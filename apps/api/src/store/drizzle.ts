@@ -2,6 +2,16 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { projects, documents, documentRevisions, type Db } from "@appuscholar/db";
 import type { Store, Project, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind } from "./types";
 
+const APPEND_RETRIES = 2;
+
+/** Postgres unique_violation (23505), whether thrown directly by the driver or wrapped by drizzle in `cause`. */
+export function isUniqueViolation(err: unknown): boolean {
+  for (let e: unknown = err, depth = 0; e && typeof e === "object" && depth < 5; e = (e as { cause?: unknown }).cause, depth++) {
+    if ((e as { code?: unknown }).code === "23505") return true;
+  }
+  return false;
+}
+
 export class DrizzleStore implements Store {
   constructor(private d: Db) {}
 
@@ -68,10 +78,20 @@ export class DrizzleStore implements Store {
   async appendRevision(userId: string, documentId: string, rev: NewRevision): Promise<DocumentRevision | null> {
     const doc = await this.ownedDoc(userId, documentId);
     if (!doc) return null;
-    const [row] = await this.d.insert(documentRevisions).values({
-      documentId, ...rev,
-      seq: sql`(select coalesce(max(${documentRevisions.seq}), 0) + 1 from ${documentRevisions} where ${documentRevisions.documentId} = ${documentId})`
-    }).returning();
+    // Two concurrent appends can compute the same next seq; the (document_id, seq) unique index rejects the loser,
+    // which then recomputes seq from the new max. Revisions stay append-only either way.
+    let row: typeof documentRevisions.$inferSelect | undefined;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        [row] = await this.d.insert(documentRevisions).values({
+          documentId, ...rev,
+          seq: sql`(select coalesce(max(${documentRevisions.seq}), 0) + 1 from ${documentRevisions} where ${documentRevisions.documentId} = ${documentId})`
+        }).returning();
+        break;
+      } catch (err) {
+        if (attempt >= APPEND_RETRIES || !isUniqueViolation(err)) throw err;
+      }
+    }
     await this.d.update(documents).set({ currentRevisionId: row!.id, updatedAt: row!.createdAt }).where(eq(documents.id, documentId));
     return this.toRev(row!);
   }
