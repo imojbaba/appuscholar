@@ -3,6 +3,7 @@ import { SignJWT } from "jose";
 import { createApp } from "../src/app";
 import { MemoryStore } from "../src/store/memory";
 import { readFileSync } from "node:fs";
+import { parseV1Backup } from "@appuscholar/core";
 
 const SECRET = "test-secret-test-secret-test-secret-1234";
 const key = new TextEncoder().encode(SECRET);
@@ -83,21 +84,60 @@ describe("api routes", () => {
     expect((await app.request(`/documents/${d.id}`, { headers: other })).status).toBe(404);
   });
 
-  it("imports a v1 backup into a new project", async () => {
-    const r = await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ bundleText: v1fixture }) });
+  function importBody(bundleText: string, extra: Record<string, unknown> = {}) {
+    const parsed = parseV1Backup(bundleText);
+    if (!parsed.ok) throw new Error(parsed.reason);
+    return JSON.stringify({ exported: parsed.backup.exported, projectTitle: "Sleep and memory (imported from v1)", documents: parsed.backup.documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml })), ...extra });
+  }
+
+  it("imports parsed v1 documents into a new project", async () => {
+    const r = await app.request("/import/v1", { method: "POST", headers: auth, body: importBody(v1fixture) });
     expect(r.status).toBe(201);
     const { projectId, imported } = await r.json() as { projectId: string; imported: number };
     expect(imported).toBe(2);
-    const docs = await (await app.request(`/projects/${projectId}/documents`, { headers: auth })).json() as { title: string }[];
+    const projects = await (await app.request("/projects", { headers: auth })).json() as { id: string; title: string }[];
+    expect(projects.find(p => p.id === projectId)?.title).toBe("Sleep and memory (imported from v1)");
+    const docs = await (await app.request(`/projects/${projectId}/documents`, { headers: auth })).json() as { id: string; title: string }[];
     expect(docs.map(x => x.title).sort()).toEqual(["Literature review", "Plain notes"]);
-    const bad = await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ bundleText: "nope" }) });
-    expect(bad.status).toBe(400);
-    expect(await bad.json()).toEqual({ error: "not-json" });
+    const revs = await (await app.request(`/documents/${docs[0]!.id}/revisions`, { headers: auth })).json() as { authorKind: string; authorLabel: string }[];
+    expect(revs[0]).toMatchObject({ authorKind: "import", authorLabel: "v1 backup 2026-10-12" });
+  });
+
+  it("rejects malformed import bodies, including the old bundleText shape", async () => {
+    for (const body of ["nope", JSON.stringify({ bundleText: v1fixture }), JSON.stringify({ exported: "", projectTitle: "x", documents: [] })]) {
+      const bad = await app.request("/import/v1", { method: "POST", headers: auth, body });
+      expect(bad.status).toBe(400);
+      expect(await bad.json()).toEqual({ error: "invalid" });
+    }
+  });
+
+  it("adds later batches to the project created by the first, and only to my own project", async () => {
+    const one = (title: string) => JSON.stringify({ exported: "2026-10-12T09:30:00.000Z", projectTitle: "Batch", documents: [{ title, bodyHtml: `<p>${title}</p>` }] });
+    const first = await (await app.request("/import/v1", { method: "POST", headers: auth, body: one("A") })).json() as { projectId: string };
+    const second = await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ ...JSON.parse(one("B")), projectId: first.projectId }) });
+    expect(second.status).toBe(201);
+    expect(await second.json()).toEqual({ projectId: first.projectId, imported: 1 });
+    expect((await (await app.request("/projects", { headers: auth })).json() as unknown[]).length).toBe(1);
+    const docs = await (await app.request(`/projects/${first.projectId}/documents`, { headers: auth })).json() as { title: string }[];
+    expect(docs.map(d => d.title).sort()).toEqual(["A", "B"]);
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    const stolen = await app.request("/import/v1", { method: "POST", headers: other, body: JSON.stringify({ ...JSON.parse(one("C")), projectId: first.projectId }) });
+    expect(stolen.status).toBe(404);
+    expect((await (await app.request(`/projects/${first.projectId}/documents`, { headers: auth })).json() as unknown[]).length).toBe(2);
+  });
+
+  it("rejects an import request above the size limit with 413", async () => {
+    const small = createApp({ store: new MemoryStore(), jwtSecret: SECRET, maxImportBytes: 1024 });
+    const body = JSON.stringify({ exported: "", projectTitle: "Big", documents: [{ title: "x", bodyHtml: "<p>" + "x".repeat(2048) + "</p>" }] });
+    const r = await small.request("/import/v1", { method: "POST", headers: auth, body });
+    expect(r.status).toBe(413);
+    expect(await r.json()).toEqual({ error: "too-large" });
+    expect(await (await small.request("/projects", { headers: auth })).json()).toEqual([]);
   });
 
   it("sanitises imported bodies", async () => {
-    const bundle = { app: "appuscholar", v: 1, exported: "2026-10-01T00:00:00.000Z", data: { appu_docs: JSON.stringify([{ id: "d1", title: "Hostile", body: '<p>ok</p><img src="x" onerror="fetch(1)">', updated: 1 }]) } };
-    const r = await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ bundleText: JSON.stringify(bundle) }) });
+    const body = JSON.stringify({ exported: "2026-10-01T00:00:00.000Z", projectTitle: "Hostile", documents: [{ title: "Hostile", bodyHtml: '<p>ok</p><img src="x" onerror="fetch(1)"><script>alert(1)</script>' }] });
+    const r = await app.request("/import/v1", { method: "POST", headers: auth, body });
     expect(r.status).toBe(201);
     const { projectId } = await r.json() as { projectId: string };
     const docs = await (await app.request(`/projects/${projectId}/documents`, { headers: auth })).json() as { id: string }[];
@@ -105,5 +145,6 @@ describe("api routes", () => {
     const doc = await (await app.request(`/documents/${docs[0]!.id}`, { headers: auth })).json() as { bodyHtml: string };
     expect(doc.bodyHtml).toContain("<p>ok</p>");
     expect(doc.bodyHtml).not.toContain("onerror");
+    expect(doc.bodyHtml).not.toContain("<script");
   });
 });
