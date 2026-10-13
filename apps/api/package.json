@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
+    "start": "node dist/index.js",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -14,8 +15,10 @@
     "@appuscholar/core": "workspace:*",
     "@appuscholar/db": "workspace:*",
     "@hono/node-server": "^2.1.4",
+    "@neondatabase/serverless": "^1.2.0",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",
+    "isomorphic-dompurify": "^4.5.0",
     "jose": "^6.2.12",
     "pg": "^8.23.1",
     "zod": "^4.6.7"
@@ -25,6 +28,7 @@
     "@types/node": "^22.20.5",
     "@types/pg": "^8.23.1",
     "eslint": "^10.0.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.0.0",
     "typescript-eslint": "^8.0.0",
     "vitest": "^5.0.4"
