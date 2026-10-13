@@ -1,0 +1,8 @@
+:root { --purple-800:#4c1d95; --gold:#c9932e; --bg:#fbfaf9; --ink:#2a2438; --muted:#787288; --line:#ece8f2; --card:#fff; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); }
+a { color: var(--purple-800); }
+.btn { border:1px solid var(--line); background: var(--card); border-radius:10px; padding:8px 14px; cursor:pointer; font:inherit; }
+.btn-purple { background: var(--purple-800); color:#fff; border-color: var(--purple-800); }
+.card { background: var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+.editor .ProseMirror { min-height: 60vh; outline:none; line-height:1.7; font-size:16px; }
