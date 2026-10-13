@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { editorExtensions } from "@/lib/editorExtensions";
 import { useAutosave } from "@/lib/useAutosave";
 
-export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady }: { docId: string; initialHtml: string; initialSeq: number; onSaved?: (seq: number) => void; onReady?: (api: { flushNow: () => Promise<void> }) => void }) {
+export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady }: { docId: string; initialHtml: string; initialSeq: number; onSaved?: (seq: number) => void; onReady?: (api: { flushNow: () => Promise<boolean> }) => void }) {
   const { status, currentSeq, onChange, flushNow } = useAutosave(docId, initialHtml, initialSeq);
   const editor = useEditor({
     extensions: editorExtensions,
