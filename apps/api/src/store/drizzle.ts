@@ -1,0 +1,83 @@
+import { and, desc, eq, sql } from "drizzle-orm";
+import { projects, documents, documentRevisions, type Db } from "@appuscholar/db";
+import type { Store, Project, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind } from "./types";
+
+export class DrizzleStore implements Store {
+  constructor(private d: Db) {}
+
+  private async ownedDoc(userId: string, docId: string) {
+    const rows = await this.d.select({ doc: documents, project: projects }).from(documents).innerJoin(projects, eq(projects.id, documents.projectId)).where(and(eq(documents.id, docId), eq(projects.userId, userId))).limit(1);
+    return rows[0]?.doc ?? null;
+  }
+  private async latest(docId: string) {
+    const rows = await this.d.select().from(documentRevisions).where(eq(documentRevisions.documentId, docId)).orderBy(desc(documentRevisions.seq)).limit(1);
+    const r = rows[0];
+    if (!r) throw new Error("document without revisions: " + docId);
+    return this.toRev(r);
+  }
+  private toRev(r: typeof documentRevisions.$inferSelect): DocumentRevision {
+    return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, createdAt: r.createdAt };
+  }
+  private async summary(doc: typeof documents.$inferSelect): Promise<DocumentSummary> {
+    const r = await this.latest(doc.id);
+    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, updatedAt: doc.updatedAt };
+  }
+
+  async createProject(userId: string, title: string): Promise<Project> {
+    const [p] = await this.d.insert(projects).values({ userId, title }).returning();
+    return p!;
+  }
+  async listProjects(userId: string): Promise<Project[]> {
+    return this.d.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.createdAt));
+  }
+  async getProject(userId: string, id: string): Promise<Project | null> {
+    const rows = await this.d.select().from(projects).where(and(eq(projects.id, id), eq(projects.userId, userId))).limit(1);
+    return rows[0] ?? null;
+  }
+
+  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision): Promise<DocumentWithBody | null> {
+    if (!(await this.getProject(userId, projectId))) return null;
+    const [doc] = await this.d.insert(documents).values({ projectId, title, kind }).returning();
+    const [rev] = await this.d.insert(documentRevisions).values({ documentId: doc!.id, seq: 1, ...first }).returning();
+    await this.d.update(documents).set({ currentRevisionId: rev!.id }).where(eq(documents.id, doc!.id));
+    return { ...(await this.summary(doc!)), bodyHtml: rev!.bodyHtml };
+  }
+  async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
+    if (!(await this.getProject(userId, projectId))) return null;
+    const rows = await this.d.select().from(documents).where(eq(documents.projectId, projectId)).orderBy(desc(documents.updatedAt));
+    return Promise.all(rows.map(r => this.summary(r)));
+  }
+  async getDocument(userId: string, id: string): Promise<DocumentWithBody | null> {
+    const doc = await this.ownedDoc(userId, id);
+    if (!doc) return null;
+    const r = await this.latest(doc.id);
+    return { ...(await this.summary(doc)), bodyHtml: r.bodyHtml };
+  }
+  async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
+    const doc = await this.ownedDoc(userId, id);
+    if (!doc) return null;
+    const [updated] = await this.d.update(documents).set({ title, updatedAt: new Date() }).where(eq(documents.id, id)).returning();
+    return this.summary(updated!);
+  }
+
+  async appendRevision(userId: string, documentId: string, rev: NewRevision): Promise<DocumentRevision | null> {
+    const doc = await this.ownedDoc(userId, documentId);
+    if (!doc) return null;
+    const [row] = await this.d.insert(documentRevisions).values({
+      documentId, ...rev,
+      seq: sql`(select coalesce(max(${documentRevisions.seq}), 0) + 1 from ${documentRevisions} where ${documentRevisions.documentId} = ${documentId})`
+    }).returning();
+    await this.d.update(documents).set({ currentRevisionId: row!.id, updatedAt: row!.createdAt }).where(eq(documents.id, documentId));
+    return this.toRev(row!);
+  }
+  async listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null> {
+    if (!(await this.ownedDoc(userId, documentId))) return null;
+    const rows = await this.d.select({ id: documentRevisions.id, documentId: documentRevisions.documentId, seq: documentRevisions.seq, authorKind: documentRevisions.authorKind, authorLabel: documentRevisions.authorLabel, wordCount: documentRevisions.wordCount, createdAt: documentRevisions.createdAt }).from(documentRevisions).where(eq(documentRevisions.documentId, documentId)).orderBy(desc(documentRevisions.seq));
+    return rows.map(r => ({ ...r, authorKind: r.authorKind as AuthorKind }));
+  }
+  async getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null> {
+    if (!(await this.ownedDoc(userId, documentId))) return null;
+    const rows = await this.d.select().from(documentRevisions).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).limit(1);
+    return rows[0] ? this.toRev(rows[0]) : null;
+  }
+}
