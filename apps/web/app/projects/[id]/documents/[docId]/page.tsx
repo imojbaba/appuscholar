@@ -10,13 +10,15 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string;
   const [doc, setDoc] = useState<Doc | null>(null);
   const [seq, setSeq] = useState(0);
   const [key, setKey] = useState(0);
-  const load = useCallback(() => apiFetch<Doc>(`/documents/${docId}`).then(d => { setDoc(d); setSeq(d.currentSeq); setKey(k => k + 1); }), [docId]);
+  const [error, setError] = useState("");
+  const load = useCallback(() => apiFetch<Doc>(`/documents/${docId}`).then(d => { setDoc(d); setSeq(d.currentSeq); setKey(k => k + 1); setError(""); }).catch(() => setError("Could not load this document.")), [docId]);
   useEffect(() => { void load(); }, [load]);
-  if (!doc) return <main style={{ padding: 16 }}>Loading…</main>;
+  if (!doc) return <main style={{ padding: 16 }}>{error ? <p role="alert" data-testid="error-msg">{error}</p> : "Loading…"}</main>;
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
       <Link href={`/projects/${id}`}>← Documents</Link>
       <h1 style={{ color: "var(--purple-800)" }}>{doc.title}</h1>
+      {error && <p role="alert" data-testid="error-msg">{error}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
         <Editor key={key} docId={doc.id} initialHtml={doc.bodyHtml} initialSeq={doc.currentSeq} onSaved={setSeq} />
         <RevisionPanel docId={doc.id} currentSeq={seq} onRestored={() => { void load(); }} />

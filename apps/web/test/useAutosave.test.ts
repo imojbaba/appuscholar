@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { createAutosaver } from "../lib/useAutosave";
 
 describe("createAutosaver", () => {
+  afterEach(() => { vi.useRealTimers(); });
   it("debounces and skips unchanged bodies", async () => {
     vi.useFakeTimers();
     const save = vi.fn(async (html: string) => ({ seq: html.length, created: true }));
@@ -16,7 +17,6 @@ describe("createAutosaver", () => {
     await vi.advanceTimersByTimeAsync(1500);
     expect(save).toHaveBeenCalledTimes(1);
     expect(a.getStatus()).toBe("saved");
-    vi.useRealTimers();
   });
   it("reports error and retries on the next change", async () => {
     vi.useFakeTimers();
@@ -28,6 +28,14 @@ describe("createAutosaver", () => {
     a.onChange("<p>xy</p>");
     await vi.advanceTimersByTimeAsync(100);
     expect(a.getStatus()).toBe("saved");
-    vi.useRealTimers();
+  });
+  it("cancel() drops the pending save", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn(async () => ({ seq: 1, created: true }));
+    const a = createAutosaver({ initialHtml: "", save, delayMs: 100 });
+    a.onChange("<p>x</p>");
+    a.cancel();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(save).not.toHaveBeenCalled();
   });
 });

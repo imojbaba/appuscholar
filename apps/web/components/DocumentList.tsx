@@ -6,13 +6,18 @@ type Doc = { id: string; title: string; currentSeq: number; wordCount: number; u
 export function DocumentList({ projectId }: { projectId: string }) {
   const [items, setItems] = useState<Doc[] | null>(null);
   const [title, setTitle] = useState("");
-  const load = useCallback(() => apiFetch<Doc[]>(`/projects/${projectId}/documents`).then(setItems).catch(() => setItems([])), [projectId]);
+  const [error, setError] = useState("");
+  const load = useCallback(() => apiFetch<Doc[]>(`/projects/${projectId}/documents`).then(r => { setItems(r); setError(""); }).catch(() => { setItems(prev => prev ?? []); setError("Could not load the documents. Check your connection and try again."); }), [projectId]);
   useEffect(() => { void load(); }, [load]);
   async function create(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    await apiFetch(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title }) });
-    setTitle(""); await load();
+    try {
+      await apiFetch(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title }) });
+      setTitle(""); await load();
+    } catch {
+      setError("Could not create the document. Try again.");
+    }
   }
   return (
     <section>
@@ -20,6 +25,7 @@ export function DocumentList({ projectId }: { projectId: string }) {
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="New document title" data-testid="doc-title" style={{ flex: 1, padding: 10 }} />
         <button className="btn btn-purple" data-testid="doc-create">New document</button>
       </form>
+      {error && <p role="alert" data-testid="error-msg" style={{ color: "crimson" }}>{error}</p>}
       {items === null ? <p>Loading…</p> : (
         <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 8 }}>
           {items.map(d => (

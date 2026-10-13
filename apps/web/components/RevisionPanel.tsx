@@ -4,17 +4,23 @@ import { apiFetch } from "@/lib/api";
 type Rev = { seq: number; authorKind: string; authorLabel: string; wordCount: number; createdAt: string };
 export function RevisionPanel({ docId, currentSeq, onRestored }: { docId: string; currentSeq: number; onRestored: () => void }) {
   const [revs, setRevs] = useState<Rev[]>([]);
-  const load = useCallback(() => apiFetch<Rev[]>(`/documents/${docId}/revisions`).then(setRevs).catch(() => setRevs([])), [docId]);
+  const [error, setError] = useState("");
+  const load = useCallback(() => apiFetch<Rev[]>(`/documents/${docId}/revisions`).then(r => { setRevs(r); setError(""); }).catch(() => setError("Could not load history.")), [docId]);
   // currentSeq is intentionally a trigger: reload the history whenever a new revision is saved.
   useEffect(() => { void load(); }, [load, currentSeq]);
   async function restore(seq: number) {
     if (!confirm(`Restore revision ${seq}? The current text is kept as a revision too.`)) return;
-    await apiFetch(`/documents/${docId}/restore/${seq}`, { method: "POST" });
-    onRestored();
+    try {
+      await apiFetch(`/documents/${docId}/restore/${seq}`, { method: "POST" });
+      onRestored();
+    } catch {
+      setError("Could not restore that revision. Try again.");
+    }
   }
   return (
     <aside className="card" style={{ fontSize: 13 }}>
       <h3 style={{ margin: "0 0 8px" }}>History</h3>
+      {error && <p role="alert" data-testid="error-msg" style={{ color: "crimson" }}>{error}</p>}
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 }} data-testid="revision-list">
         {revs.map(r => (
           <li key={r.seq} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>

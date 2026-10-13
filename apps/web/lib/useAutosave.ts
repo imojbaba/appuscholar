@@ -35,6 +35,11 @@ export function createAutosaver(o: { initialHtml: string; save: (html: string) =
       timer = setTimeout(() => { void flush(); }, o.delayMs);
     },
     flushNow: flush,
+    cancel() {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      pending = null;
+    },
     getStatus: () => status
   };
 }
@@ -51,6 +56,7 @@ export function useAutosave(docId: string, initialHtml: string, initialSeq: numb
     },
     onStatus: (s, seq) => { setStatus(s); if (seq) setSeq(seq); }
   }), [docId, initialHtml]);
+  useEffect(() => () => saver.cancel(), [saver]);
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (saver.getStatus() === "dirty" || saver.getStatus() === "saving") { e.preventDefault(); } };
     window.addEventListener("beforeunload", h);
