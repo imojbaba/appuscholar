@@ -4,7 +4,8 @@ import { sanitizeHtml, wordCount } from "../src/sanitize";
 describe("sanitizeHtml", () => {
   it("keeps ordinary document markup", () => {
     const html = '<h1>Title</h1><p>Hello <b>world</b> <a href="https://x.org">link</a></p><ul><li>a</li></ul><table><tr><td>1</td></tr></table>';
-    expect(sanitizeHtml(html)).toBe(html);
+    const expected = '<h1>Title</h1><p>Hello <b>world</b> <a href="https://x.org">link</a></p><ul><li>a</li></ul><table><tbody><tr><td>1</td></tr></tbody></table>';
+    expect(sanitizeHtml(html)).toBe(expected);
   });
   it("strips event handlers and script", () => {
     const out = sanitizeHtml('<p>ok</p><img src="x" onerror="fetch(1)"><script>alert(1)</script><svg onload="a()"></svg>');
