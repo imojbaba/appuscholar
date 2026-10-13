@@ -4,8 +4,8 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useAutosave } from "@/lib/useAutosave";
 
-export function Editor({ docId, initialHtml, initialSeq, onSaved }: { docId: string; initialHtml: string; initialSeq: number; onSaved?: (seq: number) => void }) {
-  const { status, currentSeq, onChange } = useAutosave(docId, initialHtml, initialSeq);
+export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady }: { docId: string; initialHtml: string; initialSeq: number; onSaved?: (seq: number) => void; onReady?: (api: { flushNow: () => Promise<void> }) => void }) {
+  const { status, currentSeq, onChange, flushNow } = useAutosave(docId, initialHtml, initialSeq);
   const editor = useEditor({
     extensions: [StarterKit],
     content: initialHtml,
@@ -13,6 +13,7 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved }: { docId: str
     onUpdate: ({ editor }) => onChange(editor.getHTML())
   });
   useEffect(() => { if (status === "saved") onSaved?.(currentSeq); }, [status, currentSeq, onSaved]);
+  useEffect(() => { onReady?.({ flushNow }); }, [onReady, flushNow]);
   const label = status === "saved" ? `Saved · revision ${currentSeq}` : status === "saving" ? "Saving…" : status === "dirty" ? "Unsaved changes" : "Could not save, will retry";
   return (
     <div className="card editor">

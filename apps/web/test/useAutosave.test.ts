@@ -38,4 +38,16 @@ describe("createAutosaver", () => {
     await vi.advanceTimersByTimeAsync(500);
     expect(save).not.toHaveBeenCalled();
   });
+  it("flushNow() saves immediately without waiting for the timer", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn(async () => ({ seq: 3, created: true }));
+    const a = createAutosaver({ initialHtml: "", save, delayMs: 1500 });
+    a.onChange("<p>x</p>");
+    await a.flushNow();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith("<p>x</p>");
+    expect(a.getStatus()).toBe("saved");
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
 });

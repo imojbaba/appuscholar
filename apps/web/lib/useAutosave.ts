@@ -10,20 +10,26 @@ export function createAutosaver(o: { initialHtml: string; save: (html: string) =
   let pending: string | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let status: SaveStatus = "saved";
+  let inflight: Promise<SaveResult> | null = null;
   const set = (s: SaveStatus, seq?: number) => { status = s; o.onStatus?.(s, seq); };
 
   async function flush() {
+    if (timer) clearTimeout(timer);
     timer = null;
+    if (inflight) await inflight.catch(() => undefined);
     const html = pending; pending = null;
     if (html === null || html === lastSaved) { set("saved"); return; }
     set("saving");
     try {
-      const r = await o.save(html);
+      inflight = o.save(html);
+      const r = await inflight;
       lastSaved = html;
       set("saved", r.seq);
     } catch {
       pending = html;
       set("error");
+    } finally {
+      inflight = null;
     }
   }
   return {
@@ -56,7 +62,7 @@ export function useAutosave(docId: string, initialHtml: string, initialSeq: numb
     },
     onStatus: (s, seq) => { setStatus(s); if (seq) setSeq(seq); }
   }), [docId, initialHtml]);
-  useEffect(() => () => saver.cancel(), [saver]);
+  useEffect(() => () => { void saver.flushNow(); }, [saver]);
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (saver.getStatus() === "dirty" || saver.getStatus() === "saving") { e.preventDefault(); } };
     window.addEventListener("beforeunload", h);

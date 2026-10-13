@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 type Rev = { seq: number; authorKind: string; authorLabel: string; wordCount: number; createdAt: string };
-export function RevisionPanel({ docId, currentSeq, onRestored }: { docId: string; currentSeq: number; onRestored: () => void }) {
+export function RevisionPanel({ docId, currentSeq, onRestored, beforeRestore }: { docId: string; currentSeq: number; onRestored: () => void; beforeRestore?: () => Promise<void> }) {
   const [revs, setRevs] = useState<Rev[]>([]);
   const [error, setError] = useState("");
   const load = useCallback(() => apiFetch<Rev[]>(`/documents/${docId}/revisions`).then(r => { setRevs(r); setError(""); }).catch(() => setError("Could not load history.")), [docId]);
@@ -11,6 +11,7 @@ export function RevisionPanel({ docId, currentSeq, onRestored }: { docId: string
   async function restore(seq: number) {
     if (!confirm(`Restore revision ${seq}? The current text is kept as a revision too.`)) return;
     try {
+      await beforeRestore?.();
       await apiFetch(`/documents/${docId}/restore/${seq}`, { method: "POST" });
       onRestored();
     } catch {
