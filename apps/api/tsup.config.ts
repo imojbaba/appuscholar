@@ -1,9 +1,12 @@
 import { defineConfig } from "tsup";
 
-// One self-contained ESM file for Node 22. Workspace packages (@appuscholar/*) ship TypeScript sources, so they are
-// bundled in; npm dependencies stay external and are resolved from apps/api/node_modules at runtime.
+// Two self-contained ESM bundles for Node 22:
+//   dist/index.js   the Node server (Docker, `pnpm start`), also exports `app`
+//   dist/vercel.js  the Vercel function handlers (GET/POST/...), imported by api/index.js
+// Everything is bundled in, workspace packages and npm dependencies alike, except jsdom (it reads files relative to
+// __dirname at runtime, so it must stay a real package) and optional native modules that are never installed.
 export default defineConfig({
-  entry: { index: "src/index.ts" },
+  entry: { index: "src/index.ts", vercel: "src/vercel.ts" },
   format: ["esm"],
   platform: "node",
   target: "node22",
@@ -11,5 +14,7 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
-  noExternal: [/^@appuscholar\//]
+  noExternal: [/^(?!(jsdom|pg-native|canvas|bufferutil|utf-8-validate|@electric-sql\/pglite)($|\/))/],
+  external: ["jsdom", "pg-native", "canvas", "bufferutil", "utf-8-validate", "@electric-sql/pglite"],
+  banner: { js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);' }
 });
