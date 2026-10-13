@@ -1,3 +1,3 @@
 export * from "./schema";
-export { db } from "./client";
+export { db, isNeonUrl } from "./client";
 export type { Db } from "./client";
