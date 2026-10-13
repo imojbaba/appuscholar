@@ -94,4 +94,16 @@ describe("api routes", () => {
     expect(bad.status).toBe(400);
     expect(await bad.json()).toEqual({ error: "not-json" });
   });
+
+  it("sanitises imported bodies", async () => {
+    const bundle = { app: "appuscholar", v: 1, exported: "2026-10-01T00:00:00.000Z", data: { appu_docs: JSON.stringify([{ id: "d1", title: "Hostile", body: '<p>ok</p><img src="x" onerror="fetch(1)">', updated: 1 }]) } };
+    const r = await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ bundleText: JSON.stringify(bundle) }) });
+    expect(r.status).toBe(201);
+    const { projectId } = await r.json() as { projectId: string };
+    const docs = await (await app.request(`/projects/${projectId}/documents`, { headers: auth })).json() as { id: string }[];
+    expect(docs).toHaveLength(1);
+    const doc = await (await app.request(`/documents/${docs[0]!.id}`, { headers: auth })).json() as { bodyHtml: string };
+    expect(doc.bodyHtml).toContain("<p>ok</p>");
+    expect(doc.bodyHtml).not.toContain("onerror");
+  });
 });

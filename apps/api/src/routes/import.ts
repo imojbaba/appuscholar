@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { parseV1Backup, wordCount } from "@appuscholar/core";
+import { parseV1Backup, sanitizeHtml, wordCount } from "@appuscholar/core";
 import type { Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
@@ -19,7 +19,8 @@ export function importRoutes(store: Store) {
     const project = await store.createProject(userId, title);
     let imported = 0;
     for (const d of parsed.backup.documents) {
-      const created = await store.createDocument(userId, project.id, d.title, "draft", { bodyHtml: d.bodyHtml, authorKind: "import", authorLabel: `v1 backup ${parsed.backup.exported.slice(0, 10)}`, wordCount: wordCount(d.bodyHtml) });
+      const clean = sanitizeHtml(d.bodyHtml);
+      const created = await store.createDocument(userId, project.id, d.title, "draft", { bodyHtml: clean, authorKind: "import", authorLabel: `v1 backup ${parsed.backup.exported.slice(0, 10)}`, wordCount: wordCount(clean) });
       if (created) imported++;
     }
     return c.json({ projectId: project.id, imported }, 201);
