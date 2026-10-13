@@ -14,14 +14,12 @@ export class MemoryStore implements Store {
     const d = this.docs.get(docId);
     return d && this.ownsProject(userId, d.projectId) ? d : null;
   }
-  private latest(docId: string): DocumentRevision {
+  private latest(docId: string): DocumentRevision | null {
     const list = this.revs.get(docId) ?? [];
-    const last = list[list.length - 1];
-    if (!last) throw new Error("document without revisions: " + docId);
-    return last;
+    return list[list.length - 1] ?? null;
   }
-  private summary(d: DocRow): DocumentSummary {
-    const r = this.latest(d.id);
+  private summary(d: DocRow, r: DocumentRevision | null = this.latest(d.id)): DocumentSummary | null {
+    if (!r) return null;
     return { id: d.id, projectId: d.projectId, title: d.title, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, updatedAt: d.updatedAt };
   }
 
@@ -45,15 +43,18 @@ export class MemoryStore implements Store {
     this.docs.set(d.id, d);
     const r: DocumentRevision = { id: crypto.randomUUID(), documentId: d.id, seq: 1, ...first, createdAt: now };
     this.revs.set(d.id, [r]);
-    return { ...this.summary(d), bodyHtml: r.bodyHtml };
+    return { ...this.summary(d, r)!, bodyHtml: r.bodyHtml };
   }
   async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
     if (!this.ownsProject(userId, projectId)) return null;
-    return [...this.docs.values()].filter(d => d.projectId === projectId).map(d => this.summary(d)).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return [...this.docs.values()].filter(d => d.projectId === projectId).map(d => this.summary(d)).filter((x): x is DocumentSummary => x !== null).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
   async getDocument(userId: string, id: string): Promise<DocumentWithBody | null> {
     const d = this.ownedDoc(userId, id);
-    return d ? { ...this.summary(d), bodyHtml: this.latest(d.id).bodyHtml } : null;
+    if (!d) return null;
+    const r = this.latest(d.id);
+    const sum = this.summary(d, r);
+    return r && sum ? { ...sum, bodyHtml: r.bodyHtml } : null;
   }
   async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
     const d = this.ownedDoc(userId, id);
