@@ -15,3 +15,27 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        if: ${{ env.E2E_DATABASE_URL != '' }}
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        if: ${{ env.E2E_DATABASE_URL != '' }}
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+        if: ${{ env.E2E_DATABASE_URL != '' }}
+      - run: pnpm --filter @appuscholar/db db:migrate
+        if: ${{ env.E2E_DATABASE_URL != '' }}
+        env:
+          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
+      - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
+        if: ${{ env.E2E_DATABASE_URL != '' }}
+      - run: pnpm --filter @appuscholar/web e2e
+        if: ${{ env.E2E_DATABASE_URL != '' }}
+        env:
+          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
