@@ -78,3 +78,12 @@ docker run -p 8788:8788 -e API_JWT_SECRET=... -e DATABASE_URL=... -e WEB_ORIGIN=
 It installs only the api and its workspace dependencies (`pnpm install --filter @appuscholar/api...`), runs the same tsup
 build, sets `NODE_ENV=production` and starts `node apps/api/dist/index.js`. The root `.dockerignore` keeps `.env*`, `.git`,
 `.superpowers`, `node_modules`, `.next` and `dist` out of the build context.
+
+## Vercel runtime notes (learned on the first deploy)
+
+- `dist/vercel.js` bundles every dependency except `jsdom`; `api/index.js` loads it lazily and turns a boot failure into a
+  readable 500 instead of `FUNCTION_INVOCATION_FAILED`.
+- Vercel's function loader does not support `require()` of ES modules. jsdom 30's dependency chain needs that, so the
+  workspace pins `jsdom` to 26.1.0 (root `pnpm.overrides` and a direct dependency here). Do not bump jsdom past 26 until
+  Vercel's loader supports `require(esm)`; the symptom is `ERR_REQUIRE_ESM ... html-encoding-sniffer`.
+- Projects run on Node 24 on Vercel (set in project settings); local engines allow 22+.
