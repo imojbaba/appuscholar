@@ -5,7 +5,7 @@ export function proxy(req: NextRequest) {
   const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8788";
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' blob: data: https://*.public.blob.vercel-storage.com",
@@ -16,6 +16,7 @@ export function proxy(req: NextRequest) {
   ].join("; ");
   const headers = new Headers(req.headers);
   headers.set("x-nonce", nonce);
+  headers.set("Content-Security-Policy", csp);
   const res = NextResponse.next({ request: { headers } });
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");
