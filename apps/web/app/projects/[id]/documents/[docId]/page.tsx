@@ -9,12 +9,14 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string;
   const { id, docId } = use(params);
   const [doc, setDoc] = useState<Doc | null>(null);
   const [seq, setSeq] = useState(0);
-  const [key, setKey] = useState(0);
+  // The editor remounts only after a restore (so it shows the restored body); never on the initial load, because a
+  // remount during the first keystrokes would strand those edits in a replaced instance (dev StrictMode loads twice).
+  const [editorGen, setEditorGen] = useState(0);
   const [error, setError] = useState("");
   const flushRef = useRef<(() => Promise<boolean>) | null>(null);
   const onReady = useCallback((api: { flushNow: () => Promise<boolean> }) => { flushRef.current = api.flushNow; }, []);
   const beforeRestore = useCallback(async () => (await flushRef.current?.()) ?? true, []);
-  const load = useCallback(() => apiFetch<Doc>(`/documents/${docId}`).then(d => { setDoc(d); setSeq(d.currentSeq); setKey(k => k + 1); setError(""); }).catch(() => setError("Could not load this document.")), [docId]);
+  const load = useCallback(() => apiFetch<Doc>(`/documents/${docId}`).then(d => { setDoc(d); setSeq(d.currentSeq); setError(""); return true; }).catch(() => { setError("Could not load this document."); return false; }), [docId]);
   useEffect(() => { void load(); }, [load]);
   if (!doc) return <main style={{ padding: 16 }}>{error ? <p role="alert" data-testid="error-msg">{error}</p> : "Loading…"}</main>;
   return (
@@ -23,8 +25,8 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string;
       <h1 style={{ color: "var(--purple-800)" }}>{doc.title}</h1>
       {error && <p role="alert" data-testid="error-msg">{error}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
-        <Editor key={key} docId={doc.id} initialHtml={doc.bodyHtml} initialSeq={doc.currentSeq} onSaved={setSeq} onReady={onReady} />
-        <RevisionPanel docId={doc.id} currentSeq={seq} onRestored={() => { void load(); }} beforeRestore={beforeRestore} />
+        <Editor key={editorGen} docId={doc.id} initialHtml={doc.bodyHtml} initialSeq={doc.currentSeq} onSaved={setSeq} onReady={onReady} />
+        <RevisionPanel docId={doc.id} currentSeq={seq} onRestored={() => { void load().then(ok => { if (ok) setEditorGen(g => g + 1); }); }} beforeRestore={beforeRestore} />
       </div>
     </main>
   );
