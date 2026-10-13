@@ -15,6 +15,46 @@ importers:
         specifier: ^5.9.0
         version: 5.9.3
 
+  apps/api:
+    dependencies:
+      '@appuscholar/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@appuscholar/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@hono/node-server':
+        specifier: ^2.1.4
+        version: 2.1.5(hono@4.13.13)
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@neondatabase/serverless@1.2.0)
+      hono:
+        specifier: ^4.13.13
+        version: 4.13.13
+      jose:
+        specifier: ^6.2.12
+        version: 6.2.12
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      eslint:
+        specifier: ^10.0.0
+        version: 10.12.0
+      tsx:
+        specifier: ^4.0.0
+        version: 4.23.15
+      typescript-eslint:
+        specifier: ^8.0.0
+        version: 8.71.2(eslint@10.12.0)(typescript@5.9.3)
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@types/node@22.20.5)(jsdom@30.1.2)(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15))
+
   packages/core:
     dependencies:
       isomorphic-dompurify:
@@ -629,6 +669,12 @@ packages:
       '@noble/hashes':
         optional: true
 
+  '@hono/node-server@2.1.5':
+    resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4 || ^5.0.0-0
+
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
     engines: {node: '>=18.18.0'}
@@ -1193,6 +1239,10 @@ packages:
   hashery@1.5.1:
     resolution: {integrity: sha512-iZyKG96/JwPz1N55vj2Ie2vXbhu440zfUfJvSwEqEbeLluk7NnapfGqa7LH0mOsnDxTF85Mx8/dyR6HfqcbmbQ==}
     engines: {node: '>=20'}
+
+  hono@4.13.13:
+    resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+    engines: {node: '>=16.9.0'}
 
   hookified@1.15.1:
     resolution: {integrity: sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg==}
@@ -1993,6 +2043,10 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
+  '@hono/node-server@2.1.5(hono@4.13.13)':
+    dependencies:
+      hono: 4.13.13
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -2499,6 +2553,8 @@ snapshots:
   hashery@1.5.1:
     dependencies:
       hookified: 1.15.1
+
+  hono@4.13.13: {}
 
   hookified@1.15.1: {}
 
