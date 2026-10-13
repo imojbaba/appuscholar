@@ -1,10 +1,14 @@
 import { signIn } from "@/auth";
-export default function SignIn() {
-  const e2e = process.env.E2E_AUTH === "1";
+import { e2eAuthEnabled } from "@/lib/e2eAuth";
+import { signinErrorMessage } from "@/lib/signinError";
+export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string | string[] }> }) {
+  const e2e = e2eAuthEnabled();
+  const error = signinErrorMessage((await searchParams).error);
   return (
     <main style={{ maxWidth: 420, margin: "80px auto", padding: 16 }}>
       <h1 style={{ color: "var(--purple-800)" }}>Appuscholar</h1>
       <p style={{ color: "var(--muted)" }}>Sign in to open your projects.</p>
+      {error ? <p role="alert" data-testid="signin-error" style={{ color: "crimson" }}>{error}</p> : null}
       <form action={async () => { "use server"; await signIn("google", { redirectTo: "/projects" }); }}>
         <button className="btn btn-purple" style={{ width: "100%" }}>Continue with Google</button>
       </form>

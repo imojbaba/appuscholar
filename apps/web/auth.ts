@@ -4,6 +4,7 @@ import Resend from "next-auth/providers/resend";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, users, accounts, sessions, verificationTokens } from "@appuscholar/db";
+import { e2eAuthEnabled } from "@/lib/e2eAuth";
 
 let cached: ReturnType<typeof db> | undefined;
 function getDb() {
@@ -14,7 +15,7 @@ function getDb() {
   }
   return cached;
 }
-const e2e = process.env.E2E_AUTH === "1";
+const e2e = e2eAuthEnabled();
 
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   const database = getDb();
@@ -23,7 +24,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
     session: { strategy: "jwt" },
     pages: { signIn: "/signin" },
     providers: [
-      Google,
+      // Google verifies email ownership, so linking a Google sign-in to an existing email-link account is safe and
+      // avoids the OAuthAccountNotLinked dead end for students who first signed in by email.
+      Google({ allowDangerousEmailAccountLinking: true }),
       Resend({ from: process.env.AUTH_EMAIL_FROM }),
       ...(e2e ? [Credentials({
         name: "E2E",
