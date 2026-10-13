@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 
 const fixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-small.json");
+const richFixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-rich.json");
 
 test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await page.goto("/signin");
@@ -37,4 +38,30 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await page.getByTestId("doc-link").filter({ hasText: "Literature review" }).click();
   await expect(page.locator(".ProseMirror")).toContainText("Attachment theory matters");
   expect(await page.locator("[onerror],[onload]").count()).toBe(0);
+
+  // A v1 document with a table, an inline image and an AI-insertion span must survive the first keystroke.
+  await page.goto("/import");
+  page.once("dialog", d => d.accept());
+  await page.getByTestId("import-file").setInputFiles(richFixture);
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+$/, { timeout: 15_000 });
+  await page.getByTestId("doc-link").filter({ hasText: "Results with table" }).click();
+  await expect(page).toHaveURL(/\/documents\/[0-9a-f-]+$/);
+  const docId = page.url().split("/").pop()!;
+  const rich = page.locator(".ProseMirror");
+  await expect(rich.locator("table")).toHaveCount(1);
+  await rich.getByText("End of results.").click();
+  await page.keyboard.press("End");
+  await page.keyboard.type("!");
+  await expect(page.getByTestId("save-status")).toHaveText(/revision 2/, { timeout: 10_000 });
+  const saved = await page.evaluate(async (id) => {
+    const { token } = await (await fetch("/api/token", { cache: "no-store" })).json() as { token: string };
+    const r = await fetch(`http://localhost:8788/documents/${id}`, { headers: { authorization: "Bearer " + token } });
+    return (await r.json() as { bodyHtml: string; currentSeq: number });
+  }, docId);
+  expect(saved.currentSeq).toBe(2);
+  expect(saved.bodyHtml).toContain("<table");
+  expect(saved.bodyHtml).toContain("Control");
+  expect(saved.bodyHtml).toContain("data:image/png;base64,");
+  expect(saved.bodyHtml).toMatch(/<span class="ai-ins" data-h="abc123">/);
+  expect(saved.bodyHtml).toContain("End of results.!");
 });

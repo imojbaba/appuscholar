@@ -1,13 +1,13 @@
 "use client";
 import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { editorExtensions } from "@/lib/editorExtensions";
 import { useAutosave } from "@/lib/useAutosave";
 
 export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady }: { docId: string; initialHtml: string; initialSeq: number; onSaved?: (seq: number) => void; onReady?: (api: { flushNow: () => Promise<void> }) => void }) {
   const { status, currentSeq, onChange, flushNow } = useAutosave(docId, initialHtml, initialSeq);
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: editorExtensions,
     content: initialHtml,
     immediatelyRender: false,
     onUpdate: ({ editor }) => onChange(editor.getHTML())

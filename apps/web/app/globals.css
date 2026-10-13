@@ -6,3 +6,6 @@ a { color: var(--purple-800); }
 .btn-purple { background: var(--purple-800); color:#fff; border-color: var(--purple-800); }
 .card { background: var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
 .editor .ProseMirror { min-height: 60vh; outline:none; line-height:1.7; font-size:16px; }
+.editor .ProseMirror table { border-collapse: collapse; margin: 12px 0; }
+.editor .ProseMirror th, .editor .ProseMirror td { border: 1px solid #ccc; padding: 4px 8px; vertical-align: top; }
+.editor .ProseMirror img { max-width: 100%; height: auto; }
