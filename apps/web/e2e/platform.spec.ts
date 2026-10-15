@@ -100,6 +100,26 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await expect(page.getByTestId("save-status")).toHaveText(/revision 5/, { timeout: 10_000 });
   await expect(editor).toHaveText("First sentence here.");
 
+  // renaming while typing never reverts the writing: type, rename at once (autosave still pending), keep typing
+  await editor.click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" Typed before rename.");
+  await page.getByTestId("doc-title-field").fill("Draft, renamed mid-sentence");
+  await page.keyboard.press("Enter");
+  await editor.click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" Typed after rename.");
+  await expect(page.getByTestId("save-status")).toHaveText(/^Saved/, { timeout: 10_000 });
+  await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Draft, renamed mid-sentence");
+  const raced = await page.evaluate(async (id) => {
+    const { token } = await (await fetch("/api/token", { cache: "no-store" })).json() as { token: string };
+    const r = await fetch(`http://localhost:8788/documents/${id}`, { headers: { authorization: "Bearer " + token } });
+    return (await r.json() as { title: string; bodyHtml: string });
+  }, renamedDocId);
+  expect(raced.title).toBe("Draft, renamed mid-sentence");
+  expect(raced.bodyHtml).toContain("Typed before rename.");
+  expect(raced.bodyHtml).toContain("Typed after rename.");
+
   await page.goto("/import");
   page.once("dialog", d => d.accept());
   await page.getByTestId("import-file").setInputFiles(fixture);

@@ -28,7 +28,7 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string;
   return (
     <div className="grid gap-5">
       <Breadcrumb items={[{ href: "/projects", label: "Research Projects" }, { href: `/projects/${id}`, label: projectTitle ?? "Project" }, { label: doc.title }]} />
-      <TitleField docId={doc.id} title={doc.title} beforeRename={beforeRestore} onRenamed={t => setDoc(d => (d ? { ...d, title: t } : d))} />
+      <TitleField docId={doc.id} title={doc.title} onRenamed={t => setDoc(d => (d ? { ...d, title: t } : d))} />
       {error && <p role="alert" data-testid="error-msg" className="text-sm text-destructive">{error}</p>}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Editor key={editorGen} docId={doc.id} initialHtml={doc.bodyHtml} initialSeq={doc.currentSeq} onSaved={setSeq} onReady={onReady} />

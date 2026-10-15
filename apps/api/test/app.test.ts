@@ -172,6 +172,25 @@ describe("api routes", () => {
     expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: other, body: JSON.stringify({ title: "Hijack" }) })).status).toBe(404);
   });
 
+  it("PATCH /documents/:id renames without creating a revision, validates, and refuses other users", async () => {
+    const { d } = await makeDoc();
+    await app.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml: "<p>latest</p>" }) });
+    const ok = await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "  Chapter one  " }) });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ id: d.id, title: "Chapter one", currentSeq: 2 });
+    const doc = await (await app.request(`/documents/${d.id}`, { headers: auth })).json() as { title: string; bodyHtml: string; currentSeq: number };
+    expect(doc).toMatchObject({ title: "Chapter one", bodyHtml: "<p>latest</p>", currentSeq: 2 });
+    const revs = await (await app.request(`/documents/${d.id}/revisions`, { headers: auth })).json() as unknown[];
+    expect(revs).toHaveLength(2);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "   " }) })).status).toBe(400);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "x".repeat(201) }) })).status).toBe(400);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({}) })).status).toBe(400);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: "not json" })).status).toBe(400);
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: other, body: JSON.stringify({ title: "Hijack" }) })).status).toBe(404);
+    expect((await app.request(`/documents/does-not-exist`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "x" }) })).status).toBe(404);
+  });
+
   it("DELETE removes the project and its documents", async () => {
     const { p, d } = await makeDoc();
     const other = { authorization: "Bearer " + (await token("u2")) };

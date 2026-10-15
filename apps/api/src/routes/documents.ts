@@ -5,6 +5,7 @@ import type { Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
 const Put = z.object({ bodyHtml: z.string(), title: z.string().trim().min(1).max(200).optional() });
+const Patch = z.object({ title: z.string().trim().min(1).max(200) });
 
 export function documentRoutes(store: Store, maxBodyBytes: number) {
   const r = new Hono<AuthEnv>();
@@ -31,6 +32,15 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     }
     const rev = await store.appendRevision(userId, current.id, { bodyHtml: clean, authorKind: "web", authorLabel: c.get("email"), wordCount: wordCount(clean) });
     return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: true });
+  });
+
+  /** Rename only. Never touches the body and never creates a revision, so it cannot race the editor's autosave. */
+  r.patch("/:id", async (c) => {
+    let parsed: unknown; try { parsed = await c.req.json(); } catch { return c.json({ error: "invalid" }, 400); }
+    const body = Patch.safeParse(parsed);
+    if (!body.success) return c.json({ error: "invalid" }, 400);
+    const d = await store.renameDocument(c.get("userId"), c.req.param("id"), body.data.title);
+    return d ? c.json(d) : c.json({ error: "not-found" }, 404);
   });
 
   r.get("/:id/revisions", async (c) => {
