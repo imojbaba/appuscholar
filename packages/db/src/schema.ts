@@ -45,6 +45,7 @@ export const projects = pgTable("projects", {
   title: text("title").notNull(),
   field: text("field").notNull().default("psychology"),
   stage: text("stage").notNull().default("idea"),
+  status: text("status").notNull().default("active"),
   contentLang: text("content_lang").notNull().default("en"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [index("projects_user_idx").on(t.userId)]);

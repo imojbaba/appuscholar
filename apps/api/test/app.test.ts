@@ -147,4 +147,37 @@ describe("api routes", () => {
     expect(doc.bodyHtml).not.toContain("onerror");
     expect(doc.bodyHtml).not.toContain("<script");
   });
+
+  it("lists projects with documentCount and lastEditedAt", async () => {
+    const { p, d } = await makeDoc();
+    await app.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml: "<p>a</p>" }) });
+    const list = await (await app.request("/projects", { headers: auth })).json() as { id: string; documentCount: number; lastEditedAt: string | null }[];
+    const mine = list.find(x => x.id === p.id)!;
+    expect(mine.documentCount).toBe(1);
+    expect(typeof mine.lastEditedAt).toBe("string");
+  });
+
+  it("PATCH updates title and stage and validates", async () => {
+    const { p } = await makeDoc();
+    const ok = await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "Renamed", stage: "lit" }) });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ title: "Renamed", stage: "lit" });
+    expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ stage: "nope" }) })).status).toBe(400);
+    expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ status: "done" }) })).status).toBe(400);
+    const done = await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ status: "complete" }) });
+    expect(await done.json()).toMatchObject({ status: "complete" });
+    expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "" }) })).status).toBe(400);
+    expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "x".repeat(201) }) })).status).toBe(400);
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: other, body: JSON.stringify({ title: "Hijack" }) })).status).toBe(404);
+  });
+
+  it("DELETE removes the project and its documents", async () => {
+    const { p, d } = await makeDoc();
+    const other = { authorization: "Bearer " + (await token("u2")) };
+    expect((await app.request(`/projects/${p.id}`, { method: "DELETE", headers: other })).status).toBe(404);
+    expect((await app.request(`/projects/${p.id}`, { method: "DELETE", headers: auth })).status).toBe(204);
+    expect((await app.request(`/documents/${d.id}`, { headers: auth })).status).toBe(404);
+    expect((await app.request(`/projects/${p.id}`, { method: "DELETE", headers: auth })).status).toBe(404);
+  });
 });

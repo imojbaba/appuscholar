@@ -49,5 +49,42 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect((await s.renameDocument(a, d.id, "Final"))?.title).toBe("Final");
       expect(await s.renameDocument(b, d.id, "Nope")).toBeNull();
     });
+
+    it("lists projects with document count and last edited time", async () => {
+      const p = await s.createProject(a, "Sleep");
+      let list = await s.listProjects(a);
+      expect(list[0]?.documentCount).toBe(0);
+      expect(list[0]?.lastEditedAt).toBeNull();
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: a, wordCount: 1 });
+      list = await s.listProjects(a);
+      expect(list[0]?.documentCount).toBe(1);
+      expect(list[0]?.lastEditedAt).toBeInstanceOf(Date);
+    });
+
+    it("updates title, stage and status, sorts complete projects last, and refuses other users", async () => {
+      const p = await s.createProject(a, "Sleep");
+      const q = await s.createProject(a, "Memory");
+      expect(p.status).toBe("active");
+      const u = await s.updateProject(a, p.id, { title: "Sleep and memory", stage: "lit" });
+      expect(u?.title).toBe("Sleep and memory");
+      expect(u?.stage).toBe("lit");
+      expect((await s.getProject(a, p.id))?.stage).toBe("lit");
+      await s.updateProject(a, q.id, { status: "complete" });
+      const list = await s.listProjects(a);
+      expect(list.map(x => x.id)).toEqual([p.id, q.id]);
+      expect(list[1]?.status).toBe("complete");
+      expect(await s.updateProject(b, p.id, { title: "Nope" })).toBeNull();
+    });
+
+    it("deletes a project with its documents, and refuses other users", async () => {
+      const p = await s.createProject(a, "Sleep");
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
+      expect(await s.deleteProject(b, p.id)).toBe(false);
+      expect(await s.deleteProject(a, p.id)).toBe(true);
+      expect(await s.getProject(a, p.id)).toBeNull();
+      expect(await s.getDocument(a, d.id)).toBeNull();
+      expect(await s.deleteProject(a, p.id)).toBe(false);
+    });
   });
 }

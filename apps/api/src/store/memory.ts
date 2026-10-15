@@ -1,4 +1,4 @@
-import type { Store, Project, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision } from "./types";
 
 type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date };
 
@@ -24,12 +24,35 @@ export class MemoryStore implements Store {
   }
 
   async createProject(userId: string, title: string): Promise<Project> {
-    const p: Project = { id: crypto.randomUUID(), userId, title, field: "psychology", stage: "idea", contentLang: "en", createdAt: new Date() };
+    const p: Project = { id: crypto.randomUUID(), userId, title, field: "psychology", stage: "idea", status: "active", contentLang: "en", createdAt: new Date() };
     this.projects.set(p.id, p);
     return p;
   }
-  async listProjects(userId: string): Promise<Project[]> {
-    return [...this.projects.values()].filter(p => p.userId === userId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  async listProjects(userId: string): Promise<ProjectSummary[]> {
+    const rank = (p: Project) => (p.status === "complete" ? 1 : 0);
+    return [...this.projects.values()]
+      .filter(p => p.userId === userId)
+      .sort((x, y) => rank(x) - rank(y) || y.createdAt.getTime() - x.createdAt.getTime())
+      .map(p => {
+        const docs = [...this.docs.values()].filter(d => d.projectId === p.id);
+        const last = docs.reduce<Date | null>((acc, d) => (acc === null || d.updatedAt > acc ? d.updatedAt : acc), null);
+        return { ...p, documentCount: docs.length, lastEditedAt: last };
+      });
+  }
+  async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
+    const p = this.projects.get(id);
+    if (!p || p.userId !== userId) return null;
+    if (patch.title !== undefined) p.title = patch.title;
+    if (patch.stage !== undefined) p.stage = patch.stage;
+    if (patch.status !== undefined) p.status = patch.status;
+    return p;
+  }
+  async deleteProject(userId: string, id: string): Promise<boolean> {
+    const p = this.projects.get(id);
+    if (!p || p.userId !== userId) return false;
+    for (const d of [...this.docs.values()]) if (d.projectId === id) { this.docs.delete(d.id); this.revs.delete(d.id); }
+    this.projects.delete(id);
+    return true;
   }
   async getProject(userId: string, id: string): Promise<Project | null> {
     const p = this.projects.get(id);

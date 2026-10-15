@@ -1,6 +1,6 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, max, sql } from "drizzle-orm";
 import { projects, documents, documentRevisions, type Db } from "@appuscholar/db";
-import type { Store, Project, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -36,8 +36,30 @@ export class DrizzleStore implements Store {
     const [p] = await this.d.insert(projects).values({ userId, title }).returning();
     return p!;
   }
-  async listProjects(userId: string): Promise<Project[]> {
-    return this.d.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.createdAt));
+  async listProjects(userId: string): Promise<ProjectSummary[]> {
+    const rows = await this.d
+      .select({ project: projects, documentCount: count(documents.id), lastEditedAt: max(documents.updatedAt) })
+      .from(projects)
+      .leftJoin(documents, eq(documents.projectId, projects.id))
+      .where(eq(projects.userId, userId))
+      .groupBy(projects.id)
+      .orderBy(sql`case when ${projects.status} = 'complete' then 1 else 0 end`, desc(projects.createdAt));
+    return rows.map(r => ({ ...r.project, documentCount: Number(r.documentCount), lastEditedAt: r.lastEditedAt ?? null }));
+  }
+  async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
+    if (!(await this.getProject(userId, id))) return null;
+    const set: Partial<typeof projects.$inferInsert> = {};
+    if (patch.title !== undefined) set.title = patch.title;
+    if (patch.stage !== undefined) set.stage = patch.stage;
+    if (patch.status !== undefined) set.status = patch.status;
+    if (Object.keys(set).length === 0) return this.getProject(userId, id);
+    const [row] = await this.d.update(projects).set(set).where(eq(projects.id, id)).returning();
+    return row ?? null;
+  }
+  async deleteProject(userId: string, id: string): Promise<boolean> {
+    if (!(await this.getProject(userId, id))) return false;
+    const rows = await this.d.delete(projects).where(eq(projects.id, id)).returning({ id: projects.id });
+    return rows.length > 0;
   }
   async getProject(userId: string, id: string): Promise<Project | null> {
     const rows = await this.d.select().from(projects).where(and(eq(projects.id, id), eq(projects.userId, userId))).limit(1);
