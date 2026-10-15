@@ -1,31 +1,43 @@
 @import "tailwindcss";
 
+/* Tokens: source of truth is appuscholar-blueprint/design/mockups/tokens.css (DESIGN-SYSTEM.md section 3 to 5). */
 :root {
+  --purple-900: #3b0764; --purple-800: #4c1d95; --purple-700: #5b21b6; --purple-600: #6d28d9; --purple-500: #7c3aed; --purple-100: #ede9fe;
+  --gold: #c9932e; --gold-bright: #f0ad3f; --gold-wash: #fdf4e3;
+  --bg: #fbfaf9; --card: #ffffff; --soft: #f8f6fc; --chip: #f4f3f6; --line: #ece8f2; --line-strong: #ddd9e4; --dashed: #cdbdf0;
+  --ink: #2a2438; --muted: #6b6579; --accent-ink: #5b21b6;
+  --flag-ink: #92400e; --flag-bg: #fef3c7; --ok-ink: #166534; --ok-bg: #dcfce7; --danger-ink: #b91c1c; --danger-bg: #fee2e2;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s7: 32px;
+  --r-ctl: 8px; --r-card: 12px; --r-dialog: 16px;
+  --ctl: 34px; --ctl-s: 30px;
+  --shadow-float: 0 6px 18px rgba(17, 12, 34, 0.25); --shadow-dialog: 0 12px 32px rgba(17, 12, 34, 0.18);
+  --sidebar-w: 236px; --dock-w: 440px; --gut: 18px;
+
+  /* shadcn names, pointed at the tokens above */
   --radius: 0.5rem;
-  --background: #fbfaf9;
-  --foreground: #2a2438;
-  --card: #ffffff;
-  --card-foreground: #2a2438;
-  --popover: #ffffff;
-  --popover-foreground: #2a2438;
-  --primary: #4c1d95;
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--purple-800);
   --primary-foreground: #ffffff;
-  --secondary: #f4f1fa;
-  --secondary-foreground: #3b0764;
-  --muted: #f4f3f6;
-  --muted-foreground: #6f6a80;
-  --accent: #ede9fe;
-  --accent-foreground: #3b0764;
-  --destructive: #b42318;
-  --border: #e6e2ee;
-  --input: #e6e2ee;
-  --ring: #7c3aed;
+  --secondary: var(--soft);
+  --secondary-foreground: var(--purple-900);
+  --accent: var(--purple-100);
+  --accent-foreground: var(--purple-900);
+  --muted-foreground: var(--muted);
+  --destructive: var(--danger-ink);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--purple-800);
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-plex), var(--font-plex-devanagari), system-ui, -apple-system, "Segoe UI", "Noto Sans Devanagari", sans-serif;
+  --font-mono: ui-monospace, monospace;
   --font-display: var(--font-fraunces), Georgia, serif;
+  --font-doc: Georgia, "Times New Roman", "Noto Serif Devanagari", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -36,7 +48,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
+  --color-muted: var(--chip);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -44,6 +56,28 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-purple-900: var(--purple-900);
+  --color-purple-800: var(--purple-800);
+  --color-purple-700: var(--purple-700);
+  --color-purple-600: var(--purple-600);
+  --color-purple-500: var(--purple-500);
+  --color-purple-100: var(--purple-100);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-wash: var(--gold-wash);
+  --color-soft: var(--soft);
+  --color-chip: var(--chip);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-dashed-line: var(--dashed);
+  --color-ink: var(--ink);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok-ink: var(--ok-ink);
+  --color-ok-bg: var(--ok-bg);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-bg: var(--danger-bg);
+  --color-flag-ink: var(--flag-ink);
+  --color-flag-bg: var(--flag-bg);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 4px);
@@ -52,19 +86,28 @@
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground font-sans antialiased; }
+  body { @apply bg-background text-foreground font-sans antialiased; font-size: 14px; line-height: 20px; }
   button { cursor: pointer; }
+  kbd { font-family: inherit; font-size: 12px; line-height: 16px; background: var(--chip); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; }
 }
 
 /* Editor */
-.editor .ProseMirror { min-height: 60vh; outline: none; line-height: 1.7; font-size: 16px; padding: 4px 2px; }
-.editor .ProseMirror p { margin: 0 0 0.75em; }
-.editor .ProseMirror h1, .editor .ProseMirror h2, .editor .ProseMirror h3 { font-weight: 600; margin: 1.2em 0 0.4em; line-height: 1.25; }
-.editor .ProseMirror h1 { font-size: 1.6em; } .editor .ProseMirror h2 { font-size: 1.3em; } .editor .ProseMirror h3 { font-size: 1.1em; }
+.editor .ProseMirror { min-height: 60vh; outline: none; font-family: var(--font-doc); font-size: 17px; line-height: 1.8; color: var(--ink); padding: 4px 2px; }
+.editor .ProseMirror p { margin: 0 0 1em; max-width: 72ch; }
+.editor .ProseMirror h1, .editor .ProseMirror h2, .editor .ProseMirror h3 { font-weight: 600; margin: 1.2em 0 0.4em; line-height: 1.3; }
+.editor .ProseMirror h1 { font-size: 24px; } .editor .ProseMirror h2 { font-size: 1.3em; } .editor .ProseMirror h3 { font-size: 1.1em; }
 .editor .ProseMirror ul, .editor .ProseMirror ol { padding-left: 1.4em; margin: 0 0 0.75em; }
 .editor .ProseMirror table { border-collapse: collapse; margin: 12px 0; width: 100%; }
-.editor .ProseMirror th, .editor .ProseMirror td { border: 1px solid var(--border); padding: 6px 8px; vertical-align: top; }
-.editor .ProseMirror th { background: var(--muted); font-weight: 600; }
+.editor .ProseMirror th, .editor .ProseMirror td { border: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+.editor .ProseMirror th { background: var(--chip); font-weight: 600; }
 .editor .ProseMirror img { max-width: 100%; height: auto; }
 .editor .ProseMirror mark { background: #fde68a; padding: 0 2px; }
-.editor .ProseMirror .ai-ins { border-bottom: 2px dotted #c4b5fd; }
+/* AI-inserted text is marked in gold and nothing else is (DESIGN-SYSTEM.md rule 1). */
+.editor .ProseMirror .ai-ins { text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.editor.highlight-ai .ProseMirror .ai-ins { background: var(--gold-wash); }
+.editor ::selection { background: var(--purple-100); }
+
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--card); padding: 9px 14px; border-radius: var(--r-ctl); font-size: 13px; z-index: 50; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
