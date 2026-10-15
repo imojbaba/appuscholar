@@ -56,6 +56,18 @@ describe("api routes", () => {
     expect((await app.request(`/documents/${d.id}/restore-deleted`, { method: "POST", headers: auth })).status).toBe(200);
   });
 
+  it("hides a document from other users on PATCH, DELETE and restore-deleted, and rejects an empty or unknown PATCH body", async () => {
+    const { d } = await makeDoc();
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: other, body: JSON.stringify({ title: "Mine now" }) })).status).toBe(404);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: other, body: JSON.stringify({ kind: "source" }) })).status).toBe(404);
+    expect((await app.request(`/documents/${d.id}`, { method: "DELETE", headers: other })).status).toBe(404);
+    expect((await app.request(`/documents/${d.id}/restore-deleted`, { method: "POST", headers: other })).status).toBe(404);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({}) })).status).toBe(400);
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "Ok", bodyHtml: "<p>x</p>" }) })).status).toBe(400);
+    expect((await app.request(`/documents/${d.id}`, { headers: auth })).status).toBe(200);
+  });
+
   it("moves a document between the user's projects and refuses foreign ones", async () => {
     const me = await (await app.request("/me", { headers: auth })).json() as { scratchProjectId: string };
     const d = await (await app.request(`/projects/${me.scratchProjectId}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Draft" }) })).json() as { id: string };

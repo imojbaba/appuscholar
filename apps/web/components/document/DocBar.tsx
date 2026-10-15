@@ -17,7 +17,7 @@ const UNDO_MS = 10_000;
 export function DocBar() {
   const t = useT();
   const { me } = useSettings();
-  const { project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, registerFlush, flushOpen } = useWorkspace();
+  const { project, documents, currentDoc, selectDoc, reloadDocs, restoreDocument, patchDoc, registerFlush, flushOpen } = useWorkspace();
   const [dialog, setDialog] = useState<"new" | "rename" | "delete" | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,9 +32,10 @@ export function DocBar() {
     try {
       const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: name.trim() || "Untitled" }) });
       await reloadDocs();
-      await selectDoc(made.id);
+      const shown = await selectDoc(made.id);
       setDialog(null);
-      toast("New document created ✓");
+      // Declining the switch leaves the new document in the list; only a shown one is announced.
+      if (shown) toast("New document created ✓");
     } catch { toast("Could not create the document. Try again."); }
     finally { setBusy(false); }
   }
@@ -71,7 +72,7 @@ export function DocBar() {
       await reloadDocs();
       toast("Deleted — ", {
         ms: UNDO_MS,
-        action: { label: "Undo", testId: "undo-delete", onClick: () => { void undo(gone.id); } }
+        action: { label: "Undo", testId: "undo-delete", onClick: () => { void undo(gone.id, gone.projectId); } }
       });
     } catch (e) {
       setDialog(null);
@@ -79,12 +80,10 @@ export function DocBar() {
     } finally { setBusy(false); }
   }
 
-  async function undo(id: string) {
+  async function undo(id: string, docProjectId: string) {
     try {
-      await apiFetch<DocumentSummary>(`/documents/${id}/restore-deleted`, { method: "POST" });
-      await reloadDocs();
-      await selectDoc(id);
-      toast("Restored ✓");
+      // The workspace restores into whichever project is open by now, so a late Undo never mixes projects.
+      if (await restoreDocument(id, docProjectId)) toast("Restored ✓");
     } catch { toast("Could not bring the document back."); }
   }
 

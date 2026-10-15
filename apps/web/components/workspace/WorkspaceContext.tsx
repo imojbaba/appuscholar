@@ -4,7 +4,7 @@ import type { StageKey, ToolId } from "@/lib/tools";
 
 /** Wire shapes of the API (dates arrive as ISO strings). */
 export type Project = { id: string; title: string; field: string; stage: string; status: string; contentLang: string; kind: string };
-export type DocumentSummary = { id: string; projectId: string; title: string; kind: string; currentSeq: number; wordCount: number; updatedAt: string };
+export type DocumentSummary = { id: string; projectId: string; title: string; kind: string; currentSeq: number; wordCount: number; createdAt: string; updatedAt: string };
 export type DocumentWithBody = DocumentSummary & { bodyHtml: string };
 
 export type WorkspaceValue = {
@@ -20,8 +20,10 @@ export type WorkspaceValue = {
   project: Project | null;
   documents: DocumentSummary[];
   currentDoc: DocumentWithBody | null;
-  /** Shows another document of this project, after the open one's autosave has stored its text (it stays put when that save fails). */
-  selectDoc(id: string): Promise<void>;
+  /** Shows another document of this project, after the open one's autosave has stored its text. When that save fails the student is asked "Switch anyway?"; false means they stayed on the open document. */
+  selectDoc(id: string): Promise<boolean>;
+  /** Un-deletes a document and shows it, whichever project is open now. False when the switch to it was declined. */
+  restoreDocument(id: string, projectId: string): Promise<boolean>;
   reloadDocs(): Promise<void>;
   /** Applies a rename or a source/own change to the list and to the open document without touching its body. */
   patchDoc(id: string, patch: Partial<Pick<DocumentSummary, "title" | "kind">>): void;
@@ -33,7 +35,7 @@ export type WorkspaceValue = {
   wordCount: number | null;
   setWordCount(docId: string, words: number): void;
   /** Switch the active project (null = scratch space). Opening a project jumps to its stage's first tool unless it is complete or `skipJump`; `docId` is shown after the switch. */
-  setActiveProject(id: string | null, opts?: { skipJump?: boolean; docId?: string }): Promise<void>;
+  setActiveProject(id: string | null, opts?: { skipJump?: boolean; docId?: string }): Promise<boolean>;
   /** Re-reads the active project (stage, status) after a change made elsewhere. */
   reloadProject(): Promise<void>;
   /** The Help and AI Provider / Key dialogs (bodies arrive in Tasks 17 and 13), plus the project dialogs. */

@@ -4,8 +4,7 @@ import { apiFetch } from "@/lib/api";
 import { useSettings, type Settings } from "@/lib/settings";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
-import { toast } from "@/components/ui/toast";
-import { AUTOSAVE_STOPPED_TOAST } from "@/lib/docMessages";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
 import { ProjectBar } from "./ProjectBar";
@@ -27,6 +26,11 @@ async function listOrSeed(projectId: string): Promise<DocumentSummary[]> {
   return [made];
 }
 
+/** Creation order, as v1 listed documents (the API answers most recently updated first). */
+function byCreated(list: DocumentSummary[]): DocumentSummary[] {
+  return [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
 export function Workspace() {
   const { me, settings, update, reload } = useSettings();
   const [ready, setReady] = useState(false);
@@ -43,8 +47,14 @@ export function Workspace() {
   const [aiWaiting] = useState(false); // Task 14 raises this when an AI suggestion is waiting.
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
+  useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
   const docToken = useRef(0);
   const flushRef = useRef<(() => Promise<boolean>) | null>(null);
+  // The latest project and open document, for callbacks that outlive a render (the Undo of a deletion, ten seconds later).
+  const projectIdRef = useRef<string | null>(null);
+  const currentDocRef = useRef<DocumentWithBody | null>(null);
+  // Set while the "Switch anyway?" question is open; answering it resolves the switch that asked.
+  const [switchAsk, setSwitchAsk] = useState<{ title: string; answer: (yes: boolean) => void } | null>(null);
   const [live, setLive] = useState<{ docId: string; words: number } | null>(null);
   // A document to show after the next project switch (the one that was just moved into the project).
   const pendingDoc = useRef<string | null>(null);
@@ -81,7 +91,7 @@ export function Workspace() {
       if (!live) return;
       setProject(r.project);
       setProjectId(r.projectId);
-      setDocuments(r.documents);
+      setDocuments(byCreated(r.documents));
       setCurrentDoc(r.doc);
       if (!toolInit.current) {
         toolInit.current = true;
@@ -117,21 +127,33 @@ export function Workspace() {
 
   const flushOpen = useCallback(async () => (await flushRef.current?.()) ?? true, []);
 
-  const selectDoc = useCallback(async (id: string) => {
-    // The open document's text is stored before another one replaces it; if it cannot be stored, stay on it (the red badge says why).
-    if (!(await flushOpen())) { toast(AUTOSAVE_STOPPED_TOAST); return; }
+  /** Resolves true to leave the open document: its text is stored, or the student chose to switch anyway after a failed save. */
+  const confirmLeave = useCallback(async (): Promise<boolean> => {
+    if (await flushOpen()) return true;
+    return new Promise<boolean>((resolve) => {
+      setSwitchAsk((prev) => { prev?.answer(false); return { title: currentDocRef.current?.title ?? "this document", answer: resolve }; });
+    });
+  }, [flushOpen]);
+
+  /** Shows another document. False when the student stayed on the open one (its save failed and they chose Stay). */
+  const selectDoc = useCallback(async (id: string): Promise<boolean> => {
+    if (currentDocRef.current?.id === id) return true;
+    if (!(await confirmLeave())) return false;
     const mine = ++docToken.current;
     const doc = await apiFetch<DocumentWithBody>(`/documents/${id}`);
     if (mine === docToken.current) setCurrentDoc(doc);
-  }, [flushOpen]);
+    return true;
+  }, [confirmLeave]);
 
   const reloadDocs = useCallback(async () => {
-    if (!projectId) return;
-    const list = await listOrSeed(projectId);
+    const pid = projectIdRef.current;
+    if (!pid) return;
+    const list = byCreated(await listOrSeed(pid));
     setDocuments(list);
-    const keep = currentDoc && list.some((d) => d.id === currentDoc.id) ? currentDoc.id : list[0]?.id;
-    if (keep && keep !== currentDoc?.id) await selectDoc(keep);
-  }, [projectId, currentDoc, selectDoc]);
+    const open = currentDocRef.current;
+    const keep = open && list.some((d) => d.id === open.id) ? open.id : list[0]?.id;
+    if (keep && keep !== open?.id) await selectDoc(keep);
+  }, [selectDoc]);
 
   const reloadProject = useCallback(async () => {
     if (!activeProjectId) return;
@@ -139,7 +161,7 @@ export function Workspace() {
     setProject(list.find((x) => x.id === activeProjectId) ?? null);
   }, [activeProjectId]);
 
-  const setActiveProject = useCallback(async (id: string | null, opts: { skipJump?: boolean; docId?: string } = {}) => {
+  const setActiveProject = useCallback(async (id: string | null, opts: { skipJump?: boolean; docId?: string } = {}): Promise<boolean> => {
     let jump: ToolId | null = null;
     if (id && !opts.skipJump) {
       const p = (await apiFetch<Project[]>("/projects")).find((x) => x.id === id);
@@ -148,15 +170,29 @@ export function Workspace() {
     }
     await apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: id }) });
     pendingDoc.current = opts.docId ?? null;
-    if (id === activeProjectId) { await reloadProject(); await reloadDocs(); if (opts.docId) await selectDoc(opts.docId); } else await reload();
+    let shown = true;
+    if (id === activeProjectId) { await reloadProject(); await reloadDocs(); if (opts.docId) shown = await selectDoc(opts.docId); } else await reload();
     if (jump) showTool(jump);
+    return shown;
   }, [activeProjectId, reload, reloadProject, reloadDocs, selectDoc, showTool]);
+
+  // restoreDocument must stay valid for ten seconds in a toast, so it reads the newest setActiveProject (which knows the project open now).
+  const setActiveProjectRef = useRef(setActiveProject);
+  useEffect(() => { setActiveProjectRef.current = setActiveProject; }, [setActiveProject]);
+
+  /** Brings a deleted document back and shows it, in whichever project is open now (Undo can come ten seconds after the delete). */
+  const restoreDocument = useCallback(async (id: string, docProjectId: string): Promise<boolean> => {
+    await apiFetch<DocumentSummary>(`/documents/${id}/restore-deleted`, { method: "POST" });
+    if (projectIdRef.current === docProjectId) { await reloadDocs(); return selectDoc(id); }
+    // The student has moved to another project since: open the one the document belongs to (null = scratch space).
+    return setActiveProjectRef.current(docProjectId === scratchProjectId ? null : docProjectId, { skipJump: true, docId: id });
+  }, [reloadDocs, selectDoc, scratchProjectId]);
 
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
-    currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, registerFlush, flushOpen,
+    currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null),
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
@@ -174,6 +210,18 @@ export function Workspace() {
       <SaveAsProject />
       <Projects />
       <StageIntro />
+      <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
+        <AlertDialogContent data-testid="switch-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Switch anyway?</AlertDialogTitle>
+            <AlertDialogDescription>{`Unsaved changes in "${switchAsk?.title ?? ""}" may be lost.`}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="switch-stay">Stay</AlertDialogCancel>
+            <AlertDialogAction data-testid="switch-anyway" onClick={() => { switchAsk?.answer(true); setSwitchAsk(null); }}>Switch anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {ready ? (
         <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px" } as React.CSSProperties}>
           <Sidebar />

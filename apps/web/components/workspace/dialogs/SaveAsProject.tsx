@@ -62,7 +62,7 @@ function Form() {
         const made = await runCreateFlow(progress.current, {
           create: () => apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify({ title, stage }) }),
           move: moveDoc ? (id) => apiFetch(`/documents/${moveDoc.id}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) }) : null,
-          activate: (id) => setActiveProject(id, { skipJump: true, docId: moveDoc?.id })
+          activate: async (id) => { await setActiveProject(id, { skipJump: true, docId: moveDoc?.id }); }
         });
         toast(t("toast_saved_as") + made.title);
         openStageIntro(stage);

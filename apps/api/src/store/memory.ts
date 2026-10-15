@@ -23,7 +23,7 @@ export class MemoryStore implements Store {
   }
   private summary(d: DocRow, r: DocumentRevision | null = this.latest(d.id)): DocumentSummary | null {
     if (!r) return null;
-    return { id: d.id, projectId: d.projectId, title: d.title, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, updatedAt: d.updatedAt, deletedAt: d.deletedAt };
+    return { id: d.id, projectId: d.projectId, title: d.title, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: d.createdAt, updatedAt: d.updatedAt, deletedAt: d.deletedAt };
   }
 
   async getUser(userId: string): Promise<UserRecord | null> {

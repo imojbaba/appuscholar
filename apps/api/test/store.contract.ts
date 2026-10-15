@@ -23,6 +23,8 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const d = await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 });
       expect(d).not.toBeNull();
       expect(d!.currentSeq).toBe(1);
+      expect(d!.createdAt).toBeInstanceOf(Date);
+      expect((await s.listDocuments(a, p.id))![0]!.createdAt).toBeInstanceOf(Date);
       const got = await s.getDocument(a, d!.id);
       expect(got?.bodyHtml).toBe("");
       expect(await s.getDocument(b, d!.id)).toBeNull();

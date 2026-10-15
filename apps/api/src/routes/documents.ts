@@ -5,7 +5,7 @@ import type { Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
 const Put = z.object({ bodyHtml: z.string(), title: z.string().trim().min(1).max(200).optional() });
-const Patch = z.object({ title: z.string().trim().min(1).max(200).optional(), kind: z.enum(["draft", "source"]).optional() }).refine((b) => b.title !== undefined || b.kind !== undefined);
+const Patch = z.object({ title: z.string().trim().min(1).max(200).optional(), kind: z.enum(["draft", "source"]).optional() }).strict().refine((b) => b.title !== undefined || b.kind !== undefined);
 const Move = z.object({ projectId: z.string().min(1) }).strict();
 
 export function documentRoutes(store: Store, maxBodyBytes: number) {

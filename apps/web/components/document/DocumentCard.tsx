@@ -22,15 +22,15 @@ export function DocumentCard() {
   const t = useT();
   const { settings } = useSettings();
   const { currentDoc, registerFlush, setWordCount } = useWorkspace();
-  const [save, setSave] = useState<SaveStatus>("saved");
+  // Red from the first failed save until a save succeeds: retries ("saving") and typing offline ("dirty") do not turn it green.
+  const [failed, setFailed] = useState(false);
   // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
   const warned = useRef(false);
   const docId = currentDoc?.id;
 
   const onStatus = useCallback((s: SaveStatus) => {
-    setSave(s);
-    if (s === "error") { if (!warned.current) { warned.current = true; toast(AUTOSAVE_STOPPED_TOAST); } }
-    else if (s === "saved") warned.current = false;
+    if (s === "error") { setFailed(true); if (!warned.current) { warned.current = true; toast(AUTOSAVE_STOPPED_TOAST); } }
+    else if (s === "saved") { setFailed(false); warned.current = false; }
   }, []);
   const onCount = useCallback((n: number) => { if (docId) setWordCount(docId, n); }, [docId, setWordCount]);
   const onReady = useCallback((api: { flushNow: () => Promise<boolean> }) => registerFlush(api.flushNow), [registerFlush]);
@@ -41,7 +41,7 @@ export function DocumentCard() {
     <section className="doc" aria-label="Your document">
       <div className="card-head">
         <h2>{t("doc_pane_h2")}</h2>
-        {save === "error"
+        {failed
           ? <Badge variant="danger" data-testid="save-status" role="status">{AUTOSAVE_OFF_BADGE}</Badge>
           : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
         {hasProviderKey && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}

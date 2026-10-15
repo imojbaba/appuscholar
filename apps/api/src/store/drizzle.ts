@@ -36,7 +36,7 @@ export class DrizzleStore implements Store {
   private async summary(doc: typeof documents.$inferSelect): Promise<DocumentSummary | null> {
     const r = await this.latest(doc.id);
     if (!r) return null;
-    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt };
+    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt };
   }
 
   async getUser(userId: string): Promise<UserRecord | null> {
@@ -127,7 +127,7 @@ export class DrizzleStore implements Store {
     if (!r) return null;
     return {
       id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind,
-      currentSeq: r.seq, wordCount: r.wordCount, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, bodyHtml: r.bodyHtml
+      currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, bodyHtml: r.bodyHtml
     };
   }
   async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
