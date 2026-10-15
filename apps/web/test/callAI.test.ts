@@ -147,6 +147,15 @@ describe("callAI failover", () => {
   });
 });
 
+describe("callAI terms gate", () => {
+  it("turns the server's 403 terms into the accept-the-terms sentence and does not fail over", async () => {
+    keyStore.setSession("gemini", "AIza1"); keyStore.setSession("groq", "gsk_1");
+    mockFetch.mockRejectedValue(new ApiError(403, "terms"));
+    await expect(callAI("hello", {}, ctx())).rejects.toMatchObject({ code: "terms", message: "Accept the terms first (open ❓ Help → Terms and where your data goes)." });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("apiMsg", () => {
   it("returns the v1 strings", () => {
     expect(apiMsg("key-rejected")).toBe("Your API key was rejected. Open ⚙ and paste it again.");
@@ -157,6 +166,7 @@ describe("apiMsg", () => {
     expect(apiMsg("empty")).toBe("The AI returned an empty answer. Try again.");
     expect(apiMsg("no-key")).toBe("Add your API key first — click ⚙ at the top right.");
     expect(apiMsg("bad-pass")).toBe("Wrong passphrase — nothing was unlocked. Try again.");
+    expect(apiMsg("terms")).toBe("Accept the terms first (open ❓ Help → Terms and where your data goes).");
     expect(apiMsg("cancelled")).toBe("Cancelled. Nothing was sent to the AI provider.");
     expect(apiMsg("blocked", "The request was blocked.")).toBe("The request was blocked.");
     expect(apiMsg("provider-error", "HTTP 503: " + "x".repeat(400))).toBe("The AI service is having problems (already retried a couple of times). Try again in a few minutes, or switch provider using the tabs at the top. Detail: " + ("HTTP 503: " + "x".repeat(400)).slice(0, 180));

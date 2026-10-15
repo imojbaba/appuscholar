@@ -47,7 +47,11 @@ export function summariseAiUse(rows: AiUseEntry[]): { byKind: Record<string, num
 export function aiRoutes(store: Store, deps: GatewayDeps) {
   const r = new Hono<AuthEnv>();
   r.use("*", async (c, next) => {
-    await store.ensureUser(c.get("userId"), c.get("email"));
+    const userId = c.get("userId");
+    await store.ensureUser(userId, c.get("email"));
+    // The AI routes send the student's text to a third party, so they stay closed until the terms are accepted (the client gate alone is not enough).
+    const user = await store.getUser(userId);
+    if (!user?.termsAcceptedAt) return c.json({ error: "terms" }, 403);
     await next();
   });
 

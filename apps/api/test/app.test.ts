@@ -356,12 +356,14 @@ describe("ai routes", () => {
     if (status !== 200) return new Response("{}", { status });
     return new Response(JSON.stringify({ choices: [{ message: { content: JSON.parse(String(init.body)).messages[0].content.includes("single word OK") ? "OK" : "generated" } }] }), { status: 200 });
   }) as unknown as typeof fetch;
+  const acceptTerms = async (h: Record<string, string>) => { await app.request("/me", { headers: h }); await app.request("/me/terms", { method: "POST", headers: h }); };
   const post = (path: string, body: unknown, headers = auth) => app.request(path, { method: "POST", headers, body: JSON.stringify(body) });
   beforeEach(async () => {
     status = 200; sent.length = 0;
     store = new MemoryStore();
     app = createApp({ store, jwtSecret: SECRET, ai: { fetch: fakeFetch } });
     auth = { authorization: "Bearer " + (await token("u1")), "content-type": "application/json" };
+    await acceptTerms(auth);
   });
 
   it("POST /ai/complete refuses unmasked personal data unless pdAccepted, logs provider, model and kind only", async () => {
@@ -459,6 +461,23 @@ describe("ai routes", () => {
   it("keeps one student's log out of another's", async () => {
     await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-15" });
     const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    await acceptTerms(other);
     expect(await (await app.request("/ai/log", { headers: other })).json()).toEqual([]);
+  });
+
+  it("answers 403 { error: \"terms\" } on every /ai route until the terms are accepted, then works", async () => {
+    const fresh = { authorization: "Bearer " + (await token("u9")), "content-type": "application/json" };
+    const complete = { provider: "groq", apiKey: "gsk_x", prompt: "Improve this text", day: "2026-10-15" };
+    for (const [path, body] of [["/ai/complete", complete], ["/ai/test", { provider: "groq", apiKey: "gsk_x" }]] as const) {
+      const r = await post(path, body, fresh);
+      expect(r.status).toBe(403); expect(await r.json()).toEqual({ error: "terms" });
+    }
+    for (const path of ["/ai/log", "/ai/log/summary"]) expect((await app.request(path, { headers: fresh })).status).toBe(403);
+    expect((await app.request("/ai/log", { method: "DELETE", headers: fresh })).status).toBe(403);
+    expect(sent).toHaveLength(0);
+    expect((await app.request("/me/terms", { method: "POST", headers: fresh })).status).toBe(204);
+    expect((await post("/ai/complete", complete, fresh)).status).toBe(200);
+    expect((await post("/ai/test", { provider: "groq", apiKey: "gsk_x" }, fresh)).status).toBe(200);
+    expect((await app.request("/ai/log", { headers: fresh })).status).toBe(200);
   });
 });

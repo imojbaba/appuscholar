@@ -4,7 +4,7 @@ import { toast } from "@/components/ui/toast";
 import { keyStore, unlockKeyBlob } from "./keys";
 
 /** The gateway's error classes (apps/api/src/ai/types.ts). */
-export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network";
+export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms";
 export type ScanResult = ReturnType<typeof scanText>;
 
 export type CallOpts = { temp?: number; max?: number; noLang?: boolean; noScan?: boolean; purposeDay?: string };
@@ -37,6 +37,7 @@ export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: st
     case "network": return "No internet connection, or this provider does not allow calls made directly from a web page (this is common for OpenAI and sometimes DeepSeek). Try Google Gemini, Groq, or OpenRouter — those are confirmed to work from the browser.";
     case "truncated": return "The answer was cut off. Select a smaller piece of text and try again.";
     case "empty": return "The AI returned an empty answer. Try again.";
+    case "terms": return "Accept the terms first (open ❓ Help → Terms and where your data goes).";
   }
 }
 
@@ -45,7 +46,7 @@ export class AiCallError extends Error {
   constructor(public code: AiErrorCode | "cancelled" | "bad-pass" | "unknown", message: string) { super(message); }
 }
 
-const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network"];
+const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms"];
 /** Errors worth trying another provider for: v1 aiRetriable (429, 5xx, 401/403, 404, network). */
 const RETRIABLE: readonly string[] = ["rate-limit", "provider-error", "key-rejected", "model-gone", "network"];
 
