@@ -8,14 +8,14 @@
  * in-memory store: start it with NO DATABASE_URL.
  *
  * CI / local recipe:
- *  1. A Postgres with packages/db/migrations applied: a CI Postgres service container, or `node e2e/support/pglite-postgres.mjs`
- *     (pglite served over a socket on 127.0.0.1:5433; see its header for the two packages it needs).
+ *  1. A Postgres with packages/db/migrations applied: a CI Postgres service container, or, from apps/web, `node e2e/support/pglite-postgres.mjs`
+ *     (pglite served over a socket on 127.0.0.1:5433; @electric-sql/pglite and pglite-socket are web devDependencies, so it runs in place).
  *  2. export DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres (or the service's URL) BEFORE running Playwright, so the
- *     config forwards it to the web server. Gotcha: playwright.config.ts passes `DATABASE_URL: process.env.DATABASE_URL ?? ""` to BOTH
- *     servers; with nothing exported the web server gets an empty URL and the app layout answers 500. The API must then be the one
- *     started WITHOUT it, so when you let the config start servers, start the API yourself first (reuseExistingServer is on):
+ *     config forwards it to the web server. playwright.config.ts passes DATABASE_URL to BOTH servers when it is set, and to neither when
+ *     it is not. The API must be the one started WITHOUT it (it then uses the in-memory store, which is what the spec expects), so start
+ *     the API yourself first (reuseExistingServer is on):
  *     `API_JWT_SECRET=e2e-secret-e2e-secret-e2e-secret-12 WEB_ORIGIN=http://localhost:3000 PORT=8788 pnpm --filter @appuscholar/api dev`
- *     in a shell where DATABASE_URL is unset (the API then uses the in-memory store, which is what the spec expects).
+ *     in a shell where DATABASE_URL is unset.
  *  3. The web server needs E2E_AUTH=1, AUTH_TRUST_HOST=true, AUTH_SECRET, API_JWT_SECRET, NEXT_PUBLIC_API_URL=http://localhost:8788
  *     (values in playwright.config.ts); started by the config, or by hand with those variables plus the DATABASE_URL of step 2.
  *

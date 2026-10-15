@@ -51,7 +51,7 @@ export type WorkspaceValue = {
   /** Re-reads the active project (stage, status) after a change made elsewhere. */
   reloadProject(): Promise<void>;
   /** The one dialog open now: Help, Terms (read-only), Welcome, AI Provider / Key, and the project dialogs. */
-  dialog: "help" | "terms" | "welcome" | "settings" | "saveAs" | "projects" | "stageIntro" | "importOrigin" | "myWriting" | null;
+  dialog: "help" | "terms" | "welcome" | "settings" | "saveAs" | "projects" | "stageIntro" | "importOrigin" | "myWriting" | "importV1" | null;
   /** Imports files as new documents (the Import button, a drop on the editor, a pasted file). Asks "Whose writing is this?" once unless every file is a PDF. */
   startImport(files: File[]): void;
   /** The names of the files waiting for the answer to "Whose writing is this?". */
@@ -59,6 +59,8 @@ export type WorkspaceValue = {
   /** The answer to the question: imports the waiting files, then shows the last one. */
   runImport(origin: "draft" | "source"): Promise<void>;
   openHelp(): void;
+  /** The v1 backup import dialog (from Help, or /import). */
+  openImportV1(): void;
   /** The Terms read-only (from Help and the AI Provider / Key dialog). The first-use gate is not a dialog state: it applies whenever the account has not accepted the current terms. */
   openTerms(): void;
   /** The welcome tour (first run, and Help's replay button). */

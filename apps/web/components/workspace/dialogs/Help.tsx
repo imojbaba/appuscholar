@@ -13,7 +13,7 @@ const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 
 export function Help() {
   const t = useT();
-  const { dialog, closeDialog, openWelcome, openTerms } = useWorkspace();
+  const { dialog, closeDialog, openWelcome, openTerms, openImportV1 } = useWorkspace();
   const { email, signOutAction } = useSession();
   return (
     <Dialog open={dialog === "help"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
@@ -41,6 +41,7 @@ export function Help() {
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" data-testid="help-tour" onClick={openWelcome}>{t("help_tour_btn")}</Button>
           <Button variant="ghost" data-testid="help-terms" onClick={openTerms}>{t("terms_reopen_btn")}</Button>
+          <Button variant="ghost" data-testid="help-import-v1" onClick={openImportV1}>Import a v1 backup</Button>
         </div>
         <p className="m-0 text-xs text-muted-foreground" data-testid="help-version">Appuscholar v2 ({APP_VERSION})</p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">

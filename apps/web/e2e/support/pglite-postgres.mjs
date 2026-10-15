@@ -1,4 +1,4 @@
-// Usage: copy this file to a scratch dir, `npm i @electric-sql/pglite @electric-sql/pglite-socket` there, then `MIGRATIONS_DIR=<repo>/packages/db/migrations/ node pglite-postgres.mjs`.
+// Usage: from apps/web, `node e2e/support/pglite-postgres.mjs` (@electric-sql/pglite and pglite-socket are web devDependencies). Set MIGRATIONS_DIR to use another migrations folder.
 // Serves an in-memory Postgres on 127.0.0.1:5433 with packages/db/migrations applied: DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";

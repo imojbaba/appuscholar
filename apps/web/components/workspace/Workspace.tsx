@@ -20,6 +20,7 @@ import { Projects } from "./dialogs/Projects";
 import { StageIntro } from "./dialogs/StageIntro";
 import { ImportOrigin } from "./dialogs/ImportOrigin";
 import { MyWriting } from "./dialogs/MyWriting";
+import { ImportV1Dialog } from "./dialogs/ImportV1Dialog";
 import { ChromeDialogs, Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { SidebarDrawer } from "./SidebarDrawer";
@@ -44,7 +45,7 @@ function byCreated(list: DocumentSummary[]): DocumentSummary[] {
   return [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export function Workspace() {
+export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) {
   const t = useT();
   const { me, settings, update, reload } = useSettings();
   const [ready, setReady] = useState(false);
@@ -86,7 +87,9 @@ export function Workspace() {
   const [welcomeChecked, setWelcomeChecked] = useState(false);
   if (me && !gated && !welcomeChecked) {
     setWelcomeChecked(true);
-    if (!settings.seenWelcome) setDialog("welcome");
+    // /import lands here with ?import=1: the backup import wins over the tour (Help replays the tour).
+    if (openImportV1) setDialog("importV1");
+    else if (!settings.seenWelcome) setDialog("welcome");
   }
 
   const userId = me?.id;
@@ -259,7 +262,7 @@ export function Workspace() {
     activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
     openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
@@ -279,6 +282,7 @@ export function Workspace() {
         <StageIntro />
         <ImportOrigin />
         <MyWriting />
+        <ImportV1Dialog />
         <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
           <AlertDialogContent data-testid="switch-dialog">
             <AlertDialogHeader>

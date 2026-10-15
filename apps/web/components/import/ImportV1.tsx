@@ -1,6 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { parseV1Backup, unlockV1Backup, chunkV1Documents } from "@appuscholar/core";
 import { UploadSimple } from "@phosphor-icons/react";
 import { apiFetch, ApiError } from "@/lib/api";
@@ -19,9 +18,9 @@ const REASONS: Record<string, string> = {
   locked: "This backup is locked with a passphrase."
 };
 
-export function ImportV1() {
+/** `onDone` gets the new project's id once every batch is stored (the workspace opens it). */
+export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string) => void; onBusyChange?: (busy: boolean) => void }) {
   const t = useT();
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -30,6 +29,7 @@ export function ImportV1() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const disabled = busy || locked !== null;
+  useEffect(() => { onBusyChange?.(busy); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
 
   function resetFile() { if (fileRef.current) fileRef.current.value = ""; }
 
@@ -59,7 +59,7 @@ export function ImportV1() {
         setProgress({ done: i + 1, total: batches.length });
       }
       setMsg(`Imported ${imported} document(s).`);
-      router.push(`/projects/${projectId}`);
+      if (projectId) onDone(projectId);
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       const base = code === "too-large" ? "A document in this backup is too large to import." : "Import failed. Try again.";

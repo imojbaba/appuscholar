@@ -5,11 +5,10 @@ import { editorExtensionsWith, setEditorPlaceholder } from "@/lib/editorExtensio
 import { plainText, useLang, useT } from "@/lib/i18n";
 import { useAutosave, type SaveStatus } from "@/lib/useAutosave";
 import { isImportable } from "@/lib/import/parse";
-import { Toolbar } from "./Toolbar";
 
 function words(text: string): number { const t = text.trim(); return t ? t.split(/\s+/).length : 0; }
 
-export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onStatus, onCount, onEditor, onFiles, onTab, highlightAi = false, toolbar = true }: {
+export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onStatus, onCount, onEditor, onFiles, onTab, highlightAi = false }: {
   docId: string; initialHtml: string; initialSeq: number;
   onSaved?: (seq: number) => void;
   onReady?: (api: { flushNow: () => Promise<boolean> }) => void;
@@ -19,8 +18,6 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   onCount?: (words: number) => void;
   /** The TipTap instance once it exists, and null when this editor unmounts: the document card's format bar works on it. */
   onEditor?: (editor: TipTapEditor | null) => void;
-  /** False when the caller shows its own format bar (the document card). The old document page keeps the phase-1 toolbar. */
-  toolbar?: boolean;
   /** Files dropped on the editor or pasted into it that can be imported (.docx, .pdf, .txt, .md, .html). Anything else drops and pastes as usual. */
   onFiles?: (files: File[]) => void;
   /** Tab inside the document: return true when it accepted a waiting AI suggestion (the key is then consumed); false lets Tab move focus as usual. */
@@ -105,7 +102,6 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
         e.preventDefault();
         onFiles(files);
       }}>
-      {toolbar && <div className="sticky top-0 z-10 bg-card"><Toolbar editor={editor} /></div>}
       <div className="px-4 py-4 sm:px-6"><EditorContent editor={editor} data-testid="editor" /></div>
     </div>
   );
