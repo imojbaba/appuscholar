@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { needsTerms, TERMS_DATE, TERMS_SINCE, TERMS_VERSION } from "@/lib/terms";
 import { tFormat } from "@/lib/i18n";
-import { OVERRIDES, applyOverrides } from "../scripts/i18n-overrides.mjs";
+import { OVERRIDES, applyOverrides, dropFromHindi } from "../scripts/i18n-overrides.mjs";
 import en from "../messages/en.json";
 import v1Snapshot from "./fixtures/v1-i18n-snapshot.json";
 import hi from "../messages/hi.json";
@@ -58,6 +58,19 @@ describe("v2 terms wording overrides", () => {
   });
   it("refuses to override a key the extraction does not have", () => {
     expect(() => applyOverrides({ terms_d1: "x" })).toThrow();
+  });
+  it("keeps no overridden key in hi.json, so Hindi shows the English v2 wording", () => {
+    const stale = Object.keys(OVERRIDES).filter((k) => k in (hi as Record<string, string>));
+    expect(stale).toEqual([]);
+    for (const k of Object.keys(OVERRIDES)) {
+      expect(tFormat(en, hi, k, "hi", { version: 2, date: "d" })).toBe(tFormat(en, hi, k, "en", { version: 2, date: "d" }));
+    }
+  });
+  it("dropFromHindi removes exactly the overridden keys", () => {
+    const out = dropFromHindi({ ...hi, terms_d1: "v1", other: "x" } as Record<string, string>);
+    expect(Object.keys(out).filter((k) => k in OVERRIDES)).toEqual([]);
+    expect(out.other).toBe("x");
+    expect(Object.keys(out).length).toBe(Object.keys(hi).length + 1);
   });
   it("is what en.json holds, with the version line from lib/terms", () => {
     for (const k of KEYS) expect((en as Record<string, string>)[k]).toBe(OVERRIDES[k as keyof typeof OVERRIDES]);
