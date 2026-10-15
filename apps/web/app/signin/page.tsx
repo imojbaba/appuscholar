@@ -3,6 +3,7 @@ import { e2eAuthEnabled } from "@/lib/e2eAuth";
 import { signinErrorMessage } from "@/lib/signinError";
 export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string | string[] }> }) {
   const e2e = e2eAuthEnabled();
+  const emailEnabled = Boolean(process.env.AUTH_RESEND_KEY);
   const error = signinErrorMessage((await searchParams).error);
   return (
     <main style={{ maxWidth: 420, margin: "80px auto", padding: 16 }}>
@@ -12,10 +13,10 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
       <form action={async () => { "use server"; await signIn("google", { redirectTo: "/projects" }); }}>
         <button className="btn btn-purple" style={{ width: "100%" }}>Continue with Google</button>
       </form>
-      <form action={async (fd: FormData) => { "use server"; await signIn("resend", { email: String(fd.get("email")), redirectTo: "/projects" }); }} style={{ marginTop: 12 }}>
+      {emailEnabled ? <form action={async (fd: FormData) => { "use server"; await signIn("resend", { email: String(fd.get("email")), redirectTo: "/projects" }); }} style={{ marginTop: 12 }}>
         <input name="email" type="email" required placeholder="you@college.edu" style={{ width: "100%", padding: 10, marginBottom: 8 }} />
         <button className="btn" style={{ width: "100%" }}>Email me a sign-in link</button>
-      </form>
+      </form> : null}
       {e2e ? (
         <form action={async (fd: FormData) => { "use server"; await signIn("credentials", { email: String(fd.get("email")), redirectTo: "/projects" }); }} style={{ marginTop: 12 }} data-testid="e2e-form">
           <input name="email" type="email" defaultValue="tester@e2e.local" data-testid="e2e-email" />

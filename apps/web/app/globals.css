@@ -9,3 +9,4 @@ a { color: var(--purple-800); }
 .editor .ProseMirror table { border-collapse: collapse; margin: 12px 0; }
 .editor .ProseMirror th, .editor .ProseMirror td { border: 1px solid #ccc; padding: 4px 8px; vertical-align: top; }
 .editor .ProseMirror img { max-width: 100%; height: auto; }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
