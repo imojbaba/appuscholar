@@ -3,10 +3,12 @@ import { useState } from "react";
 import { plain, useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
-/** v1 intake form. State is local in this phase (v2 stores it per project later); the two buttons are wired in later tasks. */
+/** v1 intake form. State is local in this phase (v2 stores it per project later); Assess arrives later; Save opens the Save-as-project dialog. */
 export function IdeaPanel() {
   const t = useT();
+  const { openSaveAs } = useWorkspace();
   const [topic, setTopic] = useState("");
   const [resources, setResources] = useState("");
   const [timeframe, setTimeframe] = useState("");
@@ -34,7 +36,7 @@ export function IdeaPanel() {
       </div>
       <div className="stack">
         <Button variant="primary" className="w-full" data-testid="idea-assess" onClick={later}>{t("idea_assess_btn")}</Button>
-        <Button variant="ghost" className="w-full" data-testid="idea-save-project" onClick={later}>{t("idea_saveproject_btn")}</Button>
+        <Button variant="ghost" className="w-full" data-testid="idea-save-project" onClick={() => openSaveAs("new", topic.trim().slice(0, 80))}>{t("idea_saveproject_btn")}</Button>
       </div>
       <p className="note">{t("idea_panel_note")}</p>
     </div>

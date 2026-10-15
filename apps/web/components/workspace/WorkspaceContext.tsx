@@ -22,11 +22,22 @@ export type WorkspaceValue = {
   currentDoc: DocumentWithBody | null;
   selectDoc(id: string): Promise<void>;
   reloadDocs(): Promise<void>;
-  /** The Help and AI Provider / Key dialogs (bodies arrive in Tasks 17 and 13). */
-  dialog: "help" | "settings" | null;
+  /** Switch the active project (null = scratch space). Opening a project jumps to its stage's first tool unless it is complete or `skipJump`; `docId` is shown after the switch. */
+  setActiveProject(id: string | null, opts?: { skipJump?: boolean; docId?: string }): Promise<void>;
+  /** Re-reads the active project (stage, status) after a change made elsewhere. */
+  reloadProject(): Promise<void>;
+  /** The Help and AI Provider / Key dialogs (bodies arrive in Tasks 17 and 13), plus the project dialogs. */
+  dialog: "help" | "settings" | "saveAs" | "projects" | "stageIntro" | null;
   openHelp(): void;
   openSettings(): void;
   closeDialog(): void;
+  /** Save as research project. `prefillName` pre-fills the name field (the Idea panel passes the first 80 characters of the idea). */
+  openSaveAs(mode: "new" | "existing", prefillName?: string): void;
+  saveAsInit: { mode: "new" | "existing"; name: string };
+  openProjects(): void;
+  /** The six-stage intro, shown after a new project is created; `introStage` is the new project's stage. */
+  openStageIntro(stage: StageKey): void;
+  introStage: StageKey;
 };
 
 const Ctx = createContext<WorkspaceValue | null>(null);

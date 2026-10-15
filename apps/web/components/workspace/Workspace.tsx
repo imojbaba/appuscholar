@@ -1,14 +1,16 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { useT } from "@/lib/i18n";
 import { useSettings, type Settings } from "@/lib/settings";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { Editor } from "@/components/editor/Editor";
 import { TitleField } from "@/components/editor/TitleField";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
+import { ProjectBar } from "./ProjectBar";
+import { SaveAsProject } from "./dialogs/SaveAsProject";
+import { Projects } from "./dialogs/Projects";
+import { StageIntro } from "./dialogs/StageIntro";
 import { ChromeDialogs, Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Subbar } from "./Subbar";
@@ -25,8 +27,7 @@ async function listOrSeed(projectId: string): Promise<DocumentSummary[]> {
 }
 
 export function Workspace() {
-  const t = useT();
-  const { me, settings, update } = useSettings();
+  const { me, settings, update, reload } = useSettings();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
@@ -35,11 +36,17 @@ export function Workspace() {
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);
   const [activeTool, setActiveTool] = useState<ToolId>("idea");
   const [dock, setDock] = useState<"tools" | "ai">("tools");
-  const [dialog, setDialog] = useState<"help" | "settings" | null>(null);
+  const [dialog, setDialog] = useState<WorkspaceValue["dialog"]>(null);
+  const [saveAsInit, setSaveAsInit] = useState<WorkspaceValue["saveAsInit"]>({ mode: "new", name: "" });
+  const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting] = useState(false); // Task 14 raises this when an AI suggestion is waiting.
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   const docToken = useRef(0);
+  // A document to show after the next project switch (the one that was just moved into the project).
+  const pendingDoc = useRef<string | null>(null);
+  // The remembered tool (or the project's stage tool) applies to the first load only; later switches keep the tool the student has open.
+  const toolInit = useRef(false);
   // One load per project even when React runs the effect twice in development, so the first document is never created twice.
   const loading = useRef<{ key: string; p: Promise<Loaded> } | null>(null);
 
@@ -59,7 +66,9 @@ export function Workspace() {
           const pid = proj ? proj.id : scratchProjectId;
           const docs = await listOrSeed(pid);
           const first = docs[0];
-          const doc = first ? await apiFetch<DocumentWithBody>(`/documents/${first.id}`) : null;
+          const want = pendingDoc.current; pendingDoc.current = null;
+          const pick = docs.find((d) => d.id === want) ?? first;
+          const doc = pick ? await apiFetch<DocumentWithBody>(`/documents/${pick.id}`) : null;
           return { project: proj, projectId: pid, documents: docs, doc };
         })()
       };
@@ -71,8 +80,11 @@ export function Workspace() {
       setProjectId(r.projectId);
       setDocuments(r.documents);
       setCurrentDoc(r.doc);
-      const remembered = settingsRef.current.toolTab;
-      setActiveTool(isToolId(remembered) ? remembered : r.project && isStageKey(r.project.stage) ? STAGE_FIRST_TOOL[r.project.stage] : "idea");
+      if (!toolInit.current) {
+        toolInit.current = true;
+        const remembered = settingsRef.current.toolTab;
+        setActiveTool(isToolId(remembered) ? remembered : r.project && isStageKey(r.project.stage) ? STAGE_FIRST_TOOL[r.project.stage] : "idea");
+      }
       setReady(true);
     }, () => { if (live) setError(true); });
     return () => { live = false; };
@@ -106,12 +118,34 @@ export function Workspace() {
     if (keep && keep !== currentDoc?.id) await selectDoc(keep);
   }, [projectId, currentDoc, selectDoc]);
 
+  const reloadProject = useCallback(async () => {
+    if (!activeProjectId) return;
+    const list = await apiFetch<Project[]>("/projects");
+    setProject(list.find((x) => x.id === activeProjectId) ?? null);
+  }, [activeProjectId]);
+
+  const setActiveProject = useCallback(async (id: string | null, opts: { skipJump?: boolean; docId?: string } = {}) => {
+    let jump: ToolId | null = null;
+    if (id && !opts.skipJump) {
+      const p = (await apiFetch<Project[]>("/projects")).find((x) => x.id === id);
+      // Guided, not locked: a finished project opens without steering the student anywhere.
+      if (p && p.status !== "complete" && isStageKey(p.stage)) jump = STAGE_FIRST_TOOL[p.stage];
+    }
+    await apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: id }) });
+    pendingDoc.current = opts.docId ?? null;
+    if (id === activeProjectId) { await reloadProject(); await reloadDocs(); if (opts.docId) await selectDoc(opts.docId); } else await reload();
+    if (jump) showTool(jump);
+  }, [activeProjectId, reload, reloadProject, reloadDocs, selectDoc, showTool]);
+
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
-    currentStage, project, documents, currentDoc, selectDoc, reloadDocs,
-    dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null)
+    currentStage, project, documents, currentDoc, selectDoc, reloadDocs, setActiveProject, reloadProject,
+    dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null),
+    openSaveAs: (mode, prefillName = "") => { setSaveAsInit({ mode, name: prefillName }); setDialog("saveAs"); },
+    saveAsInit, openProjects: () => setDialog("projects"),
+    openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
   };
 
   const dockW = settings.dockW ?? 440;
@@ -120,13 +154,10 @@ export function Workspace() {
       <Header />
       <ChromeDialogs />
       <Subbar />
-      <div className="projbar" data-testid="project-bar">
-        {project ? (
-          <div className="label"><span>{project.title}</span>{isStageKey(project.stage) && <Badge variant="stage">{t("stage_" + project.stage)}</Badge>}</div>
-        ) : (
-          <div className="label scratch">{t("project_bar_empty")}</div>
-        )}
-      </div>
+      <ProjectBar />
+      <SaveAsProject />
+      <Projects />
+      <StageIntro />
       {ready ? (
         <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px" } as React.CSSProperties}>
           <Sidebar />
