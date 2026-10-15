@@ -36,7 +36,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted-foreground);
+  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -64,7 +64,7 @@
 .editor .ProseMirror ul, .editor .ProseMirror ol { padding-left: 1.4em; margin: 0 0 0.75em; }
 .editor .ProseMirror table { border-collapse: collapse; margin: 12px 0; width: 100%; }
 .editor .ProseMirror th, .editor .ProseMirror td { border: 1px solid var(--border); padding: 6px 8px; vertical-align: top; }
-.editor .ProseMirror th { background: var(--muted-foreground); font-weight: 600; }
+.editor .ProseMirror th { background: var(--muted); font-weight: 600; }
 .editor .ProseMirror img { max-width: 100%; height: auto; }
 .editor .ProseMirror mark { background: #fde68a; padding: 0 2px; }
 .editor .ProseMirror .ai-ins { border-bottom: 2px dotted #c4b5fd; }
