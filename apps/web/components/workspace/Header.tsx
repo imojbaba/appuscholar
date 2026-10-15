@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
 import { useLang, useT } from "@/lib/i18n";
 import { APP_VERSION } from "@/lib/version";
+import { useSession } from "@/lib/session";
+import { useWorkspace } from "./WorkspaceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +12,7 @@ const HDR_BTN = "hbtn border-white/35 bg-transparent text-white hover:border-whi
 export function Header() {
   const t = useT();
   const { lang, setLang } = useLang();
-  const [dialog, setDialog] = useState<"help" | "provider" | null>(null);
+  const { openHelp, openSettings } = useWorkspace();
   return (
     <>
       <header className="hdr">
@@ -30,23 +31,37 @@ export function Header() {
         <Button variant="ghost" className={`${HDR_BTN} lang px-0`} aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={() => setLang(lang === "en" ? "hi" : "en")}>
           {lang === "en" ? "हि" : "EN"}
         </Button>
-        <Button variant="ghost" className={HDR_BTN} data-testid="help-btn" onClick={() => setDialog("help")}>{t("help_btn")}</Button>
-        <Button variant="gold" data-testid="provider-key-btn" onClick={() => setDialog("provider")}>{t("settings_btn")}</Button>
+        <Button variant="ghost" className={HDR_BTN} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>
+        <Button variant="gold" data-testid="provider-key-btn" onClick={openSettings}>{t("settings_btn")}</Button>
       </header>
-      {/* Placeholders: Task 17 replaces the Help dialog and Task 13 the provider dialog. */}
-      <Dialog open={dialog === "help"} onOpenChange={(o) => { if (!o) setDialog(null); }}>
+    </>
+  );
+}
+
+/** Placeholders: Task 17 replaces the Help dialog body and Task 13 the provider dialog body. State lives in the workspace context. */
+export function ChromeDialogs() {
+  const t = useT();
+  const { dialog, closeDialog } = useWorkspace();
+  const { email, signOutAction } = useSession();
+  return (
+    <>
+      <Dialog open={dialog === "help"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("help_btn")}</DialogTitle>
-            <DialogDescription>The help dialog arrives in Task 17.</DialogDescription>
+            <DialogDescription>Help arrives in the next update.</DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
+            <span data-testid="signed-in-as">Signed in as {email}</span>
+            <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { void signOutAction(); }}>Sign out</Button>
+          </div>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialog === "provider"} onOpenChange={(o) => { if (!o) setDialog(null); }}>
-        <DialogContent>
+      <Dialog open={dialog === "settings"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
+        <DialogContent data-testid="settings-dialog">
           <DialogHeader>
             <DialogTitle>{t("settings_h2")}</DialogTitle>
-            <DialogDescription>The provider dialog arrives in Task 13.</DialogDescription>
+            <DialogDescription>Provider setup arrives in the next update.</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>

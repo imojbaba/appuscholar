@@ -1,5 +1,5 @@
 "use client";
-import { useT, plain, splitEmoji } from "@/lib/i18n";
+import { useT, plain, plainText, splitEmoji } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { STAGE_EMOJI, STAGE_ORDER, TOOLS_BY_STAGE, toolLabelKey, toolTitleKey, type StageKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
@@ -31,8 +31,8 @@ export function Sidebar() {
     <nav className="sidebar" role="tablist" aria-label="Writing tools" data-testid="sidebar">
       <button type="button" className="sb-toggle" aria-label="Collapse or expand the tool panel" title="Collapse the tool panel" aria-expanded={!sidebarCollapsed} data-testid="sidebar-toggle" onClick={toggleSidebar}>☰</button>
       <div className="sb-pinned">
-        <button type="button" className="tab new" aria-label={plain(t("tab_new_project"))} title={t("tab_new_project_title")} data-testid="new-project-tab" onClick={soon}><TabLabel label={t("tab_new_project")} /></button>
-        <button type="button" className="tab" aria-label={plain(t("tab_projects"))} title={t("tab_projects_title")} data-testid="projects-tab" onClick={soon}><TabLabel label={t("tab_projects")} /></button>
+        <button type="button" className="tab new" aria-label={plainText(t("tab_new_project"))} title={t("tab_new_project_title")} data-testid="new-project-tab" onClick={soon}><TabLabel label={t("tab_new_project")} /></button>
+        <button type="button" className="tab" aria-label={plainText(t("tab_projects"))} title={t("tab_projects_title")} data-testid="projects-tab" onClick={soon}><TabLabel label={t("tab_projects")} /></button>
       </div>
       {STAGE_ORDER.map((stage) => {
         const closed = stageGroupsCollapsed.includes(stage);
@@ -46,7 +46,7 @@ export function Sidebar() {
             </button>
             <div className="stage-tools">
               {TOOLS_BY_STAGE[stage].map((id) => (
-                <button key={id} type="button" role="tab" className={"tab" + (activeTool === id ? " active" : "")} aria-selected={activeTool === id} aria-label={plain(t(toolLabelKey(id)))} data-tool={id} data-testid={"tool-" + id} title={plain(t(toolTitleKey(id)))} onClick={() => showTool(id)}>
+                <button key={id} type="button" role="tab" className={"tab" + (activeTool === id ? " active" : "")} aria-selected={activeTool === id} aria-label={plainText(t(toolLabelKey(id)))} data-tool={id} data-testid={"tool-" + id} title={plain(t(toolTitleKey(id)))} onClick={() => showTool(id)}>
                   <TabLabel label={t(toolLabelKey(id))} />
                 </button>
               ))}

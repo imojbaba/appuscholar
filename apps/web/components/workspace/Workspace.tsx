@@ -9,7 +9,7 @@ import { TitleField } from "@/components/editor/TitleField";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
-import { Header } from "./Header";
+import { ChromeDialogs, Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Subbar } from "./Subbar";
 import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type Project, type WorkspaceValue } from "./WorkspaceContext";
@@ -20,7 +20,7 @@ async function listOrSeed(projectId: string): Promise<DocumentSummary[]> {
   const list = await apiFetch<DocumentSummary[]>(`/projects/${projectId}/documents`);
   if (list.length) return list;
   // A project always has a document to write in (v1 always had one).
-  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: "Untitled" }) });
+  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: "My first document" }) });
   return [made];
 }
 
@@ -35,6 +35,7 @@ export function Workspace() {
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);
   const [activeTool, setActiveTool] = useState<ToolId>("idea");
   const [dock, setDock] = useState<"tools" | "ai">("tools");
+  const [dialog, setDialog] = useState<"help" | "settings" | null>(null);
   const [aiWaiting] = useState(false); // Task 14 raises this when an AI suggestion is waiting.
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
@@ -109,13 +110,15 @@ export function Workspace() {
 
   const value: WorkspaceValue = {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
-    currentStage, project, documents, currentDoc, selectDoc, reloadDocs
+    currentStage, project, documents, currentDoc, selectDoc, reloadDocs,
+    dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null)
   };
 
   const dockW = settings.dockW ?? 440;
   return (
     <WorkspaceProvider value={value}>
       <Header />
+      <ChromeDialogs />
       <Subbar />
       <div className="projbar" data-testid="project-bar">
         {project ? (

@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
+import { useWorkspace } from "./WorkspaceContext";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
 
 /** Provider pill and menu. Key presence arrives with lib/ai/keys.ts (Task 13); until then no provider has a key. */
 export function Subbar() {
   const { settings, update } = useSettings();
+  const { openSettings } = useWorkspace();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const current: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
@@ -26,7 +28,10 @@ export function Subbar() {
   const choose = (id: ProviderId) => {
     setOpen(false);
     void update({ provider: id });
-    toast(hasKey(id) ? `Now using ${PROVIDERS[id].short} ✓ Your next AI request goes to ${PROVIDERS[id].short}.` : `Paste your ${PROVIDERS[id].name} key to enable it`);
+    if (hasKey(id)) { toast(`Now using ${PROVIDERS[id].short} ✓ Your next AI request goes to ${PROVIDERS[id].short}.`); return; }
+    // No key yet: open the Settings dialog so the student can paste one (v1).
+    openSettings();
+    toast(`Paste your ${PROVIDERS[id].name} key to enable it`);
   };
 
   return (

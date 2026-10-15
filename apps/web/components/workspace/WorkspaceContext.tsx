@@ -22,6 +22,11 @@ export type WorkspaceValue = {
   currentDoc: DocumentWithBody | null;
   selectDoc(id: string): Promise<void>;
   reloadDocs(): Promise<void>;
+  /** The Help and AI Provider / Key dialogs (bodies arrive in Tasks 17 and 13). */
+  dialog: "help" | "settings" | null;
+  openHelp(): void;
+  openSettings(): void;
+  closeDialog(): void;
 };
 
 const Ctx = createContext<WorkspaceValue | null>(null);

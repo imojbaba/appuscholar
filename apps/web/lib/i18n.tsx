@@ -27,6 +27,8 @@ export function tHtml(s: string): React.ReactNode {
 }
 /** A few v1 labels (tab_idea, tab_design, tab_stats) carry an &amp; entity because v1 wrote them with innerHTML. React escapes text, so decode it for display. */
 export function plain(s: string): string { return s.replace(/&amp;/g, "&"); }
+/** Like plain(), also dropping the leading emoji, for aria-labels (the emoji is decorative). */
+export function plainText(s: string): string { return plain(s).replace(/^[^\p{L}\p{N}]+/u, ""); }
 /** Splits a v1 tool label ("💡 Idea & Feasibility") into its leading emoji and the text, for the icon-only sidebar rail. */
 export function splitEmoji(label: string): { emoji: string; text: string } {
   const i = label.indexOf(" ");
