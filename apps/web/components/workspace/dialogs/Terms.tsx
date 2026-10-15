@@ -15,7 +15,6 @@ import { useWorkspace } from "../WorkspaceContext";
  * Accepting records it on the server (POST /me/terms); the under-18 path records nothing.
  */
 export function Terms() {
-  const t = useT();
   const { me } = useSettings();
   const { dialog, closeDialog } = useWorkspace();
   const gate = needsTerms(me, TERMS_SINCE);

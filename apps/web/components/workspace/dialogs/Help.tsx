@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWorkspace } from "../WorkspaceContext";
 
-// The FAQ entries that are still true in v2. faq_lost and faq_key are left out: they say everything and the key live only in this browser, "never on a server".
-const FAQ = ["hindi"];
+const FAQ = ["lost", "hindi", "key"];
 // The app never sends mail (rule 12): the button opens the student's own mail app.
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 

@@ -1,4 +1,4 @@
-// The v2 wording (a product decision; the terms are for the lawyer). These six English keys replace what the v1 extraction
+// The v2 wording (a product decision; the terms are for the lawyer). These eight English keys replace what the v1 extraction
 // produces; extract-v1-i18n.mjs applies them after extraction so re-running it keeps them.
 // The Hindi strings for the same keys are still v1 and need re-translating to match.
 export const OVERRIDES = {
@@ -9,7 +9,10 @@ export const OVERRIDES = {
   // The version and date come from lib/terms.ts (TERMS_VERSION, TERMS_DATE), so a new version needs no dictionary edit.
   terms_ver: "Version {version}, {date}.",
   // v1 said everything stays on this computer; in v2 it is saved under the account.
-  welcome_intro: "A writing and research assistant, with psychology research support built in. Everything you write is saved under your account."
+  welcome_intro: "A writing and research assistant, with psychology research support built in. Everything you write is saved under your account.",
+  // The v1 answers said everything and the key live only in this browser.
+  faq_a_lost: "Your documents are saved under your account with every version, so clearing a browser does not lose them. Sign in on any device to find them. If a document is missing, check the Doc list and Research Projects, then write to us.",
+  faq_a_key: "Your AI key is kept in this browser, or locked with your passphrase under your account. If the app says there is no key, open <b>⚙ AI Provider / Key</b> and paste it again."
 };
 
 /** Returns a copy of the English dictionary with the overrides applied. Every override must replace an existing key. */

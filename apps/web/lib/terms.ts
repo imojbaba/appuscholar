@@ -1,8 +1,8 @@
 /** The terms the student accepts at first use (and again when they change). Task 21 sets the date on deploy. */
 export const TERMS_VERSION = 2;
 export const TERMS_DATE = "16 October 2026";
-/** Acceptances recorded before this instant were given to an older version of the terms and are asked again. */
-export const TERMS_SINCE = "2026-10-16T00:00:00Z";
+/** Never later than the clock of a machine that is accepting now, or the gate would loop. Task 21 sets this and TERMS_DATE to the deploy day. Acceptances recorded before this instant were given to an older version of the terms and are asked again. */
+export const TERMS_SINCE = "2026-10-15T00:00:00Z";
 
 /**
  * The gate: true when the terms must be shown. False while /me has not loaded (no `me` yet, so nothing to decide),

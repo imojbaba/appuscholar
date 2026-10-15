@@ -1,0 +1,10 @@
+{
+  "terms_d1": "Your documents, sources, projects and statistics data stay in this browser on this computer. Appuscholar has no server, so nobody at Appuscholar can see them. Clearing your browser data erases them, so download a backup now and then.",
+  "terms_d2": "Your AI key also stays in this browser. It goes only to the AI provider you choose.",
+  "terms_d3": "When you press an AI button, the text you selected travels from your browser straight to that provider (Google, Groq, OpenRouter, DeepSeek, OpenAI or Anthropic). Appuscholar does not see it or keep it. The provider's own terms apply, and on a free key a provider may read or reuse what it receives. Never send names, phone numbers, roll numbers or other details that identify a participant.",
+  "terms_d4": "Paper search sends your search words, DOI or ORCID iD to OpenAlex, Crossref, PubMed and ORCID. The chart, Word and PDF tools and the fonts load from Cloudflare and Google, which can see your IP address, as any website can.",
+  "terms_ver": "Version 1, 7 October 2026.",
+  "welcome_intro": "A writing and research assistant, with psychology research support built in. Everything you write stays on this computer.",
+  "faq_a_lost": "Everything is saved only in this browser, on this computer — never on a server. Clearing site data, switching browsers, or moving to a new computer wipes it with no way back. Use <b>⬇ Download</b> in the document toolbar regularly to keep a copy outside the browser.",
+  "faq_a_key": "Open <b>⚙ AI Provider / Key</b> at the top right, pick your provider again, and follow the link to generate a new one — it's free and takes under a minute. Your key lives only in this browser; nothing to recover from a server."
+}
