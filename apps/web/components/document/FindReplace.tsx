@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { findInDoc, replaceRanges, revealMatch, showMatches } from "@/lib/editor/findInEditor";
+import { findInDoc, nextMatchIndex, replaceRanges, revealMatch, showMatches } from "@/lib/editor/findInEditor";
 import type { DocRange } from "@/lib/editor/findDecorations";
 
 const btn = "fmt";
@@ -40,10 +40,15 @@ export function FindReplace({ editor, seed, onClose }: { editor: Editor; seed: s
     revealMatch(editor, target);
   }
   function replaceOne() {
-    if (!matches.length) return;
     const target = matches[current];
-    if (target) replaceRanges(editor, [target], repl);
-    // The next match slides into this index; the count box refreshes on the editor's update event.
+    if (!target) return;
+    replaceRanges(editor, [target], repl);
+    // Move on to the first match after the replacement, so "cat" -> "cats" does not hit the same spot again.
+    const after = findInDoc(editor.state.doc, query, caseSensitive);
+    const next = nextMatchIndex(after, target.from + repl.length);
+    setCurrent(next);
+    const m = after[next];
+    if (m) revealMatch(editor, m);
   }
   function replaceAll() {
     const n = replaceRanges(editor, matches, repl);

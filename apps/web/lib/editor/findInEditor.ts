@@ -41,3 +41,9 @@ export function replaceRanges(editor: Editor, ranges: DocRange[], replacement: s
   editor.view.dispatch(tr);
   return ranges.length;
 }
+
+/** The index of the first match that starts at or after `pos`, wrapping to the first; 0 when there are none. */
+export function nextMatchIndex(matches: DocRange[], pos: number): number {
+  const i = matches.findIndex((m) => m.from >= pos);
+  return i < 0 ? 0 : i;
+}

@@ -11,6 +11,7 @@ const V1_HTML = [
   "<table><tbody><tr><th>Group</th><th>n</th></tr><tr><td>Control</td><td>12</td></tr></tbody></table>",
   '<p><span style="color: rgb(255, 0, 0)">red</span> text</p>',
   '<p style="text-align: center">centred</p>',
+  '<p style="margin-left: 4em">indented</p>',
   `<p><img src="${PNG}" alt="wide" style="width: 640px"></p>`,
   "<div class=\"page-break\" data-page-break></div>",
   "<table><tbody><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></tbody></table>"
@@ -46,6 +47,9 @@ describe("editor schema keeps v1 content", () => {
   });
   it("keeps paragraph alignment", () => {
     expect(out).toMatch(/<p style="text-align: center;?">centred<\/p>/);
+  });
+  it("keeps a paragraph's indent", () => {
+    expect(out).toMatch(/<p style="margin-left: 4em;?">indented<\/p>/);
   });
   it("keeps an image's width", () => {
     expect(out).toMatch(/<img [^>]*style="width: 640px;?"/);

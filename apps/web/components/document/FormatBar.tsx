@@ -4,6 +4,7 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
+import { clearFormatting } from "@/lib/editor/clearFormatting";
 import { resizeImage } from "@/lib/editor/image";
 import { DICTATION_LANGS, UNSUPPORTED_MESSAGE, defaultDictationLang, startDictation, type Dictation } from "@/lib/editor/dictate";
 import { TableSize } from "@/components/workspace/dialogs/TableSize";
@@ -54,6 +55,9 @@ export function FormatBar({ editor }: { editor: Editor }) {
         bullets: e.isActive("bulletList"), numbered: e.isActive("orderedList"),
         left: e.isActive({ textAlign: "left" }), center: e.isActive({ textAlign: "center" }), right: e.isActive({ textAlign: "right" }), justify: e.isActive({ textAlign: "justify" }),
         canUndo: e.can().undo(), canRedo: e.can().redo(),
+        // In a list Indent/Outdent move the list item; elsewhere they step a paragraph's or heading's margin.
+        canIndent: e.isActive("listItem") ? e.can().sinkListItem("listItem") : e.can().indent(),
+        canOutdent: e.isActive("listItem") ? e.can().liftListItem("listItem") : e.can().outdent(),
         font: ts.fontFamily?.replace(/["']/g, "") ?? "", size: ts.fontSize ?? "", color: ts.color ?? "#000000",
         highlight: (e.getAttributes("highlight") as { color?: string }).color ?? "#fde68a",
         image: img, imageWidth: img ? Math.min(MAX_IMG, Math.max(MIN_IMG, Math.round(Number((e.getAttributes("image") as { width?: number }).width ?? dom?.offsetWidth ?? 640)))) : 0
@@ -175,9 +179,9 @@ export function FormatBar({ editor }: { editor: Editor }) {
             <input type="color" aria-label="Highlight colour" data-testid="fmt-highlight" value={/^#[0-9a-f]{6}$/i.test(s.highlight) ? s.highlight : "#fde68a"} onChange={(e) => run().setHighlight({ color: e.target.value }).run()} />
           </label>
           <Sep />
-          <Fmt name="outdent" label="Outdent" on={() => run().liftListItem("listItem").run()}>⇤</Fmt>
-          <Fmt name="indent" label="Indent" on={() => run().sinkListItem("listItem").run()}>⇥</Fmt>
-          <Fmt name="clear" label="Clear formatting" on={() => run().unsetAllMarks().clearNodes().run()}>Tx</Fmt>
+          <Fmt name="outdent" label="Outdent" disabled={!s.canOutdent} on={() => (editor.isActive("listItem") ? run().liftListItem("listItem") : run().outdent()).run()}>⇤</Fmt>
+          <Fmt name="indent" label="Indent" disabled={!s.canIndent} on={() => (editor.isActive("listItem") ? run().sinkListItem("listItem") : run().indent()).run()}>⇥</Fmt>
+          <Fmt name="clear" label="Clear formatting" on={() => { clearFormatting(editor); }}>Tx</Fmt>
           <Sep />
           <Fmt name="align-left" label="Align left" active={s.left} on={() => run().setTextAlign("left").run()}>⇚</Fmt>
           <Fmt name="align-center" label="Align centre" active={s.center} on={() => run().setTextAlign("center").run()}>≡</Fmt>

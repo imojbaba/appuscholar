@@ -9,6 +9,7 @@ import { TextStyleKit } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
 import { Placeholder } from "@tiptap/extensions";
 import { FindDecorations } from "./editor/findDecorations";
+import { Indent } from "./editor/indent";
 
 function dataAttributes(el: HTMLElement): Record<string, string> {
   const out: Record<string, string> = {};
@@ -86,6 +87,7 @@ const schemaExtensions: Extensions = [
   Highlight.configure({ multicolor: true }),
   TextStyleKit,
   TextAlign.configure({ types: ["heading", "paragraph"] }),
+  Indent,
   PageBreak,
   ClassSpan,
   FindDecorations

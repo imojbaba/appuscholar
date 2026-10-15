@@ -187,6 +187,9 @@ importers:
       eslint-config-next:
         specifier: ^16.4.0
         version: 16.4.0(@typescript-eslint/parser@8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       typescript-eslint:
         specifier: ^8.0.0
         version: 8.71.2(eslint@10.12.0(jiti@2.7.0))(typescript@5.9.3)
