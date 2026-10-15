@@ -21,6 +21,8 @@ import { Sidebar } from "./Sidebar";
 import { Subbar } from "./Subbar";
 import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type Project, type WorkspaceValue } from "./WorkspaceContext";
 
+const BUSY = "Another import is still running. Wait for it to finish.";
+
 type Loaded = { project: Project | null; projectId: string; documents: DocumentSummary[]; doc: DocumentWithBody | null };
 
 async function listOrSeed(projectId: string): Promise<DocumentSummary[]> {
@@ -199,7 +201,7 @@ export function Workspace() {
   /** Imports the files as new documents, then shows the last one. One batch at a time. */
   const doImport = useCallback(async (files: File[], origin: "draft" | "source") => {
     const pid = projectIdRef.current;
-    if (!pid || importing.current) return;
+    if (!pid) return;
     importing.current = true;
     try {
       const last = await importFiles(files, origin, pid, t);
@@ -208,6 +210,7 @@ export function Workspace() {
   }, [t, reloadDocs, selectDoc]);
 
   const startImport = useCallback((files: File[]) => {
+    if (importing.current) { toast(BUSY); return; }
     const usable = files.filter(isImportable);
     const skipped = files.length - usable.length;
     if (!usable.length) { toast("Import a .docx, .pdf, .txt, .md or .html file."); return; }
@@ -218,6 +221,8 @@ export function Workspace() {
   }, [doImport]);
 
   const runImport = useCallback(async (origin: "draft" | "source") => {
+    // The dialog stays as it is when another batch is still running.
+    if (importing.current) { toast(BUSY); return; }
     const files = importWaiting;
     setImportWaiting([]);
     setDialog(null);

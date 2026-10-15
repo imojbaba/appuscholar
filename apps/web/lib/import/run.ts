@@ -12,8 +12,11 @@ export function allPdf(files: File[]): boolean { return files.length > 0 && file
  * non-PDF files; PDFs are always sources. Returns the id of the last document created, or null when none was.
  */
 export async function importFiles(files: File[], origin: "draft" | "source", projectId: string, t: T): Promise<string | null> {
-  if (files.length > 1) toast(`Importing ${files.length} files — each becomes its own document…`);
+  const batch = files.length > 1;
   let lastId: string | null = null;
+  // One toast host shows one toast at a time, so a batch reports once, after the loop.
+  const failed: string[] = [];
+  let imported = 0, dropped = 0, pdfs = 0;
   for (const file of files) {
     let madeId: string | null = null;
     try {
@@ -24,13 +27,24 @@ export async function importFiles(files: File[], origin: "draft" | "source", pro
       madeId = made.id;
       await apiFetch<unknown>(`/documents/${made.id}`, { method: "PUT", body: JSON.stringify({ bodyHtml: parsed.html }) });
       lastId = made.id;
-      const dropped = parsed.droppedImages ? ` (${parsed.droppedImages} pictures were too large and were removed)` : "";
-      toast((parsed.isPdf ? t("imp_pdf_toast") : kind === "source" ? t("imp_src_toast") : `Imported "${title}" ✓ — check formatting before you keep going`) + dropped);
+      imported++; dropped += parsed.droppedImages; if (parsed.isPdf) pdfs++;
+      if (!batch) {
+        const note = parsed.droppedImages ? ` (${parsed.droppedImages} pictures were too large and were removed)` : "";
+        toast((parsed.isPdf ? t("imp_pdf_toast") : kind === "source" ? t("imp_src_toast") : `Imported "${title}" ✓ — check formatting before you keep going`) + note);
+      }
     } catch (e) {
       // A document created for a body the server then refused would stay behind empty.
       if (madeId) await apiFetch<void>(`/documents/${madeId}`, { method: "DELETE" }).catch(() => undefined);
-      toast(e instanceof ImportError ? e.message : e instanceof ApiError && e.status === 413 ? TOO_LARGE_MESSAGE : `Could not import "${file.name}".`);
+      const why = e instanceof ImportError ? e.message : e instanceof ApiError && e.status === 413 ? TOO_LARGE_MESSAGE : `Could not import "${file.name}".`;
+      if (!batch) toast(why);
+      else failed.push(why.includes(`"${file.name}"`) ? why : `"${file.name}": ${why}`);
     }
+  }
+  if (batch) {
+    const note = dropped ? ` (${dropped} pictures were too large and were removed)` : "";
+    const pdf = pdfs ? ` ${t("imp_pdf_toast")}` : "";
+    const bad = failed.length ? ` — ${failed.join("; ")}` : "";
+    toast(`Imported ${imported} of ${files.length} files${imported ? " ✓" : ""}${note}${bad}${pdf}`, { ms: failed.length || pdfs ? 9000 : undefined });
   }
   return lastId;
 }

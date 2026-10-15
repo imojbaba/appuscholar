@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
@@ -11,19 +12,20 @@ const NAMES = Object.keys(SCAFFOLDS) as [ScaffoldName, ...ScaffoldName[]];
 
 /** v1's template menu: the `🧱 Template` button and its "Which template?" list. Task 14 moves the button into the action row. */
 export function TemplatePicker({ editor }: { editor: Editor }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<ScaffoldName>(NAMES[0]);
 
   function insert() {
     setOpen(false);
-    insertPlainHtml(editor, scaffoldToHtml(SCAFFOLDS[name]));
+    insertPlainHtml(editor, scaffoldToHtml(SCAFFOLDS[name]), { atEnd: true });
     toast("Template inserted ✓ — Ctrl+Z to undo");
   }
 
   return (
     <>
-      <Button type="button" variant="ghost" size="sm" title="Insert a ready-made outline (lab report, essay, literature review)" data-testid="act-template"
-        onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen(true)}>🧱 Template</Button>
+      <Button type="button" variant="ghost" size="sm" title={t("template_btn_title")} data-testid="act-template"
+        onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen(true)}>{t("template_btn")}</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm" data-testid="template-dialog" aria-describedby={undefined}
           onCloseAutoFocus={(e) => { e.preventDefault(); editor.commands.focus(); }}>
