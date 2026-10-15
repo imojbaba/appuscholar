@@ -14,28 +14,39 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
   const [draft, setDraft] = useState(title);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function run(fn: () => Promise<void>, close: () => void) {
+  const [statusBusy, setStatusBusy] = useState<"complete" | "active" | null>(null);
+  const [statusError, setStatusError] = useState("");
+  async function run(fn: () => Promise<void>, close: () => void, failure: string) {
     setBusy(true); setError("");
-    try { await fn(); close(); } catch { setError("That did not save. Try again."); } finally { setBusy(false); }
+    try { await fn(); close(); } catch { setError(failure); } finally { setBusy(false); }
   }
+  async function changeStatus(next: "active" | "complete") {
+    if (statusBusy) return;
+    setStatusBusy(next); setStatusError("");
+    try { await onStatus(next); } catch { setStatusError("Could not update the project. Try again."); } finally { setStatusBusy(null); }
+  }
+  function openRename() { setError(""); setStatusError(""); setDraft(title); setRenaming(true); }
+  function openDelete() { setError(""); setStatusError(""); setDeleting(true); }
   return (
-    <>
+    <div className="flex shrink-0 flex-col items-end gap-1">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" aria-label={`Actions for ${title}`} data-testid="project-actions"><DotsThree size={20} weight="bold" /></Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => { setDraft(title); setRenaming(true); }} data-testid="project-rename"><PencilSimple size={18} /> Rename</DropdownMenuItem>
+          <DropdownMenuItem onSelect={openRename} data-testid="project-rename"><PencilSimple size={18} /> Rename</DropdownMenuItem>
           {status === "complete"
-            ? <DropdownMenuItem onSelect={() => { void onStatus("active"); }} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> Reopen</DropdownMenuItem>
-            : <DropdownMenuItem onSelect={() => { void onStatus("complete"); }} data-testid="project-complete"><CheckCircle size={18} /> Mark complete</DropdownMenuItem>}
-          <DropdownMenuItem onSelect={() => setDeleting(true)} className="text-destructive" data-testid="project-delete"><Trash size={18} /> Delete</DropdownMenuItem>
+            ? <DropdownMenuItem onSelect={() => { void changeStatus("active"); }} disabled={statusBusy !== null} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> {statusBusy === "active" ? "Reopening…" : "Reopen"}</DropdownMenuItem>
+            : <DropdownMenuItem onSelect={() => { void changeStatus("complete"); }} disabled={statusBusy !== null} data-testid="project-complete"><CheckCircle size={18} /> {statusBusy === "complete" ? "Marking complete…" : "Mark complete"}</DropdownMenuItem>}
+          <DropdownMenuItem onSelect={openDelete} className="text-destructive" data-testid="project-delete"><Trash size={18} /> Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {statusBusy ? <p role="status" className="text-xs text-muted-foreground">{statusBusy === "complete" ? "Marking complete…" : "Reopening…"}</p> : null}
+      {statusError ? <p role="alert" data-testid="error-msg" className="max-w-48 text-right text-xs text-destructive">{statusError}</p> : null}
 
-      <Dialog open={renaming} onOpenChange={setRenaming}>
+      <Dialog open={renaming} onOpenChange={o => { if (!o) setError(""); setRenaming(o); }}>
         <DialogContent>
-          <form onSubmit={e => { e.preventDefault(); if (draft.trim()) void run(() => onRename(draft.trim()), () => setRenaming(false)); }} className="grid gap-4">
+          <form onSubmit={e => { e.preventDefault(); if (draft.trim()) void run(() => onRename(draft.trim()), () => setRenaming(false), "That did not save. Try again."); }} className="grid gap-4">
             <DialogHeader><DialogTitle>Rename project</DialogTitle><DialogDescription>Documents and history are kept.</DialogDescription></DialogHeader>
             <div className="grid gap-2">
               <Label htmlFor="rename">Project title</Label>
@@ -43,14 +54,14 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
             </div>
             {error ? <p role="alert" data-testid="error-msg" className="text-sm text-destructive">{error}</p> : null}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setRenaming(false)} disabled={busy}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => { setError(""); setRenaming(false); }} disabled={busy}>Cancel</Button>
               <Button type="submit" disabled={busy || !draft.trim()} data-testid="rename-save">{busy ? "Saving…" : "Save"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleting} onOpenChange={setDeleting}>
+      <AlertDialog open={deleting} onOpenChange={o => { if (!o) setError(""); setDeleting(o); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete &quot;{title}&quot;?</AlertDialogTitle>
@@ -61,10 +72,10 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
           {error ? <p role="alert" data-testid="error-msg" className="text-sm text-destructive">{error}</p> : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Keep it</AlertDialogCancel>
-            <AlertDialogAction onClick={e => { e.preventDefault(); void run(onDelete, () => setDeleting(false)); }} disabled={busy} className="bg-destructive text-white hover:bg-destructive/90" data-testid="delete-confirm">{busy ? "Deleting…" : "Delete project"}</AlertDialogAction>
+            <AlertDialogAction onClick={e => { e.preventDefault(); void run(onDelete, () => setDeleting(false), "Could not delete the project. Try again."); }} disabled={busy} className="bg-destructive text-white hover:bg-destructive/90" data-testid="delete-confirm">{busy ? "Deleting…" : "Delete project"}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

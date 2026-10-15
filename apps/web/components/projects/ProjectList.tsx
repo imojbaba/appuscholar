@@ -32,7 +32,7 @@ export function ProjectList() {
   }
   const rename = (id: string) => async (t: string) => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify({ title: t }) }); await load(); };
   const remove = (id: string) => async () => { await apiFetch(`/projects/${id}`, { method: "DELETE" }); await load(); };
-  const setStatus = (id: string) => async (status: "active" | "complete") => { try { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }); await load(); } catch { setError("Could not update the project. Try again."); } };
+  const setStatus = (id: string) => async (status: "active" | "complete") => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }); await load(); };
 
   return (
     <section className="grid gap-6">

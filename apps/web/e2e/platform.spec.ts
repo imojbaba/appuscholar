@@ -16,6 +16,23 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   if (await page.getByTestId("stage-intro-start").count()) await page.getByTestId("stage-intro-start").click();
   await page.goto("/projects");
 
+  // a failed rename shows an error that does not leak into the next dialog open
+  await page.route("**/projects/*", async route => {
+    if (route.request().method() === "PATCH") await route.abort();
+    else await route.continue();
+  });
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-rename").click();
+  await page.getByTestId("rename-input").fill("Will not save");
+  await page.getByTestId("rename-save").click();
+  await expect(page.getByTestId("error-msg")).toHaveText("That did not save. Try again.");
+  await page.keyboard.press("Escape");
+  await page.unroute("**/projects/*");
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-rename").click();
+  await expect(page.getByTestId("error-msg")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
   // rename via the card menu
   await page.getByTestId("project-actions").first().click();
   await page.getByTestId("project-rename").click();
