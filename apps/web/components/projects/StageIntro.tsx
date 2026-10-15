@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { STAGES, STAGE_DESCRIPTIONS, stageIndex } from "@/lib/stages";
@@ -8,10 +7,11 @@ import { cn } from "@/lib/utils";
 
 /** v1 `stageIntroShow`. No stage tool exists to jump to yet, so the button is v1's fallback "Got it"; closing moves focus to `focusId`. */
 export function StageIntro({ projectId, stage, open, focusId }: { projectId: string; stage: string; open: boolean; focusId?: string }) {
-  const router = useRouter();
   const [show, setShow] = useState(open);
   const cur = stageIndex(stage);
-  function close() { setShow(false); router.replace(`/projects/${projectId}`); }
+  // Drop ?intro=1 synchronously (Next syncs native history calls with useSearchParams). A router.replace is a
+  // server round trip in dev, so a reload straight after closing could still see ?intro=1 and show the intro again.
+  function close() { setShow(false); window.history.replaceState(null, "", `/projects/${projectId}`); }
   return (
     <Dialog open={show} onOpenChange={o => { if (!o) close(); }}>
       <DialogContent className="max-w-lg" data-testid="stage-intro" onCloseAutoFocus={e => { const el = focusId ? document.getElementById(focusId) : null; if (el) { e.preventDefault(); el.focus(); } }}>
