@@ -29,7 +29,7 @@ export function RevisionPanel({ docId, currentSeq, onRestored, beforeRestore }: 
         {revs.map(r => (
           <li key={r.seq} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
             <span>#{r.seq} · {r.authorKind}{r.authorKind === "copilot" ? ` (${r.authorLabel})` : ""} · {r.wordCount} w · {new Date(r.createdAt).toLocaleString()}</span>
-            {r.seq !== currentSeq ? <button className="btn" onClick={() => restore(r.seq)} data-testid={`restore-${r.seq}`}>Restore</button> : <span style={{ color: "var(--muted)" }}>current</span>}
+            {r.seq !== currentSeq ? <button className="btn" onClick={() => restore(r.seq)} data-testid={`restore-${r.seq}`}>Restore</button> : <span style={{ color: "var(--muted-foreground)" }}>current</span>}
           </li>
         ))}
       </ul>

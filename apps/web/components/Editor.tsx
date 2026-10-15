@@ -25,7 +25,7 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady }: { d
   const label = status === "saved" ? `Saved · revision ${currentSeq}` : status === "saving" ? "Saving…" : status === "dirty" ? "Unsaved changes" : "Could not save, will retry";
   return (
     <div className="card editor">
-      <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13, marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted-foreground)", fontSize: 13, marginBottom: 8 }}>
         <span data-testid="save-status">{label}</span>
       </div>
       <EditorContent editor={editor} data-testid="editor" />

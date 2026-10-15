@@ -35,7 +35,7 @@ export function DocumentList({ projectId }: { projectId: string }) {
           {items.map(d => (
             <li key={d.id} className="card" style={{ display: "flex", justifyContent: "space-between" }}>
               <Link href={`/projects/${projectId}/documents/${d.id}`} data-testid="doc-link">{d.title}</Link>
-              <span style={{ color: "var(--muted)", fontSize: 13 }}>{d.wordCount} words · rev {d.currentSeq}</span>
+              <span style={{ color: "var(--muted-foreground)", fontSize: 13 }}>{d.wordCount} words · rev {d.currentSeq}</span>
             </li>
           ))}
         </ul>

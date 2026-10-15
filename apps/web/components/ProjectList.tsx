@@ -30,7 +30,7 @@ export function ProjectList() {
         <button className="btn btn-purple" data-testid="project-create" disabled={busy}>{busy ? "Creating…" : "Create"}</button>
       </form>
       {error && <p role="alert" data-testid="error-msg" style={{ color: "crimson" }}>{error}</p>}
-      {items === null ? <p>Loading…</p> : items.length === 0 && !error ? <p style={{ color: "var(--muted)" }}>No research project yet. <Link href="/import">Import a v1 backup</Link> or create one above.</p> : (
+      {items === null ? <p>Loading…</p> : items.length === 0 && !error ? <p style={{ color: "var(--muted-foreground)" }}>No research project yet. <Link href="/import">Import a v1 backup</Link> or create one above.</p> : (
         <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 8 }}>
           {items.map(p => <li key={p.id} className="card"><Link href={`/projects/${p.id}`} data-testid="project-link">{p.title}</Link></li>)}
         </ul>

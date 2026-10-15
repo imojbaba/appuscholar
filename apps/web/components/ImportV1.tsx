@@ -95,7 +95,7 @@ export function ImportV1() {
           <button type="button" className="btn" onClick={cancelUnlock} disabled={busy}>Cancel</button>
         </form>
       ) : null}
-      <p data-testid="import-msg" role="status" style={{ color: "var(--muted)" }}>{msg}</p>
+      <p data-testid="import-msg" role="status" style={{ color: "var(--muted-foreground)" }}>{msg}</p>
     </div>
   );
 }

@@ -7,8 +7,8 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
   const error = signinErrorMessage((await searchParams).error);
   return (
     <main style={{ maxWidth: 420, margin: "80px auto", padding: 16 }}>
-      <h1 style={{ color: "var(--purple-800)" }}>Appuscholar</h1>
-      <p style={{ color: "var(--muted)" }}>Sign in to open your projects.</p>
+      <h1 style={{ color: "var(--primary)" }}>Appuscholar</h1>
+      <p style={{ color: "var(--muted-foreground)" }}>Sign in to open your projects.</p>
       {error ? <p role="alert" data-testid="signin-error" style={{ color: "crimson" }}>{error}</p> : null}
       <form action={async () => { "use server"; await signIn("google", { redirectTo: "/projects" }); }}>
         <button className="btn btn-purple" style={{ width: "100%" }}>Continue with Google</button>
