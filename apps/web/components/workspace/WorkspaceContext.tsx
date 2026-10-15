@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext } from "react";
+import type { ProviderId } from "@appuscholar/core";
 import type { StageKey, ToolId } from "@/lib/tools";
 
 /** Wire shapes of the API (dates arrive as ISO strings). */
@@ -47,7 +48,10 @@ export type WorkspaceValue = {
   /** The answer to the question: imports the waiting files, then shows the last one. */
   runImport(origin: "draft" | "source"): Promise<void>;
   openHelp(): void;
-  openSettings(): void;
+  /** Opens AI Provider / Key, with `provider` preselected in its select (default: the current provider). */
+  openSettings(provider?: ProviderId): void;
+  /** The provider the AI Provider / Key dialog opened on, or null for the current one. */
+  settingsProvider: ProviderId | null;
   closeDialog(): void;
   /** Save as research project. `prefillName` pre-fills the name field (the Idea panel passes the first 80 characters of the idea). */
     openSaveAs(mode: "new" | "existing", prefillName?: string, opts?: { guessStage?: boolean }): void;

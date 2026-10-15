@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useSettings, type Settings } from "@/lib/settings";
 import { useT } from "@/lib/i18n";
@@ -50,6 +51,7 @@ export function Workspace() {
   const [activeTool, setActiveTool] = useState<ToolId>("idea");
   const [dock, setDock] = useState<"tools" | "ai">("tools");
   const [dialog, setDialog] = useState<WorkspaceValue["dialog"]>(null);
+  const [settingsProvider, setSettingsProvider] = useState<ProviderId | null>(null);
   const [saveAsInit, setSaveAsInit] = useState<WorkspaceValue["saveAsInit"]>({ mode: "new", name: "", guessStage: false });
   const [importWaiting, setImportWaiting] = useState<File[]>([]);
   const importing = useRef(false);
@@ -235,7 +237,7 @@ export function Workspace() {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => { setDialog(null); setImportWaiting([]); },
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
     openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage

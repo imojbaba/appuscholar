@@ -101,7 +101,7 @@ async function ensureKey(ctx: CallCtx): Promise<string> {
 
 export async function callAI(prompt: string, opts: CallOpts, ctx: CallCtx): Promise<string> {
   // 1. Personal-data check, before anything leaves the browser.
-  let pdAccepted = !!opts.noScan;
+  let pdAccepted = false;
   if (!opts.noScan) {
     const sc = scanText(prompt);
     if (sc.total > 0) {

@@ -56,6 +56,22 @@ describe("callAI personal-data step", () => {
     expect(String(body().prompt)).not.toContain("a@b.com");
   });
 
+  it("scans before the key step: personal data, no key, cancel -> Cancelled message and the settings dialog is not opened", async () => {
+    const c = ctx({ askPd: vi.fn(async () => "cancel" as const) });
+    await expect(callAI("mail a@b.com now", {}, c)).rejects.toThrow("Cancelled. Nothing was sent to the AI provider.");
+    expect(c.openSettings).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("noScan skips only the dialog: nothing is asked and pdAccepted stays false", async () => {
+    keyStore.setSession("gemini", "AIza1");
+    mockFetch.mockResolvedValue({ text: "ok", model: "m" });
+    const askPd = vi.fn(async () => "send" as const);
+    await callAI("mail a@b.com now", { noScan: true }, ctx({ askPd }));
+    expect(askPd).not.toHaveBeenCalled();
+    expect(body().pdAccepted).toBe(false);
+  });
+
   it("does not scan or ask when there is nothing to find", async () => {
     keyStore.setSession("gemini", "AIza1");
     mockFetch.mockResolvedValue({ text: "ok", model: "m" });

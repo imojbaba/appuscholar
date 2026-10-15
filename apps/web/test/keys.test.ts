@@ -61,6 +61,13 @@ describe("keyStore", () => {
     expect(keyStore.getUnlocked("gemini")).toBe("c");
   });
 
+  it("clearSession forgets tab-only keys and leaves remembered ones", () => {
+    keyStore.setSession("groq", "gsk_1"); keyStore.setPlain("gemini", "AIza1");
+    keyStore.clearSession();
+    expect(keyStore.getUnlocked("groq")).toBeNull();
+    expect(keyStore.getUnlocked("gemini")).toBe("AIza1");
+  });
+
   it("hasAny counts plain, session and a server blob; providersWithKeys follows PROV_ORDER", () => {
     keyStore.setSession("groq", "gsk_1");
     expect(keyStore.hasAny("gemini", {})).toBe(false);

@@ -25,8 +25,8 @@ const OPTION: Record<ProviderId, string> = {
 };
 /** v1 keyModeNote (index.html:5069-5073). */
 const MODE_HINT: Record<KeyMode, string> = {
-  pass: "You choose a passphrase now and type it once each time you open Appuscholar. Other files on your computer see only encrypted text.",
-  plain: "No passphrase. Any other HTML file you open on this computer can read this key.",
+  pass: "You choose a passphrase now and type it once each time you open Appuscholar. The key is stored locked; nobody at Appuscholar can read it.",
+  plain: "No passphrase. The key stays in this browser only.",
   session: "Kept in memory only. Closing the tab erases it."
 };
 
@@ -47,13 +47,13 @@ const TONE: Record<NonNullable<Out>["tone"], string> = { run: "text-muted-foregr
 function Form() {
   const t = useT();
   const { settings, update } = useSettings();
-  const { project, reloadProject, closeDialog } = useWorkspace();
+  const { project, reloadProject, closeDialog, settingsProvider } = useWorkspace();
   const keys = useKeys();
   const active: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
-  const [p, setP] = useState<ProviderId>(active);
+  const [p, setP] = useState<ProviderId>(settingsProvider ?? active);
   const [key, setKey] = useState("");
-  const initialMode = (q: ProviderId): KeyMode => (keys.blobs[q] ? "pass" : keyStore.getUnlocked(q) && !keyStore.isPlain(q) ? "session" : "plain");
-  const [mode, setMode] = useState<KeyMode>(() => initialMode(active));
+  const initialMode = (q: ProviderId): KeyMode => (!keyStore.getUnlocked(q) || keys.blobs[q] ? "pass" : keyStore.isPlain(q) ? "plain" : "session");
+  const [mode, setMode] = useState<KeyMode>(() => initialMode(settingsProvider ?? active));
   const [out, setOut] = useState<Out>(null);
   const [busy, setBusy] = useState(false);
   const info = PROVIDERS[p];

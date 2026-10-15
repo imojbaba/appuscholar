@@ -26,7 +26,7 @@ export function useCallAI(): (prompt: string, opts?: CallOpts) => Promise<string
       provider, blobs, fallbackOn, contentLang, projectId,
       askPassphrase: (p) => askPassphrase({ kind: "unlock", provider: p }),
       askPd,
-      openSettings,
+      openSettings: () => openSettings(provider),
       onFailover: (from, to) => toast(`${PROVIDERS[from].short} did not answer, so this request used ${PROVIDERS[to].short} instead.`),
       onRateLimit: () => { if (provider !== "groq" && hasKey("groq")) showRateLimit(provider); }
     };

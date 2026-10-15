@@ -6,6 +6,7 @@ import { useWorkspace } from "./WorkspaceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { keyStore } from "@/lib/ai/keys";
 import { PdHost } from "@/lib/ai/pdDialog";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
@@ -38,7 +39,7 @@ export function Header() {
           {lang === "en" ? "हि" : "EN"}
         </Button>
         <Button variant="ghost" className={HDR_BTN} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>
-        <Button variant="gold" data-testid="provider-key-btn" onClick={openSettings}>{t("settings_btn")}</Button>
+        <Button variant="gold" data-testid="provider-key-btn" onClick={() => openSettings()}>{t("settings_btn")}</Button>
       </header>
     </>
   );
@@ -60,7 +61,7 @@ export function ChromeDialogs() {
           </DialogHeader>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
             <span data-testid="signed-in-as">Signed in as {email}</span>
-            <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { void signOutAction(); }}>Sign out</Button>
+            <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { keyStore.clearSession(); void signOutAction(); }}>Sign out</Button>
           </div>
         </DialogContent>
       </Dialog>

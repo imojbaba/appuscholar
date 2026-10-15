@@ -28,10 +28,9 @@ export function Subbar() {
 
   const choose = (id: ProviderId) => {
     setOpen(false);
-    void update({ provider: id });
-    if (hasKey(id)) { toast(`Now using ${PROVIDERS[id].short} ✓ Your next AI request goes to ${PROVIDERS[id].short}.`); return; }
-    // No key yet: open the Settings dialog so the student can paste one (v1).
-    openSettings();
+    if (hasKey(id)) { void update({ provider: id }); toast(`Now using ${PROVIDERS[id].short} ✓ Your next AI request goes to ${PROVIDERS[id].short}.`); return; }
+    // No key yet: the provider stays as it is; open Settings on that provider so the student can paste one (v1 switchProv).
+    openSettings(id);
     toast(`Paste your ${PROVIDERS[id].name} key to enable it`);
   };
 

@@ -58,6 +58,8 @@ export const keyStore = {
   /** "Remember on this computer": one mode in force, so a tab-only copy of the same provider is dropped. */
   setPlain(p: ProviderId, key: string): void { session.delete(p); try { ls()?.setItem(lsKey(p), key); } catch { /* storage blocked */ } },
   setSession(p: ProviderId, key: string): void { try { ls()?.removeItem(lsKey(p)); } catch { /* storage blocked */ } session.set(p, key); },
+  /** Forgets every key held in this tab (sign-out). Keys remembered on this computer are untouched. */
+  clearSession(): void { session.clear(); },
   clear(p: ProviderId): void { session.delete(p); try { ls()?.removeItem(lsKey(p)); } catch { /* storage blocked */ } },
   hasAny(p: ProviderId, blobs: Record<string, string>): boolean { return !!keyStore.getUnlocked(p) || !!blobs[p]; },
   providersWithKeys(blobs: Record<string, string>): ProviderId[] { return PROV_ORDER.filter((p) => keyStore.hasAny(p, blobs)); }
