@@ -1,10 +1,13 @@
-import Link from "next/link";
-import { ImportV1 } from "@/components/ImportV1";
+import { Breadcrumb } from "@/components/shell/Breadcrumb";
+import { ImportV1 } from "@/components/import/ImportV1";
 export default function ImportPage() {
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-      <Link href="/projects">← Research Projects</Link>
-      <h1 style={{ color: "var(--primary)" }}>Import a v1 backup</h1>
+    <div className="grid gap-6">
+      <Breadcrumb items={[{ href: "/projects", label: "Research Projects" }, { label: "Import a v1 backup" }]} />
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Import a v1 backup</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Bring documents from the browser-only Appuscholar into your account.</p>
+      </div>
       <ImportV1 />
     </div>
   );
