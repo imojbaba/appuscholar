@@ -175,3 +175,46 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await page.getByTestId("delete-confirm").click();
   await expect(page.getByTestId("project-card")).toHaveCount(before - 1);
 });
+
+test.describe("phone width", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  const noSideScroll = (page: import("@playwright/test").Page) =>
+    page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth }));
+
+  test("projects, rename dialog and document page do not scroll sideways at 390px", async ({ page }) => {
+    await page.goto("/signin");
+    await page.getByTestId("e2e-email").fill(`p${Date.now()}@e2e.local`);
+    await page.getByTestId("e2e-submit").click();
+    await expect(page).toHaveURL(/\/projects$/);
+
+    await page.getByTestId("project-title").fill("Academic procrastination in final-year psychology undergraduates at three colleges");
+    await page.getByTestId("project-create").click();
+    await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
+    await page.getByTestId("stage-intro-start").click();
+    await expect(page.getByTestId("stage-counter")).toBeVisible();
+    let w = await noSideScroll(page);
+    expect(w.scrollWidth).toBeLessThanOrEqual(w.innerWidth);
+
+    await page.goto("/projects");
+    await expect(page.getByTestId("project-card").first()).toBeVisible();
+    w = await noSideScroll(page);
+    expect(w.scrollWidth).toBeLessThanOrEqual(w.innerWidth);
+
+    await page.getByTestId("project-actions").first().click();
+    await page.getByTestId("project-rename").click();
+    await expect(page.getByTestId("rename-input")).toBeVisible();
+    w = await noSideScroll(page);
+    expect(w.scrollWidth).toBeLessThanOrEqual(w.innerWidth);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("project-actions").first()).toBeFocused();
+
+    await page.getByTestId("project-link").first().click();
+    await page.getByTestId("doc-title").fill("Chapter two: method and participants in detail");
+    await page.getByTestId("doc-create").click();
+    await page.getByTestId("doc-link").first().click();
+    await expect(page.locator(".ProseMirror")).toBeVisible();
+    w = await noSideScroll(page);
+    expect(w.scrollWidth).toBeLessThanOrEqual(w.innerWidth);
+  });
+});
