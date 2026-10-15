@@ -43,7 +43,7 @@ export class DrizzleStore implements Store {
       .leftJoin(documents, eq(documents.projectId, projects.id))
       .where(eq(projects.userId, userId))
       .groupBy(projects.id)
-      .orderBy(sql`case when ${projects.status} = 'complete' then 1 else 0 end`, desc(projects.createdAt));
+      .orderBy(sql`case when ${projects.status} = 'complete' then 1 else 0 end`, desc(sql`coalesce(max(${documents.updatedAt}), ${projects.createdAt})`));
     return rows.map(r => ({ ...r.project, documentCount: Number(r.documentCount), lastEditedAt: r.lastEditedAt ?? null }));
   }
   async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {

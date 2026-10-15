@@ -30,14 +30,15 @@ export class MemoryStore implements Store {
   }
   async listProjects(userId: string): Promise<ProjectSummary[]> {
     const rank = (p: Project) => (p.status === "complete" ? 1 : 0);
+    const recency = (p: ProjectSummary) => (p.lastEditedAt ?? p.createdAt).getTime();
     return [...this.projects.values()]
       .filter(p => p.userId === userId)
-      .sort((x, y) => rank(x) - rank(y) || y.createdAt.getTime() - x.createdAt.getTime())
       .map(p => {
         const docs = [...this.docs.values()].filter(d => d.projectId === p.id);
         const last = docs.reduce<Date | null>((acc, d) => (acc === null || d.updatedAt > acc ? d.updatedAt : acc), null);
         return { ...p, documentCount: docs.length, lastEditedAt: last };
-      });
+      })
+      .sort((x, y) => rank(x) - rank(y) || recency(y) - recency(x));
   }
   async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
     const p = this.projects.get(id);

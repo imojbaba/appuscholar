@@ -77,6 +77,21 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.updateProject(b, p.id, { title: "Nope" })).toBeNull();
     });
 
+    it("orders active projects by most recent edit (falling back to creation), complete ones last", async () => {
+      const tick = () => new Promise(r => setTimeout(r, 15));
+      const older = await s.createProject(a, "Older");
+      await tick();
+      const newer = await s.createProject(a, "Newer");
+      await tick();
+      const done = await s.createProject(a, "Done");
+      await s.updateProject(a, done.id, { status: "complete" });
+      expect((await s.listProjects(a)).map(x => x.id)).toEqual([newer.id, older.id, done.id]);
+      await tick();
+      const d = (await s.createDocument(a, older.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: a, wordCount: 1 });
+      expect((await s.listProjects(a)).map(x => x.id)).toEqual([older.id, newer.id, done.id]);
+    });
+
     it("deletes a project with its documents, and refuses other users", async () => {
       const p = await s.createProject(a, "Sleep");
       const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
