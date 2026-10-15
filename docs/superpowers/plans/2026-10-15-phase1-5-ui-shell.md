@@ -22,14 +22,26 @@
 - Any button that triggers a request is disabled and shows progress text while in flight. Destructive actions confirm in an `AlertDialog`.
 - These `data-testid` values must survive unchanged: `e2e-email`, `e2e-submit`, `signin-error`, `project-title`, `project-create`, `project-link`, `doc-title`, `doc-create`, `doc-link`, `save-status`, `editor`, `revision-list`, `restore-<seq>`, `import-file`, `import-msg`, `error-msg`. The editor root keeps class `ProseMirror` (TipTap default).
 - CSP stays as in `apps/web/proxy.ts`; Tailwind is compiled at build time so no new `style-src` sources. `next/font` serves fonts from `'self'`.
-- Stage keys are exactly `idea | lit | design | analysis | writing | publish` with labels "Idea & Feasibility", "Literature Review", "Design & Ethics", "Collection & Analysis", "Writing", "Review & Publish".
+- Stage keys are exactly `idea | lit | design | collect | writing | review` with labels "Idea & Feasibility", "Literature Review", "Design & Ethics", "Collection & Analysis", "Writing", "Review & Publish".
 - Copy: plain sentences, no em-dashes anywhere in UI strings, sentence case for buttons and headings.
 - Commits: Conventional Commits prefix and trailer `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+
+## v1 fidelity (binding; these come from Dr. Sharma's v1 source and override anything below that disagrees)
+
+- Stage keys and order are exactly v1's: `idea, lit, design, collect, writing, review`. Labels: "Idea & Feasibility", "Literature Review", "Design & Ethics", "Collection & Analysis", "Writing", "Review & Publish".
+- Stage descriptions (one line each, verbatim from v1): idea "Shape your question and check what's realistically doable." · lit "Find and work through what's already been studied." · design "Plan your method and prepare consent/ethics paperwork." · collect "Gather data, run statistics, code open-ended answers." · writing "Draft the paper, cite your sources, refine the text." · review "Polish, format, and get ready to submit."
+- Stage intro (v1 `stageIntroShow`): shown right after a project is created. Lists the six stages numbered 1 to 6 with their descriptions, the current one highlighted, intro sentence "The app follows you through them in order. Every tool stays one click away the whole time. This is just the shape of the road ahead." and one button "Start with {stage label}" (an arrow icon, not the "→" character).
+- Stage navigation (v1 stage-guide bar): "Stage {n} of 6", "Back: {label}" and "Next: {label}" controls that move the project's stage; on the last stage the Next slot reads "Final stage. Nothing after this in the sequence." No dropdown.
+- Project status: `active | complete`. Buttons "Mark complete" and "Reopen"; a green "Complete" badge on the card and the project page. Completed projects sort after active ones.
+- New-project form labels from v1: "Research project name" with placeholder "e.g. Thesis on academic procrastination"; stage defaults to Idea & Feasibility. Button text "New Research Project" (v1's label, minus the emoji). Page title "Research Projects" (v1's capitalisation).
+- Empty projects copy adapted from v1: "No research projects saved yet. Start one above, or import a backup from Appuscholar v1."
+- Default document title when the title field is left blank: "Untitled document".
+- The project's `field` stays "psychology" by default and is not shown in this phase. Hindi UI is phase 5, not here.
 
 ## Review Focus
 
 1. Deleting a project must cascade to its documents and revisions, must refuse another user's project with 404, and must require confirmation in the UI. Test in Task 1 (store + route) and Task 3 (e2e).
-2. A stage change must persist across reload, and an invalid stage string must be rejected with 400. Test in Task 1 (route) and Task 4 (e2e).
+2. A stage change via Next, Back or a chip must persist across reload, the final stage must show the v1 final-stage sentence, and an invalid stage or status string must be rejected with 400. Test in Task 1 (route) and Task 4 (e2e).
 3. A project title rename to an empty or 201+ character string must be rejected with 400 and the UI must keep the old title. Test in Task 1.
 4. The editor toolbar must not break autosave: toggling bold then typing must still produce one new revision per debounce window, and the word count must update. Test in Task 5 (e2e).
 5. The projects list must show the document count and last-edited time from the API, not from client-side guesses; a project with zero documents shows "No documents yet". Test in Task 1 (route shape) and Task 3 (e2e).
@@ -67,7 +79,7 @@ apps/web/app/signin/page.tsx                  redesigned, outside the shell
 apps/web/components/projects/ProjectList.tsx  cards, create form, rename/delete
 apps/web/components/projects/ProjectCard.tsx
 apps/web/components/projects/ProjectActions.tsx   dropdown + dialogs
-apps/web/components/projects/StageSelect.tsx
+apps/web/components/projects/StageStrip.tsx + StageIntro.tsx
 apps/web/components/documents/DocumentList.tsx
 apps/web/components/editor/Editor.tsx         (moved) + toolbar + word count
 apps/web/components/editor/Toolbar.tsx
@@ -87,12 +99,13 @@ apps/web/e2e/platform.spec.ts                 extended
 **Interfaces:**
 - Consumes: existing `Store`, `Project`, `DocumentSummary`.
 - Produces:
-  - `type ProjectStage = "idea" | "lit" | "design" | "analysis" | "writing" | "publish"`; `export const PROJECT_STAGES: readonly ProjectStage[]`.
+  - `type ProjectStage = "idea" | "lit" | "design" | "collect" | "writing" | "review"`; `export const PROJECT_STAGES: readonly ProjectStage[]`.
+  - `type ProjectStatus = "active" | "complete"`; `export const PROJECT_STATUSES`; `Project.status: string` (new DB column `projects.status text not null default 'active'`, migration `0001_project_status` generated with drizzle-kit).
   - `type ProjectSummary = Project & { documentCount: number; lastEditedAt: Date | null }`.
   - `Store.listProjects(userId): Promise<ProjectSummary[]>` (changed return type).
-  - `Store.updateProject(userId, id, patch: { title?: string; stage?: ProjectStage }): Promise<Project | null>`.
+  - `Store.updateProject(userId, id, patch: { title?: string; stage?: ProjectStage; status?: ProjectStatus }): Promise<Project | null>`.
   - `Store.deleteProject(userId, id): Promise<boolean>` (false when not found / not owned).
-  - Routes: `GET /projects` → `ProjectSummary[]` with `lastEditedAt` as ISO string or null; `PATCH /projects/:id {title?, stage?}` → `Project` or 400 `{error:"invalid"}` / 404; `DELETE /projects/:id` → 204 or 404.
+  - Routes: `GET /projects` → `ProjectSummary[]` (active first, then complete, newest first within each) with `lastEditedAt` as ISO string or null; `PATCH /projects/:id {title?, stage?, status?}` → `Project` or 400 `{error:"invalid"}` / 404; `DELETE /projects/:id` → 204 or 404.
 
 - [ ] **Step 1: Add the failing contract tests**
 
@@ -110,12 +123,18 @@ Append inside `storeContract`'s `describe` in `apps/api/test/store.contract.ts`:
       expect(list[0]?.lastEditedAt).toBeInstanceOf(Date);
     });
 
-    it("updates title and stage, and refuses other users", async () => {
+    it("updates title, stage and status, sorts complete projects last, and refuses other users", async () => {
       const p = await s.createProject(a, "Sleep");
+      const q = await s.createProject(a, "Memory");
+      expect(p.status).toBe("active");
       const u = await s.updateProject(a, p.id, { title: "Sleep and memory", stage: "lit" });
       expect(u?.title).toBe("Sleep and memory");
       expect(u?.stage).toBe("lit");
       expect((await s.getProject(a, p.id))?.stage).toBe("lit");
+      await s.updateProject(a, q.id, { status: "complete" });
+      const list = await s.listProjects(a);
+      expect(list.map(x => x.id)).toEqual([p.id, q.id]);
+      expect(list[1]?.status).toBe("complete");
       expect(await s.updateProject(b, p.id, { title: "Nope" })).toBeNull();
     });
 
@@ -135,14 +154,18 @@ Append inside `storeContract`'s `describe` in `apps/api/test/store.contract.ts`:
 Run: `pnpm --filter @appuscholar/api test`
 Expected: FAIL on the three new cases for both stores (`updateProject is not a function`, missing `documentCount`).
 
-- [ ] **Step 3: Types**
+- [ ] **Step 3: Schema column and types**
 
-In `apps/api/src/store/types.ts` add after `Project`:
+In `packages/db/src/schema.ts` add to `projects` after `stage`: `status: text("status").notNull().default("active"),`. Then `pnpm --filter @appuscholar/db db:generate` and rename the generated file to `packages/db/migrations/0001_project_status.sql` (update `meta/_journal.json`'s `tag` to match). It must contain `ALTER TABLE "projects" ADD COLUMN "status" text DEFAULT 'active' NOT NULL;`. Apply it to Neon with `DATABASE_URL=... pnpm --filter @appuscholar/db db:migrate` (the controller does this at deploy; the implementer only generates it). PGlite tests apply all migrations automatically.
+
+In `apps/api/src/store/types.ts` add `status: string` to `Project`, and after `Project`:
 ```ts
-export const PROJECT_STAGES = ["idea", "lit", "design", "analysis", "writing", "publish"] as const;
+export const PROJECT_STAGES = ["idea", "lit", "design", "collect", "writing", "review"] as const;
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
+export const PROJECT_STATUSES = ["active", "complete"] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type ProjectSummary = Project & { documentCount: number; lastEditedAt: Date | null };
-export type ProjectPatch = { title?: string; stage?: ProjectStage };
+export type ProjectPatch = { title?: string; stage?: ProjectStage; status?: ProjectStatus };
 ```
 Change the interface:
 ```ts
@@ -156,9 +179,10 @@ Change the interface:
 Replace `listProjects` and add the two methods in `apps/api/src/store/memory.ts`:
 ```ts
   async listProjects(userId: string): Promise<ProjectSummary[]> {
+    const rank = (p: Project) => (p.status === "complete" ? 1 : 0);
     return [...this.projects.values()]
       .filter(p => p.userId === userId)
-      .sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime())
+      .sort((x, y) => rank(x) - rank(y) || y.createdAt.getTime() - x.createdAt.getTime())
       .map(p => {
         const docs = [...this.docs.values()].filter(d => d.projectId === p.id);
         const last = docs.reduce<Date | null>((acc, d) => (acc === null || d.updatedAt > acc ? d.updatedAt : acc), null);
@@ -170,6 +194,7 @@ Replace `listProjects` and add the two methods in `apps/api/src/store/memory.ts`
     if (!p || p.userId !== userId) return null;
     if (patch.title !== undefined) p.title = patch.title;
     if (patch.stage !== undefined) p.stage = patch.stage;
+    if (patch.status !== undefined) p.status = patch.status;
     return p;
   }
   async deleteProject(userId: string, id: string): Promise<boolean> {
@@ -193,7 +218,7 @@ In `apps/api/src/store/drizzle.ts` import `count, max` from `drizzle-orm` and re
       .leftJoin(documents, eq(documents.projectId, projects.id))
       .where(eq(projects.userId, userId))
       .groupBy(projects.id)
-      .orderBy(desc(projects.createdAt));
+      .orderBy(sql`case when ${projects.status} = 'complete' then 1 else 0 end`, desc(projects.createdAt));
     return rows.map(r => ({ ...r.project, documentCount: Number(r.documentCount), lastEditedAt: r.lastEditedAt ?? null }));
   }
   async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
@@ -201,6 +226,7 @@ In `apps/api/src/store/drizzle.ts` import `count, max` from `drizzle-orm` and re
     const set: Partial<typeof projects.$inferInsert> = {};
     if (patch.title !== undefined) set.title = patch.title;
     if (patch.stage !== undefined) set.stage = patch.stage;
+    if (patch.status !== undefined) set.status = patch.status;
     if (Object.keys(set).length === 0) return this.getProject(userId, id);
     const [row] = await this.d.update(projects).set(set).where(eq(projects.id, id)).returning();
     return row ?? null;
@@ -237,6 +263,9 @@ Append inside `describe("api routes")` in `apps/api/test/app.test.ts`:
     expect(ok.status).toBe(200);
     expect(await ok.json()).toMatchObject({ title: "Renamed", stage: "lit" });
     expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ stage: "nope" }) })).status).toBe(400);
+    expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ status: "done" }) })).status).toBe(400);
+    const done = await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ status: "complete" }) });
+    expect(await done.json()).toMatchObject({ status: "complete" });
     expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "" }) })).status).toBe(400);
     expect((await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title: "x".repeat(201) }) })).status).toBe(400);
     const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
@@ -262,11 +291,12 @@ Expected: the three new cases FAIL (404 on PATCH/DELETE, missing fields).
 
 In `apps/api/src/routes/projects.ts` add the schema and routes:
 ```ts
-import { PROJECT_STAGES } from "../store/types";
+import { PROJECT_STAGES, PROJECT_STATUSES } from "../store/types";
 const Patch = z.object({
   title: z.string().trim().min(1).max(200).optional(),
-  stage: z.enum(PROJECT_STAGES).optional()
-}).refine(v => v.title !== undefined || v.stage !== undefined, { message: "empty patch" });
+  stage: z.enum(PROJECT_STAGES).optional(),
+  status: z.enum(PROJECT_STATUSES).optional()
+}).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined, { message: "empty patch" });
 
   r.patch("/:id", async (c) => {
     const body = Patch.safeParse(await c.req.json().catch(() => null));
@@ -289,8 +319,8 @@ Expected: all PASS.
 - [ ] **Step 11: Commit**
 
 ```bash
-git add apps/api
-git commit -m "feat(api): project summaries, patch and delete routes
+git add apps/api packages/db
+git commit -m "feat(api): project status, summaries, patch and delete routes
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ```
@@ -490,11 +520,20 @@ export const STAGES = [
   { key: "idea", label: "Idea & Feasibility" },
   { key: "lit", label: "Literature Review" },
   { key: "design", label: "Design & Ethics" },
-  { key: "analysis", label: "Collection & Analysis" },
+  { key: "collect", label: "Collection & Analysis" },
   { key: "writing", label: "Writing" },
-  { key: "publish", label: "Review & Publish" }
+  { key: "review", label: "Review & Publish" }
 ] as const;
 export type ProjectStage = (typeof STAGES)[number]["key"];
+export const STAGE_DESCRIPTIONS: Record<ProjectStage, string> = {
+  idea: "Shape your question and check what's realistically doable.",
+  lit: "Find and work through what's already been studied.",
+  design: "Plan your method and prepare consent/ethics paperwork.",
+  collect: "Gather data, run statistics, code open-ended answers.",
+  writing: "Draft the paper, cite your sources, refine the text.",
+  review: "Polish, format, and get ready to submit."
+};
+export function stageIndex(key: string): number { const i = STAGES.findIndex(s => s.key === key); return i < 0 ? 0 : i; }
 export function stageLabel(key: string): string { return STAGES.find(s => s.key === key)?.label ?? "Idea & Feasibility"; }
 ```
 
@@ -723,7 +762,7 @@ Mobile: the grid collapses to a single column (`lg:` prefix), left panel first.
 ```tsx
 "use client";
 import { useState } from "react";
-import { DotsThree, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CheckCircle, DotsThree, PencilSimple, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -731,7 +770,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-export function ProjectActions({ title, documentCount, onRename, onDelete }: { title: string; documentCount: number; onRename: (t: string) => Promise<void>; onDelete: () => Promise<void> }) {
+export function ProjectActions({ title, documentCount, status, onRename, onDelete, onStatus }: { title: string; documentCount: number; status: string; onRename: (t: string) => Promise<void>; onDelete: () => Promise<void>; onStatus: (s: "active" | "complete") => Promise<void> }) {
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [draft, setDraft] = useState(title);
@@ -749,6 +788,9 @@ export function ProjectActions({ title, documentCount, onRename, onDelete }: { t
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => { setDraft(title); setRenaming(true); }} data-testid="project-rename"><PencilSimple size={18} /> Rename</DropdownMenuItem>
+          {status === "complete"
+            ? <DropdownMenuItem onSelect={() => { void onStatus("active"); }} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> Reopen</DropdownMenuItem>
+            : <DropdownMenuItem onSelect={() => { void onStatus("complete"); }} data-testid="project-complete"><CheckCircle size={18} /> Mark complete</DropdownMenuItem>}
           <DropdownMenuItem onSelect={() => setDeleting(true)} className="text-destructive" data-testid="project-delete"><Trash size={18} /> Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -797,20 +839,22 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { stageLabel } from "@/lib/stages";
 import { plural, relativeTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { ProjectActions } from "./ProjectActions";
-export type ProjectRow = { id: string; title: string; stage: string; createdAt: string; documentCount: number; lastEditedAt: string | null };
-export function ProjectCard({ p, onRename, onDelete }: { p: ProjectRow; onRename: (t: string) => Promise<void>; onDelete: () => Promise<void> }) {
+export type ProjectRow = { id: string; title: string; stage: string; status: string; createdAt: string; documentCount: number; lastEditedAt: string | null };
+export function ProjectCard({ p, onRename, onDelete, onStatus }: { p: ProjectRow; onRename: (t: string) => Promise<void>; onDelete: () => Promise<void>; onStatus: (s: "active" | "complete") => Promise<void> }) {
   return (
-    <Card className="flex items-start justify-between gap-3 p-4" data-testid="project-card">
+    <Card className={cn("flex items-start justify-between gap-3 p-4", p.status === "complete" && "opacity-80")} data-testid="project-card">
       <div className="min-w-0">
         <Link href={`/projects/${p.id}`} className="block truncate text-base font-medium hover:underline" data-testid="project-link">{p.title}</Link>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           <Badge variant="secondary">{stageLabel(p.stage)}</Badge>
+          {p.status === "complete" ? <Badge className="bg-emerald-600 text-white hover:bg-emerald-600" data-testid="project-complete-badge">Complete</Badge> : null}
           <span>{p.documentCount === 0 ? "No documents yet" : plural(p.documentCount, "document", "documents")}</span>
           <span>Edited {relativeTime(p.lastEditedAt ?? p.createdAt)}</span>
         </div>
       </div>
-      <ProjectActions title={p.title} documentCount={p.documentCount} onRename={onRename} onDelete={onDelete} />
+      <ProjectActions title={p.title} documentCount={p.documentCount} status={p.status} onRename={onRename} onDelete={onDelete} onStatus={onStatus} />
     </Card>
   );
 }
@@ -823,6 +867,7 @@ export function ProjectCard({ p, onRename, onDelete }: { p: ProjectRow; onRename
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus } from "@phosphor-icons/react";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -832,6 +877,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectCard, type ProjectRow } from "./ProjectCard";
 
 export function ProjectList() {
+  const router = useRouter();
   const [items, setItems] = useState<ProjectRow[] | null>(null);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -843,32 +889,36 @@ export function ProjectList() {
     e.preventDefault();
     if (!title.trim() || busy) return;
     setBusy(true); setError("");
-    try { await apiFetch("/projects", { method: "POST", body: JSON.stringify({ title: title.trim() }) }); setTitle(""); await load(); }
-    catch { setError("Could not create the project. Try again."); }
-    finally { setBusy(false); }
+    try {
+      const created = await apiFetch<{ id: string }>("/projects", { method: "POST", body: JSON.stringify({ title: title.trim() }) });
+      setTitle("");
+      router.push(`/projects/${created.id}?intro=1`);
+    }
+    catch { setError("Could not create the project. Try again."); setBusy(false); }
   }
   const rename = (id: string) => async (t: string) => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify({ title: t }) }); await load(); };
   const remove = (id: string) => async () => { await apiFetch(`/projects/${id}`, { method: "DELETE" }); await load(); };
+  const setStatus = (id: string) => async (status: "active" | "complete") => { try { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }); await load(); } catch { setError("Could not update the project. Try again."); } };
 
   return (
     <section className="grid gap-6">
       <form onSubmit={create} className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
-          <Label htmlFor="new-project">New research project</Label>
-          <Input id="new-project" value={title} onChange={e => setTitle(e.target.value)} placeholder="For example: Sleep and memory in first-year students" maxLength={200} disabled={busy} data-testid="project-title" />
+          <Label htmlFor="new-project">Research project name</Label>
+          <Input id="new-project" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Thesis on academic procrastination" maxLength={200} disabled={busy} data-testid="project-title" />
         </div>
-        <Button type="submit" disabled={busy || !title.trim()} data-testid="project-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : "Create project"}</Button>
+        <Button type="submit" disabled={busy || !title.trim()} data-testid="project-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : "New Research Project"}</Button>
       </form>
       {error ? <p role="alert" data-testid="error-msg" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       {items === null ? (
         <div className="grid gap-3" aria-busy="true"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
       ) : items.length === 0 && !error ? (
         <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="font-medium">No research project yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Create one above, or <Link href="/import" className="underline">import a backup from Appuscholar v1</Link>.</p>
+          <p className="font-medium">No research projects saved yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">Start one above, or <Link href="/import" className="underline">import a backup from Appuscholar v1</Link>.</p>
         </div>
       ) : (
-        <div className="grid gap-3">{items.map(p => <ProjectCard key={p.id} p={p} onRename={rename(p.id)} onDelete={remove(p.id)} />)}</div>
+        <div className="grid gap-3">{items.map(p => <ProjectCard key={p.id} p={p} onRename={rename(p.id)} onDelete={remove(p.id)} onStatus={setStatus(p.id)} />)}</div>
       )}
     </section>
   );
@@ -882,8 +932,8 @@ export default function Projects() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Research projects</h1>
-        <p className="mt-1 text-sm text-muted-foreground">One project per study. Documents, sources and history live inside it.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Research Projects</h1>
+        <p className="mt-1 text-sm text-muted-foreground">One project per study. It names your work, then walks you through its six stages.</p>
       </div>
       <ProjectList />
     </div>
@@ -894,7 +944,7 @@ Delete `apps/web/components/ProjectList.tsx`.
 
 - [ ] **Step 4: Extend the e2e**
 
-In `apps/web/e2e/platform.spec.ts`, after the first project is created and before opening it, add a rename and, at the very end of the test, a delete:
+In `apps/web/e2e/platform.spec.ts`: creating a project now navigates straight to `/projects/<id>?intro=1` and shows the stage intro (Task 4). Replace the existing "click project-link" step with: after `project-create`, `await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/)`, then `await page.getByTestId("stage-intro-start").click()` (Task 4 adds that id; until Task 4 lands, guard it with `if (await page.getByTestId("stage-intro-start").count())`). Then `await page.goto("/projects")` and add the rename and status checks, and at the very end of the test, a delete:
 ```ts
   // rename via the card menu
   await page.getByTestId("project-actions").first().click();
@@ -903,6 +953,13 @@ In `apps/web/e2e/platform.spec.ts`, after the first project is created and befor
   await page.getByTestId("rename-save").click();
   await expect(page.getByTestId("project-link").first()).toHaveText("Sleep and memory, renamed");
   await expect(page.getByTestId("project-card").first()).toContainText("No documents yet");
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-complete").click();
+  await expect(page.getByTestId("project-complete-badge").first()).toHaveText("Complete");
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-reopen").click();
+  await expect(page.getByTestId("project-complete-badge")).toHaveCount(0);
+  await page.getByTestId("project-link").first().click();
 ```
 and at the end:
 ```ts
@@ -935,41 +992,108 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Files:**
 - Modify: `apps/web/app/(app)/projects/[id]/page.tsx`, `apps/web/app/(app)/import/page.tsx`
-- Create: `apps/web/components/projects/StageSelect.tsx`, `apps/web/components/documents/DocumentList.tsx` (replaces `apps/web/components/DocumentList.tsx`), `apps/web/components/import/ImportV1.tsx` (moved from `apps/web/components/ImportV1.tsx`)
+- Create: `apps/web/components/projects/StageStrip.tsx`, `apps/web/components/projects/StageIntro.tsx`, `apps/web/components/documents/DocumentList.tsx` (replaces `apps/web/components/DocumentList.tsx`), `apps/web/components/import/ImportV1.tsx` (moved from `apps/web/components/ImportV1.tsx`)
 - Delete: `apps/web/components/StageBar.tsx`, `apps/web/components/DocumentList.tsx`, `apps/web/components/ImportV1.tsx`
 - Test: `apps/web/e2e/platform.spec.ts` (extend)
 
 **Interfaces:**
-- Consumes: `GET /projects` (to find the project by id; there is no `GET /projects/:id`, so the page filters the list), `PATCH /projects/:id {stage}`, `GET /projects/:id/documents`, `POST /projects/:id/documents`; `Breadcrumb`; shadcn `Select`.
-- Produces: `data-testid`s `stage-select`, `stage-option-<key>`, `doc-title`, `doc-create`, `doc-link`, `doc-row`, `import-file`, `import-msg`, `import-progress`.
+- Consumes: `GET /projects` (to find the project by id; there is no `GET /projects/:id`, so the page filters the list), `PATCH /projects/:id {stage}`, `GET /projects/:id/documents`, `POST /projects/:id/documents`; `Breadcrumb`; `STAGES`, `STAGE_DESCRIPTIONS`, `stageIndex`, `stageLabel`; shadcn `Dialog`, `Badge`.
+- Produces: `data-testid`s `stage-strip`, `stage-chip-<key>`, `stage-counter`, `stage-back`, `stage-next`, `stage-final`, `stage-intro`, `stage-intro-start`, `project-complete-badge`, `doc-title`, `doc-create`, `doc-link`, `doc-row`, `import-file`, `import-msg`, `import-progress`.
 
-- [ ] **Step 1: Stage select**
+- [ ] **Step 1: Stage strip and stage intro (v1's stage-guide bar and `stageIntroShow`)**
 
-`apps/web/components/projects/StageSelect.tsx`:
+`apps/web/components/projects/StageStrip.tsx`:
 ```tsx
 "use client";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { STAGES, type ProjectStage } from "@/lib/stages";
+import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { STAGES, stageIndex, stageLabel, type ProjectStage } from "@/lib/stages";
 import { apiFetch } from "@/lib/api";
-export function StageSelect({ projectId, stage }: { projectId: string; stage: string }) {
-  const [value, setValue] = useState<string>(stage);
+import { cn } from "@/lib/utils";
+
+export function StageStrip({ projectId, stage }: { projectId: string; stage: string }) {
+  const [current, setCurrent] = useState<ProjectStage>(STAGES[stageIndex(stage)]!.key);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function change(next: string) {
-    const prev = value; setValue(next); setError("");
-    try { await apiFetch(`/projects/${projectId}`, { method: "PATCH", body: JSON.stringify({ stage: next as ProjectStage }) }); }
-    catch { setValue(prev); setError("Could not save the stage. Try again."); }
+  const i = stageIndex(current);
+  const prev = i > 0 ? STAGES[i - 1] : null;
+  const next = i < STAGES.length - 1 ? STAGES[i + 1] : null;
+  async function go(key: ProjectStage) {
+    if (busy || key === current) return;
+    const before = current; setCurrent(key); setBusy(true); setError("");
+    try { await apiFetch(`/projects/${projectId}`, { method: "PATCH", body: JSON.stringify({ stage: key }) }); }
+    catch { setCurrent(before); setError("Could not save the stage. Try again."); }
+    finally { setBusy(false); }
   }
   return (
-    <div className="grid gap-1">
-      <Label htmlFor="stage" className="text-xs text-muted-foreground">Current stage</Label>
-      <Select value={value} onValueChange={change}>
-        <SelectTrigger id="stage" className="w-[240px]" data-testid="stage-select"><SelectValue /></SelectTrigger>
-        <SelectContent>{STAGES.map(s => <SelectItem key={s.key} value={s.key} data-testid={`stage-option-${s.key}`}>{s.label}</SelectItem>)}</SelectContent>
-      </Select>
-      {error ? <p role="alert" data-testid="error-msg" className="text-xs text-destructive">{error}</p> : null}
-    </div>
+    <section aria-label="Research stages" className="rounded-lg border bg-card p-4" data-testid="stage-strip">
+      <ol className="grid gap-2 sm:grid-cols-6">
+        {STAGES.map((s, idx) => (
+          <li key={s.key}>
+            <button type="button" onClick={() => go(s.key)} disabled={busy} aria-current={s.key === current ? "step" : undefined} data-testid={`stage-chip-${s.key}`}
+              className={cn("flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent", s.key === current ? "border-primary bg-primary text-primary-foreground hover:bg-primary" : idx < i ? "border-transparent text-muted-foreground" : "text-foreground")}>
+              <span className={cn("grid size-5 shrink-0 place-items-center rounded-full text-xs font-medium", s.key === current ? "bg-white/20" : "bg-muted")}>{idx + 1}</span>
+              <span className="truncate">{s.label}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="font-medium" data-testid="stage-counter">Stage {i + 1} of {STAGES.length}</span>
+        <div className="flex items-center gap-2">
+          {prev ? <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => go(prev.key)} data-testid="stage-back"><ArrowLeft size={16} /> Back: {prev.label}</Button> : null}
+          {next
+            ? <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => go(next.key)} data-testid="stage-next">Next: {next.label} <ArrowRight size={16} /></Button>
+            : <span className="text-muted-foreground" data-testid="stage-final">Final stage. Nothing after this in the sequence.</span>}
+        </div>
+      </div>
+      {error ? <p role="alert" data-testid="error-msg" className="mt-2 text-xs text-destructive">{error}</p> : null}
+      <p className="sr-only">Current stage: {stageLabel(current)}</p>
+    </section>
+  );
+}
+```
+
+`apps/web/components/projects/StageIntro.tsx` (v1's intro dialog, shown once after a project is created via `?intro=1`):
+```tsx
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { STAGES, STAGE_DESCRIPTIONS, stageIndex, stageLabel } from "@/lib/stages";
+import { cn } from "@/lib/utils";
+
+export function StageIntro({ projectId, projectTitle, stage, open }: { projectId: string; projectTitle: string; stage: string; open: boolean }) {
+  const router = useRouter();
+  const [show, setShow] = useState(open);
+  const cur = stageIndex(stage);
+  function close() { setShow(false); router.replace(`/projects/${projectId}`); }
+  return (
+    <Dialog open={show} onOpenChange={o => { if (!o) close(); }}>
+      <DialogContent className="max-w-lg" data-testid="stage-intro">
+        <DialogHeader>
+          <DialogTitle>{projectTitle}: the six stages</DialogTitle>
+          <DialogDescription>The app follows you through them in order. Every tool stays one click away the whole time. This is just the shape of the road ahead.</DialogDescription>
+        </DialogHeader>
+        <ol className="grid gap-2">
+          {STAGES.map((s, i) => (
+            <li key={s.key} className={cn("flex gap-3 rounded-md border px-3 py-2", i === cur ? "border-primary bg-accent" : "border-transparent")}>
+              <span className={cn("grid size-6 shrink-0 place-items-center rounded-full text-xs font-medium", i === cur ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{i + 1}</span>
+              <div>
+                <p className="text-sm font-medium">{s.label}</p>
+                <p className="text-sm text-muted-foreground">{STAGE_DESCRIPTIONS[s.key]}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <DialogFooter>
+          <Button type="button" onClick={close} data-testid="stage-intro-start">Start with {stageLabel(STAGES[cur]!.key)} <ArrowRight size={18} /></Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
@@ -998,9 +1122,9 @@ export function DocumentList({ projectId }: { projectId: string }) {
   useEffect(() => { void load(); }, [load]);
   async function create(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || busy) return;
+    if (busy) return;
     setBusy(true); setError("");
-    try { await apiFetch(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: title.trim() }) }); setTitle(""); await load(); }
+    try { await apiFetch(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: title.trim() || "Untitled document" }) }); setTitle(""); await load(); }
     catch { setError("Could not create the document. Try again."); }
     finally { setBusy(false); }
   }
@@ -1009,9 +1133,9 @@ export function DocumentList({ projectId }: { projectId: string }) {
       <form onSubmit={create} className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
           <Label htmlFor="new-doc">New document</Label>
-          <Input id="new-doc" value={title} onChange={e => setTitle(e.target.value)} placeholder="For example: Literature review" maxLength={200} disabled={busy} data-testid="doc-title" />
+          <Input id="new-doc" value={title} onChange={e => setTitle(e.target.value)} placeholder="Untitled document" maxLength={200} disabled={busy} data-testid="doc-title" />
         </div>
-        <Button type="submit" disabled={busy || !title.trim()} data-testid="doc-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : "New document"}</Button>
+        <Button type="submit" disabled={busy} data-testid="doc-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : "New document"}</Button>
       </form>
       {error ? <p role="alert" data-testid="error-msg" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       {items === null ? (
@@ -1046,32 +1170,39 @@ export function DocumentList({ projectId }: { projectId: string }) {
 ```tsx
 "use client";
 import { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { Breadcrumb } from "@/components/shell/Breadcrumb";
-import { StageSelect } from "@/components/projects/StageSelect";
+import { StageStrip } from "@/components/projects/StageStrip";
+import { StageIntro } from "@/components/projects/StageIntro";
 import { DocumentList } from "@/components/documents/DocumentList";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-type Project = { id: string; title: string; stage: string };
+type Project = { id: string; title: string; stage: string; status: string };
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const intro = useSearchParams().get("intro") === "1";
   const [project, setProject] = useState<Project | null | undefined>(undefined);
   useEffect(() => {
     apiFetch<Project[]>("/projects").then(list => setProject(list.find(p => p.id === id) ?? null)).catch(() => setProject(null));
   }, [id]);
-  if (project === undefined) return <div className="grid gap-4"><Skeleton className="h-6 w-40" /><Skeleton className="h-9 w-80" /></div>;
+  if (project === undefined) return <div className="grid gap-4"><Skeleton className="h-6 w-40" /><Skeleton className="h-24" /></div>;
   if (project === null) return <p role="alert" data-testid="error-msg">This project could not be loaded. It may have been deleted.</p>;
   return (
     <div className="grid gap-6">
-      <Breadcrumb items={[{ href: "/projects", label: "Research projects" }, { label: project.title }]} />
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <Breadcrumb items={[{ href: "/projects", label: "Research Projects" }, { label: project.title }]} />
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
-        <StageSelect projectId={project.id} stage={project.stage} />
+        {project.status === "complete" ? <Badge className="bg-emerald-600 text-white hover:bg-emerald-600" data-testid="project-complete-badge">Complete</Badge> : null}
       </div>
+      <StageStrip projectId={project.id} stage={project.stage} />
       <DocumentList projectId={project.id} />
+      {intro ? <StageIntro projectId={project.id} projectTitle={project.title} stage={project.stage} open /> : null}
     </div>
   );
 }
 ```
+`useSearchParams` in a client page needs a `Suspense` boundary for static builds; wrap the page's content in `<Suspense fallback={null}>` if `next build` complains, keeping the component split as `ProjectPage` (outer, Suspense) and `ProjectPageInner`.
 
 - [ ] **Step 4: Import page**
 
@@ -1088,7 +1219,7 @@ import { ImportV1 } from "@/components/import/ImportV1";
 export default function ImportPage() {
   return (
     <div className="grid gap-6">
-      <Breadcrumb items={[{ href: "/projects", label: "Research projects" }, { label: "Import a v1 backup" }]} />
+      <Breadcrumb items={[{ href: "/projects", label: "Research Projects" }, { label: "Import a v1 backup" }]} />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Import a v1 backup</h1>
         <p className="mt-1 text-sm text-muted-foreground">Bring documents from the browser-only Appuscholar into your account.</p>
@@ -1102,13 +1233,22 @@ Delete `StageBar.tsx`, the old `DocumentList.tsx` and `ImportV1.tsx`.
 
 - [ ] **Step 5: Extend the e2e**
 
-After opening the first project, before creating the document:
+After the project is created (the app lands on the project page with the intro) and before creating the document:
 ```ts
-  await page.getByTestId("stage-select").click();
-  await page.getByTestId("stage-option-lit").click();
+  await expect(page.getByTestId("stage-intro")).toBeVisible();
+  await expect(page.getByTestId("stage-intro")).toContainText("Shape your question");
+  await page.getByTestId("stage-intro-start").click();
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 1 of 6");
+  await page.getByTestId("stage-next").click();
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 2 of 6");
   await page.reload();
-  await expect(page.getByTestId("stage-select")).toContainText("Literature Review");
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 2 of 6");
+  await expect(page.getByTestId("stage-chip-lit")).toHaveAttribute("aria-current", "step");
+  await page.getByTestId("stage-chip-review").click();
+  await expect(page.getByTestId("stage-final")).toBeVisible();
+  await page.getByTestId("stage-chip-idea").click();
 ```
+Remove the Task 3 guard around `stage-intro-start` now that the id exists.
 The import step already uses `import-file` with `setInputFiles`, which works on the visually hidden input.
 
 - [ ] **Step 6: Verify and commit**
@@ -1264,7 +1404,7 @@ Passing the current `bodyHtml` keeps the PUT a no-op for the body (`created:fals
 ```tsx
   return (
     <div className="grid gap-5">
-      <Breadcrumb items={[{ href: "/projects", label: "Research projects" }, { href: `/projects/${id}`, label: projectTitle ?? "Project" }, { label: doc.title }]} />
+      <Breadcrumb items={[{ href: "/projects", label: "Research Projects" }, { href: `/projects/${id}`, label: projectTitle ?? "Project" }, { label: doc.title }]} />
       <TitleField docId={doc.id} title={doc.title} bodyHtml={doc.bodyHtml} onRenamed={t => setDoc(d => (d ? { ...d, title: t } : d))} />
       {error && <p role="alert" data-testid="error-msg" className="text-sm text-destructive">{error}</p>}
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
