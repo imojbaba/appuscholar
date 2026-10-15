@@ -2,19 +2,20 @@
 import { useEffect, useRef, useState } from "react";
 import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
 import { useSettings } from "@/lib/settings";
+import { useKeys } from "@/lib/ai/useKeys";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "./WorkspaceContext";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
 
-/** Provider pill and menu. Key presence arrives with lib/ai/keys.ts (Task 13); until then no provider has a key. */
+/** Provider pill and menu: a provider is "ready" when a key for it is usable now or saved (encrypted) on the server. */
 export function Subbar() {
   const { settings, update } = useSettings();
   const { openSettings } = useWorkspace();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const current: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
-  const hasKey = (_id: ProviderId) => false;
+  const { hasKey } = useKeys();
 
   useEffect(() => {
     if (!open) return;

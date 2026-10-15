@@ -6,6 +6,12 @@ import { useWorkspace } from "./WorkspaceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PdHost } from "@/lib/ai/pdDialog";
+import { useSettings } from "@/lib/settings";
+import { toast } from "@/components/ui/toast";
+import { PassphraseHost } from "./dialogs/Passphrase";
+import { ProviderKey } from "./dialogs/ProviderKey";
+import { RateLimit } from "./dialogs/RateLimit";
 
 const HDR_BTN = "hbtn border-white/35 bg-transparent text-white hover:border-white/35 hover:bg-white/10";
 
@@ -38,10 +44,11 @@ export function Header() {
   );
 }
 
-/** Placeholders: Task 17 replaces the Help dialog body and Task 13 the provider dialog body. State lives in the workspace context. */
+/** The Help dialog is a placeholder until Task 17. State lives in the workspace context; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog. */
 export function ChromeDialogs() {
   const t = useT();
   const { dialog, closeDialog } = useWorkspace();
+  const { update } = useSettings();
   const { email, signOutAction } = useSession();
   return (
     <>
@@ -57,14 +64,10 @@ export function ChromeDialogs() {
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialog === "settings"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
-        <DialogContent data-testid="settings-dialog">
-          <DialogHeader>
-            <DialogTitle>{t("settings_h2")}</DialogTitle>
-            <DialogDescription>Provider setup arrives in the next update.</DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      <ProviderKey />
+      <PassphraseHost />
+      <PdHost />
+      <RateLimit onSwitchToGroq={() => { void update({ provider: "groq" }); toast("Now using Groq ✓ Your next AI request goes to Groq."); }} />
     </>
   );
 }

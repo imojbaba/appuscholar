@@ -4,6 +4,7 @@ import type { Editor as TipTapEditor } from "@tiptap/react";
 import { PROVIDERS, type ProviderId } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
+import { useKeys } from "@/lib/ai/useKeys";
 import type { SaveStatus } from "@/lib/useAutosave";
 import { AUTOSAVE_OFF_BADGE, AUTOSAVE_STOPPED_TOAST, WORD_DOWNLOADED_TOAST, LATEX_EXPORTED_TOAST } from "@/lib/docMessages";
 import { downloadBlob } from "@/lib/export/download";
@@ -17,15 +18,13 @@ import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { DocBar } from "./DocBar";
 import { FormatBar } from "./FormatBar";
 
-/** Task 13 (the key store) sets this from the stored keys; the provider badge shows only when the chosen provider has one. */
-const hasProviderKey = false;
-
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
 
 /** The centre column: "Your Document" with its autosave badge, the document bar and the editor. The format bar and action row (Task 14) join here. */
 export function DocumentCard() {
   const t = useT();
   const { settings } = useSettings();
+  const { hasKey } = useKeys();
   const { currentDoc, registerFlush, setWordCount, startImport } = useWorkspace();
   // Red from the first failed save until a save succeeds: retries ("saving") and typing offline ("dirty") do not turn it green.
   const [failed, setFailed] = useState(false);
@@ -65,7 +64,7 @@ export function DocumentCard() {
         {failed
           ? <Badge variant="danger" data-testid="save-status" role="status">{AUTOSAVE_OFF_BADGE}</Badge>
           : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
-        {hasProviderKey && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
+        {hasKey(provider) && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
         <div className="right">
           <Button variant="ghost" size="sm" disabled={!editor} onClick={exportWord} data-testid="download-word">{t("download_btn")}</Button>
           <Button variant="ghost" size="sm" disabled={!editor} onClick={exportLatex} title={t("latex_btn_title")} data-testid="download-latex">{t("latex_btn")}</Button>
