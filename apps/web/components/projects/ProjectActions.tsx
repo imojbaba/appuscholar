@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowCounterClockwise, CheckCircle, DotsThree, PencilSimple, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,9 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
     setStatusBusy(next); setStatusError("");
     try { await onStatus(next); } catch { setStatusError("Could not update the project. Try again."); } finally { setStatusBusy(null); }
   }
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // Dialogs opened from the menu hand focus back to the menu button when they close, not to the page body.
+  const returnFocus = (e: Event) => { e.preventDefault(); triggerRef.current?.focus(); };
   function openRename() { setError(""); setStatusError(""); setDraft(title); setRenaming(true); }
   function openDelete() { setError(""); setStatusError(""); setDeleting(true); }
   return (
@@ -35,7 +38,7 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
           : <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("complete"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-complete"><CheckCircle size={18} /> {statusBusy === "complete" ? "Marking complete…" : "Mark complete"}</Button>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={`Actions for ${title}`} data-testid="project-actions"><DotsThree size={20} weight="bold" /></Button>
+            <Button ref={triggerRef} variant="ghost" size="icon" aria-label={`Actions for ${title}`} data-testid="project-actions"><DotsThree size={20} weight="bold" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={openRename} data-testid="project-rename"><PencilSimple size={18} /> Rename</DropdownMenuItem>
@@ -47,7 +50,7 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
       {statusError ? <p role="alert" data-testid="error-msg" className="max-w-48 text-right text-xs text-destructive">{statusError}</p> : null}
 
       <Dialog open={renaming} onOpenChange={o => { if (!o) setError(""); setRenaming(o); }}>
-        <DialogContent>
+        <DialogContent onCloseAutoFocus={returnFocus}>
           <form onSubmit={e => { e.preventDefault(); if (draft.trim()) void run(() => onRename(draft.trim()), () => setRenaming(false), "That did not save. Try again."); }} className="grid gap-4">
             <DialogHeader><DialogTitle>Rename project</DialogTitle><DialogDescription>Documents and history are kept.</DialogDescription></DialogHeader>
             <div className="grid gap-2">
@@ -64,7 +67,7 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
       </Dialog>
 
       <AlertDialog open={deleting} onOpenChange={o => { if (!o) setError(""); setDeleting(o); }}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={returnFocus}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete &quot;{title}&quot;?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -74,7 +77,7 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
           {error ? <p role="alert" data-testid="error-msg" className="text-sm text-destructive">{error}</p> : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Keep it</AlertDialogCancel>
-            <AlertDialogAction onClick={e => { e.preventDefault(); void run(onDelete, () => setDeleting(false), "Could not delete the project. Try again."); }} disabled={busy} className="bg-destructive text-white hover:bg-destructive/90" data-testid="delete-confirm">{busy ? "Deleting…" : "Delete project"}</AlertDialogAction>
+            <AlertDialogAction onClick={e => { e.preventDefault(); void run(onDelete, () => setDeleting(false), "Could not delete the project. Try again."); }} disabled={busy} variant="destructive" data-testid="delete-confirm">{busy ? "Deleting…" : "Delete project"}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
