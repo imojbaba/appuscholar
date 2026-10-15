@@ -67,8 +67,15 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   // renaming does not create a revision
   await page.getByTestId("doc-title-field").fill("Draft, renamed");
   await page.keyboard.press("Enter");
-  await expect(page.getByTestId("save-status")).toHaveText(/revision 1/);
   await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Draft, renamed");
+  const renamedDocId = page.url().split("/").pop()!;
+  const afterRename = await page.evaluate(async (id) => {
+    const { token } = await (await fetch("/api/token", { cache: "no-store" })).json() as { token: string };
+    const r = await fetch(`http://localhost:8788/documents/${id}`, { headers: { authorization: "Bearer " + token } });
+    return (await r.json() as { title: string; currentSeq: number });
+  }, renamedDocId);
+  expect(afterRename.currentSeq).toBe(1);
+  expect(afterRename.title).toBe("Draft, renamed");
 
   const editor = page.locator(".ProseMirror");
   await editor.click();
