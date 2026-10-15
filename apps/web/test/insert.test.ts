@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Editor } from "@tiptap/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { provHash } from "@appuscholar/core";
-import { hasSelection, insertAiText, insertPlainHtml, selectionText, tailText } from "../lib/editor/insert";
+import { hasSelection, insertAiText, insertPlainHtml, mapRange, selectionRange, selectionText, tailText } from "../lib/editor/insert";
 
 const make = (content: string) => new Editor({ extensions: editorExtensions, content });
 
@@ -85,6 +85,46 @@ describe("selection and tail helpers", () => {
   it("tail separates paragraphs with a newline", () => {
     const ed = make("<p>one</p><p>two</p>");
     expect(tailText(ed)).toBe("one\ntwo");
+    ed.destroy();
+  });
+});
+
+describe("replacing the range the request was made for", () => {
+  it("replaces the original range even after the cursor moved elsewhere", () => {
+    const ed = make("<p>keep this drop this</p>");
+    ed.commands.setTextSelection({ from: 11, to: 20 });
+    const range = selectionRange(ed);
+    expect(range).toEqual({ from: 11, to: 20, text: "drop this" });
+    ed.commands.setTextSelection(3);
+    insertAiText(ed, "new", true, range);
+    expect(ed.getHTML()).toBe(`<p>keep this <span class="ai-ins" data-h="${provHash("new")}">new</span></p>`);
+    ed.destroy();
+  });
+  it("follows the range through edits made before it", () => {
+    const ed = make("<p>keep this drop this</p>");
+    ed.commands.setTextSelection({ from: 11, to: 20 });
+    let range = selectionRange(ed)!;
+    ed.on("transaction", ({ transaction }) => { if (transaction.docChanged) range = mapRange(range, transaction.mapping); });
+    ed.commands.insertContentAt(1, "XX ");
+    expect(range).toEqual({ from: 14, to: 23, text: "drop this" });
+    insertAiText(ed, "new", true, range);
+    expect(ed.getHTML()).toBe(`<p>XX keep this <span class="ai-ins" data-h="${provHash("new")}">new</span></p>`);
+    ed.destroy();
+  });
+  it("appends at the end when the original text is no longer there", () => {
+    const ed = make("<p>keep this drop this</p>");
+    ed.commands.setTextSelection({ from: 11, to: 20 });
+    const range = selectionRange(ed);
+    ed.commands.insertContentAt({ from: 11, to: 20 }, "changed");
+    ed.commands.setTextSelection(3);
+    insertAiText(ed, "new", true, range);
+    expect(ed.getHTML()).toBe(`<p>keep this changed</p><p><span class="ai-ins" data-h="${provHash("new")}">new</span></p>`);
+    ed.destroy();
+  });
+  it("selectionRange is null when collapsed", () => {
+    const ed = make("<p>abc</p>");
+    ed.commands.setTextSelection(2);
+    expect(selectionRange(ed)).toBeNull();
     ed.destroy();
   });
 });

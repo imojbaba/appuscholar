@@ -1,8 +1,8 @@
 "use client";
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { useT } from "@/lib/i18n";
-import { insertAiText } from "@/lib/editor/insert";
+import { insertAiText, mapRange, type SelectionRange } from "@/lib/editor/insert";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import type { SuggestionNote, SuggestionStatus } from "./actions";
@@ -18,9 +18,13 @@ export type SuggestionValue = {
   status: SuggestionStatus;
   /** True when the suggestion replaces the selection it was made from (Improve, Extend), false when it goes at the end (Continue). */
   selectionAtRequest: boolean;
-  set(text: string, note: SuggestionNote | null, selectionAtRequest: boolean): void;
-  setFeedback(text: string): void;
-  setThinking(status: SuggestionStatus): void;
+  /** Stores a result for the request that was given `token`; a stale token is ignored. `range` is the text it replaces, null to append. */
+  set(text: string, note: SuggestionNote | null, range: SelectionRange | null, token: number): void;
+  setFeedback(text: string, token: number): void;
+  /** Starts a request: shows the status and returns the token its result must carry. */
+  setThinking(status: SuggestionStatus): number;
+  /** False once another request started, Dismiss was pressed or the document changed since `token` was issued. */
+  isCurrent(token: number): boolean;
   /** Resets the pane. Without a message it returns to the Tools tab; with one (an error, or the placeholder) the pane stays where it is. */
   clear(msg?: string): void;
   /** The open document's editor, registered by the document card. */
@@ -44,42 +48,59 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   const [selectionAtRequest, setSelectionAtRequest] = useState(false);
   const [editor, setEditorState] = useState<Editor | null>(null);
   // Mirrors for the editor's key handler and the buttons, which can fire before a render has caught up.
-  const live = useRef({ sug: null as string | null, replace: false, editor: null as Editor | null });
+  const live = useRef({ sug: null as string | null, range: null as SelectionRange | null, editor: null as Editor | null, token: 0 });
 
-  const set = useCallback<SuggestionValue["set"]>((s, n, replace) => {
-    live.current.sug = s; live.current.replace = replace;
-    setSug(s); setText(s); setNote(n); setStatus("idle"); setSelectionAtRequest(replace);
+  const isCurrent = useCallback((token: number) => token === live.current.token, []);
+  const set = useCallback<SuggestionValue["set"]>((s, n, range, token) => {
+    if (token !== live.current.token) return;
+    live.current.sug = s; live.current.range = range;
+    setSug(s); setText(s); setNote(n); setStatus("idle"); setSelectionAtRequest(range !== null);
     dockShow("ai");
     setAiWaiting(true);
   }, [dockShow, setAiWaiting]);
-  const setFeedback = useCallback((s: string) => {
-    live.current.sug = null;
+  const setFeedback = useCallback((s: string, token: number) => {
+    if (token !== live.current.token) return;
+    live.current.sug = null; live.current.range = null;
     setSug(null); setText(s); setNote(null); setStatus("idle");
     dockShow("ai");
     setAiWaiting(true);
   }, [dockShow, setAiWaiting]);
   const setThinking = useCallback((s: SuggestionStatus) => {
-    live.current.sug = null;
+    live.current.sug = null; live.current.range = null;
     setSug(null); setText(null); setNote(null); setStatus(s);
+    return ++live.current.token;
   }, []);
   const clear = useCallback((msg?: string) => {
-    live.current.sug = null;
+    live.current.sug = null; live.current.range = null;
+    live.current.token++; // an answer still on its way is no longer wanted
     setSug(null); setText(msg ?? null); setNote(null); setStatus("idle"); setSelectionAtRequest(false);
     setAiWaiting(false);
     if (msg === undefined) dockShow("tools");
   }, [dockShow, setAiWaiting]);
 
   const setEditor = useCallback((e: Editor | null) => {
-    // A suggestion belongs to the document it was written for: another document's editor must not receive it.
-    if (live.current.editor !== e && live.current.sug !== null) { live.current.sug = null; setSug(null); setText(null); setNote(null); setAiWaiting(false); }
+    // A request and its suggestion belong to the document they were made for: another document's editor must not receive them.
+    if (live.current.editor !== e) {
+      live.current.sug = null; live.current.range = null; live.current.token++;
+      setSug(null); setText(null); setNote(null); setStatus("idle"); setSelectionAtRequest(false); setAiWaiting(false);
+    }
     live.current.editor = e;
     setEditorState(e);
   }, [setAiWaiting]);
+  // Edits made while a suggestion waits move the range it will replace (v1 kept a live Range).
+  useEffect(() => {
+    if (!editor) return;
+    const onTr = ({ transaction }: { transaction: { docChanged: boolean; mapping: { map(pos: number, assoc?: number): number } } }) => {
+      if (transaction.docChanged && live.current.range) live.current.range = mapRange(live.current.range, transaction.mapping);
+    };
+    editor.on("transaction", onTr);
+    return () => { editor.off("transaction", onTr); };
+  }, [editor]);
 
   const accept = useCallback(() => {
     const s = live.current.sug, ed = live.current.editor;
     if (!s || !ed || ed.isDestroyed) { toast("No suggestion to accept yet"); return; }
-    insertAiText(ed, s, live.current.replace);
+    insertAiText(ed, s, live.current.range !== null, live.current.range);
     clear(t("ai_pane_placeholder"));
     dockShow("tools");
     toast("Inserted ✓ — Ctrl+Z to undo");
@@ -96,8 +117,8 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   }, [accept]);
 
   const value = useMemo<SuggestionValue>(
-    () => ({ sug, text, note, status, selectionAtRequest, set, setFeedback, setThinking, clear, editor, setEditor, accept, copy, tab }),
-    [sug, text, note, status, selectionAtRequest, set, setFeedback, setThinking, clear, editor, setEditor, accept, copy, tab]
+    () => ({ sug, text, note, status, selectionAtRequest, set, setFeedback, setThinking, isCurrent, clear, editor, setEditor, accept, copy, tab }),
+    [sug, text, note, status, selectionAtRequest, set, setFeedback, setThinking, isCurrent, clear, editor, setEditor, accept, copy, tab]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -14,8 +14,10 @@ function deps(over: Partial<ActionDeps> & { selection?: string } = {}) {
     callAI: vi.fn(async () => "Reply with 25% more."),
     hasSelection: vi.fn(() => !!over.selection),
     selectionText: vi.fn(() => over.selection ?? ""),
+    selectionRange: vi.fn(() => (over.selection ? { from: 5, to: 5 + over.selection.length, text: over.selection } : null)),
     tailText: vi.fn(() => TAIL),
-    setThinking: vi.fn((s: string) => void log.push("thinking:" + s)),
+    setThinking: vi.fn((s: string) => { log.push("thinking:" + s); return 1; }),
+    isCurrent: vi.fn(() => true),
     set: vi.fn<ActionDeps["set"]>(() => void log.push("set")),
     setFeedback: vi.fn(() => void log.push("feedback")),
     clear: vi.fn(() => void log.push("clear")),
@@ -48,7 +50,7 @@ describe("runWritingAction", () => {
     const built = buildWritingPrompt("continue", TAIL);
     expect(m.callAI).toHaveBeenCalledWith(built.prompt, { temp: built.temp, max: built.max });
     expect(log[0]).toBe("thinking:thinking");
-    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", { msg: accCheck(TAIL, "Reply with 25% more.", "continue").msg, warn: true }, false);
+    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", { msg: accCheck(TAIL, "Reply with 25% more.", "continue").msg, warn: true }, null, 1);
     expect(m.set.mock.calls[0]![1]!.msg).toContain("25%");
     expect(m.toast).toHaveBeenCalledWith("Suggestion ready — press Tab in the editor to accept");
     expect(m.dockShow).toHaveBeenCalledWith("ai");
@@ -59,7 +61,7 @@ describe("runWritingAction", () => {
     const built = buildWritingPrompt("improve", "Around 40 students took part.");
     expect(m.callAI).toHaveBeenCalledWith(built.prompt, { temp: built.temp, max: built.max });
     expect(m.setThinking).toHaveBeenCalledWith("polishing");
-    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", expect.objectContaining({ warn: true }), true);
+    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", expect.objectContaining({ warn: true }), { from: 5, to: 5 + "Around 40 students took part.".length, text: "Around 40 students took part." }, 1);
     expect(m.toast).toHaveBeenCalledWith("Ready — press Tab to replace your selection");
   });
   it("Extend uses the expanding status", async () => {
@@ -94,7 +96,7 @@ describe("runDraftFirst", () => {
   it("shows the label and the reply, keeps nothing insertable, and toasts df_ready", async () => {
     const { d, m } = deps({ draftFirst: true });
     await runDraftFirst("tail", d);
-    expect(m.setFeedback).toHaveBeenCalledWith(t("df_label") + "\n\n" + "Reply with 25% more.");
+    expect(m.setFeedback).toHaveBeenCalledWith(t("df_label") + "\n\n" + "Reply with 25% more.", 1);
     expect(m.set).not.toHaveBeenCalled();
     expect(m.toast).toHaveBeenCalledWith(t("df_ready"));
     expect(m.setThinking).toHaveBeenCalledWith("reading");
@@ -131,5 +133,51 @@ describe("runDraftFirst", () => {
     await runWritingAction("expand", d);
     expect(m.callAI).toHaveBeenNthCalledWith(1, buildDraftFirstPrompt("improve", "Chosen.").prompt, expect.anything());
     expect(m.callAI).toHaveBeenNthCalledWith(2, buildDraftFirstPrompt("expand", "Chosen.").prompt, expect.anything());
+  });
+});
+
+describe("a request that is no longer current", () => {
+  it("is ignored when the document was switched or the pane dismissed while it was in flight", async () => {
+    let current = 1;
+    let resolve!: (v: string) => void;
+    const { d, m } = deps({
+      isCurrent: vi.fn((tok: number) => tok === current),
+      callAI: vi.fn(() => new Promise<string>((r) => { resolve = r; }))
+    });
+    const run = runWritingAction("continue", d);
+    current = 2; // switch editor or Dismiss bumps the token
+    resolve("Late answer with 99%.");
+    await run;
+    expect(m.set).not.toHaveBeenCalled();
+    expect(m.toast).not.toHaveBeenCalled();
+    expect(m.clear).not.toHaveBeenCalled();
+  });
+  it("a late Draft first answer is ignored too", async () => {
+    let current = 1;
+    let resolve!: (v: string) => void;
+    const { d, m } = deps({
+      isCurrent: vi.fn((tok: number) => tok === current),
+      callAI: vi.fn(() => new Promise<string>((r) => { resolve = r; }))
+    });
+    const run = runDraftFirst("tail", d);
+    current = 2;
+    resolve("late");
+    await run;
+    expect(m.setFeedback).not.toHaveBeenCalled();
+    expect(m.toast).not.toHaveBeenCalled();
+  });
+  it("a late error is ignored too", async () => {
+    let current = 1;
+    let reject!: (e: Error) => void;
+    const { d, m } = deps({
+      isCurrent: vi.fn((tok: number) => tok === current),
+      callAI: vi.fn(() => new Promise<string>((_r, j) => { reject = j; }))
+    });
+    const run = runWritingAction("continue", d);
+    current = 2;
+    reject(new Error("boom"));
+    await run;
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.toast).not.toHaveBeenCalled();
   });
 });

@@ -6,7 +6,7 @@ import { useSettings } from "@/lib/settings";
 import { runWritingAction, type ActionDeps } from "@/lib/ai/actions";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { useCallAI } from "@/lib/ai/useCallAI";
-import { hasSelection, selectionText, tailText } from "@/lib/editor/insert";
+import { hasSelection, selectionRange, selectionText, tailText } from "@/lib/editor/insert";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
@@ -23,8 +23,8 @@ export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Edit
 
   const run = (kind: "continue" | "improve" | "expand") => {
     const deps: ActionDeps = {
-      callAI, hasSelection: () => hasSelection(editor), selectionText: () => selectionText(editor), tailText: () => tailText(editor),
-      setThinking: suggestion.setThinking, set: suggestion.set, setFeedback: suggestion.setFeedback, clear: suggestion.clear,
+      callAI, hasSelection: () => hasSelection(editor), selectionText: () => selectionText(editor), selectionRange: () => selectionRange(editor), tailText: () => tailText(editor),
+      setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, setFeedback: suggestion.setFeedback, clear: suggestion.clear,
       dockShow, toast, t, draftFirst
     };
     return runWritingAction(kind, deps);

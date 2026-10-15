@@ -26,6 +26,13 @@ describe("sanitizeHtml", () => {
   });
 });
 
+describe("sanitizeHtml provenance mark", () => {
+  it("keeps data-h on an ai-ins span, hard breaks included (rule 7)", () => {
+    const html = '<p><span class="ai-ins" data-h="1xmanvp">a<br>b</span></p>';
+    expect(sanitizeHtml(html)).toBe(html);
+  });
+});
+
 describe("wordCount", () => {
   it("counts words of text content only", () => {
     expect(wordCount("<p>one two</p><p>three</p>")).toBe(3);

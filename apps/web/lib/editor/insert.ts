@@ -18,17 +18,38 @@ export function insertPlainHtml(editor: Editor, html: string, opts: { atEnd?: bo
 
 function escapeHtml(s: string): string { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
+/** The text a request was made for, as it stood then (v1 `savedRange`). */
+export type SelectionRange = { from: number; to: number; text: string };
+
 /**
  * Inserts AI text as `<span class="ai-ins" data-h="…">`, the mark the origin share and the AI-text highlight read (rule 7).
  * `data-h` is the hash of the text as inserted, so a passage can later be reported as left as inserted or edited.
- * With `replaceSelection` it goes over the current selection; otherwise at the end of the document, in a paragraph of its own unless the document is blank.
+ * With `replaceSelection` it goes over `range` (the text the request was made for) when that text is still where it was, else over the current selection when no range
+ * is given; if the range's text has changed or gone, it is appended at the end instead. Without `replaceSelection` it goes at the end, in a paragraph of its own unless the document is blank.
  */
-export function insertAiText(editor: Editor, text: string, replaceSelection: boolean): void {
+export function insertAiText(editor: Editor, text: string, replaceSelection: boolean, range?: SelectionRange | null): void {
   const html = `<span class="ai-ins" data-h="${provHash(text)}">${escapeHtml(text).replace(/\n/g, "<br>")}</span>`;
-  if (replaceSelection) editor.chain().focus().insertContent(html).run();
-  else if (editor.isEmpty) editor.chain().focus("end").insertContent(html).run();
+  if (replaceSelection && range) {
+    const { doc } = editor.state;
+    if (range.from >= 0 && range.to <= doc.content.size && range.from < range.to && doc.textBetween(range.from, range.to, "\n") === range.text) {
+      editor.chain().focus().setTextSelection({ from: range.from, to: range.to }).insertContent(html).run();
+      return;
+    }
+  } else if (replaceSelection) { editor.chain().focus().insertContent(html).run(); return; }
+  if (editor.isEmpty) editor.chain().focus("end").insertContent(html).run();
   // A paragraph of its own after the last block; inserting at the cursor instead would leave an empty paragraph behind.
   else editor.chain().focus().insertContentAt(editor.state.doc.content.size, `<p>${html}</p>`).focus("end").run();
+}
+
+/** The selection with its position and text, or null when collapsed. */
+export function selectionRange(editor: Editor): SelectionRange | null {
+  const { from, to, empty } = editor.state.selection;
+  return empty ? null : { from, to, text: editor.state.doc.textBetween(from, to, "\n") };
+}
+
+/** Moves a saved range through a transaction's changes, so edits made before it do not leave it pointing at the wrong words. */
+export function mapRange(range: SelectionRange, mapping: { map(pos: number, assoc?: number): number }): SelectionRange {
+  return { ...range, from: mapping.map(range.from, 1), to: mapping.map(range.to, -1) };
 }
 
 /** True when the selection covers text (a collapsed cursor is not a selection). */
