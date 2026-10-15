@@ -16,7 +16,7 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "border border-line-strong bg-card font-medium text-accent-ink hover:bg-soft",
         link: "text-primary underline-offset-4 hover:underline",
         // v2 design-system variants (DESIGN-SYSTEM.md section 7 "Buttons")
         primary:
