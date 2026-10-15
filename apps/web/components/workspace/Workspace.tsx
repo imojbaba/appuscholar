@@ -88,8 +88,11 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   if (me && !gated && !welcomeChecked) {
     setWelcomeChecked(true);
     // /import lands here with ?import=1: the backup import wins over the tour (Help replays the tour).
-    if (openImportV1) setDialog("importV1");
-    else if (!settings.seenWelcome) setDialog("welcome");
+    if (openImportV1) {
+      setDialog("importV1");
+      // Strip ?import=1 so a reload or a copied link does not reopen the dialog (synchronous, once: guarded by welcomeChecked).
+      if (typeof window !== "undefined") window.history.replaceState(null, "", "/");
+    } else if (!settings.seenWelcome) setDialog("welcome");
   }
 
   const userId = me?.id;

@@ -1,2 +1,2 @@
-/** Shown in the header pill. The deployed git short SHA (NEXT_PUBLIC_BUILD_SHA is set at build time in Task 21), "dev" locally. */
-export const APP_VERSION = process.env.NEXT_PUBLIC_BUILD_SHA?.slice(0, 7) ?? "dev";
+/** Shown in the header pill. The deployed git short SHA (next.config.ts exposes VERCEL_GIT_COMMIT_SHA or GITHUB_SHA as NEXT_PUBLIC_BUILD_SHA at build time), "dev" locally or when the build has no SHA. */
+export const APP_VERSION = (process.env.NEXT_PUBLIC_BUILD_SHA || "dev").slice(0, 7);

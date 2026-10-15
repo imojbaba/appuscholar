@@ -60,8 +60,9 @@ test("sign in, write, reload, import a v1 backup", async ({ page }) => {
 test("/import opens the backup import inside the workspace; the drop zone takes a dropped file", async ({ page }) => {
   await signIn(page);
   await page.goto("/import");
-  await expect(page).toHaveURL(/localhost:3000\/\?import=1$/);
   await expect(page.getByTestId("import-v1-dialog")).toBeVisible();
+  // The query is stripped once the dialog is open.
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("help-btn")).toBeVisible();
 
   page.once("dialog", (d) => d.accept());
