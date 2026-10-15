@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SignJWT } from "jose";
 import { createApp } from "../src/app";
 import { MemoryStore } from "../src/store/memory";
@@ -286,5 +286,123 @@ describe("api routes", () => {
     expect((await (await app.request("/me", { headers: auth })).json() as { activeProjectId: string }).activeProjectId).toBe(p.id);
     await app.request(`/projects/${p.id}`, { method: "DELETE", headers: auth });
     expect((await (await app.request("/me", { headers: auth })).json() as { activeProjectId: string | null }).activeProjectId).toBeNull();
+  });
+});
+
+describe("ai routes", () => {
+  let app: ReturnType<typeof createApp>;
+  let auth: Record<string, string>;
+  let store: MemoryStore;
+  let status: number;
+  const sent: Array<{ url: string; headers: Record<string, string>; body: string }> = [];
+  const fakeFetch = (async (url: string, init: RequestInit) => {
+    sent.push({ url, headers: init.headers as Record<string, string>, body: String(init.body) });
+    if (status !== 200) return new Response("{}", { status });
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.parse(String(init.body)).messages[0].content.includes("single word OK") ? "OK" : "generated" } }] }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const post = (path: string, body: unknown, headers = auth) => app.request(path, { method: "POST", headers, body: JSON.stringify(body) });
+  beforeEach(async () => {
+    status = 200; sent.length = 0;
+    store = new MemoryStore();
+    app = createApp({ store, jwtSecret: SECRET, ai: { fetch: fakeFetch } });
+    auth = { authorization: "Bearer " + (await token("u1")), "content-type": "application/json" };
+  });
+
+  it("POST /ai/complete refuses unmasked personal data unless pdAccepted, logs provider, model and kind only", async () => {
+    await app.request("/me", { headers: auth });
+    const body = { provider: "groq", apiKey: "gsk_x", prompt: "Continue this writing in the same register, about 120 words. ... mail asha@uni.ac.in", day: "2026-10-15" };
+    const refused = await post("/ai/complete", body);
+    expect(refused.status).toBe(400); expect(await refused.json()).toEqual({ error: "personal-data", detail: "Found: 1 email address." });
+    expect(sent).toHaveLength(0);
+    const ok = await post("/ai/complete", { ...body, pdAccepted: true });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ text: "generated", model: "openai/gpt-oss-120b" });
+    const log = await (await app.request("/ai/log", { headers: auth })).json() as Array<Record<string, string>>;
+    expect(log).toEqual([{ d: "2026-10-15", p: "groq", m: "openai/gpt-oss-120b", k: "continuing my draft", g: "text" }]);
+    expect(JSON.stringify(log)).not.toContain("asha@");
+  });
+
+  it("builds the v1 Found sentence with plurals and appends the content-language suffix unless noLang", async () => {
+    const prompt = "Improve this text a@b.org c@d.org call 9876543210";
+    const r = await post("/ai/complete", { provider: "groq", apiKey: "k", prompt, day: "2026-10-15" });
+    expect(await r.json()).toEqual({ error: "personal-data", detail: "Found: 2 email addresses, 1 phone number." });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-15", contentLang: "hi" });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-15", contentLang: "hi", noLang: true });
+    expect(JSON.parse(sent[0]!.body).messages[0].content).toContain("formal Hindi");
+    expect(JSON.parse(sent[1]!.body).messages[0].content).toBe("Improve this text");
+  });
+
+  it("requires auth, a valid body and a YYYY-MM-DD day", async () => {
+    expect((await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "p", day: "2026-10-15" }, { "content-type": "application/json" })).status).toBe(401);
+    expect((await post("/ai/complete", { provider: "nope", apiKey: "k", prompt: "p", day: "2026-10-15" })).status).toBe(400);
+    expect((await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "p" })).status).toBe(400);
+    expect((await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "p", day: "15-10-2026" })).status).toBe(400);
+    expect((await post("/ai/complete", { provider: "groq", apiKey: "k".repeat(401), prompt: "p", day: "2026-10-15" })).status).toBe(400);
+    expect((await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "p".repeat(60001), day: "2026-10-15" })).status).toBe(400);
+  });
+
+  it("maps AiError codes to statuses and writes no log row on failure", async () => {
+    const run = async (s: number) => { status = s; const r = await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "p", day: "2026-10-15" }); return [r.status, ((await r.json()) as { error: string }).error] as const; };
+    expect(await run(401)).toEqual([401, "key-rejected"]);
+    expect(await run(404)).toEqual([404, "model-gone"]);
+    expect(await run(429)).toEqual([429, "rate-limit"]);
+    expect((await post("/ai/complete", { provider: "groq", apiKey: "  ", prompt: "p", day: "2026-10-15" })).status).toBe(400);
+    expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+  });
+
+  it("does not log the Appu help assistant or when aiLogOff is set", async () => {
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "You are Appu, the help assistant. Hi", day: "2026-10-15" });
+    await app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify({ aiLogOff: true }) });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-15" });
+    expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+  });
+
+  it("never writes the key or the prompt to the console on failure", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    status = 503;
+    const r = await post("/ai/complete", { provider: "groq", apiKey: "gsk_secret", prompt: "SECRET PROMPT", day: "2026-10-15" });
+    expect(r.status).toBe(502);
+    expect(JSON.stringify(spy.mock.calls)).not.toMatch(/gsk_secret|SECRET PROMPT/);
+    spy.mockRestore();
+  });
+
+  it("an unexpected error answers 502 provider-error and logs only its name", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = createApp({ store, jwtSecret: SECRET, ai: { anthropic: (() => ({ messages: { create: async () => { throw new RangeError("gsk_secret SECRET PROMPT"); } } })) as never } });
+    const r = await boom.request("/ai/complete", { method: "POST", headers: auth, body: JSON.stringify({ provider: "claude", apiKey: "gsk_secret", prompt: "SECRET PROMPT", day: "2026-10-15" }) });
+    expect(r.status).toBe(502);
+    expect(await r.json()).toEqual({ error: "provider-error", detail: "unexpected" });
+    expect(spy).toHaveBeenCalled();
+    expect(JSON.stringify(spy.mock.calls)).not.toMatch(/gsk_secret|SECRET PROMPT/);
+    spy.mockRestore();
+  });
+
+  it("POST /ai/test sends the OK probe and does not log", async () => {
+    const r = await post("/ai/test", { provider: "groq", apiKey: "gsk_x" });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ok: true, reply: "OK" });
+    expect(JSON.parse(sent[0]!.body)).toEqual({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: "Reply with the single word OK." }], temperature: 0, max_tokens: 20 });
+    expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+    status = 401;
+    const bad = await post("/ai/test", { provider: "groq", apiKey: "gsk_x" });
+    expect(bad.status).toBe(401);
+    expect(await bad.json()).toMatchObject({ error: "key-rejected" });
+  });
+
+  it("serves the log with a range, a summary, and erases it", async () => {
+    for (const day of ["2026-10-14", "2026-10-15"]) await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Continue this writing", day: "2026-10-15" });
+    const ranged = await (await app.request("/ai/log?from=2026-10-15&to=2026-10-15", { headers: auth })).json() as unknown[];
+    expect(ranged).toHaveLength(2);
+    expect(await (await app.request("/ai/log/summary", { headers: auth })).json()).toEqual({ byKind: { "grammar and polish": 2, "continuing my draft": 1 }, byProvider: { groq: 3 }, total: 3 });
+    expect((await app.request("/ai/log?from=bad", { headers: auth })).status).toBe(400);
+    expect((await app.request("/ai/log", { method: "DELETE", headers: auth })).status).toBe(204);
+    expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+  });
+
+  it("keeps one student's log out of another's", async () => {
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-15" });
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    expect(await (await app.request("/ai/log", { headers: other })).json()).toEqual([]);
   });
 });
