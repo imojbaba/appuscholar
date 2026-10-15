@@ -3,11 +3,21 @@
  *
  * Run:  pnpm --filter @appuscholar/web exec playwright test e2e/phase2-responsive.spec.ts
  *
- * Sign-in goes through the e2e form (`e2e-email` / `e2e-submit`), which needs the web app's NextAuth `users` table. The web server
- * therefore needs a DATABASE_URL whose schema has the Auth.js tables. The API can run on its in-memory store (no DATABASE_URL), which
- * is what this spec expects: start `pnpm --filter @appuscholar/api dev` with API_JWT_SECRET and WEB_ORIGIN=http://localhost:3000,
- * and the web dev server with E2E_AUTH=1, AUTH_TRUST_HOST=true, AUTH_SECRET, API_JWT_SECRET and NEXT_PUBLIC_API_URL=http://localhost:8788
- * (see playwright.config.ts for the values); both are reused when already running (reuseExistingServer).
+ * Sign-in goes through the e2e form (`e2e-email` / `e2e-submit`), which writes the Auth.js `users` row, so the WEB server needs a
+ * DATABASE_URL whose schema has the repo migrations (the Neon database lacks the phase-2 ones until Task 9). The API runs on its
+ * in-memory store: start it with NO DATABASE_URL.
+ *
+ * CI / local recipe:
+ *  1. A Postgres with packages/db/migrations applied: a CI Postgres service container, or `node e2e/support/pglite-postgres.mjs`
+ *     (pglite served over a socket on 127.0.0.1:5433; see its header for the two packages it needs).
+ *  2. export DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres (or the service's URL) BEFORE running Playwright, so the
+ *     config forwards it to the web server. Gotcha: playwright.config.ts passes `DATABASE_URL: process.env.DATABASE_URL ?? ""` to BOTH
+ *     servers; with nothing exported the web server gets an empty URL and the app layout answers 500. The API must then be the one
+ *     started WITHOUT it, so when you let the config start servers, start the API yourself first (reuseExistingServer is on):
+ *     `API_JWT_SECRET=e2e-secret-e2e-secret-e2e-secret-12 WEB_ORIGIN=http://localhost:3000 PORT=8788 pnpm --filter @appuscholar/api dev`
+ *     in a shell where DATABASE_URL is unset (the API then uses the in-memory store, which is what the spec expects).
+ *  3. The web server needs E2E_AUTH=1, AUTH_TRUST_HOST=true, AUTH_SECRET, API_JWT_SECRET, NEXT_PUBLIC_API_URL=http://localhost:8788
+ *     (values in playwright.config.ts); started by the config, or by hand with those variables plus the DATABASE_URL of step 2.
  *
  * Third-party axe findings that cannot be fixed in the chrome are listed in AXE_ACCEPTED below with the rule id and the reason.
  */
@@ -191,24 +201,59 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
     expect(await axeSerious(page), "help dialog open").toEqual([]);
   });
 
-  test("every button in the header, project bar and action row is at least 44px tall", async ({ page }) => {
+  test("every button in the header, project bar, action row, format bar, sheet and drawer is at least 44px tall", async ({ page }) => {
     await signIn(page);
-    const short = await page.evaluate(() => {
+    const sweep = () => page.evaluate((roots) => {
       const out: string[] = [];
-      const roots = [".hdr", "[data-testid=project-bar]", "[data-testid=action-row]"];
       for (const sel of roots) {
         document.querySelectorAll(`${sel} button`).forEach((b) => {
           const r = b.getBoundingClientRect();
           if (r.width === 0 && r.height === 0) return; // not rendered
+          if (b.classList.contains("bub-insert")) return; // chat's inline Insert link
           if (r.height < 44) out.push(`${sel} ${b.getAttribute("data-testid") ?? b.textContent?.trim()} ${r.height}`);
         });
       }
       return out;
-    });
-    expect(short).toEqual([]);
-    // and there are some to measure
+    }, ["[role=dialog]", ".hdr", "[data-testid=project-bar]", "[data-testid=action-row]", "[data-testid=format-bar]", ".dock-wrap", ".toast"]);
+    expect(await sweep()).toEqual([]);
     expect(await page.locator(".hdr button:visible").count()).toBeGreaterThanOrEqual(4);
     expect(await page.locator("[data-testid=action-row] button").count()).toBeGreaterThanOrEqual(5);
+    expect(await page.locator("[data-testid=format-bar] button:visible").count()).toBeGreaterThanOrEqual(5);
+    // the AI tab of the sheet
+    await page.getByTestId("dock-tab-ai").click();
+    expect(await sweep()).toEqual([]);
+    // the drawer
+    await page.getByTestId("phone-menu").click();
+    await expect(page.getByTestId("sidebar-drawer")).toBeVisible();
+    expect(await sweep()).toEqual([]);
+    await page.keyboard.press("Escape");
+    // an open dialog (Help), its close X included
+    await page.getByTestId("help-btn").click();
+    await expect(page.getByTestId("help-dialog")).toBeVisible();
+    expect(await sweep()).toEqual([]);
+    const x = (await page.getByTestId("help-dialog").locator("[data-slot=dialog-close]").boundingBox())!;
+    expect(x.width).toBeGreaterThanOrEqual(44);
+    expect(x.height).toBeGreaterThanOrEqual(44);
+    await page.keyboard.press("Escape");
+  });
+
+  test("a dialog opened from the drawer gives focus back to the menu button", async ({ page }) => {
+    await signIn(page);
+    const menu = page.getByTestId("phone-menu");
+    await menu.click();
+    await page.getByTestId("projects-tab").click();
+    await expect(page.getByTestId("sidebar-drawer")).toBeHidden();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(menu).toBeFocused();
+  });
+
+  test("the width splitter is out of the accessibility tree on a phone", async ({ page }) => {
+    await signIn(page);
+    await expect(page.getByTestId("dock-splitter")).toBeHidden();
+    await expect(page.getByRole("separator", { name: "Resize side panel" })).toHaveCount(0);
   });
 
   test("the header is two rows and does not overlap the provider pill or project bar; the bar's buttons scroll sideways", async ({ page }) => {

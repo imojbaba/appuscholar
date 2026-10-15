@@ -370,5 +370,9 @@
   .toast { top: 12px; bottom: auto; }
 
   /* Every button in the chrome is a 44px target. Chat's inline Insert link stays a text link. */
-  .hdr button, .projbar button, .doc button, .dock-wrap button:not(.bub-insert), .drawer button, .doc .select, .dock-wrap .select { min-height: 44px; }
+  .hdr button, .projbar button, .doc button, .dock-wrap button:not(.bub-insert), .drawer button, .doc .select, .dock-wrap .select,
+  [role="dialog"] button, [role="alertdialog"] button, .toast button { min-height: 44px; }
+  /* Dialogs render outside the workspace: their close X gets a 44px hit area by padding, the icon stays 16px. */
+  [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }
+  .splitter { display: none; }
 }
