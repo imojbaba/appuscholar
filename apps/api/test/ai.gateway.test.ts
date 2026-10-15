@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import Anthropic from "@anthropic-ai/sdk";
 import { complete, fetchRetry5xx } from "../src/ai/gateway";
 import { AiError } from "../src/ai/types";
+import { defaultAnthropic } from "../src/ai/providers/anthropic";
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const H = new Headers();
 
@@ -132,5 +133,28 @@ describe("gateway", () => {
   });
   it("an empty key is no-key", async () => {
     await expect(complete({ provider: "groq", apiKey: "  ", prompt: "p" }, { fetch: vi.fn() as never })).rejects.toMatchObject({ code: "no-key" });
+  });
+});
+
+describe("default Anthropic client", () => {
+  it("ignores ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN from the environment and does not retry", () => {
+    const saved = { b: process.env.ANTHROPIC_BASE_URL, t: process.env.ANTHROPIC_AUTH_TOKEN };
+    process.env.ANTHROPIC_BASE_URL = "https://evil.example";
+    process.env.ANTHROPIC_AUTH_TOKEN = "env-token";
+    try {
+      const c = defaultAnthropic("sk-ant-x") as unknown as Anthropic;
+      expect(c.baseURL).toBe("https://api.anthropic.com");
+      expect(c.authToken).toBeNull();
+      expect(c.apiKey).toBe("sk-ant-x");
+      expect(c.maxRetries).toBe(0);
+      expect(c.timeout).toBe(60_000);
+      // Control: an unpinned client does pick the environment up, so the assertions above prove the pin.
+      const loose = new Anthropic({ apiKey: "k" });
+      expect(loose.baseURL).toBe("https://evil.example");
+      expect(loose.authToken).toBe("env-token");
+    } finally {
+      if (saved.b === undefined) delete process.env.ANTHROPIC_BASE_URL; else process.env.ANTHROPIC_BASE_URL = saved.b;
+      if (saved.t === undefined) delete process.env.ANTHROPIC_AUTH_TOKEN; else process.env.ANTHROPIC_AUTH_TOKEN = saved.t;
+    }
   });
 });

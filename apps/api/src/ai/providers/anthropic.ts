@@ -2,7 +2,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { PROVIDERS } from "@appuscholar/core";
 import { AiError, type AnthropicFactory, type CompleteInput, type CompleteOutput } from "../types";
 
-export const defaultAnthropic: AnthropicFactory = (apiKey) => new Anthropic({ apiKey }) as unknown as ReturnType<AnthropicFactory>;
+/** Pinned so nothing in the server's environment (ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN) can redirect the student's key or swap its credentials. One try: the web app already offers its own retry and failover. */
+export const defaultAnthropic: AnthropicFactory = (apiKey) =>
+  new Anthropic({ apiKey, baseURL: "https://api.anthropic.com", authToken: null, maxRetries: 0, timeout: 60_000 }) as unknown as ReturnType<AnthropicFactory>;
 
 /** Classifies an SDK failure by class; anything else is not ours to name and is rethrown. */
 function mapSdkError(e: unknown): AiError | null {
