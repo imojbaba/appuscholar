@@ -199,4 +199,43 @@ describe("api routes", () => {
     expect((await app.request(`/documents/${d.id}`, { headers: auth })).status).toBe(404);
     expect((await app.request(`/projects/${p.id}`, { method: "DELETE", headers: auth })).status).toBe(404);
   });
+
+  it("GET /me creates the user row and the scratch project once", async () => {
+    const a = await (await app.request("/me", { headers: auth })).json() as { scratchProjectId: string; settings: object };
+    const b = await (await app.request("/me", { headers: auth })).json() as { scratchProjectId: string };
+    expect(a.scratchProjectId).toBe(b.scratchProjectId);
+    expect(a.settings).toEqual({});
+  });
+
+  it("PATCH /me/settings merges and rejects unknown keys", async () => {
+    await app.request("/me", { headers: auth });
+    const r = await app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify({ lang: "hi", draftFirst: true }) });
+    expect(await r.json()).toEqual({ lang: "hi", draftFirst: true });
+    expect((await app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify({ evil: 1 }) })).status).toBe(400);
+  });
+
+  it("credentials accept only the blob shape and never return to another user", async () => {
+    await app.request("/me", { headers: auth });
+    expect((await app.request("/me/credentials/gemini", { method: "PUT", headers: auth, body: JSON.stringify({ encryptedKey: "plain-key" }) })).status).toBe(400);
+    expect((await app.request("/me/credentials/gemini", { method: "PUT", headers: auth, body: JSON.stringify({ encryptedKey: "c2FsdA.aXY.Y3Q" }) })).status).toBe(204);
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    await app.request("/me", { headers: other });
+    expect(await (await app.request("/me/credentials", { headers: other })).json()).toEqual([]);
+  });
+
+  it("POST /me/terms records acceptance", async () => {
+    await app.request("/me", { headers: auth });
+    expect((await app.request("/me/terms", { method: "POST", headers: auth })).status).toBe(204);
+    const me = await (await app.request("/me", { headers: auth })).json() as { ageConfirmed: boolean; termsAcceptedAt: string };
+    expect(me.ageConfirmed).toBe(true); expect(me.termsAcceptedAt).toBeTruthy();
+  });
+
+  it("active project: 404 for a foreign project, and GET /me clears one that was deleted", async () => {
+    const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Sleep" }) })).json() as { id: string };
+    expect((await app.request("/me/active-project", { method: "PATCH", headers: auth, body: JSON.stringify({ projectId: "nope" }) })).status).toBe(404);
+    expect((await app.request("/me/active-project", { method: "PATCH", headers: auth, body: JSON.stringify({ projectId: p.id }) })).status).toBe(204);
+    expect((await (await app.request("/me", { headers: auth })).json() as { activeProjectId: string }).activeProjectId).toBe(p.id);
+    await app.request(`/projects/${p.id}`, { method: "DELETE", headers: auth });
+    expect((await (await app.request("/me", { headers: auth })).json() as { activeProjectId: string | null }).activeProjectId).toBeNull();
+  });
 });

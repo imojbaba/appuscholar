@@ -5,6 +5,7 @@ import type { Store } from "./store/types";
 import { projectRoutes } from "./routes/projects";
 import { documentRoutes } from "./routes/documents";
 import { importRoutes } from "./routes/import";
+import { meRoutes } from "./routes/me";
 
 export type AppOptions = { store: Store; jwtSecret: string; maxBodyBytes?: number; maxImportBytes?: number; corsOrigin?: string };
 
@@ -16,9 +17,12 @@ export function createApp(o: AppOptions) {
   app.use("/projects", apiAuth(o.jwtSecret));
   app.use("/documents/*", apiAuth(o.jwtSecret));
   app.use("/import/*", apiAuth(o.jwtSecret));
+  app.use("/me/*", apiAuth(o.jwtSecret));
+  app.use("/me", apiAuth(o.jwtSecret));
   app.route("/projects", projectRoutes(o.store));
   app.route("/documents", documentRoutes(o.store, o.maxBodyBytes ?? 2 * 1024 * 1024));
   app.route("/import", importRoutes(o.store, o.maxImportBytes));
+  app.route("/me", meRoutes(o.store));
   app.onError((err, c) => { console.error(err); return c.json({ error: "server" }, 500); });
   return app;
 }
