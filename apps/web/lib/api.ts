@@ -31,5 +31,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     let code = "error"; try { code = (await r.json()).error ?? code; } catch { /* ignore */ }
     throw new ApiError(r.status, code);
   }
+  if (r.status === 204) return undefined as T;
   return r.json() as Promise<T>;
 }

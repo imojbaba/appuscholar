@@ -12,6 +12,23 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
 
   await page.getByTestId("project-title").fill("Sleep and memory");
   await page.getByTestId("project-create").click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
+  if (await page.getByTestId("stage-intro-start").count()) await page.getByTestId("stage-intro-start").click();
+  await page.goto("/projects");
+
+  // rename via the card menu
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-rename").click();
+  await page.getByTestId("rename-input").fill("Sleep and memory, renamed");
+  await page.getByTestId("rename-save").click();
+  await expect(page.getByTestId("project-link").first()).toHaveText("Sleep and memory, renamed");
+  await expect(page.getByTestId("project-card").first()).toContainText("No documents yet");
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-complete").click();
+  await expect(page.getByTestId("project-complete-badge").first()).toHaveText("Complete");
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-reopen").click();
+  await expect(page.getByTestId("project-complete-badge")).toHaveCount(0);
   await page.getByTestId("project-link").first().click();
 
   await page.getByTestId("doc-title").fill("Draft");
@@ -64,4 +81,12 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   expect(saved.bodyHtml).toContain("data:image/png;base64,");
   expect(saved.bodyHtml).toMatch(/<span class="ai-ins" data-h="abc123">/);
   expect(saved.bodyHtml).toContain("End of results.!");
+
+  await page.goto("/projects");
+  await expect(page.getByTestId("project-card").first()).toBeVisible();
+  const before = await page.getByTestId("project-card").count();
+  await page.getByTestId("project-actions").first().click();
+  await page.getByTestId("project-delete").click();
+  await page.getByTestId("delete-confirm").click();
+  await expect(page.getByTestId("project-card")).toHaveCount(before - 1);
 });

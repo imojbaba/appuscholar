@@ -1,8 +1,11 @@
-import { ProjectList } from "@/components/ProjectList";
+import { ProjectList } from "@/components/projects/ProjectList";
 export default function Projects() {
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", padding: 16 }}>
-      <h1 style={{ color: "var(--primary)" }}>Research Projects</h1>
+    <div className="grid gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Research Projects</h1>
+        <p className="mt-1 text-sm text-muted-foreground">One project per study. It names your work, then walks you through its six stages.</p>
+      </div>
       <ProjectList />
     </div>
   );
