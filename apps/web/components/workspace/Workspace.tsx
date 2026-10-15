@@ -2,6 +2,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useSettings, type Settings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
+import { toast } from "@/components/ui/toast";
+import { isImportable } from "@/lib/import/parse";
+import { allPdf, importFiles } from "@/lib/import/run";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -11,6 +15,7 @@ import { ProjectBar } from "./ProjectBar";
 import { SaveAsProject } from "./dialogs/SaveAsProject";
 import { Projects } from "./dialogs/Projects";
 import { StageIntro } from "./dialogs/StageIntro";
+import { ImportOrigin } from "./dialogs/ImportOrigin";
 import { ChromeDialogs, Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Subbar } from "./Subbar";
@@ -32,6 +37,7 @@ function byCreated(list: DocumentSummary[]): DocumentSummary[] {
 }
 
 export function Workspace() {
+  const t = useT();
   const { me, settings, update, reload } = useSettings();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -43,6 +49,8 @@ export function Workspace() {
   const [dock, setDock] = useState<"tools" | "ai">("tools");
   const [dialog, setDialog] = useState<WorkspaceValue["dialog"]>(null);
   const [saveAsInit, setSaveAsInit] = useState<WorkspaceValue["saveAsInit"]>({ mode: "new", name: "", guessStage: false });
+  const [importWaiting, setImportWaiting] = useState<File[]>([]);
+  const importing = useRef(false);
   const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting] = useState(false); // Task 14 raises this when an AI suggestion is waiting.
   const settingsRef = useRef(settings);
@@ -188,13 +196,41 @@ export function Workspace() {
     return setActiveProjectRef.current(docProjectId === scratchProjectId ? null : docProjectId, { skipJump: true, docId: id });
   }, [reloadDocs, selectDoc, scratchProjectId]);
 
+  /** Imports the files as new documents, then shows the last one. One batch at a time. */
+  const doImport = useCallback(async (files: File[], origin: "draft" | "source") => {
+    const pid = projectIdRef.current;
+    if (!pid || importing.current) return;
+    importing.current = true;
+    try {
+      const last = await importFiles(files, origin, pid, t);
+      if (last) { await reloadDocs(); await selectDoc(last); }
+    } finally { importing.current = false; }
+  }, [t, reloadDocs, selectDoc]);
+
+  const startImport = useCallback((files: File[]) => {
+    const usable = files.filter(isImportable);
+    const skipped = files.length - usable.length;
+    if (!usable.length) { toast("Import a .docx, .pdf, .txt, .md or .html file."); return; }
+    if (skipped) toast(`${skipped} file(s) skipped: only .docx, .pdf, .txt, .md and .html can be imported.`);
+    if (allPdf(usable)) { void doImport(usable, "source"); return; }
+    setImportWaiting(usable);
+    setDialog("importOrigin");
+  }, [doImport]);
+
+  const runImport = useCallback(async (origin: "draft" | "source") => {
+    const files = importWaiting;
+    setImportWaiting([]);
+    setDialog(null);
+    await doImport(files, origin);
+  }, [importWaiting, doImport]);
+
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
-    dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null),
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
     openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
@@ -210,6 +246,7 @@ export function Workspace() {
       <SaveAsProject />
       <Projects />
       <StageIntro />
+      <ImportOrigin />
       <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
         <AlertDialogContent data-testid="switch-dialog">
           <AlertDialogHeader>

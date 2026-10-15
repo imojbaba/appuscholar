@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiFetch, ApiError } from "@/lib/api";
 import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
+import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { useWorkspace, type DocumentSummary, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
 
 const UNDO_MS = 10_000;
@@ -17,10 +18,11 @@ const UNDO_MS = 10_000;
 export function DocBar() {
   const t = useT();
   const { me } = useSettings();
-  const { project, documents, currentDoc, selectDoc, reloadDocs, restoreDocument, patchDoc, registerFlush, flushOpen } = useWorkspace();
+  const { project, documents, currentDoc, selectDoc, reloadDocs, startImport, restoreDocument, patchDoc, registerFlush, flushOpen } = useWorkspace();
   const [dialog, setDialog] = useState<"new" | "rename" | "delete" | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const isSource = currentDoc?.kind === "source";
   const projectId = project?.id ?? me?.scratchProjectId;
 
@@ -107,8 +109,9 @@ export function DocBar() {
       <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName("Untitled " + (documents.length + 1)); setDialog("new"); }}>{t("doc_new_btn")}</Button>
       <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { setName(currentDoc?.title ?? ""); setDialog("rename"); }}>✎</button>
       <button type="button" className="icon del" aria-label={t("doc_delete_title")} title={t("doc_delete_title")} data-testid="doc-delete" disabled={!currentDoc} onClick={askDelete}>🗑</button>
-      {/* Task 10 wires the import. */}
-      <Button variant="ghost" size="sm" title={t("doc_import_title")} data-testid="doc-import" onClick={() => toast("Import arrives in the next update.")}>{t("doc_import_btn")}</Button>
+      <Button variant="ghost" size="sm" title={t("doc_import_title")} data-testid="doc-import" onClick={() => fileRef.current?.click()}>{t("doc_import_btn")}</Button>
+      <input ref={fileRef} type="file" accept={IMPORT_ACCEPT} multiple hidden data-testid="doc-import-input" aria-label="Choose files to import"
+        onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ""; if (files.length) startImport(files); }} />
       <Button variant="ghost" size="sm" title={t(isSource ? "org_btn_title_src" : "org_btn_title_own")} data-testid="doc-origin" disabled={!currentDoc} onClick={() => { void toggleOrigin(); }}>{t(isSource ? "org_btn_src" : "org_btn_own")}</Button>
 
       <Dialog open={dialog === "new" || dialog === "rename"} onOpenChange={(o) => { if (!o) close(); }}>

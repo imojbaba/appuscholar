@@ -39,7 +39,13 @@ export type WorkspaceValue = {
   /** Re-reads the active project (stage, status) after a change made elsewhere. */
   reloadProject(): Promise<void>;
   /** The Help and AI Provider / Key dialogs (bodies arrive in Tasks 17 and 13), plus the project dialogs. */
-  dialog: "help" | "settings" | "saveAs" | "projects" | "stageIntro" | null;
+  dialog: "help" | "settings" | "saveAs" | "projects" | "stageIntro" | "importOrigin" | null;
+  /** Imports files as new documents (the Import button, a drop on the editor, a pasted file). Asks "Whose writing is this?" once unless every file is a PDF. */
+  startImport(files: File[]): void;
+  /** The names of the files waiting for the answer to "Whose writing is this?". */
+  importNames: string[];
+  /** The answer to the question: imports the waiting files, then shows the last one. */
+  runImport(origin: "draft" | "source"): Promise<void>;
   openHelp(): void;
   openSettings(): void;
   closeDialog(): void;

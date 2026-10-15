@@ -23,7 +23,7 @@ function isProvider(v: unknown): v is ProviderId { return typeof v === "string" 
 export function DocumentCard() {
   const t = useT();
   const { settings } = useSettings();
-  const { currentDoc, registerFlush, setWordCount } = useWorkspace();
+  const { currentDoc, registerFlush, setWordCount, startImport } = useWorkspace();
   // Red from the first failed save until a save succeeds: retries ("saving") and typing offline ("dirty") do not turn it green.
   const [failed, setFailed] = useState(false);
   // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
@@ -58,7 +58,7 @@ export function DocumentCard() {
       <DocBar />
       {/* Keyed by the instance, so a new document's bar subscribes afresh. Its slot keeps its height until the editor exists. */}
       {editor ? <FormatBar key={editor.instanceId} editor={editor} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
-      {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} toolbar={false} />}
+      {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} toolbar={false} onFiles={startImport} />}
     </section>
   );
 }
