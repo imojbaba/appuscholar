@@ -16,7 +16,7 @@ function deps(over: Partial<ActionDeps> & { selection?: string } = {}) {
     selectionText: vi.fn(() => over.selection ?? ""),
     selectionRange: vi.fn(() => (over.selection ? { from: 5, to: 5 + over.selection.length, text: over.selection } : null)),
     tailText: vi.fn(() => TAIL),
-    setThinking: vi.fn((s: string) => { log.push("thinking:" + s); return 1; }),
+    setThinking: vi.fn((s: string, _range?: unknown) => { log.push("thinking:" + s); return 1; }),
     isCurrent: vi.fn(() => true),
     set: vi.fn<ActionDeps["set"]>(() => void log.push("set")),
     setFeedback: vi.fn(() => void log.push("feedback")),
@@ -50,7 +50,8 @@ describe("runWritingAction", () => {
     const built = buildWritingPrompt("continue", TAIL);
     expect(m.callAI).toHaveBeenCalledWith(built.prompt, { temp: built.temp, max: built.max });
     expect(log[0]).toBe("thinking:thinking");
-    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", { msg: accCheck(TAIL, "Reply with 25% more.", "continue").msg, warn: true }, null, 1);
+    expect(m.setThinking).toHaveBeenCalledWith("thinking", null);
+    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", { msg: accCheck(TAIL, "Reply with 25% more.", "continue").msg, warn: true }, 1);
     expect(m.set.mock.calls[0]![1]!.msg).toContain("25%");
     expect(m.toast).toHaveBeenCalledWith("Suggestion ready — press Tab in the editor to accept");
     expect(m.dockShow).toHaveBeenCalledWith("ai");
@@ -60,14 +61,15 @@ describe("runWritingAction", () => {
     await runWritingAction("improve", d);
     const built = buildWritingPrompt("improve", "Around 40 students took part.");
     expect(m.callAI).toHaveBeenCalledWith(built.prompt, { temp: built.temp, max: built.max });
-    expect(m.setThinking).toHaveBeenCalledWith("polishing");
-    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", expect.objectContaining({ warn: true }), { from: 5, to: 5 + "Around 40 students took part.".length, text: "Around 40 students took part." }, 1);
+    // The range is handed over when the request starts, so edits made while the AI thinks are mapped.
+    expect(m.setThinking).toHaveBeenCalledWith("polishing", { from: 5, to: 5 + "Around 40 students took part.".length, text: "Around 40 students took part." });
+    expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", expect.objectContaining({ warn: true }), 1);
     expect(m.toast).toHaveBeenCalledWith("Ready — press Tab to replace your selection");
   });
   it("Extend uses the expanding status", async () => {
     const { d, m } = deps({ selection: "Short text." });
     await runWritingAction("expand", d);
-    expect(m.setThinking).toHaveBeenCalledWith("expanding");
+    expect(m.setThinking).toHaveBeenCalledWith("expanding", expect.objectContaining({ text: "Short text." }));
     expect(m.toast).toHaveBeenCalledWith("Ready — press Tab to replace your selection");
   });
   it("a clean result has a note that is not a warning", async () => {

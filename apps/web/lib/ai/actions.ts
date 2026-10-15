@@ -12,12 +12,12 @@ export type ActionDeps = {
   /** The selection with its position, captured when the request starts so Accept can replace that range later (v1 savedRange). */
   selectionRange(): SelectionRange | null;
   tailText(): string;
-  /** Starts a request and returns its token. Starting another request, dismissing, or switching document makes the token stale. */
-  setThinking(status: SuggestionStatus): number;
+  /** Starts a request and returns its token. `range` is the text the answer will replace (Improve, Extend), null to append (Continue): the provider keeps it mapped through edits made while the AI thinks. Starting another request, dismissing, or switching document makes the token stale. */
+  setThinking(status: SuggestionStatus, range?: SelectionRange | null): number;
   /** False once the request that was given `token` has been superseded: its answer (or error) must be dropped. */
   isCurrent(token: number): boolean;
-  /** A suggestion the student can accept: Tab and Accept insert it. `range` is the text it replaces (Improve, Extend), null to append at the end (Continue). */
-  set(text: string, note: SuggestionNote, range: SelectionRange | null, token: number): void;
+  /** A suggestion the student can accept: Tab and Accept insert it, over the range given to `setThinking` or at the end. */
+  set(text: string, note: SuggestionNote, token: number): void;
   /** Draft first feedback: shown in the pane, never insertable (rule 4). */
   setFeedback(text: string, token: number): void;
   clear(msg?: string): void;
@@ -51,13 +51,13 @@ export async function runWritingAction(kind: WritingKind, d: ActionDeps): Promis
   const range = kind === "continue" ? null : d.selectionRange();
   const orig = kind === "continue" ? d.tailText() : d.selectionText();
   const built = buildWritingPrompt(kind, orig, d.stylePrompt);
-  const token = d.setThinking(THINKING[kind]);
+  const token = d.setThinking(THINKING[kind], range);
   d.dockShow("ai");
   try {
     const res = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     const c = accCheck(orig, res, kind);
-    d.set(res, { msg: c.msg, warn: c.warn }, range, token);
+    d.set(res, { msg: c.msg, warn: c.warn }, token);
     d.dockShow("ai");
     d.toast(kind === "continue" ? "Suggestion ready — press Tab in the editor to accept" : "Ready — press Tab to replace your selection");
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }

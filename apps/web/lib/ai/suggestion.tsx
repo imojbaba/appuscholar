@@ -18,11 +18,11 @@ export type SuggestionValue = {
   status: SuggestionStatus;
   /** True when the suggestion replaces the selection it was made from (Improve, Extend), false when it goes at the end (Continue). */
   selectionAtRequest: boolean;
-  /** Stores a result for the request that was given `token`; a stale token is ignored. `range` is the text it replaces, null to append. */
-  set(text: string, note: SuggestionNote | null, range: SelectionRange | null, token: number): void;
+  /** Stores a result for the request that was given `token`; a stale token is ignored. It replaces the range given to `setThinking`, or is appended when there was none. */
+  set(text: string, note: SuggestionNote | null, token: number): void;
   setFeedback(text: string, token: number): void;
-  /** Starts a request: shows the status and returns the token its result must carry. */
-  setThinking(status: SuggestionStatus): number;
+  /** Starts a request: shows the status and returns the token its result must carry. `range` is the text the answer will replace; it is mapped through every edit made while the AI thinks and while the suggestion waits. */
+  setThinking(status: SuggestionStatus, range?: SelectionRange | null): number;
   /** False once another request started, Dismiss was pressed or the document changed since `token` was issued. */
   isCurrent(token: number): boolean;
   /** Resets the pane. Without a message it returns to the Tools tab; with one (an error, or the placeholder) the pane stays where it is. */
@@ -51,23 +51,24 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   const live = useRef({ sug: null as string | null, range: null as SelectionRange | null, editor: null as Editor | null, token: 0 });
 
   const isCurrent = useCallback((token: number) => token === live.current.token, []);
-  const set = useCallback<SuggestionValue["set"]>((s, n, range, token) => {
+  const set = useCallback<SuggestionValue["set"]>((s, n, token) => {
     if (token !== live.current.token) return;
-    live.current.sug = s; live.current.range = range;
-    setSug(s); setText(s); setNote(n); setStatus("idle"); setSelectionAtRequest(range !== null);
+    // The range was stored when the request started and has been mapped through every edit since.
+    live.current.sug = s;
+    setSug(s); setText(s); setNote(n); setStatus("idle"); setSelectionAtRequest(live.current.range !== null);
     dockShow("ai");
     setAiWaiting(true);
   }, [dockShow, setAiWaiting]);
   const setFeedback = useCallback((s: string, token: number) => {
     if (token !== live.current.token) return;
     live.current.sug = null; live.current.range = null;
-    setSug(null); setText(s); setNote(null); setStatus("idle");
+    setSug(null); setText(s); setNote(null); setStatus("idle"); setSelectionAtRequest(false);
     dockShow("ai");
     setAiWaiting(true);
   }, [dockShow, setAiWaiting]);
-  const setThinking = useCallback((s: SuggestionStatus) => {
-    live.current.sug = null; live.current.range = null;
-    setSug(null); setText(null); setNote(null); setStatus(s);
+  const setThinking = useCallback((s: SuggestionStatus, range: SelectionRange | null = null) => {
+    live.current.sug = null; live.current.range = range;
+    setSug(null); setText(null); setNote(null); setStatus(s); setSelectionAtRequest(range !== null);
     return ++live.current.token;
   }, []);
   const clear = useCallback((msg?: string) => {
