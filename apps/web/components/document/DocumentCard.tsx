@@ -18,6 +18,7 @@ import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { DocBar } from "./DocBar";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { ActionRow } from "./ActionRow";
+import { SelectionBubble } from "./SelectionBubble";
 import { FormatBar } from "./FormatBar";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
@@ -79,6 +80,7 @@ export function DocumentCard() {
       {/* Keyed by the instance, so a new document's bar subscribes afresh. Its slot keeps its height until the editor exists. */}
       {editor ? <FormatBar key={editor.instanceId} editor={editor} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
       {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} toolbar={false} onFiles={startImport} onTab={tab} highlightAi={highlightAi} />}
+      {editor && <SelectionBubble key={"bubble-" + editor.instanceId} editor={editor} />}
       {editor && <ActionRow key={"actions-" + editor.instanceId} editor={editor} highlightAi={highlightAi} onHighlightAi={setHighlightAi} />}
     </section>
   );

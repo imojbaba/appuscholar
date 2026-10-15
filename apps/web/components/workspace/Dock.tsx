@@ -5,6 +5,7 @@ import { useSettings } from "@/lib/settings";
 import { toolLabelKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
 import { AiPane } from "@/components/tools/AiPane";
+import { ChatPanel, useChatLog } from "@/components/tools/ChatPanel";
 import { IdeaPanel } from "@/components/tools/IdeaPanel";
 import { StubPanel } from "@/components/tools/StubPanel";
 import { StageGuide } from "./StageGuide";
@@ -19,6 +20,7 @@ export function Dock() {
   const t = useT();
   const { settings, update } = useSettings();
   const { activeTool, dock, dockShow, aiWaiting } = useWorkspace();
+  const chat = useChatLog();
   const [dragging, setDragging] = useState(false);
   const start = useRef<{ x: number; w: number; ws: HTMLElement } | null>(null);
 
@@ -63,7 +65,7 @@ export function Dock() {
         ) : (
           <>
             <StageGuide />
-            {activeTool === "idea" ? <IdeaPanel /> : <StubPanel id={activeTool} />}
+            {activeTool === "idea" ? <IdeaPanel /> : activeTool === "chat" ? <ChatPanel chat={chat} /> : <StubPanel id={activeTool} />}
           </>
         )}
       </aside>

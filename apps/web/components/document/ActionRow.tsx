@@ -3,10 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { tHtml, useT } from "@/lib/i18n";
 import { plural } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
-import { runWritingAction, type ActionDeps } from "@/lib/ai/actions";
-import { useSuggestion } from "@/lib/ai/suggestion";
-import { useCallAI } from "@/lib/ai/useCallAI";
-import { hasSelection, selectionRange, selectionText, tailText } from "@/lib/editor/insert";
+import { useWritingRun } from "@/lib/ai/useWritingRun";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
@@ -16,19 +13,9 @@ import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Editor; highlightAi: boolean; onHighlightAi(on: boolean): void }) {
   const t = useT();
   const { settings, update } = useSettings();
-  const { currentDoc, wordCount, dockShow } = useWorkspace();
-  const suggestion = useSuggestion();
-  const callAI = useCallAI();
+  const { currentDoc, wordCount } = useWorkspace();
+  const run = useWritingRun(editor);
   const draftFirst = settings.draftFirst === true;
-
-  const run = (kind: "continue" | "improve" | "expand") => {
-    const deps: ActionDeps = {
-      callAI, hasSelection: () => hasSelection(editor), selectionText: () => selectionText(editor), selectionRange: () => selectionRange(editor), tailText: () => tailText(editor),
-      setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, setFeedback: suggestion.setFeedback, clear: suggestion.clear,
-      dockShow, toast, t, draftFirst
-    };
-    return runWritingAction(kind, deps);
-  };
   // The buttons must not take focus from the document: the selection Improve and Extend work on stays visible.
   const keep = (e: React.MouseEvent) => e.preventDefault();
   const words = wordCount ?? currentDoc?.wordCount ?? 0;

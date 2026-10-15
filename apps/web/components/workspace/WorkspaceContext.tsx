@@ -11,6 +11,9 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string };
 export type WorkspaceValue = {
   activeTool: ToolId;
   showTool(id: ToolId): void;
+  /** The text the selection bubble's Find papers kept for the Research tool (up to 200 characters), or null. */
+  pendingSearch: string | null;
+  setPendingSearch(text: string | null): void;
   dock: "tools" | "ai";
   dockShow(which: "tools" | "ai"): void;
   aiWaiting: boolean;

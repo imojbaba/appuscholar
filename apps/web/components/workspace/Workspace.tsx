@@ -58,6 +58,7 @@ export function Workspace() {
   const importing = useRef(false);
   const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting, setAiWaiting] = useState(false);
+  const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
@@ -237,7 +238,7 @@ export function Workspace() {
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
-    activeTool, showTool, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
+    activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
