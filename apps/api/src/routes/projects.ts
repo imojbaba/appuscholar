@@ -3,7 +3,7 @@ import { z } from "zod";
 import { PROJECT_STAGES, PROJECT_STATUSES, type Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
-const Create = z.object({ title: z.string().trim().min(1).max(200) });
+const Create = z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(PROJECT_STAGES).optional() });
 const Patch = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   stage: z.enum(PROJECT_STAGES).optional(),
@@ -18,7 +18,7 @@ export function projectRoutes(store: Store) {
   r.post("/", async (c) => {
     const body = Create.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    return c.json(await store.createProject(c.get("userId"), body.data.title), 201);
+    return c.json(await store.createProject(c.get("userId"), body.data.title, body.data.stage), 201);
   });
   r.patch("/:id", async (c) => {
     const body = Patch.safeParse(await c.req.json().catch(() => null));

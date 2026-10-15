@@ -26,7 +26,7 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string };
 export type NewRevision = { bodyHtml: string; authorKind: AuthorKind; authorLabel: string; wordCount: number; originStats?: OriginStats };
 
 export interface Store {
-  createProject(userId: string, title: string): Promise<Project>;
+  createProject(userId: string, title: string, stage?: ProjectStage): Promise<Project>;
   /** Excludes the scratch project. */
   listProjects(userId: string): Promise<ProjectSummary[]>;
   updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null>;

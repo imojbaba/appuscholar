@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql } from "drizzle-orm";
 import { users, projects, documents, documentRevisions, credentials, aiUseLog, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -64,8 +64,8 @@ export class DrizzleStore implements Store {
     await this.d.update(users).set({ termsAcceptedAt: at, ageConfirmed: true }).where(eq(users.id, userId));
   }
 
-  async createProject(userId: string, title: string): Promise<Project> {
-    const [p] = await this.d.insert(projects).values({ userId, title }).returning();
+  async createProject(userId: string, title: string, stage?: ProjectStage): Promise<Project> {
+    const [p] = await this.d.insert(projects).values(stage ? { userId, title, stage } : { userId, title }).returning();
     return this.toProject(p!);
   }
   async getScratchProject(userId: string): Promise<Project> {

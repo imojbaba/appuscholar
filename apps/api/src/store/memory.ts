@@ -1,4 +1,4 @@
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, Settings, UserRecord, Credential, AiUseEntry } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry } from "./types";
 
 type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null };
 
@@ -55,8 +55,8 @@ export class MemoryStore implements Store {
     u.ageConfirmed = true;
   }
 
-  async createProject(userId: string, title: string): Promise<Project> {
-    const p: Project = { id: crypto.randomUUID(), userId, title, field: "psychology", stage: "idea", status: "active", contentLang: "en", kind: "research", createdAt: new Date() };
+  async createProject(userId: string, title: string, stage: ProjectStage = "idea"): Promise<Project> {
+    const p: Project = { id: crypto.randomUUID(), userId, title, field: "psychology", stage, status: "active", contentLang: "en", kind: "research", createdAt: new Date() };
     this.projects.set(p.id, p);
     return p;
   }

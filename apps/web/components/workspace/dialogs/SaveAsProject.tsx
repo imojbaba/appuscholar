@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
-import { STAGE_ORDER, isStageKey, type StageKey } from "@/lib/tools";
+import { runCreateFlow, type SaveAsProgress } from "@/lib/saveAsFlow";
+import { STAGE_ORDER, TOOL_TO_STAGE, isStageKey, type StageKey } from "@/lib/tools";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
@@ -26,10 +27,12 @@ export function SaveAsProject() {
 function Form() {
   const t = useT();
   const { me } = useSettings();
-  const { saveAsInit, currentDoc, project, setActiveProject, openStageIntro, closeDialog } = useWorkspace();
+  const { saveAsInit, activeTool, currentDoc, project, setActiveProject, openStageIntro, closeDialog } = useWorkspace();
   const [mode, setMode] = useState(saveAsInit.mode);
   const [name, setName] = useState(saveAsInit.name);
-  const [stage, setStage] = useState<StageKey>("idea");
+  const [stage, setStage] = useState<StageKey>(saveAsInit.guessStage ? TOOL_TO_STAGE[activeTool] ?? "idea" : "idea");
+  // Survives a failed attempt, so Save again resumes instead of creating a second project.
+  const progress = useRef<SaveAsProgress>({});
   const [open, setOpen] = useState<Summary[] | null>(null);
   const [existingId, setExistingId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,13 +58,19 @@ function Form() {
       if (!title) { toast(t("toast_name_first")); return; }
       setBusy(true);
       try {
-        const p = await apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify({ title }) });
-        if (stage !== "idea") await apiFetch(`/projects/${p.id}`, { method: "PATCH", body: JSON.stringify({ stage }) });
-        if (currentDoc && inScratch) await apiFetch(`/documents/${currentDoc.id}/move`, { method: "POST", body: JSON.stringify({ projectId: p.id }) });
-        await setActiveProject(p.id, { skipJump: true, docId: currentDoc && inScratch ? currentDoc.id : undefined });
-        toast(t("toast_saved_as") + title);
+        const moveDoc = currentDoc && inScratch ? currentDoc : null;
+        const made = await runCreateFlow(progress.current, {
+          create: () => apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify({ title, stage }) }),
+          move: moveDoc ? (id) => apiFetch(`/documents/${moveDoc.id}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) }) : null,
+          activate: (id) => setActiveProject(id, { skipJump: true, docId: moveDoc?.id })
+        });
+        toast(t("toast_saved_as") + made.title);
         openStageIntro(stage);
-      } catch { toast("Could not save the research project. Try again."); setBusy(false); }
+      } catch {
+        const done = progress.current;
+        toast(done.projectId ? `Created "${done.title}"${done.moved ? " and moved your document into it" : ""}, but could not finish. Press Save to retry the rest.` : "Could not save the research project. Try again.");
+        setBusy(false);
+      }
     } else {
       const target = open?.find((p) => p.id === existingId);
       if (!target) { toast(t("toast_no_existing_project")); return; }
@@ -96,6 +105,7 @@ function Form() {
             <select className="input" id="sapStage" value={stage} onChange={(e) => { if (isStageKey(e.target.value)) setStage(e.target.value); }} data-testid="sap-stage">
               {STAGE_ORDER.map((s) => <option key={s} value={s}>{t("stage_" + s)}</option>)}
             </select>
+            {saveAsInit.guessStage && <p className="m-0 text-[13px] text-muted-foreground" data-testid="sap-stage-desc">{t("sap_stage_desc")}</p>}
           </div>
         </>
       ) : (

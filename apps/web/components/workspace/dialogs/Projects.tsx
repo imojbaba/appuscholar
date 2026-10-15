@@ -82,7 +82,7 @@ function List() {
             <div className="flex flex-wrap gap-1.5">
               <Button variant="primary" size="sm" disabled={busy} data-testid="project-open" onClick={() => { void open(p); }}>{t("project_open_btn")}</Button>
               <Button variant="ghost" size="sm" disabled={busy} data-testid="project-complete" onClick={() => { void toggle(p); }}>{t(p.status === "complete" ? "project_reopen_btn" : "project_complete_btn")}</Button>
-              <Button variant="ghost" size="sm" disabled={busy} data-testid="project-delete" onClick={() => setConfirm(p)}>Delete</Button>
+              <Button variant="ghost" size="sm" disabled={busy} aria-label={`Delete ${p.title}`} data-testid="project-delete" onClick={() => setConfirm(p)}>Delete</Button>
             </div>
           </li>
         ))}

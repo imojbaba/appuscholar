@@ -49,6 +49,12 @@ describe("api routes", () => {
     expect((await app.request(`/documents/${d.id}/move`, { method: "POST", headers: auth, body: JSON.stringify({ projectId: "nope" }) })).status).toBe(404);
   });
 
+  it("POST /projects accepts an optional stage and rejects an unknown one", async () => {
+    const r = await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Lit", stage: "lit" }) });
+    expect(r.status).toBe(201); expect(((await r.json()) as { stage: string }).stage).toBe("lit");
+    expect((await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "X", stage: "nope" }) })).status).toBe(400);
+  });
+
   it("PATCH /projects/:id accepts contentLang", async () => {
     const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Hindi" }) })).json() as { id: string };
     const r = await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ contentLang: "hi" }) });

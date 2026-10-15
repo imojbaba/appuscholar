@@ -6,7 +6,7 @@ import type { AuthEnv } from "../auth";
 
 const Put = z.object({ bodyHtml: z.string(), title: z.string().trim().min(1).max(200).optional() });
 const Patch = z.object({ title: z.string().trim().min(1).max(200) });
-const Move = z.object({ projectId: z.string().min(1) });
+const Move = z.object({ projectId: z.string().min(1) }).strict();
 
 export function documentRoutes(store: Store, maxBodyBytes: number) {
   const r = new Hono<AuthEnv>();

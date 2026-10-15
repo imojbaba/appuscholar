@@ -37,7 +37,7 @@ export function Workspace() {
   const [activeTool, setActiveTool] = useState<ToolId>("idea");
   const [dock, setDock] = useState<"tools" | "ai">("tools");
   const [dialog, setDialog] = useState<WorkspaceValue["dialog"]>(null);
-  const [saveAsInit, setSaveAsInit] = useState<WorkspaceValue["saveAsInit"]>({ mode: "new", name: "" });
+  const [saveAsInit, setSaveAsInit] = useState<WorkspaceValue["saveAsInit"]>({ mode: "new", name: "", guessStage: false });
   const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting] = useState(false); // Task 14 raises this when an AI suggestion is waiting.
   const settingsRef = useRef(settings);
@@ -143,7 +143,7 @@ export function Workspace() {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, setActiveProject, reloadProject,
     dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null),
-    openSaveAs: (mode, prefillName = "") => { setSaveAsInit({ mode, name: prefillName }); setDialog("saveAs"); },
+    openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
     openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
   };

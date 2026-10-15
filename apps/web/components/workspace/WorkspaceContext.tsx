@@ -32,8 +32,9 @@ export type WorkspaceValue = {
   openSettings(): void;
   closeDialog(): void;
   /** Save as research project. `prefillName` pre-fills the name field (the Idea panel passes the first 80 characters of the idea). */
-  openSaveAs(mode: "new" | "existing", prefillName?: string): void;
-  saveAsInit: { mode: "new" | "existing"; name: string };
+    openSaveAs(mode: "new" | "existing", prefillName?: string, opts?: { guessStage?: boolean }): void;
+  /** `guessStage`: the project bar's button defaults the stage to the open tool's stage and shows v1's hint; every other entry point defaults to idea. */
+  saveAsInit: { mode: "new" | "existing"; name: string; guessStage: boolean };
   openProjects(): void;
   /** The six-stage intro, shown after a new project is created; `introStage` is the new project's stage. */
   openStageIntro(stage: StageKey): void;
