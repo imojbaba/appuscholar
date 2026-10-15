@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { sanitizeHtml, wordCount } from "@appuscholar/core";
+import { originCount, sanitizeHtml, wordCount } from "@appuscholar/core";
 import type { Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
@@ -31,7 +31,7 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
       const rev = await store.getRevision(userId, current.id, current.currentSeq);
       return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: false });
     }
-    const rev = await store.appendRevision(userId, current.id, { bodyHtml: clean, authorKind: "web", authorLabel: c.get("email"), wordCount: wordCount(clean) });
+    const rev = await store.appendRevision(userId, current.id, { bodyHtml: clean, authorKind: "web", authorLabel: c.get("email"), wordCount: wordCount(clean), originStats: originCount(clean) });
     return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: true });
   });
 

@@ -105,6 +105,26 @@ describe("api routes", () => {
     expect(r2.revision.seq).toBe(2);
   });
 
+  it("GET /projects/:id/writing-record counts typed versus AI words per revision, and keeps source documents out of docs", async () => {
+    const { p, d } = await makeDoc();
+    const put = (id: string, bodyHtml: string) => app.request(`/documents/${id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml }) });
+    await put(d.id, "<p>mine</p>");
+    await put(d.id, '<p>mine <span class="ai-ins" data-h="x">theirs too</span></p>');
+    const src = await (await app.request(`/projects/${p.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Paper" }) })).json() as { id: string };
+    await put(src.id, "<p>one two three four</p>");
+    await app.request(`/documents/${src.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ kind: "source" }) });
+    const rec = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; title: string; kind: string; stats: unknown }[]; sources: { title: string; words: number }[]; weekly: { weekStart: string; typed: number; ai: number }[]; aiLog: { total: number } };
+    expect(rec.docs).toHaveLength(1);
+    expect(rec.docs[0]).toMatchObject({ id: d.id, title: "Draft", kind: "draft", stats: { typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 } });
+    expect(rec.sources).toEqual([{ title: "Paper", words: 4 }]);
+    expect(rec.weekly).toHaveLength(1);
+    expect(rec.weekly[0]).toMatchObject({ typed: 1, ai: 2 });
+    expect(rec.weekly[0]?.weekStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(rec.aiLog).toEqual({ byKind: {}, byProvider: {}, total: 0 });
+    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
+    expect((await app.request(`/projects/${p.id}/writing-record`, { headers: other })).status).toBe(404);
+  });
+
   it("rejects bodies over the limit with 413 and keeps the last revision", async () => {
     const { d } = await makeDoc();
     await app.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml: "<p>keep</p>" }) });

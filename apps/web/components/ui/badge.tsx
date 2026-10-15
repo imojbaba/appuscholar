@@ -20,6 +20,7 @@ const badgeVariants = cva(
         // v2 design-system pills (DESIGN-SYSTEM.md section 7 "Badge")
         stage: "bg-purple-100 text-purple-800",
         ok: "bg-ok-bg text-ok-ink",
+        flag: "bg-flag-bg font-semibold text-flag-ink",
         chip: "bg-chip text-muted-foreground",
         gold: "border-gold bg-gold-wash text-ink",
         danger: "bg-danger-bg font-semibold text-danger-ink",

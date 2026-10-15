@@ -18,6 +18,7 @@ import { SaveAsProject } from "./dialogs/SaveAsProject";
 import { Projects } from "./dialogs/Projects";
 import { StageIntro } from "./dialogs/StageIntro";
 import { ImportOrigin } from "./dialogs/ImportOrigin";
+import { MyWriting } from "./dialogs/MyWriting";
 import { ChromeDialogs, Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Subbar } from "./Subbar";
@@ -241,7 +242,7 @@ export function Workspace() {
     activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
     openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
@@ -259,6 +260,7 @@ export function Workspace() {
         <Projects />
         <StageIntro />
         <ImportOrigin />
+        <MyWriting />
         <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
           <AlertDialogContent data-testid="switch-dialog">
             <AlertDialogHeader>

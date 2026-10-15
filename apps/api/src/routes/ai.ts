@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { classifyAiUse, contentLangInstruction, scanText } from "@appuscholar/core";
-import type { Store } from "../store/types";
+import type { AiUseEntry, Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 import { complete, type GatewayDeps } from "../ai/gateway";
 import { AiError, type AiErrorCode } from "../ai/types";
@@ -34,6 +34,14 @@ const STATUS: Record<AiErrorCode, 400 | 401 | 404 | 429 | 502> = {
 function foundSentence(counts: Record<string, number>): string {
   const plural = (k: string) => (k.endsWith("s") ? k + "es" : k + "s");
   return "Found: " + Object.keys(counts).map((k) => counts[k] + " " + (counts[k]! > 1 ? plural(k) : k)).join(", ") + ".";
+}
+
+/** Counts of AI requests by help type and by provider (the log summary, and the writing-process record's AI-use part). */
+export function summariseAiUse(rows: AiUseEntry[]): { byKind: Record<string, number>; byProvider: Record<string, number>; total: number } {
+  const byKind: Record<string, number> = {};
+  const byProvider: Record<string, number> = {};
+  for (const e of rows) { byKind[e.k] = (byKind[e.k] ?? 0) + 1; byProvider[e.p] = (byProvider[e.p] ?? 0) + 1; }
+  return { byKind, byProvider, total: rows.length };
 }
 
 export function aiRoutes(store: Store, deps: GatewayDeps) {
@@ -94,10 +102,7 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     const q = Range.safeParse(c.req.query());
     if (!q.success) return c.json({ error: "invalid" }, 400);
     const rows = await store.listAiUse(c.get("userId"), q.data.from, q.data.to);
-    const byKind: Record<string, number> = {};
-    const byProvider: Record<string, number> = {};
-    for (const e of rows) { byKind[e.k] = (byKind[e.k] ?? 0) + 1; byProvider[e.p] = (byProvider[e.p] ?? 0) + 1; }
-    return c.json({ byKind, byProvider, total: rows.length });
+    return c.json(summariseAiUse(rows));
   });
 
   r.delete("/log", async (c) => {

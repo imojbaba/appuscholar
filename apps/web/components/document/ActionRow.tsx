@@ -6,6 +6,7 @@ import { useSettings } from "@/lib/settings";
 import { useWritingRun } from "@/lib/ai/useWritingRun";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { OriginBadge } from "./OriginBadge";
 import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
@@ -33,7 +34,7 @@ export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Edit
         onClick={() => { void update({ draftFirst: !draftFirst }); toast(draftFirst ? t("df_off") : t("df_on")); }}>{t("df_btn")}</Button>
       <span className="spacer" />
       <span className="count" data-testid="word-count">{plural(words, "word", "words")}</span>
-      {/* The "NN% yours" origin badge (data-testid="origin-badge") joins here in Task 16. */}
+      <OriginBadge editor={editor} />
     </div>
   );
 }
