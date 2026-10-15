@@ -22,4 +22,10 @@ describe("v1 chrome strings", () => {
     expect(tFormat(en, hi, "help_intro", "hi")).toBe(hi.help_intro);
     expect(tFormat(en, hi, "nonexistent_key", "hi")).toBe("nonexistent_key");
   });
+  it("falls back to English for a key Hindi lacks, and leaves unresolved placeholders literal", () => {
+    const e = { a: "E {x} {y}" } as Record<string, string>;
+    const h = {} as Record<string, string>;
+    expect(tFormat(e, h, "a", "hi", { x: 1 })).toBe("E 1 {y}");
+    expect(tFormat(e, h, "a", "en")).toBe("E {x} {y}");
+  });
 });
