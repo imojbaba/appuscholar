@@ -266,3 +266,18 @@
 .editor .ProseMirror .page-break.ProseMirror-selectednode { border-top-color: var(--purple-800); }
 .is-phone .fmtbar { padding: 8px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
 .is-phone .fmtbar > * { flex: none; }
+
+/* Action row under the document and the AI suggestion pane (mockup 02). Gold marks the machine; a flag is an amber sentence, not a badge. */
+.actions { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; position: relative; }
+.actions .spacer { flex: 1; }
+.actions .count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.is-phone .actions { padding: 10px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.is-phone .actions > * { flex: none; }
+.ai-out { min-height: 120px; padding: 12px 14px; border: 1px dashed var(--dashed); border-radius: var(--r-card); background: var(--card); font-size: 14px; line-height: 22px; white-space: pre-wrap; }
+.ai-out.empty { color: var(--muted); }
+.ai-note { margin: 8px 0 0; font-size: 12px; line-height: 16px; color: var(--muted); }
+.ai-note.flag { color: var(--flag-ink); }
+.ai-note.ok { color: var(--ok-ink); }
+.ai-row { display: flex; gap: 6px; margin-top: 12px; }
+.ai-row .primary { flex: 1; justify-content: center; }
+.thinking { color: var(--accent-ink); font-weight: 500; }

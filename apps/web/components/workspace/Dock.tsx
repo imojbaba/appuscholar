@@ -1,9 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
-import { plain, plainText, tHtml, useT } from "@/lib/i18n";
+import { plain, plainText, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { toolLabelKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
+import { AiPane } from "@/components/tools/AiPane";
 import { IdeaPanel } from "@/components/tools/IdeaPanel";
 import { StubPanel } from "@/components/tools/StubPanel";
 import { StageGuide } from "./StageGuide";
@@ -58,8 +59,7 @@ export function Dock() {
       <div className={"splitter" + (dragging ? " drag" : "")} role="separator" aria-orientation="vertical" aria-label="Resize side panel" aria-valuemin={MIN_W} aria-valuemax={MAX_W} aria-valuenow={settings.dockW ?? 440} data-testid="dock-splitter" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
       <aside className="dock" role="tabpanel" aria-label={dock === "ai" ? plainText(t("dock_ai_tab")) : plainText(t(toolLabelKey(activeTool)))}>
         {dock === "ai" ? (
-          // Task 14 replaces this with AiPane.
-          <div className="panel" data-testid="ai-pane"><p className="desc">{tHtml(t("ai_pane_desc"))}</p></div>
+          <AiPane />
         ) : (
           <>
             <StageGuide />

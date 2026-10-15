@@ -10,6 +10,7 @@ import { allPdf, importFiles } from "@/lib/import/run";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
 import { ProjectBar } from "./ProjectBar";
@@ -56,7 +57,7 @@ export function Workspace() {
   const [importWaiting, setImportWaiting] = useState<File[]>([]);
   const importing = useRef(false);
   const [introStage, setIntroStage] = useState<StageKey>("idea");
-  const [aiWaiting] = useState(false); // Task 14 raises this when an AI suggestion is waiting.
+  const [aiWaiting, setAiWaiting] = useState(false);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
@@ -231,10 +232,12 @@ export function Workspace() {
     await doImport(files, origin);
   }, [importWaiting, doImport]);
 
+  const dockShow = useCallback((which: "tools" | "ai") => { setDock(which); if (which === "ai") setAiWaiting(false); }, []);
+
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
-    activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
+    activeTool, showTool, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
@@ -246,37 +249,39 @@ export function Workspace() {
   const dockW = settings.dockW ?? 440;
   return (
     <WorkspaceProvider value={value}>
-      <Header />
-      <ChromeDialogs />
-      <Subbar />
-      <ProjectBar />
-      <SaveAsProject />
-      <Projects />
-      <StageIntro />
-      <ImportOrigin />
-      <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
-        <AlertDialogContent data-testid="switch-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Switch anyway?</AlertDialogTitle>
-            <AlertDialogDescription>{`Unsaved changes in "${switchAsk?.title ?? ""}" may be lost.`}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="switch-stay">Stay</AlertDialogCancel>
-            <AlertDialogAction data-testid="switch-anyway" onClick={() => { switchAsk?.answer(true); setSwitchAsk(null); }}>Switch anyway</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {ready ? (
-        <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px" } as React.CSSProperties}>
-          <Sidebar />
-          <DocumentCard />
-          <Dock />
-        </main>
-      ) : error ? (
-        <p role="alert" className="p-6 text-sm text-destructive" data-testid="error-msg">Could not load your workspace.</p>
-      ) : (
-        <div className="grid gap-4 p-6" aria-busy="true"><Skeleton className="h-6 w-60" /><Skeleton className="h-96" /></div>
-      )}
+      <SuggestionProvider>
+        <Header />
+        <ChromeDialogs />
+        <Subbar />
+        <ProjectBar />
+        <SaveAsProject />
+        <Projects />
+        <StageIntro />
+        <ImportOrigin />
+        <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
+          <AlertDialogContent data-testid="switch-dialog">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Switch anyway?</AlertDialogTitle>
+              <AlertDialogDescription>{`Unsaved changes in "${switchAsk?.title ?? ""}" may be lost.`}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="switch-stay">Stay</AlertDialogCancel>
+              <AlertDialogAction data-testid="switch-anyway" onClick={() => { switchAsk?.answer(true); setSwitchAsk(null); }}>Switch anyway</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {ready ? (
+          <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px" } as React.CSSProperties}>
+            <Sidebar />
+            <DocumentCard />
+            <Dock />
+          </main>
+        ) : error ? (
+          <p role="alert" className="p-6 text-sm text-destructive" data-testid="error-msg">Could not load your workspace.</p>
+        ) : (
+          <div className="grid gap-4 p-6" aria-busy="true"><Skeleton className="h-6 w-60" /><Skeleton className="h-96" /></div>
+        )}
+      </SuggestionProvider>
     </WorkspaceProvider>
   );
 }

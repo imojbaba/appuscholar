@@ -9,7 +9,7 @@ import { Toolbar } from "./Toolbar";
 
 function words(text: string): number { const t = text.trim(); return t ? t.split(/\s+/).length : 0; }
 
-export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onStatus, onCount, onEditor, onFiles, toolbar = true }: {
+export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onStatus, onCount, onEditor, onFiles, onTab, highlightAi = false, toolbar = true }: {
   docId: string; initialHtml: string; initialSeq: number;
   onSaved?: (seq: number) => void;
   onReady?: (api: { flushNow: () => Promise<boolean> }) => void;
@@ -23,6 +23,10 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   toolbar?: boolean;
   /** Files dropped on the editor or pasted into it that can be imported (.docx, .pdf, .txt, .md, .html). Anything else drops and pastes as usual. */
   onFiles?: (files: File[]) => void;
+  /** Tab inside the document: return true when it accepted a waiting AI suggestion (the key is then consumed); false lets Tab move focus as usual. */
+  onTab?: () => boolean;
+  /** Marks every AI-inserted passage with the gold wash (the 👁 AI text toggle). */
+  highlightAi?: boolean;
 }) {
   const t = useT();
   // Fixed when the editor is created, so a language switch shows the other hint from the next document opened.
@@ -32,11 +36,18 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   // The handlers below are created with the editor, so they read the newest callback from here.
   const onFilesRef = useRef(onFiles);
   useEffect(() => { onFilesRef.current = onFiles; }, [onFiles]);
+  const onTabRef = useRef(onTab);
+  useEffect(() => { onTabRef.current = onTab; }, [onTab]);
   const editor = useEditor({
     extensions,
     content: initialHtml,
     immediatelyRender: false,
     editorProps: {
+      handleKeyDown: (_view, event) => {
+        if (event.key !== "Tab" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || !onTabRef.current?.()) return false;
+        event.preventDefault();
+        return true;
+      },
       handleDrop: (_view, event) => {
         const files = Array.from(event.dataTransfer?.files ?? []).filter(isImportable);
         if (!files.length || !onFilesRef.current) return false;
@@ -80,7 +91,7 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   }, [editor, onEditor]);
   return (
     // A file dropped on the card's padding (outside the text) would otherwise be opened by the browser, so the wrapper takes it too.
-    <div className="editor min-w-0"
+    <div className={"editor min-w-0" + (highlightAi ? " highlight-ai" : "")}
       onDragOver={(e) => { if (onFiles && e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
       onDrop={(e) => {
         if (e.defaultPrevented || !onFiles) return;

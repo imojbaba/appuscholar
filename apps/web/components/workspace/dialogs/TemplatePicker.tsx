@@ -10,7 +10,7 @@ import { SCAFFOLDS, scaffoldToHtml, type ScaffoldName } from "@/lib/templates";
 
 const NAMES = Object.keys(SCAFFOLDS) as [ScaffoldName, ...ScaffoldName[]];
 
-/** v1's template menu: the `🧱 Template` button and its "Which template?" list. Task 14 moves the button into the action row. */
+/** v1's template menu: the `🧱 Template` button and its "Which template?" list. The action row hosts the button. */
 export function TemplatePicker({ editor }: { editor: Editor }) {
   const t = useT();
   const [open, setOpen] = useState(false);

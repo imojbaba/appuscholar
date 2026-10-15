@@ -8,7 +8,6 @@ import { clearFormatting } from "@/lib/editor/clearFormatting";
 import { resizeImage } from "@/lib/editor/image";
 import { DICTATION_LANGS, UNSUPPORTED_MESSAGE, defaultDictationLang, startDictation, type Dictation } from "@/lib/editor/dictate";
 import { TableSize } from "@/components/workspace/dialogs/TableSize";
-import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
 import { FindReplace } from "./FindReplace";
 
 const FONTS = ["Georgia", "Times New Roman", "Arial", "Noto Sans Devanagari"];
@@ -154,9 +153,6 @@ export function FormatBar({ editor }: { editor: Editor }) {
         </select>
         <button type="button" className="fmt" aria-label="More formatting" aria-expanded={more} data-testid="fmt-more" onMouseDown={(e) => e.preventDefault()}
           onClick={() => { void update({ fmtMore: !more }); }}>{t("fmt_more_btn", { a: more ? "▴" : "▾" })}</button>
-        {/* Task 14 moves the Template button into the action row. */}
-        <span className="ml-auto" aria-hidden="true" />
-        <TemplatePicker editor={editor} />
       </div>
 
       {more && (

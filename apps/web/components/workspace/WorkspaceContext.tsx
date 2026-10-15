@@ -14,6 +14,8 @@ export type WorkspaceValue = {
   dock: "tools" | "ai";
   dockShow(which: "tools" | "ai"): void;
   aiWaiting: boolean;
+  /** Raised by the suggestion provider while a result waits; showing the AI tab lowers it. */
+  setAiWaiting(on: boolean): void;
   sidebarCollapsed: boolean;
   stageGroupsCollapsed: StageKey[];
   /** The active project's stage, or null in scratch space or once the project is complete. */
