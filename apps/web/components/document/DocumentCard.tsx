@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Editor as TipTapEditor } from "@tiptap/react";
 import { PROVIDERS, type ProviderId } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -11,13 +12,14 @@ import { toast } from "@/components/ui/toast";
 import { Editor } from "@/components/editor/Editor";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { DocBar } from "./DocBar";
+import { FormatBar } from "./FormatBar";
 
 /** Task 13 (the key store) sets this from the stored keys; the provider badge shows only when the chosen provider has one. */
 const hasProviderKey = false;
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
 
-/** The centre column: "Your Document" with its autosave badge, the document bar and the editor. The format bar (Task 9) and action row (Task 14) join here. */
+/** The centre column: "Your Document" with its autosave badge, the document bar and the editor. The format bar and action row (Task 14) join here. */
 export function DocumentCard() {
   const t = useT();
   const { settings } = useSettings();
@@ -27,6 +29,8 @@ export function DocumentCard() {
   // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
   const warned = useRef(false);
   const docId = currentDoc?.id;
+  // The format bar works on the open document's editor instance; null while no document is open or the editor is still being created.
+  const [editor, setEditor] = useState<TipTapEditor | null>(null);
 
   const onStatus = useCallback((s: SaveStatus) => {
     if (s === "error") { setFailed(true); if (!warned.current) { warned.current = true; toast(AUTOSAVE_STOPPED_TOAST); } }
@@ -52,7 +56,9 @@ export function DocumentCard() {
         </div>
       </div>
       <DocBar />
-      {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} />}
+      {/* Keyed by the instance, so a new document's bar subscribes afresh. Its slot keeps its height until the editor exists. */}
+      {editor ? <FormatBar key={editor.instanceId} editor={editor} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
+      {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} toolbar={false} />}
     </section>
   );
 }

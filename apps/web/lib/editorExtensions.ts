@@ -1,4 +1,4 @@
-import { Mark, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Mark, Node, mergeAttributes, type Extensions } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
@@ -6,7 +6,9 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import Highlight from "@tiptap/extension-highlight";
 import { TextStyleKit } from "@tiptap/extension-text-style";
+import TextAlign from "@tiptap/extension-text-align";
 import { Placeholder } from "@tiptap/extensions";
+import { FindDecorations } from "./editor/findDecorations";
 
 function dataAttributes(el: HTMLElement): Record<string, string> {
   const out: Record<string, string> = {};
@@ -38,18 +40,55 @@ export const ClassSpan = Mark.create({
   }
 });
 
+/**
+ * An inserted picture's width. Stored as an inline `width: Npx` style rather than a `width` attribute, because the sanitiser keeps `style`
+ * and drops `width`; the 320-1600 px slider in the format bar sets it.
+ */
+const SizedImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: (el) => {
+          const n = parseInt((el as HTMLElement).style.width || el.getAttribute("width") || "", 10);
+          return Number.isFinite(n) && n > 0 ? n : null;
+        },
+        renderHTML: (a) => (a.width ? { style: `width: ${a.width}px` } : {})
+      }
+    };
+  }
+});
+
+/** A manual page break: `<div class="page-break" data-page-break>`. The sanitiser drops the data attribute, so the class alone is read back too. */
+export const PageBreak = Node.create({
+  name: "pageBreak",
+  group: "block",
+  atom: true,
+  selectable: true,
+  parseHTML() {
+    return [{ tag: "div[data-page-break]" }, { tag: "div.page-break" }];
+  },
+  renderHTML() {
+    return ["div", { class: "page-break", "data-page-break": "" }];
+  }
+});
+
 const schemaExtensions: Extensions = [
   StarterKit,
   Table.configure({ resizable: false }),
   TableRow,
   TableHeader,
   TableCell,
-  Image.configure({ inline: true, allowBase64: true }),
+  SizedImage.configure({ inline: true, allowBase64: true }),
   Subscript,
   Superscript,
   Highlight.configure({ multicolor: true }),
   TextStyleKit,
-  ClassSpan
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  PageBreak,
+  ClassSpan,
+  FindDecorations
 ];
 
 /** The single editor schema. Shared by the editor and by the schema round-trip test, so they cannot drift. The placeholder is not a node, so it never changes what a document round-trips to. */
