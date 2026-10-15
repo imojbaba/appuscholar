@@ -40,6 +40,21 @@ describe("api routes", () => {
     return { p, d };
   }
 
+  it("moves a document between the user's projects and refuses foreign ones", async () => {
+    const me = await (await app.request("/me", { headers: auth })).json() as { scratchProjectId: string };
+    const d = await (await app.request(`/projects/${me.scratchProjectId}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Draft" }) })).json() as { id: string };
+    const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Thesis" }) })).json() as { id: string };
+    const r = await app.request(`/documents/${d.id}/move`, { method: "POST", headers: auth, body: JSON.stringify({ projectId: p.id }) });
+    expect(r.status).toBe(200); expect(((await r.json()) as { projectId: string }).projectId).toBe(p.id);
+    expect((await app.request(`/documents/${d.id}/move`, { method: "POST", headers: auth, body: JSON.stringify({ projectId: "nope" }) })).status).toBe(404);
+  });
+
+  it("PATCH /projects/:id accepts contentLang", async () => {
+    const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Hindi" }) })).json() as { id: string };
+    const r = await app.request(`/projects/${p.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ contentLang: "hi" }) });
+    expect(r.status).toBe(200); expect(((await r.json()) as { contentLang: string }).contentLang).toBe("hi");
+  });
+
   it("creates project and document, document starts at revision 1", async () => {
     const { d } = await makeDoc();
     expect(d.currentSeq).toBe(1);

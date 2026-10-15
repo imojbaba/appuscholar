@@ -7,8 +7,9 @@ const Create = z.object({ title: z.string().trim().min(1).max(200) });
 const Patch = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   stage: z.enum(PROJECT_STAGES).optional(),
-  status: z.enum(PROJECT_STATUSES).optional()
-}).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined, { message: "empty patch" });
+  status: z.enum(PROJECT_STATUSES).optional(),
+  contentLang: z.enum(["en", "hi"]).optional()
+}).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
 const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.string().trim().min(1).max(40).default("draft") });
 
 export function projectRoutes(store: Store) {

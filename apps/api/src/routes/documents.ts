@@ -6,6 +6,7 @@ import type { AuthEnv } from "../auth";
 
 const Put = z.object({ bodyHtml: z.string(), title: z.string().trim().min(1).max(200).optional() });
 const Patch = z.object({ title: z.string().trim().min(1).max(200) });
+const Move = z.object({ projectId: z.string().min(1) });
 
 export function documentRoutes(store: Store, maxBodyBytes: number) {
   const r = new Hono<AuthEnv>();
@@ -40,6 +41,14 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const body = Patch.safeParse(parsed);
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const d = await store.renameDocument(c.get("userId"), c.req.param("id"), body.data.title);
+    return d ? c.json(d) : c.json({ error: "not-found" }, 404);
+  });
+
+  /** Move a document into another of the user's projects (v1: a project is a label). 404 for a foreign or missing project or document. */
+  r.post("/:id/move", async (c) => {
+    const body = Move.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "invalid" }, 400);
+    const d = await store.moveDocument(c.get("userId"), c.req.param("id"), body.data.projectId);
     return d ? c.json(d) : c.json({ error: "not-found" }, 404);
   });
 
