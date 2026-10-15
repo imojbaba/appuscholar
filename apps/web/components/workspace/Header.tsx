@@ -1,15 +1,15 @@
 "use client";
 import { useLang, useT } from "@/lib/i18n";
 import { APP_VERSION } from "@/lib/version";
-import { useSession } from "@/lib/session";
 import { useWorkspace } from "./WorkspaceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { keyStore } from "@/lib/ai/keys";
 import { PdHost } from "@/lib/ai/pdDialog";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
+import { Help } from "./dialogs/Help";
+import { Terms } from "./dialogs/Terms";
+import { Welcome } from "./dialogs/Welcome";
 import { PassphraseHost } from "./dialogs/Passphrase";
 import { ProviderKey } from "./dialogs/ProviderKey";
 import { RateLimit } from "./dialogs/RateLimit";
@@ -45,26 +45,14 @@ export function Header() {
   );
 }
 
-/** The Help dialog is a placeholder until Task 17. State lives in the workspace context; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog. */
+/** Help, Terms and Welcome live in dialogs/; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog. */
 export function ChromeDialogs() {
-  const t = useT();
-  const { dialog, closeDialog } = useWorkspace();
   const { update } = useSettings();
-  const { email, signOutAction } = useSession();
   return (
     <>
-      <Dialog open={dialog === "help"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("help_btn")}</DialogTitle>
-            <DialogDescription>Help arrives in the next update.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
-            <span data-testid="signed-in-as">Signed in as {email}</span>
-            <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { keyStore.clearSession(); void signOutAction(); }}>Sign out</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Help />
+      <Terms />
+      <Welcome />
       <ProviderKey />
       <PassphraseHost />
       <PdHost />

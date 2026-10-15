@@ -47,7 +47,7 @@ const TONE: Record<NonNullable<Out>["tone"], string> = { run: "text-muted-foregr
 function Form() {
   const t = useT();
   const { settings, update } = useSettings();
-  const { project, reloadProject, closeDialog, settingsProvider } = useWorkspace();
+  const { project, reloadProject, closeDialog, openTerms, settingsProvider } = useWorkspace();
   const keys = useKeys();
   const active: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   const [p, setP] = useState<ProviderId>(settingsProvider ?? active);
@@ -241,7 +241,7 @@ function Form() {
       </div>
 
       <div>
-        <Button variant="ghost" data-testid="terms-link" onClick={() => toast("Terms arrive in the next update.")}>{t("terms_reopen_btn")}</Button>
+        <Button variant="ghost" data-testid="terms-link" onClick={openTerms}>{t("terms_reopen_btn")}</Button>
       </div>
     </>
   );

@@ -4,6 +4,7 @@ import type { ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useSettings, type Settings } from "@/lib/settings";
 import { useT } from "@/lib/i18n";
+import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { toast } from "@/components/ui/toast";
 import { isImportable } from "@/lib/import/parse";
 import { allPdf, importFiles } from "@/lib/import/run";
@@ -77,6 +78,14 @@ export function Workspace() {
   const toolInit = useRef(false);
   // One load per project even when React runs the effect twice in development, so the first document is never created twice.
   const loading = useRef<{ key: string; p: Promise<Loaded> } | null>(null);
+
+  // First run: the terms gate (non-dismissible, in dialogs/Terms) comes first; once the account has accepted, the welcome tour opens once for a student who has not seen it.
+  const gated = needsTerms(me, TERMS_SINCE);
+  const [welcomeChecked, setWelcomeChecked] = useState(false);
+  if (me && !gated && !welcomeChecked) {
+    setWelcomeChecked(true);
+    if (!settings.seenWelcome) setDialog("welcome");
+  }
 
   const userId = me?.id;
   const activeProjectId = me?.activeProjectId ?? null;
@@ -242,7 +251,7 @@ export function Workspace() {
     activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
     openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
