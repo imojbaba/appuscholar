@@ -5,7 +5,10 @@ import { PROVIDERS, type ProviderId } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import type { SaveStatus } from "@/lib/useAutosave";
-import { AUTOSAVE_OFF_BADGE, AUTOSAVE_STOPPED_TOAST } from "@/lib/docMessages";
+import { AUTOSAVE_OFF_BADGE, AUTOSAVE_STOPPED_TOAST, WORD_DOWNLOADED_TOAST, LATEX_EXPORTED_TOAST } from "@/lib/docMessages";
+import { downloadBlob } from "@/lib/export/download";
+import { wordDocument } from "@/lib/export/word";
+import { latexDocument } from "@/lib/export/latex";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
@@ -40,6 +43,20 @@ export function DocumentCard() {
   const onReady = useCallback((api: { flushNow: () => Promise<boolean> }) => registerFlush(api.flushNow), [registerFlush]);
   useEffect(() => () => registerFlush(null), [registerFlush]);
 
+  // Both exports take what the student sees (the live editor HTML, unsaved typing included), not the last saved body.
+  const exportWord = () => {
+    if (!editor || !currentDoc) return;
+    const { filename, blob } = wordDocument(currentDoc.title, editor.getHTML());
+    downloadBlob(filename, blob);
+    toast(WORD_DOWNLOADED_TOAST);
+  };
+  const exportLatex = () => {
+    if (!editor || !currentDoc) return;
+    const { filename, blob } = latexDocument(currentDoc.title, editor.getHTML(), settings.orcid);
+    downloadBlob(filename, blob);
+    toast(LATEX_EXPORTED_TOAST);
+  };
+
   const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   return (
     <section className="doc" aria-label="Your document">
@@ -50,9 +67,8 @@ export function DocumentCard() {
           : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
         {hasProviderKey && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
         <div className="right">
-          {/* Task 11 enables both downloads; until then they carry their v1 titles and stay disabled. */}
-          <Button variant="ghost" size="sm" disabled data-testid="download-word">{t("download_btn")}</Button>
-          <Button variant="ghost" size="sm" disabled title={t("latex_btn_title")} data-testid="download-latex">{t("latex_btn")}</Button>
+          <Button variant="ghost" size="sm" disabled={!editor} onClick={exportWord} data-testid="download-word">{t("download_btn")}</Button>
+          <Button variant="ghost" size="sm" disabled={!editor} onClick={exportLatex} title={t("latex_btn_title")} data-testid="download-latex">{t("latex_btn")}</Button>
         </div>
       </div>
       <DocBar />
