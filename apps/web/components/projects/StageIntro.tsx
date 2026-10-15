@@ -1,22 +1,22 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { STAGES, STAGE_DESCRIPTIONS, stageIndex, stageLabel } from "@/lib/stages";
+import { STAGES, STAGE_DESCRIPTIONS, stageIndex } from "@/lib/stages";
 import { cn } from "@/lib/utils";
 
-export function StageIntro({ projectId, projectTitle, stage, open }: { projectId: string; projectTitle: string; stage: string; open: boolean }) {
+/** v1 `stageIntroShow`. No stage tool exists to jump to yet, so the button is v1's fallback "Got it"; closing moves focus to `focusId`. */
+export function StageIntro({ projectId, stage, open, focusId }: { projectId: string; stage: string; open: boolean; focusId?: string }) {
   const router = useRouter();
   const [show, setShow] = useState(open);
   const cur = stageIndex(stage);
   function close() { setShow(false); router.replace(`/projects/${projectId}`); }
   return (
     <Dialog open={show} onOpenChange={o => { if (!o) close(); }}>
-      <DialogContent className="max-w-lg" data-testid="stage-intro">
+      <DialogContent className="max-w-lg" data-testid="stage-intro" onCloseAutoFocus={e => { const el = focusId ? document.getElementById(focusId) : null; if (el) { e.preventDefault(); el.focus(); } }}>
         <DialogHeader>
-          <DialogTitle>{projectTitle}: the six stages</DialogTitle>
+          <DialogTitle>Your project has six stages</DialogTitle>
           <DialogDescription>The app follows you through them in order. Every tool stays one click away the whole time. This is just the shape of the road ahead.</DialogDescription>
         </DialogHeader>
         <ol className="grid gap-2">
@@ -31,7 +31,7 @@ export function StageIntro({ projectId, projectTitle, stage, open }: { projectId
           ))}
         </ol>
         <DialogFooter>
-          <Button type="button" onClick={close} data-testid="stage-intro-start">Start with {stageLabel(STAGES[cur]!.key)} <ArrowRight size={18} /></Button>
+          <Button type="button" onClick={close} data-testid="stage-intro-start">Got it</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

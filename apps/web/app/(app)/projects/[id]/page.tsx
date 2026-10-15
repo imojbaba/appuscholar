@@ -27,7 +27,7 @@ function ProjectPageInner({ id }: { id: string }) {
       </div>
       <StageStrip projectId={project.id} stage={project.stage} />
       <DocumentList projectId={project.id} />
-      {intro ? <StageIntro projectId={project.id} projectTitle={project.title} stage={project.stage} open /> : null}
+      {intro ? <StageIntro projectId={project.id} stage={project.stage} open focusId="new-doc" /> : null}
     </div>
   );
 }

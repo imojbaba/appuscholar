@@ -22,19 +22,19 @@ export function StageStrip({ projectId, stage }: { projectId: string; stage: str
   }
   return (
     <section aria-label="Research stages" className="rounded-lg border bg-card p-4" data-testid="stage-strip">
-      <ol className="grid gap-2 sm:grid-cols-6">
+      <ol className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
         {STAGES.map((s, idx) => (
-          <li key={s.key}>
+          <li key={s.key} className="min-w-0">
             <button type="button" onClick={() => go(s.key)} disabled={busy} aria-current={s.key === current ? "step" : undefined} data-testid={`stage-chip-${s.key}`}
-              className={cn("flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent", s.key === current ? "border-primary bg-primary text-primary-foreground hover:bg-primary" : idx < i ? "border-transparent text-muted-foreground" : "text-foreground")}>
+              className={cn("flex h-full w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm leading-tight transition-colors hover:bg-accent", s.key === current ? "border-primary bg-primary text-primary-foreground hover:bg-primary" : idx < i ? "border-transparent text-muted-foreground" : "text-foreground")}>
               <span className={cn("grid size-5 shrink-0 place-items-center rounded-full text-xs font-medium", s.key === current ? "bg-white/20" : "bg-muted")}>{idx + 1}</span>
-              <span className="truncate">{s.label}</span>
+              <span className="min-w-0 leading-tight">{s.label}</span>
             </button>
           </li>
         ))}
       </ol>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="font-medium" data-testid="stage-counter">Stage {i + 1} of {STAGES.length}</span>
+        <span className="font-medium" data-testid="stage-counter">Stage {i + 1} of {STAGES.length} · {stageLabel(current)}</span>
         <div className="flex items-center gap-2">
           {prev ? <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => go(prev.key)} data-testid="stage-back"><ArrowLeft size={16} /> Back: {prev.label}</Button> : null}
           {next
@@ -43,7 +43,6 @@ export function StageStrip({ projectId, stage }: { projectId: string; stage: str
         </div>
       </div>
       {error ? <p role="alert" data-testid="error-msg" className="mt-2 text-xs text-destructive">{error}</p> : null}
-      <p className="sr-only">Current stage: {stageLabel(current)}</p>
     </section>
   );
 }

@@ -15,17 +15,20 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
   await expect(page.getByTestId("stage-intro")).toBeVisible();
   await expect(page.getByTestId("stage-intro")).toContainText("Shape your question");
+  await expect(page.getByTestId("stage-intro")).toContainText("Your project has six stages");
   await page.getByTestId("stage-intro-start").click();
-  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 1 of 6");
+  await expect(page.getByTestId("stage-intro")).toBeHidden();
+  await expect(page.locator("#new-doc")).toBeFocused();
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 1 of 6 · Idea & Feasibility");
   await page.getByTestId("stage-next").click();
-  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 2 of 6");
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 2 of 6 · Literature Review");
   await page.reload();
-  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 2 of 6");
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 2 of 6 · Literature Review");
   await expect(page.getByTestId("stage-chip-lit")).toHaveAttribute("aria-current", "step");
   await page.getByTestId("stage-chip-review").click();
   await expect(page.getByTestId("stage-final")).toBeVisible();
   await page.getByTestId("stage-chip-idea").click();
-  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 1 of 6");
+  await expect(page.getByTestId("stage-counter")).toHaveText("Stage 1 of 6 · Idea & Feasibility");
   await page.goto("/projects");
 
   // a failed rename shows an error that does not leak into the next dialog open
