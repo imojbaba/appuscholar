@@ -489,7 +489,7 @@
   "rt_why_noset": "The dataset “{n}” has not been loaded in this browser, so there is nothing to compare with. Load it in the Statistics Lab under the same name.",
   "rt_why_stale": "The data under this name changed on {d}. The number in the text was calculated before that.",
   "sap_cancel_btn": "Cancel",
-  "sap_desc": "Research projects track which stage a piece of work is at, so the app can point you to the right tools. Nothing you've written moves or changes — this just labels it.",
+  "sap_desc": "Research projects track which stage a piece of work is at, so the app can point you to the right tools. The open document moves into the project; your other documents stay in scratch space.",
   "sap_existing_label": "Choose research project",
   "sap_h2": "💾 Save as research project",
   "sap_mode_existing": "Add to an existing research project",

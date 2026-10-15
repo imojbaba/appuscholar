@@ -25,7 +25,7 @@ const OPTION: Record<ProviderId, string> = {
 };
 /** v1 keyModeNote (index.html:5069-5073). */
 const MODE_HINT: Record<KeyMode, string> = {
-  pass: "You choose a passphrase now and type it once each time you open Appuscholar. The key is stored locked; nobody at Appuscholar can read it.",
+  pass: "You choose a passphrase now and type it once each time you open Appuscholar. The key is stored locked; nobody at Appuscholar can read the stored copy.",
   plain: "No passphrase. The key stays in this browser only.",
   session: "Kept in memory only. Closing the tab erases it."
 };

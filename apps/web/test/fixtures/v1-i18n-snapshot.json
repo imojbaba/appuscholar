@@ -6,5 +6,6 @@
   "terms_ver": "Version 1, 7 October 2026.",
   "welcome_intro": "A writing and research assistant, with psychology research support built in. Everything you write stays on this computer.",
   "faq_a_lost": "Everything is saved only in this browser, on this computer — never on a server. Clearing site data, switching browsers, or moving to a new computer wipes it with no way back. Use <b>⬇ Download</b> in the document toolbar regularly to keep a copy outside the browser.",
-  "faq_a_key": "Open <b>⚙ AI Provider / Key</b> at the top right, pick your provider again, and follow the link to generate a new one — it's free and takes under a minute. Your key lives only in this browser; nothing to recover from a server."
+  "faq_a_key": "Open <b>⚙ AI Provider / Key</b> at the top right, pick your provider again, and follow the link to generate a new one — it's free and takes under a minute. Your key lives only in this browser; nothing to recover from a server.",
+  "sap_desc": "Research projects track which stage a piece of work is at, so the app can point you to the right tools. Nothing you've written moves or changes — this just labels it."
 }

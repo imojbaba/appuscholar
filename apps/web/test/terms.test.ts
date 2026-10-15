@@ -41,8 +41,8 @@ describe("needsTerms (the first-use gate)", () => {
 });
 
 describe("v2 terms wording overrides", () => {
-  const KEYS = ["faq_a_key", "faq_a_lost", "terms_d1", "terms_d2", "terms_d3", "terms_d4", "terms_ver", "welcome_intro"];
-  it("overrides exactly the eight keys, leaving every other key alone", () => {
+  const KEYS = ["faq_a_key", "faq_a_lost", "sap_desc", "terms_d1", "terms_d2", "terms_d3", "terms_d4", "terms_ver", "welcome_intro"];
+  it("overrides exactly the nine keys, leaving every other key alone", () => {
     expect(Object.keys(OVERRIDES).sort()).toEqual(KEYS);
     expect(Object.keys(v1Snapshot).sort()).toEqual(KEYS);
     const v1 = { ...en, ...v1Snapshot } as Record<string, string>;

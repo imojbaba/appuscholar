@@ -1,4 +1,4 @@
-// The v2 wording (a product decision; the terms are for the lawyer). These eight English keys replace what the v1 extraction
+// The v2 wording (a product decision; the terms are for the lawyer). These nine English keys replace what the v1 extraction
 // produces; extract-v1-i18n.mjs applies them after extraction so re-running it keeps them.
 // The Hindi strings for the same keys would be v1 wording that no longer matches, so they are removed from the Hindi dictionary
 // (dropFromHindi): the app then shows the English v2 text until they are re-translated.
@@ -13,7 +13,9 @@ export const OVERRIDES = {
   welcome_intro: "A writing and research assistant, with psychology research support built in. Everything you write is saved under your account.",
   // The v1 answers said everything and the key live only in this browser.
   faq_a_lost: "Your documents are saved under your account with every version, so clearing a browser does not lose them. Sign in on any device to find them. If a document is missing, check the Doc list and Research Projects, then write to us.",
-  faq_a_key: "Your AI key is kept in this browser, or locked with your passphrase under your account. If the app says there is no key, open <b>⚙ AI Provider / Key</b> and paste it again."
+  faq_a_key: "Your AI key is kept in this browser, or locked with your passphrase under your account. If the app says there is no key, open <b>⚙ AI Provider / Key</b> and paste it again.",
+  // v1 said nothing moves; in v2 the open document moves into the project.
+  sap_desc: "Research projects track which stage a piece of work is at, so the app can point you to the right tools. The open document moves into the project; your other documents stay in scratch space."
 };
 
 /** Returns a copy of the English dictionary with the overrides applied. Every override must replace an existing key. */

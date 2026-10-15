@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import { plain, plainText, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
-import { toolLabelKey } from "@/lib/tools";
+import { canPopOut, toolLabelKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
 import { AiPane } from "@/components/tools/AiPane";
 import { ChatPanel, useChatLog } from "@/components/tools/ChatPanel";
@@ -96,8 +96,8 @@ export function Dock() {
             {t("dock_ai_tab")}{aiWaiting && dock !== "ai" && <span className="ddot" data-testid="ai-dot" role="img" aria-label="New suggestion" />}
           </button>
         </div>
-        {/* No pop-out page exists yet, so every tool answers with the v1 notice. canPopOut() in lib/tools.ts marks the two tools that will open one. */}
-        <button type="button" className="pop" title={t("pop_btn_title")} data-testid="pop-out" onClick={() => toast(t("pop_unsupported"))}>{t("pop_btn")}</button>
+        {/* No pop-out page exists yet. The two tools that will get one (canPopOut) say it is coming; the others keep the v1 notice. */}
+        <button type="button" className="pop" title={t("pop_btn_title")} data-testid="pop-out" onClick={() => toast(canPopOut(activeTool) ? "Pop out arrives in a later phase." : t("pop_unsupported"))}>{t("pop_btn")}</button>
       </div>
       <div className={"splitter" + (dragging ? " drag" : "")} role="separator" aria-orientation="vertical" aria-label="Resize side panel" aria-valuemin={MIN_W} aria-valuemax={MAX_W} aria-valuenow={settings.dockW ?? 440} data-testid="dock-splitter" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
       <div className="dock" role="tabpanel" aria-label={dock === "ai" ? plainText(t("dock_ai_tab")) : plainText(t(toolLabelKey(activeTool)))}>

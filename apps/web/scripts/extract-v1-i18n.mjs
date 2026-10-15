@@ -1,6 +1,6 @@
 // Usage: node scripts/extract-v1-i18n.mjs /path/to/appuscholer/index.html [outDir]
-// The dictionaries in messages/ are generated, with one exception: the eight v2 keys in i18n-overrides.mjs
-// (terms_d1..d4, terms_ver, welcome_intro, faq_a_lost, faq_a_key; English only) are applied after extraction, so re-running this keeps them,
+// The dictionaries in messages/ are generated, with one exception: the nine v2 keys in i18n-overrides.mjs
+// (terms_d1..d4, terms_ver, welcome_intro, faq_a_lost, faq_a_key, sap_desc; English only) are applied after extraction, so re-running this keeps them,
 // and their v1 Hindi strings are deleted so the app falls back to the English wording.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
