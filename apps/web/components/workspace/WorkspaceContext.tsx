@@ -20,8 +20,18 @@ export type WorkspaceValue = {
   project: Project | null;
   documents: DocumentSummary[];
   currentDoc: DocumentWithBody | null;
+  /** Shows another document of this project, after the open one's autosave has stored its text (it stays put when that save fails). */
   selectDoc(id: string): Promise<void>;
   reloadDocs(): Promise<void>;
+  /** Applies a rename or a source/own change to the list and to the open document without touching its body. */
+  patchDoc(id: string, patch: Partial<Pick<DocumentSummary, "title" | "kind">>): void;
+  /** The open editor registers how to store its text now (null on unmount); selecting or deleting a document calls it first. */
+  registerFlush(fn: (() => Promise<boolean>) | null): void;
+  /** Stores the open document's pending text now: true when nothing is left unsaved. */
+  flushOpen(): Promise<boolean>;
+  /** The editor's live word count for the open document, or null until the editor has reported it. */
+  wordCount: number | null;
+  setWordCount(docId: string, words: number): void;
   /** Switch the active project (null = scratch space). Opening a project jumps to its stage's first tool unless it is complete or `skipJump`; `docId` is shown after the switch. */
   setActiveProject(id: string | null, opts?: { skipJump?: boolean; docId?: string }): Promise<void>;
   /** Re-reads the active project (stage, status) after a change made elsewhere. */

@@ -10,7 +10,7 @@ import { useWorkspace } from "./WorkspaceContext";
 /** v1 project bar: the active project (or the scratch-space label), its stage, and the project actions. Opening a project is guided, not locked. */
 export function ProjectBar() {
   const t = useT();
-  const { project, currentDoc, openSaveAs, openProjects } = useWorkspace();
+  const { project, currentDoc, wordCount, openSaveAs, openProjects } = useWorkspace();
   // Phase 5 brings the real backup; until then the button explains where the work already is.
   const openBackup = () => toast("Backup arrives in a later phase. Your work is already saved on the server with every revision.");
   return (
@@ -28,8 +28,8 @@ export function ProjectBar() {
       <Button variant="ghost" size="md" data-testid="save-as-project" onClick={() => openSaveAs("new", "", { guessStage: true })}>{t("save_as_project_btn")}</Button>
       <Button variant="ghost" size="md" data-testid="projects-btn" onClick={openProjects}>{t("projects_btn")}</Button>
       <Button variant="ghost" size="md" title={t("backup_btn_title")} data-testid="backup-btn" onClick={openBackup}>{t("backup_btn")}</Button>
-      {/* The count is the saved revision's; Task 8 swaps in the editor's live count. */}
-      {currentDoc && <span className="status" data-testid="project-bar-status">{currentDoc.title} · {plural(currentDoc.wordCount, "word", "words")}</span>}
+      {/* The editor's live count; the saved revision's until the editor has reported. */}
+      {currentDoc && <span className="status" data-testid="project-bar-status">{currentDoc.title} · {plural(wordCount ?? currentDoc.wordCount, "word", "words")}</span>}
     </div>
   );
 }

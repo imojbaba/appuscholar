@@ -1,0 +1,58 @@
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PROVIDERS, type ProviderId } from "@appuscholar/core";
+import { useT } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
+import type { SaveStatus } from "@/lib/useAutosave";
+import { AUTOSAVE_OFF_BADGE, AUTOSAVE_STOPPED_TOAST } from "@/lib/docMessages";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
+import { Editor } from "@/components/editor/Editor";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { DocBar } from "./DocBar";
+
+/** Task 13 (the key store) sets this from the stored keys; the provider badge shows only when the chosen provider has one. */
+const hasProviderKey = false;
+
+function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
+
+/** The centre column: "Your Document" with its autosave badge, the document bar and the editor. The format bar (Task 9) and action row (Task 14) join here. */
+export function DocumentCard() {
+  const t = useT();
+  const { settings } = useSettings();
+  const { currentDoc, registerFlush, setWordCount } = useWorkspace();
+  const [save, setSave] = useState<SaveStatus>("saved");
+  // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
+  const warned = useRef(false);
+  const docId = currentDoc?.id;
+
+  const onStatus = useCallback((s: SaveStatus) => {
+    setSave(s);
+    if (s === "error") { if (!warned.current) { warned.current = true; toast(AUTOSAVE_STOPPED_TOAST); } }
+    else if (s === "saved") warned.current = false;
+  }, []);
+  const onCount = useCallback((n: number) => { if (docId) setWordCount(docId, n); }, [docId, setWordCount]);
+  const onReady = useCallback((api: { flushNow: () => Promise<boolean> }) => registerFlush(api.flushNow), [registerFlush]);
+  useEffect(() => () => registerFlush(null), [registerFlush]);
+
+  const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+  return (
+    <section className="doc" aria-label="Your document">
+      <div className="card-head">
+        <h2>{t("doc_pane_h2")}</h2>
+        {save === "error"
+          ? <Badge variant="danger" data-testid="save-status" role="status">{AUTOSAVE_OFF_BADGE}</Badge>
+          : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
+        {hasProviderKey && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
+        <div className="right">
+          {/* Task 11 enables both downloads; until then they carry their v1 titles and stay disabled. */}
+          <Button variant="ghost" size="sm" disabled data-testid="download-word">{t("download_btn")}</Button>
+          <Button variant="ghost" size="sm" disabled title={t("latex_btn_title")} data-testid="download-latex">{t("latex_btn")}</Button>
+        </div>
+      </div>
+      <DocBar />
+      {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} />}
+    </section>
+  );
+}

@@ -3,8 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useSettings, type Settings } from "@/lib/settings";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
-import { Editor } from "@/components/editor/Editor";
-import { TitleField } from "@/components/editor/TitleField";
+import { DocumentCard } from "@/components/document/DocumentCard";
+import { toast } from "@/components/ui/toast";
+import { AUTOSAVE_STOPPED_TOAST } from "@/lib/docMessages";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
 import { ProjectBar } from "./ProjectBar";
@@ -43,6 +44,8 @@ export function Workspace() {
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   const docToken = useRef(0);
+  const flushRef = useRef<(() => Promise<boolean>) | null>(null);
+  const [live, setLive] = useState<{ docId: string; words: number } | null>(null);
   // A document to show after the next project switch (the one that was just moved into the project).
   const pendingDoc = useRef<string | null>(null);
   // The remembered tool (or the project's stage tool) applies to the first load only; later switches keep the tool the student has open.
@@ -104,11 +107,23 @@ export function Workspace() {
     void update(patch);
   }, [update]);
 
+  const registerFlush = useCallback((fn: (() => Promise<boolean>) | null) => { flushRef.current = fn; }, []);
+  const setWordCount = useCallback((docId: string, words: number) => setLive((l) => (l && l.docId === docId && l.words === words ? l : { docId, words })), []);
+  const patchDoc = useCallback((id: string, patch: Partial<Pick<DocumentSummary, "title" | "kind">>) => {
+    setDocuments((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+    // Only title and kind change here, never the body: a new body would restart the editor's autosave.
+    setCurrentDoc((d) => (d && d.id === id ? { ...d, ...patch } : d));
+  }, []);
+
+  const flushOpen = useCallback(async () => (await flushRef.current?.()) ?? true, []);
+
   const selectDoc = useCallback(async (id: string) => {
+    // The open document's text is stored before another one replaces it; if it cannot be stored, stay on it (the red badge says why).
+    if (!(await flushOpen())) { toast(AUTOSAVE_STOPPED_TOAST); return; }
     const mine = ++docToken.current;
     const doc = await apiFetch<DocumentWithBody>(`/documents/${id}`);
     if (mine === docToken.current) setCurrentDoc(doc);
-  }, []);
+  }, [flushOpen]);
 
   const reloadDocs = useCallback(async () => {
     if (!projectId) return;
@@ -141,7 +156,8 @@ export function Workspace() {
 
   const value: WorkspaceValue = {
     activeTool, showTool, dock, dockShow: setDock, aiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
-    currentStage, project, documents, currentDoc, selectDoc, reloadDocs, setActiveProject, reloadProject,
+    currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, registerFlush, flushOpen,
+    wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, openHelp: () => setDialog("help"), openSettings: () => setDialog("settings"), closeDialog: () => setDialog(null),
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
     saveAsInit, openProjects: () => setDialog("projects"),
@@ -161,17 +177,7 @@ export function Workspace() {
       {ready ? (
         <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px" } as React.CSSProperties}>
           <Sidebar />
-          <section className="doc" aria-label="Your document">
-            {currentDoc && (
-              <>
-                <TitleField key={"t" + currentDoc.id} docId={currentDoc.id} title={currentDoc.title} onRenamed={(title) => {
-                  setCurrentDoc((d) => (d ? { ...d, title } : d));
-                  setDocuments((list) => list.map((d) => (d.id === currentDoc.id ? { ...d, title } : d)));
-                }} />
-                <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} />
-              </>
-            )}
-          </section>
+          <DocumentCard />
           <Dock />
         </main>
       ) : error ? (

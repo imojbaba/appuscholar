@@ -5,7 +5,7 @@ import type { Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
 const Put = z.object({ bodyHtml: z.string(), title: z.string().trim().min(1).max(200).optional() });
-const Patch = z.object({ title: z.string().trim().min(1).max(200) });
+const Patch = z.object({ title: z.string().trim().min(1).max(200).optional(), kind: z.enum(["draft", "source"]).optional() }).refine((b) => b.title !== undefined || b.kind !== undefined);
 const Move = z.object({ projectId: z.string().min(1) }).strict();
 
 export function documentRoutes(store: Store, maxBodyBytes: number) {
@@ -35,12 +35,28 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: true });
   });
 
-  /** Rename only. Never touches the body and never creates a revision, so it cannot race the editor's autosave. */
+  /** Rename and/or mark as source. Never touches the body and never creates a revision, so it cannot race the editor's autosave. */
   r.patch("/:id", async (c) => {
     let parsed: unknown; try { parsed = await c.req.json(); } catch { return c.json({ error: "invalid" }, 400); }
     const body = Patch.safeParse(parsed);
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    const d = await store.renameDocument(c.get("userId"), c.req.param("id"), body.data.title);
+    const userId = c.get("userId"), id = c.req.param("id");
+    let d = null;
+    if (body.data.title !== undefined) d = await store.renameDocument(userId, id, body.data.title);
+    if (body.data.kind !== undefined && (body.data.title === undefined || d)) d = await store.setDocumentKind(userId, id, body.data.kind);
+    return d ? c.json(d) : c.json({ error: "not-found" }, 404);
+  });
+
+  /** Soft delete: 204, or 409 for the project's only document. Brought back within seconds by POST /:id/restore-deleted. */
+  r.delete("/:id", async (c) => {
+    const res = await store.softDeleteDocument(c.get("userId"), c.req.param("id"));
+    if (res === null) return c.json({ error: "not-found" }, 404);
+    if (res === "only-document") return c.json({ error: "only-document" }, 409);
+    return c.body(null, 204);
+  });
+
+  r.post("/:id/restore-deleted", async (c) => {
+    const d = await store.restoreDeletedDocument(c.get("userId"), c.req.param("id"));
     return d ? c.json(d) : c.json({ error: "not-found" }, 404);
   });
 

@@ -6,6 +6,7 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import Highlight from "@tiptap/extension-highlight";
 import { TextStyleKit } from "@tiptap/extension-text-style";
+import { Placeholder } from "@tiptap/extensions";
 
 function dataAttributes(el: HTMLElement): Record<string, string> {
   const out: Record<string, string> = {};
@@ -37,8 +38,7 @@ export const ClassSpan = Mark.create({
   }
 });
 
-/** The single editor schema. Shared by the editor and by the schema round-trip test, so they cannot drift. */
-export const editorExtensions: Extensions = [
+const schemaExtensions: Extensions = [
   StarterKit,
   Table.configure({ resizable: false }),
   TableRow,
@@ -51,3 +51,11 @@ export const editorExtensions: Extensions = [
   TextStyleKit,
   ClassSpan
 ];
+
+/** The single editor schema. Shared by the editor and by the schema round-trip test, so they cannot drift. The placeholder is not a node, so it never changes what a document round-trips to. */
+export const editorExtensions: Extensions = [...schemaExtensions, Placeholder.configure({ placeholder: "" })];
+
+/** The same extensions with the editor's empty-document hint (v1 `editor_placeholder`). */
+export function editorExtensionsWith(placeholder: string): Extensions {
+  return [...schemaExtensions, Placeholder.configure({ placeholder })];
+}

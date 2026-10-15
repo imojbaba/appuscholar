@@ -40,6 +40,22 @@ describe("api routes", () => {
     return { p, d };
   }
 
+  it("marks a document as a source and back", async () => {
+    const { d } = await makeDoc();
+    const r = await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ kind: "source" }) });
+    expect(((await r.json()) as { kind: string }).kind).toBe("source");
+    expect((await app.request(`/documents/${d.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ kind: "weird" }) })).status).toBe(400);
+  });
+
+  it("refuses to delete the only document, soft-deletes otherwise, and restores", async () => {
+    const { p, d } = await makeDoc();
+    expect((await app.request(`/documents/${d.id}`, { method: "DELETE", headers: auth })).status).toBe(409);
+    const d2 = await (await app.request(`/projects/${p.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Two" }) })).json() as { id: string };
+    expect((await app.request(`/documents/${d.id}`, { method: "DELETE", headers: auth })).status).toBe(204);
+    expect(((await (await app.request(`/projects/${p.id}/documents`, { headers: auth })).json()) as { id: string }[]).map(x => x.id)).toEqual([d2.id]);
+    expect((await app.request(`/documents/${d.id}/restore-deleted`, { method: "POST", headers: auth })).status).toBe(200);
+  });
+
   it("moves a document between the user's projects and refuses foreign ones", async () => {
     const me = await (await app.request("/me", { headers: auth })).json() as { scratchProjectId: string };
     const d = await (await app.request(`/projects/${me.scratchProjectId}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Draft" }) })).json() as { id: string };
