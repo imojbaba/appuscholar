@@ -1,4 +1,4 @@
-/** Port of v1 PROVIDERS and PROV_ORDER (index.html:2556-2564). The inline warning spans become `warning`. */
+/** Port of v1 PROVIDERS and PROV_ORDER (index.html:2556-2564). v1's browser-call warnings on DeepSeek and OpenAI are dropped in v2: the calls go through Appuscholar's server, so they work. */
 export type ProviderId = "gemini" | "groq" | "deepseek" | "openrouter" | "openai" | "claude";
 
 export type ProviderInfo = {
@@ -20,8 +20,7 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
   deepseek: {
     name: "DeepSeek", short: "DeepSeek", model: "deepseek-chat",
     keyPrefix: "sk-", keysUrl: "https://platform.deepseek.com/api_keys",
-    stepsHtml: 'Sign up → <b>API Keys</b> → <b>Create</b> → copy (starts with sk-). <b>Paid</b>, but very cheap — add a small credit first. <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">Open →</a>',
-    warning: "⚠ This provider does not reliably allow direct browser calls — it may fail even with a valid, funded key. Prefer Gemini, Groq, or OpenRouter."
+    stepsHtml: 'Sign up → <b>API Keys</b> → <b>Create</b> → copy (starts with sk-). <b>Paid</b>, but very cheap — add a small credit first. <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">Open →</a>'
   },
   openrouter: {
     name: "OpenRouter", short: "OpenRouter", model: "meta-llama/llama-3.3-70b-instruct:free",
@@ -31,8 +30,7 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
   openai: {
     name: "ChatGPT (OpenAI)", short: "ChatGPT", model: "gpt-4o-mini",
     keyPrefix: "sk-", keysUrl: "https://platform.openai.com/api-keys",
-    stepsHtml: 'Sign up → <b>API keys</b> → <b>Create new secret key</b> → copy (starts with sk-). <b>Paid</b> — add billing credit first (from ~$5). <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">Open →</a>',
-    warning: "⚠ OpenAI's API blocks direct calls from a web page like this one (no browser access). This key will not work here — it needs a server in between. Use Gemini, Groq, or OpenRouter instead."
+    stepsHtml: 'Sign up → <b>API keys</b> → <b>Create new secret key</b> → copy (starts with sk-). <b>Paid</b> — add billing credit first (from ~$5). <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">Open →</a>'
   },
   claude: {
     // v1 used the dated id claude-haiku-4-5-20251001; the controller ruled for the undated 5-5 id with 4-5 as fallback.

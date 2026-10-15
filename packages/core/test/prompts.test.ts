@@ -44,9 +44,8 @@ describe("provider table", () => {
     expect(PROVIDERS.gemini.fallbacks).toEqual(["gemini-3.6-flash", "gemini-2.5-flash"]);
     expect(PROVIDERS.claude.model).toBe("claude-haiku-5-5");
     expect(PROVIDERS.claude.fallbacks).toEqual(["claude-haiku-4-5"]);
-    expect(PROVIDERS.deepseek.warning).toBeTruthy();
-    expect(PROVIDERS.openai.warning).toBeTruthy();
-    expect(PROVIDERS.groq.warning).toBeUndefined();
+    // v2 sends every call through the server, so no provider carries a browser-access warning.
+    for (const id of PROV_ORDER) expect(PROVIDERS[id].warning).toBeUndefined();
     for (const id of PROV_ORDER) expect(PROVIDERS[id].stepsHtml).not.toContain("<span");
   });
 });

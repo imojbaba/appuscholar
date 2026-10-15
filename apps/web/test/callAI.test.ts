@@ -159,7 +159,7 @@ describe("callAI terms gate", () => {
 describe("apiMsg", () => {
   it("returns the v1 strings", () => {
     expect(apiMsg("key-rejected")).toBe("Your API key was rejected. Open ⚙ and paste it again.");
-    expect(apiMsg("network")).toBe("No internet connection, or this provider does not allow calls made directly from a web page (this is common for OpenAI and sometimes DeepSeek). Try Google Gemini, Groq, or OpenRouter — those are confirmed to work from the browser.");
+    expect(apiMsg("network")).toBe("Could not reach the AI provider. Check your connection and try again, or switch provider using the tabs at the top.");
     expect(apiMsg("rate-limit")).toBe("Free limit reached for now. Wait a minute, or switch provider using the tabs at the top.");
     expect(apiMsg("model-gone")).toBe("That AI model is no longer available. Try a different provider using the tabs at the top.");
     expect(apiMsg("truncated")).toBe("The answer was cut off. Select a smaller piece of text and try again.");

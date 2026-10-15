@@ -34,7 +34,7 @@ export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: st
     case "model-gone": return "That AI model is no longer available. Try a different provider using the tabs at the top.";
     case "rate-limit": return "Free limit reached for now. Wait a minute, or switch provider using the tabs at the top.";
     case "provider-error": return "The AI service is having problems (already retried a couple of times). Try again in a few minutes, or switch provider using the tabs at the top. Detail: " + (detail ?? "").slice(0, 180);
-    case "network": return "No internet connection, or this provider does not allow calls made directly from a web page (this is common for OpenAI and sometimes DeepSeek). Try Google Gemini, Groq, or OpenRouter — those are confirmed to work from the browser.";
+    case "network": return "Could not reach the AI provider. Check your connection and try again, or switch provider using the tabs at the top.";
     case "truncated": return "The answer was cut off. Select a smaller piece of text and try again.";
     case "empty": return "The AI returned an empty answer. Try again.";
     case "terms": return "Accept the terms first (open ❓ Help → Terms and where your data goes).";
