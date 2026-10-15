@@ -32,17 +32,17 @@ describe("lockKey / unlockKeyBlob", () => {
 });
 
 describe("keyStore", () => {
-  beforeEach(() => { localStorage.clear(); for (const p of ["gemini", "groq", "claude"] as const) keyStore.clear(p); });
+  beforeEach(() => { localStorage.clear(); keyStore.setUser("A"); for (const p of ["gemini", "groq", "claude"] as const) keyStore.clear(p); });
 
-  it("setPlain writes localStorage appu_key_<p>", () => {
+  it("setPlain writes localStorage appu_key_<userId>_<p>", () => {
     keyStore.setPlain("gemini", "AIza1");
-    expect(localStorage.getItem("appu_key_gemini")).toBe("AIza1");
+    expect(localStorage.getItem("appu_key_A_gemini")).toBe("AIza1");
     expect(keyStore.getUnlocked("gemini")).toBe("AIza1");
   });
 
   it("setSession keeps the key in memory only", () => {
     keyStore.setSession("groq", "gsk_1");
-    expect(localStorage.getItem("appu_key_groq")).toBeNull();
+    expect(localStorage.getItem("appu_key_A_groq")).toBeNull();
     expect(keyStore.getUnlocked("groq")).toBe("gsk_1");
   });
 
@@ -50,13 +50,13 @@ describe("keyStore", () => {
     keyStore.setPlain("gemini", "a"); keyStore.setSession("gemini", "b");
     keyStore.clear("gemini");
     expect(keyStore.getUnlocked("gemini")).toBeNull();
-    expect(localStorage.getItem("appu_key_gemini")).toBeNull();
+    expect(localStorage.getItem("appu_key_A_gemini")).toBeNull();
   });
 
   it("setPlain replaces a session key and setSession replaces a plain one, so one mode is in force", () => {
     keyStore.setPlain("gemini", "a");
     keyStore.setSession("gemini", "b");
-    expect(localStorage.getItem("appu_key_gemini")).toBeNull();
+    expect(localStorage.getItem("appu_key_A_gemini")).toBeNull();
     keyStore.setPlain("gemini", "c");
     expect(keyStore.getUnlocked("gemini")).toBe("c");
   });
@@ -74,5 +74,37 @@ describe("keyStore", () => {
     expect(keyStore.hasAny("gemini", { gemini: "s.i.c" })).toBe(true);
     expect(keyStore.hasAny("groq", {})).toBe(true);
     expect(keyStore.providersWithKeys({ claude: "s.i.c" })).toEqual(["groq", "claude"]);
+  });
+
+  it("user A's remembered key is invisible after setUser(\"B\") and back again for A", () => {
+    keyStore.setPlain("gemini", "AIza1");
+    keyStore.setUser("B");
+    expect(keyStore.getUnlocked("gemini")).toBeNull();
+    expect(keyStore.isPlain("gemini")).toBe(false);
+    expect(keyStore.hasPlain()).toBe(false);
+    keyStore.setUser("A");
+    expect(keyStore.getUnlocked("gemini")).toBe("AIza1");
+  });
+
+  it("forgetPlainKeys(userId) removes only that user's remembered keys", () => {
+    keyStore.setPlain("gemini", "a1"); keyStore.setPlain("groq", "a2");
+    keyStore.setUser("B"); keyStore.setPlain("gemini", "b1");
+    keyStore.forgetPlainKeys("A");
+    expect(localStorage.getItem("appu_key_A_gemini")).toBeNull();
+    expect(localStorage.getItem("appu_key_A_groq")).toBeNull();
+    expect(localStorage.getItem("appu_key_B_gemini")).toBe("b1");
+    expect(keyStore.getUnlocked("gemini")).toBe("b1");
+  });
+
+  it("with no user set, remembered keys are unavailable and old appu_key_<p> entries are ignored", () => {
+    localStorage.setItem("appu_key_gemini", "old");
+    keyStore.setUser(null);
+    expect(keyStore.getUnlocked("gemini")).toBeNull();
+    keyStore.setUser("A");
+    expect(keyStore.getUnlocked("gemini")).toBeNull();
+    keyStore.setUser(null);
+    keyStore.setPlain("groq", "gsk_1"); // no account: held in this tab only, never written
+    expect(localStorage.getItem("appu_key_groq")).toBeNull();
+    expect(keyStore.isPlain("groq")).toBe(false);
   });
 });

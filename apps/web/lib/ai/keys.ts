@@ -41,26 +41,50 @@ export async function unlockKeyBlob(blob: string, pass: string): Promise<string>
 
 /** Keys held in this tab only (the "This tab only" mode, and a passphrase-protected key after it has been unlocked). Never written to disk. */
 const session = new Map<ProviderId, string>();
-const lsKey = (p: ProviderId) => "appu_key_" + p;
+/** The signed-in account's id: remembered keys are stored per account, so a shared computer never hands one student's key to the next. */
+let userId: string | null = null;
+const lsKey = (p: ProviderId) => (userId ? "appu_key_" + userId + "_" + p : null);
 function ls(): Storage | null { try { return localStorage; } catch { return null; } }
+function read(p: ProviderId): string | null {
+  const k = lsKey(p);
+  if (!k) return null;
+  try { return ls()?.getItem(k) ?? null; } catch { return null; /* storage blocked */ }
+}
+function drop(p: ProviderId): void {
+  const k = lsKey(p);
+  if (!k) return;
+  try { ls()?.removeItem(k); } catch { /* storage blocked */ }
+}
 
 export const keyStore = {
-  /** The key usable right now: this tab's memory first, then the one remembered on this computer. */
+  /** Sets whose remembered keys are visible. With no user, keys remembered on this computer are unavailable. Keys from before accounts (appu_key_<provider>) are ignored. */
+  setUser(id: string | null): void { userId = id || null; },
+  /** The key usable right now: this tab's memory first, then the one remembered on this computer for this account. */
   getUnlocked(p: ProviderId): string | null {
     const s = session.get(p);
     if (s) return s;
-    let v: string | null = null;
-    try { v = ls()?.getItem(lsKey(p)) ?? null; } catch { /* storage blocked */ }
+    const v = read(p);
     return v && v.trim() ? v.trim() : null;
   },
-  /** True when the key is remembered on this computer (localStorage), as opposed to held in this tab's memory. */
-  isPlain(p: ProviderId): boolean { try { return !!ls()?.getItem(lsKey(p)); } catch { return false; } },
-  /** "Remember on this computer": one mode in force, so a tab-only copy of the same provider is dropped. */
-  setPlain(p: ProviderId, key: string): void { session.delete(p); try { ls()?.setItem(lsKey(p), key); } catch { /* storage blocked */ } },
-  setSession(p: ProviderId, key: string): void { try { ls()?.removeItem(lsKey(p)); } catch { /* storage blocked */ } session.set(p, key); },
+  /** True when the key is remembered on this computer (localStorage) for this account, as opposed to held in this tab's memory. */
+  isPlain(p: ProviderId): boolean { return !!read(p); },
+  /** True when any key is remembered on this computer for this account. */
+  hasPlain(): boolean { return PROV_ORDER.some((p) => !!read(p)); },
+  /** "Remember on this computer": one mode in force, so a tab-only copy of the same provider is dropped. With no signed-in account the key is kept in this tab only. */
+  setPlain(p: ProviderId, key: string): void {
+    const k = lsKey(p);
+    if (!k) { session.set(p, key); return; }
+    session.delete(p);
+    try { ls()?.setItem(k, key); } catch { /* storage blocked */ }
+  },
+  setSession(p: ProviderId, key: string): void { drop(p); session.set(p, key); },
   /** Forgets every key held in this tab (sign-out). Keys remembered on this computer are untouched. */
   clearSession(): void { session.clear(); },
-  clear(p: ProviderId): void { session.delete(p); try { ls()?.removeItem(lsKey(p)); } catch { /* storage blocked */ } },
+  /** Removes the keys remembered on this computer for that account only (sign-out, "Forget"). */
+  forgetPlainKeys(id: string): void {
+    for (const p of PROV_ORDER) { try { ls()?.removeItem("appu_key_" + id + "_" + p); } catch { /* storage blocked */ } }
+  },
+  clear(p: ProviderId): void { session.delete(p); drop(p); },
   hasAny(p: ProviderId, blobs: Record<string, string>): boolean { return !!keyStore.getUnlocked(p) || !!blobs[p]; },
   providersWithKeys(blobs: Record<string, string>): ProviderId[] { return PROV_ORDER.filter((p) => keyStore.hasAny(p, blobs)); }
 };

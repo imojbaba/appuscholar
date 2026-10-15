@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { ProviderId } from "@appuscholar/core";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useSettings } from "@/lib/settings";
 import { keyStore, lockKey, type KeyMode } from "./keys";
 
 export type KeysValue = {
@@ -27,6 +28,10 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
   const [blobs, setBlobs] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
   const [version, bump] = useReducer((n: number) => n + 1, 0);
+  // Keys remembered on this computer belong to the signed-in account; set it before consumers read, and re-render once it is known.
+  const userId = useSettings().me?.id ?? null;
+  keyStore.setUser(userId);
+  useEffect(() => { bump(); }, [userId]);
   const blobsRef = useRef(blobs);
   const commit = useCallback((next: Record<string, string>) => { blobsRef.current = next; setBlobs(next); }, []);
 

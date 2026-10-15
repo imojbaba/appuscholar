@@ -1,8 +1,12 @@
 "use client";
+import { useState } from "react";
 import { tHtml, useT } from "@/lib/i18n";
 import { keyStore } from "@/lib/ai/keys";
+import { resetPdMemo } from "@/lib/ai/callAI";
+import { useSettings } from "@/lib/settings";
 import { useSession } from "@/lib/session";
 import { APP_VERSION } from "@/lib/version";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWorkspace } from "../WorkspaceContext";
@@ -15,7 +19,17 @@ export function Help() {
   const t = useT();
   const { dialog, closeDialog, openWelcome, openTerms, openImportV1 } = useWorkspace();
   const { email, signOutAction } = useSession();
+  const { me } = useSettings();
+  const [askForget, setAskForget] = useState(false);
+  // Forget the tab's keys and the unlocked-text memo, then end the session (and, if chosen, the keys remembered on this computer).
+  const signOut = (forget: boolean) => {
+    if (forget && me?.id) keyStore.forgetPlainKeys(me.id);
+    keyStore.clearSession();
+    resetPdMemo();
+    void signOutAction();
+  };
   return (
+    <>
     <Dialog open={dialog === "help"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
       <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto" data-testid="help-dialog">
         <DialogHeader>
@@ -46,9 +60,22 @@ export function Help() {
         <p className="m-0 text-xs text-muted-foreground" data-testid="help-version">Appuscholar v2 ({APP_VERSION})</p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
           <span data-testid="signed-in-as">Signed in as {email}</span>
-          <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { keyStore.clearSession(); void signOutAction(); }}>Sign out</Button>
+          <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { if (keyStore.hasPlain()) setAskForget(true); else signOut(false); }}>Sign out</Button>
         </div>
       </DialogContent>
     </Dialog>
+      <AlertDialog open={askForget} onOpenChange={setAskForget}>
+        <AlertDialogContent data-testid="forget-keys-confirm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Forget the AI keys remembered on this computer?</AlertDialogTitle>
+            <AlertDialogDescription>If this is a shared computer, forget them. Otherwise keep them and you will not need to paste them again next time.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="keep-keys-signout" onClick={() => signOut(false)}>Keep and sign out</AlertDialogCancel>
+            <Button variant="destructive" data-testid="forget-keys-signout" onClick={() => signOut(true)}>Forget and sign out</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
