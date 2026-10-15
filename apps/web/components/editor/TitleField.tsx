@@ -28,8 +28,12 @@ export function TitleField({ docId, title, onRenamed }: { docId: string; title: 
   return (
     <div className="grid gap-1">
       <label htmlFor="doc-title-field" className="sr-only">Document title</label>
-      <div className="group flex min-w-0 items-center gap-2">
-        <input id="doc-title-field" value={value} onChange={e => setValue(e.target.value)} onBlur={() => { void commit(); }} onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} readOnly={saving} aria-busy={saving} maxLength={200} data-testid="doc-title-field" className="min-w-0 flex-1 rounded-md bg-transparent text-2xl font-semibold tracking-tight outline-none focus:underline decoration-primary/40 underline-offset-4" />
+      {/* The invisible copy sizes the field to its text, so the pencil sits right after the title rather than at the far edge. */}
+      <div className="group grid max-w-full grid-cols-[minmax(0,auto)_auto] items-center justify-start gap-2">
+        <div className="grid min-w-0">
+          <span aria-hidden="true" className="invisible col-start-1 row-start-1 overflow-hidden whitespace-pre text-2xl font-semibold tracking-tight">{value || " "}</span>
+          <input id="doc-title-field" value={value} onChange={e => setValue(e.target.value)} onBlur={() => { void commit(); }} onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} readOnly={saving} aria-busy={saving} maxLength={200} data-testid="doc-title-field" className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-2xl font-semibold tracking-tight outline-none focus:underline decoration-primary/40 underline-offset-4" />
+        </div>
         <PencilSimple size={18} aria-hidden="true" className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
       </div>
       {saving ? <p role="status" data-testid="doc-title-status" className="text-xs text-muted-foreground">Saving…</p> : null}
