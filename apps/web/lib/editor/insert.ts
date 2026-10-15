@@ -52,6 +52,11 @@ export function mapRange(range: SelectionRange, mapping: { map(pos: number, asso
   return { ...range, from: mapping.map(range.from, 1), to: mapping.map(range.to, -1) };
 }
 
+/** v1 selCite: collapses the selection to its end without moving focus, so a citation inserted later goes right after the passage instead of replacing it. */
+export function collapseSelectionToEnd(editor: Editor): void {
+  editor.chain().setTextSelection(editor.state.selection.to).run();
+}
+
 /** True when the selection covers text (a collapsed cursor is not a selection). */
 export function hasSelection(editor: Editor): boolean {
   return !editor.state.selection.empty;

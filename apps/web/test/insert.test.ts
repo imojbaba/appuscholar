@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Editor } from "@tiptap/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { provHash } from "@appuscholar/core";
-import { hasSelection, insertAiText, insertPlainHtml, mapRange, selectionRange, selectionText, tailText } from "../lib/editor/insert";
+import { collapseSelectionToEnd, hasSelection, insertAiText, insertPlainHtml, mapRange, selectionRange, selectionText, tailText } from "../lib/editor/insert";
 
 const make = (content: string) => new Editor({ extensions: editorExtensions, content });
 
@@ -126,5 +126,18 @@ describe("replacing the range the request was made for", () => {
     ed.commands.setTextSelection(2);
     expect(selectionRange(ed)).toBeNull();
     ed.destroy();
+  });
+});
+
+describe("collapseSelectionToEnd", () => {
+  it("turns a selection into a caret at its end and leaves the text alone", () => {
+    const e = make("<p>Alpha beta gamma delta</p>");
+    e.commands.setTextSelection({ from: 7, to: 17 });
+    collapseSelectionToEnd(e);
+    expect(e.state.selection.from).toBe(17);
+    expect(e.state.selection.to).toBe(17);
+    expect(e.state.selection.empty).toBe(true);
+    expect(e.getText()).toBe("Alpha beta gamma delta");
+    e.destroy();
   });
 });

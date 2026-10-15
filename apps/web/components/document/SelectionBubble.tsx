@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useT } from "@/lib/i18n";
 import { useWritingRun } from "@/lib/ai/useWritingRun";
+import { collapseSelectionToEnd } from "@/lib/editor/insert";
 import { selBubbleVisible } from "@/lib/editor/selectionBubble";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
@@ -45,7 +46,7 @@ export function SelectionBubble({ editor }: { editor: Editor }) {
     setPendingSearch(text.slice(0, 200));
     showTool("research");
   };
-  const cite = () => { hide(); showTool("cite"); toast(t("sel_cite_toast")); };
+  const cite = () => { hide(); collapseSelectionToEnd(editor); showTool("cite"); toast(t("sel_cite_toast")); };
   const improve = () => { void run("improve"); hide(); };
 
   return (

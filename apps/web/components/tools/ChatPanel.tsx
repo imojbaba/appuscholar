@@ -19,9 +19,9 @@ export function useChatLog() {
   const [log, setLog] = useState<ChatMsg[]>([]);
   const next = useRef(1);
   const ask = useCallback((q: string, run: (q: string) => Promise<{ text: string; error: boolean }>) => {
-    const aiId = next.current + 1;
-    setLog((l) => [...l, { id: next.current, role: "user", text: q, state: "done" }, { id: aiId, role: "ai", text: THINKING, state: "pending" }]);
+    const userId = next.current, aiId = next.current + 1;
     next.current += 2;
+    setLog((l) => [...l, { id: userId, role: "user", text: q, state: "done" }, { id: aiId, role: "ai", text: THINKING, state: "pending" }]);
     void run(q).then((r) => setLog((l) => l.map((m) => (m.id === aiId ? { ...m, text: r.text, state: r.error ? "error" : "done" } : m))));
   }, []);
   return { log, ask };
