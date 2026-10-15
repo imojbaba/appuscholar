@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor as TipTapEditor } from "@tiptap/react";
 import { PROVIDERS, type ProviderId } from "@appuscholar/core";
-import { useT } from "@/lib/i18n";
+import { plainText, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useKeys } from "@/lib/ai/useKeys";
 import type { SaveStatus } from "@/lib/useAutosave";
@@ -64,7 +64,7 @@ export function DocumentCard() {
 
   const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   return (
-    <section className="doc" aria-label="Your document">
+    <section className="doc" aria-label={plainText(t("doc_pane_h2"))}>
       <div className="card-head">
         <h2>{t("doc_pane_h2")}</h2>
         {failed

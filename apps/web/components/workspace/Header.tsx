@@ -20,6 +20,12 @@ export function Header() {
   const t = useT();
   const { lang, setLang } = useLang();
   const { openHelp, openSettings } = useWorkspace();
+  // v1 toasts the new language in that language; the switch is a settings update plus a context change, nothing remounts.
+  const switchLang = () => {
+    const next = lang === "en" ? "hi" : "en";
+    setLang(next);
+    toast(next === "hi" ? "भाषा: हिन्दी" : "Language: English");
+  };
   return (
     <>
       <header className="hdr">
@@ -35,7 +41,7 @@ export function Header() {
             <Badge className="ver" data-testid="app-version">Version {APP_VERSION}</Badge>
           </div>
         </div>
-        <Button variant="ghost" className={`${HDR_BTN} lang px-0`} aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={() => setLang(lang === "en" ? "hi" : "en")}>
+        <Button variant="ghost" className={`${HDR_BTN} lang px-0`} aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
           {lang === "en" ? "हि" : "EN"}
         </Button>
         <Button variant="ghost" className={HDR_BTN} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>

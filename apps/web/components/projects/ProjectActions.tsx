@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useT } from "@/lib/i18n";
 
 export function ProjectActions({ title, documentCount, status, onRename, onDelete, onStatus }: { title: string; documentCount: number; status: string; onRename: (t: string) => Promise<void>; onDelete: () => Promise<void>; onStatus: (s: "active" | "complete") => Promise<void> }) {
+  const t = useT();
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [draft, setDraft] = useState(title);
@@ -34,8 +36,8 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
     <div className="flex shrink-0 flex-col items-end gap-1">
       <div className="flex items-center gap-1">
         {status === "complete"
-          ? <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("active"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> {statusBusy === "active" ? "Reopening…" : "Reopen"}</Button>
-          : <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("complete"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-complete"><CheckCircle size={18} /> {statusBusy === "complete" ? "Marking complete…" : "Mark complete"}</Button>}
+          ? <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("active"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> {statusBusy === "active" ? "Reopening…" : t("project_reopen_btn")}</Button>
+          : <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("complete"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-complete"><CheckCircle size={18} /> {statusBusy === "complete" ? "Marking complete…" : t("project_complete_btn")}</Button>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button ref={triggerRef} variant="ghost" size="icon" aria-label={`Actions for ${title}`} data-testid="project-actions"><DotsThree size={20} weight="bold" /></Button>
@@ -59,8 +61,8 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
             </div>
             {error ? <p role="alert" data-testid="error-msg" className="text-sm text-destructive">{error}</p> : null}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setError(""); setRenaming(false); }} disabled={busy}>Cancel</Button>
-              <Button type="submit" disabled={busy || !draft.trim()} data-testid="rename-save">{busy ? "Saving…" : "Save"}</Button>
+              <Button type="button" variant="outline" onClick={() => { setError(""); setRenaming(false); }} disabled={busy}>{t("sap_cancel_btn")}</Button>
+              <Button type="submit" disabled={busy || !draft.trim()} data-testid="rename-save">{busy ? "Saving…" : t("sap_save_btn")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

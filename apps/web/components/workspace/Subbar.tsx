@@ -5,11 +5,13 @@ import { useSettings } from "@/lib/settings";
 import { useKeys } from "@/lib/ai/useKeys";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "./WorkspaceContext";
+import { useT } from "@/lib/i18n";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
 
 /** Provider pill and menu: a provider is "ready" when a key for it is usable now or saved (encrypted) on the server. */
 export function Subbar() {
+  const t = useT();
   const { settings, update } = useSettings();
   const { openSettings } = useWorkspace();
   const [open, setOpen] = useState(false);
@@ -40,7 +42,7 @@ export function Subbar() {
         <span aria-hidden="true">🔌</span> {PROVIDERS[current].short} {hasKey(current) ? <span className="ok">✓ ready</span> : <span>no key</span>} <span aria-hidden="true">▾</span>
       </button>
       {open && (
-        <div className="prov-menu" role="menu" aria-label="AI provider">
+        <div className="prov-menu" role="menu" aria-label={t("settings_provider_label")}>
           {PROV_ORDER.map((id) => (
             <button key={id} type="button" role="menuitemradio" aria-checked={id === current} data-testid={"provider-" + id} onClick={() => choose(id)}>
               <span className="em" aria-hidden="true">{hasKey(id) ? "✓" : ""}</span>{PROVIDERS[id].name}

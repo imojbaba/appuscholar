@@ -8,18 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/lib/i18n";
 
 /** Stays well under Vercel's 4.5 MB request limit once JSON escaping and the other fields are added. */
 const MAX_BATCH_BYTES = 3 * 1024 * 1024;
 
 const REASONS: Record<string, string> = {
   "not-json": "That file is not JSON.",
-  "not-appuscholar": "That file is not an Appuscholar backup.",
   "no-documents": "That backup has no documents.",
   locked: "This backup is locked with a passphrase."
 };
 
 export function ImportV1() {
+  const t = useT();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string>("");
@@ -36,7 +37,7 @@ export function ImportV1() {
     const parsed = parseV1Backup(text);
     if (!parsed.ok) {
       if (parsed.reason === "locked") { setLocked(text); setMsg("This backup is locked. Enter the passphrase you chose when you saved it in v1."); return; }
-      setMsg(REASONS[parsed.reason] ?? "That file could not be read.");
+      setMsg(parsed.reason === "not-appuscholar" ? t("restore_bad") : REASONS[parsed.reason] ?? "That file could not be read.");
       return;
     }
     const { documents, projects, exported } = parsed.backup;
@@ -134,8 +135,8 @@ export function ImportV1() {
               <Label htmlFor="backup-passphrase">Backup passphrase</Label>
               <Input id="backup-passphrase" type="password" autoComplete="off" value={passphrase} onChange={e => setPassphrase(e.target.value)} disabled={busy} data-testid="import-passphrase" />
             </div>
-            <Button type="submit" disabled={busy || !passphrase} data-testid="import-unlock">Unlock</Button>
-            <Button type="button" variant="outline" onClick={cancelUnlock} disabled={busy}>Cancel</Button>
+            <Button type="submit" disabled={busy || !passphrase} data-testid="import-unlock">{t("bk_ok_open")}</Button>
+            <Button type="button" variant="outline" onClick={cancelUnlock} disabled={busy}>{t("bk_cancel")}</Button>
           </form>
         ) : null}
         {progress ? (

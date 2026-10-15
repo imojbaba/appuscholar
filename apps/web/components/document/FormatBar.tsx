@@ -162,9 +162,9 @@ export function FormatBar({ editor }: { editor: Editor }) {
             <option value="">Font</option>
             {FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
-          <select className="select" aria-label="Size" data-testid="fmt-size" value={SIZES.some((n) => `${n}px` === s.size) ? s.size : ""}
+          <select className="select" aria-label={t("ps_size")} data-testid="fmt-size" value={SIZES.some((n) => `${n}px` === s.size) ? s.size : ""}
             onChange={(e) => { const c = run(); if (e.target.value) c.setFontSize(e.target.value).run(); else c.unsetFontSize().run(); }}>
-            <option value="">Size</option>
+            <option value="">{t("ps_size")}</option>
             {SIZES.map((n) => <option key={n} value={`${n}px`}>{n} px</option>)}
           </select>
           <Sep />

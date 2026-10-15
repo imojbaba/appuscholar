@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { plural, relativeTime } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 type Doc = { id: string; title: string; currentSeq: number; wordCount: number; updatedAt: string };
 export function DocumentList({ projectId }: { projectId: string }) {
+  const t = useT();
   const [items, setItems] = useState<Doc[] | null>(null);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,10 +30,10 @@ export function DocumentList({ projectId }: { projectId: string }) {
     <section className="grid gap-5">
       <form onSubmit={create} className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
-          <Label htmlFor="new-doc">New document</Label>
+          <Label htmlFor="new-doc">{t("doc_new_title")}</Label>
           <Input id="new-doc" value={title} onChange={e => setTitle(e.target.value)} placeholder="Untitled document" maxLength={200} disabled={busy} data-testid="doc-title" />
         </div>
-        <Button type="submit" disabled={busy} data-testid="doc-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : "New document"}</Button>
+        <Button type="submit" disabled={busy} data-testid="doc-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : t("doc_new_title")}</Button>
       </form>
       {error ? <p role="alert" data-testid="error-msg" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       {items === null ? (

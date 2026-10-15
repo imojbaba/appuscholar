@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PROVIDERS, type ProviderId } from "@appuscholar/core";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useT } from "@/lib/i18n";
 
 /** v1 asked with window.prompt; the wording is the same. */
 export type PassphraseAsk = { kind: "unlock"; provider: ProviderId } | { kind: "choose" } | { kind: "confirm" };
@@ -31,6 +32,7 @@ export function askPassphrase(ask: PassphraseAsk): Promise<string | null> {
 
 /** Mount once, in ChromeDialogs. */
 export function PassphraseHost() {
+  const t = useT();
   const [pending, setPending] = useState<Pending | null>(null);
   const [value, setValue] = useState("");
   useEffect(() => {
@@ -51,12 +53,12 @@ export function PassphraseHost() {
         {pending && (
           <form onSubmit={(e) => { e.preventDefault(); finish(value); }} className="grid gap-3">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-purple-800">🔒 Passphrase</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-purple-800">🔒 {t("bk_pass1")}</DialogTitle>
               <DialogDescription data-testid="pass-message">{message(pending.ask)}</DialogDescription>
             </DialogHeader>
-            <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label="Passphrase" data-testid="pass-input" />
+            <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")} data-testid="pass-input" />
             <DialogFooter>
-              <Button type="button" variant="ghost" data-testid="pass-cancel" onClick={() => finish(null)}>Cancel</Button>
+              <Button type="button" variant="ghost" data-testid="pass-cancel" onClick={() => finish(null)}>{t("bk_cancel")}</Button>
               <Button type="submit" variant="primary" data-testid="pass-ok">OK</Button>
             </DialogFooter>
           </form>

@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectCard, type ProjectRow } from "./ProjectCard";
+import { useT } from "@/lib/i18n";
 
 export function ProjectList() {
+  const t = useT();
   const router = useRouter();
   const [items, setItems] = useState<ProjectRow[] | null>(null);
   const [title, setTitle] = useState("");
@@ -38,8 +40,8 @@ export function ProjectList() {
     <section className="grid min-w-0 grid-cols-1 gap-6">
       <form onSubmit={create} className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
-          <Label htmlFor="new-project">Research project name</Label>
-          <Input id="new-project" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Thesis on academic procrastination" maxLength={200} disabled={busy} data-testid="project-title" />
+          <Label htmlFor="new-project">{t("sap_name_label")}</Label>
+          <Input id="new-project" value={title} onChange={e => setTitle(e.target.value)} placeholder={t("sap_name_placeholder")} maxLength={200} disabled={busy} data-testid="project-title" />
         </div>
         <Button type="submit" disabled={busy || !title.trim()} data-testid="project-create"><Plus size={18} weight="bold" /> {busy ? "Creating…" : "New Research Project"}</Button>
       </form>

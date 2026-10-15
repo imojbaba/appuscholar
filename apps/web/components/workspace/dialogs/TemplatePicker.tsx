@@ -40,7 +40,7 @@ export function TemplatePicker({ editor }: { editor: Editor }) {
               ))}
             </fieldset>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)} data-testid="template-cancel">Cancel</Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} data-testid="template-cancel">{t("sap_cancel_btn")}</Button>
               <Button type="submit" variant="primary" data-testid="template-insert">Insert</Button>
             </DialogFooter>
           </form>

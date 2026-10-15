@@ -97,7 +97,7 @@ function List() {
             <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{t("sap_cancel_btn")}</AlertDialogCancel>
             <AlertDialogAction variant="destructive" disabled={busy} data-testid="project-delete-yes" onClick={(e) => { e.preventDefault(); if (confirm) void remove(confirm); }}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

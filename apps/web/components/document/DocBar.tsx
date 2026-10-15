@@ -120,7 +120,7 @@ export function DocBar() {
             <DialogHeader><DialogTitle>{dialog === "new" ? "Name for the new document:" : "Rename this document:"}</DialogTitle></DialogHeader>
             <Input className="my-4" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} autoFocus aria-label={dialog === "new" ? "Name for the new document" : "Rename this document"} data-testid="doc-name-input" />
             <DialogFooter>
-              <Button type="button" variant="ghost" size="md" onClick={close}>Cancel</Button>
+              <Button type="button" variant="ghost" size="md" onClick={close}>{t("sap_cancel_btn")}</Button>
               <Button type="submit" variant="primary" size="md" disabled={busy} data-testid="doc-name-ok">OK</Button>
             </DialogFooter>
           </form>
@@ -134,7 +134,7 @@ export function DocBar() {
             <AlertDialogDescription>A copy can be brought back for ten seconds after you delete it.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="doc-delete-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="doc-delete-cancel">{t("sap_cancel_btn")}</AlertDialogCancel>
             <AlertDialogAction data-testid="doc-delete-confirm" disabled={busy} onClick={(e) => { e.preventDefault(); void remove(); }}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

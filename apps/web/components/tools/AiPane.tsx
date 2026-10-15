@@ -1,5 +1,5 @@
 "use client";
-import { tHtml, useT } from "@/lib/i18n";
+import { plainText, tHtml, useT } from "@/lib/i18n";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ export function AiPane() {
     <div className="panel" data-testid="ai-pane">
       <h3>{t("ai_pane_h3")}</h3>
       <p className="desc">{tHtml(t("ai_pane_desc"))}</p>
-      <div className={"ai-out" + (empty ? " empty" : "")} role="region" aria-label="AI suggestion" aria-busy={busy} data-testid="ai-out">
+      <div className={"ai-out" + (empty ? " empty" : "")} role="region" aria-label={plainText(t("dock_ai_tab"))} aria-busy={busy} data-testid="ai-out">
         {busy ? <span className="thinking" role="status" data-testid="ai-status">{statusText}</span> : text ?? placeholder}
       </div>
       {/* v1 shows the check only for a result from Continue, Improve or Extend: not for Draft first feedback and not for an error. */}

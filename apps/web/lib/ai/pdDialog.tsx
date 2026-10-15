@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { ScanResult } from "./callAI";
+import { useT } from "@/lib/i18n";
 
 export type PdAnswer = "mask" | "send" | "cancel";
 
@@ -28,6 +29,7 @@ export function askPd(sc: ScanResult): Promise<PdAnswer> {
 
 /** Mount once, in ChromeDialogs. */
 export function PdHost() {
+  const t = useT();
   const [pending, setPending] = useState<Pending | null>(null);
   useEffect(() => {
     listener = setPending;
@@ -54,7 +56,7 @@ export function PdHost() {
             <DialogFooter>
               <Button variant="primary" data-testid="pd-mask" onClick={() => finish("mask")}>Mask them and send</Button>
               <Button variant="ghost" data-testid="pd-send" onClick={() => finish("send")}>Send as it is</Button>
-              <Button variant="ghost" data-testid="pd-cancel" onClick={() => finish("cancel")}>Cancel</Button>
+              <Button variant="ghost" data-testid="pd-cancel" onClick={() => finish("cancel")}>{t("sap_cancel_btn")}</Button>
             </DialogFooter>
           </>
         )}

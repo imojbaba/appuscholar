@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
 import { parseTableSize } from "@/lib/editor/tableSize";
+import { useT } from "@/lib/i18n";
 
 /** v1's table-size prompt: one box, "3x4", at most 30 rows and 12 columns. */
 export function TableSize({ open, onOpenChange, onInsert }: { open: boolean; onOpenChange(open: boolean): void; onInsert(rows: number, cols: number): void }) {
@@ -19,6 +20,7 @@ export function TableSize({ open, onOpenChange, onInsert }: { open: boolean; onO
 }
 
 function Form({ onCancel, onInsert }: { onCancel(): void; onInsert(rows: number, cols: number): void }) {
+  const t = useT();
   const [value, setValue] = useState("3x4");
   function submit() {
     const size = parseTableSize(value);
@@ -33,7 +35,7 @@ function Form({ onCancel, onInsert }: { onCancel(): void; onInsert(rows: number,
       <Label htmlFor="tableSize">Table size — rows x columns (e.g. 3x4):</Label>
       <Input id="tableSize" value={value} onChange={(e) => setValue(e.target.value)} autoFocus onFocus={(e) => e.currentTarget.select()} data-testid="table-size-input" />
       <DialogFooter>
-        <Button type="button" variant="ghost" onClick={onCancel} data-testid="table-cancel">Cancel</Button>
+        <Button type="button" variant="ghost" onClick={onCancel} data-testid="table-cancel">{t("sap_cancel_btn")}</Button>
         <Button type="submit" variant="primary" data-testid="table-insert">Insert</Button>
       </DialogFooter>
     </form>
