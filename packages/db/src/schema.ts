@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   locale: text("locale").notNull().default("en"),
   termsAcceptedAt: timestamp("terms_accepted_at", { mode: "date" }),
   ageConfirmed: boolean("age_confirmed").notNull().default(false),
+  settings: jsonb("settings").notNull().default({}),
+  activeProjectId: text("active_project_id"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
 });
 
@@ -47,8 +49,9 @@ export const projects = pgTable("projects", {
   stage: text("stage").notNull().default("idea"),
   status: text("status").notNull().default("active"),
   contentLang: text("content_lang").notNull().default("en"),
+  kind: text("kind").notNull().default("research"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
-}, (t) => [index("projects_user_idx").on(t.userId)]);
+}, (t) => [index("projects_user_idx").on(t.userId), index("projects_user_kind_idx").on(t.userId, t.kind)]);
 
 export const documents = pgTable("documents", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -56,6 +59,7 @@ export const documents = pgTable("documents", {
   title: text("title").notNull(),
   kind: text("kind").notNull().default("draft"),
   currentRevisionId: text("current_revision_id"),
+  deletedAt: timestamp("deleted_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [index("documents_project_idx").on(t.projectId)]);
@@ -71,6 +75,25 @@ export const documentRevisions = pgTable("document_revisions", {
   originStats: jsonb("origin_stats"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [uniqueIndex("revisions_doc_seq_idx").on(t.documentId, t.seq)]);
+
+export const credentials = pgTable("credentials", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  encryptedKey: text("encrypted_key").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
+}, (t) => [primaryKey({ columns: [t.userId, t.provider] })]);
+
+export const aiUseLog = pgTable("ai_use_log", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: text("project_id"),
+  day: text("day").notNull(),          // YYYY-MM-DD in the student's local date as sent by the client
+  provider: text("provider").notNull(),
+  model: text("model").notNull(),
+  kind: text("kind").notNull(),
+  grp: text("grp").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
+}, (t) => [index("ai_use_user_day_idx").on(t.userId, t.day)]);
 
 export type Project = typeof projects.$inferSelect;
 export type Document = typeof documents.$inferSelect;

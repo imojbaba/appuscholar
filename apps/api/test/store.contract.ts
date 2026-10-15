@@ -101,5 +101,155 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.getDocument(a, d.id)).toBeNull();
       expect(await s.deleteProject(a, p.id)).toBe(false);
     });
+
+    const first = { bodyHtml: "", authorKind: "web", authorLabel: "", wordCount: 0 } as const;
+    const em = (id: string) => `${id}@contract.local`;
+
+    it("ensures a user row and merges settings", async () => {
+      const id = "u-" + crypto.randomUUID();
+      const u = await s.ensureUser(id, em(id));
+      expect(u).toMatchObject({ id, email: em(id), locale: "en", settings: {}, activeProjectId: null, termsAcceptedAt: null, ageConfirmed: false });
+      await s.updateSettings(id, { lang: "hi", draftFirst: true, stageGroupsCollapsed: ["lit", "design"] });
+      const merged = await s.updateSettings(id, { provider: "groq", stageGroupsCollapsed: ["writing"] });
+      expect(merged).toEqual({ lang: "hi", draftFirst: true, provider: "groq", stageGroupsCollapsed: ["writing"] });
+      const untouched = await s.updateSettings(id, { lang: undefined });
+      expect(untouched.lang).toBe("hi");
+      expect((await s.getUser(id))?.settings).toEqual(merged);
+    });
+
+    it("ensureUser is idempotent and keeps settings and terms", async () => {
+      await s.ensureUser(a, em(a));
+      await s.updateSettings(a, { field: "biology" });
+      await s.acceptTerms(a, new Date("2026-10-01T00:00:00Z"));
+      const again = await s.ensureUser(a, "other@contract.local");
+      expect(again.settings).toEqual({ field: "biology" });
+      expect(again.termsAcceptedAt).toEqual(new Date("2026-10-01T00:00:00Z"));
+      expect(again.ageConfirmed).toBe(true);
+      expect(again.email).toBe(em(a));
+    });
+
+    it("returns null for an unknown user", async () => {
+      expect(await s.getUser("u-" + crypto.randomUUID())).toBeNull();
+    });
+
+    it("sets the active project only if the user owns it", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      const p = await s.createProject(a, "T");
+      expect(await s.setActiveProject(b, p.id)).toBe(false);
+      expect(await s.setActiveProject(a, p.id)).toBe(true);
+      expect((await s.getUser(a))?.activeProjectId).toBe(p.id);
+      expect(await s.setActiveProject(a, null)).toBe(true);
+      expect((await s.getUser(a))?.activeProjectId).toBeNull();
+    });
+
+    it("creates one scratch project per user and hides it from the list", async () => {
+      await s.ensureUser(a, em(a));
+      const x = await s.getScratchProject(a);
+      const y = await s.getScratchProject(a);
+      expect(x.id).toBe(y.id);
+      expect(x.kind).toBe("scratch");
+      expect(x.title).toBe("Scratch space");
+      expect((await s.listProjects(a)).find(p => p.id === x.id)).toBeUndefined();
+      expect((await s.createProject(a, "T")).kind).toBe("research");
+    });
+
+    it("moves a document into another project of the same user only", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      const scratch = await s.getScratchProject(a);
+      const p = await s.createProject(a, "Thesis");
+      const other = await s.createProject(b, "Theirs");
+      const d = await s.createDocument(a, scratch.id, "Draft", "draft", { ...first, bodyHtml: "<p>x</p>", authorLabel: em(a), wordCount: 1 });
+      expect(await s.moveDocument(a, d!.id, other.id)).toBeNull();
+      expect((await s.getDocument(a, d!.id))?.projectId).toBe(scratch.id);
+      expect(await s.moveDocument(b, d!.id, other.id)).toBeNull();
+      expect((await s.moveDocument(a, d!.id, p.id))?.projectId).toBe(p.id);
+      expect((await s.listDocuments(a, p.id))!.map(x => x.id)).toEqual([d!.id]);
+      expect((await s.listDocuments(a, scratch.id))).toEqual([]);
+    });
+
+    it("changes the kind of a document, for its owner only", async () => {
+      const p = await s.createProject(a, "T");
+      const d = (await s.createDocument(a, p.id, "A", "draft", first))!;
+      expect((await s.setDocumentKind(a, d.id, "notes"))?.kind).toBe("notes");
+      expect((await s.getDocument(a, d.id))?.kind).toBe("notes");
+      expect(await s.setDocumentKind(b, d.id, "draft")).toBeNull();
+    });
+
+    it("soft-deletes all but the last document and restores", async () => {
+      const p = await s.createProject(a, "T");
+      const x = (await s.createDocument(a, p.id, "A", "draft", first))!;
+      expect(await s.softDeleteDocument(a, x.id)).toBe("only-document");
+      const y = (await s.createDocument(a, p.id, "B", "draft", first))!;
+      expect(await s.softDeleteDocument(b, x.id)).toBeNull();
+      expect(await s.softDeleteDocument(a, x.id)).toBe("deleted");
+      expect((await s.listDocuments(a, p.id))!.map(d => d.id)).toEqual([y.id]);
+      expect(await s.getDocument(a, x.id)).toBeNull();
+      expect(await s.renameDocument(a, x.id, "Z")).toBeNull();
+      expect(await s.appendRevision(a, x.id, first)).toBeNull();
+      expect(await s.softDeleteDocument(a, y.id)).toBe("only-document");
+      expect(await s.restoreDeletedDocument(b, x.id)).toBeNull();
+      expect((await s.restoreDeletedDocument(a, x.id))?.id).toBe(x.id);
+      expect((await s.listDocuments(a, p.id))!.length).toBe(2);
+      expect((await s.getDocument(a, x.id))?.id).toBe(x.id);
+    });
+
+    it("keeps soft-deleted documents out of the project document count", async () => {
+      const p = await s.createProject(a, "T");
+      const x = (await s.createDocument(a, p.id, "A", "draft", first))!;
+      await s.createDocument(a, p.id, "B", "draft", first);
+      await s.softDeleteDocument(a, x.id);
+      expect((await s.listProjects(a))[0]?.documentCount).toBe(1);
+    });
+
+    it("stores credentials as opaque blobs and lists per user", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      await s.putCredential(a, "gemini", "c2FsdA.aXY.Y3Q");
+      await s.putCredential(a, "gemini", "c2FsdA.aXY.Y3Qy");
+      await s.putCredential(b, "gemini", "other");
+      const creds = await s.getCredentials(a);
+      expect(creds.map(c => [c.provider, c.encryptedKey])).toEqual([["gemini", "c2FsdA.aXY.Y3Qy"]]);
+      expect(creds[0]?.updatedAt).toBeInstanceOf(Date);
+      expect(await s.deleteCredential(b, "groq")).toBe(false);
+      expect(await s.deleteCredential(a, "gemini")).toBe(true);
+      expect(await s.getCredentials(a)).toEqual([]);
+      expect((await s.getCredentials(b)).length).toBe(1);
+    });
+
+    it("keeps an AI-use log of date, provider, model and kind only, filtered by date", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      const one = { d: "2026-10-01", p: "gemini", m: "gemini-3.8-flash", k: "continuing my draft", g: "text" } as const;
+      const two = { d: "2026-10-15", p: "groq", m: "openai/gpt-oss-120b", k: "grammar and polish", g: "text" } as const;
+      await s.appendAiUse(a, null, one);
+      await s.appendAiUse(a, null, two);
+      await s.appendAiUse(b, null, one);
+      expect(await s.listAiUse(a)).toEqual([one, two]);
+      expect(await s.listAiUse(a, "2026-10-10", "2026-10-31")).toEqual([two]);
+      expect(await s.listAiUse(a, undefined, "2026-10-01")).toEqual([one]);
+      await s.eraseAiUse(a);
+      expect(await s.listAiUse(a)).toEqual([]);
+      expect((await s.listAiUse(b)).length).toBe(1);
+    });
+
+    it("stores origin stats on a revision and returns them in summaries", async () => {
+      const p = await s.createProject(a, "T");
+      const d = (await s.createDocument(a, p.id, "A", "draft", first))!;
+      const stats = { typed: 1, ai: 2, passages: 1, kept: 1, edited: 0, unknown: 0 };
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>a <span class=\"ai-ins\" data-h=\"z\">b c</span></p>", authorKind: "web", authorLabel: "", wordCount: 3, originStats: stats });
+      const revs = (await s.listRevisions(a, d.id))!;
+      expect(revs[0]!.originStats).toEqual(stats);
+      expect(revs[1]!.originStats).toBeNull();
+      expect((await s.getRevision(a, d.id, 2))?.originStats).toEqual(stats);
+      expect((await s.getRevision(a, d.id, 1))?.originStats).toBeNull();
+    });
+
+    it("updates a project's content language", async () => {
+      const p = await s.createProject(a, "T");
+      expect((await s.updateProject(a, p.id, { contentLang: "hi" }))?.contentLang).toBe("hi");
+      expect((await s.getProject(a, p.id))?.contentLang).toBe("hi");
+    });
   });
 }
