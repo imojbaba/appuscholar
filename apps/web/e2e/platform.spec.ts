@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 
 const fixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-small.json");
 const richFixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-rich.json");
@@ -124,9 +125,16 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   expect(raced.bodyHtml).toContain("Typed before rename.");
   expect(raced.bodyHtml).toContain("Typed after rename.");
 
+  // the drop zone accepts a dropped file as well as click-to-choose
   await page.goto("/import");
   page.once("dialog", d => d.accept());
-  await page.getByTestId("import-file").setInputFiles(fixture);
+  const dropped = await page.evaluateHandle(text => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([text], "backup.json", { type: "application/json" }));
+    return dt;
+  }, readFileSync(fixture, "utf8"));
+  await page.getByTestId("import-dropzone").dispatchEvent("dragover", { dataTransfer: dropped });
+  await page.getByTestId("import-dropzone").dispatchEvent("drop", { dataTransfer: dropped });
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+$/, { timeout: 15_000 });
   await expect(page.getByTestId("doc-link")).toHaveCount(2);
   await page.getByTestId("doc-link").filter({ hasText: "Literature review" }).click();

@@ -27,6 +27,8 @@ export function ImportV1() {
   const [locked, setLocked] = useState<string | null>(null);
   const [passphrase, setPassphrase] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const disabled = busy || locked !== null;
 
   function resetFile() { if (fileRef.current) fileRef.current.value = ""; }
 
@@ -55,7 +57,7 @@ export function ImportV1() {
         imported += r.imported;
         setProgress({ done: i + 1, total: batches.length });
       }
-      setMsg(`Imported ${imported} document(s) ✓`);
+      setMsg(`Imported ${imported} document(s).`);
       router.push(`/projects/${projectId}`);
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
@@ -69,6 +71,24 @@ export function ImportV1() {
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
+    await handleFile(f);
+  }
+
+  function onDragOver(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = disabled ? "none" : "copy";
+    if (!disabled) setDragging(true);
+  }
+
+  async function onDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (!f || disabled) return;
+    await handleFile(f);
+  }
+
+  async function handleFile(f: File) {
     setLocked(null);
     setPassphrase("");
     try {
@@ -93,7 +113,6 @@ export function ImportV1() {
 
   function cancelUnlock() { setLocked(null); setPassphrase(""); setMsg(""); resetFile(); }
 
-  const disabled = busy || locked !== null;
   return (
     <Card>
       <CardContent className="grid gap-5">
@@ -103,10 +122,10 @@ export function ImportV1() {
           <li>3. Documents land in a new project; the original file is not changed.</li>
         </ol>
         <p className="text-sm text-muted-foreground">Your AI keys and access code were never in the backup. Locked backups ask for their passphrase; it stays in this browser.</p>
-        <label htmlFor="backup" data-testid="import-dropzone" className={`rounded-lg border-2 border-dashed p-8 text-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-accent focus-within:ring-2 focus-within:ring-ring"}`}>
+        <label htmlFor="backup" data-testid="import-dropzone" onDragOver={onDragOver} onDragLeave={() => setDragging(false)} onDrop={onDrop} className={`rounded-lg border-2 border-dashed p-8 text-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-accent focus-within:ring-2 focus-within:ring-ring"} ${dragging ? "border-primary bg-accent" : ""}`}>
           <UploadSimple size={28} className="mx-auto mb-2 text-muted-foreground" aria-hidden="true" />
           <span className="font-medium">Choose the backup file</span>
-          <span className="mt-1 block text-sm text-muted-foreground">A .json file from Appuscholar v1</span>
+          <span className="mt-1 block text-sm text-muted-foreground">A .json file from Appuscholar v1. You can also drop it here.</span>
           <input id="backup" ref={fileRef} type="file" accept="application/json,.json" className="sr-only" onChange={onFile} disabled={disabled} data-testid="import-file" />
         </label>
         {locked !== null ? (
