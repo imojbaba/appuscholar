@@ -17,8 +17,8 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
       <section className="flex flex-col justify-between bg-secondary px-6 py-8 lg:px-14 lg:py-12">
         <Wordmark href="/signin" />
         <div className="my-12 max-w-md">
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight lg:text-4xl">A research supervisor in your browser, for psychology students.</h1>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground">Appuscholar walks a thesis from the first idea to the viva. It keeps every revision, checks your numbers, and asks questions instead of writing for you.</p>
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight lg:text-4xl">A writing and research assistant, with psychology research support built in.</h1>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">Appuscholar walks a thesis from the first idea to the viva, in six stages. It keeps every revision of your writing. A real supervisor&apos;s judgment still matters most.</p>
           <ol className="mt-8 grid gap-2 text-sm">
             {STAGES.map((s, i) => (
               <li key={s.key} className="flex items-center gap-3">
