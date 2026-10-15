@@ -64,16 +64,33 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await page.getByTestId("doc-create").click();
   await page.getByTestId("doc-link").first().click();
 
+  // renaming does not create a revision
+  await page.getByTestId("doc-title-field").fill("Draft, renamed");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("save-status")).toHaveText(/revision 1/);
+  await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Draft, renamed");
+
   const editor = page.locator(".ProseMirror");
   await editor.click();
   await editor.type("First sentence here.");
   await expect(page.getByTestId("save-status")).toHaveText(/revision 2/, { timeout: 10_000 });
-  await editor.type(" Second sentence here.");
+  await expect(page.getByTestId("word-count")).toHaveText("3 words");
+  await page.getByTestId("tb-bold").click();
+  await editor.type(" Bold bit.");
   await expect(page.getByTestId("save-status")).toHaveText(/revision 3/, { timeout: 10_000 });
+  await expect(page.getByTestId("word-count")).toHaveText("5 words");
+  await editor.type(" Second sentence here.");
+  await expect(page.getByTestId("save-status")).toHaveText(/revision 4/, { timeout: 10_000 });
+
+  // history can be collapsed and reopened
+  await page.getByTestId("history-toggle").click();
+  await expect(page.getByTestId("revision-list")).toBeHidden();
+  await page.getByTestId("history-toggle").click();
+  await expect(page.getByTestId("revision-list")).toBeVisible();
 
   page.once("dialog", d => d.accept());
   await page.getByTestId("restore-2").click();
-  await expect(page.getByTestId("save-status")).toHaveText(/revision 4/, { timeout: 10_000 });
+  await expect(page.getByTestId("save-status")).toHaveText(/revision 5/, { timeout: 10_000 });
   await expect(editor).toHaveText("First sentence here.");
 
   await page.goto("/import");

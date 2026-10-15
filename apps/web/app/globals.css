@@ -68,9 +68,3 @@
 .editor .ProseMirror img { max-width: 100%; height: auto; }
 .editor .ProseMirror mark { background: #fde68a; padding: 0 2px; }
 .editor .ProseMirror .ai-ins { border-bottom: 2px dotted #c4b5fd; }
-
-/* Legacy classes used by pages not yet rebuilt on shadcn primitives. Remove when Tasks 3 to 5 land. */
-.btn { border: 1px solid var(--border); background: var(--card); border-radius: var(--radius-lg); padding: 8px 14px; font: inherit; }
-.btn:disabled { opacity: .6; cursor: not-allowed; }
-.btn-purple { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 16px; }
