@@ -1,12 +1,16 @@
 import { safeFileName } from "./download";
 
-/** Ported from v1 `_texEsc` (the escape order, including its backslash-first quirk, is v1's). */
+/**
+ * Ported from v1 `_texEsc`, with one fix: v1 escaped the backslash first and then escaped the braces of its own
+ * `\textbackslash{}`, which printed a stray "{}". The backslash is now a placeholder substituted last.
+ */
 function texEsc(s: string | null | undefined): string {
   return String(s == null ? "" : s)
-    .replace(/\\/g, "\\textbackslash{}")
+    .replace(/\\/g, "\u0000")
     .replace(/([#$%&_{}])/g, "\\$1")
     .replace(/~/g, "\\textasciitilde{}")
-    .replace(/\^/g, "\\textasciicircum{}");
+    .replace(/\^/g, "\\textasciicircum{}")
+    .replace(/\u0000/g, "\\textbackslash{}");
 }
 
 /** Ported from v1 `_texInline`. Highlights, font/colour spans and AI-provenance spans fall through to plain text; images are not exported. */

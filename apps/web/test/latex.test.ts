@@ -18,7 +18,7 @@ describe("toLatex", () => {
     expect(tex).toContain("\\begin{tabular}{ll}\n\nh1 & h2 \\\\\n\n1 & 2 \\\\\n\n\\end{tabular}");
     expect(tex).toContain("link\\footnote{https://x.org}");
     expect(tex).toContain("\\newpage");
-    expect(tex).toContain("\\#\\$\\%\\&\\_\\{\\}\\textasciitilde{}\\textasciicircum{}\\textbackslash");
+    expect(tex).toContain("\\#\\$\\%\\&\\_\\{\\}\\textasciitilde{}\\textasciicircum{}\\textbackslash{}");
     expect(tex).not.toContain("base64");
   });
   it("author line without ORCID is plain", () => { expect(toLatex("T", "<p>x</p>")).toContain("\\author{Author}"); });
