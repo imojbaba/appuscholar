@@ -45,8 +45,10 @@ export function SettingsProvider({ initialLang = "en", children }: { initialLang
     const owned = () => keys.filter((k) => owner.current.get(k) === mine);
     try {
       const saved = await apiFetch<Settings>("/me/settings", { method: "PATCH", body: JSON.stringify(patch) });
-      commit(applyPatchResult(current.current, owned(), saved));
-      setMe((m) => (m ? { ...m, settings: applyPatchResult(m.settings, owned(), saved) } : m));
+      // Read ownership now: a setMe updater may run after the finally block has released it.
+      const ks = owned();
+      commit(applyPatchResult(current.current, ks, saved));
+      setMe((m) => (m ? { ...m, settings: applyPatchResult(m.settings, ks, saved) } : m));
     } catch {
       commit(revertPatch(current.current, owned(), before));
       toast("Could not save your settings. Try again.");

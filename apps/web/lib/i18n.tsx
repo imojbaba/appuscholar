@@ -25,3 +25,10 @@ export function tHtml(s: string): React.ReactNode {
   const parts = s.split(/(<kbd>.*?<\/kbd>|<b>.*?<\/b>)/g);
   return parts.map((p, i) => p.startsWith("<kbd>") ? <kbd key={i}>{p.slice(5, -6)}</kbd> : p.startsWith("<b>") ? <b key={i}>{p.slice(3, -4)}</b> : p);
 }
+/** A few v1 labels (tab_idea, tab_design, tab_stats) carry an &amp; entity because v1 wrote them with innerHTML. React escapes text, so decode it for display. */
+export function plain(s: string): string { return s.replace(/&amp;/g, "&"); }
+/** Splits a v1 tool label ("💡 Idea & Feasibility") into its leading emoji and the text, for the icon-only sidebar rail. */
+export function splitEmoji(label: string): { emoji: string; text: string } {
+  const i = label.indexOf(" ");
+  return i < 0 ? { emoji: label, text: "" } : { emoji: label.slice(0, i), text: label.slice(i + 1) };
+}
