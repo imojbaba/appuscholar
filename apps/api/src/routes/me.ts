@@ -16,6 +16,7 @@ export const SettingsSchema = z.object({
   stageGroupsCollapsed: z.array(z.string().max(10)).max(6),
   fmtMore: z.boolean(),
   dockW: z.number().int().min(320).max(760),
+  sheetPct: z.number().int().min(40).max(85),
   aiLogOff: z.boolean(),
   seenWelcome: z.boolean()
 }).partial().strict();

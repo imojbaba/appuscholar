@@ -2,7 +2,7 @@
 export type Settings = {
   lang?: "en" | "hi"; provider?: string; draftFirst?: boolean; aiFallback?: boolean; field?: string;
   contentLang?: "en" | "hi"; orcid?: string; toolTab?: string; sidebarCollapsed?: boolean;
-  stageGroupsCollapsed?: string[]; fmtMore?: boolean; dockW?: number; aiLogOff?: boolean; seenWelcome?: boolean;
+  stageGroupsCollapsed?: string[]; fmtMore?: boolean; dockW?: number; sheetPct?: number; aiLogOff?: boolean; seenWelcome?: boolean;
 };
 
 export type Me = {

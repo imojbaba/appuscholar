@@ -24,12 +24,15 @@ export function ToastHost() {
     listener = setShown;
     return () => { if (listener === setShown) listener = null; clearTimeout(timer); };
   }, []);
-  if (!shown) return null;
-  const { message, action } = shown;
+  // The live region is always mounted, so a screen reader is already listening when the first message arrives.
   return (
-    <div role="status" className="toast" data-testid="toast">
-      <span>{message}</span>
-      {action && <button type="button" className="toast-action" data-testid={action.testId} onClick={() => { clearTimeout(timer); setShown(null); action.onClick(); }}>{action.label}</button>}
+    <div role="status" aria-live="polite" data-testid="toast-host">
+      {shown && (
+        <div className="toast" data-testid="toast">
+          <span>{shown.message}</span>
+          {shown.action && <button type="button" className="toast-action" data-testid={shown.action.testId} onClick={() => { const a = shown.action!; clearTimeout(timer); setShown(null); a.onClick(); }}>{shown.action.label}</button>}
+        </div>
+      )}
     </div>
   );
 }

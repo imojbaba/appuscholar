@@ -19,7 +19,7 @@ const HDR_BTN = "hbtn border-white/35 bg-transparent text-white hover:border-whi
 export function Header() {
   const t = useT();
   const { lang, setLang } = useLang();
-  const { openHelp, openSettings } = useWorkspace();
+  const { openHelp, openSettings, drawerOpen, setDrawerOpen } = useWorkspace();
   // v1 toasts the new language in that language; the switch is a settings update plus a context change, nothing remounts.
   const switchLang = () => {
     const next = lang === "en" ? "hi" : "en";
@@ -29,6 +29,10 @@ export function Header() {
   return (
     <>
       <header className="hdr">
+        {/* Phone only (CSS hides it above 700px): opens the tool list as a left drawer. */}
+        <Button variant="ghost" className={`${HDR_BTN} menu px-0`} aria-label="Open the writing tools" aria-haspopup="dialog" aria-expanded={drawerOpen} title="Writing tools" data-testid="phone-menu" onClick={() => setDrawerOpen(true)}>
+          <span aria-hidden="true">☰</span>
+        </Button>
         <div className="brand">
           <svg className="mark" viewBox="0 0 34 34" aria-hidden="true">
             <circle cx="17" cy="17" r="17" fill="#fff" />
@@ -44,7 +48,8 @@ export function Header() {
         <Button variant="ghost" className={`${HDR_BTN} lang px-0`} aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
           {lang === "en" ? "हि" : "EN"}
         </Button>
-        <Button variant="ghost" className={HDR_BTN} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>
+        <span className="brk" aria-hidden="true" />
+        <Button variant="ghost" className={`${HDR_BTN} help`} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>
         <Button variant="gold" data-testid="provider-key-btn" onClick={() => openSettings()}>{t("settings_btn")}</Button>
       </header>
     </>

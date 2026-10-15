@@ -218,17 +218,19 @@
 .field .input::placeholder { color: var(--muted); }
 .field .input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
-/* Below v1's 1100px dock breakpoint the three columns stack and the page scrolls. */
-@media (max-width: 1099px) {
-  .ws { display: flex; flex-direction: column; height: auto; min-height: 0; }
-  .ws.rail { --sidebar-w: auto; }
-  .sidebar, .doc, .dock { grid-column: auto; grid-row: auto; }
-  .doc { min-height: 460px; overflow: visible; }
-  .doc > .editor { overflow: visible; }
-  .dock { min-height: 420px; }
-  .splitter { display: none; }
-  .dock-tabs { margin: 0; }
-}
+/* Phone-only pieces, off above 700px: the header's menu button and line break, the sheet's handle, the drawer. The wrappers add no box on desktop. */
+.hdr .menu, .hdr .brk, .sheet-handle { display: none; }
+.projbar .btns, .dock-wrap { display: contents; }
+.sheet-handle { align-items: center; justify-content: center; height: 32px; flex: none; cursor: ns-resize; touch-action: none; border-radius: var(--r-dialog) var(--r-dialog) 0 0; }
+.sheet-handle .grip { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+.sheet-handle:focus-visible { outline: 2px solid var(--purple-800); outline-offset: -2px; }
+.sheet-handle:focus-visible .grip { background: var(--purple-800); }
+.drawer-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(17, 12, 34, 0.45); }
+.drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 51; width: min(86vw, 320px); display: flex; flex-direction: column; padding: 0 12px 12px; overflow-y: auto; background: var(--card); box-shadow: var(--shadow-dialog); outline: none; }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; flex: none; height: 56px; }
+.drawer-title { margin: 0; font-family: var(--font-display), Georgia, serif; font-size: 18px; line-height: 24px; font-weight: 600; color: var(--purple-800); }
+.drawer .icon:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.sidebar.in-drawer { overflow: visible; padding: 0; border: none; border-radius: 0; }
 
 /* Toast */
 .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--card); padding: 9px 14px; border-radius: var(--r-ctl); font-size: 13px; z-index: 60; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
@@ -249,6 +251,8 @@
 .fmt:disabled { opacity: 0.45; cursor: default; }
 .fmt[aria-pressed="true"], .fmt[aria-expanded="true"] { background: var(--purple-100); border-color: var(--purple-100); color: var(--purple-800); }
 .fmt b, .fmt i, .fmt u { font-size: 14px; }
+/* A glyph that is part of the button's picture, not its text: the button's name is its aria-label (the label-content-name-mismatch rule reads real text only). */
+.fmt-glyph::before { content: attr(data-glyph); }
 .fmt-color { position: relative; cursor: pointer; }
 .fmt-color input { width: 18px; height: 18px; padding: 0; border: none; background: none; cursor: pointer; }
 .fmtbar select.select { font-family: inherit; }
@@ -264,15 +268,11 @@
 .editor .ProseMirror .page-break { margin: 18px 0; border-top: 2px dashed var(--line-strong); text-align: center; line-height: 0; height: 0; }
 .editor .ProseMirror .page-break::after { content: "Page break"; display: inline-block; background: var(--card); padding: 0 10px; font-size: 11px; line-height: 1; color: var(--muted); }
 .editor .ProseMirror .page-break.ProseMirror-selectednode { border-top-color: var(--purple-800); }
-.is-phone .fmtbar { padding: 8px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
-.is-phone .fmtbar > * { flex: none; }
 
 /* Action row under the document and the AI suggestion pane (mockup 02). Gold marks the machine; a flag is an amber sentence, not a badge. */
 .actions { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; position: relative; }
 .actions .spacer { flex: 1; }
 .actions .count { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.is-phone .actions { padding: 10px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
-.is-phone .actions > * { flex: none; }
 .ai-out { min-height: 120px; padding: 12px 14px; border: 1px dashed var(--dashed); border-radius: var(--r-card); background: var(--card); font-size: 14px; line-height: 22px; white-space: pre-wrap; }
 .ai-out.empty { color: var(--muted); }
 .ai-note { margin: 8px 0 0; font-size: 12px; line-height: 16px; color: var(--muted); }
@@ -303,3 +303,72 @@
 .chat-input { flex: 1; min-width: 0; resize: none; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font: inherit; font-size: 14px; line-height: 20px; }
 .chat-input::placeholder { color: var(--muted); }
 .chat-input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+
+/* Two columns, 701 to 1099px (DESIGN-SYSTEM.md section 6): the sidebar (the icon rail until the student chooses) beside the document, with the dock tabs and the dock stacked under it. The page scrolls. */
+@media (min-width: 701px) and (max-width: 1099px) {
+  .ws { grid-template-columns: var(--sidebar-w) minmax(0, 1fr); grid-template-rows: none; row-gap: 12px; align-items: start; height: auto; min-height: 0; }
+  .sidebar { grid-column: 1; grid-row: 1 / span 3; position: sticky; top: 12px; max-height: calc(100vh - 24px); }
+  .doc { grid-column: 2; grid-row: 1; min-height: 460px; overflow: visible; }
+  .doc > .editor { overflow: visible; }
+  .dock-tabs { grid-column: 2; grid-row: 2; margin: 0; }
+  .dock { grid-column: 2; grid-row: 3; min-height: 420px; }
+  .splitter { display: none; }
+  /* The label and status keep a readable width and the row wraps rather than squeezing them to a word per line. */
+  .projbar { flex-wrap: wrap; row-gap: 6px; }
+  .projbar .label { min-width: min(100%, 240px); }
+  .projbar .status { min-width: 160px; }
+}
+
+/* Phone, up to 700px (mockup 05): one column, the document is the page, the dock is a bottom sheet and the sidebar a left drawer. Controls grow to 44px. */
+@media (max-width: 700px) {
+  :root { --gut: 12px; --ctl: 44px; --ctl-s: 44px; }
+  .hdr { position: static; height: auto; flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+  .hdr .menu { display: inline-flex; width: 44px; padding: 0; font-size: 18px; }
+  .hdr .brk { display: block; flex-basis: 100%; height: 0; }
+  .hdr .lang { width: 44px; }
+  .hdr .help { margin-left: auto; }
+  .brand h1 { font-size: 18px; }
+  .brand .txt { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .brand .ver { height: 18px; padding: 0 7px; font-size: 11px; }
+  .subbar { height: auto; min-height: 40px; }
+  .subbar .prov { position: relative; height: 28px; }
+  .subbar .prov::after { content: ""; position: absolute; inset: -8px 0; }
+  .subbar .prov-menu { top: 100%; left: 12px; }
+  .projbar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+  .projbar .label { width: 100%; margin: 0; font-size: 14px; line-height: 20px; }
+  .projbar .btns { display: flex; gap: 6px; width: 100%; padding-bottom: 2px; overflow-x: auto; scrollbar-width: none; }
+  .projbar .btns > * { flex: none; }
+  .projbar .status { display: none; }
+
+  .ws { display: block; height: auto; min-height: 0; padding: 12px 12px calc(var(--sheet-pct, 46) * 1vh + 12px); padding-bottom: calc(var(--sheet-pct, 46) * 1dvh + 12px); }
+  .doc { min-height: 460px; overflow: visible; }
+  .doc > .editor { overflow: visible; }
+  .card-head { padding: 10px 12px; }
+  .card-head .right { width: 100%; margin: 0; }
+  .card-head .right > * { flex: 1; justify-content: center; }
+  .docbar, .fmtbar { padding: 8px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .docbar > *, .fmtbar > * { flex: none; }
+  .docbar .select.grow { flex: none; width: 190px; }
+  .actions { padding: 10px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .actions > * { flex: none; }
+
+  .dock-wrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; flex-direction: column; height: calc(var(--sheet-pct, 46) * 1vh); height: calc(var(--sheet-pct, 46) * 1dvh); background: var(--card); border-radius: var(--r-dialog) var(--r-dialog) 0 0; box-shadow: 0 -8px 24px rgba(17, 12, 34, 0.16); }
+  .sheet-handle { display: flex; }
+  .dock-wrap .dock-tabs { display: flex; flex: none; gap: 6px; margin: 0; min-height: 0; padding: 0 12px 8px; }
+  .dock-wrap .dock-tabs .tabs { flex: 1; }
+  .dtab { flex: 1; height: 44px; max-width: none; justify-content: center; }
+  .dtab.active { flex: 1.4; }
+  .pop { display: none; }
+  .dock { flex: 1; min-height: 0; border: none; border-top: 1px solid var(--line); border-radius: 0; }
+  .guide { padding: 10px 12px; }
+  .guide .nav { width: 100%; margin: 6px 0 0; flex-wrap: nowrap; }
+  .guide .nav .btn { flex: 1; min-width: 0; height: 44px; padding: 0 8px; justify-content: center; font-size: 12px; line-height: 16px; text-align: center; white-space: normal; }
+  .guide .final { margin-left: 0; }
+  .panel { padding: 14px 12px; }
+
+  /* The tall toast and sheet share the screen's bottom, so a toast goes to the top. */
+  .toast { top: 12px; bottom: auto; }
+
+  /* Every button in the chrome is a 44px target. Chat's inline Insert link stays a text link. */
+  .hdr button, .projbar button, .doc button, .dock-wrap button:not(.bub-insert), .drawer button, .doc .select, .dock-wrap .select { min-height: 44px; }
+}

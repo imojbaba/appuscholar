@@ -137,7 +137,7 @@ export function FormatBar({ editor }: { editor: Editor }) {
         <Fmt name="underline" label="Underline" active={s.underline} on={() => run().toggleUnderline().run()}><u>U</u></Fmt>
         <Sep />
         <Fmt name="bullets" label="Bulleted list" active={s.bullets} on={() => run().toggleBulletList().run()}>≡•</Fmt>
-        <Fmt name="numbered" label="Numbered list" active={s.numbered} on={() => run().toggleOrderedList().run()}>≡1</Fmt>
+        <Fmt name="numbered" label="Numbered list" active={s.numbered} on={() => run().toggleOrderedList().run()}><span className="fmt-glyph" data-glyph="≡1" aria-hidden="true" /></Fmt>
         <Sep />
         <Fmt name="undo" label="Undo" disabled={!s.canUndo} on={() => run().undo().run()}>↶</Fmt>
         <Fmt name="redo" label="Redo" disabled={!s.canRedo} on={() => run().redo().run()}>↷</Fmt>

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor as TipTapEditor } from "@tiptap/react";
 import { editorExtensionsWith, setEditorPlaceholder } from "@/lib/editorExtensions";
-import { useLang, useT } from "@/lib/i18n";
+import { plainText, useLang, useT } from "@/lib/i18n";
 import { useAutosave, type SaveStatus } from "@/lib/useAutosave";
 import { isImportable } from "@/lib/import/parse";
 import { Toolbar } from "./Toolbar";
@@ -43,6 +43,8 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
     content: initialHtml,
     immediatelyRender: false,
     editorProps: {
+      // The text box needs a name for a screen reader; the effect below keeps it in the language on screen.
+      attributes: { "aria-label": plainText(t("doc_pane_h2")) },
       handleKeyDown: (_view, event) => {
         if (event.key !== "Tab" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || !onTabRef.current?.()) return false;
         event.preventDefault();
@@ -86,6 +88,7 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   useEffect(() => { onReady?.({ flushNow }); }, [onReady, flushNow]);
   // The language switch: the hint changes in place, the document and the cursor stay where they are.
   useEffect(() => { if (editor) setEditorPlaceholder(editor, t("editor_placeholder")); }, [editor, lang, t]);
+  useEffect(() => { editor?.view.dom.setAttribute("aria-label", plainText(t("doc_pane_h2"))); }, [editor, lang, t]);
   useEffect(() => {
     if (!editor) return;
     onEditor?.(editor);

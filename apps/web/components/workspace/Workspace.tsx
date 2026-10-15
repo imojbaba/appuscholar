@@ -22,6 +22,8 @@ import { ImportOrigin } from "./dialogs/ImportOrigin";
 import { MyWriting } from "./dialogs/MyWriting";
 import { ChromeDialogs, Header } from "./Header";
 import { Sidebar } from "./Sidebar";
+import { SidebarDrawer } from "./SidebarDrawer";
+import { MID_QUERY, PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { Subbar } from "./Subbar";
 import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type Project, type WorkspaceValue } from "./WorkspaceContext";
 
@@ -128,7 +130,13 @@ export function Workspace() {
   }, [userId, activeProjectId, scratchProjectId]);
 
   const collapsed = useMemo(() => (settings.stageGroupsCollapsed ?? []).filter(isStageKey) as StageKey[], [settings.stageGroupsCollapsed]);
-  const sidebarCollapsed = settings.sidebarCollapsed ?? false;
+  // Between 701 and 1099px the sidebar is the icon rail until the student chooses otherwise (their stored choice always wins).
+  const phone = useMedia(PHONE_QUERY);
+  const mid = useMedia(MID_QUERY);
+  const sidebarCollapsed = settings.sidebarCollapsed ?? mid;
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  // Growing past the phone width leaves no drawer to show.
+  if (!phone && drawerOpen) setDrawerOpen(false);
 
   const showTool = useCallback((id: ToolId) => {
     setActiveTool(id);
@@ -248,7 +256,7 @@ export function Workspace() {
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
-    activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, stageGroupsCollapsed: collapsed,
+    activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
     currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
@@ -258,6 +266,7 @@ export function Workspace() {
   };
 
   const dockW = settings.dockW ?? 440;
+  const sheetPct = settings.sheetPct ?? 46;
   return (
     <WorkspaceProvider value={value}>
       <SuggestionProvider>
@@ -282,9 +291,11 @@ export function Workspace() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        {phone && <SidebarDrawer />}
         {ready ? (
-          <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px" } as React.CSSProperties}>
-            <Sidebar />
+          <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px", "--sheet-pct": sheetPct } as React.CSSProperties}>
+            {/* One copy of the tool list at a time: the drawer replaces the sidebar on a phone. */}
+            {!phone && <Sidebar />}
             <DocumentCard />
             <Dock />
           </main>

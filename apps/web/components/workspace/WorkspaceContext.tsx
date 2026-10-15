@@ -19,7 +19,13 @@ export type WorkspaceValue = {
   aiWaiting: boolean;
   /** Raised by the suggestion provider while a result waits; showing the AI tab lowers it. */
   setAiWaiting(on: boolean): void;
+  /** The icon rail: the student's choice, or (until they make one) the default of the two-column layout between 701 and 1099px. */
   sidebarCollapsed: boolean;
+  /** At most 700px wide: the sidebar lives in a drawer and the dock is the bottom sheet. */
+  phone: boolean;
+  /** The tool drawer of the phone layout (opened from the header's menu button). */
+  drawerOpen: boolean;
+  setDrawerOpen(open: boolean): void;
   stageGroupsCollapsed: StageKey[];
   /** The active project's stage, or null in scratch space or once the project is complete. */
   currentStage: StageKey | null;

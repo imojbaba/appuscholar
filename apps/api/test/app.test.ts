@@ -311,6 +311,14 @@ describe("api routes", () => {
     expect((await app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify({ evil: 1 }) })).status).toBe(400);
   });
 
+  it("PATCH /me/settings keeps the phone sheet height between 40 and 85 percent", async () => {
+    await app.request("/me", { headers: auth });
+    const patch = (sheetPct: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify({ sheetPct }) });
+    expect(await (await patch(62)).json()).toEqual({ sheetPct: 62 });
+    for (const bad of [39, 86, 50.5, "50"]) expect((await patch(bad)).status, String(bad)).toBe(400);
+    expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { sheetPct: 62 } });
+  });
+
   it("credentials accept only the blob shape and never return to another user", async () => {
     await app.request("/me", { headers: auth });
     expect((await app.request("/me/credentials/gemini", { method: "PUT", headers: auth, body: JSON.stringify({ encryptedKey: "plain-key" }) })).status).toBe(400);
