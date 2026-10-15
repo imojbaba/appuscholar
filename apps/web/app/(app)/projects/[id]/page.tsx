@@ -23,7 +23,7 @@ function ProjectPageInner({ id }: { id: string }) {
       <Breadcrumb items={[{ href: "/projects", label: "Research Projects" }, { label: project.title }]} />
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
-        {project.status === "complete" ? <Badge className="bg-emerald-600 text-white hover:bg-emerald-600" data-testid="project-complete-badge">Complete</Badge> : null}
+        {project.status === "complete" ? <Badge className="bg-emerald-700 text-white" data-testid="project-complete-badge">Complete</Badge> : null}
       </div>
       <StageStrip projectId={project.id} stage={project.stage} />
       <DocumentList projectId={project.id} />

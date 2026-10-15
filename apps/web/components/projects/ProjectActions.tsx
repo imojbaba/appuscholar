@@ -29,19 +29,21 @@ export function ProjectActions({ title, documentCount, status, onRename, onDelet
   function openDelete() { setError(""); setStatusError(""); setDeleting(true); }
   return (
     <div className="flex shrink-0 flex-col items-end gap-1">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={`Actions for ${title}`} data-testid="project-actions"><DotsThree size={20} weight="bold" /></Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={openRename} data-testid="project-rename"><PencilSimple size={18} /> Rename</DropdownMenuItem>
-          {status === "complete"
-            ? <DropdownMenuItem onSelect={() => { void changeStatus("active"); }} disabled={statusBusy !== null} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> {statusBusy === "active" ? "Reopening…" : "Reopen"}</DropdownMenuItem>
-            : <DropdownMenuItem onSelect={() => { void changeStatus("complete"); }} disabled={statusBusy !== null} data-testid="project-complete"><CheckCircle size={18} /> {statusBusy === "complete" ? "Marking complete…" : "Mark complete"}</DropdownMenuItem>}
-          <DropdownMenuItem onSelect={openDelete} className="text-destructive" data-testid="project-delete"><Trash size={18} /> Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {statusBusy ? <p role="status" className="text-xs text-muted-foreground">{statusBusy === "complete" ? "Marking complete…" : "Reopening…"}</p> : null}
+      <div className="flex items-center gap-1">
+        {status === "complete"
+          ? <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("active"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-reopen"><ArrowCounterClockwise size={18} /> {statusBusy === "active" ? "Reopening…" : "Reopen"}</Button>
+          : <Button type="button" variant="secondary" size="sm" onClick={() => { void changeStatus("complete"); }} disabled={statusBusy !== null} aria-busy={statusBusy !== null} data-testid="project-complete"><CheckCircle size={18} /> {statusBusy === "complete" ? "Marking complete…" : "Mark complete"}</Button>}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label={`Actions for ${title}`} data-testid="project-actions"><DotsThree size={20} weight="bold" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={openRename} data-testid="project-rename"><PencilSimple size={18} /> Rename</DropdownMenuItem>
+            <DropdownMenuItem onSelect={openDelete} className="text-destructive" data-testid="project-delete"><Trash size={18} /> Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      {statusBusy ? <p role="status" className="sr-only">{statusBusy === "complete" ? "Marking complete…" : "Reopening…"}</p> : null}
       {statusError ? <p role="alert" data-testid="error-msg" className="max-w-48 text-right text-xs text-destructive">{statusError}</p> : null}
 
       <Dialog open={renaming} onOpenChange={o => { if (!o) setError(""); setRenaming(o); }}>

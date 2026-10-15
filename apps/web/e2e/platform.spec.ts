@@ -52,12 +52,13 @@ test("sign in, write with revisions, restore, import v1", async ({ page }) => {
   await page.getByTestId("rename-save").click();
   await expect(page.getByTestId("project-link").first()).toHaveText("Sleep and memory, renamed");
   await expect(page.getByTestId("project-card").first()).toContainText("No documents yet");
-  await page.getByTestId("project-actions").first().click();
-  await page.getByTestId("project-complete").click();
+  // status buttons sit on the card itself, like v1's projects dialog; a complete project shows Complete instead of its stage
+  await page.getByTestId("project-complete").first().click();
   await expect(page.getByTestId("project-complete-badge").first()).toHaveText("Complete");
-  await page.getByTestId("project-actions").first().click();
-  await page.getByTestId("project-reopen").click();
+  await expect(page.getByTestId("project-card").first()).not.toContainText("Idea & Feasibility");
+  await page.getByTestId("project-reopen").first().click();
   await expect(page.getByTestId("project-complete-badge")).toHaveCount(0);
+  await expect(page.getByTestId("project-card").first()).toContainText("Idea & Feasibility");
   await page.getByTestId("project-link").first().click();
 
   await page.getByTestId("doc-title").fill("Draft");
