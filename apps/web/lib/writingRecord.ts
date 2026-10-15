@@ -1,20 +1,25 @@
-import { PROVIDERS } from "@appuscholar/core";
-
 export type OriginStats = { typed: number; ai: number; passages: number; kept: number; edited: number; unknown: number };
 /** The wire shape of GET /projects/:id/writing-record. */
 export type WritingRecord = {
   docs: Array<{ id: string; title: string; kind: string; stats: OriginStats }>;
   sources: Array<{ title: string; words: number }>;
   weekly: Array<{ weekStart: string; typed: number; ai: number }>;
-  aiLog: { byKind: Record<string, number>; byProvider: Record<string, number>; total: number };
+  /** `byService` is keyed "Name (model)"; `firstAt` and `lastAt` are YYYY-MM-DD days; `loggingOff` is the account setting. */
+  aiLog: { byKind: Record<string, number>; byService: Record<string, number>; total: number; firstAt: string | null; lastAt: string | null; loggingOff: boolean };
 };
 
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** v1 `aiuDate`: "15 October 2026" from YYYY-MM-DD; anything else is shown as it is. */
+function aiuDate(d: string | null): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d ?? "");
+  return m ? parseInt(m[3]!, 10) + " " + MONTHS[parseInt(m[2]!, 10) - 1] + " " + m[1] : String(d ?? "");
+}
 const pct = (part: number, whole: number) => (whole ? Math.round((100 * part) / whole) : 0);
 
 /** The writing-process record as plain text: v1 `provReportText`, section by section, with the same sentences. `today` is the local YYYY-MM-DD. */
 export function buildRecordText(rec: WritingRecord, build: string, today: string): string {
   let t = "WRITING-PROCESS RECORD (made with Appuscholar, " + build + ")\nDate: " + today + "\n\n";
-  t += "WHAT THIS IS\nA count, kept in the student's browser, of words typed in the editor against words inserted from an AI suggestion or the chat, with a summary of the AI-use log. It was made by counting, with no AI. It is the student's own record. It can be edited on the student's computer, so it supports an honest account and is not proof against a determined person. It cannot see text typed from another source, or retyped from an AI chat elsewhere. It is not an AI detector.\n\n";
+  t += "WHAT THIS IS\nA count, kept under the student's account, of words typed in the editor against words inserted from an AI suggestion or the chat, with a summary of the AI-use log. It was made by counting, with no AI. It is the student's own record. It can be edited by the student, so it supports an honest account and is not proof against a determined person. It cannot see text typed from another source, or retyped from an AI chat elsewhere. It is not an AI detector.\n\n";
   const typed = rec.docs.reduce((a, d) => a + d.stats.typed, 0), ai = rec.docs.reduce((a, d) => a + d.stats.ai, 0), tot = typed + ai;
   t += "WORDS BY ORIGIN (all documents the student wrote)\n";
   if (!tot) t += "No writing recorded yet.\n\n";
@@ -35,11 +40,12 @@ export function buildRecordText(rec: WritingRecord, build: string, today: string
   }
   t += "AI-USE LOG (summary)\n";
   const log = rec.aiLog;
-  if (!log.total) t += "No AI requests logged.\n\n";
+  if (log.loggingOff) t += "Logging is switched off for this account, so this part is empty by choice.\n\n";
+  else if (!log.total) t += "No AI requests logged.\n\n";
   else {
-    t += log.total + " request" + (log.total === 1 ? "" : "s") + ".\n";
+    t += log.total + " request" + (log.total === 1 ? "" : "s") + " from " + aiuDate(log.firstAt) + " to " + aiuDate(log.lastAt) + ".\n";
     for (const k of Object.keys(log.byKind).sort((x, y) => (log.byKind[y] ?? 0) - (log.byKind[x] ?? 0))) t += "- " + k + ": " + log.byKind[k] + "\n";
-    t += "Services used: " + Object.keys(log.byProvider).map((k) => ((PROVIDERS as Record<string, { name: string }>)[k]?.name ?? k) + " " + log.byProvider[k]).join("; ") + ".\n\n";
+    t += "Services used: " + Object.keys(log.byService).map((k) => k + " " + log.byService[k]).join("; ") + ".\n\n";
   }
   t += "DECLARED WRITING SAMPLES\n(none declared yet)\n\n";
   t += "LIMITS\nCounting where words came from does not show who thought of the ideas. A student who retypes AI text by hand is counted as the author of those words. The record is useful together with drafts, notes and a talk with the supervisor.\n";

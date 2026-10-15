@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
 import { PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type Store } from "../store/types";
-import { summariseAiUse } from "./ai";
+import { foldWeekly, summariseAiLog, type DatedStats } from "./writingRecord";
 import type { AuthEnv } from "../auth";
 
 const Create = z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(PROJECT_STAGES).optional() });
@@ -13,13 +13,6 @@ const Patch = z.object({
   contentLang: z.enum(["en", "hi"]).optional()
 }).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
 const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.string().trim().min(1).max(40).default("draft") });
-
-const DAY = 86_400_000;
-/** The Monday (UTC) of the ISO week containing `t`, as epoch milliseconds. */
-function weekStart(t: number): number {
-  const d = new Date(t);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - ((d.getUTCDay() + 6) % 7) * DAY;
-}
 
 export function projectRoutes(store: Store) {
   const r = new Hono<AuthEnv>();
@@ -46,7 +39,7 @@ export function projectRoutes(store: Store) {
   r.post("/:id/documents", async (c) => {
     const body = CreateDoc.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0 });
+    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0, originStats: originCount("") });
     return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
   });
   /**
@@ -59,28 +52,21 @@ export function projectRoutes(store: Store) {
     if (!list) return c.json({ error: "not-found" }, 404);
     const own = list.filter((d) => d.kind !== "source").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     const docs: { id: string; title: string; kind: string; stats: OriginStats }[] = [];
-    const revs: Awaited<ReturnType<Store["listRevisions"]>>[] = [];
+    const perDoc: DatedStats[][] = [];
     for (const d of own) {
-      const rs = await store.listRevisions(userId, d.id);
-      revs.push(rs);
-      // Revisions stored before the tracker existed carry no stats: count the current text instead.
-      const latest = rs?.[0]?.originStats ?? originCount((await store.getDocument(userId, d.id))?.bodyHtml ?? "");
-      docs.push({ id: d.id, title: d.title, kind: d.kind, stats: latest });
+      const revs = (await store.listRevisions(userId, d.id)) ?? [];
+      // Every writer stores stats; only revisions saved before the tracker existed lack them, and those are counted from their text.
+      const stats = async (r: (typeof revs)[number]): Promise<OriginStats> => r.originStats ?? originCount((await store.getRevision(userId, d.id, r.seq))?.bodyHtml ?? "");
+      const dated: DatedStats[] = [];
+      for (const r of revs) dated.push({ at: r.createdAt.getTime(), stats: await stats(r) });
+      perDoc.push(dated);
+      const newest = revs[0];
+      docs.push({ id: d.id, title: d.title, kind: d.kind, stats: newest ? await stats(newest) : originCount("") });
     }
     const sources = list.filter((d) => d.kind === "source").map((d) => ({ title: d.title, words: d.wordCount }));
-    // The last 8 ISO weeks: per week, each document's newest revision made before the next week begins; weeks with no revision are left out.
-    const weekly: { weekStart: string; typed: number; ai: number }[] = [];
-    const thisWeek = weekStart(Date.now());
-    for (let i = 7; i >= 0; i--) {
-      const start = thisWeek - i * 7 * DAY, end = start + 7 * DAY;
-      let typed = 0, ai = 0, seen = false;
-      for (const rs of revs) {
-        const rev = (rs ?? []).find((x) => x.createdAt.getTime() < end && x.originStats);
-        if (rev?.originStats) { typed += rev.originStats.typed; ai += rev.originStats.ai; seen = true; }
-      }
-      if (seen) weekly.push({ weekStart: new Date(start).toISOString().slice(0, 10), typed, ai });
-    }
-    return c.json({ docs, sources, weekly, aiLog: summariseAiUse(await store.listAiUse(userId)) });
+    const weekly = foldWeekly(perDoc, Date.now());
+    const user = await store.getUser(userId);
+    return c.json({ docs, sources, weekly, aiLog: summariseAiLog(await store.listAiUse(userId), user?.settings.aiLogOff === true) });
   });
   return r;
 }

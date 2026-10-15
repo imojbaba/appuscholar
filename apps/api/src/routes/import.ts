@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { sanitizeHtml, wordCount } from "@appuscholar/core";
+import { originCount, sanitizeHtml, wordCount } from "@appuscholar/core";
 import type { Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
@@ -34,7 +34,7 @@ export function importRoutes(store: Store, maxRequestBytes = DEFAULT_MAX_IMPORT_
     let imported = 0;
     for (const d of documents) {
       const clean = sanitizeHtml(d.bodyHtml);
-      const created = await store.createDocument(userId, project.id, d.title || "Untitled", "draft", { bodyHtml: clean, authorKind: "import", authorLabel: label, wordCount: wordCount(clean) });
+      const created = await store.createDocument(userId, project.id, d.title || "Untitled", "draft", { bodyHtml: clean, authorKind: "import", authorLabel: label, wordCount: wordCount(clean), originStats: originCount(clean) });
       if (created) imported++;
     }
     return c.json({ projectId: project.id, imported }, 201);

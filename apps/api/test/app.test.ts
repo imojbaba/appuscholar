@@ -113,16 +113,44 @@ describe("api routes", () => {
     const src = await (await app.request(`/projects/${p.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Paper" }) })).json() as { id: string };
     await put(src.id, "<p>one two three four</p>");
     await app.request(`/documents/${src.id}`, { method: "PATCH", headers: auth, body: JSON.stringify({ kind: "source" }) });
-    const rec = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; title: string; kind: string; stats: unknown }[]; sources: { title: string; words: number }[]; weekly: { weekStart: string; typed: number; ai: number }[]; aiLog: { total: number } };
+    const rec = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; title: string; kind: string; stats: unknown }[]; sources: { title: string; words: number }[]; weekly: { weekStart: string; typed: number; ai: number }[]; aiLog: unknown };
     expect(rec.docs).toHaveLength(1);
     expect(rec.docs[0]).toMatchObject({ id: d.id, title: "Draft", kind: "draft", stats: { typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 } });
     expect(rec.sources).toEqual([{ title: "Paper", words: 4 }]);
     expect(rec.weekly).toHaveLength(1);
     expect(rec.weekly[0]).toMatchObject({ typed: 1, ai: 2 });
     expect(rec.weekly[0]?.weekStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(rec.aiLog).toEqual({ byKind: {}, byProvider: {}, total: 0 });
+    expect(rec.aiLog).toEqual({ byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false });
+    await app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify({ aiLogOff: true }) });
+    const off = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { aiLog: { loggingOff: boolean } };
+    expect(off.aiLog.loggingOff).toBe(true);
     const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
     expect((await app.request(`/projects/${p.id}/writing-record`, { headers: other })).status).toBe(404);
+  });
+
+  it("the writing record counts a legacy revision without stats from its text", async () => {
+    const store = new MemoryStore();
+    const legacyApp = createApp({ store, jwtSecret: SECRET, maxBodyBytes: 2 * 1024 * 1024 });
+    const proj = await store.createProject("u1", "Old");
+    const doc = await store.createDocument("u1", proj.id, "Legacy", "draft", { bodyHtml: "<p>one two three</p>", authorKind: "web", authorLabel: "x", wordCount: 3 });
+    const rec = await (await legacyApp.request(`/projects/${proj.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; stats: { typed: number } }[]; weekly: { typed: number }[] };
+    expect(rec.docs[0]).toMatchObject({ id: doc!.id, stats: { typed: 3, ai: 0 } });
+    expect(rec.weekly).toMatchObject([{ typed: 3, ai: 0 }]);
+  });
+
+  it("every revision writer stores originStats: restore, v1 import and a new empty document", async () => {
+    const { d } = await makeDoc();
+    const put = (bodyHtml: string) => app.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml }) });
+    const stats = async (docId: string, seq: number) => ((await (await app.request(`/documents/${docId}/revisions/${seq}`, { headers: auth })).json()) as { originStats: unknown }).originStats;
+    expect(await stats(d.id, 1)).toEqual({ typed: 0, ai: 0, passages: 0, kept: 0, edited: 0, unknown: 0 });
+    await put('<p>mine <span class="ai-ins" data-h="x">theirs too</span></p>');
+    await put("<p>other</p>");
+    const restored = await (await app.request(`/documents/${d.id}/restore/2`, { method: "POST", headers: auth })).json() as { revision: { seq: number; originStats: unknown } };
+    expect(restored.revision.originStats).toEqual({ typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 });
+    expect(await stats(d.id, restored.revision.seq)).toEqual(restored.revision.originStats);
+    const imp = await (await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ exported: "2026-10-01T00:00:00Z", projectTitle: "Imported", documents: [{ title: "Old", bodyHtml: "<p>one two three</p>" }] }) })).json() as { projectId: string };
+    const [od] = await (await app.request(`/projects/${imp.projectId}/documents`, { headers: auth })).json() as { id: string }[];
+    expect(await stats(od!.id, 1)).toMatchObject({ typed: 3, ai: 0 });
   });
 
   it("rejects bodies over the limit with 413 and keeps the last revision", async () => {

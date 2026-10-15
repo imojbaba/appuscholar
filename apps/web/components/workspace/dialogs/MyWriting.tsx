@@ -20,6 +20,7 @@ export function MyWriting() {
   const t = useT();
   const { me } = useSettings();
   const { dialog, closeDialog, project, currentDoc } = useWorkspace();
+  const docId = currentDoc?.id;
   const { editor } = useSuggestion();
   const open = dialog === "myWriting";
   const projectId = project?.id ?? me?.scratchProjectId;
@@ -32,11 +33,11 @@ export function MyWriting() {
     let live = true;
     apiFetch<WritingRecord>(`/projects/${projectId}/writing-record`).then((r) => {
       if (!live) return;
-      const mine = editor && currentDoc ? originCount(editor.getHTML()) : null;
-      setRec(mine && currentDoc ? { ...r, docs: r.docs.map((d) => (d.id === currentDoc.id ? { ...d, stats: mine } : d)) } : r);
+      const mine = editor && docId ? originCount(editor.getHTML()) : null;
+      setRec(mine ? { ...r, docs: r.docs.map((d) => (d.id === docId ? { ...d, stats: mine } : d)) } : r);
     }, () => { if (live) setFailed(true); });
     return () => { live = false; setRec(null); setFailed(false); };
-  }, [open, projectId, editor, currentDoc]);
+  }, [open, projectId, editor, docId]);
 
   const docs = rec?.docs ?? [];
   const typed = docs.reduce((a, d) => a + d.stats.typed, 0), ai = docs.reduce((a, d) => a + d.stats.ai, 0), total = typed + ai;

@@ -86,7 +86,7 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const userId = c.get("userId");
     const old = await store.getRevision(userId, c.req.param("id"), seq);
     if (!old) return c.json({ error: "not-found" }, 404);
-    const rev = await store.appendRevision(userId, old.documentId, { bodyHtml: old.bodyHtml, authorKind: "restore", authorLabel: `restored revision ${seq}`, wordCount: old.wordCount });
+    const rev = await store.appendRevision(userId, old.documentId, { bodyHtml: old.bodyHtml, authorKind: "restore", authorLabel: `restored revision ${seq}`, wordCount: old.wordCount, originStats: old.originStats ?? originCount(old.bodyHtml) });
     return c.json({ document: await store.getDocument(userId, old.documentId), revision: rev });
   });
 
