@@ -19,8 +19,8 @@ const values = new Set(
     .map(v => v.trim())
     .filter(v => v.length >= 3 && /[\p{L}\p{N}]/u.test(v)),
 );
-// The on-line key lookups: a line that goes through t( or tHtml( is already translated.
-const TRANSLATED = /\bt\(|\btHtml\(/;
+// A literal that is the key argument of t( or tHtml( is a lookup, not copy. Only the characters right before the opening quote count, so another t( on the same line does not excuse a literal.
+const KEY_ARG = /\b(?:t|tHtml)\(\s*$/;
 
 /** Blanks out comments (keeping line structure) while leaving string contents alone. */
 function stripComments(src: string): string {
@@ -56,10 +56,12 @@ export function findOffenders(file: string, src: string): string[] {
   const hits: string[] = [];
   const lines = stripComments(src).split("\n");
   lines.forEach((line, idx) => {
-    if (TRANSLATED.test(line)) return;
     const found: string[] = [];
     // quoted literals: "..." '...' `...` (a literal with ${} interpolation is not an exact match, so it is skipped)
-    for (const m of line.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|`((?:[^`\\$]|\\.)*)`/g)) found.push(m[1] ?? m[2] ?? m[3] ?? "");
+    for (const m of line.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|`((?:[^`\\$]|\\.)*)`/g)) {
+      if (KEY_ARG.test(line.slice(0, m.index))) continue;
+      found.push(m[1] ?? m[2] ?? m[3] ?? "");
+    }
     // JSX text on one line: >text<
     for (const m of line.matchAll(/>([^<>{}]+)</g)) found.push(m[1]!);
     // JSX text that sits alone on its own line
@@ -77,6 +79,9 @@ describe("i18n coverage", () => {
     expect(findOffenders("x.tsx", `<b>{x}</b>\nconst a = "Cancel";\nconst b = t("cancel"); // "Cancel"\n// "Cancel"\nconst c = "OK";`)).toHaveLength(1);
     expect(findOffenders("x.tsx", `<p>\n  Cancel\n</p>`)).toHaveLength(1);
     expect(findOffenders("x.tsx", `const u = "https://x"; const a = "Cancel";`)).toHaveLength(1);
+    // a t( elsewhere on the line does not excuse a literal that is not its argument
+    expect(findOffenders("x.tsx", `<b aria-label="Cancel" title={t("x")}>{t( "Cancel" )}</b>`)).toHaveLength(1);
+    expect(findOffenders("x.tsx", `<b>{tHtml(t("Cancel"))}</b>`)).toHaveLength(0);
   });
   it("no component or lib file carries a literal that equals a v1 en.json value outside t()", () => {
     const offenders = DIRS.flatMap(d => walk(join(ROOT, d))).flatMap(f => findOffenders(f, readFileSync(f, "utf8")));

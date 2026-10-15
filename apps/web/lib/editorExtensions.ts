@@ -8,6 +8,7 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
 import { Placeholder } from "@tiptap/extensions";
+import type { Editor } from "@tiptap/core";
 import { FindDecorations } from "./editor/findDecorations";
 import { Indent } from "./editor/indent";
 
@@ -96,7 +97,23 @@ const schemaExtensions: Extensions = [
 /** The single editor schema. Shared by the editor and by the schema round-trip test, so they cannot drift. The placeholder is not a node, so it never changes what a document round-trips to. */
 export const editorExtensions: Extensions = [...schemaExtensions, Placeholder.configure({ placeholder: "" })];
 
+/** The hint is read through a function that also carries a setter: the extension's plugin keeps its own copy of the options, so replacing an option on a live editor never reaches it, but a function it already holds can answer differently. */
+type Hint = (() => string) & { set(text: string): void };
+function hintOf(text: string): Hint {
+  let current = text;
+  return Object.assign(() => current, { set(next: string) { current = next; } });
+}
+
 /** The same extensions with the editor's empty-document hint (v1 `editor_placeholder`). */
 export function editorExtensionsWith(placeholder: string): Extensions {
-  return [...schemaExtensions, Placeholder.configure({ placeholder })];
+  return [...schemaExtensions, Placeholder.configure({ placeholder: hintOf(placeholder) })];
+}
+
+/** Changes the empty-document hint of a live editor (the language switch) without recreating it; an empty transaction makes the view rebuild the hint decoration. */
+export function setEditorPlaceholder(editor: Editor, placeholder: string): void {
+  const ext = editor.extensionManager.extensions.find((e) => e.name === "placeholder");
+  const hint = (ext?.options as { placeholder?: Partial<Hint> } | undefined)?.placeholder;
+  if (typeof hint?.set !== "function") return;
+  hint.set(placeholder);
+  editor.view.dispatch(editor.state.tr);
 }

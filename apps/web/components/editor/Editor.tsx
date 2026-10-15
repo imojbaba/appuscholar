@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor as TipTapEditor } from "@tiptap/react";
-import { editorExtensionsWith } from "@/lib/editorExtensions";
-import { useT } from "@/lib/i18n";
+import { editorExtensionsWith, setEditorPlaceholder } from "@/lib/editorExtensions";
+import { useLang, useT } from "@/lib/i18n";
 import { useAutosave, type SaveStatus } from "@/lib/useAutosave";
 import { isImportable } from "@/lib/import/parse";
 import { Toolbar } from "./Toolbar";
@@ -29,9 +29,9 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   highlightAi?: boolean;
 }) {
   const t = useT();
-  // Fixed when the editor is created, so a language switch shows the other hint from the next document opened.
-  const placeholder = t("editor_placeholder");
-  const extensions = useMemo(() => editorExtensionsWith(placeholder), [placeholder]);
+  const { lang } = useLang();
+  // Created once with the hint of the language on screen; the effect below swaps the hint on a language switch without recreating the editor.
+  const [extensions] = useState(() => editorExtensionsWith(t("editor_placeholder")));
   const { status, currentSeq, onChange, flushNow } = useAutosave(docId, initialHtml, initialSeq);
   // The handlers below are created with the editor, so they read the newest callback from here.
   const onFilesRef = useRef(onFiles);
@@ -84,6 +84,8 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
     return () => { editor.off("update", report); };
   }, [editor, onCount]);
   useEffect(() => { onReady?.({ flushNow }); }, [onReady, flushNow]);
+  // The language switch: the hint changes in place, the document and the cursor stay where they are.
+  useEffect(() => { if (editor) setEditorPlaceholder(editor, t("editor_placeholder")); }, [editor, lang, t]);
   useEffect(() => {
     if (!editor) return;
     onEditor?.(editor);

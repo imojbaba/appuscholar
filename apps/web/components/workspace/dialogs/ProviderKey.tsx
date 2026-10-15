@@ -195,7 +195,7 @@ function Form() {
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" disabled={busy} data-testid="key-save" onClick={() => { void save(); }}>{t("settings_savekey_btn")}</Button>
         <Button variant="ghost" disabled={busy} data-testid="key-test" onClick={() => { void test(); }}>{t("aitest_btn")}</Button>
-        {keys.hasKey(p) && <Button variant="ghost" disabled={busy} data-testid="key-forget" onClick={() => { void forget(); }}>Forget this key</Button>}
+        {keys.hasKey(p) && <Button variant="ghost" disabled={busy} data-testid="key-forget" onClick={() => { void forget(); }}>{t("settings_removekey_btn")}</Button>}
       </div>
       <p className={"m-0 min-h-5 text-sm font-semibold " + (out ? TONE[out.tone] : "")} role="status" aria-live="polite" data-testid="key-test-out">{out?.text ?? ""}</p>
 
