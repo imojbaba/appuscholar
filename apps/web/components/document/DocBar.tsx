@@ -10,6 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { IMPORT_ACCEPT } from "@/lib/import/parse";
+import { newDocumentBody } from "@/lib/useAutosave";
+import { useVault } from "@/lib/vault/useVault";
 import { useWorkspace, type DocumentSummary, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
 
 const UNDO_MS = 10_000;
@@ -18,6 +20,7 @@ const UNDO_MS = 10_000;
 export function DocBar() {
   const t = useT();
   const { me } = useSettings();
+  const vault = useVault();
   const { project, documents, currentDoc, selectDoc, reloadDocs, startImport, restoreDocument, patchDoc, registerFlush, flushOpen } = useWorkspace();
   const [dialog, setDialog] = useState<"new" | "rename" | "delete" | null>(null);
   const [name, setName] = useState("");
@@ -32,7 +35,11 @@ export function DocBar() {
     if (busy || !projectId) return;
     setBusy(true);
     try {
-      const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: name.trim() || "Untitled" }) });
+      // With a vault the new document's empty body is encrypted from the start (the vault is opened first).
+      const body = await newDocumentBody(vault);
+      // The unlock was cancelled: nothing is created and the name dialog stays open.
+      if (!body) return;
+      const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: name.trim() || "Untitled", ...body }) });
       await reloadDocs();
       const shown = await selectDoc(made.id);
       setDialog(null);

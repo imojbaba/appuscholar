@@ -2,11 +2,16 @@
 import { createContext, useContext } from "react";
 import type { ProviderId } from "@appuscholar/core";
 import type { StageKey, ToolId } from "@/lib/tools";
+import type { WrappedDek } from "@/lib/vault/useVault";
 
 /** Wire shapes of the API (dates arrive as ISO strings). */
 export type Project = { id: string; title: string; field: string; stage: string; status: string; contentLang: string; kind: string };
 export type DocumentSummary = { id: string; projectId: string; title: string; kind: string; currentSeq: number; wordCount: number; createdAt: string; updatedAt: string };
-export type DocumentWithBody = DocumentSummary & { bodyHtml: string };
+/**
+ * `bodyHtml` is the text the editor opens with: decrypted on load when `keyVersion` is 1 or more. `unreadable` is set when it could not be:
+ * "locked" (the unlock was cancelled) or "broken" (its key is missing or the ciphertext does not open); the body is then empty and no editor opens.
+ */
+export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion: number; deks: WrappedDek[]; unreadable?: "locked" | "broken" };
 
 export type WorkspaceValue = {
   activeTool: ToolId;

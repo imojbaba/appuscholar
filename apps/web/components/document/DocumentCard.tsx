@@ -31,6 +31,8 @@ export function DocumentCard() {
   const { currentDoc, registerFlush, setWordCount, startImport } = useWorkspace();
   // Red from the first failed save until a save succeeds: retries ("saving") and typing offline ("dirty") do not turn it green.
   const [failed, setFailed] = useState(false);
+  // The vault is locked and the student has not opened it: the text waits in the editor (vault_save_locked).
+  const [held, setHeld] = useState(false);
   // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
   const warned = useRef(false);
   const docId = currentDoc?.id;
@@ -41,6 +43,7 @@ export function DocumentCard() {
   const [highlightAi, setHighlightAi] = useState(false);
 
   const onStatus = useCallback((s: SaveStatus) => {
+    setHeld(s === "locked");
     if (s === "error") { setFailed(true); if (!warned.current) { warned.current = true; toast(AUTOSAVE_STOPPED_TOAST); } }
     else if (s === "saved") { setFailed(false); warned.current = false; }
   }, []);
@@ -67,7 +70,9 @@ export function DocumentCard() {
     <section className="doc" aria-label={plainText(t("doc_pane_h2"))}>
       <div className="card-head">
         <h2>{t("doc_pane_h2")}</h2>
-        {failed
+        {held
+          ? <Badge variant="flag" data-testid="save-status" role="status">{t("vault_save_locked")}</Badge>
+          : failed
           ? <Badge variant="danger" data-testid="save-status" role="status">{AUTOSAVE_OFF_BADGE}</Badge>
           : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
         {hasKey(provider) && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
@@ -79,7 +84,13 @@ export function DocumentCard() {
       <DocBar />
       {/* Keyed by the instance, so a new document's bar subscribes afresh. Its slot keeps its height until the editor exists. */}
       {editor ? <FormatBar key={editor.instanceId} editor={editor} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
-      {currentDoc && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} onFiles={startImport} onTab={tab} highlightAi={highlightAi} />}
+      {/* A document that did not open (vault locked, or its key missing or the text damaged) gets no editor, so nothing can be saved over it. */}
+      {currentDoc && currentDoc.unreadable && (
+        <p role="alert" className="px-4 py-6 text-sm text-muted-foreground sm:px-6" data-testid="doc-unreadable">
+          {t(currentDoc.unreadable === "broken" ? "vault_doc_broken" : "vault_doc_locked")}
+        </p>
+      )}
+      {currentDoc && !currentDoc.unreadable && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} deks={currentDoc.deks} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} onFiles={startImport} onTab={tab} highlightAi={highlightAi} />}
       {editor && <SelectionBubble key={"bubble-" + editor.instanceId} editor={editor} />}
       {editor && <ActionRow key={"actions-" + editor.instanceId} editor={editor} highlightAi={highlightAi} onHighlightAi={setHighlightAi} />}
     </section>

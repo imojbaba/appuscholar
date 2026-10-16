@@ -27,6 +27,11 @@ export type VaultValue = {
   forgetThisComputer(): Promise<void>;
   /** Prompts via askPassphrase("vault-unlock") until correct or cancelled. */
   ensureUnlocked(): Promise<boolean>;
+  /**
+   * The status once this account's vault record has been read ("off" when there is none); stays pending while the api is unreachable,
+   * so "loading" is never mistaken for "off". `recheck` asks the server again when this tab has seen no vault: another tab may have set one up.
+   */
+  known(recheck?: boolean): Promise<VaultStatus>;
   encryptBody(doc: { id: string; deks: WrappedDek[] }, html: string): Promise<{ bodyHtml: string; keyVersion: number; dek?: WrappedDek }>;
   decryptBody(doc: { id: string; deks: WrappedDek[]; bodyHtml: string; keyVersion: number }): Promise<string>;
   migrating: { n: number; total: number } | null;
@@ -277,6 +282,23 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     return run;
   }, [unlock, unlockRemembered, t]);
 
+  const known = useCallback(async (recheck = false): Promise<VaultStatus> => {
+    const mine = epoch.current;
+    await loading.current;
+    if (recheck && epoch.current === mine && statusRef.current === "off") {
+      try {
+        const rec = await apiFetch<VaultRecord>("/me/vault");
+        if (epoch.current === mine && !record.current) {
+          record.current = rec;
+          statusRef.current = "locked";
+          setState({ uid: userRef.current, status: "locked", complete: rec.complete });
+          void unlockRemembered();
+        }
+      } catch { /* 404: still none; a failure leaves it as it was */ }
+    }
+    return statusRef.current;
+  }, [unlockRemembered]);
+
   const dekFor = useCallback(async (docId: string, dek: WrappedDek, key: CryptoKey): Promise<CryptoKey> => {
     const id = docId + ":" + dek.v + ":" + dek.wrapped;
     const hit = dekCache.current.get(id);
@@ -327,9 +349,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<VaultValue>(() => ({
-    status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, encryptBody, decryptBody, migrating,
+    status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, known, encryptBody, decryptBody, migrating,
     wrapSecret, unwrapSecret
-  }), [status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, encryptBody, decryptBody, migrating, wrapSecret, unwrapSecret]);
+  }), [status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, known, encryptBody, decryptBody, migrating, wrapSecret, unwrapSecret]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

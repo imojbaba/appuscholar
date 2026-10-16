@@ -163,15 +163,24 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("stage-counter")).toContainText("Idea & Feasibility");
   });
 
-  await test.step("4. write two sentences, autosave, reload: the text, the project bar and the badge are back", async () => {
+  await test.step("4. write two sentences, autosave (encrypted: the vault is on), reload: the passphrase opens the document, the text, the project bar and the badge are back", async () => {
     await expect(page.getByTestId("save-status")).toHaveText("Auto-save on");
     const editor = page.locator(".ProseMirror");
     await editor.click();
     const saved = page.waitForResponse((r) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url()) && r.ok());
     await editor.pressSequentially(`${SENTENCE_1} ${SENTENCE_2}`);
-    await saved;
+    const sent = (await saved).request().postDataJSON() as { bodyHtml: string; keyVersion: number; wordCount: number };
+    // The server receives ciphertext and the counts, never the text.
+    expect(sent.keyVersion).toBeGreaterThanOrEqual(1);
+    expect(sent.bodyHtml).not.toContain("<p>");
+    expect(sent.wordCount).toBeGreaterThan(0);
     await expect(page.getByTestId("save-status")).toHaveText("Auto-save on");
     await page.reload();
+    // After a reload the vault is locked: the document asks for its passphrase before the editor opens.
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await expect(page.getByTestId("pass-message")).toHaveText("Type the passphrase that protects your documents.");
+    await page.getByTestId("pass-input").fill(PASS);
+    await page.getByTestId("pass-ok").click();
     await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_1);
     await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
     await expect(page.getByTestId("project-bar-label")).toContainText("Thesis on academic procrastination");
@@ -190,14 +199,11 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(headings.filter({ hasText: "References" })).toHaveCount(1);
   });
 
-  await test.step("6. select a sentence, Improve from the bubble: polishing, result, amber note (the vault is locked after the reload, so its passphrase is asked once)", async () => {
+  await test.step("6. select a sentence, Improve from the bubble: polishing, result, amber note (the vault opened with the document, so the key needs no second passphrase)", async () => {
     await selectInEditor(page, SENTENCE_1);
     await expect(page.getByTestId("sel-bubble")).toBeVisible();
     await page.getByTestId("sel-improve").click();
-    await expect(page.getByTestId("pass-dialog")).toBeVisible();
-    await expect(page.getByTestId("pass-message")).toHaveText("Type the passphrase that protects your documents.");
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
     await expect(page.getByTestId("ai-status")).toHaveText("💜 Polishing…");
     await expect(page.getByTestId("ai-out")).toHaveText(IMPROVED);
     const note = page.getByTestId("ai-note");
@@ -371,12 +377,9 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("tool-idea")).toContainText("Idea & Feasibility");
   });
 
-  await test.step("19. reload, then a wrong passphrase on the first AI use: refused and asked again, then cancelled; nothing sent", async () => {
-    await page.reload();
-    await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
-    await expect(page.getByTestId("act-continue")).toBeVisible();
+  await test.step("19. reload, then a wrong passphrase when the document opens: refused and asked again, then cancelled: the document stays locked, the Doc list works, nothing sent; the pill opens it", async () => {
     const before = completeCalls;
-    await page.getByTestId("act-continue").click();
+    await page.reload();
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
     await page.getByTestId("pass-input").fill("not-the-passphrase");
     await page.getByTestId("pass-ok").click();
@@ -384,7 +387,19 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
     await page.getByTestId("pass-cancel").click();
     await expect(page.getByTestId("pass-dialog")).toBeHidden();
+    // Never an empty editor in place of the text: the card says the document is locked, and no AI action is offered on it.
+    await expect(page.getByTestId("doc-unreadable")).toHaveText("This document is locked. Unlock your vault to read it.");
+    await expect(page.locator(".ProseMirror")).toHaveCount(0);
+    await expect(page.getByTestId("act-continue")).toHaveCount(0);
+    await expect(page.getByTestId("doc-select")).toBeEnabled();
     expect(completeCalls).toBe(before);
+    // The vault pill opens the vault, and the document with it.
+    await page.getByTestId("vault-pill").click();
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await page.getByTestId("pass-input").fill(PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
+    await expect(page.getByTestId("doc-unreadable")).toHaveCount(0);
   });
 });
 

@@ -358,4 +358,30 @@ describe("useVault", () => {
     await act(async () => { await s.v.unlock("other", false); });
     expect(s.v.status).toBe("unlocked");
   }, 30_000);
+  it("known() resolves once the record is read, and a recheck finds a vault another tab set up", async () => {
+    let answer!: () => void;
+    h.api.mockImplementation((path: string, init?: RequestInit) => (path === "/me/vault" && !init?.method ? new Promise((res, rej) => { answer = () => (server.vault ? res({ ...server.vault }) : rej(new ApiError(404, "no-vault"))); }) : fakeApi(path, init)));
+    const s = await mount();
+    let seen: string | null = null;
+    const waiting = s.v.known().then((st) => { seen = st; });
+    await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+    expect(seen).toBeNull();
+    await act(async () => { answer(); await waiting; });
+    expect(seen).toBe("off");
+    expect(await s.v.known()).toBe("off");
+    // Another tab sets the vault up: this tab still says off until it asks again.
+    server.vault = await vaultWith("right");
+    h.api.mockImplementation(fakeApi);
+    let after!: string;
+    await act(async () => { after = await s.v.known(true); });
+    expect(after).toBe("locked");
+    expect(s.v.status).toBe("locked");
+    expect(s.v.complete).toBe(false);
+    await act(async () => { await s.v.unlock("right", false); });
+    expect(s.v.status).toBe("unlocked");
+    // A recheck with a vault already known asks nothing.
+    const calls = server.calls.length;
+    expect(await s.v.known(true)).toBe("unlocked");
+    expect(server.calls.length).toBe(calls);
+  }, 30_000);
 });

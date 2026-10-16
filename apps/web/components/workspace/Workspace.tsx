@@ -8,6 +8,9 @@ import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { toast } from "@/components/ui/toast";
 import { isImportable } from "@/lib/import/parse";
 import { allPdf, importFiles } from "@/lib/import/run";
+import { newDocumentBody } from "@/lib/useAutosave";
+import { useVault, type VaultValue } from "@/lib/vault/useVault";
+import { VaultError } from "@/lib/vault/crypto";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -32,12 +35,32 @@ const BUSY = "Another import is still running. Wait for it to finish.";
 
 type Loaded = { project: Project | null; projectId: string; documents: DocumentSummary[]; doc: DocumentWithBody | null };
 
-async function listOrSeed(projectId: string): Promise<DocumentSummary[]> {
+async function listOrSeed(projectId: string, vault: VaultValue): Promise<DocumentSummary[]> {
   const list = await apiFetch<DocumentSummary[]>(`/projects/${projectId}/documents`);
   if (list.length) return list;
-  // A project always has a document to write in (v1 always had one).
-  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: "My first document" }) });
+  // A project always has a document to write in (v1 always had one); with a vault its empty body is encrypted from the start.
+  const body = await newDocumentBody(vault);
+  // The unlock was cancelled: no document yet, and New in the document bar can make one later.
+  if (!body) return [];
+  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: "My first document", ...body }) });
   return [made];
+}
+
+/**
+ * The document as the editor may open it: plaintext (keyVersion 0) as it is; ciphertext decrypted once the vault is open. Never an empty
+ * stand-in for text that did not open: a cancelled unlock or a body that does not decrypt is marked `unreadable` and no editor opens on it.
+ */
+export async function readableDoc(vault: Pick<VaultValue, "ensureUnlocked" | "decryptBody">, doc: DocumentWithBody): Promise<DocumentWithBody> {
+  if (!doc.keyVersion) return doc;
+  if (!(await vault.ensureUnlocked())) return { ...doc, bodyHtml: "", unreadable: "locked" };
+  try {
+    return { ...doc, bodyHtml: await vault.decryptBody(doc) };
+  } catch (e) {
+    if (e instanceof VaultError) return { ...doc, bodyHtml: "", unreadable: "broken" };
+    // Locked again between the unlock and the decrypt.
+    if (e instanceof Error && e.message === "vault-locked") return { ...doc, bodyHtml: "", unreadable: "locked" };
+    throw e;
+  }
 }
 
 /** Creation order, as v1 listed documents (the API answers most recently updated first). */
@@ -48,6 +71,10 @@ function byCreated(list: DocumentSummary[]): DocumentSummary[] {
 export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) {
   const t = useT();
   const { me, settings, update, reload } = useSettings();
+  const vault = useVault();
+  // Loads and creations outlive a render; they read the newest vault from here.
+  const vaultRef = useRef(vault);
+  useEffect(() => { vaultRef.current = vault; }, [vault]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
@@ -109,11 +136,12 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
           let proj: Project | null = null;
           if (activeProjectId) proj = (await apiFetch<Project[]>("/projects")).find((x) => x.id === activeProjectId) ?? null;
           const pid = proj ? proj.id : scratchProjectId;
-          const docs = await listOrSeed(pid);
+          const docs = await listOrSeed(pid, vaultRef.current);
           const first = docs[0];
           const want = pendingDoc.current; pendingDoc.current = null;
           const pick = docs.find((d) => d.id === want) ?? first;
-          const doc = pick ? await apiFetch<DocumentWithBody>(`/documents/${pick.id}`) : null;
+          // Decrypted before the editor mounts.
+          const doc = pick ? await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${pick.id}`)) : null;
           return { project: proj, projectId: pid, documents: docs, doc };
         })()
       };
@@ -178,15 +206,26 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
     if (currentDocRef.current?.id === id) return true;
     if (!(await confirmLeave())) return false;
     const mine = ++docToken.current;
-    const doc = await apiFetch<DocumentWithBody>(`/documents/${id}`);
+    const doc = await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${id}`));
     if (mine === docToken.current) setCurrentDoc(doc);
     return true;
   }, [confirmLeave]);
 
+  // A document left locked (the unlock was cancelled) opens once the vault does, from the header pill or another prompt.
+  const vaultOpen = vault.status === "unlocked" || vault.status === "migrating";
+  useEffect(() => {
+    const shut = currentDoc;
+    if (!vaultOpen || shut?.unreadable !== "locked") return;
+    const mine = ++docToken.current;
+    apiFetch<DocumentWithBody>(`/documents/${shut.id}`)
+      .then((d) => readableDoc(vaultRef.current, d))
+      .then((d) => { if (mine === docToken.current) setCurrentDoc(d); }, () => undefined);
+  }, [vaultOpen, currentDoc]);
+
   const reloadDocs = useCallback(async () => {
     const pid = projectIdRef.current;
     if (!pid) return;
-    const list = byCreated(await listOrSeed(pid));
+    const list = byCreated(await listOrSeed(pid, vaultRef.current));
     setDocuments(list);
     const open = currentDocRef.current;
     const keep = open && list.some((d) => d.id === open.id) ? open.id : list[0]?.id;
@@ -232,7 +271,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
     if (!pid) return;
     importing.current = true;
     try {
-      const last = await importFiles(files, origin, pid, t);
+      const last = await importFiles(files, origin, pid, t, vaultRef.current);
       if (last) { await reloadDocs(); await selectDoc(last); }
     } finally { importing.current = false; }
   }, [t, reloadDocs, selectDoc]);
