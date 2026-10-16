@@ -3,13 +3,13 @@ import "fake-indexeddb/auto";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { generateKeypair, generateVaultKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
+import { generateKeypair, generateVaultKey, sealVaultCheck, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), toast: vi.fn(), ws: null as unknown, editors: [] as string[] }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u-load", scratchProjectId: "p1" }, settings: {} }) }));
-vi.mock("@/components/workspace/dialogs/Passphrase", () => ({ askPassphrase: h.ask }));
+vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) }));
 vi.mock("@/lib/ai/suggestion", async (orig) => ({ ...(await orig<typeof import("../lib/ai/suggestion")>()), useSuggestion: () => ({ setEditor: () => {}, tab: () => false }) }));
@@ -25,13 +25,13 @@ import type { DocumentWithBody } from "../components/workspace/WorkspaceContext"
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-type Rec = { passWrapped: string; recoveryWrapped: string; publicKey: string; privateKeyWrapped: string; complete: boolean; updatedAt: string };
+type Rec = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
 const PASS = "right passphrase";
 let record: Rec;
 beforeEach(async () => {
   const vk = await generateVaultKey();
   const kp = await generateKeypair();
-  record = { passWrapped: await wrapWithPassphrase(vk, PASS), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
+  record = { passWrapped: await wrapWithPassphrase(vk, PASS), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), checkWrapped: await sealVaultCheck(vk), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
   h.api.mockReset().mockImplementation((path: string) => (path === "/me/vault" ? Promise.resolve({ ...record }) : Promise.reject(new ApiError(404, "not-found"))));
   h.ask.mockReset();
   h.editors = [];

@@ -116,9 +116,30 @@ export async function decryptText(blob: Wrapped, key: CryptoKey): Promise<string
   try { return dec.decode(await subtle().decrypt({ name: "AES-GCM", iv }, key, ct)); } catch { throw new VaultError("corrupt"); }
 }
 
-/** An X25519 keypair for sharing. The public half is raw bytes, base64url; the private half stays a CryptoKey (extractable only so it can be wrapped). */
+/** The plaintext of the vault's check blob. Opening it under a candidate key to exactly this proves the key is this vault's key. */
+export const VAULT_CHECK = "appuscholar-vault-check";
+
+/** The check blob stored with the vault record: VAULT_CHECK encrypted under the vault key (iv.ct). */
+export const sealVaultCheck = (vk: CryptoKey): Promise<Wrapped> => encryptText(VAULT_CHECK, vk);
+
+/** Resolves when `vk` opens the vault's check blob to VAULT_CHECK; otherwise throws VaultError("corrupt"): the key is not this vault's. */
+export async function verifyVaultKey(checkWrapped: Wrapped, vk: CryptoKey): Promise<void> {
+  if ((await decryptText(checkWrapped, vk)) !== VAULT_CHECK) throw new VaultError("corrupt");
+}
+
+/**
+ * An X25519 keypair for sharing. The public half is raw bytes, base64url; the private half stays a CryptoKey (extractable only so it can
+ * be wrapped). A browser without X25519 (WebCrypto answers NotSupportedError) gets VaultError("no-crypto"): the vault works without it.
+ */
 export async function generateKeypair(): Promise<{ publicKeyB64: string; privateKey: CryptoKey }> {
-  const kp = (await subtle().generateKey({ name: "X25519" }, true, ["deriveBits"])) as CryptoKeyPair;
+  let kp: CryptoKeyPair;
+  try {
+    kp = (await subtle().generateKey({ name: "X25519" }, true, ["deriveBits"])) as CryptoKeyPair;
+  } catch (e) {
+    // By name: a DOMException is not an Error subclass everywhere (jsdom's is not).
+    if ((e as { name?: unknown } | null)?.name === "NotSupportedError") throw new VaultError("no-crypto");
+    throw e;
+  }
   return { publicKeyB64: b64(await subtle().exportKey("raw", kp.publicKey)), privateKey: kp.privateKey };
 }
 

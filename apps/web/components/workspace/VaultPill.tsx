@@ -25,7 +25,7 @@ export function VaultPill({ className }: { className?: string }) {
   const t = useT();
   const vault = useVault();
   const [changing, setChanging] = useState(false);
-  const { status } = vault;
+  const { status, complete } = vault;
   const uid = useSettings().me?.id ?? null;
   /** "Forget on this computer" is offered only when this computer remembers the vault. Re-read when the vault opens and when the menu opens. */
   const [remembered, setRemembered] = useState(false);
@@ -47,6 +47,16 @@ export function VaultPill({ className }: { className?: string }) {
       <span role="status" className={cn(PILL, TONE.migrating, className)} title={m ? t("vault_migrating_n", { n: m.n, total: m.total }) : undefined} data-testid="vault-pill" data-status={status}>
         <span className="truncate">{t("vault_pill_migrating")}</span>
       </span>
+    );
+  }
+  // A vault whose migration has not finished (a failed run, or one not started in this session) says so until it is done, and finishes it
+  // on a click: unlocking first when locked.
+  if (!complete && (status === "locked" || status === "unlocked")) {
+    return (
+      <button type="button" className={cn(PILL, TONE.migrating, className)} data-testid="vault-pill" data-status="migrating"
+        onClick={() => { void vault.resumeMigration(); }}>
+        <span className="truncate">{t("vault_pill_migrating")}</span>
+      </button>
     );
   }
   if (status === "off" || status === "locked") {

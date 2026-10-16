@@ -3,14 +3,14 @@ import "fake-indexeddb/auto";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { generateKeypair, generateVaultKey, unwrapWithPassphrase, unwrapWithRecovery, VaultError, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
+import { generateKeypair, generateVaultKey, sealVaultCheck, unwrapPrivateKey, unwrapWithPassphrase, unwrapWithRecovery, VaultError, verifyVaultKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 import { forgetRemembered, hasRemembered } from "../lib/vault/remember";
 import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), toast: vi.fn(), uid: "u1", scratch: undefined as string | undefined }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: h.uid, scratchProjectId: h.scratch } }) }));
-vi.mock("@/components/workspace/dialogs/Passphrase", () => ({ askPassphrase: h.ask }));
+vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
@@ -18,7 +18,7 @@ import { useVault, VaultProvider, type VaultValue } from "../lib/vault/useVault"
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-type Rec = { passWrapped: string; recoveryWrapped: string; publicKey: string; privateKeyWrapped: string; complete: boolean; updatedAt: string };
+type Rec = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
 type SRev = { seq: number; bodyHtml: string; keyVersion: number };
 type SDoc = { id: string; projectId: string; deletedAt: string | null; deks: { v: number; wrapped: string }[]; revs: SRev[] };
 let server: { vault: Rec | null; calls: { path: string; method: string; body?: Record<string, unknown> }[]; projects: string[]; docs: SDoc[] };
@@ -52,6 +52,15 @@ function docApi(path: string, method: string, body: Record<string, unknown> | un
   return null;
 }
 
+/** PATCH /me/vault/wraps as the api answers it: 409 stale when expectUpdatedAt is not the stored updatedAt; a change moves updatedAt forward. */
+function patchWraps(body: Record<string, unknown>): Promise<unknown> {
+  const { reason: _r, expectUpdatedAt, ...w } = body;
+  if (!server.vault) return Promise.reject(new ApiError(404, "no-vault"));
+  if (expectUpdatedAt !== undefined && expectUpdatedAt !== server.vault.updatedAt) return Promise.reject(new ApiError(409, "stale"));
+  server.vault = { ...server.vault, ...w, updatedAt: new Date(Date.parse(server.vault.updatedAt) + 1000).toISOString() };
+  return Promise.resolve({ ...server.vault });
+}
+
 function fakeApi(path: string, init: RequestInit = {}) {
   const method = init.method ?? "GET";
   const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined;
@@ -59,8 +68,8 @@ function fakeApi(path: string, init: RequestInit = {}) {
   const doc = docApi(path, method, body);
   if (doc) return doc;
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
-  if (path === "/me/vault" && method === "PUT") { if (server.vault) return Promise.reject(new ApiError(409, "vault-exists")); server.vault = { ...(body as Omit<Rec, "complete" | "updatedAt">), complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve(undefined); }
-  if (path === "/me/vault/wraps" && method === "PATCH") { const { reason: _r, ...w } = body!; server.vault = { ...server.vault!, ...w }; return Promise.resolve({ ok: true }); }
+  if (path === "/me/vault" && method === "PUT") { if (server.vault) return Promise.reject(new ApiError(409, "vault-exists")); server.vault = { ...(body as Omit<Rec, "complete" | "updatedAt">), complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve({ ...server.vault }); }
+  if (path === "/me/vault/wraps" && method === "PATCH") return patchWraps(body!);
   if (path === "/me/vault/complete" && method === "POST" && !server.vault?.complete) {
     const count = server.docs.flatMap((d) => d.revs).filter((r) => r.keyVersion === 0).length;
     if (count) return Promise.reject(new ApiError(409, "plaintext-remains"));
@@ -70,9 +79,31 @@ function fakeApi(path: string, init: RequestInit = {}) {
 }
 
 async function vaultWith(pass: string, code = "AAAAA-BBBBB-CCCCC-DDDDD"): Promise<Rec> {
-  const vk = await generateVaultKey();
-  const kp = await generateKeypair();
-  return { passWrapped: await wrapWithPassphrase(vk, pass), recoveryWrapped: await wrapWithRecovery(vk, code), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: false, updatedAt: new Date().toISOString() };
+  return vaultFor(await generateVaultKey(), pass, code);
+}
+/** A record for a given vault key; `keypair: false` as a browser without X25519 sets it up. */
+async function vaultFor(vk: CryptoKey, pass: string, code = "AAAAA-BBBBB-CCCCC-DDDDD", keypair = true): Promise<Rec> {
+  const kp = keypair ? await generateKeypair() : null;
+  return {
+    passWrapped: await wrapWithPassphrase(vk, pass), recoveryWrapped: await wrapWithRecovery(vk, code), checkWrapped: await sealVaultCheck(vk),
+    publicKey: kp ? kp.publicKeyB64 : null, privateKeyWrapped: kp ? await wrapPrivateKey(kp.privateKey, vk) : null, complete: false, updatedAt: new Date().toISOString()
+  };
+}
+/** What another device does to the stored record: new wraps of the same vault key, and a later updatedAt. */
+async function elsewhere(vk: CryptoKey, change: { pass?: string; code?: string }) {
+  const v = server.vault!;
+  server.vault = {
+    ...v,
+    ...(change.pass ? { passWrapped: await wrapWithPassphrase(vk, change.pass) } : {}),
+    ...(change.code ? { recoveryWrapped: await wrapWithRecovery(vk, change.code) } : {}),
+    updatedAt: new Date(Date.parse(v.updatedAt) + 60_000).toISOString()
+  };
+}
+/** WebCrypto as in a browser without X25519: generateKey answers NotSupportedError for it, everything else is real. */
+function withoutX25519() {
+  const real = crypto.subtle.generateKey.bind(crypto.subtle) as (...a: unknown[]) => Promise<unknown>;
+  return vi.spyOn(crypto.subtle, "generateKey").mockImplementation(((alg: { name?: string }, ...rest: unknown[]) =>
+    alg?.name === "X25519" ? Promise.reject(new DOMException("Unrecognized algorithm name", "NotSupportedError")) : real(alg, ...rest)) as unknown as typeof crypto.subtle.generateKey);
 }
 
 const roots: Root[] = [];
@@ -113,7 +144,7 @@ describe("useVault", () => {
     await act(async () => { out = await s.v.setup("pw", false); });
     expect(out.recoveryCode).toMatch(CODE);
     const put = server.calls.find((c) => c.path === "/me/vault" && c.method === "PUT")!;
-    expect(Object.keys(put.body!).sort()).toEqual(["passWrapped", "privateKeyWrapped", "publicKey", "recoveryWrapped"]);
+    expect(Object.keys(put.body!).sort()).toEqual(["checkWrapped", "passWrapped", "privateKeyWrapped", "publicKey", "recoveryWrapped"]);
     for (const v of Object.values(put.body!)) expect(typeof v === "string" && v.length > 0).toBe(true);
     // The server holds wraps that open with the passphrase and with the code, never the key itself.
     await expect(unwrapWithPassphrase(put.body!.passWrapped as string, "pw")).resolves.toBeDefined();
@@ -422,6 +453,188 @@ describe("useVault", () => {
     expect(await s.v.known(true)).toBe("unlocked");
     expect(server.calls.length).toBe(calls);
   }, 30_000);
+  describe("a record changed in another tab or on another device", () => {
+    const errCode = (p: Promise<unknown>) => p.then(() => "resolved", (e: unknown) => (e instanceof VaultError ? e.code : (e as Error).message));
+
+    it("another device changed the passphrase: the new one unlocks after one re-read, and then the old one fails", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "old passphrase");
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      await elsewhere(vk, { pass: "new passphrase" });
+      const reads = () => server.calls.filter((c) => c.path === "/me/vault" && c.method === "GET").length;
+      const before = reads();
+      await act(async () => { await s.v.unlock("new passphrase", false); });
+      expect(s.v.status).toBe("unlocked");
+      expect(reads()).toBe(before + 1);
+      act(() => { s.v.lock(); });
+      // This tab now holds the new record: the old passphrase is wrong (one more read finds nothing newer).
+      expect(await errCode(s.v.unlock("old passphrase", false))).toBe("wrong-passphrase");
+      expect(reads()).toBe(before + 2);
+      expect(s.v.status).toBe("locked");
+      // A wrong passphrase with nothing changed elsewhere is still just wrong.
+      expect(await errCode(s.v.unlock("never", false))).toBe("wrong-passphrase");
+      await act(async () => { await s.v.unlock("new passphrase", false); });
+      expect(s.v.status).toBe("unlocked");
+    }, 30_000);
+
+    it("ensureUnlocked accepts the passphrase set on another device without a wrong-passphrase toast", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "old passphrase");
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      await elsewhere(vk, { pass: "new passphrase" });
+      h.ask.mockResolvedValueOnce("new passphrase");
+      let ok: boolean | undefined;
+      await act(async () => { ok = await s.v.ensureUnlocked(); });
+      expect(ok).toBe(true);
+      expect(h.ask).toHaveBeenCalledTimes(1);
+      expect(h.toast).not.toHaveBeenCalledWith(en.vault_wrong);
+    }, 30_000);
+
+    it("recovery with an old code made void on another device fails after the re-read, and changes nothing", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "pass one", "AAAAA-BBBBB-CCCCC-DDDDD");
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      // The other device used the code: a new passphrase and a new code. This tab's record still holds the old code's wrap.
+      await elsewhere(vk, { pass: "pass two", code: "EEEEE-FFFFF-GGGGG-HHHHH" });
+      const stored = { ...server.vault! };
+      expect(await errCode(s.v.recover("AAAAA-BBBBB-CCCCC-DDDDD", "pass three"))).toBe("wrong-code");
+      // It tried once with the stale precondition (409), read the record, and the old code does not open the new one: nothing changed.
+      expect(server.calls.filter((c) => c.method === "PATCH").map((c) => c.body!.expectUpdatedAt)).toHaveLength(1);
+      expect(server.vault).toEqual(stored);
+      expect(s.v.status).toBe("locked");
+      // The new code works, against the record as it is now.
+      let out!: { recoveryCode: string };
+      await act(async () => { out = await s.v.recover("EEEEE-FFFFF-GGGGG-HHHHH", "pass three"); });
+      expect(out.recoveryCode).toMatch(CODE);
+      expect(s.v.status).toBe("unlocked");
+      await expect(unwrapWithPassphrase(server.vault!.passWrapped, "pass three")).resolves.toBeDefined();
+    }, 30_000);
+
+    it("a change refused as stale (the record moved on, the passphrase did not) is read again and sent once more", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      // The recovery code was replaced elsewhere; the passphrase is the same.
+      await elsewhere(vk, { code: "JJJJJ-KKKKK-LLLLL-MMMMM" });
+      await act(async () => { await s.v.changePassphrase("right", "next one"); });
+      const patches = server.calls.filter((c) => c.method === "PATCH");
+      expect(patches).toHaveLength(2);
+      expect(patches[0]!.body!.expectUpdatedAt).not.toBe(patches[1]!.body!.expectUpdatedAt);
+      await expect(unwrapWithPassphrase(server.vault!.passWrapped, "next one")).resolves.toBeDefined();
+      // The other device's code is kept.
+      await expect(unwrapWithRecovery(server.vault!.recoveryWrapped, "JJJJJ-KKKKK-LLLLL-MMMMM")).resolves.toBeDefined();
+      expect(s.v.status).toBe("unlocked");
+    }, 30_000);
+
+    it("a change whose old passphrase was replaced on another device fails with wrong-passphrase and sends nothing more", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      await elsewhere(vk, { pass: "theirs" });
+      const stored = { ...server.vault! };
+      expect(await errCode(s.v.changePassphrase("right", "mine"))).toBe("wrong-passphrase");
+      expect(server.calls.filter((c) => c.method === "PATCH")).toHaveLength(1);
+      expect(server.vault).toEqual(stored);
+    }, 30_000);
+
+    it("a second stale refusal is the caller's error (the dialog says vault_change_fail)", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      h.api.mockImplementation((path: string, init?: RequestInit) => (init?.method === "PATCH" ? (server.calls.push({ path, method: "PATCH" }), Promise.reject(new ApiError(409, "stale"))) : fakeApi(path, init)));
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      const err = await s.v.changePassphrase("right", "next").catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).code).toBe("stale");
+      expect(server.calls.filter((c) => c.method === "PATCH")).toHaveLength(2);
+    }, 30_000);
+  });
+
+  describe("without X25519, and the check blob", () => {
+    it("setup in a browser without X25519 stores no keypair and works; the check blob opens under the vault key", async () => {
+      const spy = withoutX25519();
+      try {
+        const s = await mount();
+        await until(() => s.v.status === "off");
+        let out!: { recoveryCode: string };
+        await act(async () => { out = await s.v.setup("pw", false); });
+        expect(out.recoveryCode).toMatch(CODE);
+        const put = server.calls.find((c) => c.path === "/me/vault" && c.method === "PUT")!;
+        expect(put.body).toMatchObject({ publicKey: null, privateKeyWrapped: null });
+        const vk = await unwrapWithPassphrase(put.body!.passWrapped as string, "pw");
+        await expect(verifyVaultKey(put.body!.checkWrapped as string, vk)).resolves.toBeUndefined();
+        expect(s.v.status).toBe("unlocked");
+        const enc = await s.v.encryptBody({ id: "d1", deks: [] }, "<p>x</p>");
+        expect(await s.v.decryptBody({ id: "d1", deks: [enc.dek!], bodyHtml: enc.bodyHtml, keyVersion: 1 })).toBe("<p>x</p>");
+        // No keypair is tried again in this session.
+        await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+        expect(server.calls.some((c) => c.method === "PATCH")).toBe(false);
+        // Locked and opened again: the passphrase path checks the key with the check blob, not a keypair.
+        act(() => { s.v.lock(); });
+        await act(async () => { await s.v.unlock("pw", false); });
+        expect(s.v.status).toBe("unlocked");
+      } finally { spy.mockRestore(); }
+    }, 30_000);
+
+    it("a remembered vault key is accepted by the check blob alone (no keypair), and refused when it is another vault's", async () => {
+      const vk = await generateVaultKey();
+      server.vault = { ...(await vaultFor(vk, "right", undefined, false)), complete: true };
+      const spy = withoutX25519();
+      try {
+        const a = await mount();
+        await until(() => a.v.status === "locked");
+        await act(async () => { await a.v.unlock("right", true); });
+        expect(await hasRemembered("u1")).toBe(true);
+        const b = await mount();
+        await until(() => b.v.status === "unlocked");
+        expect(h.ask).not.toHaveBeenCalled();
+        // The vault's check blob is replaced by one under another key: the remembered key no longer passes and is forgotten.
+        server.vault = { ...server.vault!, checkWrapped: await sealVaultCheck(await generateVaultKey()) };
+        const c = await mount();
+        await until(() => c.v.status === "locked");
+        for (let i = 0; i < 40 && (await hasRemembered("u1")); i++) await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+        expect(await hasRemembered("u1")).toBe(false);
+        expect(c.v.status).toBe("locked");
+      } finally { spy.mockRestore(); }
+    }, 30_000);
+
+    it("a vault set up without a keypair gets one, once, the first time it opens where X25519 is there", async () => {
+      const vk = await generateVaultKey();
+      server.vault = { ...(await vaultFor(vk, "right", undefined, false)), complete: true };
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      const t0 = server.vault.updatedAt;
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => server.vault!.publicKey !== null);
+      const patch = server.calls.find((c) => c.method === "PATCH")!;
+      expect(patch.body).toMatchObject({ reason: "keypair-added", expectUpdatedAt: t0 });
+      expect(Object.keys(patch.body!).sort()).toEqual(["expectUpdatedAt", "privateKeyWrapped", "publicKey", "reason"]);
+      const priv = await unwrapPrivateKey(server.vault!.privateKeyWrapped!, vk);
+      expect(priv.algorithm.name).toBe("X25519");
+      act(() => { s.v.lock(); });
+      await act(async () => { await s.v.unlock("right", false); await new Promise((r) => setTimeout(r, 20)); });
+      expect(server.calls.filter((c) => c.method === "PATCH")).toHaveLength(1);
+      // The record this tab holds is the server's answer, so a later change's precondition matches.
+      await act(async () => { await s.v.changePassphrase("right", "next one"); });
+      expect(server.calls.filter((c) => c.method === "PATCH")).toHaveLength(2);
+    }, 30_000);
+  });
+
+  it("the unlock ask's Remember box keeps the vault on this computer", async () => {
+    server.vault = { ...(await vaultWith("right")), complete: true };
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    h.ask.mockResolvedValueOnce({ pass: "right", remember: true });
+    await act(async () => { await s.v.ensureUnlocked(); });
+    expect(s.v.status).toBe("unlocked");
+    expect(await hasRemembered("u1")).toBe(true);
+  }, 30_000);
+
   describe("one-off migration", () => {
     const plain = (seq: number, text: string): SRev => ({ seq, bodyHtml: `<p>${text}</p>`, keyVersion: 0 });
     function seed() {
@@ -549,10 +762,11 @@ describe("useVault", () => {
       expect(s.v.migrating).toBeNull();
     }, 30_000);
 
-    it("a failed migration leaves the vault unlocked and incomplete, with no toast", async () => {
+    it("a failed migration leaves the vault unlocked and incomplete and says so; back online it runs again and completes", async () => {
       seed();
       server.vault = await vaultWith("right");
-      h.api.mockImplementation((path: string, init?: RequestInit) => (path.endsWith("/rewrite") ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+      let offline = true;
+      h.api.mockImplementation((path: string, init?: RequestInit) => (offline && path.endsWith("/rewrite") ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
       const s = await mount();
       await until(() => s.v.status === "locked");
       await act(async () => { await s.v.unlock("right", false); });
@@ -560,8 +774,53 @@ describe("useVault", () => {
       expect(s.seen).toContain("migrating");
       expect(s.v.complete).toBe(false);
       expect(s.v.migrating).toBeNull();
-      expect(h.toast).not.toHaveBeenCalled();
+      expect(h.toast).toHaveBeenCalledTimes(1);
+      expect(h.toast).toHaveBeenCalledWith(en.vault_migrate_fail);
       expect(server.calls.some((c) => c.path === "/me/vault/complete")).toBe(false);
+      // Listings of every project: a failed run here lists once (its first rewrite fails), a finished run twice (its pass and the checking pass).
+      const listings = () => server.calls.filter((c) => c.path === "/projects" && c.method === "GET").length;
+      expect(listings()).toBe(1);
+      // The browser comes back online: a second run, without a prompt, finishes the job.
+      offline = false;
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await until(() => s.v.complete);
+      expect(listings()).toBe(3);
+      expect(h.ask).not.toHaveBeenCalled();
+      expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrated);
+      expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 1))).toBe(true);
+      // Complete now: another online event starts nothing.
+      await act(async () => { window.dispatchEvent(new Event("online")); await new Promise((r) => setTimeout(r, 20)); });
+      expect(listings()).toBe(3);
+    }, 30_000);
+
+    it("resumeMigration (the pill) runs an unfinished migration again, unlocking first when the vault is locked", async () => {
+      seed();
+      server.vault = await vaultWith("right");
+      let offline = true;
+      h.api.mockImplementation((path: string, init?: RequestInit) => (offline && path.endsWith("/rewrite") ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => s.v.status === "unlocked" && h.toast.mock.calls.length === 1);
+      // Listings of every project: a failed run here lists once (its first rewrite fails), a finished run twice (its pass and the checking pass).
+      const listings = () => server.calls.filter((c) => c.path === "/projects" && c.method === "GET").length;
+      // Still offline: the pill's retry runs and fails again, and says so again.
+      await act(async () => { await s.v.resumeMigration(); });
+      await until(() => listings() === 2 && s.v.status === "unlocked" && h.toast.mock.calls.length === 2);
+      expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrate_fail);
+      // Locked meanwhile: the pill asks for the passphrase, and the unlock carries on with the migration.
+      offline = false;
+      act(() => { s.v.lock(); });
+      h.ask.mockResolvedValueOnce("right");
+      await act(async () => { await s.v.resumeMigration(); });
+      expect(h.ask).toHaveBeenCalledTimes(1);
+      await until(() => s.v.complete && s.v.status === "unlocked");
+      expect(listings()).toBe(4);
+      expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrated);
+      expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 1))).toBe(true);
+      // Complete: nothing more to do.
+      await act(async () => { await s.v.resumeMigration(); });
+      expect(listings()).toBe(4);
     }, 30_000);
   });
 });

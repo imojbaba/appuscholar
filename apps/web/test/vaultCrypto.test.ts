@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { generateVaultKey, wrapWithPassphrase, unwrapWithPassphrase, generateRecoveryCode, wrapWithRecovery, unwrapWithRecovery, generateDek, wrapKey, unwrapKey, encryptText, decryptText, generateKeypair, wrapPrivateKey, unwrapPrivateKey, VaultError, VAULT_KDF_ITERATIONS } from "@/lib/vault/crypto";
+import { describe, it, expect, vi } from "vitest";
+import { generateVaultKey, wrapWithPassphrase, unwrapWithPassphrase, generateRecoveryCode, wrapWithRecovery, unwrapWithRecovery, generateDek, wrapKey, unwrapKey, encryptText, decryptText, generateKeypair, wrapPrivateKey, unwrapPrivateKey, VaultError, VAULT_KDF_ITERATIONS, VAULT_CHECK, sealVaultCheck, verifyVaultKey } from "@/lib/vault/crypto";
 
 describe("vault crypto", () => {
   it("round-trips a text through DEK under VK under a passphrase", async () => {
@@ -45,4 +45,26 @@ describe("vault crypto", () => {
     expect(priv.algorithm.name).toBe("X25519");
   });
   it("pins the KDF cost", () => { expect(VAULT_KDF_ITERATIONS).toBe(310_000); });
+  it("the check blob opens under its own vault key only", async () => {
+    expect(VAULT_CHECK).toBe("appuscholar-vault-check");
+    const vk = await generateVaultKey();
+    const check = await sealVaultCheck(vk);
+    expect(check.split(".")).toHaveLength(2);
+    expect(check).not.toContain("appuscholar");
+    await expect(verifyVaultKey(check, vk)).resolves.toBeUndefined();
+    await expect(verifyVaultKey(check, await generateVaultKey())).rejects.toMatchObject({ code: "corrupt" });
+    // A blob under the right key that holds something else is not a check either.
+    await expect(verifyVaultKey(await encryptText("something else", vk), vk)).rejects.toMatchObject({ code: "corrupt" });
+  });
+  it("a browser without X25519 gets VaultError no-crypto from generateKeypair; other failures pass through", async () => {
+    const real = crypto.subtle.generateKey.bind(crypto.subtle);
+    const spy = vi.spyOn(crypto.subtle, "generateKey").mockImplementation(((alg: AlgorithmIdentifier, ...rest: unknown[]) =>
+      (alg as { name?: string }).name === "X25519" ? Promise.reject(new DOMException("Unrecognized algorithm name", "NotSupportedError")) : (real as (...a: unknown[]) => unknown)(alg, ...rest)) as typeof crypto.subtle.generateKey);
+    try {
+      await expect(generateKeypair()).rejects.toMatchObject({ code: "no-crypto" });
+      await expect(generateKeypair()).rejects.toBeInstanceOf(VaultError);
+      spy.mockImplementation((() => Promise.reject(new DOMException("boom", "OperationError"))) as typeof crypto.subtle.generateKey);
+      await expect(generateKeypair()).rejects.toMatchObject({ name: "OperationError" });
+    } finally { spy.mockRestore(); }
+  });
 });

@@ -4,12 +4,12 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { originCount } from "@appuscholar/core";
-import { generateKeypair, generateVaultKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
+import { generateKeypair, generateVaultKey, sealVaultCheck, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 
 const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), toast: vi.fn() }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u-autosave" } }) }));
-vi.mock("@/components/workspace/dialogs/Passphrase", () => ({ askPassphrase: h.ask }));
+vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
@@ -304,11 +304,11 @@ describe("createAutosaver with the vault", () => {
 
 // ---- useAutosave against a real vault (WebCrypto) and a fake api ----
 
-type Rec = { passWrapped: string; recoveryWrapped: string; publicKey: string; privateKeyWrapped: string; complete: boolean; updatedAt: string };
+type Rec = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
 async function vaultWith(pass: string): Promise<Rec> {
   const vk = await generateVaultKey();
   const kp = await generateKeypair();
-  return { passWrapped: await wrapWithPassphrase(vk, pass), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: false, updatedAt: new Date().toISOString() };
+  return { passWrapped: await wrapWithPassphrase(vk, pass), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), checkWrapped: await sealVaultCheck(vk), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: false, updatedAt: new Date().toISOString() };
 }
 const roots: Root[] = [];
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); });

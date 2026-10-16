@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: {}, update: h.update }) }));
-vi.mock("@/components/workspace/dialogs/Passphrase", () => ({ askPassphrase: h.ask }));
+vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/components/workspace/dialogs/VaultSetup", () => ({ openVaultSetup: h.openSetup }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => h.ws }));
@@ -35,7 +35,7 @@ function fakeApi(path: string, init: RequestInit = {}) {
   const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined;
   server.calls.push({ path, method, body });
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
-  if (path === "/me/vault" && method === "PUT") { server.vault = { ...body, complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve(undefined); }
+  if (path === "/me/vault" && method === "PUT") { server.vault = { ...body, complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve({ ...server.vault }); }
   if (path === "/me/credentials" && method === "GET") return Promise.resolve(Object.entries(server.creds).map(([provider, encryptedKey]) => ({ provider, encryptedKey })));
   const m = /^\/me\/credentials\/(\w+)$/.exec(path);
   if (m && method === "PUT") {

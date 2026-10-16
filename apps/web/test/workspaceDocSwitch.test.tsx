@@ -3,14 +3,14 @@ import "fake-indexeddb/auto";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { encryptText, generateDek, generateKeypair, generateVaultKey, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
+import { encryptText, generateDek, generateKeypair, generateVaultKey, sealVaultCheck, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 
 const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), ws: null as unknown, stub: () => null }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({
   useSettings: () => ({ me: { id: "u-ws", activeProjectId: null, scratchProjectId: "p1", termsAcceptedAt: "2999-01-01T00:00:00Z" }, settings: { seenWelcome: true }, update: async () => undefined, reload: async () => undefined })
 }));
-vi.mock("@/components/workspace/dialogs/Passphrase", () => ({ askPassphrase: h.ask }));
+vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
 vi.mock("@/lib/useMedia", () => ({ PHONE_QUERY: "p", MID_QUERY: "m", useMedia: () => false }));
 // The workspace's chrome is not under test: every child is a stub, the document card shows which document is open and how.
@@ -57,7 +57,7 @@ describe("Workspace document switching with the vault", () => {
   it("cancel on A, select B, unlock: B is shown, not A", async () => {
     const vk = await generateVaultKey();
     const kp = await generateKeypair();
-    const record = { passWrapped: await wrapWithPassphrase(vk, PASS), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
+    const record = { passWrapped: await wrapWithPassphrase(vk, PASS), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), checkWrapped: await sealVaultCheck(vk), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
     const sealed = async (id: string, html: string) => {
       const dek = await generateDek();
       return { id, projectId: "p1", title: id, kind: "draft", currentSeq: 1, wordCount: 2, createdAt: "2026-10-16T00:00:0" + (id === "A" ? "1" : "2") + "Z", updatedAt: "2026-10-16T00:00:00Z", keyVersion: 1, deks: [{ v: 1, wrapped: await wrapKey(dek, vk) }], bodyHtml: await encryptText(html, dek) };

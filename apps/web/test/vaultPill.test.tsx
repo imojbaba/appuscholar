@@ -5,8 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
 
 type FakeVault = {
-  status: string; migrating: { n: number; total: number } | null;
+  status: string; complete: boolean; migrating: { n: number; total: number } | null;
   ensureUnlocked: ReturnType<typeof vi.fn>; changePassphrase: ReturnType<typeof vi.fn>; forgetThisComputer: ReturnType<typeof vi.fn>;
+  resumeMigration: ReturnType<typeof vi.fn>;
 };
 const h = vi.hoisted(() => ({ v: null as unknown as FakeVault, open: vi.fn(), toast: vi.fn(), remembered: vi.fn() }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" } }) }));
@@ -51,7 +52,7 @@ async function until(pred: () => boolean) {
 }
 
 beforeEach(() => {
-  h.v = { status: "loading", migrating: null, ensureUnlocked: vi.fn(async () => true), changePassphrase: vi.fn(async () => {}), forgetThisComputer: vi.fn(async () => {}) };
+  h.v = { status: "loading", complete: true, migrating: null, ensureUnlocked: vi.fn(async () => true), changePassphrase: vi.fn(async () => {}), forgetThisComputer: vi.fn(async () => {}), resumeMigration: vi.fn(async () => {}) };
   h.open.mockReset().mockResolvedValue(false);
   h.toast.mockReset();
   h.remembered.mockReset().mockResolvedValue(true);
@@ -69,6 +70,7 @@ describe("VaultPill", () => {
     expect($("vault-pill")).toBeNull();
 
     h.v.status = "off";
+    h.v.complete = false; // no vault: nothing to complete, and the pill says off
     await render();
     let pill = $("vault-pill")!;
     expect(pill.textContent).toBe(en.vault_pill_off);
@@ -79,6 +81,7 @@ describe("VaultPill", () => {
     expect(h.v.ensureUnlocked).not.toHaveBeenCalled();
 
     h.v.status = "locked";
+    h.v.complete = true;
     await render();
     pill = $("vault-pill")!;
     expect(pill.textContent).toBe(en.vault_pill_locked);
@@ -111,6 +114,37 @@ describe("VaultPill", () => {
     expect(pill.className).toContain("bg-purple-100"); // purple: structure, work in progress
     expect(pill.title).toBe(en.vault_migrating_n.replace("{n}", "3").replace("{total}", "10"));
     expect(h.open).toHaveBeenCalledTimes(1);
+  });
+
+  it("an unfinished migration (no run going) keeps the migrating pill, and a click finishes it", async () => {
+    for (const status of ["unlocked", "locked"]) {
+      h.v.status = status;
+      h.v.complete = false;
+      h.v.migrating = null;
+      h.v.resumeMigration.mockClear();
+      await render();
+      const pill = $("vault-pill")!;
+      expect(pill.tagName).toBe("BUTTON");
+      expect(pill.textContent).toBe(en.vault_pill_migrating);
+      expect(pill.dataset.status).toBe("migrating");
+      expect(pill.className).toContain("bg-purple-100");
+      expect(pill.title).toBe(""); // the count is shown only while a run goes
+      await click("vault-pill");
+      expect(h.v.resumeMigration).toHaveBeenCalledTimes(1);
+      expect($("vault-menu")).toBeNull();
+    }
+    // While a run goes it is a status, not a button.
+    h.v.status = "migrating";
+    h.v.migrating = { n: 1, total: 4 };
+    await render();
+    expect($("vault-pill")!.tagName).toBe("SPAN");
+    expect($("vault-pill")!.getAttribute("role")).toBe("status");
+    // Complete: the ordinary pill again.
+    h.v.status = "unlocked";
+    h.v.complete = true;
+    h.v.migrating = null;
+    await render();
+    expect($("vault-pill")!.textContent).toBe(en.vault_pill_on);
   });
 
   it("Forget on this computer is offered only when this computer remembers the vault", async () => {

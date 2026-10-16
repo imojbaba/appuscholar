@@ -30,7 +30,8 @@ function title(ask: PassphraseAsk, t: T): string {
   return t("bk_pass1");
 }
 
-type Pending = { ask: PassphraseAsk; resolve: (v: string | null) => void };
+/** `remember` is the vault unlock's "Remember on this computer" box (always false for the other asks). */
+type Pending = { ask: PassphraseAsk; resolve: (v: string | null, remember: boolean) => void };
 let listener: ((p: Pending | null) => void) | null = null;
 let current: Pending | null = null;
 
@@ -43,14 +44,24 @@ export function setVaultForgotHandler(fn: (() => void) | null): void {
   forgotHandler = fn;
 }
 
+function open(ask: PassphraseAsk, resolve: Pending["resolve"]): void {
+  current?.resolve(null, false);
+  current = { ask, resolve };
+  if (!listener) { current = null; resolve(null, false); return; }
+  listener(current);
+}
+
 /** Opens the passphrase dialog and resolves with what the student typed, or null when they cancel. One at a time: a second ask cancels the first. */
 export function askPassphrase(ask: PassphraseAsk): Promise<string | null> {
-  return new Promise((resolve) => {
-    current?.resolve(null);
-    current = { ask, resolve };
-    if (!listener) { current = null; resolve(null); return; }
-    listener(current);
-  });
+  return new Promise((resolve) => open(ask, (v) => resolve(v)));
+}
+
+/**
+ * The vault unlock ask: the passphrase and whether "Remember on this computer" was ticked (unticked by default), or null when cancelled.
+ * Shares the one dialog with askPassphrase, so either cancels the other.
+ */
+export function askVaultUnlock(): Promise<{ pass: string; remember: boolean } | null> {
+  return new Promise((resolve) => open({ kind: "vault-unlock" }, (v, remember) => resolve(v === null ? null : { pass: v, remember })));
 }
 
 /** Mount once, in ChromeDialogs. */
@@ -58,9 +69,10 @@ export function PassphraseHost() {
   const t = useT();
   const [pending, setPending] = useState<Pending | null>(null);
   const [value, setValue] = useState("");
+  const [remember, setRemember] = useState(false);
   useEffect(() => {
-    listener = (p) => { setValue(""); setPending(p); };
-    return () => { listener = null; current?.resolve(null); current = null; };
+    listener = (p) => { setValue(""); setRemember(false); setPending(p); };
+    return () => { listener = null; current?.resolve(null, false); current = null; };
   }, []);
   function finish(answer: string | null) {
     const p = pending;
@@ -68,7 +80,8 @@ export function PassphraseHost() {
     current = null;
     setPending(null);
     setValue("");
-    p.resolve(answer);
+    setRemember(false);
+    p.resolve(answer, answer !== null && p.ask.kind === "vault-unlock" && remember);
   }
   return (
     <Dialog open={!!pending} onOpenChange={(o) => { if (!o) finish(null); }}>
@@ -80,6 +93,12 @@ export function PassphraseHost() {
               <DialogDescription data-testid="pass-message">{message(pending.ask, t)}</DialogDescription>
             </DialogHeader>
             <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")} data-testid="pass-input" />
+            {pending.ask.kind === "vault-unlock" && (
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} data-testid="pass-remember" />
+                <span>{t("vault_remember")}</span>
+              </label>
+            )}
             {pending.ask.kind === "vault-unlock" && forgotHandler && (
               <button type="button" className="justify-self-start text-sm text-purple-800 underline underline-offset-2" data-testid="vault-forgot"
                 onClick={() => { const go = forgotHandler; finish(null); go?.(); }}>{t("vault_forgot")}</button>

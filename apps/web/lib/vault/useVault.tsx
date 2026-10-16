@@ -4,10 +4,10 @@ import { ApiError, apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
-import { askPassphrase } from "@/components/workspace/dialogs/Passphrase";
+import { askVaultUnlock } from "@/components/workspace/dialogs/Passphrase";
 import {
-  decryptText, encryptText, generateDek, generateKeypair, generateRecoveryCode, generateVaultKey, unwrapKey, unwrapPrivateKey,
-  unwrapWithPassphrase, unwrapWithRecovery, VaultError, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery
+  decryptText, encryptText, generateDek, generateKeypair, generateRecoveryCode, generateVaultKey, sealVaultCheck, unwrapKey,
+  unwrapWithPassphrase, unwrapWithRecovery, VaultError, verifyVaultKey, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery
 } from "./crypto";
 import { migrateToVault } from "./migrate";
 import { forgetRemembered, hasRemembered, readRemembered, rememberVault } from "./remember";
@@ -27,10 +27,13 @@ export type VaultValue = {
   lock(): void;
   forgetThisComputer(): Promise<void>;
   /**
-   * Prompts via askPassphrase("vault-unlock") until correct or cancelled. While the one-off migration runs it resolves once the migration
-   * has finished, so a write held by encryptBody goes out after it and never races its rewrites or a document's first key.
+   * Prompts via askVaultUnlock until correct or cancelled (its "Remember on this computer" box is honoured). While the one-off migration
+   * runs it resolves once the migration has finished, so a write held by encryptBody goes out after it and never races its rewrites or a
+   * document's first key.
    */
   ensureUnlocked(): Promise<boolean>;
+  /** The vault exists but is not complete and no migration runs: finish it now (unlocking first when locked). */
+  resumeMigration(): Promise<void>;
   /**
    * The status once this account's vault record has been read ("off" when there is none); stays pending while the api is unreachable,
    * so "loading" is never mistaken for "off". `recheck` asks the server again when this tab has seen no vault: another tab may have set one up.
@@ -47,8 +50,8 @@ export type VaultValue = {
   unwrapSecret(blob: string): Promise<string>;
 };
 
-/** What GET /me/vault returns. */
-type VaultRecord = { passWrapped: string; recoveryWrapped: string; publicKey: string; privateKeyWrapped: string; complete: boolean; updatedAt: string };
+/** What GET /me/vault returns (and PUT /me/vault, PATCH /me/vault/wraps). The sharing keypair is null where the browser had no X25519. */
+type VaultRecord = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
 
 const Ctx = createContext<VaultValue | null>(null);
 
@@ -59,6 +62,10 @@ const changedError = () => new Error("vault-changed");
 /** GET /me/vault retries after a network or server failure: 1 s, 2 s, 4 s … up to 30 s, and at once when the browser comes back online. */
 const RETRY_BASE_MS = 1000;
 const RETRY_MAX_MS = 30_000;
+/** PATCH /me/vault/wraps refused because the record changed since this tab read it (another tab or device). */
+const isStale = (e: unknown) => e instanceof ApiError && e.status === 409 && e.code === "stale";
+/** A wrong passphrase or recovery code, as the unwrap reports it. */
+const isWrongSecret = (e: unknown) => e instanceof VaultError && (e.code === "wrong-passphrase" || e.code === "wrong-code");
 
 export function VaultProvider({ children }: { children: React.ReactNode }) {
   const t = useT();
@@ -100,8 +107,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const epoch = useRef(0);
   /** The one-off migration while it runs. Writes wait for it (encryptBody refuses, ensureUnlocked resolves after it). */
   const migration = useRef<Promise<void> | null>(null);
-  /** The migration has run (or is running) in this session for this account; a failed run is tried again at the next unlock. */
+  /** The migration has run (or is running) in this session for this account; a failed run is tried again at the next unlock, when the
+   *  browser comes back online, or from the pill. */
   const migrated = useRef(false);
+  /** The sharing keypair has been tried in this session (a vault set up where X25519 was missing gets one later, once). */
+  const keypairTried = useRef(false);
 
   const forgetKeys = useCallback(() => { vk.current = null; dekCache.current.clear(); pendingDek.current.clear(); }, []);
 
@@ -152,6 +162,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     let run!: Promise<void>;
     run = (async () => {
       let done = false;
+      let failed = false;
       try {
         await migrateToVault({
           listAll: async () => {
@@ -181,7 +192,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
             const fresh = await apiFetch<VaultRecord>("/me/vault");
             if (epoch.current === mine) { record.current = fresh; setComplete(fresh.complete); }
           } catch { /* the record stays as it was; the next load reads it */ }
-        } else migrated.current = false; // interrupted (offline, locked meanwhile): the next unlock picks up what is still plaintext
+        } else {
+          // Interrupted (offline, locked meanwhile): what is still plaintext is picked up by the next run (unlock, back online, the pill).
+          migrated.current = false;
+          failed = true;
+        }
       } finally {
         if (migration.current === run) migration.current = null;
         if (epoch.current === mine) {
@@ -189,17 +204,68 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
           if (done && record.current) { record.current = { ...record.current, complete: true }; setComplete(true); }
           if (statusRef.current === "migrating") setStatus(vk.current ? "unlocked" : "locked");
           if (done) toast(tRef.current("vault_migrated"));
+          if (failed) toast(tRef.current("vault_migrate_fail"));
         }
       }
     })();
     migration.current = run;
   }, [seal, setComplete, setStatus]);
 
+  /** Takes a vault record the server answered, keeping a completion this tab already knows of. */
+  const adopt = useCallback((rec: VaultRecord) => {
+    record.current = { ...rec, complete: rec.complete || (record.current?.complete ?? false) };
+    setComplete(record.current.complete);
+  }, [setComplete]);
+
+  /** Reads the vault record again. Null when it is unchanged (same updatedAt) or cannot be read now; throws "vault-changed" after an account switch. */
+  const reread = useCallback(async (mine: number): Promise<VaultRecord | null> => {
+    const before = record.current;
+    let fresh: VaultRecord;
+    try { fresh = await apiFetch<VaultRecord>("/me/vault"); } catch { if (epoch.current !== mine) throw changedError(); return null; }
+    if (epoch.current !== mine) throw changedError();
+    if (before && fresh.updatedAt === before.updatedAt) return null;
+    adopt(fresh);
+    return record.current;
+  }, [adopt]);
+
+  /**
+   * Opens the vault key with `open` against the record this tab holds, and checks it against the record's check blob. A wrong passphrase or
+   * code may only mean the record is stale (changed in another tab or on another device): then the record is read once more and, if it
+   * changed, the secret is tried against the new one before "wrong" is reported.
+   */
+  const openRecord = useCallback(async (mine: number, open: (rec: VaultRecord) => Promise<CryptoKey>): Promise<{ key: CryptoKey; rec: VaultRecord }> => {
+    const rec = record.current;
+    if (!rec) throw new Error("no-vault");
+    const attempt = async (r: VaultRecord) => { const key = await open(r); await verifyVaultKey(r.checkWrapped, key); return { key, rec: r }; };
+    try { return await attempt(rec); } catch (e) {
+      if (!isWrongSecret(e)) throw e;
+      const fresh = await reread(mine);
+      if (!fresh) throw e;
+      return attempt(fresh);
+    }
+  }, [reread]);
+
+  /** A vault set up where X25519 was missing gets its sharing keypair the first time a session opens it where X25519 is there. */
+  const addKeypair = useCallback(async (key: CryptoKey) => {
+    const rec = record.current;
+    if (!rec || rec.publicKey !== null || keypairTried.current) return;
+    keypairTried.current = true;
+    const mine = epoch.current;
+    try {
+      const kp = await generateKeypair(); // VaultError("no-crypto") here: still none, the vault works without it
+      const body = { publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, key), reason: "keypair-added", expectUpdatedAt: rec.updatedAt };
+      if (epoch.current !== mine) return;
+      const saved = await apiFetch<VaultRecord>("/me/vault/wraps", { method: "PATCH", body: JSON.stringify(body) });
+      if (epoch.current === mine) adopt(saved);
+    } catch { /* no X25519, offline, or the record changed meanwhile: the next session tries again */ }
+  }, [adopt]);
+
   const opened = useCallback((key: CryptoKey) => {
     vk.current = key;
     if (statusRef.current !== "migrating") setStatus("unlocked");
     startMigration();
-  }, [setStatus, startMigration]);
+    void addKeypair(key);
+  }, [setStatus, startMigration, addKeypair]);
 
   /** Keeps the remembered copy's passphrase wrap current after a change, when this computer remembers the vault. */
   const refreshRemembered = useCallback(async (passWrapped: string, key: CryptoKey) => {
@@ -225,10 +291,10 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     try { raw = await readRemembered(uid); } catch { return false; }
     if (!raw) return false;
     let key: CryptoKey;
-    // The remembered key must open this account's current vault; a copy left from an erased or replaced vault is dropped.
+    // The remembered key must open this account's current vault (its check blob); a copy left from an erased or replaced vault is dropped.
     try {
       key = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-      await unwrapPrivateKey(rec.privateKeyWrapped, key);
+      await verifyVaultKey(rec.checkWrapped, key);
     } catch {
       try { await forgetRemembered(uid); } catch { /* storage blocked */ }
       return false;
@@ -248,6 +314,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     unlocking.current = null;
     migration.current = null;
     migrated.current = false;
+    keypairTried.current = false;
     if (!userId) { loading.current = null; return; }
     let live = true;
     let inflight = false;
@@ -288,16 +355,21 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (record.current) throw new Error("vault-exists");
     const key = await generateVaultKey();
     const recoveryCode = generateRecoveryCode();
-    const kp = await generateKeypair();
+    // The sharing keypair needs X25519; a browser without it sets the vault up without one (a later unlock adds it where it can).
+    let kp: { publicKeyB64: string; privateKey: CryptoKey } | null = null;
+    try { kp = await generateKeypair(); } catch (e) { if (!(e instanceof VaultError && e.code === "no-crypto")) throw e; }
+    if (!kp) keypairTried.current = true; // not again in this session
     const body = {
       passWrapped: await wrapWithPassphrase(key, pass),
       recoveryWrapped: await wrapWithRecovery(key, recoveryCode),
-      publicKey: kp.publicKeyB64,
-      privateKeyWrapped: await wrapPrivateKey(kp.privateKey, key)
+      checkWrapped: await sealVaultCheck(key),
+      publicKey: kp ? kp.publicKeyB64 : null,
+      privateKeyWrapped: kp ? await wrapPrivateKey(kp.privateKey, key) : null
     };
     if (epoch.current !== mine) throw changedError();
+    let saved: VaultRecord;
     try {
-      await apiFetch<void>("/me/vault", { method: "PUT", body: JSON.stringify(body) });
+      saved = await apiFetch<VaultRecord>("/me/vault", { method: "PUT", body: JSON.stringify(body) });
     } catch (e) {
       // 409: the vault was set up meanwhile (another tab or device). Read it, so this tab shows it locked instead of "off".
       if (e instanceof ApiError && e.status === 409 && epoch.current === mine) {
@@ -309,8 +381,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       throw e;
     }
     if (epoch.current !== mine) return { recoveryCode };
-    record.current = { ...body, complete: false, updatedAt: new Date().toISOString() };
-    setComplete(false);
+    record.current = saved;
+    setComplete(saved.complete);
     opened(key);
     if (rememberIt) await remember(body.passWrapped, key);
     return { recoveryCode };
@@ -318,43 +390,74 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const unlock = useCallback(async (pass: string, rememberIt: boolean) => {
     const mine = epoch.current;
-    const rec = record.current;
-    if (!rec) throw new Error("no-vault");
-    const key = await unwrapWithPassphrase(rec.passWrapped, pass); // VaultError("wrong-passphrase") leaves everything as it was
+    // VaultError("wrong-passphrase") (after one re-read of the record) leaves everything as it was.
+    const { key, rec } = await openRecord(mine, (r) => unwrapWithPassphrase(r.passWrapped, pass));
     if (epoch.current !== mine) throw changedError();
     opened(key);
     if (rememberIt) await remember(rec.passWrapped, key);
-  }, [opened, remember]);
+  }, [opened, openRecord, remember]);
+
+  /**
+   * Sends new wraps with the record they replace as precondition. Answered 409 stale (changed elsewhere meanwhile), the record is read again
+   * and `again` re-derives the wraps against it, once; a second refusal, or a wrong secret against the new record, is thrown to the caller.
+   */
+  const patchWraps = useCallback(async (
+    mine: number, rec: VaultRecord, wraps: Record<string, string>, reason: string,
+    again: (fresh: VaultRecord) => Promise<{ rec: VaultRecord; wraps: Record<string, string> }>
+  ): Promise<VaultRecord> => {
+    const send = (r: VaultRecord, w: Record<string, string>) => {
+      if (epoch.current !== mine) throw changedError();
+      return apiFetch<VaultRecord>("/me/vault/wraps", { method: "PATCH", body: JSON.stringify({ ...w, reason, expectUpdatedAt: r.updatedAt }) });
+    };
+    try { return await send(rec, wraps); } catch (e) {
+      if (!isStale(e)) throw e;
+      const fresh = await apiFetch<VaultRecord>("/me/vault");
+      if (epoch.current !== mine) throw changedError();
+      adopt(fresh);
+      const next = await again(record.current!);
+      return send(next.rec, next.wraps);
+    }
+  }, [adopt]);
 
   const recover = useCallback(async (code: string, newPass: string) => {
     const mine = epoch.current;
-    const rec = record.current;
-    if (!rec) throw new Error("no-vault");
-    const key = await unwrapWithRecovery(rec.recoveryWrapped, code);
     const recoveryCode = generateRecoveryCode();
-    const wraps = { passWrapped: await wrapWithPassphrase(key, newPass), recoveryWrapped: await wrapWithRecovery(key, recoveryCode) };
+    const derive = async (key: CryptoKey) => ({ passWrapped: await wrapWithPassphrase(key, newPass), recoveryWrapped: await wrapWithRecovery(key, recoveryCode) });
+    let { key, rec } = await openRecord(mine, (r) => unwrapWithRecovery(r.recoveryWrapped, code));
+    let wraps = await derive(key);
     if (epoch.current !== mine) throw changedError();
-    await apiFetch("/me/vault/wraps", { method: "PATCH", body: JSON.stringify({ ...wraps, reason: "recovery-used" }) });
+    // A code made void meanwhile (a recovery or change on another device) fails here, against the record as it is now.
+    const saved = await patchWraps(mine, rec, wraps, "recovery-used", async (fresh) => {
+      key = await unwrapWithRecovery(fresh.recoveryWrapped, code);
+      await verifyVaultKey(fresh.checkWrapped, key);
+      rec = fresh;
+      wraps = await derive(key);
+      return { rec, wraps };
+    });
     if (epoch.current !== mine) return { recoveryCode };
-    record.current = { ...rec, ...wraps };
+    adopt(saved);
     opened(key);
     await refreshRemembered(wraps.passWrapped, key);
     return { recoveryCode };
-  }, [opened, refreshRemembered]);
+  }, [adopt, opened, openRecord, patchWraps, refreshRemembered]);
 
   const changePassphrase = useCallback(async (oldPass: string, newPass: string) => {
     const mine = epoch.current;
-    const rec = record.current;
-    if (!rec) throw new Error("no-vault");
-    const key = await unwrapWithPassphrase(rec.passWrapped, oldPass);
-    const passWrapped = await wrapWithPassphrase(key, newPass);
+    let { key, rec } = await openRecord(mine, (r) => unwrapWithPassphrase(r.passWrapped, oldPass));
+    let passWrapped = await wrapWithPassphrase(key, newPass);
     if (epoch.current !== mine) throw changedError();
-    await apiFetch("/me/vault/wraps", { method: "PATCH", body: JSON.stringify({ passWrapped, reason: "passphrase-changed" }) });
+    const saved = await patchWraps(mine, rec, { passWrapped }, "passphrase-changed", async (fresh) => {
+      key = await unwrapWithPassphrase(fresh.passWrapped, oldPass);
+      await verifyVaultKey(fresh.checkWrapped, key);
+      rec = fresh;
+      passWrapped = await wrapWithPassphrase(key, newPass);
+      return { rec, wraps: { passWrapped } };
+    });
     if (epoch.current !== mine) return;
-    record.current = { ...rec, passWrapped };
+    adopt(saved);
     opened(key);
     await refreshRemembered(passWrapped, key);
-  }, [opened, refreshRemembered]);
+  }, [adopt, opened, openRecord, patchWraps, refreshRemembered]);
 
   const lock = useCallback(() => {
     forgetKeys();
@@ -381,9 +484,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         if (!record.current) return false;
         if (await unlockRemembered()) return true;
         for (;;) {
-          const pass = await askPassphrase({ kind: "vault-unlock" });
-          if (pass === null || epoch.current !== mine) return false;
-          try { await unlock(pass, false); return true; } catch (e) {
+          const answer = await askVaultUnlock();
+          if (answer === null || epoch.current !== mine) return false;
+          try { await unlock(answer.pass, answer.remember); return true; } catch (e) {
             if (epoch.current !== mine) return false;
             if (!(e instanceof VaultError && e.code === "wrong-passphrase")) throw e;
             toast(t("vault_wrong"));
@@ -404,6 +507,20 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       if (!migration.current) return true;
     }
   }, [openNow]);
+
+  const resumeMigration = useCallback(async () => {
+    const rec = record.current;
+    if (!rec || rec.complete || migration.current) return;
+    if (!vk.current) { await ensureUnlocked(); return; } // unlocking starts it
+    startMigration();
+  }, [ensureUnlocked, startMigration]);
+
+  // Back online: an unfinished migration (a run that failed while offline) carries on by itself.
+  useEffect(() => {
+    const retry = () => { if (vk.current && record.current && !record.current.complete) startMigration(); };
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, [startMigration]);
 
   const known = useCallback(async (recheck = false): Promise<VaultStatus> => {
     const mine = epoch.current;
@@ -449,9 +566,10 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<VaultValue>(() => ({
-    status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, known, encryptBody, decryptBody, migrating,
-    wrapSecret, unwrapSecret
-  }), [status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, known, encryptBody, decryptBody, migrating, wrapSecret, unwrapSecret]);
+    status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, resumeMigration, known, encryptBody,
+    decryptBody, migrating, wrapSecret, unwrapSecret
+  }), [status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, resumeMigration, known, encryptBody,
+    decryptBody, migrating, wrapSecret, unwrapSecret]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

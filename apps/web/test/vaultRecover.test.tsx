@@ -3,8 +3,8 @@ import "fake-indexeddb/auto";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { generateKeypair, generateVaultKey, unwrapWithPassphrase, unwrapWithRecovery, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
-import { forgetRemembered } from "../lib/vault/remember";
+import { generateKeypair, generateVaultKey, sealVaultCheck, unwrapWithPassphrase, unwrapWithRecovery, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
+import { forgetRemembered, hasRemembered } from "../lib/vault/remember";
 import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({ api: vi.fn(), toast: vi.fn() }));
@@ -14,20 +14,29 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
 import { useVault, VaultProvider, type VaultValue } from "../lib/vault/useVault";
-import { PassphraseHost } from "../components/workspace/dialogs/Passphrase";
+import { askPassphrase, PassphraseHost } from "../components/workspace/dialogs/Passphrase";
 import { formatRecoveryCode, openVaultRecover, VaultRecoverHost } from "../components/workspace/dialogs/VaultRecover";
 import { ChangePassphrase } from "../components/workspace/dialogs/ChangePassphrase";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-type Rec = { passWrapped: string; recoveryWrapped: string; publicKey: string; privateKeyWrapped: string; complete: boolean; updatedAt: string };
+type Rec = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
 let server: { vault: Rec | null; calls: { path: string; method: string; body?: Record<string, unknown> }[] };
+/** PATCH /me/vault/wraps as the api answers it: 409 stale when expectUpdatedAt is not the stored updatedAt; a change moves updatedAt forward. */
+function patchWraps(body: Record<string, unknown>): Promise<unknown> {
+  const { reason: _r, expectUpdatedAt, ...w } = body;
+  if (!server.vault) return Promise.reject(new ApiError(404, "no-vault"));
+  if (expectUpdatedAt !== undefined && expectUpdatedAt !== server.vault.updatedAt) return Promise.reject(new ApiError(409, "stale"));
+  server.vault = { ...server.vault, ...w, updatedAt: new Date(Date.parse(server.vault.updatedAt) + 1000).toISOString() };
+  return Promise.resolve({ ...server.vault });
+}
+
 function fakeApi(path: string, init: RequestInit = {}) {
   const method = init.method ?? "GET";
   const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined;
   server.calls.push({ path, method, body });
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
-  if (path === "/me/vault/wraps" && method === "PATCH") { const { reason: _r, ...w } = body!; server.vault = { ...server.vault!, ...w }; return Promise.resolve({ ok: true }); }
+  if (path === "/me/vault/wraps" && method === "PATCH") return patchWraps(body!);
   return Promise.reject(new ApiError(404, "not-found"));
 }
 
@@ -38,7 +47,7 @@ const NEW_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 async function vaultWith(pass: string, code: string): Promise<Rec> {
   const vk = await generateVaultKey();
   const kp = await generateKeypair();
-  return { passWrapped: await wrapWithPassphrase(vk, pass), recoveryWrapped: await wrapWithRecovery(vk, code), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
+  return { passWrapped: await wrapWithPassphrase(vk, pass), recoveryWrapped: await wrapWithRecovery(vk, code), checkWrapped: await sealVaultCheck(vk), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
 }
 
 const roots: Root[] = [];
@@ -192,7 +201,7 @@ describe("ChangePassphrase", () => {
     expect(box.open).toBe(false);
     // PATCH /me/vault/wraps once, with the passphrase wrap only; no document is touched.
     expect(writes().map((c) => [c.method, c.path])).toEqual([["PATCH", "/me/vault/wraps"]]);
-    expect(Object.keys(writes()[0]!.body!).sort()).toEqual(["passWrapped", "reason"]);
+    expect(Object.keys(writes()[0]!.body!).sort()).toEqual(["expectUpdatedAt", "passWrapped", "reason"]);
     expect(server.calls.filter((c) => c.path.startsWith("/documents"))).toEqual([]);
     expect(JSON.stringify(server.calls)).not.toContain(NEW);
     await expect(unwrapWithPassphrase(server.vault!.passWrapped, NEW)).resolves.toBeDefined();
@@ -210,5 +219,49 @@ describe("ChangePassphrase", () => {
     expect(h.toast).toHaveBeenCalledWith(en.vault_wrong);
     expect(writes()).toEqual([]);
     expect(box.open).toBe(true);
+  });
+});
+
+describe("the vault unlock ask", () => {
+  it("offers Remember on this computer, unticked; ticked, the unlock keeps the vault on this computer", async () => {
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    // Unticked (the default): unlocked for this tab only.
+    let opened = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    expect(($("pass-remember") as HTMLInputElement).checked).toBe(false);
+    expect($("pass-remember")!.closest("label")!.textContent).toBe(en.vault_remember);
+    type("pass-input", OLD);
+    await click("pass-ok");
+    await act(async () => { expect(await opened).toBe(true); });
+    expect(await hasRemembered("u1")).toBe(false);
+    act(() => { s.v.lock(); });
+    // Ticked, then cancelled: nothing is remembered.
+    opened = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    await click("pass-remember");
+    await click("pass-cancel");
+    await act(async () => { expect(await opened).toBe(false); });
+    expect(await hasRemembered("u1")).toBe(false);
+    // Ticked and answered: remembered.
+    opened = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    expect(($("pass-remember") as HTMLInputElement).checked).toBe(false); // each ask starts unticked
+    await click("pass-remember");
+    type("pass-input", OLD);
+    await click("pass-ok");
+    await act(async () => { expect(await opened).toBe(true); });
+    expect(s.v.status).toBe("unlocked");
+    expect(await hasRemembered("u1")).toBe(true);
+  });
+
+  it("the other passphrase asks have no Remember box", async () => {
+    await mount();
+    let answer: Promise<string | null> = Promise.resolve(null);
+    act(() => { answer = askPassphrase({ kind: "vault-choose" }); });
+    await until(() => !!$("pass-dialog"));
+    expect($("pass-remember")).toBeNull();
+    await click("pass-cancel");
+    await act(async () => { expect(await answer).toBeNull(); });
   });
 });

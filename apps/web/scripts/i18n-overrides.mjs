@@ -59,9 +59,10 @@ export const V2_STRINGS = {
   vault_pill_on: { en: "Vault on", hi: "तिजोरी चालू है" },
   vault_pill_migrating: { en: "Vault: securing your documents…", hi: "तिजोरी: आपके दस्तावेज़ सुरक्षित किए जा रहे हैं…" },
   vault_setup_h2: { en: "Protect your work with a passphrase", hi: "अपने काम को पासफ़्रेज़ से सुरक्षित करें" },
+  // The titles sentence (Ruling, final review): what the vault does not hide. DRAFT — its Hindi is pending review with the rest.
   vault_setup_intro: {
-    en: "Your documents are saved under your account, locked so that only this passphrase opens them. Nobody at Appuscholar can read them. If you lose the passphrase and the recovery sheet, the documents cannot be recovered.",
-    hi: "आपके दस्तावेज़ आपके खाते के अंतर्गत सहेजे जाते हैं और इस तरह बंद रहते हैं कि केवल यही पासफ़्रेज़ उन्हें खोलता है। Appuscholar में कोई भी उन्हें नहीं पढ़ सकता। अगर आप पासफ़्रेज़ और रिकवरी शीट दोनों खो देते हैं, तो दस्तावेज़ वापस नहीं पाए जा सकते।"
+    en: "Your documents are saved under your account, locked so that only this passphrase opens them. Nobody at Appuscholar can read them. Titles and project names stay readable so your lists work. If you lose the passphrase and the recovery sheet, the documents cannot be recovered.",
+    hi: "आपके दस्तावेज़ आपके खाते के अंतर्गत सहेजे जाते हैं और इस तरह बंद रहते हैं कि केवल यही पासफ़्रेज़ उन्हें खोलता है। Appuscholar में कोई भी उन्हें नहीं पढ़ सकता। शीर्षक और प्रोजेक्ट के नाम पढ़े जा सकते हैं, ताकि आपकी सूचियाँ काम करें। अगर आप पासफ़्रेज़ और रिकवरी शीट दोनों खो देते हैं, तो दस्तावेज़ वापस नहीं पाए जा सकते।"
   },
   vault_setup_btn: { en: "Set passphrase", hi: "पासफ़्रेज़ तय करें" },
   vault_setup_later: { en: "Not now", hi: "अभी नहीं" },
@@ -91,6 +92,11 @@ export const V2_STRINGS = {
   vault_changed: { en: "Passphrase changed ✓", hi: "पासफ़्रेज़ बदल गया ✓" },
   vault_migrating_n: { en: "Securing document {n} of {total}…", hi: "दस्तावेज़ {n}/{total} सुरक्षित किया जा रहा है…" },
   vault_migrated: { en: "All your documents are now locked in your vault ✓", hi: "आपके सभी दस्तावेज़ अब आपकी तिजोरी में बंद हैं ✓" },
+  // The migration stopped part way (offline, locked meanwhile); it carries on when the browser is back online, at the next unlock, or from the pill. DRAFT Hindi.
+  vault_migrate_fail: {
+    en: "Some documents are not yet in your vault. Reconnect, or open the vault again, to finish.",
+    hi: "कुछ दस्तावेज़ अभी आपकी तिजोरी में नहीं हैं। पूरा करने के लिए फिर से कनेक्ट करें, या तिजोरी दोबारा खोलें।"
+  },
   vault_doc_locked: { en: "This document is locked. Unlock your vault to read it.", hi: "यह दस्तावेज़ बंद है। इसे पढ़ने के लिए अपनी तिजोरी खोलें।" },
   vault_doc_broken: { en: "This document cannot be opened on this device. Nothing was changed.", hi: "यह दस्तावेज़ इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
   vault_save_locked: { en: "Unlock your vault to save your changes.", hi: "अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
