@@ -1,4 +1,5 @@
 import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
+import { b64, unb64 } from "@/lib/vault/encoding";
 
 export function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
 
@@ -7,15 +8,6 @@ export type KeyMode = "pass" | "plain" | "session";
 /* AES-GCM 256 with a PBKDF2-SHA-256 key (250,000 rounds), as v1 (index.html:5036-5055). Blob: salt.iv.ciphertext, each base64url without padding. */
 const enc = new TextEncoder();
 const dec = new TextDecoder();
-const b64 = (b: ArrayBuffer | Uint8Array): string => {
-  const bytes = b instanceof Uint8Array ? b : new Uint8Array(b);
-  let s = ""; for (const x of bytes) s += String.fromCharCode(x);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-};
-const unb64 = (s: string): Uint8Array<ArrayBuffer> => {
-  const std = s.replace(/-/g, "+").replace(/_/g, "/");
-  return Uint8Array.from(atob(std + "=".repeat((4 - (std.length % 4)) % 4)), (c) => c.charCodeAt(0));
-};
 
 export function cryptoOK(): boolean { return typeof crypto !== "undefined" && !!crypto.subtle; }
 
