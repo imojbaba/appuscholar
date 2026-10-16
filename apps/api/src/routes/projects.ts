@@ -35,8 +35,9 @@ export function projectRoutes(store: Store) {
     const ok = await store.deleteProject(c.get("userId"), c.req.param("id"));
     return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
   });
+  /** `?includeDeleted=1` also lists soft-deleted documents (with `deletedAt` set): the vault migration must reach them. */
   r.get("/:id/documents", async (c) => {
-    const list = await store.listDocuments(c.get("userId"), c.req.param("id"));
+    const list = await store.listDocuments(c.get("userId"), c.req.param("id"), { includeDeleted: c.req.query("includeDeleted") === "1" });
     return list ? c.json(list) : c.json({ error: "not-found" }, 404);
   });
   r.post("/:id/documents", async (c) => {

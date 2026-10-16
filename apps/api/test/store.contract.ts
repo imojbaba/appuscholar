@@ -298,6 +298,30 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.rewriteRevision(b, gone.id, 1, { bodyHtml: "no", keyVersion: 1 })).toBeNull();
     });
 
+    it("includeDeleted lists a soft-deleted document and reads its revisions for the owner only (the vault migration reads them)", async () => {
+      const p = await s.createProject(a, "P");
+      const rev = { bodyHtml: "<p>x</p>", authorKind: "web" as const, authorLabel: "t", wordCount: 1, keyVersion: 0 };
+      const keep = (await s.createDocument(a, p.id, "Keep", "draft", rev))!;
+      const gone = (await s.createDocument(a, p.id, "Gone", "draft", rev))!;
+      await s.appendRevision(a, gone.id, { ...rev, bodyHtml: "<p>y</p>" });
+      expect(await s.softDeleteDocument(a, gone.id)).toBe("deleted");
+      // Without the option a soft-deleted document stays out of every read.
+      expect((await s.listDocuments(a, p.id))!.map((d) => d.id)).toEqual([keep.id]);
+      expect(await s.listRevisions(a, gone.id)).toBeNull();
+      expect(await s.getRevision(a, gone.id, 1)).toBeNull();
+      const all = (await s.listDocuments(a, p.id, { includeDeleted: true }))!;
+      expect(all.map((d) => d.id).sort()).toEqual([keep.id, gone.id].sort());
+      expect(all.find((d) => d.id === gone.id)!.deletedAt).toBeInstanceOf(Date);
+      expect(all.find((d) => d.id === keep.id)!.deletedAt).toBeNull();
+      expect((await s.listRevisions(a, gone.id, { includeDeleted: true }))!.map((r) => [r.seq, r.keyVersion])).toEqual([[2, 0], [1, 0]]);
+      expect((await s.getRevision(a, gone.id, 2, { includeDeleted: true }))).toMatchObject({ seq: 2, bodyHtml: "<p>y</p>", keyVersion: 0 });
+      // Another user never reaches them, deleted or not.
+      expect(await s.listDocuments(b, p.id, { includeDeleted: true })).toBeNull();
+      expect(await s.listRevisions(b, gone.id, { includeDeleted: true })).toBeNull();
+      expect(await s.getRevision(b, gone.id, 1, { includeDeleted: true })).toBeNull();
+      expect(await s.listRevisions(b, keep.id, { includeDeleted: true })).toBeNull();
+    });
+
     it("createDocument attaches the given deks together with the first revision", async () => {
       const p = await s.createProject(a, "P");
       const d = (await s.createDocument(a, p.id, "Enc", "draft", { bodyHtml: "aA.bB", authorKind: "web", authorLabel: "t", wordCount: 2, keyVersion: 1 }, [{ v: 1, wrapped: "i.k" }]))!;

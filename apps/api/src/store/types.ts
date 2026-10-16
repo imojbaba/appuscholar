@@ -52,15 +52,16 @@ export interface Store {
 
   /** `deks` are attached in the same step, so a ciphertext first revision is never stored without its key. */
   createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks?: WrappedDek[]): Promise<DocumentWithBody | null>;
-  /** Excludes soft-deleted documents, as does every document lookup except restoreDeletedDocument. */
-  listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null>;
+  /** Excludes soft-deleted documents, as does every document lookup except restoreDeletedDocument, unless `includeDeleted` (the vault migration). */
+  listDocuments(userId: string, projectId: string, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary[] | null>;
   /** `includeDeleted` also returns a soft-deleted document (the vault migration must reach those). */
   getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null>;
   renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null>;
 
   appendRevision(userId: string, documentId: string, rev: NewRevision): Promise<DocumentRevision | null>;
-  listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null>;
-  getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null>;
+  /** `includeDeleted` also reaches a soft-deleted document's revisions (the vault migration rewrites those too). */
+  listRevisions(userId: string, documentId: string, opts?: { includeDeleted?: boolean }): Promise<RevisionSummary[] | null>;
+  getRevision(userId: string, documentId: string, seq: number, opts?: { includeDeleted?: boolean }): Promise<DocumentRevision | null>;
 
   getUser(userId: string): Promise<UserRecord | null>;
   /** Inserts a users row if the API sees a JWT for a user the adapter has not written yet (e2e provider). Never overwrites an existing row. */

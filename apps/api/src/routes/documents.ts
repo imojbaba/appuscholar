@@ -107,15 +107,16 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     return d ? c.json(d) : c.json({ error: "not-found" }, 404);
   });
 
+  // `?includeDeleted=1` also reaches a soft-deleted document (owner-scoped as ever): the vault migration rewrites its revisions too.
   r.get("/:id/revisions", async (c) => {
-    const list = await store.listRevisions(c.get("userId"), c.req.param("id"));
+    const list = await store.listRevisions(c.get("userId"), c.req.param("id"), { includeDeleted: c.req.query("includeDeleted") === "1" });
     return list ? c.json(list) : c.json({ error: "not-found" }, 404);
   });
 
   r.get("/:id/revisions/:seq", async (c) => {
     const seq = Number(c.req.param("seq"));
     if (!Number.isInteger(seq) || seq < 1) return c.json({ error: "invalid" }, 400);
-    const rev = await store.getRevision(c.get("userId"), c.req.param("id"), seq);
+    const rev = await store.getRevision(c.get("userId"), c.req.param("id"), seq, { includeDeleted: c.req.query("includeDeleted") === "1" });
     return rev ? c.json(rev) : c.json({ error: "not-found" }, 404);
   });
 

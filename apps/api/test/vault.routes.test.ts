@@ -259,6 +259,29 @@ describe("vault routes", () => {
     expect(await json(await req("GET", `/documents/${gone.id}/revisions/2`))).toMatchObject({ bodyHtml: "c2.d", keyVersion: 1 });
   });
 
+  it("?includeDeleted=1 lists a soft-deleted document and reads its revisions, for the owner only", async () => {
+    const p = await json<{ id: string }>(await req("POST", "/projects", { title: "T" }));
+    const keep = await json<{ id: string }>(await req("POST", `/projects/${p.id}/documents`, { title: "Keep" }));
+    const gone = await json<{ id: string }>(await req("POST", `/projects/${p.id}/documents`, { title: "Gone" }));
+    await req("PUT", `/documents/${gone.id}`, { bodyHtml: "<p>old words</p>", keyVersion: 0 });
+    expect((await req("DELETE", `/documents/${gone.id}`)).status).toBe(204);
+    // Without the flag nothing changes: the deleted document is not listed and its revisions are not found.
+    expect((await json<{ id: string }[]>(await req("GET", `/projects/${p.id}/documents`))).map((d) => d.id)).toEqual([keep.id]);
+    expect((await req("GET", `/documents/${gone.id}/revisions`)).status).toBe(404);
+    expect((await req("GET", `/documents/${gone.id}/revisions/2`)).status).toBe(404);
+    const all = await json<{ id: string; deletedAt: string | null; deks: unknown[] }[]>(await req("GET", `/projects/${p.id}/documents?includeDeleted=1`));
+    expect(all.map((d) => d.id).sort()).toEqual([keep.id, gone.id].sort());
+    expect(all.find((d) => d.id === gone.id)).toMatchObject({ deletedAt: expect.any(String), deks: [] });
+    const revs = await json<{ seq: number; keyVersion: number }[]>(await req("GET", `/documents/${gone.id}/revisions?includeDeleted=1`));
+    expect(revs.map((r) => [r.seq, r.keyVersion])).toEqual([[2, 0], [1, 0]]);
+    expect(await json(await req("GET", `/documents/${gone.id}/revisions/2?includeDeleted=1`))).toMatchObject({ seq: 2, bodyHtml: "<p>old words</p>", keyVersion: 0 });
+    // Owner-scoped: another user gets 404 with the flag too.
+    expect((await as("u2", "GET", `/projects/${p.id}/documents?includeDeleted=1`)).status).toBe(404);
+    expect((await as("u2", "GET", `/documents/${gone.id}/revisions?includeDeleted=1`)).status).toBe(404);
+    expect((await as("u2", "GET", `/documents/${gone.id}/revisions/1?includeDeleted=1`)).status).toBe(404);
+    expect((await as("u2", "GET", `/documents/${keep.id}/revisions?includeDeleted=1`)).status).toBe(404);
+  });
+
   it("the first request of a fresh user can be PUT /me/vault (the user row is ensured)", async () => {
     const fresh = await token("fresh");
     expect(await store.getUser("fresh")).toBeNull();

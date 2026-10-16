@@ -112,9 +112,9 @@ export class MemoryStore implements Store {
     this.revs.set(d.id, [r]);
     return { ...this.summary(d, r)!, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion };
   }
-  async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
+  async listDocuments(userId: string, projectId: string, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary[] | null> {
     if (!this.ownsProject(userId, projectId)) return null;
-    return [...this.docs.values()].filter(d => d.projectId === projectId && d.deletedAt === null).map(d => this.summary(d)).filter((x): x is DocumentSummary => x !== null).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return [...this.docs.values()].filter(d => d.projectId === projectId && (opts?.includeDeleted === true || d.deletedAt === null)).map(d => this.summary(d)).filter((x): x is DocumentSummary => x !== null).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
   async getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null> {
     const d = this.ownedDoc(userId, id, opts?.includeDeleted === true);
@@ -165,12 +165,12 @@ export class MemoryStore implements Store {
     d.updatedAt = r.createdAt;
     return r;
   }
-  async listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null> {
-    if (!this.ownedDoc(userId, documentId)) return null;
+  async listRevisions(userId: string, documentId: string, opts?: { includeDeleted?: boolean }): Promise<RevisionSummary[] | null> {
+    if (!this.ownedDoc(userId, documentId, opts?.includeDeleted === true)) return null;
     return [...(this.revs.get(documentId) ?? [])].reverse().map((r): RevisionSummary => ({ id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: r.originStats, keyVersion: r.keyVersion, createdAt: r.createdAt }));
   }
-  async getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null> {
-    if (!this.ownedDoc(userId, documentId)) return null;
+  async getRevision(userId: string, documentId: string, seq: number, opts?: { includeDeleted?: boolean }): Promise<DocumentRevision | null> {
+    if (!this.ownedDoc(userId, documentId, opts?.includeDeleted === true)) return null;
     return (this.revs.get(documentId) ?? []).find(r => r.seq === seq) ?? null;
   }
 

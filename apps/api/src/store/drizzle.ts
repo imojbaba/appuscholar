@@ -117,9 +117,10 @@ export class DrizzleStore implements Store {
     await this.d.update(documents).set({ currentRevisionId: rev!.id }).where(eq(documents.id, doc!.id));
     return { ...(await this.summary(doc!))!, bodyHtml: rev!.bodyHtml, keyVersion: rev!.keyVersion };
   }
-  async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
+  async listDocuments(userId: string, projectId: string, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary[] | null> {
     if (!(await this.getProject(userId, projectId))) return null;
-    const rows = await this.d.select().from(documents).where(and(eq(documents.projectId, projectId), isNull(documents.deletedAt))).orderBy(desc(documents.updatedAt));
+    const live = opts?.includeDeleted === true ? undefined : isNull(documents.deletedAt);
+    const rows = await this.d.select().from(documents).where(and(eq(documents.projectId, projectId), live)).orderBy(desc(documents.updatedAt));
     const sums = await Promise.all(rows.map(r => this.summary(r)));
     return sums.filter((x): x is DocumentSummary => x !== null);
   }
@@ -184,13 +185,13 @@ export class DrizzleStore implements Store {
     await this.d.update(documents).set({ currentRevisionId: row!.id, updatedAt: row!.createdAt }).where(eq(documents.id, documentId));
     return this.toRev(row!);
   }
-  async listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null> {
-    if (!(await this.ownedDoc(userId, documentId))) return null;
+  async listRevisions(userId: string, documentId: string, opts?: { includeDeleted?: boolean }): Promise<RevisionSummary[] | null> {
+    if (!(await this.ownedDoc(userId, documentId, opts?.includeDeleted === true))) return null;
     const rows = await this.d.select({ id: documentRevisions.id, documentId: documentRevisions.documentId, seq: documentRevisions.seq, authorKind: documentRevisions.authorKind, authorLabel: documentRevisions.authorLabel, wordCount: documentRevisions.wordCount, originStats: documentRevisions.originStats, keyVersion: documentRevisions.keyVersion, createdAt: documentRevisions.createdAt }).from(documentRevisions).where(eq(documentRevisions.documentId, documentId)).orderBy(desc(documentRevisions.seq));
     return rows.map(r => ({ ...r, authorKind: r.authorKind as AuthorKind, originStats: (r.originStats as OriginStats | null) ?? null }));
   }
-  async getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null> {
-    if (!(await this.ownedDoc(userId, documentId))) return null;
+  async getRevision(userId: string, documentId: string, seq: number, opts?: { includeDeleted?: boolean }): Promise<DocumentRevision | null> {
+    if (!(await this.ownedDoc(userId, documentId, opts?.includeDeleted === true))) return null;
     const rows = await this.d.select().from(documentRevisions).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).limit(1);
     return rows[0] ? this.toRev(rows[0]) : null;
   }
