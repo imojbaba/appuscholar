@@ -287,6 +287,33 @@ describe("the vault unlock ask", () => {
     await act(async () => { expect(await again).toBe(false); });
   });
 
+  it("every passphrase field has the eye toggle, hidden by default (O14)", async () => {
+    const s = await mount(<ChangePassphrase open onClose={() => undefined} />);
+    await until(() => s.v.status === "locked");
+    const opened = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    const field = $("pass-input") as HTMLInputElement;
+    expect(field.type).toBe("password");
+    type("pass-input", OLD);
+    await click("pass-input-toggle");
+    expect(field.type).toBe("text");
+    expect(field.value).toBe(OLD); // showing it does not touch what was typed
+    await click("pass-cancel");
+    await act(async () => { expect(await opened).toBe(false); });
+    for (const id of ["vault-change-old", "vault-change-new", "vault-change-again"]) {
+      expect(($(id) as HTMLInputElement).type).toBe("password");
+      await click(id + "-toggle");
+      expect(($(id) as HTMLInputElement).type).toBe("text");
+    }
+    act(() => { openVaultRecover(); });
+    await until(() => !!$("vault-recover-dialog"));
+    for (const id of ["recover-pass", "recover-pass2"]) {
+      expect(($(id) as HTMLInputElement).type).toBe("password");
+      await click(id + "-toggle");
+      expect(($(id) as HTMLInputElement).type).toBe("text");
+    }
+  });
+
   it("the other passphrase asks have no Remember box", async () => {
     await mount();
     let answer: Promise<string | null> = Promise.resolve(null);

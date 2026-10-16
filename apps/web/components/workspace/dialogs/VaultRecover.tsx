@@ -5,6 +5,7 @@ import { useVault } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
 import { MIN_PASS } from "./ChangePassphrase";
 import { setVaultForgotHandler } from "./Passphrase";
@@ -83,11 +84,11 @@ export function VaultRecoverHost() {
             </label>
             <label className="grid gap-1 text-sm font-medium">
               {t("vault_recover_new")}
-              <input className="input" type="password" autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} data-testid="recover-pass" />
+              <SecretInput autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} data-testid="recover-pass" toggleTestId="recover-pass-toggle" />
             </label>
             <label className="grid gap-1 text-sm font-medium">
               {t("bk_pass2")}
-              <input className="input" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="recover-pass2" />
+              <SecretInput autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="recover-pass2" toggleTestId="recover-pass2-toggle" />
             </label>
             {verdict && <p role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="recover-verdict">{verdict}</p>}
             <DialogFooter>

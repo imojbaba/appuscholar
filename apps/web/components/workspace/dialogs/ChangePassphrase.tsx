@@ -5,6 +5,7 @@ import { useVault } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
 
 /** As the setup: a vault passphrase is at least 10 characters (bk_err_short). */
@@ -53,15 +54,15 @@ export function ChangePassphrase({ open, onClose }: { open: boolean; onClose: ()
           </DialogHeader>
           <label className="grid gap-1 text-sm font-medium">
             {t("vault_change_old")}
-            <input className="input" type="password" autoComplete="current-password" autoFocus value={old} onChange={(e) => setOld(e.target.value)} data-testid="vault-change-old" />
+            <SecretInput autoComplete="current-password" autoFocus value={old} onChange={(e) => setOld(e.target.value)} data-testid="vault-change-old" toggleTestId="vault-change-old-toggle" />
           </label>
           <label className="grid gap-1 text-sm font-medium">
             {t("vault_change_new")}
-            <input className="input" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} data-testid="vault-change-new" />
+            <SecretInput autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} data-testid="vault-change-new" toggleTestId="vault-change-new-toggle" />
           </label>
           <label className="grid gap-1 text-sm font-medium">
             {t("bk_pass2")}
-            <input className="input" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="vault-change-again" />
+            <SecretInput autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="vault-change-again" toggleTestId="vault-change-again-toggle" />
           </label>
           {verdict && <p role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="vault-change-verdict">{verdict}</p>}
           <DialogFooter>

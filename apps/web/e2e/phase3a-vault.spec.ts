@@ -159,6 +159,14 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await expect(stale.getByTestId("pass-dialog")).toBeVisible();
     // O9: the verdict is inside the window too, under the field, where a student looking at the modal sees it.
     await expect(stale.getByTestId("pass-verdict")).toHaveText(WRONG);
+    // O14: the eye shows what was typed (hidden by default), so a refused passphrase can be checked against the sheet.
+    await expect(stale.getByTestId("pass-input")).toHaveAttribute("type", "password");
+    await stale.getByTestId("pass-input").fill(PASS_1);
+    await stale.getByTestId("pass-input-toggle").click();
+    await expect(stale.getByTestId("pass-input")).toHaveAttribute("type", "text");
+    await expect(stale.getByTestId("pass-input")).toHaveValue(PASS_1);
+    await stale.getByTestId("pass-input-toggle").click();
+    await expect(stale.getByTestId("pass-input")).toHaveAttribute("type", "password");
     await unlockWith(stale, PASS_1);
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
     const sent = (await saved).request().postDataJSON() as SentBody;

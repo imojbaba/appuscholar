@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PROVIDERS, type ProviderId } from "@appuscholar/core";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SecretInput } from "@/components/ui/secret-input";
 import { useT } from "@/lib/i18n";
 
 /** v1 asked with window.prompt; the wording is the same. The vault kinds use the v2 vault strings. */
@@ -97,8 +98,8 @@ export function PassphraseHost() {
               <DialogTitle className="text-xl font-semibold text-purple-800">🔒 {title(pending.ask, t)}</DialogTitle>
               <DialogDescription data-testid="pass-message">{message(pending.ask, t)}</DialogDescription>
             </DialogHeader>
-            <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")}
-              aria-invalid={pending.verdict ? true : undefined} aria-describedby={pending.verdict ? "pass-verdict" : undefined} data-testid="pass-input" />
+            <SecretInput autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")}
+              aria-invalid={pending.verdict ? true : undefined} aria-describedby={pending.verdict ? "pass-verdict" : undefined} data-testid="pass-input" toggleTestId="pass-input-toggle" />
             {pending.verdict && <p id="pass-verdict" role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="pass-verdict">{pending.verdict}</p>}
             {pending.ask.kind === "vault-unlock" && (
               <label className="flex cursor-pointer items-center gap-2 text-sm">

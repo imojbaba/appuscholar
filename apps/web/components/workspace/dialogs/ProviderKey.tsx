@@ -10,6 +10,7 @@ import { useKeys } from "@/lib/ai/useKeys";
 import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "../WorkspaceContext";
 import { openVaultSetup } from "./VaultSetup";
@@ -172,7 +173,7 @@ function Form() {
       </div>
 
       <div className="field !mb-0">
-        <input className="input" type="password" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} placeholder={placeholder} aria-label={t("settings_keyin_placeholder")} data-testid="key-input" />
+        <SecretInput secret="key" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} placeholder={placeholder} aria-label={t("settings_keyin_placeholder")} data-testid="key-input" toggleTestId="key-input-toggle" />
       </div>
 
       <div role="radiogroup" aria-labelledby="keyModeLabel" className="field !mb-0">
