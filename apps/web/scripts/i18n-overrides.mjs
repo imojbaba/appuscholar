@@ -46,3 +46,79 @@ export const HINDI_DRAFTS = {
 export function applyHindiDrafts(hi) {
   return { ...hi, ...HINDI_DRAFTS };
 }
+
+// DRAFT — reviewed by: (pending)
+// New v2 student-facing copy with no v1 equivalent (the researcher's vault, export and account deletion).
+// English is the product copy; Hindi is a draft for Dr. Sharma's review, in the register of HINDI_DRAFTS above and v1's Hindi:
+// पासफ़्रेज़ (bk_pass1), बंद / खोलें for locked / unlock (bk_h_open, bk_ok_open), डाउनलोड (backup_btn_full), निर्यात (cite_export_btn),
+// दस्तावेज़, कुंजी, खाता, सुरक्षित, इस कंप्यूटर पर याद रखें (settings_keymode_plain), हटाएं (doc_delete_title), बैकअप.
+// "Vault" is rendered as तिजोरी (plain Hindi for a strongbox), "recovery sheet" and "recovery code" as रिकवरी शीट / रिकवरी कोड.
+export const V2_STRINGS = {
+  vault_pill_off: { en: "Vault off", hi: "तिजोरी चालू नहीं है" },
+  vault_pill_locked: { en: "Vault locked", hi: "तिजोरी बंद है" },
+  vault_pill_on: { en: "Vault on", hi: "तिजोरी चालू है" },
+  vault_pill_migrating: { en: "Vault: securing your documents…", hi: "तिजोरी: आपके दस्तावेज़ सुरक्षित किए जा रहे हैं…" },
+  vault_setup_h2: { en: "Protect your work with a passphrase", hi: "अपने काम को पासफ़्रेज़ से सुरक्षित करें" },
+  vault_setup_intro: {
+    en: "Your documents are saved under your account, locked so that only this passphrase opens them. Nobody at Appuscholar can read them. If you lose the passphrase and the recovery sheet, the documents cannot be recovered.",
+    hi: "आपके दस्तावेज़ आपके खाते के अंतर्गत सहेजे जाते हैं और इस तरह बंद रहते हैं कि केवल यही पासफ़्रेज़ उन्हें खोलता है। Appuscholar में कोई भी उन्हें नहीं पढ़ सकता। अगर आप पासफ़्रेज़ और रिकवरी शीट दोनों खो देते हैं, तो दस्तावेज़ वापस नहीं पाए जा सकते।"
+  },
+  vault_setup_btn: { en: "Set passphrase", hi: "पासफ़्रेज़ तय करें" },
+  vault_setup_later: { en: "Not now", hi: "अभी नहीं" },
+  vault_sheet_h2: { en: "Your recovery sheet", hi: "आपकी रिकवरी शीट" },
+  vault_sheet_intro: {
+    en: "If you forget the passphrase, this code is the only way back in. Save the file somewhere safe. Appuscholar does not keep a copy.",
+    hi: "अगर आप पासफ़्रेज़ भूल जाते हैं, तो वापस भीतर आने का एकमात्र रास्ता यही कोड है। फ़ाइल को कहीं सुरक्षित रखें। Appuscholar इसकी कोई प्रति अपने पास नहीं रखता।"
+  },
+  vault_sheet_download: { en: "⬇ Download recovery sheet", hi: "⬇ रिकवरी शीट डाउनलोड करें" },
+  vault_sheet_saved: { en: "I have saved it", hi: "मैंने इसे सहेज लिया है" },
+  vault_sheet_done: { en: "Done", hi: "पूरा हुआ" },
+  vault_unlock_h2: { en: "Unlock your vault", hi: "अपनी तिजोरी खोलें" },
+  vault_unlock_hint: { en: "Type the passphrase that protects your documents.", hi: "अपने दस्तावेज़ों को सुरक्षित रखने वाला पासफ़्रेज़ लिखें।" },
+  // Same sentence as the key lock (v1 bk_err_wrong says it differently, so this is its own key).
+  vault_wrong: { en: "Wrong passphrase — nothing was unlocked. Try again.", hi: "पासफ़्रेज़ गलत है — कुछ भी नहीं खुला। फिर कोशिश करें।" },
+  vault_forgot: { en: "Forgot it? Use your recovery sheet", hi: "भूल गए? अपनी रिकवरी शीट का उपयोग करें" },
+  vault_recover_h2: { en: "Recover with your code", hi: "अपने कोड से वापस पाएँ" },
+  vault_recover_code: { en: "Recovery code", hi: "रिकवरी कोड" },
+  vault_recover_new: { en: "New passphrase", hi: "नया पासफ़्रेज़" },
+  vault_recover_btn: { en: "Recover and set passphrase", hi: "वापस पाएँ और पासफ़्रेज़ तय करें" },
+  vault_recover_bad: { en: "That code did not match. Check the sheet and try again.", hi: "वह कोड मेल नहीं खाया। शीट देखें और फिर कोशिश करें।" },
+  vault_recovered: { en: "Vault recovered ✓ — a new recovery sheet is ready", hi: "तिजोरी वापस मिल गई ✓ — नई रिकवरी शीट तैयार है" },
+  vault_change_h2: { en: "Change passphrase", hi: "पासफ़्रेज़ बदलें" },
+  vault_change_old: { en: "Current passphrase", hi: "मौजूदा पासफ़्रेज़" },
+  vault_change_new: { en: "New passphrase", hi: "नया पासफ़्रेज़" },
+  vault_change_btn: { en: "Change", hi: "बदलें" },
+  vault_changed: { en: "Passphrase changed ✓", hi: "पासफ़्रेज़ बदल गया ✓" },
+  vault_migrating_n: { en: "Securing document {n} of {total}…", hi: "दस्तावेज़ {n}/{total} सुरक्षित किया जा रहा है…" },
+  vault_migrated: { en: "All your documents are now locked in your vault ✓", hi: "आपके सभी दस्तावेज़ अब आपकी तिजोरी में बंद हैं ✓" },
+  vault_doc_locked: { en: "This document is locked. Unlock your vault to read it.", hi: "यह दस्तावेज़ बंद है। इसे पढ़ने के लिए अपनी तिजोरी खोलें।" },
+  vault_doc_broken: { en: "This document cannot be opened on this device. Nothing was changed.", hi: "यह दस्तावेज़ इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
+  vault_save_locked: { en: "Unlock your vault to save your changes.", hi: "अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
+  vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
+  vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
+  help_export_btn: { en: "⬇ Export all my work", hi: "⬇ मेरा सारा काम निर्यात करें" },
+  export_done: { en: "Export ready ✓", hi: "निर्यात तैयार है ✓" },
+  help_erase_btn: { en: "Delete my account", hi: "मेरा खाता हटाएं" },
+  erase_h2: { en: "Delete your account?", hi: "अपना खाता हटाएं?" },
+  erase_intro: {
+    en: "Everything under your account is deleted: projects, documents and their versions, keys and the AI-use log. This cannot be undone. Export first if you want a copy.",
+    hi: "आपके खाते के अंतर्गत सब कुछ हटा दिया जाता है: प्रोजेक्ट, दस्तावेज़ और उनके संस्करण, कुंजियाँ और AI उपयोग का लॉग। इसे वापस नहीं किया जा सकता। प्रति चाहिए तो पहले निर्यात कर लें।"
+  },
+  // The word the student must type. It stays in Latin capitals in Hindi too, so the same keystrokes confirm in either language.
+  erase_confirm_word: { en: "DELETE", hi: "DELETE" },
+  erase_type: { en: "Type {word} to confirm", hi: "पुष्टि के लिए {word} लिखें" },
+  erase_btn: { en: "Delete everything", hi: "सब कुछ हटाएं" },
+  erased: { en: "Your account has been deleted.", hi: "आपका खाता हटा दिया गया है।" },
+  import_v1_vault: { en: "Your backup is read on this computer and saved locked in your vault.", hi: "आपका बैकअप इसी कंप्यूटर पर पढ़ा जाता है और आपकी तिजोरी में बंद करके सहेजा जाता है।" }
+};
+
+/** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */
+export function applyV2Strings(en, hi) {
+  const outEn = { ...en }, outHi = { ...hi };
+  for (const [k, v] of Object.entries(V2_STRINGS)) {
+    if (k in outEn || k in outHi) throw new Error(`V2 string key collides with a v1 key: ${k}`);
+    outEn[k] = v.en;
+    outHi[k] = v.hi;
+  }
+  return { en: outEn, hi: outHi };
+}

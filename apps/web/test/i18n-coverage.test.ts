@@ -13,10 +13,14 @@ function walk(dir: string): string[] {
   });
 }
 
+/** Keys whose value is a typed confirmation token, not copy: "DELETE" is also the HTTP method the API client sends. */
+const NOT_COPY = new Set(["erase_confirm_word"]);
+
 /** Values worth guarding: 3+ characters with at least one letter or digit (so "✨", "…", "—" are skipped). */
 const values = new Set(
-  Object.values(en as Record<string, string>)
-    .map(v => v.trim())
+  Object.entries(en as Record<string, string>)
+    .filter(([k]) => !NOT_COPY.has(k))
+    .map(([, v]) => v.trim())
     .filter(v => v.length >= 3 && /[\p{L}\p{N}]/u.test(v)),
 );
 // A literal that is the key argument of t( or tHtml( is a lookup, not copy. Only the characters right before the opening quote count, so another t( on the same line does not excuse a literal.

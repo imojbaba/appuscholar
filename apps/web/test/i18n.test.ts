@@ -28,4 +28,11 @@ describe("v1 chrome strings", () => {
     expect(tFormat(e, h, "a", "hi", { x: 1 })).toBe("E 1 {y}");
     expect(tFormat(e, h, "a", "en")).toBe("E {x} {y}");
   });
+  it("v2 vault strings exist in both dictionaries with the draft marker on Hindi", () => {
+    for (const k of ["vault_pill_off", "vault_setup_h2", "vault_wrong", "erase_btn", "import_v1_vault"]) {
+      expect((en as Record<string, string>)[k]).toBeTruthy();
+      expect((hi as Record<string, string>)[k]).toBeTruthy();
+    }
+    expect((en as Record<string, string>).vault_wrong).toBe("Wrong passphrase — nothing was unlocked. Try again.");
+  });
 });

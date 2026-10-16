@@ -110,7 +110,7 @@ function Form() {
     if (!use && keys.blobs[p]) {
       const pass = await askPassphrase({ kind: "unlock", provider: p });
       if (pass) {
-        try { use = await unlockKeyBlob(keys.blobs[p]!, pass); } catch { setOut({ tone: "fail", text: "Wrong passphrase — nothing was unlocked. Try again." }); return; }
+        try { use = await unlockKeyBlob(keys.blobs[p]!, pass); } catch { setOut({ tone: "fail", text: t("vault_wrong") }); return; }
         keyStore.setSession(p, use);
         toast("Key unlocked for this session ✓");
       }
