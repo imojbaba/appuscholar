@@ -113,7 +113,8 @@ export const V2_STRINGS = {
   erase_type: { en: "Type {word} to confirm", hi: "पुष्टि के लिए {word} लिखें" },
   erase_btn: { en: "Delete everything", hi: "सब कुछ हटाएं" },
   erased: { en: "Your account has been deleted.", hi: "आपका खाता हटा दिया गया है।" },
-  import_v1_vault: { en: "Your backup is read on this computer and saved locked in your vault.", hi: "आपका बैकअप इसी कंप्यूटर पर पढ़ा जाता है और आपकी तिजोरी में बंद करके सहेजा जाता है।" }
+  import_v1_vault: { en: "Your backup is read on this computer and saved locked in your vault.", hi: "आपका बैकअप इसी कंप्यूटर पर पढ़ा जाता है और आपकी तिजोरी में बंद करके सहेजा जाता है।" },
+  import_v1_progress: { en: "Importing… {n} of {total}", hi: "आयात हो रहा है… {total} में से {n}" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

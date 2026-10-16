@@ -183,6 +183,39 @@ describe("api routes", () => {
     expect(await (await app.request("/projects", { headers: auth })).json()).toEqual([]);
   });
 
+  describe("who a created document names as its author", () => {
+    const create = async (extra: Record<string, unknown>) => {
+      const proj = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "P" }) })).json() as { id: string };
+      const r = await app.request(`/projects/${proj.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Old", bodyHtml: "<p>one two three</p>", ...extra }) });
+      const d = r.status === 201 ? await r.json() as { id: string } : null;
+      const revs = d ? await (await app.request(`/documents/${d.id}/revisions`, { headers: auth })).json() as { authorKind: string; authorLabel: string; originStats: unknown }[] : [];
+      return { status: r.status, revs, projectId: proj.id };
+    };
+
+    it("an import names itself: authorKind import and the label the client gives (default 'v1 backup')", async () => {
+      const a = await create({ authorKind: "import", authorLabel: "v1 backup 2026-10-12" });
+      expect(a.status).toBe(201);
+      expect(a.revs[0]).toMatchObject({ authorKind: "import", authorLabel: "v1 backup 2026-10-12", originStats: { typed: 3, ai: 0 } });
+      const b = await create({ authorKind: "import" });
+      expect(b.revs[0]).toMatchObject({ authorKind: "import", authorLabel: "v1 backup" });
+    });
+
+    it("without authorKind the author is the web user's email; a label alone changes nothing", async () => {
+      const a = await create({});
+      expect(a.revs[0]).toMatchObject({ authorKind: "web", authorLabel: "u1@x.org" });
+      const b = await create({ authorLabel: "spoofed" });
+      expect(b.revs[0]).toMatchObject({ authorKind: "web", authorLabel: "u1@x.org" });
+    });
+
+    it("a client cannot set any other authorKind (copilot, restore, web): 400 and nothing created", async () => {
+      for (const authorKind of ["copilot", "restore", "web", "ai"]) {
+        const r = await create({ authorKind, authorLabel: "x" });
+        expect(r.status).toBe(400);
+        expect(await (await app.request(`/projects/${r.projectId}/documents`, { headers: auth })).json()).toEqual([]);
+      }
+    });
+  });
+
   describe("document body limit (2.8 MB by default: ciphertext is 4/3 the HTML, Vercel stops at 4.5 MB)", () => {
     const MB = 1024 * 1024;
     it("accepts a 2.5 MB body on PUT and on create, and refuses above 2.8 MB with 413 on both, storing nothing", async () => {

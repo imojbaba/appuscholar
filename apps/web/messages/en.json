@@ -263,6 +263,7 @@
   "imp_pdf_toast": "PDF imported as a source paper, not counted as your writing. Change it with the 📄 button.",
   "imp_src": "Someone else's paper (a source)",
   "imp_src_toast": "Imported as a source paper ✓",
+  "import_v1_progress": "Importing… {n} of {total}",
   "import_v1_vault": "Your backup is read on this computer and saved locked in your vault.",
   "improve_btn": "💜 Improve selection",
   "improve_btn_title": "Select some text first, then click to polish its grammar",

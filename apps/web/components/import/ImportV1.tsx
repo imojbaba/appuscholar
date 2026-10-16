@@ -43,21 +43,22 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
     const { documents, projects, exported } = parsed.backup;
     if (!confirm(`Import ${documents.length} document(s) saved ${exported.slice(0, 10) || "?"} into a new project?`)) { setMsg(""); return; }
     const first = projects[0];
+    const authorLabel = exported ? "v1 backup " + exported.slice(0, 10) : "v1 backup";
     const projectTitle = first ? `${first.title} (imported from v1)` : "Imported from v1";
-    // With a vault the documents are encrypted here, so it must be open before anything is created: a cancelled unlock imports nothing.
-    const sealing = (await vault.known()) !== "off";
-    if (sealing && !(await vault.ensureUnlocked())) { setMsg(t("vault_save_locked")); return; }
     let projectId: string | undefined;
     let imported = 0;
     setBusy(true);
     setMsg("Importing…");
     setProgress({ done: 0, total: documents.length });
     try {
+      // With a vault the documents are encrypted here, so it must be open before anything is created: a cancelled unlock imports nothing.
+      const sealing = (await vault.known()) !== "off";
+      if (sealing && !(await vault.ensureUnlocked())) { setMsg(t("vault_save_locked")); return; }
       const r = await importV1Backup({ projectTitle, documents: documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml })) }, {}, {
         createProject: (title) => apiFetch<{ id: string }>("/projects", { method: "POST", body: JSON.stringify({ title }) }),
-        createDocument: async (pid, title, body) => { await apiFetch<unknown>(`/projects/${pid}/documents`, { method: "POST", body: JSON.stringify({ title, kind: "draft", ...body }) }); },
+        createDocument: async (pid, title, body) => { await apiFetch<unknown>(`/projects/${pid}/documents`, { method: "POST", body: JSON.stringify({ title, kind: "draft", authorKind: "import", authorLabel, ...body }) }); },
         encrypt: sealing ? vault.encryptBody : null,
-        onProgress: (p) => { projectId = p.projectId; imported = p.imported; setProgress({ done: p.imported, total: p.total }); if (p.total > 1) setMsg(`Importing… ${p.imported} of ${p.total}`); }
+        onProgress: (p) => { projectId = p.projectId; imported = p.imported; setProgress({ done: p.imported, total: p.total }); if (p.total > 1) setMsg(t("import_v1_progress", { n: p.imported, total: p.total })); }
       });
       setMsg(`Imported ${r.imported} document(s).`);
       onDone(r.projectId);

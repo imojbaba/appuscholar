@@ -29,7 +29,7 @@ describe("v1 chrome strings", () => {
     expect(tFormat(e, h, "a", "en")).toBe("E {x} {y}");
   });
   it("v2 vault strings exist in both dictionaries with the draft marker on Hindi", () => {
-    for (const k of ["vault_pill_off", "vault_setup_h2", "vault_wrong", "erase_btn", "import_v1_vault"]) {
+    for (const k of ["vault_pill_off", "vault_setup_h2", "vault_wrong", "erase_btn", "import_v1_vault", "import_v1_progress"]) {
       expect((en as Record<string, string>)[k]).toBeTruthy();
       expect((hi as Record<string, string>)[k]).toBeTruthy();
     }

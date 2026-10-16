@@ -15,7 +15,13 @@ const Patch = z.object({
 }).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
 const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.string().trim().min(1).max(40).default("draft") });
 /** A document can also be created with its first body, in the same shape as PUT /documents/:id (ciphertext needs its dek here, since the document has none yet). */
-const CreateDocBody = CreateDoc.extend({ ...WriteFields, bodyHtml: WriteFields.bodyHtml.default("") });
+const CreateDocBody = CreateDoc.extend({
+  ...WriteFields,
+  bodyHtml: WriteFields.bodyHtml.default(""),
+  // The only author a client may name is an import (a v1 backup); anything else is refused, never taken for "web". The label counts only with it.
+  authorKind: z.literal("import").optional(),
+  authorLabel: z.string().trim().min(1).max(100).optional()
+});
 
 export function projectRoutes(store: Store, maxBodyBytes: number) {
   const r = new Hono<AuthEnv>();
@@ -49,7 +55,7 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
     const userId = c.get("userId");
     const w = await resolveWrite(store, userId, [], body.data);
     if (!w.ok) return c.json({ error: w.error }, w.status);
-    const d = await store.createDocument(userId, c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: w.bodyHtml, authorKind: "web", authorLabel: c.get("email"), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats }, w.addDek ? [w.addDek] : []);
+    const d = await store.createDocument(userId, c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: w.bodyHtml, ...(body.data.authorKind === "import" ? { authorKind: "import" as const, authorLabel: body.data.authorLabel ?? "v1 backup" } : { authorKind: "web" as const, authorLabel: c.get("email") }), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats }, w.addDek ? [w.addDek] : []);
     return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
   });
   /**
