@@ -34,6 +34,15 @@ type Pending = { ask: PassphraseAsk; resolve: (v: string | null) => void };
 let listener: ((p: Pending | null) => void) | null = null;
 let current: Pending | null = null;
 
+let forgotHandler: (() => void) | null = null;
+/**
+ * What the vault unlock ask's vault_forgot link does: VaultRecoverHost registers the recovery here when it mounts (null when it unmounts).
+ * The link shows only while a handler is set. Clicking it cancels the ask (it resolves null) and then calls the handler.
+ */
+export function setVaultForgotHandler(fn: (() => void) | null): void {
+  forgotHandler = fn;
+}
+
 /** Opens the passphrase dialog and resolves with what the student typed, or null when they cancel. One at a time: a second ask cancels the first. */
 export function askPassphrase(ask: PassphraseAsk): Promise<string | null> {
   return new Promise((resolve) => {
@@ -71,6 +80,10 @@ export function PassphraseHost() {
               <DialogDescription data-testid="pass-message">{message(pending.ask, t)}</DialogDescription>
             </DialogHeader>
             <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")} data-testid="pass-input" />
+            {pending.ask.kind === "vault-unlock" && forgotHandler && (
+              <button type="button" className="justify-self-start text-sm text-purple-800 underline underline-offset-2" data-testid="vault-forgot"
+                onClick={() => { const go = forgotHandler; finish(null); go?.(); }}>{t("vault_forgot")}</button>
+            )}
             <DialogFooter>
               <Button type="button" variant="ghost" data-testid="pass-cancel" onClick={() => finish(null)}>{t("bk_cancel")}</Button>
               <Button type="submit" variant="primary" data-testid="pass-ok">OK</Button>

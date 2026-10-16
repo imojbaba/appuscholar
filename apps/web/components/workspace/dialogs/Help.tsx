@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { apiFetch } from "@/lib/api";
 import { tHtml, useT } from "@/lib/i18n";
 import { keyStore } from "@/lib/ai/keys";
 import { resetPdMemo } from "@/lib/ai/callAI";
@@ -7,11 +8,17 @@ import { useSettings } from "@/lib/settings";
 import { useSession } from "@/lib/session";
 import { useVault } from "@/lib/vault/useVault";
 import { hasRemembered } from "@/lib/vault/remember";
+import { exportAll, exportFileName, localDay, type ExportDoc, type ExportDocSummary, type ExportProject } from "@/lib/vault/export";
+import { downloadBlob } from "@/lib/export/download";
+import { buildRecordText, type WritingRecord } from "@/lib/writingRecord";
 import { APP_VERSION } from "@/lib/version";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "../WorkspaceContext";
+import { ChangePassphrase } from "./ChangePassphrase";
+import { EraseAccount } from "./EraseAccount";
 
 const FAQ = ["lost", "hindi", "key"];
 // The app never sends mail (rule 12): the button opens the student's own mail app.
@@ -40,6 +47,47 @@ export function Help() {
     const keys = keyStore.hasPlain();
     const vaultKept = me?.id ? await hasRemembered(me.id).catch(() => false) : false;
     if (keys || vaultKept) setAskForget({ keys, vault: vaultKept }); else void signOut(false);
+  };
+  const [changing, setChanging] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  /** Change passphrase is offered once the vault exists (locked or open). */
+  const hasVault = vault.status === "locked" || vault.status === "unlocked" || vault.status === "migrating";
+  /**
+   * Every project's documents (the scratch space's too), decrypted here and zipped with the writing-process record. Only ciphertext
+   * comes from the server and nothing decrypted goes back; the export is logged (POST /me/export-audit) once the zip is built, before it is saved.
+   */
+  const exportWork = async () => {
+    if (exporting) return;
+    if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
+    setExporting(true);
+    try {
+      const projects = await apiFetch<ExportProject[]>("/projects");
+      const scratch = me?.scratchProjectId;
+      if (scratch && !projects.some((p) => p.id === scratch)) projects.push({ id: scratch, title: t("export_scratch"), stage: "", createdAt: "" });
+      const day = localDay();
+      const blob = await exportAll({
+        listProjects: async () => projects,
+        listDocuments: (id) => apiFetch<ExportDocSummary[]>(`/projects/${id}/documents`),
+        getDocument: (id) => apiFetch<ExportDoc>(`/documents/${id}`),
+        decrypt: (doc) => vault.decryptBody(doc),
+        // The record MyWriting downloads, one per project, each under its project's title.
+        writingRecordText: async () => {
+          const parts = await Promise.all(projects.map(async (p) => {
+            const rec = await apiFetch<WritingRecord>(`/projects/${p.id}/writing-record`);
+            return p.title + "\n" + "=".repeat(p.title.length) + "\n" + buildRecordText(rec, APP_VERSION, day);
+          }));
+          return parts.join("\n\n");
+        }
+      });
+      await apiFetch<void>("/me/export-audit", { method: "POST" });
+      downloadBlob(exportFileName(), blob);
+      toast(t("export_done"));
+    } catch {
+      toast(t("export_fail"));
+    } finally {
+      setExporting(false);
+    }
   };
   return (
     <>
@@ -75,6 +123,11 @@ export function Help() {
           <span data-testid="signed-in-as">Signed in as {email}</span>
           <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { void startSignOut(); }}>Sign out</Button>
         </div>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Button variant="ghost" size="sm" disabled={exporting} data-testid="help-export" onClick={() => { void exportWork(); }}>{t("help_export_btn")}</Button>
+          {hasVault && <Button variant="ghost" size="sm" data-testid="help-change-pass" onClick={() => setChanging(true)}>{t("vault_change_h2")}</Button>}
+          <Button variant="ghost" size="sm" className="text-destructive" data-testid="help-erase" onClick={() => setErasing(true)}>{t("help_erase_btn")}</Button>
+        </div>
       </DialogContent>
     </Dialog>
       <AlertDialog open={!!askForget} onOpenChange={(o) => { if (!o) setAskForget(null); }}>
@@ -91,6 +144,8 @@ export function Help() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ChangePassphrase open={changing} onClose={() => setChanging(false)} />
+      <EraseAccount open={erasing} onClose={() => setErasing(false)} onErased={() => signOut(true)} />
     </>
   );
 }

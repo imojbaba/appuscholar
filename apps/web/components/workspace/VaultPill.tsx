@@ -4,16 +4,11 @@ import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { useVault } from "@/lib/vault/useVault";
-import { VaultError } from "@/lib/vault/crypto";
 import { hasRemembered } from "@/lib/vault/remember";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
+import { ChangePassphrase } from "./dialogs/ChangePassphrase";
 import { openVaultSetup } from "./dialogs/VaultSetup";
-
-/** As the setup: a vault passphrase is at least 10 characters (bk_err_short). */
-const MIN_PASS = 10;
 
 /* DESIGN-SYSTEM.md: amber flags what needs attention, green is good, purple is structure (work under way), grey is neutral.
    Borders, not shadows. 34px target on desktop; the phone rule in globals.css makes every header button 44px. */
@@ -76,59 +71,5 @@ export function VaultPill({ className }: { className?: string }) {
       </DropdownMenu>
       <ChangePassphrase open={changing} onClose={() => setChanging(false)} />
     </>
-  );
-}
-
-function ChangePassphrase({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const t = useT();
-  const { changePassphrase } = useVault();
-  const [old, setOld] = useState("");
-  const [next, setNext] = useState("");
-  const [again, setAgain] = useState("");
-  const [busy, setBusy] = useState(false);
-  function close() { setOld(""); setNext(""); setAgain(""); setBusy(false); onClose(); }
-
-  async function submit() {
-    if (busy) return;
-    if (next.length < MIN_PASS) { toast(t("bk_err_short")); return; }
-    if (next !== again) { toast(t("bk_err_match")); return; }
-    setBusy(true);
-    try {
-      await changePassphrase(old, next);
-    } catch (e) {
-      setBusy(false);
-      toast(t(e instanceof VaultError && e.code === "wrong-passphrase" ? "vault_wrong" : "vault_change_fail"));
-      return;
-    }
-    toast(t("vault_changed"));
-    close();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
-      <DialogContent className="max-w-sm" data-testid="vault-change-dialog">
-        <form onSubmit={(e) => { e.preventDefault(); void submit(); }} className="grid gap-3">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-purple-800">🔒 {t("vault_change_h2")}</DialogTitle>
-          </DialogHeader>
-          <label className="grid gap-1 text-sm font-medium">
-            {t("vault_change_old")}
-            <input className="input" type="password" autoComplete="current-password" autoFocus value={old} onChange={(e) => setOld(e.target.value)} data-testid="vault-change-old" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium">
-            {t("vault_change_new")}
-            <input className="input" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} data-testid="vault-change-new" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium">
-            {t("bk_pass2")}
-            <input className="input" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="vault-change-again" />
-          </label>
-          <DialogFooter>
-            <Button type="button" variant="ghost" data-testid="vault-change-cancel" onClick={close}>{t("bk_cancel")}</Button>
-            <Button type="submit" variant="primary" disabled={busy} data-testid="vault-change-submit">{t("vault_change_btn")}</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

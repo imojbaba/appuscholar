@@ -102,6 +102,9 @@ export const V2_STRINGS = {
   vault_change_fail: { en: "Could not change the passphrase. Check your connection and try again.", hi: "पासफ़्रेज़ नहीं बदला जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
   help_export_btn: { en: "⬇ Export all my work", hi: "⬇ मेरा सारा काम निर्यात करें" },
   export_done: { en: "Export ready ✓", hi: "निर्यात तैयार है ✓" },
+  export_fail: { en: "Could not make the export. Check your connection and try again.", hi: "निर्यात नहीं बन सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
+  // The folder in the export zip that holds the documents written outside any research project.
+  export_scratch: { en: "Scratch space", hi: "स्क्रैच स्पेस" },
   help_erase_btn: { en: "Delete my account", hi: "मेरा खाता हटाएं" },
   erase_h2: { en: "Delete your account?", hi: "अपना खाता हटाएं?" },
   erase_intro: {
@@ -113,6 +116,7 @@ export const V2_STRINGS = {
   erase_type: { en: "Type {word} to confirm", hi: "पुष्टि के लिए {word} लिखें" },
   erase_btn: { en: "Delete everything", hi: "सब कुछ हटाएं" },
   erased: { en: "Your account has been deleted.", hi: "आपका खाता हटा दिया गया है।" },
+  erase_fail: { en: "Could not delete your account. Check your connection and try again.", hi: "आपका खाता नहीं हटाया जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
   import_v1_vault: { en: "Your backup is read on this computer and saved locked in your vault.", hi: "आपका बैकअप इसी कंप्यूटर पर पढ़ा जाता है और आपकी तिजोरी में बंद करके सहेजा जाता है।" },
   import_v1_progress: { en: "Importing… {n} of {total}", hi: "आयात हो रहा है… {total} में से {n}" }
 };

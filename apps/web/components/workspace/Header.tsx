@@ -13,6 +13,7 @@ import { Welcome } from "./dialogs/Welcome";
 import { PassphraseHost } from "./dialogs/Passphrase";
 import { ProviderKey } from "./dialogs/ProviderKey";
 import { RateLimit } from "./dialogs/RateLimit";
+import { VaultRecoverHost } from "./dialogs/VaultRecover";
 import { VaultSetupHost } from "./dialogs/VaultSetup";
 import { VaultPill } from "./VaultPill";
 
@@ -60,7 +61,7 @@ export function Header() {
   );
 }
 
-/** Help, Terms and Welcome live in dialogs/; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog; the vault setup from the vault pill and the key dialog. */
+/** Help, Terms and Welcome live in dialogs/; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog; the vault setup from the vault pill and the key dialog; the vault recovery from the unlock ask's vault_forgot link. */
 export function ChromeDialogs() {
   const { update } = useSettings();
   return (
@@ -71,6 +72,7 @@ export function ChromeDialogs() {
       <ProviderKey />
       <PassphraseHost />
       <VaultSetupHost />
+      <VaultRecoverHost />
       <PdHost />
       <RateLimit onSwitchToGroq={() => { void update({ provider: "groq" }); toast("Now using Groq ✓ Your next AI request goes to Groq."); }} />
     </>
