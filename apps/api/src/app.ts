@@ -5,8 +5,11 @@ import type { Store } from "./store/types";
 import { projectRoutes } from "./routes/projects";
 import { documentRoutes } from "./routes/documents";
 import { importRoutes } from "./routes/import";
+import { meRoutes } from "./routes/me";
+import { aiRoutes } from "./routes/ai";
+import type { AnthropicFactory } from "./ai/types";
 
-export type AppOptions = { store: Store; jwtSecret: string; maxBodyBytes?: number; maxImportBytes?: number; corsOrigin?: string };
+export type AppOptions = { store: Store; jwtSecret: string; maxBodyBytes?: number; maxImportBytes?: number; corsOrigin?: string; ai?: { fetch?: typeof fetch; anthropic?: AnthropicFactory } };
 
 export function createApp(o: AppOptions) {
   const app = new Hono<AuthEnv>();
@@ -16,9 +19,14 @@ export function createApp(o: AppOptions) {
   app.use("/projects", apiAuth(o.jwtSecret));
   app.use("/documents/*", apiAuth(o.jwtSecret));
   app.use("/import/*", apiAuth(o.jwtSecret));
+  app.use("/me/*", apiAuth(o.jwtSecret));
+  app.use("/me", apiAuth(o.jwtSecret));
+  app.use("/ai/*", apiAuth(o.jwtSecret));
   app.route("/projects", projectRoutes(o.store));
   app.route("/documents", documentRoutes(o.store, o.maxBodyBytes ?? 2 * 1024 * 1024));
   app.route("/import", importRoutes(o.store, o.maxImportBytes));
+  app.route("/me", meRoutes(o.store));
+  app.route("/ai", aiRoutes(o.store, { fetch: o.ai?.fetch ?? fetch, anthropic: o.ai?.anthropic }));
   app.onError((err, c) => { console.error(err); return c.json({ error: "server" }, 500); });
   return app;
 }

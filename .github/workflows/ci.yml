@@ -2,43 +2,51 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, "phase-*"]
 jobs:
   checks:
     runs-on: ubuntu-latest
+    env:
+      # Dummy values for the build only. Never put a real secret here.
+      AUTH_SECRET: ci-dummy-auth-secret-ci-dummy-auth-secret-12
+      API_JWT_SECRET: ci-dummy-jwt-secret-ci-dummy-jwt-secret-12
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
+        with: { node-version: 22 }
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm -r lint
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm --filter @appuscholar/web build
   e2e:
     runs-on: ubuntu-latest
+    # First version: the browser journey is allowed to fail without blocking a merge. Remove continue-on-error once it has been green on CI for a while.
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      API_JWT_SECRET: e2e-secret-e2e-secret-e2e-secret-12
+      AUTH_SECRET: e2e-auth-secret-e2e-auth-secret-1234
     steps:
-      - name: Skip notice
-        if: ${{ env.E2E_DATABASE_URL == '' }}
-        run: |
-          echo "::warning::e2e skipped: E2E_DATABASE_URL not set"
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        if: ${{ env.E2E_DATABASE_URL != '' }}
       - uses: actions/setup-node@v4
-        if: ${{ env.E2E_DATABASE_URL != '' }}
-        with: { node-version: 22, cache: pnpm }
+        with: { node-version: 22 }
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
-        if: ${{ env.E2E_DATABASE_URL != '' }}
       - run: pnpm --filter @appuscholar/db db:migrate
-        if: ${{ env.E2E_DATABASE_URL != '' }}
-        env:
-          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
       - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
-        if: ${{ env.E2E_DATABASE_URL != '' }}
+      # The API runs on its in-memory store, so it is started here without DATABASE_URL (only the web server gets it, from the job env).
+      - name: Start the API
+        run: |
+          env -u DATABASE_URL WEB_ORIGIN=http://localhost:3000 PORT=8788 nohup pnpm --filter @appuscholar/api dev > api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8788/health && exit 0; sleep 1; done
+          cat api.log; exit 1
       - run: pnpm --filter @appuscholar/web e2e
-        if: ${{ env.E2E_DATABASE_URL != '' }}
-        env:
-          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}

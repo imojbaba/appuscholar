@@ -1,6 +1,6 @@
-import { and, count, desc, eq, max, sql } from "drizzle-orm";
-import { projects, documents, documentRevisions, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind } from "./types";
+import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql } from "drizzle-orm";
+import { users, projects, documents, documentRevisions, credentials, aiUseLog, type Db } from "@appuscholar/db";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -15,8 +15,9 @@ export function isUniqueViolation(err: unknown): boolean {
 export class DrizzleStore implements Store {
   constructor(private d: Db) {}
 
-  private async ownedDoc(userId: string, docId: string) {
-    const rows = await this.d.select({ doc: documents, project: projects }).from(documents).innerJoin(projects, eq(projects.id, documents.projectId)).where(and(eq(documents.id, docId), eq(projects.userId, userId))).limit(1);
+  private async ownedDoc(userId: string, docId: string, includeDeleted = false) {
+    const live = includeDeleted ? undefined : isNull(documents.deletedAt);
+    const rows = await this.d.select({ doc: documents, project: projects }).from(documents).innerJoin(projects, eq(projects.id, documents.projectId)).where(and(eq(documents.id, docId), eq(projects.userId, userId), live)).limit(1);
     return rows[0]?.doc ?? null;
   }
   private async latest(docId: string): Promise<{ seq: number; wordCount: number } | null> {
@@ -24,27 +25,65 @@ export class DrizzleStore implements Store {
     return rows[0] ?? null;
   }
   private toRev(r: typeof documentRevisions.$inferSelect): DocumentRevision {
-    return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, createdAt: r.createdAt };
+    return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, createdAt: r.createdAt };
+  }
+  private toProject(p: typeof projects.$inferSelect): Project {
+    return { ...p, kind: p.kind as ProjectKind };
+  }
+  private toUser(u: typeof users.$inferSelect): UserRecord {
+    return { id: u.id, email: u.email, locale: u.locale, settings: u.settings as Settings, activeProjectId: u.activeProjectId, termsAcceptedAt: u.termsAcceptedAt, ageConfirmed: u.ageConfirmed };
   }
   private async summary(doc: typeof documents.$inferSelect): Promise<DocumentSummary | null> {
     const r = await this.latest(doc.id);
     if (!r) return null;
-    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, updatedAt: doc.updatedAt };
+    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt };
   }
 
-  async createProject(userId: string, title: string): Promise<Project> {
-    const [p] = await this.d.insert(projects).values({ userId, title }).returning();
-    return p!;
+  async getUser(userId: string): Promise<UserRecord | null> {
+    const rows = await this.d.select().from(users).where(eq(users.id, userId)).limit(1);
+    return rows[0] ? this.toUser(rows[0]) : null;
+  }
+  async ensureUser(userId: string, email: string): Promise<UserRecord> {
+    await this.d.insert(users).values({ id: userId, email }).onConflictDoNothing();
+    const u = await this.getUser(userId);
+    if (!u) throw new Error(`cannot ensure user ${userId}: email already belongs to another user`);
+    return u;
+  }
+  async updateSettings(userId: string, patch: Settings): Promise<Settings> {
+    // jsonb || jsonb is a shallow merge, and JSON.stringify drops undefined keys, so absent keys stay untouched and arrays replace.
+    const rows = await this.d.update(users).set({ settings: sql`${users.settings} || ${JSON.stringify(patch)}::jsonb` }).where(eq(users.id, userId)).returning({ settings: users.settings });
+    if (!rows[0]) throw new Error(`unknown user ${userId}`);
+    return rows[0].settings as Settings;
+  }
+  async setActiveProject(userId: string, projectId: string | null): Promise<boolean> {
+    if (projectId !== null && !(await this.getProject(userId, projectId))) return false;
+    const rows = await this.d.update(users).set({ activeProjectId: projectId }).where(eq(users.id, userId)).returning({ id: users.id });
+    return rows.length > 0;
+  }
+  async acceptTerms(userId: string, at: Date): Promise<void> {
+    await this.d.update(users).set({ termsAcceptedAt: at, ageConfirmed: true }).where(eq(users.id, userId));
+  }
+
+  async createProject(userId: string, title: string, stage?: ProjectStage): Promise<Project> {
+    const [p] = await this.d.insert(projects).values(stage ? { userId, title, stage } : { userId, title }).returning();
+    return this.toProject(p!);
+  }
+  async getScratchProject(userId: string): Promise<Project> {
+    const find = () => this.d.select().from(projects).where(and(eq(projects.userId, userId), eq(projects.kind, "scratch"))).orderBy(asc(projects.createdAt), asc(projects.id)).limit(1);
+    const existing = (await find())[0];
+    if (existing) return this.toProject(existing);
+    await this.d.insert(projects).values({ userId, title: "Scratch space", kind: "scratch" });
+    return this.toProject((await find())[0]!);
   }
   async listProjects(userId: string): Promise<ProjectSummary[]> {
     const rows = await this.d
       .select({ project: projects, documentCount: count(documents.id), lastEditedAt: max(documents.updatedAt) })
       .from(projects)
-      .leftJoin(documents, eq(documents.projectId, projects.id))
-      .where(eq(projects.userId, userId))
+      .leftJoin(documents, and(eq(documents.projectId, projects.id), isNull(documents.deletedAt)))
+      .where(and(eq(projects.userId, userId), ne(projects.kind, "scratch")))
       .groupBy(projects.id)
       .orderBy(sql`case when ${projects.status} = 'complete' then 1 else 0 end`, desc(sql`coalesce(max(${documents.updatedAt}), ${projects.createdAt})`));
-    return rows.map(r => ({ ...r.project, documentCount: Number(r.documentCount), lastEditedAt: r.lastEditedAt ?? null }));
+    return rows.map(r => ({ ...this.toProject(r.project), documentCount: Number(r.documentCount), lastEditedAt: r.lastEditedAt ?? null }));
   }
   async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
     if (!(await this.getProject(userId, id))) return null;
@@ -52,9 +91,10 @@ export class DrizzleStore implements Store {
     if (patch.title !== undefined) set.title = patch.title;
     if (patch.stage !== undefined) set.stage = patch.stage;
     if (patch.status !== undefined) set.status = patch.status;
+    if (patch.contentLang !== undefined) set.contentLang = patch.contentLang;
     if (Object.keys(set).length === 0) return this.getProject(userId, id);
     const [row] = await this.d.update(projects).set(set).where(eq(projects.id, id)).returning();
-    return row ?? null;
+    return row ? this.toProject(row) : null;
   }
   async deleteProject(userId: string, id: string): Promise<boolean> {
     if (!(await this.getProject(userId, id))) return false;
@@ -63,7 +103,7 @@ export class DrizzleStore implements Store {
   }
   async getProject(userId: string, id: string): Promise<Project | null> {
     const rows = await this.d.select().from(projects).where(and(eq(projects.id, id), eq(projects.userId, userId))).limit(1);
-    return rows[0] ?? null;
+    return rows[0] ? this.toProject(rows[0]) : null;
   }
 
   async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision): Promise<DocumentWithBody | null> {
@@ -75,7 +115,7 @@ export class DrizzleStore implements Store {
   }
   async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
     if (!(await this.getProject(userId, projectId))) return null;
-    const rows = await this.d.select().from(documents).where(eq(documents.projectId, projectId)).orderBy(desc(documents.updatedAt));
+    const rows = await this.d.select().from(documents).where(and(eq(documents.projectId, projectId), isNull(documents.deletedAt))).orderBy(desc(documents.updatedAt));
     const sums = await Promise.all(rows.map(r => this.summary(r)));
     return sums.filter((x): x is DocumentSummary => x !== null);
   }
@@ -87,13 +127,36 @@ export class DrizzleStore implements Store {
     if (!r) return null;
     return {
       id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind,
-      currentSeq: r.seq, wordCount: r.wordCount, updatedAt: doc.updatedAt, bodyHtml: r.bodyHtml
+      currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, bodyHtml: r.bodyHtml
     };
   }
   async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
     const doc = await this.ownedDoc(userId, id);
     if (!doc) return null;
     const [updated] = await this.d.update(documents).set({ title, updatedAt: new Date() }).where(eq(documents.id, id)).returning();
+    return this.summary(updated!);
+  }
+  async moveDocument(userId: string, documentId: string, projectId: string): Promise<DocumentSummary | null> {
+    if (!(await this.ownedDoc(userId, documentId)) || !(await this.getProject(userId, projectId))) return null;
+    const [updated] = await this.d.update(documents).set({ projectId }).where(eq(documents.id, documentId)).returning();
+    return this.summary(updated!);
+  }
+  async setDocumentKind(userId: string, id: string, kind: string): Promise<DocumentSummary | null> {
+    if (!(await this.ownedDoc(userId, id))) return null;
+    const [updated] = await this.d.update(documents).set({ kind }).where(eq(documents.id, id)).returning();
+    return this.summary(updated!);
+  }
+  async softDeleteDocument(userId: string, id: string): Promise<"deleted" | "only-document" | null> {
+    const doc = await this.ownedDoc(userId, id);
+    if (!doc) return null;
+    const [live] = await this.d.select({ n: count() }).from(documents).where(and(eq(documents.projectId, doc.projectId), isNull(documents.deletedAt)));
+    if (Number(live?.n ?? 0) <= 1) return "only-document";
+    await this.d.update(documents).set({ deletedAt: new Date() }).where(eq(documents.id, id));
+    return "deleted";
+  }
+  async restoreDeletedDocument(userId: string, id: string): Promise<DocumentSummary | null> {
+    if (!(await this.ownedDoc(userId, id, true))) return null;
+    const [updated] = await this.d.update(documents).set({ deletedAt: null }).where(eq(documents.id, id)).returning();
     return this.summary(updated!);
   }
 
@@ -119,12 +182,36 @@ export class DrizzleStore implements Store {
   }
   async listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null> {
     if (!(await this.ownedDoc(userId, documentId))) return null;
-    const rows = await this.d.select({ id: documentRevisions.id, documentId: documentRevisions.documentId, seq: documentRevisions.seq, authorKind: documentRevisions.authorKind, authorLabel: documentRevisions.authorLabel, wordCount: documentRevisions.wordCount, createdAt: documentRevisions.createdAt }).from(documentRevisions).where(eq(documentRevisions.documentId, documentId)).orderBy(desc(documentRevisions.seq));
-    return rows.map(r => ({ ...r, authorKind: r.authorKind as AuthorKind }));
+    const rows = await this.d.select({ id: documentRevisions.id, documentId: documentRevisions.documentId, seq: documentRevisions.seq, authorKind: documentRevisions.authorKind, authorLabel: documentRevisions.authorLabel, wordCount: documentRevisions.wordCount, originStats: documentRevisions.originStats, createdAt: documentRevisions.createdAt }).from(documentRevisions).where(eq(documentRevisions.documentId, documentId)).orderBy(desc(documentRevisions.seq));
+    return rows.map(r => ({ ...r, authorKind: r.authorKind as AuthorKind, originStats: (r.originStats as OriginStats | null) ?? null }));
   }
   async getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null> {
     if (!(await this.ownedDoc(userId, documentId))) return null;
     const rows = await this.d.select().from(documentRevisions).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).limit(1);
     return rows[0] ? this.toRev(rows[0]) : null;
+  }
+
+  async putCredential(userId: string, provider: string, encryptedKey: string): Promise<void> {
+    await this.d.insert(credentials).values({ userId, provider, encryptedKey }).onConflictDoUpdate({ target: [credentials.userId, credentials.provider], set: { encryptedKey, updatedAt: new Date() } });
+  }
+  async getCredentials(userId: string): Promise<Credential[]> {
+    return this.d.select({ provider: credentials.provider, encryptedKey: credentials.encryptedKey, updatedAt: credentials.updatedAt }).from(credentials).where(eq(credentials.userId, userId)).orderBy(asc(credentials.provider));
+  }
+  async deleteCredential(userId: string, provider: string): Promise<boolean> {
+    const rows = await this.d.delete(credentials).where(and(eq(credentials.userId, userId), eq(credentials.provider, provider))).returning({ provider: credentials.provider });
+    return rows.length > 0;
+  }
+
+  async appendAiUse(userId: string, projectId: string | null, e: AiUseEntry): Promise<void> {
+    await this.d.insert(aiUseLog).values({ userId, projectId, day: e.d, provider: e.p, model: e.m, kind: e.k, grp: e.g });
+  }
+  async listAiUse(userId: string, from?: string, to?: string): Promise<AiUseEntry[]> {
+    const rows = await this.d.select().from(aiUseLog)
+      .where(and(eq(aiUseLog.userId, userId), from === undefined ? undefined : gte(aiUseLog.day, from), to === undefined ? undefined : lte(aiUseLog.day, to)))
+      .orderBy(asc(aiUseLog.day), asc(aiUseLog.createdAt));
+    return rows.map(r => ({ d: r.day, p: r.provider, m: r.model, k: r.kind, g: r.grp as AiUseEntry["g"] }));
+  }
+  async eraseAiUse(userId: string): Promise<void> {
+    await this.d.delete(aiUseLog).where(eq(aiUseLog.userId, userId));
   }
 }

@@ -1,14 +1,17 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { PROJECT_STAGES, PROJECT_STATUSES, type Store } from "../store/types";
+import { originCount } from "@appuscholar/core";
+import { PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type Store } from "../store/types";
+import { foldWeekly, summariseAiLog, type DatedStats } from "./writingRecord";
 import type { AuthEnv } from "../auth";
 
-const Create = z.object({ title: z.string().trim().min(1).max(200) });
+const Create = z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(PROJECT_STAGES).optional() });
 const Patch = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   stage: z.enum(PROJECT_STAGES).optional(),
-  status: z.enum(PROJECT_STATUSES).optional()
-}).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined, { message: "empty patch" });
+  status: z.enum(PROJECT_STATUSES).optional(),
+  contentLang: z.enum(["en", "hi"]).optional()
+}).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
 const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.string().trim().min(1).max(40).default("draft") });
 
 export function projectRoutes(store: Store) {
@@ -17,7 +20,7 @@ export function projectRoutes(store: Store) {
   r.post("/", async (c) => {
     const body = Create.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    return c.json(await store.createProject(c.get("userId"), body.data.title), 201);
+    return c.json(await store.createProject(c.get("userId"), body.data.title, body.data.stage), 201);
   });
   r.patch("/:id", async (c) => {
     const body = Patch.safeParse(await c.req.json().catch(() => null));
@@ -36,8 +39,34 @@ export function projectRoutes(store: Store) {
   r.post("/:id/documents", async (c) => {
     const body = CreateDoc.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0 });
+    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0, originStats: originCount("") });
     return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
+  });
+  /**
+   * The data behind "My writing" and the writing-process record. `docs`, `sources` and `weekly` belong to this project; `aiLog` is the
+   * student's whole AI-use log (the log is the student's own record, kept per user and not per project).
+   */
+  r.get("/:id/writing-record", async (c) => {
+    const userId = c.get("userId");
+    const list = await store.listDocuments(userId, c.req.param("id"));
+    if (!list) return c.json({ error: "not-found" }, 404);
+    const own = list.filter((d) => d.kind !== "source").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const docs: { id: string; title: string; kind: string; stats: OriginStats }[] = [];
+    const perDoc: DatedStats[][] = [];
+    for (const d of own) {
+      const revs = (await store.listRevisions(userId, d.id)) ?? [];
+      // Every writer stores stats; only revisions saved before the tracker existed lack them, and those are counted from their text.
+      const stats = async (r: (typeof revs)[number]): Promise<OriginStats> => r.originStats ?? originCount((await store.getRevision(userId, d.id, r.seq))?.bodyHtml ?? "");
+      const dated: DatedStats[] = [];
+      for (const r of revs) dated.push({ at: r.createdAt.getTime(), stats: await stats(r) });
+      perDoc.push(dated);
+      const newest = revs[0];
+      docs.push({ id: d.id, title: d.title, kind: d.kind, stats: newest ? await stats(newest) : originCount("") });
+    }
+    const sources = list.filter((d) => d.kind === "source").map((d) => ({ title: d.title, words: d.wordCount }));
+    const weekly = foldWeekly(perDoc, Date.now());
+    const user = await store.getUser(userId);
+    return c.json({ docs, sources, weekly, aiLog: summariseAiLog(await store.listAiUse(userId), user?.settings.aiLogOff === true) });
   });
   return r;
 }

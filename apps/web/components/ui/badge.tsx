@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
+  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden h-[22px] rounded-full border border-transparent px-[9px] py-0 text-xs leading-4 font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
   {
     variants: {
       variant: {
@@ -17,6 +17,14 @@ const badgeVariants = cva(
           "border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         link: "text-primary underline-offset-4 [a&]:hover:underline",
+        // v2 design-system pills (DESIGN-SYSTEM.md section 7 "Badge")
+        stage: "bg-purple-100 text-purple-800",
+        ok: "bg-ok-bg text-ok-ink",
+        flag: "bg-flag-bg font-semibold text-flag-ink",
+        chip: "bg-chip text-muted-foreground",
+        gold: "border-gold bg-gold-wash text-ink",
+        danger: "bg-danger-bg font-semibold text-danger-ink",
+        dashed: "border-dashed border-dashed-line bg-card text-purple-800",
       },
     },
     defaultVariants: {

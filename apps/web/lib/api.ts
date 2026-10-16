@@ -22,14 +22,15 @@ async function getToken(): Promise<string> {
   return (await inflight).token;
 }
 
-export class ApiError extends Error { constructor(public status: number, public code: string) { super(`${status} ${code}`); } }
+export class ApiError extends Error { constructor(public status: number, public code: string, public detail?: string) { super(`${status} ${code}`); } }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const r = await fetch(API + path, { ...init, headers: { ...(init.headers ?? {}), authorization: "Bearer " + token, ...(init.body ? { "content-type": "application/json" } : {}) } });
   if (!r.ok) {
-    let code = "error"; try { code = (await r.json()).error ?? code; } catch { /* ignore */ }
-    throw new ApiError(r.status, code);
+    let code = "error"; let detail: string | undefined;
+    try { const j = (await r.json()) as { error?: string; detail?: unknown }; code = j.error ?? code; if (typeof j.detail === "string") detail = j.detail; } catch { /* ignore */ }
+    throw new ApiError(r.status, code, detail);
   }
   if (r.status === 204) return undefined as T;
   return r.json() as Promise<T>;

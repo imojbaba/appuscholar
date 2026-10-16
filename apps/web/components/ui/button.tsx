@@ -16,13 +16,20 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "border border-line-strong bg-card font-medium text-accent-ink hover:bg-soft",
         link: "text-primary underline-offset-4 hover:underline",
+        // v2 design-system variants (DESIGN-SYSTEM.md section 7 "Buttons")
+        primary:
+          "border border-purple-800 bg-purple-800 font-semibold text-white hover:border-purple-600 hover:bg-purple-600 active:bg-purple-900 [&_kbd]:border-white/40 [&_kbd]:bg-white/20 [&_kbd]:text-white",
+        gold: "border border-gold bg-gold font-semibold text-ink hover:border-gold-bright hover:bg-gold-bright",
+        toggle:
+          "border border-purple-100 bg-purple-100 font-semibold text-purple-800 hover:bg-purple-100/80",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
+        md: "h-[34px] gap-1.5 px-3.5 has-[>svg]:px-3",
+        sm: "h-[30px] gap-1.5 rounded-md px-2.5 text-[13px] has-[>svg]:px-2",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
         icon: "size-9",
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",

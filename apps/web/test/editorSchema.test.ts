@@ -9,7 +9,12 @@ const V1_HTML = [
   '<p>Plain text, then <span class="ai-ins" data-h="abc123">an AI insertion</span> and <mark>marked</mark> words, H<sub>2</sub>O and x<sup>2</sup>.</p>',
   `<p><span class="img-wrap"><img src="${PNG}" alt="chart"></span> after the image</p>`,
   "<table><tbody><tr><th>Group</th><th>n</th></tr><tr><td>Control</td><td>12</td></tr></tbody></table>",
-  '<p><span style="color: rgb(255, 0, 0)">red</span> text</p>'
+  '<p><span style="color: rgb(255, 0, 0)">red</span> text</p>',
+  '<p style="text-align: center">centred</p>',
+  '<p style="margin-left: 4em">indented</p>',
+  `<p><img src="${PNG}" alt="wide" style="width: 640px"></p>`,
+  "<div class=\"page-break\" data-page-break></div>",
+  "<table><tbody><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></tbody></table>"
 ].join("");
 
 function roundTrip(html: string) {
@@ -36,6 +41,22 @@ describe("editor schema keeps v1 content", () => {
     expect(out).toContain("<sub>2</sub>");
     expect(out).toContain("<sup>2</sup>");
     expect(out).toMatch(/<span style="color: ?rgb\(255, 0, 0\);?">red<\/span>/);
+  });
+  it("keeps a table's header row", () => {
+    expect(out).toMatch(/<th[^>]*>(<p>)?A/);
+  });
+  it("keeps paragraph alignment", () => {
+    expect(out).toMatch(/<p style="text-align: center;?">centred<\/p>/);
+  });
+  it("keeps a paragraph's indent", () => {
+    expect(out).toMatch(/<p style="margin-left: 4em;?">indented<\/p>/);
+  });
+  it("keeps an image's width", () => {
+    expect(out).toMatch(/<img [^>]*style="width: 640px;?"/);
+  });
+  it("keeps a page break, with or without its data attribute", () => {
+    expect(out).toMatch(/<div class="page-break" data-page-break[^>]*><\/div>/);
+    expect(roundTrip(sanitizeHtml('<div class="page-break" data-page-break></div>'))).toMatch(/data-page-break/);
   });
   it("is stable: a second round trip through the sanitiser and schema changes nothing", () => {
     expect(roundTrip(sanitizeHtml(out))).toBe(out);
