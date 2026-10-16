@@ -157,6 +157,8 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await unlockWith(stale, "wrong");
     await expect.poll(toasts).toContain(WRONG);
     await expect(stale.getByTestId("pass-dialog")).toBeVisible();
+    // O9: the verdict is inside the window too, under the field, where a student looking at the modal sees it.
+    await expect(stale.getByTestId("pass-verdict")).toHaveText(WRONG);
     await unlockWith(stale, PASS_1);
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
     const sent = (await saved).request().postDataJSON() as SentBody;
@@ -256,6 +258,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("recover-pass2").fill("fourth passphrase");
     await page.getByTestId("recover-submit").click();
     await expect.poll(refused).toContain("That code did not match. Check the sheet and try again.");
+    await expect(page.getByTestId("recover-verdict")).toHaveText("That code did not match. Check the sheet and try again."); // O9: inline too
     await expect(page.getByTestId("vault-recover-dialog")).toBeVisible();
     await page.getByTestId("recover-cancel").click();
     await expect(page.getByTestId("doc-unreadable")).toHaveText(DOC_LOCKED);

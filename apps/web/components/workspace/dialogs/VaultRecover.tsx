@@ -36,26 +36,31 @@ export function VaultRecoverHost() {
   const [pass, setPass] = useState("");
   const [again, setAgain] = useState("");
   const [busy, setBusy] = useState(false);
+  // The last submit's refusal, shown inside the window (O9): a toast behind a modal goes unseen.
+  const [verdict, setVerdict] = useState<string | null>(null);
   const [sheet, setSheet] = useState<string | null>(null);
 
   useEffect(() => {
-    opener = () => { setCode(""); setPass(""); setAgain(""); setBusy(false); setOpen(true); };
+    opener = () => { setCode(""); setPass(""); setAgain(""); setBusy(false); setVerdict(null); setOpen(true); };
     setVaultForgotHandler(() => opener?.());
     return () => { opener = null; setVaultForgotHandler(null); };
   }, []);
-  function close() { setOpen(false); setCode(""); setPass(""); setAgain(""); setBusy(false); }
+  function close() { setOpen(false); setCode(""); setPass(""); setAgain(""); setBusy(false); setVerdict(null); }
+  /** Refuses the submit: the line goes under the fields and, as before, into a toast. */
+  function refuse(key: string) { const msg = t(key); setVerdict(msg); toast(msg); }
 
   async function submit() {
     if (busy) return;
-    if (pass.length < MIN_PASS) { toast(t("bk_err_short")); return; }
-    if (pass !== again) { toast(t("bk_err_match")); return; }
+    if (pass.length < MIN_PASS) { refuse("bk_err_short"); return; }
+    if (pass !== again) { refuse("bk_err_match"); return; }
     setBusy(true);
+    setVerdict(null);
     let fresh: string;
     try {
       fresh = (await recover(code, pass)).recoveryCode;
     } catch (e) {
       setBusy(false);
-      toast(t(e instanceof VaultError && e.code === "wrong-code" ? "vault_recover_bad" : "vault_change_fail"));
+      refuse(e instanceof VaultError && e.code === "wrong-code" ? "vault_recover_bad" : "vault_change_fail");
       return;
     }
     close();
@@ -84,6 +89,7 @@ export function VaultRecoverHost() {
               {t("bk_pass2")}
               <input className="input" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="recover-pass2" />
             </label>
+            {verdict && <p role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="recover-verdict">{verdict}</p>}
             <DialogFooter>
               <Button type="button" variant="ghost" data-testid="recover-cancel" onClick={close}>{t("bk_cancel")}</Button>
               <Button type="submit" variant="primary" disabled={busy} data-testid="recover-submit">{t("vault_recover_btn")}</Button>

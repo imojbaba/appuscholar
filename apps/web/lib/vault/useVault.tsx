@@ -483,13 +483,16 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         if (vk.current) return true;
         if (!record.current) return false;
         if (await unlockRemembered()) return true;
+        // After a wrong passphrase the next ask shows the verdict inside the window (O9): the toast alone goes unseen behind the modal.
+        let verdict: string | undefined;
         for (;;) {
-          const answer = await askVaultUnlock();
+          const answer = await askVaultUnlock(verdict ? { verdict } : {});
           if (answer === null || epoch.current !== mine) return false;
           try { await unlock(answer.pass, answer.remember); return true; } catch (e) {
             if (epoch.current !== mine) return false;
             if (!(e instanceof VaultError && e.code === "wrong-passphrase")) throw e;
-            toast(t("vault_wrong"));
+            verdict = t("vault_wrong");
+            toast(verdict);
           }
         }
       } finally { if (unlocking.current === run) unlocking.current = null; }

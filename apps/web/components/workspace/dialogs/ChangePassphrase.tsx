@@ -21,18 +21,23 @@ export function ChangePassphrase({ open, onClose }: { open: boolean; onClose: ()
   const [next, setNext] = useState("");
   const [again, setAgain] = useState("");
   const [busy, setBusy] = useState(false);
-  function close() { setOld(""); setNext(""); setAgain(""); setBusy(false); onClose(); }
+  // The last submit's refusal, shown inside the window (O9): a toast behind a modal goes unseen.
+  const [verdict, setVerdict] = useState<string | null>(null);
+  function close() { setOld(""); setNext(""); setAgain(""); setBusy(false); setVerdict(null); onClose(); }
+  /** Refuses the submit: the line goes under the fields and, as before, into a toast. */
+  function refuse(key: string) { const msg = t(key); setVerdict(msg); toast(msg); }
 
   async function submit() {
     if (busy) return;
-    if (next.length < MIN_PASS) { toast(t("bk_err_short")); return; }
-    if (next !== again) { toast(t("bk_err_match")); return; }
+    if (next.length < MIN_PASS) { refuse("bk_err_short"); return; }
+    if (next !== again) { refuse("bk_err_match"); return; }
     setBusy(true);
+    setVerdict(null);
     try {
       await changePassphrase(old, next);
     } catch (e) {
       setBusy(false);
-      toast(t(e instanceof VaultError && e.code === "wrong-passphrase" ? "vault_wrong" : "vault_change_fail"));
+      refuse(e instanceof VaultError && e.code === "wrong-passphrase" ? "vault_wrong" : "vault_change_fail");
       return;
     }
     toast(t("vault_changed"));
@@ -58,6 +63,7 @@ export function ChangePassphrase({ open, onClose }: { open: boolean; onClose: ()
             {t("bk_pass2")}
             <input className="input" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} data-testid="vault-change-again" />
           </label>
+          {verdict && <p role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="vault-change-verdict">{verdict}</p>}
           <DialogFooter>
             <Button type="button" variant="ghost" data-testid="vault-change-cancel" onClick={close}>{t("bk_cancel")}</Button>
             <Button type="submit" variant="primary" disabled={busy} data-testid="vault-change-submit">{t("vault_change_btn")}</Button>

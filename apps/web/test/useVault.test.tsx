@@ -258,13 +258,17 @@ describe("useVault", () => {
     await act(async () => { ok = await s.v.ensureUnlocked(); });
     expect(ok).toBe(false);
     expect(h.ask).toHaveBeenCalledTimes(2);
-    expect(h.ask).toHaveBeenCalledWith({ kind: "vault-unlock" });
+    // The first ask carries no verdict; after a wrong passphrase the next one shows the verdict inside the window (O9), and the toast stays.
+    expect(h.ask).toHaveBeenNthCalledWith(1, { kind: "vault-unlock" });
+    expect(h.ask).toHaveBeenNthCalledWith(2, { kind: "vault-unlock", verdict: en.vault_wrong });
     expect(h.toast).toHaveBeenCalledWith(en.vault_wrong);
     expect(s.v.status).toBe("locked");
     h.ask.mockReset().mockResolvedValueOnce("wrong").mockResolvedValueOnce("right");
     await act(async () => { ok = await s.v.ensureUnlocked(); });
     expect(ok).toBe(true);
     expect(h.ask).toHaveBeenCalledTimes(2);
+    expect(h.ask).toHaveBeenNthCalledWith(1, { kind: "vault-unlock" }); // a new round starts clean
+    expect(h.ask).toHaveBeenNthCalledWith(2, { kind: "vault-unlock", verdict: en.vault_wrong });
     expect(s.v.status).toBe("unlocked");
     // Already unlocked: no prompt.
     h.ask.mockReset();

@@ -30,8 +30,12 @@ function title(ask: PassphraseAsk, t: T): string {
   return t("bk_pass1");
 }
 
-/** `remember` is the vault unlock's "Remember on this computer" box (always false for the other asks). */
-type Pending = { ask: PassphraseAsk; resolve: (v: string | null, remember: boolean) => void };
+/**
+ * `remember` is the vault unlock's "Remember on this computer" box (always false for the other asks). `verdict` is what the last
+ * answer earned (the wrong-passphrase line): shown inside the window, under the field, because a toast at the foot of the page is
+ * not seen while a modal holds focus (O9, Phase 3A walk).
+ */
+type Pending = { ask: PassphraseAsk; verdict: string | null; resolve: (v: string | null, remember: boolean) => void };
 let listener: ((p: Pending | null) => void) | null = null;
 let current: Pending | null = null;
 
@@ -44,9 +48,9 @@ export function setVaultForgotHandler(fn: (() => void) | null): void {
   forgotHandler = fn;
 }
 
-function open(ask: PassphraseAsk, resolve: Pending["resolve"]): void {
+function open(ask: PassphraseAsk, resolve: Pending["resolve"], verdict: string | null = null): void {
   current?.resolve(null, false);
-  current = { ask, resolve };
+  current = { ask, verdict, resolve };
   if (!listener) { current = null; resolve(null, false); return; }
   listener(current);
 }
@@ -58,10 +62,11 @@ export function askPassphrase(ask: PassphraseAsk): Promise<string | null> {
 
 /**
  * The vault unlock ask: the passphrase and whether "Remember on this computer" was ticked (unticked by default), or null when cancelled.
- * Shares the one dialog with askPassphrase, so either cancels the other.
+ * Shares the one dialog with askPassphrase, so either cancels the other. `verdict` (the previous try's wrong-passphrase line) shows
+ * under the field.
  */
-export function askVaultUnlock(): Promise<{ pass: string; remember: boolean } | null> {
-  return new Promise((resolve) => open({ kind: "vault-unlock" }, (v, remember) => resolve(v === null ? null : { pass: v, remember })));
+export function askVaultUnlock(opts: { verdict?: string } = {}): Promise<{ pass: string; remember: boolean } | null> {
+  return new Promise((resolve) => open({ kind: "vault-unlock" }, (v, remember) => resolve(v === null ? null : { pass: v, remember }), opts.verdict ?? null));
 }
 
 /** Mount once, in ChromeDialogs. */
@@ -92,7 +97,9 @@ export function PassphraseHost() {
               <DialogTitle className="text-xl font-semibold text-purple-800">🔒 {title(pending.ask, t)}</DialogTitle>
               <DialogDescription data-testid="pass-message">{message(pending.ask, t)}</DialogDescription>
             </DialogHeader>
-            <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")} data-testid="pass-input" />
+            <input className="input" type="password" autoComplete="off" autoFocus value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("bk_pass1")}
+              aria-invalid={pending.verdict ? true : undefined} aria-describedby={pending.verdict ? "pass-verdict" : undefined} data-testid="pass-input" />
+            {pending.verdict && <p id="pass-verdict" role="alert" className="m-0 text-sm font-semibold text-destructive" data-testid="pass-verdict">{pending.verdict}</p>}
             {pending.ask.kind === "vault-unlock" && (
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} data-testid="pass-remember" />
