@@ -95,6 +95,8 @@ export interface Store {
   updateVaultWraps(userId: string, patch: { passWrapped?: string; recoveryWrapped?: string }): Promise<VaultRecord | null>;
   /** False if the user has no vault record. */
   markVaultComplete(userId: string): Promise<boolean>;
+  /** Revisions with keyVersion 0 in any of the user's documents, soft-deleted ones included: the vault completes only at 0. */
+  countPlaintextRevisions(userId: string): Promise<number>;
 
   /** Attaches a wrapped data key to a document, soft-deleted ones included. Throws DekExistsError if a dek with the same `v` already exists. Null if the document is not the user's. */
   addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null>;

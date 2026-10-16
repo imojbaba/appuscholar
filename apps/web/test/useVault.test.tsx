@@ -36,7 +36,12 @@ function docApi(path: string, method: string, body: Record<string, unknown> | un
   m = /^\/documents\/([^/]+)\/revisions\/(\d+)$/.exec(p!);
   if (m && method === "GET") { const r = find(m[1]!)?.revs.find((x) => x.seq === Number(m![2])); return r ? Promise.resolve({ ...r }) : Promise.reject(new ApiError(404, "not-found")); }
   m = /^\/documents\/([^/]+)\/deks$/.exec(p!);
-  if (m && method === "POST") { const d = server.docs.find((x) => x.id === m![1])!; d.deks.push(body as { v: number; wrapped: string }); return Promise.resolve({ id: d.id, deks: d.deks }); }
+  if (m && method === "POST") {
+    const d = server.docs.find((x) => x.id === m![1])!;
+    if (d.deks.some((k) => k.v === (body as { v: number }).v)) return Promise.reject(new ApiError(409, "dek-exists"));
+    d.deks.push(body as { v: number; wrapped: string });
+    return Promise.resolve({ id: d.id, deks: d.deks });
+  }
   m = /^\/documents\/([^/]+)\/revisions\/(\d+)\/rewrite$/.exec(p!);
   if (m && method === "PUT") {
     if (server.vault?.complete) return Promise.reject(new ApiError(409, "migration-closed"));
@@ -56,6 +61,10 @@ function fakeApi(path: string, init: RequestInit = {}) {
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
   if (path === "/me/vault" && method === "PUT") { if (server.vault) return Promise.reject(new ApiError(409, "vault-exists")); server.vault = { ...(body as Omit<Rec, "complete" | "updatedAt">), complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve(undefined); }
   if (path === "/me/vault/wraps" && method === "PATCH") { const { reason: _r, ...w } = body!; server.vault = { ...server.vault!, ...w }; return Promise.resolve({ ok: true }); }
+  if (path === "/me/vault/complete" && method === "POST" && !server.vault?.complete) {
+    const count = server.docs.flatMap((d) => d.revs).filter((r) => r.keyVersion === 0).length;
+    if (count) return Promise.reject(new ApiError(409, "plaintext-remains"));
+  }
   if (path === "/me/vault/complete" && method === "POST") { server.vault = { ...server.vault!, complete: true }; return Promise.resolve(undefined); }
   return Promise.reject(new ApiError(404, "not-found"));
 }

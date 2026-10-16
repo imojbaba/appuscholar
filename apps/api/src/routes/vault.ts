@@ -51,6 +51,11 @@ export function vaultRoutes(store: Store) {
     const userId = c.get("userId");
     const v = await store.getVault(userId);
     if (!v) return c.json({ error: "no-vault" }, 404);
+    // Never while a plaintext revision is left (a stale tab's write, a restore during the run): the client runs another pass first.
+    if (!v.complete) {
+      const left = await store.countPlaintextRevisions(userId);
+      if (left > 0) return c.json({ error: "plaintext-remains", count: left }, 409);
+    }
     // Completing twice is harmless and is logged once.
     if (!v.complete && (await store.markVaultComplete(userId))) await store.appendAudit(userId, "migration-complete");
     return c.body(null, 204);

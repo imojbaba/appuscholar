@@ -9,7 +9,7 @@ export const WrappedDekSchema = z.object({ v: z.number().int().min(1).max(1e6), 
 /**
  * The body shape shared by document creation and PUT /documents/:id. keyVersion 0 is plaintext (the server sanitises and counts);
  * 1 or more is ciphertext the server stores untouched and cannot count, so the client sends wordCount and originStats.
- * keyVersion defaults to 0 so clients that predate the vault keep working until the vault is complete.
+ * keyVersion defaults to 0 so clients that predate the vault keep working until the vault is set up.
  */
 export const WriteFields = {
   bodyHtml: z.string(),
@@ -27,7 +27,8 @@ export type ResolvedWrite =
 /** Decides what to store for a write, or why to refuse it. Nothing is written here; the caller adds `addDek` first, then the revision. */
 export async function resolveWrite(store: Store, userId: string, deks: WrappedDek[], b: WriteBody): Promise<ResolvedWrite> {
   if (b.keyVersion === 0) {
-    if ((await store.getVault(userId))?.complete) return { ok: false, status: 409, error: "vault-required" };
+    // Refused once a vault exists at all, not only once it is complete: a plaintext write during the migration could outlive it.
+    if (await store.getVault(userId)) return { ok: false, status: 409, error: "vault-required" };
     const clean = sanitizeHtml(b.bodyHtml);
     return { ok: true, bodyHtml: clean, keyVersion: 0, wordCount: wordCount(clean), originStats: originCount(clean) };
   }

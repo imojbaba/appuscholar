@@ -215,6 +215,11 @@ export class MemoryStore implements Store {
     v.updatedAt = new Date();
     return { ...v };
   }
+  async countPlaintextRevisions(userId: string): Promise<number> {
+    let n = 0;
+    for (const d of this.docs.values()) if (this.ownsProject(userId, d.projectId)) n += (this.revs.get(d.id) ?? []).filter(r => r.keyVersion === 0).length;
+    return n;
+  }
   async markVaultComplete(userId: string): Promise<boolean> {
     const v = this.vaults.get(userId);
     if (!v) return false;

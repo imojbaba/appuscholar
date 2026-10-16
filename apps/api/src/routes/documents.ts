@@ -127,7 +127,8 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const old = await store.getRevision(userId, c.req.param("id"), seq);
     if (!old) return c.json({ error: "not-found" }, 404);
     // The body is copied as it is: a ciphertext revision is never sanitised, and keeps the key version its body was encrypted under.
-    if (old.keyVersion === 0 && (await store.getVault(userId))?.complete) return c.json({ error: "vault-required" }, 409);
+    // As for any write: no new plaintext revision once a vault exists (the migration may already have passed this document).
+    if (old.keyVersion === 0 && (await store.getVault(userId))) return c.json({ error: "vault-required" }, 409);
     const rev = await store.appendRevision(userId, old.documentId, { bodyHtml: old.bodyHtml, authorKind: "restore", authorLabel: `restored revision ${seq}`, wordCount: old.wordCount, keyVersion: old.keyVersion, originStats: old.originStats ?? (old.keyVersion === 0 ? originCount(old.bodyHtml) : ZERO_STATS) });
     return c.json({ document: await store.getDocument(userId, old.documentId), revision: rev });
   });

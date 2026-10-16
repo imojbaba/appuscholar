@@ -236,6 +236,13 @@ export class DrizzleStore implements Store {
     const rows = await this.d.update(vaultKeys).set(set).where(eq(vaultKeys.userId, userId)).returning();
     return rows[0] ? this.toVault(rows[0]) : null;
   }
+  async countPlaintextRevisions(userId: string): Promise<number> {
+    const [row] = await this.d.select({ n: count() }).from(documentRevisions)
+      .innerJoin(documents, eq(documents.id, documentRevisions.documentId))
+      .innerJoin(projects, eq(projects.id, documents.projectId))
+      .where(and(eq(projects.userId, userId), eq(documentRevisions.keyVersion, 0)));
+    return Number(row?.n ?? 0);
+  }
   async markVaultComplete(userId: string): Promise<boolean> {
     const rows = await this.d.update(vaultKeys).set({ complete: true, updatedAt: new Date() }).where(eq(vaultKeys.userId, userId)).returning({ userId: vaultKeys.userId });
     return rows.length > 0;

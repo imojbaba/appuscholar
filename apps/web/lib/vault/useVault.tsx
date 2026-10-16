@@ -146,7 +146,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     const mine = epoch.current;
     const live = () => { if (epoch.current !== mine) throw changedError(); };
     const call = <T,>(path: string, init?: RequestInit): Promise<T> => { live(); return apiFetch<T>(path, init); };
-    setMigrating(null); // nothing left from a run under another account: the count arrives with the listing
+    setMigrating(null); // nothing left from a run under another account: the count arrives with the first listing
+    let counted = false;
     setStatus("migrating");
     let run!: Promise<void>;
     run = (async () => {
@@ -159,7 +160,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
             if (scratch && !ids.includes(scratch)) ids.push(scratch);
             const docs = (await Promise.all(ids.map((id) => call<{ id: string; deks: WrappedDek[] }[]>(`/projects/${id}/documents?includeDeleted=1`)))).flat();
             live();
-            setMigrating({ n: 0, total: docs.length });
+            // The checking passes (and a dek-exists re-read) list again; the progress stays the first pass's.
+            if (!counted) { counted = true; setMigrating({ n: 0, total: docs.length }); }
             return docs;
           },
           listRevisions: (id) => call(`/documents/${id}/revisions?includeDeleted=1`),

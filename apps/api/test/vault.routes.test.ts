@@ -91,14 +91,67 @@ describe("vault routes", () => {
     expect(unknown.status).toBe(400);
     expect(await json(unknown)).toEqual({ error: "unknown-key-version" });
     expect((await json(await req("GET", `/documents/${doc.id}`))).bodyHtml).toBe("aA.bB");
-    await req("POST", "/me/vault/complete");
+    // The document's first revision (written before the vault) is migrated, so completion is allowed.
+    expect((await req("PUT", `/documents/${doc.id}/revisions/1/rewrite`, { bodyHtml: "r.w", keyVersion: 1 })).status).toBe(200);
+    expect((await req("POST", "/me/vault/complete")).status).toBe(204);
     const plain = await req("PUT", `/documents/${doc.id}`, { bodyHtml: "<p>plain</p>", keyVersion: 0 });
     expect(plain.status).toBe(409);
     expect(await json(plain)).toEqual({ error: "vault-required" });
     const closed = await req("PUT", `/documents/${doc.id}/revisions/1/rewrite`, { bodyHtml: "x.y", keyVersion: 1 });
     expect(closed.status).toBe(409);
     expect(await json(closed)).toEqual({ error: "migration-closed" });
-    expect((await json(await req("GET", `/documents/${doc.id}/revisions/1`))).bodyHtml).toBe("");
+    expect((await json(await req("GET", `/documents/${doc.id}/revisions/1`))).bodyHtml).toBe("r.w");
+  });
+
+  it("refuses every plaintext write (PUT, create, restore of a plaintext revision) as soon as a vault exists, before completion", async () => {
+    const p = await json<{ id: string }>(await req("POST", "/projects", { title: "T" }));
+    const doc = await json<{ id: string }>(await req("POST", `/projects/${p.id}/documents`, { title: "Before" }));
+    expect((await req("PUT", `/documents/${doc.id}`, { bodyHtml: "<p>early</p>", keyVersion: 0 })).status).toBe(200);
+    expect((await req("PUT", "/me/vault", VAULT)).status).toBe(201);
+    expect((await json(await req("GET", "/me/vault"))).complete).toBe(false);
+    const put = await req("PUT", `/documents/${doc.id}`, { bodyHtml: "<p>stale tab</p>", keyVersion: 0 });
+    expect(put.status).toBe(409);
+    expect(await json(put)).toEqual({ error: "vault-required" });
+    const made = await req("POST", `/projects/${p.id}/documents`, { title: "Plain" });
+    expect(made.status).toBe(409);
+    expect(await json(made)).toEqual({ error: "vault-required" });
+    const restored = await req("POST", `/documents/${doc.id}/restore/2`);
+    expect(restored.status).toBe(409);
+    expect(await json(restored)).toEqual({ error: "vault-required" });
+    // Nothing was written: two revisions, both from before the vault, and one document in the project.
+    expect((await json<unknown[]>(await req("GET", `/documents/${doc.id}/revisions`))).length).toBe(2);
+    expect((await json<unknown[]>(await req("GET", `/projects/${p.id}/documents`))).length).toBe(1);
+    // Ciphertext is still accepted, and so is restoring a ciphertext revision.
+    expect((await req("PUT", `/documents/${doc.id}`, { bodyHtml: "aA.bB", keyVersion: 1, wordCount: 1, originStats: ZERO_STATS, dek: { v: 1, wrapped: "k" } })).status).toBe(200);
+    expect((await req("POST", `/documents/${doc.id}/restore/3`)).status).toBe(200);
+    expect((await req("POST", `/projects/${p.id}/documents`, { title: "Enc", keyVersion: 1, bodyHtml: "a.b", wordCount: 1, originStats: ZERO_STATS, dek: { v: 1, wrapped: "k2" } })).status).toBe(201);
+    // Another user without a vault still writes plaintext.
+    const other = await makeDoc("u2");
+    expect((await as("u2", "PUT", `/documents/${other.id}`, { bodyHtml: "<p>fine</p>", keyVersion: 0 })).status).toBe(200);
+  });
+
+  it("complete answers 409 plaintext-remains with the count while any revision is plaintext (deleted documents included), then 204", async () => {
+    // Another user's plaintext never counts against this one.
+    await makeDoc("u2");
+    const p = await json<{ id: string }>(await req("POST", "/projects", { title: "T" }));
+    const keep = await json<{ id: string }>(await req("POST", `/projects/${p.id}/documents`, { title: "Keep" }));
+    const gone = await json<{ id: string }>(await req("POST", `/projects/${p.id}/documents`, { title: "Gone" }));
+    await req("PUT", `/documents/${gone.id}`, { bodyHtml: "<p>old</p>", keyVersion: 0 });
+    expect((await req("DELETE", `/documents/${gone.id}`)).status).toBe(204);
+    await req("PUT", "/me/vault", VAULT);
+    const early = await req("POST", "/me/vault/complete");
+    expect(early.status).toBe(409);
+    expect(await json(early)).toEqual({ error: "plaintext-remains", count: 3 });
+    expect((await json(await req("GET", "/me/vault"))).complete).toBe(false);
+    for (const id of [keep.id, gone.id]) await req("POST", `/documents/${id}/deks`, { v: 1, wrapped: "k" });
+    await req("PUT", `/documents/${keep.id}/revisions/1/rewrite`, { bodyHtml: "a.b", keyVersion: 1 });
+    await req("PUT", `/documents/${gone.id}/revisions/1/rewrite`, { bodyHtml: "a.b", keyVersion: 1 });
+    expect(await json(await req("POST", "/me/vault/complete"))).toEqual({ error: "plaintext-remains", count: 1 });
+    await req("PUT", `/documents/${gone.id}/revisions/2/rewrite`, { bodyHtml: "c.d", keyVersion: 1 });
+    expect((await req("POST", "/me/vault/complete")).status).toBe(204);
+    expect((await json(await req("GET", "/me/vault"))).complete).toBe(true);
+    const audit = await json(await req("GET", "/me/audit"));
+    expect(audit.entries.map((e: { action: string }) => e.action).filter((a: string) => a === "migration-complete")).toHaveLength(1);
   });
 
   it("stores ciphertext untouched (no sanitising) and requires wordCount and originStats", async () => {

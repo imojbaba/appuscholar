@@ -322,6 +322,30 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.listRevisions(b, keep.id, { includeDeleted: true })).toBeNull();
     });
 
+    it("countPlaintextRevisions counts the owner's keyVersion 0 revisions, soft-deleted documents included", async () => {
+      expect(await s.countPlaintextRevisions(a)).toBe(0);
+      const p = await s.createProject(a, "P");
+      const rev = { bodyHtml: "<p>x</p>", authorKind: "web" as const, authorLabel: "t", wordCount: 1, keyVersion: 0 };
+      const keep = (await s.createDocument(a, p.id, "Keep", "draft", rev))!;
+      const gone = (await s.createDocument(a, p.id, "Gone", "draft", rev))!;
+      await s.appendRevision(a, gone.id, rev);
+      await s.appendRevision(a, keep.id, { ...rev, bodyHtml: "aA.bB", keyVersion: 1 });
+      const scratch = await s.getScratchProject(a);
+      await s.createDocument(a, scratch.id, "Note", "draft", rev);
+      expect(await s.softDeleteDocument(a, gone.id)).toBe("deleted");
+      expect(await s.countPlaintextRevisions(a)).toBe(4);
+      // Another user's plaintext is not counted for a, and a's is not counted for b.
+      const pb = await s.createProject(b, "B");
+      await s.createDocument(b, pb.id, "Theirs", "draft", rev);
+      expect(await s.countPlaintextRevisions(b)).toBe(1);
+      expect(await s.countPlaintextRevisions(a)).toBe(4);
+      await s.addDek(a, gone.id, { v: 1, wrapped: "k" });
+      await s.rewriteRevision(a, gone.id, 1, { bodyHtml: "c.d", keyVersion: 1 });
+      expect(await s.countPlaintextRevisions(a)).toBe(3);
+      expect(await s.deleteProject(a, p.id)).toBe(true);
+      expect(await s.countPlaintextRevisions(a)).toBe(1);
+    });
+
     it("createDocument attaches the given deks together with the first revision", async () => {
       const p = await s.createProject(a, "P");
       const d = (await s.createDocument(a, p.id, "Enc", "draft", { bodyHtml: "aA.bB", authorKind: "web", authorLabel: "t", wordCount: 2, keyVersion: 1 }, [{ v: 1, wrapped: "i.k" }]))!;

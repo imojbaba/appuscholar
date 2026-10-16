@@ -23,7 +23,7 @@ export function shouldWarnOnUnload(status: SaveStatus): boolean {
 
 const isVaultLocked = (e: unknown) => e instanceof Error && e.message === "vault-locked";
 /**
- * The document's keys or the vault changed under this tab: "vault-required" (another tab completed the vault after this body was sealed in
+ * The document's keys or the vault changed under this tab: "vault-required" (a vault was set up elsewhere after this body was sealed in
  * plaintext) or "dek-exists" (a first key reached the server but its answer did not, and the vault was locked since, so a new first key was made).
  */
 const isStaleKeys = (e: unknown) => e instanceof ApiError && e.status === 409 && (e.code === "vault-required" || e.code === "dek-exists");
