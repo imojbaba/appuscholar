@@ -9,6 +9,7 @@ import {
   decryptText, encryptText, generateDek, generateKeypair, generateRecoveryCode, generateVaultKey, unwrapKey, unwrapPrivateKey,
   unwrapWithPassphrase, unwrapWithRecovery, VaultError, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery
 } from "./crypto";
+import { migrateToVault } from "./migrate";
 import { forgetRemembered, hasRemembered, readRemembered, rememberVault } from "./remember";
 
 /** A document's key, wrapped under the vault key, with the version that revisions name in `keyVersion`. */
@@ -25,15 +26,20 @@ export type VaultValue = {
   changePassphrase(oldPass: string, newPass: string): Promise<void>;
   lock(): void;
   forgetThisComputer(): Promise<void>;
-  /** Prompts via askPassphrase("vault-unlock") until correct or cancelled. */
+  /**
+   * Prompts via askPassphrase("vault-unlock") until correct or cancelled. While the one-off migration runs it resolves once the migration
+   * has finished, so a write held by encryptBody goes out after it and never races its rewrites or a document's first key.
+   */
   ensureUnlocked(): Promise<boolean>;
   /**
    * The status once this account's vault record has been read ("off" when there is none); stays pending while the api is unreachable,
    * so "loading" is never mistaken for "off". `recheck` asks the server again when this tab has seen no vault: another tab may have set one up.
    */
   known(recheck?: boolean): Promise<VaultStatus>;
+  /** Throws Error("vault-locked") while locked, and while the one-off migration runs (a write is held until it is done; see ensureUnlocked). */
   encryptBody(doc: { id: string; deks: WrappedDek[] }, html: string): Promise<{ bodyHtml: string; keyVersion: number; dek?: WrappedDek }>;
   decryptBody(doc: { id: string; deks: WrappedDek[]; bodyHtml: string; keyVersion: number }): Promise<string>;
+  /** Documents done of all documents while the one-off migration runs (status "migrating"), else null. */
   migrating: { n: number; total: number } | null;
   /** Encrypts a short secret (an AI key) under the vault key: iv.ct. Throws "vault-locked" while locked; the vault key itself never leaves. */
   wrapSecret(text: string): Promise<string>;
@@ -56,10 +62,16 @@ const RETRY_MAX_MS = 30_000;
 
 export function VaultProvider({ children }: { children: React.ReactNode }) {
   const t = useT();
-  const userId = useSettings().me?.id ?? null;
+  const me = useSettings().me;
+  const userId = me?.id ?? null;
+  // The migration's toast and scratch project are read when it ends or starts, not on render: a language change must not re-create the methods.
+  const tRef = useRef(t);
+  const scratchRef = useRef<string | null>(null);
+  const scratchId = me?.scratchProjectId ?? null;
+  useEffect(() => { tRef.current = t; scratchRef.current = scratchId; }, [t, scratchId]);
   // State is tagged with the account it was read for, so another account starts at "loading" without a reset in the effect.
   const [state, setState] = useState<{ uid: string | null; status: VaultStatus; complete: boolean }>({ uid: null, status: "loading", complete: false });
-  const [migrating] = useState<{ n: number; total: number } | null>(null);
+  const [migrating, setMigrating] = useState<{ n: number; total: number } | null>(null);
   // Refs are the source of truth for the async methods, so a call made right after another sees its result.
   const statusRef = useRef<VaultStatus>("loading");
   const userRef = useRef<string | null>(null);
@@ -86,9 +98,106 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const loading = useRef<Promise<void> | null>(null);
   /** Bumped on every account change; an operation started under an older epoch must not touch the session. */
   const epoch = useRef(0);
+  /** The one-off migration while it runs. Writes wait for it (encryptBody refuses, ensureUnlocked resolves after it). */
+  const migration = useRef<Promise<void> | null>(null);
+  /** The migration has run (or is running) in this session for this account; a failed run is tried again at the next unlock. */
+  const migrated = useRef(false);
 
   const forgetKeys = useCallback(() => { vk.current = null; dekCache.current.clear(); pendingDek.current.clear(); }, []);
-  const opened = useCallback((key: CryptoKey) => { vk.current = key; if (statusRef.current !== "migrating") setStatus("unlocked"); }, [setStatus]);
+
+  const dekFor = useCallback(async (docId: string, dek: WrappedDek, key: CryptoKey): Promise<CryptoKey> => {
+    const id = docId + ":" + dek.v + ":" + dek.wrapped;
+    const hit = dekCache.current.get(id);
+    if (hit) return hit;
+    const k = await unwrapKey(dek.wrapped, key); // VaultError("corrupt") when it does not open under this vault key
+    dekCache.current.set(id, k);
+    return k;
+  }, []);
+
+  /** encryptBody without the migration's hold: the migration itself seals with this. */
+  const seal = useCallback(async (doc: { id: string; deks: WrappedDek[] }, html: string) => {
+    const key = vk.current;
+    if (!key) throw lockedError();
+    if (doc.deks.length === 0) {
+      let dek = pendingDek.current.get(doc.id);
+      let dk: CryptoKey;
+      if (dek) dk = await dekFor(doc.id, dek, key);
+      else {
+        dk = await generateDek();
+        dek = { v: 1, wrapped: await wrapKey(dk, key) };
+        pendingDek.current.set(doc.id, dek);
+        dekCache.current.set(doc.id + ":1:" + dek.wrapped, dk);
+      }
+      return { bodyHtml: await encryptText(html, dk), keyVersion: 1, dek };
+    }
+    pendingDek.current.delete(doc.id);
+    const top = doc.deks.reduce((a, b) => (b.v > a.v ? b : a));
+    return { bodyHtml: await encryptText(html, await dekFor(doc.id, top, key)), keyVersion: top.v };
+  }, [dekFor]);
+
+  /**
+   * The one-off migration of plaintext revisions, once per session after the first unlock while the vault is not complete. Every
+   * document of every project and the scratch space, soft-deleted ones included, is read and rewritten in place, then the vault completes.
+   */
+  const startMigration = useCallback(() => {
+    const rec = record.current;
+    if (!rec || rec.complete || migrated.current || migration.current) return;
+    migrated.current = true;
+    const mine = epoch.current;
+    const live = () => { if (epoch.current !== mine) throw changedError(); };
+    const call = <T,>(path: string, init?: RequestInit): Promise<T> => { live(); return apiFetch<T>(path, init); };
+    setMigrating(null); // nothing left from a run under another account: the count arrives with the listing
+    setStatus("migrating");
+    let run!: Promise<void>;
+    run = (async () => {
+      let done = false;
+      try {
+        await migrateToVault({
+          listAll: async () => {
+            const ids = (await call<{ id: string }[]>("/projects")).map((p) => p.id);
+            const scratch = scratchRef.current;
+            if (scratch && !ids.includes(scratch)) ids.push(scratch);
+            const docs = (await Promise.all(ids.map((id) => call<{ id: string; deks: WrappedDek[] }[]>(`/projects/${id}/documents?includeDeleted=1`)))).flat();
+            live();
+            setMigrating({ n: 0, total: docs.length });
+            return docs;
+          },
+          listRevisions: (id) => call(`/documents/${id}/revisions?includeDeleted=1`),
+          getRevision: (id, seq) => call(`/documents/${id}/revisions/${seq}?includeDeleted=1`),
+          addDek: async (id, dek) => { await call(`/documents/${id}/deks`, { method: "POST", body: JSON.stringify(dek) }); },
+          rewrite: async (id, seq, body) => { await call(`/documents/${id}/revisions/${seq}/rewrite`, { method: "PUT", body: JSON.stringify(body) }); },
+          complete: () => call<void>("/me/vault/complete", { method: "POST" }),
+          encrypt: async (doc, html) => { live(); return seal(doc, html); },
+          onProgress: (n, total) => { if (epoch.current === mine) setMigrating({ n, total }); }
+        });
+        done = true;
+      } catch (e) {
+        if (epoch.current !== mine) return;
+        if (e instanceof ApiError && e.status === 409 && e.code === "migration-closed") {
+          // Another tab completed the migration: stop here and take the vault record as it is now.
+          try {
+            const fresh = await apiFetch<VaultRecord>("/me/vault");
+            if (epoch.current === mine) { record.current = fresh; setComplete(fresh.complete); }
+          } catch { /* the record stays as it was; the next load reads it */ }
+        } else migrated.current = false; // interrupted (offline, locked meanwhile): the next unlock picks up what is still plaintext
+      } finally {
+        if (migration.current === run) migration.current = null;
+        if (epoch.current === mine) {
+          setMigrating(null);
+          if (done && record.current) { record.current = { ...record.current, complete: true }; setComplete(true); }
+          if (statusRef.current === "migrating") setStatus(vk.current ? "unlocked" : "locked");
+          if (done) toast(tRef.current("vault_migrated"));
+        }
+      }
+    })();
+    migration.current = run;
+  }, [seal, setComplete, setStatus]);
+
+  const opened = useCallback((key: CryptoKey) => {
+    vk.current = key;
+    if (statusRef.current !== "migrating") setStatus("unlocked");
+    startMigration();
+  }, [setStatus, startMigration]);
 
   /** Keeps the remembered copy's passphrase wrap current after a change, when this computer remembers the vault. */
   const refreshRemembered = useCallback(async (passWrapped: string, key: CryptoKey) => {
@@ -135,6 +244,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     record.current = null;
     statusRef.current = "loading";
     unlocking.current = null;
+    migration.current = null;
+    migrated.current = false;
     if (!userId) { loading.current = null; return; }
     let live = true;
     let inflight = false;
@@ -253,7 +364,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (uid) await forgetRemembered(uid);
   }, []);
 
-  const ensureUnlocked = useCallback((): Promise<boolean> => {
+  const openNow = useCallback((): Promise<boolean> => {
     if (vk.current) return Promise.resolve(true);
     // One prompt at a time: a second caller waits for the first instead of cancelling its dialog.
     if (unlocking.current) return unlocking.current;
@@ -282,6 +393,16 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     return run;
   }, [unlock, unlockRemembered, t]);
 
+  const ensureUnlocked = useCallback(async (): Promise<boolean> => {
+    for (;;) {
+      // A write waits for the migration (one started by this very unlock too); the migration's run never rejects.
+      const m = migration.current;
+      if (m) { await m; continue; }
+      if (!(await openNow())) return false;
+      if (!migration.current) return true;
+    }
+  }, [openNow]);
+
   const known = useCallback(async (recheck = false): Promise<VaultStatus> => {
     const mine = epoch.current;
     await loading.current;
@@ -299,34 +420,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     return statusRef.current;
   }, [unlockRemembered]);
 
-  const dekFor = useCallback(async (docId: string, dek: WrappedDek, key: CryptoKey): Promise<CryptoKey> => {
-    const id = docId + ":" + dek.v + ":" + dek.wrapped;
-    const hit = dekCache.current.get(id);
-    if (hit) return hit;
-    const k = await unwrapKey(dek.wrapped, key); // VaultError("corrupt") when it does not open under this vault key
-    dekCache.current.set(id, k);
-    return k;
-  }, []);
-
   const encryptBody = useCallback(async (doc: { id: string; deks: WrappedDek[] }, html: string) => {
-    const key = vk.current;
-    if (!key) throw lockedError();
-    if (doc.deks.length === 0) {
-      let dek = pendingDek.current.get(doc.id);
-      let dk: CryptoKey;
-      if (dek) dk = await dekFor(doc.id, dek, key);
-      else {
-        dk = await generateDek();
-        dek = { v: 1, wrapped: await wrapKey(dk, key) };
-        pendingDek.current.set(doc.id, dek);
-        dekCache.current.set(doc.id + ":1:" + dek.wrapped, dk);
-      }
-      return { bodyHtml: await encryptText(html, dk), keyVersion: 1, dek };
-    }
-    pendingDek.current.delete(doc.id);
-    const top = doc.deks.reduce((a, b) => (b.v > a.v ? b : a));
-    return { bodyHtml: await encryptText(html, await dekFor(doc.id, top, key)), keyVersion: top.v };
-  }, [dekFor]);
+    // Held while the migration runs, the way a locked vault holds it: the editor keeps the text and ensureUnlocked releases it afterwards.
+    if (migration.current) throw lockedError();
+    return seal(doc, html);
+  }, [seal]);
 
   const decryptBody = useCallback(async (doc: { id: string; deks: WrappedDek[]; bodyHtml: string; keyVersion: number }) => {
     if (doc.keyVersion === 0) return doc.bodyHtml;

@@ -52,6 +52,23 @@ async function selectInEditor(page: Page, text: string) {
   }, text);
 }
 
+/**
+ * Every toast message shown from now on, in order. One toast replaces another, so two that arrive close together (the key's and the
+ * vault migration's) are read from this record rather than from the toast on screen.
+ */
+async function recordToasts(page: Page): Promise<() => Promise<string[]>> {
+  await page.evaluate(() => {
+    const w = window as unknown as { __toasts: string[] };
+    w.__toasts = [];
+    const host = document.querySelector('[data-testid="toast-host"]')!;
+    new MutationObserver(() => {
+      const text = host.querySelector('[data-testid="toast"] span')?.textContent;
+      if (text && w.__toasts[w.__toasts.length - 1] !== text) w.__toasts.push(text);
+    }).observe(host, { childList: true, subtree: true, characterData: true });
+  });
+  return () => page.evaluate(() => (window as unknown as { __toasts: string[] }).__toasts);
+}
+
 /** Puts the cursor at the very end of the document (the same on every platform, unlike an End key chord). */
 async function cursorToEnd(page: Page) {
   await page.locator(".ProseMirror").focus();
@@ -124,6 +141,8 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     // No vault yet: its setup comes first, and its passphrase is the one that locks the key.
     await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+    const toasts = await recordToasts(page);
+    const rewrote = page.waitForResponse((r) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+\/revisions\/\d+\/rewrite$/.test(r.url()) && r.ok());
     await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
     await expect(page.getByTestId("pass-message")).toContainText("only this passphrase opens them");
@@ -135,7 +154,11 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     // The recovery sheet: the code shown once; Done waits for "I have saved it".
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
-    await expect(page.getByTestId("toast")).toHaveText("Groq connected ✓ and encrypted 🔒");
+    // The key is saved under the vault, and the first document (written before the vault, in plaintext) is migrated into it.
+    await expect.poll(toasts).toEqual(expect.arrayContaining(["Groq connected ✓ and encrypted 🔒", "All your documents are now locked in your vault ✓"]));
+    const rewritten = (await rewrote).request().postDataJSON() as { bodyHtml: string; keyVersion: number };
+    expect(rewritten.keyVersion).toBe(1);
+    expect(rewritten.bodyHtml).not.toContain("<");
     await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
