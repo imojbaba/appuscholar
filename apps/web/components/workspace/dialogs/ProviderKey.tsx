@@ -4,14 +4,15 @@ import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { tHtml, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
-import { cryptoOK, isProvider, keyStore, unlockKeyBlob, type KeyMode } from "@/lib/ai/keys";
+import { cryptoOK, isProvider, keyStore, type KeyMode } from "@/lib/ai/keys";
 import { toCallError } from "@/lib/ai/callAI";
 import { useKeys } from "@/lib/ai/useKeys";
+import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "../WorkspaceContext";
-import { askPassphrase } from "./Passphrase";
+import { openVaultSetup } from "./VaultSetup";
 
 /** v1 FIELD_LIST (index.html:2499). */
 export const FIELD_LIST = ["psychology", "education", "sociology", "medicine and health", "nursing", "management and commerce", "law", "economics", "science", "engineering and technology", "humanities"];
@@ -49,6 +50,7 @@ function Form() {
   const { settings, update } = useSettings();
   const { project, reloadProject, closeDialog, openTerms, settingsProvider } = useWorkspace();
   const keys = useKeys();
+  const vault = useVault();
   const active: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   const [p, setP] = useState<ProviderId>(settingsProvider ?? active);
   const [key, setKey] = useState("");
@@ -72,18 +74,13 @@ function Form() {
     const k = key.trim();
     if (!k) { toast("Paste your key first"); return; }
     if (busy) return;
-    let pass: string | undefined;
-    if (mode === "pass") {
-      if (!cryptoOK()) { toast("This browser cannot encrypt — choose another option"); return; }
-      const first = await askPassphrase({ kind: "choose" });
-      if (first === null || first.length < 6) { toast("Passphrase needs at least 6 characters — nothing was saved"); return; }
-      const again = await askPassphrase({ kind: "confirm" });
-      if (again !== first) { toast("The two passphrases did not match — nothing was saved"); return; }
-      pass = first;
-    }
+    if (mode === "pass" && !cryptoOK()) { toast("This browser cannot encrypt — choose another option"); return; }
     setBusy(true);
+    // "Protect with a passphrase" locks the key under the vault: with no vault yet, the student sets one up first and its
+    // passphrase is the key's; with a vault, it is opened (asked for once) if it is locked. Cancelling either saves nothing.
+    if (mode === "pass" && !(vault.status === "off" ? await openVaultSetup() : await vault.ensureUnlocked())) { setBusy(false); return; }
     try {
-      await keys.save(p, k, mode, pass);
+      await keys.save(p, k, mode);
     } catch {
       toast(mode === "pass" ? "Could not encrypt and store the key — nothing was saved" : "Could not save the key. Try again.");
       setBusy(false);
@@ -108,12 +105,9 @@ function Form() {
     const typed = key.trim();
     let use = typed || keyStore.getUnlocked(p) || "";
     if (!use && keys.blobs[p]) {
-      const pass = await askPassphrase({ kind: "unlock", provider: p });
-      if (pass) {
-        try { use = await unlockKeyBlob(keys.blobs[p]!, pass); } catch { setOut({ tone: "fail", text: t("vault_wrong") }); return; }
-        keyStore.setSession(p, use);
-        toast("Key unlocked for this session ✓");
-      }
+      // A key locked under the vault opens with the vault; a legacy one asks for its key passphrase (and is then re-saved under the vault).
+      try { use = (await keys.getUnlocked(p)) ?? ""; } catch { setOut({ tone: "fail", text: t("vault_wrong") }); return; }
+      if (use) toast("Key unlocked for this session ✓");
     }
     if (!use) {
       setOut({ tone: "warn", text: keys.blobs[p] ? `${name}: your key is locked with a passphrase. Paste it again here to test it, or close this window and use any AI button once to unlock it.` : `${name}: no key yet. Paste your key in the box above, then test again.` });

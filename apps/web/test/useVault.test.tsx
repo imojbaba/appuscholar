@@ -151,6 +151,21 @@ describe("useVault", () => {
     expect(await code(s.v.decryptBody({ id: "d9", deks: [{ v: 1, wrapped: "AAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }], bodyHtml: enc.bodyHtml, keyVersion: 1 }))).toBe("corrupt");
   }, 30_000);
 
+  it("wrapSecret / unwrapSecret round-trip under the vault key and refuse while locked", async () => {
+    server.vault = await vaultWith("right");
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    await expect(s.v.wrapSecret("AIza-1")).rejects.toMatchObject({ message: "vault-locked" });
+    await act(async () => { await s.v.unlock("right", false); });
+    const blob = await s.v.wrapSecret("AIza-1");
+    expect(blob).not.toContain("AIza-1");
+    expect(blob.split(".")).toHaveLength(2);
+    expect(await s.v.unwrapSecret(blob)).toBe("AIza-1");
+    await expect(s.v.unwrapSecret("bad.blob")).rejects.toBeInstanceOf(VaultError);
+    act(() => { s.v.lock(); });
+    await expect(s.v.unwrapSecret(blob)).rejects.toMatchObject({ message: "vault-locked" });
+  }, 30_000);
+
   it("ensureUnlocked prompts until correct and returns false on cancel", async () => {
     server.vault = await vaultWith("right");
     const s = await mount();

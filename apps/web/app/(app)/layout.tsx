@@ -15,7 +15,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SettingsProvider initialLang={lang}>
       <SessionProvider value={{ email: session.user.email ?? "", signOutAction }}>
         <ToastHost />
-        <KeysProvider><VaultProvider>{children}</VaultProvider></KeysProvider>
+        {/* The vault is outside the keys: AI keys locked under the vault open with its key. */}
+        <VaultProvider><KeysProvider>{children}</KeysProvider></VaultProvider>
       </SessionProvider>
     </SettingsProvider>
   );

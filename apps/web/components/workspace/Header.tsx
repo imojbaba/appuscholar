@@ -13,6 +13,8 @@ import { Welcome } from "./dialogs/Welcome";
 import { PassphraseHost } from "./dialogs/Passphrase";
 import { ProviderKey } from "./dialogs/ProviderKey";
 import { RateLimit } from "./dialogs/RateLimit";
+import { VaultSetupHost } from "./dialogs/VaultSetup";
+import { VaultPill } from "./VaultPill";
 
 const HDR_BTN = "hbtn border-white/35 bg-transparent text-white hover:border-white/35 hover:bg-white/10";
 
@@ -45,18 +47,20 @@ export function Header() {
             <Badge className="ver" data-testid="app-version">Version {APP_VERSION}</Badge>
           </div>
         </div>
+        {/* Left of the language toggle at desktop width; on a phone (order) it opens the second row, before Help and the key button. */}
+        <VaultPill className="max-[700px]:order-1" />
         <Button variant="ghost" className={`${HDR_BTN} lang px-0`} aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
           {lang === "en" ? "हि" : "EN"}
         </Button>
         <span className="brk" aria-hidden="true" />
-        <Button variant="ghost" className={`${HDR_BTN} help`} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>
-        <Button variant="gold" data-testid="provider-key-btn" onClick={() => openSettings()}>{t("settings_btn")}</Button>
+        <Button variant="ghost" className={`${HDR_BTN} help max-[700px]:order-2`} data-testid="help-btn" onClick={openHelp}>{t("help_btn")}</Button>
+        <Button variant="gold" className="max-[700px]:order-2" data-testid="provider-key-btn" onClick={() => openSettings()}>{t("settings_btn")}</Button>
       </header>
     </>
   );
 }
 
-/** Help, Terms and Welcome live in dialogs/; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog. */
+/** Help, Terms and Welcome live in dialogs/; the passphrase, personal-data and rate-limit dialogs open from callAI and the key dialog; the vault setup from the vault pill and the key dialog. */
 export function ChromeDialogs() {
   const { update } = useSettings();
   return (
@@ -66,6 +70,7 @@ export function ChromeDialogs() {
       <Welcome />
       <ProviderKey />
       <PassphraseHost />
+      <VaultSetupHost />
       <PdHost />
       <RateLimit onSwitchToGroq={() => { void update({ provider: "groq" }); toast("Now using Groq ✓ Your next AI request goes to Groq."); }} />
     </>

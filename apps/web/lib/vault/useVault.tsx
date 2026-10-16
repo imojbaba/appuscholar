@@ -30,6 +30,10 @@ export type VaultValue = {
   encryptBody(doc: { id: string; deks: WrappedDek[] }, html: string): Promise<{ bodyHtml: string; keyVersion: number; dek?: WrappedDek }>;
   decryptBody(doc: { id: string; deks: WrappedDek[]; bodyHtml: string; keyVersion: number }): Promise<string>;
   migrating: { n: number; total: number } | null;
+  /** Encrypts a short secret (an AI key) under the vault key: iv.ct. Throws "vault-locked" while locked; the vault key itself never leaves. */
+  wrapSecret(text: string): Promise<string>;
+  /** Opens a wrapSecret blob. Throws "vault-locked" while locked, VaultError("corrupt") when it does not open under this vault key. */
+  unwrapSecret(blob: string): Promise<string>;
 };
 
 /** What GET /me/vault returns. */
@@ -300,9 +304,21 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     return decryptText(doc.bodyHtml, await dekFor(doc.id, dek, key)); // VaultError("corrupt") on any failure, never ""
   }, [dekFor]);
 
+  const wrapSecret = useCallback(async (text: string) => {
+    const key = vk.current;
+    if (!key) throw lockedError();
+    return encryptText(text, key);
+  }, []);
+  const unwrapSecret = useCallback(async (blob: string) => {
+    const key = vk.current;
+    if (!key) throw lockedError();
+    return decryptText(blob, key);
+  }, []);
+
   const value = useMemo<VaultValue>(() => ({
-    status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, encryptBody, decryptBody, migrating
-  }), [status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, encryptBody, decryptBody, migrating]);
+    status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, encryptBody, decryptBody, migrating,
+    wrapSecret, unwrapSecret
+  }), [status, complete, setup, unlock, unlockRemembered, recover, changePassphrase, lock, forgetThisComputer, ensureUnlocked, encryptBody, decryptBody, migrating, wrapSecret, unwrapSecret]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

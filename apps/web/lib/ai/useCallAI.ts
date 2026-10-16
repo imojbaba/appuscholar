@@ -18,18 +18,19 @@ export function useCallAI(): (prompt: string, opts?: CallOpts) => Promise<string
   const keys = useKeys();
   const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   const contentLang = project ? (project.contentLang === "hi" ? "hi" : "en") : settings.contentLang === "hi" ? "hi" : "en";
-  const { blobs, hasKey } = keys;
+  const { blobs, hasKey, getUnlocked } = keys;
   const fallbackOn = settings.aiFallback !== false;
   const projectId = project?.id ?? null;
   return useCallback((prompt, opts = {}) => {
     const ctx: CallCtx = {
       provider, blobs, fallbackOn, contentLang, projectId,
       askPassphrase: (p) => askPassphrase({ kind: "unlock", provider: p }),
+      unlockKey: getUnlocked,
       askPd,
       openSettings: () => openSettings(provider),
       onFailover: (from, to) => toast(`${PROVIDERS[from].short} did not answer, so this request used ${PROVIDERS[to].short} instead.`),
       onRateLimit: () => { if (provider !== "groq" && hasKey("groq")) showRateLimit(provider); }
     };
     return callAI(prompt, opts, ctx);
-  }, [provider, blobs, fallbackOn, contentLang, projectId, openSettings, hasKey]);
+  }, [provider, blobs, fallbackOn, contentLang, projectId, openSettings, hasKey, getUnlocked]);
 }

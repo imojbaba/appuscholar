@@ -6,6 +6,7 @@ import { resetPdMemo } from "@/lib/ai/callAI";
 import { useSettings } from "@/lib/settings";
 import { useSession } from "@/lib/session";
 import { useVault } from "@/lib/vault/useVault";
+import { hasRemembered } from "@/lib/vault/remember";
 import { APP_VERSION } from "@/lib/version";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,8 @@ export function Help() {
   const { email, signOutAction } = useSession();
   const { me } = useSettings();
   const vault = useVault();
-  const [askForget, setAskForget] = useState(false);
+  /** What is remembered on this computer, when the sign-out asks whether to forget it: AI keys, the vault, or both. */
+  const [askForget, setAskForget] = useState<{ keys: boolean; vault: boolean } | null>(null);
   // Forget the tab's keys, the vault key and the unlocked-text memo, then end the session (and, if chosen, the keys and the vault remembered on this computer).
   const signOut = async (forget: boolean) => {
     if (forget && me?.id) keyStore.forgetPlainKeys(me.id);
@@ -32,6 +34,12 @@ export function Help() {
     if (forget) await vault.forgetThisComputer().catch(() => {});
     resetPdMemo();
     void signOutAction();
+  };
+  // Asks whether to forget what this computer remembers (AI keys, the vault, or both); with nothing remembered it signs out at once.
+  const startSignOut = async () => {
+    const keys = keyStore.hasPlain();
+    const vaultKept = me?.id ? await hasRemembered(me.id).catch(() => false) : false;
+    if (keys || vaultKept) setAskForget({ keys, vault: vaultKept }); else void signOut(false);
   };
   return (
     <>
@@ -65,14 +73,15 @@ export function Help() {
         <p className="m-0 text-xs text-muted-foreground" data-testid="help-version">Appuscholar v2 ({APP_VERSION})</p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
           <span data-testid="signed-in-as">Signed in as {email}</span>
-          <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { if (keyStore.hasPlain()) setAskForget(true); else void signOut(false); }}>Sign out</Button>
+          <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { void startSignOut(); }}>Sign out</Button>
         </div>
       </DialogContent>
     </Dialog>
-      <AlertDialog open={askForget} onOpenChange={setAskForget}>
+      <AlertDialog open={!!askForget} onOpenChange={(o) => { if (!o) setAskForget(null); }}>
         <AlertDialogContent data-testid="forget-keys-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Forget the AI keys remembered on this computer?</AlertDialogTitle>
+            <AlertDialogTitle>{askForget?.keys !== false ? "Forget the AI keys remembered on this computer?" : t("vault_forget_q")}</AlertDialogTitle>
+            {askForget?.keys && askForget.vault && <p className="m-0 text-sm font-semibold" data-testid="forget-vault-q">{t("vault_forget_q")}</p>}
             <AlertDialogDescription>If this is a shared computer, forget them. Otherwise keep them and you will not need to paste them again next time.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

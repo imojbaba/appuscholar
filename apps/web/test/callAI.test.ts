@@ -101,6 +101,22 @@ describe("callAI key step", () => {
     expect(keyStore.getUnlocked("gemini")).toBe("AIza1");
   });
 
+  it("with unlockKey in the context the key step uses it (vault-locked keys), not the key passphrase", async () => {
+    mockFetch.mockResolvedValue({ text: "hi", model: "m" });
+    const askPassphrase = vi.fn(async () => "secret1");
+    const unlockKey = vi.fn(async () => "AIza-v2");
+    await expect(callAI("hello", {}, ctx({ blobs: { gemini: "v2.aaa.bbb" }, askPassphrase, unlockKey }))).resolves.toBe("hi");
+    expect(unlockKey).toHaveBeenCalledWith("gemini");
+    expect(askPassphrase).not.toHaveBeenCalled();
+    expect(body().apiKey).toBe("AIza-v2");
+  });
+
+  it("unlockKey: cancelled is no-key, a throw is bad-pass, and nothing is sent", async () => {
+    await expect(callAI("hello", {}, ctx({ blobs: { gemini: "v2.aaa.bbb" }, unlockKey: vi.fn(async () => null) }))).rejects.toMatchObject({ code: "no-key" });
+    await expect(callAI("hello", {}, ctx({ blobs: { gemini: "x.y.z" }, unlockKey: vi.fn(async () => { throw new Error("wrong"); }) }))).rejects.toMatchObject({ code: "bad-pass" });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it("with no key at all it opens the settings dialog and rejects", async () => {
     const c = ctx();
     await expect(callAI("hello", {}, c)).rejects.toThrow("Add your API key first — click ⚙ at the top right.");
