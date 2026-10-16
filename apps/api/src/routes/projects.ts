@@ -17,7 +17,7 @@ const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.s
 /** A document can also be created with its first body, in the same shape as PUT /documents/:id (ciphertext needs its dek here, since the document has none yet). */
 const CreateDocBody = CreateDoc.extend({ ...WriteFields, bodyHtml: WriteFields.bodyHtml.default("") });
 
-export function projectRoutes(store: Store) {
+export function projectRoutes(store: Store, maxBodyBytes: number) {
   const r = new Hono<AuthEnv>();
   r.get("/", async (c) => c.json(await store.listProjects(c.get("userId"))));
   r.post("/", async (c) => {
@@ -41,7 +41,10 @@ export function projectRoutes(store: Store) {
     return list ? c.json(list) : c.json({ error: "not-found" }, 404);
   });
   r.post("/:id/documents", async (c) => {
-    const body = CreateDocBody.safeParse(await c.req.json().catch(() => null));
+    const raw = await c.req.text();
+    if (raw.length > maxBodyBytes) return c.json({ error: "too-large" }, 413);
+    let parsed: unknown; try { parsed = JSON.parse(raw); } catch { return c.json({ error: "invalid" }, 400); }
+    const body = CreateDocBody.safeParse(parsed);
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const userId = c.get("userId");
     const w = await resolveWrite(store, userId, [], body.data);

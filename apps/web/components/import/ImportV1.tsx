@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { parseV1Backup, unlockV1Backup, chunkV1Documents } from "@appuscholar/core";
+import { parseV1Backup, unlockV1Backup } from "@appuscholar/core";
 import { UploadSimple } from "@phosphor-icons/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useT } from "@/lib/i18n";
-
-/** Stays well under Vercel's 4.5 MB request limit once JSON escaping and the other fields are added. */
-const MAX_BATCH_BYTES = 3 * 1024 * 1024;
+import { importV1Backup } from "@/lib/import/v1";
+import { useVault } from "@/lib/vault/useVault";
 
 const REASONS: Record<string, string> = {
   "not-json": "That file is not JSON.",
@@ -21,6 +20,7 @@ const REASONS: Record<string, string> = {
 /** `onDone` gets the new project's id once every batch is stored (the workspace opens it). */
 export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string) => void; onBusyChange?: (busy: boolean) => void }) {
   const t = useT();
+  const vault = useVault();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -44,25 +44,26 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
     if (!confirm(`Import ${documents.length} document(s) saved ${exported.slice(0, 10) || "?"} into a new project?`)) { setMsg(""); return; }
     const first = projects[0];
     const projectTitle = first ? `${first.title} (imported from v1)` : "Imported from v1";
-    const batches = chunkV1Documents(documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml })), MAX_BATCH_BYTES);
+    // With a vault the documents are encrypted here, so it must be open before anything is created: a cancelled unlock imports nothing.
+    const sealing = (await vault.known()) !== "off";
+    if (sealing && !(await vault.ensureUnlocked())) { setMsg(t("vault_save_locked")); return; }
     let projectId: string | undefined;
     let imported = 0;
     setBusy(true);
     setMsg("Importing…");
-    setProgress({ done: 0, total: batches.length });
+    setProgress({ done: 0, total: documents.length });
     try {
-      for (const [i, batch] of batches.entries()) {
-        if (batches.length > 1) setMsg(`Importing… part ${i + 1} of ${batches.length}`);
-        const r = await apiFetch<{ projectId: string; imported: number }>("/import/v1", { method: "POST", body: JSON.stringify({ exported, projectTitle, documents: batch, ...(projectId ? { projectId } : {}) }) });
-        projectId = r.projectId;
-        imported += r.imported;
-        setProgress({ done: i + 1, total: batches.length });
-      }
-      setMsg(`Imported ${imported} document(s).`);
-      if (projectId) onDone(projectId);
+      const r = await importV1Backup({ projectTitle, documents: documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml })) }, {}, {
+        createProject: (title) => apiFetch<{ id: string }>("/projects", { method: "POST", body: JSON.stringify({ title }) }),
+        createDocument: async (pid, title, body) => { await apiFetch<unknown>(`/projects/${pid}/documents`, { method: "POST", body: JSON.stringify({ title, kind: "draft", ...body }) }); },
+        encrypt: sealing ? vault.encryptBody : null,
+        onProgress: (p) => { projectId = p.projectId; imported = p.imported; setProgress({ done: p.imported, total: p.total }); if (p.total > 1) setMsg(`Importing… ${p.imported} of ${p.total}`); }
+      });
+      setMsg(`Imported ${r.imported} document(s).`);
+      onDone(r.projectId);
     } catch (err) {
-      const code = err instanceof ApiError ? err.code : "";
-      const base = code === "too-large" ? "A document in this backup is too large to import." : "Import failed. Try again.";
+      const locked = err instanceof Error && err.message === "vault-locked";
+      const base = locked ? t("vault_save_locked") : err instanceof ApiError && err.code === "too-large" ? "A document in this backup is too large to import." : "Import failed. Try again.";
       setMsg(projectId ? `${base} ${imported} of ${documents.length} document(s) were imported into "${projectTitle}" before it stopped.` : base);
     } finally {
       setBusy(false);
@@ -123,6 +124,7 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
           <li>3. Documents land in a new project; the original file is not changed.</li>
         </ol>
         <p className="text-sm text-muted-foreground">Your AI keys and access code were never in the backup. Locked backups ask for their passphrase; it stays in this browser.</p>
+        {vault.status !== "off" && vault.status !== "loading" ? <p className="text-sm text-muted-foreground" data-testid="import-vault-note">{t("import_v1_vault")}</p> : null}
         <label htmlFor="backup" data-testid="import-dropzone" onDragOver={onDragOver} onDragLeave={() => setDragging(false)} onDrop={onDrop} className={`rounded-lg border-2 border-dashed p-8 text-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-accent focus-within:ring-2 focus-within:ring-ring"} ${dragging ? "border-primary bg-accent" : ""}`}>
           <UploadSimple size={28} className="mx-auto mb-2 text-muted-foreground" aria-hidden="true" />
           <span className="font-medium">Choose the backup file</span>
