@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ProviderId } from "@appuscholar/core";
+import { sanitizeHtml, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useSettings, type Settings } from "@/lib/settings";
 import { useT } from "@/lib/i18n";
@@ -47,14 +47,15 @@ async function listOrSeed(projectId: string, vault: VaultValue): Promise<Documen
 }
 
 /**
- * The document as the editor may open it: plaintext (keyVersion 0) as it is; ciphertext decrypted once the vault is open. Never an empty
- * stand-in for text that did not open: a cancelled unlock or a body that does not decrypt is marked `unreadable` and no editor opens on it.
+ * The document as the editor may open it: plaintext (keyVersion 0) as it is (the server sanitised it); ciphertext decrypted once the vault
+ * is open, then sanitised here, because the server cannot sanitise what it cannot read. Never an empty stand-in for text that did not open:
+ * a cancelled unlock or a body that does not decrypt is marked `unreadable` and no editor opens on it.
  */
 export async function readableDoc(vault: Pick<VaultValue, "ensureUnlocked" | "decryptBody">, doc: DocumentWithBody): Promise<DocumentWithBody> {
   if (!doc.keyVersion) return doc;
   if (!(await vault.ensureUnlocked())) return { ...doc, bodyHtml: "", unreadable: "locked" };
   try {
-    return { ...doc, bodyHtml: await vault.decryptBody(doc) };
+    return { ...doc, bodyHtml: sanitizeHtml(await vault.decryptBody(doc)) };
   } catch (e) {
     if (e instanceof VaultError) return { ...doc, bodyHtml: "", unreadable: "broken" };
     // Locked again between the unlock and the decrypt.
@@ -95,6 +96,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
   const docToken = useRef(0);
+  /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */
+  const selecting = useRef(false);
   const flushRef = useRef<(() => Promise<boolean>) | null>(null);
   // The latest project and open document, for callbacks that outlive a render (the Undo of a deletion, ten seconds later).
   const projectIdRef = useRef<string | null>(null);
@@ -206,20 +209,24 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
     if (currentDocRef.current?.id === id) return true;
     if (!(await confirmLeave())) return false;
     const mine = ++docToken.current;
-    const doc = await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${id}`));
-    if (mine === docToken.current) setCurrentDoc(doc);
+    selecting.current = true;
+    try {
+      const doc = await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${id}`));
+      if (mine === docToken.current) setCurrentDoc(doc);
+    } finally { if (mine === docToken.current) selecting.current = false; }
     return true;
   }, [confirmLeave]);
 
-  // A document left locked (the unlock was cancelled) opens once the vault does, from the header pill or another prompt.
+  // A document left locked (the unlock was cancelled) opens once the vault does, from the header pill or another prompt. It never takes
+  // the document token and never applies while another document is being chosen: the vault often opens for exactly that choice.
   const vaultOpen = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => {
     const shut = currentDoc;
-    if (!vaultOpen || shut?.unreadable !== "locked") return;
-    const mine = ++docToken.current;
+    if (!vaultOpen || shut?.unreadable !== "locked" || selecting.current) return;
+    const mine = docToken.current;
     apiFetch<DocumentWithBody>(`/documents/${shut.id}`)
       .then((d) => readableDoc(vaultRef.current, d))
-      .then((d) => { if (mine === docToken.current) setCurrentDoc(d); }, () => undefined);
+      .then((d) => { if (mine === docToken.current && !selecting.current && currentDocRef.current?.id === shut.id) setCurrentDoc(d); }, () => undefined);
   }, [vaultOpen, currentDoc]);
 
   const reloadDocs = useCallback(async () => {

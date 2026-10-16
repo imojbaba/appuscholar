@@ -101,7 +101,7 @@ describe("document load", () => {
     h.ask.mockResolvedValueOnce(null);
     const shut = await readableDoc(vault.v!, enc);
     expect(shut.unreadable).toBe("locked");
-    expect(shut.bodyHtml).not.toContain(sealed.bodyHtml);
+    expect(shut.bodyHtml).toBe("");
     const { host } = await renderCard(shut, [shut, doc("d2")]);
     expect(host.querySelector('[data-testid="doc-unreadable"]')?.textContent).toBe(en.vault_doc_locked);
     expect(host.querySelector('[data-testid="editor-stub"]')).toBeNull();
@@ -131,6 +131,20 @@ describe("document load", () => {
     await act(async () => { select.value = "d2"; select.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(selectDoc).toHaveBeenCalledWith("d2");
     expect(host.querySelector<HTMLButtonElement>('[data-testid="doc-new"]')!.disabled).toBe(false);
+  }, 30_000);
+
+  it("a decrypted body is sanitised before it reaches the editor (the server cannot sanitise ciphertext)", async () => {
+    const vault = await mountVault();
+    await act(async () => { await vault.v!.unlock(PASS, false); });
+    // Sealed straight through encryptBody, as a tampering client could: the script and the handler are inside the ciphertext.
+    const sealed = await vault.v!.encryptBody({ id: "d1", deks: [] }, '<p>hello</p><script>alert(1)</script><img src="x" onerror="alert(2)">');
+    const opened = await readableDoc(vault.v!, doc("d1", { bodyHtml: sealed.bodyHtml, keyVersion: 1, deks: [sealed.dek!] }));
+    expect(opened.bodyHtml).toContain("<p>hello</p>");
+    expect(opened.bodyHtml).not.toMatch(/<script|onerror|alert/i);
+    await renderCard(opened, [opened]);
+    expect(h.editors).toHaveLength(1);
+    expect(h.editors[0]).toContain("<p>hello</p>");
+    expect(h.editors[0]).not.toMatch(/<script|onerror|alert/i);
   }, 30_000);
 
   it("a readable document opens in the editor with its decrypted text", async () => {
