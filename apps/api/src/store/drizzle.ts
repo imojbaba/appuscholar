@@ -110,9 +110,9 @@ export class DrizzleStore implements Store {
     return rows[0] ? this.toProject(rows[0]) : null;
   }
 
-  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision): Promise<DocumentWithBody | null> {
+  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks: WrappedDek[] = []): Promise<DocumentWithBody | null> {
     if (!(await this.getProject(userId, projectId))) return null;
-    const [doc] = await this.d.insert(documents).values({ projectId, title, kind }).returning();
+    const [doc] = await this.d.insert(documents).values({ projectId, title, kind, deks: deks.map(k => ({ v: k.v, wrapped: k.wrapped })) }).returning();
     const [rev] = await this.d.insert(documentRevisions).values({ documentId: doc!.id, seq: 1, ...first }).returning();
     await this.d.update(documents).set({ currentRevisionId: rev!.id }).where(eq(documents.id, doc!.id));
     return { ...(await this.summary(doc!))!, bodyHtml: rev!.bodyHtml, keyVersion: rev!.keyVersion };
@@ -123,8 +123,8 @@ export class DrizzleStore implements Store {
     const sums = await Promise.all(rows.map(r => this.summary(r)));
     return sums.filter((x): x is DocumentSummary => x !== null);
   }
-  async getDocument(userId: string, id: string): Promise<DocumentWithBody | null> {
-    const doc = await this.ownedDoc(userId, id);
+  async getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null> {
+    const doc = await this.ownedDoc(userId, id, opts?.includeDeleted === true);
     if (!doc) return null;
     const rows = await this.d.select().from(documentRevisions).where(eq(documentRevisions.documentId, doc.id)).orderBy(desc(documentRevisions.seq)).limit(1);
     const r = rows[0];
@@ -241,7 +241,7 @@ export class DrizzleStore implements Store {
   }
 
   async addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null> {
-    if (!(await this.ownedDoc(userId, documentId))) return null;
+    if (!(await this.ownedDoc(userId, documentId, true))) return null;
     // One conditional statement, so two concurrent adds of the same `v` cannot both land.
     const entry = JSON.stringify([{ v: dek.v, wrapped: dek.wrapped }]);
     const rows = await this.d.update(documents)
@@ -252,7 +252,7 @@ export class DrizzleStore implements Store {
     return this.summary(rows[0]);
   }
   async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
-    if (!(await this.ownedDoc(userId, documentId))) return null;
+    if (!(await this.ownedDoc(userId, documentId, true))) return null;
     const rows = await this.d.update(documentRevisions).set({ bodyHtml: patch.bodyHtml, keyVersion: patch.keyVersion }).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).returning();
     if (!rows[0]) return null;
     const r = rows[0];

@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
-import { DekExistsError } from "../store/types";
 import { WriteFields, resolveWrite } from "./docWrite";
 import { PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type Store } from "../store/types";
 import { foldWeekly, summariseAiLog, type DatedStats } from "./writingRecord";
@@ -46,11 +45,8 @@ export function projectRoutes(store: Store) {
     const userId = c.get("userId");
     const w = await resolveWrite(store, userId, [], body.data);
     if (!w.ok) return c.json({ error: w.error }, w.status);
-    const d = await store.createDocument(userId, c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: w.bodyHtml, authorKind: "web", authorLabel: c.get("email"), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats });
-    if (!d) return c.json({ error: "not-found" }, 404);
-    if (!w.addDek) return c.json(d, 201);
-    try { await store.addDek(userId, d.id, w.addDek); } catch (e) { if (!(e instanceof DekExistsError)) throw e; }
-    return c.json(await store.getDocument(userId, d.id), 201);
+    const d = await store.createDocument(userId, c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: w.bodyHtml, authorKind: "web", authorLabel: c.get("email"), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats }, w.addDek ? [w.addDek] : []);
+    return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
   });
   /**
    * The data behind "My writing" and the writing-process record. `docs`, `sources` and `weekly` belong to this project; `aiLog` is the

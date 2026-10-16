@@ -32,6 +32,8 @@ export async function resolveWrite(store: Store, userId: string, deks: WrappedDe
     return { ok: true, bodyHtml: clean, keyVersion: 0, wordCount: wordCount(clean), originStats: originCount(clean) };
   }
   if (b.wordCount === undefined || b.originStats === undefined) return { ok: false, status: 400, error: "invalid" };
+  // A dek that arrives with a write is the key for this write's version; an unrelated one is refused, not stored.
+  if (b.dek && b.dek.v !== b.keyVersion) return { ok: false, status: 400, error: "invalid" };
   const known = deks.find((k) => k.v === b.keyVersion);
   if (!known && b.dek?.v !== b.keyVersion) return { ok: false, status: 400, error: "unknown-key-version" };
   const clash = b.dek ? deks.find((k) => k.v === b.dek!.v) : undefined;

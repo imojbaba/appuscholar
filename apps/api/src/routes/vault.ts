@@ -11,6 +11,11 @@ const Wraps = z.object({ passWrapped: Wrap.optional(), recoveryWrapped: Wrap.opt
 /** The server stores only wrapped keys: it never sees a passphrase, a recovery code or an unwrapped key. */
 export function vaultRoutes(store: Store) {
   const r = new Hono<AuthEnv>();
+  // Mounted ahead of meRoutes, so it makes sure the user row exists itself (vault_keys has a foreign key to users). An erased user never gets here: apiAuth answers 401.
+  r.use("*", async (c, next) => {
+    await store.ensureUser(c.get("userId"), c.get("email"));
+    await next();
+  });
 
   r.get("/", async (c) => {
     const v = await store.getVault(c.get("userId"));

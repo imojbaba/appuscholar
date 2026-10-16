@@ -66,7 +66,8 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const userId = c.get("userId");
     if ((await store.getVault(userId))?.complete) return c.json({ error: "migration-closed" }, 409);
-    const doc = await store.getDocument(userId, c.req.param("id"));
+    // Soft-deleted documents are included: the migration has to reach every plaintext revision.
+    const doc = await store.getDocument(userId, c.req.param("id"), { includeDeleted: true });
     if (!doc) return c.json({ error: "not-found" }, 404);
     if (!doc.deks.some((k) => k.v === body.data.keyVersion)) return c.json({ error: "unknown-key-version" }, 400);
     const rev = await store.rewriteRevision(userId, doc.id, seq, body.data);

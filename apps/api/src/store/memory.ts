@@ -103,10 +103,10 @@ export class MemoryStore implements Store {
     return p && p.userId === userId ? p : null;
   }
 
-  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision): Promise<DocumentWithBody | null> {
+  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks: WrappedDek[] = []): Promise<DocumentWithBody | null> {
     if (!this.ownsProject(userId, projectId)) return null;
     const now = new Date();
-    const d: DocRow = { id: crypto.randomUUID(), projectId, title, kind, createdAt: now, updatedAt: now, deletedAt: null, deks: [] };
+    const d: DocRow = { id: crypto.randomUUID(), projectId, title, kind, createdAt: now, updatedAt: now, deletedAt: null, deks: deks.map(k => ({ v: k.v, wrapped: k.wrapped })) };
     this.docs.set(d.id, d);
     const r: DocumentRevision = { id: crypto.randomUUID(), documentId: d.id, seq: 1, ...first, originStats: first.originStats ?? null, createdAt: now };
     this.revs.set(d.id, [r]);
@@ -116,8 +116,8 @@ export class MemoryStore implements Store {
     if (!this.ownsProject(userId, projectId)) return null;
     return [...this.docs.values()].filter(d => d.projectId === projectId && d.deletedAt === null).map(d => this.summary(d)).filter((x): x is DocumentSummary => x !== null).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
-  async getDocument(userId: string, id: string): Promise<DocumentWithBody | null> {
-    const d = this.ownedDoc(userId, id);
+  async getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null> {
+    const d = this.ownedDoc(userId, id, opts?.includeDeleted === true);
     if (!d) return null;
     const r = this.latest(d.id);
     const sum = this.summary(d, r);
@@ -224,14 +224,14 @@ export class MemoryStore implements Store {
   }
 
   async addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null> {
-    const d = this.ownedDoc(userId, documentId);
+    const d = this.ownedDoc(userId, documentId, true);
     if (!d) return null;
     if (d.deks.some(k => k.v === dek.v)) throw new DekExistsError(dek.v);
     d.deks.push({ v: dek.v, wrapped: dek.wrapped });
     return this.summary(d);
   }
   async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
-    if (!this.ownedDoc(userId, documentId)) return null;
+    if (!this.ownedDoc(userId, documentId, true)) return null;
     const r = (this.revs.get(documentId) ?? []).find(x => x.seq === seq);
     if (!r) return null;
     r.bodyHtml = patch.bodyHtml;

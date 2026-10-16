@@ -281,6 +281,33 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.rewriteRevision(b, d.id, 1, { bodyHtml: "no", keyVersion: 1 })).toBeNull();
     });
 
+    it("soft-deleted documents still take deks and rewrites (the vault migration reaches them), foreign users never do", async () => {
+      const p = await s.createProject(a, "P");
+      const rev = { bodyHtml: "<p>x</p>", authorKind: "web" as const, authorLabel: "t", wordCount: 1, keyVersion: 0 };
+      await s.createDocument(a, p.id, "Keep", "draft", rev);
+      const gone = (await s.createDocument(a, p.id, "Gone", "draft", rev))!;
+      expect(await s.softDeleteDocument(a, gone.id)).toBe("deleted");
+      expect(await s.getDocument(a, gone.id)).toBeNull();
+      expect((await s.getDocument(a, gone.id, { includeDeleted: true }))!.id).toBe(gone.id);
+      expect(await s.getDocument(b, gone.id, { includeDeleted: true })).toBeNull();
+      expect((await s.addDek(a, gone.id, { v: 1, wrapped: "i.k" }))!.deks).toEqual([{ v: 1, wrapped: "i.k" }]);
+      const rw = (await s.rewriteRevision(a, gone.id, 1, { bodyHtml: "cT.dU", keyVersion: 1 }))!;
+      expect(rw.keyVersion).toBe(1);
+      expect((await s.getDocument(a, gone.id, { includeDeleted: true }))).toMatchObject({ bodyHtml: "cT.dU", keyVersion: 1 });
+      expect(await s.addDek(b, gone.id, { v: 2, wrapped: "no" })).toBeNull();
+      expect(await s.rewriteRevision(b, gone.id, 1, { bodyHtml: "no", keyVersion: 1 })).toBeNull();
+    });
+
+    it("createDocument attaches the given deks together with the first revision", async () => {
+      const p = await s.createProject(a, "P");
+      const d = (await s.createDocument(a, p.id, "Enc", "draft", { bodyHtml: "aA.bB", authorKind: "web", authorLabel: "t", wordCount: 2, keyVersion: 1 }, [{ v: 1, wrapped: "i.k" }]))!;
+      expect(d.deks).toEqual([{ v: 1, wrapped: "i.k" }]);
+      expect(d.keyVersion).toBe(1);
+      expect((await s.getDocument(a, d.id))!.deks).toEqual([{ v: 1, wrapped: "i.k" }]);
+      const plain = (await s.createDocument(a, p.id, "Plain", "draft", { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0 }))!;
+      expect(plain.deks).toEqual([]);
+    });
+
     it("audit survives erasure; erasure removes every other row", async () => {
       const p = await s.createProject(a, "P");
       await s.createDocument(a, p.id, "D", "draft", { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0 });

@@ -50,10 +50,12 @@ export interface Store {
   deleteProject(userId: string, id: string): Promise<boolean>;
   getProject(userId: string, id: string): Promise<Project | null>;
 
-  createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision): Promise<DocumentWithBody | null>;
+  /** `deks` are attached in the same step, so a ciphertext first revision is never stored without its key. */
+  createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks?: WrappedDek[]): Promise<DocumentWithBody | null>;
   /** Excludes soft-deleted documents, as does every document lookup except restoreDeletedDocument. */
   listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null>;
-  getDocument(userId: string, id: string): Promise<DocumentWithBody | null>;
+  /** `includeDeleted` also returns a soft-deleted document (the vault migration must reach those). */
+  getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null>;
   renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null>;
 
   appendRevision(userId: string, documentId: string, rev: NewRevision): Promise<DocumentRevision | null>;
@@ -93,9 +95,9 @@ export interface Store {
   /** False if the user has no vault record. */
   markVaultComplete(userId: string): Promise<boolean>;
 
-  /** Attaches a wrapped data key to a document. Throws DekExistsError if a dek with the same `v` already exists. Null if the document is not the user's. */
+  /** Attaches a wrapped data key to a document, soft-deleted ones included. Throws DekExistsError if a dek with the same `v` already exists. Null if the document is not the user's. */
   addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null>;
-  /** Replaces a revision's body and key version in place; id, seq, createdAt, author, wordCount and originStats are untouched. Null if the document or revision is not the user's. */
+  /** Replaces a revision's body and key version in place, on soft-deleted documents too; id, seq, createdAt, author, wordCount and originStats are untouched. Null if the document or revision is not the user's. */
   rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null>;
 
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;

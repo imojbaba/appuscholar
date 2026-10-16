@@ -236,4 +236,65 @@ describe("vault routes", () => {
     // other users are unaffected and a user who never existed is still created on first /me
     expect((await as("u2", "GET", "/me")).status).toBe(200);
   });
+
+  it("takes deks and rewrites for a soft-deleted document (the migration reaches it), and stays owner-scoped", async () => {
+    const p = await json<{ id: string }>(await req("POST", "/projects", { title: "T" }));
+    await req("POST", `/projects/${p.id}/documents`, { title: "Keep" });
+    const gone = await json<{ id: string }>(await req("POST", `/projects/${p.id}/documents`, { title: "Gone" }));
+    await req("PUT", `/documents/${gone.id}`, { bodyHtml: "<p>old words</p>", keyVersion: 0 });
+    expect((await req("DELETE", `/documents/${gone.id}`)).status).toBe(204);
+    expect((await req("GET", `/documents/${gone.id}`)).status).toBe(404);
+    const add = await req("POST", `/documents/${gone.id}/deks`, { v: 1, wrapped: "i.k" });
+    expect(add.status).toBe(200);
+    expect(await json(add)).toMatchObject({ id: gone.id, deks: [{ v: 1, wrapped: "i.k" }] });
+    for (const seq of [1, 2]) {
+      const rw = await req("PUT", `/documents/${gone.id}/revisions/${seq}/rewrite`, { bodyHtml: `c${seq}.d`, keyVersion: 1 });
+      expect(rw.status).toBe(200);
+      expect(await json(rw)).toMatchObject({ seq, keyVersion: 1 });
+    }
+    expect((await as("u2", "PUT", `/documents/${gone.id}/revisions/1/rewrite`, { bodyHtml: "no.no", keyVersion: 1 })).status).toBe(404);
+    expect((await as("u2", "POST", `/documents/${gone.id}/deks`, { v: 2, wrapped: "x" })).status).toBe(404);
+    // restoring brings the migrated revisions back as they are
+    expect((await req("POST", `/documents/${gone.id}/restore-deleted`)).status).toBe(200);
+    expect(await json(await req("GET", `/documents/${gone.id}/revisions/2`))).toMatchObject({ bodyHtml: "c2.d", keyVersion: 1 });
+  });
+
+  it("the first request of a fresh user can be PUT /me/vault (the user row is ensured)", async () => {
+    const fresh = await token("fresh");
+    expect(await store.getUser("fresh")).toBeNull();
+    const r = await app.request("/me/vault", { method: "PUT", headers: { authorization: "Bearer " + fresh, "content-type": "application/json" }, body: JSON.stringify(VAULT) });
+    expect(r.status).toBe(201);
+    expect((await store.getUser("fresh"))!.email).toBe("fresh@x.org");
+    expect((await store.getVault("fresh"))!.passWrapped).toBe(VAULT.passWrapped);
+  });
+
+  it("a dek for another version than the write's key version is refused and not stored", async () => {
+    const doc = await makeDoc();
+    await req("POST", `/documents/${doc.id}/deks`, { v: 1, wrapped: "k1" });
+    const r = await req("PUT", `/documents/${doc.id}`, { bodyHtml: "a.b", keyVersion: 1, wordCount: 1, originStats: ZERO_STATS, dek: { v: 2, wrapped: "k2" } });
+    expect(r.status).toBe(400);
+    expect(await json(r)).toEqual({ error: "invalid" });
+    const got = await json(await req("GET", `/documents/${doc.id}`));
+    expect(got.deks).toEqual([{ v: 1, wrapped: "k1" }]);
+    expect(got.currentSeq).toBe(1);
+  });
+
+  it("ciphertext document creation hands its dek to createDocument in one step, so no key-less revision can be left behind", async () => {
+    const failing = new MemoryStore();
+    const calls: unknown[][] = [];
+    const orig = failing.createDocument.bind(failing);
+    failing.createDocument = (...a: Parameters<MemoryStore["createDocument"]>) => { calls.push(a); return orig(...a); };
+    failing.addDek = async () => { throw new Error("addDek must not be needed on create"); };
+    const app2 = createApp({ store: failing, jwtSecret: SECRET });
+    const h = { authorization: "Bearer " + tokens.u1, "content-type": "application/json" };
+    const p = await (await app2.request("/projects", { method: "POST", headers: h, body: JSON.stringify({ title: "T" }) })).json() as { id: string };
+    const r = await app2.request(`/projects/${p.id}/documents`, { method: "POST", headers: h, body: JSON.stringify({ title: "Enc", keyVersion: 1, bodyHtml: "a.b", wordCount: 1, originStats: ZERO_STATS, dek: { v: 1, wrapped: "k" } }) });
+    expect(r.status).toBe(201);
+    expect(((await r.json()) as { deks: unknown }).deks).toEqual([{ v: 1, wrapped: "k" }]);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]![5]).toEqual([{ v: 1, wrapped: "k" }]);
+    // the store refusing the create (foreign project) leaves nothing behind
+    const miss = await app2.request(`/projects/nope/documents`, { method: "POST", headers: h, body: JSON.stringify({ title: "Enc", keyVersion: 1, bodyHtml: "a.b", wordCount: 1, originStats: ZERO_STATS, dek: { v: 1, wrapped: "k" } }) });
+    expect(miss.status).toBe(404);
+  });
 });
