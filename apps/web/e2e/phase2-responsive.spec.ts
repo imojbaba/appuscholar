@@ -23,6 +23,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { signIn } from "./support/signin";
 
 const PHONE = { width: 390, height: 844 };
 const TABLET = { width: 768, height: 1024 };
@@ -31,20 +32,8 @@ const DESKTOP = { width: 1440, height: 900 };
 /** Rule ids accepted for a third-party primitive we do not own. Empty means every serious or critical finding fails the test. */
 const AXE_ACCEPTED: string[] = [];
 
-async function signIn(page: Page) {
-  await page.goto("/signin");
-  await page.getByTestId("e2e-email").fill(`r${Date.now()}${Math.random().toString(36).slice(2, 7)}@e2e.local`);
-  await page.getByTestId("e2e-submit").click();
-  await expect(page).toHaveURL(/localhost:3000\/$/);
-  // A new account meets the terms gate, then the welcome tour.
-  await page.getByTestId("terms-age").check();
-  await page.getByTestId("terms-agree").check();
-  await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-later").click();
-  await expect(page.getByTestId("welcome-dialog")).toBeHidden();
-  await expect(page.getByTestId("dock-tab-tools")).toBeVisible();
-  await expect(page.getByTestId("stage-counter")).toBeVisible();
-}
+/** A new account past the terms gate and the welcome tour, with the dock and the stage counter on screen. */
+const NEW_ACCOUNT = { prefix: "r", newAccount: true, ready: ["dock-tab-tools", "stage-counter"] };
 
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const sheetRatio = async (page: Page) => {
@@ -65,7 +54,7 @@ for (const [name, viewport] of [["phone 390", PHONE], ["tablet 768", TABLET], ["
     test.use({ viewport });
 
     test("no horizontal scroll, with a tool open and with the AI pane open", async ({ page }) => {
-      await signIn(page);
+      await signIn(page, NEW_ACCOUNT);
       expect(await noHorizontalScroll(page)).toBe(true);
       await page.getByTestId("dock-tab-ai").click();
       await expect(page.getByTestId("ai-pane")).toBeVisible();
@@ -73,7 +62,7 @@ for (const [name, viewport] of [["phone 390", PHONE], ["tablet 768", TABLET], ["
     });
 
     test("axe: no serious or critical violation with a tool open and with the AI pane open", async ({ page }) => {
-      await signIn(page);
+      await signIn(page, NEW_ACCOUNT);
       expect(await axeSerious(page), "tool open").toEqual([]);
       await page.getByTestId("dock-tab-ai").click();
       await expect(page.getByTestId("ai-pane")).toBeVisible();
@@ -86,7 +75,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   test.use({ viewport: PHONE });
 
   test("the sheet shows both tabs and the stage guide, and its handle resizes between 40% and 85% and persists", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const sheet = page.getByTestId("phone-sheet");
     await expect(sheet).toBeVisible();
     await expect(sheet.getByTestId("dock-tab-tools")).toBeVisible();
@@ -138,7 +127,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("the handle also moves with the arrow keys and is announced as a separator with its value", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const handle = page.getByTestId("sheet-handle");
     await expect(handle).toHaveAttribute("role", "separator");
     await expect(handle).toHaveAttribute("aria-valuemin", "40");
@@ -154,7 +143,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("the menu button opens the tool drawer with focus inside; Escape closes it and focus returns; picking a tool closes it", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const menu = page.getByTestId("phone-menu");
     await expect(page.getByTestId("sidebar")).toHaveCount(0); // one copy of the tool list at a time
     await menu.click();
@@ -179,7 +168,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("New Research Project from the drawer closes it and hands focus to the dialog", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     await page.getByTestId("phone-menu").click();
     await page.getByTestId("new-project-tab").click();
     await expect(page.getByTestId("sidebar-drawer")).toBeHidden();
@@ -191,7 +180,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("axe: no serious or critical violation with the drawer open or with a dialog open", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     await page.getByTestId("phone-menu").click();
     await expect(page.getByTestId("sidebar-drawer")).toBeVisible();
     expect(await axeSerious(page), "drawer open").toEqual([]);
@@ -202,7 +191,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("every button in the header, project bar, action row, format bar, sheet and drawer is at least 44px tall", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const sweep = () => page.evaluate((roots) => {
       const out: string[] = [];
       for (const sel of roots) {
@@ -238,7 +227,7 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("a dialog opened from the drawer gives focus back to the menu button", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const menu = page.getByTestId("phone-menu");
     await menu.click();
     await page.getByTestId("projects-tab").click();
@@ -251,13 +240,13 @@ test.describe("phone 390: sheet, drawer and hit targets", () => {
   });
 
   test("the width splitter is out of the accessibility tree on a phone", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     await expect(page.getByTestId("dock-splitter")).toBeHidden();
     await expect(page.getByRole("separator", { name: "Resize side panel" })).toHaveCount(0);
   });
 
   test("the header is two rows and does not overlap the provider pill or project bar; the bar's buttons scroll sideways", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const rect = async (sel: string) => (await page.locator(sel).first().boundingBox())!;
     const hdr = await rect(".hdr");
     const sub = await rect(".subbar");
@@ -277,7 +266,7 @@ test.describe("keyboard and screen reader", () => {
   test.use({ viewport: DESKTOP });
 
   test("Tab order runs header, provider pill, project bar, sidebar, document, dock", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.locator(".hdr .brand").evaluate((el) => (el as HTMLElement).setAttribute("tabindex", "-1"));
     await page.locator(".hdr .brand").focus();
@@ -303,7 +292,7 @@ test.describe("keyboard and screen reader", () => {
   });
 
   test("a dialog traps focus and gives it back to its opener", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     const help = page.getByTestId("help-btn");
     await help.click();
     const dialog = page.getByRole("dialog");
@@ -334,7 +323,7 @@ test.describe("keyboard and screen reader", () => {
   });
 
   test("the toast host and the AI note are polite live regions", async ({ page }) => {
-    await signIn(page);
+    await signIn(page, NEW_ACCOUNT);
     // the host exists before any toast, so the first message is announced
     await expect(page.getByTestId("toast-host")).toHaveAttribute("aria-live", "polite");
     await expect(page.getByTestId("toast-host")).toHaveAttribute("role", "status");

@@ -4,28 +4,18 @@
  * Run it with the recipe in phase2-responsive.spec.ts's header (pglite Postgres for the web server, API on its in-memory store):
  *   pnpm --filter @appuscholar/web exec playwright test e2e/platform.spec.ts
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { readFileSync } from "node:fs";
+import { signIn } from "./support/signin";
 
 const fixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-small.json");
 
-async function signIn(page: Page) {
-  await page.goto("/signin");
-  await page.getByTestId("e2e-email").fill(`t${Date.now()}${Math.random().toString(36).slice(2, 7)}@e2e.local`);
-  await page.getByTestId("e2e-submit").click();
-  await expect(page).toHaveURL(/localhost:3000\/$/);
-  // A new account meets the terms gate, then the welcome tour.
-  await page.getByTestId("terms-age").check();
-  await page.getByTestId("terms-agree").check();
-  await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-later").click();
-  await expect(page.getByTestId("welcome-dialog")).toBeHidden();
-  await expect(page.getByTestId("doc-select")).toBeVisible();
-}
+/** A new account past the terms gate and the welcome tour, with the Doc list on screen. */
+const NEW_ACCOUNT = { prefix: "t", newAccount: true, ready: ["doc-select"] };
 
 test("sign in, write, reload, import a v1 backup", async ({ page }) => {
-  await signIn(page);
+  await signIn(page, NEW_ACCOUNT);
 
   // The old Research Projects screen redirects to the workspace.
   await page.goto("/projects");
@@ -58,7 +48,7 @@ test("sign in, write, reload, import a v1 backup", async ({ page }) => {
 });
 
 test("/import opens the backup import inside the workspace; the drop zone takes a dropped file", async ({ page }) => {
-  await signIn(page);
+  await signIn(page, NEW_ACCOUNT);
   await page.goto("/import");
   await expect(page.getByTestId("import-v1-dialog")).toBeVisible();
   // The query is stripped once the dialog is open.

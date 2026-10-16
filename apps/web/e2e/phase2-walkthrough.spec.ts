@@ -9,6 +9,8 @@
  */
 import path from "node:path";
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { e2eEmail, signIn } from "./support/signin";
+import { recordToasts } from "./support/toasts";
 
 const API_ORIGIN = "http://localhost:8788";
 /** The vault passphrase (at least 10 characters). Since Phase 3A "Protect with a passphrase" locks the key under the vault, so this one passphrase opens both. */
@@ -25,13 +27,6 @@ const fixture = (name: string) => path.join(__dirname, "fixtures", name);
 
 const CORS = { "access-control-allow-origin": "http://localhost:3000", "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS" };
 const json = (route: Route, body: unknown) => route.fulfill({ status: 200, contentType: "application/json", headers: CORS, body: JSON.stringify(body) });
-
-async function signIn(page: Page) {
-  await page.goto("/signin");
-  await page.getByTestId("e2e-email").fill(`w${Date.now()}${Math.random().toString(36).slice(2, 7)}@e2e.local`);
-  await page.getByTestId("e2e-submit").click();
-  await expect(page).toHaveURL(/localhost:3000\/$/);
-}
 
 /** Selects `text` inside the editor the way a drag would (the browser selection, which ProseMirror then adopts). */
 async function selectInEditor(page: Page, text: string) {
@@ -50,23 +45,6 @@ async function selectInEditor(page: Page, text: string) {
     }
     throw new Error("text not found in the editor: " + needle);
   }, text);
-}
-
-/**
- * Every toast message shown from now on, in order. One toast replaces another, so two that arrive close together (the key's and the
- * vault migration's) are read from this record rather than from the toast on screen.
- */
-async function recordToasts(page: Page): Promise<() => Promise<string[]>> {
-  await page.evaluate(() => {
-    const w = window as unknown as { __toasts: string[] };
-    w.__toasts = [];
-    const host = document.querySelector('[data-testid="toast-host"]')!;
-    new MutationObserver(() => {
-      const text = host.querySelector('[data-testid="toast"] span')?.textContent;
-      if (text && w.__toasts[w.__toasts.length - 1] !== text) w.__toasts.push(text);
-    }).observe(host, { childList: true, subtree: true, characterData: true });
-  });
-  return () => page.evaluate(() => (window as unknown as { __toasts: string[] }).__toasts);
 }
 
 /** Puts the cursor at the very end of the document (the same on every platform, unlike an End key chord). */
@@ -119,7 +97,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
   });
 
   await test.step("1. sign in: the terms block the workspace; Escape asks for both ticks", async () => {
-    await signIn(page);
+    await signIn(page, { prefix: "w" });
     await expect(page.getByTestId("terms-dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("terms-dialog")).toBeVisible();
@@ -428,14 +406,9 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
 
 test("sign-out asks whether to forget the AI keys remembered on this computer (kept per account)", async ({ page }) => {
   test.setTimeout(120_000);
-  const email = `k${Date.now()}${Math.random().toString(36).slice(2, 7)}@e2e.local`;
+  const email = e2eEmail("k");
   const remembered = () => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("appu_key_")));
-  async function signInAs() {
-    await page.goto("/signin");
-    await page.getByTestId("e2e-email").fill(email);
-    await page.getByTestId("e2e-submit").click();
-    await expect(page).toHaveURL(/localhost:3000\/$/);
-  }
+  const signInAs = () => signIn(page, { email });
   await signInAs();
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
