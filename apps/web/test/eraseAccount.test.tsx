@@ -124,6 +124,22 @@ describe("Help: account erasure", () => {
     expect(h.v.lock).not.toHaveBeenCalled();
     expect($("erase-dialog")).not.toBeNull();
   });
+
+  it("if the sign-out itself fails after the erase, the dialog is not stuck: the word is cleared and Cancel closes it", async () => {
+    h.signOut.mockImplementation(async () => { h.order.push("signOut"); throw new Error("offline"); });
+    await render();
+    await click("help-erase");
+    type("erase-word", en.erase_confirm_word);
+    await click("erase-confirm");
+    await until(() => h.signOut.mock.calls.length === 1);
+    await until(() => (($("erase-word") as HTMLInputElement | null)?.value ?? "") === "");
+    expect(h.toast).toHaveBeenCalledWith(en.erased);
+    expect(h.order).toEqual(["delete", "lock", "forget", "signOut"]);
+    expect(($("erase-confirm") as HTMLButtonElement).disabled).toBe(true); // cannot erase twice
+    expect(($("erase-cancel") as HTMLButtonElement).disabled).toBe(false);
+    await click("erase-cancel");
+    await until(() => !$("erase-dialog"));
+  });
 });
 
 describe("Help: export, change passphrase", () => {
@@ -134,7 +150,7 @@ describe("Help: export, change passphrase", () => {
       if (path === "/projects/scratch1/documents") return [{ id: "d2", projectId: "scratch1", title: "Notes", kind: "draft", createdAt: "x", updatedAt: "y", deletedAt: null, wordCount: 1 }];
       if (path === "/documents/d1") return { id: "d1", title: "Ch 1", bodyHtml: "ct:<p>Hello thesis.</p>", keyVersion: 1, deks: [] };
       if (path === "/documents/d2") return { id: "d2", title: "Notes", bodyHtml: "ct:<p>Scratch note.</p>", keyVersion: 1, deks: [] };
-      if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false } };
+      if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: { "grammar and polish": 2 }, byService: { "Google Gemini": 2 }, total: 2, firstAt: "2026-10-01", lastAt: "2026-10-02", loggingOff: false } };
       if (path === "/me/export-audit" && init?.method === "POST") { h.order.push("audit"); return undefined; }
       throw new ApiError(404, "not-found");
     });
@@ -151,9 +167,38 @@ describe("Help: export, change passphrase", () => {
     const zip = await JSZip.loadAsync(blob); // jsdom's Blob has no arrayBuffer(); JSZip reads it with FileReader
     expect(await zip.file("Thesis/Ch 1.html")!.async("string")).toContain("Hello thesis.");
     expect(await zip.file(en.export_scratch + "/Notes.html")!.async("string")).toContain("Scratch note.");
-    expect(await zip.file("writing-process-record.txt")!.async("string")).toContain("WRITING-PROCESS RECORD");
+    // One record: each project's words under its title, the account-wide AI-use log once.
+    const record = await zip.file("writing-process-record.txt")!.async("string");
+    expect(record.match(/WRITING-PROCESS RECORD/g)).toHaveLength(1);
+    expect(record.match(/AI-USE LOG/g)).toHaveLength(1);
+    expect(record.match(/WORDS BY ORIGIN/g)).toHaveLength(2);
+    expect(record).toContain("Thesis\n======\n");
+    expect(record).toContain(en.export_scratch + "\n");
     // Nothing decrypted goes back to the server: the only write is the audit row.
     expect(calls().filter(([m]) => m !== "GET")).toEqual([["POST", "/me/export-audit"]]);
+  });
+
+  it("a second click while the first export waits on the unlock ask makes no second export", async () => {
+    let release!: (ok: boolean) => void;
+    h.v.ensureUnlocked.mockImplementation(() => new Promise<boolean>((r) => { release = r; }));
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/projects") return [];
+      if (path.endsWith("/documents")) return [];
+      if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false } };
+      if (path === "/me/export-audit" && init?.method === "POST") return undefined;
+      throw new ApiError(404, "not-found");
+    });
+    await render();
+    await click("help-export");
+    await until(() => h.v.ensureUnlocked.mock.calls.length === 1);
+    await act(async () => { $("help-export")!.click(); $("help-export")!.click(); await new Promise((r) => setTimeout(r, 0)); });
+    await act(async () => { release(true); await new Promise((r) => setTimeout(r, 0)); });
+    await until(() => h.toast.mock.calls.length > 0);
+    await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+    expect(h.v.ensureUnlocked).toHaveBeenCalledTimes(1);
+    expect(h.download).toHaveBeenCalledTimes(1);
+    expect(calls().filter(([m, p]) => m === "POST" && p === "/me/export-audit")).toHaveLength(1);
+    expect(($("help-export") as HTMLButtonElement).disabled).toBe(false); // free again afterwards
   });
 
   it("a locked vault that stays locked exports nothing", async () => {

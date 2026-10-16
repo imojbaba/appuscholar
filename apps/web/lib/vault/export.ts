@@ -1,5 +1,4 @@
 import JSZip from "jszip";
-import { safeFileName } from "@/lib/export/download";
 import { wordText } from "@/lib/export/word";
 import { VaultError } from "./crypto";
 import type { WrappedDek } from "./useVault";
@@ -27,6 +26,15 @@ export function exportFileName(d = new Date()): string {
   return `appuscholar-export-${localDay(d)}.zip`;
 }
 
+/**
+ * A zip entry name from a title: Unicode letters, combining marks (Devanagari vowel signs) and digits are kept, with "_", "-" and spaces;
+ * path separators and the characters Windows and macOS reserve are dropped, as are trailing dots and spaces. Empty: "appuscholar-document".
+ * (The single-document download keeps v1's ASCII file-name rule.)
+ */
+export function zipName(title: string): string {
+  return title.replace(/[^\p{L}\p{M}\p{N}_\- ]+/gu, "").replace(/[. ]+$/, "").trim() || "appuscholar-document";
+}
+
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -51,7 +59,7 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
   const folders = new Set<string>();
   const projects = [];
   for (const p of await deps.listProjects()) {
-    const folder = unique(safeFileName(p.title), folders);
+    const folder = unique(zipName(p.title), folders);
     const names = new Map<string, Set<string>>();
     const documents = [];
     for (const d of await deps.listDocuments(p.id)) {
@@ -68,7 +76,7 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
       const dir = d.kind === "source" ? `${folder}/sources` : folder;
       const used = names.get(dir) ?? new Set<string>();
       names.set(dir, used);
-      const base = `${dir}/${unique(safeFileName(d.title), used)}`;
+      const base = `${dir}/${unique(zipName(d.title), used)}`;
       zip.file(base + ".html", htmlFile(d.title, html));
       zip.file(base + ".doc", wordText(d.title, html));
       documents.push({ ...meta, html: base + ".html", doc: base + ".doc" });

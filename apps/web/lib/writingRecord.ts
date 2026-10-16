@@ -18,8 +18,28 @@ const pct = (part: number, whole: number) => (whole ? Math.round((100 * part) / 
 
 /** The writing-process record as plain text: v1 `provReportText`, section by section, with the same sentences. `today` is the local YYYY-MM-DD. */
 export function buildRecordText(rec: WritingRecord, build: string, today: string): string {
+  return recordHead(build, today) + recordWords(rec) + recordAiLog(rec.aiLog) + recordTail();
+}
+
+/**
+ * The record for several projects in one file (the export): the header once, the words-by-origin sections of each project under its
+ * title, then the AI-use log once (it is the student's whole log, the same in every project's record) and the closing sections once.
+ */
+export function buildAllRecordText(parts: Array<{ title: string; rec: WritingRecord }>, build: string, today: string): string {
+  let t = recordHead(build, today);
+  for (const p of parts) t += p.title + "\n" + "=".repeat(p.title.length) + "\n\n" + recordWords(p.rec);
+  if (parts[0]) t += recordAiLog(parts[0].rec.aiLog);
+  return t + recordTail();
+}
+
+function recordHead(build: string, today: string): string {
   let t = "WRITING-PROCESS RECORD (made with Appuscholar, " + build + ")\nDate: " + today + "\n\n";
   t += "WHAT THIS IS\nA count, kept under the student's account, of words typed in the editor against words inserted from an AI suggestion or the chat, with a summary of the AI-use log. It was made by counting, with no AI. It is the student's own record. It can be edited by the student, so it supports an honest account and is not proof against a determined person. It cannot see text typed from another source, or retyped from an AI chat elsewhere. It is not an AI detector.\n\n";
+  return t;
+}
+
+function recordWords(rec: WritingRecord): string {
+  let t = "";
   const typed = rec.docs.reduce((a, d) => a + d.stats.typed, 0), ai = rec.docs.reduce((a, d) => a + d.stats.ai, 0), tot = typed + ai;
   t += "WORDS BY ORIGIN (all documents the student wrote)\n";
   if (!tot) t += "No writing recorded yet.\n\n";
@@ -38,8 +58,11 @@ export function buildRecordText(rec: WritingRecord, build: string, today: string
     for (const w of rec.weekly) { const n = w.typed + w.ai; t += "- week of " + w.weekStart + ": " + pct(w.typed, n) + "% typed of " + n + " words\n"; }
     t += "\n";
   }
-  t += "AI-USE LOG (summary)\n";
-  const log = rec.aiLog;
+  return t;
+}
+
+function recordAiLog(log: WritingRecord["aiLog"]): string {
+  let t = "AI-USE LOG (summary)\n";
   if (log.loggingOff) t += "Logging is switched off for this account, so this part is empty by choice.\n\n";
   else if (!log.total) t += "No AI requests logged.\n\n";
   else {
@@ -47,7 +70,11 @@ export function buildRecordText(rec: WritingRecord, build: string, today: string
     for (const k of Object.keys(log.byKind).sort((x, y) => (log.byKind[y] ?? 0) - (log.byKind[x] ?? 0))) t += "- " + k + ": " + log.byKind[k] + "\n";
     t += "Services used: " + Object.keys(log.byService).map((k) => k + " " + log.byService[k]).join("; ") + ".\n\n";
   }
-  t += "DECLARED WRITING SAMPLES\n(none declared yet)\n\n";
+  return t;
+}
+
+function recordTail(): string {
+  let t = "DECLARED WRITING SAMPLES\n(none declared yet)\n\n";
   t += "LIMITS\nCounting where words came from does not show who thought of the ideas. A student who retypes AI text by hand is counted as the author of those words. The record is useful together with drafts, notes and a talk with the supervisor.\n";
   return t;
 }

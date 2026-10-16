@@ -1,7 +1,8 @@
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { VaultError } from "../lib/vault/crypto";
-import { exportAll, exportFileName, type ExportDeps } from "../lib/vault/export";
+import { exportAll, exportFileName, zipName, type ExportDeps } from "../lib/vault/export";
+import hi from "../messages/hi.json";
 
 type Doc = { id: string; projectId: string; title: string; kind: string; createdAt: string; updatedAt: string; deletedAt: string | null; wordCount: number };
 const P = [
@@ -78,6 +79,35 @@ describe("exportAll", () => {
     expect(index.projects[0]!.documents[1]!.html).toBeUndefined();
     d.decrypt.mockRejectedValue(new Error("vault-locked"));
     await expect(exportAll(d)).rejects.toThrow("vault-locked");
+  });
+
+  it("Hindi and accented titles keep their letters in the zip; only path and reserved characters go", async () => {
+    const d = deps();
+    d.listProjects = async () => [
+      { id: "p1", title: "मेरा शोध", stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
+      { id: "p2", title: "Café: notes/2026", stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
+    ];
+    d.listDocuments = async (id: string) => id === "p1"
+      ? [{ ...D[0]!, title: "पहला अध्याय" }, { ...D[2]!, projectId: "p1", title: "स्रोत पत्र" }]
+      : [{ ...D[1]!, projectId: "p2", title: "Résumé?" }];
+    const zip = await JSZip.loadAsync(await (await exportAll(d)).arrayBuffer());
+    const names = Object.keys(zip.files).filter((n) => !zip.files[n]!.dir).sort();
+    expect(names).toEqual([
+      "Café notes2026/Résumé.doc", "Café notes2026/Résumé.html",
+      "index.json", "writing-process-record.txt",
+      "मेरा शोध/sources/स्रोत पत्र.doc", "मेरा शोध/sources/स्रोत पत्र.html",
+      "मेरा शोध/पहला अध्याय.doc", "मेरा शोध/पहला अध्याय.html"
+    ]);
+    expect(await zip.file("मेरा शोध/पहला अध्याय.html")!.async("string")).toContain("The first sentence of D1.");
+  });
+
+  it("zipName keeps letters, marks and digits in any script, and falls back when nothing is left", () => {
+    expect(zipName(hi.export_scratch)).toBe(hi.export_scratch);
+    expect(zipName("Café")).toBe("Café");
+    expect(zipName("a\\b/c:d*e?f\"g<h>i|j")).toBe("abcdefghij");
+    expect(zipName("Draft v2...")).toBe("Draft v2");
+    expect(zipName("../..")).toBe("appuscholar-document");
+    expect(zipName("  ")).toBe("appuscholar-document");
   });
 
   it("names the file appuscholar-export-YYYY-MM-DD.zip", () => {

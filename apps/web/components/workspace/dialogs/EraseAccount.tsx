@@ -30,7 +30,11 @@ export function EraseAccount({ open, onClose, onErased }: { open: boolean; onClo
       return;
     }
     toast(t("erased"));
-    await onErased();
+    // The account is gone. Should the sign-out itself fail, the dialog must not stay stuck busy: it can be closed and Sign out tried again.
+    try { await onErased(); } catch { /* the session ends on its own: every api call now answers 401 */ }
+    // Cleared, so the button cannot erase twice; Cancel is free again.
+    setTyped("");
+    setBusy(false);
   }
 
   return (

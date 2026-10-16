@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { tHtml, useT } from "@/lib/i18n";
 import { keyStore } from "@/lib/ai/keys";
@@ -10,7 +10,7 @@ import { useVault } from "@/lib/vault/useVault";
 import { hasRemembered } from "@/lib/vault/remember";
 import { exportAll, exportFileName, localDay, type ExportDoc, type ExportDocSummary, type ExportProject } from "@/lib/vault/export";
 import { downloadBlob } from "@/lib/export/download";
-import { buildRecordText, type WritingRecord } from "@/lib/writingRecord";
+import { buildAllRecordText, type WritingRecord } from "@/lib/writingRecord";
 import { APP_VERSION } from "@/lib/version";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,8 @@ export function Help() {
     // Wait for IndexedDB before the sign-out navigates away; a blocked store must not keep the student signed in.
     if (forget) await vault.forgetThisComputer().catch(() => {});
     resetPdMemo();
-    void signOutAction();
+    // Returned, so the account erasure can tell when the sign-out itself failed.
+    await signOutAction();
   };
   // Asks whether to forget what this computer remembers (AI keys, the vault, or both); with nothing remembered it signs out at once.
   const startSignOut = async () => {
@@ -57,11 +58,14 @@ export function Help() {
    * Every project's documents (the scratch space's too), decrypted here and zipped with the writing-process record. Only ciphertext
    * comes from the server and nothing decrypted goes back; the export is logged (POST /me/export-audit) once the zip is built, before it is saved.
    */
+  /** Set before the first await, so a second click while the unlock ask is open does not start a second export. */
+  const exportBusy = useRef(false);
   const exportWork = async () => {
-    if (exporting) return;
-    if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
+    if (exportBusy.current) return;
+    exportBusy.current = true;
     setExporting(true);
     try {
+      if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
       const projects = await apiFetch<ExportProject[]>("/projects");
       const scratch = me?.scratchProjectId;
       if (scratch && !projects.some((p) => p.id === scratch)) projects.push({ id: scratch, title: t("export_scratch"), stage: "", createdAt: "" });
@@ -71,13 +75,10 @@ export function Help() {
         listDocuments: (id) => apiFetch<ExportDocSummary[]>(`/projects/${id}/documents`),
         getDocument: (id) => apiFetch<ExportDoc>(`/documents/${id}`),
         decrypt: (doc) => vault.decryptBody(doc),
-        // The record MyWriting downloads, one per project, each under its project's title.
+        // The record MyWriting downloads: each project's words under its title, the AI-use log (the whole account's) once.
         writingRecordText: async () => {
-          const parts = await Promise.all(projects.map(async (p) => {
-            const rec = await apiFetch<WritingRecord>(`/projects/${p.id}/writing-record`);
-            return p.title + "\n" + "=".repeat(p.title.length) + "\n" + buildRecordText(rec, APP_VERSION, day);
-          }));
-          return parts.join("\n\n");
+          const parts = await Promise.all(projects.map(async (p) => ({ title: p.title, rec: await apiFetch<WritingRecord>(`/projects/${p.id}/writing-record`) })));
+          return buildAllRecordText(parts, APP_VERSION, day);
         }
       });
       await apiFetch<void>("/me/export-audit", { method: "POST" });
@@ -86,6 +87,7 @@ export function Help() {
     } catch {
       toast(t("export_fail"));
     } finally {
+      exportBusy.current = false;
       setExporting(false);
     }
   };

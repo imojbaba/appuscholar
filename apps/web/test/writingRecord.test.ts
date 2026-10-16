@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildRecordText, type WritingRecord } from "../lib/writingRecord";
+import { buildAllRecordText, buildRecordText, type WritingRecord } from "../lib/writingRecord";
 
 const stats = (typed: number, ai: number, passages = 0, kept = 0, edited = 0, unknown = 0) => ({ typed, ai, passages, kept, edited, unknown });
 const rec: WritingRecord = {
@@ -44,5 +44,23 @@ describe("buildRecordText", () => {
     expect(empty).toContain("No writing recorded yet.");
     expect(empty).not.toContain("WEEKLY PICTURE");
     expect(empty).toContain("No AI requests logged.");
+  });
+});
+
+describe("buildAllRecordText", () => {
+  it("writes the header, the AI-use log and the closing sections once, and each project's words under its title", () => {
+    const other: WritingRecord = { ...rec, docs: [{ id: "b", title: "Notes", kind: "draft", stats: stats(5, 0) }], sources: [], weekly: [] };
+    const text = buildAllRecordText([{ title: "Thesis", rec }, { title: "Scratch", rec: other }], "abc1234", "2026-10-16");
+    for (const once of ["WRITING-PROCESS RECORD", "WHAT THIS IS", "AI-USE LOG", "4 requests from", "DECLARED WRITING SAMPLES", "LIMITS"]) expect(text.split(once)).toHaveLength(2);
+    expect(text.split("WORDS BY ORIGIN")).toHaveLength(3);
+    expect(text).toContain("Thesis\n======\n\nWORDS BY ORIGIN");
+    expect(text).toContain("- Essay: 40 words");
+    expect(text).toContain("Scratch\n=======\n\nWORDS BY ORIGIN");
+    expect(text).toContain("- Notes: 5 words, 100% typed");
+    expect(text.indexOf("- Notes")).toBeLessThan(text.indexOf("AI-USE LOG"));
+  });
+  it("is the single record's text, with the project heading, for one project", () => {
+    const one = buildAllRecordText([{ title: "Essay", rec }], "abc1234", "2026-10-16");
+    expect(one.replace("Essay\n=====\n\n", "")).toBe(buildRecordText(rec, "abc1234", "2026-10-16"));
   });
 });
