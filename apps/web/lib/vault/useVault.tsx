@@ -39,6 +39,11 @@ const Ctx = createContext<VaultValue | null>(null);
 
 /** Thrown when a body must be encrypted or decrypted while the vault key is not in memory. Never a plaintext fallback. */
 const lockedError = () => new Error("vault-locked");
+/** Thrown when another account signed in while a vault operation was under way: its result is dropped, never applied to the new account. */
+const changedError = () => new Error("vault-changed");
+/** GET /me/vault retries after a network or server failure: 1 s, 2 s, 4 s … up to 30 s, and at once when the browser comes back online. */
+const RETRY_BASE_MS = 1000;
+const RETRY_MAX_MS = 30_000;
 
 export function VaultProvider({ children }: { children: React.ReactNode }) {
   const t = useT();
@@ -68,6 +73,10 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   /** A document's first key, generated but not yet on the server: a retried first save must carry the same one. */
   const pendingDek = useRef(new Map<string, WrappedDek>());
   const unlocking = useRef<Promise<boolean> | null>(null);
+  /** Settles when this account's GET /me/vault has answered (record or 404), or when the account changes. */
+  const loading = useRef<Promise<void> | null>(null);
+  /** Bumped on every account change; an operation started under an older epoch must not touch the session. */
+  const epoch = useRef(0);
 
   const forgetKeys = useCallback(() => { vk.current = null; dekCache.current.clear(); pendingDek.current.clear(); }, []);
   const opened = useCallback((key: CryptoKey) => { vk.current = key; if (statusRef.current !== "migrating") setStatus("unlocked"); }, [setStatus]);
@@ -85,6 +94,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const unlockRemembered = useCallback(async (): Promise<boolean> => {
+    const mine = epoch.current;
+    await loading.current;
+    if (epoch.current !== mine) return false;
     const uid = userRef.current;
     const rec = record.current;
     if (!uid || !rec) return false;
@@ -101,7 +113,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       try { await forgetRemembered(uid); } catch { /* storage blocked */ }
       return false;
     }
-    if (record.current !== rec || userRef.current !== uid) return false;
+    if (epoch.current !== mine) return false;
     opened(key);
     return true;
   }, [opened]);
@@ -109,25 +121,48 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // A new account (or none): nothing of the previous one's vault stays in memory.
     userRef.current = userId;
+    epoch.current++;
     forgetKeys();
     record.current = null;
     statusRef.current = "loading";
-    if (!userId) return;
+    unlocking.current = null;
+    if (!userId) { loading.current = null; return; }
     let live = true;
-    apiFetch<VaultRecord>("/me/vault").then(
-      (rec) => {
-        if (!live) return;
-        record.current = rec;
-        setState({ uid: userId, status: "locked", complete: rec.complete });
-        statusRef.current = "locked";
-        void unlockRemembered();
-      },
-      (e: unknown) => { if (live && e instanceof ApiError && e.status === 404) setStatus("off"); /* otherwise: unknown, stay loading */ }
-    );
-    return () => { live = false; };
+    let inflight = false;
+    let attempt = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let settle!: () => void;
+    loading.current = new Promise<void>((r) => { settle = r; });
+    const load = () => {
+      if (!live || inflight) return;
+      clearTimeout(timer);
+      inflight = true;
+      apiFetch<VaultRecord>("/me/vault").then(
+        (rec) => {
+          inflight = false;
+          if (!live) return;
+          record.current = rec;
+          setState({ uid: userId, status: "locked", complete: rec.complete });
+          statusRef.current = "locked";
+          settle();
+          void unlockRemembered();
+        },
+        (e: unknown) => {
+          inflight = false;
+          if (!live) return;
+          if (e instanceof ApiError && e.status === 404) { setStatus("off"); settle(); return; }
+          // Network or server failure: the vault's state is unknown, so stay "loading" (never "off") and try again.
+          timer = setTimeout(load, Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** attempt++));
+        }
+      );
+    };
+    window.addEventListener("online", load);
+    load();
+    return () => { live = false; clearTimeout(timer); window.removeEventListener("online", load); settle(); };
   }, [userId, forgetKeys, setStatus, unlockRemembered]);
 
   const setup = useCallback(async (pass: string, rememberIt: boolean) => {
+    const mine = epoch.current;
     if (record.current) throw new Error("vault-exists");
     const key = await generateVaultKey();
     const recoveryCode = generateRecoveryCode();
@@ -138,7 +173,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       publicKey: kp.publicKeyB64,
       privateKeyWrapped: await wrapPrivateKey(kp.privateKey, key)
     };
+    if (epoch.current !== mine) throw changedError();
     await apiFetch<void>("/me/vault", { method: "PUT", body: JSON.stringify(body) });
+    if (epoch.current !== mine) return { recoveryCode };
     record.current = { ...body, complete: false, updatedAt: new Date().toISOString() };
     setComplete(false);
     opened(key);
@@ -147,20 +184,25 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, [opened, remember, setComplete]);
 
   const unlock = useCallback(async (pass: string, rememberIt: boolean) => {
+    const mine = epoch.current;
     const rec = record.current;
     if (!rec) throw new Error("no-vault");
     const key = await unwrapWithPassphrase(rec.passWrapped, pass); // VaultError("wrong-passphrase") leaves everything as it was
+    if (epoch.current !== mine) throw changedError();
     opened(key);
     if (rememberIt) await remember(rec.passWrapped, key);
   }, [opened, remember]);
 
   const recover = useCallback(async (code: string, newPass: string) => {
+    const mine = epoch.current;
     const rec = record.current;
     if (!rec) throw new Error("no-vault");
     const key = await unwrapWithRecovery(rec.recoveryWrapped, code);
     const recoveryCode = generateRecoveryCode();
     const wraps = { passWrapped: await wrapWithPassphrase(key, newPass), recoveryWrapped: await wrapWithRecovery(key, recoveryCode) };
+    if (epoch.current !== mine) throw changedError();
     await apiFetch("/me/vault/wraps", { method: "PATCH", body: JSON.stringify({ ...wraps, reason: "recovery-used" }) });
+    if (epoch.current !== mine) return { recoveryCode };
     record.current = { ...rec, ...wraps };
     opened(key);
     await refreshRemembered(wraps.passWrapped, key);
@@ -168,11 +210,14 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   }, [opened, refreshRemembered]);
 
   const changePassphrase = useCallback(async (oldPass: string, newPass: string) => {
+    const mine = epoch.current;
     const rec = record.current;
     if (!rec) throw new Error("no-vault");
     const key = await unwrapWithPassphrase(rec.passWrapped, oldPass);
     const passWrapped = await wrapWithPassphrase(key, newPass);
+    if (epoch.current !== mine) throw changedError();
     await apiFetch("/me/vault/wraps", { method: "PATCH", body: JSON.stringify({ passWrapped, reason: "passphrase-changed" }) });
+    if (epoch.current !== mine) return;
     record.current = { ...rec, passWrapped };
     opened(key);
     await refreshRemembered(passWrapped, key);
@@ -190,22 +235,31 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const ensureUnlocked = useCallback((): Promise<boolean> => {
     if (vk.current) return Promise.resolve(true);
-    if (!record.current) return Promise.resolve(false);
     // One prompt at a time: a second caller waits for the first instead of cancelling its dialog.
-    unlocking.current ??= (async () => {
+    if (unlocking.current) return unlocking.current;
+    const mine = epoch.current;
+    let run!: Promise<boolean>;
+    run = (async () => {
       try {
+        // While GET /me/vault is in flight the answer is not "no vault" yet: wait for it (it retries until it gets one).
+        await loading.current;
+        if (epoch.current !== mine) return false;
+        if (vk.current) return true;
+        if (!record.current) return false;
         if (await unlockRemembered()) return true;
         for (;;) {
           const pass = await askPassphrase({ kind: "vault-unlock" });
-          if (pass === null) return false;
+          if (pass === null || epoch.current !== mine) return false;
           try { await unlock(pass, false); return true; } catch (e) {
+            if (epoch.current !== mine) return false;
             if (!(e instanceof VaultError && e.code === "wrong-passphrase")) throw e;
             toast(t("vault_wrong"));
           }
         }
-      } finally { unlocking.current = null; }
+      } finally { if (unlocking.current === run) unlocking.current = null; }
     })();
-    return unlocking.current;
+    unlocking.current = run;
+    return run;
   }, [unlock, unlockRemembered, t]);
 
   const dekFor = useCallback(async (docId: string, dek: WrappedDek, key: CryptoKey): Promise<CryptoKey> => {

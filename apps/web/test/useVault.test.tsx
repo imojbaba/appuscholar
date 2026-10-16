@@ -7,9 +7,9 @@ import { generateKeypair, generateVaultKey, unwrapWithPassphrase, unwrapWithReco
 import { forgetRemembered, hasRemembered } from "../lib/vault/remember";
 import en from "../messages/en.json";
 
-const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), toast: vi.fn() }));
+const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), toast: vi.fn(), uid: "u1" }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
-vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" } }) }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: h.uid } }) }));
 vi.mock("@/components/workspace/dialogs/Passphrase", () => ({ askPassphrase: h.ask }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
@@ -45,8 +45,9 @@ async function mount() {
   function Probe() { const v = useVault(); box.v = v; if (seen[seen.length - 1] !== v.status) seen.push(v.status); return null; }
   const root = createRoot(document.createElement("div"));
   roots.push(root);
-  await act(async () => { root.render(<VaultProvider><Probe /></VaultProvider>); });
-  return { get v(): VaultValue { return box.v!; }, seen };
+  const render = () => root.render(<VaultProvider><Probe /></VaultProvider>);
+  await act(async () => { render(); });
+  return { get v(): VaultValue { return box.v!; }, seen, render };
 }
 async function until(pred: () => boolean) {
   for (let i = 0; i < 400; i++) { if (pred()) return; await act(async () => { await new Promise((r) => setTimeout(r, 5)); }); }
@@ -56,6 +57,7 @@ const CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 
 beforeEach(async () => {
   server = { vault: null, calls: [] };
+  h.uid = "u1";
   h.api.mockReset().mockImplementation(fakeApi);
   h.ask.mockReset();
   h.toast.mockReset();
@@ -122,8 +124,10 @@ describe("useVault", () => {
     expect(third.keyVersion).toBe(2);
     // After a lock the cache is gone: the wrapped dek alone, under the vault key, opens the text.
     act(() => { s.v.lock(); });
-    await expect(s.v.decryptBody({ id: "d1", deks, bodyHtml: second.bodyHtml, keyVersion: 1 })).rejects.toBeInstanceOf(Error);
-    await expect(s.v.encryptBody({ id: "d1", deks }, "x")).rejects.toBeInstanceOf(Error);
+    // Locked is its own error, never mistaken for corrupt data.
+    await expect(s.v.decryptBody({ id: "d1", deks, bodyHtml: second.bodyHtml, keyVersion: 1 })).rejects.toMatchObject({ message: "vault-locked" });
+    await expect(s.v.decryptBody({ id: "d1", deks, bodyHtml: second.bodyHtml, keyVersion: 1 })).rejects.not.toBeInstanceOf(VaultError);
+    await expect(s.v.encryptBody({ id: "d1", deks }, "x")).rejects.toMatchObject({ message: "vault-locked" });
     await act(async () => { await s.v.unlock("right", false); });
     expect(await s.v.decryptBody({ id: "d1", deks, bodyHtml: second.bodyHtml, keyVersion: 1 })).toBe("<p>v2</p>");
   }, 30_000);
@@ -247,6 +251,82 @@ describe("useVault", () => {
     await act(async () => { await s.v.unlock("right", false).catch((e: unknown) => { err = e; }); });
     expect((err as VaultError).code).toBe("wrong-passphrase");
     await act(async () => { await s.v.unlock("next", false); });
+    expect(s.v.status).toBe("unlocked");
+  }, 30_000);
+
+  it("ensureUnlocked called while the vault is still loading waits for the record, then prompts", async () => {
+    server.vault = await vaultWith("right");
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => { if (path === "/me/vault" && !init?.method) await gate; return fakeApi(path, init); });
+    const s = await mount();
+    expect(s.v.status).toBe("loading");
+    h.ask.mockResolvedValueOnce("right");
+    let ok: boolean | undefined;
+    const pending = s.v.ensureUnlocked().then((v) => { ok = v; });
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(ok).toBeUndefined();
+    expect(h.ask).not.toHaveBeenCalled();
+    await act(async () => { release(); await pending; });
+    expect(ok).toBe(true);
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    expect(s.v.status).toBe("unlocked");
+  }, 30_000);
+
+  it("a failed load retries with backoff and reaches locked without a reload", async () => {
+    server.vault = await vaultWith("right");
+    h.api.mockImplementationOnce(() => Promise.reject(new TypeError("Failed to fetch")));
+    const s = await mount();
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(s.v.status).toBe("loading");
+    await until(() => s.v.status === "locked");
+    expect(server.calls.filter((c) => c.path === "/me/vault" && c.method === "GET").length).toBe(1); // the rejected first try never reached fakeApi
+    expect(h.api).toHaveBeenCalledTimes(2);
+  }, 30_000);
+
+  it("a failed load retries at once when the browser comes back online", async () => {
+    server.vault = await vaultWith("right");
+    h.api.mockImplementationOnce(() => Promise.reject(new ApiError(503, "unavailable")));
+    const s = await mount();
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(s.v.status).toBe("loading");
+    await act(async () => { window.dispatchEvent(new Event("online")); await new Promise((r) => setTimeout(r, 20)); });
+    expect(s.v.status).toBe("locked");
+  }, 30_000);
+
+  it("an unlock that finishes after the account changed never opens the new account's session", async () => {
+    server.vault = await vaultWith("right");
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    const unlocking = s.v.unlock("right", true).then(() => "resolved", (e: unknown) => (e as Error).message);
+    // Another account signs in while the passphrase is being checked; it has no vault.
+    h.api.mockImplementation((path: string, init?: RequestInit) => (path === "/me/vault" && !init?.method ? Promise.reject(new ApiError(404, "no-vault")) : fakeApi(path, init)));
+    h.uid = "u2";
+    await act(async () => { s.render(); });
+    expect(await unlocking).toBe("vault-changed");
+    await until(() => s.v.status === "off");
+    expect(s.v.status).toBe("off");
+    await expect(s.v.encryptBody({ id: "d1", deks: [] }, "x")).rejects.toMatchObject({ message: "vault-locked" });
+    expect(await hasRemembered("u1")).toBe(false);
+    expect(await hasRemembered("u2")).toBe(false);
+  }, 30_000);
+
+  it("recover and changePassphrase that finish after the account changed do not touch the new account's session", async () => {
+    server.vault = await vaultWith("right", "AAAAA-BBBBB-CCCCC-DDDDD");
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    const recovering = s.v.recover("AAAAA-BBBBB-CCCCC-DDDDD", "new");
+    const changing = s.v.changePassphrase("right", "next");
+    const other = await vaultWith("other");
+    h.api.mockImplementation((path: string, init?: RequestInit) => (path === "/me/vault" && !init?.method ? Promise.resolve({ ...other }) : fakeApi(path, init)));
+    h.uid = "u2";
+    await act(async () => { s.render(); });
+    await act(async () => { await Promise.allSettled([recovering, changing]); });
+    await until(() => s.v.status === "locked");
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(s.v.status).toBe("locked");
+    // The new account's record was not overwritten: its own passphrase still opens it.
+    await act(async () => { await s.v.unlock("other", false); });
     expect(s.v.status).toBe("unlocked");
   }, 30_000);
 });
