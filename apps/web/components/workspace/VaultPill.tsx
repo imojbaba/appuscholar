@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { useVault } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
+import { hasRemembered } from "@/lib/vault/remember";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -29,6 +31,19 @@ export function VaultPill({ className }: { className?: string }) {
   const vault = useVault();
   const [changing, setChanging] = useState(false);
   const { status } = vault;
+  const uid = useSettings().me?.id ?? null;
+  /** "Forget on this computer" is offered only when this computer remembers the vault. Re-read when the vault opens and when the menu opens. */
+  const [remembered, setRemembered] = useState(false);
+  const readRemembered = useCallback(() => {
+    if (!uid) return;
+    hasRemembered(uid).then(setRemembered, () => setRemembered(false));
+  }, [uid]);
+  useEffect(() => { if (status === "unlocked") readRemembered(); }, [status, readRemembered]);
+  async function forget() {
+    try { await vault.forgetThisComputer(); } catch { return; }
+    setRemembered(false);
+    toast(t("vault_forgotten"));
+  }
   if (status === "loading") return null; // never shows "off" to a student whose vault has not been read yet
 
   if (status === "migrating") {
@@ -50,13 +65,13 @@ export function VaultPill({ className }: { className?: string }) {
   return (
     <>
       {/* Not modal, so the change dialog it opens takes focus cleanly. */}
-      <DropdownMenu modal={false}>
+      <DropdownMenu modal={false} onOpenChange={(o) => { if (o) readRemembered(); }}>
         <DropdownMenuTrigger asChild>
           <button type="button" className={cn(PILL, TONE.unlocked, className)} data-testid="vault-pill" data-status={status}><span className="truncate">{t("vault_pill_on")}</span></button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" data-testid="vault-menu">
           <DropdownMenuItem className="min-h-[34px]" data-testid="vault-menu-change" onSelect={() => setChanging(true)}>{t("vault_change_h2")}</DropdownMenuItem>
-          <DropdownMenuItem className="min-h-[34px]" data-testid="vault-menu-forget" onSelect={() => { void vault.forgetThisComputer().catch(() => {}); }}>{t("vault_forget_q")}</DropdownMenuItem>
+          {remembered && <DropdownMenuItem className="min-h-[34px]" data-testid="vault-menu-forget" onSelect={() => { void forget(); }}>{t("vault_forget_btn")}</DropdownMenuItem>}
         </DropdownMenuContent>
       </DropdownMenu>
       <ChangePassphrase open={changing} onClose={() => setChanging(false)} />
@@ -82,7 +97,7 @@ function ChangePassphrase({ open, onClose }: { open: boolean; onClose: () => voi
       await changePassphrase(old, next);
     } catch (e) {
       setBusy(false);
-      if (e instanceof VaultError && e.code === "wrong-passphrase") toast(t("vault_wrong"));
+      toast(t(e instanceof VaultError && e.code === "wrong-passphrase" ? "vault_wrong" : "vault_change_fail"));
       return;
     }
     toast(t("vault_changed"));

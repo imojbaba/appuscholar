@@ -78,11 +78,12 @@ export function Help() {
       </DialogContent>
     </Dialog>
       <AlertDialog open={!!askForget} onOpenChange={(o) => { if (!o) setAskForget(null); }}>
-        <AlertDialogContent data-testid="forget-keys-confirm">
+        {/* With only the vault remembered, the AI-keys sentence does not apply: no description then. */}
+        <AlertDialogContent data-testid="forget-keys-confirm" {...(askForget && !askForget.keys ? { "aria-describedby": undefined } : {})}>
           <AlertDialogHeader>
             <AlertDialogTitle>{askForget?.keys !== false ? "Forget the AI keys remembered on this computer?" : t("vault_forget_q")}</AlertDialogTitle>
             {askForget?.keys && askForget.vault && <p className="m-0 text-sm font-semibold" data-testid="forget-vault-q">{t("vault_forget_q")}</p>}
-            <AlertDialogDescription>If this is a shared computer, forget them. Otherwise keep them and you will not need to paste them again next time.</AlertDialogDescription>
+            {askForget?.keys !== false && <AlertDialogDescription>If this is a shared computer, forget them. Otherwise keep them and you will not need to paste them again next time.</AlertDialogDescription>}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="keep-keys-signout" onClick={() => void signOut(false)}>Keep and sign out</AlertDialogCancel>

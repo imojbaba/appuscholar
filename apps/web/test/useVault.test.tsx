@@ -26,7 +26,7 @@ function fakeApi(path: string, init: RequestInit = {}) {
   const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined;
   server.calls.push({ path, method, body });
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
-  if (path === "/me/vault" && method === "PUT") { server.vault = { ...(body as Omit<Rec, "complete" | "updatedAt">), complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve(undefined); }
+  if (path === "/me/vault" && method === "PUT") { if (server.vault) return Promise.reject(new ApiError(409, "vault-exists")); server.vault = { ...(body as Omit<Rec, "complete" | "updatedAt">), complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve(undefined); }
   if (path === "/me/vault/wraps" && method === "PATCH") { const { reason: _r, ...w } = body!; server.vault = { ...server.vault!, ...w }; return Promise.resolve({ ok: true }); }
   if (path === "/me/vault/complete" && method === "POST") { server.vault = { ...server.vault!, complete: true }; return Promise.resolve(undefined); }
   return Promise.reject(new ApiError(404, "not-found"));
@@ -149,6 +149,20 @@ describe("useVault", () => {
     expect(await code(s.v.decryptBody({ id: "d1", deks, bodyHtml: enc.bodyHtml, keyVersion: 7 }))).toBe("corrupt");
     // A dek that does not open under this vault key.
     expect(await code(s.v.decryptBody({ id: "d9", deks: [{ v: 1, wrapped: "AAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }], bodyHtml: enc.bodyHtml, keyVersion: 1 }))).toBe("corrupt");
+  }, 30_000);
+
+  it("setup answered 409 (set up meanwhile elsewhere) re-reads the record and shows the vault locked", async () => {
+    const s = await mount();
+    await until(() => s.v.status === "off");
+    server.vault = await vaultWith("other device");
+    let err: unknown;
+    await act(async () => { await s.v.setup("pw", false).catch((e: unknown) => { err = e; }); });
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(409);
+    expect(s.v.status).toBe("locked");
+    // The record read back is the other device's: its passphrase opens it.
+    await act(async () => { await s.v.unlock("other device", false); });
+    expect(s.v.status).toBe("unlocked");
   }, 30_000);
 
   it("wrapSecret / unwrapSecret round-trip under the vault key and refuse while locked", async () => {

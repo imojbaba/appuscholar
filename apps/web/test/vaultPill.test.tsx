@@ -8,7 +8,9 @@ type FakeVault = {
   status: string; migrating: { n: number; total: number } | null;
   ensureUnlocked: ReturnType<typeof vi.fn>; changePassphrase: ReturnType<typeof vi.fn>; forgetThisComputer: ReturnType<typeof vi.fn>;
 };
-const h = vi.hoisted(() => ({ v: null as unknown as FakeVault, open: vi.fn(), toast: vi.fn() }));
+const h = vi.hoisted(() => ({ v: null as unknown as FakeVault, open: vi.fn(), toast: vi.fn(), remembered: vi.fn() }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" } }) }));
+vi.mock("@/lib/vault/remember", () => ({ hasRemembered: h.remembered }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => h.v }));
 vi.mock("@/components/workspace/dialogs/VaultSetup", () => ({ openVaultSetup: h.open }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -32,7 +34,7 @@ async function click(id: string) {
 async function openMenu() {
   const pill = $("vault-pill")!;
   await act(async () => {
-    pill.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    pill.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     await new Promise((r) => setTimeout(r, 0));
   });
 }
@@ -52,6 +54,7 @@ beforeEach(() => {
   h.v = { status: "loading", migrating: null, ensureUnlocked: vi.fn(async () => true), changePassphrase: vi.fn(async () => {}), forgetThisComputer: vi.fn(async () => {}) };
   h.open.mockReset().mockResolvedValue(false);
   h.toast.mockReset();
+  h.remembered.mockReset().mockResolvedValue(true);
   const box = document.createElement("div");
   document.body.appendChild(box);
   root = createRoot(box);
@@ -91,9 +94,13 @@ describe("VaultPill", () => {
     expect(pill.className).toContain("bg-ok-bg"); // green
     await openMenu();
     expect($("vault-menu-change")!.textContent).toBe(en.vault_change_h2);
-    expect($("vault-menu-forget")!.textContent).toBe(en.vault_forget_q);
+    await until(() => !!$("vault-menu-forget"));
+    expect(h.remembered).toHaveBeenCalledWith("u1");
+    expect($("vault-menu-forget")!.textContent).toBe(en.vault_forget_btn);
     await click("vault-menu-forget");
     expect(h.v.forgetThisComputer).toHaveBeenCalledTimes(1);
+    await until(() => h.toast.mock.calls.length === 1);
+    expect(h.toast).toHaveBeenCalledWith(en.vault_forgotten);
     expect(h.v.ensureUnlocked).toHaveBeenCalledTimes(1);
 
     h.v.status = "migrating";
@@ -104,6 +111,16 @@ describe("VaultPill", () => {
     expect(pill.className).toContain("bg-purple-100"); // purple: structure, work in progress
     expect(pill.title).toBe(en.vault_migrating_n.replace("{n}", "3").replace("{total}", "10"));
     expect(h.open).toHaveBeenCalledTimes(1);
+  });
+
+  it("Forget on this computer is offered only when this computer remembers the vault", async () => {
+    h.v.status = "unlocked";
+    h.remembered.mockResolvedValue(false);
+    await render();
+    await openMenu();
+    await until(() => h.remembered.mock.calls.length >= 2); // when the vault opened, and when the menu opened
+    expect($("vault-menu-change")).not.toBeNull();
+    expect($("vault-menu-forget")).toBeNull();
   });
 
   it("Change passphrase asks for the current one and the new one twice", async () => {
@@ -136,8 +153,15 @@ describe("VaultPill", () => {
     expect(h.toast).toHaveBeenLastCalledWith(en.vault_wrong);
     expect($("vault-change-dialog")).not.toBeNull();
 
+    // Any other failure (the network) says so and keeps the dialog open.
+    h.v.changePassphrase.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     await click("vault-change-submit");
     await until(() => h.toast.mock.calls.length === 4);
+    expect(h.toast).toHaveBeenLastCalledWith(en.vault_change_fail);
+    expect($("vault-change-dialog")).not.toBeNull();
+
+    await click("vault-change-submit");
+    await until(() => h.toast.mock.calls.length === 5);
     expect(h.v.changePassphrase).toHaveBeenLastCalledWith("old passphrase", "new passphrase 1");
     expect(h.toast).toHaveBeenLastCalledWith(en.vault_changed);
     await until(() => !$("vault-change-dialog"));

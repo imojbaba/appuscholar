@@ -11,7 +11,9 @@ import path from "node:path";
 import { test, expect, type Page, type Route } from "@playwright/test";
 
 const API_ORIGIN = "http://localhost:8788";
-const PASS = "secret1";
+/** The vault passphrase (at least 10 characters). Since Phase 3A "Protect with a passphrase" locks the key under the vault, so this one passphrase opens both. */
+const PASS = "secret passphrase 1";
+const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 const SENTENCE_1 = "Procrastination delays important work.";
 const SENTENCE_2 = "Students often start essays late.";
 /** One number the student's sentence does not have, so the accuracy note is amber. */
@@ -111,7 +113,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("terms-dialog")).toBeHidden();
   });
 
-  await test.step("2. Welcome, then Set up my key: Groq, a passphrase, Save, Test", async () => {
+  await test.step("2. Welcome, then Set up my key: Groq, a passphrase (the vault setup and its recovery sheet), Save, Test", async () => {
     await expect(page.getByTestId("welcome-dialog")).toBeVisible();
     await page.getByTestId("welcome-setup").click();
     await expect(page.getByTestId("provider-dialog")).toBeVisible();
@@ -119,14 +121,27 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("key-input").fill("gsk_test");
     await page.getByTestId("key-mode-pass").check();
     await page.getByTestId("key-save").click();
+    // No vault yet: its setup comes first, and its passphrase is the one that locks the key.
+    await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
+    await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+    await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await expect(page.getByTestId("pass-message")).toContainText("only this passphrase opens them");
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("pass-message")).toContainText("once more");
+    await expect(page.getByTestId("pass-message")).toHaveText("Type it again");
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
+    // The recovery sheet: the code shown once; Done waits for "I have saved it".
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
+    await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
     await expect(page.getByTestId("toast")).toHaveText("Groq connected ✓ and encrypted 🔒");
+    await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
+    await page.getByTestId("vault-sheet-saved").check();
+    await page.getByTestId("vault-sheet-done").click();
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
     await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await expect(page.getByTestId("vault-pill")).toHaveText("Vault on");
 
     await page.getByTestId("provider-key-btn").click();
     await page.getByTestId("key-test").click();
@@ -175,12 +190,12 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(headings.filter({ hasText: "References" })).toHaveCount(1);
   });
 
-  await test.step("6. select a sentence, Improve from the bubble: polishing, result, amber note (the key is locked after the reload, so the passphrase is asked once)", async () => {
+  await test.step("6. select a sentence, Improve from the bubble: polishing, result, amber note (the vault is locked after the reload, so its passphrase is asked once)", async () => {
     await selectInEditor(page, SENTENCE_1);
     await expect(page.getByTestId("sel-bubble")).toBeVisible();
     await page.getByTestId("sel-improve").click();
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
-    await expect(page.getByTestId("pass-message")).toContainText("Passphrase to unlock your Groq key");
+    await expect(page.getByTestId("pass-message")).toHaveText("Type the passphrase that protects your documents.");
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
     await expect(page.getByTestId("ai-status")).toHaveText("💜 Polishing…");
@@ -356,7 +371,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("tool-idea")).toContainText("Idea & Feasibility");
   });
 
-  await test.step("19. reload, then a wrong passphrase on the first AI use: refused, nothing sent", async () => {
+  await test.step("19. reload, then a wrong passphrase on the first AI use: refused and asked again, then cancelled; nothing sent", async () => {
     await page.reload();
     await expect(page.locator(".ProseMirror")).toContainText(SENTENCE_2);
     await expect(page.getByTestId("act-continue")).toBeVisible();
@@ -365,7 +380,10 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
     await page.getByTestId("pass-input").fill("not-the-passphrase");
     await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("ai-out")).toHaveText("Wrong passphrase — nothing was unlocked. Try again.");
+    await expect(page.getByTestId("toast")).toHaveText("Wrong passphrase — nothing was unlocked. Try again.");
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await page.getByTestId("pass-cancel").click();
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
     expect(completeCalls).toBe(before);
   });
 });

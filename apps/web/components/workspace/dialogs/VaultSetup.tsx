@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,10 @@ export function VaultSetupHost() {
       setCode(recoveryCode);
       go("sheet");
       settle(true);
-    } catch {
+    } catch (e) {
+      toast(t("vault_setup_fail"));
+      // A vault that already exists (set up meanwhile elsewhere: the provider has re-read it, so the pill shows it locked) cannot be set up again.
+      if ((e instanceof ApiError && e.status === 409) || (e instanceof Error && e.message === "vault-exists")) { go("closed"); settle(false); return; }
       go("intro");
     }
   }

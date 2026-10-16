@@ -178,14 +178,25 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       privateKeyWrapped: await wrapPrivateKey(kp.privateKey, key)
     };
     if (epoch.current !== mine) throw changedError();
-    await apiFetch<void>("/me/vault", { method: "PUT", body: JSON.stringify(body) });
+    try {
+      await apiFetch<void>("/me/vault", { method: "PUT", body: JSON.stringify(body) });
+    } catch (e) {
+      // 409: the vault was set up meanwhile (another tab or device). Read it, so this tab shows it locked instead of "off".
+      if (e instanceof ApiError && e.status === 409 && epoch.current === mine) {
+        try {
+          const rec = await apiFetch<VaultRecord>("/me/vault");
+          if (epoch.current === mine && !vk.current) { record.current = rec; setStatus("locked"); setComplete(rec.complete); }
+        } catch { /* stays as it was; the next load reads it */ }
+      }
+      throw e;
+    }
     if (epoch.current !== mine) return { recoveryCode };
     record.current = { ...body, complete: false, updatedAt: new Date().toISOString() };
     setComplete(false);
     opened(key);
     if (rememberIt) await remember(body.passWrapped, key);
     return { recoveryCode };
-  }, [opened, remember, setComplete]);
+  }, [opened, remember, setComplete, setStatus]);
 
   const unlock = useCallback(async (pass: string, rememberIt: boolean) => {
     const mine = epoch.current;

@@ -12,6 +12,7 @@ vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api
 vi.mock("@/lib/session", () => ({ useSession: () => ({ email: "asha@example.edu", signOutAction: async () => {} }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", setup: h.setup }) }));
 
+import { ApiError } from "../lib/api";
 import { openVaultSetup, VaultSetupHost } from "../components/workspace/dialogs/VaultSetup";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -55,6 +56,29 @@ beforeEach(() => { h.ask.mockReset(); h.toast.mockReset(); h.dl.mockReset(); h.s
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
 
 describe("VaultSetup and the recovery sheet", () => {
+  it("a failed setup says so and stays open; a vault that exists already closes the setup", async () => {
+    await mount();
+    let result!: Promise<boolean>;
+    await act(async () => { result = openVaultSetup(); });
+    h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS);
+    h.setup.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await click("vault-setup-submit");
+    await until(() => h.toast.mock.calls.length === 1);
+    expect(h.toast).toHaveBeenCalledWith(en.vault_setup_fail);
+    await until(() => !!$("vault-setup-dialog"));
+    expect($("vault-code")).toBeNull();
+
+    h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS);
+    h.setup.mockRejectedValueOnce(new ApiError(409, "vault-exists"));
+    await click("vault-setup-submit");
+    await until(() => h.toast.mock.calls.length === 2);
+    expect(h.toast).toHaveBeenLastCalledWith(en.vault_setup_fail);
+    await expect(result).resolves.toBe(false);
+    expect($("vault-setup-dialog")).toBeNull();
+    expect($("vault-code")).toBeNull();
+  });
+
+
   it("VaultSetup requires matching passphrases, then shows the sheet and enables Done after the checkbox", async () => {
     await mount();
     let result!: Promise<boolean>;
