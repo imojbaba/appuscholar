@@ -5,6 +5,7 @@ import { keyStore } from "@/lib/ai/keys";
 import { resetPdMemo } from "@/lib/ai/callAI";
 import { useSettings } from "@/lib/settings";
 import { useSession } from "@/lib/session";
+import { useVault } from "@/lib/vault/useVault";
 import { APP_VERSION } from "@/lib/version";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,15 @@ export function Help() {
   const { dialog, closeDialog, openWelcome, openTerms, openImportV1 } = useWorkspace();
   const { email, signOutAction } = useSession();
   const { me } = useSettings();
+  const vault = useVault();
   const [askForget, setAskForget] = useState(false);
-  // Forget the tab's keys and the unlocked-text memo, then end the session (and, if chosen, the keys remembered on this computer).
-  const signOut = (forget: boolean) => {
+  // Forget the tab's keys, the vault key and the unlocked-text memo, then end the session (and, if chosen, the keys and the vault remembered on this computer).
+  const signOut = async (forget: boolean) => {
     if (forget && me?.id) keyStore.forgetPlainKeys(me.id);
     keyStore.clearSession();
+    vault.lock();
+    // Wait for IndexedDB before the sign-out navigates away; a blocked store must not keep the student signed in.
+    if (forget) await vault.forgetThisComputer().catch(() => {});
     resetPdMemo();
     void signOutAction();
   };
@@ -60,7 +65,7 @@ export function Help() {
         <p className="m-0 text-xs text-muted-foreground" data-testid="help-version">Appuscholar v2 ({APP_VERSION})</p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
           <span data-testid="signed-in-as">Signed in as {email}</span>
-          <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { if (keyStore.hasPlain()) setAskForget(true); else signOut(false); }}>Sign out</Button>
+          <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { if (keyStore.hasPlain()) setAskForget(true); else void signOut(false); }}>Sign out</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -71,8 +76,8 @@ export function Help() {
             <AlertDialogDescription>If this is a shared computer, forget them. Otherwise keep them and you will not need to paste them again next time.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="keep-keys-signout" onClick={() => signOut(false)}>Keep and sign out</AlertDialogCancel>
-            <Button variant="destructive" data-testid="forget-keys-signout" onClick={() => signOut(true)}>Forget and sign out</Button>
+            <AlertDialogCancel data-testid="keep-keys-signout" onClick={() => void signOut(false)}>Keep and sign out</AlertDialogCancel>
+            <Button variant="destructive" data-testid="forget-keys-signout" onClick={() => void signOut(true)}>Forget and sign out</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
