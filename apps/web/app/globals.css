@@ -214,9 +214,9 @@
 .panel .stack { display: flex; flex-direction: column; gap: 8px; }
 .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
 .field label { font-size: 13px; line-height: 18px; font-weight: 500; }
-.field .input { width: 100%; min-height: var(--ctl); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font-size: 14px; line-height: 20px; resize: vertical; }
-.field .input::placeholder { color: var(--muted); }
-.field .input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.input, .field .input { width: 100%; min-height: var(--ctl); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font-size: 14px; line-height: 20px; resize: vertical; }
+.input::placeholder, .field .input::placeholder { color: var(--muted); }
+.input:focus-visible, .field .input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
 /* Phone-only pieces, off above 700px: the header's menu button and line break, the sheet's handle, the drawer. The wrappers add no box on desktop. */
 .hdr .menu, .hdr .brk, .sheet-handle { display: none; }
