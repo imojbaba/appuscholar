@@ -1,5 +1,5 @@
 import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, VaultRecord, WrappedDek } from "./types";
-import { VaultExistsError } from "./types";
+import { DekExistsError, VaultExistsError } from "./types";
 
 type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
 
@@ -226,7 +226,7 @@ export class MemoryStore implements Store {
   async addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null> {
     const d = this.ownedDoc(userId, documentId);
     if (!d) return null;
-    if (d.deks.some(k => k.v === dek.v)) throw new Error(`dek v${dek.v} already exists for document ${documentId}`);
+    if (d.deks.some(k => k.v === dek.v)) throw new DekExistsError(dek.v);
     d.deks.push({ v: dek.v, wrapped: dek.wrapped });
     return this.summary(d);
   }

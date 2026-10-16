@@ -63,6 +63,20 @@ export function meRoutes(store: Store) {
     return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
   });
 
+  r.get("/audit", async (c) => c.json({ entries: await store.listAudit(c.get("userId")) }));
+
+  /** The browser calls this after it has built the export zip, so the log records that the data left. */
+  r.post("/export-audit", async (c) => {
+    await store.appendAudit(c.get("userId"), "export");
+    return c.body(null, 204);
+  });
+
+  /** Erases the account and everything under it. The store appends the "account-erased" audit row itself. */
+  r.delete("/", async (c) => {
+    const ok = await store.eraseUser(c.get("userId"));
+    return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
+  });
+
   r.post("/terms", async (c) => {
     await store.acceptTerms(c.get("userId"), new Date());
     return c.body(null, 204);

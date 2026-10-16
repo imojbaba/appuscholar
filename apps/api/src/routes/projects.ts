@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
+import { DekExistsError } from "../store/types";
+import { WriteFields, resolveWrite } from "./docWrite";
 import { PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type Store } from "../store/types";
 import { foldWeekly, summariseAiLog, type DatedStats } from "./writingRecord";
 import type { AuthEnv } from "../auth";
@@ -13,6 +15,8 @@ const Patch = z.object({
   contentLang: z.enum(["en", "hi"]).optional()
 }).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
 const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.string().trim().min(1).max(40).default("draft") });
+/** A document can also be created with its first body, in the same shape as PUT /documents/:id (ciphertext needs its dek here, since the document has none yet). */
+const CreateDocBody = CreateDoc.extend({ ...WriteFields, bodyHtml: WriteFields.bodyHtml.default("") });
 
 export function projectRoutes(store: Store) {
   const r = new Hono<AuthEnv>();
@@ -37,10 +41,16 @@ export function projectRoutes(store: Store) {
     return list ? c.json(list) : c.json({ error: "not-found" }, 404);
   });
   r.post("/:id/documents", async (c) => {
-    const body = CreateDoc.safeParse(await c.req.json().catch(() => null));
+    const body = CreateDocBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0, keyVersion: 0, originStats: originCount("") });
-    return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
+    const userId = c.get("userId");
+    const w = await resolveWrite(store, userId, [], body.data);
+    if (!w.ok) return c.json({ error: w.error }, w.status);
+    const d = await store.createDocument(userId, c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: w.bodyHtml, authorKind: "web", authorLabel: c.get("email"), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats });
+    if (!d) return c.json({ error: "not-found" }, 404);
+    if (!w.addDek) return c.json(d, 201);
+    try { await store.addDek(userId, d.id, w.addDek); } catch (e) { if (!(e instanceof DekExistsError)) throw e; }
+    return c.json(await store.getDocument(userId, d.id), 201);
   });
   /**
    * The data behind "My writing" and the writing-process record. `docs`, `sources` and `weekly` belong to this project; `aiLog` is the

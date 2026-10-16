@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { VaultExistsError, type Store } from "../src/store/types";
+import { DekExistsError, VaultExistsError, type Store } from "../src/store/types";
 
 export type ContractEnv = { store: Store; users: { a: string; b: string } };
 
@@ -271,7 +271,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(d.keyVersion).toBe(0);
       expect(d.deks).toEqual([]);
       expect((await s.addDek(a, d.id, { v: 1, wrapped: "i.k" }))!.deks).toEqual([{ v: 1, wrapped: "i.k" }]);
-      await expect(s.addDek(a, d.id, { v: 1, wrapped: "dup" })).rejects.toThrow();
+      await expect(s.addDek(a, d.id, { v: 1, wrapped: "dup" })).rejects.toThrow(DekExistsError);
       const r = (await s.appendRevision(a, d.id, { bodyHtml: "aXYZ.bQ", authorKind: "web", authorLabel: "t", wordCount: 9, keyVersion: 1 }))!;
       expect(r.keyVersion).toBe(1);
       expect((await s.getDocument(a, d.id))!.bodyHtml).toBe("aXYZ.bQ");

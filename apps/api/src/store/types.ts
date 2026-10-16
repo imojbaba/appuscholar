@@ -37,6 +37,11 @@ export class VaultExistsError extends Error {
   constructor() { super("vault already exists"); this.name = "VaultExistsError"; }
 }
 
+/** Thrown by addDek when the document already has a data key with the same `v`. */
+export class DekExistsError extends Error {
+  constructor(v: number) { super(`dek v${v} already exists`); this.name = "DekExistsError"; }
+}
+
 export interface Store {
   createProject(userId: string, title: string, stage?: ProjectStage): Promise<Project>;
   /** Excludes the scratch project. */
@@ -88,7 +93,7 @@ export interface Store {
   /** False if the user has no vault record. */
   markVaultComplete(userId: string): Promise<boolean>;
 
-  /** Attaches a wrapped data key to a document. Rejects (throws) if a dek with the same `v` already exists. Null if the document is not the user's. */
+  /** Attaches a wrapped data key to a document. Throws DekExistsError if a dek with the same `v` already exists. Null if the document is not the user's. */
   addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null>;
   /** Replaces a revision's body and key version in place; id, seq, createdAt, author, wordCount and originStats are untouched. Null if the document or revision is not the user's. */
   rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null>;

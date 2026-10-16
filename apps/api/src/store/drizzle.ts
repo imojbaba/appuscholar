@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql } from "drizzle-orm";
 import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, type Db } from "@appuscholar/db";
 import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, WrappedDek } from "./types";
-import { VaultExistsError } from "./types";
+import { DekExistsError, VaultExistsError } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -248,7 +248,7 @@ export class DrizzleStore implements Store {
       .set({ deks: sql`${documents.deks} || ${entry}::jsonb` })
       .where(and(eq(documents.id, documentId), sql`not exists (select 1 from jsonb_array_elements(${documents.deks}) e where (e->>'v')::int = ${dek.v})`))
       .returning();
-    if (!rows[0]) throw new Error(`dek v${dek.v} already exists for document ${documentId}`);
+    if (!rows[0]) throw new DekExistsError(dek.v);
     return this.summary(rows[0]);
   }
   async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
