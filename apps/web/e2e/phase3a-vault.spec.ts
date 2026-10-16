@@ -7,7 +7,7 @@
  *
  * No AI provider is involved: the vault is set up from its header pill, not from the key dialog.
  */
-import { test, expect, type Page, type Response } from "@playwright/test";
+import { test, expect, type Page, type Request, type Response } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { signIn } from "./support/signin";
@@ -68,15 +68,18 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
 
   await test.step("2a. write two sentences: 9 words, saved in plaintext while the vault is off", async () => {
     await expect(page.getByTestId("save-status")).toHaveText("Auto-save on");
-    const saved = page.waitForResponse((r) => isDocPut(r) && r.ok());
+    // The save that carries the whole text (an earlier one may go out mid-typing, after the debounce).
+    const saved = page.waitForResponse((r) => isDocPut(r) && r.ok() && (r.request().postData() ?? "").includes(SENTENCE_2));
     await page.locator(".ProseMirror").click();
     await page.locator(".ProseMirror").pressSequentially(`${SENTENCE_1} ${SENTENCE_2}`);
-    const sent = (await saved).request().postDataJSON() as SentBody;
-    docId = /\/documents\/([0-9a-f-]+)$/.exec((await saved).url())![1]!;
+    await expect(page.getByTestId("word-count")).toHaveText("9 words");
+    const res = await saved;
+    const sent = res.request().postDataJSON() as SentBody;
+    docId = /\/documents\/([0-9a-f-]+)$/.exec(res.url())![1]!;
     // Before the vault, the server is sent the text itself (keyVersion 0): this is what the migration has to lock away.
     expect(sent.keyVersion).toBe(0);
     expect(sent.bodyHtml).toContain(SENTENCE_1);
-    await expect(page.getByTestId("word-count")).toHaveText("9 words");
+    expect(sent.bodyHtml).toContain(SENTENCE_2);
     await expect(page.getByTestId("save-status")).toHaveText("Auto-save on");
   });
 
@@ -94,7 +97,10 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-pill").click();
     await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-setup-remember")).not.toBeChecked();
-    const rewrote = page.waitForResponse((r) => r.request().method() === "PUT" && new RegExp(`/documents/${docId}/revisions/\\d+/rewrite$`).test(r.url()) && r.ok());
+    // Every rewrite the migration sends, until its toast.
+    const rewrites: Request[] = [];
+    const onRequest = (r: Request) => { if (r.method() === "PUT" && /\/documents\/[0-9a-f-]+\/revisions\/\d+\/rewrite$/.test(r.url())) rewrites.push(r); };
+    page.on("request", onRequest);
     await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-message")).toContainText("only this passphrase opens them");
     await page.getByTestId("pass-input").fill(PASS_1);
@@ -105,12 +111,22 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
     firstCode = (await page.getByTestId("vault-code").innerText()).trim();
-    // The plaintext revision is rewritten in place as ciphertext.
-    const rewritten = (await rewrote).request().postDataJSON() as SentBody;
-    expect(rewritten.keyVersion).toBe(1);
-    expect(rewritten.bodyHtml).not.toContain("Procrastination");
-    expect(rewritten.bodyHtml).not.toContain("<");
     await expect.poll(toasts).toContain("All your documents are now locked in your vault ✓");
+    page.off("request", onRequest);
+    // Every plaintext revision (the empty seed and the one with the two sentences) was rewritten in place as ciphertext.
+    expect(rewrites.length).toBeGreaterThanOrEqual(2);
+    for (const r of rewrites) {
+      const body = r.postDataJSON() as SentBody;
+      expect(body.keyVersion).toBe(1);
+      expect(body.bodyHtml).not.toContain("<");
+      expect(body.bodyHtml).not.toContain("Procrastination");
+    }
+    const bearer = { authorization: (await rewrites[0]!.allHeaders()).authorization! };
+    const revisions = (await (await page.request.get(`${API}/documents/${docId}/revisions`, { headers: bearer })).json()) as { seq: number; keyVersion: number }[];
+    expect(revisions.length).toBeGreaterThanOrEqual(2);
+    expect(revisions.map((r) => r.keyVersion)).toEqual(revisions.map(() => 1));
+    const rewrittenSeqs = rewrites.map((r) => /\/documents\/([0-9a-f-]+)\/revisions\/(\d+)\/rewrite$/.exec(r.url())!).filter((m) => m[1] === docId).map((m) => Number(m[2]));
+    expect([...new Set(rewrittenSeqs)].sort((a, b) => a - b)).toEqual(revisions.map((r) => r.seq).sort((a, b) => a - b));
     await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
@@ -220,7 +236,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    // The document the cancelled ask left locked opens with the vault.
+    // The recovery opened the vault, and with it the document the unlock ask (left by the Forgot link) had kept closed.
     await expectAllSentences(page);
   });
 
