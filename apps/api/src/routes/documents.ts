@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
 import { DekExistsError, type Store } from "../store/types";
-import { WriteFields, WrappedDekSchema, resolveWrite } from "./docWrite";
+import { CIPHERTEXT, WriteFields, WrappedDekSchema, resolveWrite } from "./docWrite";
 import type { AuthEnv } from "../auth";
 
 const Put = z.object({ ...WriteFields, title: z.string().trim().min(1).max(200).optional() });
-const Rewrite = z.object({ bodyHtml: z.string(), keyVersion: z.number().int().min(1).max(1e6) }).strict();
+const Rewrite = z.object({ bodyHtml: z.string().regex(CIPHERTEXT), keyVersion: z.number().int().min(1).max(1e6) }).strict();
 const Patch = z.object({ title: z.string().trim().min(1).max(200).optional(), kind: z.enum(["draft", "source"]).optional() }).strict().refine((b) => b.title !== undefined || b.kind !== undefined);
 const ZERO_STATS = { typed: 0, ai: 0, passages: 0, kept: 0, edited: 0, unknown: 0 };
 const Move = z.object({ projectId: z.string().min(1) }).strict();
@@ -55,7 +55,11 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     }
   });
 
-  /** Migration only: replaces one revision's plaintext with its ciphertext in place (seq, created_at, author and counts stay). Closed once the vault is complete. */
+  /**
+   * Migration only: replaces one revision's plaintext with its ciphertext in place (seq, created_at, author and counts stay). Closed once the
+   * vault is complete. A plaintext revision saved before the origin tracker has no stats: they are counted from its text now, in the same
+   * update, because once it is ciphertext nobody on the server can count it again.
+   */
   r.put("/:id/revisions/:seq/rewrite", async (c) => {
     const seq = Number(c.req.param("seq"));
     if (!Number.isInteger(seq) || seq < 1) return c.json({ error: "invalid" }, 400);
@@ -70,7 +74,10 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const doc = await store.getDocument(userId, c.req.param("id"), { includeDeleted: true });
     if (!doc) return c.json({ error: "not-found" }, 404);
     if (!doc.deks.some((k) => k.v === body.data.keyVersion)) return c.json({ error: "unknown-key-version" }, 400);
-    const rev = await store.rewriteRevision(userId, doc.id, seq, body.data);
+    const old = await store.getRevision(userId, doc.id, seq, { includeDeleted: true });
+    if (!old) return c.json({ error: "not-found" }, 404);
+    const originStats = old.keyVersion === 0 && old.originStats === null ? originCount(old.bodyHtml) : undefined;
+    const rev = await store.rewriteRevision(userId, doc.id, seq, { ...body.data, originStats });
     return rev ? c.json(rev) : c.json({ error: "not-found" }, 404);
   });
 

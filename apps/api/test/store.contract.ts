@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DekExistsError, VaultExistsError, type Store } from "../src/store/types";
+import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, type Store } from "../src/store/types";
 
 export type ContractEnv = { store: Store; users: { a: string; b: string } };
 
@@ -256,13 +256,63 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
 
     it("vault record: create once, update wraps, mark complete", async () => {
       expect(await s.getVault(a)).toBeNull();
-      const v = await s.putVault(a, { passWrapped: "s.i.c", recoveryWrapped: "s.i.r", publicKey: "pk", privateKeyWrapped: "i.p" });
-      expect(v.complete).toBe(false);
-      await expect(s.putVault(a, { passWrapped: "x", recoveryWrapped: "y", publicKey: "z", privateKeyWrapped: "w" })).rejects.toBeInstanceOf(VaultExistsError);
+      const v = await s.putVault(a, { passWrapped: "s.i.c", recoveryWrapped: "s.i.r", checkWrapped: "i.chk", publicKey: "pk", privateKeyWrapped: "i.p" });
+      expect(v).toMatchObject({ complete: false, checkWrapped: "i.chk", publicKey: "pk", privateKeyWrapped: "i.p" });
+      await expect(s.putVault(a, { passWrapped: "x", recoveryWrapped: "y", checkWrapped: "c", publicKey: "z", privateKeyWrapped: "w" })).rejects.toBeInstanceOf(VaultExistsError);
       expect((await s.updateVaultWraps(a, { passWrapped: "s2.i2.c2" }))!.passWrapped).toBe("s2.i2.c2");
+      expect(await s.updateVaultWraps(b, { passWrapped: "x" })).toBeNull();
       expect(await s.markVaultComplete(a)).toBe(true);
       expect((await s.getVault(a))!.complete).toBe(true);
+      expect((await s.getVault(a))!.checkWrapped).toBe("i.chk");
       expect(await s.getVault(b)).toBeNull();
+    });
+
+    it("updateVaultWraps: expectUpdatedAt must be the stored updatedAt, and every change moves updatedAt forward", async () => {
+      const v0 = await s.putVault(a, { passWrapped: "p0", recoveryWrapped: "r0", checkWrapped: "c", publicKey: "pk", privateKeyWrapped: "i.p" });
+      // The stamp round-trips through JSON (milliseconds) and still matches.
+      const t0 = new Date(v0.updatedAt.toISOString());
+      expect((await s.getVault(a))!.updatedAt.getTime()).toBe(t0.getTime());
+      const v1 = (await s.updateVaultWraps(a, { passWrapped: "p1" }, { expectUpdatedAt: t0 }))!;
+      expect(v1.passWrapped).toBe("p1");
+      expect(v1.updatedAt.getTime()).toBeGreaterThan(t0.getTime());
+      // Straight after, within the same millisecond or not: the old stamp no longer matches.
+      await expect(s.updateVaultWraps(a, { passWrapped: "p2", recoveryWrapped: "r2" }, { expectUpdatedAt: t0 })).rejects.toBeInstanceOf(VaultStaleError);
+      expect(await s.getVault(a)).toMatchObject({ passWrapped: "p1", recoveryWrapped: "r0" });
+      const v2 = (await s.updateVaultWraps(a, { recoveryWrapped: "r2" }, { expectUpdatedAt: v1.updatedAt }))!;
+      expect(v2.updatedAt.getTime()).toBeGreaterThan(v1.updatedAt.getTime());
+      expect(await s.markVaultComplete(a)).toBe(true);
+      const v3 = (await s.getVault(a))!;
+      expect(v3.updatedAt.getTime()).toBeGreaterThan(v2.updatedAt.getTime());
+      await expect(s.updateVaultWraps(a, { passWrapped: "p3" }, { expectUpdatedAt: v2.updatedAt })).rejects.toBeInstanceOf(VaultStaleError);
+      // No record: null, whatever the precondition.
+      expect(await s.updateVaultWraps(b, { passWrapped: "x" }, { expectUpdatedAt: t0 })).toBeNull();
+    });
+
+    it("a vault without the sharing keypair takes one later, once", async () => {
+      const v = await s.putVault(a, { passWrapped: "p", recoveryWrapped: "r", checkWrapped: "c", publicKey: null, privateKeyWrapped: null });
+      expect(v).toMatchObject({ publicKey: null, privateKeyWrapped: null, checkWrapped: "c" });
+      expect(await s.getVault(a)).toMatchObject({ publicKey: null, privateKeyWrapped: null });
+      const added = (await s.updateVaultWraps(a, { publicKey: "pk", privateKeyWrapped: "i.p" }, { expectUpdatedAt: v.updatedAt }))!;
+      expect(added).toMatchObject({ publicKey: "pk", privateKeyWrapped: "i.p", passWrapped: "p" });
+      await expect(s.updateVaultWraps(a, { publicKey: "pk2", privateKeyWrapped: "i.p2" })).rejects.toBeInstanceOf(VaultKeypairExistsError);
+      expect((await s.getVault(a))!.publicKey).toBe("pk");
+    });
+
+    it("rewriteRevision stores origin stats only where the revision has none", async () => {
+      const p = await s.createProject(a, "P");
+      const d = (await s.createDocument(a, p.id, "D", "draft", { bodyHtml: "<p>x y</p>", authorKind: "web", authorLabel: "t", wordCount: 2, keyVersion: 0 }))!;
+      const own = { typed: 5, ai: 0, passages: 0, kept: 0, edited: 0, unknown: 0 };
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>z</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0, originStats: own });
+      await s.addDek(a, d.id, { v: 1, wrapped: "k" });
+      const counted = { typed: 2, ai: 0, passages: 0, kept: 0, edited: 0, unknown: 0 };
+      expect((await s.rewriteRevision(a, d.id, 1, { bodyHtml: "c.d", keyVersion: 1, originStats: counted }))!.originStats).toEqual(counted);
+      expect((await s.getRevision(a, d.id, 1))!.originStats).toEqual(counted);
+      expect((await s.rewriteRevision(a, d.id, 2, { bodyHtml: "e.f", keyVersion: 1, originStats: counted }))!.originStats).toEqual(own);
+      expect((await s.getRevision(a, d.id, 2))).toMatchObject({ bodyHtml: "e.f", keyVersion: 1, originStats: own });
+      // Without stats a rewrite leaves them as they are (null stays null).
+      const e = (await s.createDocument(a, p.id, "E", "draft", { bodyHtml: "<p>q</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0 }))!;
+      await s.addDek(a, e.id, { v: 1, wrapped: "k" });
+      expect((await s.rewriteRevision(a, e.id, 1, { bodyHtml: "g.h", keyVersion: 1 }))!.originStats).toBeNull();
     });
 
     it("revisions carry a key version and deks attach to the document", async () => {

@@ -1,7 +1,7 @@
-import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql } from "drizzle-orm";
-import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, WrappedDek } from "./types";
-import { DekExistsError, VaultExistsError } from "./types";
+import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql, type SQL } from "drizzle-orm";
+import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, type Db } from "@appuscholar/db";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek } from "./types";
+import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -29,7 +29,7 @@ export class DrizzleStore implements Store {
     return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, keyVersion: r.keyVersion, createdAt: r.createdAt };
   }
   private toVault(v: typeof vaultKeys.$inferSelect): VaultRecord {
-    return { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: v.complete, updatedAt: v.updatedAt };
+    return { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, checkWrapped: v.checkWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: v.complete, updatedAt: v.updatedAt };
   }
   private toProject(p: typeof projects.$inferSelect): Project {
     return { ...p, kind: p.kind as ProjectKind };
@@ -225,16 +225,34 @@ export class DrizzleStore implements Store {
     return rows[0] ? this.toVault(rows[0]) : null;
   }
   async putVault(userId: string, v: Omit<VaultRecord, "complete" | "updatedAt">): Promise<VaultRecord> {
-    const rows = await this.d.insert(vaultKeys).values({ userId, passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped }).onConflictDoNothing().returning();
+    // Stamped here, to the millisecond (now() would keep microseconds the client never sees), so expectUpdatedAt can match it exactly.
+    const now = new Date();
+    const rows = await this.d.insert(vaultKeys).values({ userId, passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, checkWrapped: v.checkWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, createdAt: now, updatedAt: now }).onConflictDoNothing().returning();
     if (!rows[0]) throw new VaultExistsError();
     return this.toVault(rows[0]);
   }
-  async updateVaultWraps(userId: string, patch: { passWrapped?: string; recoveryWrapped?: string }): Promise<VaultRecord | null> {
-    const set: Partial<typeof vaultKeys.$inferInsert> = { updatedAt: new Date() };
+  /** The next updatedAt: now, but always after the stored one (two changes within a millisecond stay distinguishable). */
+  private nextStamp() {
+    return sql`greatest(${new Date().toISOString()}::timestamp, date_trunc('milliseconds', ${vaultKeys.updatedAt}) + interval '1 millisecond')`;
+  }
+  async updateVaultWraps(userId: string, patch: VaultWrapsPatch, opts?: { expectUpdatedAt?: Date }): Promise<VaultRecord | null> {
+    const set: { [K in keyof typeof vaultKeys.$inferInsert]?: (typeof vaultKeys.$inferInsert)[K] | SQL } = { updatedAt: this.nextStamp() };
     if (patch.passWrapped !== undefined) set.passWrapped = patch.passWrapped;
     if (patch.recoveryWrapped !== undefined) set.recoveryWrapped = patch.recoveryWrapped;
-    const rows = await this.d.update(vaultKeys).set(set).where(eq(vaultKeys.userId, userId)).returning();
-    return rows[0] ? this.toVault(rows[0]) : null;
+    if (patch.publicKey !== undefined) set.publicKey = patch.publicKey;
+    if (patch.privateKeyWrapped !== undefined) set.privateKeyWrapped = patch.privateKeyWrapped;
+    const keypair = patch.publicKey !== undefined || patch.privateKeyWrapped !== undefined;
+    // One conditional statement: the precondition and the keypair-once rule hold against a concurrent change.
+    const rows = await this.d.update(vaultKeys).set(set).where(and(
+      eq(vaultKeys.userId, userId),
+      opts?.expectUpdatedAt ? sql`date_trunc('milliseconds', ${vaultKeys.updatedAt}) = ${opts.expectUpdatedAt.toISOString()}::timestamp` : undefined,
+      keypair ? and(isNull(vaultKeys.publicKey), isNull(vaultKeys.privateKeyWrapped)) : undefined
+    )).returning();
+    if (rows[0]) return this.toVault(rows[0]);
+    const now = await this.getVault(userId);
+    if (!now) return null;
+    if (keypair && (now.publicKey !== null || now.privateKeyWrapped !== null)) throw new VaultKeypairExistsError();
+    throw new VaultStaleError();
   }
   async countPlaintextRevisions(userId: string): Promise<number> {
     const [row] = await this.d.select({ n: count() }).from(documentRevisions)
@@ -244,7 +262,7 @@ export class DrizzleStore implements Store {
     return Number(row?.n ?? 0);
   }
   async markVaultComplete(userId: string): Promise<boolean> {
-    const rows = await this.d.update(vaultKeys).set({ complete: true, updatedAt: new Date() }).where(eq(vaultKeys.userId, userId)).returning({ userId: vaultKeys.userId });
+    const rows = await this.d.update(vaultKeys).set({ complete: true, updatedAt: this.nextStamp() }).where(eq(vaultKeys.userId, userId)).returning({ userId: vaultKeys.userId });
     return rows.length > 0;
   }
 
@@ -259,9 +277,11 @@ export class DrizzleStore implements Store {
     if (!rows[0]) throw new DekExistsError(dek.v);
     return this.summary(rows[0]);
   }
-  async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
+  async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number; originStats?: OriginStats }): Promise<RevisionSummary | null> {
     if (!(await this.ownedDoc(userId, documentId, true))) return null;
-    const rows = await this.d.update(documentRevisions).set({ bodyHtml: patch.bodyHtml, keyVersion: patch.keyVersion }).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).returning();
+    // Stats are filled in only where there are none, in the same statement as the ciphertext: stats already stored are kept.
+    const stats = patch.originStats ? { originStats: sql`coalesce(${documentRevisions.originStats}, ${JSON.stringify(patch.originStats)}::jsonb)` } : {};
+    const rows = await this.d.update(documentRevisions).set({ bodyHtml: patch.bodyHtml, keyVersion: patch.keyVersion, ...stats }).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).returning();
     if (!rows[0]) return null;
     const r = rows[0];
     return { id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, keyVersion: r.keyVersion, createdAt: r.createdAt };
@@ -275,6 +295,7 @@ export class DrizzleStore implements Store {
     return rows.map(r => ({ action: r.action as AuditAction, target: r.target, at: r.at }));
   }
   async eraseUser(userId: string): Promise<boolean> {
+    // accounts and sessions go with the users row by foreign-key cascade; sign-in tokens are keyed by email, so they are deleted by it.
     // Atomic without an interactive transaction: the neon-http driver used in production has none, but a single
     // statement with data-modifying CTEs is one atomic unit on every driver. The audit row is inserted only if the
     // user row was actually deleted, and audit_log has no foreign key, so earlier audit rows are untouched.
@@ -283,6 +304,7 @@ export class DrizzleStore implements Store {
         c as (delete from ${credentials} where ${credentials.userId} = ${userId}),
         l as (delete from ${aiUseLog} where ${aiUseLog.userId} = ${userId}),
         v as (delete from ${vaultKeys} where ${vaultKeys.userId} = ${userId}),
+        t as (delete from ${verificationTokens} where ${verificationTokens.identifier} in (select ${users.email} from ${users} where ${users.id} = ${userId})),
         p as (delete from ${projects} where ${projects.userId} = ${userId}),
         u as (delete from ${users} where ${users.id} = ${userId} returning ${users.id} as id),
         a as (insert into ${auditLog} (id, user_id, action) select ${crypto.randomUUID()}, id, 'account-erased' from u)

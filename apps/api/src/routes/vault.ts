@@ -1,12 +1,26 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { VaultExistsError, type Store } from "../store/types";
+import { VaultExistsError, VaultKeypairExistsError, VaultStaleError, type Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 
 const Wrap = z.string().min(1).max(10_000);
-const Create = z.object({ passWrapped: Wrap, recoveryWrapped: Wrap, publicKey: z.string().min(1).max(2_000), privateKeyWrapped: Wrap }).strict();
-const Wraps = z.object({ passWrapped: Wrap.optional(), recoveryWrapped: Wrap.optional(), reason: z.enum(["passphrase-changed", "recovery-used"]) }).strict()
-  .refine((b) => b.passWrapped !== undefined || b.recoveryWrapped !== undefined, { message: "no wrap" });
+const PublicKey = z.string().min(1).max(2_000);
+/** The sharing keypair comes as a pair or not at all. */
+const pairOk = (b: { publicKey?: string | null; privateKeyWrapped?: string | null }) => (b.publicKey == null) === (b.privateKeyWrapped == null);
+// The keypair is null where the browser has no X25519; checkWrapped (a sentinel under the vault key) is always there.
+const Create = z.object({ passWrapped: Wrap, recoveryWrapped: Wrap, checkWrapped: Wrap, publicKey: PublicKey.nullable(), privateKeyWrapped: Wrap.nullable() }).strict()
+  .refine(pairOk, { message: "keypair is a pair" });
+const Wraps = z.object({
+  passWrapped: Wrap.optional(), recoveryWrapped: Wrap.optional(),
+  // Added once, by a later unlock, when the vault was set up without X25519.
+  publicKey: PublicKey.optional(), privateKeyWrapped: Wrap.optional(),
+  // The updatedAt of the record the client changed: another tab or device may have changed it since (409 stale).
+  expectUpdatedAt: z.string().max(40).refine((s) => !Number.isNaN(Date.parse(s)), { message: "date" }).optional(),
+  reason: z.enum(["passphrase-changed", "recovery-used", "keypair-added"])
+}).strict()
+  .refine((b) => b.passWrapped !== undefined || b.recoveryWrapped !== undefined || b.publicKey !== undefined, { message: "no wrap" })
+  .refine(pairOk, { message: "keypair is a pair" })
+  .refine((b) => (b.reason === "keypair-added") === (b.passWrapped === undefined && b.recoveryWrapped === undefined), { message: "reason" });
 
 /** The server stores only wrapped keys: it never sees a passphrase, a recovery code or an unwrapped key. */
 export function vaultRoutes(store: Store) {
@@ -40,8 +54,15 @@ export function vaultRoutes(store: Store) {
     const body = Wraps.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const userId = c.get("userId");
-    const { reason, ...wraps } = body.data;
-    const v = await store.updateVaultWraps(userId, wraps);
+    const { reason, expectUpdatedAt, ...wraps } = body.data;
+    let v;
+    try {
+      v = await store.updateVaultWraps(userId, wraps, { expectUpdatedAt: expectUpdatedAt === undefined ? undefined : new Date(expectUpdatedAt) });
+    } catch (e) {
+      if (e instanceof VaultStaleError) return c.json({ error: "stale" }, 409);
+      if (e instanceof VaultKeypairExistsError) return c.json({ error: "keypair-exists" }, 409);
+      throw e;
+    }
     if (!v) return c.json({ error: "no-vault" }, 404);
     await store.appendAudit(userId, reason);
     return c.json(v);

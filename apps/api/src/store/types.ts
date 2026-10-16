@@ -28,13 +28,28 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion:
 
 export type NewRevision = { bodyHtml: string; authorKind: AuthorKind; authorLabel: string; wordCount: number; originStats?: OriginStats; keyVersion: number };
 
-export type VaultRecord = { passWrapped: string; recoveryWrapped: string; publicKey: string; privateKeyWrapped: string; complete: boolean; updatedAt: Date };
-export type AuditAction = "signin" | "vault-setup" | "passphrase-changed" | "recovery-used" | "migration-complete" | "export" | "document-deleted" | "project-deleted" | "account-erased";
+/**
+ * `checkWrapped` is a fixed sentinel encrypted under the vault key, so a candidate key is checked without the sharing keypair. The keypair is
+ * null where the browser had no X25519 at setup; a later unlock adds it once (see updateVaultWraps).
+ */
+export type VaultRecord = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: Date };
+export type VaultWrapsPatch = { passWrapped?: string; recoveryWrapped?: string; publicKey?: string; privateKeyWrapped?: string };
+export type AuditAction = "signin" | "vault-setup" | "passphrase-changed" | "recovery-used" | "keypair-added" | "migration-complete" | "export" | "document-deleted" | "project-deleted" | "account-erased";
 export type AuditEntry = { action: AuditAction; target: string | null; at: Date };
 
 /** Thrown by putVault when the user already has a vault record. */
 export class VaultExistsError extends Error {
   constructor() { super("vault already exists"); this.name = "VaultExistsError"; }
+}
+
+/** Thrown by updateVaultWraps when the caller's `expectUpdatedAt` is not the record's: another tab or device changed it meanwhile. */
+export class VaultStaleError extends Error {
+  constructor() { super("vault record changed"); this.name = "VaultStaleError"; }
+}
+
+/** Thrown by updateVaultWraps when a keypair is sent for a vault that already has one: the sharing keypair is set once. */
+export class VaultKeypairExistsError extends Error {
+  constructor() { super("vault keypair already set"); this.name = "VaultKeypairExistsError"; }
 }
 
 /** Thrown by addDek when the document already has a data key with the same `v`. */
@@ -91,8 +106,12 @@ export interface Store {
   getVault(userId: string): Promise<VaultRecord | null>;
   /** Creates the record (complete=false). A second call for the same user throws VaultExistsError. */
   putVault(userId: string, v: Omit<VaultRecord, "complete" | "updatedAt">): Promise<VaultRecord>;
-  /** Replaces whichever wraps are given. Null if the user has no vault record. */
-  updateVaultWraps(userId: string, patch: { passWrapped?: string; recoveryWrapped?: string }): Promise<VaultRecord | null>;
+  /**
+   * Replaces whichever wraps are given, in one conditional step, and moves updatedAt strictly forward. Null if the user has no vault record.
+   * Throws VaultStaleError when `expectUpdatedAt` is given and differs from the stored updatedAt (compared to the millisecond), and
+   * VaultKeypairExistsError when publicKey/privateKeyWrapped are given while the record already has a keypair.
+   */
+  updateVaultWraps(userId: string, patch: VaultWrapsPatch, opts?: { expectUpdatedAt?: Date }): Promise<VaultRecord | null>;
   /** False if the user has no vault record. */
   markVaultComplete(userId: string): Promise<boolean>;
   /** Revisions with keyVersion 0 in any of the user's documents, soft-deleted ones included: the vault completes only at 0. */
@@ -100,12 +119,16 @@ export interface Store {
 
   /** Attaches a wrapped data key to a document, soft-deleted ones included. Throws DekExistsError if a dek with the same `v` already exists. Null if the document is not the user's. */
   addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null>;
-  /** Replaces a revision's body and key version in place, on soft-deleted documents too; id, seq, createdAt, author, wordCount and originStats are untouched. Null if the document or revision is not the user's. */
-  rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null>;
+  /**
+   * Replaces a revision's body and key version in place, on soft-deleted documents too; id, seq, createdAt, author and wordCount are untouched.
+   * `originStats` is stored only where the revision has none (a revision saved before the tracker): stats already there are kept.
+   * Null if the document or revision is not the user's.
+   */
+  rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number; originStats?: OriginStats }): Promise<RevisionSummary | null>;
 
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;
   /** Oldest first. */
   listAudit(userId: string): Promise<AuditEntry[]>;
-  /** Deletes credentials, ai_use_log, vault_keys, projects (with their documents and revisions) and the user, then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
+  /** Deletes credentials, ai_use_log, vault_keys, verification tokens for the user's email, projects (with their documents and revisions) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
   eraseUser(userId: string): Promise<boolean>;
 }

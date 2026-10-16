@@ -5,7 +5,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
-import { db, users, documents, documentRevisions, type Db } from "@appuscholar/db";
+import { db, users, accounts, sessions, verificationTokens, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, type Db } from "@appuscholar/db";
 import * as schema from "../../../packages/db/src/schema";
 import { storeContract } from "./store.contract";
 import { DrizzleStore, isUniqueViolation } from "../src/store/drizzle";
@@ -28,6 +28,28 @@ async function makeEnv() {
   await d.insert(users).values([{ id: a, email: `${a}@contract.local` }, { id: b, email: `${b}@contract.local` }]);
   return { d, store: new DrizzleStore(d), users: { a, b } };
 }
+
+/** Both drivers (pglite here, node-postgres with DATABASE_URL) answer a raw query with { rows }. */
+const rawRows = async <T,>(d: Db, q: SQL) => ((await d.execute(q)) as unknown as { rows: T[] }).rows;
+type Column = { table_schema: string; table_name: string; column_name: string };
+/** Every column of every table, in every schema but the system ones. */
+const allColumns = (d: Db) => rawRows<Column>(d, sql`
+  select c.table_schema, c.table_name, c.column_name from information_schema.columns c
+  join information_schema.tables t on t.table_schema = c.table_schema and t.table_name = c.table_name and t.table_type = 'BASE TABLE'
+  where c.table_schema not in ('pg_catalog', 'information_schema')
+  order by 1, 2, 3`);
+const quoteId = (id: string) => '"' + id.replaceAll('"', '""') + '"';
+/** For each column, read as text, how many rows contain any of the needles; only columns with a hit are listed, as "table.column". */
+async function hitCounts(d: Db, cols: Column[], needles: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  for (const c of cols) {
+    const any = sql.join(needles.map((n) => sql`strpos(${sql.raw(quoteId(c.column_name))}::text, ${n}) > 0`), sql` or `);
+    const [r] = await rawRows<{ n: number }>(d, sql`select count(*)::int as n from ${sql.raw(quoteId(c.table_schema) + "." + quoteId(c.table_name))} where ${any}`);
+    if (r!.n > 0) out[`${c.table_name}.${c.column_name}`] = r!.n;
+  }
+  return out;
+}
+const USER_TABLES = ["users", "accounts", "sessions", "verification_tokens", "projects", "documents", "document_revisions", "credentials", "ai_use_log", "vault_keys", "audit_log"];
 
 storeContract("drizzle", async () => {
   const { store, users: u } = await makeEnv();
@@ -132,6 +154,7 @@ if (!url) {
       const vault = {
         passWrapped: "salt." + (await seal(await aesKey(), rawVk)),
         recoveryWrapped: "salt." + (await seal(await aesKey(), rawVk)),
+        checkWrapped: await seal(vk, new TextEncoder().encode("appuscholar-vault-check")),
         publicKey: b64(await crypto.subtle.exportKey("raw", kp.publicKey)),
         privateKeyWrapped: await seal(vk, new Uint8Array(await crypto.subtle.exportKey("pkcs8", kp.privateKey)))
       };
@@ -145,27 +168,11 @@ if (!url) {
       const put = await req("PUT", `/documents/${doc.id}`, { bodyHtml: body, keyVersion: 1, wordCount: 4, originStats: stats, dek: { v: 1, wrapped } });
       expect(put.status).toBe(200);
 
-      // Both drivers (pglite here, node-postgres with DATABASE_URL) answer a raw query with { rows }.
-      const rows = async <T,>(q: SQL) => ((await d.execute(q)) as unknown as { rows: T[] }).rows;
-      // Every column of every table, in every schema but the system ones, read as text.
-      const cols = await rows<{ table_schema: string; table_name: string; column_name: string }>(sql`
-        select c.table_schema, c.table_name, c.column_name from information_schema.columns c
-        join information_schema.tables t on t.table_schema = c.table_schema and t.table_name = c.table_name and t.table_type = 'BASE TABLE'
-        where c.table_schema not in ('pg_catalog', 'information_schema')
-        order by 1, 2, 3`);
-      const q = (id: string) => '"' + id.replaceAll('"', '""') + '"';
-      const hitsFor = async (needle: string) => {
-        const hits: string[] = [];
-        for (const c of cols) {
-          const [r] = await rows<{ n: number }>(sql`select count(*)::int as n from ${sql.raw(q(c.table_schema) + "." + q(c.table_name))} where strpos(${sql.raw(q(c.column_name))}::text, ${needle}) > 0`);
-          if (r!.n > 0) hits.push(`${c.table_name}.${c.column_name}`);
-        }
-        return hits;
-      };
+      // Every column of every table, read as text.
+      const cols = await allColumns(d);
+      const hitsFor = async (needle: string) => Object.keys(await hitCounts(d, cols, [needle]));
       const tables = new Set(cols.map((c) => c.table_name));
-      for (const t of ["users", "accounts", "sessions", "verification_tokens", "projects", "documents", "document_revisions", "credentials", "ai_use_log", "vault_keys", "audit_log"]) {
-        expect(tables, t).toContain(t);
-      }
+      for (const t of USER_TABLES) expect(tables, t).toContain(t);
 
       expect(await hitsFor("Procrastination")).toEqual([]);
       // The scan does read the stored body: the ciphertext itself is found where it was written, and nowhere else.
@@ -177,6 +184,59 @@ if (!url) {
         { documentId: doc.id, seq: 1, keyVersion: 0, bodyHtml: "", wordCount: 0 },
         { documentId: doc.id, seq: 2, keyVersion: 1, bodyHtml: body, wordCount: 4 }
       ]);
+    });
+  });
+}
+
+if (!url) {
+  describe("account erasure is complete", () => {
+    /** One of everything that names a user: auth rows, sign-in tokens, work, keys, the AI-use log, the vault and the audit log. */
+    async function seed(d: Db, store: DrizzleStore, id: string) {
+      const email = `${id}@contract.local`;
+      await d.insert(accounts).values({ userId: id, type: "oauth", provider: "google", providerAccountId: "g-" + id, access_token: "at-" + id });
+      await d.insert(sessions).values({ sessionToken: "s-" + id, userId: id, expires: new Date(Date.now() + 86_400_000) });
+      await d.insert(verificationTokens).values({ identifier: email, token: "vt-" + id, expires: new Date(Date.now() + 86_400_000) });
+      const p = await store.createProject(id, "Thesis of " + id);
+      const doc = (await store.createDocument(id, p.id, "Draft", "draft", { bodyHtml: "<p>words</p>", authorKind: "web", authorLabel: email, wordCount: 1, keyVersion: 0 }))!;
+      await store.appendRevision(id, doc.id, { bodyHtml: "<p>more words</p>", authorKind: "web", authorLabel: email, wordCount: 2, keyVersion: 0 });
+      await store.getScratchProject(id);
+      await store.putCredential(id, "groq", "s.i.c");
+      await store.appendAiUse(id, p.id, { d: "2026-10-16", p: "groq", m: "llama", k: "rewrite", g: "text" });
+      await store.putVault(id, { passWrapped: "s.i.p", recoveryWrapped: "s.i.r", checkWrapped: "i.c", publicKey: null, privateKeyWrapped: null });
+      await store.appendAudit(id, "export");
+      // Every user-identifying value of this user: its id and email, and the ids of the rows that hang off it.
+      return [id, email, p.id, doc.id];
+    }
+
+    it("leaves no row that names the erased user outside audit_log, and leaves the other user's rows as they were", async () => {
+      const { d, store, users: u } = await makeEnv();
+      const needlesA = await seed(d, store, u.a);
+      const needlesB = await seed(d, store, u.b);
+      const cols = await allColumns(d);
+      const tablesOf = (hits: Record<string, number>) => [...new Set(Object.keys(hits).map((k) => k.split(".")[0]!))].sort();
+
+      // The seed reaches every table that can name a user (so the walk below would see a leftover anywhere).
+      const beforeA = await hitCounts(d, cols, needlesA);
+      expect(tablesOf(beforeA)).toEqual([...USER_TABLES].sort());
+      const beforeB = await hitCounts(d, cols, needlesB);
+      expect(tablesOf(beforeB)).toEqual([...USER_TABLES].sort());
+      // The tables the seed wrote straight are the auth adapter's; the store wrote the rest.
+      expect(await d.select().from(verificationTokens)).toEqual(expect.arrayContaining([expect.objectContaining({ identifier: `${u.a}@contract.local` })]));
+
+      expect(await store.eraseUser(u.a)).toBe(true);
+
+      const afterA = await hitCounts(d, cols, needlesA);
+      expect(Object.keys(afterA)).toEqual(["audit_log.user_id"]);
+      expect(afterA["audit_log.user_id"]).toBe(2); // the export before, and the account-erased row
+      expect((await store.listAudit(u.a)).map((e) => e.action)).toEqual(["export", "account-erased"]);
+      expect(await hitCounts(d, cols, needlesB)).toEqual(beforeB);
+      // And row for row, b keeps every table's rows.
+      for (const t of [users, accounts, sessions, projects, credentials, aiUseLog, vaultKeys, auditLog]) {
+        const owner = "userId" in t ? t.userId : (t as typeof users).id;
+        expect((await d.select().from(t).where(sql`${owner} = ${u.b}`)).length, String(t)).toBeGreaterThan(0);
+      }
+      expect(await d.select().from(documents)).not.toHaveLength(0);
+      expect(await d.select().from(documentRevisions)).not.toHaveLength(0);
     });
   });
 }

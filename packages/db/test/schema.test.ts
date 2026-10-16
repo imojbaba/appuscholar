@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getTableName, getTableColumns } from "drizzle-orm";
-import { users, projects, documents, documentRevisions, credentials, aiUseLog } from "../src/schema";
+import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys } from "../src/schema";
 
 describe("schema", () => {
   it("names tables as in the spec", () => {
@@ -25,5 +25,12 @@ describe("schema", () => {
     expect(Object.keys(getTableColumns(credentials)).sort()).toEqual(["encryptedKey", "provider", "updatedAt", "userId"]);
     expect(getTableName(aiUseLog)).toBe("ai_use_log");
     expect(Object.keys(getTableColumns(aiUseLog)).sort()).toEqual(["createdAt", "day", "grp", "id", "kind", "model", "projectId", "provider", "userId"]);
+  });
+  it("vault_keys: the sharing keypair may be absent (no X25519 in the browser), the vault-key check never is", () => {
+    const c = getTableColumns(vaultKeys);
+    expect(c.publicKey.notNull).toBe(false);
+    expect(c.privateKeyWrapped.notNull).toBe(false);
+    expect(c.checkWrapped.notNull).toBe(true);
+    expect(c.checkWrapped.name).toBe("check_wrapped");
   });
 });

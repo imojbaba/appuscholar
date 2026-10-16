@@ -5,6 +5,11 @@ import type { OriginStats, WrappedDek, Store } from "../store/types";
 const Count = z.number().int().min(0).max(1e9);
 export const OriginStatsSchema = z.object({ typed: Count, ai: Count, passages: Count, kept: Count, edited: Count, unknown: Count }).strict();
 export const WrappedDekSchema = z.object({ v: z.number().int().min(1).max(1e6), wrapped: z.string().min(1).max(10_000) }).strict();
+/**
+ * The shape of a sealed body, as the browser writes it: a 12-byte IV and the AES-GCM output, base64url without padding, joined by ".".
+ * The server cannot check the encryption, only the shape; plaintext HTML never has it, so a body that claims a key version is refused without it.
+ */
+export const CIPHERTEXT = /^[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]+$/;
 
 /**
  * The body shape shared by document creation and PUT /documents/:id. keyVersion 0 is plaintext (the server sanitises and counts);
@@ -33,6 +38,7 @@ export async function resolveWrite(store: Store, userId: string, deks: WrappedDe
     return { ok: true, bodyHtml: clean, keyVersion: 0, wordCount: wordCount(clean), originStats: originCount(clean) };
   }
   if (b.wordCount === undefined || b.originStats === undefined) return { ok: false, status: 400, error: "invalid" };
+  if (!CIPHERTEXT.test(b.bodyHtml)) return { ok: false, status: 400, error: "invalid" };
   // A dek that arrives with a write is the key for this write's version; an unrelated one is refused, not stored.
   if (b.dek && b.dek.v !== b.keyVersion) return { ok: false, status: 400, error: "invalid" };
   const known = deks.find((k) => k.v === b.keyVersion);

@@ -10,8 +10,9 @@ CREATE TABLE "vault_keys" (
 	"user_id" text PRIMARY KEY NOT NULL,
 	"pass_wrapped" text NOT NULL,
 	"recovery_wrapped" text NOT NULL,
-	"public_key" text NOT NULL,
-	"private_key_wrapped" text NOT NULL,
+	"public_key" text,
+	"private_key_wrapped" text,
+	"check_wrapped" text NOT NULL,
 	"complete" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

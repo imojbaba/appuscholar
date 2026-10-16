@@ -1,5 +1,8 @@
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, VaultRecord, WrappedDek } from "./types";
-import { DekExistsError, VaultExistsError } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek } from "./types";
+import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError } from "./types";
+
+/** A vault record's next updatedAt: now, but always after the last one, so a precondition never matches two versions. */
+const after = (prev: Date): Date => new Date(Math.max(Date.now(), prev.getTime() + 1));
 
 type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
 
@@ -203,16 +206,20 @@ export class MemoryStore implements Store {
   }
   async putVault(userId: string, v: Omit<VaultRecord, "complete" | "updatedAt">): Promise<VaultRecord> {
     if (this.vaults.has(userId)) throw new VaultExistsError();
-    const rec: VaultRecord = { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: false, updatedAt: new Date() };
+    const rec: VaultRecord = { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, checkWrapped: v.checkWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: false, updatedAt: new Date() };
     this.vaults.set(userId, rec);
     return { ...rec };
   }
-  async updateVaultWraps(userId: string, patch: { passWrapped?: string; recoveryWrapped?: string }): Promise<VaultRecord | null> {
+  async updateVaultWraps(userId: string, patch: VaultWrapsPatch, opts?: { expectUpdatedAt?: Date }): Promise<VaultRecord | null> {
     const v = this.vaults.get(userId);
     if (!v) return null;
+    if (opts?.expectUpdatedAt && opts.expectUpdatedAt.getTime() !== v.updatedAt.getTime()) throw new VaultStaleError();
+    if ((patch.publicKey !== undefined || patch.privateKeyWrapped !== undefined) && (v.publicKey !== null || v.privateKeyWrapped !== null)) throw new VaultKeypairExistsError();
     if (patch.passWrapped !== undefined) v.passWrapped = patch.passWrapped;
     if (patch.recoveryWrapped !== undefined) v.recoveryWrapped = patch.recoveryWrapped;
-    v.updatedAt = new Date();
+    if (patch.publicKey !== undefined) v.publicKey = patch.publicKey;
+    if (patch.privateKeyWrapped !== undefined) v.privateKeyWrapped = patch.privateKeyWrapped;
+    v.updatedAt = after(v.updatedAt);
     return { ...v };
   }
   async countPlaintextRevisions(userId: string): Promise<number> {
@@ -224,7 +231,7 @@ export class MemoryStore implements Store {
     const v = this.vaults.get(userId);
     if (!v) return false;
     v.complete = true;
-    v.updatedAt = new Date();
+    v.updatedAt = after(v.updatedAt);
     return true;
   }
 
@@ -235,12 +242,13 @@ export class MemoryStore implements Store {
     d.deks.push({ v: dek.v, wrapped: dek.wrapped });
     return this.summary(d);
   }
-  async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
+  async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number; originStats?: OriginStats }): Promise<RevisionSummary | null> {
     if (!this.ownedDoc(userId, documentId, true)) return null;
     const r = (this.revs.get(documentId) ?? []).find(x => x.seq === seq);
     if (!r) return null;
     r.bodyHtml = patch.bodyHtml;
     r.keyVersion = patch.keyVersion;
+    if (r.originStats === null && patch.originStats) r.originStats = { ...patch.originStats };
     return { id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: r.originStats, keyVersion: r.keyVersion, createdAt: r.createdAt };
   }
 

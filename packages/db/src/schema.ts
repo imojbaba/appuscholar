@@ -101,8 +101,11 @@ export const vaultKeys = pgTable("vault_keys", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   passWrapped: text("pass_wrapped").notNull(),
   recoveryWrapped: text("recovery_wrapped").notNull(),
-  publicKey: text("public_key").notNull(),
-  privateKeyWrapped: text("private_key_wrapped").notNull(),
+  // The sharing keypair (Phase 7). Null where the browser had no X25519 at setup; a later unlock adds it when it can.
+  publicKey: text("public_key"),
+  privateKeyWrapped: text("private_key_wrapped"),
+  // A fixed sentinel encrypted under the vault key: opening it proves a candidate vault key is this vault's.
+  checkWrapped: text("check_wrapped").notNull(),
   complete: boolean("complete").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()

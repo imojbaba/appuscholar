@@ -827,10 +827,16 @@
           "name": "public_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "private_key_wrapped": {
           "name": "private_key_wrapped",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "check_wrapped": {
+          "name": "check_wrapped",
           "type": "text",
           "primaryKey": false,
           "notNull": true
