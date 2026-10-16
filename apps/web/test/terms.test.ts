@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { needsTerms, TERMS_DATE, TERMS_SINCE, TERMS_VERSION } from "@/lib/terms";
 import { tFormat } from "@/lib/i18n";
-import { OVERRIDES, applyOverrides, dropFromHindi } from "../scripts/i18n-overrides.mjs";
+import { OVERRIDES, applyOverrides, applyHindiDrafts, HINDI_DRAFTS } from "../scripts/i18n-overrides.mjs";
 import en from "../messages/en.json";
 import v1Snapshot from "./fixtures/v1-i18n-snapshot.json";
 import hi from "../messages/hi.json";
@@ -59,16 +59,28 @@ describe("v2 terms wording overrides", () => {
   it("refuses to override a key the extraction does not have", () => {
     expect(() => applyOverrides({ terms_d1: "x" })).toThrow();
   });
-  it("keeps no overridden key in hi.json, so Hindi shows the English v2 wording", () => {
-    const stale = Object.keys(OVERRIDES).filter((k) => k in (hi as Record<string, string>));
-    expect(stale).toEqual([]);
+  it("carries a Hindi draft for every overridden key in hi.json: non-empty, not the English, in Devanagari", () => {
+    const h = hi as Record<string, string>;
+    const E = en as Record<string, string>;
+    expect(Object.keys(HINDI_DRAFTS).sort()).toEqual(KEYS);
     for (const k of Object.keys(OVERRIDES)) {
-      expect(tFormat(en, hi, k, "hi", { version: 2, date: "d" })).toBe(tFormat(en, hi, k, "en", { version: 2, date: "d" }));
+      expect(k in h, k).toBe(true);
+      expect(h[k]?.trim().length, k).toBeGreaterThan(0);
+      expect(h[k], k).not.toBe(E[k]);
+      expect(h[k], k).toMatch(/[\u0900-\u097F]/);
+      expect(h[k], k).toBe(HINDI_DRAFTS[k as keyof typeof HINDI_DRAFTS]);
     }
   });
-  it("dropFromHindi removes exactly the overridden keys", () => {
-    const out = dropFromHindi({ ...hi, terms_d1: "v1", other: "x" } as Record<string, string>);
-    expect(Object.keys(out).filter((k) => k in OVERRIDES)).toEqual([]);
+  it("keeps the placeholders and markup of the English in the Hindi", () => {
+    const h = hi as Record<string, string>;
+    expect(h.terms_ver).toContain("{version}");
+    expect(h.terms_ver).toContain("{date}");
+    expect(tFormat(en, hi, "terms_ver", "hi", { version: 2, date: "16 अक्टूबर 2026" })).toBe("संस्करण 2, 16 अक्टूबर 2026।");
+    expect(h.faq_a_key).toContain("<b>⚙ AI प्रदाता / कुंजी</b>");
+  });
+  it("applyHindiDrafts writes exactly the nine drafts and leaves other keys alone", () => {
+    const out = applyHindiDrafts({ ...hi, terms_d1: "v1", other: "x" } as Record<string, string>);
+    for (const k of Object.keys(OVERRIDES)) expect(out[k]).toBe(HINDI_DRAFTS[k as keyof typeof HINDI_DRAFTS]);
     expect(out.other).toBe("x");
     expect(Object.keys(out).length).toBe(Object.keys(hi).length + 1);
   });

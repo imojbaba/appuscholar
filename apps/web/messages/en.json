@@ -603,7 +603,7 @@
   "terms_d1": "Your documents, sources and projects are saved on Appuscholar's server under your account, with every version kept, so you can open them from any device. The people who run Appuscholar can see them only to keep the service running and will not read them for any other purpose. Statistics data is encrypted with a passphrase only you know before it leaves your browser.",
   "terms_d2": "Your AI key stays in this browser, or on the server locked with a passphrase only you know. When you press an AI button, the key travels with that one request to the provider you chose, is used once, and is not kept.",
   "terms_d3": "When you press an AI button, the text you selected travels through Appuscholar's server straight to that provider (Google, Groq, OpenRouter, DeepSeek, OpenAI or Anthropic). Appuscholar does not keep it. The provider's own terms apply, and on a free key a provider may read or reuse what it receives. Never send names, phone numbers, roll numbers or other details that identify a participant.",
-  "terms_d4": "Paper search sends your search words, DOI or ORCID iD to OpenAlex, Crossref, PubMed and ORCID. The chart, Word and PDF tools load from Cloudflare, which can see your IP address, as any website can. The fonts load with the app.",
+  "terms_d4": "Paper search sends your search words, DOI or ORCID iD to OpenAlex, Crossref, PubMed and ORCID. The fonts and the Word and PDF tools load with the app from Appuscholar's own address, which can see your IP address, as any website can.",
   "terms_data_h": "Where your data goes",
   "terms_h": "Before you start",
   "terms_leave": "You cannot use Appuscholar without accepting. To leave, close this browser tab.",
