@@ -2,7 +2,7 @@
  * Phase 3A, Task 11: the researcher's vault from first setup to account erasure.
  * docs/walkthroughs/phase-3a.md is the same journey for a human on the live site; its numbered moments are this test's steps.
  *
- * Run it with the recipe in phase2-responsive.spec.ts's header (pglite Postgres for the web server, API on its in-memory store):
+ * Run it with the recipe in e2e/support/pglite-postgres.mjs's header (api and web server on the one pglite Postgres):
  *   pnpm --filter @appuscholar/web exec playwright test e2e/phase3a-vault.spec.ts
  *
  * No AI provider is involved: the vault is set up from its header pill, not from the key dialog.
@@ -324,13 +324,11 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
 });
 
 /*
- * Moment 9b, the last half of moment 9: the same address signs in again and meets a fresh account. It cannot pass on the e2e recipe: there the api
- * runs on its in-memory store while Auth.js's users table is in the web server's Postgres, so the erasure cannot delete the users row the
- * e2e provider re-uses; the same user id comes back and the api's account-erased tombstone (Task 3 ruling) answers 401. In production
- * both servers share one database: the erasure deletes the users row and the next sign-in is issued a new id. This body passes with
- * the api on the web's database (start the api with the same DATABASE_URL); enable it when the recipe shares the database.
+ * Moment 9b, the last half of moment 9: the same address signs in again and meets a fresh account. The api and the web server run on the
+ * one DATABASE_URL (recipe in e2e/support/pglite-postgres.mjs), as in production: the erasure deletes the users row Auth.js made, so the
+ * next sign-in is issued a new id (the account-erased tombstone, Task 3 ruling, answers 401 only to the old id's token).
  */
-test.fixme("vault journey, 9b: after Delete my account the same address signs in to a fresh account", async ({ page }) => {
+test("vault journey, 9b: after Delete my account the same address signs in to a fresh account", async ({ page }) => {
   const email = await signIn(page, { prefix: "x", newAccount: true, ready: ["doc-select"] });
   await page.locator(".ProseMirror").click();
   const saved = page.waitForResponse((r) => isDocPut(r) && r.ok());

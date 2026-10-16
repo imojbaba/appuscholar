@@ -1,5 +1,10 @@
-// Usage: from apps/web, `node e2e/support/pglite-postgres.mjs` (@electric-sql/pglite and pglite-socket are web devDependencies). Set MIGRATIONS_DIR to use another migrations folder.
-// Serves an in-memory Postgres on 127.0.0.1:5433 with packages/db/migrations applied: DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres
+// The local e2e recipe (CI uses a Postgres service container the same way; see .github/workflows/ci.yml):
+//  1. From apps/web, `node e2e/support/pglite-postgres.mjs` (@electric-sql/pglite and pglite-socket are web devDependencies). It serves an
+//     in-memory Postgres on 127.0.0.1:5433 with packages/db/migrations applied. Set MIGRATIONS_DIR to use another migrations folder.
+//  2. In another shell: `export DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres` then `pnpm --filter @appuscholar/web e2e`.
+//     playwright.config.ts starts the api AND the web server on that one DATABASE_URL, as in production, where both share one database:
+//     sign-in (Auth.js, web) and the api (projects, documents, the vault, account erasure) then see the same users row. Nothing else to start;
+//     if an api or web server is already on 8788 / 3000 it is reused, so make sure a leftover one is not on another store.
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { readFileSync, readdirSync } from "node:fs";
