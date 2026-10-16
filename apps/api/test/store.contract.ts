@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import type { Store } from "../src/store/types";
+import { VaultExistsError, type Store } from "../src/store/types";
 
 export type ContractEnv = { store: Store; users: { a: string; b: string } };
 
@@ -20,7 +20,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
 
     it("creates a document with revision 1 and reads it back", async () => {
       const p = await s.createProject(a, "Sleep");
-      const d = await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 });
+      const d = await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0, keyVersion: 0 });
       expect(d).not.toBeNull();
       expect(d!.currentSeq).toBe(1);
       expect(d!.createdAt).toBeInstanceOf(Date);
@@ -28,26 +28,26 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const got = await s.getDocument(a, d!.id);
       expect(got?.bodyHtml).toBe("");
       expect(await s.getDocument(b, d!.id)).toBeNull();
-      expect(await s.createDocument(b, p.id, "x", "draft", { bodyHtml: "", authorKind: "web", authorLabel: b, wordCount: 0 })).toBeNull();
+      expect(await s.createDocument(b, p.id, "x", "draft", { bodyHtml: "", authorKind: "web", authorLabel: b, wordCount: 0, keyVersion: 0 })).toBeNull();
     });
 
     it("appends revisions with increasing seq and lists newest first", async () => {
       const p = await s.createProject(a, "Sleep");
-      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
-      const r2 = await s.appendRevision(a, d.id, { bodyHtml: "<p>a</p>", authorKind: "web", authorLabel: a, wordCount: 1 });
-      const r3 = await s.appendRevision(a, d.id, { bodyHtml: "<p>a b</p>", authorKind: "copilot", authorLabel: "Claude", wordCount: 2 });
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0, keyVersion: 0 }))!;
+      const r2 = await s.appendRevision(a, d.id, { bodyHtml: "<p>a</p>", authorKind: "web", authorLabel: a, wordCount: 1, keyVersion: 0 });
+      const r3 = await s.appendRevision(a, d.id, { bodyHtml: "<p>a b</p>", authorKind: "copilot", authorLabel: "Claude", wordCount: 2, keyVersion: 0 });
       expect(r2?.seq).toBe(2);
       expect(r3?.seq).toBe(3);
       const list = await s.listRevisions(a, d.id);
       expect(list?.map(r => r.seq)).toEqual([3, 2, 1]);
       expect((await s.getDocument(a, d.id))?.bodyHtml).toBe("<p>a b</p>");
       expect((await s.getRevision(a, d.id, 2))?.bodyHtml).toBe("<p>a</p>");
-      expect(await s.appendRevision(b, d.id, { bodyHtml: "x", authorKind: "web", authorLabel: b, wordCount: 1 })).toBeNull();
+      expect(await s.appendRevision(b, d.id, { bodyHtml: "x", authorKind: "web", authorLabel: b, wordCount: 1, keyVersion: 0 })).toBeNull();
     });
 
     it("renames a document", async () => {
       const p = await s.createProject(a, "Sleep");
-      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0, keyVersion: 0 }))!;
       expect((await s.renameDocument(a, d.id, "Final"))?.title).toBe("Final");
       expect(await s.renameDocument(b, d.id, "Nope")).toBeNull();
     });
@@ -57,8 +57,8 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       let list = await s.listProjects(a);
       expect(list[0]?.documentCount).toBe(0);
       expect(list[0]?.lastEditedAt).toBeNull();
-      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
-      await s.appendRevision(a, d.id, { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: a, wordCount: 1 });
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0, keyVersion: 0 }))!;
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: a, wordCount: 1, keyVersion: 0 });
       list = await s.listProjects(a);
       expect(list[0]?.documentCount).toBe(1);
       expect(list[0]?.lastEditedAt).toBeInstanceOf(Date);
@@ -89,14 +89,14 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       await s.updateProject(a, done.id, { status: "complete" });
       expect((await s.listProjects(a)).map(x => x.id)).toEqual([newer.id, older.id, done.id]);
       await tick();
-      const d = (await s.createDocument(a, older.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
-      await s.appendRevision(a, d.id, { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: a, wordCount: 1 });
+      const d = (await s.createDocument(a, older.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0, keyVersion: 0 }))!;
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: a, wordCount: 1, keyVersion: 0 });
       expect((await s.listProjects(a)).map(x => x.id)).toEqual([older.id, newer.id, done.id]);
     });
 
     it("deletes a project with its documents, and refuses other users", async () => {
       const p = await s.createProject(a, "Sleep");
-      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0 }))!;
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 0, keyVersion: 0 }))!;
       expect(await s.deleteProject(b, p.id)).toBe(false);
       expect(await s.deleteProject(a, p.id)).toBe(true);
       expect(await s.getProject(a, p.id)).toBeNull();
@@ -104,7 +104,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.deleteProject(a, p.id)).toBe(false);
     });
 
-    const first = { bodyHtml: "", authorKind: "web", authorLabel: "", wordCount: 0 } as const;
+    const first = { bodyHtml: "", authorKind: "web", authorLabel: "", wordCount: 0, keyVersion: 0 } as const;
     const em = (id: string) => `${id}@contract.local`;
 
     it("ensures a user row and merges settings", async () => {
@@ -162,7 +162,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const scratch = await s.getScratchProject(a);
       const p = await s.createProject(a, "Thesis");
       const other = await s.createProject(b, "Theirs");
-      const d = await s.createDocument(a, scratch.id, "Draft", "draft", { ...first, bodyHtml: "<p>x</p>", authorLabel: em(a), wordCount: 1 });
+      const d = await s.createDocument(a, scratch.id, "Draft", "draft", { ...first, bodyHtml: "<p>x</p>", authorLabel: em(a), wordCount: 1, keyVersion: 0 });
       expect(await s.moveDocument(a, d!.id, other.id)).toBeNull();
       expect((await s.getDocument(a, d!.id))?.projectId).toBe(scratch.id);
       expect(await s.moveDocument(b, d!.id, other.id)).toBeNull();
@@ -240,7 +240,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const p = await s.createProject(a, "T");
       const d = (await s.createDocument(a, p.id, "A", "draft", first))!;
       const stats = { typed: 1, ai: 2, passages: 1, kept: 1, edited: 0, unknown: 0 };
-      await s.appendRevision(a, d.id, { bodyHtml: "<p>a <span class=\"ai-ins\" data-h=\"z\">b c</span></p>", authorKind: "web", authorLabel: "", wordCount: 3, originStats: stats });
+      await s.appendRevision(a, d.id, { bodyHtml: "<p>a <span class=\"ai-ins\" data-h=\"z\">b c</span></p>", authorKind: "web", authorLabel: "", wordCount: 3, keyVersion: 0, originStats: stats });
       const revs = (await s.listRevisions(a, d.id))!;
       expect(revs[0]!.originStats).toEqual(stats);
       expect(revs[1]!.originStats).toBeNull();
@@ -252,6 +252,46 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const p = await s.createProject(a, "T");
       expect((await s.updateProject(a, p.id, { contentLang: "hi" }))?.contentLang).toBe("hi");
       expect((await s.getProject(a, p.id))?.contentLang).toBe("hi");
+    });
+
+    it("vault record: create once, update wraps, mark complete", async () => {
+      expect(await s.getVault(a)).toBeNull();
+      const v = await s.putVault(a, { passWrapped: "s.i.c", recoveryWrapped: "s.i.r", publicKey: "pk", privateKeyWrapped: "i.p" });
+      expect(v.complete).toBe(false);
+      await expect(s.putVault(a, { passWrapped: "x", recoveryWrapped: "y", publicKey: "z", privateKeyWrapped: "w" })).rejects.toBeInstanceOf(VaultExistsError);
+      expect((await s.updateVaultWraps(a, { passWrapped: "s2.i2.c2" }))!.passWrapped).toBe("s2.i2.c2");
+      expect(await s.markVaultComplete(a)).toBe(true);
+      expect((await s.getVault(a))!.complete).toBe(true);
+      expect(await s.getVault(b)).toBeNull();
+    });
+
+    it("revisions carry a key version and deks attach to the document", async () => {
+      const p = await s.createProject(a, "P");
+      const d = (await s.createDocument(a, p.id, "D", "draft", { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0 }))!;
+      expect(d.keyVersion).toBe(0);
+      expect(d.deks).toEqual([]);
+      expect((await s.addDek(a, d.id, { v: 1, wrapped: "i.k" }))!.deks).toEqual([{ v: 1, wrapped: "i.k" }]);
+      await expect(s.addDek(a, d.id, { v: 1, wrapped: "dup" })).rejects.toThrow();
+      const r = (await s.appendRevision(a, d.id, { bodyHtml: "aXYZ.bQ", authorKind: "web", authorLabel: "t", wordCount: 9, keyVersion: 1 }))!;
+      expect(r.keyVersion).toBe(1);
+      expect((await s.getDocument(a, d.id))!.bodyHtml).toBe("aXYZ.bQ");
+      const rw = (await s.rewriteRevision(a, d.id, 1, { bodyHtml: "cT.dU", keyVersion: 1 }))!;
+      expect(rw.keyVersion).toBe(1);
+      expect((await s.getRevision(a, d.id, 1))!.bodyHtml).toBe("cT.dU");
+      expect(await s.rewriteRevision(b, d.id, 1, { bodyHtml: "no", keyVersion: 1 })).toBeNull();
+    });
+
+    it("audit survives erasure; erasure removes every other row", async () => {
+      const p = await s.createProject(a, "P");
+      await s.createDocument(a, p.id, "D", "draft", { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0 });
+      await s.putCredential(a, "groq", "s.i.c");
+      await s.appendAudit(a, "export");
+      expect(await s.eraseUser(a)).toBe(true);
+      expect(await s.getUser(a)).toBeNull();
+      expect(await s.listProjects(a)).toEqual([]);
+      expect(await s.getCredentials(a)).toEqual([]);
+      expect((await s.listAudit(a)).map((x) => x.action)).toEqual(["export", "account-erased"]);
+      expect(await s.eraseUser(a)).toBe(false);
     });
   });
 }

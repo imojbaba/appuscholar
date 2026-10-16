@@ -132,7 +132,7 @@ describe("api routes", () => {
     const store = new MemoryStore();
     const legacyApp = createApp({ store, jwtSecret: SECRET, maxBodyBytes: 2 * 1024 * 1024 });
     const proj = await store.createProject("u1", "Old");
-    const doc = await store.createDocument("u1", proj.id, "Legacy", "draft", { bodyHtml: "<p>one two three</p>", authorKind: "web", authorLabel: "x", wordCount: 3 });
+    const doc = await store.createDocument("u1", proj.id, "Legacy", "draft", { bodyHtml: "<p>one two three</p>", authorKind: "web", authorLabel: "x", wordCount: 3, keyVersion: 0 });
     const rec = await (await legacyApp.request(`/projects/${proj.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; stats: { typed: number } }[]; weekly: { typed: number }[] };
     expect(rec.docs[0]).toMatchObject({ id: doc!.id, stats: { typed: 3, ai: 0 } });
     expect(rec.weekly).toMatchObject([{ typed: 3, ai: 0 }]);

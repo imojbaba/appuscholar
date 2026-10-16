@@ -31,7 +31,7 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
       const rev = await store.getRevision(userId, current.id, current.currentSeq);
       return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: false });
     }
-    const rev = await store.appendRevision(userId, current.id, { bodyHtml: clean, authorKind: "web", authorLabel: c.get("email"), wordCount: wordCount(clean), originStats: originCount(clean) });
+    const rev = await store.appendRevision(userId, current.id, { bodyHtml: clean, authorKind: "web", authorLabel: c.get("email"), wordCount: wordCount(clean), keyVersion: 0, originStats: originCount(clean) });
     return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: true });
   });
 
@@ -86,7 +86,7 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const userId = c.get("userId");
     const old = await store.getRevision(userId, c.req.param("id"), seq);
     if (!old) return c.json({ error: "not-found" }, 404);
-    const rev = await store.appendRevision(userId, old.documentId, { bodyHtml: old.bodyHtml, authorKind: "restore", authorLabel: `restored revision ${seq}`, wordCount: old.wordCount, originStats: old.originStats ?? originCount(old.bodyHtml) });
+    const rev = await store.appendRevision(userId, old.documentId, { bodyHtml: old.bodyHtml, authorKind: "restore", authorLabel: `restored revision ${seq}`, wordCount: old.wordCount, keyVersion: 0, originStats: old.originStats ?? originCount(old.bodyHtml) });
     return c.json({ document: await store.getDocument(userId, old.documentId), revision: rev });
   });
 

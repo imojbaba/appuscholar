@@ -60,6 +60,7 @@ export const documents = pgTable("documents", {
   kind: text("kind").notNull().default("draft"),
   currentRevisionId: text("current_revision_id"),
   deletedAt: timestamp("deleted_at", { mode: "date" }),
+  deks: jsonb("deks").$type<{ v: number; wrapped: string }[]>().notNull().default([]),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [index("documents_project_idx").on(t.projectId)]);
@@ -73,6 +74,7 @@ export const documentRevisions = pgTable("document_revisions", {
   authorLabel: text("author_label").notNull(),
   wordCount: integer("word_count").notNull(),
   originStats: jsonb("origin_stats"),
+  keyVersion: integer("key_version").notNull().default(0),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [uniqueIndex("revisions_doc_seq_idx").on(t.documentId, t.seq)]);
 
@@ -94,6 +96,26 @@ export const aiUseLog = pgTable("ai_use_log", {
   grp: text("grp").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [index("ai_use_user_day_idx").on(t.userId, t.day)]);
+
+export const vaultKeys = pgTable("vault_keys", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  passWrapped: text("pass_wrapped").notNull(),
+  recoveryWrapped: text("recovery_wrapped").notNull(),
+  publicKey: text("public_key").notNull(),
+  privateKeyWrapped: text("private_key_wrapped").notNull(),
+  complete: boolean("complete").notNull().default(false),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
+});
+
+// No foreign key on user_id: audit rows must survive account erasure.
+export const auditLog = pgTable("audit_log", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+  action: text("action").notNull(),
+  target: text("target"),
+  at: timestamp("at", { mode: "date" }).notNull().defaultNow()
+}, (t) => [index("audit_log_user_idx").on(t.userId)]);
 
 export type Project = typeof projects.$inferSelect;
 export type Document = typeof documents.$inferSelect;

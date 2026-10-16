@@ -1,6 +1,7 @@
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, VaultRecord, WrappedDek } from "./types";
+import { VaultExistsError } from "./types";
 
-type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null };
+type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
 
 export class MemoryStore implements Store {
   private projects = new Map<string, Project>();
@@ -8,6 +9,8 @@ export class MemoryStore implements Store {
   private revs = new Map<string, DocumentRevision[]>();
   private users = new Map<string, UserRecord>();
   private credentials = new Map<string, Credential & { userId: string }>();
+  private vaults = new Map<string, VaultRecord>();
+  private audit: { userId: string; action: AuditAction; target: string | null; at: Date }[] = [];
   private aiUse: { userId: string; projectId: string | null; e: AiUseEntry }[] = [];
 
   private ownsProject(userId: string, projectId: string): boolean {
@@ -23,7 +26,7 @@ export class MemoryStore implements Store {
   }
   private summary(d: DocRow, r: DocumentRevision | null = this.latest(d.id)): DocumentSummary | null {
     if (!r) return null;
-    return { id: d.id, projectId: d.projectId, title: d.title, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: d.createdAt, updatedAt: d.updatedAt, deletedAt: d.deletedAt };
+    return { id: d.id, projectId: d.projectId, title: d.title, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: d.createdAt, updatedAt: d.updatedAt, deletedAt: d.deletedAt, deks: d.deks.map(k => ({ ...k })) };
   }
 
   async getUser(userId: string): Promise<UserRecord | null> {
@@ -103,11 +106,11 @@ export class MemoryStore implements Store {
   async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision): Promise<DocumentWithBody | null> {
     if (!this.ownsProject(userId, projectId)) return null;
     const now = new Date();
-    const d: DocRow = { id: crypto.randomUUID(), projectId, title, kind, createdAt: now, updatedAt: now, deletedAt: null };
+    const d: DocRow = { id: crypto.randomUUID(), projectId, title, kind, createdAt: now, updatedAt: now, deletedAt: null, deks: [] };
     this.docs.set(d.id, d);
     const r: DocumentRevision = { id: crypto.randomUUID(), documentId: d.id, seq: 1, ...first, originStats: first.originStats ?? null, createdAt: now };
     this.revs.set(d.id, [r]);
-    return { ...this.summary(d, r)!, bodyHtml: r.bodyHtml };
+    return { ...this.summary(d, r)!, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion };
   }
   async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
     if (!this.ownsProject(userId, projectId)) return null;
@@ -118,7 +121,7 @@ export class MemoryStore implements Store {
     if (!d) return null;
     const r = this.latest(d.id);
     const sum = this.summary(d, r);
-    return r && sum ? { ...sum, bodyHtml: r.bodyHtml } : null;
+    return r && sum ? { ...sum, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion } : null;
   }
   async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
     const d = this.ownedDoc(userId, id);
@@ -164,7 +167,7 @@ export class MemoryStore implements Store {
   }
   async listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null> {
     if (!this.ownedDoc(userId, documentId)) return null;
-    return [...(this.revs.get(documentId) ?? [])].reverse().map((r): RevisionSummary => ({ id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: r.originStats, createdAt: r.createdAt }));
+    return [...(this.revs.get(documentId) ?? [])].reverse().map((r): RevisionSummary => ({ id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: r.originStats, keyVersion: r.keyVersion, createdAt: r.createdAt }));
   }
   async getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null> {
     if (!this.ownedDoc(userId, documentId)) return null;
@@ -192,5 +195,64 @@ export class MemoryStore implements Store {
   }
   async eraseAiUse(userId: string): Promise<void> {
     this.aiUse = this.aiUse.filter(r => r.userId !== userId);
+  }
+
+  async getVault(userId: string): Promise<VaultRecord | null> {
+    const v = this.vaults.get(userId);
+    return v ? { ...v } : null;
+  }
+  async putVault(userId: string, v: Omit<VaultRecord, "complete" | "updatedAt">): Promise<VaultRecord> {
+    if (this.vaults.has(userId)) throw new VaultExistsError();
+    const rec: VaultRecord = { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: false, updatedAt: new Date() };
+    this.vaults.set(userId, rec);
+    return { ...rec };
+  }
+  async updateVaultWraps(userId: string, patch: { passWrapped?: string; recoveryWrapped?: string }): Promise<VaultRecord | null> {
+    const v = this.vaults.get(userId);
+    if (!v) return null;
+    if (patch.passWrapped !== undefined) v.passWrapped = patch.passWrapped;
+    if (patch.recoveryWrapped !== undefined) v.recoveryWrapped = patch.recoveryWrapped;
+    v.updatedAt = new Date();
+    return { ...v };
+  }
+  async markVaultComplete(userId: string): Promise<boolean> {
+    const v = this.vaults.get(userId);
+    if (!v) return false;
+    v.complete = true;
+    v.updatedAt = new Date();
+    return true;
+  }
+
+  async addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null> {
+    const d = this.ownedDoc(userId, documentId);
+    if (!d) return null;
+    if (d.deks.some(k => k.v === dek.v)) throw new Error(`dek v${dek.v} already exists for document ${documentId}`);
+    d.deks.push({ v: dek.v, wrapped: dek.wrapped });
+    return this.summary(d);
+  }
+  async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
+    if (!this.ownedDoc(userId, documentId)) return null;
+    const r = (this.revs.get(documentId) ?? []).find(x => x.seq === seq);
+    if (!r) return null;
+    r.bodyHtml = patch.bodyHtml;
+    r.keyVersion = patch.keyVersion;
+    return { id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: r.originStats, keyVersion: r.keyVersion, createdAt: r.createdAt };
+  }
+
+  async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {
+    this.audit.push({ userId, action, target: target ?? null, at: new Date() });
+  }
+  async listAudit(userId: string): Promise<AuditEntry[]> {
+    return this.audit.filter(r => r.userId === userId).map(({ action, target, at }) => ({ action, target, at }));
+  }
+  async eraseUser(userId: string): Promise<boolean> {
+    if (!this.users.has(userId)) return false;
+    for (const p of [...this.projects.values()]) if (p.userId === userId) await this.deleteProject(userId, p.id);
+    for (const k of [...this.credentials.keys()]) if (this.credentials.get(k)!.userId === userId) this.credentials.delete(k);
+    await this.eraseAiUse(userId);
+    this.vaults.delete(userId);
+    this.users.delete(userId);
+    await this.appendAudit(userId, "account-erased");
+    return true;
   }
 }

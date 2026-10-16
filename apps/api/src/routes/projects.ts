@@ -39,7 +39,7 @@ export function projectRoutes(store: Store) {
   r.post("/:id/documents", async (c) => {
     const body = CreateDoc.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0, originStats: originCount("") });
+    const d = await store.createDocument(c.get("userId"), c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: "", authorKind: "web", authorLabel: c.get("email"), wordCount: 0, keyVersion: 0, originStats: originCount("") });
     return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
   });
   /**

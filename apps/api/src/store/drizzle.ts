@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql } from "drizzle-orm";
-import { users, projects, documents, documentRevisions, credentials, aiUseLog, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage } from "./types";
+import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, type Db } from "@appuscholar/db";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, WrappedDek } from "./types";
+import { VaultExistsError } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -25,7 +26,10 @@ export class DrizzleStore implements Store {
     return rows[0] ?? null;
   }
   private toRev(r: typeof documentRevisions.$inferSelect): DocumentRevision {
-    return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, createdAt: r.createdAt };
+    return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, keyVersion: r.keyVersion, createdAt: r.createdAt };
+  }
+  private toVault(v: typeof vaultKeys.$inferSelect): VaultRecord {
+    return { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: v.complete, updatedAt: v.updatedAt };
   }
   private toProject(p: typeof projects.$inferSelect): Project {
     return { ...p, kind: p.kind as ProjectKind };
@@ -36,7 +40,7 @@ export class DrizzleStore implements Store {
   private async summary(doc: typeof documents.$inferSelect): Promise<DocumentSummary | null> {
     const r = await this.latest(doc.id);
     if (!r) return null;
-    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt };
+    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, deks: doc.deks };
   }
 
   async getUser(userId: string): Promise<UserRecord | null> {
@@ -111,7 +115,7 @@ export class DrizzleStore implements Store {
     const [doc] = await this.d.insert(documents).values({ projectId, title, kind }).returning();
     const [rev] = await this.d.insert(documentRevisions).values({ documentId: doc!.id, seq: 1, ...first }).returning();
     await this.d.update(documents).set({ currentRevisionId: rev!.id }).where(eq(documents.id, doc!.id));
-    return { ...(await this.summary(doc!))!, bodyHtml: rev!.bodyHtml };
+    return { ...(await this.summary(doc!))!, bodyHtml: rev!.bodyHtml, keyVersion: rev!.keyVersion };
   }
   async listDocuments(userId: string, projectId: string): Promise<DocumentSummary[] | null> {
     if (!(await this.getProject(userId, projectId))) return null;
@@ -127,7 +131,7 @@ export class DrizzleStore implements Store {
     if (!r) return null;
     return {
       id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind,
-      currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, bodyHtml: r.bodyHtml
+      currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, deks: doc.deks, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion
     };
   }
   async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
@@ -182,7 +186,7 @@ export class DrizzleStore implements Store {
   }
   async listRevisions(userId: string, documentId: string): Promise<RevisionSummary[] | null> {
     if (!(await this.ownedDoc(userId, documentId))) return null;
-    const rows = await this.d.select({ id: documentRevisions.id, documentId: documentRevisions.documentId, seq: documentRevisions.seq, authorKind: documentRevisions.authorKind, authorLabel: documentRevisions.authorLabel, wordCount: documentRevisions.wordCount, originStats: documentRevisions.originStats, createdAt: documentRevisions.createdAt }).from(documentRevisions).where(eq(documentRevisions.documentId, documentId)).orderBy(desc(documentRevisions.seq));
+    const rows = await this.d.select({ id: documentRevisions.id, documentId: documentRevisions.documentId, seq: documentRevisions.seq, authorKind: documentRevisions.authorKind, authorLabel: documentRevisions.authorLabel, wordCount: documentRevisions.wordCount, originStats: documentRevisions.originStats, keyVersion: documentRevisions.keyVersion, createdAt: documentRevisions.createdAt }).from(documentRevisions).where(eq(documentRevisions.documentId, documentId)).orderBy(desc(documentRevisions.seq));
     return rows.map(r => ({ ...r, authorKind: r.authorKind as AuthorKind, originStats: (r.originStats as OriginStats | null) ?? null }));
   }
   async getRevision(userId: string, documentId: string, seq: number): Promise<DocumentRevision | null> {
@@ -213,5 +217,69 @@ export class DrizzleStore implements Store {
   }
   async eraseAiUse(userId: string): Promise<void> {
     await this.d.delete(aiUseLog).where(eq(aiUseLog.userId, userId));
+  }
+
+  async getVault(userId: string): Promise<VaultRecord | null> {
+    const rows = await this.d.select().from(vaultKeys).where(eq(vaultKeys.userId, userId)).limit(1);
+    return rows[0] ? this.toVault(rows[0]) : null;
+  }
+  async putVault(userId: string, v: Omit<VaultRecord, "complete" | "updatedAt">): Promise<VaultRecord> {
+    const rows = await this.d.insert(vaultKeys).values({ userId, passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped }).onConflictDoNothing().returning();
+    if (!rows[0]) throw new VaultExistsError();
+    return this.toVault(rows[0]);
+  }
+  async updateVaultWraps(userId: string, patch: { passWrapped?: string; recoveryWrapped?: string }): Promise<VaultRecord | null> {
+    const set: Partial<typeof vaultKeys.$inferInsert> = { updatedAt: new Date() };
+    if (patch.passWrapped !== undefined) set.passWrapped = patch.passWrapped;
+    if (patch.recoveryWrapped !== undefined) set.recoveryWrapped = patch.recoveryWrapped;
+    const rows = await this.d.update(vaultKeys).set(set).where(eq(vaultKeys.userId, userId)).returning();
+    return rows[0] ? this.toVault(rows[0]) : null;
+  }
+  async markVaultComplete(userId: string): Promise<boolean> {
+    const rows = await this.d.update(vaultKeys).set({ complete: true, updatedAt: new Date() }).where(eq(vaultKeys.userId, userId)).returning({ userId: vaultKeys.userId });
+    return rows.length > 0;
+  }
+
+  async addDek(userId: string, documentId: string, dek: WrappedDek): Promise<DocumentSummary | null> {
+    if (!(await this.ownedDoc(userId, documentId))) return null;
+    // One conditional statement, so two concurrent adds of the same `v` cannot both land.
+    const entry = JSON.stringify([{ v: dek.v, wrapped: dek.wrapped }]);
+    const rows = await this.d.update(documents)
+      .set({ deks: sql`${documents.deks} || ${entry}::jsonb` })
+      .where(and(eq(documents.id, documentId), sql`not exists (select 1 from jsonb_array_elements(${documents.deks}) e where (e->>'v')::int = ${dek.v})`))
+      .returning();
+    if (!rows[0]) throw new Error(`dek v${dek.v} already exists for document ${documentId}`);
+    return this.summary(rows[0]);
+  }
+  async rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number }): Promise<RevisionSummary | null> {
+    if (!(await this.ownedDoc(userId, documentId))) return null;
+    const rows = await this.d.update(documentRevisions).set({ bodyHtml: patch.bodyHtml, keyVersion: patch.keyVersion }).where(and(eq(documentRevisions.documentId, documentId), eq(documentRevisions.seq, seq))).returning();
+    if (!rows[0]) return null;
+    const r = rows[0];
+    return { id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, keyVersion: r.keyVersion, createdAt: r.createdAt };
+  }
+
+  async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {
+    await this.d.insert(auditLog).values({ userId, action, target: target ?? null });
+  }
+  async listAudit(userId: string): Promise<AuditEntry[]> {
+    const rows = await this.d.select({ action: auditLog.action, target: auditLog.target, at: auditLog.at }).from(auditLog).where(eq(auditLog.userId, userId)).orderBy(asc(auditLog.at));
+    return rows.map(r => ({ action: r.action as AuditAction, target: r.target, at: r.at }));
+  }
+  async eraseUser(userId: string): Promise<boolean> {
+    // Atomic without an interactive transaction: the neon-http driver used in production has none, but a single
+    // statement with data-modifying CTEs is one atomic unit on every driver. The audit row is inserted only if the
+    // user row was actually deleted, and audit_log has no foreign key, so earlier audit rows are untouched.
+    const res = await this.d.execute(sql`
+      with
+        c as (delete from ${credentials} where ${credentials.userId} = ${userId}),
+        l as (delete from ${aiUseLog} where ${aiUseLog.userId} = ${userId}),
+        v as (delete from ${vaultKeys} where ${vaultKeys.userId} = ${userId}),
+        p as (delete from ${projects} where ${projects.userId} = ${userId}),
+        u as (delete from ${users} where ${users.id} = ${userId} returning ${users.id} as id),
+        a as (insert into ${auditLog} (id, user_id, action) select ${crypto.randomUUID()}, id, 'account-erased' from u)
+      select id from u`);
+    const rows = Array.isArray(res) ? res : (res as { rows: unknown[] }).rows;
+    return rows.length > 0;
   }
 }
