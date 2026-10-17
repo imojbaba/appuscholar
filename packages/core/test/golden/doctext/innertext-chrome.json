@@ -187,6 +187,51 @@
    "id": "numeric-entities",
    "normal": "em—dash en–dash En–dash nbsp dec hex 'q'",
    "preWrap": "em—dash en–dash En–dash nbsp dec hex 'q'"
+  },
+  {
+   "id": "attr-gt",
+   "normal": "a  d",
+   "preWrap": "a  d"
+  },
+  {
+   "id": "attr-gt-title",
+   "normal": "link tail",
+   "preWrap": "link tail"
+  },
+  {
+   "id": "table-pretty-printed",
+   "normal": "a\tb",
+   "preWrap": "a\tb"
+  },
+  {
+   "id": "table-v1-cells",
+   "normal": "a\tb\nc\td",
+   "preWrap": "a\tb\nc\td"
+  },
+  {
+   "id": "pre-between-headings",
+   "normal": "x\ny\nz\nw",
+   "preWrap": "x\ny\nz\nw"
+  },
+  {
+   "id": "hr-between-divs",
+   "normal": "a\nb",
+   "preWrap": "a\nb"
+  },
+  {
+   "id": "pagebreak-between-headings",
+   "normal": "a\nb",
+   "preWrap": "a\nb"
+  },
+  {
+   "id": "table-nested",
+   "normal": "x\t\ni1\ti2\n\ny\tz",
+   "preWrap": "x\t\ni1\ti2\n\ny\tz"
+  },
+  {
+   "id": "table-tiptap",
+   "normal": "Group\n\n\t\n\n\n\n\nControl\n\n\t\n\n12",
+   "preWrap": "Group\n\n\t\n\n\n\n\nControl\n\n\t\n\n12"
   }
  ]
 }

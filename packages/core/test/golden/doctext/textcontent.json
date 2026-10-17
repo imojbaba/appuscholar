@@ -150,6 +150,42 @@
   {
    "id": "numeric-entities",
    "text": "em—dash en–dash En–dash nbsp dec hex 'q'"
+  },
+  {
+   "id": "attr-gt",
+   "text": "a  d"
+  },
+  {
+   "id": "attr-gt-title",
+   "text": "link tail"
+  },
+  {
+   "id": "table-pretty-printed",
+   "text": "\n\n\na\nb\n\n\n"
+  },
+  {
+   "id": "table-v1-cells",
+   "text": "abcd"
+  },
+  {
+   "id": "pre-between-headings",
+   "text": "xy\nzw"
+  },
+  {
+   "id": "hr-between-divs",
+   "text": "ab"
+  },
+  {
+   "id": "pagebreak-between-headings",
+   "text": "ab"
+  },
+  {
+   "id": "table-nested",
+   "text": "xi1i2yz"
+  },
+  {
+   "id": "table-tiptap",
+   "text": "GroupControl12"
   }
  ]
 }

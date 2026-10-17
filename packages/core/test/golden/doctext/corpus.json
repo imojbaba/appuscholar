@@ -34,5 +34,14 @@
  { "id": "stat-split-across-paragraphs", "html": "<p>t(58) = 2.36, p</p><p>= .022</p>" },
  { "id": "pre-wrap-newlines-in-text", "html": "<p>line one\nline two</p>" },
  { "id": "hindi-mixed-marks", "html": "<p><strong>परिणाम</strong>: t(21) = 2.15, p = .043।</p>" },
- { "id": "numeric-entities", "html": "<p>em&#8212;dash en&#x2013;dash En&#X2013;dash nbsp&#160;dec&#xa0;hex &#39;q&#39;</p>" }
+ { "id": "numeric-entities", "html": "<p>em&#8212;dash en&#x2013;dash En&#X2013;dash nbsp&#160;dec&#xa0;hex &#39;q&#39;</p>" },
+ { "id": "attr-gt", "html": "<p>a <img src=\"x\" alt=\"b > c\"> d</p>" },
+ { "id": "attr-gt-title", "html": "<p><a href=\"https://x.org/\" title=\"x > (Rao, 2019)\">link</a> tail</p>" },
+ { "id": "table-pretty-printed", "html": "<table>\n<tbody>\n<tr>\n<td>a</td>\n<td>b</td>\n</tr>\n</tbody>\n</table>" },
+ { "id": "table-v1-cells", "html": "<table><tbody><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></tbody></table>" },
+ { "id": "pre-between-headings", "html": "<h2>x</h2><pre><code>y\nz</code></pre><h2>w</h2>" },
+ { "id": "hr-between-divs", "html": "<div>a</div><hr><div>b</div>" },
+ { "id": "pagebreak-between-headings", "html": "<h1>a</h1><div class=\"page-break\" data-page-break=\"\"></div><h2>b</h2>" },
+ { "id": "table-nested", "html": "<table><tbody><tr><td>x</td><td><table><tbody><tr><td>i1</td><td>i2</td></tr></tbody></table></td></tr><tr><td>y</td><td>z</td></tr></tbody></table>" },
+ { "id": "table-tiptap", "html": "<table style=\"min-width: 50px;\"><colgroup><col style=\"min-width: 25px;\"><col style=\"min-width: 25px;\"></colgroup><tbody><tr><th colspan=\"1\" rowspan=\"1\"><p>Group</p></th><th colspan=\"1\" rowspan=\"1\"><p></p></th></tr><tr><td><p>Control</p></td><td><p>12</p></td></tr></tbody></table>" }
 ]
