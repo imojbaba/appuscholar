@@ -14,3 +14,4 @@ export { PLAIN_OUT, contentLangInstruction, buildWritingPrompt, buildDraftFirstP
 export type { WritingKind } from "./prompts";
 export { PROVIDERS, PROV_ORDER } from "./providers";
 export type { ProviderId, ProviderInfo } from "./providers";
+export { docInnerText, docTextContent } from "./doctext";

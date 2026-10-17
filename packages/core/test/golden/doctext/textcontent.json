@@ -1,0 +1,155 @@
+{
+ "engine": "doctext",
+ "captured": "2026-10-17",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "two-paragraphs",
+   "text": "First.Second."
+  },
+  {
+   "id": "headings",
+   "text": "TitleBodyMethodTextSubMore"
+  },
+  {
+   "id": "empty-paragraphs",
+   "text": "ab"
+  },
+  {
+   "id": "trailing-br",
+   "text": "linenext"
+  },
+  {
+   "id": "hard-breaks",
+   "text": "onetwothree"
+  },
+  {
+   "id": "list-tiptap",
+   "text": "alphabetaonetwo"
+  },
+  {
+   "id": "list-v1",
+   "text": "alphabeta"
+  },
+  {
+   "id": "nested-list",
+   "text": "outerinnerlast"
+  },
+  {
+   "id": "blockquote-code",
+   "text": "quotedx = 1\ny = 2after"
+  },
+  {
+   "id": "inline-marks",
+   "text": "a b c d e f g H2O x2 link"
+  },
+  {
+   "id": "ai-ins-span",
+   "text": "mine theirsmore tail"
+  },
+  {
+   "id": "styled-span",
+   "text": "a1 b red"
+  },
+  {
+   "id": "table",
+   "text": "H1H2c1c2after"
+  },
+  {
+   "id": "table-in-li",
+   "text": "itemc"
+  },
+  {
+   "id": "image-in-p",
+   "text": "before  after"
+  },
+  {
+   "id": "hr-and-pagebreak",
+   "text": "abc"
+  },
+  {
+   "id": "nbsp-citation",
+   "text": "Sleep loss predicted delay (Smith, 2020) and (Rao et al., 2019)."
+  },
+  {
+   "id": "double-spaces",
+   "text": "two  spaces   and three"
+  },
+  {
+   "id": "leading-trailing-space",
+   "text": " leadtrail "
+  },
+  {
+   "id": "refs-english",
+   "text": "Body (Smith, 2020).ReferencesSmith, J. (2020). Title. Journal, 1(2), 3-4."
+  },
+  {
+   "id": "refs-hindi-heading",
+   "text": "अध्ययन (Sharma, 2021) ने दिखाया।संदर्भ सूचीSharma, R. (2021). शोध-प्रबंध. University of Delhi."
+  },
+  {
+   "id": "refs-last-heading-wins",
+   "text": "References are listed below.ReferencesA, B. (2001). X.BibliographyC, D. (2002). Y."
+  },
+  {
+   "id": "v1-divs",
+   "text": "line oneline twoline four"
+  },
+  {
+   "id": "v1-plain-br",
+   "text": "line oneline twoline three"
+  },
+  {
+   "id": "v1-font-span",
+   "text": "big plain"
+  },
+  {
+   "id": "align-and-highlight",
+   "text": "centredhi"
+  },
+  {
+   "id": "devanagari-body",
+   "text": "यह एक वाक्य है।दूसरा वाक्य, with English."
+  },
+  {
+   "id": "empty",
+   "text": ""
+  },
+  {
+   "id": "text-only",
+   "text": "plain text with no tags"
+  },
+  {
+   "id": "entities",
+   "text": "a & b < c > d \"e\" 'f'"
+  },
+  {
+   "id": "sup-and-super-span",
+   "text": "Smith3 and Lee4."
+  },
+  {
+   "id": "numbered-citations",
+   "text": "Sleep matters [1] and [2,5-7]."
+  },
+  {
+   "id": "stat-split-across-paragraphs",
+   "text": "t(58) = 2.36, p= .022"
+  },
+  {
+   "id": "pre-wrap-newlines-in-text",
+   "text": "line one\nline two"
+  },
+  {
+   "id": "hindi-mixed-marks",
+   "text": "परिणाम: t(21) = 2.15, p = .043।"
+  },
+  {
+   "id": "numeric-entities",
+   "text": "em—dash en–dash En–dash nbsp dec hex 'q'"
+  }
+ ]
+}
