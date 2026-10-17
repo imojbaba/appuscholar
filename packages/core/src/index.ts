@@ -17,3 +17,5 @@ export type { ProviderId, ProviderInfo } from "./providers";
 export { docInnerText, docTextContent } from "./doctext";
 export { gammaln, betai, gammaq, erf, normalCDF, pFromT, pFromF, pFromChi, pFromZ } from "./pvalue";
 export { noLead, pCell, fmtP } from "./statfmt";
+export { ncFind, ncJudge, ncPOf, ncFmtP, numbersCheck, numbersCheckHtml, numbersSummary } from "./numbers";
+export type { NcKind, NcFind, NcNote, NcJudge } from "./numbers";
