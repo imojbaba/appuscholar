@@ -32,7 +32,7 @@ export const statsDemos: Engine = {
       v1.call("statsRunNow");
       const results = element("statsResults");
       return {
-        id, test: dm.test, csv: dm.csv, sel: dm.sel, extra: dm.extra, tick: dm.tick,
+        id, test: dm.test, csv: dm.csv, sel: dm.sel, extra: dm.extra, tick: dm.tick, rev: dm.rev, rrange: dm.rrange,
         apa: element("statsSentence").textContent,
         resultsText: (results.textContent ?? "").replace(/\s+/g, " "),
         resultsHtml: results.innerHTML,

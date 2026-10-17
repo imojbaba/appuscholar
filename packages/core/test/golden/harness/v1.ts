@@ -19,6 +19,7 @@ export type V1 = {
   setValue(id: string, value: string): void;
   stubCallAI(reply?: string): Array<{ prompt: string; opts: Record<string, unknown> }>;
   toasts: string[];
+  errors: string[];
 };
 
 const PACKAGE_DIR = fileURLToPath(new URL("../../../", import.meta.url));
@@ -34,12 +35,14 @@ export async function loadV1(indexPath?: string): Promise<V1> {
   const file = given ? resolve(process.env.INIT_CWD ?? process.cwd(), given) : DEFAULT_INDEX;
   const bytes = readFileSync(file);
   const text = bytes.toString("utf8");
+  const errors: string[] = [];
+  const virtualConsole = new VirtualConsole(); // no console listeners: v1's own console output is swallowed
+  virtualConsole.on("jsdomError", (e) => errors.push(String(e.message).slice(0, 200))); // kept as evidence 01 kept them
   const dom = new JSDOM(text.replace(/<script src="https:[^>]*><\/script>/g, ""), {
     runScripts: "dangerously",
     pretendToBeVisual: true,
     url: "http://localhost/",
-    // A VirtualConsole with no listeners swallows jsdom's errors and v1's console output.
-    virtualConsole: new VirtualConsole(),
+    virtualConsole,
     beforeParse(w) {
       const proto = w.HTMLElement.prototype as unknown as { showModal(this: { open: boolean }): void; close(this: { open: boolean }): void };
       proto.showModal = function () { this.open = true; };
@@ -91,5 +94,6 @@ export async function loadV1(indexPath?: string): Promise<V1> {
       return calls;
     },
     toasts,
+    errors,
   };
 }

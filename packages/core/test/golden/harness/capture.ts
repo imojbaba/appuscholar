@@ -19,6 +19,7 @@ for (const engine of ENGINES.filter((e) => names.includes("all") || names.includ
   try {
     differs = (await engine.capture(v1, opts)).includes("differs") || differs;
   } finally {
+    for (const e of v1.errors) console.error(`${engine.name}: jsdom error: ${e.replace(/\s+/g, " ")}`);
     v1.window.close();
   }
 }

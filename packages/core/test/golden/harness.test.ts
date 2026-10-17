@@ -2,11 +2,12 @@ import { describe, it, expect, vi } from "vitest";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { emitTables, readFixture, writeFixture } from "./harness/fixture";
+import { runInNewContext } from "node:vm";
+import { emitTables, encodeSpecial, readFixture, writeFixture } from "./harness/fixture";
 import type { V1 } from "./harness/v1";
 
 type SmokeCase = { fn: string; args: unknown[]; out: unknown };
-type Demo = { id: string; test: string; csv: string; sel: Record<string, string>; apa: string; resultsText: string; resultsHtml: string; toasts: string[] };
+type Demo = { id: string; test: string; csv: string; sel: Record<string, string>; rev?: string; rrange?: string; apa: string; resultsText: string; resultsHtml: string; toasts: string[] };
 
 describe("golden harness fixtures", () => {
   it("smoke: 20 pure v1 functions captured by direct call, header names the v1 build", () => {
@@ -22,14 +23,23 @@ describe("golden harness fixtures", () => {
     const fx = readFixture<{ demos: Demo[] }>("stats-demos", "demos");
     const ids = fx.demos.map(d => d.id);
     expect(ids).toEqual(["ttest1", "ttestInd", "mannwhitney", "ttestPaired", "wilcoxon", "anova1", "kruskal", "pearson", "spearman", "regression", "chisq", "gof", "alpha"]);
-    const audit = JSON.parse(readFileSync(new URL("./stats-demos/audit-capture-2026-10-17.json", import.meta.url), "utf8")) as Record<string, { apa: string }>;
+    const audit = JSON.parse(readFileSync(new URL("./stats-demos/audit-capture-2026-10-17.json", import.meta.url), "utf8")) as Record<string, { apa: string; res: string }>;
     for (const d of fx.demos) { expect(d.apa.length).toBeGreaterThan(40); expect(d.apa).toBe(audit[d.id]?.apa); expect(d.toasts).toEqual([]); }
+    // The audit kept the first 900 characters of the same collapsed text.
+    for (const d of fx.demos) expect(d.resultsText.slice(0, 900)).toBe(audit[d.id]?.res);
+    // Input beside output: only alpha reverses an item (TG_DEMO, v1 12431), so its record must carry both inputs to be replayable.
+    expect(fx.demos.filter(d => d.rev !== undefined || d.rrange !== undefined).map(d => [d.id, d.rev, d.rrange])).toEqual([["alpha", "q6", "1-5"]]);
   });
   it("special numbers survive the fixture encoding", async () => {
     const { encodeSpecial, decodeSpecial } = await import("./harness/fixture");
     const v = { a: NaN, b: -0, c: Infinity, d: -Infinity, e: [1, NaN], f: "x" };
     const back = decodeSpecial(JSON.parse(JSON.stringify(encodeSpecial(v)))) as typeof v;
     expect(back).toEqual(v); expect(Object.is(back.b, -0)).toBe(true);
+  });
+  it("only JSON data is encoded: a plain object from another realm passes, a Promise or a Date is refused with its path", () => {
+    expect(encodeSpecial(runInNewContext("({ out: [1, NaN, { k: null }] })"))).toEqual({ out: [1, { $n: "NaN" }, { k: null }] });
+    expect(() => encodeSpecial({ cases: [{ out: 1 }, { out: Promise.resolve(1) }] })).toThrow("$.cases[1].out is not JSON data (Promise)");
+    expect(() => encodeSpecial({ when: new Date(0) })).toThrow("$.when is not JSON data (Date)");
   });
 });
 

@@ -12,13 +12,23 @@ const GOLDEN_DIR = resolve(PACKAGE_DIR, "test/golden");
 const DATA_DIR = resolve(PACKAGE_DIR, "src/data");
 const HEADER_KEYS = ["engine", "captured", "v1"];
 
-/** Plain objects from either realm (v1's objects come from the jsdom window, so `instanceof Object` would be false). */
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return Object.prototype.toString.call(v) === "[object Object]";
+/**
+ * A plain object from either realm: its prototype is null or a realm's Object.prototype
+ * (v1's objects come from the jsdom window, so `instanceof Object` or `=== Object.prototype` would be false).
+ */
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  if (Object.prototype.toString.call(v) !== "[object Object]") return false;
+  const proto = Object.getPrototypeOf(v) as object | null;
+  return proto === null || Object.getPrototypeOf(proto) === null;
 }
 
-/** NaN, ±Infinity and −0 become `{"$n": …}`, recursively; `undefined` properties are dropped. */
-export function encodeSpecial(v: unknown): unknown {
+function kindOf(v: object): string {
+  if (typeof v === "function") return "function";
+  const tag = Object.prototype.toString.call(v).slice(8, -1);
+  return tag === "Object" ? `instance of ${(Object.getPrototypeOf(v) as { constructor?: { name?: string } }).constructor?.name || "a class"}` : tag;
+}
+
+function encodeAt(v: unknown, path: string): unknown {
   if (typeof v === "number") {
     if (Number.isNaN(v)) return { $n: "NaN" };
     if (v === Infinity) return { $n: "Infinity" };
@@ -26,13 +36,24 @@ export function encodeSpecial(v: unknown): unknown {
     if (Object.is(v, -0)) return { $n: "-0" };
     return v;
   }
-  if (Array.isArray(v)) return v.map(encodeSpecial);
-  if (isRecord(v)) {
+  if (Array.isArray(v)) return Array.from(v, (x, i) => encodeAt(x, `${path}[${i}]`));
+  if (isPlainObject(v)) {
     const out: Record<string, unknown> = {};
-    for (const [k, x] of Object.entries(v)) if (x !== undefined) out[k] = encodeSpecial(x);
+    for (const [k, x] of Object.entries(v)) if (x !== undefined) out[k] = encodeAt(x, `${path}.${k}`);
     return out;
   }
+  // JSON.stringify would silently turn these into {} or a string (an un-awaited Promise, a Map, a Date, a DOM node).
+  if ((typeof v === "object" && v !== null) || typeof v === "function")
+    throw new Error(`encodeSpecial: ${path} is not JSON data (${kindOf(v)}); record a plain value instead (await the Promise, convert the Date or Map)`);
   return v;
+}
+
+/**
+ * NaN, ±Infinity and −0 become `{"$n": …}`, recursively; `undefined` properties are dropped.
+ * Anything that is not null, a primitive, an array or a plain object throws, naming its JSON path.
+ */
+export function encodeSpecial(v: unknown): unknown {
+  return encodeAt(v, "$");
 }
 
 function specialNumber(s: unknown): number | undefined {
@@ -47,7 +68,7 @@ function specialNumber(s: unknown): number | undefined {
 
 export function decodeSpecial(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(decodeSpecial);
-  if (isRecord(v)) {
+  if (isPlainObject(v)) {
     const keys = Object.keys(v);
     if (keys.length === 1 && keys[0] === "$n") {
       const n = specialNumber(v.$n);
@@ -94,7 +115,7 @@ function firstDiff(was: unknown, now: unknown, path: string): Diff | null {
     }
     return null;
   }
-  if (isRecord(was) && isRecord(now)) {
+  if (isPlainObject(was) && isPlainObject(now)) {
     for (const k of new Set([...Object.keys(now), ...Object.keys(was)])) {
       const d = firstDiff(was[k], now[k], `${path}.${k}`);
       if (d) return d;
