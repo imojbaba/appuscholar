@@ -1,0 +1,141 @@
+{
+ "engine": "pd",
+ "captured": "2026-10-18",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "email-phone-id",
+   "text": "Write to asha@uni.ac.in or call +91 98765 43210, roll 9876543210. Aadhaar 1234 5678 9012, PAN ABCDE1234F.",
+   "scan": {
+    "counts": {
+     "email address": 1,
+     "phone number": 2,
+     "ID number": 2
+    },
+    "total": 5,
+    "sig": "email addressasha@uni.ac.in||phone number +91 98765 43210| 9876543210||ID number 1234 5678 9012| ABCDE1234F"
+   },
+   "mask": "Write to [email] or call [phone], roll [phone]. Aadhaar [id number], PAN [id number]."
+  },
+  {
+   "id": "statistics-not-personal",
+   "text": "n = 120, M = 3.45, SD = 0.9, year 2024, 12345",
+   "scan": {
+    "counts": {},
+    "total": 0,
+    "sig": ""
+   },
+   "mask": "n = 120, M = 3.45, SD = 0.9, year 2024, 12345"
+  },
+  {
+   "id": "mask-sentence",
+   "text": "Mail asha@uni.ac.in, phone 9876543210, PAN ABCDE1234F.",
+   "scan": {
+    "counts": {
+     "email address": 1,
+     "phone number": 1,
+     "ID number": 1
+    },
+    "total": 3,
+    "sig": "email addressasha@uni.ac.in||phone number 9876543210||ID number ABCDE1234F"
+   },
+   "mask": "Mail [email], phone [phone], PAN [id number]."
+  },
+  {
+   "id": "signature-email-x",
+   "text": "a@b.co x",
+   "scan": {
+    "counts": {
+     "email address": 1
+    },
+    "total": 1,
+    "sig": "email addressa@b.co"
+   },
+   "mask": "[email] x"
+  },
+  {
+   "id": "signature-email-y",
+   "text": "a@b.co y",
+   "scan": {
+    "counts": {
+     "email address": 1
+    },
+    "total": 1,
+    "sig": "email addressa@b.co"
+   },
+   "mask": "[email] y"
+  },
+  {
+   "id": "signature-email",
+   "text": "a@b.co",
+   "scan": {
+    "counts": {
+     "email address": 1
+    },
+    "total": 1,
+    "sig": "email addressa@b.co"
+   },
+   "mask": "[email]"
+  },
+  {
+   "id": "signature-other-email",
+   "text": "c@d.co",
+   "scan": {
+    "counts": {
+     "email address": 1
+    },
+    "total": 1,
+    "sig": "email addressc@d.co"
+   },
+   "mask": "[email]"
+  },
+  {
+   "id": "empty",
+   "text": "",
+   "scan": {
+    "counts": {},
+    "total": 0,
+    "sig": ""
+   },
+   "mask": ""
+  },
+  {
+   "id": "two-emails",
+   "text": "Send it to asha@uni.ac.in and to ravi.k@college.edu by Friday.",
+   "scan": {
+    "counts": {
+     "email address": 2
+    },
+    "total": 2,
+    "sig": "email addressasha@uni.ac.in|ravi.k@college.edu"
+   },
+   "mask": "Send it to [email] and to [email] by Friday."
+  },
+  {
+   "id": "twelve-digits-inside-longer-run",
+   "text": "Reference 1234567890123456 was filed.",
+   "scan": {
+    "counts": {},
+    "total": 0,
+    "sig": ""
+   },
+   "mask": "Reference 1234567890123456 was filed."
+  },
+  {
+   "id": "twelve-digits-exact",
+   "text": "Reference 123456789012 was filed.",
+   "scan": {
+    "counts": {
+     "ID number": 1
+    },
+    "total": 1,
+    "sig": "ID number 123456789012"
+   },
+   "mask": "Reference [id number] was filed."
+  }
+ ]
+}

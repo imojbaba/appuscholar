@@ -1,0 +1,59 @@
+{
+ "engine": "providers",
+ "captured": "2026-10-18",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "PROVIDERS": {
+  "gemini": {
+   "name": "Google Gemini",
+   "short": "Gemini",
+   "steps": "Sign in with Google → <b>Get API Key</b> → <b>Create API Key</b> → copy (starts with AIza). <a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">Open →</a>",
+   "model": "gemini-3.8-flash",
+   "fallbacks": [
+    "gemini-3.6-flash",
+    "gemini-2.5-flash"
+   ]
+  },
+  "groq": {
+   "name": "Groq",
+   "short": "Groq",
+   "steps": "Sign up free → <b>API Keys</b> → <b>Create API Key</b> → copy (starts with gsk_). <a href=\"https://console.groq.com/keys\" target=\"_blank\" rel=\"noopener\">Open →</a>",
+   "model": "openai/gpt-oss-120b"
+  },
+  "deepseek": {
+   "name": "DeepSeek",
+   "short": "DeepSeek",
+   "steps": "Sign up → <b>API Keys</b> → <b>Create</b> → copy (starts with sk-). <b>Paid</b>, but very cheap — add a small credit first. <a href=\"https://platform.deepseek.com/api_keys\" target=\"_blank\" rel=\"noopener\">Open →</a> <br><span style=\"color:#b45309\">⚠ This provider does not reliably allow direct browser calls — it may fail even with a valid, funded key. Prefer Gemini, Groq, or OpenRouter.</span>",
+   "model": "deepseek-chat"
+  },
+  "openrouter": {
+   "name": "OpenRouter",
+   "short": "OpenRouter",
+   "steps": "Sign up → <b>Keys</b> → <b>Create Key</b> → copy (starts with sk-or-). Free models available. <a href=\"https://openrouter.ai/keys\" target=\"_blank\" rel=\"noopener\">Open →</a>",
+   "model": "meta-llama/llama-3.3-70b-instruct:free"
+  },
+  "openai": {
+   "name": "ChatGPT (OpenAI)",
+   "short": "ChatGPT",
+   "steps": "Sign up → <b>API keys</b> → <b>Create new secret key</b> → copy (starts with sk-). <b>Paid</b> — add billing credit first (from ~$5). <a href=\"https://platform.openai.com/api-keys\" target=\"_blank\" rel=\"noopener\">Open →</a> <br><span style=\"color:#b45309\">⚠ OpenAI's API blocks direct calls from a web page like this one (no browser access). This key will not work here — it needs a server in between. Use Gemini, Groq, or OpenRouter instead.</span>",
+   "model": "gpt-4o-mini"
+  },
+  "claude": {
+   "name": "Claude (Anthropic)",
+   "short": "Claude",
+   "steps": "Sign up → <b>API keys</b> → <b>Create key</b> → copy (starts with sk-ant-). <b>Paid</b> — add billing credit first. <a href=\"https://console.anthropic.com/settings/keys\" target=\"_blank\" rel=\"noopener\">Open →</a>",
+   "model": "claude-haiku-4-5-20251001"
+  }
+ },
+ "PROV_ORDER": [
+  "gemini",
+  "groq",
+  "deepseek",
+  "openrouter",
+  "openai",
+  "claude"
+ ]
+}
