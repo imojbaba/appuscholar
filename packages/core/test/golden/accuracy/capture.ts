@@ -27,7 +27,10 @@ const ITEMS: Array<[id: string, s: string]> = [
 ];
 
 const ORIG = "Sleep loss predicted delay (Steel, 2007), r = .32 in 120 students, and “a reduced capacity to begin”.";
-/** The five pairs of core/test/accuracy.test.ts, then a pair with nine added items (the " and 1 more" tail). */
+/**
+ * The five pairs of core/test/accuracy.test.ts, then a pair with nine added items (the " and 1 more" tail), then a pair that drops items and adds none
+ * (v1 2543-2545: for `continue` that still reads "unchanged and none was added", with `missing` not empty; `improve` and `expand` report only "Dropped from your text").
+ */
 const PAIRS: Array<[id: string, orig: string, res: string]> = [
   ["unchanged", ORIG, "Loss of sleep predicted delay (Steel, 2007), r = .32 among 120 students, and “a reduced capacity to begin”."],
   ["dropped-and-added", ORIG, "Sleep loss predicted delay (Steel, 2010) in 95 students."],
@@ -35,6 +38,7 @@ const PAIRS: Array<[id: string, orig: string, res: string]> = [
   ["nothing-added", "", "Plain prose without figures."],
   ["ten-added", "", "1 2 3 4 5 6 7 8 9 10"],
   ["nine-added", "", "1 2 3 4 5 6 7 8 9"],
+  ["dropped-only", ORIG, "Plain prose without figures."],
 ];
 const KINDS = ["continue", "improve", "expand"] as const;
 

@@ -15,7 +15,9 @@ const LITERALS: Array<[id: string, prompt: string]> = [
 
 /**
  * aiuClassify (v1 5443) on the first 400 characters of every prompt test/golden/prompts/cases.json records, and on the three literals.
- * The prompts capture runs after this one in the engine order: while its file is absent only the literals are recorded, and this capture is run again once it exists.
+ * engines.ts registers the prompts capture before this one (Task 5 adds it), so a write-mode `golden:capture all` captures prompts first and this capture
+ * reads the file it has just written: a stale prompts fixture cannot be read in that order. Naming only `aiuse` reads whatever is on disk.
+ * While that file does not exist, only the literals are recorded.
  */
 export const aiuse: Engine = {
   name: "aiuse",

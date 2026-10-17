@@ -526,6 +526,57 @@
      "9"
     ]
    }
+  },
+  {
+   "id": "dropped-only/continue",
+   "orig": "Sleep loss predicted delay (Steel, 2007), r = .32 in 120 students, and “a reduced capacity to begin”.",
+   "res": "Plain prose without figures.",
+   "kind": "continue",
+   "out": {
+    "warn": false,
+    "msg": "Checked: every number, citation and quoted phrase in your text is unchanged and none was added.",
+    "missing": [
+     ".32",
+     "120",
+     "Steel 2007",
+     "“a reduced capacity to begin”"
+    ],
+    "added": []
+   }
+  },
+  {
+   "id": "dropped-only/improve",
+   "orig": "Sleep loss predicted delay (Steel, 2007), r = .32 in 120 students, and “a reduced capacity to begin”.",
+   "res": "Plain prose without figures.",
+   "kind": "improve",
+   "out": {
+    "warn": true,
+    "msg": "Dropped from your text: .32, 120, Steel 2007, “a reduced capacity to begin”. Check each one against your sources before you accept, or delete it.",
+    "missing": [
+     ".32",
+     "120",
+     "Steel 2007",
+     "“a reduced capacity to begin”"
+    ],
+    "added": []
+   }
+  },
+  {
+   "id": "dropped-only/expand",
+   "orig": "Sleep loss predicted delay (Steel, 2007), r = .32 in 120 students, and “a reduced capacity to begin”.",
+   "res": "Plain prose without figures.",
+   "kind": "expand",
+   "out": {
+    "warn": true,
+    "msg": "Dropped from your text: .32, 120, Steel 2007, “a reduced capacity to begin”. Check each one against your sources before you accept, or delete it.",
+    "missing": [
+     ".32",
+     "120",
+     "Steel 2007",
+     "“a reduced capacity to begin”"
+    ],
+    "added": []
+   }
   }
  ]
 }

@@ -1,4 +1,4 @@
-/** Port of v1 provHash (index.html:3402), provCountDoc (3408) and computeOriginality (3346), without a DOM. */
+/** Port of v1 provHash (index.html:3402), provCountDoc (3407) and computeOriginality (3346), without a DOM. */
 export type OriginStats = { typed: number; ai: number; passages: number; kept: number; edited: number; unknown: number };
 
 /** djb2 over whitespace-stripped text, base36 (v1 provHash). */

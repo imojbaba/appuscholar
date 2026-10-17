@@ -11,17 +11,26 @@ import { readFixture } from "./harness/fixture";
 
 /**
  * The five modules ported by hand in earlier phases, checked against v1's own outputs for the first time (spec §5.8).
- * Every expected value below is read from test/golden/<module>/cases.json, which `golden:capture` records from v1 running; the one exception is
- * the v2 side of D-W0-1 (claude's model and fallback), which is the deviation itself.
+ * Every module output below is compared with a value read from test/golden/<module>/cases.json, which `golden:capture` records from v1 running.
+ * What is typed in this file is of two kinds. Register pins, which state the register's own claims and check them against the fixture: D-W0-1 (v1's claude model
+ * string and its lack of fallbacks, and v2's model and fallback, which are the deviation itself) and D-W0-2 (the two ids that carry v1's browser-call warning, and the warning's shape).
+ * Guards that a fixture holds the inputs it exists for: counts, kinds, ids, the shapes with a > inside a quoted attribute, the null v1 returns for the Appu line,
+ * and the drop-only pair's branch (`warn` false with `missing` not empty).
  * A mismatch is a bug in the module or a row in docs/superpowers/specs/parity-deviations.md, never an edit to a fixture.
  */
 
 describe("accuracy.ts equals v1's accItems and accCheck", () => {
-  const acc = readFixture<{ items: Array<{ id: string; s: string; out: AccItems }>; checks: Array<{ id: string; orig: string; res: string; kind: AccKind; out: unknown }> }>("accuracy", "cases");
-  it("the fixture holds at least the 12 strings, and the six pairs in every kind", () => {
+  const acc = readFixture<{ items: Array<{ id: string; s: string; out: AccItems }>; checks: Array<{ id: string; orig: string; res: string; kind: AccKind; out: ReturnType<typeof accCheck> }> }>("accuracy", "cases");
+  it("the fixture holds at least the 12 strings, and the seven pairs in every kind", () => {
     expect(acc.items.length).toBeGreaterThanOrEqual(12);
     expect(new Set(acc.checks.map((c) => c.kind))).toEqual(new Set(["continue", "improve", "expand"]));
-    expect(acc.checks.length).toBeGreaterThanOrEqual(18); // the five pairs of accuracy.test.ts and the nine-added pair, each in three kinds
+    expect(acc.checks.length).toBeGreaterThanOrEqual(21); // the five pairs of accuracy.test.ts, the nine-added pair and the drop-only pair, each in three kinds
+  });
+  it("the drop-only pair reaches the branch where continue says unchanged although items are missing (v1 2543-2545)", () => {
+    const out = acc.checks.find((c) => c.id === "dropped-only/continue")?.out;
+    expect(out?.warn).toBe(false);
+    expect(out?.missing.length).toBeGreaterThan(0);
+    expect(out?.added).toEqual([]);
   });
   for (const c of acc.items) it(`accItems ${c.id}`, () => expect(accItems(c.s)).toEqual(c.out));
   for (const c of acc.checks) it(`accCheck ${c.id}`, () => expect(accCheck(c.orig, c.res, c.kind)).toEqual(c.out));
