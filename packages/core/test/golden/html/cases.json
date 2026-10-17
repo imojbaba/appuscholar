@@ -1,0 +1,105 @@
+{
+ "engine": "html",
+ "captured": "2026-10-18",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "fn": "escHTML",
+   "args": [
+    "<a href=\"x\">&'\""
+   ],
+   "out": "&lt;a href=&quot;x&quot;&gt;&amp;&#39;&quot;"
+  },
+  {
+   "fn": "escHTML",
+   "args": [
+    null
+   ],
+   "out": ""
+  },
+  {
+   "fn": "escHTML",
+   "args": [],
+   "out": ""
+  },
+  {
+   "fn": "escHTML",
+   "args": [
+    0
+   ],
+   "out": "0"
+  },
+  {
+   "fn": "escHTML",
+   "args": [
+    "यहाँ लिखना शुरू करें… टेक्स्ट चुनें और \"सुधारें\" दबाएँ, या बस लिखें और AI को आगे बढ़ाने दें।"
+   ],
+   "out": "यहाँ लिखना शुरू करें… टेक्स्ट चुनें और &quot;सुधारें&quot; दबाएँ, या बस लिखें और AI को आगे बढ़ाने दें।"
+  },
+  {
+   "fn": "escHTML",
+   "args": [
+    false
+   ],
+   "out": "false"
+  },
+  {
+   "fn": "escHTML",
+   "args": [
+    ""
+   ],
+   "out": ""
+  },
+  {
+   "fn": "escAttr",
+   "args": [
+    "<a href=\"x\">&'\""
+   ],
+   "out": "<a href=&quot;x&quot;>&'&quot;"
+  },
+  {
+   "fn": "escAttr",
+   "args": [
+    null
+   ],
+   "out": ""
+  },
+  {
+   "fn": "escAttr",
+   "args": [],
+   "out": ""
+  },
+  {
+   "fn": "escAttr",
+   "args": [
+    0
+   ],
+   "out": "0"
+  },
+  {
+   "fn": "escAttr",
+   "args": [
+    "यहाँ लिखना शुरू करें… टेक्स्ट चुनें और \"सुधारें\" दबाएँ, या बस लिखें और AI को आगे बढ़ाने दें।"
+   ],
+   "out": "यहाँ लिखना शुरू करें… टेक्स्ट चुनें और &quot;सुधारें&quot; दबाएँ, या बस लिखें और AI को आगे बढ़ाने दें।"
+  },
+  {
+   "fn": "escAttr",
+   "args": [
+    false
+   ],
+   "out": "false"
+  },
+  {
+   "fn": "escAttr",
+   "args": [
+    ""
+   ],
+   "out": ""
+  }
+ ]
+}

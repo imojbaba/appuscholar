@@ -19,3 +19,6 @@ export { gammaln, betai, gammaq, erf, normalCDF, pFromT, pFromF, pFromChi, pFrom
 export { noLead, pCell, fmtP } from "./statfmt";
 export { ncFind, ncJudge, ncPOf, ncFmtP, numbersCheck, numbersCheckHtml, numbersSummary } from "./numbers";
 export type { NcKind, NcFind, NcNote, NcJudge } from "./numbers";
+export { escHTML, escAttr } from "./html";
+export { CIT_STYLES, citFmt, citKind, citLastName, citNames, citInitials, citIsNumbered, apaAuthors, apa6Authors, mlaAuthors, chicagoAuthors, harvardAuthors, vancAuthors, ieeeAuthors } from "./citation";
+export type { CitationStyle, CitationEntry, CitationKind, Formatted } from "./citation";

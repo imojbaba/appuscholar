@@ -11,6 +11,8 @@ export type V1 = {
   build: string;
   sha256: string;
   lines: number;
+  /** index.html as text, the bytes `sha256` is taken of: for a capture that reads v1's own source lines (citation's Devanagari strings). */
+  text: string;
   call<T = unknown>(name: string, ...args: unknown[]): T;
   eval<T = unknown>(expr: string): T;
   editor(): HTMLElement;
@@ -69,6 +71,7 @@ export async function loadV1(indexPath?: string): Promise<V1> {
     build: evalIn<string>("APP_BUILD"),
     sha256: createHash("sha256").update(bytes).digest("hex"),
     lines: text.split("\n").length - (text.endsWith("\n") ? 1 : 0),
+    text,
     // v1's top-level `function` declarations are window properties; `const`/`let` bindings are reached through eval.
     call<T = unknown>(name: string, ...args: unknown[]): T {
       const fn: unknown = window[name];
