@@ -1,0 +1,424 @@
+{
+ "engine": "v1import",
+ "captured": "2026-10-18",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "tag-p",
+   "body": "Before <p>inside</p> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <p>inside</p> after."
+  },
+  {
+   "id": "tag-div",
+   "body": "Before <div>inside</div> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <div>inside</div> after."
+  },
+  {
+   "id": "tag-br",
+   "body": "Before <br> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <br> after."
+  },
+  {
+   "id": "tag-b",
+   "body": "Before <b>inside</b> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <b>inside</b> after."
+  },
+  {
+   "id": "tag-i",
+   "body": "Before <i>inside</i> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <i>inside</i> after."
+  },
+  {
+   "id": "tag-u",
+   "body": "Before <u>inside</u> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <u>inside</u> after."
+  },
+  {
+   "id": "tag-strong",
+   "body": "Before <strong>inside</strong> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <strong>inside</strong> after."
+  },
+  {
+   "id": "tag-em",
+   "body": "Before <em>inside</em> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <em>inside</em> after."
+  },
+  {
+   "id": "tag-ul",
+   "body": "Before <ul>inside</ul> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <ul>inside</ul> after."
+  },
+  {
+   "id": "tag-ol",
+   "body": "Before <ol>inside</ol> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <ol>inside</ol> after."
+  },
+  {
+   "id": "tag-li",
+   "body": "Before <li>inside</li> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <li>inside</li> after."
+  },
+  {
+   "id": "tag-h1",
+   "body": "Before <h1>inside</h1> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <h1>inside</h1> after."
+  },
+  {
+   "id": "tag-h2",
+   "body": "Before <h2>inside</h2> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <h2>inside</h2> after."
+  },
+  {
+   "id": "tag-h3",
+   "body": "Before <h3>inside</h3> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <h3>inside</h3> after."
+  },
+  {
+   "id": "tag-h4",
+   "body": "Before <h4>inside</h4> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <h4>inside</h4> after."
+  },
+  {
+   "id": "tag-h5",
+   "body": "Before <h5>inside</h5> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <h5>inside</h5> after."
+  },
+  {
+   "id": "tag-h6",
+   "body": "Before <h6>inside</h6> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <h6>inside</h6> after."
+  },
+  {
+   "id": "tag-blockquote",
+   "body": "Before <blockquote>inside</blockquote> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <blockquote>inside</blockquote> after."
+  },
+  {
+   "id": "tag-span",
+   "body": "Before <span>inside</span> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <span>inside</span> after."
+  },
+  {
+   "id": "tag-img",
+   "body": "Before <img> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <img> after."
+  },
+  {
+   "id": "tag-table",
+   "body": "Before <table>inside</table> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <table>inside</table> after."
+  },
+  {
+   "id": "tag-thead",
+   "body": "Before <thead>inside</thead> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <thead>inside</thead> after."
+  },
+  {
+   "id": "tag-tbody",
+   "body": "Before <tbody>inside</tbody> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <tbody>inside</tbody> after."
+  },
+  {
+   "id": "tag-tr",
+   "body": "Before <tr>inside</tr> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <tr>inside</tr> after."
+  },
+  {
+   "id": "tag-td",
+   "body": "Before <td>inside</td> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <td>inside</td> after."
+  },
+  {
+   "id": "tag-th",
+   "body": "Before <th>inside</th> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <th>inside</th> after."
+  },
+  {
+   "id": "tag-svg",
+   "body": "Before <svg>inside</svg> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <svg>inside</svg> after."
+  },
+  {
+   "id": "tag-a",
+   "body": "Before <a>inside</a> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <a>inside</a> after."
+  },
+  {
+   "id": "tag-sup",
+   "body": "Before <sup>inside</sup> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <sup>inside</sup> after."
+  },
+  {
+   "id": "tag-sub",
+   "body": "Before <sub>inside</sub> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <sub>inside</sub> after."
+  },
+  {
+   "id": "tag-hr",
+   "body": "Before <hr> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <hr> after."
+  },
+  {
+   "id": "tag-pre",
+   "body": "Before <pre>inside</pre> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <pre>inside</pre> after."
+  },
+  {
+   "id": "tag-code",
+   "body": "Before <code>inside</code> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <code>inside</code> after."
+  },
+  {
+   "id": "tag-font",
+   "body": "Before <font>inside</font> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <font>inside</font> after."
+  },
+  {
+   "id": "tag-figure",
+   "body": "Before <figure>inside</figure> after.",
+   "repaired": false,
+   "html": true,
+   "out": "Before <figure>inside</figure> after."
+  },
+  {
+   "id": "terminator-slash",
+   "body": "Line one<br/>line two",
+   "repaired": false,
+   "html": true,
+   "out": "Line one<br/>line two"
+  },
+  {
+   "id": "terminator-space-slash",
+   "body": "Line one<br />line two",
+   "repaired": false,
+   "html": true,
+   "out": "Line one<br />line two"
+  },
+  {
+   "id": "terminator-newline",
+   "body": "A <p\nclass=\"x\">paragraph</p>",
+   "repaired": false,
+   "html": true,
+   "out": "A <p\nclass=\"x\">paragraph</p>"
+  },
+  {
+   "id": "tag-upper-case",
+   "body": "<P>Upper</P> and <DIV>case</DIV>",
+   "repaired": false,
+   "html": true,
+   "out": "<P>Upper</P> and <DIV>case</DIV>"
+  },
+  {
+   "id": "accidental-tag",
+   "body": "Compare a <b and c>b in the proof",
+   "repaired": false,
+   "html": true,
+   "out": "Compare a <b and c>b in the proof"
+  },
+  {
+   "id": "plain-sentence",
+   "body": "A plain sentence with no markup at all.",
+   "repaired": false,
+   "html": false,
+   "out": "A plain sentence with no markup at all."
+  },
+  {
+   "id": "plain-newline",
+   "body": "line one\nline two",
+   "repaired": false,
+   "html": false,
+   "out": "line one<br>line two"
+  },
+  {
+   "id": "plain-blank-line",
+   "body": "paragraph one\n\nparagraph two",
+   "repaired": false,
+   "html": false,
+   "out": "paragraph one<br><br>paragraph two"
+  },
+  {
+   "id": "plain-entities",
+   "body": "Smith & Rao said \"x\" and it's 5 > 3 &amp; &lt;",
+   "repaired": false,
+   "html": false,
+   "out": "Smith &amp; Rao said &quot;x&quot; and it&#39;s 5 &gt; 3 &amp;amp; &amp;lt;"
+  },
+  {
+   "id": "plain-less-than",
+   "body": "x < y and 3<5, a <= b",
+   "repaired": false,
+   "html": false,
+   "out": "x &lt; y and 3&lt;5, a &lt;= b"
+  },
+  {
+   "id": "plain-unlisted-tags",
+   "body": "Use <center>, <s>strike</s>, <mark>mark</mark> and <figcaption>c</figcaption> here",
+   "repaired": false,
+   "html": false,
+   "out": "Use &lt;center&gt;, &lt;s&gt;strike&lt;/s&gt;, &lt;mark&gt;mark&lt;/mark&gt; and &lt;figcaption&gt;c&lt;/figcaption&gt; here"
+  },
+  {
+   "id": "plain-url-in-brackets",
+   "body": "see <https://example.org/a> for details",
+   "repaired": false,
+   "html": false,
+   "out": "see &lt;https://example.org/a&gt; for details"
+  },
+  {
+   "id": "plain-open-tag-at-end",
+   "body": "ends with an open tag <p",
+   "repaired": false,
+   "html": false,
+   "out": "ends with an open tag &lt;p"
+  },
+  {
+   "id": "plain-tag-name-continues",
+   "body": "<para>one</para> <pre-wrap>two</pre-wrap> <abbr>three</abbr> <h7>four</h7>",
+   "repaired": false,
+   "html": false,
+   "out": "&lt;para&gt;one&lt;/para&gt; &lt;pre-wrap&gt;two&lt;/pre-wrap&gt; &lt;abbr&gt;three&lt;/abbr&gt; &lt;h7&gt;four&lt;/h7&gt;"
+  },
+  {
+   "id": "plain-empty",
+   "body": "",
+   "repaired": false,
+   "html": false,
+   "out": ""
+  },
+  {
+   "id": "plain-blank",
+   "body": "   \n  ",
+   "repaired": false,
+   "html": false,
+   "out": "   <br>  "
+  },
+  {
+   "id": "plain-crlf",
+   "body": "line one\r\nline two",
+   "repaired": false,
+   "html": false,
+   "out": "line one\r<br>line two"
+  },
+  {
+   "id": "plain-devanagari-nbsp",
+   "body": "शोध का उद्देश्य स्पष्ट है।\nदूसरी पंक्ति",
+   "repaired": false,
+   "html": false,
+   "out": "शोध का उद्देश्य स्पष्ट है।<br>दूसरी पंक्ति"
+  },
+  {
+   "id": "img-wrap-escaped-once",
+   "body": "Figure 2. &lt;span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"&gt;&lt;img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"&gt;&lt;span class=\"img-handle\" title=\"Drag to resize\"&gt;&lt;/span&gt;&lt;/span&gt;",
+   "repaired": true,
+   "html": true,
+   "out": "Figure 2. <span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"><span class=\"img-handle\" title=\"Drag to resize\"></span></span>"
+  },
+  {
+   "id": "img-wrap-escaped-twice",
+   "body": "Figure 2. &amp;lt;span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"&amp;gt;&amp;lt;img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"&amp;gt;&amp;lt;span class=\"img-handle\" title=\"Drag to resize\"&amp;gt;&amp;lt;/span&amp;gt;&amp;lt;/span&amp;gt;",
+   "repaired": true,
+   "html": true,
+   "out": "Figure 2. <span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"><span class=\"img-handle\" title=\"Drag to resize\"></span></span>"
+  },
+  {
+   "id": "img-wrap-escaped-among-html",
+   "body": "<p>Results</p>&lt;span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"&gt;&lt;img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"&gt;&lt;span class=\"img-handle\" title=\"Drag to resize\"&gt;&lt;/span&gt;&lt;/span&gt;<p>End.</p>",
+   "repaired": true,
+   "html": true,
+   "out": "<p>Results</p><span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"><span class=\"img-handle\" title=\"Drag to resize\"></span></span><p>End.</p>"
+  },
+  {
+   "id": "appuimg-double-quotes",
+   "body": "<p>See below.</p><img src=\"appuimg:i7v184nnbncx3a\" alt=\"Figure 1\">",
+   "repaired": false,
+   "html": true,
+   "out": "<p>See below.</p><img src=\"appuimg:i7v184nnbncx3a\" alt=\"Figure 1\">"
+  },
+  {
+   "id": "appuimg-single-quotes",
+   "body": "<p>See below.</p><img src='appuimg:i7v184nnbncx3a' alt='Figure 1'>",
+   "repaired": false,
+   "html": true,
+   "out": "<p>See below.</p><img src='appuimg:i7v184nnbncx3a' alt='Figure 1'>"
+  },
+  {
+   "id": "img-data-png",
+   "body": "<p>See below.</p><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\" alt=\"Figure 1\">",
+   "repaired": false,
+   "html": true,
+   "out": "<p>See below.</p><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\" alt=\"Figure 1\">"
+  }
+ ]
+}

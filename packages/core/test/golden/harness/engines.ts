@@ -5,11 +5,17 @@ import { statsDemos } from "../stats-demos/capture";
 import { doctext } from "../doctext/capture";
 import { accuracy } from "../accuracy/capture";
 import { pd } from "../pd/capture";
+import { prompts } from "../prompts/capture";
 import { aiuse } from "../aiuse/capture";
 import { origin } from "../origin/capture";
 import { providers } from "../providers/capture";
+import { v1import } from "../v1import/capture";
+import { v1locked } from "../v1locked/capture";
 
 export type Engine = { name: string; capture(v1: V1, opts: { check: boolean; emit: boolean }): Promise<FixtureStatus[]> };
 
-/** In task order; each later task appends its engines. */
-export const ENGINES: Engine[] = [smoke, statsDemos, doctext, accuracy, pd, aiuse, origin, providers];
+/**
+ * In capture order, which is mostly task order: a task appends its engines, except `prompts`, which sits before `aiuse` because the aiuse capture reads the prompts fixture
+ * (so a write-mode `golden:capture all` captures prompts first).
+ */
+export const ENGINES: Engine[] = [smoke, statsDemos, doctext, accuracy, pd, prompts, aiuse, origin, providers, v1import, v1locked];

@@ -15,7 +15,7 @@ import { readFixture } from "./harness/fixture";
  * What is typed in this file is of two kinds. Register pins, which state the register's own claims and check them against the fixture: D-W0-1 (v1's claude model
  * string and its lack of fallbacks, and v2's model and fallback, which are the deviation itself) and D-W0-2 (the two ids that carry v1's browser-call warning, and the warning's shape).
  * Guards that a fixture holds the inputs it exists for: counts, kinds, ids, the shapes with a > inside a quoted attribute, the null v1 returns for the Appu line,
- * and the drop-only pair's branch (`warn` false with `missing` not empty).
+ * the drop-only pair's branch (`warn` false with `missing` not empty), and the 26 rows of v1's AIU_RULES that the aiuse probes reach.
  * A mismatch is a bug in the module or a row in docs/superpowers/specs/parity-deviations.md, never an edit to a fixture.
  */
 
@@ -51,10 +51,16 @@ describe("pd.ts equals v1's pdScanText and pdMask", () => {
 });
 
 describe("aiuse.ts equals v1's aiuClassify", () => {
-  const ai = readFixture<{ cases: Array<{ id: string; prompt: string; out: { k: string; g: string } | null }> }>("aiuse", "cases");
+  const ai = readFixture<{ rules: number; cases: Array<{ id: string; prompt: string; rule?: number | null; out: { k: string; g: string } | null }> }>("aiuse", "cases");
   it("the fixture holds the three literals, whatever else the prompts capture added", () => {
     expect(ai.cases.slice(0, 3).map((c) => c.id)).toEqual(["literal-appu-help", "literal-fallback", "literal-continue"]);
     expect(ai.cases[0]?.out).toBeNull(); // v1 does not log the Appu help assistant
+  });
+  it("the probes reach every row of v1's AIU_RULES, and the 400-character head decides between row 17 and the fallback", () => {
+    expect(ai.rules).toBe(26);
+    expect([...new Set(ai.cases.flatMap((c) => (typeof c.rule === "number" ? [c.rule] : [])))].sort((a, b) => a - b)).toEqual(Array.from({ length: ai.rules }, (_, i) => i + 1));
+    expect(ai.cases.find((c) => c.id === "head-ends-at-400")?.rule).toBe(17);
+    expect(ai.cases.find((c) => c.id === "head-ends-at-401")).toMatchObject({ rule: null, out: { k: "other help", g: "other" } });
   });
   for (const c of ai.cases) it(`classifyAiUse ${c.id}`, () => expect(classifyAiUse(c.prompt)).toEqual(c.out));
 });

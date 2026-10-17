@@ -6,6 +6,7 @@
   "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
   "lines": 13699
  },
+ "rules": 26,
  "cases": [
   {
    "id": "literal-appu-help",
@@ -26,6 +27,389 @@
    "out": {
     "k": "continuing my draft",
     "g": "text"
+   }
+  },
+  {
+   "id": "continueWriting#0",
+   "prompt": "Continue this writing in the same register, about 120 words. Pick up exactly where the text stops and do not repeat it. Add no citations, statistics, quotations or named studies. Where the next sentence needs evidence, write [add source] in its place. Vary sentence length. Reply with the continuation only. Output plain text with no markdown symbols (no asterisks, hash signs or backticks). Avoid th",
+   "out": {
+    "k": "continuing my draft",
+    "g": "text"
+   }
+  },
+  {
+   "id": "improveText#1",
+   "prompt": "Improve this text: fix grammar, spelling and punctuation and tighten the wording. Keep the meaning, the language, the length (within 10 percent) and every citation, number and quoted phrase exactly as written. Add no claim and no source. Reply with the improved text only. Output plain text with no markdown symbols (no asterisks, hash signs or backticks). Avoid the words delve, leverage, robust, pi",
+   "out": {
+    "k": "grammar and polish",
+    "g": "text"
+   }
+  },
+  {
+   "id": "makeLonger#2",
+   "prompt": "Expand this text to about double its length by adding explanation, reasoning and clearer links between ideas. Add no statistics, citations, named studies, dates or quotations that are not in the text. Where evidence is needed, write [add source] or [add example from your data]. A short illustration is allowed if you label it \"hypothetical example\". Keep the language and the author's position. Vary",
+   "out": {
+    "k": "expanding my text",
+    "g": "text"
+   }
+  },
+  {
+   "id": "draftFeedback#3",
+   "prompt": "You are a thesis supervisor reading a student's draft. The student must stay the author. Write, rewrite, improve and extend nothing for them, and give no example sentence they could paste in. Reply with at most 4 short numbered questions or observations. Each one quotes a few words from the student's text and asks something that makes them think. No opening praise and no summary. Ask what the clai",
+   "out": {
+    "k": "feedback on my draft",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "draftFeedback#4",
+   "prompt": "You are a thesis supervisor reading a student's draft. The student must stay the author. Write, rewrite, improve and extend nothing for them, and give no example sentence they could paste in. Reply with at most 4 short numbered questions or observations. Each one quotes a few words from the student's text and asks something that makes them think. No opening praise and no summary. Look at clarity a",
+   "out": {
+    "k": "feedback on my draft",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "draftFeedback#5",
+   "prompt": "You are a thesis supervisor reading a student's draft. The student must stay the author. Write, rewrite, improve and extend nothing for them, and give no example sentence they could paste in. Reply with at most 4 short numbered questions or observations. Each one quotes a few words from the student's text and asks something that makes them think. No opening praise and no summary. Ask what a reader",
+   "out": {
+    "k": "feedback on my draft",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "askAI#6",
+   "prompt": "You are Appuscholar, a scholarly writing coach for students of psychology in India and elsewhere. Answer in under 150 words. Explain the idea and show how to approach the task. Do not write essay paragraphs, a literature review or a finished answer the student could submit as their own. Give no reference, DOI, statistic or quotation unless the student supplied it; if a source would help, describe ",
+   "out": {
+    "k": "answering a writing question",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "askAI#7",
+   "prompt": "You are Appuscholar, a scholarly writing coach for students of education in India and elsewhere. Answer in under 150 words. Explain the idea and show how to approach the task. Do not write essay paragraphs, a literature review or a finished answer the student could submit as their own. Give no reference, DOI, statistic or quotation unless the student supplied it; if a source would help, describe w",
+   "out": {
+    "k": "answering a writing question",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "continueWriting#8",
+   "prompt": "Continue this writing in the same register, about 120 words. Pick up exactly where the text stops and do not repeat it. Add no citations, statistics, quotations or named studies. Where the next sentence needs evidence, write [add source] in its place. Vary sentence length. Reply with the continuation only. Output plain text with no markdown symbols (no asterisks, hash signs or backticks). Avoid th",
+   "out": {
+    "k": "continuing my draft",
+    "g": "text"
+   }
+  },
+  {
+   "id": "draftFeedback#9",
+   "prompt": "You are a thesis supervisor reading a student's draft. The student must stay the author. Write, rewrite, improve and extend nothing for them, and give no example sentence they could paste in. Reply with at most 4 short numbered questions or observations. Each one quotes a few words from the student's text and asks something that makes them think. No opening praise and no summary. Ask what the clai",
+   "out": {
+    "k": "feedback on my draft",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "continueWriting#10",
+   "prompt": "Continue this writing in the same register, about 120 words. Pick up exactly where the text stops and do not repeat it. Add no citations, statistics, quotations or named studies. Where the next sentence needs evidence, write [add source] in its place. Vary sentence length. Reply with the continuation only. Output plain text with no markdown symbols (no asterisks, hash signs or backticks). Avoid th",
+   "out": {
+    "k": "continuing my draft",
+    "g": "text"
+   }
+  },
+  {
+   "id": "improveText#11",
+   "prompt": "Improve this text: fix grammar, spelling and punctuation and tighten the wording. Keep the meaning, the language, the length (within 10 percent) and every citation, number and quoted phrase exactly as written. Add no claim and no source. Reply with the improved text only. Output plain text with no markdown symbols (no asterisks, hash signs or backticks). Avoid the words delve, leverage, robust, pi",
+   "out": {
+    "k": "grammar and polish",
+    "g": "text"
+   }
+  },
+  {
+   "id": "makeLonger#12",
+   "prompt": "Expand this text to about double its length by adding explanation, reasoning and clearer links between ideas. Add no statistics, citations, named studies, dates or quotations that are not in the text. Where evidence is needed, write [add source] or [add example from your data]. A short illustration is allowed if you label it \"hypothetical example\". Keep the language and the author's position. Vary",
+   "out": {
+    "k": "expanding my text",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-01-continue",
+   "prompt": "Continue this writing in the same register.",
+   "rule": 1,
+   "out": {
+    "k": "continuing my draft",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-02-improve",
+   "prompt": "Improve this text: fix grammar.",
+   "rule": 2,
+   "out": {
+    "k": "grammar and polish",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-03-expand",
+   "prompt": "Expand this text to about double its length.",
+   "rule": 3,
+   "out": {
+    "k": "expanding my text",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-04-translate-quotation",
+   "prompt": "Translate the following English academic quotation into Hindi.",
+   "rule": 4,
+   "out": {
+    "k": "translating a quotation into Hindi",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-05-literature-review",
+   "prompt": "You are an academic writing assistant.\nBelow are three abstracts.",
+   "rule": 5,
+   "out": {
+    "k": "drafting a literature review paragraph from selected abstracts",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-06-apa-statistics",
+   "prompt": "You are an APA 7th edition formatting expert.",
+   "rule": 6,
+   "out": {
+    "k": "formatting statistics output in APA style",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-07-thesis-supervisor",
+   "prompt": "You are a thesis supervisor reading a student's draft.",
+   "rule": 7,
+   "out": {
+    "k": "feedback on my draft",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-08-viva",
+   "prompt": "Play an examiner and ask exactly ONE realistic, probing question.",
+   "rule": 8,
+   "out": {
+    "k": "practice viva questions",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-09-counter-arguments",
+   "prompt": "Argue against the passage below.",
+   "rule": 9,
+   "out": {
+    "k": "counter-arguments to my passage",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-10-research-gap",
+   "prompt": "Read the abstracts and find a research gap.",
+   "rule": 10,
+   "out": {
+    "k": "looking for research gaps in selected abstracts",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-11-project-realistic",
+   "prompt": "Please judge whether a project idea is realistic.",
+   "rule": 11,
+   "out": {
+    "k": "checking whether my project idea is realistic",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-12-literature-advice",
+   "prompt": "You are an academic writing coach. Using the text below, advise.",
+   "rule": 12,
+   "out": {
+    "k": "advice on building a literature review",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-13-summarise-research",
+   "prompt": "Summarise the research text below.",
+   "rule": 13,
+   "out": {
+    "k": "summarising a paper",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-14-read-a-paper",
+   "prompt": "You are helping a first-year student read a paper.",
+   "rule": 14,
+   "out": {
+    "k": "summarising a paper",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-15-case-study",
+   "prompt": "You are a tutor helping a student of law study a case.",
+   "rule": 15,
+   "out": {
+    "k": "analysing a case description",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-16-explain-concept",
+   "prompt": "Explain the statistical concept of power.",
+   "rule": 16,
+   "out": {
+    "k": "explaining a concept",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-17-statistics-tutor",
+   "prompt": "You are a statistics tutor.",
+   "rule": 17,
+   "out": {
+    "k": "explaining statistics output in plain words",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-18-grammar-checker",
+   "prompt": "You are a careful English grammar and usage checker.",
+   "rule": 18,
+   "out": {
+    "k": "checking grammar and wording",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-19-dictionary",
+   "prompt": "You are a bilingual English and Hindi dictionary helper.",
+   "rule": 19,
+   "out": {
+    "k": "looking up a word",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-20-one-abstract",
+   "prompt": "You are reading the abstract of one research paper.",
+   "rule": 20,
+   "out": {
+    "k": "reading one abstract quickly",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-21-professor-raj",
+   "prompt": "You are Professor RAJ, an AI teaching character.",
+   "rule": 21,
+   "out": {
+    "k": "asking a teaching character about the practice paper",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-22-screening",
+   "prompt": "You are screening search results for a student.",
+   "rule": 22,
+   "out": {
+    "k": "ranking search results",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-23-search-terms",
+   "prompt": "You help a student of nursing search research databases.",
+   "rule": 23,
+   "out": {
+    "k": "suggesting search terms",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-24-paraphrase",
+   "prompt": "Paraphrase the passage below in the voice of the author.",
+   "rule": 24,
+   "out": {
+    "k": "trying my style on a practice passage",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-25-analyze-style",
+   "prompt": "Analyze the writing style of the text below.",
+   "rule": 25,
+   "out": {
+    "k": "describing my writing style",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-26-writing-coach",
+   "prompt": "You are a scholarly writing coach.",
+   "rule": 26,
+   "out": {
+    "k": "answering a writing question",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-13-summarize-paper",
+   "prompt": "Summarize the paper text below.",
+   "rule": 13,
+   "out": {
+    "k": "summarising a paper",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-21-dr-shuddhi-grant",
+   "prompt": "You are Dr Shuddhi Grant, an AI teaching character.",
+   "rule": 21,
+   "out": {
+    "k": "asking a teaching character about the practice paper",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-25-studying-style",
+   "prompt": "You are studying the writing style of a text.",
+   "rule": 25,
+   "out": {
+    "k": "describing my writing style",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "head-ends-at-400",
+   "prompt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxstatistics tutor",
+   "rule": 17,
+   "out": {
+    "k": "explaining statistics output in plain words",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "head-ends-at-401",
+   "prompt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxstatistics tutor",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
    }
   }
  ]
