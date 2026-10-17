@@ -15,3 +15,5 @@ export type { WritingKind } from "./prompts";
 export { PROVIDERS, PROV_ORDER } from "./providers";
 export type { ProviderId, ProviderInfo } from "./providers";
 export { docInnerText, docTextContent } from "./doctext";
+export { gammaln, betai, gammaq, erf, normalCDF, pFromT, pFromF, pFromChi, pFromZ } from "./pvalue";
+export { noLead, pCell, fmtP } from "./statfmt";
