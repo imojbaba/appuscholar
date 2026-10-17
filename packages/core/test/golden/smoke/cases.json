@@ -1,0 +1,830 @@
+{
+ "engine": "smoke",
+ "captured": "2026-10-17",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "fn": "pFromT",
+   "args": [
+    0.5,
+    3
+   ],
+   "out": 0.6514479648481544
+  },
+  {
+   "fn": "pFromT",
+   "args": [
+    2.15,
+    21
+   ],
+   "out": 0.043360276354708106
+  },
+  {
+   "fn": "pFromT",
+   "args": [
+    5,
+    10
+   ],
+   "out": 0.0005373336027559763
+  },
+  {
+   "fn": "pFromT",
+   "args": [
+    10,
+    30
+   ],
+   "out": 4.5752514082310495e-11
+  },
+  {
+   "fn": "pFromT",
+   "args": [
+    20,
+    100
+   ],
+   "out": 9.994267861343032e-37
+  },
+  {
+   "fn": "pFromT",
+   "args": [
+    40,
+    200
+   ],
+   "out": 2.248739653520809e-97
+  },
+  {
+   "fn": "pFromF",
+   "args": [
+    1,
+    2,
+    10
+   ],
+   "out": 0.40187757201646157
+  },
+  {
+   "fn": "pFromF",
+   "args": [
+    4,
+    3,
+    20
+   ],
+   "out": 0.022076999663828145
+  },
+  {
+   "fn": "pFromF",
+   "args": [
+    30,
+    2,
+    40
+   ],
+   "out": 1.0995116261902638e-8
+  },
+  {
+   "fn": "pFromF",
+   "args": [
+    200,
+    3,
+    50
+   ],
+   "out": 0
+  },
+  {
+   "fn": "pFromF",
+   "args": [
+    900,
+    4,
+    100
+   ],
+   "out": 0
+  },
+  {
+   "fn": "pFromChi",
+   "args": [
+    3.84,
+    1
+   ],
+   "out": 0.050043521154836706
+  },
+  {
+   "fn": "pFromChi",
+   "args": [
+    20,
+    5
+   ],
+   "out": 0.0012497305629332854
+  },
+  {
+   "fn": "pFromChi",
+   "args": [
+    80,
+    3
+   ],
+   "out": 3.0692774861779686e-17
+  },
+  {
+   "fn": "pFromChi",
+   "args": [
+    200,
+    10
+   ],
+   "out": 1.6139305336976386e-37
+  },
+  {
+   "fn": "pFromZ",
+   "args": [
+    0
+   ],
+   "out": 1
+  },
+  {
+   "fn": "pFromZ",
+   "args": [
+    1.96
+   ],
+   "out": 0.049995790203040395
+  },
+  {
+   "fn": "pFromZ",
+   "args": [
+    -2.5
+   ],
+   "out": 0.012419330641250913
+  },
+  {
+   "fn": "pFromZ",
+   "args": [
+    3.29
+   ],
+   "out": 0.001001873827053177
+  },
+  {
+   "fn": "pFromZ",
+   "args": [
+    6
+   ],
+   "out": 1.9731752899019194e-9
+  },
+  {
+   "fn": "normalCDF",
+   "args": [
+    0.5
+   ],
+   "out": 0.6914624627239938
+  },
+  {
+   "fn": "normalCDF",
+   "args": [
+    1
+   ],
+   "out": 0.8413447361676363
+  },
+  {
+   "fn": "normalCDF",
+   "args": [
+    2
+   ],
+   "out": 0.9772499371127437
+  },
+  {
+   "fn": "normalCDF",
+   "args": [
+    3
+   ],
+   "out": 0.9986500327186852
+  },
+  {
+   "fn": "normalCDF",
+   "args": [
+    4
+   ],
+   "out": 0.9999683139639357
+  },
+  {
+   "fn": "normalCDF",
+   "args": [
+    5
+   ],
+   "out": 0.9999997128949867
+  },
+  {
+   "fn": "gammaln",
+   "args": [
+    0.5
+   ],
+   "out": 0.572364942924743
+  },
+  {
+   "fn": "gammaln",
+   "args": [
+    1
+   ],
+   "out": 0
+  },
+  {
+   "fn": "gammaln",
+   "args": [
+    2.5
+   ],
+   "out": 0.2846828704729183
+  },
+  {
+   "fn": "gammaln",
+   "args": [
+    10
+   ],
+   "out": 12.801827480081961
+  },
+  {
+   "fn": "gammaln",
+   "args": [
+    100
+   ],
+   "out": 359.1342053696796
+  },
+  {
+   "fn": "betai",
+   "args": [
+    2,
+    3,
+    0
+   ],
+   "out": 0
+  },
+  {
+   "fn": "betai",
+   "args": [
+    2,
+    3,
+    1
+   ],
+   "out": 1
+  },
+  {
+   "fn": "betai",
+   "args": [
+    2,
+    3,
+    0.2
+   ],
+   "out": 0.18080000000000024
+  },
+  {
+   "fn": "betai",
+   "args": [
+    2,
+    3,
+    0.8
+   ],
+   "out": 0.9728
+  },
+  {
+   "fn": "betai",
+   "args": [
+    0.5,
+    0.5,
+    0.5
+   ],
+   "out": 0.5000000000157192
+  },
+  {
+   "fn": "betai",
+   "args": [
+    10.5,
+    0.5,
+    0.9
+   ],
+   "out": 0.14155309181377684
+  },
+  {
+   "fn": "gammaq",
+   "args": [
+    3,
+    0
+   ],
+   "out": 1
+  },
+  {
+   "fn": "gammaq",
+   "args": [
+    0.5,
+    0.2
+   ],
+   "out": 0.5270892568735845
+  },
+  {
+   "fn": "gammaq",
+   "args": [
+    1,
+    1
+   ],
+   "out": 0.36787944123504
+  },
+  {
+   "fn": "gammaq",
+   "args": [
+    2,
+    5
+   ],
+   "out": 0.04042768199451281
+  },
+  {
+   "fn": "gammaq",
+   "args": [
+    5,
+    10
+   ],
+   "out": 0.029252688076961127
+  },
+  {
+   "fn": "erf",
+   "args": [
+    0
+   ],
+   "out": 9.999999717180685e-10
+  },
+  {
+   "fn": "erf",
+   "args": [
+    0.5
+   ],
+   "out": 0.5205000163047472
+  },
+  {
+   "fn": "erf",
+   "args": [
+    -1
+   ],
+   "out": -0.8427006897475899
+  },
+  {
+   "fn": "erf",
+   "args": [
+    2
+   ],
+   "out": 0.9953221395812188
+  },
+  {
+   "fn": "erf",
+   "args": [
+    -3
+   ],
+   "out": -0.9999778948511022
+  },
+  {
+   "fn": "stkShapiro",
+   "args": [
+    [
+     2.1,
+     3.4,
+     1.9,
+     5.6,
+     4.4,
+     3.8,
+     2.7,
+     9.1
+    ]
+   ],
+   "out": {
+    "W": 0.8640601961926091,
+    "p": 0.13175615972424132,
+    "n": 8
+   }
+  },
+  {
+   "fn": "stkShapiro",
+   "args": [
+    [
+     12,
+     14,
+     11,
+     13,
+     15,
+     12,
+     14,
+     13,
+     16,
+     18,
+     11,
+     12
+    ]
+   ],
+   "out": {
+    "W": 0.917983390805362,
+    "p": 0.26964989063639655,
+    "n": 12
+   }
+  },
+  {
+   "fn": "stkShapiro",
+   "args": [
+    [
+     1,
+     2,
+     2,
+     3,
+     3,
+     3,
+     4,
+     4,
+     5,
+     9,
+     10,
+     20,
+     25,
+     3,
+     2
+    ]
+   ],
+   "out": {
+    "W": 0.695394393095409,
+    "p": 0.00022196633805515384,
+    "n": 15
+   }
+  },
+  {
+   "fn": "stkPtukey",
+   "args": [
+    3.5,
+    3,
+    10
+   ],
+   "out": 0.9228966891596057
+  },
+  {
+   "fn": "stkPtukey",
+   "args": [
+    4.2,
+    4,
+    20
+   ],
+   "out": 0.9649114903211914
+  },
+  {
+   "fn": "stkPtukey",
+   "args": [
+    2,
+    3,
+    30
+   ],
+   "out": 0.6534785902110846
+  },
+  {
+   "fn": "stkPtukey",
+   "args": [
+    5.5,
+    5,
+    12
+   ],
+   "out": 0.9849817074712214
+  },
+  {
+   "fn": "stkPtukey",
+   "args": [
+    3,
+    6,
+    60
+   ],
+   "out": 0.7094381521097364
+  },
+  {
+   "fn": "stkQtukey",
+   "args": [
+    0.95,
+    3,
+    10
+   ],
+   "out": 3.8767767500435686
+  },
+  {
+   "fn": "stkQtukey",
+   "args": [
+    0.95,
+    4,
+    20
+   ],
+   "out": 3.9582935610189938
+  },
+  {
+   "fn": "stkQtukey",
+   "args": [
+    0.95,
+    6,
+    60
+   ],
+   "out": 4.163160814276041
+  },
+  {
+   "fn": "stkQtukey",
+   "args": [
+    0.95,
+    3,
+    5
+   ],
+   "out": 4.601726054471832
+  },
+  {
+   "fn": "stkExactMW",
+   "args": [
+    5,
+    7,
+    6
+   ],
+   "out": 0.07323232323232323
+  },
+  {
+   "fn": "stkExactMW",
+   "args": [
+    8,
+    8,
+    20
+   ],
+   "out": 0.2344988344988345
+  },
+  {
+   "fn": "stkExactMW",
+   "args": [
+    12,
+    10,
+    40
+   ],
+   "out": 0.20296731132644447
+  },
+  {
+   "fn": "pwPower",
+   "args": [
+    {
+     "test": "ind",
+     "effect": 0.5,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    64
+   ],
+   "out": 0.8014595580648496
+  },
+  {
+   "fn": "pwPower",
+   "args": [
+    {
+     "test": "paired",
+     "effect": 0.4,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    30
+   ],
+   "out": 0.5628136072327168
+  },
+  {
+   "fn": "pwPower",
+   "args": [
+    {
+     "test": "one",
+     "effect": 0.3,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    100
+   ],
+   "out": 0.8439471029144882
+  },
+  {
+   "fn": "pwPower",
+   "args": [
+    {
+     "test": "anova",
+     "effect": 0.25,
+     "alpha": 0.05,
+     "tails": 2,
+     "k": 4
+    },
+    40
+   ],
+   "out": 0.7494045376106123
+  },
+  {
+   "fn": "pwPower",
+   "args": [
+    {
+     "test": "corr",
+     "effect": 0.3,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    85
+   ],
+   "out": 0.8003462501061602
+  },
+  {
+   "fn": "pwSolveN",
+   "args": [
+    {
+     "test": "ind",
+     "effect": 0.5,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    0.8
+   ],
+   "out": 64
+  },
+  {
+   "fn": "pwSolveN",
+   "args": [
+    {
+     "test": "ind",
+     "effect": 0.2,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    0.9
+   ],
+   "out": 527
+  },
+  {
+   "fn": "pwSolveN",
+   "args": [
+    {
+     "test": "corr",
+     "effect": 0.3,
+     "alpha": 0.05,
+     "tails": 2
+    },
+    0.8
+   ],
+   "out": 85
+  },
+  {
+   "fn": "accItems",
+   "args": [
+    "Smith (2020) found that 45% of 1,200 students slept under 6.5 hours, and Jones and Lee (2019) reported \"a marked decline in attention\" (p = .03)."
+   ],
+   "out": {
+    "n": [
+     "45%",
+     "1200",
+     "6.5",
+     ".03"
+    ],
+    "c": [
+     "Smith 2020",
+     "Jones and Lee 2019"
+    ],
+    "q": [
+     "a marked decline in attention"
+    ]
+   }
+  },
+  {
+   "fn": "accItems",
+   "args": [
+    "As Sharma et al. (2018a) noted, the effect was “small but reliable” (d = 0.24, N = 312), in line with O’Brien, 2015."
+   ],
+   "out": {
+    "n": [
+     ".24",
+     "312"
+    ],
+    "c": [
+     "Sharma et al. 2018a",
+     "O'Brien 2015"
+    ],
+    "q": [
+     "small but reliable"
+    ]
+   }
+  },
+  {
+   "fn": "accItems",
+   "args": [
+    "Scores fell from 28.4 to −3.5 points (Kumar & Rao, 2021; Das, 2017), and one participant said \"I could not sleep at all\" twice."
+   ],
+   "out": {
+    "n": [
+     "28.4",
+     "3.5"
+    ],
+    "c": [
+     "Kumar & Rao 2021",
+     "Das 2017"
+    ],
+    "q": [
+     "i could not sleep at all"
+    ]
+   }
+  },
+  {
+   "fn": "pdScanText",
+   "args": [
+    "Write to asha@uni.ac.in or call +91 98765 43210, roll 9876543210. Aadhaar 1234 5678 9012, PAN ABCDE1234F."
+   ],
+   "out": {
+    "counts": {
+     "email address": 1,
+     "phone number": 2,
+     "ID number": 2
+    },
+    "total": 5,
+    "sig": "email addressasha@uni.ac.in||phone number +91 98765 43210| 9876543210||ID number 1234 5678 9012| ABCDE1234F"
+   }
+  },
+  {
+   "fn": "pdScanText",
+   "args": [
+    "n = 120, M = 3.45, SD = 0.9, year 2024, 12345"
+   ],
+   "out": {
+    "counts": {},
+    "total": 0,
+    "sig": ""
+   }
+  },
+  {
+   "fn": "pdScanText",
+   "args": [
+    "Mail asha@uni.ac.in, phone 9876543210, PAN ABCDE1234F."
+   ],
+   "out": {
+    "counts": {
+     "email address": 1,
+     "phone number": 1,
+     "ID number": 1
+    },
+    "total": 3,
+    "sig": "email addressasha@uni.ac.in||phone number 9876543210||ID number ABCDE1234F"
+   }
+  },
+  {
+   "fn": "provHash",
+   "args": [
+    "a b c"
+   ],
+   "out": "3772q3"
+  },
+  {
+   "fn": "provHash",
+   "args": [
+    "abc"
+   ],
+   "out": "3772q3"
+  },
+  {
+   "fn": "provHash",
+   "args": [
+    ""
+   ],
+   "out": "45h"
+  },
+  {
+   "fn": "aiuClassify",
+   "args": [
+    "Continue this writing"
+   ],
+   "out": {
+    "k": "continuing my draft",
+    "g": "text"
+   }
+  },
+  {
+   "fn": "aiuClassify",
+   "args": [
+    "You are Appu, the help assistant"
+   ],
+   "out": null
+  },
+  {
+   "fn": "aiuClassify",
+   "args": [
+    "Something new"
+   ],
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Müller"
+   ],
+   "out": "muller"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "O’Brien"
+   ],
+   "out": "o brien"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "van der Berg"
+   ],
+   "out": "van der berg"
+  }
+ ]
+}
