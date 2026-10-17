@@ -56,7 +56,22 @@ const PROBES: Array<[id: string, row: number | null, prompt: string]> = [
 ];
 
 /**
- * aiuClassify (v1 5443) on the first 400 characters of every prompt test/golden/prompts/cases.json records, on the three literals, and on the probes above.
+ * The rows whose pattern lets two phrases stand at most N characters apart (`[^]{0,N}` in rows 5, 12, 14, 15 and 16, `.{0,N}` in row 23). The short probes above leave a gap of a
+ * few characters, so they cannot tell N from a smaller number. For each row the capture reads N from the row's own regex source in v1 and builds two inputs around the row's
+ * phrases: the gap exactly N characters (the row matches) and N + 1 (it does not, and the input falls through to the fallback), like the 400 and 401 pair above.
+ * The gap of a `[^]` row is made of line breaks, which `.` does not match, so those inputs also tell `[^]` from `.`; row 23's `.` gap is made of letters.
+ */
+const GAPPED: Array<[row: number, before: string, gap: string, after: string]> = [
+  [5, "academic writing assistant", "\n", "Below are"],
+  [12, "academic writing coach", "\n", "Using the text"],
+  [14, "helping a ", "\n", "read a paper"],
+  [15, "tutor helping a student", "\n", "study"],
+  [16, "Explain the ", "\n", "concept"],
+  [23, "You help a student of ", "x", " search research databases"],
+];
+
+/**
+ * aiuClassify (v1 5443) on the first 400 characters of every prompt test/golden/prompts/cases.json records, on the three literals, on the probes above and on the gap pairs.
  * engines.ts registers the prompts capture before this one, so a write-mode `golden:capture all` captures prompts first and this capture
  * reads the file it has just written: a stale prompts fixture cannot be read in that order. Naming only `aiuse` reads whatever is on disk.
  * While that file does not exist, only the literals and the probes are recorded.
@@ -76,7 +91,17 @@ export const aiuse: Engine = {
     }
     // The 1-based row of v1's AIU_RULES that matches the head first, as v1's own table says (0 when none does); the Appu line is answered before the table (5445), so it never gets here.
     const firstRow = v1.window.eval("(function (p) { return AIU_RULES.findIndex(function (r) { return r[0].test(p.slice(0, 400)); }) + 1; })") as (p: string) => number;
-    const probes = PROBES.map(([id, row, prompt]) => {
+    const bound = (row: number) => {
+      const n = /\{0,(\d+)\}/.exec(v1.eval<string>(`AIU_RULES[${row - 1}][0].source`))?.[1];
+      if (n === undefined) throw new Error(`aiuse: row ${row} of v1's AIU_RULES has no {0,N} gap`);
+      return Number(n);
+    };
+    const pairs = GAPPED.flatMap(([row, before, gap, after]): Array<[string, number | null, string]> => {
+      const n = bound(row);
+      const id = `row-${String(row).padStart(2, "0")}-gap`;
+      return [[`${id}-${n}`, row, before + gap.repeat(n) + after], [`${id}-${n + 1}`, null, before + gap.repeat(n + 1) + after]];
+    });
+    const probes = [...PROBES, ...pairs].map(([id, row, prompt]) => {
       const got = firstRow(prompt);
       if (got !== (row ?? 0)) throw new Error(`aiuse: probe ${id} meant for row ${row ?? "none"} matches row ${got || "none"} of v1's AIU_RULES`);
       return { id, prompt, rule: row, out: v1.call("aiuClassify", prompt) };

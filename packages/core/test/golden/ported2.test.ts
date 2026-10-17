@@ -12,8 +12,9 @@ import { readFixture } from "./harness/fixture";
  * hand them to callAI, bodyToHTML's output for each body, the locked bundles bkEncrypt returns. A mismatch is a bug in the module or a row in
  * docs/superpowers/specs/parity-deviations.md, never an edit to a fixture.
  * What is typed in this file is of two kinds. Register pins, which state the register's own claims about a difference and check them against the fixture: D-W0-5
- * (what v2 does to a plain body, an escaped picture and an appuimg: reference that v1 does differently). Guards that a fixture holds the inputs it exists for: counts, the kinds of
- * body, the ids of the cases that use the long paragraph or My Writing Style, the two fields of study, the compressed and uncompressed locked files and v1's 600,000 rounds.
+ * (what v2 does to a plain body, an escaped picture and an appuimg: reference that v1 does differently) and D-W0-4 (the import drops the origin and src that make a v1
+ * document a source paper). Guards that a fixture holds the inputs it exists for: counts, the kinds of body, the one source document, the ids of the cases that use the long
+ * paragraph or My Writing Style, the two fields of study, the compressed and uncompressed locked files, v1's 600,000 rounds and the Node version they were made on.
  */
 
 describe("prompts.ts equals v1's prompts", () => {
@@ -60,17 +61,16 @@ describe("prompts.ts equals v1's prompts", () => {
   });
   for (const c of fx.cases) {
     it(c.id, () => {
-      const b = built(c);
-      expect(b.prompt).toBe(c.prompt);
-      expect(b.temp).toBe(c.opts.temp);
-      expect(b.max).toBe(c.opts.max);
+      const { prompt, ...opts } = built(c); // everything but the prompt is the options object v1 passed to callAI
+      expect(prompt).toBe(c.prompt);
+      expect(opts).toEqual(c.opts);
     });
   }
 });
 
 describe("v1import.ts reads what v1 exports", () => {
   type Decided = { repaired: boolean; html: boolean };
-  type Doc = Decided & { id: string; title: string; updated: number; body: string; v1Html: string };
+  type Doc = Decided & { id: string; title: string; updated: number; body: string; v1Html: string; origin?: string; src?: string };
   type BodyCase = Decided & { id: string; body: string; out: string };
   type Bundle = { app: string; v: number; exported: string; data: Record<string, string> };
   type StoredProject = { id: string; name: string; stage: string };
@@ -100,7 +100,7 @@ describe("v1import.ts reads what v1 exports", () => {
         expect(repaired).toContain('<img src="data:image/png;base64,');
         expect(got).not.toContain('<span class="img-wrap"');
         expect(got).not.toContain("<img");
-        expect(got).toMatch(/&(?:amp;)*lt;span class="img-wrap"/); // the damage v1 mends (3136) is still there, as text
+        expect(got).toMatch(/&(?:amp;)*lt;span class="img-wrap"/); // the damage v1 mends (3136) is still there, as entities
         break;
       }
       case "appuimg":
@@ -122,12 +122,14 @@ describe("v1import.ts reads what v1 exports", () => {
     return r.backup;
   };
 
-  it("the bundle is the file backupExport writes, without the AI key, and its four documents take the four paths", () => {
+  it("the bundle is the file backupExport writes, without the AI key, and its five documents take the four paths, one of them a source paper", () => {
     expect(bundle.bundle.app).toBe("appuscholar");
     expect(bundle.bundle.v).toBe(1);
     expect(Object.keys(bundle.bundle.data)).toEqual(expect.arrayContaining(["appu_docs", "appu_projects", "appu_theme"]));
     expect(bundle.bundle.data).not.toHaveProperty("appu_key_gemini");
     expect(new Set(bundle.docs.map((d) => kindOf(d, d.v1Html)))).toEqual(new Set(["html", "plain", "appuimg", "escaped picture"]));
+    expect(bundle.docs).toHaveLength(5);
+    expect(bundle.docs.filter((d) => d.origin !== undefined).map((d) => [d.origin, typeof d.src])).toEqual([["source", "string"]]);
   });
   it("parses v1's own bundle: exported stamp, titles, ids, dates and order, and the projects under their v1 field name", () => {
     const b = parsed();
@@ -144,6 +146,17 @@ describe("v1import.ts reads what v1 exports", () => {
     const kind = kindOf(d, d.v1Html);
     it(`bundle document "${d.title}" (${kind}) ${label(kind)}`, () => pin(kind, d.body, d.v1Html, parsed().documents[i]?.bodyHtml ?? "(no document)"));
   }
+
+  it("D-W0-4 bundle source document: v1 flags it with origin and src (3230), the import keeps neither, so it arrives as the student's own", () => {
+    const i = bundle.docs.findIndex((d) => d.origin === "source");
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(bundle.docs[i]?.src).toMatch(/\S/); // the file name v1 keeps beside the flag
+    const doc = parsed().documents[i];
+    expect(doc?.title).toBe(bundle.docs[i]?.title); // the right document, and an ordinary one in every other respect
+    expect(doc).not.toHaveProperty("origin");
+    expect(doc).not.toHaveProperty("src");
+    expect(Object.keys(doc ?? {}).sort()).toEqual(["bodyHtml", "id", "title", "updated"]);
+  });
 
   it("the bodies fixture holds a case per tag of looksLikeStoredHTML, and the plain, escaped-picture and appuimg shapes", () => {
     const tags = bodies.cases.filter((c) => c.id.startsWith("tag-"));
@@ -182,12 +195,13 @@ describe("v1import.ts reads what v1 exports", () => {
 });
 
 describe("v1locked.ts opens what v1 locks", () => {
-  type LockedFile = { locked: { app: string; v: number; locked: boolean; enc: { iter: number; z: number } }; plain: string; pass: string };
+  type LockedFile = { locked: { app: string; v: number; locked: boolean; enc: { iter: number; z: number } }; plain: string; pass: string; node: string };
   for (const [file, z] of [["locked-gzip", 1], ["locked-plain", 0]] as const) {
     it(file, async () => {
       const fx = readFixture<LockedFile>("v1locked", file);
       expect(fx.locked.enc.z).toBe(z); // v1 compressed the one file and not the other
       expect(fx.locked.enc.iter).toBe(600000); // the rounds v1 ships
+      expect(fx.node).toMatch(/^v/); // the Node the file was made on (the z = 1 ciphertext depends on its zlib)
       const text = JSON.stringify(fx.locked);
       expect(isLockedV1Backup(text)).toBe(true);
       expect(await unlockV1Backup(text, fx.pass)).toEqual({ ok: true, text: fx.plain });

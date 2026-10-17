@@ -411,6 +411,114 @@
     "k": "other help",
     "g": "other"
    }
+  },
+  {
+   "id": "row-05-gap-80",
+   "prompt": "academic writing assistant\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nBelow are",
+   "rule": 5,
+   "out": {
+    "k": "drafting a literature review paragraph from selected abstracts",
+    "g": "text"
+   }
+  },
+  {
+   "id": "row-05-gap-81",
+   "prompt": "academic writing assistant\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nBelow are",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
+  },
+  {
+   "id": "row-12-gap-60",
+   "prompt": "academic writing coach\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nUsing the text",
+   "rule": 12,
+   "out": {
+    "k": "advice on building a literature review",
+    "g": "feedback"
+   }
+  },
+  {
+   "id": "row-12-gap-61",
+   "prompt": "academic writing coach\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nUsing the text",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
+  },
+  {
+   "id": "row-14-gap-40",
+   "prompt": "helping a \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nread a paper",
+   "rule": 14,
+   "out": {
+    "k": "summarising a paper",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-14-gap-41",
+   "prompt": "helping a \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nread a paper",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
+  },
+  {
+   "id": "row-15-gap-40",
+   "prompt": "tutor helping a student\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nstudy",
+   "rule": 15,
+   "out": {
+    "k": "analysing a case description",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-15-gap-41",
+   "prompt": "tutor helping a student\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nstudy",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
+  },
+  {
+   "id": "row-16-gap-40",
+   "prompt": "Explain the \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nconcept",
+   "rule": 16,
+   "out": {
+    "k": "explaining a concept",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-16-gap-41",
+   "prompt": "Explain the \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nconcept",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
+  },
+  {
+   "id": "row-23-gap-60",
+   "prompt": "You help a student of xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx search research databases",
+   "rule": 23,
+   "out": {
+    "k": "suggesting search terms",
+    "g": "explain"
+   }
+  },
+  {
+   "id": "row-23-gap-61",
+   "prompt": "You help a student of xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx search research databases",
+   "rule": null,
+   "out": {
+    "k": "other help",
+    "g": "other"
+   }
   }
  ]
 }
