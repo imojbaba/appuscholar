@@ -1,5 +1,6 @@
 import { defineConfig } from "@playwright/test";
-// Omit the key when unset: an empty DATABASE_URL makes the web layout answer 500 and gives the API an empty URL instead of its in-memory store.
+// Both servers run on the one DATABASE_URL (recipe: e2e/support/pglite-postgres.mjs), as in production, so the api's account erasure removes the
+// users row sign-in made. Omit the key when unset: an empty DATABASE_URL makes the web layout answer 500 and the api fail to start.
 const DB_ENV: Record<string, string> = process.env.DATABASE_URL ? { DATABASE_URL: process.env.DATABASE_URL } : {};
 export default defineConfig({
   testDir: "./e2e",

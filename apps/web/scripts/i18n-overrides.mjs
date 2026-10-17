@@ -124,7 +124,12 @@ export const V2_STRINGS = {
   erased: { en: "Your account has been deleted.", hi: "आपका खाता हटा दिया गया है।" },
   erase_fail: { en: "Could not delete your account. Check your connection and try again.", hi: "आपका खाता नहीं हटाया जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
   import_v1_vault: { en: "Your backup is read on this computer and saved locked in your vault.", hi: "आपका बैकअप इसी कंप्यूटर पर पढ़ा जाता है और आपकी तिजोरी में बंद करके सहेजा जाता है।" },
-  import_v1_progress: { en: "Importing… {n} of {total}", hi: "आयात हो रहा है… {total} में से {n}" }
+  import_v1_progress: { en: "Importing… {n} of {total}", hi: "आयात हो रहा है… {total} में से {n}" },
+  // O14 (Phase 3A walk): the eye on every passphrase and key field (components/ui/secret-input.tsx). DRAFT Hindi: दिखाएं / छिपाएं as in qual_show_colors_label.
+  pass_show: { en: "Show passphrase", hi: "पासफ़्रेज़ दिखाएं" },
+  pass_hide: { en: "Hide passphrase", hi: "पासफ़्रेज़ छिपाएं" },
+  key_show: { en: "Show key", hi: "कुंजी दिखाएं" },
+  key_hide: { en: "Hide key", hi: "कुंजी छिपाएं" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

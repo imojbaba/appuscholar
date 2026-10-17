@@ -43,10 +43,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @appuscholar/db db:migrate
       - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
-      # The API runs on its in-memory store, so it is started here without DATABASE_URL (only the web server gets it, from the job env).
-      - name: Start the API
-        run: |
-          env -u DATABASE_URL WEB_ORIGIN=http://localhost:3000 PORT=8788 nohup pnpm --filter @appuscholar/api dev > api.log 2>&1 &
-          for i in $(seq 1 60); do curl -sf http://localhost:8788/health && exit 0; sleep 1; done
-          cat api.log; exit 1
+      # playwright.config.ts starts the api and the web server, both on the job's DATABASE_URL (one database, as in production).
       - run: pnpm --filter @appuscholar/web e2e

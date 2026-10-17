@@ -104,8 +104,19 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("terms-need")).toHaveText("Tick both boxes to continue.");
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
+    const where = (await page.getByTestId("terms-continue").boundingBox())!;
     await page.getByTestId("terms-continue").click();
     await expect(page.getByTestId("terms-dialog")).toBeHidden();
+    // O11 (Phase 3A walk): a second click where Continue was, or an Enter meant for it, arrives as the welcome opens with its primary
+    // button in the same place. Neither may open the key window: the welcome shows first, with its Later button.
+    await expect(page.getByTestId("welcome-dialog")).toBeVisible();
+    await expect(page.getByTestId("welcome-setup")).toBeDisabled();
+    await page.mouse.click(where.x + where.width / 2, where.y + where.height / 2);
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("welcome-dialog")).toBeVisible();
+    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await expect(page.getByTestId("welcome-later")).toBeVisible();
+    await expect(page.getByTestId("welcome-later")).toBeEnabled();
   });
 
   await test.step("2. Welcome, then Set up my key: Groq, a passphrase (the vault setup and its recovery sheet), Save, Test", async () => {

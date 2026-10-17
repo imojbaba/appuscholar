@@ -109,6 +109,8 @@ describe("VaultRecover", () => {
     await click("recover-submit");
     await until(() => h.toast.mock.calls.length > 0);
     expect(h.toast).toHaveBeenCalledWith(en.vault_recover_bad);
+    // The verdict is also inside the window (O9): a toast at the foot of the page goes unseen behind a modal.
+    expect($("recover-verdict")!.textContent).toBe(en.vault_recover_bad);
     expect(writes()).toEqual([]);
     expect(server.vault).toEqual(before);
     expect(s.v.status).toBe("locked");
@@ -161,10 +163,12 @@ describe("VaultRecover", () => {
     type("recover-pass2", "short");
     await click("recover-submit");
     expect(h.toast).toHaveBeenLastCalledWith(en.bk_err_short);
+    expect($("recover-verdict")!.textContent).toBe(en.bk_err_short);
     type("recover-pass", NEW);
     type("recover-pass2", NEW + "x");
     await click("recover-submit");
     expect(h.toast).toHaveBeenLastCalledWith(en.bk_err_match);
+    expect($("recover-verdict")!.textContent).toBe(en.bk_err_match);
     expect(writes()).toEqual([]);
   });
 
@@ -217,6 +221,7 @@ describe("ChangePassphrase", () => {
     await click("vault-change-submit");
     await until(() => h.toast.mock.calls.length > 0);
     expect(h.toast).toHaveBeenCalledWith(en.vault_wrong);
+    expect($("vault-change-verdict")!.textContent).toBe(en.vault_wrong); // inside the window too (O9)
     expect(writes()).toEqual([]);
     expect(box.open).toBe(true);
   });
@@ -253,6 +258,60 @@ describe("the vault unlock ask", () => {
     await act(async () => { expect(await opened).toBe(true); });
     expect(s.v.status).toBe("unlocked");
     expect(await hasRemembered("u1")).toBe(true);
+  });
+
+  it("shows the wrong-passphrase verdict under the field on the next ask, and not on a fresh one", async () => {
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    const opened = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    expect($("pass-verdict")).toBeNull();
+    type("pass-input", "not it");
+    await click("pass-ok");
+    await until(() => !!$("pass-verdict"));
+    expect($("pass-verdict")!.textContent).toBe(en.vault_wrong);
+    expect($("pass-verdict")!.getAttribute("role")).toBe("alert");
+    expect($("pass-input")!.getAttribute("aria-invalid")).toBe("true");
+    expect(($("pass-input") as HTMLInputElement).value).toBe(""); // the field is emptied for the next try
+    expect(h.toast).toHaveBeenCalledWith(en.vault_wrong); // the toast stays
+    type("pass-input", OLD);
+    await click("pass-ok");
+    await act(async () => { expect(await opened).toBe(true); });
+    // A fresh round, after a lock, starts without a verdict.
+    act(() => { s.v.lock(); });
+    const again = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    expect($("pass-verdict")).toBeNull();
+    expect($("pass-input")!.getAttribute("aria-invalid")).toBeNull();
+    await click("pass-cancel");
+    await act(async () => { expect(await again).toBe(false); });
+  });
+
+  it("every passphrase field has the eye toggle, hidden by default (O14)", async () => {
+    const s = await mount(<ChangePassphrase open onClose={() => undefined} />);
+    await until(() => s.v.status === "locked");
+    const opened = s.v.ensureUnlocked();
+    await until(() => !!$("pass-dialog"));
+    const field = $("pass-input") as HTMLInputElement;
+    expect(field.type).toBe("password");
+    type("pass-input", OLD);
+    await click("pass-input-toggle");
+    expect(field.type).toBe("text");
+    expect(field.value).toBe(OLD); // showing it does not touch what was typed
+    await click("pass-cancel");
+    await act(async () => { expect(await opened).toBe(false); });
+    for (const id of ["vault-change-old", "vault-change-new", "vault-change-again"]) {
+      expect(($(id) as HTMLInputElement).type).toBe("password");
+      await click(id + "-toggle");
+      expect(($(id) as HTMLInputElement).type).toBe("text");
+    }
+    act(() => { openVaultRecover(); });
+    await until(() => !!$("vault-recover-dialog"));
+    for (const id of ["recover-pass", "recover-pass2"]) {
+      expect(($(id) as HTMLInputElement).type).toBe("password");
+      await click(id + "-toggle");
+      expect(($(id) as HTMLInputElement).type).toBe("text");
+    }
   });
 
   it("the other passphrase asks have no Remember box", async () => {

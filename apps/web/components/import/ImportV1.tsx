@@ -5,8 +5,8 @@ import { UploadSimple } from "@phosphor-icons/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SecretInput } from "@/components/ui/secret-input";
 import { useT } from "@/lib/i18n";
 import { importV1Backup } from "@/lib/import/v1";
 import { useVault } from "@/lib/vault/useVault";
@@ -136,7 +136,7 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
           <form onSubmit={onUnlock} className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-end" data-testid="import-unlock-form">
             <div className="grid gap-2">
               <Label htmlFor="backup-passphrase">Backup passphrase</Label>
-              <Input id="backup-passphrase" type="password" autoComplete="off" value={passphrase} onChange={e => setPassphrase(e.target.value)} disabled={busy} data-testid="import-passphrase" />
+              <SecretInput id="backup-passphrase" autoComplete="off" value={passphrase} onChange={e => setPassphrase(e.target.value)} disabled={busy} data-testid="import-passphrase" toggleTestId="import-passphrase-toggle" />
             </div>
             <Button type="submit" disabled={busy || !passphrase} data-testid="import-unlock">{t("bk_ok_open")}</Button>
             <Button type="button" variant="outline" onClick={cancelUnlock} disabled={busy}>{t("bk_cancel")}</Button>
