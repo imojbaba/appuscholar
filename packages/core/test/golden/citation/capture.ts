@@ -29,7 +29,22 @@ export const RANGES: Array<[first: number, last: number]> = [
   [7564, 7565], // retrNormDoi and retrValidDoi (Task 11, analyse.ts)
   [7871, 7881], // citInsertBib (Task 10, citlib.ts); not 7882-7887, the comment that opens the next function, which core does not port (its line 7885 holds a Devanagari word)
   [7991, 8023], // citExport and citImport (Task 10, citlib.ts)
+  [8041, 8049], // rsReconstructAbstract (Task 12, research.ts)
+  [8055, 8060], // rsOaStatus (Task 12, research.ts)
+  [8127, 8127], // RS_DESIGNS (Task 12, data/research-tables.ts)
+  [8131, 8160], // rsQuickCheck (Task 12, research.ts)
+  [8191, 8195], // rsCsvText (Task 12, research.ts)
+  [8209, 8219], // rsRankParse (Task 12, research.ts)
+  [8237, 8244], // RS_DESIGN (Task 12, data/research-tables.ts)
+  [8245, 8250], // rsCleanTerm (Task 12, research.ts)
+  [8273, 8282], // rsBuildQuery (Task 12, research.ts); 8283 opens researchSearch
+  [8312, 8314], // the de-duplication inside researchSearch (Task 12, research.ts: rsDedupe); not 8311, the merge before it, nor the rest of researchSearch
+  [8336, 8346], // rsFilterPass (Task 12, research.ts)
+  [8455, 8464], // rsAuthorsToCit (Task 12, research.ts)
+  [8465, 8470], // rsEntryFromResult (Task 12, research.ts)
+  [8525, 8529], // rsCorpusText (Task 12, research.ts)
   [8633, 8690], // the distribution core (Task 6, pvalue.ts)
+  [9461, 9462], // pdCsvCell and pdCsv (Task 12, csv.ts)
   [9837, 9837], // AP_SAMPLE (Task 11, data/analyse-tables.ts)
   [9839, 9881], // AP_STAGES (data/analyse-tables.ts), AP_HEADS, AP_STOP (its words in data/analyse-tables.ts), apSquash, apToks, apHeadName and apBuild (Task 11, analyse.ts); not apLoad, 9882-9891
   [9987, 10017], // apPick, apJson and apCheckQuote (Task 11, analyse.ts); not apQuotesHTML, 10018-10026, nor the prompts of Task 14 from 10027

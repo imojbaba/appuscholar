@@ -1,0 +1,2602 @@
+{
+ "engine": "research",
+ "captured": "2026-10-19",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "papers": [
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000001",
+   "title": "Social media use and adolescent anxiety: a randomised trial in 12 schools, 2019–2021",
+   "authors": "Michael Kuria, D. Ndetei, Priya Nair, Tom Okafor, et al.",
+   "year": "2022",
+   "venue": "Journal of Adolescent Health",
+   "abstract": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "citationCount": 41,
+   "doi": "10.1016/j.jadohealth.2022.01.004",
+   "url": "https://doi.org/10.1016/j.jadohealth.2022.01.004",
+   "referencedWorks": [
+    "https://openalex.org/W2100000001",
+    "https://openalex.org/W2100000002"
+   ],
+   "citedByApiUrl": "https://api.openalex.org/works?filter=cites:W4200000001",
+   "retracted": false,
+   "oaStatus": "gold",
+   "oaUrl": "https://www.example.org/jah-2022-004.pdf",
+   "rel": {
+    "score": 3,
+    "reason": "Same topic and the same age group as the question."
+   },
+   "quick": {
+    "summary": "Cutting social media use for 4 weeks lowered anxiety scores by 2.5 points in 1,200 adolescents.",
+    "design": {
+     "type": "randomised trial",
+     "quote": "In this randomised trial, 1,200 adolescents aged 13 to 17",
+     "ok": true
+    },
+    "sample": {
+     "n": 1200,
+     "quote": "1,200 adolescents aged 13 to 17 from 12 schools",
+     "ok": true
+    }
+   }
+  },
+  {
+   "source": "PubMed",
+   "ssId": null,
+   "title": "\"Screen time\" and sleep in primary school children: a cross-sectional survey",
+   "authors": "Smith JA, Brown K, Lee ABCDE",
+   "year": "2019",
+   "venue": "BMC Public Health",
+   "abstract": "We surveyed 60 parents of children aged 6 to 11 about evening screen time and sleep. Children with more than two hours of screen time after 6 pm slept 35 minutes less on school nights. This cross-sectional survey cannot show cause and effect.",
+   "doi": "",
+   "rel": {
+    "score": 2,
+    "reason": "Related: \"screen time\" and sleep, but children, not adolescents."
+   },
+   "quick": {
+    "summary": "Evening screen time was linked to shorter sleep on school nights.",
+    "design": {
+     "type": "cross-sectional survey",
+     "ok": false
+    },
+    "sample": {
+     "n": 60,
+     "quote": "We surveyed 60 parents",
+     "ok": true
+    }
+   },
+   "pmid": "31000002",
+   "citationCount": 0,
+   "url": "https://pubmed.ncbi.nlm.nih.gov/31000002/"
+  },
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000003",
+   "title": "Anxiety in adults who use social networking sites",
+   "authors": "Unknown authors",
+   "year": "",
+   "venue": "",
+   "abstract": "",
+   "citationCount": 0,
+   "doi": "",
+   "url": "https://openalex.org/W4200000003",
+   "referencedWorks": [],
+   "citedByApiUrl": "",
+   "retracted": false,
+   "oaStatus": "",
+   "oaUrl": "",
+   "rel": {
+    "score": 1,
+    "reason": "Title only: about adults, not adolescents.",
+    "titleOnly": true
+   }
+  },
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000004",
+   "title": "Exam anxiety predicts grades: a three-year cohort study",
+   "authors": "Anjali Mehta, Rahul Verma",
+   "year": 2018,
+   "venue": "Journal of Educational Psychology",
+   "abstract": "This cohort study followed 840 university students over three years and found that exam anxiety predicted lower grades. The paper reports an effect size of d = 0.45.",
+   "citationCount": 7,
+   "doi": "https://doi.org/10.1037/edu0000999",
+   "url": "https://doi.org/10.1037/edu0000999",
+   "referencedWorks": [
+    "https://openalex.org/W2100000004"
+   ],
+   "citedByApiUrl": "https://api.openalex.org/works?filter=cites:W4200000004",
+   "retracted": true,
+   "oaStatus": "bronze",
+   "oaUrl": "",
+   "quick": {
+    "summaryDropped": true,
+    "design": {
+     "type": "cohort study",
+     "quote": "This cohort study followed 840 university students",
+     "ok": true
+    },
+    "sample": {
+     "n": 804,
+     "ok": false
+    }
+   }
+  },
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000005",
+   "title": "Burnout among rural teachers:\r\na thematic analysis",
+   "authors": "Grace Wanjiru",
+   "year": "2021",
+   "venue": "Teaching and Teacher Education",
+   "abstract": "<jats:p>Background &amp; aims: Little is known about how teachers experience burnout in rural schools. We used thematic analysis of interviews with 14 teachers. Themes were workload, isolation and a sense of purpose &lt;in spite of&gt; low pay.</jats:p>",
+   "citationCount": 3,
+   "doi": "10.1016/j.tate.2021.103300",
+   "url": "https://doi.org/10.1016/j.tate.2021.103300",
+   "referencedWorks": [],
+   "citedByApiUrl": "https://api.openalex.org/works?filter=cites:W4200000005",
+   "retracted": false,
+   "oaStatus": "green",
+   "oaUrl": "https://europepmc.org/articles/PMC0000005",
+   "rel": {
+    "score": 0,
+    "reason": "Off topic: teachers, not adolescents."
+   },
+   "quick": {
+    "summary": "Rural teachers linked burnout to workload and isolation.",
+    "design": {
+     "type": "qualitative study",
+     "quote": "We used thematic analysis of interviews with 14 teachers",
+     "ok": true
+    }
+   }
+  },
+  {
+   "source": "PubMed",
+   "ssId": null,
+   "title": "Sleep, screens and school performance",
+   "authors": "Li X, Wang Y, Ravi Kumar Sharma, Kuria M, et al.",
+   "year": "2021",
+   "venue": "Lancet Child\tAdolescent Health",
+   "abstract": "",
+   "doi": "",
+   "pmid": "31000006",
+   "citationCount": 0,
+   "url": "https://pubmed.ncbi.nlm.nih.gov/31000006/"
+  },
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000007",
+   "title": "किशोरों में नींद की कमी और परीक्षा की चिंता",
+   "authors": "रवि शर्मा, अनीता वर्मा",
+   "year": "2020",
+   "venue": "भारतीय मनोविज्ञान पत्रिका",
+   "abstract": "यह अनुदैर्ध्य अध्ययन 450 विद्यार्थियों पर किया गया। नींद की कमी और परीक्षा की चिंता में संबंध पाया गया।",
+   "citationCount": 2,
+   "doi": "10.5555/bmp.2020.007",
+   "url": "https://doi.org/10.5555/bmp.2020.007",
+   "referencedWorks": [],
+   "citedByApiUrl": "",
+   "retracted": false,
+   "oaStatus": "hybrid",
+   "oaUrl": "https://www.example.org/bmp-2020-007.pdf",
+   "quick": {
+    "summary": "नींद की कमी परीक्षा की चिंता से जुड़ी पाई गई।",
+    "design": {
+     "type": "longitudinal study",
+     "ok": false
+    },
+    "sample": {
+     "n": 450,
+     "quote": "यह अनुदैर्ध्य अध्ययन 450 विद्यार्थियों पर किया गया",
+     "ok": true
+    }
+   }
+  },
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000008",
+   "title": "Mindfulness in schools: what's the evidence? A systematic review",
+   "authors": "Smith J.A., O'Brien Mary-Kate",
+   "year": "2023",
+   "venue": "Educational Psychology Review",
+   "abstract": "This systematic review of 32 studies (n = 5,412) found that mindfulness programmes in schools had small effects on anxiety. Most studies were at high risk of bias.",
+   "citationCount": 250,
+   "doi": "10.1007/s10648-023-09999-1",
+   "url": "https://doi.org/10.1007/s10648-023-09999-1",
+   "referencedWorks": [
+    "https://openalex.org/W2100000008"
+   ],
+   "citedByApiUrl": "https://api.openalex.org/works?filter=cites:W4200000008",
+   "retracted": false,
+   "oaStatus": "gold",
+   "oaUrl": "",
+   "rel": {
+    "score": 2,
+    "reason": "Related: anxiety in school pupils, through mindfulness."
+   },
+   "quick": {
+    "design": {
+     "type": "systematic review",
+     "quote": "This systematic review of 32 studies",
+     "ok": true
+    }
+   }
+  },
+  {
+   "source": "PubMed",
+   "ssId": null,
+   "title": "Mindfulness for test anxiety in university students: a meta-analysis",
+   "authors": "Smith JA",
+   "year": 2023,
+   "venue": "",
+   "abstract": "We pooled 21 randomised trials of mindfulness for test anxiety in university students. The pooled effect was moderate, g = 0.52, with high heterogeneity.",
+   "doi": "",
+   "quick": {},
+   "pmid": "31000009",
+   "citationCount": 0,
+   "url": "https://pubmed.ncbi.nlm.nih.gov/31000009/"
+  },
+  {
+   "source": "OpenAlex",
+   "oaId": "W4200000010",
+   "title": "Teacher burnout in Kenya,\na qualitative study",
+   "authors": "Otieno P, Achieng M",
+   "year": "2021",
+   "venue": "arXiv",
+   "abstract": "Teacher burnout was explored in a qualitative study of 18 secondary school teachers in Kenya using semi-structured interviews. Teachers described long hours, large classes and little support.",
+   "citationCount": 0,
+   "doi": "",
+   "url": "https://openalex.org/W4200000010",
+   "referencedWorks": [],
+   "citedByApiUrl": "",
+   "retracted": false,
+   "oaStatus": "",
+   "oaUrl": "https://arxiv.org/pdf/2101.00010",
+   "rel": {
+    "score": 3,
+    "reason": "Direct:\tteachers' burnout, as asked."
+   },
+   "quick": {
+    "summary": "Teachers described long hours, large classes and little support.",
+    "design": {
+     "type": "qualitative study",
+     "quote": "in a qualitative study of 18 secondary school teachers",
+     "ok": true
+    },
+    "sample": {
+     "n": 18,
+     "quote": "18 secondary school teachers",
+     "ok": true
+    }
+   }
+  }
+ ],
+ "abstracts": [
+  {
+   "inv": {},
+   "out": ""
+  },
+  {
+   "inv": null,
+   "out": ""
+  },
+  {
+   "inv": {
+    "Reading": [
+     0
+    ],
+    "aloud": [
+     1
+    ],
+    "helps": [
+     2
+    ],
+    "memory": [
+     3
+    ]
+   },
+   "out": "Reading aloud helps memory"
+  },
+  {
+   "inv": {
+    "words": [
+     5
+    ],
+    "twenty": [
+     4
+    ],
+    "Each": [
+     0
+    ],
+    "read": [
+     2
+    ],
+    "child": [
+     1
+    ],
+    "aloud": [
+     3,
+     6
+    ],
+    "the": [
+     9,
+     7
+    ],
+    "next": [
+     8
+    ],
+    "day": [
+     10
+    ]
+   },
+   "out": "Each child read aloud twenty words aloud the next the day"
+  },
+  {
+   "inv": {
+    "Background": [
+     0
+    ],
+    "anxiety": [
+     3
+    ],
+    "rose": [
+     4
+    ]
+   },
+   "out": "Background anxiety rose"
+  },
+  {
+   "inv": {
+    "first": [
+     0
+    ],
+    "second": [
+     0
+    ],
+    "third": [
+     1
+    ]
+   },
+   "out": "second third"
+  },
+  {
+   "inv": {
+    "2019": [
+     0,
+     2
+    ],
+    "cats": [
+     0
+    ],
+    "in": [
+     1
+    ]
+   },
+   "out": "cats in 2019"
+  },
+  {
+   "inv": {
+    "<jats:p>Background:": [
+     0
+    ],
+    "aims": [
+     1
+    ],
+    "&amp;": [
+     2
+    ],
+    "methods.</jats:p>": [
+     3
+    ]
+   },
+   "out": "<jats:p>Background: aims &amp; methods.</jats:p>"
+  },
+  {
+   "inv": {
+    "two\nwords": [
+     0
+    ],
+    "end": [
+     1
+    ]
+   },
+   "out": "two words end"
+  },
+  {
+   "inv": {
+    "neg": [
+     -1
+    ],
+    "zero": [
+     0
+    ]
+   },
+   "out": "zero"
+  },
+  {
+   "inv": {
+    "neg": [
+     -1
+    ]
+   },
+   "out": ""
+  },
+  {
+   "inv": {
+    "a": []
+   },
+   "out": ""
+  },
+  {
+   "inv": {
+    "began": [
+     2
+    ],
+    "late": [
+     3
+    ]
+   },
+   "out": "began late"
+  }
+ ],
+ "oa": [
+  {
+   "oa": null,
+   "out": ""
+  },
+  {
+   "oa": {},
+   "out": ""
+  },
+  {
+   "oa": {
+    "is_oa": false,
+    "oa_status": "gold"
+   },
+   "out": ""
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": "gold"
+   },
+   "out": "gold"
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": "Diamond"
+   },
+   "out": "gold"
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": "GREEN"
+   },
+   "out": "green"
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": "hybrid"
+   },
+   "out": "hybrid"
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": "bronze"
+   },
+   "out": "bronze"
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": "closed"
+   },
+   "out": ""
+  },
+  {
+   "oa": {
+    "is_oa": true
+   },
+   "out": ""
+  },
+  {
+   "oa": {
+    "is_oa": true,
+    "oa_status": " gold"
+   },
+   "out": ""
+  },
+  {
+   "oa": {
+    "is_oa": "yes",
+    "oa_status": "green"
+   },
+   "out": "green"
+  }
+ ],
+ "quick": [
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"Cutting social media use for 4 weeks lowered anxiety scores by 2.5 points in 1,200 adolescents.\",\"design\":{\"type\":\"randomised trial\",\"quote\":\"In this randomised trial, 1,200 adolescents aged 13 to 17\"},\"sample\":{\"n\":1200,\"quote\":\"1,200 adolescents aged 13 to 17 from 12 schools\"}}",
+   "out": {
+    "summary": "Cutting social media use for 4 weeks lowered anxiety scores by 2.5 points in 1,200 adolescents.",
+    "design": {
+     "type": "randomised trial",
+     "quote": "In this randomised trial, 1,200 adolescents aged 13 to 17",
+     "ok": true
+    },
+    "sample": {
+     "n": 1200,
+     "quote": "1,200 adolescents aged 13 to 17 from 12 schools",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"Anxiety fell by 30% in 1,500 teenagers.\",\"design\":{\"type\":\"Randomised Trial\",\"quote\":\"in this randomised trial\"},\"sample\":{\"n\":1200,\"quote\":\"1,200 adolescents\"}}",
+   "out": {
+    "summaryDropped": true,
+    "design": {
+     "type": "randomised trial",
+     "quote": "in this randomised trial",
+     "ok": true
+    },
+    "sample": {
+     "n": 1200,
+     "quote": "1,200 adolescents",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"A programme to cut social media use reduced anxiety.\",\"design\":{\"type\":\"randomised trial\",\"quote\":\"participants were randomly allocated using sealed envelopes\"},\"sample\":{\"n\":12,\"quote\":\"from 12 schools\"}}",
+   "out": {
+    "summary": "A programme to cut social media use reduced anxiety.",
+    "design": {
+     "type": "randomised trial",
+     "ok": false
+    },
+    "sample": {
+     "n": 12,
+     "quote": "from 12 schools",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"Anxiety fell more with less social media.\",\"design\":{\"type\":\"not stated\",\"quote\":\"\"},\"sample\":{\"n\":1200,\"quote\":\"adolescents aged 13 to 17 from 12 schools\"}}",
+   "out": {
+    "summary": "Anxiety fell more with less social media.",
+    "sample": {
+     "n": 1200,
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "We surveyed 60 parents of children aged 6 to 11 about evening screen time and sleep. Children with more than two hours of screen time after 6 pm slept 35 minutes less on school nights. This cross-sectional survey cannot show cause and effect.",
+   "raw": "```json\n{\"summary\":\"Children with more than two hours of evening screen time slept 35 minutes less.\",\"design\":{\"type\":\"cross-sectional survey\",\"quote\":\"This cross-sectional survey cannot show cause and effect\"},\"sample\":{\"n\":\"60\",\"quote\":\"We surveyed 60 parents of children aged 6 to 11\"}}\n```",
+   "out": {
+    "summary": "Children with more than two hours of evening screen time slept 35 minutes less.",
+    "design": {
+     "type": "cross-sectional survey",
+     "quote": "This cross-sectional survey cannot show cause and effect",
+     "ok": true
+    },
+    "sample": {
+     "n": 60,
+     "quote": "We surveyed 60 parents of children aged 6 to 11",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "We surveyed 60 parents of children aged 6 to 11 about evening screen time and sleep. Children with more than two hours of screen time after 6 pm slept 35 minutes less on school nights. This cross-sectional survey cannot show cause and effect.",
+   "raw": "I'm sorry, I could not find an abstract to read.",
+   "out": null
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{}",
+   "out": {}
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"\",\"design\":\"randomised trial\",\"sample\":1200}",
+   "out": {}
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"sample\":{\"n\":\"1,200\",\"quote\":\"1,200 adolescents aged 13 to 17\"}}",
+   "out": {}
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"Anxiety fell in 1,200 adolescents.\",\"sample\":{\"n\":1,200,\"quote\":\"1,200 adolescents\"}}",
+   "out": null
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"design\":{\"type\":\"randomised trial\",\"quote\":\"RCT\"},\"sample\":{\"n\":0,\"quote\":\"no one\"}}",
+   "out": {
+    "design": {
+     "type": "randomised trial",
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"design\":{\"type\":\"Longitudinal Study\",\"quote\":\"Anxiety was measured with the GAD-7 at baseline and after 4 weeks\"},\"sample\":{\"n\":12.5,\"quote\":\"from 12 schools\"}}",
+   "out": {
+    "design": {
+     "type": "longitudinal study",
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"sample\":{\"n\":20000000,\"quote\":\"1,200 adolescents aged 13 to 17\"}}",
+   "out": {}
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"sample\":{\"n\":10000000,\"quote\":\"1,200 adolescents aged 13 to 17\"}}",
+   "out": {
+    "sample": {
+     "n": 10000000,
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "A total of 120 pupils from 4 schools took part in the reading programme, and 20 of them left before the end.",
+   "raw": "{\"sample\":{\"n\":20,\"quote\":\"A total of 120 pupils from 4 schools\"}}",
+   "out": {
+    "sample": {
+     "n": 20,
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "A total of 120 pupils from 4 schools took part in the reading programme, and 20 of them left before the end.",
+   "raw": "{\"summary\":\"Most pupils finished the reading programme.\",\"sample\":{\"n\":null,\"quote\":\"not reported\"}}",
+   "out": {
+    "summary": "Most pupils finished the reading programme."
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"Control scores fell by only 0.80 points.\"}",
+   "out": {
+    "summaryDropped": true
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"Scores fell by 2,5 points.\"}",
+   "out": {
+    "summaryDropped": true
+   }
+  },
+  {
+   "ab": "यह अनुदैर्ध्य अध्ययन 450 विद्यार्थियों पर किया गया। नींद की कमी और परीक्षा की चिंता में संबंध पाया गया।",
+   "raw": "{\"summary\":\"४५० विद्यार्थियों में नींद की कमी चिंता से जुड़ी थी।\",\"design\":{\"type\":\"cohort study\",\"quote\":\"यह अनुदैर्ध्य अध्ययन 450 विद्यार्थियों पर किया गया\"},\"sample\":{\"n\":450,\"quote\":\"450 विद्यार्थियों पर\"}}",
+   "out": {
+    "summary": "४५० विद्यार्थियों में नींद की कमी चिंता से जुड़ी थी।",
+    "design": {
+     "type": "cohort study",
+     "quote": "यह अनुदैर्ध्य अध्ययन 450 विद्यार्थियों पर किया गया",
+     "ok": true
+    },
+    "sample": {
+     "n": 450,
+     "quote": "450 विद्यार्थियों पर",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":\"This   trial asked whether\\n\\nadolescents who cut their social media use feel less anxious, and it found that they did: the reduction group's anxiety scores fell further than those of the group that kept to its usual use, over the same weeks and with the same questionnaire, which the authors describe in full and which other schools could use.\"}",
+   "out": {
+    "summary": "This trial asked whether adolescents who cut their social media use feel less anxious, and it found that they did: the reduction group's anxiety scores fell further than those of the group that kept to its usual use, over the same weeks and with the "
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"design\":{\"type\":\"  Cohort Study  \",\"quote\":\"Anxiety was measured with the GAD-7 at baseline\"}}",
+   "out": {
+    "design": {
+     "type": "cohort study",
+     "quote": "Anxiety was measured with the GAD-7 at baseline",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"summary\":1200}",
+   "out": {
+    "summary": "1200"
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "[{\"summary\":\"a\"},{\"summary\":\"b\"}]",
+   "out": null
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"sample\":{\"n\":1200,\"quote\":\"n=1,200\"}}",
+   "out": {
+    "sample": {
+     "n": 1200,
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"design\":{\"type\":\"randomised trial\",\"quote\":\"  Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusio  \"}}",
+   "out": {
+    "design": {
+     "type": "randomised trial",
+     "quote": "Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points ",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"sample\":{\"n\":1200,\"quote\":\" n this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cuttin \"}}",
+   "out": {
+    "sample": {
+     "n": 1200,
+     "quote": "n this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the con",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"design\":{\"type\":\"cohort study\",\"quote\":\"baseline\"}}",
+   "out": {
+    "design": {
+     "type": "cohort study",
+     "quote": "baseline",
+     "ok": true
+    }
+   }
+  },
+  {
+   "ab": "Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.",
+   "raw": "{\"design\":{\"type\":\"cohort study\",\"quote\":\"anxiety\"}}",
+   "out": {
+    "design": {
+     "type": "cohort study",
+     "ok": false
+    }
+   }
+  },
+  {
+   "ab": "A total of 120 pupils from 4 schools took part in the reading programme, and 20 of them left before the end.",
+   "raw": "{\"sample\":{\"n\":12,\"quote\":\"A total of 120 pupils\"}}",
+   "out": {
+    "sample": {
+     "n": 12,
+     "ok": false
+    }
+   }
+  }
+ ],
+ "rank": [
+  {
+   "n": 3,
+   "raw": "{\"scores\":[{\"id\":1,\"score\":3,\"reason\":\"Same topic and same age group.\"},{\"id\":2,\"score\":2,\"reason\":\"Related: sleep, not anxiety.\"},{\"id\":3,\"score\":0,\"reason\":\"Title only: about adults.\"}]}",
+   "out": {
+    "1": {
+     "score": 3,
+     "reason": "Same topic and same age group."
+    },
+    "2": {
+     "score": 2,
+     "reason": "Related: sleep, not anxiety."
+    },
+    "3": {
+     "score": 0,
+     "reason": "Title only: about adults."
+    }
+   }
+  },
+  {
+   "n": 3,
+   "raw": "{\"scores\":[{\"id\":0,\"score\":2,\"reason\":\"zero\"},{\"id\":4,\"score\":1,\"reason\":\"four\"},{\"id\":2,\"score\":3,\"reason\":\"first entry for 2\"},{\"id\":2,\"score\":0,\"reason\":\"second entry for 2\"},{\"id\":\"3\",\"score\":\"1\",\"reason\":\"id and score as strings\"}]}",
+   "out": {
+    "2": {
+     "score": 3,
+     "reason": "first entry for 2"
+    },
+    "3": {
+     "score": 1,
+     "reason": "id and score as strings"
+    }
+   }
+  },
+  {
+   "n": 3,
+   "raw": "{\"scores\":{\"1\":{\"score\":3,\"reason\":\"an object, not a list\"}}}",
+   "out": {}
+  },
+  {
+   "n": 5,
+   "raw": "{\"scores\":[{\"id\":1,\"score\":4,\"reason\":\"too high\"},{\"id\":2,\"score\":-1,\"reason\":\"negative\"},{\"id\":3,\"score\":2.5,\"reason\":\"half\"},{\"id\":4,\"score\":3,\"reason\":\"  Direct:\\n same   group  \"},{\"id\":5,\"score\":0}]}",
+   "out": {
+    "4": {
+     "score": 3,
+     "reason": "Direct: same group"
+    },
+    "5": {
+     "score": 0,
+     "reason": ""
+    }
+   }
+  },
+  {
+   "n": 1,
+   "raw": "```json\n{\"scores\":[null,\"x\",3,{\"id\":1.0,\"score\":1,\"reason\":\"Loosely related: it is about anxiety, but in adults at work rather than in adolescents at school, and it measures anxiety with a questionnaire the student's question does not mention, over a single day rather than weeks of use.\"}]}\n```",
+   "out": {
+    "1": {
+     "score": 1,
+     "reason": "Loosely related: it is about anxiety, but in adults at work rather than in adolescents at school, and it measures anxiety with a questionnaire the student's question does not mention, over a single da"
+    }
+   }
+  },
+  {
+   "n": 2,
+   "raw": "Sorry, I cannot rate these papers.",
+   "out": {}
+  },
+  {
+   "n": 2,
+   "raw": "{\"scores\":[]}",
+   "out": {}
+  },
+  {
+   "n": 6,
+   "raw": "{\"scores\":[{\"id\":1,\"score\":true,\"reason\":\"true\"},{\"id\":2,\"score\":null,\"reason\":\"null\"},{\"id\":3,\"score\":\"\",\"reason\":\"empty\"},{\"id\":4,\"score\":\"3 \",\"reason\":\"space\"},{\"id\":[5],\"score\":2,\"reason\":\"list\"},{\"id\":\"1.5\",\"score\":1,\"reason\":\"1.5\"}]}",
+   "out": {
+    "1": {
+     "score": 1,
+     "reason": "true"
+    },
+    "2": {
+     "score": 0,
+     "reason": "null"
+    },
+    "3": {
+     "score": 0,
+     "reason": "empty"
+    },
+    "4": {
+     "score": 3,
+     "reason": "space"
+    },
+    "5": {
+     "score": 2,
+     "reason": "list"
+    }
+   }
+  }
+ ],
+ "terms": [
+  {
+   "t": "screen time",
+   "q": "social media use and adolescent anxiety",
+   "out": "screen time"
+  },
+  {
+   "t": "\"social media\"",
+   "q": "social media use and adolescent anxiety",
+   "out": "social media"
+  },
+  {
+   "t": "“curly quotes”",
+   "q": "social media use and adolescent anxiety",
+   "out": "curly quotes"
+  },
+  {
+   "t": "(teen OR adolescent)",
+   "q": "social media use and adolescent anxiety",
+   "out": "teen adolescent"
+  },
+  {
+   "t": "[tiab] depression",
+   "q": "social media use and adolescent anxiety",
+   "out": "tiab depression"
+  },
+  {
+   "t": "Anxiety AND depression NOT adults",
+   "q": "social media use and adolescent anxiety",
+   "out": "Anxiety depression adults"
+  },
+  {
+   "t": "and or not",
+   "q": "social media use and adolescent anxiety",
+   "out": "and or not"
+  },
+  {
+   "t": "ORANGE juice",
+   "q": "social media use and adolescent anxiety",
+   "out": "ORANGE juice"
+  },
+  {
+   "t": "AND/OR",
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "(OR)",
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "a",
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "ab",
+   "q": "social media use and adolescent anxiety",
+   "out": "ab"
+  },
+  {
+   "t": "cognitive behavioral therapy for anxiety",
+   "q": "social media use and adolescent anxiety",
+   "out": "cognitive behavioral therapy for anxiety"
+  },
+  {
+   "t": "cognitive behavioural therapy for anxiety",
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "one two three four five",
+   "q": "social media use and adolescent anxiety",
+   "out": "one two three four five"
+  },
+  {
+   "t": "one two three four five six",
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "Social Media Use and Adolescent Anxiety",
+   "q": "  social media use and adolescent anxiety  ",
+   "out": ""
+  },
+  {
+   "t": "",
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "  multiple   spaces  ",
+   "q": "social media use and adolescent anxiety",
+   "out": "multiple spaces"
+  },
+  {
+   "t": "teen\tsocial media",
+   "q": "social media use and adolescent anxiety",
+   "out": "teen social media"
+  },
+  {
+   "t": "children's sleep",
+   "q": "social media use and adolescent anxiety",
+   "out": "children's sleep"
+  },
+  {
+   "t": "न्यूरोसाइंस",
+   "q": "social media use and adolescent anxiety",
+   "out": "न्यूरोसाइंस"
+  },
+  {
+   "t": 42,
+   "q": "social media use and adolescent anxiety",
+   "out": "42"
+  },
+  {
+   "t": null,
+   "q": "social media use and adolescent anxiety",
+   "out": ""
+  },
+  {
+   "t": "Teacher Burnout",
+   "q": "  teacher burnout ",
+   "out": ""
+  }
+ ],
+ "queries": [
+  {
+   "q": "social media use and adolescent anxiety",
+   "kind": "oa",
+   "terms": [],
+   "design": "any",
+   "out": "social media use and adolescent anxiety"
+  },
+  {
+   "q": "social media use and adolescent anxiety",
+   "kind": "pm",
+   "terms": [],
+   "design": "any",
+   "out": "social media use and adolescent anxiety"
+  },
+  {
+   "q": "social media use and adolescent anxiety",
+   "kind": "oa",
+   "terms": [
+    "screen time",
+    "teen depression"
+   ],
+   "design": "any",
+   "out": "(social media use and adolescent anxiety) OR \"screen time\" OR \"teen depression\""
+  },
+  {
+   "q": "social media use and adolescent anxiety",
+   "kind": "pm",
+   "terms": [
+    "screen time",
+    "teen depression"
+   ],
+   "design": "any",
+   "out": "(social media use and adolescent anxiety) OR \"screen time\"[tiab] OR \"teen depression\"[tiab]"
+  },
+  {
+   "q": "exercise and depression",
+   "kind": "oa",
+   "terms": [],
+   "design": "rct",
+   "out": "(exercise and depression) AND (\"randomized controlled trial\" OR \"randomised controlled trial\" OR \"randomized trial\")"
+  },
+  {
+   "q": "exercise and depression",
+   "kind": "pm",
+   "terms": [
+    "physical activity"
+   ],
+   "design": "rct",
+   "out": "((exercise and depression) OR \"physical activity\"[tiab]) AND \"Randomized Controlled Trial\"[pt]"
+  },
+  {
+   "q": "mindfulness in schools",
+   "kind": "oa",
+   "terms": [
+    "meditation"
+   ],
+   "design": "sr",
+   "out": "((mindfulness in schools) OR \"meditation\") AND (\"systematic review\" OR \"meta-analysis\")"
+  },
+  {
+   "q": "mindfulness in schools",
+   "kind": "pm",
+   "terms": [],
+   "design": "sr",
+   "out": "(mindfulness in schools) AND (Systematic Review[pt] OR Meta-Analysis[pt])"
+  },
+  {
+   "q": "reading interventions",
+   "kind": "oa",
+   "terms": [],
+   "design": "review",
+   "out": "reading interventions"
+  },
+  {
+   "q": "reading interventions",
+   "kind": "pm",
+   "terms": [
+    "literacy"
+   ],
+   "design": "review",
+   "out": "((reading interventions) OR \"literacy\"[tiab]) AND Review[pt]"
+  },
+  {
+   "q": "teacher burnout",
+   "kind": "oa",
+   "terms": [
+    "work stress"
+   ],
+   "design": "qual",
+   "out": "((teacher burnout) OR \"work stress\") AND (qualitative OR \"thematic analysis\" OR interview)"
+  },
+  {
+   "q": "teacher burnout",
+   "kind": "pm",
+   "terms": [],
+   "design": "qual",
+   "out": "(teacher burnout) AND (qualitative[tiab] OR \"thematic analysis\"[tiab])"
+  },
+  {
+   "q": "sleep and exam anxiety",
+   "kind": "oa",
+   "terms": [],
+   "design": "survey",
+   "out": "(sleep and exam anxiety) AND (survey OR questionnaire OR \"cross-sectional\")"
+  },
+  {
+   "q": "sleep and exam anxiety",
+   "kind": "pm",
+   "terms": [
+    "insomnia",
+    "test anxiety"
+   ],
+   "design": "survey",
+   "out": "((sleep and exam anxiety) OR \"insomnia\"[tiab] OR \"test anxiety\"[tiab]) AND (survey*[tiab] OR questionnaire*[tiab] OR \"cross-sectional\"[tiab])"
+  },
+  {
+   "q": "screen time",
+   "kind": "oa",
+   "terms": [
+    "digital media"
+   ],
+   "design": "cohort",
+   "out": "(screen time) OR \"digital media\""
+  },
+  {
+   "q": "\"screen time\" (children)",
+   "kind": "pm",
+   "terms": [
+    "“tablet use”"
+   ],
+   "design": "rct",
+   "out": "((\"screen time\" (children)) OR \"“tablet use”\"[tiab]) AND \"Randomized Controlled Trial\"[pt]"
+  }
+ ],
+ "filters": [
+  {
+   "f": {
+    "year": 0,
+    "oa": false,
+    "ret": false,
+    "des": "",
+    "n": 0
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 2020,
+    "oa": false,
+    "ret": false,
+    "des": "",
+    "n": 0
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 0,
+    "oa": true,
+    "ret": false,
+    "des": "",
+    "n": 0
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 0,
+    "oa": false,
+    "ret": true,
+    "des": "",
+    "n": 0
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 0,
+    "oa": false,
+    "ret": false,
+    "des": "randomised trial",
+    "n": 0
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 0,
+    "oa": false,
+    "ret": false,
+    "des": "",
+    "n": 100
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 0,
+    "oa": false,
+    "ret": false,
+    "des": "",
+    "n": 5
+   },
+   "out": [
+    {
+     "ok": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 2021,
+    "oa": true,
+    "ret": true,
+    "des": "qualitative study",
+    "n": 18
+   },
+   "out": [
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": true
+    }
+   ]
+  },
+  {
+   "f": {
+    "year": 0,
+    "oa": false,
+    "ret": false,
+    "des": "cross-sectional survey",
+    "n": 0
+   },
+   "out": [
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false,
+     "needsQuick": true
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": false
+    }
+   ]
+  }
+ ],
+ "authors": [
+  {
+   "str": "Michael Kuria, D. Ndetei, et al.",
+   "out": "Kuria, Michael; Ndetei, D."
+  },
+  {
+   "str": "Unknown authors",
+   "out": ""
+  },
+  {
+   "str": "Smith JA",
+   "out": "Smith, JA"
+  },
+  {
+   "str": "Smith JA, Brown K, Lee ABCDE",
+   "out": "Smith, JA; Brown, K; ABCDE, Lee"
+  },
+  {
+   "str": "Plato",
+   "out": "Plato"
+  },
+  {
+   "str": "Maria de la Cruz, Jean-Paul Sartre",
+   "out": "Cruz, Maria de la; Sartre, Jean-Paul"
+  },
+  {
+   "str": "",
+   "out": ""
+  },
+  {
+   "str": "A. B. Smith, C. Jones, et al",
+   "out": "Smith, A. B.; Jones, C."
+  },
+  {
+   "str": "Ravi Kumar Sharma ET AL.",
+   "out": "Sharma, Ravi Kumar"
+  },
+  {
+   "str": "Smith J.A., O'Brien Mary-Kate",
+   "out": "J.A., Smith; Mary-Kate, O'Brien"
+  },
+  {
+   "str": "रवि शर्मा, अनीता वर्मा",
+   "out": "शर्मा, रवि; वर्मा, अनीता"
+  },
+  {
+   "str": "Unknown authors, et al.",
+   "out": ""
+  },
+  {
+   "str": "  ,Li X,,  Wang Y  , ",
+   "out": "Li, X; Wang, Y"
+  },
+  {
+   "str": "Smith  JA",
+   "out": "Smith, JA"
+  },
+  {
+   "str": "WHO",
+   "out": "WHO"
+  },
+  {
+   "str": "Liu XYZW, Chen ABCDE",
+   "out": "Liu, XYZW; ABCDE, Chen"
+  },
+  {
+   "str": "Kuria M, et al",
+   "out": "Kuria, M"
+  },
+  {
+   "str": "et al.",
+   "out": ""
+  },
+  {
+   "str": "Smith, et al., Jones",
+   "out": "Smith; al., et; Jones"
+  },
+  {
+   "str": "Michael Kuria, D. Ndetei, Priya Nair, Tom Okafor, et al.",
+   "out": "Kuria, Michael; Ndetei, D.; Nair, Priya; Okafor, Tom"
+  },
+  {
+   "str": "Anjali Mehta, Rahul Verma",
+   "out": "Mehta, Anjali; Verma, Rahul"
+  },
+  {
+   "str": "Grace Wanjiru",
+   "out": "Wanjiru, Grace"
+  },
+  {
+   "str": "Li X, Wang Y, Ravi Kumar Sharma, Kuria M, et al.",
+   "out": "Li, X; Wang, Y; Sharma, Ravi Kumar; Kuria, M"
+  },
+  {
+   "str": "Otieno P, Achieng M",
+   "out": "Otieno, P; Achieng, M"
+  }
+ ],
+ "entries": [
+  {
+   "style": "apa",
+   "out": [
+    {
+     "author": "Kuria, Michael; Ndetei, D.; Nair, Priya; Okafor, Tom",
+     "year": "2022",
+     "title": "Social media use and adolescent anxiety: a randomised trial in 12 schools, 2019–2021",
+     "source": "Journal of Adolescent Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1016/j.jadohealth.2022.01.004",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Smith, JA; Brown, K; ABCDE, Lee",
+     "year": "2019",
+     "title": "\"Screen time\" and sleep in primary school children: a cross-sectional survey",
+     "source": "BMC Public Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000002/",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "",
+     "year": "",
+     "title": "Anxiety in adults who use social networking sites",
+     "source": "",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://openalex.org/W4200000003",
+     "type": "Website",
+     "style": "apa"
+    },
+    {
+     "author": "Mehta, Anjali; Verma, Rahul",
+     "year": "2018",
+     "title": "Exam anxiety predicts grades: a three-year cohort study",
+     "source": "Journal of Educational Psychology",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "https://doi.org/10.1037/edu0000999",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Wanjiru, Grace",
+     "year": "2021",
+     "title": "Burnout among rural teachers:\r\na thematic analysis",
+     "source": "Teaching and Teacher Education",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1016/j.tate.2021.103300",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Li, X; Wang, Y; Sharma, Ravi Kumar; Kuria, M",
+     "year": "2021",
+     "title": "Sleep, screens and school performance",
+     "source": "Lancet Child\tAdolescent Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000006/",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "शर्मा, रवि; वर्मा, अनीता",
+     "year": "2020",
+     "title": "किशोरों में नींद की कमी और परीक्षा की चिंता",
+     "source": "भारतीय मनोविज्ञान पत्रिका",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.5555/bmp.2020.007",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "J.A., Smith; Mary-Kate, O'Brien",
+     "year": "2023",
+     "title": "Mindfulness in schools: what's the evidence? A systematic review",
+     "source": "Educational Psychology Review",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1007/s10648-023-09999-1",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Smith, JA",
+     "year": "2023",
+     "title": "Mindfulness for test anxiety in university students: a meta-analysis",
+     "source": "",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000009/",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Otieno, P; Achieng, M",
+     "year": "2021",
+     "title": "Teacher burnout in Kenya,\na qualitative study",
+     "source": "arXiv",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://openalex.org/W4200000010",
+     "type": "Journal article",
+     "style": "apa"
+    }
+   ]
+  },
+  {
+   "style": "ieee",
+   "out": [
+    {
+     "author": "Kuria, Michael; Ndetei, D.; Nair, Priya; Okafor, Tom",
+     "year": "2022",
+     "title": "Social media use and adolescent anxiety: a randomised trial in 12 schools, 2019–2021",
+     "source": "Journal of Adolescent Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1016/j.jadohealth.2022.01.004",
+     "url": "",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "Smith, JA; Brown, K; ABCDE, Lee",
+     "year": "2019",
+     "title": "\"Screen time\" and sleep in primary school children: a cross-sectional survey",
+     "source": "BMC Public Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000002/",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "",
+     "year": "",
+     "title": "Anxiety in adults who use social networking sites",
+     "source": "",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://openalex.org/W4200000003",
+     "type": "Website",
+     "style": "ieee"
+    },
+    {
+     "author": "Mehta, Anjali; Verma, Rahul",
+     "year": "2018",
+     "title": "Exam anxiety predicts grades: a three-year cohort study",
+     "source": "Journal of Educational Psychology",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "https://doi.org/10.1037/edu0000999",
+     "url": "",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "Wanjiru, Grace",
+     "year": "2021",
+     "title": "Burnout among rural teachers:\r\na thematic analysis",
+     "source": "Teaching and Teacher Education",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1016/j.tate.2021.103300",
+     "url": "",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "Li, X; Wang, Y; Sharma, Ravi Kumar; Kuria, M",
+     "year": "2021",
+     "title": "Sleep, screens and school performance",
+     "source": "Lancet Child\tAdolescent Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000006/",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "शर्मा, रवि; वर्मा, अनीता",
+     "year": "2020",
+     "title": "किशोरों में नींद की कमी और परीक्षा की चिंता",
+     "source": "भारतीय मनोविज्ञान पत्रिका",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.5555/bmp.2020.007",
+     "url": "",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "J.A., Smith; Mary-Kate, O'Brien",
+     "year": "2023",
+     "title": "Mindfulness in schools: what's the evidence? A systematic review",
+     "source": "Educational Psychology Review",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1007/s10648-023-09999-1",
+     "url": "",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "Smith, JA",
+     "year": "2023",
+     "title": "Mindfulness for test anxiety in university students: a meta-analysis",
+     "source": "",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000009/",
+     "type": "Journal article",
+     "style": "ieee"
+    },
+    {
+     "author": "Otieno, P; Achieng, M",
+     "year": "2021",
+     "title": "Teacher burnout in Kenya,\na qualitative study",
+     "source": "arXiv",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://openalex.org/W4200000010",
+     "type": "Journal article",
+     "style": "ieee"
+    }
+   ]
+  },
+  {
+   "style": "",
+   "out": [
+    {
+     "author": "Kuria, Michael; Ndetei, D.; Nair, Priya; Okafor, Tom",
+     "year": "2022",
+     "title": "Social media use and adolescent anxiety: a randomised trial in 12 schools, 2019–2021",
+     "source": "Journal of Adolescent Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1016/j.jadohealth.2022.01.004",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Smith, JA; Brown, K; ABCDE, Lee",
+     "year": "2019",
+     "title": "\"Screen time\" and sleep in primary school children: a cross-sectional survey",
+     "source": "BMC Public Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000002/",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "",
+     "year": "",
+     "title": "Anxiety in adults who use social networking sites",
+     "source": "",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://openalex.org/W4200000003",
+     "type": "Website",
+     "style": "apa"
+    },
+    {
+     "author": "Mehta, Anjali; Verma, Rahul",
+     "year": "2018",
+     "title": "Exam anxiety predicts grades: a three-year cohort study",
+     "source": "Journal of Educational Psychology",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "https://doi.org/10.1037/edu0000999",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Wanjiru, Grace",
+     "year": "2021",
+     "title": "Burnout among rural teachers:\r\na thematic analysis",
+     "source": "Teaching and Teacher Education",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1016/j.tate.2021.103300",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Li, X; Wang, Y; Sharma, Ravi Kumar; Kuria, M",
+     "year": "2021",
+     "title": "Sleep, screens and school performance",
+     "source": "Lancet Child\tAdolescent Health",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000006/",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "शर्मा, रवि; वर्मा, अनीता",
+     "year": "2020",
+     "title": "किशोरों में नींद की कमी और परीक्षा की चिंता",
+     "source": "भारतीय मनोविज्ञान पत्रिका",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.5555/bmp.2020.007",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "J.A., Smith; Mary-Kate, O'Brien",
+     "year": "2023",
+     "title": "Mindfulness in schools: what's the evidence? A systematic review",
+     "source": "Educational Psychology Review",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "10.1007/s10648-023-09999-1",
+     "url": "",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Smith, JA",
+     "year": "2023",
+     "title": "Mindfulness for test anxiety in university students: a meta-analysis",
+     "source": "",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/31000009/",
+     "type": "Journal article",
+     "style": "apa"
+    },
+    {
+     "author": "Otieno, P; Achieng, M",
+     "year": "2021",
+     "title": "Teacher burnout in Kenya,\na qualitative study",
+     "source": "arXiv",
+     "volume": "",
+     "issue": "",
+     "pages": "",
+     "doi": "",
+     "url": "https://openalex.org/W4200000010",
+     "type": "Journal article",
+     "style": "apa"
+    }
+   ]
+  }
+ ],
+ "corpus": [
+  {
+   "ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "out": "[1] Michael Kuria, D. Ndetei, Priya Nair, Tom Okafor, et al. (2022). Social media use and adolescent anxiety: a randomised trial in 12 schools, 2019–2021. Journal of Adolescent Health.\nAbstract: Background: Heavy social media use has been linked to anxiety in adolescents. Methods: In this randomised trial, 1,200 adolescents aged 13 to 17 from 12 schools were assigned to a four-week reduction programme or to usual use. Anxiety was measured with the GAD-7 at baseline and after 4 weeks. Results: Anxiety scores fell by 2.5 points in the reduction group and by 0.8 points in the control group (p = .003). Conclusions: Cutting social media use for four weeks reduced anxiety.\n\n[2] Smith JA, Brown K, Lee ABCDE (2019). \"Screen time\" and sleep in primary school children: a cross-sectional survey. BMC Public Health.\nAbstract: We surveyed 60 parents of children aged 6 to 11 about evening screen time and sleep. Children with more than two hours of screen time after 6 pm slept 35 minutes less on school nights. This cross-sectional survey cannot show cause and effect.\n\n[3] Unknown authors (n.d.). Anxiety in adults who use social networking sites. OpenAlex.\nAbstract: not available.\n\n[4] Anjali Mehta, Rahul Verma (2018). Exam anxiety predicts grades: a three-year cohort study. Journal of Educational Psychology.\nAbstract: This cohort study followed 840 university students over three years and found that exam anxiety predicted lower grades. The paper reports an effect size of d = 0.45.\nWARNING: this paper is marked as retracted. Do not present its findings as reliable; mention the retraction if you refer to it.\n\n[5] Grace Wanjiru (2021). Burnout among rural teachers:\r\na thematic analysis. Teaching and Teacher Education.\nAbstract: <jats:p>Background &amp; aims: Little is known about how teachers experience burnout in rural schools. We used thematic analysis of interviews with 14 teachers. Themes were workload, isolation and a sense of purpose &lt;in spite of&gt; low pay.</jats:p>\n\n[6] Li X, Wang Y, Ravi Kumar Sharma, Kuria M, et al. (2021). Sleep, screens and school performance. Lancet Child\tAdolescent Health.\nAbstract: not available.\n\n[7] रवि शर्मा, अनीता वर्मा (2020). किशोरों में नींद की कमी और परीक्षा की चिंता. भारतीय मनोविज्ञान पत्रिका.\nAbstract: यह अनुदैर्ध्य अध्ययन 450 विद्यार्थियों पर किया गया। नींद की कमी और परीक्षा की चिंता में संबंध पाया गया।\n\n[8] Smith J.A., O'Brien Mary-Kate (2023). Mindfulness in schools: what's the evidence? A systematic review. Educational Psychology Review.\nAbstract: This systematic review of 32 studies (n = 5,412) found that mindfulness programmes in schools had small effects on anxiety. Most studies were at high risk of bias.\n\n[9] Smith JA (2023). Mindfulness for test anxiety in university students: a meta-analysis. PubMed.\nAbstract: We pooled 21 randomised trials of mindfulness for test anxiety in university students. The pooled effect was moderate, g = 0.52, with high heterogeneity.\n\n[10] Otieno P, Achieng M (2021). Teacher burnout in Kenya,\na qualitative study. arXiv.\nAbstract: Teacher burnout was explored in a qualitative study of 18 secondary school teachers in Kenya using semi-structured interviews. Teachers described long hours, large classes and little support."
+  },
+  {
+   "ids": [],
+   "out": ""
+  }
+ ],
+ "csv": [
+  {
+   "ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "out": "Title,Authors,Year,Venue,DOI,Source,Retracted (OpenAlex),Fit 0-3 (AI),Fit reason (AI),\"Kind of study (AI, confirmed from abstract)\",\"Sample size (AI, confirmed from abstract)\",Summary (AI)\n\"Social media use and adolescent anxiety: a randomised trial in 12 schools, 2019–2021\",\"Michael Kuria, D. Ndetei, Priya Nair, Tom Okafor, et al.\",2022,Journal of Adolescent Health,10.1016/j.jadohealth.2022.01.004,OpenAlex,,3,Same topic and the same age group as the question.,randomised trial,1200,\"Cutting social media use for 4 weeks lowered anxiety scores by 2.5 points in 1,200 adolescents.\"\n\"\"\"Screen time\"\" and sleep in primary school children: a cross-sectional survey\",\"Smith JA, Brown K, Lee ABCDE\",2019,BMC Public Health,,PubMed,,2,\"Related: \"\"screen time\"\" and sleep, but children, not adolescents.\",,60,Evening screen time was linked to shorter sleep on school nights.\nAnxiety in adults who use social networking sites,Unknown authors,,,,OpenAlex,,1,\"Title only: about adults, not adolescents.\",,,\nExam anxiety predicts grades: a three-year cohort study,\"Anjali Mehta, Rahul Verma\",2018,Journal of Educational Psychology,https://doi.org/10.1037/edu0000999,OpenAlex,yes,,,cohort study,,\n\"Burnout among rural teachers:\r\na thematic analysis\",Grace Wanjiru,2021,Teaching and Teacher Education,10.1016/j.tate.2021.103300,OpenAlex,,0,\"Off topic: teachers, not adolescents.\",qualitative study,,Rural teachers linked burnout to workload and isolation.\n\"Sleep, screens and school performance\",\"Li X, Wang Y, Ravi Kumar Sharma, Kuria M, et al.\",2021,\"Lancet Child\tAdolescent Health\",,PubMed,,,,,,\nकिशोरों में नींद की कमी और परीक्षा की चिंता,\"रवि शर्मा, अनीता वर्मा\",2020,भारतीय मनोविज्ञान पत्रिका,10.5555/bmp.2020.007,OpenAlex,,,,,450,नींद की कमी परीक्षा की चिंता से जुड़ी पाई गई।\nMindfulness in schools: what's the evidence? A systematic review,\"Smith J.A., O'Brien Mary-Kate\",2023,Educational Psychology Review,10.1007/s10648-023-09999-1,OpenAlex,,2,\"Related: anxiety in school pupils, through mindfulness.\",systematic review,,\nMindfulness for test anxiety in university students: a meta-analysis,Smith JA,2023,,,PubMed,,,,,,\n\"Teacher burnout in Kenya,\na qualitative study\",\"Otieno P, Achieng M\",2021,arXiv,,OpenAlex,,3,\"Direct:\tteachers' burnout, as asked.\",qualitative study,18,\"Teachers described long hours, large classes and little support.\""
+  },
+  {
+   "ids": [],
+   "out": "Title,Authors,Year,Venue,DOI,Source,Retracted (OpenAlex),Fit 0-3 (AI),Fit reason (AI),\"Kind of study (AI, confirmed from abstract)\",\"Sample size (AI, confirmed from abstract)\",Summary (AI)"
+  }
+ ],
+ "cells": [
+  {
+   "v": "plain",
+   "out": "plain"
+  },
+  {
+   "v": "a,b",
+   "out": "\"a,b\""
+  },
+  {
+   "v": "say \"hi\"",
+   "out": "\"say \"\"hi\"\"\""
+  },
+  {
+   "v": "line1\nline2",
+   "out": "\"line1\nline2\""
+  },
+  {
+   "v": "cr\rhere",
+   "out": "\"cr\rhere\""
+  },
+  {
+   "v": "tab\there",
+   "out": "\"tab\there\""
+  },
+  {
+   "v": "",
+   "out": ""
+  },
+  {
+   "v": null,
+   "out": ""
+  },
+  {
+   "v": 0,
+   "out": "0"
+  },
+  {
+   "v": 12.5,
+   "out": "12.5"
+  },
+  {
+   "v": true,
+   "out": "true"
+  },
+  {
+   "v": false,
+   "out": "false"
+  },
+  {
+   "v": " spaced ",
+   "out": " spaced "
+  },
+  {
+   "v": "semi;colon",
+   "out": "semi;colon"
+  },
+  {
+   "v": "नमस्ते",
+   "out": "नमस्ते"
+  },
+  {
+   "v": {
+    "a": 1
+   },
+   "out": "[object Object]"
+  },
+  {
+   "v": [
+    1,
+    2
+   ],
+   "out": "\"1,2\""
+  },
+  {
+   "v": "\"\"",
+   "out": "\"\"\"\"\"\""
+  },
+  {
+   "v": "trailing,",
+   "out": "\"trailing,\""
+  },
+  {
+   "out": ""
+  }
+ ],
+ "csvTables": [
+  {
+   "headers": [
+    "Name",
+    "Note"
+   ],
+   "rows": [
+    [
+     "Asha",
+     "likes, commas"
+    ],
+    [
+     "Ravi",
+     "says \"hi\""
+    ]
+   ],
+   "out": "Name,Note\nAsha,\"likes, commas\"\nRavi,\"says \"\"hi\"\"\""
+  },
+  {
+   "headers": [
+    "A"
+   ],
+   "rows": [],
+   "out": "A"
+  },
+  {
+   "headers": [],
+   "rows": [
+    []
+   ],
+   "out": "\n"
+  },
+  {
+   "headers": [
+    "x",
+    "y",
+    "z"
+   ],
+   "rows": [
+    [
+     1,
+     null,
+     "a\nb"
+    ],
+    [
+     "only"
+    ]
+   ],
+   "out": "x,y,z\n1,,\"a\nb\"\nonly"
+  }
+ ],
+ "dedupe": {
+  "topic": "social media use and adolescent anxiety",
+  "in": [
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000001",
+    "title": "Social media use and adolescent anxiety: a systematic review",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000001",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000002",
+    "title": "Social Media Use and Adolescent Anxiety — A Systematic Review",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000002",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000003",
+    "title": "Effects of a school-based mindfulness programme on anxiety, depression and wellbeing in secondary school students: a cluster randomised trial",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000003",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000004",
+    "title": "किशोरों में सोशल मीडिया और चिंता",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000004",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000005",
+    "title": "Sleep_and_exams",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000005",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000006",
+    "title": "Reading aloud and memory for new words in primary school children: a review",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000006",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000007",
+    "title": "Peer tutoring and statistics anxiety in second-year psychology classes",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000007",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Social media use and adolescent anxiety: A systematic review.",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000001",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000001/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Effects of a school-based mindfulness programme on anxiety, depression, and sleep in primary pupils",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000002",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000002/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "परीक्षा की चिंता और नींद",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000003",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000003/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Sleep and exams",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000004",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000004/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Untitled",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000005",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000005/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Untitled",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000006",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000006/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Reading aloud and memory for new words in primary school children: a revisit",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000007",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000007/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Peer tutoring and statistics anxiety in second-year psychology classrooms",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000008",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000008/"
+   }
+  ],
+  "out": [
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000001",
+    "title": "Social media use and adolescent anxiety: a systematic review",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000001",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000003",
+    "title": "Effects of a school-based mindfulness programme on anxiety, depression and wellbeing in secondary school students: a cluster randomised trial",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000003",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000004",
+    "title": "किशोरों में सोशल मीडिया और चिंता",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000004",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000005",
+    "title": "Sleep_and_exams",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000005",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000006",
+    "title": "Reading aloud and memory for new words in primary school children: a review",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000006",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "OpenAlex",
+    "oaId": "W4300000007",
+    "title": "Peer tutoring and statistics anxiety in second-year psychology classes",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://openalex.org/W4300000007",
+    "referencedWorks": [],
+    "citedByApiUrl": "",
+    "retracted": false,
+    "oaStatus": "",
+    "oaUrl": ""
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Sleep and exams",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000004",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000004/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Untitled",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000005",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000005/"
+   },
+   {
+    "source": "PubMed",
+    "ssId": null,
+    "title": "Peer tutoring and statistics anxiety in second-year psychology classrooms",
+    "authors": "Unknown authors",
+    "year": "2020",
+    "venue": "",
+    "abstract": "",
+    "pmid": "32000008",
+    "citationCount": 0,
+    "doi": "",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32000008/"
+   }
+  ]
+ }
+}

@@ -28,3 +28,6 @@ export { citKey, citNumFor, docPlainForCitations, citRegex, citNumsIn, citUsageN
 export type { PlainDoc, Usage } from "./citlib";
 export { AP_SAMPLE, AP_STAGES, AP_HEADS, AP_STOP, AP_NAME, apSquash, apToks, apHeadName, apBuild, apPick, apJson, apCheckQuote, apNumbers, apRefDois, retrNormDoi, retrValidDoi } from "./analyse";
 export type { ApChunk, ApDoc, ApStage, ApNumber } from "./analyse";
+export { pdCsvCell, pdCsv } from "./csv";
+export { RS_DESIGNS, RS_DESIGN, rsReconstructAbstract, rsOaStatus, rsQuickCheck, rsRankParse, rsCleanTerm, rsBuildQuery, rsDedupe, rsFilterPass, rsCsvText, rsAuthorsToCit, rsEntryFromResult, rsCorpusText } from "./research";
+export type { RsQuick, RsPaper, RsFilter } from "./research";
