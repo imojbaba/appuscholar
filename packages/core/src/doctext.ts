@@ -6,6 +6,10 @@
  *   readers of the attached editor's innerText: `getEditorText` 3151, `ccOpen` 12159 and `textOf` 4959.
  * - `docTextContent(html)` is DOM `textContent`: the text nodes concatenated, no separators. It serves v1's `ncOpen` 12353, which reads
  *   `editor.textContent`, and `clHtmlToText` 6852, whose innerText of a detached div Chrome answers with textContent.
+ * - `docElementTexts(html, match)` is `[].map.call(div.querySelectorAll(selector), x => x.textContent)`: the textContent of every element the
+ *   predicate accepts, in document order (an element inside an accepted element is listed after it). The predicate stands for a selector:
+ *   it gets the tag name in lower case and `attr(name)`, the attribute as the HTML tokeniser reads it from the tag (the name in any case, the
+ *   first of a repeated name, the value with the references below decoded, null when absent). It serves v1's `citPlainDocs` 7520 (citlib.ts).
  *
  * Both decode `&amp; &lt; &gt; &quot; &nbsp;` and numeric references (`&#39;`, `&#160;`, `&#x2014;`) and keep U+00A0 as U+00A0, so a caller
  * maps it as v1 does (`ccOpen` replaces it with a space). Both return "" for "" and throw a TypeError on a non-string.
@@ -40,7 +44,7 @@
  * put "\n\n" around the "\t". Pinned by test/golden/doctext.test.ts (every corpus id, both contracts).
  */
 
-type El = { tag: string; kids: Array<El | string> };
+type El = { tag: string; attrs: string; kids: Array<El | string> }; // attrs: the tag's text after its name
 type Item = string | number; // a number is a required line break count
 
 /** origin.ts's VOID set. */
@@ -66,7 +70,7 @@ function decode(s: string): string {
 
 /** The element tree of `html`, built by origin.ts's token walker: an end tag closes up to its nearest open namesake and is ignored without one. */
 function parse(html: string): El {
-  const root: El = { tag: "", kids: [] };
+  const root: El = { tag: "", attrs: "", kids: [] };
   const open: El[] = [root];
   const src = html.replace(/<!--[\s\S]*?-->/g, "");
   const re = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|[^">])*)>|[^<]+/g;
@@ -83,7 +87,7 @@ function parse(html: string): El {
       if (at > 0) open.length = at;
       continue;
     }
-    const el: El = { tag, kids: [] };
+    const el: El = { tag, attrs: m[3] ?? "", kids: [] };
     if (tag !== "template") top.kids.push(el); // a template's content is not its children (DOM), so neither contract sees it
     if (!VOID.has(tag) && !/\/\s*$/.test(m[3] ?? "")) open.push(el);
   }
@@ -153,4 +157,36 @@ export function docInnerText(html: string): string {
 export function docTextContent(html: string): string {
   expectString("docTextContent", html);
   return descendantText(parse(html));
+}
+
+/**
+ * The attributes of a tag's text as the HTML tokeniser splits them: a name (no space, `/`, `>` or `=`), then optionally `=` and a value in
+ * double quotes, in single quotes or bare (up to a space). A `/` between attributes is skipped like a space, as the tokeniser skips it.
+ */
+const ATTR = /([^\s/>=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]*)))?/g;
+
+/** The value of attribute `name` in a tag's text, as `getAttribute` returns it: names compared in lower case, the first of a repeated name (the tokeniser drops the rest), references decoded. */
+function attrOf(attrs: string, name: string): string | null {
+  const want = name.toLowerCase();
+  for (const m of attrs.matchAll(ATTR)) if (m[1]!.toLowerCase() === want) return decode(m[2] ?? m[3] ?? m[4] ?? "");
+  return null;
+}
+
+/**
+ * The textContent of every element of `html` that `match` accepts, in document order, as the module comment describes. Built on the tokeniser
+ * of the two contracts above, with its limits; in particular the content of `<script>`, `<style>` and `<textarea>` is not raw text here (the
+ * sanitiser keeps none of them), and a `template`'s content is not searched, as the DOM does not search it.
+ */
+export function docElementTexts(html: string, match: (tag: string, attr: (name: string) => string | null) => boolean): string[] {
+  expectString("docElementTexts", html);
+  const out: string[] = [];
+  const walk = (el: El): void => {
+    for (const k of el.kids) {
+      if (typeof k === "string") continue;
+      if (match(k.tag, (name) => attrOf(k.attrs, name))) out.push(descendantText(k));
+      walk(k);
+    }
+  };
+  walk(parse(html));
+  return out;
 }

@@ -24,3 +24,5 @@ export { CIT_STYLES, citFmt, citKind, citLastName, citNames, citInitials, citIsN
 export type { CitationStyle, CitationEntry, CitationKind, Formatted } from "./citation";
 export { CC_SN, CC_YR, CC_STOP, ccNorm, ccKey, ccYrMatch, ccSplit, ccParseRef, ccCites, ccLev, ccAnalyse, crossCheckHtml } from "./crosscheck";
 export type { CcCite, CcRef, CcUniq, CcMissing, CcResult } from "./crosscheck";
+export { citKey, citNumFor, docPlainForCitations, citRegex, citNumsIn, citUsageNumbered, citUsage, bibliography, bibliographyHtml, mergeLibrary, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES } from "./citlib";
+export type { PlainDoc, Usage } from "./citlib";
