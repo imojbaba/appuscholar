@@ -22,3 +22,5 @@ export type { NcKind, NcFind, NcNote, NcJudge } from "./numbers";
 export { escHTML, escAttr } from "./html";
 export { CIT_STYLES, citFmt, citKind, citLastName, citNames, citInitials, citIsNumbered, apaAuthors, apa6Authors, mlaAuthors, chicagoAuthors, harvardAuthors, vancAuthors, ieeeAuthors } from "./citation";
 export type { CitationStyle, CitationEntry, CitationKind, Formatted } from "./citation";
+export { CC_SN, CC_YR, CC_STOP, ccNorm, ccKey, ccYrMatch, ccSplit, ccParseRef, ccCites, ccLev, ccAnalyse, crossCheckHtml } from "./crosscheck";
+export type { CcCite, CcRef, CcUniq, CcMissing, CcResult } from "./crosscheck";

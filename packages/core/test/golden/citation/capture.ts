@@ -13,8 +13,10 @@ import { emitTables, writeFixture } from "../harness/fixture";
  *   (6, 6) and (6, 3)) and citWho in every style over the author strings; citEdList in every mode over the editor strings; citNames over both, and citInitials over the first names it finds in them;
  *   citKind over the type strings; citIsNumbered over the styles and one name that is not a style.
  * - `tables.json` (and, under --emit, src/data/citation-tables.ts): CIT_MONTHS, CIT_MON_MLA, CIT_MON_ABB, CIT_MON_IEEE and CIT_STYLES (7064-7073) as v1 holds them.
- * - `devanagari.json`: `{ ranges, strings }`, every quoted string holding a Devanagari letter in the v1 line ranges core has ported (RANGES), with JavaScript escapes decoded (ruling R9).
- *   devanagari.test.ts checks that core holds each of them and no other. A task that ports a range appends it to RANGES and re-captures citation; cases.json and tables.json must stay `same`.
+ * - `devanagari.json`: `{ ranges, strings, runs }`. `strings` is every quoted string holding a Devanagari letter in the v1 line ranges core has ported (RANGES), with JavaScript escapes decoded (ruling R9).
+ *   `runs` is every maximal run of Devanagari code points anywhere in those ranges' source text, a regex literal or a comment included (v1 12109 holds the heading pattern of the cross-check in a regex
+ *   literal, which no quoted-string pattern sees), each once, in order of appearance (ruling T8-T9). devanagari.test.ts checks both: that core holds each string and each run, and that it holds no other.
+ *   A task that ports a range appends it to RANGES and re-captures citation; cases.json and tables.json must stay `same`.
  */
 
 /** The v1 line ranges, [first, last], whose ports have landed in core (ruling R5). A task that ports a range appends it here and re-captures `citation`. */
@@ -24,11 +26,15 @@ export const RANGES: Array<[first: number, last: number]> = [
   [7053, 7465], // the citation engine (Task 8, citation.ts)
   [8633, 8690], // the distribution core (Task 6, pvalue.ts)
   [11980, 11982], // noLead, pCell and fmtP (Task 6, statfmt.ts)
+  [12100, 12157], // the citation cross-check (Task 9, crosscheck.ts)
   [12195, 12257], // the Numbers check (Task 7, numbers.ts)
 ];
 
 /** A quoted string holding a Devanagari letter (the brief's pattern, used on v1's lines here and on core's files in devanagari.test.ts): a quote, characters that are neither quotes nor line breaks, a quote. */
 export const DEVANAGARI_STRING = /["'`]([^"'`\n]*[ऀ-ॿ][^"'`\n]*)["'`]/g;
+
+/** A maximal run of Devanagari code points (U+0900 to U+097F) anywhere in a line: in a string, a regex literal or a comment. Written with escapes, so this file holds no Devanagari of its own. */
+export const DEVANAGARI_RUN = /[\u0900-\u097f]+/g;
 
 const SIMPLE_ESCAPES: Record<string, string> = { b: "\b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v", "0": "\0" };
 /** A string's body with JavaScript's escapes decoded (ruling R9: Devanagari strings are compared as values, both ways). A body with no backslash comes back as it is. */
@@ -40,7 +46,7 @@ export function decodeEscapes(body: string): string {
 const DEVANAGARI = /[ऀ-ॿ]/g;
 const devanagariCount = (s: string) => (s.match(DEVANAGARI) ?? []).length;
 
-/** The Devanagari strings of v1's lines first..last, in order, each once. A Devanagari letter outside a quoted string (a comment, a regex literal) is reported, not recorded. */
+/** The Devanagari strings of v1's lines first..last, in order, each once. A Devanagari letter outside a quoted string (a comment, a regex literal) is reported here and recorded by devanagariRuns. */
 function devanagariStrings(lines: string[], first: number, last: number): string[] {
   const found: string[] = [];
   for (let n = first; n <= last; n++) {
@@ -55,7 +61,18 @@ function devanagariStrings(lines: string[], first: number, last: number): string
       if (!found.includes(s)) found.push(s);
       inStrings += devanagariCount(whole);
     }
-    if (devanagariCount(line) > inStrings) console.log(`citation: v1 line ${n} has Devanagari outside a quoted string (a comment or a regex literal); not recorded`);
+    if (devanagariCount(line) > inStrings) console.log(`citation: v1 line ${n} has Devanagari outside a quoted string (a comment or a regex literal); it is recorded in runs, not in strings`);
+  }
+  return found;
+}
+
+/** The maximal Devanagari runs of v1's lines first..last, wherever they stand in a line, in order of appearance, each once. */
+function devanagariRuns(lines: string[], first: number, last: number): string[] {
+  const found: string[] = [];
+  for (let n = first; n <= last; n++) {
+    const line = lines[n - 1];
+    if (line === undefined) throw new Error(`citation: v1 has no line ${n}`);
+    for (const m of line.matchAll(DEVANAGARI_RUN)) if (!found.includes(m[0])) found.push(m[0]);
   }
   return found;
 }
@@ -118,10 +135,11 @@ export const citation: Engine = {
 
     const ranges = RANGES.map(([first, last]) => [first, last]);
     const strings = distinct(RANGES.flatMap(([first, last]) => devanagariStrings(lines, first, last)));
+    const runs = distinct(RANGES.flatMap(([first, last]) => devanagariRuns(lines, first, last)));
     return [
       emitTables(v1, "citation", "citation-tables", tables, opts),
       writeFixture("citation", "cases", { entries: corpus, cases, kinds, helpers }, v1, check),
-      writeFixture("citation", "devanagari", { ranges, strings }, v1, check),
+      writeFixture("citation", "devanagari", { ranges, strings, runs }, v1, check),
     ];
   },
 };
