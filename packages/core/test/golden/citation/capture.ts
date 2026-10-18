@@ -26,9 +26,16 @@ export const RANGES: Array<[first: number, last: number]> = [
   [7053, 7465], // the citation engine (Task 8, citation.ts)
   [7488, 7493], // citKey and citNumFor (Task 10, citlib.ts)
   [7510, 7555], // v1's backlinks comment (kept in citlib.ts), citPlainDocs, citRegex, citNumsIn, citUsageNumbered and citUsage (Task 10, citlib.ts)
+  [7564, 7565], // retrNormDoi and retrValidDoi (Task 11, analyse.ts)
   [7871, 7881], // citInsertBib (Task 10, citlib.ts); not 7882-7887, the comment that opens the next function, which core does not port (its line 7885 holds a Devanagari word)
   [7991, 8023], // citExport and citImport (Task 10, citlib.ts)
   [8633, 8690], // the distribution core (Task 6, pvalue.ts)
+  [9837, 9837], // AP_SAMPLE (Task 11, data/analyse-tables.ts)
+  [9839, 9881], // AP_STAGES (data/analyse-tables.ts), AP_HEADS, AP_STOP (its words in data/analyse-tables.ts), apSquash, apToks, apHeadName and apBuild (Task 11, analyse.ts); not apLoad, 9882-9891
+  [9987, 10017], // apPick, apJson and apCheckQuote (Task 11, analyse.ts); not apQuotesHTML, 10018-10026, nor the prompts of Task 14 from 10027
+  [10066, 10105], // apNumbers (Task 11, analyse.ts)
+  [10435, 10435], // AP_NAME (Task 11, data/analyse-tables.ts)
+  [11225, 11235], // apRefDois (Task 11, analyse.ts)
   [11980, 11982], // noLead, pCell and fmtP (Task 6, statfmt.ts)
   [12100, 12157], // the citation cross-check (Task 9, crosscheck.ts)
   [12195, 12257], // the Numbers check (Task 7, numbers.ts)

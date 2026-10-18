@@ -26,3 +26,5 @@ export { CC_SN, CC_YR, CC_STOP, ccNorm, ccKey, ccYrMatch, ccSplit, ccParseRef, c
 export type { CcCite, CcRef, CcUniq, CcMissing, CcResult } from "./crosscheck";
 export { citKey, citNumFor, docPlainForCitations, citRegex, citNumsIn, citUsageNumbered, citUsage, bibliography, bibliographyHtml, mergeLibrary, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES } from "./citlib";
 export type { PlainDoc, Usage } from "./citlib";
+export { AP_SAMPLE, AP_STAGES, AP_HEADS, AP_STOP, AP_NAME, apSquash, apToks, apHeadName, apBuild, apPick, apJson, apCheckQuote, apNumbers, apRefDois, retrNormDoi, retrValidDoi } from "./analyse";
+export type { ApChunk, ApDoc, ApStage, ApNumber } from "./analyse";
