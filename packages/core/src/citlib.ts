@@ -7,7 +7,8 @@
    - parameter and return types, `export`, and the types PlainDoc and Usage;
    - citNumFor(lib, d): v1's `const l=citGetLib()` is `const l=lib`;
    - docPlainForCitations(id, title, html) is citPlainDocs for one document. v1 maps docsGet() (3114: imgHydrate on each body), takes the open document's HTML from the live editor (7518) and passes
-     each body through bodyToHTML (7519); here the caller hands the document's HTML (v2 bodies are HTML already, and the panel hands the editor's HTML for the open document). v1's `div.textContent`
+     each body through bodyToHTML (7519); here the caller hands the document's HTML (v2 bodies are HTML already, and the panel hands the editor's HTML for the open document). A document with no
+     body is passed as "": v1's `(d.body||'')` (7518) has no counterpart here, and docTextContent and docElementTexts throw a TypeError on anything but a string. v1's `div.textContent`
      is docTextContent(html), whose `||''` is kept; `[].map.call(div.querySelectorAll('sup,...'),x=>x.textContent||'')` is docElementTexts(html,citSupMatch) (doctext.ts, over its one tokeniser),
      citSupMatch being 7520's selector read clause by clause (new: exported for doctext-elements.test.ts, not from index.ts); an element's textContent is never null, so that `||''` has
      nothing to do and is dropped. v1's comment above citPlainDocs (7510-7514) is kept above it;
@@ -43,6 +44,7 @@ export function citNumFor(lib: CitationEntry[],d: CitationEntry): { n: number; s
   for(let i=0;i<l.length;i++)if(citKey(l[i]!)===k)return{n:i+1,saved:true};
   return{n:l.length+1,saved:false};
 }
+/* [v1's wording, kept as v1 wrote it (7510-7514). docPlainForCitations reads neither localStorage nor the live editor: the caller hands it each document's HTML.] */
 /* Backlinks, scaled down to one student: for each library source, which of their own documents
    cite it. No graph database — a plain-text scan of the documents already in localStorage, matching
    the author's surname followed within ~40 characters by the year, which covers (Smith, 2020),
@@ -94,12 +96,14 @@ export function bibliography(lib: CitationEntry[],style: CitationStyle): { head:
   if(!numbered)items.sort((a,b)=>citLastName(a.d.author).localeCompare(citLastName(b.d.author),'en',{sensitivity:'base'}));
   return{head:meta.head,numbered:numbered,items:items.map(x=>({entry:x.d,index:x.i,number:numbered?x.i+1:0,fmt:citFmt(x.d,numbered?x.i+1:0,st)}))};
 }
+/** An empty library gives `<p><br></p>` and the heading alone; v1 inserted nothing and showed a toast instead (7872), which the panel reproduces. */
 export function bibliographyHtml(lib: CitationEntry[],style: CitationStyle): string{
   const b=bibliography(lib,style);
   const head='<p class="ref-head" style="text-align:center;margin:14px 0 8px"><b>'+escHTML(b.head)+'</b></p>';
   const body=b.items.map(x=>'<p class="ref-item" style="padding-left:2em;text-indent:-2em;margin:0 0 6px">'+x.fmt.refHTML+'</p>').join('');
   return '<p><br></p>'+head+body;
 }
+/** An empty library gives `[]`; v1 wrote no file and showed a toast instead (7992), which the panel reproduces. */
 export function exportLibrary(lib: CitationEntry[]): string{const l=lib;return JSON.stringify(l,null,2)}
 export const LIBRARY_FILE_NAME='psychology-class-library.json';
 export const LIBRARY_IMPORT_MAX_BYTES=3*1024*1024;

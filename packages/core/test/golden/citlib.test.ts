@@ -98,6 +98,8 @@ describe("citlib.ts is v1's library code", () => {
       expect(b.items.map((x) => x.fmt.refHTML), c.style).toEqual(paragraphs);
       expect(c.html).toContain(`<b>${escHTML(b.head)}</b>`);
       expect(b.numbered).toBe(CIT_STYLES[c.style].numbered);
+      // An empty library (v1 showed a toast instead, 7872): v1's block up to its first item, the blank paragraph and the heading.
+      expect(bibliographyHtml([], c.style), c.style).toBe(c.html.slice(0, c.html.indexOf('<p class="ref-item"')));
       expect(b.items.map((x) => x.index).sort((p, q) => p - q)).toEqual(lib.map((_, i) => i));
       if (b.numbered) expect(b.items.map((x) => x.index)).toEqual(lib.map((_, i) => i));
       for (const x of b.items) {
@@ -146,6 +148,7 @@ describe("citlib.ts is v1's library code", () => {
       const r = mergeLibrary(lib, incoming);
       if (r.ok) {
         expect(r.lib, c.id).toEqual(c.libAfter);
+        expect(JSON.stringify(r.lib), c.id).toBe(JSON.stringify(c.libAfter)); // key order too: it reaches exportLibrary's text
         expect(c.toast, c.id).toBe(merged(r.added));
         expect(r.lib.length, c.id).toBe(lib.length + r.added);
       } else {
@@ -193,5 +196,7 @@ describe("citlib.ts is v1's library code", () => {
     // Both are what v1's citExport wrote.
     expect(exportLibrary(lib)).toBe(fx.export.text);
     expect(LIBRARY_FILE_NAME).toBe(fx.export.download);
+    // An empty library (v1 showed a toast instead, 7992).
+    expect(exportLibrary([])).toBe(JSON.stringify([], null, 2));
   });
 });
