@@ -21,7 +21,9 @@ import { emitTables, writeFixture } from "../harness/fixture";
 
 /** The v1 line ranges, [first, last], whose ports have landed in core (ruling R5). A task that ports a range appends it here and re-captures `citation`. */
 export const RANGES: Array<[first: number, last: number]> = [
+  [2500, 2500], // fieldName (Task 13, prompts.ts: fieldLabel)
   [2606, 2606], // escHTML (Task 8, html.ts)
+  [3608, 3624], // vivaAsk (Task 13, prompts-helpers.ts: buildVivaPrompt, VIVA_MIN_WORDS)
   [8033, 8033], // escAttr (Task 8, html.ts)
   [7053, 7465], // the citation engine (Task 8, citation.ts)
   [7488, 7493], // citKey and citNumFor (Task 10, citlib.ts)
@@ -32,17 +34,24 @@ export const RANGES: Array<[first: number, last: number]> = [
   [8041, 8049], // rsReconstructAbstract (Task 12, research.ts)
   [8055, 8060], // rsOaStatus (Task 12, research.ts)
   [8127, 8127], // RS_DESIGNS (Task 12, data/research-tables.ts)
+  [8128, 8130], // rsQuickPrompt (Task 13, prompts-research.ts: buildQuickReadPrompt)
   [8131, 8160], // rsQuickCheck (Task 12, research.ts)
   [8191, 8195], // rsCsvText (Task 12, research.ts)
+  [8206, 8208], // rsRankPrompt (Task 13, prompts-research.ts: buildRankPrompt)
   [8209, 8219], // rsRankParse (Task 12, research.ts)
   [8237, 8244], // RS_DESIGN (Task 12, data/research-tables.ts)
   [8245, 8250], // rsCleanTerm (Task 12, research.ts)
+  [8256, 8256], // the prompt inside rsSuggestTerms (Task 13, prompts-research.ts: buildSuggestTermsPrompt); not the rest of rsSuggestTerms, 8251-8255 and 8257-8263
   [8273, 8282], // rsBuildQuery (Task 12, research.ts); 8283 opens researchSearch
   [8312, 8314], // the de-duplication inside researchSearch (Task 12, research.ts: rsDedupe); not 8311, the merge before it, nor the rest of researchSearch
   [8336, 8346], // rsFilterPass (Task 12, research.ts)
   [8455, 8464], // rsAuthorsToCit (Task 12, research.ts)
   [8465, 8470], // rsEntryFromResult (Task 12, research.ts)
   [8525, 8529], // rsCorpusText (Task 12, research.ts)
+  [8530, 8551], // researchLitReview and researchGapFinder (Task 13, prompts-research.ts: buildLitReviewPrompt, buildGapFinderPrompt)
+  [8568, 8580], // ideaAssess (Task 13, prompts-idea.ts: buildIdeaPrompt)
+  [8592, 8615], // PSYCH_PROMPTS and psychTool (Task 13, prompts-helpers.ts: buildHelperPrompt, HELPER_TEMPS, HELPER_MIN_CHARS)
+  [8619, 8630], // devilTool (Task 13, prompts-helpers.ts: buildDevilPrompt, DEVIL_MIN_WORDS)
   [8633, 8690], // the distribution core (Task 6, pvalue.ts)
   [9461, 9462], // pdCsvCell and pdCsv (Task 12, csv.ts)
   [9837, 9837], // AP_SAMPLE (Task 11, data/analyse-tables.ts)

@@ -1,4 +1,4 @@
-/** Port of v1 PLAIN_OUT and contentLangInstruction (index.html:2493-2500) and the writing prompts (5675-5740, 3376-3395). */
+/** Port of v1 PLAIN_OUT, contentLangInstruction and fieldName (index.html:2493-2500) and the writing prompts (5675-5740, 3376-3395). */
 export const PLAIN_OUT = ' Output plain text with no markdown symbols (no asterisks, hash signs or backticks). Avoid the words delve, leverage, robust, pivotal, crucial, underscore, showcase, foster, seamless and tapestry. Avoid "not X but Y" phrasing, stacked lists of three, and closing summary sentences.';
 
 export function contentLangInstruction(lang: "en" | "hi"): string {
@@ -6,8 +6,17 @@ export function contentLangInstruction(lang: "en" | "hi"): string {
   return "\n\nLanguage: write explanatory prose in clear, formal Hindi (Devanagari), at the level of a Hindi-medium university textbook. Keep unchanged: any heading this prompt names, statistical symbols and terms, APA, MLA and Chicago names, proper nouns, and any quoted text. When the task is to edit or continue the student's own text, keep that text in the language it is written in.";
 }
 
+/**
+ * v1 fieldName (index.html:2500): the student's field of study from the stored appu_field, trimmed and cut to its first 60 characters, or "psychology" when that leaves nothing.
+ * The builders that take a `field` (buildChatPrompt and those of prompts-idea.ts, prompts-helpers.ts and prompts-research.ts) take it as given; callers pass fieldLabel(...) of the stored value (register row D-W0-8).
+ */
+export function fieldLabel(raw: string | null | undefined): string {
+  return String(raw ?? "").trim().slice(0, 60) || "psychology";
+}
+
 export type WritingKind = "continue" | "improve" | "expand";
-type Built = { prompt: string; temp: number; max: number };
+/** A prompt and the options v1 hands to callAI beside it. `noLang` is v1's option that keeps callAIRaw (5349) from adding the content-language instruction to the prompt (the quick read, the ranking and the related terms of Research send it: 8177, 8227, 8256). */
+export type Built = { prompt: string; temp: number; max: number; noLang?: true };
 
 const WRITING: Record<WritingKind, { head: string; label: string; temp: number; max: number }> = {
   continue: {
