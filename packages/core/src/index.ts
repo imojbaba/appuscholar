@@ -35,3 +35,4 @@ export { buildIdeaPrompt } from "./prompts-idea";
 export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildHelperPrompt, buildDevilPrompt, buildVivaPrompt } from "./prompts-helpers";
 export type { HelperKind } from "./prompts-helpers";
 export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt } from "./prompts-research";
+export { AP_RULES, LESSON_QUESTION_MAX_CHARS, buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "./prompts-analyse";

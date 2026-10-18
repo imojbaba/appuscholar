@@ -57,8 +57,10 @@ export const RANGES: Array<[first: number, last: number]> = [
   [9837, 9837], // AP_SAMPLE (Task 11, data/analyse-tables.ts)
   [9839, 9881], // AP_STAGES (data/analyse-tables.ts), AP_HEADS, AP_STOP (its words in data/analyse-tables.ts), apSquash, apToks, apHeadName and apBuild (Task 11, analyse.ts); not apLoad, 9882-9891
   [9987, 10017], // apPick, apJson and apCheckQuote (Task 11, analyse.ts); not apQuotesHTML, 10018-10026, nor the prompts of Task 14 from 10027
+  [10027, 10064], // apCall's options, AP_RULES, apAsk and apWalkShow (Task 14, prompts-analyse.ts: AP_RULES, buildAskPrompt, buildWalkPrompt); not 10065, the comment that opens apNumbers
   [10066, 10105], // apNumbers (Task 11, analyse.ts)
   [10435, 10435], // AP_NAME (Task 11, data/analyse-tables.ts)
+  [11162, 11181], // apLesAsk (Task 14, prompts-analyse.ts: buildLessonAskPrompt, LESSON_QUESTION_MAX_CHARS); not 11182, the blank line before apLessonHTML
   [11225, 11235], // apRefDois (Task 11, analyse.ts)
   [11980, 11982], // noLead, pCell and fmtP (Task 6, statfmt.ts)
   [12100, 12157], // the citation cross-check (Task 9, crosscheck.ts)
