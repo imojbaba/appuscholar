@@ -1,5 +1,8 @@
 import type { SelectionRange } from "@/lib/editor/insert";
-import { accCheck, buildDraftFirstPrompt, buildIdeaPrompt, buildWritingPrompt, type WritingKind } from "@appuscholar/core";
+import {
+  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildHelperPrompt, buildIdeaPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS,
+  type HelperKind, type WritingKind
+} from "@appuscholar/core";
 
 /** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
 export type SuggestionStatus = "idle" | "thinking" | "polishing" | "expanding" | "reading" | "custom";
@@ -112,5 +115,69 @@ export async function assessIdea(d: IdeaDeps): Promise<void> {
     d.set(reply, null, token);
     d.dockShow("ai");
     d.toast(IDEA_READY);
+  } catch (e) { if (d.isCurrent(token)) fail(d, e); }
+}
+
+/** v1 psychTool's sentences (8604, 8606, 8609, 8610, 8613): toasts, confirm and pane text of v1's script, English in both languages as in v1. */
+export const HELPER_NEED_TEXT = "Write or select some text first, then tap the tool";
+export const HELPER_CASE_CONFIRM = "This text will be sent to your AI provider.\n\nRemove names, dates of birth, addresses and any other identifying details before you continue (APA Ethics 4.07).\n\nContinue?";
+export const HELPER_LONG_DOC = "Long document — analyzing the first 12,000 characters. Select a section for a sharper answer.";
+export const HELPER_THINKING = "💜 Thinking…";
+export const HELPER_READY = "Ready — press Tab in the editor to insert";
+/** Where the case tool's yes is kept for the session (v1 sessionKeys['appu_case_ack'], 8605-8607). */
+export const HELPER_CASE_ACK_KEY = "appu_case_ack";
+
+/** What the Research helpers touch: the suggestion pane, the AI, the text (v1 selText: the selection, else the whole document), the field, and the case tool's confirm and session store. */
+export type HelperDeps = Pick<ActionDeps, "callAI" | "hasSelection" | "selectionText" | "setThinking" | "isCurrent" | "set" | "setFeedback" | "clear" | "dockShow" | "toast" | "t"> & {
+  /** The whole document as v1's getEditorText (3151) read it: docInnerText of the editor's HTML. */
+  docText(): string;
+  /** fieldLabel(settings.field): v1 fieldName(). */
+  field: string;
+  confirm(msg: string): boolean;
+  session: { get(key: string): string | null; set(key: string, value: string): void };
+};
+export type DevilDeps = Omit<HelperDeps, "field" | "confirm" | "session">;
+
+/** v1 selText (5554): the selection when there is one, else the whole document. */
+const helperText = (d: Pick<HelperDeps, "hasSelection" | "selectionText" | "docText">) => d.hasSelection() ? d.selectionText() : d.docText();
+
+/** One of the five Research helpers (v1 psychTool 8600-8615): the answer lands in the suggestion pane, insertable with Tab or Accept. */
+export async function runHelper(kind: HelperKind, d: HelperDeps): Promise<void> {
+  const whole = !d.hasSelection();
+  const txt = helperText(d).trim();
+  if (txt.length < HELPER_MIN_CHARS) { d.toast(HELPER_NEED_TEXT); return; }
+  if (kind === "case" && !d.session.get(HELPER_CASE_ACK_KEY)) {
+    if (!d.confirm(HELPER_CASE_CONFIRM)) return;
+    d.session.set(HELPER_CASE_ACK_KEY, "1");
+  }
+  if (whole && txt.length > 12000) d.toast(HELPER_LONG_DOC);
+  // The builder adds v1's "\n\nText:\n" and cuts the text to its first 12,000 characters.
+  const built = buildHelperPrompt(kind, d.field, txt);
+  const token = d.setThinking("custom", null, HELPER_THINKING);
+  d.dockShow("ai");
+  try {
+    const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+    if (!d.isCurrent(token)) return;
+    // v1 shows no accuracy check for this answer (setSug with no note, 8612).
+    d.set(reply, null, token);
+    d.dockShow("ai");
+    d.toast(HELPER_READY);
+  } catch (e) { if (d.isCurrent(token)) fail(d, e); }
+}
+
+/** "😈 Challenge my argument" (v1 devilTool 8619-8630): a reviewer's objections, shown in the pane as feedback that Tab and Accept never insert. */
+export async function runDevil(d: DevilDeps): Promise<void> {
+  const txt = helperText(d).trim();
+  if (txt.split(/\s+/).filter(Boolean).length < DEVIL_MIN_WORDS) { d.toast(d.t("devil_need")); return; }
+  // The builder adds v1's "\n\nPASSAGE:\n" and cuts the passage to its first 6,000 characters.
+  const built = buildDevilPrompt(txt);
+  const token = d.setThinking("custom", null, d.t("devil_thinking"));
+  d.dockShow("ai");
+  try {
+    const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+    if (!d.isCurrent(token)) return;
+    d.setFeedback(d.t("devil_label") + "\n\n" + reply, token);
+    d.dockShow("ai");
+    d.toast(d.t("devil_ready"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
