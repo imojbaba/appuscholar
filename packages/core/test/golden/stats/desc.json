@@ -1,0 +1,285 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "desc-demo-score",
+   "test": "desc",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "score: M = 50.92, SD = 2.43, N = 12.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "M",
+       "SD",
+       "Median",
+       "Min",
+       "Max"
+      ],
+      [
+       "12",
+       "50.92",
+       "2.43",
+       "51.00",
+       "47.00",
+       "55.00"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsNMSDMedianMinMax1250.922.4351.0047.0055.00score: M = 50.92, SD = 2.43, N = 12.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>M</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th></tr><tr><td>12</td><td>50.92</td><td>2.43</td><td>51.00</td><td>47.00</td><td>55.00</td></tr></tbody></table><div id=\"statsSentence\">score: M = 50.92, SD = 2.43, N = 12.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "desc-one-value",
+   "test": "desc",
+   "csv": "score\n5",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 2 values"
+   ]
+  },
+  {
+   "id": "desc-text-in-numeric",
+   "test": "desc",
+   "csv": "score\n52\n48\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n55\n51\n-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\n49",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "score: M = 51.00, SD = 2.74, N = 5.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "M",
+       "SD",
+       "Median",
+       "Min",
+       "Max"
+      ],
+      [
+       "5",
+       "51.00",
+       "2.74",
+       "51.00",
+       "48.00",
+       "55.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsNMSDMedianMinMax551.002.7451.0048.0055.002 entries that are not a number were left out.score: M = 51.00, SD = 2.74, N = 5.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>M</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th></tr><tr><td>5</td><td>51.00</td><td>2.74</td><td>51.00</td><td>48.00</td><td>55.00</td></tr></tbody></table><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">score: M = 51.00, SD = 2.74, N = 5.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "desc-hindi-column-name",
+   "test": "desc",
+   "csv": "परीक्षा अंक\n62\n71\n58\n80\n66",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "परीक्षा अंक: M = 67.40, SD = 8.53, N = 5.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "M",
+       "SD",
+       "Median",
+       "Min",
+       "Max"
+      ],
+      [
+       "5",
+       "67.40",
+       "8.53",
+       "66.00",
+       "58.00",
+       "80.00"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsNMSDMedianMinMax567.408.5366.0058.0080.00परीक्षा अंक: M = 67.40, SD = 8.53, N = 5.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>M</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th></tr><tr><td>5</td><td>67.40</td><td>8.53</td><td>66.00</td><td>58.00</td><td>80.00</td></tr></tbody></table><div id=\"statsSentence\">परीक्षा अंक: M = 67.40, SD = 8.53, N = 5.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "desc-column-named-undefined",
+   "test": "desc",
+   "csv": "undefined\n3\n4\n5\n6",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "<b>This analysis produced a number that is undefined, so no result is shown.</b> It usually means a group has no spread (every value the same), a group is too small, or the data fit a line exactly. Look at the data and the groups, then try again."
+    }
+   ],
+   "resultsText": "ResultsThis analysis produced a number that is undefined, so no result is shown. It usually means a group has no spread (every value the same), a group is too small, or the data fit a line exactly. Look at the data and the groups, then try again.",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\"><b>This analysis produced a number that is undefined, so no result is shown.</b> It usually means a group has no spread (every value the same), a group is too small, or the data fit a line exactly. Look at the data and the groups, then try again.</p>",
+   "toasts": []
+  },
+  {
+   "id": "desc-negative-decimals",
+   "test": "desc",
+   "csv": "change\n-1.25\n0.5\n-3.75\n2.0\n-0.125\n1.5",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "change: M = -0.19, SD = 2.09, N = 6.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "M",
+       "SD",
+       "Median",
+       "Min",
+       "Max"
+      ],
+      [
+       "6",
+       "-0.19",
+       "2.09",
+       "0.19",
+       "-3.75",
+       "2.00"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsNMSDMedianMinMax6-0.192.090.19-3.752.00change: M = -0.19, SD = 2.09, N = 6.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>M</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th></tr><tr><td>6</td><td>-0.19</td><td>2.09</td><td>0.19</td><td>-3.75</td><td>2.00</td></tr></tbody></table><div id=\"statsSentence\">change: M = -0.19, SD = 2.09, N = 6.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "desc-second-column",
+   "test": "desc",
+   "csv": "id,grp,time\n1,a,12.5\n2,b,9\n3,a,10.25\n4,b,14",
+   "form": {
+    "values": {
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "time: M = 11.44, SD = 2.24, N = 4.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "M",
+       "SD",
+       "Median",
+       "Min",
+       "Max"
+      ],
+      [
+       "4",
+       "11.44",
+       "2.24",
+       "11.38",
+       "9.00",
+       "14.00"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsNMSDMedianMinMax411.442.2411.389.0014.00time: M = 11.44, SD = 2.24, N = 4.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>M</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th></tr><tr><td>4</td><td>11.44</td><td>2.24</td><td>11.38</td><td>9.00</td><td>14.00</td></tr></tbody></table><div id=\"statsSentence\">time: M = 11.44, SD = 2.24, N = 4.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "desc-empty-cells",
+   "test": "desc",
+   "csv": "score,grp\n4,a\n,b\n7,a\n,b\n9,b",
+   "form": {
+    "values": {
+     "dv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "score: M = 6.67, SD = 2.52, N = 3.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "M",
+       "SD",
+       "Median",
+       "Min",
+       "Max"
+      ],
+      [
+       "3",
+       "6.67",
+       "2.52",
+       "7.00",
+       "4.00",
+       "9.00"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsNMSDMedianMinMax36.672.527.004.009.00score: M = 6.67, SD = 2.52, N = 3.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>M</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th></tr><tr><td>3</td><td>6.67</td><td>2.52</td><td>7.00</td><td>4.00</td><td>9.00</td></tr></tbody></table><div id=\"statsSentence\">score: M = 6.67, SD = 2.52, N = 3.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

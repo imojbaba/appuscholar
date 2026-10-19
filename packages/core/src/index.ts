@@ -47,3 +47,6 @@ export { statsSplitLine, statsParseText } from "./intake";
 export type { ParsedData, ParsedCol } from "./intake";
 export { PD_HDR, PD_LABEL, PD_DEFAULT, pdTestVal, pdScan, pdTransform } from "./pdscan";
 export type { PdKind, PdFound, PdChoice, PdTransform } from "./pdscan";
+export { STAT_TESTS, statsColVals, statsGroupBy, stkIsBinaryCol, stkBinData, stkBinom5, sig, stkAssumpBlock, stkAssumpFor, stkAnova2Cells, stkMRData, finishResult } from "./stats-core";
+export type { StatsTestKey, StatsForm, StatsCtx, StatsBlock, StatsResult, StatsOk, StatsFail, StatsTestDef, StatsField, StatsFieldType, StatsExtra, BinData, Anova2Cells, MRData, MRRef } from "./stats-core";
+export { runStats } from "./stats";
