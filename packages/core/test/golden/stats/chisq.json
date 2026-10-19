@@ -1,0 +1,426 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "chisq-demo",
+   "test": "chisq",
+   "csv": "counselling,passed\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "counselling",
+    "v2": "passed"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square test of independence showed no significant association between counselling and passed, χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "yes",
+       "no"
+      ],
+      [
+       "yes",
+       "18",
+       "12"
+      ],
+      [
+       "no",
+       "15",
+       "15"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10"
+    },
+    {
+     "kind": "note",
+     "html": "With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 60) = 0.27, p = .604. Current guidance prefers the uncorrected test, or an exact test when a count is small."
+    }
+   ],
+   "resultsText": "Resultsyesnoyes1812no1515χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 60) = 0.27, p = .604. Current guidance prefers the uncorrected test, or an exact test when a count is small.A chi-square test of independence showed no significant association between counselling and passed, χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>yes</th><th>no</th></tr><tr><th>yes</th><td>18</td><td>12</td></tr><tr><th>no</th><td>15</td><td>15</td></tr></tbody></table><p class=\"desc\">χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10</p><p class=\"desc\">With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 60) = 0.27, p = .604. Current guidance prefers the uncorrected test, or an exact test when a count is small.</p><div id=\"statsSentence\">A chi-square test of independence showed no significant association between counselling and passed, χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq-integer-labels",
+   "test": "chisq",
+   "csv": "year,passed\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,yes\n10,no\n10,no\n10,no\n10,no\n10,no\n10,no\n10,no\n10,no\n2,yes\n2,yes\n2,yes\n2,yes\n2,yes\n2,yes\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n2,no\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,yes\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\n3,no\nx,",
+   "values": {
+    "v1": "year",
+    "v2": "passed"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square test of independence showed no significant association between year and passed, χ²(2, N = 60) = 3.75, p = .153, Cramér's V = 0.25.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "yes",
+       "no"
+      ],
+      [
+       "10",
+       "12",
+       "8"
+      ],
+      [
+       "2",
+       "6",
+       "14"
+      ],
+      [
+       "3",
+       "10",
+       "10"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(2, N = 60) = 3.75, p = .153, Cramér's V = 0.25"
+    }
+   ],
+   "resultsText": "Resultsyesno10128261431010χ²(2, N = 60) = 3.75, p = .153, Cramér's V = 0.25A chi-square test of independence showed no significant association between year and passed, χ²(2, N = 60) = 3.75, p = .153, Cramér's V = 0.25.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>yes</th><th>no</th></tr><tr><th>10</th><td>12</td><td>8</td></tr><tr><th>2</th><td>6</td><td>14</td></tr><tr><th>3</th><td>10</td><td>10</td></tr></tbody></table><p class=\"desc\">χ²(2, N = 60) = 3.75, p = .153, Cramér's V = 0.25</p><div id=\"statsSentence\">A chi-square test of independence showed no significant association between year and passed, χ²(2, N = 60) = 3.75, p = .153, Cramér's V = 0.25.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq-2x2-small-expected",
+   "test": "chisq",
+   "csv": "group,outcome\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,no\nA,no\nB,yes\nB,yes\nB,yes\nB,no\nB,no\nB,no\nB,no\nB,no\nB,no\nB,no",
+   "values": {
+    "v1": "group",
+    "v2": "outcome"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A Fisher's exact test showed no significant association between group and outcome, p = .070, odds ratio = 9.33 (N = 20).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "yes",
+       "no"
+      ],
+      [
+       "A",
+       "8",
+       "2"
+      ],
+      [
+       "B",
+       "3",
+       "7"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(1, N = 20) = 5.05, p = .025, Cramér's V = 0.50"
+    },
+    {
+     "kind": "note",
+     "html": "With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 20) = 3.23, p = .072. Current guidance prefers the uncorrected test, or an exact test when a count is small."
+    },
+    {
+     "kind": "note",
+     "html": "<b>The smallest expected count is 4.50, below 5, so chi-square is unreliable here. Fisher's exact test (two-sided): p = .070, odds ratio = 9.33.</b> Report the Fisher result."
+    }
+   ],
+   "resultsText": "ResultsyesnoA82B37χ²(1, N = 20) = 5.05, p = .025, Cramér's V = 0.50With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 20) = 3.23, p = .072. Current guidance prefers the uncorrected test, or an exact test when a count is small.The smallest expected count is 4.50, below 5, so chi-square is unreliable here. Fisher's exact test (two-sided): p = .070, odds ratio = 9.33. Report the Fisher result.A Fisher's exact test showed no significant association between group and outcome, p = .070, odds ratio = 9.33 (N = 20).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>yes</th><th>no</th></tr><tr><th>A</th><td>8</td><td>2</td></tr><tr><th>B</th><td>3</td><td>7</td></tr></tbody></table><p class=\"desc\">χ²(1, N = 20) = 5.05, p = .025, Cramér's V = 0.50</p><p class=\"desc\">With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 20) = 3.23, p = .072. Current guidance prefers the uncorrected test, or an exact test when a count is small.</p><p class=\"desc\"><b>The smallest expected count is 4.50, below 5, so chi-square is unreliable here. Fisher's exact test (two-sided): p = .070, odds ratio = 9.33.</b> Report the Fisher result.</p><div id=\"statsSentence\">A Fisher's exact test showed no significant association between group and outcome, p = .070, odds ratio = 9.33 (N = 20).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq-2x2-empty-cell",
+   "test": "chisq",
+   "csv": "group,outcome\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nB,yes\nB,yes\nB,yes\nB,no\nB,no\nB,no\nB,no\nB,no",
+   "values": {
+    "v1": "group",
+    "v2": "outcome"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A Fisher's exact test showed a significant association between group and outcome, p = .031, odds ratio = undefined (an empty cell) (N = 14).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "yes",
+       "no"
+      ],
+      [
+       "A",
+       "6",
+       "0"
+      ],
+      [
+       "B",
+       "3",
+       "5"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(1, N = 14) = 5.83, p = .016, Cramér's V = 0.65"
+    },
+    {
+     "kind": "note",
+     "html": "With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 14) = 3.43, p = .064. Current guidance prefers the uncorrected test, or an exact test when a count is small."
+    },
+    {
+     "kind": "note",
+     "html": "<b>The smallest expected count is 2.14, below 5, so chi-square is unreliable here. Fisher's exact test (two-sided): p = .031, odds ratio = undefined (an empty cell).</b> Report the Fisher result."
+    }
+   ],
+   "resultsText": "ResultsyesnoA60B35χ²(1, N = 14) = 5.83, p = .016, Cramér's V = 0.65With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 14) = 3.43, p = .064. Current guidance prefers the uncorrected test, or an exact test when a count is small.The smallest expected count is 2.14, below 5, so chi-square is unreliable here. Fisher's exact test (two-sided): p = .031, odds ratio = undefined (an empty cell). Report the Fisher result.A Fisher's exact test showed a significant association between group and outcome, p = .031, odds ratio = undefined (an empty cell) (N = 14).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>yes</th><th>no</th></tr><tr><th>A</th><td>6</td><td>0</td></tr><tr><th>B</th><td>3</td><td>5</td></tr></tbody></table><p class=\"desc\">χ²(1, N = 14) = 5.83, p = .016, Cramér's V = 0.65</p><p class=\"desc\">With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 14) = 3.43, p = .064. Current guidance prefers the uncorrected test, or an exact test when a count is small.</p><p class=\"desc\"><b>The smallest expected count is 2.14, below 5, so chi-square is unreliable here. Fisher's exact test (two-sided): p = .031, odds ratio = undefined (an empty cell).</b> Report the Fisher result.</p><div id=\"statsSentence\">A Fisher's exact test showed a significant association between group and outcome, p = .031, odds ratio = undefined (an empty cell) (N = 14).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq-3x3-sparse",
+   "test": "chisq",
+   "csv": "arm,response\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,y\nA,y\nA,z\nB,x\nB,x\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,z\nB,z\nB,z\nC,x\nC,y\nC,y\nC,y\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z\nC,z",
+   "values": {
+    "v1": "arm",
+    "v2": "response"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A Fisher-Freeman-Halton exact test showed a significant association between arm and response, p = .001 (N = 36).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "x",
+       "y",
+       "z"
+      ],
+      [
+       "A",
+       "8",
+       "2",
+       "1"
+      ],
+      [
+       "B",
+       "2",
+       "7",
+       "3"
+      ],
+      [
+       "C",
+       "1",
+       "3",
+       "9"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(4, N = 36) = 19.38, p &lt; .001, Cramér's V = 0.52"
+    },
+    {
+     "kind": "note",
+     "html": "9 of 9 cells have an expected count below 5, more than the 20% limit, so the chi-square p-value is not trustworthy."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Fisher-Freeman-Halton exact test: p = .001.</b> All 4,017 tables with the same row and column totals were enumerated, and the p value is the chance of a table no more likely than yours. Report this result."
+    }
+   ],
+   "resultsText": "ResultsxyzA821B273C139χ²(4, N = 36) = 19.38, p < .001, Cramér's V = 0.529 of 9 cells have an expected count below 5, more than the 20% limit, so the chi-square p-value is not trustworthy.Fisher-Freeman-Halton exact test: p = .001. All 4,017 tables with the same row and column totals were enumerated, and the p value is the chance of a table no more likely than yours. Report this result.A Fisher-Freeman-Halton exact test showed a significant association between arm and response, p = .001 (N = 36).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>x</th><th>y</th><th>z</th></tr><tr><th>A</th><td>8</td><td>2</td><td>1</td></tr><tr><th>B</th><td>2</td><td>7</td><td>3</td></tr><tr><th>C</th><td>1</td><td>3</td><td>9</td></tr></tbody></table><p class=\"desc\">χ²(4, N = 36) = 19.38, p &lt; .001, Cramér's V = 0.52</p><p class=\"desc\">9 of 9 cells have an expected count below 5, more than the 20% limit, so the chi-square p-value is not trustworthy.</p><p class=\"desc\"><b>Fisher-Freeman-Halton exact test: p = .001.</b> All 4,017 tables with the same row and column totals were enumerated, and the p value is the chance of a table no more likely than yours. Report this result.</p><div id=\"statsSentence\">A Fisher-Freeman-Halton exact test showed a significant association between arm and response, p = .001 (N = 36).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq-3x4-sparse-large-N",
+   "test": "chisq",
+   "csv": "site,choice\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,w\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,x\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,y\nA,z\nA,z\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,w\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,x\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,y\nB,z\nC,w\nC,w\nC,w\nC,x\nC,x\nC,y",
+   "values": {
+    "v1": "site",
+    "v2": "choice"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square test of independence showed no significant association between site and choice, χ²(6, N = 294) = 0.67, p = .995, Cramér's V = 0.03.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "w",
+       "x",
+       "y",
+       "z"
+      ],
+      [
+       "A",
+       "60",
+       "50",
+       "40",
+       "2"
+      ],
+      [
+       "B",
+       "55",
+       "45",
+       "35",
+       "1"
+      ],
+      [
+       "C",
+       "3",
+       "2",
+       "1",
+       "0"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(6, N = 294) = 0.67, p = .995, Cramér's V = 0.03"
+    },
+    {
+     "kind": "note",
+     "html": "6 of 12 cells have an expected count below 5, more than the 20% limit, so the chi-square p-value is not trustworthy."
+    },
+    {
+     "kind": "note",
+     "html": "There are too many possible tables to enumerate here for an exact test. Merge sparse categories if that makes sense for your question, or ask a statistician for the exact test."
+    }
+   ],
+   "resultsText": "ResultswxyzA6050402B5545351C3210χ²(6, N = 294) = 0.67, p = .995, Cramér's V = 0.036 of 12 cells have an expected count below 5, more than the 20% limit, so the chi-square p-value is not trustworthy.There are too many possible tables to enumerate here for an exact test. Merge sparse categories if that makes sense for your question, or ask a statistician for the exact test.A chi-square test of independence showed no significant association between site and choice, χ²(6, N = 294) = 0.67, p = .995, Cramér's V = 0.03.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>w</th><th>x</th><th>y</th><th>z</th></tr><tr><th>A</th><td>60</td><td>50</td><td>40</td><td>2</td></tr><tr><th>B</th><td>55</td><td>45</td><td>35</td><td>1</td></tr><tr><th>C</th><td>3</td><td>2</td><td>1</td><td>0</td></tr></tbody></table><p class=\"desc\">χ²(6, N = 294) = 0.67, p = .995, Cramér's V = 0.03</p><p class=\"desc\">6 of 12 cells have an expected count below 5, more than the 20% limit, so the chi-square p-value is not trustworthy.</p><p class=\"desc\">There are too many possible tables to enumerate here for an exact test. Merge sparse categories if that makes sense for your question, or ask a statistician for the exact test.</p><div id=\"statsSentence\">A chi-square test of independence showed no significant association between site and choice, χ²(6, N = 294) = 0.67, p = .995, Cramér's V = 0.03.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq-one-value-column",
+   "test": "chisq",
+   "csv": "group,outcome\nA,yes\nA,yes\nA,yes\nA,yes\nA,yes\nB,yes\nB,yes\nB,yes\nB,yes\nB,yes",
+   "values": {
+    "v1": "group",
+    "v2": "outcome"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Each variable needs at least 2 different values"
+   ]
+  },
+  {
+   "id": "chisq-hindi-categories",
+   "test": "chisq",
+   "csv": "लिंग,उत्तर\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,हाँ\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nपुरुष,नहीं\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,हाँ\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं\nमहिला,नहीं",
+   "values": {
+    "v1": "लिंग",
+    "v2": "उत्तर"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square test of independence showed a significant association between लिंग and उत्तर, χ²(1, N = 50) = 6.65, p = .010, Cramér's V = 0.36.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "हाँ",
+       "नहीं"
+      ],
+      [
+       "पुरुष",
+       "15",
+       "10"
+      ],
+      [
+       "महिला",
+       "6",
+       "19"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(1, N = 50) = 6.65, p = .010, Cramér's V = 0.36"
+    },
+    {
+     "kind": "note",
+     "html": "With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 50) = 5.25, p = .022. Current guidance prefers the uncorrected test, or an exact test when a count is small."
+    }
+   ],
+   "resultsText": "Resultsहाँनहींपुरुष1510महिला619χ²(1, N = 50) = 6.65, p = .010, Cramér's V = 0.36With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 50) = 5.25, p = .022. Current guidance prefers the uncorrected test, or an exact test when a count is small.A chi-square test of independence showed a significant association between लिंग and उत्तर, χ²(1, N = 50) = 6.65, p = .010, Cramér's V = 0.36.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>हाँ</th><th>नहीं</th></tr><tr><th>पुरुष</th><td>15</td><td>10</td></tr><tr><th>महिला</th><td>6</td><td>19</td></tr></tbody></table><p class=\"desc\">χ²(1, N = 50) = 6.65, p = .010, Cramér's V = 0.36</p><p class=\"desc\">With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 50) = 5.25, p = .022. Current guidance prefers the uncorrected test, or an exact test when a count is small.</p><div id=\"statsSentence\">A chi-square test of independence showed a significant association between लिंग and उत्तर, χ²(1, N = 50) = 6.65, p = .010, Cramér's V = 0.36.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

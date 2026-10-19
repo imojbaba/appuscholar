@@ -23,8 +23,11 @@ for (const f of fixtures) for (const c of readFixture<{ cases: CapturedRun[] }>(
 
 /**
  * The keys scipy gives for each test (pearson's cl and ch only when n > 3; tukey's p_i_j for every pair; mannwhitney's U is min(U1, n1*n2 - U1) and wilcoxon's W is min(W+, W-), the
- * statistic v1 prints). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
- * padj_i_j), the Spearman interval (lo, hi), ω² (omega2, F9) and ε² (eps2).
+ * statistic v1 prints; chisq's chiY and pY on a 2x2 only, fisherP where v1 reports Fisher, and fisherOr there unless b*c is 0, the sample odds ratio a*d/(b*c) that the script
+ * computes (F8); gof's binomP with two categories and an expected count below 5; mcnemar's chi is the continuity-corrected formula computed in the script, "matches v1 (formula)",
+ * with pChi from chi2.sf). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
+ * padj_i_j), the Spearman interval (lo, hi), ω² (omega2, F9), ε² (eps2), the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramér's V, Cohen's w, Kendall's W, the Cochran
+ * and Friedman pairwise p (pair_p_i_j) and Cochran's Q (every cochran case is ref null, "no scipy counterpart").
  */
 const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
   ttest1: (r) => sameKeys(r, ["t", "p"]),
@@ -39,6 +42,10 @@ const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
   kruskal: (r) => sameKeys(r, ["H", "p"]),
   spearman: (r) => sameKeys(r, ["rho", "p"]),
   welchAnova: (r) => sameKeys(r, ["F", "p"]),
+  chisq: (r) => [["chi2", "p"], ["chi2", "p", "chiY", "pY"], ["chi2", "p", "chiY", "pY", "fisherP"], ["chi2", "p", "chiY", "pY", "fisherP", "fisherOr"]].some((k) => sameKeys(r, k)),
+  gof: (r) => sameKeys(r, ["chi2", "p"]) || sameKeys(r, ["chi2", "p", "binomP"]),
+  mcnemar: (r) => sameKeys(r, ["pEx", "chi", "pChi"]),
+  friedman: (r) => sameKeys(r, ["chi", "pF"]),
 };
 function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Object.keys(r).sort().join() === keys.slice().sort().join()}
 

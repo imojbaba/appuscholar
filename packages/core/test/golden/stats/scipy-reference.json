@@ -68,6 +68,121 @@
    "why": "v1 refused the case with a toast"
   },
   {
+   "test": "chisq",
+   "id": "chisq-demo",
+   "ref": {
+    "chi2": 0.606060606060606,
+    "p": 0.4362749288405292,
+    "chiY": 0.26936026936026936,
+    "pY": 0.6037612321081913
+   }
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-integer-labels",
+   "ref": {
+    "chi2": 3.7499999999999996,
+    "p": 0.1533549668449285
+   }
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-2x2-small-expected",
+   "ref": {
+    "chi2": 5.05050505050505,
+    "p": 0.024618761380815164,
+    "chiY": 3.2323232323232323,
+    "pY": 0.07219819770165763,
+    "fisherP": 0.06977851869492736,
+    "fisherOr": 9.333333333333334
+   }
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-2x2-empty-cell",
+   "ref": {
+    "chi2": 5.833333333333333,
+    "p": 0.015725299754505352,
+    "chiY": 3.428703703703704,
+    "pY": 0.06407237419527177,
+    "fisherP": 0.030969030969030968
+   }
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-3x3-sparse",
+   "ref": {
+    "chi2": 19.384921023032913,
+    "p": 0.0006602304326466208
+   }
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-3x4-sparse-large-N",
+   "ref": {
+    "chi2": 0.6749785715105304,
+    "p": 0.9950152163842637
+   }
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-one-value-column",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "chisq",
+   "id": "chisq-hindi-categories",
+   "ref": {
+    "chi2": 6.650246305418719,
+    "p": 0.009914211838606633,
+    "chiY": 5.254515599343186,
+    "pY": 0.021889893660666092
+   }
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-four-conditions",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-non-significant",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-two-columns",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-all-same",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-nine-columns",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-n2",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
+   "test": "cochran",
+   "id": "cochran-missing-answer",
+   "ref": null,
+   "why": "no scipy counterpart: Cochran's Q matches v1"
+  },
+  {
    "test": "desc",
    "id": "desc-demo-score",
    "ref": null,
@@ -120,6 +235,113 @@
    "id": "desc-one-left-out",
    "ref": null,
    "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-four-conditions",
+   "ref": {
+    "chi": 22.900000000000006,
+    "pF": 4.2368260953892045e-05
+   }
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-ties",
+   "ref": {
+    "chi": 13.347826086956507,
+    "pF": 0.0039417224094570776
+   }
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-non-significant",
+   "ref": {
+    "chi": 2.882352941176474,
+    "pF": 0.2366491840420615
+   }
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-all-same",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-n2",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-two-columns",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-nine-columns",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "friedman",
+   "id": "friedman-missing-row",
+   "ref": {
+    "chi": 22.900000000000006,
+    "pF": 4.2368260953892045e-05
+   }
+  },
+  {
+   "test": "gof",
+   "id": "gof-demo",
+   "ref": {
+    "chi2": 8.4,
+    "p": 0.014995576820477714
+   }
+  },
+  {
+   "test": "gof",
+   "id": "gof-expected-shares",
+   "ref": {
+    "chi2": 0.0,
+    "p": 1.0
+   }
+  },
+  {
+   "test": "gof",
+   "id": "gof-expected-bad",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "gof",
+   "id": "gof-expected-missing-category",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "gof",
+   "id": "gof-two-categories-small",
+   "ref": {
+    "chi2": 2.7777777777777777,
+    "p": 0.09558070454562927,
+    "binomP": 0.1796875
+   }
+  },
+  {
+   "test": "gof",
+   "id": "gof-three-categories-small",
+   "ref": {
+    "chi2": 2.0,
+    "p": 0.36787944117144245
+   }
+  },
+  {
+   "test": "gof",
+   "id": "gof-one-category",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
   },
   {
    "test": "kruskal",
@@ -269,6 +491,72 @@
    "ref": {
     "U": 0.0,
     "p": 0.02857142857142857
+   }
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-yes-no",
+   "ref": {
+    "pEx": 0.03515625,
+    "chi": 4.266666666666667,
+    "pChi": 0.038867103812417245
+   }
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-pos-given",
+   "ref": {
+    "pEx": 0.03515625,
+    "chi": 4.266666666666667,
+    "pChi": 0.038867103812417245
+   }
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-pos-unknown",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-no-changers",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-nd25",
+   "ref": {
+    "pEx": 0.016124801710247997,
+    "chi": 5.633333333333334,
+    "pChi": 0.01762209096232446
+   }
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-three-answers",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-same-column",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-one-person",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mcnemar",
+   "id": "mcnemar-missing-answer",
+   "ref": {
+    "pEx": 0.03515625,
+    "chi": 4.266666666666667,
+    "pChi": 0.038867103812417245
    }
   },
   {

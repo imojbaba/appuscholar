@@ -40,6 +40,12 @@ const REQUIRED: Record<string, string[]> = {
   kruskal: ["kruskal-demo", "kruskal-group-column-named-group", "kruskal-non-significant", "kruskal-small-group", "kruskal-all-same", "kruskal-two-groups"],
   spearman: ["spearman-demo", "spearman-tiny-p", "spearman-text-dropped-uncounted", "spearman-n4", "spearman-n9", "spearman-perfect-negative"],
   welchAnova: ["welchAnova-demo", "welchAnova-non-significant", "welchAnova-constant-group", "welchAnova-two-groups", "welchAnova-text-in-numeric", "welchAnova-hindi-labels"],
+  chisq: ["chisq-demo", "chisq-integer-labels", "chisq-2x2-small-expected", "chisq-2x2-empty-cell", "chisq-3x3-sparse", "chisq-3x4-sparse-large-N", "chisq-one-value-column",
+    "chisq-hindi-categories"],
+  gof: ["gof-demo", "gof-expected-shares", "gof-expected-bad", "gof-expected-missing-category", "gof-two-categories-small", "gof-three-categories-small", "gof-one-category"],
+  mcnemar: ["mcnemar-yes-no", "mcnemar-pos-given", "mcnemar-pos-unknown", "mcnemar-no-changers", "mcnemar-nd25", "mcnemar-three-answers", "mcnemar-same-column"],
+  cochran: ["cochran-four-conditions", "cochran-non-significant", "cochran-two-columns", "cochran-all-same", "cochran-nine-columns"],
+  friedman: ["friedman-four-conditions", "friedman-ties", "friedman-all-same", "friedman-n2", "friedman-two-columns", "friedman-missing-row"],
 };
 
 for (const file of fixtures) {
@@ -131,8 +137,8 @@ describe("stats: the frame", () => {
     const data = statsParseText("score\n1\n2\n3")!;
     const toast = "Could not run that test — check the columns you picked match what the test needs";
     expect(runStats(data, "nope" as "desc", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "nope", reason: "toast", toast });
-    // A real key whose runner a later task ports: the task that ports chisq updates this line.
-    expect(runStats(data, "chisq", { values: { v1: "0", v2: "0" }, ticked: {} })).toEqual({ ok: false, test: "chisq", reason: "toast", toast });
+    // A real key whose runner a later task ports: the task that ports anova2 updates this line.
+    expect(runStats(data, "anova2", { values: { dv: "0", iv: "0", iv2: "0" }, ticked: {} })).toEqual({ ok: false, test: "anova2", reason: "toast", toast });
   });
   it("desc-one-left-out: one dropped entry gives the singular note (11994)", () => {
     const c = load("desc").cases.find((x) => x.id === "desc-one-left-out")!;
@@ -286,5 +292,83 @@ describe("stats: rank tests and Welch ANOVA (mannwhitney, wilcoxon, kruskal, spe
       expect(blockAsText(r.blocks[1]!)).toContain(`ω² = ${nl(fixed(v.omega2!))} `);
       if (v.p! < 0.05) { const rows = (r.blocks[2] as { rows: string[][] }).rows.slice(1); const k = (r.blocks[0] as { rows: string[][] }).rows.length - 1;
         let n = 0; for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) { expect(rows[n++]!.slice(1, 3), c.id).toEqual([fixed(v[`gh_diff_${i}_${j}`]!), `[${fixed(v[`gh_lo_${i}_${j}`]!)}, ${fixed(v[`gh_hi_${i}_${j}`]!)}]`]); } } }
+  });
+});
+
+describe("stats: tests on counts (chisq, gof, mcnemar, cochran, friedman)", () => {
+  const find = (file: string, id: string) => load(file).cases.find((x) => x.id === id)!;
+  const rowsOf = (c: CapturedRun, b = 0) => (c.blocks[b] as { rows: string[][] }).rows;
+  const notes = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "note").map((b) => (b as { html: string }).html);
+  const lastNote = (c: CapturedRun) => { const b = c.blocks[c.blocks.length - 1]!; return b.kind === "note" ? b.html : ""; };
+  it("chisq keeps the Set's data order for its row and column keys (F4's other branch): 10, 2, 3 stay 10, 2, 3", () => {
+    const c = find("chisq", "chisq-integer-labels");
+    expect(rowsOf(c).map((r) => r[0])).toEqual(["", "10", "2", "3"]);
+    expect(rowsOf(c)[0]).toEqual(["", "yes", "no"]);
+  });
+  it("F8: the Fisher sentence reports stkFisher2x2's sample odds ratio a*d/(b*c)", () => {
+    const c = find("chisq", "chisq-2x2-small-expected");
+    expect(c.apa).toBe("A Fisher's exact test showed no significant association between group and outcome, p = .070, odds ratio = 9.33 (N = 20).");
+    const r = run(c);
+    expect(r.ok && r.values.fisherOr).toBe((8 * 7) / (2 * 3));
+  });
+  it("chisq-2x2-empty-cell: 'undefined (an empty cell)' passes the safety net, so the result is shown", () => {
+    const c = find("chisq", "chisq-2x2-empty-cell");
+    expect(c.apa).toContain("odds ratio = undefined (an empty cell) (N = 14)");
+    expect(c.toasts).toEqual([]);
+    const r = run(c);
+    expect(r.ok && r.values.fisherOr).toBe(Infinity);
+  });
+  it("D-W2-7: the Fisher-Freeman-Halton note groups the table count with toLocaleString('en-US'); N > 200 skips the test", () => {
+    const c = find("chisq", "chisq-3x3-sparse");
+    expect(notes(c).some((h) => h.includes("All 4,017 tables with the same row and column totals were enumerated"))).toBe(true);
+    expect(run(c)).toMatchObject({ ok: true, values: { N: 36, ffhTables: 4017 } });
+    const big = find("chisq", "chisq-3x4-sparse-large-N");
+    expect(lastNote(big)).toMatch(/^There are too many possible tables to enumerate here/);
+    const r = run(big);
+    expect(r.ok && r.values.N! > 200 && !("ffhP" in r.values)).toBe(true);
+  });
+  it("gof: the exact binomial sentence with two categories, the note only with three", () => {
+    expect(find("gof", "gof-two-categories-small").apa).toMatch(/^An exact binomial test showed that the proportion of right in hand \(7 of 9\)/);
+    const three = find("gof", "gof-three-categories-small");
+    expect(three.apa).toMatch(/^A chi-square goodness-of-fit test/);
+    expect(lastNote(three)).toMatch(/^An expected count is below 5 \(4\.00\)/);
+    expect(run(three)).toMatchObject({ ok: true, values: { k: 3, minE: 4 } });
+  });
+  it("mcnemar: the exact branch under 25 changers, the χ² branch at 25 or more; the curly quotes in stkBinData's toast", () => {
+    expect(run(find("mcnemar", "mcnemar-yes-no"))).toMatchObject({ ok: true, values: { nd: 15, useEx: 1, b: 3, c: 12 } });
+    expect(run(find("mcnemar", "mcnemar-pos-given"))).toMatchObject({ ok: true, values: { nd: 15, useEx: 1, b: 12, c: 3 } });
+    expect(run(find("mcnemar", "mcnemar-nd25"))).toMatchObject({ ok: true, values: { nd: 30, useEx: 0 } });
+    expect(rowsOf(find("mcnemar", "mcnemar-nd25"), 1)[0]![4]).toBe("χ²(1)");
+    expect(find("mcnemar", "mcnemar-pos-unknown").toasts).toEqual(["“maybe” is not one of the two answers (yes, no)."]);
+  });
+  it("the left-out count: B.skipped in mcnemar and cochran, the friedman row filter inline", () => {
+    for (const [file, id, n] of [["mcnemar", "mcnemar-missing-answer", 2], ["cochran", "cochran-missing-answer", 1], ["friedman", "friedman-missing-row", 1]] as const) {
+      const c = find(file, id);
+      expect(lastNote(c), id).toBe(n === 1 ? "1 entry that is not a number was left out." : `${n} entries that are not a number were left out.`);
+      expect(run(c), id).toMatchObject({ ok: true, skipped: n });
+    }
+  });
+  it("the pairwise values exist only when the pairwise table is shown", () => {
+    for (const [file, pk] of [["cochran", "pQ"], ["friedman", "pF"]] as const) for (const c of load(file).cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const k = r.values.k!, pairs = Object.keys(r.values).filter((x) => /^pair_p_\d+_\d+$/.test(x)).length;
+      expect(pairs, c.id).toBe(r.values[pk]! < 0.05 ? k * (k - 1) / 2 : 0);
+    }
+  });
+  it("values are the numbers behind the table cells (register row F27)", () => {
+    const fixed = (x: number, k = 2) => x.toFixed(k);
+    const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
+    for (const c of load("chisq").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(blockAsText(r.blocks[1]!), c.id).toBe(`χ²(${v.df}, N = ${v.N}) = ${fixed(v.chi2!)}, ${fmtP(v.p!)}, Cramér's V = ${fixed(v.v!)}`); }
+    for (const c of load("gof").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(blockAsText(r.blocks[1]!).startsWith(`χ²(${v.df}, N = ${v.N}) = ${fixed(v.chi2!)}, ${fmtP(v.p!)}, Cohen's w = ${nl(fixed(v.w!))}.`), c.id).toBe(true); }
+    for (const c of load("mcnemar").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect((r.blocks[1] as { rows: string[][] }).rows[1]!.slice(0, 3), c.id).toEqual([String(v.n), String(v.b), String(v.c)]);
+      expect((r.blocks[0] as { rows: string[][] }).rows.slice(1).map((x) => x.slice(1)), c.id).toEqual([[String(v.a), String(v.b)], [String(v.c), String(v.dd)]]); }
+    for (const c of load("cochran").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect((r.blocks[1] as { rows: string[][] }).rows[1]!.slice(0, 3), c.id).toEqual([String(v.n), fixed(v.Q!), String(v.df)]); }
+    for (const c of load("friedman").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect((r.blocks[1] as { rows: string[][] }).rows[1]!, c.id).toEqual([String(v.n), fixed(v.chi!), String(v.df), v.pF! < 0.001 ? "&lt; .001" : nl(fixed(v.pF!, 3)), nl(fixed(v.W!, 3))]); }
   });
 });
