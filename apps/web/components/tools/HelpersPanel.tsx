@@ -20,12 +20,14 @@ const HELPERS: { kind: HelperKind; label: string }[] = [
   { kind: "stats", label: "psych_btn_apa" }
 ];
 
-/** The browser session's store for the case tool's acknowledgement; an in-memory stand-in when sessionStorage is unavailable (private mode, blocked storage). */
+/** The case tool's acknowledgement, kept in memory for the life of the tab as v1's sessionKeys (1958): a reload asks the APA 4.07 question again. */
 const memory = new Map<string, string>();
 const session: HelperDeps["session"] = {
-  get(key) { try { return window.sessionStorage.getItem(key); } catch { return memory.get(key) ?? null; } },
-  set(key, value) { try { window.sessionStorage.setItem(key, value); } catch { memory.set(key, value); } }
+  get: (key) => memory.get(key) ?? null,
+  set: (key, value) => void memory.set(key, value)
 };
+/** Forgets the acknowledgement, as a reload does (for tests). */
+export function resetHelperSession(): void { memory.clear(); }
 
 /** Research helpers (v1 728-738, psychTool / devilTool 8591-8630): six buttons on the selection, or on the whole document when nothing is selected. */
 export function HelpersPanel() {

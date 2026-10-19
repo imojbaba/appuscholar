@@ -19,7 +19,7 @@ vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, setti
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ dockShow: h.dockShow }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
-import { HelpersPanel } from "../components/tools/HelpersPanel";
+import { HelpersPanel, resetHelperSession } from "../components/tools/HelpersPanel";
 import type { HelperDeps } from "../lib/ai/actions";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -47,7 +47,7 @@ beforeEach(() => {
     setThinking: vi.fn(), isCurrent: vi.fn(), set: vi.fn(), setFeedback: vi.fn(), clear: vi.fn(),
     editor
   };
-  sessionStorage.clear();
+  resetHelperSession();
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -112,8 +112,9 @@ describe("Research helpers panel (v1 728-738)", () => {
     expect(d.docText()).toBe("");
   });
 
-  it("the case confirm is the browser's confirm and the acknowledgement lives in sessionStorage", async () => {
+  it("the case confirm is the browser's confirm; the acknowledgement is kept in memory for the tab, never in sessionStorage (v1 sessionKeys)", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
     mount();
     await click("helper-case");
     const d = lastDeps(h.runHelper);
@@ -121,8 +122,19 @@ describe("Research helpers panel (v1 728-738)", () => {
     expect(confirm).toHaveBeenCalledWith("Continue?");
     expect(d.session.get("appu_case_ack")).toBeNull();
     d.session.set("appu_case_ack", "1");
-    expect(sessionStorage.getItem("appu_case_ack")).toBe("1");
     expect(d.session.get("appu_case_ack")).toBe("1");
+    expect(setItem).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("appu_case_ack")).toBeNull();
+    expect(sessionStorage.length).toBe(0);
+    // A second mount in the same tab (leaving the panel and coming back) still has the yes.
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    mount();
+    await click("helper-case");
+    expect(lastDeps(h.runHelper).session.get("appu_case_ack")).toBe("1");
+    // A reload starts with a fresh module, which resetHelperSession stands in for.
+    resetHelperSession();
+    expect(lastDeps(h.runHelper).session.get("appu_case_ack")).toBeNull();
+    setItem.mockRestore();
     confirm.mockRestore();
   });
 });
