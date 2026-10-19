@@ -1,0 +1,91 @@
+[
+ {
+  "id": "anova1-demo",
+  "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "TG_DEMO's anova1 data (TG_DEMO sends it to welchAnova; this is the classic ANOVA on it)"
+ },
+ {
+  "id": "anova1-text-in-numeric",
+  "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20\nCBT,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nWaitlist,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). statsGroupBy drops both, and the assumption pass calls statsGroupBy again, so the note says 4 (D-W2-4)."
+ },
+ {
+  "id": "anova1-two-groups",
+  "csv": "group,score\nA,4\nA,6\nA,5\nB,7\nB,9\nB,8",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "two groups: the toast"
+ },
+ {
+  "id": "anova1-one-row-group",
+  "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nA,9\nB,14\nB,15\nB,13\nB,16\nB,15\nC,20",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "C has one value: its SD prints —, Shapiro needs 3 or more values, and Brown-Forsythe is not run"
+ },
+ {
+  "id": "anova1-no-spread",
+  "csv": "group,score\nA,5\nA,5\nB,7\nB,7\nC,9\nC,9",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "no spread in any group: the toast"
+ },
+ {
+  "id": "anova1-six-groups",
+  "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,12\nB,14\nB,13\nB,15\nC,11\nC,13\nC,12\nC,10\nD,15\nD,17\nD,16\nD,18\nE,13\nE,12\nE,14\nE,15\nF,20\nF,22\nF,19\nF,21",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "six groups"
+ },
+ {
+  "id": "anova1-hindi-labels",
+  "csv": "समूह,अंक\nनियंत्रण,12\nनियंत्रण,14\nनियंत्रण,11\nनियंत्रण,13\nध्यान,15\nध्यान,17\nध्यान,16\nध्यान,18\nव्यायाम,13\nव्यायाम,15\nव्यायाम,14\nव्यायाम,12",
+  "test": "anova1",
+  "values": {
+   "dv": "अंक",
+   "iv": "समूह"
+  },
+  "why": "Devanagari group labels and column names"
+ },
+ {
+  "id": "anova1-nonsignificant",
+  "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,11\nB,13\nB,12\nB,10\nC,12\nC,11\nC,14\nC,10",
+  "test": "anova1",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "non-significant: no post-hoc sentence"
+ },
+ {
+  "id": "anova1-no-categorical-column",
+  "csv": "score\n4\n6\n5\n7",
+  "test": "anova1",
+  "values": {
+   "dv": "score"
+  },
+  "why": "no categorical column: sf_iv has no option, its value is '', d.cols[NaN].name throws, and the run falls to the catch toast"
+ }
+]

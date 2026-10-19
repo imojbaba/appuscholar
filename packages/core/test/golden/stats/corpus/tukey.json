@@ -1,0 +1,91 @@
+[
+ {
+  "id": "tukey-demo-arms",
+  "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "TG_DEMO's anova1 data under tukey; CBT vs Waitlist has p < .001, printed without the entity (D-W2-6)"
+ },
+ {
+  "id": "tukey-text-in-numeric",
+  "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20\nCBT,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nWaitlist,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). statsGroupBy drops both, and the assumption pass calls statsGroupBy again, so the note says 4 (D-W2-4)."
+ },
+ {
+  "id": "tukey-integer-labels",
+  "csv": "group,score\n3,12\n3,14\n3,13\n3,15\n2,9\n2,11\n2,10\n2,8\n10,16\n10,18\n10,17\n10,19\nx,",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "groups 3, 2 and 10 (in that order in the file; the x row with an empty score makes the column categorical): object-key order gives 2, 3, 10, so the pairs are 2 vs 3, 2 vs 10, 3 vs 10 (F4)"
+ },
+ {
+  "id": "tukey-two-groups",
+  "csv": "group,score\nA,4\nA,6\nA,5\nB,7\nB,9\nB,8",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "two groups: the toast"
+ },
+ {
+  "id": "tukey-six-groups",
+  "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,12\nB,14\nB,13\nB,15\nC,11\nC,13\nC,12\nC,10\nD,15\nD,17\nD,16\nD,18\nE,13\nE,12\nE,14\nE,15\nF,20\nF,22\nF,19\nF,21",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "six groups, fifteen pairs"
+ },
+ {
+  "id": "tukey-no-spread",
+  "csv": "group,score\nA,5\nA,5\nB,7\nB,7\nC,9\nC,9",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "no spread in any group: the toast"
+ },
+ {
+  "id": "tukey-unequal-n",
+  "csv": "group,score\nA,10\nA,12\nA,11\nB,14\nB,15\nB,13\nB,16\nB,15\nB,17\nC,12\nC,13\nC,11\nC,14\nC,12",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "unequal group sizes (Tukey-Kramer)"
+ },
+ {
+  "id": "tukey-no-categorical-column",
+  "csv": "score\n4\n6\n5\n7",
+  "test": "tukey",
+  "values": {
+   "dv": "score"
+  },
+  "why": "no categorical column: sf_iv is '', tukey reads no column name, statsGroupBy finds no group, so the toast counts fewer than 3 groups"
+ },
+ {
+  "id": "tukey-f5-exact-zero",
+  "csv": "group,score\nA,9.7\nA,10\nA,10.3\nB,19.7\nB,20\nB,20.3\nC,29.7\nC,30\nC,30.3\nD,39.7\nD,40\nD,40.3\nE,49.7\nE,50\nE,50.3\nF,59.7\nF,60\nF,60.3\nG,69.7\nG,70\nG,70.3\nH,79.7\nH,80\nH,80.3\nI,89.7\nI,90\nI,90.3\nJ,99.7\nJ,100\nJ,100.3",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "register row F5 at 12714: ten groups of three, means 10 apart, SD 0.3, df 20, so every q is 57.7 or more and stkPtukey returns exactly 1: each of the 45 p (adjusted) is exactly 0 (scipy a tiny positive number) and prints < .001. With 8 groups or fewer the quadrature never reaches 1 at a whole-number df (the tail floors near 1e-11), so this needs 10 groups"
+ }
+]

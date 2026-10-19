@@ -36,3 +36,54 @@ export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildH
 export type { HelperKind } from "./prompts-helpers";
 export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt } from "./prompts-research";
 export { AP_RULES, LESSON_QUESTION_MAX_CHARS, buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "./prompts-analyse";
+export {
+  smean, svar, ssd, smedian, ranks, stkNormCdf, stkQnorm, stkPoly, stkShapiro, stkBrownForsythe, stkRSS, stkAnova2, stkOLS, stkLogit, stkAUC, stkSimpleEffects,
+  plRng, plNorm, plSim, pwLogPois, pwNcChiSf, pwNcFSf, pwNctCdf, pwChiCrit, pwPowerT, pwPowerF, pwPower, pwSolveN, pwSolveEffect,
+  stkTCrit, stkFQuant, stkTieTerm, stkHolm, stkKruskal, stkDunn, stkSpearman, stkCorrMat, stkOmega, stkAlpha, stkRng, stkOmegaBoot,
+  STK_GL, stkGL, stkPhi, stkPtukey, stkQtukey, stkWelchAnova, stkGamesHowell, stkLogChoose, stkFisherRC, stkFisher2x2, stkExactMW, stkExactSR, stkBinomTwo,
+} from "./statsmath";
+export type { Anova2, Anova2Row, Ols, Logit, LogitFit, Eff, SimRun, PowerTest, PowerSpec, Kruskal, DunnPair, Spearman, Omega, Welch, GamesHowellPair, FisherRC } from "./statsmath";
+export { statsSplitLine, statsParseText } from "./intake";
+export type { ParsedData, ParsedCol } from "./intake";
+export { PD_HDR, PD_LABEL, PD_DEFAULT, pdTestVal, pdScan, pdTransform } from "./pdscan";
+export type { PdKind, PdFound, PdChoice, PdTransform } from "./pdscan";
+export { STAT_TESTS, statsColVals, statsGroupBy, stkIsBinaryCol, stkBinData, stkBinom5, sig, stkAssumpBlock, stkAssumpFor, stkAnova2Cells, stkMRData, finishResult } from "./stats-core";
+export type { StatsTestKey, StatsForm, StatsCtx, StatsBlock, StatsResult, StatsOk, StatsFail, StatsTestDef, StatsField, StatsFieldType, StatsExtra, BinData, Anova2Cells, MRData, MRRef } from "./stats-core";
+export { runStats } from "./stats";
+export { runDesc, runTtest1, runTtestInd, runTtestPaired, runAnova1, runTukey, runRegression, runPearson } from "./stats-means";
+export { runMannwhitney, runWilcoxon, runKruskal, runSpearman, runWelchAnova } from "./stats-ranks";
+export { runChisq, runGof, runMcnemar, runCochran, runFriedman } from "./stats-counts";
+export { runAnova2, runMregress } from "./stats-factorial";
+export { runLogistic, runRmanova, runAlpha } from "./stats-models";
+export { runModerate, runMediate, runMixed } from "./stats-advanced";
+export {
+  TG_Q, TG_RES, TG_IMP, TG_EXTRA, TG_DEMO, GEN_DESIGNS, STATS_TEST_OPTIONS, TG_CHECK_TEXT, TG_CHECK_FALLBACK, TG_WHY_TEXT, GEN_TEXT,
+  tgNext, tgRes, tgWhyItems, tgExtra, tgSkew, tgQuant, tgOutliers, tgCheck, tgCheckNumbers, tgCheckCounts, tgCountsText, genVerdict,
+} from "./guide";
+export type {
+  TgQuestionKey, TgAnswers, TgQuestion, TgResKey, TgResEntry, TgResult, TgNextOut, TgWhyItem, TgExtra, TgDemo, GenDesignKey, GenDesign,
+  TgCheckSel, TgNumbersRow, TgNumbers, TgCounts, TgCheckOut, GenVerdict,
+} from "./guide";
+export { PW_INFO, POWER_FOOTER_NOTE, pwArt, pwNum, powerCompute, simulatorParse, simulatorCompute, simulatorHtml } from "./power";
+export type { PowerTestKey, PowerMode, PowerInput, PowerResult, SimBin, SimLast, SimResult } from "./power";
+export {
+  VZ_COL, VZ_GRAY, VZ_I18N, vzPalette, vzEsc, vzQuant, vzTCrit, vzQNorm, vzNice, vzFmt, vzSummary, vzGroups, vzAxisDefaults, vzDefaults, vzCaption,
+  vzFrame, vzSvgOpen, vzYAxis, vzXLabel, vzScaleY, vzJit, vzTableBlock, vzCatLabel, vzBox, vzBar, vzHist, vzQQ, vzChart,
+} from "./charts";
+export type { VzType, VzOptions, VzGroup, VzSummary, VzScale, VzFrame, VzChart, VzTr } from "./charts";
+export { chartParseLines, vennNum, vennSvg } from "./quickchart";
+export type { ChartRow, VennInput } from "./quickchart";
+export { rtHash, rtSetRecord, rtRunRecord, rtFirstP, rtSig, rtFlip, rtScanTags } from "./rtlink";
+export type { RtRun, RtSavedRun, RtSet, RtTag, RtStatus, RtWhy, RtScanItem, RtFirstP } from "./rtlink";
+export {
+  DESIGN_ITEMS, EC_DOCS, CTRI_FIELDS, PI_ITEMS, BUDGET_DEFAULTS, DESIGN_TOASTS, REG_WARN, regPathway, regDone, protoDone, protocolMarkdown, ecMinorsNote, checklistDone,
+  ecDoneAfterToggle, ecDoneAfterSave, ethicsStatement, consentMarkdown, ctriMarkdown, piDone, piCvText, budgetRows, budgetTotal, budgetTotalText, budgetMarkdown, budgetDone,
+  designDashboard,
+} from "./design";
+export type { DesignKey, RegState, ProtoFields, EcState, BudgetRow, DesignDashboard } from "./design";
+export { AIU_MONTHS, aiuDate, aiuJoin, aiuInRange, aiuBuild } from "./aiustatement";
+export type { AiuEntry, AiuTicks, AiuStyle, AiuInput, AiuBuilt } from "./aiustatement";
+export { SCALES, SL_PENDING, slById, slVarNames, slText, slCodebookRows, slCodebookCsv, slScore, slBand, slGuessColumns, slScoreData } from "./scales";
+export type { Scale, ScaleShape, ScaleCoding, ScaleBand, SlScore, SlScoreData } from "./scales";
+export { QUAL_PALETTE, qualNextColor, qualDescendantIds, qualDeleteCascade, qualPassageText, qualBuildMarkdown } from "./qual";
+export type { QualCode, QualPassage } from "./qual";

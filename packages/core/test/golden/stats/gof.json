@@ -1,0 +1,301 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "gof-demo",
+   "test": "gof",
+   "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+   "values": {
+    "v1": "method"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square goodness-of-fit test showed that the distribution of method differed significantly from the expected distribution, χ²(2, N = 60) = 8.40, p = .015, w = .37.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Category",
+       "Observed",
+       "Expected",
+       "Standardised residual"
+      ],
+      [
+       "Notes",
+       "18",
+       "20.00",
+       "-0.45"
+      ],
+      [
+       "Flashcards",
+       "30",
+       "20.00",
+       "2.24"
+      ],
+      [
+       "Rereading",
+       "12",
+       "20.00",
+       "-1.79"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(2, N = 60) = 8.40, p = .015, Cohen's w = .37. A residual beyond ±2 marks a category that departs from what you expected."
+    }
+   ],
+   "resultsText": "ResultsCategoryObservedExpectedStandardised residualNotes1820.00-0.45Flashcards3020.002.24Rereading1220.00-1.79χ²(2, N = 60) = 8.40, p = .015, Cohen's w = .37. A residual beyond ±2 marks a category that departs from what you expected.A chi-square goodness-of-fit test showed that the distribution of method differed significantly from the expected distribution, χ²(2, N = 60) = 8.40, p = .015, w = .37.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Category</th><th>Observed</th><th>Expected</th><th>Standardised residual</th></tr><tr><td>Notes</td><td>18</td><td>20.00</td><td>-0.45</td></tr><tr><td>Flashcards</td><td>30</td><td>20.00</td><td>2.24</td></tr><tr><td>Rereading</td><td>12</td><td>20.00</td><td>-1.79</td></tr></tbody></table><p class=\"desc\">χ²(2, N = 60) = 8.40, p = .015, Cohen's w = .37. A residual beyond ±2 marks a category that departs from what you expected.</p><div id=\"statsSentence\">A chi-square goodness-of-fit test showed that the distribution of method differed significantly from the expected distribution, χ²(2, N = 60) = 8.40, p = .015, w = .37.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "gof-expected-shares",
+   "test": "gof",
+   "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+   "values": {
+    "v1": "method",
+    "exp": "Notes:30, Flashcards:50, Rereading:20"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": "Notes:30, Flashcards:50, Rereading:20"
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square goodness-of-fit test showed that the distribution of method did not differ significantly from the expected distribution, χ²(2, N = 60) = 0.00, p = 1.000, w = .00.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Category",
+       "Observed",
+       "Expected",
+       "Standardised residual"
+      ],
+      [
+       "Notes",
+       "18",
+       "18.00",
+       "0.00"
+      ],
+      [
+       "Flashcards",
+       "30",
+       "30.00",
+       "0.00"
+      ],
+      [
+       "Rereading",
+       "12",
+       "12.00",
+       "0.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(2, N = 60) = 0.00, p = 1.000, Cohen's w = .00. A residual beyond ±2 marks a category that departs from what you expected."
+    }
+   ],
+   "resultsText": "ResultsCategoryObservedExpectedStandardised residualNotes1818.000.00Flashcards3030.000.00Rereading1212.000.00χ²(2, N = 60) = 0.00, p = 1.000, Cohen's w = .00. A residual beyond ±2 marks a category that departs from what you expected.A chi-square goodness-of-fit test showed that the distribution of method did not differ significantly from the expected distribution, χ²(2, N = 60) = 0.00, p = 1.000, w = .00.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Category</th><th>Observed</th><th>Expected</th><th>Standardised residual</th></tr><tr><td>Notes</td><td>18</td><td>18.00</td><td>0.00</td></tr><tr><td>Flashcards</td><td>30</td><td>30.00</td><td>0.00</td></tr><tr><td>Rereading</td><td>12</td><td>12.00</td><td>0.00</td></tr></tbody></table><p class=\"desc\">χ²(2, N = 60) = 0.00, p = 1.000, Cohen's w = .00. A residual beyond ±2 marks a category that departs from what you expected.</p><div id=\"statsSentence\">A chi-square goodness-of-fit test showed that the distribution of method did not differ significantly from the expected distribution, χ²(2, N = 60) = 0.00, p = 1.000, w = .00.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "gof-expected-bad",
+   "test": "gof",
+   "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+   "values": {
+    "v1": "method",
+    "exp": "Notes 30, Flashcards:50, Rereading:20"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": "Notes 30, Flashcards:50, Rereading:20"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "List every category once, like A:50, B:30, C:20. Categories found: Notes, Flashcards, Rereading"
+   ]
+  },
+  {
+   "id": "gof-expected-missing-category",
+   "test": "gof",
+   "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+   "values": {
+    "v1": "method",
+    "exp": "Notes:30, Flashcards:70"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": "Notes:30, Flashcards:70"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "List every category once, like A:50, B:30, C:20. Categories found: Notes, Flashcards, Rereading"
+   ]
+  },
+  {
+   "id": "gof-two-categories-small",
+   "test": "gof",
+   "csv": "hand\nright\nright\nright\nright\nright\nright\nright\nleft\nleft",
+   "values": {
+    "v1": "hand"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": ""
+    },
+    "ticked": {}
+   },
+   "apa": "An exact binomial test showed that the proportion of right in hand (7 of 9) did not differ significantly from the expected .50, p = .180.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Category",
+       "Observed",
+       "Expected",
+       "Standardised residual"
+      ],
+      [
+       "right",
+       "7",
+       "4.50",
+       "1.18"
+      ],
+      [
+       "left",
+       "2",
+       "4.50",
+       "-1.18"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(1, N = 9) = 2.78, p = .096, Cohen's w = .56. A residual beyond ±2 marks a category that departs from what you expected."
+    },
+    {
+     "kind": "note",
+     "html": "<b>An expected count is below 5, so the exact binomial test is reported: p = .180.</b>"
+    }
+   ],
+   "resultsText": "ResultsCategoryObservedExpectedStandardised residualright74.501.18left24.50-1.18χ²(1, N = 9) = 2.78, p = .096, Cohen's w = .56. A residual beyond ±2 marks a category that departs from what you expected.An expected count is below 5, so the exact binomial test is reported: p = .180.An exact binomial test showed that the proportion of right in hand (7 of 9) did not differ significantly from the expected .50, p = .180.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Category</th><th>Observed</th><th>Expected</th><th>Standardised residual</th></tr><tr><td>right</td><td>7</td><td>4.50</td><td>1.18</td></tr><tr><td>left</td><td>2</td><td>4.50</td><td>-1.18</td></tr></tbody></table><p class=\"desc\">χ²(1, N = 9) = 2.78, p = .096, Cohen's w = .56. A residual beyond ±2 marks a category that departs from what you expected.</p><p class=\"desc\"><b>An expected count is below 5, so the exact binomial test is reported: p = .180.</b></p><div id=\"statsSentence\">An exact binomial test showed that the proportion of right in hand (7 of 9) did not differ significantly from the expected .50, p = .180.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "gof-three-categories-small",
+   "test": "gof",
+   "csv": "colour\nred\nred\nred\nred\nred\nred\nblue\nblue\nblue\nblue\ngreen\ngreen",
+   "values": {
+    "v1": "colour"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A chi-square goodness-of-fit test showed that the distribution of colour did not differ significantly from the expected distribution, χ²(2, N = 12) = 2.00, p = .368, w = .41.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Category",
+       "Observed",
+       "Expected",
+       "Standardised residual"
+      ],
+      [
+       "red",
+       "6",
+       "4.00",
+       "1.00"
+      ],
+      [
+       "blue",
+       "4",
+       "4.00",
+       "0.00"
+      ],
+      [
+       "green",
+       "2",
+       "4.00",
+       "-1.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "χ²(2, N = 12) = 2.00, p = .368, Cohen's w = .41. A residual beyond ±2 marks a category that departs from what you expected."
+    },
+    {
+     "kind": "note",
+     "html": "An expected count is below 5 (4.00), so the chi-square p-value is not reliable. Merge sparse categories if that makes sense, or ask a statistician about an exact multinomial test."
+    }
+   ],
+   "resultsText": "ResultsCategoryObservedExpectedStandardised residualred64.001.00blue44.000.00green24.00-1.00χ²(2, N = 12) = 2.00, p = .368, Cohen's w = .41. A residual beyond ±2 marks a category that departs from what you expected.An expected count is below 5 (4.00), so the chi-square p-value is not reliable. Merge sparse categories if that makes sense, or ask a statistician about an exact multinomial test.A chi-square goodness-of-fit test showed that the distribution of colour did not differ significantly from the expected distribution, χ²(2, N = 12) = 2.00, p = .368, w = .41.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Category</th><th>Observed</th><th>Expected</th><th>Standardised residual</th></tr><tr><td>red</td><td>6</td><td>4.00</td><td>1.00</td></tr><tr><td>blue</td><td>4</td><td>4.00</td><td>0.00</td></tr><tr><td>green</td><td>2</td><td>4.00</td><td>-1.00</td></tr></tbody></table><p class=\"desc\">χ²(2, N = 12) = 2.00, p = .368, Cohen's w = .41. A residual beyond ±2 marks a category that departs from what you expected.</p><p class=\"desc\">An expected count is below 5 (4.00), so the chi-square p-value is not reliable. Merge sparse categories if that makes sense, or ask a statistician about an exact multinomial test.</p><div id=\"statsSentence\">A chi-square goodness-of-fit test showed that the distribution of colour did not differ significantly from the expected distribution, χ²(2, N = 12) = 2.00, p = .368, w = .41.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "gof-one-category",
+   "test": "gof",
+   "csv": "colour\nred\nred\nred\nred\nred\nred",
+   "values": {
+    "v1": "colour"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "exp": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "The variable needs at least 2 categories"
+   ]
+  }
+ ]
+}

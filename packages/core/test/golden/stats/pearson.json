@@ -1,0 +1,318 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "pearson-demo",
+   "test": "pearson",
+   "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+   "values": {
+    "v1": "hours",
+    "v2": "marks"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p < .001, 95% CI [.98, 1.00].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "r",
+       "df",
+       "p"
+      ],
+      [
+       "14",
+       "1.00",
+       "12",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "95% CI [.98, 1.00] (Fisher z)."
+    }
+   ],
+   "resultsText": "ResultsNrdfp141.0012< .00195% CI [.98, 1.00] (Fisher z).There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p < .001, 95% CI [.98, 1.00].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>14</td><td>1.00</td><td>12</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">95% CI [.98, 1.00] (Fisher z).</p><div id=\"statsSentence\">There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p &lt; .001, 95% CI [.98, 1.00].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson-text-in-numeric",
+   "test": "pearson",
+   "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,50\n4,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "v1": "hours",
+    "v2": "marks"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p < .001, 95% CI [.98, 1.00].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "r",
+       "df",
+       "p"
+      ],
+      [
+       "14",
+       "1.00",
+       "12",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "95% CI [.98, 1.00] (Fisher z)."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsNrdfp141.0012< .00195% CI [.98, 1.00] (Fisher z).2 entries that are not a number were left out.There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p < .001, 95% CI [.98, 1.00].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>14</td><td>1.00</td><td>12</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">95% CI [.98, 1.00] (Fisher z).</p><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p &lt; .001, 95% CI [.98, 1.00].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson-n3",
+   "test": "pearson",
+   "csv": "x,y\n1,2\n2,5\n3,4",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a strong positive correlation between x and y, which was not statistically significant, r(1) = .65, p = .546.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "r",
+       "df",
+       "p"
+      ],
+      [
+       "3",
+       ".65",
+       "1",
+       ".546"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsNrdfp3.651.546There was a strong positive correlation between x and y, which was not statistically significant, r(1) = .65, p = .546.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>3</td><td>.65</td><td>1</td><td>.546</td></tr></tbody></table><div id=\"statsSentence\">There was a strong positive correlation between x and y, which was not statistically significant, r(1) = .65, p = .546.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson-perfect",
+   "test": "pearson",
+   "csv": "x,y\n1,1\n2,2\n3,3\n4,4\n5,5",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive correlation between x and y, which was statistically significant, r(3) = 1.00, p < .001, 95% CI [1.00, 1.00].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "r",
+       "df",
+       "p"
+      ],
+      [
+       "5",
+       "1.00",
+       "3",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "95% CI [1.00, 1.00] (Fisher z)."
+    }
+   ],
+   "resultsText": "ResultsNrdfp51.003< .00195% CI [1.00, 1.00] (Fisher z).There was a very strong positive correlation between x and y, which was statistically significant, r(3) = 1.00, p < .001, 95% CI [1.00, 1.00].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>5</td><td>1.00</td><td>3</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">95% CI [1.00, 1.00] (Fisher z).</p><div id=\"statsSentence\">There was a very strong positive correlation between x and y, which was statistically significant, r(3) = 1.00, p &lt; .001, 95% CI [1.00, 1.00].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson-negative",
+   "test": "pearson",
+   "csv": "x,y\n1,20\n2,18\n3,17\n4,13\n5,12\n6,9\n7,8\n8,4",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong negative correlation between x and y, which was statistically significant, r(6) = -.99, p < .001, 95% CI [-1.00, -.95].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "r",
+       "df",
+       "p"
+      ],
+      [
+       "8",
+       "-.99",
+       "6",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "95% CI [-1.00, -.95] (Fisher z)."
+    }
+   ],
+   "resultsText": "ResultsNrdfp8-.996< .00195% CI [-1.00, -.95] (Fisher z).There was a very strong negative correlation between x and y, which was statistically significant, r(6) = -.99, p < .001, 95% CI [-1.00, -.95].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>8</td><td>-.99</td><td>6</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">95% CI [-1.00, -.95] (Fisher z).</p><div id=\"statsSentence\">There was a very strong negative correlation between x and y, which was statistically significant, r(6) = -.99, p &lt; .001, 95% CI [-1.00, -.95].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson-no-spread",
+   "test": "pearson",
+   "csv": "x,y\n1,4\n2,4\n3,4\n4,4",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "One of the two variables has no spread (every value is the same), so a correlation cannot be calculated."
+   ]
+  },
+  {
+   "id": "pearson-weak",
+   "test": "pearson",
+   "csv": "x,y\n1,5\n2,3\n3,6\n4,4\n5,5\n6,3\n7,6\n8,5",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a weak positive correlation between x and y, which was not statistically significant, r(6) = .17, p = .684, 95% CI [-.61, .78].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "r",
+       "df",
+       "p"
+      ],
+      [
+       "8",
+       ".17",
+       "6",
+       ".684"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "95% CI [-.61, .78] (Fisher z)."
+    }
+   ],
+   "resultsText": "ResultsNrdfp8.176.68495% CI [-.61, .78] (Fisher z).There was a weak positive correlation between x and y, which was not statistically significant, r(6) = .17, p = .684, 95% CI [-.61, .78].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>8</td><td>.17</td><td>6</td><td>.684</td></tr></tbody></table><p class=\"desc\">95% CI [-.61, .78] (Fisher z).</p><div id=\"statsSentence\">There was a weak positive correlation between x and y, which was not statistically significant, r(6) = .17, p = .684, 95% CI [-.61, .78].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson-n2",
+   "test": "pearson",
+   "csv": "x,y\n1,2\n2,5",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 3 complete pairs"
+   ]
+  }
+ ]
+}

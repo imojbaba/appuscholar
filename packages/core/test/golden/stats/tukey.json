@@ -1,0 +1,1124 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "tukey-demo-arms",
+   "test": "tukey",
+   "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+   "values": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 3.56, α = .05) gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "CBT vs Mindful",
+       "-4.00",
+       "6.38",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "CBT vs Waitlist",
+       "-10.50",
+       "16.75",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "Mindful vs Waitlist",
+       "-6.50",
+       "10.37",
+       "&lt; .001",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 3.14, df = 21. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "CBT",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Mindful",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Waitlist",
+       "8",
+       "0.975",
+       ".933"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?CBT vs Mindful-4.006.38< .001YesCBT vs Waitlist-10.5016.75< .001YesMindful vs Waitlist-6.5010.37< .001YesMSW = 3.14, df = 21. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk WpCBT80.965.857Mindful80.965.857Waitlist80.975.933Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.Tukey HSD post-hoc comparisons (q critical = 3.56, α = .05) gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>CBT vs Mindful</td><td>-4.00</td><td>6.38</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>CBT vs Waitlist</td><td>-10.50</td><td>16.75</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>Mindful vs Waitlist</td><td>-6.50</td><td>10.37</td><td>&lt; .001</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 3.14, df = 21. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>CBT</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Mindful</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Waitlist</td><td>8</td><td>0.975</td><td>.933</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 3.56, α = .05) gave: CBT vs Mindful (p &lt; .001); CBT vs Waitlist (p &lt; .001); Mindful vs Waitlist (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "tukey-text-in-numeric",
+   "test": "tukey",
+   "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20\nCBT,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nWaitlist,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 3.56, α = .05) gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "CBT vs Mindful",
+       "-4.00",
+       "6.38",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "CBT vs Waitlist",
+       "-10.50",
+       "16.75",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "Mindful vs Waitlist",
+       "-6.50",
+       "10.37",
+       "&lt; .001",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 3.14, df = 21. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "CBT",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Mindful",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Waitlist",
+       "8",
+       "0.975",
+       ".933"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    },
+    {
+     "kind": "note",
+     "html": "4 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?CBT vs Mindful-4.006.38< .001YesCBT vs Waitlist-10.5016.75< .001YesMindful vs Waitlist-6.5010.37< .001YesMSW = 3.14, df = 21. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk WpCBT80.965.857Mindful80.965.857Waitlist80.975.933Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.4 entries that are not a number were left out.Tukey HSD post-hoc comparisons (q critical = 3.56, α = .05) gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>CBT vs Mindful</td><td>-4.00</td><td>6.38</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>CBT vs Waitlist</td><td>-10.50</td><td>16.75</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>Mindful vs Waitlist</td><td>-6.50</td><td>10.37</td><td>&lt; .001</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 3.14, df = 21. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>CBT</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Mindful</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Waitlist</td><td>8</td><td>0.975</td><td>.933</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><p class=\"desc\">4 entries that are not a number were left out.</p><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 3.56, α = .05) gave: CBT vs Mindful (p &lt; .001); CBT vs Waitlist (p &lt; .001); Mindful vs Waitlist (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "tukey-integer-labels",
+   "test": "tukey",
+   "csv": "group,score\n3,12\n3,14\n3,13\n3,15\n2,9\n2,11\n2,10\n2,8\n10,16\n10,18\n10,17\n10,19\nx,",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 3.95, α = .05) gave: 2 vs 3 (p = .005); 2 vs 10 (p < .001); 3 vs 10 (p = .005).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "2 vs 3",
+       "-4.00",
+       "6.20",
+       ".005",
+       "Yes"
+      ],
+      [
+       "2 vs 10",
+       "-8.00",
+       "12.39",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "3 vs 10",
+       "-4.00",
+       "6.20",
+       ".005",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 1.67, df = 9. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "2",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "3",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "10",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 9) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?2 vs 3-4.006.20.005Yes2 vs 10-8.0012.39< .001Yes3 vs 10-4.006.20.005YesMSW = 1.67, df = 9. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk Wp240.993.972340.993.9721040.993.972Equal spread (Brown-Forsythe): F(2, 9) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.Tukey HSD post-hoc comparisons (q critical = 3.95, α = .05) gave: 2 vs 3 (p = .005); 2 vs 10 (p < .001); 3 vs 10 (p = .005).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>2 vs 3</td><td>-4.00</td><td>6.20</td><td>.005</td><td>Yes</td></tr><tr><td>2 vs 10</td><td>-8.00</td><td>12.39</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>3 vs 10</td><td>-4.00</td><td>6.20</td><td>.005</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 1.67, df = 9. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>2</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>3</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>10</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 9) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 3.95, α = .05) gave: 2 vs 3 (p = .005); 2 vs 10 (p &lt; .001); 3 vs 10 (p = .005).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "tukey-two-groups",
+   "test": "tukey",
+   "csv": "group,score\nA,4\nA,6\nA,5\nB,7\nB,9\nB,8",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Tukey HSD needs 3 or more groups"
+   ]
+  },
+  {
+   "id": "tukey-six-groups",
+   "test": "tukey",
+   "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,12\nB,14\nB,13\nB,15\nC,11\nC,13\nC,12\nC,10\nD,15\nD,17\nD,16\nD,18\nE,13\nE,12\nE,14\nE,15\nF,20\nF,22\nF,19\nF,21",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 4.49, α = .05) gave: A vs B (p = .289); A vs C (p = 1.000); A vs D (p < .001); A vs E (p = .289); A vs F (p < .001); B vs C (p = .289); B vs D (p = .040); B vs E (p = 1.000); B vs F (p < .001); C vs D (p < .001); C vs E (p = .289); C vs F (p < .001); D vs E (p = .040); D vs F (p = .004); E vs F (p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "A vs B",
+       "-2.00",
+       "3.10",
+       ".289",
+       "No"
+      ],
+      [
+       "A vs C",
+       "0.00",
+       "0.00",
+       "1.000",
+       "No"
+      ],
+      [
+       "A vs D",
+       "-5.00",
+       "7.75",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs E",
+       "-2.00",
+       "3.10",
+       ".289",
+       "No"
+      ],
+      [
+       "A vs F",
+       "-9.00",
+       "13.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs C",
+       "2.00",
+       "3.10",
+       ".289",
+       "No"
+      ],
+      [
+       "B vs D",
+       "-3.00",
+       "4.65",
+       ".040",
+       "Yes"
+      ],
+      [
+       "B vs E",
+       "0.00",
+       "0.00",
+       "1.000",
+       "No"
+      ],
+      [
+       "B vs F",
+       "-7.00",
+       "10.84",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs D",
+       "-5.00",
+       "7.75",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs E",
+       "-2.00",
+       "3.10",
+       ".289",
+       "No"
+      ],
+      [
+       "C vs F",
+       "-9.00",
+       "13.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs E",
+       "3.00",
+       "4.65",
+       ".040",
+       "Yes"
+      ],
+      [
+       "D vs F",
+       "-4.00",
+       "6.20",
+       ".004",
+       "Yes"
+      ],
+      [
+       "E vs F",
+       "-7.00",
+       "10.84",
+       "&lt; .001",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 1.67, df = 18. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "B",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "C",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "D",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "E",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "F",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 18) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?A vs B-2.003.10.289NoA vs C0.000.001.000NoA vs D-5.007.75< .001YesA vs E-2.003.10.289NoA vs F-9.0013.94< .001YesB vs C2.003.10.289NoB vs D-3.004.65.040YesB vs E0.000.001.000NoB vs F-7.0010.84< .001YesC vs D-5.007.75< .001YesC vs E-2.003.10.289NoC vs F-9.0013.94< .001YesD vs E3.004.65.040YesD vs F-4.006.20.004YesE vs F-7.0010.84< .001YesMSW = 1.67, df = 18. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk WpA40.993.972B40.993.972C40.993.972D40.993.972E40.993.972F40.993.972Equal spread (Brown-Forsythe): F(5, 18) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.Tukey HSD post-hoc comparisons (q critical = 4.49, α = .05) gave: A vs B (p = .289); A vs C (p = 1.000); A vs D (p < .001); A vs E (p = .289); A vs F (p < .001); B vs C (p = .289); B vs D (p = .040); B vs E (p = 1.000); B vs F (p < .001); C vs D (p < .001); C vs E (p = .289); C vs F (p < .001); D vs E (p = .040); D vs F (p = .004); E vs F (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>A vs B</td><td>-2.00</td><td>3.10</td><td>.289</td><td>No</td></tr><tr><td>A vs C</td><td>0.00</td><td>0.00</td><td>1.000</td><td>No</td></tr><tr><td>A vs D</td><td>-5.00</td><td>7.75</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs E</td><td>-2.00</td><td>3.10</td><td>.289</td><td>No</td></tr><tr><td>A vs F</td><td>-9.00</td><td>13.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs C</td><td>2.00</td><td>3.10</td><td>.289</td><td>No</td></tr><tr><td>B vs D</td><td>-3.00</td><td>4.65</td><td>.040</td><td>Yes</td></tr><tr><td>B vs E</td><td>0.00</td><td>0.00</td><td>1.000</td><td>No</td></tr><tr><td>B vs F</td><td>-7.00</td><td>10.84</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs D</td><td>-5.00</td><td>7.75</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs E</td><td>-2.00</td><td>3.10</td><td>.289</td><td>No</td></tr><tr><td>C vs F</td><td>-9.00</td><td>13.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs E</td><td>3.00</td><td>4.65</td><td>.040</td><td>Yes</td></tr><tr><td>D vs F</td><td>-4.00</td><td>6.20</td><td>.004</td><td>Yes</td></tr><tr><td>E vs F</td><td>-7.00</td><td>10.84</td><td>&lt; .001</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 1.67, df = 18. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>B</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>C</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>D</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>E</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>F</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 18) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 4.49, α = .05) gave: A vs B (p = .289); A vs C (p = 1.000); A vs D (p &lt; .001); A vs E (p = .289); A vs F (p &lt; .001); B vs C (p = .289); B vs D (p = .040); B vs E (p = 1.000); B vs F (p &lt; .001); C vs D (p &lt; .001); C vs E (p = .289); C vs F (p &lt; .001); D vs E (p = .040); D vs F (p = .004); E vs F (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "tukey-no-spread",
+   "test": "tukey",
+   "csv": "group,score\nA,5\nA,5\nB,7\nB,7\nC,9\nC,9",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "No group has any spread, or there are too few values, so Tukey HSD cannot be calculated."
+   ]
+  },
+  {
+   "id": "tukey-unequal-n",
+   "test": "tukey",
+   "csv": "group,score\nA,10\nA,12\nA,11\nB,14\nB,15\nB,13\nB,16\nB,15\nB,17\nC,12\nC,13\nC,11\nC,14\nC,12",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 3.82, α = .05) gave: A vs B (p = .002); A vs C (p = .314); B vs C (p = .014).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "A vs B",
+       "-4.00",
+       "6.40",
+       ".002",
+       "Yes"
+      ],
+      [
+       "A vs C",
+       "-1.40",
+       "2.17",
+       ".314",
+       "No"
+      ],
+      [
+       "B vs C",
+       "2.60",
+       "4.86",
+       ".014",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 1.56, df = 11. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "B",
+       "6",
+       "0.982",
+       ".960"
+      ],
+      [
+       "C",
+       "5",
+       "0.961",
+       ".814"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 11) = 0.18, p = .836."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?A vs B-4.006.40.002YesA vs C-1.402.17.314NoB vs C2.604.86.014YesMSW = 1.56, df = 11. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk WpA31.0001.000B60.982.960C50.961.814Equal spread (Brown-Forsythe): F(2, 11) = 0.18, p = .836.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.Tukey HSD post-hoc comparisons (q critical = 3.82, α = .05) gave: A vs B (p = .002); A vs C (p = .314); B vs C (p = .014).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>A vs B</td><td>-4.00</td><td>6.40</td><td>.002</td><td>Yes</td></tr><tr><td>A vs C</td><td>-1.40</td><td>2.17</td><td>.314</td><td>No</td></tr><tr><td>B vs C</td><td>2.60</td><td>4.86</td><td>.014</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 1.56, df = 11. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>B</td><td>6</td><td>0.982</td><td>.960</td></tr><tr><td>C</td><td>5</td><td>0.961</td><td>.814</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 11) = 0.18, p = .836.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 3.82, α = .05) gave: A vs B (p = .002); A vs C (p = .314); B vs C (p = .014).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "tukey-no-categorical-column",
+   "test": "tukey",
+   "csv": "score\n4\n6\n5\n7",
+   "values": {
+    "dv": "score"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "iv": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Tukey HSD needs 3 or more groups"
+   ]
+  },
+  {
+   "id": "tukey-f5-exact-zero",
+   "test": "tukey",
+   "csv": "group,score\nA,9.7\nA,10\nA,10.3\nB,19.7\nB,20\nB,20.3\nC,29.7\nC,30\nC,30.3\nD,39.7\nD,40\nD,40.3\nE,49.7\nE,50\nE,50.3\nF,59.7\nF,60\nF,60.3\nG,69.7\nG,70\nG,70.3\nH,79.7\nH,80\nH,80.3\nI,89.7\nI,90\nI,90.3\nJ,99.7\nJ,100\nJ,100.3",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 5.01, α = .05) gave: A vs B (p < .001); A vs C (p < .001); A vs D (p < .001); A vs E (p < .001); A vs F (p < .001); A vs G (p < .001); A vs H (p < .001); A vs I (p < .001); A vs J (p < .001); B vs C (p < .001); B vs D (p < .001); B vs E (p < .001); B vs F (p < .001); B vs G (p < .001); B vs H (p < .001); B vs I (p < .001); B vs J (p < .001); C vs D (p < .001); C vs E (p < .001); C vs F (p < .001); C vs G (p < .001); C vs H (p < .001); C vs I (p < .001); C vs J (p < .001); D vs E (p < .001); D vs F (p < .001); D vs G (p < .001); D vs H (p < .001); D vs I (p < .001); D vs J (p < .001); E vs F (p < .001); E vs G (p < .001); E vs H (p < .001); E vs I (p < .001); E vs J (p < .001); F vs G (p < .001); F vs H (p < .001); F vs I (p < .001); F vs J (p < .001); G vs H (p < .001); G vs I (p < .001); G vs J (p < .001); H vs I (p < .001); H vs J (p < .001); I vs J (p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "A vs B",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs C",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs D",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs E",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs F",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs G",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs H",
+       "-70.00",
+       "404.15",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs I",
+       "-80.00",
+       "461.88",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs J",
+       "-90.00",
+       "519.62",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs C",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs D",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs E",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs F",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs G",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs H",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs I",
+       "-70.00",
+       "404.15",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs J",
+       "-80.00",
+       "461.88",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs D",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs E",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs F",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs G",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs H",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs I",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs J",
+       "-70.00",
+       "404.15",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs E",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs F",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs G",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs H",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs I",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs J",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs F",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs G",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs H",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs I",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs J",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs G",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs H",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs I",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs J",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "G vs H",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "G vs I",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "G vs J",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "H vs I",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "H vs J",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "I vs J",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 0.09, df = 20. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "B",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "C",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "D",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "E",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "F",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "G",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "H",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "I",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "J",
+       "3",
+       "1.000",
+       "1.000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(9, 20) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?A vs B-10.0057.74< .001YesA vs C-20.00115.47< .001YesA vs D-30.00173.21< .001YesA vs E-40.00230.94< .001YesA vs F-50.00288.68< .001YesA vs G-60.00346.41< .001YesA vs H-70.00404.15< .001YesA vs I-80.00461.88< .001YesA vs J-90.00519.62< .001YesB vs C-10.0057.74< .001YesB vs D-20.00115.47< .001YesB vs E-30.00173.21< .001YesB vs F-40.00230.94< .001YesB vs G-50.00288.68< .001YesB vs H-60.00346.41< .001YesB vs I-70.00404.15< .001YesB vs J-80.00461.88< .001YesC vs D-10.0057.74< .001YesC vs E-20.00115.47< .001YesC vs F-30.00173.21< .001YesC vs G-40.00230.94< .001YesC vs H-50.00288.68< .001YesC vs I-60.00346.41< .001YesC vs J-70.00404.15< .001YesD vs E-10.0057.74< .001YesD vs F-20.00115.47< .001YesD vs G-30.00173.21< .001YesD vs H-40.00230.94< .001YesD vs I-50.00288.68< .001YesD vs J-60.00346.41< .001YesE vs F-10.0057.74< .001YesE vs G-20.00115.47< .001YesE vs H-30.00173.21< .001YesE vs I-40.00230.94< .001YesE vs J-50.00288.68< .001YesF vs G-10.0057.74< .001YesF vs H-20.00115.47< .001YesF vs I-30.00173.21< .001YesF vs J-40.00230.94< .001YesG vs H-10.0057.74< .001YesG vs I-20.00115.47< .001YesG vs J-30.00173.21< .001YesH vs I-10.0057.74< .001YesH vs J-20.00115.47< .001YesI vs J-10.0057.74< .001YesMSW = 0.09, df = 20. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk WpA31.0001.000B31.0001.000C31.0001.000D31.0001.000E31.0001.000F31.0001.000G31.0001.000H31.0001.000I31.0001.000J31.0001.000Equal spread (Brown-Forsythe): F(9, 20) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.Tukey HSD post-hoc comparisons (q critical = 5.01, α = .05) gave: A vs B (p < .001); A vs C (p < .001); A vs D (p < .001); A vs E (p < .001); A vs F (p < .001); A vs G (p < .001); A vs H (p < .001); A vs I (p < .001); A vs J (p < .001); B vs C (p < .001); B vs D (p < .001); B vs E (p < .001); B vs F (p < .001); B vs G (p < .001); B vs H (p < .001); B vs I (p < .001); B vs J (p < .001); C vs D (p < .001); C vs E (p < .001); C vs F (p < .001); C vs G (p < .001); C vs H (p < .001); C vs I (p < .001); C vs J (p < .001); D vs E (p < .001); D vs F (p < .001); D vs G (p < .001); D vs H (p < .001); D vs I (p < .001); D vs J (p < .001); E vs F (p < .001); E vs G (p < .001); E vs H (p < .001); E vs I (p < .001); E vs J (p < .001); F vs G (p < .001); F vs H (p < .001); F vs I (p < .001); F vs J (p < .001); G vs H (p < .001); G vs I (p < .001); G vs J (p < .001); H vs I (p < .001); H vs J (p < .001); I vs J (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>A vs B</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs C</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs D</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs E</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs F</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs G</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs H</td><td>-70.00</td><td>404.15</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs I</td><td>-80.00</td><td>461.88</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs J</td><td>-90.00</td><td>519.62</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs C</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs D</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs E</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs F</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs G</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs H</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs I</td><td>-70.00</td><td>404.15</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs J</td><td>-80.00</td><td>461.88</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs D</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs E</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs F</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs G</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs H</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs I</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs J</td><td>-70.00</td><td>404.15</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs E</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs F</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs G</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs H</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs I</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs J</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs F</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs G</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs H</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs I</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs J</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs G</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs H</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs I</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs J</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>G vs H</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>G vs I</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>G vs J</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>H vs I</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>H vs J</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>I vs J</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 0.09, df = 20. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>B</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>C</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>D</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>E</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>F</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>G</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>H</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>I</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>J</td><td>3</td><td>1.000</td><td>1.000</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(9, 20) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 5.01, α = .05) gave: A vs B (p &lt; .001); A vs C (p &lt; .001); A vs D (p &lt; .001); A vs E (p &lt; .001); A vs F (p &lt; .001); A vs G (p &lt; .001); A vs H (p &lt; .001); A vs I (p &lt; .001); A vs J (p &lt; .001); B vs C (p &lt; .001); B vs D (p &lt; .001); B vs E (p &lt; .001); B vs F (p &lt; .001); B vs G (p &lt; .001); B vs H (p &lt; .001); B vs I (p &lt; .001); B vs J (p &lt; .001); C vs D (p &lt; .001); C vs E (p &lt; .001); C vs F (p &lt; .001); C vs G (p &lt; .001); C vs H (p &lt; .001); C vs I (p &lt; .001); C vs J (p &lt; .001); D vs E (p &lt; .001); D vs F (p &lt; .001); D vs G (p &lt; .001); D vs H (p &lt; .001); D vs I (p &lt; .001); D vs J (p &lt; .001); E vs F (p &lt; .001); E vs G (p &lt; .001); E vs H (p &lt; .001); E vs I (p &lt; .001); E vs J (p &lt; .001); F vs G (p &lt; .001); F vs H (p &lt; .001); F vs I (p &lt; .001); F vs J (p &lt; .001); G vs H (p &lt; .001); G vs I (p &lt; .001); G vs J (p &lt; .001); H vs I (p &lt; .001); H vs J (p &lt; .001); I vs J (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

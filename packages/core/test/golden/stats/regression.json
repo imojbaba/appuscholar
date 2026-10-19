@@ -1,0 +1,487 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "regression-demo",
+   "test": "regression",
+   "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+   "values": {
+    "iv": "hours",
+    "dv": "marks"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p < .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "b0 (intercept)",
+       "b1 (slope)",
+       "SE(b1)",
+       "t",
+       "df",
+       "p",
+       "R²"
+      ],
+      [
+       "14",
+       "35.455",
+       "4.372",
+       "0.126",
+       "34.59",
+       "12",
+       "&lt; .001",
+       "0.990"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "ŷ = 35.455 + 4.372·x &nbsp;|&nbsp; F(1, 12) = 1196.61, p &lt; .001"
+    },
+    {
+     "kind": "note",
+     "html": "95% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "14",
+       "0.954",
+       ".625"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsNb0 (intercept)b1 (slope)SE(b1)tdfpR²1435.4554.3720.12634.5912< .0010.990ŷ = 35.455 + 4.372·x | F(1, 12) = 1196.61, p < .00195% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers.Assumption checksVariableNShapiro-Wilk WpResiduals140.954.625No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p < .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>b0 (intercept)</th><th>b1 (slope)</th><th>SE(b1)</th><th>t</th><th>df</th><th>p</th><th>R²</th></tr><tr><td>14</td><td>35.455</td><td>4.372</td><td>0.126</td><td>34.59</td><td>12</td><td>&lt; .001</td><td>0.990</td></tr></tbody></table><p class=\"desc\">ŷ = 35.455 + 4.372·x &nbsp;|&nbsp; F(1, 12) = 1196.61, p &lt; .001</p><p class=\"desc\">95% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>14</td><td>0.954</td><td>.625</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p &lt; .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "regression-text-in-numeric",
+   "test": "regression",
+   "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,50\n4,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "iv": "hours",
+    "dv": "marks"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p < .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "b0 (intercept)",
+       "b1 (slope)",
+       "SE(b1)",
+       "t",
+       "df",
+       "p",
+       "R²"
+      ],
+      [
+       "14",
+       "35.455",
+       "4.372",
+       "0.126",
+       "34.59",
+       "12",
+       "&lt; .001",
+       "0.990"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "ŷ = 35.455 + 4.372·x &nbsp;|&nbsp; F(1, 12) = 1196.61, p &lt; .001"
+    },
+    {
+     "kind": "note",
+     "html": "95% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "14",
+       "0.954",
+       ".625"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsNb0 (intercept)b1 (slope)SE(b1)tdfpR²1435.4554.3720.12634.5912< .0010.990ŷ = 35.455 + 4.372·x | F(1, 12) = 1196.61, p < .00195% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers.Assumption checksVariableNShapiro-Wilk WpResiduals140.954.625No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.2 entries that are not a number were left out.A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p < .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>b0 (intercept)</th><th>b1 (slope)</th><th>SE(b1)</th><th>t</th><th>df</th><th>p</th><th>R²</th></tr><tr><td>14</td><td>35.455</td><td>4.372</td><td>0.126</td><td>34.59</td><td>12</td><td>&lt; .001</td><td>0.990</td></tr></tbody></table><p class=\"desc\">ŷ = 35.455 + 4.372·x &nbsp;|&nbsp; F(1, 12) = 1196.61, p &lt; .001</p><p class=\"desc\">95% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>14</td><td>0.954</td><td>.625</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p &lt; .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "regression-exact-line",
+   "test": "regression",
+   "csv": "x,y\n1,3\n2,5\n3,7\n4,9\n5,11",
+   "values": {
+    "iv": "x",
+    "dv": "y"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "The points fall exactly on a straight line, so the standard errors and p-value cannot be calculated. Check that the data are real measurements."
+   ]
+  },
+  {
+   "id": "regression-no-spread-x",
+   "test": "regression",
+   "csv": "x,y\n4,3\n4,5\n4,7\n4,6",
+   "values": {
+    "iv": "x",
+    "dv": "y"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "One of the two variables has no spread (every value is the same), so a regression cannot be calculated."
+   ]
+  },
+  {
+   "id": "regression-n2",
+   "test": "regression",
+   "csv": "x,y\n1,3\n2,5",
+   "values": {
+    "iv": "x",
+    "dv": "y"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 3 complete pairs"
+   ]
+  },
+  {
+   "id": "regression-negative-slope",
+   "test": "regression",
+   "csv": "x,y\n1,20\n2,18\n3,17\n4,13\n5,12\n6,9\n7,8\n8,4",
+   "values": {
+    "iv": "x",
+    "dv": "y"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A simple linear regression showed that x significantly predicted y, b = -2.226, SE = 0.122, t(6) = -18.31, p < .001, 95% CI [-2.524, -1.929], R² = 0.982, F(1, 6) = 335.17, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "b0 (intercept)",
+       "b1 (slope)",
+       "SE(b1)",
+       "t",
+       "df",
+       "p",
+       "R²"
+      ],
+      [
+       "8",
+       "22.643",
+       "-2.226",
+       "0.122",
+       "-18.31",
+       "6",
+       "&lt; .001",
+       "0.982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "ŷ = 22.643 + -2.226·x &nbsp;|&nbsp; F(1, 6) = 335.17, p &lt; .001"
+    },
+    {
+     "kind": "note",
+     "html": "95% CI for the slope [-2.524, -1.929], SE(b0) = 0.614. Standardised slope (β) = -.991. Check the residuals for a curve or a fan shape before you trust these numbers."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "8",
+       "0.894",
+       ".257"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsNb0 (intercept)b1 (slope)SE(b1)tdfpR²822.643-2.2260.122-18.316< .0010.982ŷ = 22.643 + -2.226·x | F(1, 6) = 335.17, p < .00195% CI for the slope [-2.524, -1.929], SE(b0) = 0.614. Standardised slope (β) = -.991. Check the residuals for a curve or a fan shape before you trust these numbers.Assumption checksVariableNShapiro-Wilk WpResiduals80.894.257No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A simple linear regression showed that x significantly predicted y, b = -2.226, SE = 0.122, t(6) = -18.31, p < .001, 95% CI [-2.524, -1.929], R² = 0.982, F(1, 6) = 335.17, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>b0 (intercept)</th><th>b1 (slope)</th><th>SE(b1)</th><th>t</th><th>df</th><th>p</th><th>R²</th></tr><tr><td>8</td><td>22.643</td><td>-2.226</td><td>0.122</td><td>-18.31</td><td>6</td><td>&lt; .001</td><td>0.982</td></tr></tbody></table><p class=\"desc\">ŷ = 22.643 + -2.226·x &nbsp;|&nbsp; F(1, 6) = 335.17, p &lt; .001</p><p class=\"desc\">95% CI for the slope [-2.524, -1.929], SE(b0) = 0.614. Standardised slope (β) = -.991. Check the residuals for a curve or a fan shape before you trust these numbers.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>8</td><td>0.894</td><td>.257</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A simple linear regression showed that x significantly predicted y, b = -2.226, SE = 0.122, t(6) = -18.31, p &lt; .001, 95% CI [-2.524, -1.929], R² = 0.982, F(1, 6) = 335.17, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "regression-nonsignificant",
+   "test": "regression",
+   "csv": "x,y\n1,5\n2,3\n3,6\n4,4\n5,5\n6,3\n7,6",
+   "values": {
+    "iv": "x",
+    "dv": "y"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A simple linear regression showed that x did not significantly predict y, b = 0.071, SE = 0.261, t(5) = 0.27, p = .796, 95% CI [-0.601, 0.744], R² = 0.015, F(1, 5) = 0.07, p = .796.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "b0 (intercept)",
+       "b1 (slope)",
+       "SE(b1)",
+       "t",
+       "df",
+       "p",
+       "R²"
+      ],
+      [
+       "7",
+       "4.286",
+       "0.071",
+       "0.261",
+       "0.27",
+       "5",
+       ".796",
+       "0.015"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "ŷ = 4.286 + 0.071·x &nbsp;|&nbsp; F(1, 5) = 0.07, p = .796"
+    },
+    {
+     "kind": "note",
+     "html": "95% CI for the slope [-0.601, 0.744], SE(b0) = 1.169. Standardised slope (β) = .121. Check the residuals for a curve or a fan shape before you trust these numbers."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "7",
+       "0.925",
+       ".507"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsNb0 (intercept)b1 (slope)SE(b1)tdfpR²74.2860.0710.2610.275.7960.015ŷ = 4.286 + 0.071·x | F(1, 5) = 0.07, p = .79695% CI for the slope [-0.601, 0.744], SE(b0) = 1.169. Standardised slope (β) = .121. Check the residuals for a curve or a fan shape before you trust these numbers.Assumption checksVariableNShapiro-Wilk WpResiduals70.925.507No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A simple linear regression showed that x did not significantly predict y, b = 0.071, SE = 0.261, t(5) = 0.27, p = .796, 95% CI [-0.601, 0.744], R² = 0.015, F(1, 5) = 0.07, p = .796.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>b0 (intercept)</th><th>b1 (slope)</th><th>SE(b1)</th><th>t</th><th>df</th><th>p</th><th>R²</th></tr><tr><td>7</td><td>4.286</td><td>0.071</td><td>0.261</td><td>0.27</td><td>5</td><td>.796</td><td>0.015</td></tr></tbody></table><p class=\"desc\">ŷ = 4.286 + 0.071·x &nbsp;|&nbsp; F(1, 5) = 0.07, p = .796</p><p class=\"desc\">95% CI for the slope [-0.601, 0.744], SE(b0) = 1.169. Standardised slope (β) = .121. Check the residuals for a curve or a fan shape before you trust these numbers.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>7</td><td>0.925</td><td>.507</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A simple linear regression showed that x did not significantly predict y, b = 0.071, SE = 0.261, t(5) = 0.27, p = .796, 95% CI [-0.601, 0.744], R² = 0.015, F(1, 5) = 0.07, p = .796.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "regression-n3",
+   "test": "regression",
+   "csv": "x,y\n1,2\n2,5\n3,5",
+   "values": {
+    "iv": "x",
+    "dv": "y"
+   },
+   "form": {
+    "values": {
+     "iv": "0",
+     "dv": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A simple linear regression showed that x did not significantly predict y, b = 1.500, SE = 0.866, t(1) = 1.73, p = .333, 95% CI [-9.504, 12.504], R² = 0.750, F(1, 1) = 3.00, p = .333.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "b0 (intercept)",
+       "b1 (slope)",
+       "SE(b1)",
+       "t",
+       "df",
+       "p",
+       "R²"
+      ],
+      [
+       "3",
+       "1.000",
+       "1.500",
+       "0.866",
+       "1.73",
+       "1",
+       ".333",
+       "0.750"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "ŷ = 1.000 + 1.500·x &nbsp;|&nbsp; F(1, 1) = 3.00, p = .333"
+    },
+    {
+     "kind": "note",
+     "html": "95% CI for the slope [-9.504, 12.504], SE(b0) = 1.871. Standardised slope (β) = .866. Check the residuals for a curve or a fan shape before you trust these numbers."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "3",
+       "0.750",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsNb0 (intercept)b1 (slope)SE(b1)tdfpR²31.0001.5000.8661.731.3330.750ŷ = 1.000 + 1.500·x | F(1, 1) = 3.00, p = .33395% CI for the slope [-9.504, 12.504], SE(b0) = 1.871. Standardised slope (β) = .866. Check the residuals for a curve or a fan shape before you trust these numbers.Assumption checksVariableNShapiro-Wilk WpResiduals30.750< .001At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A simple linear regression showed that x did not significantly predict y, b = 1.500, SE = 0.866, t(1) = 1.73, p = .333, 95% CI [-9.504, 12.504], R² = 0.750, F(1, 1) = 3.00, p = .333.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>b0 (intercept)</th><th>b1 (slope)</th><th>SE(b1)</th><th>t</th><th>df</th><th>p</th><th>R²</th></tr><tr><td>3</td><td>1.000</td><td>1.500</td><td>0.866</td><td>1.73</td><td>1</td><td>.333</td><td>0.750</td></tr></tbody></table><p class=\"desc\">ŷ = 1.000 + 1.500·x &nbsp;|&nbsp; F(1, 1) = 3.00, p = .333</p><p class=\"desc\">95% CI for the slope [-9.504, 12.504], SE(b0) = 1.871. Standardised slope (β) = .866. Check the residuals for a curve or a fan shape before you trust these numbers.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>3</td><td>0.750</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A simple linear regression showed that x did not significantly predict y, b = 1.500, SE = 0.866, t(1) = 1.73, p = .333, 95% CI [-9.504, 12.504], R² = 0.750, F(1, 1) = 3.00, p = .333.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}
