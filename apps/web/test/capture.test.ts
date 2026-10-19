@@ -24,7 +24,7 @@ type Fx = {
 const FX = JSON.parse(readFileSync(join(__dirname, "../../../packages/core/test/golden/citshare/cases.json"), "utf8")) as Fx;
 
 const h = vi.hoisted(() => ({
-  library: null as unknown as { lib: CitationEntry[]; ready: boolean; loading: boolean; locked: boolean; update: ReturnType<typeof vi.fn> },
+  library: null as unknown as { lib: CitationEntry[]; ready: boolean; loading: boolean; locked: boolean; update: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> },
   toast: vi.fn(),
   /** How many mounted components ask for the library (the provider's `demands`). */
   demands: 0
@@ -85,6 +85,8 @@ describe("fileCapture: the duplicate rule and the toasts (13650-13653)", () => {
 describe("<CaptureHash/>: the load-time check", () => {
   const roots: Root[] = [];
   let stored: CitationEntry[] = [];
+  /** The library as the last flush sent it (null: no flush). */
+  let sent: CitationEntry[] | null = null;
   const mount = () => {
     const el = document.createElement("div");
     document.body.appendChild(el);
@@ -98,8 +100,11 @@ describe("<CaptureHash/>: the load-time check", () => {
     stored = FX.libBefore.slice();
     h.library = {
       lib: stored, ready: true, loading: false, locked: false,
-      update: vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); h.library = { ...h.library, lib: stored }; return true; })
+      update: vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); h.library = { ...h.library, lib: stored }; return true; }),
+      // The library's save sent now (useProjectBlob's flush): what reaches the server is the library as it stands.
+      flush: vi.fn(async () => { sent = stored.slice(); return true; })
     };
+    sent = null;
     h.toast.mockReset();
     h.demands = 0;
     resetCaptureHash();
@@ -122,6 +127,18 @@ describe("<CaptureHash/>: the load-time check", () => {
       expect(toasts()).toEqual(c.accepted.toasts);
     });
   }
+  it("the filed entry is sent at once, not after the save delay: a tab closed right after the toast keeps it", () => {
+    const c = FX.captures[0]!;
+    window.history.replaceState(null, "", "/" + c.hash);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const root = mount();
+    act(() => { root.unmount(); });
+    roots.splice(0);
+    expect(h.library.flush).toHaveBeenCalledTimes(1);
+    expect(h.library.update.mock.invocationCallOrder[0]!).toBeLessThan(h.library.flush.mock.invocationCallOrder[0]!);
+    expect(sent).toEqual(c.accepted.libAfter);
+    expect(toasts()).toEqual(c.accepted.toasts);
+  });
   it("a declined question saves nothing and says nothing", () => {
     const c = FX.captures[0]!;
     window.history.replaceState(null, "", "/" + c.hash);

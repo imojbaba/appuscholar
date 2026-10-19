@@ -26,13 +26,16 @@ const h = vi.hoisted(() => ({
 const EMPTY: BlobState = { value: null };
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const React = await import("react");
+  // The real hook's guard: in a pop-out (/popout) every kind but citations, retraction_cache and the shelf's is read-only (v1 1964).
+  const { blobWritable } = await import("../lib/popout/mode");
   const sub = (l: () => void) => { h.listeners.add(l); return () => { h.listeners.delete(l); }; };
   return {
     useProjectBlob: (kind: string, projectId: string | null) => {
       const s = React.useSyncExternalStore(sub, () => (projectId ? h.blobs[kind] ?? EMPTY : EMPTY), () => EMPTY);
       return {
-        value: s.value, loading: !!s.loading, locked: !!s.locked, broken: !!s.broken,
+        value: s.value, loading: !!s.loading, locked: !!s.locked, broken: !!s.broken, readOnly: !blobWritable(kind as never),
         set: (u: unknown) => {
+          if (!blobWritable(kind as never)) return;
           h.sets.push({ kind, update: typeof u === "function" });
           const cur = h.blobs[kind]?.value ?? null;
           h.blobs[kind] = { value: typeof u === "function" ? (u as (p: unknown) => unknown)(cur) : u };
@@ -55,7 +58,7 @@ import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
 import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 import { apWalkShow } from "../lib/analyse/walk";
-import { notePut } from "../lib/analyse/notes";
+import { NOTES_POPOUT, notePut } from "../lib/analyse/notes";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -568,5 +571,34 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     expect(tid("ap-walk-reply")).not.toBeNull();
     expect(tid("ap-stages")!.querySelectorAll("button")[0]!.textContent).toBe("1");
     expect(h.sets).toEqual([]);
+  });
+});
+
+describe("in a pop-out, where ap_notes is read-only (v1 1964; register row D-S2-17)", () => {
+  it("the walk's box and the card's fields are read-only, a line says notes are saved only in the writing window, and nothing is written", async () => {
+    window.history.replaceState(null, "", "/popout?tool=research");
+    try {
+      await mount();
+      load("sample@apSample");
+      await openTab("walk");
+      const box = $("#apTry") as HTMLTextAreaElement;
+      expect(box.readOnly).toBe(true);
+      expect(tid("ap-notes-popout")!.textContent).toBe(NOTES_POPOUT);
+      typeIn(box, "Words that could not be stored");
+      expect(getAp().tryDraft).toEqual({});
+      await openTab("card");
+      expect(["strengths", "weak", "verdict", "notes"].map((f) => ($("#apC_" + f) as HTMLTextAreaElement).readOnly)).toEqual([true, true, true, true]);
+      expect(tid("ap-notes-popout")!.textContent).toBe(NOTES_POPOUT);
+      typeIn($("#apC_weak") as HTMLTextAreaElement, "W");
+      expect(getAp().cardDraft).toEqual({});
+      expect(h.sets).toEqual([]);
+    } finally { window.history.replaceState(null, "", "/"); }
+  });
+  it("in the writing window there is no such line and the boxes can be typed in", async () => {
+    await mount();
+    load("sample@apSample");
+    await openTab("walk");
+    expect(($("#apTry") as HTMLTextAreaElement).readOnly).toBe(false);
+    expect(tid("ap-notes-popout")).toBeNull();
   });
 });

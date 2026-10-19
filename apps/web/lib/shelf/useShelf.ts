@@ -71,13 +71,20 @@ export async function readPaperOnce(projectId: string, paperId: string, vault: B
 }
 
 /**
- * An update of a project's shelf_index made after the dialog that started it went away (closed, or another project opened): a client of its own reads the index (after any
- * last save of the dialog's client), applies the update, sends it, and is disposed of; what it cannot send is held and sent later, as any blob value is (held.ts).
+ * An update of a project's shelf_index made after the dialog that started it went away (closed, or another project opened): a headless client of its own (no passphrase
+ * prompt: the dialog is gone) reads the index (after any last save of the dialog's client, and any held value), applies the update, sends it, and is disposed of; what it
+ * cannot send is held and sent later, as any blob value is (held.ts). The run is tracked under the blob's id, so a dialog opened meanwhile waits for it before its first read.
  */
 export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | null) => ShelfIndex, vault: () => BlobVault): void {
-  const c = projectBlobClient("shelf_index", projectId, vault, () => {});
+  const id = blobId(projectId, "shelf_index");
+  const c = projectBlobClient("shelf_index", projectId, vault, () => {}, { headless: true });
   c.set(u);
-  void c.start().then(() => c.flush()).finally(() => c.dispose());
+  // Not c.start(): it waits for idle(id), which now includes this run. What is held for the blob is adopted ahead of the update, as start() does.
+  void heldBlobs.after(id, async () => {
+    const held = heldBlobs.take(id);
+    if (held) c.adopt(held as Parameters<typeof c.adopt>[0]);
+    await c.flush();
+  }).finally(() => c.dispose());
 }
 
 /** The shelf of the project the workspace has loaded (the scratch project's in scratch space). */
@@ -86,8 +93,9 @@ function useShelfProject(): string | null {
 }
 
 /**
- * The Reading shelf for another tool (Task 12's "Choose a paper from your Reading shelf"): the index as stored (read only; null while it is not read, locked or broken, when its read
- * failed (`error`), and when the project has no index yet) and `loadPaper(id)`, one read of that paper's text, highlights and cells.
+ * The Reading shelf for another tool (Task 12's "Choose a paper from your Reading shelf"): the index as stored, read only, and `loadPaper(id)`, one read of that paper's text, highlights
+ * and cells. `index` is null while it is not read yet (`loading`), locked (`locked`), stored but not openable on this device (`broken`), when its first read failed (`error`), and when it
+ * was read and the project has no index blob (all four false). A re-read that fails (another window announced a save) keeps the last index shown, with `error` false.
  */
 export function useShelf(): { projectId: string | null; index: ShelfIndex | null; loading: boolean; locked: boolean; broken: boolean; error: boolean; loadPaper(id: string): Promise<ShelfPaper | null> } {
   const projectId = useShelfProject();

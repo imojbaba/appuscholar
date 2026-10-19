@@ -15,7 +15,7 @@ const FIELDS = [["strengths", "ap2_strengths", 3], ["weak", "ap2_weaknesses", 3]
  * done yet…"; Strengths, Weaknesses, "Your verdict in one line" and "Your notes", each saved to the paper's note as it is typed (apCardField 10121); "⬇ Download the card (.txt)" saves
  * paper-card.txt (core's apCardText, with the reference check's line when it ran to the end). The fields show what was typed in this tab first (cardDraft), so words a refused write did
  * not store stay visible, with the broken line above them. While the stored notes are not known (being read, locked) only v1's sentence is drawn, with the locked line when locked: no stage,
- * no field and no download, since an empty-looking field must not replace stored words.
+ * no field and no download, since an empty-looking field must not replace stored words. In a pop-out (ap_notes read-only) the fields are read-only, under NOTES_POPOUT.
  */
 export function Card({ notes }: { notes: ApNotesStore }) {
   const t = useT();
@@ -29,6 +29,7 @@ export function Card({ notes }: { notes: ApNotesStore }) {
   return (
     <div data-testid="ap-card">
       <div className="ap-box">{tHtml(t("ap2_paper_card_your_own"))}</div>
+      {notes.readOnly && !notes.broken && <NotesState notes={notes} />}
       {done.length ? done.map((x) => {
         const st = stages[x.k]!;
         return (
@@ -41,7 +42,7 @@ export function Card({ notes }: { notes: ApNotesStore }) {
       {FIELDS.map(([f, label, rows]) => (
         <div className="field" key={f}>
           <label htmlFor={"apC_" + f}>{t(label)}</label>
-          <textarea className="input" id={"apC_" + f} rows={rows} value={(c[f] as string | undefined) ?? ""} onChange={(e) => { const v = e.target.value; setAp((x) => ({ cardDraft: { ...x.cardDraft, [d.id]: { ...x.cardDraft[d.id], [f]: v } } })); notes.put(d, (x) => { x.card[f] = v; }); }} />
+          <textarea className="input" id={"apC_" + f} rows={rows} readOnly={notes.readOnly} value={(c[f] as string | undefined) ?? ""} onChange={(e) => { if (notes.readOnly) return; const v = e.target.value; setAp((x) => ({ cardDraft: { ...x.cardDraft, [d.id]: { ...x.cardDraft[d.id], [f]: v } } })); notes.put(d, (x) => { x.card[f] = v; }); }} />
         </div>
       ))}
       <div className="ap-row">

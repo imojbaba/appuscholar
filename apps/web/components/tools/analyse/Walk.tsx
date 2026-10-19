@@ -4,7 +4,7 @@ import { tHtml, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { stageAsk, stageName } from "@/lib/analyse/cards";
-import type { ApNotesStore } from "@/lib/analyse/notes";
+import { NOTES_POPOUT, type ApNotesStore } from "@/lib/analyse/notes";
 import { apWalkShow, walkDraft } from "@/lib/analyse/walk";
 import { setAp, useApState, type ApLoaded } from "@/lib/analyse/useApDoc";
 import { Button } from "@/components/ui/button";
@@ -48,11 +48,15 @@ function Reply({ d, k, r }: { d: ApLoaded; k: string; r: Res }) {
   );
 }
 
-/** The stored notes' state when it is not their content (v2): locked (vault_ap_locked) or not openable on this device (vault_ap_broken); nothing while they are being read. */
+/**
+ * The stored notes' state when it is not their content (v2): locked (vault_ap_locked), not openable on this device (vault_ap_broken), or read-only in a pop-out (NOTES_POPOUT, D-S2-17);
+ * nothing while they are being read.
+ */
 export function NotesState({ notes }: { notes: ApNotesStore }) {
   const t = useT();
   if (notes.locked) return <p className="note ap-note" data-testid="ap-notes-locked">{t("vault_ap_locked")}</p>;
   if (notes.broken) return <p className="note ap-note" data-testid="ap-notes-broken">{t("vault_ap_broken")}</p>;
+  if (notes.readOnly) return <p className="note ap-note" data-testid="ap-notes-popout">{NOTES_POPOUT}</p>;
   return null;
 }
 
@@ -60,7 +64,8 @@ export function NotesState({ notes }: { notes: ApNotesStore }) {
  * "🧭 Walk me through it" (apRender 11300-11320): the twelve stage buttons (✓ on a stage whose reply is stored, as v1 11302), "Stage N of 12: name", "Try first." with the stage's question and the box
  * (saved to the paper's note as it is typed, apDraft 10118), "Show what the paper says" ("Read it again" once there is a reply; disabled while a request runs), the reply, and the previous and
  * next stage buttons (disabled at the ends; apSetStage 10114 keeps the stage inside 1 to 12). While the stored notes are not known (being read, locked) the box is read-only and empty and the
- * reply cannot be asked for, since neither the words nor the reply could be stored; a locked or broken store says so under the box.
+ * reply cannot be asked for, since neither the words nor the reply could be stored; a locked or broken store says so under the box. In a pop-out (ap_notes read-only) the box is read-only
+ * and NOTES_POPOUT says why.
  */
 export function Walk({ notes }: { notes: ApNotesStore }) {
   const t = useT();
@@ -74,7 +79,7 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
   const r: Res | undefined = s.res[st.k] ?? stored[st.k]?.res;
   const go = (i: number) => setAp({ stage: Math.max(0, Math.min(AP_STAGES.length - 1, i)) });
   const type = (v: string) => {
-    if (notes.unread) return; // the stored words are not known yet: nothing typed may replace them
+    if (notes.unread || notes.readOnly) return; // the stored words are not known yet (nothing typed may replace them), or a pop-out, where nothing typed is stored
     setAp((x) => ({ tryDraft: { ...x.tryDraft, [st.k]: v } }));
     notes.put(d, (n) => { n.stages[st.k] = { ...(n.stages[st.k] ?? {}), mine: v }; });
   };
@@ -91,7 +96,7 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
       <h4 className="ap-stage-h">{t("ap2_stage")} {s.stage + 1} {t("ap2_of", { apStagesCount: AP_STAGES.length })} {stageName(t, st.k)}</h4>
       <div className="ap-box">{tHtml(t("ap2_try_first"))} {stageAsk(t, st.k)}</div>
       <div className="field">
-        <textarea className="input" id="apTry" rows={3} placeholder={t("ap2_try_placeholder")} readOnly={notes.unread} value={notes.unread ? "" : walkDraft(s, note, st.k)} onChange={(e) => type(e.target.value)} />
+        <textarea className="input" id="apTry" rows={3} placeholder={t("ap2_try_placeholder")} readOnly={notes.unread || notes.readOnly} value={notes.unread ? "" : walkDraft(s, note, st.k)} onChange={(e) => type(e.target.value)} />
       </div>
       <NotesState notes={notes} />
       <div className="ap-row">

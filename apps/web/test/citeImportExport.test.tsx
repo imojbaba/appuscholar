@@ -142,6 +142,14 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(ev.defaultPrevented).toBe(true);
   });
 
+  it("in a pop-out (/popout?tool=cite) the bookmarklet still opens the writing window's address, where the capture is read, not /popout", () => {
+    window.history.replaceState(null, "", "/popout?tool=cite");
+    try {
+      mount();
+      expect(tid("cite-bookmarklet")!.getAttribute("href")).toBe(bookmarkletHref("http://localhost:3000/"));
+    } finally { window.history.replaceState(null, "", "/"); }
+  });
+
   it("Clear form empties the quote too (citClearForm 7475)", async () => {
     mount();
     typeArea("citQuoteText", "A quote.");

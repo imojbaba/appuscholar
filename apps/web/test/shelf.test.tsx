@@ -69,7 +69,9 @@ import {
 } from "../lib/shelf/actions";
 import { PdfReaderUnavailable, type PdfDoc } from "../lib/shelf/extract";
 import { ShelfDialog } from "../components/tools/shelf/ShelfDialog";
-import { useShelf } from "../lib/shelf/useShelf";
+import { useShelf, writeIndexDetached } from "../lib/shelf/useShelf";
+import { blobId } from "../lib/blobs/kinds";
+import type { BlobVault } from "../lib/blobs/useProjectBlob";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -617,6 +619,44 @@ describe("the Reading shelf dialog", () => {
     await settle(1000);
     expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.id)).toEqual(["p1", "p2"]);
     expect(paperIds()).toEqual(["p1", "p2"]);
+  });
+
+  it("reopened while the closed dialog's index entry is still being written: the new dialog waits for that write and lists the paper", async () => {
+    let releasePaper!: () => void, releaseIndex!: () => void;
+    const paperGate = new Promise<void>((r) => { releasePaper = r; }), indexGate = new Promise<void>((r) => { releaseIndex = r; });
+    const box = { paper: false, index: false };
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      const p = decodeURIComponent(path);
+      if (init.method === "PUT" && p.includes("/blobs/shelf_paper:") && !box.paper) { box.paper = true; await paperGate; }
+      if (init.method === "PUT" && p.endsWith("/blobs/shelf_index") && !box.index) { box.index = true; await indexGate; }
+      return fakeApi(path, init);
+    });
+    h.extract.mockImplementation(async (f: File) => ({ pages: [f.name + " " + "word ".repeat(60)], total: 1 }));
+    const d = await mount();
+    await pick(tid("sh-file")!, [fileOf("a.pdf", 1)]);
+    await until(() => box.paper, "a's text being stored");
+    await d.close();
+    releasePaper();
+    // The entry goes through a detached client (the dialog is gone); its PUT is out when the dialog opens again.
+    await until(() => box.index, "the detached index write");
+    await mount();
+    await settle(50);
+    releaseIndex();
+    await until(() => tids("sh-paper").length === 1, "a's row in the reopened dialog");
+    await settle(1000);
+    expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.file)).toEqual(["a.pdf"]);
+  }, 15000);
+
+  it("a detached index write never asks for the passphrase (the dialog is gone): with the vault locked its entry is held for the blob", async () => {
+    server.blobs.push({ projectId: "p1", kind: "shelf_index", body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1 });
+    const locked = () => Promise.reject(new Error("vault-locked"));
+    const ensureUnlocked = vi.fn(async () => true);
+    const v = { known: async () => "on" as const, ensureUnlocked, encryptBody: locked, decryptBody: locked };
+    const entry: ShelfEntry = { id: "pz", title: "Z", file: "z.pdf", size: 1, added: NOW.toISOString(), total: 1, kept: 1 };
+    writeIndexDetached("p1", (prev) => [...(prev ?? []), entry], () => v as unknown as BlobVault);
+    await until(() => heldBlobs.has(blobId("p1", "shelf_index")), "the held entry");
+    expect(ensureUnlocked).not.toHaveBeenCalled();
+    expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
   });
 
   it("a removal the server refuses says so and keeps the paper; a paper whose blob is not read shows its pages only", async () => {

@@ -68,6 +68,15 @@ export const heldBlobs = {
     listen();
     void all.then(() => { if (busy.get(id) === all) busy.delete(id); });
   },
+  /**
+   * Runs `run` once every save tracked for the blob so far has settled, and tracks it, so a client mounting for the blob meanwhile waits for it
+   * (a write made with no panel, such as the shelf's detached index write). `run` must not wait for idle(id) itself: it would wait for itself.
+   */
+  after<R>(id: string, run: () => Promise<R>): Promise<R> {
+    const p = Promise.allSettled([busy.get(id)]).then(run);
+    heldBlobs.track(id, p);
+    return p;
+  },
   /** Settles once no last save or drain runs for the blob. */
   async idle(id: string) {
     for (let p = busy.get(id); p; p = busy.get(id)) await p;

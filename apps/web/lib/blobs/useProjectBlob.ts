@@ -309,7 +309,7 @@ export const blobPath = (projectId: string, kind: BlobKind): string => `/project
  * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
  * since the number of papers changes. The caller starts it and disposes of it.
  */
-export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions = {}) {
+export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean } = {}) {
   const path = blobPath(projectId, kind);
   const id = blobId(projectId, kind);
   return createBlobClient<BlobShape<K>>({
@@ -325,7 +325,8 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     put: (body) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body) }),
     vault,
     delayMs: BLOB_SAVE_DEBOUNCE_MS,
-    onState
+    onState,
+    headless: opts.headless
   });
 }
 

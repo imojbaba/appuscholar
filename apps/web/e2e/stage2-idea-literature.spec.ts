@@ -23,6 +23,10 @@ import { test, expect, type BrowserContext, type Page, type Request, type Route 
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
+import { captureConfirmText } from "@appuscholar/core";
+// The English constants (ruling R15) are imported from their modules where the module is plain TypeScript, so the spec cannot drift from them.
+import { IDEA_THINKING } from "../lib/ai/actions";
+import { CITATION_INSERTED } from "../lib/cite/actions";
 
 // ---- Copy: every sentence asserted is read from the dictionary, so it is byte-equal to what the panel shows ------------------------------------------
 
@@ -272,7 +276,7 @@ async function selectIn(page: Page, testid: string, text: string) {
 /** Answers the vault's unlock ask with the passphrase. */
 async function unlock(page: Page) {
   await expect(page.getByTestId("pass-dialog")).toBeVisible();
-  await expect(page.getByTestId("pass-message")).toHaveText("Type the passphrase that protects your documents.");
+  await expect(page.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint"));
   await page.getByTestId("pass-input").fill(PASS);
   await page.getByTestId("pass-ok").click();
   await expect(page.getByTestId("pass-dialog")).toBeHidden();
@@ -322,15 +326,15 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await page.getByTestId("vault-setup-submit").click();
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("pass-message")).toHaveText("Type it again");
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
-    await expect.poll(toasts).toEqual(expect.arrayContaining(["Groq connected ✓ and encrypted 🔒", "All your documents are now locked in your vault ✓"]));
+    await expect.poll(toasts).toEqual(expect.arrayContaining(["Groq connected ✓ and encrypted 🔒", T("vault_migrated")]));
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault on");
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_on"));
 
     await expect(page.getByTestId("app-version")).toHaveText(/^Version \S+$/);
     await page.getByTestId("new-project").click();
@@ -364,7 +368,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     const toasts = await recordToasts(page);
     await expect(page.getByTestId("idea-assess")).toHaveText(T("idea_assess_btn"));
     await page.getByTestId("idea-assess").click();
-    await expect(page.getByTestId("ai-status")).toHaveText("💜 Thinking this through…");
+    await expect(page.getByTestId("ai-status")).toHaveText(IDEA_THINKING);
     await expect(page.getByTestId("ai-out")).toHaveText(IDEA_REPLY);
     for (const area of ["Topic clarity and researchability: High.", "Access to participants or data: Medium.", "Time: Medium.", "Resources and equipment: High.", "Ethical complexity: Low.", "Verdict: Proceed with these modifications"]) {
       await expect(page.getByTestId("ai-out")).toContainText(area);
@@ -445,8 +449,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     cap.on("dialog", (d) => { asked.push(d.message()); void d.accept(); });
     // The new tab opens the document first, so the vault asks for the passphrase there; then the capture is filed in the library, sealed.
     await sealedSave(cap, "citations", [CAPTURED.title, "Ryan"], () => unlock(cap));
-    await expect.poll(() => cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain('Captured "' + CAPTURED.title + '" into your citation library ✓');
-    expect(asked).toEqual(['Add this to your citation library?\n\n"' + CAPTURED.title + '"\n' + CAPTURED.authors.join("; ") + " (" + CAPTURED.year + ")"]);
+    await expect.poll(() => cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain('Captured "' + CAPTURED.title + '" into your citation library ✓'); // capturedToast, lib/cite/capture.ts:20 (a "use client" module, not imported here)
+    expect(asked).toEqual([captureConfirmText({ title: CAPTURED.title, author: CAPTURED.authors.join("; "), year: CAPTURED.year, source: CAPTURED.journal, doi: CAPTURED.doi, url: "" })]);
     // The hash is taken off the address.
     expect(new URL(cap.url()).hash).toBe("");
     await cap.close();
@@ -786,8 +790,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(use).toHaveText("Insert (Ryan & Deci, 2000)");
     await use.click();
     // The pop-out says pop_sent and, at once, the Citation Manager's own toast after it (as v1 does): the student reads the second one.
-    await expect.poll(() => pop.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain("Citation inserted ✓");
-    await expect.poll(toasts).toContain("Citation inserted ✓");
+    await expect.poll(() => pop.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain(CITATION_INSERTED);
+    await expect.poll(toasts).toContain(CITATION_INSERTED);
     await expect(editor).toContainText("As self-determination theory puts it (Ryan & Deci, 2000)");
     await pop.close();
     quiet();

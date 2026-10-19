@@ -22,6 +22,9 @@ export function notePut(prev: ApNotes | null, doc: { id: string; title: string }
   return all;
 }
 
+/** New V2 copy (register row D-S2-17; ruling R15: an English constant, modelled on the shelf's COLS_POPOUT): a pop-out does not store ap_notes (v1 refuses appu_ap_notes there, 1964). */
+export const NOTES_POPOUT = "Notes can be saved only in the writing window.";
+
 export type ApNotesStore = {
   /** The stored notes (with the writes made here), {} while none is known. */
   all: ApNotes;
@@ -34,6 +37,8 @@ export type ApNotesStore = {
   locked: boolean;
   /** The stored notes do not open on this device (the panels say so: vault_ap_broken; the first write asks first, R16). */
   broken: boolean;
+  /** The notes are read but never stored here: a pop-out (ap_notes is read-only there, v1 1964). The boxes are read-only and the panels say so (NOTES_POPOUT). */
+  readOnly: boolean;
   /** v1's apNoteGet without its write: the paper's note, or undefined. */
   note(id: string): ApNote | undefined;
   /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (ap_notes is read-only there, v1 1964). */
@@ -90,5 +95,5 @@ export function useApNotes(projectId: string | null): ApNotesStore {
   }, [projectId, colsUnread, colsReadOnly, mayWrite, colsBroken, setCols]);
   const colList = useMemo(() => apAcrossCols(colsValue), [colsValue]);
   const note = useCallback((id: string) => all[id], [all]);
-  return { all, unread: notesUnread, locked: notesUnread && notes.locked, broken: !!notesBroken, note, put, remove, cols: colList, toggleCol };
+  return { all, unread: notesUnread, locked: notesUnread && notes.locked, broken: !!notesBroken, readOnly: notesReadOnly, note, put, remove, cols: colList, toggleCol };
 }

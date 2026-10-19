@@ -71,12 +71,14 @@ function CaptureFile({ rec, onDone }: { rec: CitationEntry; onDone(): void }) {
   const library = useLibrary();
   const t = useT();
   const done = useRef(false);
-  const { lib, ready, loading, locked, update } = library;
+  const { lib, ready, loading, locked, update, flush } = library;
   useEffect(() => {
     if (done.current || !ready || loading || locked) return;
     done.current = true;
     fileCapture(rec, { lib, update, toast, t });
+    // Sent now, not after the save delay: the toast has said ✓, so a tab closed straight after it must not lose the entry (nothing pending sends nothing).
+    void flush();
     onDone();
-  }, [rec, lib, ready, loading, locked, update, onDone, t]);
+  }, [rec, lib, ready, loading, locked, update, flush, onDone, t]);
   return null;
 }

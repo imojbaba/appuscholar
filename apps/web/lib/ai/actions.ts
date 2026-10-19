@@ -295,7 +295,7 @@ export async function quickReadTicked(ticked: RsPaper[], d: QuickDeps): Promise<
 }
 
 /** What the literature review and the gap finder touch: the suggestion pane, the AI, the field and the copy. */
-export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast" | "t"> & {
+export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast"> & {
   /** fieldLabel(settings.field): v1 fieldName(). */
   field: string;
   t: ResearchAiDeps["t"];

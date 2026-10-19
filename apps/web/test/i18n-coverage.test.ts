@@ -19,7 +19,7 @@ function walk(dir: string, ext: (p: string) => boolean = p => p.endsWith(".tsx")
  * one entry per occurrence. Each is a stored data token, not copy: the source type values of v1 880 ("Journal article", "Book" ... saved in the record,
  * labelled through cite_type_*), the sort and field ids ("year"), the source name "PubMed" and the "year" key of the retraction check's reply.
  * One entry is not a data token: lib/ai/callAI.ts's "bad-pass" sentence equals `vault_wrong`, which has Hindi. It is v1's apiMsg, a pure function with no
- * `t`, from before stage 2; pinned here so it shows, and reported to the controller. A new literal anywhere in these directories, or a second use of a pinned one in the same file, fails this test until it goes through t() or is
+ * `t`, from before stage 2 (Phase 3A code); it stays pinned by controller ruling R31. A new literal anywhere in these directories, or a second use of a pinned one in the same file, fails this test until it goes through t() or is
  * added here with its reason. (The English constants that have no dictionary key, ruling R15, are not hits and are not listed.)
  */
 const STAGE2_TS_KNOWN = [
