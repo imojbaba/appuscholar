@@ -232,7 +232,7 @@ describe("stats: tests on means (ttestInd, ttestPaired, anova1, tukey, regressio
     expect(v1.map((x) => decodeText(x[3]!))).toEqual(Array(45).fill("< .001"));
     expect(c.apa!.match(/\(p < \.001\)/g)).toHaveLength(45);
     expect(r.apa).toBe(c.apa);
-  });
+  }, HEAVY_CASE_MS["tukey-f5-exact-zero"]); // runs tukey-f5-exact-zero, one of the two heavy ids (stats/check.ts): 30 s, not the 5 s default
   it("ttestInd-group-named-NaN is suppressed by the safety net (F22); pearson-perfect is not, since t (Infinity) is in no cell", () => {
     expect(find("ttestInd", "ttestInd-group-named-NaN").apa).toBeNull();
     expect(run(find("ttestInd", "ttestInd-group-named-NaN"))).toMatchObject({ ok: false, reason: "undefined" });
@@ -330,7 +330,7 @@ describe("stats: rank tests and Welch ANOVA (mannwhitney, wilcoxon, kruskal, spe
     expect(rowsOf(c, 2).slice(1).map((x) => [x[3], decodeText(x[4]!)])).toEqual([["1.2", "< .001"], ["1.5", "< .001"], ["1.7", "< .001"]]);
     expect(c.apa!.split("Games-Howell comparisons: ")[1]!.match(/, p < \.001\)/g)).toHaveLength(3);
     expect(r.apa).toBe(c.apa);
-  });
+  }, HEAVY_CASE_MS["welchAnova-f5-exact-zero"]); // runs welchAnova-f5-exact-zero, one of the two heavy ids (stats/check.ts): 30 s, not the 5 s default
   it("kruskal-all-same: v1 runs the test with H = 0 (D-W2-16), its 'All values are identical' toast is not reached", () => {
     const c = find("kruskal", "kruskal-all-same");
     expect(c.toasts).toEqual([]);
