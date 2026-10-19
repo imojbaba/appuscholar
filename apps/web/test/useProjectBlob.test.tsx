@@ -17,6 +17,8 @@ import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../li
 import { BLOB_SAVE_DEBOUNCE_MS, useProjectBlob, type ProjectBlob } from "../lib/blobs/useProjectBlob";
 import { heldBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
 import { BLOB_KINDS, blobId, isBlobKind, parseBlob, shelfPaperKind, type BlobKind, type IdeaIntake } from "../lib/blobs/kinds";
+import { setSyncChannel } from "../lib/popout/channel";
+import { FakeChannel } from "./support/fakeChannel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -637,5 +639,95 @@ describe("useProjectBlob", () => {
     const s = await mount(shelfPaperKind("p1"), "proj");
     await until(() => !s.b.loading);
     expect(server.calls.some((c) => c.method === "GET" && c.path === "/projects/proj/blobs/shelf_paper%3Ap1")).toBe(true);
+  });
+});
+
+describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABLE 1964, the storage listener 7614-7616)", () => {
+  let ch: FakeChannel;
+  beforeEach(() => { ch = new FakeChannel(); setSyncChannel(ch); });
+  afterEach(() => { setSyncChannel(undefined); window.history.replaceState(null, "", "/"); });
+  const popout = () => window.history.replaceState(null, "", "/popout?tool=cite");
+
+  it("in the pop-out a kind other than citations and retraction_cache is read, and set is a no-op that holds nothing; flush resolves false", async () => {
+    popout();
+    server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(INTAKE), keyVersion: 0, deks: [] }];
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    expect(s.b.value).toEqual(INTAKE);
+    expect(s.b.readOnly).toBe(true);
+    act(() => { s.b.set(NEXT); });
+    expect(s.b.value).toEqual(INTAKE);
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+    s.unmount();
+    expect(heldBlobs.take(blobId("p1", "idea_intake"))).toBeFalsy();
+  });
+
+  it.each(["refcheck_cache", "rs_prefs", "ap_notes", "shelf_index", "shelf_cols", "ap_cols"] as const)("in the pop-out %s sends nothing", async (kind) => {
+    popout();
+    const s = await mount(kind, "p1");
+    await until(() => !s.b.loading);
+    act(() => { s.b.set((prev: unknown) => (Array.isArray(prev) || prev === null ? ["x"] : { ...(prev as object), x: 1 }) as never); });
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+  });
+
+  it("in the pop-out citations and retraction_cache write as anywhere", async () => {
+    popout();
+    const c = await mount("citations", "p1");
+    const r = await mount("retraction_cache", "p1");
+    await until(() => !c.b.loading && !r.b.loading);
+    expect(c.b.readOnly).toBe(false);
+    act(() => { c.b.set([{ author: "Ng, A.", title: "T" }]); r.b.set({ "10.1/x": { r: false, t: 1 } }); });
+    await until(() => putsTo("p1", "citations").length === 1 && putsTo("p1", "retraction_cache").length === 1);
+  });
+
+  it("the writing window writes every kind", async () => {
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    expect(s.b.readOnly).toBe(false);
+    act(() => { s.b.set(NEXT); });
+    await until(() => putsTo("p1", "idea_intake").length === 1);
+  });
+
+  it("a saved library or retraction cache is announced on appu_sync; other kinds are not", async () => {
+    const c = await mount("citations", "p1");
+    const p = await mount("rs_prefs", "p1");
+    await until(() => !c.b.loading && !p.b.loading);
+    act(() => { c.b.set([{ author: "Ng, A.", title: "T" }]); p.b.set({ rank: true }); });
+    await until(() => putsTo("p1", "citations").length === 1 && putsTo("p1", "rs_prefs").length === 1);
+    await settle();
+    expect(ch.sent).toEqual([{ type: "blob", id: blobId("p1", "citations") }]);
+  });
+
+  it("an announced library is read again, so the other window's addition shows here", async () => {
+    const A = { author: "Ng, A.", title: "Stored" }, B = { author: "Ho, B.", title: "Added in the pop-out" };
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A, B]), keyVersion: 0, deks: [] }];
+    act(() => { ch.deliver({ type: "blob", id: blobId("p2", "citations") }); ch.deliver({ type: "blob", id: blobId("p1", "rs_prefs") }); });
+    await settle();
+    expect(s.b.value).toEqual([A]);
+    act(() => { ch.deliver({ type: "blob", id: blobId("p1", "citations") }); });
+    await until(() => (s.b.value as unknown[]).length === 2);
+    expect(s.b.value).toEqual([A, B]);
+    expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+  });
+
+  it("a re-read that fails keeps what was shown", async () => {
+    const A = { author: "Ng, A.", title: "Stored" };
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    h.api.mockImplementation(async () => { throw new TypeError("Failed to fetch"); });
+    act(() => { ch.deliver({ type: "blob", id: blobId("p1", "citations") }); });
+    await settle();
+    expect(s.b.value).toEqual([A]);
+    expect(s.b.error).toBeFalsy();
   });
 });

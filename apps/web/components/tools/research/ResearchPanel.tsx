@@ -9,10 +9,10 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { retrCacheSet } from "@/lib/cite/checks";
 import { useLibrary } from "@/lib/cite/useLibrary";
-import { insertCitation } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
 import { analysePaper, downloadCsv, filterStat, loadConnected } from "@/lib/research/extras";
 import { addResult, insertResult, type AddDeps } from "@/lib/research/library";
+import { useInsertTarget } from "@/lib/popout/sync";
 import { applyQuick, filterVals, getResearch, setResearch, shownResults, SORT_OPTIONS, useSearch, type SortMode } from "@/lib/research/useSearch";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
@@ -52,8 +52,9 @@ export function ResearchPanel() {
   const library = useLibrary();
   const retr = useProjectBlob("retraction_cache", library.projectId);
   const suggestion = useSuggestion();
-  const { editor } = suggestion;
-  const insertReady = !!editor && !editor.isDestroyed;
+  // The open document's editor, or the writing window when this is a pop-out.
+  const target = useInsertTarget();
+  const insertReady = target.ready;
   // "📚 Reading shelf (your own PDFs)" opens the shelf (shOpen 11601).
   const [shelfOpen, setShelfOpen] = useState(false);
 
@@ -98,7 +99,7 @@ export function ResearchPanel() {
   };
   const actionsFor = (p: RsPaper): CardActions => ({
     add: () => { addResult(p, addDeps()); },
-    insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { if (editor && !editor.isDestroyed) insertCitation(editor, f); } }); },
+    insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { target.citation(f); } }); },
     connected: () => connected(p),
     quick: () => { void quickRead(p, quickDeps()); },
     analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool, toast, t }); }

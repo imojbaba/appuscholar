@@ -1,8 +1,7 @@
 "use client";
 import { useRef } from "react";
 import { tHtml, useT } from "@/lib/i18n";
-import { useSuggestion } from "@/lib/ai/suggestion";
-import { insertHtmlBlock } from "@/lib/editor/insert";
+import { useInsertTarget } from "@/lib/popout/sync";
 import { downloadBlob } from "@/lib/export/download";
 import { citeExport, citeImport, citeInsertBib, citeLoadClassics } from "@/lib/cite/share";
 import type { Library } from "@/lib/cite/useLibrary";
@@ -15,10 +14,10 @@ import { toast } from "@/components/ui/toast";
  */
 export function CiteShare({ library, insertReady }: { library: Library; insertReady: boolean }) {
   const t = useT();
-  const { editor } = useSuggestion();
+  const target = useInsertTarget();
   const file = useRef<HTMLInputElement>(null);
   const { lib, style, update } = library;
-  const insertBib = () => citeInsertBib({ lib, style, toast, t, insert: (html) => { if (editor && !editor.isDestroyed) insertHtmlBlock(editor, html); } });
+  const insertBib = () => citeInsertBib({ lib, style, toast, t, insert: (html) => { target.block(html); } });
   const onFile = async (input: HTMLInputElement) => {
     const f = input.files?.[0];
     try { await citeImport(f, { lib, update, toast }); } finally { input.value = ""; }

@@ -372,14 +372,18 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(last.locator("span.ai-ins")).toHaveText(CHAT_REPLY);
   });
 
-  await test.step("17. Pop out says it comes later (Citations), and keeps the old notice for the other tools", async () => {
+  await test.step("17. Pop out opens the Citation Manager in its own window, and keeps the old notice for the other tools", async () => {
     await page.getByTestId("pop-out").click();
     await expect(page.getByTestId("toast")).toHaveText("Only Citations and Research can open in their own window.");
     await expect(page.getByTestId("toast")).toBeHidden({ timeout: 15_000 });
     await page.getByTestId("tool-cite").click();
     await expect(page.getByTestId("dock-tab-tools")).toContainText("Citation Manager");
+    const opened = page.waitForEvent("popup");
     await page.getByTestId("pop-out").click();
-    await expect(page.getByTestId("toast")).toHaveText("Pop out arrives in a later phase.");
+    const popup = await opened;
+    await expect(popup.getByTestId("panel-cite")).toBeVisible();
+    expect(new URL(popup.url()).pathname + new URL(popup.url()).search).toBe("/popout?tool=cite");
+    await popup.close();
   });
 
   await test.step("18. Hindi chrome and back", async () => {

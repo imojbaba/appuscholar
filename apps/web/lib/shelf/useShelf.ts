@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { heldBlobs } from "@/lib/blobs/held";
 import { blobId, parseBlob, shelfPaperKind, type ShelfCols, type ShelfIndex, type ShelfPaper } from "@/lib/blobs/kinds";
+import { blobWritable } from "@/lib/popout/mode";
 import { blobPath, projectBlobClient, useProjectBlob, type BlobVault, type BlobWire, type ProjectBlob, type ProjectBlobState } from "@/lib/blobs/useProjectBlob";
 import { useT } from "@/lib/i18n";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
@@ -26,6 +27,8 @@ async function sealNew(vault: BlobVault, id: string, json: string): Promise<{ bo
  */
 export async function putNewPaper(projectId: string, paperId: string, paper: ShelfPaper, vault: BlobVault, t: (k: string) => string): Promise<void> {
   const kind = shelfPaperKind(paperId);
+  // The pop-out writes only citations and retraction_cache (v1 1964): a paper is not stored from there.
+  if (!blobWritable(kind)) throw new Error(t("sh2_could_not_be_read"));
   const id = blobId(projectId, kind), json = JSON.stringify(paper), path = blobPath(projectId, kind);
   const seal = async () => {
     try { return await sealNew(vault, id, json); } catch (e) {
@@ -48,6 +51,7 @@ export async function putNewPaper(projectId: string, paperId: string, paper: She
 
 /** DELETE /projects/:id/blobs/shelf_paper:<id>: true when the blob is gone (404 counts: there was none). */
 async function deletePaperBlob(projectId: string, paperId: string): Promise<boolean> {
+  if (!blobWritable(shelfPaperKind(paperId))) return false;
   try { await apiFetch(blobPath(projectId, shelfPaperKind(paperId)), { method: "DELETE" }); return true; } catch (e) { return e instanceof ApiError && e.status === 404; }
 }
 

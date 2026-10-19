@@ -468,6 +468,11 @@
 .panel #rsResults { margin-top: 8px; }
 .rs-csv-row { margin-top: 6px; }
 .rs-actions { margin-top: 12px; }
+/* The pop-out window (v1 80-83): the tool alone, at its natural height, 10px from the edge; Research's ticked-papers actions (#rsActions), which answer in
+   the AI pane, are hidden there as v1 hides them. */
+.popout { display: block; height: auto; padding: 10px; }
+.popout > .panel { overflow: visible; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.popout #rsActions { display: none !important; }
 .panel .desc.rs-grounded { margin-top: 6px; }
 .panel details.rs-more-box { margin-top: 10px; }
 .panel details.rs-more-box > summary { cursor: pointer; font-weight: 700; color: var(--purple-800); font-size: 13.5px; }

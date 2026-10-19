@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
+import { announceBlob, onBlobAnnounced } from "@/lib/popout/channel";
+import { POPOUT_WRITABLE, blobWritable } from "@/lib/popout/mode";
 import { useVault, type VaultValue, type WrappedDek } from "@/lib/vault/useVault";
 import { applyOps, compactOps, heldBlobs, type HeldOp } from "./held";
 import { blobId, parseBlob, type BlobKind, type BlobShape } from "./kinds";
@@ -26,11 +28,13 @@ export type ProjectBlob<T> = ProjectBlobState<T> & {
    * the read lands on top of the stored ones instead of replacing them.
    */
   set(next: BlobUpdate<T>): void;
-  /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server. */
+  /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server; false always when read-only. */
   flush(): Promise<boolean>;
+  /** set() sends nothing here: `opts.readOnly`, or the pop-out's guard (only citations and retraction_cache are written from a pop-out, v1 1964). */
+  readOnly: boolean;
 };
 export type ProjectBlobOptions = {
-  /** The value is read but set() sends nothing (the pop-out writes only citations and retraction_cache; Task 14 decides which). */
+  /** The value is read but set() is a no-op that holds nothing, and flush() resolves false. A pop-out makes every kind but citations and retraction_cache read-only on its own (blobWritable). */
   readOnly?: boolean;
 };
 
@@ -45,6 +49,10 @@ type ClientDeps<T> = {
   get: () => Promise<BlobWire | null>;
   put: (body: BlobPut) => Promise<BlobWire>;
   vault: () => BlobVault;
+  /** set() is a no-op that holds nothing and flush() resolves false (the pop-out's guard). */
+  readOnly?: boolean;
+  /** Called after each save the server accepted (the pop-out sync's announce). */
+  onSaved?: () => void;
 };
 
 const toOp = <T,>(u: BlobUpdate<T>): HeldOp<T> => (typeof u === "function" ? { update: u as (prev: T | null) => T } : { value: u });
@@ -175,6 +183,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       heldByLock = false;
       broken = false;
       error = false;
+      o.onSaved?.();
       return true;
     } catch {
       hold(v);
@@ -200,6 +209,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   }
   function flush(): Promise<boolean> {
     clearTimer();
+    if (o.readOnly) return Promise.resolve(false);
     return queue(step);
   }
 
@@ -229,6 +239,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     },
     flush,
     set(next: BlobUpdate<T>) {
+      if (o.readOnly) return;
       const op = toOp(next);
       if (known) {
         value = "value" in op ? op.value : op.update(value);
@@ -240,6 +251,24 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       // The read is locked: ask now (one prompt) rather than after the debounce.
       if (!known && lockedRead) { void flush(); return; }
       timer = setTimeout(() => { timer = null; void flush(); }, o.delayMs);
+    },
+    /**
+     * Another window saved this blob (v1's storage listener, 7614-7616): it is read again, without a passphrase prompt, when it is known and nothing
+     * set here is waiting to go; a re-read that fails or is locked keeps what was shown.
+     */
+    refresh() {
+      if (!active) return;
+      void queue(async () => {
+        if (!known || holds()) return !holds();
+        const was = value, wasDeks = deks, wasDeclined = declined, wasBroken = broken;
+        known = false;
+        declined = true;
+        await read();
+        declined = wasDeclined;
+        if (!known) { known = true; value = was; deks = wasDeks; broken = wasBroken; lockedRead = false; error = false; }
+        emit();
+        return true;
+      });
     },
     /** The vault opened (the header pill, another prompt): a read that was locked or failed is made again, and a held value is sent. */
     resume() {
@@ -272,10 +301,15 @@ export const blobPath = (projectId: string, kind: BlobKind): string => `/project
  * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
  * since the number of papers changes. The caller starts it and disposes of it.
  */
-export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void) {
+export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions = {}) {
   const path = blobPath(projectId, kind);
+  const id = blobId(projectId, kind);
   return createBlobClient<BlobShape<K>>({
-    id: blobId(projectId, kind),
+    id,
+    // The pop-out's guard, here so every client (the hook's, the shelf's papers, a detached index write) has it.
+    readOnly: (opts.readOnly ?? false) || !blobWritable(kind),
+    // The other windows read v1's two synced keys again once they are saved here (v1's storage event, 7614).
+    onSaved: syncedKind(kind) ? () => announceBlob(id) : undefined,
     parse: (json) => parseBlob(kind, json),
     get: async () => {
       try { return await apiFetch<BlobWire>(path); } catch (e) { if (e instanceof ApiError && e.status === 404) return null; throw e; }
@@ -286,6 +320,9 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     onState
   });
 }
+
+/** v1's storage listener reacts to appu_citations and appu_retraction_cache only (7615): the two kinds a pop-out writes. */
+const syncedKind = (kind: BlobKind): boolean => POPOUT_WRITABLE.includes(kind);
 
 type Tagged<T> = { key: string; s: ProjectBlobState<T> };
 
@@ -308,23 +345,24 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
   const [tagged, setTagged] = useState<Tagged<T> | null>(null);
   const client = useRef<ReturnType<typeof createBlobClient<T>> | null>(null);
 
+  const readOnly = (opts.readOnly ?? false) || !blobWritable(kind);
   useEffect(() => {
     if (projectId === null || key === null) return;
-    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }));
+    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), { readOnly });
     client.current = c;
     void c.start();
-    return () => { if (client.current === c) client.current = null; c.dispose(); };
-  }, [kind, projectId, key]);
+    const stop = syncedKind(kind) ? onBlobAnnounced(blobId(projectId, kind), () => c.refresh()) : () => {};
+    return () => { stop(); if (client.current === c) client.current = null; c.dispose(); };
+  }, [kind, projectId, key, readOnly]);
 
   const open = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => { if (open) client.current?.resume(); }, [open, key]);
 
-  const readOnly = opts.readOnly ?? false;
   const set = useCallback((next: BlobUpdate<T>) => { if (!readOnly) client.current?.set(next); }, [readOnly]);
-  const flush = useCallback(async () => (await client.current?.flush()) ?? true, []);
+  const flush = useCallback(async () => (readOnly ? false : (await client.current?.flush()) ?? true), [readOnly]);
 
   const s: ProjectBlobState<T> = key === null
     ? { value: null, loading: false, locked: false }
     : tagged?.key === key ? tagged.s : { value: null, loading: true, locked: false };
-  return { ...s, set, flush };
+  return { ...s, set, flush, readOnly };
 }

@@ -36,7 +36,7 @@ export type ApNotesStore = {
   broken: boolean;
   /** v1's apNoteGet without its write: the paper's note, or undefined. */
   note(id: string): ApNote | undefined;
-  /** apNotePut: false when no project is open or the student kept a broken blob. */
+  /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (it writes only citations and retraction_cache, v1 1964). */
   put(doc: { id: string; title: string }, fn: (n: ApNote) => void): boolean;
   /** apAcrossDel's delete (9981). */
   remove(id: string): boolean;
@@ -69,25 +69,25 @@ export function useApNotes(projectId: string | null): ApNotesStore {
     return yes;
   }, [t]);
   const all = useMemo(() => notes.value ?? {}, [notes.value]);
-  const { set: setNotes, broken: notesBroken } = notes;
-  const { set: setCols, broken: colsBroken, value: colsValue } = cols;
+  const { set: setNotes, broken: notesBroken, readOnly: notesReadOnly } = notes;
+  const { set: setCols, broken: colsBroken, value: colsValue, readOnly: colsReadOnly } = cols;
   const notesUnread = unread(notes);
   const colsUnread = unread(cols);
   const put = useCallback((doc: { id: string; title: string }, fn: (n: ApNote) => void) => {
-    if (!projectId || notesUnread || !mayWrite("ap_notes", notesBroken)) return false;
+    if (!projectId || notesUnread || notesReadOnly || !mayWrite("ap_notes", notesBroken)) return false;
     setNotes((prev) => notePut(prev, doc, fn));
     return true;
-  }, [projectId, notesUnread, mayWrite, notesBroken, setNotes]);
+  }, [projectId, notesUnread, notesReadOnly, mayWrite, notesBroken, setNotes]);
   const remove = useCallback((id: string) => {
-    if (!projectId || notesUnread || !mayWrite("ap_notes", notesBroken)) return false;
+    if (!projectId || notesUnread || notesReadOnly || !mayWrite("ap_notes", notesBroken)) return false;
     setNotes((prev) => { const next = { ...(prev ?? {}) }; delete next[id]; return next; });
     return true;
-  }, [projectId, notesUnread, mayWrite, notesBroken, setNotes]);
+  }, [projectId, notesUnread, notesReadOnly, mayWrite, notesBroken, setNotes]);
   const toggleCol = useCallback((k: string, on: boolean) => {
-    if (!projectId || colsUnread || !mayWrite("ap_cols", colsBroken)) return false;
+    if (!projectId || colsUnread || colsReadOnly || !mayWrite("ap_cols", colsBroken)) return false;
     setCols((prev) => apAcrossColToggle(apAcrossCols(prev), k, on));
     return true;
-  }, [projectId, colsUnread, mayWrite, colsBroken, setCols]);
+  }, [projectId, colsUnread, colsReadOnly, mayWrite, colsBroken, setCols]);
   const colList = useMemo(() => apAcrossCols(colsValue), [colsValue]);
   const note = useCallback((id: string) => all[id], [all]);
   return { all, unread: notesUnread, locked: notesUnread && notes.locked, broken: !!notesBroken, note, put, remove, cols: colList, toggleCol };

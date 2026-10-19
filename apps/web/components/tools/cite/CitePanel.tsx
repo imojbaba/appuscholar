@@ -1,8 +1,7 @@
 "use client";
 import type { Formatted } from "@appuscholar/core";
 import { plain, useT } from "@/lib/i18n";
-import { useSuggestion } from "@/lib/ai/suggestion";
-import { insertCitation } from "@/lib/editor/insert";
+import { useInsertTarget } from "@/lib/popout/sync";
 import type { CiteDeps } from "@/lib/cite/actions";
 import { useLibrary } from "@/lib/cite/useLibrary";
 import { toast } from "@/components/ui/toast";
@@ -13,16 +12,17 @@ import { CiteCapture, CiteQuote } from "./CiteQuote";
 /**
  * 📚 Citation Manager (v1 873-947). In v1's order: the heading and description, the form (CiteForm), the quote block and the one-click capture
  * (Task 8), the library (CiteLibrary). Citations go in at the open document's cursor (after the selection bubble's Cite the cursor is already at the
- * end of the passage); the library is the open project's `citations` blob.
+ * end of the passage); in a pop-out they are sent to the writing window (lib/popout/sync.ts); the library is the open project's `citations` blob.
  */
 export function CitePanel() {
   const t = useT();
   const library = useLibrary();
-  const { editor } = useSuggestion();
-  const insertReady = !!editor && !editor.isDestroyed;
+  // The open document's editor, or the writing window when this is a pop-out.
+  const target = useInsertTarget();
+  const insertReady = target.ready;
   const deps = (): CiteDeps => ({
     lib: library.lib, style: library.style, toast, t,
-    insert: (f: Formatted) => { if (editor && !editor.isDestroyed) insertCitation(editor, f); }
+    insert: (f: Formatted) => { target.citation(f); }
   });
   return (
     <div className="panel" data-testid="panel-cite">

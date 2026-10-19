@@ -31,7 +31,7 @@ vi.mock("@/components/workspace/dialogs/StageIntro", () => ({ StageIntro: h.stub
 vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: h.stub }));
 vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: h.stub }));
 vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog: h.stub }));
-vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children }));
+vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 // The document card stands in for the caret chip: it reads the workspace's library passively, as the chip does.
 vi.mock("@/components/document/DocumentCard", async () => {
   const { useWorkspace } = await import("../components/workspace/WorkspaceContext");

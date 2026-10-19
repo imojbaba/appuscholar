@@ -3,9 +3,8 @@ import { bookmarkletHref } from "@appuscholar/core";
 import { useEffect, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
-import { useSuggestion } from "@/lib/ai/suggestion";
 import { contentLangOf, useCallAI } from "@/lib/ai/useCallAI";
-import { insertHtmlBlock, insertTextAtCursor } from "@/lib/editor/insert";
+import { useInsertTarget } from "@/lib/popout/sync";
 import { getCiteForm, setCiteForm, useCiteForm } from "@/lib/cite/form";
 import { citeInsertQuote } from "@/lib/cite/quote";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -19,18 +18,18 @@ import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 export function CiteQuote({ insertReady }: { insertReady: boolean }) {
   const t = useT();
   const f = useCiteForm();
-  const { editor } = useSuggestion();
+  const target = useInsertTarget();
   const { project } = useWorkspace();
   const { settings } = useSettings();
   const callAI = useCallAI();
-  const live = () => (editor && !editor.isDestroyed ? editor : null);
   const insert = () => {
     const cur = getCiteForm();
     void citeInsertQuote({
       quote: cur.quote, srcLang: cur.lang, contentLang: contentLangOf(project, settings), callAI,
-      // The editor of the document the request was made in: if the student has switched document by the time the AI answers, it is destroyed and nothing goes in.
-      insertBlock: (html) => { const e = live(); if (!e || e.isDestroyed) return false; insertHtmlBlock(e, html); return true; },
-      insertAtCursor: (text) => { const e = live(); if (!e) return false; insertTextAtCursor(e, text); return true; },
+      // The target of the click's render: the editor of the document the request was made in (if the student has switched document by the time the AI
+      // answers, it is destroyed and nothing goes in), or the writing window from a pop-out.
+      insertBlock: (html) => target.block(html),
+      insertAtCursor: (text) => target.text(text),
       clearQuote: () => setCiteForm((p) => ({ ...p, quote: "" })),
       toast
     });
