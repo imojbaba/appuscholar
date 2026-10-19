@@ -147,15 +147,16 @@ describe("v1import.ts reads what v1 exports", () => {
     it(`bundle document "${d.title}" (${kind}) ${label(kind)}`, () => pin(kind, d.body, d.v1Html, parsed().documents[i]?.bodyHtml ?? "(no document)"));
   }
 
-  it("D-W0-4 bundle source document: v1 flags it with origin and src (3230), the import keeps neither, so it arrives as the student's own", () => {
+  it("D-W0-4 (approved by OJ 2026-10-19) bundle source document: v1 flags it with origin and src (3230), and the import keeps both as v1 stored them", () => {
     const i = bundle.docs.findIndex((d) => d.origin === "source");
     expect(i).toBeGreaterThanOrEqual(0);
     expect(bundle.docs[i]?.src).toMatch(/\S/); // the file name v1 keeps beside the flag
-    const doc = parsed().documents[i];
-    expect(doc?.title).toBe(bundle.docs[i]?.title); // the right document, and an ordinary one in every other respect
-    expect(doc).not.toHaveProperty("origin");
-    expect(doc).not.toHaveProperty("src");
-    expect(Object.keys(doc ?? {}).sort()).toEqual(["bodyHtml", "id", "title", "updated"]);
+    const docs = parsed().documents;
+    expect(docs[i]?.title).toBe(bundle.docs[i]?.title); // the right document
+    expect(docs[i]).toMatchObject({ origin: bundle.docs[i]?.origin, src: bundle.docs[i]?.src });
+    expect(Object.keys(docs[i] ?? {}).sort()).toEqual(["bodyHtml", "id", "origin", "src", "title", "updated"]);
+    // The four documents v1 did not flag arrive without either field, as v1 stored them.
+    for (const [j, d] of docs.entries()) if (j !== i) expect(Object.keys(d).sort()).toEqual(["bodyHtml", "id", "title", "updated"]);
   });
 
   it("the bodies fixture holds a case per tag of looksLikeStoredHTML, and the plain, escaped-picture and appuimg shapes", () => {

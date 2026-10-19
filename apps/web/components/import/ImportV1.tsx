@@ -54,9 +54,10 @@ export function ImportV1({ onDone, onBusyChange }: { onDone: (projectId: string)
       // With a vault the documents are encrypted here, so it must be open before anything is created: a cancelled unlock imports nothing.
       const sealing = (await vault.known()) !== "off";
       if (sealing && !(await vault.ensureUnlocked())) { setMsg(t("vault_save_locked")); return; }
-      const r = await importV1Backup({ projectTitle, documents: documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml })) }, {}, {
+      // origin and src go with each document: a paper v1 marked as a source is saved as one (D-W0-4).
+      const r = await importV1Backup({ projectTitle, documents: documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml, ...(d.origin !== undefined ? { origin: d.origin } : {}), ...(d.src !== undefined ? { src: d.src } : {}) })) }, {}, {
         createProject: (title) => apiFetch<{ id: string }>("/projects", { method: "POST", body: JSON.stringify({ title }) }),
-        createDocument: async (pid, title, body) => { await apiFetch<unknown>(`/projects/${pid}/documents`, { method: "POST", body: JSON.stringify({ title, kind: "draft", authorKind: "import", authorLabel, ...body }) }); },
+        createDocument: async (pid, title, body, kind) => { await apiFetch<unknown>(`/projects/${pid}/documents`, { method: "POST", body: JSON.stringify({ title, kind, authorKind: "import", authorLabel, ...body }) }); },
         encrypt: sealing ? vault.encryptBody : null,
         onProgress: (p) => { projectId = p.projectId; imported = p.imported; setProgress({ done: p.imported, total: p.total }); if (p.total > 1) setMsg(t("import_v1_progress", { n: p.imported, total: p.total })); }
       });
