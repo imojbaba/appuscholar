@@ -627,19 +627,20 @@ describe("stats: logistic regression, repeated-measures ANOVA and alpha (logisti
     expect(items(m)).toContain("2 row(s) with a missing answer were left out.");
     expect(run(m)).toMatchObject({ ok: true, skipped: 0, values: { n: 34 } });
   });
-  it("alpha values are the numbers behind the cells", () => {
-    const fq = (x: number) => nl(fixed(x));
-    for (const c of load("alpha").cases) {
-      if (c.id === "alpha-large-boot-200") continue; // its bootstrap takes seconds; the fixture comparison above already runs it
+  // One test per alpha case that v1 ran (each runs its own omega bootstrap of 400 resamples, so each gets its own time budget); the slow ids run in stats-slow.test.ts.
+  for (const c of load("alpha").cases.filter((x) => x.apa !== null && !SLOW_CASES.includes(x.id))) {
+    it(`alpha values are the numbers behind the cells: ${c.id}`, () => {
+      const fq = (x: number) => nl(fixed(x));
       const r = run(c);
-      if (!r.ok) continue;
+      expect(r.ok, c.id).toBe(true);
+      if (!r.ok) return;
       const v = r.values, t = tables(c);
       expect(t[0]![1]!.slice(0, 4).concat(t[0]![1]![6]!), c.id).toEqual([String(v.n), String(v.k), fq(v.alpha!), `[${fq(v.aciLo!)}, ${fq(v.aciHi!)}]`, fq(v.meanR!)]);
       for (let j = 0; j < v.k!; j++) expect([t[1]![j + 1]![3], t[1]![j + 1]![4]], `${c.id} ${j}`).toEqual([fq(v["rit_" + j]!), fq(v["ad_" + j]!)]);
       if ("omega" in v) expect(t[0]![1]![4], c.id).toBe(fq(v.omega!));
       if ("ociLo" in v) expect(t[0]![1]![5], c.id).toBe(`[${fq(v.ociLo!)}, ${fq(v.ociHi!)}]`);
-    }
-  });
+    });
+  }
 });
 
 describe("stats: mixed ANOVA, moderation and mediation (mixed, moderate, mediate)", () => {
