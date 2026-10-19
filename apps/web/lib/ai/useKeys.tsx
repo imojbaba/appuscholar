@@ -5,7 +5,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import { useSettings } from "@/lib/settings";
 import { useVault } from "@/lib/vault/useVault";
 import { askPassphrase } from "@/components/workspace/dialogs/Passphrase";
-import { keyStore, lockKey, unlockKeyBlob, type KeyMode } from "./keys";
+import { isProvider, keyStore, lockKey, unlockKeyBlob, type CredentialId, type KeyMode } from "./keys";
 
 /* A key locked under the vault is stored as "v2." followed by the vault's iv.ct, so the blob keeps the three dot-separated
    base64url fields the credentials API accepts. A legacy blob (v1's salt.iv.ct, locked with a key passphrase) starts with a
@@ -19,16 +19,16 @@ export type KeysValue = {
   /** False until the first read of /me/credentials has finished. */
   loaded: boolean;
   /** A key exists for the provider: usable now (this tab or this computer) or locked on the server. */
-  hasKey(p: ProviderId): boolean;
+  hasKey(p: CredentialId): boolean;
   /** The key usable now, unlocking it when it is held on the server: a v2 blob opens with the vault key (after ensureUnlocked), a
    *  legacy blob asks for its key passphrase and, when the vault is open, is re-saved as v2 in place of the old one. Null when there
    *  is no key or the student cancels; throws when a legacy passphrase is wrong. */
-  getUnlocked(p: ProviderId): Promise<string | null>;
+  getUnlocked(p: CredentialId): Promise<string | null>;
   providersWithKeys(): ProviderId[];
   /** Stores a key in the chosen mode. "pass" without `pass` locks it under the vault key (opening the vault first if needed);
    *  with `pass` it is the legacy key-passphrase lock. Either way the plain key is also kept in this tab. Throws when the server could not be reached or the vault stayed locked. */
-  save(p: ProviderId, key: string, mode: KeyMode, pass?: string): Promise<void>;
-  forget(p: ProviderId): Promise<void>;
+  save(p: CredentialId, key: string, mode: KeyMode, pass?: string): Promise<void>;
+  forget(p: CredentialId): Promise<void>;
   reload(): Promise<void>;
 };
 
@@ -63,13 +63,13 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
     return () => { live = false; };
   }, [commit]);
 
-  const dropBlob = useCallback(async (p: ProviderId) => {
+  const dropBlob = useCallback(async (p: CredentialId) => {
     if (!blobsRef.current[p]) return;
     try { await apiFetch<void>(`/me/credentials/${p}`, { method: "DELETE" }); } catch (e) { if (!(e instanceof ApiError && e.status === 404)) throw e; }
     commit(Object.fromEntries(Object.entries(blobsRef.current).filter(([k]) => k !== p)));
   }, [commit]);
 
-  const save = useCallback(async (p: ProviderId, key: string, mode: KeyMode, pass?: string) => {
+  const save = useCallback(async (p: CredentialId, key: string, mode: KeyMode, pass?: string) => {
     if (mode === "pass") {
       let blob: string;
       if (pass) blob = await lockKey(key, pass);
@@ -89,7 +89,7 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
   }, [commit, dropBlob, ensureUnlocked, wrapSecret]);
 
   /** Lazy re-wrap: a legacy blob just opened with its key passphrase is replaced by one under the vault key, when the vault is open. */
-  const rewrap = useCallback(async (p: ProviderId, old: string, plain: string) => {
+  const rewrap = useCallback(async (p: CredentialId, old: string, plain: string) => {
     let next: string;
     try { next = V2_PREFIX + (await wrapSecret(plain)); } catch { return; } // no vault, or locked: it stays as it is until a later unlock
     if (blobsRef.current[p] !== old) return; // replaced meanwhile
@@ -97,7 +97,7 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
     if (blobsRef.current[p] === old) commit({ ...blobsRef.current, [p]: next });
   }, [commit, wrapSecret]);
 
-  const getUnlocked = useCallback(async (p: ProviderId): Promise<string | null> => {
+  const getUnlocked = useCallback(async (p: CredentialId): Promise<string | null> => {
     const have = keyStore.getUnlocked(p);
     if (have) return have;
     const blob = blobsRef.current[p];
@@ -107,6 +107,8 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
       if (!(await ensureUnlocked())) return null;
       plain = await unwrapSecret(blob.slice(V2_PREFIX.length));
     } else {
+      // Only an AI key can be a legacy blob (v1's key passphrase); the OpenAlex key is always stored under the vault.
+      if (!isProvider(p)) return null;
       const pass = await askPassphrase({ kind: "unlock", provider: p });
       if (!pass) return null;
       plain = await unlockKeyBlob(blob, pass); // a wrong passphrase throws, and nothing changes
@@ -117,7 +119,7 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
     return plain;
   }, [ensureUnlocked, unwrapSecret, rewrap]);
 
-  const forget = useCallback(async (p: ProviderId) => {
+  const forget = useCallback(async (p: CredentialId) => {
     keyStore.clear(p);
     bump();
     await dropBlob(p);
@@ -139,4 +141,9 @@ export function useKeys(): KeysValue {
   const v = useContext(Ctx);
   if (!v) throw new Error("useKeys must be used inside <KeysProvider>");
   return v;
+}
+
+/** The keys, or null outside <KeysProvider> (a panel rendered on its own): for readers that can do without one, such as the optional OpenAlex key. */
+export function useKeysIfProvided(): KeysValue | null {
+  return useContext(Ctx);
 }

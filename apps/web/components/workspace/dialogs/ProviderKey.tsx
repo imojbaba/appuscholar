@@ -7,6 +7,7 @@ import { useSettings } from "@/lib/settings";
 import { cryptoOK, isProvider, keyStore, type KeyMode } from "@/lib/ai/keys";
 import { toCallError } from "@/lib/ai/callAI";
 import { useKeys } from "@/lib/ai/useKeys";
+import { saveOpenAlexKey, useOpenAlexKey } from "@/lib/research/oaKey";
 import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -68,6 +69,15 @@ function Form() {
   const [customField, setCustomField] = useState(fieldKnown ? "" : field);
   const [orcid, setOrcid] = useState(settings.orcid ?? "");
   const contentLang: "en" | "hi" = project ? (project.contentLang === "hi" ? "hi" : "en") : settings.contentLang === "hi" ? "hi" : "en";
+  // The OpenAlex key (v1 1186-1190): the field shows the key when it is open in this tab, as v1's fieldInit fills #oaKeyIn (2510); saved on change.
+  const oaKey = useOpenAlexKey() ?? "";
+  const [oaIn, setOaIn] = useState<string | null>(null);
+  const oaShown = oaIn ?? oaKey;
+  async function saveOaKey() {
+    if (oaIn === null || oaIn === oaKey) return;
+    const ok = await saveOpenAlexKey(oaIn, { keys, vault, setupVault: openVaultSetup, toast, t });
+    if (ok) setOaIn(null);
+  }
 
   function pick(q: ProviderId) { setP(q); setKey(""); setOut(null); setMode(initialMode(q)); }
 
@@ -201,6 +211,13 @@ function Form() {
           <option value="hi">{t("settings_contentlang_hi")}</option>
         </select>
         <p className="m-0 text-[13px] text-muted-foreground">{t("settings_contentlang_desc")}</p>
+      </div>
+
+      <div className="field !mb-0 border-t border-line pt-3">
+        <label htmlFor="oaKeyIn">{t("rs2_oa_key_label")}</label>
+        <SecretInput secret="key" id="oaKeyIn" autoComplete="off" spellCheck={false} value={oaShown} placeholder={t("rs2_oa_key_placeholder")}
+          onChange={(e) => setOaIn(e.target.value)} onBlur={() => { void saveOaKey(); }} onKeyDown={(e) => { if (e.key === "Enter") void saveOaKey(); }} data-testid="oa-key-input" />
+        <p className="m-0 text-[13px] text-muted-foreground">{t("rs2_oa_key_desc")}</p>
       </div>
 
       <div className="field !mb-0 border-t border-line pt-3">

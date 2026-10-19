@@ -57,6 +57,22 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
     const m = JSON.parse(readFileSync("messages/v1-panels.manifest.json", "utf8"));
     expect(m.rs2_terms_btn.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
+  it("holds the Research script's copy (Task 9, ruling R10): the OpenAlex key setting, the status fragments, the cards' labels", () => {
+    expect(E.rs2_oa_key_label).toBe("OpenAlex key (optional)");
+    expect(E.rs2_oa_key_placeholder).toBe("Paste a free OpenAlex key");
+    expect(E.rs2_oa_key_desc).toMatch(/^Paper search uses OpenAlex\. Without a key/);
+    expect(E.rs2_the_free_daily_openalex).toBe("the free daily OpenAlex budget is used up. Add a free OpenAlex key in Settings, or try again tomorrow");
+    expect(E.rs2_searching).toBe("🔎 Searching…");
+    expect(E.rs2_searched_your_words_plus).toBe("(searched your words plus {termsCount} related term");
+    expect(E.rs2_ranked_by_fit_to).toBe("· ranked by fit to your question ({scored} of {mergedCount} scored, about");
+    expect(E.rs2_probably_not_relevant_fit).toBe("probably not relevant (fit 0 or 1). Nothing is deleted.");
+    expect(E.rs2_citation_library).toBe("+ Citation library");
+    expect(manifest.rs2_oa_key_label!.lines).toBe("1188-1188");
+    expect(manifest.rs2_searching!.lines).toBe("8292-8292");
+    // what core ports as data or prompt text is not copy: the CSV heads (8192), the manual entry's type (8445), rsCorpusText's warning (8528)
+    for (const v of ["Fit 0-3 (AI)", "Journal article", "Website"]) expect(Object.entries(E).filter(([k, x]) => k.startsWith("rs2_") && x === v), v).toEqual([]);
+    expect(Object.values(E).some((x) => x.startsWith("WARNING: this paper is marked as retracted"))).toBe(false);
+  });
   it("has the twelve stage questions, one per AP_STAGES key", () => {
     for (const k of ["gap", "lit", "design", "sample", "measures", "procedure", "data", "stats", "results", "conclusion", "limits", "recs"]) {
       expect(E[`ap2_stage_${k}_ask`], k).toBeTruthy();

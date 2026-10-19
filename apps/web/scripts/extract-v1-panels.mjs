@@ -26,12 +26,34 @@ export const V1_WINDOWS = [
   { kind: "js", prefix: "ap2", from: 9832, to: 10136 },
   { kind: "js", prefix: "ap2", from: 11221, to: 11334 },
   { kind: "js", prefix: "sh2", from: 11513, to: 11725 },
+  // Research, the script side (Task 9, ruling R10): the OpenAlex key setting (1186-1190) and its toasts and 429 sentence (8029-8032), the quick
+  // read box and its toasts (8161-8190), the CSV toast (8196), the fit chip (8201-8205), rsRank (8220-8234), the related terms (8251-8272) and
+  // researchSearch to researchGapFinder (8283-8551). Left out: what core ports as data or prompt text (rsCsvText's column heads 8191-8195, the rank and
+  // quick-read prompts, RS_DESIGN 8237-8244, rsBuildQuery 8273-8282, rsAuthorsToCit and rsEntryFromResult 8455-8470, rsOaBrief 8492-8497,
+  // rsCorpusText 8525-8529), the paper head handed to Analyse (8411) and the manual entry's type (8445).
+  { kind: "html", prefix: "rs2", from: 1186, to: 1190 },
+  { kind: "js", prefix: "rs2", from: 8029, to: 8032 },
+  { kind: "js", prefix: "rs2", from: 8161, to: 8190 },
+  { kind: "js", prefix: "rs2", from: 8196, to: 8196 },
+  { kind: "js", prefix: "rs2", from: 8201, to: 8205 },
+  { kind: "js", prefix: "rs2", from: 8220, to: 8234 },
+  { kind: "js", prefix: "rs2", from: 8251, to: 8272 },
+  { kind: "js", prefix: "rs2", from: 8283, to: 8410 },
+  { kind: "js", prefix: "rs2", from: 8412, to: 8444 },
+  { kind: "js", prefix: "rs2", from: 8446, to: 8452 },
+  { kind: "js", prefix: "rs2", from: 8471, to: 8491 },
+  { kind: "js", prefix: "rs2", from: 8498, to: 8524 },
+  { kind: "js", prefix: "rs2", from: 8530, to: 8551 },
 ];
 
-/** Names the brief fixes: the first text that starts with the given words takes this key (within its prefix). */
+/** Names the brief fixes: the first text that starts with the given words takes this key (within its prefix; a fourth member names the
+ *  attribute item, placeholder / title / aria, it applies to). */
 const NAME_OVERRIDES = [
   ["ap2", "I am allowed to read this paper", "ap2_consent"],
   ["sh2", "Add PDFs you have the right to read", "sh2_intro"],
+  ["rs2", "OpenAlex key (optional)", "rs2_oa_key_label"],
+  ["rs2", "Paste a free OpenAlex key", "rs2_oa_key_placeholder", "placeholder"],
+  ["rs2", "Paper search uses OpenAlex.", "rs2_oa_key_desc"],
 ];
 
 /** String literals that are not copy: assigned to these names, or property values of these names. */
@@ -356,7 +378,7 @@ function keyFor({ prefix, text, id, attr, k, prop, taken, byText, line }) {
   const hit = byText.get(prefix + "\u0001" + attr + "\u0001" + text);
   if (hit) return { key: hit, fresh: false };
   let key;
-  const ov = !attr && NAME_OVERRIDES.find(([p, start]) => p === prefix && text.startsWith(start));
+  const ov = NAME_OVERRIDES.find(([p, start, , a]) => p === prefix && (a || "") === (attr || "") && text.startsWith(start));
   const stage = !attr && k && (prop === "ask" || prop === "name");
   if (ov) key = ov[2];
   else if (stage) key = `${prefix}_stage_${k}_${prop}`;

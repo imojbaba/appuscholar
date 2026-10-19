@@ -419,3 +419,39 @@
 .panel .cite-capture-link { text-align: center; margin: 10px 0; }
 .panel .cite-share { margin-top: 8px; }
 .panel .desc.cite-sharing { margin-top: 10px; }
+/* Task 9: Research (v1 950-1034): the form's rows, the status line, the result cards and their badges (v1 293-311), the fit chip (8204), the fold (8403). */
+.rs-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 2px 0 6px; font-size: 12.5px; }
+.rs-row { display: flex; gap: 8px; margin-top: 8px; }
+.rs-select { width: auto; min-height: 0; padding: 4px 8px; font-size: 12.5px; }
+.rs-check { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; cursor: pointer; }
+.rs-check input { margin-top: 3px; }
+.rs-rank { margin: 2px 0 6px; }
+.rs-sources { gap: 14px; margin-bottom: 4px; }
+.rs-sources input, .paper-check input { accent-color: var(--purple-600); }
+.rs-terms-note { font-size: 12.5px; margin: 2px 0 4px; }
+.rs-terms-list label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.panel .desc.rs-status { margin-top: 8px; }
+.rs-sort-row { margin: 4px 0 8px; gap: 8px; }
+.rs-sort-row label { font-weight: 700; color: var(--muted); }
+#rsResults { margin-top: 8px; }
+.paper-card { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55; margin-bottom: 8px; overflow-wrap: anywhere; }
+.paper-card h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--purple-800); }
+.paper-card .meta { color: var(--muted); font-size: 11.5px; margin-bottom: 5px; }
+.paper-card .abs { margin: 5px 0; max-height: 4.6em; overflow: hidden; }
+.paper-card .abs.open { max-height: none; }
+.paper-card .rs-more { font-size: 11.5px; color: var(--accent-ink); text-decoration: underline; }
+.paper-card .src-tag { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); background: var(--purple-100); padding: 1px 7px; border-radius: 10px; margin-right: 6px; }
+.paper-card .oa-badge { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--ink); padding: 1px 7px; border-radius: 10px; margin-right: 6px; border: 1px solid; cursor: help; }
+.paper-card .oa-gold { background: rgba(240, 173, 63, .22); border-color: #c9932e; }
+.paper-card .oa-green { background: rgba(34, 160, 90, .18); border-color: #22a05a; }
+.paper-card .oa-hybrid { background: rgba(59, 130, 246, .18); border-color: #3b82f6; }
+.paper-card .oa-bronze { background: rgba(194, 110, 60, .2); border-color: #c26e3c; }
+.paper-card .retr-badge { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--ink); background: rgba(220, 38, 38, .16); border: 1px solid #dc2626; padding: 1px 7px; border-radius: 10px; margin-right: 6px; cursor: help; }
+.paper-card .row { display: flex; flex-wrap: wrap; margin-top: 6px; gap: 6px; }
+.paper-check { display: flex; align-items: flex-start; gap: 6px; }
+.paper-check > input { margin-top: 4px; width: 15px; height: 15px; flex: 0 0 auto; }
+.rs-fit { font-size: 12px; margin: 2px 0; }
+.rs-fit-chip { padding: 1px 7px; border-radius: 8px; background: rgba(109, 40, 217, .12); }
+.rs-fit-why { color: var(--muted); }
+.rs-fold { margin-top: 8px; }
+.rs-fold > summary { cursor: pointer; font-weight: 700; font-size: 13px; }

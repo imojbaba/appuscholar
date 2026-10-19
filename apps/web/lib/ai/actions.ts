@@ -1,7 +1,7 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
-  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildHelperPrompt, buildIdeaPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS,
-  type HelperKind, type WritingKind
+  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildHelperPrompt, buildIdeaPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS,
+  HELPER_MIN_CHARS, rsParseTerms, rsRankParse, type HelperKind, type RsPaper, type WritingKind
 } from "@appuscholar/core";
 
 /** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
@@ -181,3 +181,62 @@ export async function runDevil(d: DevilDeps): Promise<void> {
     d.toast(d.t("devil_ready"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
+
+/** What the Research tool's two AI steps touch: the AI (with v1's noLang, which keeps the content-language line out of these prompts), the field, the copy. */
+export type ResearchAiDeps = {
+  callAI(prompt: string, opts: { temp: number; max: number; noLang?: boolean }): Promise<string>;
+  /** fieldLabel(settings.field): v1 fieldName(). */
+  field: string;
+  t(key: string, vars?: Record<string, string | number>): string;
+};
+
+/**
+ * rsRank (v1 8220-8234): the papers in batches of 12, each batch's prompt from core's buildRankPrompt (its words counted as v1 counts them, the
+ * prompt split on white space), each reply read by rsRankParse. A batch whose call fails or whose reply gives no score counts as failed; a key,
+ * 401, 403, quota or limit error on the first batch stops the ranking (the caller reports "ranking failed"). Scores land on copies of the papers.
+ */
+export async function rankPapers(list: RsPaper[], q: string, d: ResearchAiDeps): Promise<{ papers: RsPaper[]; scored: number; words: number; failed: number }> {
+  const papers = list.map((p) => ({ ...p }));
+  let words = 0, scored = 0, failed = 0;
+  for (let i = 0; i < papers.length; i += 12) {
+    const batch = papers.slice(i, i + 12);
+    const built = buildRankPrompt(d.field, q, batch);
+    words += built.prompt.split(/\s+/).length;
+    let out: string;
+    try { out = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang }); }
+    catch (e) { if (/key|401|403|quota|limit/i.test((e instanceof Error && e.message) || "") && i === 0) throw e; failed++; continue; }
+    const res = rsRankParse(out, batch.length);
+    if (!Object.keys(res).length) { failed++; continue; }
+    batch.forEach((p, k) => { const r = res[k + 1]; if (r) { p.rel = { score: r.score, reason: r.reason || d.t("rs2_no_reason_given"), titleOnly: !String(p.abstract || "").trim() }; scored++; } });
+  }
+  return { papers, scored, words, failed };
+}
+
+/** v1's RS_TERMS (8236): the topic the terms were suggested for, the terms, and which are ticked. */
+export type RsTerms = { base: string; terms: string[]; picked: boolean[] };
+/** What #rsTerms shows: nothing, v1's "Thinking…" line, its "No useful related terms" line, or the ticked boxes of RS_TERMS. */
+export type RsTermsBox = "idle" | "thinking" | "none" | "list";
+
+/**
+ * "💡 Suggest related terms" (v1 rsSuggestTerms 8251-8263): a topic of 3 characters or more, core's prompt with its options, the reply read by
+ * core's rsParseTerms; every term comes back ticked. Like v1, RS_TERMS changes only when terms came back; a failure empties the box and toasts.
+ */
+export async function suggestTerms(topic: string, d: ResearchAiDeps & { toast(msg: string): void; setBox(box: RsTermsBox): void; setTerms(terms: RsTerms): void }): Promise<void> {
+  const q = topic.trim();
+  if (q.length < 3) { d.toast(d.t("rs2_type_a_topic_first")); return; }
+  d.setBox("thinking");
+  try {
+    const built = buildSuggestTermsPrompt(d.field, q);
+    const out = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });
+    const terms = rsParseTerms(out, q);
+    if (!terms.length) { d.setBox("none"); return; }
+    d.setTerms({ base: q, terms, picked: terms.map(() => true) });
+    d.setBox("list");
+  } catch (e) {
+    d.setBox("idle");
+    d.toast(e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
+  }
+}
+
+/** rsPickedTerms (8269-8272): the ticked terms, only while the topic is the one they were suggested for. */
+export const pickedTerms = (s: RsTerms, q: string): string[] => (s.base !== q ? [] : s.terms.filter((_, i) => s.picked[i]));

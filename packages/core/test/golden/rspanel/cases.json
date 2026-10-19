@@ -1,0 +1,530 @@
+{
+ "engine": "rspanel",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "terms": [
+  {
+   "id": "plain",
+   "topic": "exam anxiety",
+   "reply": "{\"terms\":[\"test anxiety\",\"evaluation anxiety\",\"exam stress\"]}",
+   "out": [
+    "test anxiety",
+    "evaluation anxiety",
+    "exam stress"
+   ],
+   "allTicked": true,
+   "none": false
+  },
+  {
+   "id": "fenced-and-cleaned",
+   "topic": "exam anxiety",
+   "reply": "Here you go:\n```json\n{\"terms\":[\"Exam Anxiety\",\"test-anxiety\",\"\\\"quoted\\\" term\",\"(bracketed) words\",\"stress AND worry\",\"one two three four five six\",\"x\",\"“curly” quotes\",\"[square] brackets\"]}\n```\nHope this helps.",
+   "out": [
+    "test-anxiety",
+    "quoted term",
+    "bracketed words",
+    "stress worry",
+    "curly quotes",
+    "square brackets"
+   ],
+   "allTicked": true,
+   "none": false
+  },
+  {
+   "id": "over-eight",
+   "topic": "working memory",
+   "reply": "{\"terms\":[\"short-term memory\",\"executive function\",\"cognitive load\",\"attention control\",\"n-back training\",\"digit span\",\"fluid intelligence\",\"central executive\",\"phonological loop\",\"visuospatial sketchpad\"]}",
+   "out": [
+    "short-term memory",
+    "executive function",
+    "cognitive load",
+    "attention control",
+    "n-back training",
+    "digit span",
+    "fluid intelligence",
+    "central executive"
+   ],
+   "allTicked": true,
+   "none": false
+  },
+  {
+   "id": "case-duplicates",
+   "topic": "burnout",
+   "reply": "{\"terms\":[\"Teacher Burnout\",\"teacher burnout\",\"TEACHER BURNOUT\",\"emotional exhaustion\",\"Emotional exhaustion\",\"burnout\",\"  Burnout  \"]}",
+   "out": [
+    "Teacher Burnout",
+    "emotional exhaustion"
+   ],
+   "allTicked": true,
+   "none": false
+  },
+  {
+   "id": "mixed-types",
+   "topic": "sleep quality",
+   "reply": "{\"terms\":[1,null,\"sleep hygiene\",{\"a\":1},true,\"\",\"insomnia\"]}",
+   "out": [
+    "sleep hygiene",
+    "object Object",
+    "true",
+    "insomnia"
+   ],
+   "allTicked": true,
+   "none": false
+  },
+  {
+   "id": "too-long",
+   "topic": "loneliness",
+   "reply": "{\"terms\":[\"a phrase that is far longer than forty characters in all\",\"social isolation\",\"ab\",\"a\"]}",
+   "out": [
+    "social isolation",
+    "ab"
+   ],
+   "allTicked": true,
+   "none": false
+  },
+  {
+   "id": "not-an-array",
+   "topic": "screen time",
+   "reply": "{\"terms\":\"digital media use\"}",
+   "out": [],
+   "allTicked": true,
+   "none": true
+  },
+  {
+   "id": "no-json",
+   "topic": "screen time",
+   "reply": "digital media use, smartphone use, technology use",
+   "out": [],
+   "allTicked": true,
+   "none": true
+  },
+  {
+   "id": "empty",
+   "topic": "screen time",
+   "reply": "",
+   "out": [],
+   "allTicked": true,
+   "none": true
+  },
+  {
+   "id": "all-cleaned-away",
+   "topic": "mindfulness",
+   "reply": "{\"terms\":[\"mindfulness\",\" MINDFULNESS \",\"AND\",\"()\"]}",
+   "out": [],
+   "allTicked": true,
+   "none": true
+  },
+  {
+   "id": "topic-trimmed",
+   "topic": "  growth mindset  ",
+   "reply": "{\"terms\":[\"growth mindset\",\"implicit theories of intelligence\",\"fixed mindset\"]}",
+   "out": [
+    "implicit theories of intelligence",
+    "fixed mindset"
+   ],
+   "allTicked": true,
+   "none": false
+  }
+ ],
+ "sorts": [
+  {
+   "ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "mode": "relevance",
+   "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "mode": "citations",
+   "order": [
+    7,
+    0,
+    3,
+    4,
+    6,
+    1,
+    2,
+    5,
+    8,
+    9
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "mode": "year",
+   "order": [
+    7,
+    8,
+    0,
+    4,
+    5,
+    9,
+    6,
+    1,
+    3,
+    2
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "mode": "fit",
+   "order": [
+    0,
+    9,
+    1,
+    7,
+    3,
+    5,
+    6,
+    8,
+    2,
+    4
+   ],
+   "fold": 8
+  },
+  {
+   "ids": [
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    0
+   ],
+   "mode": "relevance",
+   "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    0
+   ],
+   "mode": "citations",
+   "order": [
+    2,
+    9,
+    6,
+    5,
+    3,
+    0,
+    1,
+    4,
+    7,
+    8
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    0
+   ],
+   "mode": "year",
+   "order": [
+    1,
+    2,
+    9,
+    0,
+    4,
+    5,
+    3,
+    8,
+    6,
+    7
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    0
+   ],
+   "mode": "fit",
+   "order": [
+    0,
+    9,
+    2,
+    8,
+    1,
+    3,
+    4,
+    6,
+    7,
+    5
+   ],
+   "fold": 8
+  },
+  {
+   "ids": [
+    2,
+    4
+   ],
+   "mode": "relevance",
+   "order": [
+    0,
+    1
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    2,
+    4
+   ],
+   "mode": "citations",
+   "order": [
+    1,
+    0
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    2,
+    4
+   ],
+   "mode": "year",
+   "order": [
+    1,
+    0
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    2,
+    4
+   ],
+   "mode": "fit",
+   "order": [
+    0,
+    1
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    3,
+    5,
+    8
+   ],
+   "mode": "relevance",
+   "order": [
+    0,
+    1,
+    2
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    3,
+    5,
+    8
+   ],
+   "mode": "citations",
+   "order": [
+    0,
+    1,
+    2
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    3,
+    5,
+    8
+   ],
+   "mode": "year",
+   "order": [
+    2,
+    1,
+    0
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    3,
+    5,
+    8
+   ],
+   "mode": "fit",
+   "order": [
+    0,
+    1,
+    2
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    4,
+    0,
+    2,
+    1
+   ],
+   "mode": "relevance",
+   "order": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    4,
+    0,
+    2,
+    1
+   ],
+   "mode": "citations",
+   "order": [
+    1,
+    0,
+    2,
+    3
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    4,
+    0,
+    2,
+    1
+   ],
+   "mode": "year",
+   "order": [
+    1,
+    0,
+    3,
+    2
+   ],
+   "fold": -1
+  },
+  {
+   "ids": [
+    4,
+    0,
+    2,
+    1
+   ],
+   "mode": "fit",
+   "order": [
+    1,
+    3,
+    2,
+    0
+   ],
+   "fold": 2
+  }
+ ]
+}

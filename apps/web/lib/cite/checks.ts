@@ -39,11 +39,17 @@ export function retractionStatus(lib: CitationEntry[], cache: RetractionCache | 
   return { status, checked: status.filter(Boolean).length, flagged: status.filter((s) => s && s.r).length, noDoi: lib.length - withDoi };
 }
 
+/** retrCacheSet 7567-7570: one DOI's answer, stored without a lookup (Research's "+ Citation library" already knows it, 8478), as an update of the cache. */
+export function retrCacheSet(save: Save<RetractionCache>, doi: string, flag: boolean, now: number): void {
+  const d = retrNormDoi(doi); if (!retrValidDoi(d)) return;
+  save((prev) => ({ ...(prev ?? {}), [d]: { r: !!flag, t: now } }));
+}
+
 export type RetractionDeps = {
   lib: CitationEntry[];
   cache: RetractionCache | null;
   fetch: typeof fetch;
-  /** The OpenAlex key (Task 9's credentials provider `openalex`); none until then. */
+  /** The OpenAlex key (the credential `openalex`, useOpenAlexKey), when the student saved one. */
   oaKey?: string;
   now(): number;
   save: Save<RetractionCache>;

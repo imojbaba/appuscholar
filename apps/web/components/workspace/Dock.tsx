@@ -9,6 +9,7 @@ import { ChatPanel, useChatLog } from "@/components/tools/ChatPanel";
 import { CitePanel } from "@/components/tools/cite/CitePanel";
 import { HelpersPanel } from "@/components/tools/HelpersPanel";
 import { IdeaPanel } from "@/components/tools/IdeaPanel";
+import { ResearchPanel } from "@/components/tools/research/ResearchPanel";
 import { StubPanel } from "@/components/tools/StubPanel";
 import { StageGuide } from "./StageGuide";
 import { useWorkspace } from "./WorkspaceContext";
@@ -108,7 +109,7 @@ export function Dock() {
         ) : (
           <>
             <StageGuide />
-            {activeTool === "idea" ? <IdeaPanel /> : activeTool === "psych" ? <HelpersPanel /> : activeTool === "chat" ? <ChatPanel chat={chat} /> : activeTool === "cite" ? <CitePanel /> : <StubPanel id={activeTool} />}
+            {activeTool === "idea" ? <IdeaPanel /> : activeTool === "psych" ? <HelpersPanel /> : activeTool === "chat" ? <ChatPanel chat={chat} /> : activeTool === "cite" ? <CitePanel /> : activeTool === "research" ? <ResearchPanel /> : <StubPanel id={activeTool} />}
           </>
         )}
       </div>

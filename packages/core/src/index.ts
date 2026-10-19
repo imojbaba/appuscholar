@@ -51,3 +51,5 @@ export { PSYCH_STARTERS } from "./data/classic-sources";
 // Stage 2: Citation Manager one-click capture (Task 8b)
 export { bookmarkletSource, bookmarkletHref, decodeCapture, captureConfirmText, captureRecord, captureIsDuplicate } from "./citcapture";
 export type { CaptureData } from "./citcapture";
+// Stage 2: Research related terms, sort orders and fold (Task 9)
+export { rsParseTerms, rsSortResults, rsFoldIndex } from "./research";

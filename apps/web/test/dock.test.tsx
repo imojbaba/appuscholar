@@ -13,6 +13,7 @@ vi.mock("@/components/tools/IdeaPanel", () => ({ IdeaPanel: () => <div data-test
 vi.mock("@/components/tools/HelpersPanel", () => ({ HelpersPanel: () => <div data-testid="panel-psych" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ ChatPanel: () => <div data-testid="panel-chat" />, useChatLog: () => ({}) }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
+vi.mock("@/components/tools/research/ResearchPanel", () => ({ ResearchPanel: () => <div data-testid="panel-research" /> }));
 vi.mock("@/components/tools/StubPanel", () => ({ StubPanel: ({ id }: { id: string }) => <div data-testid={"stub-" + id} /> }));
 
 import { Dock } from "../components/workspace/Dock";
@@ -32,7 +33,7 @@ afterEach(() => { act(() => root?.unmount()); root = null; document.body.innerHT
 
 describe("Dock: which panel a tool mounts", () => {
   it.each([
-    ["psych", "panel-psych"], ["idea", "panel-idea"], ["chat", "panel-chat"], ["cite", "panel-cite"], ["research", "stub-research"]
+    ["psych", "panel-psych"], ["idea", "panel-idea"], ["chat", "panel-chat"], ["cite", "panel-cite"], ["research", "panel-research"], ["analyse", "stub-analyse"]
   ])("%s mounts %s", (tool, testid) => {
     expect(render(tool)).toEqual([testid]);
   });
