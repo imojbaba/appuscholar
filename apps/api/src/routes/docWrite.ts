@@ -38,13 +38,27 @@ export async function resolveWrite(store: Store, userId: string, deks: WrappedDe
     return { ok: true, bodyHtml: clean, keyVersion: 0, wordCount: wordCount(clean), originStats: originCount(clean) };
   }
   if (b.wordCount === undefined || b.originStats === undefined) return { ok: false, status: 400, error: "invalid" };
-  if (!CIPHERTEXT.test(b.bodyHtml)) return { ok: false, status: 400, error: "invalid" };
+  const sealed = checkSealed(deks, b.bodyHtml, b.keyVersion, b.dek);
+  if (!sealed.ok) return sealed;
+  return { ok: true, bodyHtml: b.bodyHtml, keyVersion: b.keyVersion, wordCount: b.wordCount, originStats: b.originStats, addDek: sealed.addDek };
+}
+
+export type SealedCheck =
+  | { ok: false; status: 400 | 409; error: "invalid" | "unknown-key-version" | "dek-exists" }
+  | { ok: true; addDek?: WrappedDek };
+
+/**
+ * The rules for a body that claims key version 1 or more, shared by documents and project blobs: it must have the sealed shape, and its
+ * version's dek must be known or arrive with it. `addDek` is the dek to store first (absent when that wrap is already there).
+ */
+export function checkSealed(deks: WrappedDek[], body: string, keyVersion: number, dek?: WrappedDek): SealedCheck {
+  if (!CIPHERTEXT.test(body)) return { ok: false, status: 400, error: "invalid" };
   // A dek that arrives with a write is the key for this write's version; an unrelated one is refused, not stored.
-  if (b.dek && b.dek.v !== b.keyVersion) return { ok: false, status: 400, error: "invalid" };
-  const known = deks.find((k) => k.v === b.keyVersion);
-  if (!known && b.dek?.v !== b.keyVersion) return { ok: false, status: 400, error: "unknown-key-version" };
-  const clash = b.dek ? deks.find((k) => k.v === b.dek!.v) : undefined;
+  if (dek && dek.v !== keyVersion) return { ok: false, status: 400, error: "invalid" };
+  const known = deks.find((k) => k.v === keyVersion);
+  if (!known && dek?.v !== keyVersion) return { ok: false, status: 400, error: "unknown-key-version" };
+  const clash = dek ? deks.find((k) => k.v === dek.v) : undefined;
   // A retried write carries the same dek again: that is not an error, a different wrapping for the same version is.
-  if (clash && clash.wrapped !== b.dek!.wrapped) return { ok: false, status: 409, error: "dek-exists" };
-  return { ok: true, bodyHtml: b.bodyHtml, keyVersion: b.keyVersion, wordCount: b.wordCount, originStats: b.originStats, addDek: b.dek && !clash ? b.dek : undefined };
+  if (clash && clash.wrapped !== dek!.wrapped) return { ok: false, status: 409, error: "dek-exists" };
+  return { ok: true, addDek: dek && !clash ? dek : undefined };
 }

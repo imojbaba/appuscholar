@@ -5,7 +5,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
-import { db, users, accounts, sessions, verificationTokens, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, type Db } from "@appuscholar/db";
+import { db, users, accounts, sessions, verificationTokens, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, projectBlobs, type Db } from "@appuscholar/db";
 import * as schema from "../../../packages/db/src/schema";
 import { storeContract } from "./store.contract";
 import { DrizzleStore, isUniqueViolation } from "../src/store/drizzle";
@@ -49,7 +49,7 @@ async function hitCounts(d: Db, cols: Column[], needles: string[]): Promise<Reco
   }
   return out;
 }
-const USER_TABLES = ["users", "accounts", "sessions", "verification_tokens", "projects", "documents", "document_revisions", "credentials", "ai_use_log", "vault_keys", "audit_log"];
+const USER_TABLES = ["users", "accounts", "sessions", "verification_tokens", "projects", "documents", "document_revisions", "credentials", "ai_use_log", "vault_keys", "audit_log", "project_blobs"];
 
 storeContract("drizzle", async () => {
   const { store, users: u } = await makeEnv();
@@ -106,6 +106,18 @@ if (!url) {
       expect(isUniqueViolation(new Error("Failed query", { cause: { code: "23505" } }))).toBe(true);
       expect(isUniqueViolation(new Error("x"))).toBe(false);
       expect(isUniqueViolation(null)).toBe(false);
+    });
+
+    it("deleting a project removes its blob rows by cascade", async () => {
+      const { d, store, users: u } = await makeEnv();
+      const p = await store.createProject(u.a, "Sleep");
+      const keep = await store.createProject(u.a, "Keep");
+      await store.putBlob(u.a, p.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      await store.putBlob(u.a, p.id, "shelf_paper:x1", { body: "{}", keyVersion: 0 });
+      await store.putBlob(u.a, keep.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      expect(await d.select().from(projectBlobs)).toHaveLength(3);
+      expect(await store.deleteProject(u.a, p.id)).toBe(true);
+      expect((await d.select().from(projectBlobs)).map((r) => r.projectId)).toEqual([keep.id]);
     });
 
     it("tolerates an orphan document without revisions", async () => {
@@ -168,6 +180,13 @@ if (!url) {
       const put = await req("PUT", `/documents/${doc.id}`, { bodyHtml: body, keyVersion: 1, wordCount: 4, originStats: stats, dek: { v: 1, wrapped } });
       expect(put.status).toBe(200);
 
+      // A stage blob (the idea intake, say) sealed the same way, under its own key: the server stores it as it came.
+      const blobDek = await aesKey();
+      const blobBody = await seal(blobDek, new TextEncoder().encode(JSON.stringify({ question: SENTENCE })));
+      const blobWrapped = await seal(vk, new Uint8Array(await crypto.subtle.exportKey("raw", blobDek)));
+      const blobPut = await req("PUT", `/projects/${project.id}/blobs/idea_intake`, { body: blobBody, keyVersion: 1, dek: { v: 1, wrapped: blobWrapped } });
+      expect(blobPut.status).toBe(200);
+
       // Every column of every table, read as text.
       const cols = await allColumns(d);
       const hitsFor = async (needle: string) => Object.keys(await hitCounts(d, cols, [needle]));
@@ -178,6 +197,8 @@ if (!url) {
       // The scan does read the stored body: the ciphertext itself is found where it was written, and nowhere else.
       expect(await hitsFor(body)).toEqual(["document_revisions.body_html"]);
       expect(await hitsFor(wrapped)).toEqual(["documents.deks"]);
+      expect(await hitsFor(blobBody)).toEqual(["project_blobs.body"]);
+      expect(await hitsFor(blobWrapped)).toEqual(["project_blobs.deks"]);
 
       const revisions = await d.select().from(documentRevisions).orderBy(documentRevisions.seq);
       expect(revisions.map((r) => ({ documentId: r.documentId, seq: r.seq, keyVersion: r.keyVersion, bodyHtml: r.bodyHtml, wordCount: r.wordCount }))).toEqual([
@@ -203,6 +224,7 @@ if (!url) {
       await store.putCredential(id, "groq", "s.i.c");
       await store.appendAiUse(id, p.id, { d: "2026-10-16", p: "groq", m: "llama", k: "rewrite", g: "text" });
       await store.putVault(id, { passWrapped: "s.i.p", recoveryWrapped: "s.i.r", checkWrapped: "i.c", publicKey: null, privateKeyWrapped: null });
+      await store.putBlob(id, p.id, "idea_intake", { body: "{}", keyVersion: 0 });
       await store.appendAudit(id, "export");
       // Every user-identifying value of this user: its id and email, and the ids of the rows that hang off it.
       return [id, email, p.id, doc.id];
@@ -237,6 +259,7 @@ if (!url) {
       }
       expect(await d.select().from(documents)).not.toHaveLength(0);
       expect(await d.select().from(documentRevisions)).not.toHaveLength(0);
+      expect(await d.select().from(projectBlobs)).toHaveLength(1);
     });
   });
 }

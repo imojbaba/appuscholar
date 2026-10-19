@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql, type SQL } from "drizzle-orm";
-import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek } from "./types";
+import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, projectBlobs, type Db } from "@appuscholar/db";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
 import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError } from "./types";
 
 const APPEND_RETRIES = 2;
@@ -12,6 +12,9 @@ export function isUniqueViolation(err: unknown): boolean {
   }
   return false;
 }
+
+/** Code-unit order, the same on every database collation and in the memory store. */
+const byKind = (x: { kind: string }, y: { kind: string }) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0);
 
 export class DrizzleStore implements Store {
   constructor(private d: Db) {}
@@ -27,6 +30,22 @@ export class DrizzleStore implements Store {
   }
   private toRev(r: typeof documentRevisions.$inferSelect): DocumentRevision {
     return { id: r.id, documentId: r.documentId, seq: r.seq, bodyHtml: r.bodyHtml, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, keyVersion: r.keyVersion, createdAt: r.createdAt };
+  }
+  private toBlob(b: typeof projectBlobs.$inferSelect): ProjectBlob {
+    return { id: b.id, projectId: b.projectId, kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: b.deks, updatedAt: b.updatedAt };
+  }
+  /**
+   * For one statement on the stored row: `ok` holds unless the row has another wrap for `dek.v` (the write is then refused), and `deks` is the
+   * row's deks with `dek` appended when its `v` is new. Both read the row being written, so a concurrent add of the same `v` cannot slip in.
+   */
+  private dekSql(dek?: WrappedDek): { ok: SQL | undefined; deks: SQL | undefined } {
+    if (!dek) return { ok: undefined, deks: undefined };
+    const has = (cond: SQL) => sql`exists (select 1 from jsonb_array_elements(${projectBlobs.deks}) e where (e->>'v')::int = ${dek.v} and ${cond})`;
+    const entry = JSON.stringify([{ v: dek.v, wrapped: dek.wrapped }]);
+    return {
+      ok: sql`not ${has(sql`e->>'wrapped' <> ${dek.wrapped}`)}`,
+      deks: sql`case when ${has(sql`true`)} then ${projectBlobs.deks} else ${projectBlobs.deks} || ${entry}::jsonb end`
+    };
   }
   private toVault(v: typeof vaultKeys.$inferSelect): VaultRecord {
     return { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, checkWrapped: v.checkWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: v.complete, updatedAt: v.updatedAt };
@@ -259,7 +278,10 @@ export class DrizzleStore implements Store {
       .innerJoin(documents, eq(documents.id, documentRevisions.documentId))
       .innerJoin(projects, eq(projects.id, documents.projectId))
       .where(and(eq(projects.userId, userId), eq(documentRevisions.keyVersion, 0)));
-    return Number(row?.n ?? 0);
+    const [blobs] = await this.d.select({ n: count() }).from(projectBlobs)
+      .innerJoin(projects, eq(projects.id, projectBlobs.projectId))
+      .where(and(eq(projects.userId, userId), eq(projectBlobs.keyVersion, 0)));
+    return Number(row?.n ?? 0) + Number(blobs?.n ?? 0);
   }
   async markVaultComplete(userId: string): Promise<boolean> {
     const rows = await this.d.update(vaultKeys).set({ complete: true, updatedAt: this.nextStamp() }).where(eq(vaultKeys.userId, userId)).returning({ userId: vaultKeys.userId });
@@ -285,6 +307,49 @@ export class DrizzleStore implements Store {
     if (!rows[0]) return null;
     const r = rows[0];
     return { id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind as AuthorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: (r.originStats as OriginStats | null) ?? null, keyVersion: r.keyVersion, createdAt: r.createdAt };
+  }
+
+  async getBlob(userId: string, projectId: string, kind: string): Promise<ProjectBlob | null> {
+    const rows = await this.d.select({ blob: projectBlobs }).from(projectBlobs).innerJoin(projects, eq(projects.id, projectBlobs.projectId))
+      .where(and(eq(projectBlobs.projectId, projectId), eq(projectBlobs.kind, kind), eq(projects.userId, userId))).limit(1);
+    return rows[0] ? this.toBlob(rows[0].blob) : null;
+  }
+  async putBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {
+    if (!(await this.getProject(userId, projectId))) return null;
+    const dek = this.dekSql(w.dek);
+    // One upsert: the (project_id, kind) unique index makes a second put an update, and the dek rule is checked on the row it updates.
+    // Stamped here, to the millisecond, and always after the stored stamp, so two puts within a millisecond stay ordered.
+    const rows = await this.d.insert(projectBlobs)
+      .values({ projectId, kind, body: w.body, keyVersion: w.keyVersion, deks: w.dek ? [{ v: w.dek.v, wrapped: w.dek.wrapped }] : [], updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [projectBlobs.projectId, projectBlobs.kind],
+        set: {
+          body: sql`excluded.body`, keyVersion: sql`excluded.key_version`,
+          updatedAt: sql`greatest(excluded.updated_at, date_trunc('milliseconds', ${projectBlobs.updatedAt}) + interval '1 millisecond')`,
+          ...(dek.deks ? { deks: dek.deks } : {})
+        },
+        setWhere: dek.ok
+      })
+      .returning();
+    if (!rows[0]) throw new DekExistsError(w.dek!.v);
+    return this.toBlob(rows[0]);
+  }
+  async listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null> {
+    if (!(await this.getProject(userId, projectId))) return null;
+    const rows = await this.d.select({ kind: projectBlobs.kind, keyVersion: projectBlobs.keyVersion, updatedAt: projectBlobs.updatedAt }).from(projectBlobs).where(eq(projectBlobs.projectId, projectId));
+    return rows.sort(byKind);
+  }
+  async rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {
+    if (!(await this.getProject(userId, projectId))) return null;
+    const dek = this.dekSql(w.dek);
+    const rows = await this.d.update(projectBlobs)
+      .set({ body: w.body, keyVersion: w.keyVersion, ...(dek.deks ? { deks: dek.deks } : {}) })
+      .where(and(eq(projectBlobs.projectId, projectId), eq(projectBlobs.kind, kind), dek.ok))
+      .returning();
+    if (rows[0]) return this.toBlob(rows[0]);
+    // Nothing updated: either there is no such blob, or the dek rule refused the write.
+    if (w.dek && (await this.getBlob(userId, projectId, kind))) throw new DekExistsError(w.dek.v);
+    return null;
   }
 
   async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {

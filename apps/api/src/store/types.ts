@@ -26,6 +26,15 @@ export type RevisionSummary = Omit<DocumentRevision, "bodyHtml">;
 /** keyVersion 0 means bodyHtml is plaintext HTML; 1 or more means it is a ciphertext blob the server cannot read. */
 export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion: number };
 
+/**
+ * A stage panel's data for one project: one body per (project, kind). keyVersion 0 is plaintext JSON (only while the user has no vault);
+ * 1 or more is ciphertext under the dek with that `v`, which the server stores and never opens.
+ */
+export type ProjectBlob = { id: string; projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: Date };
+export type BlobSummary = { kind: string; keyVersion: number; updatedAt: Date };
+/** `dek` is added to the blob's deks when its `v` is new; the same wrap again is a no-op, another wrap for a known `v` is DekExistsError. */
+export type BlobWrite = { body: string; keyVersion: number; dek?: WrappedDek };
+
 export type NewRevision = { bodyHtml: string; authorKind: AuthorKind; authorLabel: string; wordCount: number; originStats?: OriginStats; keyVersion: number };
 
 /**
@@ -52,7 +61,7 @@ export class VaultKeypairExistsError extends Error {
   constructor() { super("vault keypair already set"); this.name = "VaultKeypairExistsError"; }
 }
 
-/** Thrown by addDek when the document already has a data key with the same `v`. */
+/** Thrown by addDek when the document already has a data key with the same `v`, and by putBlob/rewriteBlob when the blob has another wrap for that `v`. */
 export class DekExistsError extends Error {
   constructor(v: number) { super(`dek v${v} already exists`); this.name = "DekExistsError"; }
 }
@@ -114,7 +123,10 @@ export interface Store {
   updateVaultWraps(userId: string, patch: VaultWrapsPatch, opts?: { expectUpdatedAt?: Date }): Promise<VaultRecord | null>;
   /** False if the user has no vault record. */
   markVaultComplete(userId: string): Promise<boolean>;
-  /** Revisions with keyVersion 0 in any of the user's documents, soft-deleted ones included: the vault completes only at 0. */
+  /**
+   * Revisions with keyVersion 0 in any of the user's documents, soft-deleted ones included, plus blobs with keyVersion 0 in any of the user's
+   * projects (the scratch project included): the vault completes only at 0.
+   */
   countPlaintextRevisions(userId: string): Promise<number>;
 
   /** Attaches a wrapped data key to a document, soft-deleted ones included. Throws DekExistsError if a dek with the same `v` already exists. Null if the document is not the user's. */
@@ -126,9 +138,24 @@ export interface Store {
    */
   rewriteRevision(userId: string, documentId: string, seq: number, patch: { bodyHtml: string; keyVersion: number; originStats?: OriginStats }): Promise<RevisionSummary | null>;
 
+  /** Null if there is none, or the project is not the user's. */
+  getBlob(userId: string, projectId: string, kind: string): Promise<ProjectBlob | null>;
+  /**
+   * Creates the (project, kind) blob or replaces its body and key version, adding `dek` in the same step when its `v` is new.
+   * Null if the project is not the user's. Throws DekExistsError (and writes nothing) when the blob already has another wrap for `dek.v`.
+   */
+  putBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null>;
+  /** The project's blobs without their bodies, by kind. Null if the project is not the user's. */
+  listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null>;
+  /**
+   * Migration only: replaces an existing blob's body and key version, adding `dek` as putBlob does (a plaintext blob has none yet), and
+   * leaves updatedAt as it was. Null if the blob does not exist or the project is not the user's. DekExistsError as putBlob.
+   */
+  rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null>;
+
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;
   /** Oldest first. */
   listAudit(userId: string): Promise<AuditEntry[]>;
-  /** Deletes credentials, ai_use_log, vault_keys, verification tokens for the user's email, projects (with their documents and revisions) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
+  /** Deletes credentials, ai_use_log, vault_keys, verification tokens for the user's email, projects (with their documents, revisions and blobs) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
   eraseUser(userId: string): Promise<boolean>;
 }

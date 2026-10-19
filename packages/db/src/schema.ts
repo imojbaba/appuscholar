@@ -78,6 +78,21 @@ export const documentRevisions = pgTable("document_revisions", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [uniqueIndex("revisions_doc_seq_idx").on(t.documentId, t.seq)]);
 
+/**
+ * One body per (project, kind) for a stage panel's data (the idea intake, the citation library, caches, shelf text, paper notes). Sealed in
+ * the browser like a document's revisions: key_version 0 is plaintext JSON (only while the user has no vault), 1 or more is ciphertext under
+ * one of `deks`, which the server stores and never opens.
+ */
+export const projectBlobs = pgTable("project_blobs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(),
+  body: text("body").notNull(),
+  keyVersion: integer("key_version").notNull().default(0),
+  deks: jsonb("deks").$type<{ v: number; wrapped: string }[]>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
+}, (t) => [uniqueIndex("project_blobs_project_kind_idx").on(t.projectId, t.kind), index("project_blobs_project_idx").on(t.projectId)]);
+
 export const credentials = pgTable("credentials", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   provider: text("provider").notNull(),
@@ -123,3 +138,4 @@ export const auditLog = pgTable("audit_log", {
 export type Project = typeof projects.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentRevision = typeof documentRevisions.$inferSelect;
+export type ProjectBlobRow = typeof projectBlobs.$inferSelect;
