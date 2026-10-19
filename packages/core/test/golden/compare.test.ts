@@ -47,10 +47,12 @@ describe("exact mode, on the capturing platform: every number by Object.is", () 
     fails(0.0469030554839327, 0.04690305548393272, "$", "exact");
     fails(0.0000035044982100522786, 0.0000035044982100522727, "$", "exact");
   });
-  it("NaN meets NaN; −0 and 0 differ, as do 0 and 1e-301; strings and structure as in the tolerant mode", () => {
+  it("NaN meets NaN; −0 and 0 differ, as do 0 and 1e-301, 0 and 5e-14, and a p of 7.5e-5 and 5e-14 more; strings and structure as in the tolerant mode", () => {
     passes(NaN, NaN, "exact");
     fails(-0, 0, "$", "exact");
     fails(1e-301, 0, "$", "exact");
+    fails(5e-14, 0, "$", "exact");
+    fails(7.518906336889675e-5 + 5e-14, 7.518906336889675e-5, "$", "exact");
     passes({ judged: [{ status: "ok", note: "", pHi: p }] }, { judged: [{ status: "ok", note: "", pHi: p }] }, "exact");
     fails({ judged: [{ status: "ok", note: "", pHi: ulpUp(p) }] }, { judged: [{ status: "ok", note: "", pHi: p }] }, "$.judged[0].pHi", "exact");
     fails({ judged: [{ status: "warn", note: "", pHi: p }] }, { judged: [{ status: "ok", note: "", pHi: p }] }, "$.judged[0].status", "exact");
@@ -65,7 +67,7 @@ describe("exact mode, on the capturing platform: every number by Object.is", () 
   });
 });
 
-describe("tolerant mode, anywhere else: computed numbers within a relative 1e-12, everything else exact", () => {
+describe("tolerant mode, anywhere else: computed numbers within a relative 1e-12 or an absolute 1e-13, everything else exact", () => {
   it("a value one ULP away is accepted; a relative difference of 1e-13 passes, one of 1e-11 fails", () => {
     passes(ulpUp(p), p);
     passes(p * (1 + 1e-13), p);
@@ -102,12 +104,20 @@ describe("tolerant mode, anywhere else: computed numbers within a relative 1e-12
     fails(Infinity, Number.MAX_VALUE);
     fails(-Infinity, Infinity);
   });
-  it("0 vs 1e-301 passes, 0 vs 1e-299 fails: the absolute floor is 1e-300, so an exact zero (F5) stays exact", () => {
-    passes(0, 1e-301);
-    passes(1e-301, 0);
-    fails(0, 1e-299);
-    fails(1e-299, 0);
-    fails(1.1102230246251565e-16, 0); // 1 - betai one step below 1
+  it("a complement probability may also differ by an absolute 1e-13: 5e-14 off a p of 7.5e-5 (6.7e-10 relative) passes, 5e-13 off fails", () => {
+    const tail = 7.518906336889675e-5; // stkGamesHowell's p at 9264, 1 - stkPtukey, as the darwin arm64 fixture holds it
+    passes(tail + 5e-14, tail);
+    passes(tail - 5e-14, tail);
+    passes(tail + 3.5e-15, tail); // what CI run 39261262089 on Node 22 x64 computed: 4.6e-11 relative
+    fails(tail + 5e-13, tail);
+    fails(tail - 5e-13, tail);
+  });
+  it("an exact zero (F5) meets a number within 1e-13 and nothing larger: 0 vs 5e-14 passes, 0 vs 5e-13 fails", () => {
+    passes(0, 5e-14);
+    passes(5e-14, 0);
+    passes(1.1102230246251565e-16, 0); // 1 - betai one step below 1
+    fails(0, 5e-13);
+    fails(5e-13, 0);
   });
   it("a missing key fails, and so does an extra one; a key whose value is undefined counts as absent, as it does in a fixture", () => {
     fails({ status: "ok" }, { status: "ok", note: "" });
