@@ -156,10 +156,15 @@ describe("Research: the form (v1 950-965)", () => {
     expect(tid("rs-sort-row")).toBeNull();
   });
 
-  it("the Reading shelf button says it arrives in the next task", async () => {
+  it("the Reading shelf button opens the shelf on its Papers tab (shOpen 11601), and reads the project's shelf blobs", async () => {
     await mount();
+    expect(tid("shelf-dialog")).toBeNull();
     await click(tid("rs-shelf"));
-    expect(toasts()).toEqual(["Reading shelf arrives in the next task."]);
+    expect(toasts()).toEqual([]);
+    expect(tid("shelf-dialog")!.querySelector("h2")!.textContent).toBe(E.sh2_reading_shelf);
+    expect(tid("sh-tab-papers")!.getAttribute("aria-selected")).toBe("true");
+    expect(h.blobArgs.some((a) => a[0] === "shelf_index" && a[1] === "p-1")).toBe(true);
+    expect(h.blobArgs.some((a) => a[0] === "shelf_cols" && a[1] === "p-1")).toBe(true);
   });
 
   it("an empty topic toasts v1's sentence; symbols alone write it in the status", async () => {

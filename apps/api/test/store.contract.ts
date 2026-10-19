@@ -483,6 +483,22 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.countPlaintextRevisions(a)).toBe(0);
     });
 
+    it("deleteBlob removes one (project, kind) blob: true once, then false; owner-scoped; other kinds stay", async () => {
+      const p = await s.createProject(a, "P");
+      await s.putBlob(a, p.id, "shelf_paper:p1", { body: '{"pages":[]}', keyVersion: 0 });
+      await s.putBlob(a, p.id, "shelf_cols", { body: "[]", keyVersion: 0 });
+      expect(await s.deleteBlob(b, p.id, "shelf_paper:p1")).toBe(false);
+      expect(await s.getBlob(a, p.id, "shelf_paper:p1")).not.toBeNull();
+      expect(await s.deleteBlob(a, p.id, "shelf_paper:p1")).toBe(true);
+      expect(await s.getBlob(a, p.id, "shelf_paper:p1")).toBeNull();
+      expect(await s.deleteBlob(a, p.id, "shelf_paper:p1")).toBe(false);
+      expect(await s.deleteBlob(a, "no-such-project", "shelf_cols")).toBe(false);
+      expect((await s.listBlobs(a, p.id))!.map((x) => x.kind)).toEqual(["shelf_cols"]);
+      expect(await s.countPlaintextRevisions(a)).toBe(1);
+      // A deleted kind can be written again.
+      expect((await s.putBlob(a, p.id, "shelf_paper:p1", { body: "{}", keyVersion: 0 }))!.body).toBe("{}");
+    });
+
     it("blobs work on the scratch project, and go with their project when it is deleted", async () => {
       const scratch = await s.getScratchProject(a);
       expect((await s.putBlob(a, scratch.id, "shelf_index", { body: "[]", keyVersion: 0 }))!.projectId).toBe(scratch.id);

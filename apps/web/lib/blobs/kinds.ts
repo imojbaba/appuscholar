@@ -5,7 +5,7 @@ import type { CitationEntry, RcCheck } from "@appuscholar/core";
  * The stage panels' blob kinds, one blob per kind per project, as the api lists them (apps/api/src/routes/blobWrite.ts BLOB_KINDS and
  * SHELF_PAPER_KIND): keep the strings exactly as they are there.
  */
-export const BLOB_KINDS = ["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs"] as const;
+export const BLOB_KINDS = ["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols"] as const;
 export type FixedBlobKind = (typeof BLOB_KINDS)[number];
 /** One shelf paper's extracted text: `shelf_paper:<id>`, the id 1 to 64 characters of [A-Za-z0-9_-]. */
 export type ShelfPaperKind = `shelf_paper:${string}`;
@@ -63,6 +63,8 @@ const ApNoteSchema = z.looseObject({
 const ApNotesSchema = z.record(str, ApNoteSchema);
 /** The shelf matrix's column names. */
 const ApColsSchema = z.array(str);
+/** The Reading shelf matrix's column names (v1 appu_shelf_cols, 11697; ruling R14). An empty list means the default columns, as v1's shCols reads it. */
+const ShelfColsSchema = z.array(str);
 /** Research panel preferences: "Rank by fit to my question". */
 const RsPrefsSchema = z.looseObject({ rank: z.boolean() });
 
@@ -76,6 +78,7 @@ export type ShelfPaper = z.infer<typeof ShelfPaperSchema>;
 export type ApNotes = z.infer<typeof ApNotesSchema>;
 export type ApCols = z.infer<typeof ApColsSchema>;
 export type RsPrefs = z.infer<typeof RsPrefsSchema>;
+export type ShelfCols = z.infer<typeof ShelfColsSchema>;
 
 type FixedShapes = {
   idea_intake: IdeaIntake;
@@ -86,6 +89,7 @@ type FixedShapes = {
   ap_notes: ApNotes;
   ap_cols: ApCols;
   rs_prefs: RsPrefs;
+  shelf_cols: ShelfCols;
 };
 /** What a blob of kind K holds. */
 export type BlobShape<K extends BlobKind> = K extends FixedBlobKind ? FixedShapes[K] : ShelfPaper;
@@ -98,7 +102,8 @@ const SCHEMAS: Record<FixedBlobKind, z.ZodType> = {
   shelf_index: ShelfIndexSchema,
   ap_notes: ApNotesSchema,
   ap_cols: ApColsSchema,
-  rs_prefs: RsPrefsSchema
+  rs_prefs: RsPrefsSchema,
+  shelf_cols: ShelfColsSchema
 };
 const schemaOf = (kind: BlobKind): z.ZodType | null =>
   (BLOB_KINDS as readonly string[]).includes(kind) ? SCHEMAS[kind as FixedBlobKind] : SHELF_PAPER_KIND.test(kind) ? ShelfPaperSchema : null;

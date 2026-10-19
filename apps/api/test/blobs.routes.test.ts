@@ -33,7 +33,7 @@ describe("blob routes", () => {
   const blob = (kind: string, p = pid) => `/projects/${p}/blobs/${kind}`;
 
   it("kinds: the fixed list, and shelf_paper:<id> with a 1-64 character [A-Za-z0-9_-] id", () => {
-    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs"]);
+    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols"]);
     for (const k of [...BLOB_KINDS, "shelf_paper:a", "shelf_paper:" + "x".repeat(64), "shelf_paper:A-b_9"]) expect(isBlobKind(k), k).toBe(true);
     for (const k of ["", "notes", "IDEA_INTAKE", "shelf_paper:", "shelf_paper:" + "x".repeat(65), "shelf_paper:a.b", "shelf_paper:a b", "shelf_paper:a/b", "shelf_paper", "idea_intake:x"]) expect(isBlobKind(k), k).toBe(false);
   });
@@ -178,6 +178,40 @@ describe("blob routes", () => {
     expect((await json(await req("GET", blob("idea_intake")))).body).toBe(ct("a.b"));
     // After completion the ordinary write path still takes ciphertext.
     expect((await req("PUT", blob("idea_intake"), { body: ct("g.h"), keyVersion: 1 })).status).toBe(200);
+  });
+
+  it("shelf_cols (the Reading shelf's matrix columns, ruling R14) round-trips as a fixed kind", async () => {
+    expect((await req("PUT", blob("shelf_cols"), { body: '["Sample","Method"]', keyVersion: 0 })).status).toBe(200);
+    expect(await json(await req("GET", blob("shelf_cols")))).toMatchObject({ kind: "shelf_cols", body: '["Sample","Method"]', keyVersion: 0 });
+    expect((await req("GET", blob("shelf_cols:x"))).status).toBe(400);
+  });
+
+  it("DELETE removes one blob (204), then answers 404; the project's other blobs stay", async () => {
+    await req("PUT", blob("shelf_paper:p1"), { body: '{"pages":[]}', keyVersion: 0 });
+    await req("PUT", blob("shelf_index"), { body: "[]", keyVersion: 0 });
+    const del = await req("DELETE", blob("shelf_paper:p1"));
+    expect(del.status).toBe(204);
+    expect((await req("GET", blob("shelf_paper:p1"))).status).toBe(404);
+    expect((await json(await req("GET", `/projects/${pid}/blobs`))).map((x: { kind: string }) => x.kind)).toEqual(["shelf_index"]);
+    const again = await req("DELETE", blob("shelf_paper:p1"));
+    expect(again.status).toBe(404);
+    expect(await json(again)).toEqual({ error: "not-found" });
+    expect(await store.countPlaintextRevisions("u1")).toBe(1);
+  });
+
+  it("DELETE answers 404 for another user's project or a missing one, 400 for a bad kind, 401 without a token", async () => {
+    await req("PUT", blob("citations"), { body: "[]", keyVersion: 0 });
+    const other = await as("u2", "DELETE", blob("citations"));
+    expect(other.status).toBe(404);
+    expect(await json(other)).toEqual({ error: "not-found" });
+    expect((await req("DELETE", blob("citations", "nope"))).status).toBe(404);
+    for (const k of ["notes", "shelf_paper:", "shelf_paper:a.b"]) {
+      const r = await req("DELETE", blob(k));
+      expect(r.status, k).toBe(400);
+      expect(await json(r)).toEqual({ error: "invalid" });
+    }
+    expect((await app.request(blob("citations"), { method: "DELETE" })).status).toBe(401);
+    expect((await json(await req("GET", blob("citations")))).body).toBe("[]");
   });
 
   it("deleting the project takes its blobs", async () => {

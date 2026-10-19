@@ -58,6 +58,14 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
     }
   });
 
+  /** Deletes the blob: 204, or 404 when there is none (a Reading shelf paper removed from the shelf takes its text with it). */
+  r.delete("/:id/blobs/:kind", async (c) => {
+    if (!(await owned(c))) return c.json({ error: "not-found" }, 404);
+    const kind = c.req.param("kind");
+    if (!isBlobKind(kind)) return c.json({ error: "invalid" }, 400);
+    return (await store.deleteBlob(c.get("userId"), c.req.param("id"), kind)) ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
+  });
+
   /**
    * Migration only: replaces an existing blob's body with its ciphertext, adding the dek in the same step (a plaintext blob has none yet).
    * Closed once the vault is complete.

@@ -478,3 +478,34 @@
 .connected-list { margin-top: 8px; padding-left: 2px; }
 .connected-list .paper-card { margin-bottom: 6px; }
 .connected-list .paper-card b { font-size: 12.5px; }
+
+/* Reading shelf (v1 shelfDlg 1247-1254 and the sh* renderers 11607-11703) */
+.sh-dlg { max-height: 90vh; overflow-y: auto; }
+.sh-dlg .sh-desc { font-size: 13px; color: var(--muted); margin: 0; }
+.sh-body { max-height: 64vh; overflow: auto; padding-right: 4px; }
+.sh-row { display: flex; gap: 6px; margin-top: 6px; }
+.sh-row.sh-wrap { flex-wrap: wrap; }
+.sh-row.sh-center { align-items: center; }
+.sh-grow { flex: 1; }
+.sh-wide { width: 100%; }
+.sh-text { font-size: 13.5px; }
+.sh-intro { margin: 0 0 6px; }
+.sh-small { font-size: 12.5px; margin: 6px 0; }
+.sh-muted { color: var(--muted); }
+.sh-status { font-size: 13px; margin: 6px 0; }
+.sh-paper, .sh-card { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+.sh-paper .sh-title { width: 100%; font-weight: 700; }
+.sh-card-head { font-weight: 700; font-size: 13.5px; }
+.sh-card-head .sh-muted { font-weight: 400; }
+.sh-snippet { font-size: 13px; line-height: 1.55; margin: 4px 0; }
+.sh-page { white-space: pre-wrap; font-size: 14px; line-height: 1.65; border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin: 8px 0; user-select: text; }
+.sh-pg { width: 64px; display: inline-block; }
+.sh-h3 { margin: 12px 0 4px; font-size: 14px; }
+.sh-hl { border-left: 3px solid #d97706; padding: 2px 8px; margin: 6px 0; font-size: 13px; }
+.sh-ai { margin-top: 8px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+.sh-matrix { overflow: auto; margin-top: 8px; }
+.sh-matrix table { border-collapse: collapse; font-size: 13px; width: 100%; }
+.sh-matrix th { text-align: left; padding: 4px; }
+.sh-matrix td { vertical-align: top; padding: 4px; }
+.sh-matrix td textarea { width: 100%; min-width: 130px; }
+.sh-matrix .sh-matrix-title { font-weight: 700; min-width: 140px; }

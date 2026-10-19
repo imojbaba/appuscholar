@@ -295,6 +295,11 @@ export class MemoryStore implements Store {
     return this.blobCopy(b);
   }
 
+  async deleteBlob(userId: string, projectId: string, kind: string): Promise<boolean> {
+    if (!this.ownsProject(userId, projectId)) return false;
+    return this.blobs.delete(projectId + "\n" + kind);
+  }
+
   async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {
     this.audit.push({ userId, action, target: target ?? null, at: new Date() });
   }

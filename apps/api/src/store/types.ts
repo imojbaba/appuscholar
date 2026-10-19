@@ -152,6 +152,8 @@ export interface Store {
    * leaves updatedAt as it was. Null if the blob does not exist or the project is not the user's. DekExistsError as putBlob.
    */
   rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null>;
+  /** Deletes the (project, kind) blob (a Reading shelf paper removed from the shelf). False if there is none or the project is not the user's. */
+  deleteBlob(userId: string, projectId: string, kind: string): Promise<boolean>;
 
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;
   /** Oldest first. */

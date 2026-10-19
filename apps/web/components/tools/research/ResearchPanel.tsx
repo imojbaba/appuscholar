@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fieldLabel, rsFoldIndex, type Formatted, type RsPaper } from "@appuscholar/core";
 import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -17,6 +17,7 @@ import { applyQuick, filterVals, getResearch, setResearch, shownResults, SORT_OP
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { ShelfDialog } from "@/components/tools/shelf/ShelfDialog";
 import { Connected } from "./Connected";
 import { External } from "./External";
 import { Filters } from "./Filters";
@@ -25,8 +26,6 @@ import { ManualAdd } from "./ManualAdd";
 import { ResultCard, type CardActions } from "./ResultCard";
 import { SearchForm } from "./SearchForm";
 
-/** The placeholder for what Task 11 (the Reading shelf) builds next. */
-const SHELF_NEXT = "Reading shelf arrives in the next task.";
 /** The newest "🔗 Connected papers" request: an older one that answers later writes nothing (kept for the tab, as the box is). */
 let connectedGen = 0;
 /** The papers shown and ticked, in the order shown (rsCheckedPapers 8524), read when a button is pressed. */
@@ -41,7 +40,7 @@ function tickedShown(): RsPaper[] {
  * actions (#rsActions: Quick read the ticked, the literature review, the research gap), then the external search, the manual add and the
  * connected papers <details>. The results live in this tab's memory (useSearch); the rank box is the project's `rs_prefs` blob; "+ Citation
  * library", "Insert citation" and the manual add save to the open project's citations, sealed under the vault. "📄 Analyse this paper" keeps the
- * abstract in the workspace (pendingAnalyse) for Analyse a paper.
+ * abstract in the workspace (pendingAnalyse) for Analyse a paper. "📚 Reading shelf (your own PDFs)" opens the Reading shelf dialog (components/tools/shelf).
  */
 export function ResearchPanel() {
   const t = useT();
@@ -55,6 +54,8 @@ export function ResearchPanel() {
   const suggestion = useSuggestion();
   const { editor } = suggestion;
   const insertReady = !!editor && !editor.isDestroyed;
+  // "📚 Reading shelf (your own PDFs)" opens the shelf (shOpen 11601).
+  const [shelfOpen, setShelfOpen] = useState(false);
 
   // v1 stores the box at each search (8306). Stored only when it changed, and never while the vault is locked: a search asks for no passphrase.
   const prefsRef = useRef(prefs);
@@ -122,7 +123,8 @@ export function ResearchPanel() {
     <div className="panel" data-testid="panel-research">
       <h3>{plain(t("tab_research"))}</h3>
       <p className="desc">{t("research_panel_desc")}</p>
-      <SearchForm s={s} rank={rank} onRank={(on) => setResearch({ rank: on })} onSuggest={() => { void suggest(); }} onFind={() => { void search(); }} onShelf={() => toast(SHELF_NEXT)} />
+      <SearchForm s={s} rank={rank} onRank={(on) => setResearch({ rank: on })} onSuggest={() => { void suggest(); }} onFind={() => { void search(); }} onShelf={() => setShelfOpen(true)} />
+      <ShelfDialog open={shelfOpen} onOpenChange={setShelfOpen} />
       <p className="desc rs-status" id="rsStatus" data-testid="rs-status" role="status">{s.status}</p>
       {s.original.length > 0 && (
         <div className="rs-line rs-sort-row" id="rsSortRow" data-testid="rs-sort-row">

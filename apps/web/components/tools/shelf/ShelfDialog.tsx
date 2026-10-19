@@ -1,0 +1,113 @@
+"use client";
+import { useState } from "react";
+import { fieldLabel, SHELF_DEFAULT_COLS, shColsOf } from "@appuscholar/core";
+import { useT } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
+import { shelfSummarise } from "@/lib/ai/actions";
+import { useCallAI } from "@/lib/ai/useCallAI";
+import { useSuggestion } from "@/lib/ai/suggestion";
+import { selectionText } from "@/lib/editor/insert";
+import { downloadBlob } from "@/lib/export/download";
+import {
+  addColumn, addFiles, backupShelf, deleteColumn, deleteHighlight, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, setCell, type ShelfOps
+} from "@/lib/shelf/actions";
+import { extractPdfPages } from "@/lib/shelf/extract";
+import { useShelfStore } from "@/lib/shelf/useShelf";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
+import { Matrix } from "./Matrix";
+import { Papers } from "./Papers";
+import { Passages } from "./Passages";
+import { Reader } from "./Reader";
+import { Search } from "./Search";
+
+type Tab = "papers" | "search" | "find" | "matrix";
+/** shRender's tabs, in v1's order (11608). */
+const TABS: ReadonlyArray<readonly [Tab, string]> = [["papers", "sh2_papers"], ["search", "sh2_search"], ["find", "sh2_find_passages_for_a"], ["matrix", "sh2_matrix"]];
+
+/**
+ * 📚 Reading shelf (the dialog 1247-1254, shOpen 11601-11605, shRender 11607-11613): the heading, v1's sentence on PDFs, the four tabs, the tab's body (or the reader) and "Close".
+ * Opening it starts on Papers with no status line, as shOpen does; everything is read from the project's blobs when it opens (useShelfStore) and released when it closes.
+ */
+export function ShelfDialog({ open, onOpenChange }: { open: boolean; onOpenChange(open: boolean): void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && <ShelfBody />}
+    </Dialog>
+  );
+}
+
+function ShelfBody() {
+  const t = useT();
+  const store = useShelfStore();
+  const { settings } = useSettings();
+  const callAI = useCallAI();
+  const { editor } = useSuggestion();
+  const [tab, setTab] = useState<Tab>("papers");
+  const [cur, setCur] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  // Find passages starts from the editor's selection, white space collapsed (selText2 7627).
+  const [prefill] = useState(() => (editor && !editor.isDestroyed ? selectionText(editor).replace(/\s+/g, " ").trim() : ""));
+  const { index, items } = store;
+  const defaults = SHELF_DEFAULT_COLS;
+  const cols = shColsOf(store.cols.value, defaults);
+  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), setStatus, toast, now: () => new Date() };
+  const known = !index.loading && !index.locked;
+  const anyLocked = index.locked || store.cols.locked || [...store.papers.values()].some((s) => s.locked);
+  const anyBroken = !!index.broken || !!store.cols.broken || [...store.papers.values()].some((s) => s.broken);
+
+  const showTab = (x: Tab) => { setTab(x); setCur(null); };
+  const read = (id: string, pg: number) => { setCur(id); setPage(Math.max(1, pg || 1)); };
+  const run = async (job: () => Promise<void>) => { setBusy(true); try { await job(); } finally { setBusy(false); } };
+  const reading = cur ? items.find((x) => x.id === cur && x.paper) : undefined;
+
+  return (
+    <DialogContent data-testid="shelf-dialog" className="sh-dlg sm:max-w-[920px]" showCloseButton={false}>
+      <DialogTitle asChild><h2>{t("sh2_reading_shelf")}</h2></DialogTitle>
+      <DialogDescription className="sh-desc">{t("sh2_intro")}</DialogDescription>
+      <div className="sh-row sh-wrap" id="shTabs" role="tablist">
+        {TABS.map(([x, k]) => (
+          <Button key={x} role="tab" aria-selected={tab === x && !reading} variant={tab === x && !reading ? "primary" : "ghost"} size="sm" data-testid={"sh-tab-" + x} onClick={() => showTab(x)}>{t(k)}</Button>
+        ))}
+      </div>
+      {anyLocked && <p className="sh-small" role="status" data-testid="sh-locked">{t("vault_shelf_locked")}</p>}
+      {anyBroken && <p className="sh-small" role="status" data-testid="sh-broken">{t("vault_shelf_broken")}</p>}
+      <div id="shBody" className="sh-body" data-testid="sh-body">
+        {reading ? (
+          <Reader item={reading as typeof reading & { paper: NonNullable<typeof reading.paper> }} page={page}
+            onBack={() => setCur(null)} onPage={setPage}
+            onSaveHighlight={(sel, note) => saveHighlight(reading.id, page, sel, note, ops)}
+            onDeleteHighlight={(noteId) => deleteHighlight(reading.id, noteId, ops)}
+            onSummarise={(mine, setOut) => shelfSummarise({
+              callAI, field: fieldLabel(settings.field), t, mine, pages: reading.paper!.pages, setOut,
+              saveNote: async (n) => ops.updatePaper(reading.id, (p) => ({ ...p, notes: [...p.notes, n] })) && ops.flushPaper(reading.id)
+            })} />
+        ) : tab === "papers" ? (
+          <Papers items={items} status={status} busy={busy} canWrite={known}
+            onAdd={(files) => { void run(() => addFiles(files, ops)); }}
+            onBackup={() => backupShelf(items, { t, now: () => new Date(), download: downloadBlob, setStatus })}
+            onRestore={(f) => { void run(async () => restoreShelf(await readFileText(f), ops)); }}
+            onRename={(id, title) => renamePaper(id, title, ops)}
+            onRead={(id) => read(id, 1)}
+            onRemove={(id) => removePaper(id, ops)} />
+        ) : tab === "search" ? (
+          <Search items={items} onOpen={read} />
+        ) : tab === "find" ? (
+          <Passages items={items} prefill={prefill} onOpen={read} />
+        ) : (
+          <Matrix items={items} cols={cols}
+            onAddCol={(name) => addColumn(name, defaults, store.setCols)}
+            onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
+            onCell={(id, col, value) => setCell(id, col, value, ops)}
+            onCsv={() => downloadMatrix(items, cols, { t, download: downloadBlob })} />
+        )}
+      </div>
+      <div className="sh-row">
+        <DialogClose asChild><Button variant="ghost" className="flex-1" data-testid="sh-close">{t("sh2_close")}</Button></DialogClose>
+      </div>
+    </DialogContent>
+  );
+}

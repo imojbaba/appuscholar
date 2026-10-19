@@ -352,6 +352,12 @@ export class DrizzleStore implements Store {
     return null;
   }
 
+  async deleteBlob(userId: string, projectId: string, kind: string): Promise<boolean> {
+    if (!(await this.getProject(userId, projectId))) return false;
+    const rows = await this.d.delete(projectBlobs).where(and(eq(projectBlobs.projectId, projectId), eq(projectBlobs.kind, kind))).returning({ id: projectBlobs.id });
+    return rows.length > 0;
+  }
+
   async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {
     await this.d.insert(auditLog).values({ userId, action, target: target ?? null });
   }

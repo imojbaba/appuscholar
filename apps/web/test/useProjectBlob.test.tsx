@@ -127,7 +127,7 @@ afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); 
 
 describe("blob kinds", () => {
   it("mirrors the api's kinds, and blob ids never look like a document id", () => {
-    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs"]);
+    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols"]);
     expect(isBlobKind("citations")).toBe(true);
     expect(isBlobKind(shelfPaperKind("p1a2_b-3"))).toBe(true);
     expect(isBlobKind("shelf_paper:")).toBe(false);
@@ -161,6 +161,11 @@ describe("blob kinds", () => {
     const notes = { d1: { stages: { aims: { mine: "my words" }, design: { res: { reading: "x" } } }, card: {}, title: "Paper" } };
     expect(parseBlob("ap_notes", JSON.stringify(notes))).toEqual(notes);
     expect(parseBlob("ap_cols", JSON.stringify(["Sample size"]))).toEqual(["Sample size"]);
+    // The Reading shelf's matrix columns (ruling R14): names, v1's appu_shelf_cols (11697).
+    expect(parseBlob("shelf_cols", JSON.stringify(["Sample", "Method", "Key finding"]))).toEqual(["Sample", "Method", "Key finding"]);
+    expect(parseBlob("shelf_cols", JSON.stringify([]))).toEqual([]);
+    expect(parseBlob("shelf_cols", JSON.stringify([1]))).toBeNull();
+    expect(parseBlob("shelf_cols", JSON.stringify({ a: 1 }))).toBeNull();
     expect(parseBlob("rs_prefs", JSON.stringify({ rank: true }))).toEqual({ rank: true });
     expect(parseBlob("rs_prefs", JSON.stringify({ rank: 1 }))).toBeNull();
     // Unknown fields are kept, never stripped by a read.

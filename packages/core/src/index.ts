@@ -53,3 +53,6 @@ export { bookmarkletSource, bookmarkletHref, decodeCapture, captureConfirmText, 
 export type { CaptureData } from "./citcapture";
 // Stage 2: Research related terms, sort orders and fold (Task 9)
 export { rsParseTerms, rsSortResults, rsFoldIndex } from "./research";
+// Stage 2: Reading shelf (Task 11)
+export { appuStem, SH_STOP, shTokens, shCount, shSnippet, shSnippetParts, htmlMarksToParts, shRank, shBestSentence, shRankPages, shFindPassages, SH_MAX_PAGES, SH_MIN_CHARS, shPageText, shChars, shTitleGuess, shPaperId, shNoteId, shSummaryNoteId, shMarkedParts, shQuoteFind, shMineOk, shStripEmails, shSummaryText, SHELF_SUMMARY_MAX_CHARS, buildShelfSummaryPrompt, SHELF_DEFAULT_COLS, shColsOf, shColsAdd, shColsDel, shMatrixCsv, shBackupBundle, shBackupFileName, shRestoreParse } from "./shelf";
+export type { SnippetPart, ShHit, ShSearchHit, ShPassage, ShTextItem, ShNote, ShRecord } from "./shelf";

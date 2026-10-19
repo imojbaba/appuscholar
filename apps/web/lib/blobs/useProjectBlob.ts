@@ -35,9 +35,9 @@ export type ProjectBlobOptions = {
 };
 
 /** What GET and PUT /projects/:id/blobs/:kind answer. */
-type BlobWire = { kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: string };
+export type BlobWire = { kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: string };
 type BlobPut = { body: string; keyVersion: number; dek?: WrappedDek };
-type BlobVault = Pick<VaultValue, "known" | "ensureUnlocked" | "encryptBody" | "decryptBody">;
+export type BlobVault = Pick<VaultValue, "known" | "ensureUnlocked" | "encryptBody" | "decryptBody">;
 type ClientDeps<T> = {
   id: string;
   parse: (json: string) => T | null;
@@ -265,6 +265,28 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   };
 }
 
+/** The blob route of a project's blob of `kind`. */
+export const blobPath = (projectId: string, kind: BlobKind): string => `/projects/${projectId}/blobs/${encodeURIComponent(kind)}`;
+
+/**
+ * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
+ * since the number of papers changes. The caller starts it and disposes of it.
+ */
+export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void) {
+  const path = blobPath(projectId, kind);
+  return createBlobClient<BlobShape<K>>({
+    id: blobId(projectId, kind),
+    parse: (json) => parseBlob(kind, json),
+    get: async () => {
+      try { return await apiFetch<BlobWire>(path); } catch (e) { if (e instanceof ApiError && e.status === 404) return null; throw e; }
+    },
+    put: (body) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body) }),
+    vault,
+    delayMs: BLOB_SAVE_DEBOUNCE_MS,
+    onState
+  });
+}
+
 type Tagged<T> = { key: string; s: ProjectBlobState<T> };
 
 /**
@@ -288,18 +310,7 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
 
   useEffect(() => {
     if (projectId === null || key === null) return;
-    const path = `/projects/${projectId}/blobs/${encodeURIComponent(kind)}`;
-    const c = createBlobClient<T>({
-      id: blobId(projectId, kind),
-      parse: (json) => parseBlob(kind, json),
-      get: async () => {
-        try { return await apiFetch<BlobWire>(path); } catch (e) { if (e instanceof ApiError && e.status === 404) return null; throw e; }
-      },
-      put: (body) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body) }),
-      vault: () => vaultRef.current,
-      delayMs: BLOB_SAVE_DEBOUNCE_MS,
-      onState: (s) => setTagged({ key, s })
-    });
+    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }));
     client.current = c;
     void c.start();
     return () => { if (client.current === c) client.current = null; c.dispose(); };

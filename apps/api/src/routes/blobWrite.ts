@@ -2,8 +2,8 @@ import { z } from "zod";
 import { WrappedDekSchema, checkSealed } from "./docWrite";
 import type { Store, WrappedDek } from "../store/types";
 
-/** The stage panels' blob kinds, one blob per kind per project. The web client mirrors this list; keep the strings as they are. */
-export const BLOB_KINDS = ["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs"] as const;
+/** The stage panels' blob kinds, one blob per kind per project. The web client mirrors this list; keep the strings as they are. `shelf_cols` is the Reading shelf's matrix columns (ruling R14). */
+export const BLOB_KINDS = ["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols"] as const;
 export type FixedBlobKind = (typeof BLOB_KINDS)[number];
 /** One shelf paper's extracted text: `shelf_paper:<id>`, the id 1 to 64 characters of [A-Za-z0-9_-]. */
 export const SHELF_PAPER_KIND = /^shelf_paper:[A-Za-z0-9_-]{1,64}$/;
