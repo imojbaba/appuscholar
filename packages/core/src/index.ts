@@ -58,3 +58,6 @@ export { appuStem, SH_STOP, shTokens, shCount, shSnippet, shSnippetParts, htmlMa
 export type { SnippetPart, ShHit, ShSearchHit, ShPassage, ShTextItem, ShNote, ShRecord } from "./shelf";
 // Stage 2: Analyse a paper, the page's rules and formats (Task 12)
 export { apFileKind, apFileStem, apDocxText, apTitleOf, apLoadRefusal, apShelfLabel, apPreview, apNumP } from "./analyse-page";
+// Stage 2: Analyse a paper, the walk-through's reply, the paper card and the cards side by side (Task 13)
+export { apWalkRes, apCardText, AP_COLS, apAcrossCols, apAcrossColToggle, apAcrossCell, apAcrossRows, apAcrossData, apAcrossCsv } from "./analyse-cards";
+export type { ApWalkRes, ApNoteLike, ApCardLabels, ApCardRefs, ApAcrossLabels, ApQuoteCheck } from "./analyse-cards";

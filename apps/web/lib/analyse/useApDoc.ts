@@ -1,14 +1,18 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import { apBuild, apNumbers, type ApDoc, type ApNumber, type ApRefs, type apCheckQuote } from "@appuscholar/core";
+import { apBuild, apNumbers, type ApDoc, type ApNumber, type ApRefs, type ApWalkRes, type apCheckQuote } from "@appuscholar/core";
 
 /*
  * The paper Analyse a paper has loaded, and what the panel shows of it: v1's page state `AP` (9838), one paper per tab, kept in this tab's memory only, as v1 keeps `AP.doc` (never stored:
  * the chapter's "Never stored: the full text of the loaded paper and the Ask Q&A log"). The panel reads it with useApState(); the actions (intake.ts, ask.ts, refcheck.ts) write it.
  *
- * For Task 13 (Walk, Paper card, Across papers): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
- * paper loaded (a reply for an earlier paper is dropped); `mode` is the tab ("ask" until Task 13 opens the others); `refs` holds the last reference check (`finished` once it ran to the end),
+ * For the walk-through, the paper card and the cards side by side (Task 13): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
+ * paper loaded (a reply for an earlier paper is dropped); `mode` is the tab; `refs` holds the last reference check (`finished` once it ran to the end),
  * which v1's card text includes (apCardText 10127); `busy` is v1's AP.busy, shared by Ask and the walk-through.
+ * The walk-through's page state is v1's too (9838, reset by apLoad 9887): the stage shown (AP.stage), the words typed in "Try first." (AP.tryDraft) and in "Check yourself." (AP.chkDraft, never
+ * stored), which suggested answers are shown (AP.shown) and the replies of this visit (AP.res). The stored notes (the ap_notes blob, lib/analyse/notes.ts) stand in for a stage this visit has
+ * not touched, which is what v1's apLoad copies into AP.res and AP.tryDraft (9888-9889). "📊 My paper cards side by side": whether the box is open (its <details>) and the AI-columns box,
+ * which v1 keeps in localStorage `appu_ap_ai` and v2 keeps in this tab's memory (ruling R28, register D-S2-16).
  */
 export type ApLoaded = ApDoc & { abstractOnly: boolean };
 export type ApQuote = ReturnType<typeof apCheckQuote>;
@@ -32,9 +36,19 @@ export type ApState = {
   numbers: ApNumber[] | null;
   refs: ApRefState | null;
   refBusy: boolean;
+  stage: number;
+  tryDraft: Record<string, string>;
+  chkDraft: Record<string, string>;
+  shown: Record<string, boolean>;
+  res: Record<string, ApWalkRes>;
+  acrossOpen: boolean;
+  acrossAi: boolean;
 };
 
-const INITIAL: ApState = { doc: null, gen: 0, mode: "ask", log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false };
+const INITIAL: ApState = {
+  doc: null, gen: 0, mode: "ask", log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false,
+  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, acrossOpen: false, acrossAi: false
+};
 let state: ApState = INITIAL;
 const listeners = new Set<() => void>();
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
@@ -48,11 +62,11 @@ export const getAp = (): ApState => state;
 export function resetAp(): void { state = INITIAL; for (const l of listeners) l(); }
 export function useApState(): ApState { return useSyncExternalStore(subscribe, read, read); }
 
-/** apLoad after its refusals (9886-9887): AP.doc = apBuild(title, pages, src) with `sample` and `abstractOnly`, the log, the numbers and the reference check cleared, the Ask tab shown. AP.busy stays as it is, as in v1. */
+/** apLoad after its refusals (9886-9887): AP.doc = apBuild(title, pages, src) with `sample` and `abstractOnly`, the log, the numbers, the reference check and the walk-through's state cleared (the first stage), the Ask tab shown. AP.busy stays as it is, as in v1. */
 export function loadDoc(title: string, pages: string[], src: string, isSample: boolean): ApLoaded {
   const doc: ApLoaded = { ...apBuild(title, pages, src), abstractOnly: src === "abstract" };
   doc.sample = !!isSample;
-  setAp((s) => ({ doc, gen: s.gen + 1, log: [], qDraft: "", numbers: null, refs: null, refBusy: false, mode: "ask" }));
+  setAp((s) => ({ doc, gen: s.gen + 1, log: [], qDraft: "", numbers: null, refs: null, refBusy: false, mode: "ask", stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {} }));
   return doc;
 }
 

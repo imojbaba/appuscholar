@@ -1565,5 +1565,6214 @@
    "qDraftAfter": " gap ",
    "box": null
   }
+ ],
+ "walks": [
+  {
+   "id": "sample-gap-full",
+   "paper": "sample@apSample",
+   "consent": false,
+   "stage": 0,
+   "k": "gap",
+   "mine": "  They wanted to know if a sleep routine lowers exam anxiety.  ",
+   "reply": "{\"reading\":\"You are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.\",\"quotes\":[\"Sixty first-year students from one college were randomly placed in a routine group or a waiting group.\",\"Students slept for nine hours every night during the exam weeks and their marks rose.\"],\"not_stated\":[\"A power calculation\",\"How many students dropped out\"],\"watch_for\":\"Judge whether one college is enough to speak of all students.\",\"check_question\":\"What was missing in earlier work?\",\"check_answer\":\"Earlier work was mostly observational, so it could not show cause.\"}",
+   "docId": "asleepandexamanxietyinfir5317",
+   "opts": [
+    {
+     "max": 2000,
+     "temp": 0.2,
+     "noLang": true
+    }
+   ],
+   "toasts": [],
+   "res": {
+    "partial": false,
+    "n": 12,
+    "of": 12,
+    "reading": "You are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.",
+    "quotes": [
+     {
+      "q": "Sixty first-year students from one college were randomly placed in a routine group or a waiting group.",
+      "ok": true,
+      "page": 1,
+      "sec": "Abstract",
+      "label": "page 1"
+     },
+     {
+      "q": "Students slept for nine hours every night during the exam weeks and their marks rose.",
+      "ok": false,
+      "why": "not found"
+     }
+    ],
+    "not_stated": [
+     "A power calculation",
+     "How many students dropped out"
+    ],
+    "watch": "Judge whether one college is enough to speak of all students.",
+    "cq": "What was missing in earlier work?",
+    "ca": "Earlier work was mostly observational, so it could not show cause."
+   },
+   "stored": {
+    "stages": {
+     "gap": {
+      "mine": "They wanted to know if a sleep routine lowers exam anxiety.",
+      "res": {
+       "partial": false,
+       "n": 12,
+       "of": 12,
+       "reading": "You are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.",
+       "quotes": [
+        {
+         "q": "Sixty first-year students from one college were randomly placed in a routine group or a waiting group.",
+         "ok": true,
+         "page": 1,
+         "sec": "Abstract",
+         "label": "page 1"
+        },
+        {
+         "q": "Students slept for nine hours every night during the exam weeks and their marks rose.",
+         "ok": false,
+         "why": "not found"
+        }
+       ],
+       "not_stated": [
+        "A power calculation",
+        "How many students dropped out"
+       ],
+       "watch": "Judge whether one college is enough to speak of all students.",
+       "cq": "What was missing in earlier work?",
+       "ca": "Earlier work was mostly observational, so it could not show cause."
+      }
+     }
+    },
+    "card": {},
+    "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+   },
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": true
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 1 of 12: Research gap and aim",
+    "boxes": [
+     {
+      "text": "Try first. In your own words: what was missing in earlier work, and what did this study set out to answer?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "  They wanted to know if a sleep routine lowers exam anxiety.  ",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": true
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1 ✓",
+      "title": "Research gap and aim",
+      "on": true
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 1 of 12: Research gap and aim",
+    "boxes": [
+     {
+      "text": "Try first. In your own words: what was missing in earlier work, and what did this study set out to answer?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysYou are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.⚠ 1 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.The paper does not report:A power calculationHow many students dropped outJudge this yourself: Judge whether one college is enough to speak of all students.",
+      "banner": "⚠ 1 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.",
+      "quotes": [
+       {
+        "text": "“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)",
+        "bad": false
+       },
+       {
+        "text": "“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       }
+      ],
+      "notStated": [
+       "A power calculation",
+       "How many students dropped out"
+      ],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. What was missing in earlier work?Show a suggested answer",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "  They wanted to know if a sleep routine lowers exam anxiety.  ",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": ""
+    },
+    "reveal": "Show a suggested answer",
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": true
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": {
+    "stages": [
+     {
+      "text": "1 ✓",
+      "title": "Research gap and aim",
+      "on": true
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 1 of 12: Research gap and aim",
+    "boxes": [
+     {
+      "text": "Try first. In your own words: what was missing in earlier work, and what did this study set out to answer?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysYou are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.⚠ 1 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.The paper does not report:A power calculationHow many students dropped outJudge this yourself: Judge whether one college is enough to speak of all students.",
+      "banner": "⚠ 1 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.",
+      "quotes": [
+       {
+        "text": "“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)",
+        "bad": false
+       },
+       {
+        "text": "“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       }
+      ],
+      "notStated": [
+       "A power calculation",
+       "How many students dropped out"
+      ],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. What was missing in earlier work?My check answerSuggested answer: Earlier work was mostly observational, so it could not show cause.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": "Suggested answer: Earlier work was mostly observational, so it could not show cause."
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "  They wanted to know if a sleep routine lowers exam anxiety.  ",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": "My check answer"
+    },
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": true
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "sample-sample-nothing-tried",
+   "paper": "sample@apSample",
+   "consent": false,
+   "stage": 3,
+   "k": "sample",
+   "mine": null,
+   "reply": "```json\n{\"reading\":\"Sixty students took part.\",\"quotes\":[\"Sixty first-year students from one college were randomly placed in a routine group or a waiting group.\",\"Sixty students\",\"The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.\",\"Students slept for nine hours every night during the exam weeks and their marks rose.\",\"A coin toss decided the group for each student.\"],\"not_stated\":[],\"watch_for\":\"\",\"check_question\":\"How was the number of students decided?\",\"check_answer\":\"By the number who volunteered before the deadline.\"}\n```",
+   "docId": "asleepandexamanxietyinfir5317",
+   "opts": [
+    {
+     "max": 2000,
+     "temp": 0.2,
+     "noLang": true
+    }
+   ],
+   "toasts": [],
+   "res": {
+    "partial": false,
+    "n": 12,
+    "of": 12,
+    "reading": "Sixty students took part.",
+    "quotes": [
+     {
+      "q": "Sixty first-year students from one college were randomly placed in a routine group or a waiting group.",
+      "ok": true,
+      "page": 1,
+      "sec": "Abstract",
+      "label": "page 1"
+     },
+     {
+      "q": "Sixty students",
+      "ok": false,
+      "why": "too short to check"
+     },
+     {
+      "q": "The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.",
+      "ok": true,
+      "page": 2,
+      "sec": "Method",
+      "label": "page 2"
+     },
+     {
+      "q": "Students slept for nine hours every night during the exam weeks and their marks rose.",
+      "ok": false,
+      "why": "not found"
+     }
+    ],
+    "not_stated": [],
+    "watch": "",
+    "cq": "How was the number of students decided?",
+    "ca": "By the number who volunteered before the deadline."
+   },
+   "stored": {
+    "stages": {
+     "sample": {
+      "mine": "",
+      "res": {
+       "partial": false,
+       "n": 12,
+       "of": 12,
+       "reading": "Sixty students took part.",
+       "quotes": [
+        {
+         "q": "Sixty first-year students from one college were randomly placed in a routine group or a waiting group.",
+         "ok": true,
+         "page": 1,
+         "sec": "Abstract",
+         "label": "page 1"
+        },
+        {
+         "q": "Sixty students",
+         "ok": false,
+         "why": "too short to check"
+        },
+        {
+         "q": "The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.",
+         "ok": true,
+         "page": 2,
+         "sec": "Method",
+         "label": "page 2"
+        },
+        {
+         "q": "Students slept for nine hours every night during the exam weeks and their marks rose.",
+         "ok": false,
+         "why": "not found"
+        }
+       ],
+       "not_stated": [],
+       "watch": "",
+       "cq": "How was the number of students decided?",
+       "ca": "By the number who volunteered before the deadline."
+      }
+     }
+    },
+    "card": {},
+    "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+   },
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": true
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 4 of 12: Participants and sampling",
+    "boxes": [
+     {
+      "text": "Try first. Who took part, how many, and how were they chosen? Was the number justified?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4 ✓",
+      "title": "Participants and sampling",
+      "on": true
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 4 of 12: Participants and sampling",
+    "boxes": [
+     {
+      "text": "Try first. Who took part, how many, and how were they chosen? Was the number justified?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysSixty students took part.⚠ 2 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)“Sixty students”⚠ could not be matched to the paper. Do not rely on this quotation.“The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.”✓ found in the paper, page 2 (Method)“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+      "banner": "⚠ 2 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.",
+      "quotes": [
+       {
+        "text": "“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)",
+        "bad": false
+       },
+       {
+        "text": "“Sixty students”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       },
+       {
+        "text": "“The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.”✓ found in the paper, page 2 (Method)",
+        "bad": false
+       },
+       {
+        "text": "“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       }
+      ],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. How was the number of students decided?Show a suggested answer",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": ""
+    },
+    "reveal": "Show a suggested answer",
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4 ✓",
+      "title": "Participants and sampling",
+      "on": true
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 4 of 12: Participants and sampling",
+    "boxes": [
+     {
+      "text": "Try first. Who took part, how many, and how were they chosen? Was the number justified?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysSixty students took part.⚠ 2 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)“Sixty students”⚠ could not be matched to the paper. Do not rely on this quotation.“The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.”✓ found in the paper, page 2 (Method)“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+      "banner": "⚠ 2 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.",
+      "quotes": [
+       {
+        "text": "“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)",
+        "bad": false
+       },
+       {
+        "text": "“Sixty students”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       },
+       {
+        "text": "“The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.”✓ found in the paper, page 2 (Method)",
+        "bad": false
+       },
+       {
+        "text": "“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       }
+      ],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. How was the number of students decided?My check answerSuggested answer: By the number who volunteered before the deadline.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": "Suggested answer: By the number who volunteered before the deadline."
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": "My check answer"
+    },
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "sample-stats-raw",
+   "paper": "sample@apSample",
+   "consent": false,
+   "stage": 7,
+   "k": "stats",
+   "mine": "A t-test",
+   "reply": "An independent-samples t-test, because two groups were compared.",
+   "docId": "asleepandexamanxietyinfir5317",
+   "opts": [
+    {
+     "max": 2000,
+     "temp": 0.2,
+     "noLang": true
+    }
+   ],
+   "toasts": [],
+   "res": {
+    "partial": false,
+    "n": 12,
+    "of": 12,
+    "raw": "An independent-samples t-test, because two groups were compared.",
+    "quotes": []
+   },
+   "stored": {
+    "stages": {
+     "stats": {
+      "mine": "A t-test",
+      "res": {
+       "partial": false,
+       "n": 12,
+       "of": 12,
+       "raw": "An independent-samples t-test, because two groups were compared.",
+       "quotes": []
+      }
+     }
+    },
+    "card": {},
+    "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+   },
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": true
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 8 of 12: Statistics",
+    "boxes": [
+     {
+      "text": "Try first. Which test did the authors use? Does it fit the design and the data?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "A t-test",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8 ✓",
+      "title": "Statistics",
+      "on": true
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 8 of 12: Statistics",
+    "boxes": [
+     {
+      "text": "Try first. Which test did the authors use? Does it fit the design and the data?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "The reply could not be checked against the paper because it did not come back in the expected form.An independent-samples t-test, because two groups were compared.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "A t-test",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": null
+  },
+  {
+   "id": "sample-results-bare",
+   "paper": "sample@apSample",
+   "consent": false,
+   "stage": 8,
+   "k": "results",
+   "mine": null,
+   "reply": "{\"reading\":\"Only a reading.\"}",
+   "docId": "asleepandexamanxietyinfir5317",
+   "opts": [
+    {
+     "max": 2000,
+     "temp": 0.2,
+     "noLang": true
+    }
+   ],
+   "toasts": [],
+   "res": {
+    "partial": false,
+    "n": 12,
+    "of": 12,
+    "reading": "Only a reading.",
+    "quotes": [],
+    "not_stated": [],
+    "watch": "",
+    "cq": "",
+    "ca": ""
+   },
+   "stored": {
+    "stages": {
+     "results": {
+      "mine": "",
+      "res": {
+       "partial": false,
+       "n": 12,
+       "of": 12,
+       "reading": "Only a reading.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     }
+    },
+    "card": {},
+    "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+   },
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": true
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 9 of 12: Results",
+    "boxes": [
+     {
+      "text": "Try first. Say in plain words what the main result or table shows.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9 ✓",
+      "title": "Results",
+      "on": true
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 9 of 12: Results",
+    "boxes": [
+     {
+      "text": "Try first. Say in plain words what the main result or table shows.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysOnly a reading.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": null
+  },
+  {
+   "id": "sample-limits-numbers",
+   "paper": "sample@apSample",
+   "consent": false,
+   "stage": 10,
+   "k": "limits",
+   "mine": null,
+   "reply": "{\"reading\":\"Limits.\",\"quotes\":[],\"not_stated\":[\"Attrition\",3],\"watch_for\":\"Watch the self-report.\",\"check_question\":\"\",\"check_answer\":\"Unused.\"}",
+   "docId": "asleepandexamanxietyinfir5317",
+   "opts": [
+    {
+     "max": 2000,
+     "temp": 0.2,
+     "noLang": true
+    }
+   ],
+   "toasts": [],
+   "res": {
+    "partial": false,
+    "n": 12,
+    "of": 12,
+    "reading": "Limits.",
+    "quotes": [],
+    "not_stated": [
+     "Attrition",
+     "3"
+    ],
+    "watch": "Watch the self-report.",
+    "cq": "",
+    "ca": "Unused."
+   },
+   "stored": {
+    "stages": {
+     "limits": {
+      "mine": "",
+      "res": {
+       "partial": false,
+       "n": 12,
+       "of": 12,
+       "reading": "Limits.",
+       "quotes": [],
+       "not_stated": [
+        "Attrition",
+        "3"
+       ],
+       "watch": "Watch the self-report.",
+       "cq": "",
+       "ca": "Unused."
+      }
+     }
+    },
+    "card": {},
+    "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+   },
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": true
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 11 of 12: Limitations",
+    "boxes": [
+     {
+      "text": "Try first. What limitations do the authors admit? What do you think they missed?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11 ✓",
+      "title": "Limitations",
+      "on": true
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 11 of 12: Limitations",
+    "boxes": [
+     {
+      "text": "Try first. What limitations do the authors admit? What do you think they missed?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysLimits.The paper does not report:Attrition3Judge this yourself: Watch the self-report.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [
+       "Attrition",
+       "3"
+      ],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": null
+  },
+  {
+   "id": "x3-partial",
+   "paper": "sample-x3",
+   "consent": true,
+   "stage": 7,
+   "k": "stats",
+   "mine": "The t-test",
+   "reply": "{\"reading\":\"An independent-samples t-test compared the change scores.\",\"quotes\":[\"Change scores of the two groups were compared with an independent-samples t-test.\"],\"not_stated\":[],\"watch_for\":\"Whether the groups were equal at the start.\",\"check_question\":\"Which test was used?\",\"check_answer\":\"An independent-samples t-test.\"}",
+   "docId": "asleepandexamanxietyinfir15579",
+   "opts": [
+    {
+     "max": 2000,
+     "temp": 0.2,
+     "noLang": true
+    }
+   ],
+   "toasts": [],
+   "res": {
+    "partial": true,
+    "n": 19,
+    "of": 34,
+    "reading": "An independent-samples t-test compared the change scores.",
+    "quotes": [
+     {
+      "q": "Change scores of the two groups were compared with an independent-samples t-test.",
+      "ok": true,
+      "page": 2,
+      "sec": "Method",
+      "label": "page 2"
+     }
+    ],
+    "not_stated": [],
+    "watch": "Whether the groups were equal at the start.",
+    "cq": "Which test was used?",
+    "ca": "An independent-samples t-test."
+   },
+   "stored": {
+    "stages": {
+     "stats": {
+      "mine": "The t-test",
+      "res": {
+       "partial": true,
+       "n": 19,
+       "of": 34,
+       "reading": "An independent-samples t-test compared the change scores.",
+       "quotes": [
+        {
+         "q": "Change scores of the two groups were compared with an independent-samples t-test.",
+         "ok": true,
+         "page": 2,
+         "sec": "Method",
+         "label": "page 2"
+        }
+       ],
+       "not_stated": [],
+       "watch": "Whether the groups were equal at the start.",
+       "cq": "Which test was used?",
+       "ca": "An independent-samples t-test."
+      }
+     }
+    },
+    "card": {},
+    "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper (three times)"
+   },
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": true
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 8 of 12: Statistics",
+    "boxes": [
+     {
+      "text": "Try first. Which test did the authors use? Does it fit the design and the data?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "The t-test",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8 ✓",
+      "title": "Statistics",
+      "on": true
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 8 of 12: Statistics",
+    "boxes": [
+     {
+      "text": "Try first. Which test did the authors use? Does it fit the design and the data?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysAn independent-samples t-test compared the change scores.“Change scores of the two groups were compared with an independent-samples t-test.”✓ found in the paper, page 2 (Method)Judge this yourself: Whether the groups were equal at the start.The paper is long, so 19 of 34 passages were read for this stage.",
+      "banner": null,
+      "quotes": [
+       {
+        "text": "“Change scores of the two groups were compared with an independent-samples t-test.”✓ found in the paper, page 2 (Method)",
+        "bad": false
+       }
+      ],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. Which test was used?Show a suggested answer",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "The t-test",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": ""
+    },
+    "reveal": "Show a suggested answer",
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8 ✓",
+      "title": "Statistics",
+      "on": true
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 8 of 12: Statistics",
+    "boxes": [
+     {
+      "text": "Try first. Which test did the authors use? Does it fit the design and the data?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysAn independent-samples t-test compared the change scores.“Change scores of the two groups were compared with an independent-samples t-test.”✓ found in the paper, page 2 (Method)Judge this yourself: Whether the groups were equal at the start.The paper is long, so 19 of 34 passages were read for this stage.",
+      "banner": null,
+      "quotes": [
+       {
+        "text": "“Change scores of the two groups were compared with an independent-samples t-test.”✓ found in the paper, page 2 (Method)",
+        "bad": false
+       }
+      ],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. Which test was used?My check answerSuggested answer: An independent-samples t-test.",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": "Suggested answer: An independent-samples t-test."
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "The t-test",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": "My check answer"
+    },
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "no-consent",
+   "paper": "pasted-headings",
+   "consent": false,
+   "stage": 1,
+   "k": "lit",
+   "mine": "x",
+   "reply": "{}",
+   "docId": "apeertutoringandstatistic863",
+   "opts": [],
+   "toasts": [
+    "Tick the box about the paper first"
+   ],
+   "res": null,
+   "stored": null,
+   "before": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": true
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 2 of 12: Literature review",
+    "boxes": [
+     {
+      "text": "Try first. Does the review of literature lead to the question? What would you expect it to cover that it may leave out?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "x",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "view": {
+    "stages": [
+     {
+      "text": "1",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": true
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 2 of 12: Literature review",
+    "boxes": [
+     {
+      "text": "Try first. Does the review of literature lead to the question? What would you expect it to cover that it may leave out?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "x",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   },
+   "revealed": null
+  }
+ ],
+ "navs": [
+  {
+   "stage": 0,
+   "view": {
+    "stages": [
+     {
+      "text": "1 ✓",
+      "title": "Research gap and aim",
+      "on": true
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 1 of 12: Research gap and aim",
+    "boxes": [
+     {
+      "text": "Try first. In your own words: what was missing in earlier work, and what did this study set out to answer?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     },
+     {
+      "text": "What the paper saysYou are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.⚠ 1 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.The paper does not report:A power calculationHow many students dropped outJudge this yourself: Judge whether one college is enough to speak of all students.",
+      "banner": "⚠ 1 of the quotations below could not be matched to the paper text. The answer may rest on words the paper does not contain. Open the paper and check.",
+      "quotes": [
+       {
+        "text": "“Sixty first-year students from one college were randomly placed in a routine group or a waiting group.”✓ found in the paper, page 1 (Abstract)",
+        "bad": false
+       },
+       {
+        "text": "“Students slept for nine hours every night during the exam weeks and their marks rose.”⚠ could not be matched to the paper. Do not rely on this quotation.",
+        "bad": true
+       }
+      ],
+      "notStated": [
+       "A power calculation",
+       "How many students dropped out"
+      ],
+      "ok": null
+     },
+     {
+      "text": "Check yourself. What was missing in earlier work?Show a suggested answer",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "Stored words",
+    "show": {
+     "text": "Read it again",
+     "disabled": false
+    },
+    "chk": {
+     "placeholder": "Your answer",
+     "value": ""
+    },
+    "reveal": "Show a suggested answer",
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": true
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   }
+  },
+  {
+   "stage": 5,
+   "view": {
+    "stages": [
+     {
+      "text": "1 ✓",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": true
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": false
+     }
+    ],
+    "h4": "Stage 6 of 12: Procedure and ethics",
+    "boxes": [
+     {
+      "text": "Try first. What did participants actually do, in order? What would an ethics committee want to see?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": false
+     }
+    ]
+   }
+  },
+  {
+   "stage": 11,
+   "view": {
+    "stages": [
+     {
+      "text": "1 ✓",
+      "title": "Research gap and aim",
+      "on": false
+     },
+     {
+      "text": "2",
+      "title": "Literature review",
+      "on": false
+     },
+     {
+      "text": "3",
+      "title": "Study design and planning",
+      "on": false
+     },
+     {
+      "text": "4",
+      "title": "Participants and sampling",
+      "on": false
+     },
+     {
+      "text": "5",
+      "title": "Materials and measures",
+      "on": false
+     },
+     {
+      "text": "6",
+      "title": "Procedure and ethics",
+      "on": false
+     },
+     {
+      "text": "7",
+      "title": "Data collection and processing",
+      "on": false
+     },
+     {
+      "text": "8",
+      "title": "Statistics",
+      "on": false
+     },
+     {
+      "text": "9",
+      "title": "Results",
+      "on": false
+     },
+     {
+      "text": "10",
+      "title": "Conclusion",
+      "on": false
+     },
+     {
+      "text": "11",
+      "title": "Limitations",
+      "on": false
+     },
+     {
+      "text": "12",
+      "title": "Recommendations and use",
+      "on": true
+     }
+    ],
+    "h4": "Stage 12 of 12: Recommendations and use",
+    "boxes": [
+     {
+      "text": "Try first. What follows for practice, and what should the next study do?",
+      "banner": null,
+      "quotes": [],
+      "notStated": [],
+      "ok": null
+     }
+    ],
+    "tryPlaceholder": "Write a sentence or two from what you have read. A guess is fine.",
+    "tryValue": "",
+    "show": {
+     "text": "Show what the paper says",
+     "disabled": false
+    },
+    "chk": null,
+    "reveal": null,
+    "nav": [
+     {
+      "text": "← Previous stage",
+      "disabled": false
+     },
+     {
+      "text": "Next stage →",
+      "disabled": true
+     }
+    ]
+   }
+  }
+ ],
+ "clamp": {
+  "high": 11,
+  "low": 0
+ },
+ "typed": {
+  "stages": {
+   "gap": {
+    "mine": "Typed again",
+    "res": {
+     "partial": false,
+     "n": 12,
+     "of": 12,
+     "reading": "You are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.",
+     "quotes": [
+      {
+       "q": "Sixty first-year students from one college were randomly placed in a routine group or a waiting group.",
+       "ok": true,
+       "page": 1,
+       "sec": "Abstract",
+       "label": "page 1"
+      },
+      {
+       "q": "Students slept for nine hours every night during the exam weeks and their marks rose.",
+       "ok": false,
+       "why": "not found"
+      }
+     ],
+     "not_stated": [
+      "A power calculation",
+      "How many students dropped out"
+     ],
+     "watch": "Judge whether one college is enough to speak of all students.",
+     "cq": "What was missing in earlier work?",
+     "ca": "Earlier work was mostly observational, so it could not show cause."
+    }
+   }
+  },
+  "card": {},
+  "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+ },
+ "cards": [
+  {
+   "id": "no-note",
+   "note": null,
+   "refs": null,
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "No stage done yet. Use Walk me through it, and your words and the readings collect here.",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": ""
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": ""
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": ""
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": ""
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nSTRENGTHS\n\n\nWEAKNESSES\n\n\nMY VERDICT IN ONE LINE\n\n\nMY NOTES\n\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "empty-note",
+   "note": {
+    "stages": {},
+    "card": {}
+   },
+   "refs": null,
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "No stage done yet. Use Walk me through it, and your words and the readings collect here.",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": ""
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": ""
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": ""
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": ""
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nSTRENGTHS\n\n\nWEAKNESSES\n\n\nMY VERDICT IN ONE LINE\n\n\nMY NOTES\n\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "mixed",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": null,
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "Research gap and aimMy words: The gap is causal evidence.Reading: You saw the gap.",
+     "muted": [
+      "Reading: You saw the gap."
+     ]
+    },
+    {
+     "text": "Study design and planningMy words: Only my words here.",
+     "muted": []
+    },
+    {
+     "text": "StatisticsMy words: (not written)Reading: A t-test, read by the AI.",
+     "muted": [
+      "Reading: A t-test, read by the AI."
+     ]
+    },
+    {
+     "text": "ResultsMy words: (not written)",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": "Random allocation."
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": "One college, \"small\" sample, self-report."
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Promising, not proof."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": "Line one\nLine two"
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nRESEARCH GAP AND AIM\nMy words: The gap is causal evidence.\nReading: You saw the gap.\n\nSTUDY DESIGN AND PLANNING\nMy words: Only my words here.\n\nSTATISTICS\nMy words: (not written)\nReading: A t-test, read by the AI.\n\nRESULTS\nMy words: (not written)\n\nSTRENGTHS\nRandom allocation.\n\nWEAKNESSES\nOne college, \"small\" sample, self-report.\n\nMY VERDICT IN ONE LINE\nPromising, not proof.\n\nMY NOTES\nLine one\nLine two\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "mixed-refs-flagged",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1016/s0140-6736(97)11096-0",
+     "10.1016/s0140-6736(10)60175-4",
+     "10.1016/s0140-6736(05)77837-5",
+     "10.1016/s0140-6736(02)08948-1",
+     "10.1177/0020720920983537",
+     "10.1155/2022/7259595",
+     "10.1002/jcop.22684",
+     "10.3390/ijerph21080990",
+     "10.1037/0003-066x.55.1.68",
+     "10.4324/9780203771587",
+     "10.1145/3290605.3300233",
+     "10.9999/appuscholar-no-such-doi-2026"
+    ],
+    "flag": {
+     "10.1016/s0140-6736(97)11096-0": "RETRACTED: Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children",
+     "10.3390/ijerph21080990": "RETRACTED: Gamification for Mental Health and Health Psychology: Insights at the First Quarter Mark of the 21st Century",
+     "10.1155/2022/7259595": "[Retracted] The Application of Color Psychology in Community Health Environment Design",
+     "10.1177/0020720920983537": "RETRACTED: Application of positive psychology in college teaching",
+     "10.1016/s0140-6736(10)60175-4": "Retraction—Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children",
+     "10.1002/jcop.22684": "Retracted : Human psychology in the cities"
+    },
+    "seen": {
+     "10.1037//0003-066x.55.1.68": true,
+     "10.4324/9780203771587": true,
+     "10.1016/s0140-6736(97)11096-0": true,
+     "10.1145/3290605.3300233": true,
+     "10.1016/s0140-6736(05)77837-5": true,
+     "10.3390/ijerph21080990": true,
+     "10.1155/2022/7259595": true,
+     "10.1016/s0140-6736(02)08948-1": true,
+     "10.1177/0020720920983537": true,
+     "10.1016/s0140-6736(10)60175-4": true,
+     "10.1002/jcop.22684": true
+    },
+    "done": 12,
+    "finished": true
+   },
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "Research gap and aimMy words: The gap is causal evidence.Reading: You saw the gap.",
+     "muted": [
+      "Reading: You saw the gap."
+     ]
+    },
+    {
+     "text": "Study design and planningMy words: Only my words here.",
+     "muted": []
+    },
+    {
+     "text": "StatisticsMy words: (not written)Reading: A t-test, read by the AI.",
+     "muted": [
+      "Reading: A t-test, read by the AI."
+     ]
+    },
+    {
+     "text": "ResultsMy words: (not written)",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": "Random allocation."
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": "One college, \"small\" sample, self-report."
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Promising, not proof."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": "Line one\nLine two"
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nRESEARCH GAP AND AIM\nMy words: The gap is causal evidence.\nReading: You saw the gap.\n\nSTUDY DESIGN AND PLANNING\nMy words: Only my words here.\n\nSTATISTICS\nMy words: (not written)\nReading: A t-test, read by the AI.\n\nRESULTS\nMy words: (not written)\n\nREFERENCE LIST CHECK (OpenAlex)\n12 DOIs read, 11 known to OpenAlex, 6 flagged as retracted: 10.1016/s0140-6736(97)11096-0, 10.3390/ijerph21080990, 10.1155/2022/7259595, 10.1177/0020720920983537, 10.1016/s0140-6736(10)60175-4, 10.1002/jcop.22684. A warning signal only; no flag is not proof of soundness.\n\nSTRENGTHS\nRandom allocation.\n\nWEAKNESSES\nOne college, \"small\" sample, self-report.\n\nMY VERDICT IN ONE LINE\nPromising, not proof.\n\nMY NOTES\nLine one\nLine two\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "mixed-refs-none",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1000/a",
+     "10.1000/b",
+     "10.1000/c"
+    ],
+    "flag": {},
+    "seen": {
+     "10.1000/a": true
+    },
+    "done": 3,
+    "finished": true
+   },
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "Research gap and aimMy words: The gap is causal evidence.Reading: You saw the gap.",
+     "muted": [
+      "Reading: You saw the gap."
+     ]
+    },
+    {
+     "text": "Study design and planningMy words: Only my words here.",
+     "muted": []
+    },
+    {
+     "text": "StatisticsMy words: (not written)Reading: A t-test, read by the AI.",
+     "muted": [
+      "Reading: A t-test, read by the AI."
+     ]
+    },
+    {
+     "text": "ResultsMy words: (not written)",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": "Random allocation."
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": "One college, \"small\" sample, self-report."
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Promising, not proof."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": "Line one\nLine two"
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nRESEARCH GAP AND AIM\nMy words: The gap is causal evidence.\nReading: You saw the gap.\n\nSTUDY DESIGN AND PLANNING\nMy words: Only my words here.\n\nSTATISTICS\nMy words: (not written)\nReading: A t-test, read by the AI.\n\nRESULTS\nMy words: (not written)\n\nREFERENCE LIST CHECK (OpenAlex)\n3 DOIs read, 1 known to OpenAlex, none flagged. A warning signal only; no flag is not proof of soundness.\n\nSTRENGTHS\nRandom allocation.\n\nWEAKNESSES\nOne college, \"small\" sample, self-report.\n\nMY VERDICT IN ONE LINE\nPromising, not proof.\n\nMY NOTES\nLine one\nLine two\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "mixed-refs-one-flag",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1000/a",
+     "10.1000/b"
+    ],
+    "flag": {
+     "10.1000/b": "A retracted study"
+    },
+    "seen": {
+     "10.1000/a": true,
+     "10.1000/b": true
+    },
+    "done": 2,
+    "finished": true
+   },
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "Research gap and aimMy words: The gap is causal evidence.Reading: You saw the gap.",
+     "muted": [
+      "Reading: You saw the gap."
+     ]
+    },
+    {
+     "text": "Study design and planningMy words: Only my words here.",
+     "muted": []
+    },
+    {
+     "text": "StatisticsMy words: (not written)Reading: A t-test, read by the AI.",
+     "muted": [
+      "Reading: A t-test, read by the AI."
+     ]
+    },
+    {
+     "text": "ResultsMy words: (not written)",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": "Random allocation."
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": "One college, \"small\" sample, self-report."
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Promising, not proof."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": "Line one\nLine two"
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nRESEARCH GAP AND AIM\nMy words: The gap is causal evidence.\nReading: You saw the gap.\n\nSTUDY DESIGN AND PLANNING\nMy words: Only my words here.\n\nSTATISTICS\nMy words: (not written)\nReading: A t-test, read by the AI.\n\nRESULTS\nMy words: (not written)\n\nREFERENCE LIST CHECK (OpenAlex)\n2 DOIs read, 2 known to OpenAlex, 1 flagged as retracted: 10.1000/b. A warning signal only; no flag is not proof of soundness.\n\nSTRENGTHS\nRandom allocation.\n\nWEAKNESSES\nOne college, \"small\" sample, self-report.\n\nMY VERDICT IN ONE LINE\nPromising, not proof.\n\nMY NOTES\nLine one\nLine two\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "mixed-refs-running",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1000/a"
+    ],
+    "flag": {},
+    "seen": {},
+    "done": 0
+   },
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "Research gap and aimMy words: The gap is causal evidence.Reading: You saw the gap.",
+     "muted": [
+      "Reading: You saw the gap."
+     ]
+    },
+    {
+     "text": "Study design and planningMy words: Only my words here.",
+     "muted": []
+    },
+    {
+     "text": "StatisticsMy words: (not written)Reading: A t-test, read by the AI.",
+     "muted": [
+      "Reading: A t-test, read by the AI."
+     ]
+    },
+    {
+     "text": "ResultsMy words: (not written)",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": "Random allocation."
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": "One college, \"small\" sample, self-report."
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Promising, not proof."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": "Line one\nLine two"
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nRESEARCH GAP AND AIM\nMy words: The gap is causal evidence.\nReading: You saw the gap.\n\nSTUDY DESIGN AND PLANNING\nMy words: Only my words here.\n\nSTATISTICS\nMy words: (not written)\nReading: A t-test, read by the AI.\n\nRESULTS\nMy words: (not written)\n\nSTRENGTHS\nRandom allocation.\n\nWEAKNESSES\nOne college, \"small\" sample, self-report.\n\nMY VERDICT IN ONE LINE\nPromising, not proof.\n\nMY NOTES\nLine one\nLine two\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "mixed-refs-none-box",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "none": "no DOIs"
+   },
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "Research gap and aimMy words: The gap is causal evidence.Reading: You saw the gap.",
+     "muted": [
+      "Reading: You saw the gap."
+     ]
+    },
+    {
+     "text": "Study design and planningMy words: Only my words here.",
+     "muted": []
+    },
+    {
+     "text": "StatisticsMy words: (not written)Reading: A t-test, read by the AI.",
+     "muted": [
+      "Reading: A t-test, read by the AI."
+     ]
+    },
+    {
+     "text": "ResultsMy words: (not written)",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": "Random allocation."
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": "One college, \"small\" sample, self-report."
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Promising, not proof."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": "Line one\nLine two"
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nRESEARCH GAP AND AIM\nMy words: The gap is causal evidence.\nReading: You saw the gap.\n\nSTUDY DESIGN AND PLANNING\nMy words: Only my words here.\n\nSTATISTICS\nMy words: (not written)\nReading: A t-test, read by the AI.\n\nRESULTS\nMy words: (not written)\n\nSTRENGTHS\nRandom allocation.\n\nWEAKNESSES\nOne college, \"small\" sample, self-report.\n\nMY VERDICT IN ONE LINE\nPromising, not proof.\n\nMY NOTES\nLine one\nLine two\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  },
+  {
+   "id": "card-only",
+   "note": {
+    "stages": {},
+    "card": {
+     "verdict": "Only a verdict."
+    }
+   },
+   "refs": null,
+   "docId": "asleepandexamanxietyinfir5317",
+   "boxes": [
+    {
+     "text": "Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.",
+     "muted": []
+    },
+    {
+     "text": "No stage done yet. Use Walk me through it, and your words and the readings collect here.",
+     "muted": []
+    }
+   ],
+   "fields": [
+    {
+     "label": "Strengths",
+     "rows": "3",
+     "value": ""
+    },
+    {
+     "label": "Weaknesses",
+     "rows": "3",
+     "value": ""
+    },
+    {
+     "label": "Your verdict in one line",
+     "rows": "1",
+     "value": "Only a verdict."
+    },
+    {
+     "label": "Your notes",
+     "rows": "3",
+     "value": ""
+    }
+   ],
+   "button": "⬇ Download the card (.txt)",
+   "text": "PAPER CARD\nSleep and exam anxiety in first-year students: a fictional teaching paper\n\nSTRENGTHS\n\n\nWEAKNESSES\n\n\nMY VERDICT IN ONE LINE\nOnly a verdict.\n\nMY NOTES\n\n\nMade with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.\n"
+  }
+ ],
+ "cardTyped": {
+  "stages": {},
+  "card": {
+   "weak": "Typed weakness"
+  },
+  "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+ },
+ "across": [
+  {
+   "id": "empty",
+   "notes": {},
+   "cols": null,
+   "ai": null,
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": false,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict"
+    ],
+    "body": [],
+    "ids": []
+   },
+   "csv": "Paper,Design (my words),Sample (my words),Measures (my words),Statistics (my words),My verdict",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": false
+    },
+    "empty": "No paper card yet. Open a paper, use Walk me through it or fill in the Paper card tab, and it appears here as a row.",
+    "head": null,
+    "rows": null,
+    "remove": null,
+    "csvButton": null,
+    "note": null
+   }
+  },
+  {
+   "id": "defaults",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": null,
+   "ai": null,
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": false,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),Sample (my words),Measures (my words),Statistics (my words),My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,t-test,Good enough.\nPaper two,,,,,\nPaper five,,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": false
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "defaults-ai",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": null,
+   "ai": "1",
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": true,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Design (AI reading, check it)",
+     "Sample (my words)",
+     "Sample (AI reading, check it)",
+     "Measures (my words)",
+     "Measures (AI reading, check it)",
+     "Statistics (my words)",
+     "Statistics (AI reading, check it)",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "Sixty students, by the AI.",
+      "",
+      "",
+      "t-test",
+      "Independent t-test.",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),\"Design (AI reading, check it)\",Sample (my words),\"Sample (AI reading, check it)\",Measures (my words),\"Measures (AI reading, check it)\",Statistics (my words),\"Statistics (AI reading, check it)\",My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,\"Sixty students, by the AI.\",,,t-test,Independent t-test.,Good enough.\nPaper two,,,,,,,,,\nPaper five,,,,,,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": true
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Design (AI reading, check it)",
+     "Sample (my words)",
+     "Sample (AI reading, check it)",
+     "Measures (my words)",
+     "Measures (AI reading, check it)",
+     "Statistics (my words)",
+     "Statistics (AI reading, check it)",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "Sixty students, by the AI.",
+      "",
+      "",
+      "t-test",
+      "Independent t-test.",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "ai-zero",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": null,
+   "ai": "0",
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": false,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),Sample (my words),Measures (my words),Statistics (my words),My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,t-test,Good enough.\nPaper two,,,,,\nPaper five,,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": false
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "custom-order",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": "[\"verdict\",\"results\",\"bogus\",\"design\",\"limits\"]",
+   "ai": "1",
+   "colsRead": [
+    "verdict",
+    "results",
+    "design",
+    "limits"
+   ],
+   "aiRead": true,
+   "data": {
+    "head": [
+     "Paper",
+     "My verdict",
+     "Results (my words)",
+     "Results (AI reading, check it)",
+     "Design (my words)",
+     "Design (AI reading, check it)",
+     "Limitations (my words)",
+     "Limitations (AI reading, check it)"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "Good enough.",
+      "",
+      "",
+      "An experiment with two groups.",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Only limitations.",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,My verdict,Results (my words),\"Results (AI reading, check it)\",Design (my words),\"Design (AI reading, check it)\",Limitations (my words),\"Limitations (AI reading, check it)\"\n\"Paper one, with a comma\",Good enough.,,,An experiment with two groups.,,,\nPaper two,,,,,,,\nPaper five,,,,,,Only limitations.,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": false
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": false
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": false
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": true
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": true
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": true
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "My verdict",
+     "Results (my words)",
+     "Results (AI reading, check it)",
+     "Design (my words)",
+     "Design (AI reading, check it)",
+     "Limitations (my words)",
+     "Limitations (AI reading, check it)",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "Good enough.",
+      "",
+      "",
+      "An experiment with two groups.",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Only limitations.",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "bad-json",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": "not json",
+   "ai": null,
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": false,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),Sample (my words),Measures (my words),Statistics (my words),My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,t-test,Good enough.\nPaper two,,,,,\nPaper five,,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": false
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "all-bogus",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": "[\"x\",\"y\"]",
+   "ai": "1",
+   "colsRead": [],
+   "aiRead": true,
+   "data": {
+    "head": [
+     "Paper"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma"
+     ],
+     [
+      "Paper two"
+     ],
+     [
+      "Paper five"
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper\n\"Paper one, with a comma\"\nPaper two\nPaper five",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": false
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": false
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": false
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": false
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": false
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": true
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma"
+     ],
+     [
+      "Paper two"
+     ],
+     [
+      "Paper five"
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "empty-array",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": "[]",
+   "ai": null,
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": false,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),Sample (my words),Measures (my words),Statistics (my words),My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,t-test,Good enough.\nPaper two,,,,,\nPaper five,,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": false
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "not-array",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": "{\"design\":true}",
+   "ai": null,
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "verdict"
+   ],
+   "aiRead": false,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),Sample (my words),Measures (my words),Statistics (my words),My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,t-test,Good enough.\nPaper two,,,,,\nPaper five,,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": false
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": false
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": false
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": false
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": false
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Sample (my words)",
+     "Measures (my words)",
+     "Statistics (my words)",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "t-test",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  },
+  {
+   "id": "every-col-ai",
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "cols": "[\"design\",\"sample\",\"measures\",\"stats\",\"results\",\"limits\",\"strengths\",\"weak\",\"verdict\"]",
+   "ai": "1",
+   "colsRead": [
+    "design",
+    "sample",
+    "measures",
+    "stats",
+    "results",
+    "limits",
+    "strengths",
+    "weak",
+    "verdict"
+   ],
+   "aiRead": true,
+   "data": {
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Design (AI reading, check it)",
+     "Sample (my words)",
+     "Sample (AI reading, check it)",
+     "Measures (my words)",
+     "Measures (AI reading, check it)",
+     "Statistics (my words)",
+     "Statistics (AI reading, check it)",
+     "Results (my words)",
+     "Results (AI reading, check it)",
+     "Limitations (my words)",
+     "Limitations (AI reading, check it)",
+     "Strengths",
+     "Weaknesses",
+     "My verdict"
+    ],
+    "body": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "Sixty students, by the AI.",
+      "",
+      "",
+      "t-test",
+      "Independent t-test.",
+      "",
+      "",
+      "",
+      "",
+      "Random groups.",
+      "",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Clear \"aims\"\nand method.",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Only limitations.",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "ids": [
+     "a1",
+     "a2",
+     "a5"
+    ]
+   },
+   "csv": "Paper,Design (my words),\"Design (AI reading, check it)\",Sample (my words),\"Sample (AI reading, check it)\",Measures (my words),\"Measures (AI reading, check it)\",Statistics (my words),\"Statistics (AI reading, check it)\",Results (my words),\"Results (AI reading, check it)\",Limitations (my words),\"Limitations (AI reading, check it)\",Strengths,Weaknesses,My verdict\n\"Paper one, with a comma\",An experiment with two groups.,,,\"Sixty students, by the AI.\",,,t-test,Independent t-test.,,,,,Random groups.,,Good enough.\nPaper two,,,,,,,,,,,,,\"Clear \"\"aims\"\"\nand method.\",,\nPaper five,,,,,,,,,,,Only limitations.,,,,",
+   "view": {
+    "sel": [
+     {
+      "k": "design",
+      "label": "Design",
+      "checked": true
+     },
+     {
+      "k": "sample",
+      "label": "Sample",
+      "checked": true
+     },
+     {
+      "k": "measures",
+      "label": "Measures",
+      "checked": true
+     },
+     {
+      "k": "stats",
+      "label": "Statistics",
+      "checked": true
+     },
+     {
+      "k": "results",
+      "label": "Results",
+      "checked": true
+     },
+     {
+      "k": "limits",
+      "label": "Limitations",
+      "checked": true
+     },
+     {
+      "k": "strengths",
+      "label": "Strengths",
+      "checked": true
+     },
+     {
+      "k": "weak",
+      "label": "Weaknesses",
+      "checked": true
+     },
+     {
+      "k": "verdict",
+      "label": "My verdict",
+      "checked": true
+     }
+    ],
+    "ai": {
+     "label": "Also show the AI readings in separate columns (they can be wrong; your words stay first)",
+     "checked": true
+    },
+    "empty": null,
+    "head": [
+     "Paper",
+     "Design (my words)",
+     "Design (AI reading, check it)",
+     "Sample (my words)",
+     "Sample (AI reading, check it)",
+     "Measures (my words)",
+     "Measures (AI reading, check it)",
+     "Statistics (my words)",
+     "Statistics (AI reading, check it)",
+     "Results (my words)",
+     "Results (AI reading, check it)",
+     "Limitations (my words)",
+     "Limitations (AI reading, check it)",
+     "Strengths",
+     "Weaknesses",
+     "My verdict",
+     ""
+    ],
+    "rows": [
+     [
+      "Paper one, with a comma",
+      "An experiment with two groups.",
+      "",
+      "",
+      "Sixty students, by the AI.",
+      "",
+      "",
+      "t-test",
+      "Independent t-test.",
+      "",
+      "",
+      "",
+      "",
+      "Random groups.",
+      "",
+      "Good enough."
+     ],
+     [
+      "Paper two",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Clear \"aims\"\nand method.",
+      "",
+      ""
+     ],
+     [
+      "Paper five",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Only limitations.",
+      "",
+      "",
+      "",
+      ""
+     ]
+    ],
+    "remove": [
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     },
+     {
+      "text": "×",
+      "title": "Remove this card"
+     }
+    ],
+    "csvButton": "⬇ Download as CSV",
+    "note": "Cells are your words from the walk-through and the card. An empty cell means you have not written it yet. Cards live in this browser; back them up in Settings, Backup."
+   }
+  }
+ ],
+ "toggles": [
+  {
+   "cols": null,
+   "k": "results",
+   "on": true,
+   "stored": "[\"design\",\"sample\",\"measures\",\"stats\",\"results\",\"verdict\"]"
+  },
+  {
+   "cols": null,
+   "k": "design",
+   "on": false,
+   "stored": "[\"sample\",\"measures\",\"stats\",\"verdict\"]"
+  },
+  {
+   "cols": null,
+   "k": "verdict",
+   "on": true,
+   "stored": "[\"design\",\"sample\",\"measures\",\"stats\",\"verdict\"]"
+  },
+  {
+   "cols": "[\"verdict\",\"design\"]",
+   "k": "sample",
+   "on": true,
+   "stored": "[\"design\",\"sample\",\"verdict\"]"
+  },
+  {
+   "cols": "[\"design\"]",
+   "k": "design",
+   "on": false,
+   "stored": "[]"
+  },
+  {
+   "cols": "[\"x\"]",
+   "k": "weak",
+   "on": true,
+   "stored": "[\"weak\"]"
+  },
+  {
+   "cols": "[]",
+   "k": "limits",
+   "on": true,
+   "stored": "[\"design\",\"sample\",\"measures\",\"stats\",\"limits\",\"verdict\"]"
+  }
+ ],
+ "dels": [
+  {
+   "id": "yes-other",
+   "row": 0,
+   "answer": true,
+   "loaded": false,
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "asked": [
+    "Remove the saved card for \"Paper one, with a comma\"? Your words for this paper are deleted from this browser."
+   ],
+   "after": {
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "res": null,
+   "tryDraft": null
+  },
+  {
+   "id": "no",
+   "row": 1,
+   "answer": false,
+   "loaded": false,
+   "notes": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "asked": [
+    "Remove the saved card for \"Paper two\"? Your words for this paper are deleted from this browser."
+   ],
+   "after": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "res": null,
+   "tryDraft": null
+  },
+  {
+   "id": "yes-loaded",
+   "row": 0,
+   "answer": true,
+   "loaded": true,
+   "notes": {
+    "asleepandexamanxietyinfir5317": {
+     "stages": {
+      "design": {
+       "mine": "Loaded words"
+      }
+     },
+     "card": {},
+     "title": "Sleep and exam anxiety in first-year students: a fictional teaching paper"
+    },
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "asked": [
+    "Remove the saved card for \"Sleep and exam anxiety in first-year students: a fictional teaching paper\"? Your words for this paper are deleted from this browser."
+   ],
+   "after": {
+    "a1": {
+     "stages": {
+      "design": {
+       "mine": "An experiment with two groups."
+      },
+      "sample": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Sixty students, by the AI.",
+        "quotes": []
+       }
+      },
+      "stats": {
+       "mine": "t-test",
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "reading": "Independent t-test.",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "verdict": "Good enough.",
+      "strengths": "Random groups."
+     },
+     "title": "Paper one, with a comma"
+    },
+    "a2": {
+     "stages": {},
+     "card": {
+      "strengths": "Clear \"aims\"\nand method."
+     },
+     "title": "Paper two"
+    },
+    "a3": {
+     "stages": {
+      "design": {
+       "mine": "No title on this one."
+      }
+     },
+     "card": {}
+    },
+    "a4": {
+     "stages": {},
+     "card": {},
+     "title": "Paper four, nothing written"
+    },
+    "a5": {
+     "stages": {
+      "limits": {
+       "mine": "Only limitations."
+      }
+     },
+     "card": {},
+     "title": "Paper five"
+    },
+    "a6": {
+     "stages": {
+      "results": {
+       "res": {
+        "partial": false,
+        "n": 1,
+        "of": 1,
+        "raw": "raw reply",
+        "quotes": []
+       }
+      }
+     },
+     "card": {
+      "notes": "Notes are not a column."
+     },
+     "title": "Paper six"
+    }
+   },
+   "res": {},
+   "tryDraft": {}
+  }
  ]
 }

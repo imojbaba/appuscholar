@@ -99,6 +99,10 @@
     "lines": "9938-9938",
     "sha256": "a7b5a960cf1e65e9aedf4effb17b8910b5df07b39b52cc8fe1945c2997a949fc"
   },
+  "ap2_dois_read": {
+    "lines": "10132-10132",
+    "sha256": "7c53cf9104cca023a282afc222538fb1b3db6658b6691ab9a91654053811fe4c"
+  },
   "ap2_dois_s": {
     "lines": "11263-11263",
     "sha256": "37ea4364b39915b42663e5887bb3d5014a8080c735c0e94d199fb82b36061b35"
@@ -263,6 +267,10 @@
     "lines": "11284-11284",
     "sha256": "db86af4d0e582323beb729982a1c98832511a58c0c3ce62f4d3854cdabe5a7e0"
   },
+  "ap2_paper_card_head": {
+    "lines": "10126-10126",
+    "sha256": "360549dc80b7e5e5d6c9865b8c0ff210d8ca7421854eb49a3d0d4cc6b794ea71"
+  },
   "ap2_paper_card_your_own": {
     "lines": "11327-11327",
     "sha256": "59b2c3c1a2f7c29ba6e7edeb23385921508cec1fc4279aa3345edd41d1000b6e"
@@ -334,6 +342,10 @@
   "ap2_reference_list_check": {
     "lines": "11263-11263",
     "sha256": "37ea4364b39915b42663e5887bb3d5014a8080c735c0e94d199fb82b36061b35"
+  },
+  "ap2_reference_list_check_head": {
+    "lines": "10132-10132",
+    "sha256": "7c53cf9104cca023a282afc222538fb1b3db6658b6691ab9a91654053811fe4c"
   },
   "ap2_reference_list_check_openalex": {
     "lines": "10132-10132",

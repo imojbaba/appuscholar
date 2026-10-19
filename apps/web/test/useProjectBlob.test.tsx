@@ -160,6 +160,11 @@ describe("blob kinds", () => {
     expect(parseBlob("shelf_paper:p1", JSON.stringify({ pages: [1] }))).toBeNull();
     const notes = { d1: { stages: { aims: { mine: "my words" }, design: { res: { reading: "x" } } }, card: {}, title: "Paper" } };
     expect(parseBlob("ap_notes", JSON.stringify(notes))).toEqual(notes);
+    // v1's note as apWalkShow and apCardField write it (10061, 10121): a reply with its checked quotations, the card's fields (Task 13).
+    const v1Note = { a1: { stages: { gap: { mine: "m", res: { partial: false, n: 3, of: 3, reading: "r", quotes: [{ q: "a quotation", ok: true, page: 1, sec: "Method", label: "page 1" }, { q: "x", ok: false, why: "too short to check" }], not_stated: ["n"], watch: "w", cq: "q", ca: "a" } }, stats: { res: { partial: true, n: 1, of: 9, raw: "not json", quotes: [] } } }, card: { strengths: "s", weak: "w", verdict: "v", notes: "n" }, title: "T" } };
+    expect(parseBlob("ap_notes", JSON.stringify(v1Note))).toEqual(v1Note);
+    expect(parseBlob("ap_notes", JSON.stringify({ a1: { stages: { gap: { res: { quotes: "q" } } }, card: {} } }))).toBeNull();
+    expect(parseBlob("ap_notes", JSON.stringify({ a1: { stages: {}, card: { verdict: 1 } } }))).toBeNull();
     expect(parseBlob("ap_cols", JSON.stringify(["Sample size"]))).toEqual(["Sample size"]);
     // The Reading shelf's matrix columns (ruling R14): names, v1's appu_shelf_cols (11697).
     expect(parseBlob("shelf_cols", JSON.stringify(["Sample", "Method", "Key finding"]))).toEqual(["Sample", "Method", "Key finding"]);

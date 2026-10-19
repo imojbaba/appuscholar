@@ -50,18 +50,29 @@ const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str,
 /** A highlight or note on a shelf paper (v1 11681: id, page, quote, note, at). */
 const HighlightSchema = z.looseObject({ id: str, page: num, quote: str, note: str, at: str });
 const ShelfPaperSchema = z.looseObject({ pages: z.array(str), notes: z.array(HighlightSchema), cells: z.record(str, str) });
+/** A quotation of a walk-through reply as apCheckQuote checked it (v1 10010-10017): the text, found or not, and why not or where. */
+const ApQuoteSchema = z.looseObject({ q: str, ok: z.boolean(), why: str.optional(), page: num.optional(), sec: str.optional(), label: str.optional() });
 /**
- * Analyse a paper's notes, by paper (document) id. A stage holds the student's own words (`mine`) and the AI's reading (`res`, the walk's
- * result object, not checked here); v1 creates both lazily, so each may be missing. The card's fields are the student's; loose here.
+ * One stage's reply as apWalkShow keeps it (v1 10057-10059, core's ApWalkRes): apPick's numbers, then the raw text (a reply that was not JSON) or the reading, the checked quotations,
+ * what the paper does not report, what to judge, and the check question with its answer. Every field optional, as a stored note may come from an older v1.
+ */
+const ApWalkResSchema = z.looseObject({
+  partial: z.boolean().optional(), n: num.optional(), of: num.optional(), raw: str.optional(), reading: str.optional(), quotes: z.array(ApQuoteSchema).optional(),
+  not_stated: z.array(str).optional(), watch: str.optional(), cq: str.optional(), ca: str.optional()
+});
+/**
+ * Analyse a paper's notes, by v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), as v1's apNotePut (9895) writes appu_ap_notes: per stage key (AP_STAGES' k)
+ * the student's own words (`mine`, apDraft 10118) and the reply (`res`, apWalkShow 10061), each written lazily so either may be missing; the card's fields (apCardField 10121: strengths,
+ * weak, verdict, notes; the lesson adds verdict and reflection, 11190-11191); the paper's title. `chars` is never written by v1 (kept optional).
  */
 const ApNoteSchema = z.looseObject({
-  stages: z.record(str, z.looseObject({ mine: str.optional(), res: z.unknown().optional() })),
-  card: z.record(str, z.unknown()),
+  stages: z.record(str, z.looseObject({ mine: str.optional(), res: ApWalkResSchema.optional() })),
+  card: z.looseObject({ strengths: str.optional(), weak: str.optional(), verdict: str.optional(), notes: str.optional(), reflection: str.optional() }),
   title: str.optional(),
   chars: num.optional()
 });
 const ApNotesSchema = z.record(str, ApNoteSchema);
-/** The shelf matrix's column names. */
+/** The columns of "📊 My paper cards side by side", AP_COLS keys in the order apAcrossColToggle stores them (v1 appu_ap_cols, 9939-9941; ruling R28: a list only, the AI-columns box is the tab's memory). */
 const ApColsSchema = z.array(str);
 /** The Reading shelf matrix's column names (v1 appu_shelf_cols, 11697; ruling R14). An empty list means the default columns, as v1's shCols reads it. */
 const ShelfColsSchema = z.array(str);
@@ -76,6 +87,7 @@ export type ShelfIndex = z.infer<typeof ShelfIndexSchema>;
 export type Highlight = z.infer<typeof HighlightSchema>;
 export type ShelfPaper = z.infer<typeof ShelfPaperSchema>;
 export type ApNotes = z.infer<typeof ApNotesSchema>;
+export type ApNote = z.infer<typeof ApNoteSchema>;
 export type ApCols = z.infer<typeof ApColsSchema>;
 export type RsPrefs = z.infer<typeof RsPrefsSchema>;
 export type ShelfCols = z.infer<typeof ShelfColsSchema>;

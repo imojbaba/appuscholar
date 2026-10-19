@@ -533,3 +533,17 @@
 .ap-read pre { white-space: pre-wrap; font-size: 11px; max-height: 180px; overflow: auto; font-family: var(--font-mono); }
 .ap-flags { margin: 4px 0; padding-left: 18px; }
 .ap-flags a { color: var(--accent-ink); text-decoration: underline; }
+/* The walk-through, the paper card and the cards side by side (v1 11302-11331, 9968-9975). */
+.ap-stage-h { margin: 6px 0; font-size: 14px; font-weight: 600; }
+.ap-check { display: flex; gap: 4px; align-items: center; cursor: pointer; font-size: 12.5px; }
+.ap-cols { gap: 10px; margin-bottom: 6px; }
+.ap-check input { accent-color: var(--purple-600); }
+.ap-across { margin-top: 14px; }
+.ap-across > summary { cursor: pointer; font-weight: 700; }
+.ap-across #apAcross { margin-top: 8px; }
+.ap-table { overflow: auto; }
+.ap-table table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
+.ap-table th { text-align: left; padding: 4px; border-bottom: 1px solid var(--line); }
+.ap-table td { vertical-align: top; padding: 4px; min-width: 130px; }
+.ap-table td.ap-paper { font-weight: 700; min-width: 140px; }
+.ap-table td:last-child { min-width: 0; }

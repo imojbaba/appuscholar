@@ -3,14 +3,19 @@ import { useEffect, useRef } from "react";
 import { apPreview } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { fromPending } from "@/lib/analyse/intake";
-import { useApState, type ApLoaded, type ApMode } from "@/lib/analyse/useApDoc";
-import { AP_LECTURES_LATER, AP_LESSON_LATER, AP_NEXT_TASK } from "@/lib/analyse/later";
+import { useApNotes } from "@/lib/analyse/notes";
+import { setAp, useApState, type ApLoaded, type ApMode } from "@/lib/analyse/useApDoc";
+import { AP_LECTURES_LATER, AP_LESSON_LATER } from "@/lib/analyse/later";
+import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { Across } from "./Across";
 import { Ask } from "./Ask";
+import { Card } from "./Card";
 import { Intake } from "./Intake";
 import { RefCheck } from "./RefCheck";
+import { Walk } from "./Walk";
 
 /** apRender's head (11278-11283): the title, the pages and characters read, the abstract-only warning, the sections found, and "Check what Appuscholer read" with the two-column warning. */
 function Head({ d }: { d: ApLoaded }) {
@@ -33,11 +38,11 @@ function Head({ d }: { d: ApLoaded }) {
   );
 }
 
-/** The mode tabs (11284): Ask, the walk-through (disabled for an abstract, "(full paper needed)"), the paper card, and the lesson for the practice paper only. */
+/** The mode tabs (11284): Ask, the walk-through (disabled for an abstract, "(full paper needed)"), the paper card, and the lesson for the practice paper only (apSet('mode', k), 10113). */
 function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
   const t = useT();
-  // Task 13 opens the walk-through and the paper card here; the lesson and the lectures are Phase 5 (register D-S2-15).
-  const open = (k: ApMode) => { if (k !== "ask") toast(k === "lesson" ? AP_LESSON_LATER : AP_NEXT_TASK); };
+  // The lesson and the lectures are Phase 5 (register D-S2-15).
+  const open = (k: ApMode) => { if (k === "lesson") toast(AP_LESSON_LATER); else setAp({ mode: k }); };
   const tab = (k: ApMode, l: string) => (d.abstractOnly && k === "walk")
     ? <Button key={k} variant="ghost" size="sm" data-testid={"ap-tab-" + k} disabled title={t("ap2_the_walk_through_needs_title")}>{t("ap2_full_paper_needed", { l })}</Button>
     : <Button key={k} variant={mode === k ? "primary" : "ghost"} size="sm" data-testid={"ap-tab-" + k} onClick={() => open(k)}>{l}</Button>;
@@ -50,14 +55,17 @@ function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
 
 /**
  * Analyse a paper (v1 741-760 and apRender 11272-11334), in v1's order: the heading and its sentence, "📚 All lectures" (Phase 5), the intake, then #apMain for the loaded paper (the head, the
- * tabs, the reference check unless it is an abstract, "Reading the paper and writing the answer…" while a request runs, and the tab's content), then "📊 My paper cards side by side" (Task 13).
+ * tabs, the reference check unless it is an abstract, "Reading the paper and writing the answer…" while a request runs, and the tab's content: Ask, the walk-through, the paper card), then
+ * "📊 My paper cards side by side". The walk-through, the card and the cards side by side share one store of the project's ap_notes and ap_cols blobs (lib/analyse/notes.ts).
  * The paper lives in this tab's memory (lib/analyse/useApDoc.ts). Research's "📄 Analyse this paper" leaves its abstract in the workspace (pendingAnalyse): it is loaded here abstract-only, then
  * cleared (ruling R7).
  */
 export function AnalysePanel() {
   const t = useT();
   const s = useApState();
-  const { pendingAnalyse, setPendingAnalyse } = useWorkspace();
+  const { project, pendingAnalyse, setPendingAnalyse } = useWorkspace();
+  const { me } = useSettings();
+  const notes = useApNotes(project?.id ?? me?.scratchProjectId ?? null);
   // The kept abstract is loaded once: a second run of the effect for the same value (React's StrictMode, or a language change before the clear lands) does nothing.
   const consumed = useRef<typeof pendingAnalyse>(null);
   useEffect(() => {
@@ -84,11 +92,13 @@ export function AnalysePanel() {
             {!d.abstractOnly && <RefCheck />}
             {s.busy && <div className="ap-box" data-testid="ap-busy">{t("ap2_reading_the_paper_and")}</div>}
             {s.mode === "ask" && <Ask />}
-            {/* Task 13: the walk-through (mode "walk") and the paper card (mode "card") render here. */}
+            {/* apRender (11277): an abstract never shows the walk-through. */}
+            {s.mode === "walk" && !d.abstractOnly && <Walk notes={notes} />}
+            {s.mode === "card" && <Card notes={notes} />}
           </>
         )}
       </div>
-      {/* Task 13: "📊 My paper cards side by side" (#apAcrossBox, v1 759) goes here. */}
+      <Across notes={notes} />
     </div>
   );
 }

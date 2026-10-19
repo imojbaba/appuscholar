@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { AP_SAMPLE, apBuild, apNumbers } from "../../src/analyse";
+import { AP_SAMPLE, AP_STAGES, apBuild, apNumbers } from "../../src/analyse";
+import { buildWalkPrompt } from "../../src/prompts-analyse";
+import { AP_COLS, apWalkRes, apAcrossCell, apAcrossColToggle, apAcrossCols, apAcrossCsv, apAcrossData, apCardText } from "../../src/analyse-cards";
 import { apDocxText, apFileKind, apFileStem, apLoadRefusal, apNumP, apPreview, apShelfLabel, apTitleOf } from "../../src/analyse-page";
 import { shTitleGuess } from "../../src/shelf";
 import { readFixture } from "./harness/fixture";
@@ -103,5 +105,86 @@ describe("apShelfLabel is apShelfFill's option text", () => {
     expect(apShelfLabel({ title: "A".repeat(100), file: "f.pdf" }, "Paper")).toBe("A".repeat(90));
     expect(apShelfLabel({ title: "", file: "f.pdf" }, "Paper")).toBe("f.pdf");
     expect(apShelfLabel({}, "Paper")).toBe("Paper");
+  });
+});
+
+/* ---- Task 13: the paper card's text and the cards side by side (analyse-cards.ts) against v1's apCardText, apAcrossCols, apAcrossColToggle and apAcrossData (with pdCsv). */
+type Note = { stages?: Record<string, { mine?: string; res?: Record<string, unknown> }>; card?: Record<string, string>; title?: string };
+type Fx13 = {
+  cards: Array<{ id: string; note: Note | null; refs: unknown; text: string }>;
+  across: Array<{ id: string; notes: Record<string, Note>; cols: string | null; ai: string | null; colsRead: string[]; aiRead: boolean; data: { head: string[]; body: string[][]; ids: string[] }; csv: string }>;
+  toggles: Array<{ cols: string | null; k: string; on: boolean; stored: string }>;
+  walks: Array<{ id: string; paper: string; stage: number; mine: string | null; reply: string; opts: Array<Record<string, unknown>>; res: Record<string, unknown> | null; stored: { stages: Record<string, { mine?: string; res?: unknown }> } | null; k: string }>;
+};
+const fx13 = readFixture<Fx13>("appanel", "cases");
+const sampleDoc = { title: sampleTitle };
+/** v1's own words, as the panel gives them through t(): the card's (10126-10133) and the table's (9961). */
+const CARD_L = {
+  head: "PAPER CARD", myWords: "My words:", notWritten: "(not written)", reading: "Reading:", refHead: "REFERENCE LIST CHECK (OpenAlex)", doisRead: "DOIs read,", known: "known to OpenAlex,",
+  flagged: "flagged as retracted:", none: "none flagged", warning: ". A warning signal only; no flag is not proof of soundness.", strengths: "STRENGTHS", weak: "WEAKNESSES",
+  verdict: "MY VERDICT IN ONE LINE", notes: "MY NOTES", closing: "Made with Appuscholer. Parts were written with AI help from the text of the paper; check every point against the paper itself.",
+};
+const ACROSS_L = { paper: "Paper", myWords: "(my words)", aiReading: "(AI reading, check it)", names: Object.fromEntries(AP_COLS.map(([k, l]) => [k, l])) };
+/** What v1's LS.get gives apAcrossCols: the stored text read as JSON, or null; core's apAcrossCols takes the parsed value (the panel's ap_cols blob). */
+const stored = (raw: string | null): unknown => { try { return JSON.parse(raw ?? "null"); } catch { return null; } };
+
+describe("apCardText is v1's apCardText", () => {
+  it("the cases reach every branch: no note, no stage, mine only, reading only, a reply without a reading, the reference line flagged, none flagged, unfinished and a none box", () => {
+    expect(fx13.cards.map((c) => c.id)).toEqual(["no-note", "empty-note", "mixed", "mixed-refs-flagged", "mixed-refs-none", "mixed-refs-one-flag", "mixed-refs-running", "mixed-refs-none-box", "card-only"]);
+    expect(fx13.cards.filter((c) => c.text.includes("REFERENCE LIST CHECK")).length).toBe(3);
+  });
+  it("the same text for every case, byte for byte", () => {
+    for (const c of fx13.cards) {
+      expect(apCardText({ title: sampleDoc.title, note: c.note ?? undefined, refs: c.refs as Parameters<typeof apCardText>[0]["refs"], stages: AP_STAGES, L: CARD_L }), c.id).toBe(c.text);
+    }
+  });
+  it("closes with v1's line", () => {
+    for (const c of fx13.cards) expect(c.text.endsWith("\n\n" + CARD_L.closing + "\n"), c.id).toBe(true);
+  });
+});
+
+describe("AP_COLS, apAcrossCols, apAcrossColToggle and apAcrossData are v1's", () => {
+  it("AP_COLS is v1's table (generated) and the defaults are design, sample, measures, stats, verdict", () => {
+    expect(AP_COLS.map((c) => c[0])).toEqual(["design", "sample", "measures", "stats", "results", "limits", "strengths", "weak", "verdict"]);
+    expect(apAcrossCols(null)).toEqual(["design", "sample", "measures", "stats", "verdict"]);
+  });
+  it("the columns read from what is stored: none, bad JSON, not an array, an empty one (the defaults), unknown keys dropped in the stored order", () => {
+    for (const a of fx13.across) expect(apAcrossCols(stored(a.cols)), a.id).toEqual(a.colsRead);
+    expect(new Set(fx13.across.map((a) => a.colsRead.join(",")))).toContain("");
+  });
+  it("a toggle gives the columns v1 stores, in AP_COLS order", () => {
+    for (const c of fx13.toggles) expect(apAcrossColToggle(apAcrossCols(stored(c.cols)), c.k, c.on), JSON.stringify(c)).toEqual(JSON.parse(c.stored));
+  });
+  it("the table and the CSV: one row per paper with a title and any card or stage text, the head with (my words) and the AI columns", () => {
+    expect(fx13.across.some((a) => a.data.body.length === 0)).toBe(true);
+    expect(fx13.across.some((a) => a.data.head.some((h) => h.endsWith("(AI reading, check it)")))).toBe(true);
+    for (const a of fx13.across) {
+      const d = apAcrossData(a.notes, a.colsRead, a.aiRead, ACROSS_L);
+      expect(d, a.id).toEqual(a.data);
+      expect(apAcrossCsv(d), a.id).toBe(a.csv);
+    }
+  });
+  it("apAcrossCell reads the card for strengths, weak and verdict, else the stage's own words or (ai) its reading", () => {
+    const n = { stages: { design: { mine: "m", res: { reading: "r" } } }, card: { strengths: "s", weak: "w", verdict: "v" } };
+    expect(["design", "strengths", "weak", "verdict", "sample"].map((k) => [apAcrossCell(n, k, false), apAcrossCell(n, k, true)])).toEqual([["m", "r"], ["s", "s"], ["w", "w"], ["v", "v"], ["", ""]]);
+  });
+});
+
+describe("apWalkRes is what apWalkShow keeps of the reply", () => {
+  it("the cases reach JSON with matched and unmatched quotations, a fence with five quotations, a raw reply, a bare reading, numbers in not_stated, a long paper read in part, and a refusal", () => {
+    expect(fx13.walks.map((w) => w.id)).toEqual(["sample-gap-full", "sample-sample-nothing-tried", "sample-stats-raw", "sample-results-bare", "sample-limits-numbers", "x3-partial", "no-consent"]);
+    expect(fx13.walks.filter((w) => w.res === null).map((w) => w.id)).toEqual(["no-consent"]);
+  });
+  it("the same object for every reply, with apPick's numbers from buildWalkPrompt and the call's options", () => {
+    for (const w of fx13.walks) {
+      if (!w.res) continue;
+      const p = paperOf(w.paper);
+      const doc = apBuild(p.title, p.pages, p.src);
+      const built = buildWalkPrompt("psychology", doc, AP_STAGES[w.stage]!, w.mine ?? "");
+      expect(apWalkRes(doc, built.pick, w.reply), w.id).toEqual(w.res);
+      expect(JSON.stringify(apWalkRes(doc, built.pick, w.reply)), w.id).toBe(JSON.stringify(w.res));
+      expect(w.opts, w.id).toEqual([{ max: built.max, temp: built.temp, noLang: built.noLang }]);
+      expect(w.stored!.stages[w.k], w.id).toEqual({ mine: (w.mine ?? "").trim(), res: w.res });
+    }
   });
 });

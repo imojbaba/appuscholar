@@ -37,6 +37,7 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: h.projectId, index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
+vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: false, locked: false, set: () => {}, flush: async () => true }) }));
 vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) throw new Error("chunk failed"); return { extractRawText: h.mammoth }; } }));
 
 import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
@@ -139,16 +140,18 @@ describe("Analyse a paper: the panel (v1 741-760)", () => {
     for (let i = 1; i < order.length; i++) expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("📚 All lectures, the Lesson tab (the practice paper only) are Phase 5; the walk-through and the paper card toast until Task 13", async () => {
+  it("📚 All lectures and the Lesson tab (the practice paper only) are Phase 5; the walk-through and the paper card open (Task 13)", async () => {
     await mount();
     await click(tid("ap-lectures"));
     await click(tid("ap-sample-btn"));
     expect(tid("ap-tab-lesson")!.textContent).toBe("🎓 Lesson on this paper");
     await click(tid("ap-tab-lesson"));
-    await click(tid("ap-tab-walk"));
-    await click(tid("ap-tab-card"));
-    expect(toasts()).toEqual(["Lectures arrive in a later phase.", "Lessons arrive in a later phase.", "This part arrives in the next task.", "This part arrives in the next task."]);
     expect(getAp().mode).toBe("ask");
+    await click(tid("ap-tab-walk"));
+    expect(getAp().mode).toBe("walk");
+    await click(tid("ap-tab-card"));
+    expect(getAp().mode).toBe("card");
+    expect(toasts()).toEqual(["Lectures arrive in a later phase.", "Lessons arrive in a later phase."]);
     load("pasted-headings");
     await settle();
     expect(tid("ap-tab-lesson")).toBeNull();

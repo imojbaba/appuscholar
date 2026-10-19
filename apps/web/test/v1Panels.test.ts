@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { applyV1Panels, decodeEntities, extractV1Panels } from "../scripts/extract-v1-panels.mjs";
 
@@ -96,6 +98,15 @@ describe("extractV1Panels", () => {
     expect(() => extractV1Panels(src, [], [{ ...frag, line: 1 }])).toThrow(/does not hold/);
     expect(() => extractV1Panels(src, [], [{ ...frag, literal: " page " }])).toThrow(/does not hold/);
     expect(() => extractV1Panels(src, [], [{ ...frag, text: "{n} sheets," }])).toThrow(/is not the literal/);
+  });
+  it("keys a fragment that ends in a line break without it (Task 13: the paper card's heading)", () => {
+    const src = "x\n  let t='PAPER CARD\\n'+d.title+'\\n\\n';\n";
+    const frag = { prefix: "ap2", line: 2, src: "'PAPER CARD\\n'+d.title", literal: "PAPER CARD\\n", key: "ap2_paper_card_head", text: "PAPER CARD" };
+    const r = extractV1Panels(src, [], [frag]) as { en: Record<string, string> };
+    expect(r.en).toEqual({ ap2_paper_card_head: "PAPER CARD" });
+    expect(() => extractV1Panels(src, [], [{ ...frag, text: "PAPER CARDS" }])).toThrow(/is not the literal/);
+    const en = JSON.parse(readFileSync(join(__dirname, "../messages/en.json"), "utf8")) as Record<string, string>;
+    expect([en.ap2_paper_card_head, en.ap2_reference_list_check_head, en.ap2_dois_read]).toEqual(["PAPER CARD", "REFERENCE LIST CHECK (OpenAlex)", "DOIs read,"]);
   });
   it("decodes entities", () => {
     expect(decodeEntities("A &amp; B &lt;i&gt; &#39;x&#39; &#x2014; &nbsp;")).toBe("A & B <i> 'x' —  ");

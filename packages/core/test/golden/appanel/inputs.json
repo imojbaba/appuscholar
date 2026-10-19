@@ -247,5 +247,618 @@
    "q": " gap ",
    "reply": "{}"
   }
- ]
+ ],
+ "walks": [
+  {
+   "id": "sample-gap-full",
+   "paper": "sample@apSample",
+   "stage": 0,
+   "mine": "  They wanted to know if a sleep routine lowers exam anxiety.  ",
+   "reply": "{\"reading\":\"You are right that the study asks whether a sleep routine lowers exam anxiety. You missed that earlier work was mostly observational.\",\"quotes\":[\"Sixty first-year students from one college were randomly placed in a routine group or a waiting group.\",\"Students slept for nine hours every night during the exam weeks and their marks rose.\"],\"not_stated\":[\"A power calculation\",\"How many students dropped out\"],\"watch_for\":\"Judge whether one college is enough to speak of all students.\",\"check_question\":\"What was missing in earlier work?\",\"check_answer\":\"Earlier work was mostly observational, so it could not show cause.\"}"
+  },
+  {
+   "id": "sample-sample-nothing-tried",
+   "paper": "sample@apSample",
+   "stage": 3,
+   "reply": "```json\n{\"reading\":\"Sixty students took part.\",\"quotes\":[\"Sixty first-year students from one college were randomly placed in a routine group or a waiting group.\",\"Sixty students\",\"The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.\",\"Students slept for nine hours every night during the exam weeks and their marks rose.\",\"A coin toss decided the group for each student.\"],\"not_stated\":[],\"watch_for\":\"\",\"check_question\":\"How was the number of students decided?\",\"check_answer\":\"By the number who volunteered before the deadline.\"}\n```"
+  },
+  {
+   "id": "sample-stats-raw",
+   "paper": "sample@apSample",
+   "stage": 7,
+   "mine": "A t-test",
+   "reply": "An independent-samples t-test, because two groups were compared."
+  },
+  {
+   "id": "sample-results-bare",
+   "paper": "sample@apSample",
+   "stage": 8,
+   "reply": "{\"reading\":\"Only a reading.\"}"
+  },
+  {
+   "id": "sample-limits-numbers",
+   "paper": "sample@apSample",
+   "stage": 10,
+   "reply": "{\"reading\":\"Limits.\",\"quotes\":[],\"not_stated\":[\"Attrition\",3],\"watch_for\":\"Watch the self-report.\",\"check_question\":\"\",\"check_answer\":\"Unused.\"}"
+  },
+  {
+   "id": "x3-partial",
+   "paper": "sample-x3",
+   "consent": true,
+   "stage": 7,
+   "mine": "The t-test",
+   "reply": "{\"reading\":\"An independent-samples t-test compared the change scores.\",\"quotes\":[\"Change scores of the two groups were compared with an independent-samples t-test.\"],\"not_stated\":[],\"watch_for\":\"Whether the groups were equal at the start.\",\"check_question\":\"Which test was used?\",\"check_answer\":\"An independent-samples t-test.\"}"
+  },
+  {
+   "id": "no-consent",
+   "paper": "pasted-headings",
+   "consent": false,
+   "stage": 1,
+   "mine": "x",
+   "reply": "{}"
+  }
+ ],
+ "cards": [
+  {
+   "id": "no-note",
+   "note": null,
+   "refs": null
+  },
+  {
+   "id": "empty-note",
+   "note": {
+    "stages": {},
+    "card": {}
+   },
+   "refs": null
+  },
+  {
+   "id": "mixed",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": null
+  },
+  {
+   "id": "mixed-refs-flagged",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": "fetch"
+  },
+  {
+   "id": "mixed-refs-none",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1000/a",
+     "10.1000/b",
+     "10.1000/c"
+    ],
+    "flag": {},
+    "seen": {
+     "10.1000/a": true
+    },
+    "done": 3,
+    "finished": true
+   }
+  },
+  {
+   "id": "mixed-refs-one-flag",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1000/a",
+     "10.1000/b"
+    ],
+    "flag": {
+     "10.1000/b": "A retracted study"
+    },
+    "seen": {
+     "10.1000/a": true,
+     "10.1000/b": true
+    },
+    "done": 2,
+    "finished": true
+   }
+  },
+  {
+   "id": "mixed-refs-running",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "dois": [
+     "10.1000/a"
+    ],
+    "flag": {},
+    "seen": {},
+    "done": 0
+   }
+  },
+  {
+   "id": "mixed-refs-none-box",
+   "note": {
+    "stages": {
+     "gap": {
+      "mine": "The gap is causal evidence.",
+      "res": {
+       "partial": false,
+       "n": 3,
+       "of": 3,
+       "reading": "You saw the gap.",
+       "quotes": [],
+       "not_stated": [],
+       "watch": "",
+       "cq": "",
+       "ca": ""
+      }
+     },
+     "design": {
+      "mine": "Only my words here."
+     },
+     "stats": {
+      "res": {
+       "partial": false,
+       "n": 2,
+       "of": 2,
+       "reading": "A t-test, read by the AI.",
+       "quotes": []
+      }
+     },
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "not json",
+       "quotes": []
+      }
+     },
+     "limits": {
+      "mine": ""
+     }
+    },
+    "card": {
+     "strengths": "Random allocation.",
+     "weak": "One college, \"small\" sample, self-report.",
+     "verdict": "Promising, not proof.",
+     "notes": "Line one\nLine two"
+    }
+   },
+   "refs": {
+    "none": "no DOIs"
+   }
+  },
+  {
+   "id": "card-only",
+   "note": {
+    "stages": {},
+    "card": {
+     "verdict": "Only a verdict."
+    }
+   },
+   "refs": null
+  }
+ ],
+ "across": {
+  "notes": {
+   "a1": {
+    "stages": {
+     "design": {
+      "mine": "An experiment with two groups."
+     },
+     "sample": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "reading": "Sixty students, by the AI.",
+       "quotes": []
+      }
+     },
+     "stats": {
+      "mine": "t-test",
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "reading": "Independent t-test.",
+       "quotes": []
+      }
+     }
+    },
+    "card": {
+     "verdict": "Good enough.",
+     "strengths": "Random groups."
+    },
+    "title": "Paper one, with a comma"
+   },
+   "a2": {
+    "stages": {},
+    "card": {
+     "strengths": "Clear \"aims\"\nand method."
+    },
+    "title": "Paper two"
+   },
+   "a3": {
+    "stages": {
+     "design": {
+      "mine": "No title on this one."
+     }
+    },
+    "card": {}
+   },
+   "a4": {
+    "stages": {},
+    "card": {},
+    "title": "Paper four, nothing written"
+   },
+   "a5": {
+    "stages": {
+     "limits": {
+      "mine": "Only limitations."
+     }
+    },
+    "card": {},
+    "title": "Paper five"
+   },
+   "a6": {
+    "stages": {
+     "results": {
+      "res": {
+       "partial": false,
+       "n": 1,
+       "of": 1,
+       "raw": "raw reply",
+       "quotes": []
+      }
+     }
+    },
+    "card": {
+     "notes": "Notes are not a column."
+    },
+    "title": "Paper six"
+   }
+  },
+  "states": [
+   {
+    "id": "empty",
+    "notes": {},
+    "cols": null,
+    "ai": null
+   },
+   {
+    "id": "defaults",
+    "cols": null,
+    "ai": null
+   },
+   {
+    "id": "defaults-ai",
+    "cols": null,
+    "ai": "1"
+   },
+   {
+    "id": "ai-zero",
+    "cols": null,
+    "ai": "0"
+   },
+   {
+    "id": "custom-order",
+    "cols": "[\"verdict\",\"results\",\"bogus\",\"design\",\"limits\"]",
+    "ai": "1"
+   },
+   {
+    "id": "bad-json",
+    "cols": "not json",
+    "ai": null
+   },
+   {
+    "id": "all-bogus",
+    "cols": "[\"x\",\"y\"]",
+    "ai": "1"
+   },
+   {
+    "id": "empty-array",
+    "cols": "[]",
+    "ai": null
+   },
+   {
+    "id": "not-array",
+    "cols": "{\"design\":true}",
+    "ai": null
+   },
+   {
+    "id": "every-col-ai",
+    "cols": "[\"design\",\"sample\",\"measures\",\"stats\",\"results\",\"limits\",\"strengths\",\"weak\",\"verdict\"]",
+    "ai": "1"
+   }
+  ],
+  "toggles": [
+   {
+    "cols": null,
+    "k": "results",
+    "on": true
+   },
+   {
+    "cols": null,
+    "k": "design",
+    "on": false
+   },
+   {
+    "cols": null,
+    "k": "verdict",
+    "on": true
+   },
+   {
+    "cols": "[\"verdict\",\"design\"]",
+    "k": "sample",
+    "on": true
+   },
+   {
+    "cols": "[\"design\"]",
+    "k": "design",
+    "on": false
+   },
+   {
+    "cols": "[\"x\"]",
+    "k": "weak",
+    "on": true
+   },
+   {
+    "cols": "[]",
+    "k": "limits",
+    "on": true
+   }
+  ],
+  "dels": [
+   {
+    "id": "yes-other",
+    "row": 0,
+    "answer": true,
+    "loaded": false
+   },
+   {
+    "id": "no",
+    "row": 1,
+    "answer": false,
+    "loaded": false
+   },
+   {
+    "id": "yes-loaded",
+    "row": 0,
+    "answer": true,
+    "loaded": true
+   }
+  ]
+ }
 }

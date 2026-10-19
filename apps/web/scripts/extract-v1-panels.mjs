@@ -76,6 +76,10 @@ export const FRAGMENTS = [
   { prefix: "ap2", line: 11265, src: "(fl.length===1?' is':'s are')", literal: " is", key: "ap2_reference_is", text: "is" },
   { prefix: "ap2", line: 11265, src: "(fl.length===1?' is':'s are')", literal: "s are", key: "ap2_references_are", text: "s are" },
   { prefix: "ap2", line: 11280, src: "d.pages.length+' pages, '", literal: " pages, ", key: "ap2_n_pages", text: "{n} pages," },
+  // The paper card's text (apCardText, Task 13): the heading and the reference line's head end in a line break (the literal as written in the source, `\n`), the DOIs' count is an operand.
+  { prefix: "ap2", line: 10126, src: "'PAPER CARD\\n'+d.title", literal: "PAPER CARD\\n", key: "ap2_paper_card_head", text: "PAPER CARD" },
+  { prefix: "ap2", line: 10132, src: "'REFERENCE LIST CHECK (OpenAlex)\\n'+AP.refs.dois.length", literal: "REFERENCE LIST CHECK (OpenAlex)\\n", key: "ap2_reference_list_check_head", text: "REFERENCE LIST CHECK (OpenAlex)" },
+  { prefix: "ap2", line: 10132, src: "AP.refs.dois.length+' DOIs read, '", literal: " DOIs read, ", key: "ap2_dois_read", text: "DOIs read," },
 ];
 const MAX_COPY_CHARS = 900;
 
@@ -465,7 +469,8 @@ export function extractV1Panels(src, windows = V1_WINDOWS, fragments = windows =
     const at = lines[f.line - 1] ?? "";
     if (!at.includes(f.src)) throw new Error(`fragment ${f.key}: line ${f.line} does not hold ${f.src}`);
     if (!f.src.includes("'" + f.literal + "'")) throw new Error(`fragment ${f.key}: ${f.src} does not hold '${f.literal}'`);
-    if (f.text.replace(/\{[^}]*\}/g, "").trim() !== f.literal.trim()) throw new Error(`fragment ${f.key}: "${f.text}" is not the literal '${f.literal}'`);
+    // The literal is compared as the tokenizer reads it (a `\n` in the source is a space), so a part that ends in a line break is keyed without it.
+    if (f.text.replace(/\{[^}]*\}/g, "").trim() !== unescapeJs(f.literal).trim()) throw new Error(`fragment ${f.key}: "${f.text}" is not the literal '${f.literal}'`);
     if (taken.has(f.key)) throw new Error(`fragment key collision: ${f.key}`);
     taken.set(f.key, f.text);
     manifest[f.key] = { lines: `${f.line}-${f.line}`, sha256: sha(lines, f.line, f.line) };

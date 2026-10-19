@@ -9,6 +9,9 @@ export type AskDeps = {
   t(key: string, vars?: Record<string, string | number>): string;
 };
 
+/** A failed call's toast: callAI's sentence for the student (v1's apiMsg), else the house fallback. */
+export const aiFailMessage = (e: unknown): string => (e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
+
 /**
  * apAsk (10032-10047) with apCall (10027-10030): nothing while a request runs; "Tick the box about the paper first" unless apOk; "Type a question first" under 4 characters once trimmed; then
  * core's buildAskPrompt (apPick at 9,000 characters, AP_RULES; temp 0.2, max 2000, noLang) and the reply read by apJson: not JSON keeps the raw text; else in_paper (false only when the
@@ -37,7 +40,7 @@ export async function apAsk(d: AskDeps): Promise<void> {
     }
     if (getAp().gen === gen) setAp((st) => ({ log: [...st.log, item], qDraft: "" }));
   } catch (e) {
-    d.toast(e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
+    d.toast(aiFailMessage(e));
   }
   setAp({ busy: false });
 }
