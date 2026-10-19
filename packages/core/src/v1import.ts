@@ -14,7 +14,8 @@ const Bundle = z.object({
   data: z.record(z.string(), z.string())
 });
 const RawDoc = z.object({ id: z.string(), title: z.string().default("Untitled"), body: z.string().default(""), updated: z.number().default(0) });
-const RawProject = z.object({ id: z.string(), title: z.string().default("Untitled project"), stage: z.string().optional() });
+// v1 saves a project as { id, name, stage, pack, status, createdAt, updatedAt } (index.html 2896): the name is `name`, and v1 never writes a `title`.
+const RawProject = z.object({ id: z.string(), name: z.string().default("Untitled project"), stage: z.string().optional() });
 
 const LOOKS_LIKE_HTML = /<(p|div|br|b|i|u|strong|em|ul|ol|li|h[1-6]|blockquote|span|img|table|thead|tbody|tr|td|th|svg|a|sup|sub|hr|pre|code|font|figure)[\s>\/]/i;
 
@@ -44,7 +45,7 @@ export function parseV1Backup(text: string): V1ParseResult {
   const rawDocs = parseJsonArray(bundle.data.data["appu_docs"], RawDoc);
   if (rawDocs.length === 0) return { ok: false, reason: "no-documents" };
   const documents: V1Document[] = rawDocs.map((d) => ({ id: d.id, title: d.title.trim() || "Untitled", bodyHtml: v1BodyToHtml(d.body), updated: d.updated }));
-  const projects: V1Project[] = parseJsonArray(bundle.data.data["appu_projects"], RawProject).map((p) => ({ id: p.id, title: p.title, ...(p.stage ? { stage: p.stage } : {}) }));
+  const projects: V1Project[] = parseJsonArray(bundle.data.data["appu_projects"], RawProject).map((p) => ({ id: p.id, title: p.name, ...(p.stage ? { stage: p.stage } : {}) }));
   return { ok: true, backup: { exported: bundle.data.exported ?? "", documents, projects } };
 }
 

@@ -4,6 +4,6 @@
   "exported": "2026-10-12T09:30:00.000Z",
   "data": {
     "appu_docs": "[{\"id\":\"d1728700002000\",\"title\":\"Results with table\",\"body\":\"<h2>Results</h2><p>Sleep improved recall. <span class=\\\"ai-ins\\\" data-h=\\\"abc123\\\">This sentence came from the assistant.</span> H<sub>2</sub>O, x<sup>2</sup>, <mark>key finding</mark>.</p><p><span class=\\\"img-wrap\\\" contenteditable=\\\"false\\\" style=\\\"width:360px\\\"><img src=\\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\\\"><span class=\\\"img-handle\\\" title=\\\"Drag to resize\\\"></span></span>&nbsp;</p><table><tbody><tr><th>Group</th><th>n</th></tr><tr><td>Control</td><td>12</td></tr><tr><td>Nap</td><td>14</td></tr></tbody></table><p>End of results.</p>\",\"updated\":1728700002000}]",
-    "appu_projects": "[{\"id\":\"p2\",\"title\":\"Rich content\",\"stage\":\"write\"}]"
+    "appu_projects": "[{\"id\":\"p2\",\"name\":\"Rich content\",\"stage\":\"write\"}]"
   }
 }

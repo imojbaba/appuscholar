@@ -1,0 +1,191 @@
+{
+ "engine": "stats-demos",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "demos": [
+  {
+   "id": "ttest1",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "sel": {
+    "dv": "score"
+   },
+   "extra": {
+    "mu": "50"
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.",
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.4312501.3111.218Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>50</td><td>1.31</td><td>11</td><td>.218</td></tr></tbody></table><p class=\"desc\">Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestInd",
+   "test": "ttestInd",
+   "csv": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7",
+   "sel": {
+    "dv": "hours",
+    "iv": "group"
+   },
+   "apa": "An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p < .001, g = 2.53, 95% CI of the difference [0.76, 1.49].",
+   "resultsText": "ResultsGroupNMSDA127.830.47B126.710.38Welch t(21.2) = 6.42, p < .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p < .001.Assumption checksGroupNShapiro-Wilk WpA120.958.755B120.977.971Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p < .001, g = 2.53, 95% CI of the difference [0.76, 1.49].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>12</td><td>7.83</td><td>0.47</td></tr><tr><td>B</td><td>12</td><td>6.71</td><td>0.38</td></tr></tbody></table><p class=\"desc\">Welch t(21.2) = 6.42, p &lt; .001, Hedges' g = 2.53, mean difference 1.13, 95% CI [0.76, 1.49]. Welch is the default because it stays accurate when the two groups have different spreads and loses almost nothing when they do not. For comparison, Student's t(22) = 6.42, p &lt; .001.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>12</td><td>0.958</td><td>.755</td></tr><tr><td>B</td><td>12</td><td>0.977</td><td>.971</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(1, 22) = 0.30, p = .588.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">An independent-samples Welch t-test showed that hours differed significantly between A (M = 7.83, SD = 0.47) and B (M = 6.71, SD = 0.38), t(21.18) = 6.42, p &lt; .001, g = 2.53, 95% CI of the difference [0.76, 1.49].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney",
+   "test": "mannwhitney",
+   "csv": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3",
+   "sel": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "apa": "A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.",
+   "resultsText": "ResultsGroupNMedianA104.00B103.00U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>10</td><td>4.00</td></tr><tr><td>B</td><td>10</td><td>3.00</td></tr></tbody></table><p class=\"desc\">U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestPaired",
+   "test": "ttestPaired",
+   "csv": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24",
+   "sel": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "apa": "A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p < .001, 95% CI [2.80, 4.54], d = 2.68.",
+   "resultsText": "ResultsN pairsMean diffSD difftdfp123.671.379.2711< .001Mean difference 3.67, 95% CI [2.80, 4.54], dz = 2.68.Assumption checksVariableNShapiro-Wilk WpDifferences (before − after)120.770.004At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p < .001, 95% CI [2.80, 4.54], d = 2.68.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>12</td><td>3.67</td><td>1.37</td><td>9.27</td><td>11</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Mean difference 3.67, 95% CI [2.80, 4.54], d<sub>z</sub> = 2.68.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (before − after)</td><td>12</td><td>0.770</td><td>.004</td></tr></tbody></table><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p &lt; .001, 95% CI [2.80, 4.54], d = 2.68.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "wilcoxon",
+   "test": "wilcoxon",
+   "csv": "before,after\n5,3\n6,4\n4,4\n5,3\n6,4\n5,3\n4,2\n6,4\n5,3\n4,3\n6,4\n5,4",
+   "sel": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "apa": "A Wilcoxon signed-rank test showed a significant difference between before and after, z = -3.08, p = .002 (normal approximation with continuity and tie corrections), matched-pairs rank-biserial r = 1.00.",
+   "resultsText": "ResultsN (non-zero diffs)Wzp110.0-3.08.002A Wilcoxon signed-rank test showed a significant difference between before and after, z = -3.08, p = .002 (normal approximation with continuity and tie corrections), matched-pairs rank-biserial r = 1.00.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N (non-zero diffs)</th><th>W</th><th>z</th><th>p</th></tr><tr><td>11</td><td>0.0</td><td>-3.08</td><td>.002</td></tr></tbody></table><div id=\"statsSentence\">A Wilcoxon signed-rank test showed a significant difference between before and after, z = -3.08, p = .002 (normal approximation with continuity and tie corrections), matched-pairs rank-biserial r = 1.00.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1",
+   "test": "welchAnova",
+   "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+   "sel": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "apa": "A Welch one-way ANOVA showed a significant effect of arm on score, F(2, 13.35) = 57.92, p < .001, ω² = .85. Games-Howell comparisons: CBT vs Mindful (M diff = -4.00, 95% CI [-5.71, -2.29], p < .001); CBT vs Waitlist (M diff = -10.50, 95% CI [-13.16, -7.84], p < .001); Mindful vs Waitlist (M diff = -6.50, 95% CI [-9.16, -3.84], p < .001).",
+   "resultsText": "ResultsGroupNMSDCBT813.001.31Mindful817.001.31Waitlist823.502.45Welch F(2, 13.35) = 57.92, p < .001, ω² = .85 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance).Games-Howell comparisonMean difference95% CIdfp (adjusted)CBT vs Mindful-4.00[-5.71, -2.29]14.0< .001CBT vs Waitlist-10.50[-13.16, -7.84]10.7< .001Mindful vs Waitlist-6.50[-9.16, -3.84]10.7< .001Assumption checksGroupNShapiro-Wilk WpCBT80.965.857Mindful80.965.857Waitlist80.975.933Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A Welch one-way ANOVA showed a significant effect of arm on score, F(2, 13.35) = 57.92, p < .001, ω² = .85. Games-Howell comparisons: CBT vs Mindful (M diff = -4.00, 95% CI [-5.71, -2.29], p < .001); CBT vs Waitlist (M diff = -10.50, 95% CI [-13.16, -7.84], p < .001); Mindful vs Waitlist (M diff = -6.50, 95% CI [-9.16, -3.84], p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>8</td><td>13.00</td><td>1.31</td></tr><tr><td>Mindful</td><td>8</td><td>17.00</td><td>1.31</td></tr><tr><td>Waitlist</td><td>8</td><td>23.50</td><td>2.45</td></tr></tbody></table><p class=\"desc\">Welch F(2, 13.35) = 57.92, p &lt; .001, ω² = .85 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance).</p><table class=\"stats-table\"><tbody><tr><th>Games-Howell comparison</th><th>Mean difference</th><th>95% CI</th><th>df</th><th>p (adjusted)</th></tr><tr><td>CBT vs Mindful</td><td>-4.00</td><td>[-5.71, -2.29]</td><td>14.0</td><td>&lt; .001</td></tr><tr><td>CBT vs Waitlist</td><td>-10.50</td><td>[-13.16, -7.84]</td><td>10.7</td><td>&lt; .001</td></tr><tr><td>Mindful vs Waitlist</td><td>-6.50</td><td>[-9.16, -3.84]</td><td>10.7</td><td>&lt; .001</td></tr></tbody></table><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>CBT</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Mindful</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Waitlist</td><td>8</td><td>0.975</td><td>.933</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A Welch one-way ANOVA showed a significant effect of arm on score, F(2, 13.35) = 57.92, p &lt; .001, ω² = .85. Games-Howell comparisons: CBT vs Mindful (M diff = -4.00, 95% CI [-5.71, -2.29], p &lt; .001); CBT vs Waitlist (M diff = -10.50, 95% CI [-13.16, -7.84], p &lt; .001); Mindful vs Waitlist (M diff = -6.50, 95% CI [-9.16, -3.84], p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal",
+   "test": "kruskal",
+   "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+   "sel": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.",
+   "resultsText": "ResultsGroupNMdnMean rankA73.0010.3B74.0017.4C72.005.4H(2) = 13.89, p < .001, epsilon-squared = .69 (corrected for tied scores).Dunn comparisonzp (Holm-adjusted)A vs B-2.18.058A vs C1.52.128B vs C3.71< .001A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>7</td><td>3.00</td><td>10.3</td></tr><tr><td>B</td><td>7</td><td>4.00</td><td>17.4</td></tr><tr><td>C</td><td>7</td><td>2.00</td><td>5.4</td></tr></tbody></table><p class=\"desc\">H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores).</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>A vs B</td><td>-2.18</td><td>.058</td></tr><tr><td>A vs C</td><td>1.52</td><td>.128</td></tr><tr><td>B vs C</td><td>3.71</td><td>&lt; .001</td></tr></tbody></table><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p &lt; .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "pearson",
+   "test": "pearson",
+   "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+   "sel": {
+    "v1": "hours",
+    "v2": "marks"
+   },
+   "apa": "There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p < .001, 95% CI [.98, 1.00].",
+   "resultsText": "ResultsNrdfp141.0012< .00195% CI [.98, 1.00] (Fisher z).There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p < .001, 95% CI [.98, 1.00].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>r</th><th>df</th><th>p</th></tr><tr><td>14</td><td>1.00</td><td>12</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">95% CI [.98, 1.00] (Fisher z).</p><div id=\"statsSentence\">There was a very strong positive correlation between hours and marks, which was statistically significant, r(12) = 1.00, p &lt; .001, 95% CI [.98, 1.00].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman",
+   "test": "spearman",
+   "csv": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12",
+   "sel": {
+    "v1": "effort",
+    "v2": "result"
+   },
+   "apa": "There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p < .001, 95% CI [.83, .99].",
+   "resultsText": "ResultsNrₛ95% CIdfp13.96[.83, .99]11.000Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p < .001, 95% CI [.83, .99].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>13</td><td>.96</td><td>[.83, .99]</td><td>11</td><td>.000</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.</p><div id=\"statsSentence\">There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p &lt; .001, 95% CI [.83, .99].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "regression",
+   "test": "regression",
+   "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+   "sel": {
+    "iv": "hours",
+    "dv": "marks"
+   },
+   "apa": "A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p < .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p < .001.",
+   "resultsText": "ResultsNb0 (intercept)b1 (slope)SE(b1)tdfpR²1435.4554.3720.12634.5912< .0010.990ŷ = 35.455 + 4.372·x | F(1, 12) = 1196.61, p < .00195% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers.Assumption checksVariableNShapiro-Wilk WpResiduals140.954.625No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p < .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>b0 (intercept)</th><th>b1 (slope)</th><th>SE(b1)</th><th>t</th><th>df</th><th>p</th><th>R²</th></tr><tr><td>14</td><td>35.455</td><td>4.372</td><td>0.126</td><td>34.59</td><td>12</td><td>&lt; .001</td><td>0.990</td></tr></tbody></table><p class=\"desc\">ŷ = 35.455 + 4.372·x &nbsp;|&nbsp; F(1, 12) = 1196.61, p &lt; .001</p><p class=\"desc\">95% CI for the slope [4.096, 4.647], SE(b0) = 0.769. Standardised slope (β) = .995. Check the residuals for a curve or a fan shape before you trust these numbers.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>14</td><td>0.954</td><td>.625</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A simple linear regression showed that hours significantly predicted marks, b = 4.372, SE = 0.126, t(12) = 34.59, p &lt; .001, 95% CI [4.096, 4.647], R² = 0.990, F(1, 12) = 1196.61, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "chisq",
+   "test": "chisq",
+   "csv": "counselling,passed\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "sel": {
+    "v1": "counselling",
+    "v2": "passed"
+   },
+   "apa": "A chi-square test of independence showed no significant association between counselling and passed, χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10.",
+   "resultsText": "Resultsyesnoyes1812no1515χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 60) = 0.27, p = .604. Current guidance prefers the uncorrected test, or an exact test when a count is small.A chi-square test of independence showed no significant association between counselling and passed, χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>yes</th><th>no</th></tr><tr><th>yes</th><td>18</td><td>12</td></tr><tr><th>no</th><td>15</td><td>15</td></tr></tbody></table><p class=\"desc\">χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10</p><p class=\"desc\">With the Yates continuity correction (the default in R and shown by SPSS): χ²(1, N = 60) = 0.27, p = .604. Current guidance prefers the uncorrected test, or an exact test when a count is small.</p><div id=\"statsSentence\">A chi-square test of independence showed no significant association between counselling and passed, χ²(1, N = 60) = 0.61, p = .436, Cramér's V = 0.10.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "gof",
+   "test": "gof",
+   "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+   "sel": {
+    "v1": "method"
+   },
+   "apa": "A chi-square goodness-of-fit test showed that the distribution of method differed significantly from the expected distribution, χ²(2, N = 60) = 8.40, p = .015, w = .37.",
+   "resultsText": "ResultsCategoryObservedExpectedStandardised residualNotes1820.00-0.45Flashcards3020.002.24Rereading1220.00-1.79χ²(2, N = 60) = 8.40, p = .015, Cohen's w = .37. A residual beyond ±2 marks a category that departs from what you expected.A chi-square goodness-of-fit test showed that the distribution of method differed significantly from the expected distribution, χ²(2, N = 60) = 8.40, p = .015, w = .37.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Category</th><th>Observed</th><th>Expected</th><th>Standardised residual</th></tr><tr><td>Notes</td><td>18</td><td>20.00</td><td>-0.45</td></tr><tr><td>Flashcards</td><td>30</td><td>20.00</td><td>2.24</td></tr><tr><td>Rereading</td><td>12</td><td>20.00</td><td>-1.79</td></tr></tbody></table><p class=\"desc\">χ²(2, N = 60) = 8.40, p = .015, Cohen's w = .37. A residual beyond ±2 marks a category that departs from what you expected.</p><div id=\"statsSentence\">A chi-square goodness-of-fit test showed that the distribution of method differed significantly from the expected distribution, χ²(2, N = 60) = 8.40, p = .015, w = .37.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "alpha",
+   "test": "alpha",
+   "csv": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",
+   "sel": {},
+   "tick": [
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+    "q5",
+    "q6"
+   ],
+   "rev": "q6",
+   "rrange": "1-5",
+   "apa": "Internal consistency was α = .79, 95% CI [.58, .92], and McDonald's ω = .81, 95% CI [.43, .92] (k = 6 items, N = 15).",
+   "resultsText": "ResultsPeopleItemsCronbach's α95% CIMcDonald's ω95% CIMean inter-item r156.79[.58, .92].81[.43, .92].40ItemMSDCorrected item-total rα if item deletedLoadingq13.330.98.68.73.75q23.200.86.40.79.42q33.070.88.40.79.45q43.071.28.69.73.82q53.130.92.64.74.73q6 (reversed)2.730.59.58.77.65There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples.With fewer than 30 people the intervals are wide and the values are unstable.Internal consistency was α = .79, 95% CI [.58, .92], and McDonald's ω = .81, 95% CI [.43, .92] (k = 6 items, N = 15).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>People</th><th>Items</th><th>Cronbach's α</th><th>95% CI</th><th>McDonald's ω</th><th>95% CI</th><th>Mean inter-item r</th></tr><tr><td>15</td><td>6</td><td>.79</td><td>[.58, .92]</td><td>.81</td><td>[.43, .92]</td><td>.40</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Item</th><th>M</th><th>SD</th><th>Corrected item-total r</th><th>α if item deleted</th><th>Loading</th></tr><tr><td>q1</td><td>3.33</td><td>0.98</td><td>.68</td><td>.73</td><td>.75</td></tr><tr><td>q2</td><td>3.20</td><td>0.86</td><td>.40</td><td>.79</td><td>.42</td></tr><tr><td>q3</td><td>3.07</td><td>0.88</td><td>.40</td><td>.79</td><td>.45</td></tr><tr><td>q4</td><td>3.07</td><td>1.28</td><td>.69</td><td>.73</td><td>.82</td></tr><tr><td>q5</td><td>3.13</td><td>0.92</td><td>.64</td><td>.74</td><td>.73</td></tr><tr><td>q6 (reversed)</td><td>2.73</td><td>0.59</td><td>.58</td><td>.77</td><td>.65</td></tr></tbody></table><p class=\"desc\">There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples.</p><ul style=\"font-size:13px;margin:6px 0 6px 18px\"><li>With fewer than 30 people the intervals are wide and the values are unstable.</li></ul><div id=\"statsSentence\">Internal consistency was α = .79, 95% CI [.58, .92], and McDonald's ω = .81, 95% CI [.43, .92] (k = 6 items, N = 15).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

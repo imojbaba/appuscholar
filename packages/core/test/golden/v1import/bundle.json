@@ -1,0 +1,71 @@
+{
+ "engine": "v1import",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "bundle": {
+  "app": "appuscholar",
+  "v": 1,
+  "exported": "2026-10-12T09:30:00.000Z",
+  "data": {
+   "appu_docs": "[{\"id\":\"d1760000000001\",\"title\":\"Literature review\",\"body\":\"<h2>Sleep and delay</h2><p>Attachment theory <b>matters</b> (Bowlby, 1969). Students who sleep less submit later <span class=\\\"ai-ins\\\" data-h=\\\"1q8pv1j\\\">and report lower motivation</span>.</p><ul><li>Steel (2007)</li><li>Rao et al. (2019)</li></ul>\",\"updated\":1760000000001},{\"id\":\"d1760000100002\",\"title\":\"शोध नोट्स\",\"body\":\"Notes from the viva\\nSupervisor: tighten the sample (n < 30 is too small) & cite Rao.\\n\\nप्रश्न: नमूना कितना बड़ा हो?\",\"updated\":1760000100002},{\"id\":\"d1760000200003\",\"title\":\"Figure notes\",\"body\":\"<p>Figure 1 shows the dose–response curve.</p><span class=\\\"img-wrap\\\" contenteditable=\\\"false\\\" style=\\\"width:360px\\\"><img src=\\\"appuimg:i7v184nnbncx3a\\\"><span class=\\\"img-handle\\\" title=\\\"Drag to resize\\\"></span></span><p>Caption: n = 24.</p>\",\"updated\":1760000200003},{\"id\":\"d1760000300004\",\"title\":\"Results, picture shown as text\",\"body\":\"Figure 2. &lt;span class=\\\"img-wrap\\\" contenteditable=\\\"false\\\" style=\\\"width:360px\\\"&gt;&lt;img src=\\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\\\"&gt;&lt;span class=\\\"img-handle\\\" title=\\\"Drag to resize\\\"&gt;&lt;/span&gt;&lt;/span&gt;\",\"updated\":1760000300004},{\"id\":\"d1760000400005\",\"title\":\"Rao 2019 sleep and delay\",\"body\":\"<p>Rao, K., &amp; Iyer, S. (2019). Sleep and delay in undergraduates. Journal of Student Studies, 4(2), 11–24.</p><p>Abstract. Sleep loss predicted delay (r = .32) among 120 undergraduates. Students who slept under six hours handed in work later.</p>\",\"updated\":1760000400005,\"origin\":\"source\",\"src\":\"Rao 2019 sleep and delay.pdf\"}]",
+   "appu_projects": "[{\"id\":\"proj_k9x1a2bc\",\"name\":\"Sleep and memory\",\"stage\":\"lit\",\"pack\":\"psychology\",\"status\":\"active\",\"createdAt\":1760000000000,\"updatedAt\":1760000500000},{\"id\":\"proj_k9y3d4ef\",\"name\":\"सामाजिक चिंता और नींद\",\"stage\":\"writing\",\"pack\":\"psychology\",\"status\":\"complete\",\"createdAt\":1759000000000,\"updatedAt\":1759900000000}]",
+   "appu_theme": "dark"
+  }
+ },
+ "docs": [
+  {
+   "id": "d1760000000001",
+   "title": "Literature review",
+   "updated": 1760000000001,
+   "body": "<h2>Sleep and delay</h2><p>Attachment theory <b>matters</b> (Bowlby, 1969). Students who sleep less submit later <span class=\"ai-ins\" data-h=\"1q8pv1j\">and report lower motivation</span>.</p><ul><li>Steel (2007)</li><li>Rao et al. (2019)</li></ul>",
+   "repaired": false,
+   "html": true,
+   "v1Html": "<h2>Sleep and delay</h2><p>Attachment theory <b>matters</b> (Bowlby, 1969). Students who sleep less submit later <span class=\"ai-ins\" data-h=\"1q8pv1j\">and report lower motivation</span>.</p><ul><li>Steel (2007)</li><li>Rao et al. (2019)</li></ul>"
+  },
+  {
+   "id": "d1760000100002",
+   "title": "शोध नोट्स",
+   "updated": 1760000100002,
+   "body": "Notes from the viva\nSupervisor: tighten the sample (n < 30 is too small) & cite Rao.\n\nप्रश्न: नमूना कितना बड़ा हो?",
+   "repaired": false,
+   "html": false,
+   "v1Html": "Notes from the viva<br>Supervisor: tighten the sample (n &lt; 30 is too small) &amp; cite Rao.<br><br>प्रश्न: नमूना कितना बड़ा हो?"
+  },
+  {
+   "id": "d1760000200003",
+   "title": "Figure notes",
+   "updated": 1760000200003,
+   "body": "<p>Figure 1 shows the dose–response curve.</p><span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"><img src=\"appuimg:i7v184nnbncx3a\"><span class=\"img-handle\" title=\"Drag to resize\"></span></span><p>Caption: n = 24.</p>",
+   "repaired": false,
+   "html": true,
+   "v1Html": "<p>Figure 1 shows the dose–response curve.</p><span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"><img src=\"appuimg:i7v184nnbncx3a\"><span class=\"img-handle\" title=\"Drag to resize\"></span></span><p>Caption: n = 24.</p>"
+  },
+  {
+   "id": "d1760000300004",
+   "title": "Results, picture shown as text",
+   "updated": 1760000300004,
+   "body": "Figure 2. &lt;span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"&gt;&lt;img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"&gt;&lt;span class=\"img-handle\" title=\"Drag to resize\"&gt;&lt;/span&gt;&lt;/span&gt;",
+   "repaired": true,
+   "html": true,
+   "v1Html": "Figure 2. <span class=\"img-wrap\" contenteditable=\"false\" style=\"width:360px\"><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"><span class=\"img-handle\" title=\"Drag to resize\"></span></span>"
+  },
+  {
+   "id": "d1760000400005",
+   "title": "Rao 2019 sleep and delay",
+   "updated": 1760000400005,
+   "body": "<p>Rao, K., &amp; Iyer, S. (2019). Sleep and delay in undergraduates. Journal of Student Studies, 4(2), 11–24.</p><p>Abstract. Sleep loss predicted delay (r = .32) among 120 undergraduates. Students who slept under six hours handed in work later.</p>",
+   "origin": "source",
+   "src": "Rao 2019 sleep and delay.pdf",
+   "repaired": false,
+   "html": true,
+   "v1Html": "<p>Rao, K., &amp; Iyer, S. (2019). Sleep and delay in undergraduates. Journal of Student Studies, 4(2), 11–24.</p><p>Abstract. Sleep loss predicted delay (r = .32) among 120 undergraduates. Students who slept under six hours handed in work later.</p>"
+  }
+ ]
+}

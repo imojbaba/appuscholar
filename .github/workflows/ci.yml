@@ -18,6 +18,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r lint
       - run: pnpm -r typecheck
+      - run: pnpm --filter @appuscholar/core test:golden
       - run: pnpm -r test
       - run: pnpm --filter @appuscholar/web build
   e2e:

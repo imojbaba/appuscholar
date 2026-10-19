@@ -1,0 +1,6964 @@
+{
+ "engine": "crosscheck",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "patterns": {
+  "CC_SN": "(?:(?:van|von|de|del|della|der|den|di|da|le|la|bin|al|el|ibn)\\s+){0,2}\\p{Lu}[\\p{L}'\\u2019\\-]+",
+  "CC_YR": "((?:1[5-9]|20)\\d\\d[a-z]?|n\\.d\\.)"
+ },
+ "cases": [
+  {
+   "id": "doc-refs-english",
+   "plain": "Sleep loss predicts poorer recall (Smith, 2020). Smith and Lee (2019a) found a similar effect, and later work agreed (Rao et al., 2018; Smith, 2020).\n\nReferences\n\nSmith, J. (2020). Sleep and memory. Journal of Sleep Research, 10(2), 1-10.\nSmith, J., & Lee, K. (2019a). Memory consolidation overnight. Memory Journal, 5, 11-20.\nZhou, Q. (2015). An uncited source. Review of Rest, 2, 5-9.\nUnpublished manuscript, no year given.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Rao",
+       "yr": "2018",
+       "raw": "Rao et al., 2018",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Zhou",
+      "yr": "2015",
+      "text": "Zhou, Q. (2015). An uncited source. Review of Rest, 2, 5-9."
+     }
+    ],
+    "unread": 1,
+    "body": "Sleep loss predicts poorer recall (Smith, 2020). Smith and Lee (2019a) found a similar effect, and later work agreed (Rao et al., 2018; Smith, 2020).\n"
+   },
+   "split": {
+    "body": "Sleep loss predicts poorer recall (Smith, 2020). Smith and Lee (2019a) found a similar effect, and later work agreed (Rao et al., 2018; Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Sleep and memory. Journal of Sleep Research, 10(2), 1-10.",
+     "Smith, J., & Lee, K. (2019a). Memory consolidation overnight. Memory Journal, 5, 11-20.",
+     "Zhou, Q. (2015). An uncited source. Review of Rest, 2, 5-9.",
+     "Unpublished manuscript, no year given."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2019a",
+     "raw": "Smith and Lee (2019a)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Rao",
+     "yr": "2018",
+     "raw": "Rao et al., 2018"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Sleep and memory. Journal of Sleep Research, 10(2), 1-10.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Sleep and memory. Journal of Sleep Research, 10(2), 1-10."
+     }
+    },
+    {
+     "line": "Smith, J., & Lee, K. (2019a). Memory consolidation overnight. Memory Journal, 5, 11-20.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2019a",
+      "text": "Smith, J., & Lee, K. (2019a). Memory consolidation overnight. Memory Journal, 5, 11-20."
+     }
+    },
+    {
+     "line": "Zhou, Q. (2015). An uncited source. Review of Rest, 2, 5-9.",
+     "out": {
+      "sn": "Zhou",
+      "yr": "2015",
+      "text": "Zhou, Q. (2015). An uncited source. Review of Rest, 2, 5-9."
+     }
+    },
+    {
+     "line": "Unpublished manuscript, no year given.",
+     "out": null
+    }
+   ]
+  },
+  {
+   "id": "doc-refs-hindi-heading",
+   "html": "<p>अध्ययन (Sharma,&nbsp;2021) ने दिखाया।</p><p>संदर्भ सूची</p><p>Sharma, R. (2021). शोध-प्रबंध. University of Delhi.</p>",
+   "plain": "अध्ययन (Sharma, 2021) ने दिखाया।\n\nसंदर्भ सूची\n\nSharma, R. (2021). शोध-प्रबंध. University of Delhi.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "संदर्भ सूची",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "अध्ययन (Sharma, 2021) ने दिखाया।\n"
+   },
+   "split": {
+    "body": "अध्ययन (Sharma, 2021) ने दिखाया।\n",
+    "refs": [
+     "Sharma, R. (2021). शोध-प्रबंध. University of Delhi."
+    ],
+    "heading": "संदर्भ सूची"
+   },
+   "cites": [
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Sharma, R. (2021). शोध-प्रबंध. University of Delhi.",
+     "out": {
+      "sn": "Sharma",
+      "yr": "2021",
+      "text": "Sharma, R. (2021). शोध-प्रबंध. University of Delhi."
+     }
+    }
+   ]
+  },
+  {
+   "id": "doc-refs-last-heading-wins",
+   "plain": "Early work (Smith, 2020) was replicated (Rao, 2018).\n\nReferences\n\nSmith, J. (2020). First list entry. Journal A, 1, 1-2.\n\nAppendix B reprints the list for the committee.\n\nBibliography\n\nRao, P. (2018). Second list entry. Journal B, 2, 3-4.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "Bibliography",
+    "listN": 1,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Early work (Smith, 2020) was replicated (Rao, 2018).\n\nReferences\n\nSmith, J. (2020). First list entry. Journal A, 1, 1-2.\n\nAppendix B reprints the list for the committee.\n"
+   },
+   "split": {
+    "body": "Early work (Smith, 2020) was replicated (Rao, 2018).\n\nReferences\n\nSmith, J. (2020). First list entry. Journal A, 1, 1-2.\n\nAppendix B reprints the list for the committee.\n",
+    "refs": [
+     "Rao, P. (2018). Second list entry. Journal B, 2, 3-4."
+    ],
+    "heading": "Bibliography"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Rao",
+     "yr": "2018",
+     "raw": "Rao, 2018"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Rao, P. (2018). Second list entry. Journal B, 2, 3-4.",
+     "out": {
+      "sn": "Rao",
+      "yr": "2018",
+      "text": "Rao, P. (2018). Second list entry. Journal B, 2, 3-4."
+     }
+    }
+   ]
+  },
+  {
+   "id": "doc-nbsp-citation",
+   "html": "<p>Sleep loss predicted delay (Smith,&nbsp;2020) and (Rao et&nbsp;al., 2019).</p>",
+   "plain": "Sleep loss predicted delay (Smith, 2020) and (Rao et al., 2019).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Smith, John",
+     "year": "2020",
+     "title": "Sleep and delay",
+     "source": "Journal of Sleep",
+     "volume": "10",
+     "issue": "2",
+     "pages": "1-10"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Smith, J. (2020). Sleep and delay. Journal of Sleep, 10(2), 1–10."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 1,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "Rao",
+       "yr": "2019",
+       "raw": "Rao et al., 2019",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Sleep loss predicted delay (Smith, 2020) and (Rao et al., 2019)."
+   },
+   "split": {
+    "body": "Sleep loss predicted delay (Smith, 2020) and (Rao et al., 2019).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Rao",
+     "yr": "2019",
+     "raw": "Rao et al., 2019"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Miller, G. A., Smith, J. B., & Lee, K. (2020). The magical number seven. Psychological Review, 63(2), 81–97. https://doi.org/10.1037/h0043158",
+    "Bandura, A. (1977). Social learning theory. Prentice Hall.",
+    "World Health Organization. (2022, June 17). Mental health fact sheet. WHO. https://who.int/x",
+    "Roy, A., & Kapoor, P. (2019). Sleep and memory. In S. Mehta & V. Rao (Eds.), Handbook of cognition (pp. 11–30). Sage.",
+    "Sharma, R. (2021). Exam anxiety in adolescents [Doctoral dissertation, University of Delhi].",
+    "Khan, I. (n.d.). Notes on attention. Attention Letters, 3(1), 5–9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller, G. A., Smith, J. B., & Lee, K. (2020). The magical number seven. Psychological Review, 63(2), 81–97. https://doi.org/10.1037/h0043158"
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. (2022, June 17). Mental health fact sheet. WHO. https://who.int/x"
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-numbered",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "vancouver",
+   "refs": [
+    "Miller GA, Smith JB, Lee K. The magical number seven. Psychological Review. 2020;63(2):81-97. doi:10.1037/h0043158",
+    "Bandura A. Social learning theory. Prentice Hall; 1977.",
+    "World Health Organization. Mental health fact sheet [Internet]. WHO; 2022 Jun 17 [cited 2026 Oct 1] Available from: https://who.int/x",
+    "Roy A, Kapoor P. Sleep and memory. In: Mehta S, Rao V, editors. Handbook of cognition. Sage; 2019. p. 11-30.",
+    "Sharma R. Exam anxiety in adolescents. [doctoral dissertation]. University of Delhi; 2021.",
+    "Khan I. Notes on attention. Attention Letters. n.d.;3(1):5-9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller GA, Smith JB, Lee K. The magical number seven. Psychological Review. 2020;63(2):81-97. doi:10.1037/h0043158"
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. Mental health fact sheet [Internet]. WHO; 2022 Jun 17 [cited 2026 Oct 1] Available from: https://who.int/x"
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "none",
+   "plain": "Fatigue slows reaction time (Okafor, 2017). A second study agreed (Tanaka & Ito, 2019).",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2017",
+       "raw": "Okafor, 2017",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Tanaka",
+       "yr": "2019",
+       "raw": "Tanaka & Ito, 2019",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Fatigue slows reaction time (Okafor, 2017). A second study agreed (Tanaka & Ito, 2019)."
+   },
+   "split": {
+    "body": "Fatigue slows reaction time (Okafor, 2017). A second study agreed (Tanaka & Ito, 2019).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Okafor",
+     "yr": "2017",
+     "raw": "Okafor, 2017"
+    },
+    {
+     "sn": "Tanaka",
+     "yr": "2019",
+     "raw": "Tanaka & Ito, 2019"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "stop-words",
+   "plain": "(Table 2020), (Figure 1999) and (Study 2001) are labels, not sources; (Smith, 2020) is a source.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "(Table 2020), (Figure 1999) and (Study 2001) are labels, not sources; (Smith, 2020) is a source."
+   },
+   "split": {
+    "body": "(Table 2020), (Figure 1999) and (Study 2001) are labels, not sources; (Smith, 2020) is a source.",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "year-suffixes",
+   "plain": "Jones (2019a) argued the first point. Lee (2018) agreed, as did (Park, 2017b; Chen, 2016a).\n\nReferences\n\nJones, A. (2019b). The first point. Journal One, 1, 1-9.\nLee, K. (2018a). Agreement. Journal Two, 2, 2-8.\nPark, M. (2017). Another view. Journal Three, 3, 3-7.\nChen, L. (2016a). A fourth source. Journal Four, 4, 4-6.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 4,
+    "cited": 4,
+    "missing": [
+     {
+      "c": {
+       "sn": "Jones",
+       "yr": "2019a",
+       "raw": "Jones (2019a)",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Jones",
+         "yr": "2019b",
+         "text": "Jones, A. (2019b). The first point. Journal One, 1, 1-9."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Jones",
+      "yr": "2019b",
+      "text": "Jones, A. (2019b). The first point. Journal One, 1, 1-9."
+     }
+    ],
+    "unread": 0,
+    "body": "Jones (2019a) argued the first point. Lee (2018) agreed, as did (Park, 2017b; Chen, 2016a).\n"
+   },
+   "split": {
+    "body": "Jones (2019a) argued the first point. Lee (2018) agreed, as did (Park, 2017b; Chen, 2016a).\n",
+    "refs": [
+     "Jones, A. (2019b). The first point. Journal One, 1, 1-9.",
+     "Lee, K. (2018a). Agreement. Journal Two, 2, 2-8.",
+     "Park, M. (2017). Another view. Journal Three, 3, 3-7.",
+     "Chen, L. (2016a). A fourth source. Journal Four, 4, 4-6."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Jones",
+     "yr": "2019a",
+     "raw": "Jones (2019a)"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2018",
+     "raw": "Lee (2018)"
+    },
+    {
+     "sn": "Park",
+     "yr": "2017b",
+     "raw": "Park, 2017b"
+    },
+    {
+     "sn": "Chen",
+     "yr": "2016a",
+     "raw": "Chen, 2016a"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Jones, A. (2019b). The first point. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Jones",
+      "yr": "2019b",
+      "text": "Jones, A. (2019b). The first point. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Lee, K. (2018a). Agreement. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2018a",
+      "text": "Lee, K. (2018a). Agreement. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Park, M. (2017). Another view. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Park",
+      "yr": "2017",
+      "text": "Park, M. (2017). Another view. Journal Three, 3, 3-7."
+     }
+    },
+    {
+     "line": "Chen, L. (2016a). A fourth source. Journal Four, 4, 4-6.",
+     "out": {
+      "sn": "Chen",
+      "yr": "2016a",
+      "text": "Chen, L. (2016a). A fourth source. Journal Four, 4, 4-6."
+     }
+    }
+   ]
+  },
+  {
+   "id": "near-name",
+   "plain": "Attention lapses were common (Smiht, 2020), and so were slips (Jonse, 2018; Garcia, 2019).\n\nReferences\n\nSmith, J. (2020). Attention lapses. Journal One, 1, 1-9.\nJones, A. (2018). Slips of action. Journal Two, 2, 2-8.\nGarcia, L. (2017). A different year. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smiht",
+       "yr": "2020",
+       "raw": "Smiht, 2020",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "name",
+        "e": {
+         "sn": "Smith",
+         "yr": "2020",
+         "text": "Smith, J. (2020). Attention lapses. Journal One, 1, 1-9."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Jonse",
+       "yr": "2018",
+       "raw": "Jonse, 2018",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "name",
+        "e": {
+         "sn": "Jones",
+         "yr": "2018",
+         "text": "Jones, A. (2018). Slips of action. Journal Two, 2, 2-8."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Garcia",
+       "yr": "2019",
+       "raw": "Garcia, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Garcia",
+         "yr": "2017",
+         "text": "Garcia, L. (2017). A different year. Journal Three, 3, 3-7."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Attention lapses. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "Jones",
+      "yr": "2018",
+      "text": "Jones, A. (2018). Slips of action. Journal Two, 2, 2-8."
+     },
+     {
+      "sn": "Garcia",
+      "yr": "2017",
+      "text": "Garcia, L. (2017). A different year. Journal Three, 3, 3-7."
+     }
+    ],
+    "unread": 0,
+    "body": "Attention lapses were common (Smiht, 2020), and so were slips (Jonse, 2018; Garcia, 2019).\n"
+   },
+   "split": {
+    "body": "Attention lapses were common (Smiht, 2020), and so were slips (Jonse, 2018; Garcia, 2019).\n",
+    "refs": [
+     "Smith, J. (2020). Attention lapses. Journal One, 1, 1-9.",
+     "Jones, A. (2018). Slips of action. Journal Two, 2, 2-8.",
+     "Garcia, L. (2017). A different year. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smiht",
+     "yr": "2020",
+     "raw": "Smiht, 2020"
+    },
+    {
+     "sn": "Jonse",
+     "yr": "2018",
+     "raw": "Jonse, 2018"
+    },
+    {
+     "sn": "Garcia",
+     "yr": "2019",
+     "raw": "Garcia, 2019"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Attention lapses. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Attention lapses. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Jones, A. (2018). Slips of action. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Jones",
+      "yr": "2018",
+      "text": "Jones, A. (2018). Slips of action. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Garcia, L. (2017). A different year. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Garcia",
+      "yr": "2017",
+      "text": "Garcia, L. (2017). A different year. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "particles",
+   "plain": "The effect was robust: van der Berg (2017) found it in Dutch samples, and it held elsewhere (de Souza, 2015; von Neumann, 1928).\n\nReferences\n\nvan der Berg, J. (2017). Dutch samples. Journal One, 1, 1-9.\nde Souza, M. (2015). Brazilian samples. Journal Two, 2, 2-8.\nvon Neumann, J. (1928). On parlour games. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The effect was robust: van der Berg (2017) found it in Dutch samples, and it held elsewhere (de Souza, 2015; von Neumann, 1928).\n"
+   },
+   "split": {
+    "body": "The effect was robust: van der Berg (2017) found it in Dutch samples, and it held elsewhere (de Souza, 2015; von Neumann, 1928).\n",
+    "refs": [
+     "van der Berg, J. (2017). Dutch samples. Journal One, 1, 1-9.",
+     "de Souza, M. (2015). Brazilian samples. Journal Two, 2, 2-8.",
+     "von Neumann, J. (1928). On parlour games. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "van der Berg",
+     "yr": "2017",
+     "raw": "van der Berg (2017)"
+    },
+    {
+     "sn": "de Souza",
+     "yr": "2015",
+     "raw": "de Souza, 2015"
+    },
+    {
+     "sn": "von Neumann",
+     "yr": "1928",
+     "raw": "von Neumann, 1928"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "van der Berg, J. (2017). Dutch samples. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "van der Berg",
+      "yr": "2017",
+      "text": "van der Berg, J. (2017). Dutch samples. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "de Souza, M. (2015). Brazilian samples. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "de Souza",
+      "yr": "2015",
+      "text": "de Souza, M. (2015). Brazilian samples. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "von Neumann, J. (1928). On parlour games. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "von Neumann",
+      "yr": "1928",
+      "text": "von Neumann, J. (1928). On parlour games. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "narrative-three",
+   "plain": "Smith, Lee, and Rao (2020) reported the main effect, which Smith, Lee & Rao (2019) and Smith, Lee and Rao (2018) had anticipated.\n\nReferences\n\nSmith, J., Lee, K., & Rao, P. (2020). Main effect. Journal One, 1, 1-9.\nSmith, J., Lee, K., & Rao, P. (2019). Anticipated. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2018",
+       "raw": "Smith, Lee and Rao (2018)",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Smith",
+         "yr": "2020",
+         "text": "Smith, J., Lee, K., & Rao, P. (2020). Main effect. Journal One, 1, 1-9."
+        }
+       },
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Smith",
+         "yr": "2019",
+         "text": "Smith, J., Lee, K., & Rao, P. (2019). Anticipated. Journal Two, 2, 2-8."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Smith, Lee, and Rao (2020) reported the main effect, which Smith, Lee & Rao (2019) and Smith, Lee and Rao (2018) had anticipated.\n"
+   },
+   "split": {
+    "body": "Smith, Lee, and Rao (2020) reported the main effect, which Smith, Lee & Rao (2019) and Smith, Lee and Rao (2018) had anticipated.\n",
+    "refs": [
+     "Smith, J., Lee, K., & Rao, P. (2020). Main effect. Journal One, 1, 1-9.",
+     "Smith, J., Lee, K., & Rao, P. (2019). Anticipated. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, Lee, and Rao (2020)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2019",
+     "raw": "Smith, Lee & Rao (2019)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2018",
+     "raw": "Smith, Lee and Rao (2018)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J., Lee, K., & Rao, P. (2020). Main effect. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J., Lee, K., & Rao, P. (2020). Main effect. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Smith, J., Lee, K., & Rao, P. (2019). Anticipated. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2019",
+      "text": "Smith, J., Lee, K., & Rao, P. (2019). Anticipated. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "nd",
+   "plain": "Mental health services remain thin (WHO, n.d.). Smith (2020) disagreed, and Jones (n.d.) did not say.\n\nReferences\n\nWHO. (n.d.). Mental health atlas. https://who.int/atlas\nSmith, J. (n.d.). Disagreement. Journal One, 1, 1-9.\nJones, K. (2020). Silence. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith (2020)",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Smith",
+         "yr": "n.d.",
+         "text": "Smith, J. (n.d.). Disagreement. Journal One, 1, 1-9."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Jones",
+       "yr": "n.d.",
+       "raw": "Jones (n.d.)",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Jones",
+         "yr": "2020",
+         "text": "Jones, K. (2020). Silence. Journal Two, 2, 2-8."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Smith",
+      "yr": "n.d.",
+      "text": "Smith, J. (n.d.). Disagreement. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "Jones",
+      "yr": "2020",
+      "text": "Jones, K. (2020). Silence. Journal Two, 2, 2-8."
+     }
+    ],
+    "unread": 0,
+    "body": "Mental health services remain thin (WHO, n.d.). Smith (2020) disagreed, and Jones (n.d.) did not say.\n"
+   },
+   "split": {
+    "body": "Mental health services remain thin (WHO, n.d.). Smith (2020) disagreed, and Jones (n.d.) did not say.\n",
+    "refs": [
+     "WHO. (n.d.). Mental health atlas. https://who.int/atlas",
+     "Smith, J. (n.d.). Disagreement. Journal One, 1, 1-9.",
+     "Jones, K. (2020). Silence. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith (2020)"
+    },
+    {
+     "sn": "Jones",
+     "yr": "n.d.",
+     "raw": "Jones (n.d.)"
+    },
+    {
+     "sn": "WHO",
+     "yr": "n.d.",
+     "raw": "WHO, n.d."
+    }
+   ],
+   "parsed": [
+    {
+     "line": "WHO. (n.d.). Mental health atlas. https://who.int/atlas",
+     "out": {
+      "sn": "WHO",
+      "yr": "n.d.",
+      "text": "WHO. (n.d.). Mental health atlas. https://who.int/atlas"
+     }
+    },
+    {
+     "line": "Smith, J. (n.d.). Disagreement. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "n.d.",
+      "text": "Smith, J. (n.d.). Disagreement. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Jones, K. (2020). Silence. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Jones",
+      "yr": "2020",
+      "text": "Jones, K. (2020). Silence. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "group-semicolons",
+   "plain": "Several studies agree (Adams, 2001; Brown, 2002; Clark, 2003), though one disagrees (see also Davis; Evans, 2004).\n\nReferences\n\nAdams, P. (2001). One. Journal One, 1, 1-9.\nBrown, Q. (2002). Two. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 4,
+    "missing": [
+     {
+      "c": {
+       "sn": "Clark",
+       "yr": "2003",
+       "raw": "Clark, 2003",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Evans",
+       "yr": "2004",
+       "raw": "Evans, 2004",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Several studies agree (Adams, 2001; Brown, 2002; Clark, 2003), though one disagrees (see also Davis; Evans, 2004).\n"
+   },
+   "split": {
+    "body": "Several studies agree (Adams, 2001; Brown, 2002; Clark, 2003), though one disagrees (see also Davis; Evans, 2004).\n",
+    "refs": [
+     "Adams, P. (2001). One. Journal One, 1, 1-9.",
+     "Brown, Q. (2002). Two. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Adams",
+     "yr": "2001",
+     "raw": "Adams, 2001"
+    },
+    {
+     "sn": "Brown",
+     "yr": "2002",
+     "raw": "Brown, 2002"
+    },
+    {
+     "sn": "Clark",
+     "yr": "2003",
+     "raw": "Clark, 2003"
+    },
+    {
+     "sn": "Evans",
+     "yr": "2004",
+     "raw": "Evans, 2004"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Adams, P. (2001). One. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Adams",
+      "yr": "2001",
+      "text": "Adams, P. (2001). One. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Brown, Q. (2002). Two. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Brown",
+      "yr": "2002",
+      "text": "Brown, Q. (2002). Two. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "curly-apostrophe",
+   "plain": "O’Brien (2010) and D'Souza (2012) disagreed (Smith-Jones, 2014).\n\nReferences\n\nO'Brien, P. (2010). Curly cited, straight listed. Journal One, 1, 1-9.\nD’Souza, A. (2012). Straight cited, curly listed. Journal Two, 2, 2-8.\nSmith-Jones, K. (2014). Hyphenated. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "O’Brien (2010) and D'Souza (2012) disagreed (Smith-Jones, 2014).\n"
+   },
+   "split": {
+    "body": "O’Brien (2010) and D'Souza (2012) disagreed (Smith-Jones, 2014).\n",
+    "refs": [
+     "O'Brien, P. (2010). Curly cited, straight listed. Journal One, 1, 1-9.",
+     "D’Souza, A. (2012). Straight cited, curly listed. Journal Two, 2, 2-8.",
+     "Smith-Jones, K. (2014). Hyphenated. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "O’Brien",
+     "yr": "2010",
+     "raw": "O’Brien (2010)"
+    },
+    {
+     "sn": "D'Souza",
+     "yr": "2012",
+     "raw": "D'Souza (2012)"
+    },
+    {
+     "sn": "Smith-Jones",
+     "yr": "2014",
+     "raw": "Smith-Jones, 2014"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "O'Brien, P. (2010). Curly cited, straight listed. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "O'Brien",
+      "yr": "2010",
+      "text": "O'Brien, P. (2010). Curly cited, straight listed. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "D’Souza, A. (2012). Straight cited, curly listed. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "D’Souza",
+      "yr": "2012",
+      "text": "D’Souza, A. (2012). Straight cited, curly listed. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Smith-Jones, K. (2014). Hyphenated. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Smith-Jones",
+      "yr": "2014",
+      "text": "Smith-Jones, K. (2014). Hyphenated. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "diacritics",
+   "plain": "Müller (2012) and (García, 2015; Čapek, 1920) were influential.\n\nReferences\n\nMuller, H. (2012). Without the umlaut. Journal One, 1, 1-9.\nGarcia, L. (2015). Without the accent. Journal Two, 2, 2-8.\nCapek, K. (1920). Without the caron. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Müller (2012) and (García, 2015; Čapek, 1920) were influential.\n"
+   },
+   "split": {
+    "body": "Müller (2012) and (García, 2015; Čapek, 1920) were influential.\n",
+    "refs": [
+     "Muller, H. (2012). Without the umlaut. Journal One, 1, 1-9.",
+     "Garcia, L. (2015). Without the accent. Journal Two, 2, 2-8.",
+     "Capek, K. (1920). Without the caron. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Müller",
+     "yr": "2012",
+     "raw": "Müller (2012)"
+    },
+    {
+     "sn": "García",
+     "yr": "2015",
+     "raw": "García, 2015"
+    },
+    {
+     "sn": "Čapek",
+     "yr": "1920",
+     "raw": "Čapek, 1920"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Muller, H. (2012). Without the umlaut. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Muller",
+      "yr": "2012",
+      "text": "Muller, H. (2012). Without the umlaut. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Garcia, L. (2015). Without the accent. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Garcia",
+      "yr": "2015",
+      "text": "Garcia, L. (2015). Without the accent. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Capek, K. (1920). Without the caron. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Capek",
+      "yr": "1920",
+      "text": "Capek, K. (1920). Without the caron. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "empty",
+   "plain": "",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 0,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": ""
+   },
+   "split": {
+    "body": "",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [],
+   "parsed": null
+  },
+  {
+   "id": "empty-with-lib",
+   "plain": "",
+   "lib": [
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Bandura, A. (1977). Social learning theory. Prentice Hall.",
+    "Sharma, R. (2021). Exam anxiety in adolescents [Doctoral dissertation, University of Delhi]."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 2,
+    "cited": 0,
+    "missing": [],
+    "unused": [
+     {
+      "sn": "Bandura",
+      "yr": "1977",
+      "text": "Bandura, A. (1977). Social learning theory. Prentice Hall."
+     },
+     {
+      "sn": "Sharma",
+      "yr": "2021",
+      "text": "Sharma, R. (2021). Exam anxiety in adolescents [Doctoral dissertation, University of Delhi]."
+     }
+    ],
+    "unread": 0,
+    "body": ""
+   },
+   "split": {
+    "body": "",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [],
+   "parsed": null
+  },
+  {
+   "id": "heading-no-lines",
+   "plain": "The result held (Smith, 2020).\n\nReferences",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": []
+  },
+  {
+   "id": "heading-blank-lines",
+   "plain": "The result held (Smith, 2020).\n\nReferences\n\n   \n\n",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": []
+  },
+  {
+   "id": "heading-no-lines-with-lib",
+   "plain": "The result held (Bandura, 1977).\n\nReferences",
+   "lib": [
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Bandura, A. (1977). Social learning theory. Prentice Hall."
+   ],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Bandura",
+       "yr": "1977",
+       "raw": "Bandura, 1977",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Bandura, 1977).\n"
+   },
+   "split": {
+    "body": "The result held (Bandura, 1977).\n",
+    "refs": [],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura, 1977"
+    }
+   ],
+   "parsed": []
+  },
+  {
+   "id": "heading-first-line",
+   "plain": "References\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 1,
+    "cited": 0,
+    "missing": [],
+    "unused": [
+     {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    ],
+    "unread": 0,
+    "body": ""
+   },
+   "split": {
+    "body": "",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "References"
+   },
+   "cites": [],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "ref-no-year",
+   "plain": "Findings are mixed (Smith, 2020).\n\nReferences\n\nSmith, J. Sleep and memory. Journal of Sleep Research.\nLee, K. Memory consolidation. Memory Journal.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 2,
+    "body": "Findings are mixed (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "Findings are mixed (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. Sleep and memory. Journal of Sleep Research.",
+     "Lee, K. Memory consolidation. Memory Journal."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. Sleep and memory. Journal of Sleep Research.",
+     "out": null
+    },
+    {
+     "line": "Lee, K. Memory consolidation. Memory Journal.",
+     "out": null
+    }
+   ]
+  },
+  {
+   "id": "page-numbers",
+   "plain": "The effect is large (Smith, 2020, p. 4), replicated (Lee, 2019, pp. 12-15), and Rao (2018, p. 7) added detail (Ito, p. 3, 2017).\n\nReferences\n\nSmith, J. (2020). Large effect. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 1,
+    "cited": 4,
+    "missing": [
+     {
+      "c": {
+       "sn": "Rao",
+       "yr": "2018",
+       "raw": "Rao (2018, p. 7)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2019",
+       "raw": "Lee, 2019, pp. 12-15",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Ito",
+       "yr": "2017",
+       "raw": "Ito, p. 3, 2017",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "The effect is large (Smith, 2020, p. 4), replicated (Lee, 2019, pp. 12-15), and Rao (2018, p. 7) added detail (Ito, p. 3, 2017).\n"
+   },
+   "split": {
+    "body": "The effect is large (Smith, 2020, p. 4), replicated (Lee, 2019, pp. 12-15), and Rao (2018, p. 7) added detail (Ito, p. 3, 2017).\n",
+    "refs": [
+     "Smith, J. (2020). Large effect. Journal One, 1, 1-9."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Rao",
+     "yr": "2018",
+     "raw": "Rao (2018, p. 7)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020, p. 4"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019",
+     "raw": "Lee, 2019, pp. 12-15"
+    },
+    {
+     "sn": "Ito",
+     "yr": "2017",
+     "raw": "Ito, p. 3, 2017"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Large effect. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Large effect. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "et-al-variants",
+   "plain": "Rao et al. (2018) and Iyer et al (2017) agree with (Ito et al., 2016; Kuo et al, 2015) but not with (Ota et. al., 2014).\n\nReferences\n\nRao, P., Iyer, S., & Kumar, V. (2018). Agreement. Journal One, 1, 1-9.\nIyer, S., Rao, P., & Kumar, V. (2017). Agreement. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 5,
+    "missing": [
+     {
+      "c": {
+       "sn": "Ito",
+       "yr": "2016",
+       "raw": "Ito et al., 2016",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Kuo",
+       "yr": "2015",
+       "raw": "Kuo et al, 2015",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Ota",
+       "yr": "2014",
+       "raw": "Ota et. al., 2014",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Rao et al. (2018) and Iyer et al (2017) agree with (Ito et al., 2016; Kuo et al, 2015) but not with (Ota et. al., 2014).\n"
+   },
+   "split": {
+    "body": "Rao et al. (2018) and Iyer et al (2017) agree with (Ito et al., 2016; Kuo et al, 2015) but not with (Ota et. al., 2014).\n",
+    "refs": [
+     "Rao, P., Iyer, S., & Kumar, V. (2018). Agreement. Journal One, 1, 1-9.",
+     "Iyer, S., Rao, P., & Kumar, V. (2017). Agreement. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Rao",
+     "yr": "2018",
+     "raw": "Rao et al. (2018)"
+    },
+    {
+     "sn": "Iyer",
+     "yr": "2017",
+     "raw": "Iyer et al (2017)"
+    },
+    {
+     "sn": "Ito",
+     "yr": "2016",
+     "raw": "Ito et al., 2016"
+    },
+    {
+     "sn": "Kuo",
+     "yr": "2015",
+     "raw": "Kuo et al, 2015"
+    },
+    {
+     "sn": "Ota",
+     "yr": "2014",
+     "raw": "Ota et. al., 2014"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Rao, P., Iyer, S., & Kumar, V. (2018). Agreement. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Rao",
+      "yr": "2018",
+      "text": "Rao, P., Iyer, S., & Kumar, V. (2018). Agreement. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Iyer, S., Rao, P., & Kumar, V. (2017). Agreement. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Iyer",
+      "yr": "2017",
+      "text": "Iyer, S., Rao, P., & Kumar, V. (2017). Agreement. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "suffix-in-list-only",
+   "plain": "Lee (2018) is the key source.\n\nReferences\n\nLee, K. (2018a). First paper. Journal One, 1, 1-9.\nLee, K. (2018b). Second paper. Journal Two, 2, 2-8.\nPark, M. (2017a). Not cited. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 1,
+    "missing": [],
+    "unused": [
+     {
+      "sn": "Park",
+      "yr": "2017a",
+      "text": "Park, M. (2017a). Not cited. Journal Three, 3, 3-7."
+     }
+    ],
+    "unread": 0,
+    "body": "Lee (2018) is the key source.\n"
+   },
+   "split": {
+    "body": "Lee (2018) is the key source.\n",
+    "refs": [
+     "Lee, K. (2018a). First paper. Journal One, 1, 1-9.",
+     "Lee, K. (2018b). Second paper. Journal Two, 2, 2-8.",
+     "Park, M. (2017a). Not cited. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Lee",
+     "yr": "2018",
+     "raw": "Lee (2018)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Lee, K. (2018a). First paper. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2018a",
+      "text": "Lee, K. (2018a). First paper. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Lee, K. (2018b). Second paper. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2018b",
+      "text": "Lee, K. (2018b). Second paper. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Park, M. (2017a). Not cited. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Park",
+      "yr": "2017a",
+      "text": "Park, M. (2017a). Not cited. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "two-authors-ampersand",
+   "plain": "Tanaka & Ito (2019) and (Tanaka and Ito, 2018; Kuo & Ota, 2017) agree.\n\nReferences\n\nTanaka, H., & Ito, K. (2019). One. Journal One, 1, 1-9.\nTanaka, H., & Ito, K. (2018). Two. Journal Two, 2, 2-8.\nKuo, Y., & Ota, M. (2017). Three. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Tanaka & Ito (2019) and (Tanaka and Ito, 2018; Kuo & Ota, 2017) agree.\n"
+   },
+   "split": {
+    "body": "Tanaka & Ito (2019) and (Tanaka and Ito, 2018; Kuo & Ota, 2017) agree.\n",
+    "refs": [
+     "Tanaka, H., & Ito, K. (2019). One. Journal One, 1, 1-9.",
+     "Tanaka, H., & Ito, K. (2018). Two. Journal Two, 2, 2-8.",
+     "Kuo, Y., & Ota, M. (2017). Three. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Tanaka",
+     "yr": "2019",
+     "raw": "Tanaka & Ito (2019)"
+    },
+    {
+     "sn": "Tanaka",
+     "yr": "2018",
+     "raw": "Tanaka and Ito, 2018"
+    },
+    {
+     "sn": "Kuo",
+     "yr": "2017",
+     "raw": "Kuo & Ota, 2017"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Tanaka, H., & Ito, K. (2019). One. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Tanaka",
+      "yr": "2019",
+      "text": "Tanaka, H., & Ito, K. (2019). One. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Tanaka, H., & Ito, K. (2018). Two. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Tanaka",
+      "yr": "2018",
+      "text": "Tanaka, H., & Ito, K. (2018). Two. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Kuo, Y., & Ota, M. (2017). Three. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Kuo",
+      "yr": "2017",
+      "text": "Kuo, Y., & Ota, M. (2017). Three. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "list-longer-than-body",
+   "plain": "Only one source is cited here (Smith, 2020).\n\nReferences\n\nSmith, J. (2020). Cited. Journal One, 1, 1-9.\nAdams, P. (2001). Uncited one. Journal Two, 2, 2-8.\nBrown, Q. (2002). Uncited two. Journal Three, 3, 3-7.\nClark, R. (2003). Uncited three. Journal Four, 4, 4-6.\nDavis, S. (2004). Uncited four. Journal Five, 5, 5-5.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 5,
+    "cited": 1,
+    "missing": [],
+    "unused": [
+     {
+      "sn": "Adams",
+      "yr": "2001",
+      "text": "Adams, P. (2001). Uncited one. Journal Two, 2, 2-8."
+     },
+     {
+      "sn": "Brown",
+      "yr": "2002",
+      "text": "Brown, Q. (2002). Uncited two. Journal Three, 3, 3-7."
+     },
+     {
+      "sn": "Clark",
+      "yr": "2003",
+      "text": "Clark, R. (2003). Uncited three. Journal Four, 4, 4-6."
+     },
+     {
+      "sn": "Davis",
+      "yr": "2004",
+      "text": "Davis, S. (2004). Uncited four. Journal Five, 5, 5-5."
+     }
+    ],
+    "unread": 0,
+    "body": "Only one source is cited here (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "Only one source is cited here (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Cited. Journal One, 1, 1-9.",
+     "Adams, P. (2001). Uncited one. Journal Two, 2, 2-8.",
+     "Brown, Q. (2002). Uncited two. Journal Three, 3, 3-7.",
+     "Clark, R. (2003). Uncited three. Journal Four, 4, 4-6.",
+     "Davis, S. (2004). Uncited four. Journal Five, 5, 5-5."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Cited. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Cited. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Adams, P. (2001). Uncited one. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Adams",
+      "yr": "2001",
+      "text": "Adams, P. (2001). Uncited one. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Brown, Q. (2002). Uncited two. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Brown",
+      "yr": "2002",
+      "text": "Brown, Q. (2002). Uncited two. Journal Three, 3, 3-7."
+     }
+    },
+    {
+     "line": "Clark, R. (2003). Uncited three. Journal Four, 4, 4-6.",
+     "out": {
+      "sn": "Clark",
+      "yr": "2003",
+      "text": "Clark, R. (2003). Uncited three. Journal Four, 4, 4-6."
+     }
+    },
+    {
+     "line": "Davis, S. (2004). Uncited four. Journal Five, 5, 5-5.",
+     "out": {
+      "sn": "Davis",
+      "yr": "2004",
+      "text": "Davis, S. (2004). Uncited four. Journal Five, 5, 5-5."
+     }
+    }
+   ]
+  },
+  {
+   "id": "lib-no-author",
+   "plain": "Known work (Smith, 2020) and an unattributed note (Author, 2019).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Smith, John",
+     "year": "2020",
+     "title": "Sleep and delay",
+     "source": "Journal of Sleep",
+     "volume": "10",
+     "issue": "2",
+     "pages": "1-10"
+    },
+    {
+     "type": "Journal article",
+     "year": "2021",
+     "title": "A paper whose author was never entered",
+     "source": "Journal One",
+     "volume": "1",
+     "pages": "1-9"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Smith, J. (2020). Sleep and delay. Journal of Sleep, 10(2), 1–10.",
+    "Author. (2021). A paper whose author was never entered. Journal One, 1, 1–9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 2,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "Author",
+       "yr": "2019",
+       "raw": "Author, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Author",
+         "yr": "2021",
+         "text": "Author. (2021). A paper whose author was never entered. Journal One, 1, 1–9."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Author",
+      "yr": "2021",
+      "text": "Author. (2021). A paper whose author was never entered. Journal One, 1, 1–9."
+     }
+    ],
+    "unread": 0,
+    "body": "Known work (Smith, 2020) and an unattributed note (Author, 2019)."
+   },
+   "split": {
+    "body": "Known work (Smith, 2020) and an unattributed note (Author, 2019).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Author",
+     "yr": "2019",
+     "raw": "Author, 2019"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-apa6",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "apa6",
+   "refs": [
+    "Miller, G. A., Smith, J. B., & Lee, K. (2020). The magical number seven. Psychological Review, 63(2), 81–97. doi:10.1037/h0043158",
+    "Bandura, A. (1977). Social learning theory. Prentice Hall.",
+    "World Health Organization. (2022, June 17). Mental health fact sheet. Retrieved October 1, 2026, from https://who.int/x",
+    "Roy, A., & Kapoor, P. (2019). Sleep and memory. In S. Mehta & V. Rao (Eds.), Handbook of cognition (pp. 11–30). Sage.",
+    "Sharma, R. (2021). Exam anxiety in adolescents [Doctoral dissertation, University of Delhi].",
+    "Khan, I. (n.d.). Notes on attention. Attention Letters, 3(1), 5–9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller, G. A., Smith, J. B., & Lee, K. (2020). The magical number seven. Psychological Review, 63(2), 81–97. doi:10.1037/h0043158"
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. (2022, June 17). Mental health fact sheet. Retrieved October 1, 2026, from https://who.int/x"
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-mla",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "mla",
+   "refs": [
+    "Miller, George A., et al. \"The magical number seven.\" Psychological Review, vol. 63, no. 2, 2020, pp. 81–97. https://doi.org/10.1037/h0043158.",
+    "Bandura, Albert. Social learning theory. Prentice Hall, 1977.",
+    "World Health Organization. \"Mental health fact sheet.\" WHO, 17 June 2022, https://who.int/x. Accessed 1 Oct. 2026.",
+    "Roy, A., and P. Kapoor. \"Sleep and memory.\" Handbook of cognition, edited by S. Mehta and V. Rao, Sage, 2019, pp. 11–30.",
+    "Sharma, Riya. Exam anxiety in adolescents. 2021. University of Delhi, Doctoral dissertation.",
+    "Khan, Imran. \"Notes on attention.\" Attention Letters, vol. 3, no. 1, n.d., pp. 5–9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller, George A., et al. \"The magical number seven.\" Psychological Review, vol. 63, no. 2, 2020, pp. 81–97. https://doi.org/10.1037/h0043158."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. \"Mental health fact sheet.\" WHO, 17 June 2022, https://who.int/x. Accessed 1 Oct. 2026."
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-chicago",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "chicago",
+   "refs": [
+    "Miller, George A., Jane B. Smith, and Kim Lee. 2020. \"The magical number seven.\" Psychological Review 63 (2): 81–97. https://doi.org/10.1037/h0043158.",
+    "Bandura, Albert. 1977. Social learning theory. Prentice Hall.",
+    "World Health Organization. 2022. \"Mental health fact sheet.\" WHO. June 17, 2022. https://who.int/x. Accessed October 1, 2026.",
+    "Roy, A., and P. Kapoor. 2019. \"Sleep and memory.\" In Handbook of cognition, edited by S. Mehta and V. Rao, 11–30. Sage.",
+    "Sharma, Riya. 2021. \"Exam anxiety in adolescents.\" Doctoral dissertation, University of Delhi.",
+    "Khan, Imran. n.d.. \"Notes on attention.\" Attention Letters 3 (1): 5–9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller, George A., Jane B. Smith, and Kim Lee. 2020. \"The magical number seven.\" Psychological Review 63 (2): 81–97. https://doi.org/10.1037/h0043158."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. 2022. \"Mental health fact sheet.\" WHO. June 17, 2022. https://who.int/x. Accessed October 1, 2026."
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-harvard",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "harvard",
+   "refs": [
+    "Miller, G.A., Smith, J.B. and Lee, K. (2020) 'The magical number seven', Psychological Review, 63(2), pp. 81–97. Available at: https://doi.org/10.1037/h0043158.",
+    "Bandura, A. (1977) Social learning theory. Prentice Hall.",
+    "World Health Organization (2022) Mental health fact sheet. WHO. Available at: https://who.int/x (Accessed: 1 October 2026).",
+    "Roy, A. and Kapoor, P. (2019) 'Sleep and memory', in S. Mehta and V. Rao (eds.) Handbook of cognition. Sage, pp. 11–30.",
+    "Sharma, R. (2021) Exam anxiety in adolescents. Doctoral dissertation. University of Delhi.",
+    "Khan, I. (n.d.) 'Notes on attention', Attention Letters, 3(1), pp. 5–9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller, G.A., Smith, J.B. and Lee, K. (2020) 'The magical number seven', Psychological Review, 63(2), pp. 81–97. Available at: https://doi.org/10.1037/h0043158."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization (2022) Mental health fact sheet. WHO. Available at: https://who.int/x (Accessed: 1 October 2026)."
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-ieee",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "ieee",
+   "refs": [
+    "G. A. Miller, J. B. Smith, and K. Lee, \"The magical number seven,\" Psychological Review, vol. 63, no. 2, pp. 81–97, 2020, doi: 10.1037/h0043158.",
+    "A. Bandura, Social learning theory. Prentice Hall, 1977.",
+    "World Health Organization. \"Mental health fact sheet.\" WHO. [Online]. Available: https://who.int/x (accessed Oct. 1, 2026)",
+    "A. Roy and P. Kapoor, \"Sleep and memory,\" in Handbook of cognition, S. Mehta and V. Rao, Eds. Sage, 2019, pp. 11–30.",
+    "R. Sharma, \"Exam anxiety in adolescents,\" Ph.D. dissertation, University of Delhi, 2021.",
+    "I. Khan, \"Notes on attention,\" Attention Letters, vol. 3, no. 1, pp. 5–9, n.d.."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "G. A. Miller, J. B. Smith, and K. Lee, \"The magical number seven,\" Psychological Review, vol. 63, no. 2, pp. 81–97, 2020, doi: 10.1037/h0043158."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. \"Mental health fact sheet.\" WHO. [Online]. Available: https://who.int/x (accessed Oct. 1, 2026)"
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "lib-branch-ama",
+   "plain": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Miller, George A.; Smith, Jane B.; Lee, Kim",
+     "year": "2020",
+     "title": "The magical number seven",
+     "source": "Psychological Review",
+     "volume": "63",
+     "issue": "2",
+     "pages": "81-97",
+     "doi": "10.1037/h0043158"
+    },
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    },
+    {
+     "type": "Website",
+     "author": "World Health Organization",
+     "year": "2022",
+     "title": "Mental health fact sheet",
+     "source": "WHO",
+     "url": "https://who.int/x",
+     "month": "6",
+     "day": "17",
+     "accessed": "2026-10-01"
+    },
+    {
+     "type": "Book chapter",
+     "author": "Roy, A.; Kapoor, P.",
+     "year": "2019",
+     "title": "Sleep and memory",
+     "container": "Handbook of cognition",
+     "editors": "Mehta, S.; Rao, V.",
+     "source": "Sage",
+     "pages": "11-30"
+    },
+    {
+     "type": "Thesis",
+     "author": "Sharma, Riya",
+     "year": "2021",
+     "title": "Exam anxiety in adolescents",
+     "source": "University of Delhi",
+     "degree": "Doctoral dissertation"
+    },
+    {
+     "type": "Journal article",
+     "author": "Khan, Imran",
+     "title": "Notes on attention",
+     "source": "Attention Letters",
+     "volume": "3",
+     "issue": "1",
+     "pages": "5-9"
+    }
+   ],
+   "style": "ama",
+   "refs": [
+    "Miller GA, Smith JB, Lee K. The magical number seven. Psychological Review. 2020;63(2):81-97. doi:10.1037/h0043158",
+    "Bandura A. Social learning theory. Prentice Hall; 1977.",
+    "World Health Organization. Mental health fact sheet. WHO. Published June 17, 2022. Accessed October 1, 2026. https://who.int/x",
+    "Roy A, Kapoor P. Sleep and memory. In: Mehta S, Rao V, eds. Handbook of cognition. Sage; 2019:11-30.",
+    "Sharma R. Exam anxiety in adolescents. Doctoral dissertation. University of Delhi; 2021.",
+    "Khan I. Notes on attention. Attention Letters. n.d.;3(1):5-9."
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 6,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Miller",
+       "yr": "2019",
+       "raw": "Miller, 2019",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Miller",
+         "yr": "2020",
+         "text": "Miller GA, Smith JB, Lee K. The magical number seven. Psychological Review. 2020;63(2):81-97. doi:10.1037/h0043158"
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Okafor",
+       "yr": "2018",
+       "raw": "Okafor, 2018",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "WHO",
+       "yr": "2022",
+       "raw": "WHO, 2022",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Organization",
+      "yr": "2022",
+      "text": "World Health Organization. Mental health fact sheet. WHO. Published June 17, 2022. Accessed October 1, 2026. https://who.int/x"
+     }
+    ],
+    "unread": 0,
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022)."
+   },
+   "split": {
+    "body": "Working memory has a limited span (Miller et al., 2020; Miller, 2019). Social learning was described by Bandura (1977), and school programmes were reviewed by Roy and Kapoor (2019). Exam anxiety is common (Sharma, 2021; Okafor, 2018), and attention work is unpublished (Khan, n.d.). The agency notes the burden (WHO, 2022).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura (1977)"
+    },
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy and Kapoor (2019)"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2020",
+     "raw": "Miller et al., 2020"
+    },
+    {
+     "sn": "Miller",
+     "yr": "2019",
+     "raw": "Miller, 2019"
+    },
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma, 2021"
+    },
+    {
+     "sn": "Okafor",
+     "yr": "2018",
+     "raw": "Okafor, 2018"
+    },
+    {
+     "sn": "Khan",
+     "yr": "n.d.",
+     "raw": "Khan, n.d."
+    },
+    {
+     "sn": "WHO",
+     "yr": "2022",
+     "raw": "WHO, 2022"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "heading-beats-lib",
+   "plain": "As shown (Bandura, 1977).\n\nReferences\n\nRoy, A. (2019). In the list. Journal One, 1, 1-9.",
+   "lib": [
+    {
+     "type": "Book",
+     "author": "Bandura, Albert",
+     "year": "1977",
+     "title": "Social learning theory",
+     "source": "Prentice Hall"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Bandura, A. (1977). Social learning theory. Prentice Hall."
+   ],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 1,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Bandura",
+       "yr": "1977",
+       "raw": "Bandura, 1977",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Roy",
+      "yr": "2019",
+      "text": "Roy, A. (2019). In the list. Journal One, 1, 1-9."
+     }
+    ],
+    "unread": 0,
+    "body": "As shown (Bandura, 1977).\n"
+   },
+   "split": {
+    "body": "As shown (Bandura, 1977).\n",
+    "refs": [
+     "Roy, A. (2019). In the list. Journal One, 1, 1-9."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Bandura",
+     "yr": "1977",
+     "raw": "Bandura, 1977"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Roy, A. (2019). In the list. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Roy",
+      "yr": "2019",
+      "text": "Roy, A. (2019). In the list. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "lib-odd-years",
+   "plain": "Two papers by Roy (Roy, 2019) and a note (Lee, n.d.), with one in press (Banerjee, 2023).",
+   "lib": [
+    {
+     "type": "Journal article",
+     "author": "Roy, A.",
+     "year": " 2019 ",
+     "title": "Spaces in the year",
+     "source": "Journal One"
+    },
+    {
+     "type": "Journal article",
+     "author": "Roy, B.",
+     "year": "2019a",
+     "title": "A letter in the year",
+     "source": "Journal Two"
+    },
+    {
+     "type": "Journal article",
+     "author": "Lee, K.",
+     "year": "",
+     "title": "An empty year",
+     "source": "Journal Three"
+    },
+    {
+     "type": "Journal article",
+     "author": "Banerjee, R.K.",
+     "year": " in press ",
+     "title": "Feedback literacy in large classes",
+     "source": "Assessment & Evaluation in Higher Education"
+    },
+    {
+     "author": "Smith, J. ...",
+     "year": "2014",
+     "title": "  Reading on screens versus paper  ",
+     "source": " Journal of Research in Reading ",
+     "volume": "37",
+     "issue": "",
+     "pages": " 45 ",
+     "doi": "",
+     "url": " https://example.org/jrr/37/45 ",
+     "type": "Journal article",
+     "style": "apa",
+     "lang": "en"
+    }
+   ],
+   "style": "apa",
+   "refs": [
+    "Roy, A. (2019). Spaces in the year. Journal One.",
+    "Roy, B. (2019a). A letter in the year. Journal Two.",
+    "Lee, K. (n.d.). An empty year. Journal Three.",
+    "Banerjee, R. K. (in press). Feedback literacy in large classes. Assessment & Evaluation in Higher Education.",
+    "Smith, J. (2014). Reading on screens versus paper.  Journal of Research in Reading , 37, 45. https://example.org/jrr/37/45"
+   ],
+   "out": {
+    "srcKind": "lib",
+    "heading": "",
+    "listN": 5,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Banerjee",
+       "yr": "2023",
+       "raw": "Banerjee, 2023",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Banerjee",
+         "yr": "in press",
+         "text": "Banerjee, R. K. (in press). Feedback literacy in large classes. Assessment & Evaluation in Higher Education."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Banerjee",
+      "yr": "in press",
+      "text": "Banerjee, R. K. (in press). Feedback literacy in large classes. Assessment & Evaluation in Higher Education."
+     },
+     {
+      "sn": "Smith",
+      "yr": "2014",
+      "text": "Smith, J. (2014). Reading on screens versus paper.  Journal of Research in Reading , 37, 45. https://example.org/jrr/37/45"
+     }
+    ],
+    "unread": 0,
+    "body": "Two papers by Roy (Roy, 2019) and a note (Lee, n.d.), with one in press (Banerjee, 2023)."
+   },
+   "split": {
+    "body": "Two papers by Roy (Roy, 2019) and a note (Lee, n.d.), with one in press (Banerjee, 2023).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Roy",
+     "yr": "2019",
+     "raw": "Roy, 2019"
+    },
+    {
+     "sn": "Lee",
+     "yr": "n.d.",
+     "raw": "Lee, n.d."
+    },
+    {
+     "sn": "Banerjee",
+     "yr": "2023",
+     "raw": "Banerjee, 2023"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "heading-reference",
+   "plain": "The result held (Smith, 2020).\n\nReference\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "Reference",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "Reference"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-colon",
+   "plain": "The result held (Smith, 2020).\n\nReferences:\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References:",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "References:"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-uppercase",
+   "plain": "The result held (Smith, 2020).\n\nREFERENCES\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "REFERENCES",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "REFERENCES"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-padded",
+   "plain": "The result held (Smith, 2020).\n\n   Bibliography   \n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "Bibliography",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "Bibliography"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-works-cited",
+   "plain": "The result held (Smith, 2020).\n\nWorks Cited\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "Works Cited",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "Works Cited"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-reference-list",
+   "plain": "The result held (Smith, 2020).\n\nReference List\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "Reference List",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "Reference List"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-hindi-short",
+   "plain": "The result held (Smith, 2020).\n\nसंदर्भ\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "संदर्भ",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "संदर्भ"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-hindi-joined",
+   "plain": "The result held (Smith, 2020).\n\nसंदर्भसूची\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "संदर्भसूची",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "संदर्भसूची"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-hindi-nbsp",
+   "plain": "The result held (Smith, 2020).\n\nसंदर्भ सूची\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "संदर्भ सूची",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "संदर्भ सूची"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-extra-after",
+   "plain": "The result held (Smith, 2020).\n\nReferences and notes\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n\nReferences and notes\n\nSmith, J. (2020). Title. Journal One, 1, 1-9."
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n\nReferences and notes\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "heading-extra-before",
+   "plain": "The result held (Smith, 2020).\n\nSee references\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "The result held (Smith, 2020).\n\nSee references\n\nSmith, J. (2020). Title. Journal One, 1, 1-9."
+   },
+   "split": {
+    "body": "The result held (Smith, 2020).\n\nSee references\n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "crlf",
+   "plain": "Body text (Smith, 2020).\r\n\r\nReferences\r\n\r\nSmith, J. (2020). Title. Journal One, 1, 1-9.\r\n",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Body text (Smith, 2020).\r\n\r"
+   },
+   "split": {
+    "body": "Body text (Smith, 2020).\r\n\r",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "nbsp-direct",
+   "plain": "Sleep loss (Smith, 2020) and (Rao et al., 2019).\n\nReferences \n\nSmith, J. (2020). Title. Journal One, 1, 1-9.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 1,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "Rao",
+       "yr": "2019",
+       "raw": "Rao et al., 2019",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Sleep loss (Smith, 2020) and (Rao et al., 2019).\n"
+   },
+   "split": {
+    "body": "Sleep loss (Smith, 2020) and (Rao et al., 2019).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal One, 1, 1-9."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Rao",
+     "yr": "2019",
+     "raw": "Rao et al., 2019"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal One, 1, 1-9."
+     }
+    }
+   ]
+  },
+  {
+   "id": "parse-variants",
+   "plain": "Cited here: (Smith, 2020), (Lee, 2019a), (van der Berg, 2017), (WHO, n.d.), (O’Brien, 2010), (Müller, 2012), (SMITH, 2018).\n\nReferences\n\nSmith, J. (2020). Comma after the surname. Journal One, 1, 1-9.\nSmith J. (2019). No comma after the surname. Journal Two, 2, 2-8.\n   Lee, K. (2019a). Indented, with a suffix. Journal Three, 3, 3-7.\nvan der Berg, J. (2017). A particle. Journal Four, 4, 4-6.\nWHO. (n.d.). An organisation. https://who.int/x\nO’Brien, P. (2010). Curly apostrophe. Journal Five, 5, 5-5.\nMüller, H. (2012). A diaeresis. Journal Six, 6, 6-6.\nSMITH, J. (2018). Capitals. Journal Seven, 7, 7-7.\nDr. Rao (2016). A title before the name. Journal Eight, 8, 8-8.\nsmith, j. (2015). Lower case. Journal Nine, 9, 9-9.\n1. Smith, J. (2014). Numbered with a digit. Journal Ten, 10, 10-10.\n[2] Smith, J. (2013). Numbered with brackets. Journal Eleven, 11, 11-11.\nSmith, J., & Lee, K. 2012. No parentheses. Journal Twelve, 12, 12-12.\nSmith, J. (20111). Five digits. Journal Thirteen, 13, 13-13.\nSmith, J. (1492). Before 1500. Journal Fourteen, 14, 14-14.\nSmith, J. (2101). After 2099. Journal Fifteen, 15, 15-15.\nSmith, J. ( 2010 ). Spaces inside the brackets. Journal Sixteen, 16, 16-16.\nSmith, J. (2009) and (2008). Two years. Journal Seventeen, 17, 17-17.\nCalvin, J. (1536). A book from the 1500s. Press Eighteen.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 12,
+    "cited": 7,
+    "missing": [],
+    "unused": [
+     {
+      "sn": "Smith",
+      "yr": "2019",
+      "text": "Smith J. (2019). No comma after the surname. Journal Two, 2, 2-8."
+     },
+     {
+      "sn": "Dr",
+      "yr": "2016",
+      "text": "Dr. Rao (2016). A title before the name. Journal Eight, 8, 8-8."
+     },
+     {
+      "sn": "Smith",
+      "yr": "2010",
+      "text": "Smith, J. ( 2010 ). Spaces inside the brackets. Journal Sixteen, 16, 16-16."
+     },
+     {
+      "sn": "Smith",
+      "yr": "2009",
+      "text": "Smith, J. (2009) and (2008). Two years. Journal Seventeen, 17, 17-17."
+     },
+     {
+      "sn": "Calvin",
+      "yr": "1536",
+      "text": "Calvin, J. (1536). A book from the 1500s. Press Eighteen."
+     }
+    ],
+    "unread": 7,
+    "body": "Cited here: (Smith, 2020), (Lee, 2019a), (van der Berg, 2017), (WHO, n.d.), (O’Brien, 2010), (Müller, 2012), (SMITH, 2018).\n"
+   },
+   "split": {
+    "body": "Cited here: (Smith, 2020), (Lee, 2019a), (van der Berg, 2017), (WHO, n.d.), (O’Brien, 2010), (Müller, 2012), (SMITH, 2018).\n",
+    "refs": [
+     "Smith, J. (2020). Comma after the surname. Journal One, 1, 1-9.",
+     "Smith J. (2019). No comma after the surname. Journal Two, 2, 2-8.",
+     "Lee, K. (2019a). Indented, with a suffix. Journal Three, 3, 3-7.",
+     "van der Berg, J. (2017). A particle. Journal Four, 4, 4-6.",
+     "WHO. (n.d.). An organisation. https://who.int/x",
+     "O’Brien, P. (2010). Curly apostrophe. Journal Five, 5, 5-5.",
+     "Müller, H. (2012). A diaeresis. Journal Six, 6, 6-6.",
+     "SMITH, J. (2018). Capitals. Journal Seven, 7, 7-7.",
+     "Dr. Rao (2016). A title before the name. Journal Eight, 8, 8-8.",
+     "smith, j. (2015). Lower case. Journal Nine, 9, 9-9.",
+     "1. Smith, J. (2014). Numbered with a digit. Journal Ten, 10, 10-10.",
+     "[2] Smith, J. (2013). Numbered with brackets. Journal Eleven, 11, 11-11.",
+     "Smith, J., & Lee, K. 2012. No parentheses. Journal Twelve, 12, 12-12.",
+     "Smith, J. (20111). Five digits. Journal Thirteen, 13, 13-13.",
+     "Smith, J. (1492). Before 1500. Journal Fourteen, 14, 14-14.",
+     "Smith, J. (2101). After 2099. Journal Fifteen, 15, 15-15.",
+     "Smith, J. ( 2010 ). Spaces inside the brackets. Journal Sixteen, 16, 16-16.",
+     "Smith, J. (2009) and (2008). Two years. Journal Seventeen, 17, 17-17.",
+     "Calvin, J. (1536). A book from the 1500s. Press Eighteen."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019a",
+     "raw": "Lee, 2019a"
+    },
+    {
+     "sn": "van der Berg",
+     "yr": "2017",
+     "raw": "van der Berg, 2017"
+    },
+    {
+     "sn": "WHO",
+     "yr": "n.d.",
+     "raw": "WHO, n.d."
+    },
+    {
+     "sn": "O’Brien",
+     "yr": "2010",
+     "raw": "O’Brien, 2010"
+    },
+    {
+     "sn": "Müller",
+     "yr": "2012",
+     "raw": "Müller, 2012"
+    },
+    {
+     "sn": "SMITH",
+     "yr": "2018",
+     "raw": "SMITH, 2018"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Comma after the surname. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Comma after the surname. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Smith J. (2019). No comma after the surname. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2019",
+      "text": "Smith J. (2019). No comma after the surname. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Lee, K. (2019a). Indented, with a suffix. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2019a",
+      "text": "Lee, K. (2019a). Indented, with a suffix. Journal Three, 3, 3-7."
+     }
+    },
+    {
+     "line": "van der Berg, J. (2017). A particle. Journal Four, 4, 4-6.",
+     "out": {
+      "sn": "van der Berg",
+      "yr": "2017",
+      "text": "van der Berg, J. (2017). A particle. Journal Four, 4, 4-6."
+     }
+    },
+    {
+     "line": "WHO. (n.d.). An organisation. https://who.int/x",
+     "out": {
+      "sn": "WHO",
+      "yr": "n.d.",
+      "text": "WHO. (n.d.). An organisation. https://who.int/x"
+     }
+    },
+    {
+     "line": "O’Brien, P. (2010). Curly apostrophe. Journal Five, 5, 5-5.",
+     "out": {
+      "sn": "O’Brien",
+      "yr": "2010",
+      "text": "O’Brien, P. (2010). Curly apostrophe. Journal Five, 5, 5-5."
+     }
+    },
+    {
+     "line": "Müller, H. (2012). A diaeresis. Journal Six, 6, 6-6.",
+     "out": {
+      "sn": "Müller",
+      "yr": "2012",
+      "text": "Müller, H. (2012). A diaeresis. Journal Six, 6, 6-6."
+     }
+    },
+    {
+     "line": "SMITH, J. (2018). Capitals. Journal Seven, 7, 7-7.",
+     "out": {
+      "sn": "SMITH",
+      "yr": "2018",
+      "text": "SMITH, J. (2018). Capitals. Journal Seven, 7, 7-7."
+     }
+    },
+    {
+     "line": "Dr. Rao (2016). A title before the name. Journal Eight, 8, 8-8.",
+     "out": {
+      "sn": "Dr",
+      "yr": "2016",
+      "text": "Dr. Rao (2016). A title before the name. Journal Eight, 8, 8-8."
+     }
+    },
+    {
+     "line": "smith, j. (2015). Lower case. Journal Nine, 9, 9-9.",
+     "out": null
+    },
+    {
+     "line": "1. Smith, J. (2014). Numbered with a digit. Journal Ten, 10, 10-10.",
+     "out": null
+    },
+    {
+     "line": "[2] Smith, J. (2013). Numbered with brackets. Journal Eleven, 11, 11-11.",
+     "out": null
+    },
+    {
+     "line": "Smith, J., & Lee, K. 2012. No parentheses. Journal Twelve, 12, 12-12.",
+     "out": null
+    },
+    {
+     "line": "Smith, J. (20111). Five digits. Journal Thirteen, 13, 13-13.",
+     "out": null
+    },
+    {
+     "line": "Smith, J. (1492). Before 1500. Journal Fourteen, 14, 14-14.",
+     "out": null
+    },
+    {
+     "line": "Smith, J. (2101). After 2099. Journal Fifteen, 15, 15-15.",
+     "out": null
+    },
+    {
+     "line": "Smith, J. ( 2010 ). Spaces inside the brackets. Journal Sixteen, 16, 16-16.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2010",
+      "text": "Smith, J. ( 2010 ). Spaces inside the brackets. Journal Sixteen, 16, 16-16."
+     }
+    },
+    {
+     "line": "Smith, J. (2009) and (2008). Two years. Journal Seventeen, 17, 17-17.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2009",
+      "text": "Smith, J. (2009) and (2008). Two years. Journal Seventeen, 17, 17-17."
+     }
+    },
+    {
+     "line": "Calvin, J. (1536). A book from the 1500s. Press Eighteen.",
+     "out": {
+      "sn": "Calvin",
+      "yr": "1536",
+      "text": "Calvin, J. (1536). A book from the 1500s. Press Eighteen."
+     }
+    }
+   ]
+  },
+  {
+   "id": "narrative-forms",
+   "plain": "Smith (2020) began it; Smith (2020a) and Smith(2019) followed; Smith ( 2018 ) and Smith (2017, p. 4) and Smith (2016; see also Lee) and Smith (n.d.) did too. A narrative citation needs no boundary, so iPhone (2019) is read from inside the word. Smith (in press) and Smith (2020 did not count.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 8,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith (2020)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020a",
+       "raw": "Smith (2020a)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2019",
+       "raw": "Smith(2019)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2018",
+       "raw": "Smith ( 2018 )",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2017",
+       "raw": "Smith (2017, p. 4)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2016",
+       "raw": "Smith (2016; see also Lee)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "n.d.",
+       "raw": "Smith (n.d.)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Phone",
+       "yr": "2019",
+       "raw": "Phone (2019)",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Smith (2020) began it; Smith (2020a) and Smith(2019) followed; Smith ( 2018 ) and Smith (2017, p. 4) and Smith (2016; see also Lee) and Smith (n.d.) did too. A narrative citation needs no boundary, so iPhone (2019) is read from inside the word. Smith (in press) and Smith (2020 did not count."
+   },
+   "split": {
+    "body": "Smith (2020) began it; Smith (2020a) and Smith(2019) followed; Smith ( 2018 ) and Smith (2017, p. 4) and Smith (2016; see also Lee) and Smith (n.d.) did too. A narrative citation needs no boundary, so iPhone (2019) is read from inside the word. Smith (in press) and Smith (2020 did not count.",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith (2020)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020a",
+     "raw": "Smith (2020a)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2019",
+     "raw": "Smith(2019)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2018",
+     "raw": "Smith ( 2018 )"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2017",
+     "raw": "Smith (2017, p. 4)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2016",
+     "raw": "Smith (2016; see also Lee)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "n.d.",
+     "raw": "Smith (n.d.)"
+    },
+    {
+     "sn": "Phone",
+     "yr": "2019",
+     "raw": "Phone (2019)"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "parenthetical-forms",
+   "plain": "Without a comma (Smith 2020), with a lead-in (see Smith, 2020) and (e.g., Smith, 2020; Lee, 2019), two years (Smith, 2020a, 2020b), two authors (Smith & Lee, 2019), (Smith et al., 2018). Not citations: (Smith, 20200), (Smith, 1492), (Smith, 2101), (smith, 2020). Quirks: (Smith, 2020A) and (S. Smith, 2020) and (2020, Smith). Not citations either: (Smith2020) and (iPhone, 2019).",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 5,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith 2020",
+       "n": 5
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2019",
+       "raw": "Lee, 2019",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020a",
+       "raw": "Smith, 2020a, 2020b",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2019",
+       "raw": "Smith & Lee, 2019",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2018",
+       "raw": "Smith et al., 2018",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Without a comma (Smith 2020), with a lead-in (see Smith, 2020) and (e.g., Smith, 2020; Lee, 2019), two years (Smith, 2020a, 2020b), two authors (Smith & Lee, 2019), (Smith et al., 2018). Not citations: (Smith, 20200), (Smith, 1492), (Smith, 2101), (smith, 2020). Quirks: (Smith, 2020A) and (S. Smith, 2020) and (2020, Smith). Not citations either: (Smith2020) and (iPhone, 2019)."
+   },
+   "split": {
+    "body": "Without a comma (Smith 2020), with a lead-in (see Smith, 2020) and (e.g., Smith, 2020; Lee, 2019), two years (Smith, 2020a, 2020b), two authors (Smith & Lee, 2019), (Smith et al., 2018). Not citations: (Smith, 20200), (Smith, 1492), (Smith, 2101), (smith, 2020). Quirks: (Smith, 2020A) and (S. Smith, 2020) and (2020, Smith). Not citations either: (Smith2020) and (iPhone, 2019).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith 2020"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "see Smith, 2020"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "e.g., Smith, 2020"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019",
+     "raw": "Lee, 2019"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020a",
+     "raw": "Smith, 2020a, 2020b"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2019",
+     "raw": "Smith & Lee, 2019"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2018",
+     "raw": "Smith et al., 2018"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020A"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "S. Smith, 2020"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "narrative-spacing",
+   "plain": "Typos in the joins: Tan etal (2013), Smith,Lee, and Rao (2012), Smith& Lee (2011), Smith &Lee (2010), and a wide join, Smith  and   Lee (2009), which is fine.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 4,
+    "missing": [
+     {
+      "c": {
+       "sn": "Rao",
+       "yr": "2012",
+       "raw": "Rao (2012)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2011",
+       "raw": "Lee (2011)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2010",
+       "raw": "Lee (2010)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2009",
+       "raw": "Smith  and   Lee (2009)",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Typos in the joins: Tan etal (2013), Smith,Lee, and Rao (2012), Smith& Lee (2011), Smith &Lee (2010), and a wide join, Smith  and   Lee (2009), which is fine."
+   },
+   "split": {
+    "body": "Typos in the joins: Tan etal (2013), Smith,Lee, and Rao (2012), Smith& Lee (2011), Smith &Lee (2010), and a wide join, Smith  and   Lee (2009), which is fine.",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Rao",
+     "yr": "2012",
+     "raw": "Rao (2012)"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2011",
+     "raw": "Lee (2011)"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2010",
+     "raw": "Lee (2010)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2009",
+     "raw": "Smith  and   Lee (2009)"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "narrative-many",
+   "plain": "Four names: Adams, Brown, Clark, and Davis (2017). Seven names: Adams, Brown, Clark, Davis, Evans, Fox, and Green (2016). Eight names: Adams, Brown, Clark, Davis, Evans, Fox, Green, and Hall (2015).\n\nReferences\n\nAdams, A., Brown, B., Clark, C., & Davis, D. (2017). Four. Journal One, 1, 1-9.\nAdams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., & Green, G. (2016). Seven. Journal Two, 2, 2-8.\nAdams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., Green, G., & Hall, H. (2015). Eight. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Brown",
+       "yr": "2015",
+       "raw": "Brown, Clark, Davis, Evans, Fox, Green, and Hall (2015)",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Adams",
+      "yr": "2015",
+      "text": "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., Green, G., & Hall, H. (2015). Eight. Journal Three, 3, 3-7."
+     }
+    ],
+    "unread": 0,
+    "body": "Four names: Adams, Brown, Clark, and Davis (2017). Seven names: Adams, Brown, Clark, Davis, Evans, Fox, and Green (2016). Eight names: Adams, Brown, Clark, Davis, Evans, Fox, Green, and Hall (2015).\n"
+   },
+   "split": {
+    "body": "Four names: Adams, Brown, Clark, and Davis (2017). Seven names: Adams, Brown, Clark, Davis, Evans, Fox, and Green (2016). Eight names: Adams, Brown, Clark, Davis, Evans, Fox, Green, and Hall (2015).\n",
+    "refs": [
+     "Adams, A., Brown, B., Clark, C., & Davis, D. (2017). Four. Journal One, 1, 1-9.",
+     "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., & Green, G. (2016). Seven. Journal Two, 2, 2-8.",
+     "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., Green, G., & Hall, H. (2015). Eight. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Adams",
+     "yr": "2017",
+     "raw": "Adams, Brown, Clark, and Davis (2017)"
+    },
+    {
+     "sn": "Adams",
+     "yr": "2016",
+     "raw": "Adams, Brown, Clark, Davis, Evans, Fox, and Green (2016)"
+    },
+    {
+     "sn": "Brown",
+     "yr": "2015",
+     "raw": "Brown, Clark, Davis, Evans, Fox, Green, and Hall (2015)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Adams, A., Brown, B., Clark, C., & Davis, D. (2017). Four. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Adams",
+      "yr": "2017",
+      "text": "Adams, A., Brown, B., Clark, C., & Davis, D. (2017). Four. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., & Green, G. (2016). Seven. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Adams",
+      "yr": "2016",
+      "text": "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., & Green, G. (2016). Seven. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., Green, G., & Hall, H. (2015). Eight. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Adams",
+      "yr": "2015",
+      "text": "Adams, A., Brown, B., Clark, C., Davis, D., Evans, E., Fox, F., Green, G., & Hall, H. (2015). Eight. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "repeat-counts",
+   "plain": "Smith (2020) began it. Later (Smith, 2020) and (Smith, 2020, p. 9) repeated it, as did Smith (2020) again; Lee (2019) appears once.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith (2020)",
+       "n": 4
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2019",
+       "raw": "Lee (2019)",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Smith (2020) began it. Later (Smith, 2020) and (Smith, 2020, p. 9) repeated it, as did Smith (2020) again; Lee (2019) appears once."
+   },
+   "split": {
+    "body": "Smith (2020) began it. Later (Smith, 2020) and (Smith, 2020, p. 9) repeated it, as did Smith (2020) again; Lee (2019) appears once.",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith (2020)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith (2020)"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019",
+     "raw": "Lee (2019)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020, p. 9"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "group-single-letters",
+   "plain": "Letters are not surnames (A, 2001; B, 2002; C, 2003).",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 0,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Letters are not surnames (A, 2001; B, 2002; C, 2003)."
+   },
+   "split": {
+    "body": "Letters are not surnames (A, 2001; B, 2002; C, 2003).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [],
+   "parsed": null
+  },
+  {
+   "id": "group-boundaries",
+   "plain": "Gap of 90 (Smith.........................................................................................., 2020) and gap of 91 (Lee..........................................................................................., 2019). Group of 260 (Rao, 2018...........................................................................................................................................................................................................................................................) and group of 261 (Ito, 2017............................................................................................................................................................................................................................................................). Three particles van der van Berg (2016).",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "der van Berg",
+       "yr": "2016",
+       "raw": "der van Berg (2016)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith.........................................................................................., 2020",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Rao",
+       "yr": "2018",
+       "raw": "Rao, 2018...........................................................................................................................................................................................................................................................",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Gap of 90 (Smith.........................................................................................., 2020) and gap of 91 (Lee..........................................................................................., 2019). Group of 260 (Rao, 2018...........................................................................................................................................................................................................................................................) and group of 261 (Ito, 2017............................................................................................................................................................................................................................................................). Three particles van der van Berg (2016)."
+   },
+   "split": {
+    "body": "Gap of 90 (Smith.........................................................................................., 2020) and gap of 91 (Lee..........................................................................................., 2019). Group of 260 (Rao, 2018...........................................................................................................................................................................................................................................................) and group of 261 (Ito, 2017............................................................................................................................................................................................................................................................). Three particles van der van Berg (2016).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "der van Berg",
+     "yr": "2016",
+     "raw": "der van Berg (2016)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith.........................................................................................., 2020"
+    },
+    {
+     "sn": "Rao",
+     "yr": "2018",
+     "raw": "Rao, 2018..........................................................................................................................................................................................................................................................."
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "particles-spacing",
+   "plain": "van  der  Berg (2017) used double spaces, and von Neumann (1928) a no-break space.\n\nReferences\n\nvan der Berg, J. (2017). Single spaces. Journal One, 1, 1-9.\nvon Neumann, J. (1928). One space. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 2,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "van  der  Berg (2017) used double spaces, and von Neumann (1928) a no-break space.\n"
+   },
+   "split": {
+    "body": "van  der  Berg (2017) used double spaces, and von Neumann (1928) a no-break space.\n",
+    "refs": [
+     "van der Berg, J. (2017). Single spaces. Journal One, 1, 1-9.",
+     "von Neumann, J. (1928). One space. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "van  der  Berg",
+     "yr": "2017",
+     "raw": "van  der  Berg (2017)"
+    },
+    {
+     "sn": "von Neumann",
+     "yr": "1928",
+     "raw": "von Neumann (1928)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "van der Berg, J. (2017). Single spaces. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "van der Berg",
+      "yr": "2017",
+      "text": "van der Berg, J. (2017). Single spaces. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "von Neumann, J. (1928). One space. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "von Neumann",
+      "yr": "1928",
+      "text": "von Neumann, J. (1928). One space. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "dedupe-keys",
+   "plain": "Müller (2012) and (Muller, 2012) agree; so do SMITH (2020) and (Smith, 2020), O’Brien (2010) and (O'Brien, 2010), and Lee (2019a) with (Lee, 2019A) and (Lee, 2019).",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 5,
+    "missing": [
+     {
+      "c": {
+       "sn": "Müller",
+       "yr": "2012",
+       "raw": "Müller (2012)",
+       "n": 2
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "SMITH",
+       "yr": "2020",
+       "raw": "SMITH (2020)",
+       "n": 2
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "O’Brien",
+       "yr": "2010",
+       "raw": "O’Brien (2010)",
+       "n": 2
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2019a",
+       "raw": "Lee (2019a)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2019",
+       "raw": "Lee, 2019A",
+       "n": 2
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Müller (2012) and (Muller, 2012) agree; so do SMITH (2020) and (Smith, 2020), O’Brien (2010) and (O'Brien, 2010), and Lee (2019a) with (Lee, 2019A) and (Lee, 2019)."
+   },
+   "split": {
+    "body": "Müller (2012) and (Muller, 2012) agree; so do SMITH (2020) and (Smith, 2020), O’Brien (2010) and (O'Brien, 2010), and Lee (2019a) with (Lee, 2019A) and (Lee, 2019).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Müller",
+     "yr": "2012",
+     "raw": "Müller (2012)"
+    },
+    {
+     "sn": "SMITH",
+     "yr": "2020",
+     "raw": "SMITH (2020)"
+    },
+    {
+     "sn": "O’Brien",
+     "yr": "2010",
+     "raw": "O’Brien (2010)"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019a",
+     "raw": "Lee (2019a)"
+    },
+    {
+     "sn": "Muller",
+     "yr": "2012",
+     "raw": "Muller, 2012"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    },
+    {
+     "sn": "O'Brien",
+     "yr": "2010",
+     "raw": "O'Brien, 2010"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019",
+     "raw": "Lee, 2019A"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2019",
+     "raw": "Lee, 2019"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "particle-inside-word",
+   "plain": "The original Smith (2015) study, and for example Jones (2016), were not repeated.\n\nReferences\n\nSmith, J. (2015). The study. Journal One, 1, 1-9.\nJones, K. (2016). The other study. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 2,
+    "missing": [
+     {
+      "c": {
+       "sn": "al Smith",
+       "yr": "2015",
+       "raw": "al Smith (2015)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "le Jones",
+       "yr": "2016",
+       "raw": "le Jones (2016)",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Smith",
+      "yr": "2015",
+      "text": "Smith, J. (2015). The study. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "Jones",
+      "yr": "2016",
+      "text": "Jones, K. (2016). The other study. Journal Two, 2, 2-8."
+     }
+    ],
+    "unread": 0,
+    "body": "The original Smith (2015) study, and for example Jones (2016), were not repeated.\n"
+   },
+   "split": {
+    "body": "The original Smith (2015) study, and for example Jones (2016), were not repeated.\n",
+    "refs": [
+     "Smith, J. (2015). The study. Journal One, 1, 1-9.",
+     "Jones, K. (2016). The other study. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "al Smith",
+     "yr": "2015",
+     "raw": "al Smith (2015)"
+    },
+    {
+     "sn": "le Jones",
+     "yr": "2016",
+     "raw": "le Jones (2016)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2015). The study. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2015",
+      "text": "Smith, J. (2015). The study. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Jones, K. (2016). The other study. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Jones",
+      "yr": "2016",
+      "text": "Jones, K. (2016). The other study. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "particles-capitalised",
+   "plain": "Van der Berg (2017) and De Souza (2015) and van der van Berg (2016) and (Van der Berg, 2014).\n\nReferences\n\nVan der Berg, J. (2017). Capital V. Journal One, 1, 1-9.\nDe Souza, M. (2015). Capital D. Journal Two, 2, 2-8.\nvan der Berg, J. (2016). Lower v. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 4,
+    "missing": [
+     {
+      "c": {
+       "sn": "der Berg",
+       "yr": "2017",
+       "raw": "der Berg (2017)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Souza",
+       "yr": "2015",
+       "raw": "Souza (2015)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "der van Berg",
+       "yr": "2016",
+       "raw": "der van Berg (2016)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Van",
+       "yr": "2014",
+       "raw": "Van der Berg, 2014",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Van",
+         "yr": "2017",
+         "text": "Van der Berg, J. (2017). Capital V. Journal One, 1, 1-9."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Van",
+      "yr": "2017",
+      "text": "Van der Berg, J. (2017). Capital V. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "De",
+      "yr": "2015",
+      "text": "De Souza, M. (2015). Capital D. Journal Two, 2, 2-8."
+     },
+     {
+      "sn": "van der Berg",
+      "yr": "2016",
+      "text": "van der Berg, J. (2016). Lower v. Journal Three, 3, 3-7."
+     }
+    ],
+    "unread": 0,
+    "body": "Van der Berg (2017) and De Souza (2015) and van der van Berg (2016) and (Van der Berg, 2014).\n"
+   },
+   "split": {
+    "body": "Van der Berg (2017) and De Souza (2015) and van der van Berg (2016) and (Van der Berg, 2014).\n",
+    "refs": [
+     "Van der Berg, J. (2017). Capital V. Journal One, 1, 1-9.",
+     "De Souza, M. (2015). Capital D. Journal Two, 2, 2-8.",
+     "van der Berg, J. (2016). Lower v. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "der Berg",
+     "yr": "2017",
+     "raw": "der Berg (2017)"
+    },
+    {
+     "sn": "Souza",
+     "yr": "2015",
+     "raw": "Souza (2015)"
+    },
+    {
+     "sn": "der van Berg",
+     "yr": "2016",
+     "raw": "der van Berg (2016)"
+    },
+    {
+     "sn": "Van",
+     "yr": "2014",
+     "raw": "Van der Berg, 2014"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Van der Berg, J. (2017). Capital V. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Van",
+      "yr": "2017",
+      "text": "Van der Berg, J. (2017). Capital V. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "De Souza, M. (2015). Capital D. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "De",
+      "yr": "2015",
+      "text": "De Souza, M. (2015). Capital D. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "van der Berg, J. (2016). Lower v. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "van der Berg",
+      "yr": "2016",
+      "text": "van der Berg, J. (2016). Lower v. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "stop-words-more",
+   "plain": "Table (2020) and (Tables 2020) and Figure (2020) and (Figures 2020) and Fig (2020) and (Appendix 2020) and Chapter (2020) and (Section 2020) and Study (2020) and (Experiment 2020) and Note (2020) and (Sample 2020) and January (2020) and (February 2020) and March (2020) and (April 2020) and May (2020) and (June 2020) and July (2020) and (August 2020) and September (2020) and (October 2020) and November (2020) and (December 2020) and Page (2020) and (Pages 2020) and Item (2020) and (Items 2020) and Step (2020) and (Phase 2020) and Wave (2020) and (Trial 2020) and Model (2020) and (Group 2020). Upper case counts the same (TABLE 2020), and so does a comma (Figures, 2020). A source is still a source (Smith, 2020).",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "none",
+    "heading": "",
+    "listN": 0,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith, 2020",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [],
+    "unread": 0,
+    "body": "Table (2020) and (Tables 2020) and Figure (2020) and (Figures 2020) and Fig (2020) and (Appendix 2020) and Chapter (2020) and (Section 2020) and Study (2020) and (Experiment 2020) and Note (2020) and (Sample 2020) and January (2020) and (February 2020) and March (2020) and (April 2020) and May (2020) and (June 2020) and July (2020) and (August 2020) and September (2020) and (October 2020) and November (2020) and (December 2020) and Page (2020) and (Pages 2020) and Item (2020) and (Items 2020) and Step (2020) and (Phase 2020) and Wave (2020) and (Trial 2020) and Model (2020) and (Group 2020). Upper case counts the same (TABLE 2020), and so does a comma (Figures, 2020). A source is still a source (Smith, 2020)."
+   },
+   "split": {
+    "body": "Table (2020) and (Tables 2020) and Figure (2020) and (Figures 2020) and Fig (2020) and (Appendix 2020) and Chapter (2020) and (Section 2020) and Study (2020) and (Experiment 2020) and Note (2020) and (Sample 2020) and January (2020) and (February 2020) and March (2020) and (April 2020) and May (2020) and (June 2020) and July (2020) and (August 2020) and September (2020) and (October 2020) and November (2020) and (December 2020) and Page (2020) and (Pages 2020) and Item (2020) and (Items 2020) and Step (2020) and (Phase 2020) and Wave (2020) and (Trial 2020) and Model (2020) and (Group 2020). Upper case counts the same (TABLE 2020), and so does a comma (Figures, 2020). A source is still a source (Smith, 2020).",
+    "refs": null,
+    "heading": ""
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": null
+  },
+  {
+   "id": "multi-match",
+   "plain": "Lee (2018) and (Park, 2017).\n\nReferences\n\nLee, K. (2018a). First. Journal One, 1, 1-9.\nLee, K. (2018b). Second. Journal Two, 2, 2-8.\nPark, M. (2017). Third. Journal Three, 3, 3-7.\nPark, N. (2017). Fourth. Journal Four, 4, 4-6.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 4,
+    "cited": 2,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Lee (2018) and (Park, 2017).\n"
+   },
+   "split": {
+    "body": "Lee (2018) and (Park, 2017).\n",
+    "refs": [
+     "Lee, K. (2018a). First. Journal One, 1, 1-9.",
+     "Lee, K. (2018b). Second. Journal Two, 2, 2-8.",
+     "Park, M. (2017). Third. Journal Three, 3, 3-7.",
+     "Park, N. (2017). Fourth. Journal Four, 4, 4-6."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Lee",
+     "yr": "2018",
+     "raw": "Lee (2018)"
+    },
+    {
+     "sn": "Park",
+     "yr": "2017",
+     "raw": "Park, 2017"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Lee, K. (2018a). First. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2018a",
+      "text": "Lee, K. (2018a). First. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Lee, K. (2018b). Second. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2018b",
+      "text": "Lee, K. (2018b). Second. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Park, M. (2017). Third. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Park",
+      "yr": "2017",
+      "text": "Park, M. (2017). Third. Journal Three, 3, 3-7."
+     }
+    },
+    {
+     "line": "Park, N. (2017). Fourth. Journal Four, 4, 4-6.",
+     "out": {
+      "sn": "Park",
+      "yr": "2017",
+      "text": "Park, N. (2017). Fourth. Journal Four, 4, 4-6."
+     }
+    }
+   ]
+  },
+  {
+   "id": "near-boundary",
+   "plain": "Kumar (2020) is two edits from Kumaran. Jensen (2019) is three from Jenkins. Lee (2018) is three from Leigh.\n\nReferences\n\nKumaran, S. (2020). Two edits away. Journal One, 1, 1-9.\nJenkins, T. (2019). Three edits away. Journal Two, 2, 2-8.\nLeigh, M. (2018). Three edits away. Journal Three, 3, 3-7.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 3,
+    "cited": 3,
+    "missing": [
+     {
+      "c": {
+       "sn": "Kumar",
+       "yr": "2020",
+       "raw": "Kumar (2020)",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "name",
+        "e": {
+         "sn": "Kumaran",
+         "yr": "2020",
+         "text": "Kumaran, S. (2020). Two edits away. Journal One, 1, 1-9."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Jensen",
+       "yr": "2019",
+       "raw": "Jensen (2019)",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Lee",
+       "yr": "2018",
+       "raw": "Lee (2018)",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Kumaran",
+      "yr": "2020",
+      "text": "Kumaran, S. (2020). Two edits away. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "Jenkins",
+      "yr": "2019",
+      "text": "Jenkins, T. (2019). Three edits away. Journal Two, 2, 2-8."
+     },
+     {
+      "sn": "Leigh",
+      "yr": "2018",
+      "text": "Leigh, M. (2018). Three edits away. Journal Three, 3, 3-7."
+     }
+    ],
+    "unread": 0,
+    "body": "Kumar (2020) is two edits from Kumaran. Jensen (2019) is three from Jenkins. Lee (2018) is three from Leigh.\n"
+   },
+   "split": {
+    "body": "Kumar (2020) is two edits from Kumaran. Jensen (2019) is three from Jenkins. Lee (2018) is three from Leigh.\n",
+    "refs": [
+     "Kumaran, S. (2020). Two edits away. Journal One, 1, 1-9.",
+     "Jenkins, T. (2019). Three edits away. Journal Two, 2, 2-8.",
+     "Leigh, M. (2018). Three edits away. Journal Three, 3, 3-7."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Kumar",
+     "yr": "2020",
+     "raw": "Kumar (2020)"
+    },
+    {
+     "sn": "Jensen",
+     "yr": "2019",
+     "raw": "Jensen (2019)"
+    },
+    {
+     "sn": "Lee",
+     "yr": "2018",
+     "raw": "Lee (2018)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Kumaran, S. (2020). Two edits away. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Kumaran",
+      "yr": "2020",
+      "text": "Kumaran, S. (2020). Two edits away. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Jenkins, T. (2019). Three edits away. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Jenkins",
+      "yr": "2019",
+      "text": "Jenkins, T. (2019). Three edits away. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Leigh, M. (2018). Three edits away. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Leigh",
+      "yr": "2018",
+      "text": "Leigh, M. (2018). Three edits away. Journal Three, 3, 3-7."
+     }
+    }
+   ]
+  },
+  {
+   "id": "near-multiple",
+   "plain": "Smith (2020) is cited, and nothing in the list is Smith 2020.\n\nReferences\n\nSmith, A. (2019). Earlier. Journal One, 1, 1-9.\nSmith, B. (2021). Later. Journal Two, 2, 2-8.\nSmyth, C. (2020). Same year, one letter off. Journal Three, 3, 3-7.\nSmitt, D. (2020). Same year, one letter off. Journal Four, 4, 4-6.\nJones, E. (2020). Same year, another name. Journal Five, 5, 5-5.\nSmythe, F. (2018). Neither. Journal Six, 6, 6-6.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 6,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Smith",
+       "yr": "2020",
+       "raw": "Smith (2020)",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Smith",
+         "yr": "2019",
+         "text": "Smith, A. (2019). Earlier. Journal One, 1, 1-9."
+        }
+       },
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Smith",
+         "yr": "2021",
+         "text": "Smith, B. (2021). Later. Journal Two, 2, 2-8."
+        }
+       },
+       {
+        "kind": "name",
+        "e": {
+         "sn": "Smyth",
+         "yr": "2020",
+         "text": "Smyth, C. (2020). Same year, one letter off. Journal Three, 3, 3-7."
+        }
+       },
+       {
+        "kind": "name",
+        "e": {
+         "sn": "Smitt",
+         "yr": "2020",
+         "text": "Smitt, D. (2020). Same year, one letter off. Journal Four, 4, 4-6."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Smith",
+      "yr": "2019",
+      "text": "Smith, A. (2019). Earlier. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "Smith",
+      "yr": "2021",
+      "text": "Smith, B. (2021). Later. Journal Two, 2, 2-8."
+     },
+     {
+      "sn": "Smyth",
+      "yr": "2020",
+      "text": "Smyth, C. (2020). Same year, one letter off. Journal Three, 3, 3-7."
+     },
+     {
+      "sn": "Smitt",
+      "yr": "2020",
+      "text": "Smitt, D. (2020). Same year, one letter off. Journal Four, 4, 4-6."
+     },
+     {
+      "sn": "Jones",
+      "yr": "2020",
+      "text": "Jones, E. (2020). Same year, another name. Journal Five, 5, 5-5."
+     },
+     {
+      "sn": "Smythe",
+      "yr": "2018",
+      "text": "Smythe, F. (2018). Neither. Journal Six, 6, 6-6."
+     }
+    ],
+    "unread": 0,
+    "body": "Smith (2020) is cited, and nothing in the list is Smith 2020.\n"
+   },
+   "split": {
+    "body": "Smith (2020) is cited, and nothing in the list is Smith 2020.\n",
+    "refs": [
+     "Smith, A. (2019). Earlier. Journal One, 1, 1-9.",
+     "Smith, B. (2021). Later. Journal Two, 2, 2-8.",
+     "Smyth, C. (2020). Same year, one letter off. Journal Three, 3, 3-7.",
+     "Smitt, D. (2020). Same year, one letter off. Journal Four, 4, 4-6.",
+     "Jones, E. (2020). Same year, another name. Journal Five, 5, 5-5.",
+     "Smythe, F. (2018). Neither. Journal Six, 6, 6-6."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith (2020)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, A. (2019). Earlier. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2019",
+      "text": "Smith, A. (2019). Earlier. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Smith, B. (2021). Later. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2021",
+      "text": "Smith, B. (2021). Later. Journal Two, 2, 2-8."
+     }
+    },
+    {
+     "line": "Smyth, C. (2020). Same year, one letter off. Journal Three, 3, 3-7.",
+     "out": {
+      "sn": "Smyth",
+      "yr": "2020",
+      "text": "Smyth, C. (2020). Same year, one letter off. Journal Three, 3, 3-7."
+     }
+    },
+    {
+     "line": "Smitt, D. (2020). Same year, one letter off. Journal Four, 4, 4-6.",
+     "out": {
+      "sn": "Smitt",
+      "yr": "2020",
+      "text": "Smitt, D. (2020). Same year, one letter off. Journal Four, 4, 4-6."
+     }
+    },
+    {
+     "line": "Jones, E. (2020). Same year, another name. Journal Five, 5, 5-5.",
+     "out": {
+      "sn": "Jones",
+      "yr": "2020",
+      "text": "Jones, E. (2020). Same year, another name. Journal Five, 5, 5-5."
+     }
+    },
+    {
+     "line": "Smythe, F. (2018). Neither. Journal Six, 6, 6-6.",
+     "out": {
+      "sn": "Smythe",
+      "yr": "2018",
+      "text": "Smythe, F. (2018). Neither. Journal Six, 6, 6-6."
+     }
+    }
+   ]
+  },
+  {
+   "id": "essay-realistic",
+   "plain": "Sleep, Memory and Examination Performance\n\nAdolescents in India sleep less than their peers elsewhere (Gupta & Iyer, 2019), and the shortfall is largest in the exam years (Kapoor et al., 2021). Joshi (2018) linked late-night study to poorer recall, although Mehta and Rao (2020) found the opposite in a boarding-school sample. A meta-analysis of 31 studies (Agarwal, 2022a) and a follow-up (Agarwal, 2022b) agree that the effect is modest. Other work is more cautious (Nair, 2017; Verma, 2023, p. 14), and one report simply describes attendance (Pratham, 2023).\n\nReferences\n\nAgarwal, N. (2022a). Sleep and recall: A meta-analysis. Journal of Adolescence, 95(3), 512-519.\nAgarwal, N. (2022b). Sleep and recall: A follow-up. Journal of Adolescence, 96(1), 20-31.\nGupta, P., & Iyer, K. (2019). Sleep in Indian adolescents. Indian Journal of Psychology, 12, 1-15.\nJoshi, M. (2018). Late-night study. Rural Education Review, 3(2), 44-52.\nKapoor, P., Singh, H., & Rao, S. (2021). The exam years. Journal of Educational Health, 7, 100-112.\nMehta, V. (2020). Boarding schools and sleep. Boarding Studies, 2(1), 5-17.\nNair, D. S. (2016). Early work. Journal of Early Studies, 1, 1-9.\nOkafor, C. (2022). Not cited anywhere. Review of Rest, 8, 1-3.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 8,
+    "cited": 9,
+    "missing": [
+     {
+      "c": {
+       "sn": "Nair",
+       "yr": "2017",
+       "raw": "Nair, 2017",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Nair",
+         "yr": "2016",
+         "text": "Nair, D. S. (2016). Early work. Journal of Early Studies, 1, 1-9."
+        }
+       }
+      ]
+     },
+     {
+      "c": {
+       "sn": "Verma",
+       "yr": "2023",
+       "raw": "Verma, 2023, p. 14",
+       "n": 1
+      },
+      "near": []
+     },
+     {
+      "c": {
+       "sn": "Pratham",
+       "yr": "2023",
+       "raw": "Pratham, 2023",
+       "n": 1
+      },
+      "near": []
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Nair",
+      "yr": "2016",
+      "text": "Nair, D. S. (2016). Early work. Journal of Early Studies, 1, 1-9."
+     },
+     {
+      "sn": "Okafor",
+      "yr": "2022",
+      "text": "Okafor, C. (2022). Not cited anywhere. Review of Rest, 8, 1-3."
+     }
+    ],
+    "unread": 0,
+    "body": "Sleep, Memory and Examination Performance\n\nAdolescents in India sleep less than their peers elsewhere (Gupta & Iyer, 2019), and the shortfall is largest in the exam years (Kapoor et al., 2021). Joshi (2018) linked late-night study to poorer recall, although Mehta and Rao (2020) found the opposite in a boarding-school sample. A meta-analysis of 31 studies (Agarwal, 2022a) and a follow-up (Agarwal, 2022b) agree that the effect is modest. Other work is more cautious (Nair, 2017; Verma, 2023, p. 14), and one report simply describes attendance (Pratham, 2023).\n"
+   },
+   "split": {
+    "body": "Sleep, Memory and Examination Performance\n\nAdolescents in India sleep less than their peers elsewhere (Gupta & Iyer, 2019), and the shortfall is largest in the exam years (Kapoor et al., 2021). Joshi (2018) linked late-night study to poorer recall, although Mehta and Rao (2020) found the opposite in a boarding-school sample. A meta-analysis of 31 studies (Agarwal, 2022a) and a follow-up (Agarwal, 2022b) agree that the effect is modest. Other work is more cautious (Nair, 2017; Verma, 2023, p. 14), and one report simply describes attendance (Pratham, 2023).\n",
+    "refs": [
+     "Agarwal, N. (2022a). Sleep and recall: A meta-analysis. Journal of Adolescence, 95(3), 512-519.",
+     "Agarwal, N. (2022b). Sleep and recall: A follow-up. Journal of Adolescence, 96(1), 20-31.",
+     "Gupta, P., & Iyer, K. (2019). Sleep in Indian adolescents. Indian Journal of Psychology, 12, 1-15.",
+     "Joshi, M. (2018). Late-night study. Rural Education Review, 3(2), 44-52.",
+     "Kapoor, P., Singh, H., & Rao, S. (2021). The exam years. Journal of Educational Health, 7, 100-112.",
+     "Mehta, V. (2020). Boarding schools and sleep. Boarding Studies, 2(1), 5-17.",
+     "Nair, D. S. (2016). Early work. Journal of Early Studies, 1, 1-9.",
+     "Okafor, C. (2022). Not cited anywhere. Review of Rest, 8, 1-3."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Joshi",
+     "yr": "2018",
+     "raw": "Joshi (2018)"
+    },
+    {
+     "sn": "Mehta",
+     "yr": "2020",
+     "raw": "Mehta and Rao (2020)"
+    },
+    {
+     "sn": "Gupta",
+     "yr": "2019",
+     "raw": "Gupta & Iyer, 2019"
+    },
+    {
+     "sn": "Kapoor",
+     "yr": "2021",
+     "raw": "Kapoor et al., 2021"
+    },
+    {
+     "sn": "Agarwal",
+     "yr": "2022a",
+     "raw": "Agarwal, 2022a"
+    },
+    {
+     "sn": "Agarwal",
+     "yr": "2022b",
+     "raw": "Agarwal, 2022b"
+    },
+    {
+     "sn": "Nair",
+     "yr": "2017",
+     "raw": "Nair, 2017"
+    },
+    {
+     "sn": "Verma",
+     "yr": "2023",
+     "raw": "Verma, 2023, p. 14"
+    },
+    {
+     "sn": "Pratham",
+     "yr": "2023",
+     "raw": "Pratham, 2023"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Agarwal, N. (2022a). Sleep and recall: A meta-analysis. Journal of Adolescence, 95(3), 512-519.",
+     "out": {
+      "sn": "Agarwal",
+      "yr": "2022a",
+      "text": "Agarwal, N. (2022a). Sleep and recall: A meta-analysis. Journal of Adolescence, 95(3), 512-519."
+     }
+    },
+    {
+     "line": "Agarwal, N. (2022b). Sleep and recall: A follow-up. Journal of Adolescence, 96(1), 20-31.",
+     "out": {
+      "sn": "Agarwal",
+      "yr": "2022b",
+      "text": "Agarwal, N. (2022b). Sleep and recall: A follow-up. Journal of Adolescence, 96(1), 20-31."
+     }
+    },
+    {
+     "line": "Gupta, P., & Iyer, K. (2019). Sleep in Indian adolescents. Indian Journal of Psychology, 12, 1-15.",
+     "out": {
+      "sn": "Gupta",
+      "yr": "2019",
+      "text": "Gupta, P., & Iyer, K. (2019). Sleep in Indian adolescents. Indian Journal of Psychology, 12, 1-15."
+     }
+    },
+    {
+     "line": "Joshi, M. (2018). Late-night study. Rural Education Review, 3(2), 44-52.",
+     "out": {
+      "sn": "Joshi",
+      "yr": "2018",
+      "text": "Joshi, M. (2018). Late-night study. Rural Education Review, 3(2), 44-52."
+     }
+    },
+    {
+     "line": "Kapoor, P., Singh, H., & Rao, S. (2021). The exam years. Journal of Educational Health, 7, 100-112.",
+     "out": {
+      "sn": "Kapoor",
+      "yr": "2021",
+      "text": "Kapoor, P., Singh, H., & Rao, S. (2021). The exam years. Journal of Educational Health, 7, 100-112."
+     }
+    },
+    {
+     "line": "Mehta, V. (2020). Boarding schools and sleep. Boarding Studies, 2(1), 5-17.",
+     "out": {
+      "sn": "Mehta",
+      "yr": "2020",
+      "text": "Mehta, V. (2020). Boarding schools and sleep. Boarding Studies, 2(1), 5-17."
+     }
+    },
+    {
+     "line": "Nair, D. S. (2016). Early work. Journal of Early Studies, 1, 1-9.",
+     "out": {
+      "sn": "Nair",
+      "yr": "2016",
+      "text": "Nair, D. S. (2016). Early work. Journal of Early Studies, 1, 1-9."
+     }
+    },
+    {
+     "line": "Okafor, C. (2022). Not cited anywhere. Review of Rest, 8, 1-3.",
+     "out": {
+      "sn": "Okafor",
+      "yr": "2022",
+      "text": "Okafor, C. (2022). Not cited anywhere. Review of Rest, 8, 1-3."
+     }
+    }
+   ]
+  },
+  {
+   "id": "diacritics-decomposed",
+   "plain": "Müller (2012) and (Müller, 2011) are decomposed.\n\nReferences\n\nMüller, H. (2012). Decomposed. Journal One, 1, 1-9.\nMüller, H. (2011). Composed. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 1,
+    "missing": [
+     {
+      "c": {
+       "sn": "Mu",
+       "yr": "2011",
+       "raw": "Müller, 2011",
+       "n": 1
+      },
+      "near": [
+       {
+        "kind": "year",
+        "e": {
+         "sn": "Mu",
+         "yr": "2012",
+         "text": "Müller, H. (2012). Decomposed. Journal One, 1, 1-9."
+        }
+       }
+      ]
+     }
+    ],
+    "unused": [
+     {
+      "sn": "Mu",
+      "yr": "2012",
+      "text": "Müller, H. (2012). Decomposed. Journal One, 1, 1-9."
+     },
+     {
+      "sn": "Müller",
+      "yr": "2011",
+      "text": "Müller, H. (2011). Composed. Journal Two, 2, 2-8."
+     }
+    ],
+    "unread": 0,
+    "body": "Müller (2012) and (Müller, 2011) are decomposed.\n"
+   },
+   "split": {
+    "body": "Müller (2012) and (Müller, 2011) are decomposed.\n",
+    "refs": [
+     "Müller, H. (2012). Decomposed. Journal One, 1, 1-9.",
+     "Müller, H. (2011). Composed. Journal Two, 2, 2-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Mu",
+     "yr": "2011",
+     "raw": "Müller, 2011"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Müller, H. (2012). Decomposed. Journal One, 1, 1-9.",
+     "out": {
+      "sn": "Mu",
+      "yr": "2012",
+      "text": "Müller, H. (2012). Decomposed. Journal One, 1, 1-9."
+     }
+    },
+    {
+     "line": "Müller, H. (2011). Composed. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Müller",
+      "yr": "2011",
+      "text": "Müller, H. (2011). Composed. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "devanagari-names",
+   "plain": "शर्मा (2021) ने कहा कि (वर्मा, 2019) सही है। Sharma (2021) agrees.\n\nसंदर्भ सूची\n\nशर्मा, आर. (2021). Title. Journal One, 1, 1-9.\nSharma, R. (2021). Title. Journal Two, 2, 2-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "संदर्भ सूची",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 1,
+    "body": "शर्मा (2021) ने कहा कि (वर्मा, 2019) सही है। Sharma (2021) agrees.\n"
+   },
+   "split": {
+    "body": "शर्मा (2021) ने कहा कि (वर्मा, 2019) सही है। Sharma (2021) agrees.\n",
+    "refs": [
+     "शर्मा, आर. (2021). Title. Journal One, 1, 1-9.",
+     "Sharma, R. (2021). Title. Journal Two, 2, 2-8."
+    ],
+    "heading": "संदर्भ सूची"
+   },
+   "cites": [
+    {
+     "sn": "Sharma",
+     "yr": "2021",
+     "raw": "Sharma (2021)"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "शर्मा, आर. (2021). Title. Journal One, 1, 1-9.",
+     "out": null
+    },
+    {
+     "line": "Sharma, R. (2021). Title. Journal Two, 2, 2-8.",
+     "out": {
+      "sn": "Sharma",
+      "yr": "2021",
+      "text": "Sharma, R. (2021). Title. Journal Two, 2, 2-8."
+     }
+    }
+   ]
+  },
+  {
+   "id": "html-refs-english",
+   "html": "<p>Body (Smith, 2020).</p><h2>References</h2><p>Smith, J. (2020). Title. <em>Journal</em>, 1(2), 3-4.</p>",
+   "plain": "Body (Smith, 2020).\n\nReferences\n\nSmith, J. (2020). Title. Journal, 1(2), 3-4.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 1,
+    "cited": 1,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Body (Smith, 2020).\n"
+   },
+   "split": {
+    "body": "Body (Smith, 2020).\n",
+    "refs": [
+     "Smith, J. (2020). Title. Journal, 1(2), 3-4."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Title. Journal, 1(2), 3-4.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Title. Journal, 1(2), 3-4."
+     }
+    }
+   ]
+  },
+  {
+   "id": "html-refs-last-heading-wins",
+   "html": "<p>References are listed below.</p><p>References</p><p>A, B. (2001). X.</p><p>Bibliography</p><p>C, D. (2002). Y.</p>",
+   "plain": "References are listed below.\n\nReferences\n\nA, B. (2001). X.\n\nBibliography\n\nC, D. (2002). Y.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "Bibliography",
+    "listN": 0,
+    "cited": 0,
+    "missing": [],
+    "unused": [],
+    "unread": 1,
+    "body": "References are listed below.\n\nReferences\n\nA, B. (2001). X.\n"
+   },
+   "split": {
+    "body": "References are listed below.\n\nReferences\n\nA, B. (2001). X.\n",
+    "refs": [
+     "C, D. (2002). Y."
+    ],
+    "heading": "Bibliography"
+   },
+   "cites": [],
+   "parsed": [
+    {
+     "line": "C, D. (2002). Y.",
+     "out": null
+    }
+   ]
+  },
+  {
+   "id": "html-reference-list-items",
+   "html": "<h1>Sleep and recall</h1><p>Recall drops after short sleep (Smith, 2020), as <em>Lee and Rao</em> (2019) showed.</p><h2>References</h2><ul><li><p>Smith, J. (2020). Recall after short sleep. <em>Sleep Journal</em>, 4(1), 1-9.</p></li><li><p>Lee, K., &amp; Rao, P. (2019). Naps. <em>Nap Journal</em>, 2, 3-8.</p></li></ul>",
+   "plain": "Sleep and recall\n\nRecall drops after short sleep (Smith, 2020), as Lee and Rao (2019) showed.\n\nReferences\n\nSmith, J. (2020). Recall after short sleep. Sleep Journal, 4(1), 1-9.\n\nLee, K., & Rao, P. (2019). Naps. Nap Journal, 2, 3-8.",
+   "lib": [],
+   "style": "apa",
+   "refs": [],
+   "out": {
+    "srcKind": "doc",
+    "heading": "References",
+    "listN": 2,
+    "cited": 2,
+    "missing": [],
+    "unused": [],
+    "unread": 0,
+    "body": "Sleep and recall\n\nRecall drops after short sleep (Smith, 2020), as Lee and Rao (2019) showed.\n"
+   },
+   "split": {
+    "body": "Sleep and recall\n\nRecall drops after short sleep (Smith, 2020), as Lee and Rao (2019) showed.\n",
+    "refs": [
+     "Smith, J. (2020). Recall after short sleep. Sleep Journal, 4(1), 1-9.",
+     "Lee, K., & Rao, P. (2019). Naps. Nap Journal, 2, 3-8."
+    ],
+    "heading": "References"
+   },
+   "cites": [
+    {
+     "sn": "Lee",
+     "yr": "2019",
+     "raw": "Lee and Rao (2019)"
+    },
+    {
+     "sn": "Smith",
+     "yr": "2020",
+     "raw": "Smith, 2020"
+    }
+   ],
+   "parsed": [
+    {
+     "line": "Smith, J. (2020). Recall after short sleep. Sleep Journal, 4(1), 1-9.",
+     "out": {
+      "sn": "Smith",
+      "yr": "2020",
+      "text": "Smith, J. (2020). Recall after short sleep. Sleep Journal, 4(1), 1-9."
+     }
+    },
+    {
+     "line": "Lee, K., & Rao, P. (2019). Naps. Nap Journal, 2, 3-8.",
+     "out": {
+      "sn": "Lee",
+      "yr": "2019",
+      "text": "Lee, K., & Rao, P. (2019). Naps. Nap Journal, 2, 3-8."
+     }
+    }
+   ]
+  }
+ ],
+ "lev": [
+  {
+   "a": "smith",
+   "b": "smith",
+   "out": 0
+  },
+  {
+   "a": "smith",
+   "b": "smyth",
+   "out": 1
+  },
+  {
+   "a": "smith",
+   "b": "smiht",
+   "out": 2
+  },
+  {
+   "a": "smith",
+   "b": "smithe",
+   "out": 1
+  },
+  {
+   "a": "smith",
+   "b": "smithee",
+   "out": 2
+  },
+  {
+   "a": "smith",
+   "b": "smithers",
+   "out": 9
+  },
+  {
+   "a": "smith",
+   "b": "jones",
+   "out": 5
+  },
+  {
+   "a": "",
+   "b": "",
+   "out": 0
+  },
+  {
+   "a": "",
+   "b": "ab",
+   "out": 2
+  },
+  {
+   "a": "muller",
+   "b": "müller",
+   "out": 1
+  }
+ ],
+ "helpers": [
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Smith"
+   ],
+   "out": "smith"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "SMITH"
+   ],
+   "out": "smith"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "  Smith  "
+   ],
+   "out": "smith"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "O’Brien"
+   ],
+   "out": "o brien"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "O'Brien"
+   ],
+   "out": "o brien"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "O'’Brien"
+   ],
+   "out": "o brien"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Smith-Jones"
+   ],
+   "out": "smith jones"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "van der Berg"
+   ],
+   "out": "van der berg"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "van  der  Berg"
+   ],
+   "out": "van der berg"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Smith, Jones"
+   ],
+   "out": "smith jones"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Müller"
+   ],
+   "out": "muller"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Čapek"
+   ],
+   "out": "capek"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Müller"
+   ],
+   "out": "muller"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "a˿b"
+   ],
+   "out": "a b"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "àb"
+   ],
+   "out": "ab"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "aͯb"
+   ],
+   "out": "ab"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "aͰb"
+   ],
+   "out": "aͱb"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "WHO"
+   ],
+   "out": "who"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "Smith2"
+   ],
+   "out": "smith"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "a1b2c"
+   ],
+   "out": "a b c"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    "शर्मा"
+   ],
+   "out": "शर म"
+  },
+  {
+   "fn": "ccNorm",
+   "args": [
+    ""
+   ],
+   "out": ""
+  },
+  {
+   "fn": "ccKey",
+   "args": [
+    "Smith",
+    "2020"
+   ],
+   "out": "smith|2020"
+  },
+  {
+   "fn": "ccKey",
+   "args": [
+    "Smith",
+    "2020A"
+   ],
+   "out": "smith|2020a"
+  },
+  {
+   "fn": "ccKey",
+   "args": [
+    "O’Brien",
+    "n.d."
+   ],
+   "out": "o brien|n.d."
+  },
+  {
+   "fn": "ccKey",
+   "args": [
+    "Müller",
+    ""
+   ],
+   "out": "muller|"
+  },
+  {
+   "fn": "ccKey",
+   "args": [
+    "",
+    "2020"
+   ],
+   "out": "|2020"
+  },
+  {
+   "fn": "ccKey",
+   "args": [
+    "van der Berg",
+    "2017a"
+   ],
+   "out": "van der berg|2017a"
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "2019"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "2019a"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "2019b"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019",
+    "2019A"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "2019"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "2019a"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019a",
+    "2019A"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "2019"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "2019a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "2019b"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019b",
+    "2019A"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "2019"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "2019a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "2020"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2020",
+    "2019A"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "2019"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "2019a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "n.d."
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "N.D."
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.",
+    "2019A"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "2019"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "2019a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "n.d."
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "N.D."
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "N.D.",
+    "2019A"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "2019"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "2019a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "n.d.a"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "n.d.a",
+    "2019A"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "2019"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "2019a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "in press"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "in press",
+    "2019A"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "2019"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "2019a"
+   ],
+   "out": true
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "2019b"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "2020"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "n.d."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "N.D."
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "n.d.a"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "in press"
+   ],
+   "out": false
+  },
+  {
+   "fn": "ccYrMatch",
+   "args": [
+    "2019A",
+    "2019A"
+   ],
+   "out": true
+  }
+ ]
+}
