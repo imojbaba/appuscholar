@@ -83,3 +83,7 @@ export {
 export type { DesignKey, RegState, ProtoFields, EcState, BudgetRow, DesignDashboard } from "./design";
 export { AIU_MONTHS, aiuDate, aiuJoin, aiuInRange, aiuBuild } from "./aiustatement";
 export type { AiuEntry, AiuTicks, AiuStyle, AiuInput, AiuBuilt } from "./aiustatement";
+export { SCALES, SL_PENDING, slById, slVarNames, slText, slCodebookRows, slCodebookCsv, slScore, slBand, slGuessColumns, slScoreData } from "./scales";
+export type { Scale, ScaleShape, ScaleCoding, ScaleBand, SlScore, SlScoreData } from "./scales";
+export { QUAL_PALETTE, qualNextColor, qualDescendantIds, qualDeleteCascade, qualPassageText, qualBuildMarkdown } from "./qual";
+export type { QualCode, QualPassage } from "./qual";
