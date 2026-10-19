@@ -24,6 +24,7 @@ import { promptsIdea } from "../prompts-idea/capture";
 import { promptsHelpers } from "../prompts-helpers/capture";
 import { promptsResearch } from "../prompts-research/capture";
 import { promptsAnalyse } from "../prompts-analyse/capture";
+import { statsmath } from "../statsmath/capture";
 
 export type Engine = { name: string; capture(v1: V1, opts: { check: boolean; emit: boolean }): Promise<FixtureStatus[]> };
 
@@ -31,4 +32,4 @@ export type Engine = { name: string; capture(v1: V1, opts: { check: boolean; emi
  * In capture order, which is mostly task order: a task appends its engines, except `prompts`, which sits before `aiuse` because the aiuse capture reads the prompts fixture
  * (so a write-mode `golden:capture all` captures prompts first).
  */
-export const ENGINES: Engine[] = [smoke, statsDemos, doctext, accuracy, pd, prompts, aiuse, origin, providers, v1import, v1locked, pvalue, statfmt, numbers, html, citation, crosscheck, citlib, analyse, research, promptsIdea, promptsHelpers, promptsResearch, promptsAnalyse];
+export const ENGINES: Engine[] = [smoke, statsDemos, doctext, accuracy, pd, prompts, aiuse, origin, providers, v1import, v1locked, pvalue, statfmt, numbers, html, citation, crosscheck, citlib, analyse, research, promptsIdea, promptsHelpers, promptsResearch, promptsAnalyse, statsmath];

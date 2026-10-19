@@ -36,3 +36,10 @@ export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildH
 export type { HelperKind } from "./prompts-helpers";
 export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt } from "./prompts-research";
 export { AP_RULES, LESSON_QUESTION_MAX_CHARS, buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "./prompts-analyse";
+export {
+  smean, svar, ssd, smedian, ranks, stkNormCdf, stkQnorm, stkPoly, stkShapiro, stkBrownForsythe, stkRSS, stkAnova2, stkOLS, stkLogit, stkAUC, stkSimpleEffects,
+  plRng, plNorm, plSim, pwLogPois, pwNcChiSf, pwNcFSf, pwNctCdf, pwChiCrit, pwPowerT, pwPowerF, pwPower, pwSolveN, pwSolveEffect,
+  stkTCrit, stkFQuant, stkTieTerm, stkHolm, stkKruskal, stkDunn, stkSpearman, stkCorrMat, stkOmega, stkAlpha, stkRng, stkOmegaBoot,
+  STK_GL, stkGL, stkPhi, stkPtukey, stkQtukey, stkWelchAnova, stkGamesHowell, stkLogChoose, stkFisherRC, stkFisher2x2, stkExactMW, stkExactSR, stkBinomTwo,
+} from "./statsmath";
+export type { Anova2, Anova2Row, Ols, Logit, LogitFit, Eff, SimRun, PowerTest, PowerSpec, Kruskal, DunnPair, Spearman, Omega, Welch, GamesHowellPair, FisherRC } from "./statsmath";
