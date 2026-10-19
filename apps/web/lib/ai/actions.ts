@@ -1,7 +1,8 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
-  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildHelperPrompt, buildIdeaPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS,
-  HELPER_MIN_CHARS, rsParseTerms, rsRankParse, type HelperKind, type RsPaper, type WritingKind
+  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPrompt, buildHelperPrompt, buildIdeaPrompt, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
+  buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, type Built, type HelperKind,
+  type RsPaper, type RsQuick, type WritingKind
 } from "@appuscholar/core";
 
 /** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
@@ -243,3 +244,85 @@ export async function suggestTerms(topic: string, d: ResearchAiDeps & { toast(ms
 
 /** rsPickedTerms (8269-8272): the ticked terms, only while the topic is the one they were suggested for. */
 export const pickedTerms = (s: RsTerms, q: string): string[] => (s.base !== q ? [] : s.terms.filter((_, i) => s.picked[i]));
+
+/** callAI's sentence for the student (v1 apiMsg(e)). */
+const aiMsg = (e: unknown) => (e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
+
+/** What the quick read touches: the AI (with noLang), the field, the copy, the toasts, and `apply`, which writes the results on their papers and draws the list again (rsApplySort(true)). */
+export type QuickDeps = ResearchAiDeps & { toast(msg: string): void; apply(updates: ReadonlyArray<readonly [RsPaper, RsQuick]>): void };
+
+/**
+ * rsQuickP (8172-8182) without its write: a trimmed abstract of at least QUICK_READ_MIN_CHARS characters once white space is removed, core's prompt
+ * and options, the reply checked against that abstract by core's rsQuickCheck. Quiet, it toasts nothing (the ticked batch).
+ */
+async function quickOne(p: RsPaper, d: QuickDeps, quiet: boolean): Promise<RsQuick | null> {
+  const ab = String(p.abstract || "").trim();
+  if (ab.replace(/\s+/g, "").length < QUICK_READ_MIN_CHARS) { if (!quiet) d.toast(d.t("rs2_this_result_has_no")); return null; }
+  try {
+    const built = buildQuickReadPrompt(d.field, ab);
+    const raw = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });
+    const r = rsQuickCheck(raw, ab);
+    if (!r) { if (!quiet) d.toast(d.t("rs2_the_ai_reply_could")); return null; }
+    return r;
+  } catch (e) { if (!quiet) d.toast(aiMsg(e)); return null; }
+}
+
+/** A card's "⚡ Quick read" (rsQuick / rsQuickP 8171-8182): true once the paper carries its quick read. */
+export async function quickRead(p: RsPaper, d: QuickDeps): Promise<boolean> {
+  const r = await quickOne(p, d, false);
+  if (!r) return false;
+  d.apply([[p, r]]);
+  return true;
+}
+
+/**
+ * "⚡ Quick read the papers I ticked (up to 10)" (rsQuickChecked 8183-8190): the first 10 ticked papers one after another, quietly, with v1's
+ * progress toast for each; the list is drawn again once at the end, then v1's count.
+ */
+export async function quickReadTicked(ticked: RsPaper[], d: QuickDeps): Promise<void> {
+  if (!ticked.length) { d.toast(d.t("rs2_tick_some_papers_first")); return; }
+  const use = ticked.slice(0, 10);
+  let ok = 0;
+  const done: Array<readonly [RsPaper, RsQuick]> = [];
+  for (const [i, p] of use.entries()) {
+    // 'Quick read '+(use.indexOf(p)+1)+' of '+use.length+'…' (8187)
+    d.toast(d.t("rs2_quick_read_2") + " " + (i + 1) + " " + d.t("rs2_of", { useCount: use.length }));
+    const r = await quickOne(p, d, true);
+    if (r) { ok++; done.push([p, r]); }
+  }
+  d.apply(done);
+  // 'Quick read done for '+ok+' of '+use.length+(idx.length>10?' (the first 10 ticked)':'') (8189)
+  d.toast(d.t("rs2_quick_read_done_for", { ok }) + " " + use.length + (ticked.length > 10 ? " " + d.t("rs2_the_first_10_ticked") : ""));
+}
+
+/** What the literature review and the gap finder touch: the suggestion pane, the AI, the field and the copy. */
+export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast"> & {
+  /** fieldLabel(settings.field): v1 fieldName(). */
+  field: string;
+  t: ResearchAiDeps["t"];
+};
+
+/** researchLitReview / researchGapFinder (8530-8551): at least 2 ticked papers, core's prompt over them, v1's pane text, an insertable answer. */
+async function generate(build: (field: string, papers: RsPaper[]) => Built, label: string, papers: RsPaper[], d: GeneratorDeps): Promise<void> {
+  if (papers.length < 2) { d.toast(d.t("rs2_check_at_least_2")); return; }
+  // The builder numbers the papers with core's rsCorpusText and appends PLAIN_OUT, as v1 does.
+  const built = build(d.field, papers);
+  const token = d.setThinking("custom", null, label);
+  d.dockShow("ai");
+  try {
+    const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+    if (!d.isCurrent(token)) return;
+    // v1 shows no accuracy check for this answer (setSug with no note, 8538, 8549).
+    d.set(reply, null, token);
+    d.dockShow("ai");
+    d.toast(d.t("rs2_ready_press_tab_in"));
+  } catch (e) { if (d.isCurrent(token)) fail(d, e); }
+}
+
+/** "📝 Draft literature review paragraph" (researchLitReview 8530-8540) on the ticked papers shown. */
+export const litReview = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
+  generate(buildLitReviewPrompt, d.t("rs2_reading_abstracts_and_drafting", { papersCount: papers.length }), papers, d);
+
+/** "🕳 Find a research gap" (researchGapFinder 8541-8551) on the ticked papers shown. */
+export const gapFinder = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
+  generate(buildGapFinderPrompt, d.t("rs2_looking_for_what_these"), papers, d);

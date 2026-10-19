@@ -31,7 +31,7 @@ import { Sidebar } from "./Sidebar";
 import { SidebarDrawer } from "./SidebarDrawer";
 import { MID_QUERY, PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { Subbar } from "./Subbar";
-import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type Project, type WorkspaceValue } from "./WorkspaceContext";
+import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type WorkspaceValue } from "./WorkspaceContext";
 
 const BUSY = "Another import is still running. Wait for it to finish.";
 
@@ -94,6 +94,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting, setAiWaiting] = useState(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
+  const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
@@ -310,7 +311,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
-    activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
+    activeTool, showTool, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
     currentStage, project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },

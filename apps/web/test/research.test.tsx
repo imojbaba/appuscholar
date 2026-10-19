@@ -233,8 +233,8 @@ describe("Research: the cards (rsRenderResults 8376-8406)", () => {
     expect(labels).toEqual([E.rs_insert_cite, "+ Citation library", "Open source", ...(p.oaUrl ? ["📄 " + E.oa_free_btn] : []), "🔗 Connected papers", "⚡ Quick read", "📄 Analyse this paper"]);
     expect(card.querySelector('[data-testid="rs-quick"]')!.getAttribute("title")).toBe("One-line summary, kind of study and sample size, read from the abstract");
     expect(card.querySelector('[data-testid="rs-analyse"]')!.getAttribute("title")).toBe("Read the abstract with the Analyse a paper tool");
-    // Task 10's quick-read box has its place under the title
-    expect(card.querySelector('[data-rs-slot="quick"]')).not.toBeNull();
+    // no quick-read box before a quick read (researchExtras.test.tsx covers the box)
+    expect(card.querySelector('[data-testid="rs-quickbox"]')).toBeNull();
   });
 
   it("the open-access badge, the retracted badge and Show more / less", async () => {

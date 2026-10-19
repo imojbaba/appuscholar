@@ -2,6 +2,7 @@
 import type { RsPaper } from "@appuscholar/core";
 import { tHtml, useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { QuickBox } from "./QuickBox";
 
 /** rsRelHTML's labels (8203), by score. */
 const FIT_LABEL = ["rs2_off_topic", "rs2_loose", "rs2_related", "rs2_direct"];
@@ -11,7 +12,7 @@ export type CardActions = {
   insert(): void;
   /** rsAddToLibrary (8471). */
   add(): void;
-  /** rsConnected (8498), rsQuick (8171), rsAnalyse (8407): Task 10's. */
+  /** rsConnected (8498), rsQuick (8171), rsAnalyse (8407). */
   connected(): void;
   quick(): void;
   analyse(): void;
@@ -29,7 +30,7 @@ function FitChip({ rel }: { rel: NonNullable<RsPaper["rel"]> }) {
 
 /**
  * One search result as rsRenderResults draws it (8383-8400), in v1's order: the tick box; the title; the Fit chip when ranked; the quick-read box
- * (Task 10, `data-rs-slot="quick"`); the meta line (source tag, Retracted badge, open-access badge, authors, year, venue, citations); the abstract
+ * once read (QuickBox); the meta line (source tag, Retracted badge, open-access badge, authors, year, venue, citations); the abstract
  * with "Show more / less"; the buttons Insert citation, + Citation library, Open source, Free full text, Connected papers, Quick read, Analyse.
  */
 export function ResultCard({ p, i, ticked, open, insertReady, onTick, onToggleAbstract, actions }: {
@@ -45,7 +46,7 @@ export function ResultCard({ p, i, ticked, open, insertReady, onTick, onToggleAb
         <div className="min-w-0 flex-1">
           <h4>{p.title}</h4>
           {p.rel && <FitChip rel={p.rel} />}
-          <div data-rs-slot="quick" />
+          {p.quick && <QuickBox q={p.quick} />}
           <div className="meta">
             <span className="src-tag">{p.source}</span>
             {p.retracted && <span className="retr-badge" title={t("retr_tip")}>{"⚠ " + t("retr_badge")}</span>}

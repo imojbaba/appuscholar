@@ -51,3 +51,33 @@ export function insertResult(p: RsPaper, d: AddDeps & { insert(f: Formatted): vo
   putIntext(r.entry, r.lib, d.style, d.insert);
   d.toast(p.retracted ? d.t("retr_added_warn") : d.t("rs_inserted"));
 }
+
+/** What the manual add touches: the library (as for addResult), the toasts and the copy, and `clear`, which empties the five boxes. */
+export type ManualDeps = Pick<AddDeps, "lib" | "update" | "known" | "whenRead" | "toast" | "t"> & { clear(): void };
+
+/**
+ * "Add to citation library" of "➕ Add a paper you found elsewhere" (rsAddManual 8435-8454): a title is needed; the five boxes, trimmed, make v1's
+ * record (type 'Journal article' and style 'apa', 8445); a record with the same title and the same author is already there (8448, title and
+ * author, where the result cards check the title only); otherwise it is appended as an update, the boxes are emptied and v1's toast shown. While
+ * the library is unread (a locked vault) the update checks the stored entries again, and the toast and the emptying wait for the read: "Already in
+ * your library" (the boxes kept) when it was stored already, nothing while the read stays declined.
+ */
+export function addManual(f: { title: string; author: string; year: string; source: string; doi: string }, d: ManualDeps): void {
+  const title = f.title.trim();
+  if (!title) { d.toast(d.t("rs2_enter_a_title_first")); return; }
+  const entry: CitationEntry = {
+    author: f.author.trim(), year: f.year.trim(), title, source: f.source.trim(), volume: "", issue: "", pages: "", doi: f.doi.trim(),
+    url: "", type: "Journal article", style: "apa"
+  };
+  const same = (e: CitationEntry) => e.title === entry.title && e.author === entry.author;
+  if (d.lib.some(same)) { d.toast(d.t("rs2_already_in_your_library")); return; }
+  // Pure, as in addResult: it records whether the stored library held the record.
+  let stored = false;
+  if (!d.update((prev) => { stored = prev.some(same); return stored ? prev : [...prev, entry]; })) return;
+  const done = () => {
+    if (stored) { d.toast(d.t("rs2_already_in_your_library")); return; }
+    d.clear();
+    d.toast(d.t("rs2_added_to_citation_library"));
+  };
+  if (d.known) done(); else void d.whenRead().then((ok) => { if (ok) done(); }, () => {});
+}

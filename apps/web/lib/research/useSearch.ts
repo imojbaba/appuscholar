@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useSyncExternalStore } from "react";
-import { fieldLabel, oaSearch, pmSearch, rsDedupe, rsSortResults, type RsPaper } from "@appuscholar/core";
+import { fieldLabel, oaSearch, pmSearch, rsDedupe, rsFilterPass, rsSortResults, type RsBrief, type RsFilter, type RsPaper, type RsQuick } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { pickedTerms, rankPapers, suggestTerms, type ResearchAiDeps, type RsTerms, type RsTermsBox } from "@/lib/ai/actions";
@@ -102,8 +102,30 @@ export async function runSearch(input: SearchInput, d: SearchDeps): Promise<Sear
   return { papers, sort, status };
 }
 
-/** rsApplySort's list (8350-8365, without Task 10's filters): the results in the chosen order, by core. */
+/** rsApplySort's list (8350-8365, without the filters): the results in the chosen order, by core. */
 export const sortedResults = (original: RsPaper[], mode: SortMode): RsPaper[] => rsSortResults(original, mode);
+
+/** The filter boxes (#rsFYear, #rsFOA, #rsFRet, #rsFDes, #rsFN, 976-987) as typed. */
+export type FilterForm = { year: string; oa: boolean; ret: boolean; des: string; n: string };
+/** As the page starts, and as "Clear filters" leaves them (rsFilterClear 8347-8352). */
+export const FILTER_EMPTY: FilterForm = { year: "", oa: false, ret: false, des: "", n: "" };
+/** rsFilterVals (8332-8335): the boxes read as v1 reads them. */
+export const filterVals = (f: FilterForm): RsFilter => ({ year: parseInt(f.year, 10) || 0, oa: !!f.oa, ret: !!f.ret, des: f.des || "", n: parseInt(f.n, 10) || 0 });
+/** rsFilterActive (8353). */
+export const filterActive = (F: RsFilter): boolean => !!(F.year || F.oa || F.ret || F.des || F.n);
+
+/**
+ * rsApplySort's list (8357-8364): the results that pass core's rsFilterPass, in the chosen order (core's rsSortResults), and how many were hidden
+ * only for want of a quick read (needQ). Filters hide, never delete: `original` is untouched.
+ */
+export function shownResults(original: RsPaper[], mode: SortMode, form: FilterForm): { list: RsPaper[]; needQ: number } {
+  const F = filterVals(form);
+  let needQ = 0;
+  const kept = original.filter((p) => { const r = rsFilterPass(p, F); if (r.needsQuick) needQ++; return r.ok; });
+  return { list: rsSortResults(kept, mode), needQ };
+}
+/** rsToggleActions (8420-8423) after rsApplySort(true) (8374): the actions block shows while a paper shown is ticked. */
+const anyShownTicked = (st: Pick<ResearchState, "original" | "sort" | "filter" | "ticked">) => shownResults(st.original, st.sort, st.filter).list.some((p) => st.ticked.has(p));
 
 // ---------------------------------------------------------------------------------------------------------------- the panel's state
 
@@ -126,10 +148,21 @@ export type ResearchState = {
   actions: boolean;
   /** The abstracts opened with "Show more / less". */
   open: ReadonlySet<RsPaper>;
+  /** The filter boxes (976-987): they stay across searches, as the page's boxes do. */
+  filter: FilterForm;
+  /** #rsConnected (1029, rsConnected 8498-8523): nothing yet, the loading line, the two lists, or the failure sentence. */
+  connected: ConnectedBox;
+  /** The manual add's five boxes (1014-1021), as typed. */
+  manual: ManualForm;
+  /** The <details> the student opened (filters, external, manual, connected), kept while the dock shows the AI tab. */
+  details: Readonly<Record<string, boolean>>;
 };
+export type ConnectedBox = null | { kind: "loading"; title: string } | { kind: "done"; title: string; cites: RsBrief[]; citedBy: RsBrief[] } | { kind: "failed" };
+export type ManualForm = { title: string; author: string; year: string; source: string; doi: string };
+export const MANUAL_EMPTY: ManualForm = { title: "", author: "", year: "", source: "", doi: "" };
 const INITIAL: ResearchState = {
   topic: "", design: "any", oa: true, pm: true, rank: null, terms: { base: "", terms: [], picked: [] }, termsBox: "idle", status: "",
-  original: [], sort: "relevance", ticked: new Set(), actions: false, open: new Set()
+  original: [], sort: "relevance", ticked: new Set(), actions: false, open: new Set(), filter: FILTER_EMPTY, connected: null, manual: MANUAL_EMPTY, details: {}
 };
 let state: ResearchState = INITIAL;
 /** The newest search's number: a search that is not the newest writes nothing more. */
@@ -142,6 +175,29 @@ export function setResearch(next: Partial<ResearchState> | ((s: ResearchState) =
   for (const l of listeners) l();
 }
 export const getResearch = (): ResearchState => state;
+/**
+ * The filter boxes changed or were cleared: rsApplySort(true) (8354-8374), so the list is drawn again and the actions block follows the papers
+ * shown and ticked (rsToggleActions). A ticked paper that a filter hides stays ticked.
+ */
+export function setFilter(next: Partial<FilterForm> | null): void {
+  setResearch((st) => {
+    const filter = next ? { ...st.filter, ...next } : FILTER_EMPTY;
+    return { filter, actions: anyShownTicked({ ...st, filter }) };
+  });
+}
+/**
+ * A quick read's results written on their papers (rsQuickP's `p.quick=r`, 8180), then rsApplySort(true) (8180, 8188). The papers are replaced by
+ * copies, in the list, the ticked set and the opened set alike; a paper no longer in the list (a newer search began) is left alone.
+ */
+export function applyQuick(updates: ReadonlyArray<readonly [RsPaper, RsQuick]>): void {
+  setResearch((st) => {
+    // One copy per paper, so the list and the two sets hold the same new object.
+    const copies = new Map<RsPaper, RsPaper>(updates.map(([p, q]) => [p, { ...p, quick: q }]));
+    const swap = (p: RsPaper): RsPaper => copies.get(p) ?? p;
+    const next = { ...st, original: st.original.map(swap), ticked: new Set([...st.ticked].map(swap)), open: new Set([...st.open].map(swap)) };
+    return { original: next.original, ticked: next.ticked, open: next.open, actions: anyShownTicked(next) };
+  });
+}
 /** As a reload leaves it (tests). */
 export function resetResearch(): void { state = INITIAL; for (const l of listeners) l(); }
 
@@ -190,5 +246,6 @@ export function useSearch(opts: { rankStored: boolean; persistRank(rank: boolean
     callAI, field, t, toast, setBox: (termsBox) => setResearch({ termsBox }), setTerms: (terms) => setResearch({ terms })
   }), [callAI, field, t]);
 
-  return { state: s, rank, search, suggest };
+  // The OpenAlex key too: connected papers send it (one hook, so a stored key is opened once).
+  return { state: s, rank, search, suggest, oaKey };
 }

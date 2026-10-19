@@ -1,40 +1,59 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { rsFoldIndex, type Formatted, type RsPaper } from "@appuscholar/core";
+import { fieldLabel, rsFoldIndex, type Formatted, type RsPaper } from "@appuscholar/core";
 import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
+import { gapFinder, litReview, quickRead, quickReadTicked, type GeneratorDeps, type QuickDeps } from "@/lib/ai/actions";
+import { useCallAI } from "@/lib/ai/useCallAI";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { retrCacheSet } from "@/lib/cite/checks";
 import { useLibrary } from "@/lib/cite/useLibrary";
 import { insertCitation } from "@/lib/editor/insert";
+import { downloadBlob } from "@/lib/export/download";
+import { analysePaper, downloadCsv, filterStat, loadConnected } from "@/lib/research/extras";
 import { addResult, insertResult, type AddDeps } from "@/lib/research/library";
-import { setResearch, SORT_OPTIONS, sortedResults, useSearch, type SortMode } from "@/lib/research/useSearch";
+import { applyQuick, filterVals, getResearch, setResearch, shownResults, SORT_OPTIONS, useSearch, type SortMode } from "@/lib/research/useSearch";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { Connected } from "./Connected";
+import { External } from "./External";
+import { Filters } from "./Filters";
+import { Generators } from "./Generators";
+import { ManualAdd } from "./ManualAdd";
 import { ResultCard, type CardActions } from "./ResultCard";
 import { SearchForm } from "./SearchForm";
 
-/** Placeholders for what Task 10 (Quick read, Connected papers, Analyse this paper) and Task 11 (the Reading shelf) build next. */
-const NEXT_TASK = "This arrives in the next task.";
+/** The placeholder for what Task 11 (the Reading shelf) builds next. */
 const SHELF_NEXT = "Reading shelf arrives in the next task.";
+/** The newest "🔗 Connected papers" request: an older one that answers later writes nothing (kept for the tab, as the box is). */
+let connectedGen = 0;
+/** The papers shown and ticked, in the order shown (rsCheckedPapers 8524), read when a button is pressed. */
+function tickedShown(): RsPaper[] {
+  const st = getResearch();
+  return shownResults(st.original, st.sort, st.filter).list.filter((p) => st.ticked.has(p));
+}
 
 /**
- * 🔬 Research (v1 950-1034), part 1. In v1's order: the heading and description, the form (SearchForm), the status line (#rsStatus), the sort row,
- * [Task 10: the filters <details> and #rsFStat], the results with the fold of "probably not relevant" papers, [Task 10: the CSV row], the ticked
- * papers' actions block (#rsActions, filled by Task 10), [Task 10: the external search, manual add and connected papers <details>].
- * The results live in this tab's memory (useSearch); the rank box is the project's `rs_prefs` blob; "+ Citation library" and "Insert citation"
- * save to the open project's citations, sealed under the vault.
+ * 🔬 Research (v1 950-1034). In v1's order: the heading and description, the form (SearchForm), the status line (#rsStatus), the sort row, the
+ * filters <details> and their count (#rsFStat), the results with the fold of "probably not relevant" papers, the CSV row, the ticked papers'
+ * actions (#rsActions: Quick read the ticked, the literature review, the research gap), then the external search, the manual add and the
+ * connected papers <details>. The results live in this tab's memory (useSearch); the rank box is the project's `rs_prefs` blob; "+ Citation
+ * library", "Insert citation" and the manual add save to the open project's citations, sealed under the vault. "📄 Analyse this paper" keeps the
+ * abstract in the workspace (pendingAnalyse) for Analyse a paper.
  */
 export function ResearchPanel() {
   const t = useT();
-  const { project, pendingSearch, setPendingSearch } = useWorkspace();
-  const { me } = useSettings();
+  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, showTool, dockShow } = useWorkspace();
+  const { me, settings } = useSettings();
+  const callAI = useCallAI();
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
   const prefs = useProjectBlob("rs_prefs", projectId);
   const library = useLibrary();
   const retr = useProjectBlob("retraction_cache", library.projectId);
-  const { editor } = useSuggestion();
+  const suggestion = useSuggestion();
+  const { editor } = suggestion;
   const insertReady = !!editor && !editor.isDestroyed;
 
   // v1 stores the box at each search (8306). Stored only when it changed, and never while the vault is locked: a search asks for no passphrase.
@@ -45,7 +64,7 @@ export function ResearchPanel() {
     if (p.locked || (p.value?.rank ?? false) === rank) return;
     p.set((prev) => ({ ...(prev ?? {}), rank }));
   }, []);
-  const { state: s, rank, search, suggest } = useSearch({ rankStored: prefs.value?.rank ?? false, persistRank });
+  const { state: s, rank, search, suggest, oaKey } = useSearch({ rankStored: prefs.value?.rank ?? false, persistRank });
 
   // The selection bubble's "🔎 Find papers" (selFind 7651-7657): its text is the topic, searched at once (once the stored rank box is known).
   useEffect(() => {
@@ -56,22 +75,34 @@ export function ResearchPanel() {
     void search(q);
   }, [pendingSearch, prefs.loading, setPendingSearch, search]);
 
-  const results = useMemo(() => sortedResults(s.original, s.sort), [s.original, s.sort]);
+  // rsApplySort (8354-8374): the papers the filters let through (core's rsFilterPass), in the chosen order; rsFStat's sentence.
+  const { list: results, needQ } = useMemo(() => shownResults(s.original, s.sort, s.filter), [s.original, s.sort, s.filter]);
   const fold = rsFoldIndex(results, s.sort);
+  const fstat = filterStat(t, filterVals(s.filter), results.length, s.original.length, needQ);
+  const field = fieldLabel(settings.field);
 
   const addDeps = (): AddDeps => ({
     lib: library.lib, style: library.style, update: library.update, toast, t,
     known: !library.loading && !library.locked, whenRead: library.flush,
     seedRetraction: (doi, flag) => retrCacheSet(retr.set, doi, flag, Date.now())
   });
+  const quickDeps = (): QuickDeps => ({ callAI, field, t, toast, apply: applyQuick });
+  const genDeps = (): GeneratorDeps => ({
+    callAI, field, t, toast, dockShow, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear
+  });
+  const connected = (p: RsPaper) => {
+    const gen = ++connectedGen;
+    const f: typeof fetch = (input, init) => fetch(input, init);
+    void loadConnected(p, { fetch: f, oaKey, setBox: (connected) => setResearch({ connected }), isCurrent: () => gen === connectedGen });
+  };
   const actionsFor = (p: RsPaper): CardActions => ({
     add: () => { addResult(p, addDeps()); },
     insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { if (editor && !editor.isDestroyed) insertCitation(editor, f); } }); },
-    connected: () => toast(NEXT_TASK),
-    quick: () => toast(NEXT_TASK),
-    analyse: () => toast(NEXT_TASK)
+    connected: () => connected(p),
+    quick: () => { void quickRead(p, quickDeps()); },
+    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool, toast, t }); }
   });
-  // rsToggleActions (8420-8422): the actions block shows while a shown paper is ticked.
+  // rsToggleActions (8420-8423): the actions block shows while a paper shown is ticked.
   const onTick = (p: RsPaper, on: boolean) => setResearch((st) => {
     const ticked = new Set(st.ticked);
     if (on) ticked.add(p); else ticked.delete(p);
@@ -102,7 +133,8 @@ export function ResearchPanel() {
           </select>
         </div>
       )}
-      {/* Task 10: the filters <details id="rsFilters"> (976-987), then #rsFStat (988). */}
+      <Filters f={s.filter} />
+      <div className="rs-fstat" id="rsFStat" data-testid="rs-fstat">{fstat}</div>
       <div id="rsResults" data-testid="rs-results">
         {fold > 0 ? (
           <>
@@ -114,11 +146,15 @@ export function ResearchPanel() {
           </>
         ) : cards}
       </div>
-      {/* Task 10: the CSV row (#rsCsvRow, 990). */}
-      <div id="rsActions" data-testid="rs-actions" hidden={!s.actions}>
-        {/* Task 10: Quick read the ticked papers, the literature review, the research gap and the grounded note (993-996). */}
+      <div className="row rs-csv-row" id="rsCsvRow">
+        <Button variant="ghost" size="sm" type="button" id="rsCsvBtn" data-testid="rs-csv" onClick={() => downloadCsv(results, { download: downloadBlob, toast, t })}>{t("rs2_csv_btn")}</Button>
       </div>
-      {/* Task 10: the external search (999-1009), the manual add (1011-1024) and the connected papers (1026-1030) <details>. */}
+      <div id="rsActions" className="rs-actions" data-testid="rs-actions" hidden={!s.actions}>
+        <Generators onQuick={() => { void quickReadTicked(tickedShown(), quickDeps()); }} onLitReview={() => { void litReview(tickedShown(), genDeps()); }} onGapFinder={() => { void gapFinder(tickedShown(), genDeps()); }} />
+      </div>
+      <External />
+      <ManualAdd m={s.manual} deps={() => ({ lib: library.lib, update: library.update, known: !library.loading && !library.locked, whenRead: library.flush, toast, t })} />
+      <Connected box={s.connected} />
     </div>
   );
 }
