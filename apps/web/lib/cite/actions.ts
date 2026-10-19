@@ -9,7 +9,10 @@ import { citFmt, citIsNumbered, citLookup, citNumFor, type CitationEntry, type C
 export const ADD_AUTHOR_TITLE = "Add author and title first";
 export const CITATION_INSERTED = "Citation inserted ✓";
 export const SAVED_TO_LIBRARY = "Saved to library ✓";
-/** v1's duplicate toast (8448, 8476, 13651); see useLibrary's add for the rule. */
+/**
+ * v1's duplicate toast, for the adds that refuse a duplicate in v1: Research's manual add (8448, same title and author), a search result
+ * (8476, same title) and the bookmarklet (13651, same title and author). The Citation Manager's own + Library (citAdd 7507) saves duplicates.
+ */
 export const ALREADY_IN_LIBRARY = "Already in your library";
 export const FORM_CLEARED = "Form cleared";
 /** A library card's button (7864): "Insert " and the in-text form, or "¹ (n)" for AMA's superscript. */
@@ -49,14 +52,13 @@ export function citeUseLib(i: number, deps: CiteDeps): void {
   deps.toast(CITATION_INSERTED);
 }
 
-/** What useLibrary's add answers: saved, already there, missing author or title, no project yet, or a broken library the student chose to keep. */
-export type AddResult = "added" | "duplicate" | "need-author-title" | "not-ready" | "declined";
+/** What useLibrary's add answers: saved, missing author or title, no project yet, or a broken library the student chose to keep. */
+export type AddResult = "added" | "need-author-title" | "not-ready" | "declined";
 
 /** citAdd 7507-7508: the toast for each outcome of the library's add ("not-ready" and "declined" show nothing). */
 export function citeAdd(d: CitationEntry, add: (d: CitationEntry) => AddResult, toast: (msg: string) => void): AddResult {
   const r = add(d);
   if (r === "need-author-title") toast(ADD_AUTHOR_TITLE);
-  else if (r === "duplicate") toast(ALREADY_IN_LIBRARY);
   else if (r === "added") toast(SAVED_TO_LIBRARY);
   return r;
 }

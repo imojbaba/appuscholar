@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
 import { citFmt, type CitationEntry, type CitationStyle, type Formatted } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
-import { insertCitation } from "../lib/editor/insert";
+import { cursorPlaced, insertCitation } from "../lib/editor/insert";
 import { CITATION_INSERTED, citeInsert, citeUseLib, putIntext } from "../lib/cite/actions";
 import en from "../messages/en.json";
 
@@ -19,8 +19,10 @@ const golden = (id: string, style: CitationStyle, n: number) => G.cases.find((c)
 const editors: Editor[] = [];
 const make = (content: string) => { const e = new Editor({ extensions: editorExtensions, content }); editors.push(e); return e; };
 afterEach(() => { for (const e of editors.splice(0)) e.destroy(); });
-/** The cursor right after `word` in the first paragraph. */
-const after = (e: Editor, word: string) => { const i = e.state.doc.textContent.indexOf(word); e.commands.setTextSelection(1 + i + word.length); };
+/** The student has been in the document: the editor received focus (a click or a key), as v1's savedRange needs. */
+const focusIn = (e: Editor) => { e.view.dom.dispatchEvent(new FocusEvent("focus")); };
+/** The student puts the cursor right after `word` in the first paragraph. */
+const after = (e: Editor, word: string) => { focusIn(e); const i = e.state.doc.textContent.indexOf(word); e.commands.setTextSelection(1 + i + word.length); };
 
 describe("insertCitation: v1 citPutIntext's insert (7500-7501)", () => {
   it("the goldens hold the in-text forms the tests insert", () => {
@@ -55,6 +57,7 @@ describe("insertCitation: v1 citPutIntext's insert (7500-7501)", () => {
 
   it("a selection is replaced, as v1's insertHTML replaced it", () => {
     const e = make("<p>keep drop</p>");
+    focusIn(e);
     e.commands.setTextSelection({ from: 5, to: 10 });
     insertCitation(e, golden("roy-chapter", "apa", 0));
     expect(e.getHTML()).toBe("<p>keep (Roy &amp; Kapoor, 2019)</p>");
@@ -72,6 +75,46 @@ describe("insertCitation: v1 citPutIntext's insert (7500-7501)", () => {
     after(e, "Bold");
     insertCitation(e, golden("miller-3-authors", "vancouver", 3));
     expect(e.getHTML()).toBe("<p><strong>Bold [3] here</strong></p>");
+  });
+});
+
+describe("insertCitation with no cursor placed yet (v1 insertIntoEditor 4195-4200, insertHTMLBlockIntoEditor 4228-4230: no savedRange)", () => {
+  it("the text goes at the end of the document, on a new line (v1's '\\n' prefix becomes <br>)", () => {
+    const e = make("<p>First.</p><p>Sleep matters.</p>");
+    expect(cursorPlaced(e)).toBe(false);
+    insertCitation(e, golden("roy-chapter", "apa", 0));
+    expect(e.getHTML()).toBe("<p>First.</p><p>Sleep matters.<br> (Roy &amp; Kapoor, 2019)</p>");
+  });
+  it("in an empty document there is no new line first (v1 adds '\\n' only when the editor holds something)", () => {
+    const e = make("<p></p>");
+    insertCitation(e, golden("roy-chapter", "apa", 0));
+    expect(e.getHTML()).toBe("<p> (Roy &amp; Kapoor, 2019)</p>");
+  });
+  it("AMA's superscript goes at the end too, with no new line (placeCaretAtEnd)", () => {
+    const e = make("<p>First.</p><p>Sleep matters.</p>");
+    insertCitation(e, golden("miller-3-authors", "ama", 3));
+    expect(e.getHTML()).toBe("<p>First.</p><p>Sleep matters.<sup>3</sup></p>");
+  });
+  it("after an insert the cursor counts as placed: the next citation follows the first (v1 keeps savedRange after inserting)", () => {
+    const e = make("<p>First.</p><p>Sleep matters.</p>");
+    insertCitation(e, golden("roy-chapter", "apa", 0));
+    expect(cursorPlaced(e)).toBe(true);
+    insertCitation(e, golden("miller-3-authors", "vancouver", 3));
+    expect(e.getHTML()).toBe("<p>First.</p><p>Sleep matters.<br> (Roy &amp; Kapoor, 2019) [3]</p>");
+  });
+  it("once the student has been in the document the citation goes at the cursor, even after the editor lost focus to the panel", () => {
+    const e = make("<p>First.</p><p>Sleep matters.</p>");
+    focusIn(e);
+    e.view.dom.dispatchEvent(new FocusEvent("blur"));
+    e.commands.setTextSelection(7);
+    expect(cursorPlaced(e)).toBe(true);
+    insertCitation(e, golden("roy-chapter", "apa", 0));
+    expect(e.getHTML()).toBe("<p>First. (Roy &amp; Kapoor, 2019)</p><p>Sleep matters.</p>");
+  });
+  it("a selection made in the document counts as a placed cursor (v1 hasSelection())", () => {
+    const e = make("<p>keep drop</p>");
+    e.commands.setTextSelection({ from: 5, to: 10 });
+    expect(cursorPlaced(e)).toBe(true);
   });
 });
 

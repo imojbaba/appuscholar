@@ -1,4 +1,4 @@
-import { Mark, Node, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Extension, Mark, Node, mergeAttributes, type Extensions } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
@@ -11,6 +11,7 @@ import { Placeholder } from "@tiptap/extensions";
 import type { Editor } from "@tiptap/core";
 import { FindDecorations } from "./editor/findDecorations";
 import { Indent } from "./editor/indent";
+import { markCursorPlaced } from "./editor/insert";
 
 function dataAttributes(el: HTMLElement): Record<string, string> {
   const out: Record<string, string> = {};
@@ -94,8 +95,14 @@ const schemaExtensions: Extensions = [
   FindDecorations
 ];
 
+/** Remembers that the student has been in this document (its first focus), so a citation goes at the cursor rather than at the end (insertCitation). Not part of the schema. */
+export const CursorPlaced = Extension.create({
+  name: "cursorPlaced",
+  onFocus() { markCursorPlaced(this.editor); }
+});
+
 /** The single editor schema. Shared by the editor and by the schema round-trip test, so they cannot drift. The placeholder is not a node, so it never changes what a document round-trips to. */
-export const editorExtensions: Extensions = [...schemaExtensions, Placeholder.configure({ placeholder: "" })];
+export const editorExtensions: Extensions = [...schemaExtensions, Placeholder.configure({ placeholder: "" }), CursorPlaced];
 
 /** The hint is read through a function that also carries a setter: the extension's plugin keeps its own copy of the options, so replacing an option on a live editor never reaches it, but a function it already holds can answer differently. */
 type Hint = (() => string) & { set(text: string): void };
@@ -106,7 +113,7 @@ function hintOf(text: string): Hint {
 
 /** The same extensions with the editor's empty-document hint (v1 `editor_placeholder`). */
 export function editorExtensionsWith(placeholder: string): Extensions {
-  return [...schemaExtensions, Placeholder.configure({ placeholder: hintOf(placeholder) })];
+  return [...schemaExtensions, Placeholder.configure({ placeholder: hintOf(placeholder) }), CursorPlaced];
 }
 
 /** Changes the empty-document hint of a live editor (the language switch) without recreating it; an empty transaction makes the view rebuild the hint decoration. */

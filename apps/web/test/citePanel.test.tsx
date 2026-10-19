@@ -16,11 +16,12 @@ const h = vi.hoisted(() => ({
   blobArgs: [] as unknown[],
   project: null as { id: string } | null,
   toast: vi.fn(),
-  editor: null as unknown
+  editor: null as unknown,
+  me: null as { id: string; scratchProjectId: string } | null
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: (...a: unknown[]) => { h.blobArgs = a; return h.blob; } }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
-vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: {} }) }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {} }) }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.project }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
@@ -94,6 +95,7 @@ beforeEach(() => {
   h.blobArgs = [];
   h.project = null;
   h.editor = null;
+  h.me = { id: "u1", scratchProjectId: "scratch-1" };
   h.toast.mockReset();
   requested = [];
   fakeFetch.mockClear();
@@ -316,23 +318,28 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
     expect(up(null)[0]).toMatchObject({ author: "Bandura, Albert", title: "Social learning theory" });
   });
 
-  it("a source already in the library (same surname, year and title: citKey) toasts 'Already in your library' and saves nothing", async () => {
+  it("a source already in the library is saved again, as v1's citAdd saves it (7507-7508: no duplicate check)", async () => {
     h.blob.value = [MILLER];
     mount();
     fill({ ...MILLER, title: "THE MAGICAL NUMBER SEVEN", source: "Elsewhere" });
     await click("cite-add");
-    expect(h.blob.set).not.toHaveBeenCalled();
-    expect(toasts()).toEqual(["Already in your library"]);
+    expect(h.blob.set).toHaveBeenCalledTimes(1);
+    const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
+    const next = up([MILLER]);
+    expect(next).toHaveLength(2);
+    expect(next[1]).toMatchObject({ author: MILLER.author, year: "2020", title: "THE MAGICAL NUMBER SEVEN" });
+    expect(toasts()).toEqual(["Saved to library ✓"]);
   });
 
-  it("an add queued before the library is known does not duplicate an entry the stored library already holds", async () => {
+  it("an add queued before the library is known lands on top of the stored entries, a duplicate included", async () => {
     h.blob.value = null; h.blob.loading = true;
     mount();
     fill(BANDURA);
     await click("cite-add");
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
     const stored = [{ ...BANDURA }];
-    expect(up(stored)).toBe(stored);
+    expect(up(stored)).toHaveLength(2);
+    expect(up(stored)[0]).toBe(stored[0]);
   });
 
   it("a library that cannot be opened is overwritten only after a confirm", async () => {
@@ -363,6 +370,7 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
   it("Insert citation puts ' ' + intext at the editor's cursor; unsaved in a numbered style toasts cite_num_unsaved", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Learning is social.</p>" });
     editors.push(ed);
+    ed.view.dom.dispatchEvent(new FocusEvent("focus"));
     ed.commands.setTextSelection(ed.state.doc.content.size - 1);
     h.editor = ed;
     h.blob.value = [MILLER];
@@ -377,6 +385,23 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
     expect(toasts()[1]).toBe(E.cite_num_unsaved);
     expect(h.blob.set).not.toHaveBeenCalled();
   });
+  it("before the student has been in the document, Insert citation goes at its end on a new line (v1 with no savedRange)", async () => {
+    const ed = new Editor({ extensions: editorExtensions, content: "<p>Start.</p><p>Learning is social.</p>" });
+    editors.push(ed);
+    h.editor = ed;
+    mount();
+    fill(BANDURA);
+    await click("cite-insert");
+    expect(ed.getHTML()).toBe("<p>Start.</p><p>Learning is social.<br> (Bandura, 1977)</p>");
+  });
+
+  it("+ Library is disabled until the project id is known (before /me answers)", () => {
+    h.me = null;
+    mount();
+    expect(h.blobArgs).toEqual(["citations", null]);
+    expect((tid("cite-add") as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("with no document open (no editor) Insert citation and the cards' Insert are disabled", () => {
     h.blob.value = [BANDURA];
     mount();
@@ -421,6 +446,7 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
   it("a card's Insert puts its citation at the cursor and toasts 'Citation inserted ✓'", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Seven.</p>" });
     editors.push(ed);
+    ed.view.dom.dispatchEvent(new FocusEvent("focus"));
     ed.commands.setTextSelection(ed.state.doc.content.size - 1);
     h.editor = ed;
     h.blob.value = [BANDURA, MILLER];

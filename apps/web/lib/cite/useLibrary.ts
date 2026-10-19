@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { citKey, type CitationEntry, type CitationStyle } from "@appuscholar/core";
+import type { CitationEntry, CitationStyle } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
@@ -31,9 +31,10 @@ export type Library = {
   /** No project id yet (before /me answers): nothing can be saved. */
   ready: boolean;
   /**
-   * citAdd 7507: needs author and title; a source already in the library (by citKey: surname, year and lowercase title) is not added again; otherwise
-   * it is appended, as an update, so an add made before the library is read lands on top of the stored entries (and is dropped there if the stored
-   * library already holds it). The toast is the caller's (citeAdd).
+   * citAdd 7507-7508: needs author and title, then appends, as an update, so an add made before the library is read lands on top of the stored
+   * entries. Like v1's citAdd it does not look for a duplicate (refusing one by citKey is register row D-S2-9's proposal, awaiting Dr. Sharma);
+   * Research and the bookmarklet, which do refuse one in v1 with their own rules (8448, 8476, 13651), check before calling update.
+   * The toast is the caller's (citeAdd).
    */
   add(entry: CitationEntry): AddResult;
   /** citDel 7509: removes the entry at that index. */
@@ -69,11 +70,8 @@ export function useLibrary(): Library {
   const add = useCallback((entry: CitationEntry): AddResult => {
     if (!entry.author || !entry.title) return "need-author-title";
     if (!ready) return "not-ready";
-    const k = citKey(entry);
-    const has = (l: CitationEntry[]) => l.some((e) => citKey(e) === k);
-    if (has(lib)) return "duplicate";
-    return update((prev) => (has(prev) ? prev : [...prev, entry])) ? "added" : "declined";
-  }, [ready, lib, update]);
+    return update((prev) => [...prev, entry]) ? "added" : "declined";
+  }, [ready, update]);
   const remove = useCallback((index: number) => { update((prev) => prev.filter((_, i) => i !== index)); }, [update]);
 
   return { lib, loading, locked, broken, ready, add, remove, update, flush, style: current, setStyle: writeStyle };

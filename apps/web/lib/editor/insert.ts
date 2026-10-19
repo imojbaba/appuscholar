@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import type { Mark } from "@tiptap/pm/model";
+import { Selection } from "@tiptap/pm/state";
 import { provHash, type Formatted } from "@appuscholar/core";
 
 /**
@@ -53,21 +54,39 @@ export function mapRange(range: SelectionRange, mapping: { map(pos: number, asso
   return { ...range, from: mapping.map(range.from, 1), to: mapping.map(range.to, -1) };
 }
 
+/** Editors the student has been in (focused by a click or a key), or that a citation went into: v1's savedRange exists (4195, 4230). */
+const placed = new WeakSet<Editor>();
+/** Called by the CursorPlaced extension on the editor's focus, and after a citation is inserted (v1 keeps savedRange after inserting, 4220-4225). */
+export function markCursorPlaced(editor: Editor): void { placed.add(editor); }
 /**
- * v1 citPutIntext's insert (7500-7501): an in-text citation at the cursor, over the selection if there is one, as v1's insertHTML put it there. AMA's
- * number goes in as `<sup>n</sup>` with no space; every other style as plain text, `' ' + intext`. It is the student's own text: it keeps the formatting
- * the cursor sits in (bold, italics) but never an `ai-ins` span, even inside AI text, and the cursor ends after it so a second citation follows it.
+ * v1's `hasSelection()||!!savedRange` (7486) and insertHTMLBlockIntoEditor's `savedRange` (4230): the student has put the cursor in this document
+ * (it has had focus since it was opened, or holds a selection). Until then a citation goes at the end of the document.
+ */
+export function cursorPlaced(editor: Editor): boolean { return placed.has(editor) || editor.isFocused || !editor.state.selection.empty; }
+
+/**
+ * v1 citPutIntext's insert (7500-7501). With the cursor placed (cursorPlaced), the citation goes at the cursor, over the selection if there is one, as
+ * v1's insertHTML put it there; otherwise at the end of the document (placeCaretAtEnd), the text on a new line when the document holds something
+ * (insertIntoEditor's `'\n'+text`, 4199, a line break here) and AMA's number with none (insertHTMLBlockIntoEditor 4230). AMA's number goes in as
+ * `<sup>n</sup>` with no space; every other style as plain text, `' ' + intext`. It is the student's own text: it keeps the formatting the cursor sits
+ * in (bold, italics) but never an `ai-ins` span, even inside AI text, and the cursor ends after it so a second citation follows it.
  */
 export function insertCitation(editor: Editor, fmt: Formatted): void {
+  const atCursor = cursorPlaced(editor);
+  const blank = editor.isEmpty;
   editor.chain().focus().command(({ tr, state }) => {
     const { schema } = state;
+    if (!atCursor) tr.setSelection(Selection.atEnd(tr.doc));
     const aiIns = (m: Mark) => m.type.name === "classSpan" && /(^|\s)ai-ins(\s|$)/.test(String(m.attrs.class ?? ""));
-    let marks: readonly Mark[] = (state.storedMarks ?? state.selection.$from.marks()).filter((m) => !aiIns(m));
+    let marks: readonly Mark[] = ((atCursor ? state.storedMarks : null) ?? tr.selection.$from.marks()).filter((m) => !aiIns(m));
     const sup = schema.marks.superscript;
     if (fmt.sup && sup) marks = sup.create().addToSet(marks);
+    const br = schema.nodes.hardBreak;
+    if (!atCursor && !fmt.sup && !blank && br) tr.replaceSelectionWith(br.create(), false);
     tr.replaceSelectionWith(schema.text(fmt.sup ? String(fmt.num) : " " + fmt.intext, marks), false);
     return true;
   }).run();
+  markCursorPlaced(editor);
 }
 
 /** v1 selCite: collapses the selection to its end without moving focus, so a citation inserted later goes right after the passage instead of replacing it. */
