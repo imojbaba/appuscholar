@@ -37,9 +37,9 @@ function listen() {
   window.addEventListener("online", () => { void heldBlobs.drain(); });
 }
 
-/** Leaving the page now would lose a blob value that never reached the server. */
+/** Leaving the page now would lose a blob value that never reached the server (held, unsent in a panel, or a last save still running). */
 export function shouldWarnOnUnloadBlobs(): boolean {
-  return entries.size > 0 || dirty.size > 0;
+  return entries.size > 0 || dirty.size > 0 || busy.size > 0;
 }
 
 export const heldBlobs = {
@@ -65,6 +65,7 @@ export const heldBlobs = {
   track(id: string, p: Promise<unknown>) {
     const all = Promise.allSettled([busy.get(id), p]);
     busy.set(id, all);
+    listen();
     void all.then(() => { if (busy.get(id) === all) busy.delete(id); });
   },
   /** Settles once no last save or drain runs for the blob. */

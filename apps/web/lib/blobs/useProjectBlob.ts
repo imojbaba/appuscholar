@@ -52,9 +52,9 @@ const toOp = <T,>(u: BlobUpdate<T>): HeldOp<T> => (typeof u === "function" ? { u
 /**
  * One blob of one project, outside React. Reads and saves run one at a time, in order. The stored value is "known" once a read has
  * answered (a blob, broken or not, or none); until then every set is queued and replayed onto it, so nothing the panel never saw is
- * overwritten. `prompt: false` (a drain with no panel) never asks for the passphrase.
+ * overwritten. `headless` (the registry's drain, with no panel) never asks for the passphrase and reports no state or unsent value.
  */
-export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onState: (s: ProjectBlobState<T>) => void; prompt?: boolean }) {
+export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onState: (s: ProjectBlobState<T>) => void; headless?: boolean }) {
   /** A read has answered: `value` is the stored value with every later set applied. */
   let known = false;
   let value: T | null = null;
@@ -72,14 +72,16 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   let broken = false;
   let error = false;
   /** The student cancelled an unlock this blob asked for after its first read: no prompt again until the vault opens (resume). */
-  let declined = o.prompt === false;
+  let declined = o.headless === true;
   let firstRead = true;
   let active = true;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let chain: Promise<unknown> = Promise.resolve();
   const self = {};
 
-  const holds = () => pending !== null || ops.length > 0;
+  /** A save taken from `pending` whose PUT has not answered yet (it is put back into `pending` if it fails). */
+  let saving = false;
+  const holds = () => pending !== null || ops.length > 0 || saving;
   const snapshot = (): ProjectBlobState<T> => ({
     value: known ? value : applyOps(ops, null),
     loading: !attempted,
@@ -88,7 +90,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     error
   });
   const emit = () => {
-    if (!active) return;
+    if (!active || o.headless) return;
     heldBlobs.markDirty(self, holds());
     o.onState(snapshot());
   };
@@ -153,6 +155,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     if (!pending) return true;
     const v = pending.value;
     pending = null;
+    saving = true;
     const json = JSON.stringify(v);
     try {
       let body = await seal(json);
@@ -177,6 +180,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       hold(v);
       error = true;
       return false;
+    } finally {
+      saving = false;
     }
   }
 
@@ -203,7 +208,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 
   /** For the registry: a client with no panel, sending `held` the way this one would. */
   const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
-    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, prompt: false });
+    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true });
     c.adopt(held as HeldOp<T>[]);
     await c.flush();
     return c.leftover() as HeldOp[];
@@ -239,12 +244,13 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     /** The vault opened (the header pill, another prompt): a read that was locked or failed is made again, and a held value is sent. */
     resume() {
       if (!active) return;
-      declined = o.prompt === false;
+      declined = o.headless === true;
       if (!known || pending) void flush();
     },
     /**
-     * Another project or kind, or unmount: what is pending is sent now, without a prompt (the panel is gone). What still cannot go is
-     * kept in the held-blobs registry for this blob id, and nothing here touches the panel's state any more.
+     * Another project or kind, or unmount: what is pending, or a save still in flight, is seen through now, without a prompt (the panel
+     * is gone), and tracked so a new mount of this blob waits for it. What still cannot go is kept in the held-blobs registry for this
+     * blob id, and nothing here touches the panel's state any more.
      */
     dispose() {
       if (!active) return;

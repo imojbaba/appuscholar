@@ -542,6 +542,83 @@ describe("useProjectBlob", () => {
     });
   });
 
+  describe("a save in flight when the panel goes away", () => {
+    /** Holds every blob PUT until released, then answers it (ok) or fails it as offline. */
+    function gatePuts() {
+      let release!: (ok: boolean) => void;
+      const gate = new Promise<boolean>((r) => { release = r; });
+      h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+        if (init?.method === "PUT" && path.includes("/blobs/")) {
+          if (!(await gate)) { server.calls.push({ path, method: "PUT" }); throw new TypeError("Failed to fetch"); }
+        }
+        return fakeApi(path, init);
+      });
+      return (ok: boolean) => release(ok);
+    }
+    const started = () => h.api.mock.calls.filter(([p, i]) => String(p).includes("/blobs/") && (i as RequestInit | undefined)?.method === "PUT").length;
+
+    it("a slow PUT that fails after unmount: the value is held by blob id, and back online it is sent", async () => {
+      const release = gatePuts();
+      const s = await mount("ap_cols", "p1");
+      await until(() => !s.b.loading);
+      act(() => { s.b.set(["Sample size"]); });
+      await until(() => started() === 1);
+      // The PUT is out; the student leaves the panel.
+      s.unmount();
+      // The panel's own mark is cleared; its last save, still running, keeps the warning.
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      await act(async () => { release(false); });
+      await until(() => heldBlobs.has("blob:p1:ap_cols"));
+      expect(server.blobs).toHaveLength(0);
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      h.api.mockImplementation(fakeApi);
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await until(() => heldBlobs.size === 0 && server.blobs.length === 1);
+      expect(server.blobs[0]).toMatchObject({ body: JSON.stringify(["Sample size"]), keyVersion: 0 });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    });
+
+    it("a slow PUT that succeeds after unmount: a new mount of the same blob waits for it and shows the saved value", async () => {
+      server.blobs = [{ projectId: "p1", kind: "ap_cols", body: JSON.stringify(["Old"]), keyVersion: 0, deks: [] }];
+      const release = gatePuts();
+      const s = await mount("ap_cols", "p1");
+      await until(() => !s.b.loading);
+      act(() => { s.b.set(["New"]); });
+      await until(() => started() === 1);
+      s.unmount();
+      const gets = () => server.calls.filter((c) => c.method === "GET" && c.path === "/projects/p1/blobs/ap_cols").length;
+      const t = await mount("ap_cols", "p1");
+      await settle(50);
+      // Not read yet: it would show the older value.
+      expect(gets()).toBe(1);
+      expect(t.b.loading).toBe(true);
+      await act(async () => { release(true); });
+      await until(() => !t.b.loading);
+      expect(gets()).toBe(2);
+      expect(t.b.value).toEqual(["New"]);
+      expect(heldBlobs.size).toBe(0);
+    });
+  });
+
+  it("a drain that fails and then succeeds leaves no unsent-value warning behind", async () => {
+    let offline = false;
+    h.api.mockImplementation((path: string, init?: RequestInit) => (offline && init?.method === "PUT" ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+    const s = await mount("rs_prefs", "p1");
+    await until(() => !s.b.loading);
+    offline = true;
+    act(() => { s.b.set({ rank: true }); });
+    s.unmount();
+    await until(() => heldBlobs.has("blob:p1:rs_prefs"));
+    // Still offline: the drain fails and the value stays held.
+    await act(async () => { await heldBlobs.drain(); });
+    expect(heldBlobs.has("blob:p1:rs_prefs")).toBe(true);
+    offline = false;
+    await act(async () => { await heldBlobs.drain(); });
+    expect(heldBlobs.size).toBe(0);
+    expect(server.blobs[0]).toMatchObject({ body: JSON.stringify({ rank: true }) });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
   it("a shelf paper's blob kind goes in the path encoded", async () => {
     const s = await mount(shelfPaperKind("p1"), "proj");
     await until(() => !s.b.loading);
