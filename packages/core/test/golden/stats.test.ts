@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
 import { statsParseText } from "../../src/intake";
 import { STAT_TESTS, stkMRData } from "../../src/stats-core";
 import type { StatsBlock, StatsCtx, StatsResult } from "../../src/stats-core";
@@ -7,7 +8,7 @@ import { runStats } from "../../src/stats";
 import { fmtP } from "../../src/statfmt";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles, readCorpus } from "./stats/capture";
-import { blockAsText, decodeText } from "./stats/render";
+import { blockAsText, decodeText, renderResultsText } from "./stats/render";
 import { expectGolden, goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
 import { SLOW_CASES, cellsOf, expectSameAsV1 } from "./stats/check";
@@ -802,6 +803,80 @@ describe("stats: mixed ANOVA, moderation and mediation (mixed, moderate, mediate
       ["a", "b", "cp", "c"].forEach((p, i) => expect([t[0]![i + 1]![1], t[0]![i + 1]![4]], `${c.id} ${p}`).toEqual([fixed(v[p + "_b"]!, 3), pc(v[p + "_p"]!)]));
       expect(t[1]![1], c.id).toEqual([fixed(v.ab!, 3), fixed(v.bse!, 3), `[${fixed(v.lo!, 3)}, ${fixed(v.hi!, 3)}]`, fixed(v.abStd!, 3), nl(fixed(v.r2m!, 3)), nl(fixed(v.r2y!, 3))]);
       expect(v.ab, c.id).toBe(v.a_b! * v.b_b!);
+    }
+  });
+});
+
+/**
+ * The Wave 2 gate (parity-port spec §6, plan Task 16): every one of the 26 STAT_TESTS keys has a fixture with a result v1 showed; the 13 TG_DEMO runs of Wave 0's stats-demos capture
+ * (test/golden/stats-demos/demos.json, TG_DEMO's `anova1` being the welchAnova key) are the Wave 2 `<test>-demo` cases, sentence and whole results text (both captures collapse
+ * #statsResults.textContent with `.replace(/\s+/g, " ")`, untrimmed), and the port reproduces them; and scipy-reference.json has a value for every case v1 ran of every test scipy has.
+ */
+describe("stats: the Wave 2 gate", () => {
+  type Demo = { id: string; test: string; csv: string; apa: string | null; resultsText: string };
+  type Ref = { scipy: string; cases: { test: string; id: string; ref: Record<string, number> | null; why?: string }[] };
+  const shown = (c: CapturedRun) => c.apa !== null && c.toasts.length === 0;
+  /** The TG_DEMO id whose Wave 2 case is not `<id>-demo`: TG_DEMO's anova1 runs the welchAnova key. */
+  const DEMO_CASE: Record<string, string> = { anova1: "welchAnova-demo" };
+  /** The tests scipy (or numpy beside it) has a counterpart for: stats/scipy-reference.py's REFERENCE, stats-scipy.test.ts's KEYS. */
+  const SCIPY_TESTS = ["ttest1", "ttestInd", "ttestPaired", "anova1", "tukey", "regression", "pearson", "mannwhitney", "wilcoxon", "kruskal", "spearman", "welchAnova", "chisq", "gof",
+    "mcnemar", "friedman", "mregress", "logistic", "rmanova", "alpha", "moderate", "mediate"];
+  /** The tests with no counterpart at all, every case ref null with this reason (scipy-reference.py's NO_COUNTERPART): held to v1 only, "matches v1". */
+  const NO_COUNTERPART: Record<string, string> = { cochran: "no scipy counterpart: Cochran's Q matches v1", anova2: "matches v1 (Type III, no R here)", mixed: "matches v1 (F10)" };
+  /** The one test allowed no reference at all: desc's mean, SD, median, minimum and maximum. */
+  const NO_REFERENCE_YET = { test: "desc", why: "no scipy reference for this test yet" };
+  /** The one case of a scipy test that v1 ran and scipy has no finite value for (register row D-W2-16). */
+  const NO_FINITE = { id: "kruskal-all-same", why: "scipy returns no finite value for H, p" };
+
+  it("gate: every one of the 26 STAT_TESTS keys has a fixture file, and each fixture holds at least one case v1 showed a result for", () => {
+    expect([...fixtures].sort()).toEqual(Object.keys(STAT_TESTS).sort());
+    expect(fixtures).toHaveLength(26);
+    for (const test of Object.keys(STAT_TESTS)) {
+      expect(existsSync(new URL(`./stats/${test}.json`, import.meta.url)), test).toBe(true);
+      const cs = load(test).cases;
+      expect(cs.every((c) => c.test === test), test).toBe(true);
+      expect(cs.filter(shown).length, test).toBeGreaterThanOrEqual(1);
+    }
+  });
+  it("gate: the 13 TG_DEMO runs of Wave 0's stats-demos capture equal the Wave 2 <test>-demo cases (anova1 -> welchAnova-demo) on csv, sentence and results text, and the port reproduces both", () => {
+    const w0 = readFixture<{ demos: Demo[] }>("stats-demos", "demos").demos;
+    expect(w0).toHaveLength(13);
+    expect(w0.map((d) => d.id)).toEqual(["ttest1", "ttestInd", "mannwhitney", "ttestPaired", "wilcoxon", "anova1", "kruskal", "pearson", "spearman", "regression", "chisq", "gof", "alpha"]);
+    for (const d of w0) {
+      const id = DEMO_CASE[d.id] ?? `${d.id}-demo`;
+      expect(id, d.id).toBe(`${d.test}-demo`);
+      const c = load(d.test).cases.find((x) => x.id === id);
+      expect(c, id).toBeDefined();
+      if (!c) continue;
+      expect(c.test, id).toBe(d.test);
+      expect(c.csv, id).toBe(d.csv);
+      expect(c.apa, id).toBe(d.apa);
+      expect(c.resultsText, id).toBe(d.resultsText);
+      const r = run(c);
+      expect(r.ok, id).toBe(true);
+      if (r.ok) expect(r.apa, id).toBe(d.apa);
+      expect(renderResultsText(r), id).toBe(d.resultsText);
+    }
+  });
+  it("gate: scipy-reference.json covers every case of every test scipy has (22 tests); only desc has no reference, and anova2, cochran and mixed are \"matches v1\"", () => {
+    const ref = JSON.parse(readFileSync(new URL("./stats/scipy-reference.json", import.meta.url), "utf8")) as Ref;
+    const keys = Object.keys(STAT_TESTS);
+    expect([...SCIPY_TESTS, ...Object.keys(NO_COUNTERPART), NO_REFERENCE_YET.test].sort()).toEqual([...keys].sort());
+    expect(new Set(ref.cases.filter((c) => c.ref !== null).map((c) => c.test))).toEqual(new Set(SCIPY_TESTS));
+    const all = fixtures.flatMap((f) => load(f).cases);
+    expect(ref.cases).toHaveLength(all.length);
+    const byId = new Map(all.map((c) => [c.id, c]));
+    for (const rc of ref.cases) {
+      const c = byId.get(rc.id)!;
+      expect(c, rc.id).toBeDefined();
+      if (rc.test === NO_REFERENCE_YET.test) { expect([rc.ref, rc.why], rc.id).toEqual([null, NO_REFERENCE_YET.why]); continue; }
+      expect(rc.why === NO_REFERENCE_YET.why, `${rc.id}: only ${NO_REFERENCE_YET.test} may lack a reference`).toBe(false);
+      if (rc.test in NO_COUNTERPART) { expect([rc.ref, rc.why], rc.id).toEqual([null, NO_COUNTERPART[rc.test]]); continue; }
+      expect(SCIPY_TESTS, rc.id).toContain(rc.test);
+      if (rc.id === NO_FINITE.id) { expect([shown(c), rc.ref, rc.why], rc.id).toEqual([true, null, NO_FINITE.why]); continue; }
+      if (shown(c)) { expect(rc.ref, `${rc.id}: v1 showed a result, so scipy's value is required (why: ${rc.why})`).not.toBeNull(); continue; }
+      expect(rc.ref, rc.id).toBeNull();
+      expect(rc.why, rc.id).toBe(c.toasts.length > 0 ? "v1 refused the case with a toast" : "v1's safety net suppressed the result");
     }
   });
 });
