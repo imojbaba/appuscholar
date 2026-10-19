@@ -59,6 +59,13 @@ export function close(got: number, want: number): boolean {return want === 0 ? M
  */
 function closeTukeyP(got: number, want: number): boolean {return Math.abs(got - want) <= Math.max(REL * Math.abs(want), ABS_AT_ZERO)}
 /**
+ * Register row F5 at Tukey's 12714 (`Math.max(0,1-stkPtukey(q,kk,dfw))`): once stkPtukey returns exactly 1 the port's p_i_j is exactly 0 where scipy's studentized_range.sf gives a tiny
+ * positive number (1.67e-15 in tukey-f5-exact-zero), as pvalue.test.ts's F5 branch for pFromF. A reference below 1e-16 must meet an exact 0, and a reference below 1e-12 meets either the
+ * port's exact 0 or the ordinary Tukey tolerance; either way the p is below .001, where the cell prints `< .001` and the sentence `p < .001`.
+ */
+const F5_TUKEY_UNDERFLOW = 1e-16, F5_TUKEY_TINY = 1e-12;
+function isF5TukeyZero(got: number, want: number): boolean {return want < F5_TUKEY_UNDERFLOW || (Object.is(got, 0) && want < F5_TUKEY_TINY)}
+/**
  * pFromF's `1 - betai` (register row F5a): betai near 1 is a whole number of steps of 2^-53, so a right tail below about 1e-10 is off by up to half a step, a relative error above 1e-6.
  * mregress's pF, p1 and pc are pFromF's; they are held to 1e-6 relative or one step (2^-53) absolute, whichever is looser, F5a's own bound in pvalue.test.ts, and only a p below .001
  * may take the absolute bound (the cell prints `< .001`, the sentence `p < .001`).
@@ -92,6 +99,11 @@ export function expectSameAsScipy(c: RefCase, r: StatsResult, hasKeys: boolean):
     const got = key === "t" || key === "tS" ? Math.abs(raw!) : raw!;
     const w = key === "t" || key === "tS" ? Math.abs(want) : want;
     const f5a = F5A_KEYS[c.test]?.includes(key) ?? false;
+    if (c.test === "tukey" && key.startsWith("p_") && isF5TukeyZero(got, w)) {
+      expect(Object.is(got, 0), `${c.id} ${key}: F5, port ${raw} where scipy has ${want}, v1's exact 0`).toBe(true);
+      expect(want, `${c.id} ${key}: F5's reference is scipy's tiny positive tail`).toBeGreaterThanOrEqual(0);
+      continue;
+    }
     const ok = c.test === "tukey" && key.startsWith("p_") ? closeTukeyP(got, w) : f5a ? closeF5a(got, w) : c.test === "logistic" && OPT_KEY.test(key) ? closeOpt(got, w) : close(got, w);
     expect(ok, `${c.id} ${key}: port ${raw}, scipy ${want}`).toBe(true);
     if ((c.test === "tukey" || f5a) && !close(got, w)) expect(want, `${c.id} ${key}: only a p below .001 may take the absolute bound`).toBeLessThan(0.001);

@@ -31,14 +31,14 @@ const REQUIRED: Record<string, string[]> = {
     "ttestInd-no-spread-both", "ttestInd-no-spread-one", "ttestInd-unequal-n"],
   ttestPaired: ["ttestPaired-demo", "ttestPaired-text-in-numeric", "ttestPaired-same-diffs", "ttestPaired-missing-cells", "ttestPaired-n2"],
   anova1: ["anova1-demo", "anova1-text-in-numeric", "anova1-two-groups", "anova1-one-row-group", "anova1-no-spread", "anova1-six-groups", "anova1-hindi-labels"],
-  tukey: ["tukey-demo-arms", "tukey-text-in-numeric", "tukey-integer-labels", "tukey-two-groups", "tukey-six-groups"],
+  tukey: ["tukey-demo-arms", "tukey-text-in-numeric", "tukey-integer-labels", "tukey-two-groups", "tukey-six-groups", "tukey-f5-exact-zero"],
   regression: ["regression-demo", "regression-text-in-numeric", "regression-exact-line", "regression-no-spread-x", "regression-n2", "regression-negative-slope"],
   pearson: ["pearson-demo", "pearson-text-in-numeric", "pearson-n3", "pearson-perfect", "pearson-negative", "pearson-no-spread"],
   mannwhitney: ["mannwhitney-demo", "mannwhitney-integer-labels", "mannwhitney-decimal-ties", "mannwhitney-ties", "mannwhitney-n50", "mannwhitney-all-same", "mannwhitney-three-groups"],
   wilcoxon: ["wilcoxon-demo", "wilcoxon-decimal-ties", "wilcoxon-zero-diffs", "wilcoxon-one-diff", "wilcoxon-n50"],
   kruskal: ["kruskal-demo", "kruskal-group-column-named-group", "kruskal-non-significant", "kruskal-small-group", "kruskal-all-same", "kruskal-two-groups"],
   spearman: ["spearman-demo", "spearman-tiny-p", "spearman-text-dropped-uncounted", "spearman-n4", "spearman-n9", "spearman-perfect-negative"],
-  welchAnova: ["welchAnova-demo", "welchAnova-non-significant", "welchAnova-constant-group", "welchAnova-two-groups", "welchAnova-text-in-numeric", "welchAnova-hindi-labels"],
+  welchAnova: ["welchAnova-demo", "welchAnova-non-significant", "welchAnova-constant-group", "welchAnova-two-groups", "welchAnova-text-in-numeric", "welchAnova-hindi-labels", "welchAnova-f5-exact-zero"],
   chisq: ["chisq-demo", "chisq-integer-labels", "chisq-2x2-small-expected", "chisq-2x2-empty-cell", "chisq-3x3-sparse", "chisq-3x4-sparse-large-N", "chisq-one-value-column",
     "chisq-hindi-categories"],
   gof: ["gof-demo", "gof-expected-shares", "gof-expected-bad", "gof-expected-missing-category", "gof-two-categories-small", "gof-three-categories-small", "gof-one-category"],
@@ -46,7 +46,7 @@ const REQUIRED: Record<string, string[]> = {
   cochran: ["cochran-four-conditions", "cochran-non-significant", "cochran-two-columns", "cochran-all-same", "cochran-nine-columns"],
   friedman: ["friedman-four-conditions", "friedman-ties", "friedman-all-same", "friedman-n2", "friedman-two-columns", "friedman-missing-row"],
   anova2: ["anova2-2x2-balanced", "anova2-2x3-unbalanced", "anova2-integer-labels", "anova2-interaction-significant", "anova2-main-effect-3-levels", "anova2-same-factor-twice",
-    "anova2-one-level", "anova2-seven-levels", "anova2-empty-cell", "anova2-dfe-zero", "anova2-no-spread", "anova2-text-in-numeric"],
+    "anova2-one-level", "anova2-seven-levels", "anova2-empty-cell", "anova2-dfe-zero", "anova2-no-spread", "anova2-text-in-numeric", "anova2-f5-tukey-floor"],
   mregress: ["mregress-two-numeric", "mregress-categorical-3-levels", "mregress-ref-given", "mregress-step2", "mregress-step2-no-step1", "mregress-one-predictor",
     "mregress-thirteen-columns", "mregress-few-rows", "mregress-collinear", "mregress-exact-fit", "mregress-vif-high", "mregress-small-level", "mregress-missing-rows",
     "mregress-dv-ticked-as-predictor", "mregress-step1-categorical-3-levels"],
@@ -200,6 +200,19 @@ describe("stats: tests on means (ttestInd, ttestPaired, anova1, tukey, regressio
     expect(v1.slice(1).map((x) => x[3])).toEqual(["&lt; .001", "&lt; .001", "&lt; .001"]);
     expect(mine.slice(1).map((x) => decodeText(x[3]!))).toEqual(v1.slice(1).map((x) => decodeText(x[3]!)));
   });
+  it("F5 at 12714 (Tukey HSD): with ten groups stkPtukey returns exactly 1, so every p (adjusted) is exactly 0, the cell < .001 and the sentence p < .001", () => {
+    const c = find("tukey", "tukey-f5-exact-zero");
+    const r = run(c);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const ps = Object.entries(r.values).filter(([k]) => /^p_\d+_\d+$/.test(k));
+    expect(ps).toHaveLength(45);
+    for (const [k, p] of ps) expect(Object.is(p, 0), k).toBe(true);
+    const v1 = (c.blocks[0] as { rows: string[][] }).rows.slice(1);
+    expect(v1.map((x) => decodeText(x[3]!))).toEqual(Array(45).fill("< .001"));
+    expect(c.apa!.match(/\(p < \.001\)/g)).toHaveLength(45);
+    expect(r.apa).toBe(c.apa);
+  });
   it("ttestInd-group-named-NaN is suppressed by the safety net (F22); pearson-perfect is not, since t (Infinity) is in no cell", () => {
     expect(find("ttestInd", "ttestInd-group-named-NaN").apa).toBeNull();
     expect(run(find("ttestInd", "ttestInd-group-named-NaN"))).toMatchObject({ ok: false, reason: "undefined" });
@@ -282,6 +295,16 @@ describe("stats: rank tests and Welch ANOVA (mannwhitney, wilcoxon, kruskal, spe
       expect(lastNote(c), id).toBe(`${n} entries that are not a number were left out.`);
       expect(run(c), id).toMatchObject({ ok: true, skipped: n });
     }
+  });
+  it("F5 at 9264 (Games-Howell): with each pair's df between 1 and 2 stkPtukey returns exactly 1, so every gh_p is exactly 0, the cell < .001 and the sentence p < .001", () => {
+    const c = find("welchAnova", "welchAnova-f5-exact-zero");
+    const r = run(c);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    for (const k of ["gh_p_0_1", "gh_p_0_2", "gh_p_1_2"]) expect(Object.is(r.values[k], 0), k).toBe(true);
+    expect(rowsOf(c, 2).slice(1).map((x) => [x[3], decodeText(x[4]!)])).toEqual([["1.2", "< .001"], ["1.5", "< .001"], ["1.7", "< .001"]]);
+    expect(c.apa!.split("Games-Howell comparisons: ")[1]!.match(/, p < \.001\)/g)).toHaveLength(3);
+    expect(r.apa).toBe(c.apa);
   });
   it("kruskal-all-same: v1 runs the test with H = 0 (D-W2-16), its 'All values are identical' toast is not reached", () => {
     const c = find("kruskal", "kruskal-all-same");
@@ -449,6 +472,21 @@ describe("stats: two-way ANOVA and multiple regression (anova2, mregress)", () =
     const u = find("anova2", "anova2-2x3-unbalanced");
     expect(notes(u).some((h) => h.includes("and the Tukey-Kramer adjustment for unequal cell sizes"))).toBe(true);
     expect(run(u)).toMatchObject({ ok: true, values: { balanced: 0 } });
+  });
+  it("F5 at 12908 (two-way ANOVA, Tukey on the marginal means): the Source table's p_A is F5's exact 0, but with at most 6 levels and a whole-number error df stkPtukey stays below 1, so the Tukey p is about 1e-11, never exactly 0, and prints < .001", () => {
+    const c = find("anova2", "anova2-f5-tukey-floor");
+    const r = run(c);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(Object.is(r.values.p_A, 0)).toBe(true);
+    const ps = ["tukey_p_0_1", "tukey_p_0_2", "tukey_p_1_2"].map((k) => r.values[k]!);
+    for (const p of ps) { expect(p).toBeGreaterThan(0); expect(p).toBeLessThan(1e-10); }
+    expect(Object.keys(r.values).filter((k) => k.startsWith("tukey"))).toEqual(["tukey_p_0_1", "tukey_p_0_2", "tukey_p_1_2"]);
+    const t = tables(c)[2]!;
+    expect(t[0]).toEqual(["Pair", "Mean diff", "q", "p (Tukey)"]);
+    expect(t.slice(1).map((x) => x[3])).toEqual(["&lt; .001", "&lt; .001", "&lt; .001"]);
+    expect(c.apa).toContain("For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).");
+    expect(r.apa).toBe(c.apa);
   });
   it("anova2 values are the numbers behind the Source table", () => {
     for (const c of load("anova2").cases) {

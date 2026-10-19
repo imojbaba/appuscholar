@@ -30,7 +30,8 @@ import type { StatsBlock, StatsCtx, StatsResult } from "./stats-core";
      to the counter: stkMRData's `dropped` is reported in its own note, as v1;
    - each runner returns finishResult's result with `values`, the raw numbers behind the cells (register row F27): anova2 la, lb, N (the scores used), sse, dfe, mse, F_A, p_A, eta_A,
      F_B, p_B, eta_B, F_AB, p_AB, eta_AB, balanced (1 or 0) and, when the simple effects ran, se_A_<i>_F and se_A_<i>_p (the effect of factor B at level i of factor A, se.byA[i]) and
-     se_B_<j>_F, se_B_<j>_p (se.byB[j]); mregress n, k, dfe, r2, adj, F, pF, and for each coefficient j of v1's loop (0 the intercept, j >= 1 the predictor names[j-1], in m.labels
+     se_B_<j>_F, se_B_<j>_p (se.byB[j]), and when the Tukey table on the marginal means ran, tukey_p_<i>_<k> for factor A's pair i < k and tukeyB_p_<i>_<k> for
+     factor B's (pq, the p cell of 12908's table, so register row F5's floor there can be tested); mregress n, k, dfe, r2, adj, F, pF, and for each coefficient j of v1's loop (0 the intercept, j >= 1 the predictor names[j-1], in m.labels
      order, dummies included) b_<j>, se_<j>, t_<j>, p_<j>, vif_<j> for j >= 1, beta_<j> where v1 computes β (not the intercept, not a 0/1 dummy), and when step 2 ran k1, r21, adj1,
      F1, p1, dR, Fc, pc;
    - the chart code after statsResultsShow is not ported (F27): anova2's lab/mv/er arrays and statsChartInteraction (12928-12930), mregress's statsChartHistogram (12981); they read
@@ -108,6 +109,7 @@ export function runAnova2(ctx: StatsCtx): StatsResult{
           const dd=em[i]!-em[k]!,q=Math.abs(dd)/Math.sqrt(res.mse/(Lo*Lo)*vs/2),pq=Math.max(0,1-stkPtukey(q,L,res.dfe));
           tb.push([escHTML(labs[i]+' − '+labs[k]),dd.toFixed(2),q.toFixed(2),pCell(pq)]);
           bits.push(labs[i]+' vs '+labs[k]+' ('+fmtP(pq)+')');
+          values[(fac?'tukeyB_p_':'tukey_p_')+i+'_'+k]=pq;
         }
         pairHTML.push({kind:'note',html:'<b>Pairwise comparisons of '+escHTML(nmF)+' (Tukey)</b>'},{kind:'table',rows:tb},
           {kind:'note',html:'Differences between estimated marginal means of '+escHTML(nmF)+' (each level\'s mean averaged over the cell means of '+escHTML(nmO)+'), using the design\'s error term (MSE = '+res.mse.toFixed(2)+', df = '+res.dfe+')'+(balanced?'':' and the Tukey-Kramer adjustment for unequal cell sizes')+'. Run these only because the main effect is significant and the interaction is not.'});

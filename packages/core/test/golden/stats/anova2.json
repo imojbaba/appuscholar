@@ -2018,6 +2018,204 @@
    "resultsText": "ResultstherapydoseNMSDCBTLow513.481.83CBTHigh511.640.75MindfulLow512.061.08MindfulHigh512.241.63WaitlistLow512.561.71WaitlistHigh511.321.19SourceSSdfMSFpPartial η²therapy1.9920.990.49.617.039dose7.0117.013.48.075.127therapy × dose5.3822.691.33.282.100Error48.38242.02Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)300.977.733Equal spread (Brown-Forsythe): F(5, 24) = 0.39, p = .852.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 24) = 0.49, p = .617, ηp² = .039; the main effect of dose was not significant, F(1, 24) = 3.48, p = .075, ηp² = .127; the interaction between therapy and dose was not significant, F(2, 24) = 1.33, p = .282, ηp² = .100.Insert into documentCopy💡 Explain in plain language",
    "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>5</td><td>13.48</td><td>1.83</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>11.64</td><td>0.75</td></tr><tr><td>Mindful</td><td>Low</td><td>5</td><td>12.06</td><td>1.08</td></tr><tr><td>Mindful</td><td>High</td><td>5</td><td>12.24</td><td>1.63</td></tr><tr><td>Waitlist</td><td>Low</td><td>5</td><td>12.56</td><td>1.71</td></tr><tr><td>Waitlist</td><td>High</td><td>5</td><td>11.32</td><td>1.19</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>1.99</td><td>2</td><td>0.99</td><td>0.49</td><td>.617</td><td>.039</td></tr><tr><td>dose</td><td>7.01</td><td>1</td><td>7.01</td><td>3.48</td><td>.075</td><td>.127</td></tr><tr><td>therapy × dose</td><td>5.38</td><td>2</td><td>2.69</td><td>1.33</td><td>.282</td><td>.100</td></tr><tr><td>Error</td><td>48.38</td><td>24</td><td>2.02</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>30</td><td>0.977</td><td>.733</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 24) = 0.39, p = .852.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 24) = 0.49, p = .617, ηp² = .039; the main effect of dose was not significant, F(1, 24) = 3.48, p = .075, ηp² = .127; the interaction between therapy and dose was not significant, F(2, 24) = 1.33, p = .282, ηp² = .100.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
    "toasts": []
+  },
+  {
+   "id": "anova2-f5-tukey-floor",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,9.8\nCBT,Low,9.9\nCBT,Low,10\nCBT,Low,10.1\nCBT,Low,10.2\nCBT,High,10.1\nCBT,High,9.8\nCBT,High,10.2\nCBT,High,10\nCBT,High,9.9\nMindful,Low,19.8\nMindful,Low,19.9\nMindful,Low,20\nMindful,Low,20.1\nMindful,Low,20.2\nMindful,High,20.1\nMindful,High,19.8\nMindful,High,20.2\nMindful,High,20\nMindful,High,19.9\nWaitlist,Low,29.8\nWaitlist,Low,29.9\nWaitlist,Low,30\nWaitlist,Low,30.1\nWaitlist,Low,30.2\nWaitlist,High,30.1\nWaitlist,High,29.8\nWaitlist,High,30.2\nWaitlist,High,30\nWaitlist,High,29.9",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(2, 24) = 40000.00, p < .001, ηp² = 1.000; the main effect of dose was not significant, F(1, 24) = 0.00, p = 1.000, ηp² = .000; the interaction between therapy and dose was not significant, F(2, 24) = 0.00, p = 1.000, ηp² = .000. For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "5",
+       "10.00",
+       "0.16"
+      ],
+      [
+       "CBT",
+       "High",
+       "5",
+       "10.00",
+       "0.16"
+      ],
+      [
+       "Mindful",
+       "Low",
+       "5",
+       "20.00",
+       "0.16"
+      ],
+      [
+       "Mindful",
+       "High",
+       "5",
+       "20.00",
+       "0.16"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "5",
+       "30.00",
+       "0.16"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "5",
+       "30.00",
+       "0.16"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "2000.00",
+       "2",
+       "1000.00",
+       "40000.00",
+       "&lt; .001",
+       "1.000"
+      ],
+      [
+       "dose",
+       "0.00",
+       "1",
+       "0.00",
+       "0.00",
+       "1.000",
+       ".000"
+      ],
+      [
+       "therapy × dose",
+       "0.00",
+       "2",
+       "0.00",
+       "0.00",
+       "1.000",
+       ".000"
+      ],
+      [
+       "Error",
+       "0.60",
+       "24",
+       "0.02",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise comparisons of therapy (Tukey)</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "q",
+       "p (Tukey)"
+      ],
+      [
+       "CBT − Mindful",
+       "-10.00",
+       "200.00",
+       "&lt; .001"
+      ],
+      [
+       "CBT − Waitlist",
+       "-20.00",
+       "400.00",
+       "&lt; .001"
+      ],
+      [
+       "Mindful − Waitlist",
+       "-10.00",
+       "200.00",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Differences between estimated marginal means of therapy (each level's mean averaged over the cell means of dose), using the design's error term (MSE = 0.02, df = 24). Run these only because the main effect is significant and the interaction is not."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "30",
+       "0.891",
+       ".005"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 24) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow510.000.16CBTHigh510.000.16MindfulLow520.000.16MindfulHigh520.000.16WaitlistLow530.000.16WaitlistHigh530.000.16SourceSSdfMSFpPartial η²therapy2000.0021000.0040000.00< .0011.000dose0.0010.000.001.000.000therapy × dose0.0020.000.001.000.000Error0.60240.02Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Pairwise comparisons of therapy (Tukey)PairMean diffqp (Tukey)CBT − Mindful-10.00200.00< .001CBT − Waitlist-20.00400.00< .001Mindful − Waitlist-10.00200.00< .001Differences between estimated marginal means of therapy (each level's mean averaged over the cell means of dose), using the design's error term (MSE = 0.02, df = 24). Run these only because the main effect is significant and the interaction is not.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)300.891.005Equal spread (Brown-Forsythe): F(5, 24) = 0.00, p = 1.000.At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(2, 24) = 40000.00, p < .001, ηp² = 1.000; the main effect of dose was not significant, F(1, 24) = 0.00, p = 1.000, ηp² = .000; the interaction between therapy and dose was not significant, F(2, 24) = 0.00, p = 1.000, ηp² = .000. For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p < .001); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>5</td><td>10.00</td><td>0.16</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>10.00</td><td>0.16</td></tr><tr><td>Mindful</td><td>Low</td><td>5</td><td>20.00</td><td>0.16</td></tr><tr><td>Mindful</td><td>High</td><td>5</td><td>20.00</td><td>0.16</td></tr><tr><td>Waitlist</td><td>Low</td><td>5</td><td>30.00</td><td>0.16</td></tr><tr><td>Waitlist</td><td>High</td><td>5</td><td>30.00</td><td>0.16</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>2000.00</td><td>2</td><td>1000.00</td><td>40000.00</td><td>&lt; .001</td><td>1.000</td></tr><tr><td>dose</td><td>0.00</td><td>1</td><td>0.00</td><td>0.00</td><td>1.000</td><td>.000</td></tr><tr><td>therapy × dose</td><td>0.00</td><td>2</td><td>0.00</td><td>0.00</td><td>1.000</td><td>.000</td></tr><tr><td>Error</td><td>0.60</td><td>24</td><td>0.02</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Pairwise comparisons of therapy (Tukey)</b></p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>q</th><th>p (Tukey)</th></tr><tr><td>CBT − Mindful</td><td>-10.00</td><td>200.00</td><td>&lt; .001</td></tr><tr><td>CBT − Waitlist</td><td>-20.00</td><td>400.00</td><td>&lt; .001</td></tr><tr><td>Mindful − Waitlist</td><td>-10.00</td><td>200.00</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Differences between estimated marginal means of therapy (each level's mean averaged over the cell means of dose), using the design's error term (MSE = 0.02, df = 24). Run these only because the main effect is significant and the interaction is not.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>30</td><td>0.891</td><td>.005</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 24) = 0.00, p = 1.000.</p><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(2, 24) = 40000.00, p &lt; .001, ηp² = 1.000; the main effect of dose was not significant, F(1, 24) = 0.00, p = 1.000, ηp² = .000; the interaction between therapy and dose was not significant, F(2, 24) = 0.00, p = 1.000, ηp² = .000. For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p &lt; .001); CBT vs Waitlist (p &lt; .001); Mindful vs Waitlist (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
   }
  ]
 }

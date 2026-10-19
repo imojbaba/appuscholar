@@ -698,6 +698,132 @@
    "resultsText": "ResultsGroupNMSD253.001.583512.201.9210522.001.58Welch F(2, 7.94) = 166.56, p < .001, ω² = .95 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance).Games-Howell comparisonMean difference95% CIdfp (adjusted)2 vs 3-9.20[-12.41, -5.99]7.7< .0012 vs 10-19.00[-21.86, -16.14]8.0< .0013 vs 10-9.80[-13.01, -6.59]7.7< .001Assumption checksGroupNShapiro-Wilk Wp250.987.967350.979.9281050.987.967Equal spread (Brown-Forsythe): F(2, 12) = 0.07, p = .929.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A Welch one-way ANOVA showed a significant effect of group on score, F(2, 7.94) = 166.56, p < .001, ω² = .95. Games-Howell comparisons: 2 vs 3 (M diff = -9.20, 95% CI [-12.41, -5.99], p < .001); 2 vs 10 (M diff = -19.00, 95% CI [-21.86, -16.14], p < .001); 3 vs 10 (M diff = -9.80, 95% CI [-13.01, -6.59], p < .001).Insert into documentCopy💡 Explain in plain language",
    "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>2</td><td>5</td><td>3.00</td><td>1.58</td></tr><tr><td>3</td><td>5</td><td>12.20</td><td>1.92</td></tr><tr><td>10</td><td>5</td><td>22.00</td><td>1.58</td></tr></tbody></table><p class=\"desc\">Welch F(2, 7.94) = 166.56, p &lt; .001, ω² = .95 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance).</p><table class=\"stats-table\"><tbody><tr><th>Games-Howell comparison</th><th>Mean difference</th><th>95% CI</th><th>df</th><th>p (adjusted)</th></tr><tr><td>2 vs 3</td><td>-9.20</td><td>[-12.41, -5.99]</td><td>7.7</td><td>&lt; .001</td></tr><tr><td>2 vs 10</td><td>-19.00</td><td>[-21.86, -16.14]</td><td>8.0</td><td>&lt; .001</td></tr><tr><td>3 vs 10</td><td>-9.80</td><td>[-13.01, -6.59]</td><td>7.7</td><td>&lt; .001</td></tr></tbody></table><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>2</td><td>5</td><td>0.987</td><td>.967</td></tr><tr><td>3</td><td>5</td><td>0.979</td><td>.928</td></tr><tr><td>10</td><td>5</td><td>0.987</td><td>.967</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 12) = 0.07, p = .929.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A Welch one-way ANOVA showed a significant effect of group on score, F(2, 7.94) = 166.56, p &lt; .001, ω² = .95. Games-Howell comparisons: 2 vs 3 (M diff = -9.20, 95% CI [-12.41, -5.99], p &lt; .001); 2 vs 10 (M diff = -19.00, 95% CI [-21.86, -16.14], p &lt; .001); 3 vs 10 (M diff = -9.80, 95% CI [-13.01, -6.59], p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
    "toasts": []
+  },
+  {
+   "id": "welchAnova-f5-exact-zero",
+   "test": "welchAnova",
+   "csv": "group,score\nA,100\nA,100.1\nB,200\nB,200.3\nC,300\nC,300.2",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Welch one-way ANOVA showed a significant effect of group on score, F(2, 1.69) = 1200313.67, p < .001, ω² = 1.00. Games-Howell comparisons: A vs B (M diff = -100.10, 95% CI [-102.04, -98.16], p < .001); A vs C (M diff = -200.05, 95% CI [-201.03, -199.07], p < .001); B vs C (M diff = -99.95, 95% CI [-101.20, -98.70], p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "2",
+       "100.05",
+       "0.07"
+      ],
+      [
+       "B",
+       "2",
+       "200.15",
+       "0.21"
+      ],
+      [
+       "C",
+       "2",
+       "300.10",
+       "0.14"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Welch F(2, 1.69) = 1200313.67, p &lt; .001, ω² = 1.00 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Games-Howell comparison",
+       "Mean difference",
+       "95% CI",
+       "df",
+       "p (adjusted)"
+      ],
+      [
+       "A vs B",
+       "-100.10",
+       "[-102.04, -98.16]",
+       "1.2",
+       "&lt; .001"
+      ],
+      [
+       "A vs C",
+       "-200.05",
+       "[-201.03, -199.07]",
+       "1.5",
+       "&lt; .001"
+      ],
+      [
+       "B vs C",
+       "-99.95",
+       "[-101.20, -98.70]",
+       "1.7",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "2",
+       "needs 3 or more values"
+      ],
+      [
+       "B",
+       "2",
+       "needs 3 or more values"
+      ],
+      [
+       "C",
+       "2",
+       "needs 3 or more values"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 3) = 9.284550294641935e+24, p &lt; .001."
+    },
+    {
+     "kind": "note",
+     "html": "The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA2100.050.07B2200.150.21C2300.100.14Welch F(2, 1.69) = 1200313.67, p < .001, ω² = 1.00 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance).Games-Howell comparisonMean difference95% CIdfp (adjusted)A vs B-100.10[-102.04, -98.16]1.2< .001A vs C-200.05[-201.03, -199.07]1.5< .001B vs C-99.95[-101.20, -98.70]1.7< .001Assumption checksGroupNShapiro-Wilk WpA2needs 3 or more valuesB2needs 3 or more valuesC2needs 3 or more valuesEqual spread (Brown-Forsythe): F(2, 3) = 9.284550294641935e+24, p < .001.The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not.A Welch one-way ANOVA showed a significant effect of group on score, F(2, 1.69) = 1200313.67, p < .001, ω² = 1.00. Games-Howell comparisons: A vs B (M diff = -100.10, 95% CI [-102.04, -98.16], p < .001); A vs C (M diff = -200.05, 95% CI [-201.03, -199.07], p < .001); B vs C (M diff = -99.95, 95% CI [-101.20, -98.70], p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>2</td><td>100.05</td><td>0.07</td></tr><tr><td>B</td><td>2</td><td>200.15</td><td>0.21</td></tr><tr><td>C</td><td>2</td><td>300.10</td><td>0.14</td></tr></tbody></table><p class=\"desc\">Welch F(2, 1.69) = 1200313.67, p &lt; .001, ω² = 1.00 (conventional labels: .01 small, .06 medium, .14 large; they say nothing about importance).</p><table class=\"stats-table\"><tbody><tr><th>Games-Howell comparison</th><th>Mean difference</th><th>95% CI</th><th>df</th><th>p (adjusted)</th></tr><tr><td>A vs B</td><td>-100.10</td><td>[-102.04, -98.16]</td><td>1.2</td><td>&lt; .001</td></tr><tr><td>A vs C</td><td>-200.05</td><td>[-201.03, -199.07]</td><td>1.5</td><td>&lt; .001</td></tr><tr><td>B vs C</td><td>-99.95</td><td>[-101.20, -98.70]</td><td>1.7</td><td>&lt; .001</td></tr></tbody></table><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>2</td><td colspan=\"2\">needs 3 or more values</td></tr><tr><td>B</td><td>2</td><td colspan=\"2\">needs 3 or more values</td></tr><tr><td>C</td><td>2</td><td colspan=\"2\">needs 3 or more values</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 3) = 9.284550294641935e+24, p &lt; .001.</p><p class=\"desc\">The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not.</p></div><div id=\"statsSentence\">A Welch one-way ANOVA showed a significant effect of group on score, F(2, 1.69) = 1200313.67, p &lt; .001, ω² = 1.00. Games-Howell comparisons: A vs B (M diff = -100.10, 95% CI [-102.04, -98.16], p &lt; .001); A vs C (M diff = -200.05, 95% CI [-201.03, -199.07], p &lt; .001); B vs C (M diff = -99.95, 95% CI [-101.20, -98.70], p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
   }
  ]
 }

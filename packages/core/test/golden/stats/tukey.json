@@ -683,6 +683,442 @@
    "toasts": [
     "Tukey HSD needs 3 or more groups"
    ]
+  },
+  {
+   "id": "tukey-f5-exact-zero",
+   "test": "tukey",
+   "csv": "group,score\nA,9.7\nA,10\nA,10.3\nB,19.7\nB,20\nB,20.3\nC,29.7\nC,30\nC,30.3\nD,39.7\nD,40\nD,40.3\nE,49.7\nE,50\nE,50.3\nF,59.7\nF,60\nF,60.3\nG,69.7\nG,70\nG,70.3\nH,79.7\nH,80\nH,80.3\nI,89.7\nI,90\nI,90.3\nJ,99.7\nJ,100\nJ,100.3",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "Tukey HSD post-hoc comparisons (q critical = 5.01, α = .05) gave: A vs B (p < .001); A vs C (p < .001); A vs D (p < .001); A vs E (p < .001); A vs F (p < .001); A vs G (p < .001); A vs H (p < .001); A vs I (p < .001); A vs J (p < .001); B vs C (p < .001); B vs D (p < .001); B vs E (p < .001); B vs F (p < .001); B vs G (p < .001); B vs H (p < .001); B vs I (p < .001); B vs J (p < .001); C vs D (p < .001); C vs E (p < .001); C vs F (p < .001); C vs G (p < .001); C vs H (p < .001); C vs I (p < .001); C vs J (p < .001); D vs E (p < .001); D vs F (p < .001); D vs G (p < .001); D vs H (p < .001); D vs I (p < .001); D vs J (p < .001); E vs F (p < .001); E vs G (p < .001); E vs H (p < .001); E vs I (p < .001); E vs J (p < .001); F vs G (p < .001); F vs H (p < .001); F vs I (p < .001); F vs J (p < .001); G vs H (p < .001); G vs I (p < .001); G vs J (p < .001); H vs I (p < .001); H vs J (p < .001); I vs J (p < .001).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Comparison",
+       "Mean diff",
+       "q",
+       "p (adjusted)",
+       "Sig?"
+      ],
+      [
+       "A vs B",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs C",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs D",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs E",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs F",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs G",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs H",
+       "-70.00",
+       "404.15",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs I",
+       "-80.00",
+       "461.88",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "A vs J",
+       "-90.00",
+       "519.62",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs C",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs D",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs E",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs F",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs G",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs H",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs I",
+       "-70.00",
+       "404.15",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "B vs J",
+       "-80.00",
+       "461.88",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs D",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs E",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs F",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs G",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs H",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs I",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "C vs J",
+       "-70.00",
+       "404.15",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs E",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs F",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs G",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs H",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs I",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "D vs J",
+       "-60.00",
+       "346.41",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs F",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs G",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs H",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs I",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "E vs J",
+       "-50.00",
+       "288.68",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs G",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs H",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs I",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "F vs J",
+       "-40.00",
+       "230.94",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "G vs H",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "G vs I",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "G vs J",
+       "-30.00",
+       "173.21",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "H vs I",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "H vs J",
+       "-20.00",
+       "115.47",
+       "&lt; .001",
+       "Yes"
+      ],
+      [
+       "I vs J",
+       "-10.00",
+       "57.74",
+       "&lt; .001",
+       "Yes"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "MSW = 0.09, df = 20. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "B",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "C",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "D",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "E",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "F",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "G",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "H",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "I",
+       "3",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "J",
+       "3",
+       "1.000",
+       "1.000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(9, 20) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsComparisonMean diffqp (adjusted)Sig?A vs B-10.0057.74< .001YesA vs C-20.00115.47< .001YesA vs D-30.00173.21< .001YesA vs E-40.00230.94< .001YesA vs F-50.00288.68< .001YesA vs G-60.00346.41< .001YesA vs H-70.00404.15< .001YesA vs I-80.00461.88< .001YesA vs J-90.00519.62< .001YesB vs C-10.0057.74< .001YesB vs D-20.00115.47< .001YesB vs E-30.00173.21< .001YesB vs F-40.00230.94< .001YesB vs G-50.00288.68< .001YesB vs H-60.00346.41< .001YesB vs I-70.00404.15< .001YesB vs J-80.00461.88< .001YesC vs D-10.0057.74< .001YesC vs E-20.00115.47< .001YesC vs F-30.00173.21< .001YesC vs G-40.00230.94< .001YesC vs H-50.00288.68< .001YesC vs I-60.00346.41< .001YesC vs J-70.00404.15< .001YesD vs E-10.0057.74< .001YesD vs F-20.00115.47< .001YesD vs G-30.00173.21< .001YesD vs H-40.00230.94< .001YesD vs I-50.00288.68< .001YesD vs J-60.00346.41< .001YesE vs F-10.0057.74< .001YesE vs G-20.00115.47< .001YesE vs H-30.00173.21< .001YesE vs I-40.00230.94< .001YesE vs J-50.00288.68< .001YesF vs G-10.0057.74< .001YesF vs H-20.00115.47< .001YesF vs I-30.00173.21< .001YesF vs J-40.00230.94< .001YesG vs H-10.0057.74< .001YesG vs I-20.00115.47< .001YesG vs J-30.00173.21< .001YesH vs I-10.0057.74< .001YesH vs J-20.00115.47< .001YesI vs J-10.0057.74< .001YesMSW = 0.09, df = 20. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.Assumption checksGroupNShapiro-Wilk WpA31.0001.000B31.0001.000C31.0001.000D31.0001.000E31.0001.000F31.0001.000G31.0001.000H31.0001.000I31.0001.000J31.0001.000Equal spread (Brown-Forsythe): F(9, 20) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.Tukey HSD post-hoc comparisons (q critical = 5.01, α = .05) gave: A vs B (p < .001); A vs C (p < .001); A vs D (p < .001); A vs E (p < .001); A vs F (p < .001); A vs G (p < .001); A vs H (p < .001); A vs I (p < .001); A vs J (p < .001); B vs C (p < .001); B vs D (p < .001); B vs E (p < .001); B vs F (p < .001); B vs G (p < .001); B vs H (p < .001); B vs I (p < .001); B vs J (p < .001); C vs D (p < .001); C vs E (p < .001); C vs F (p < .001); C vs G (p < .001); C vs H (p < .001); C vs I (p < .001); C vs J (p < .001); D vs E (p < .001); D vs F (p < .001); D vs G (p < .001); D vs H (p < .001); D vs I (p < .001); D vs J (p < .001); E vs F (p < .001); E vs G (p < .001); E vs H (p < .001); E vs I (p < .001); E vs J (p < .001); F vs G (p < .001); F vs H (p < .001); F vs I (p < .001); F vs J (p < .001); G vs H (p < .001); G vs I (p < .001); G vs J (p < .001); H vs I (p < .001); H vs J (p < .001); I vs J (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Comparison</th><th>Mean diff</th><th>q</th><th>p (adjusted)</th><th>Sig?</th></tr><tr><td>A vs B</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs C</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs D</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs E</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs F</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs G</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs H</td><td>-70.00</td><td>404.15</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs I</td><td>-80.00</td><td>461.88</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>A vs J</td><td>-90.00</td><td>519.62</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs C</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs D</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs E</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs F</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs G</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs H</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs I</td><td>-70.00</td><td>404.15</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>B vs J</td><td>-80.00</td><td>461.88</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs D</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs E</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs F</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs G</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs H</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs I</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>C vs J</td><td>-70.00</td><td>404.15</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs E</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs F</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs G</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs H</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs I</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>D vs J</td><td>-60.00</td><td>346.41</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs F</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs G</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs H</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs I</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>E vs J</td><td>-50.00</td><td>288.68</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs G</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs H</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs I</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>F vs J</td><td>-40.00</td><td>230.94</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>G vs H</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>G vs I</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>G vs J</td><td>-30.00</td><td>173.21</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>H vs I</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>H vs J</td><td>-20.00</td><td>115.47</td><td>&lt; .001</td><td>Yes</td></tr><tr><td>I vs J</td><td>-10.00</td><td>57.74</td><td>&lt; .001</td><td>Yes</td></tr></tbody></table><p class=\"desc\">MSW = 0.09, df = 20. Exact studentized-range probabilities. Tukey HSD assumes similar spread in every group; with unequal spreads use Welch ANOVA, which comes with Games-Howell.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>B</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>C</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>D</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>E</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>F</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>G</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>H</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>I</td><td>3</td><td>1.000</td><td>1.000</td></tr><tr><td>J</td><td>3</td><td>1.000</td><td>1.000</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(9, 20) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">Tukey HSD post-hoc comparisons (q critical = 5.01, α = .05) gave: A vs B (p &lt; .001); A vs C (p &lt; .001); A vs D (p &lt; .001); A vs E (p &lt; .001); A vs F (p &lt; .001); A vs G (p &lt; .001); A vs H (p &lt; .001); A vs I (p &lt; .001); A vs J (p &lt; .001); B vs C (p &lt; .001); B vs D (p &lt; .001); B vs E (p &lt; .001); B vs F (p &lt; .001); B vs G (p &lt; .001); B vs H (p &lt; .001); B vs I (p &lt; .001); B vs J (p &lt; .001); C vs D (p &lt; .001); C vs E (p &lt; .001); C vs F (p &lt; .001); C vs G (p &lt; .001); C vs H (p &lt; .001); C vs I (p &lt; .001); C vs J (p &lt; .001); D vs E (p &lt; .001); D vs F (p &lt; .001); D vs G (p &lt; .001); D vs H (p &lt; .001); D vs I (p &lt; .001); D vs J (p &lt; .001); E vs F (p &lt; .001); E vs G (p &lt; .001); E vs H (p &lt; .001); E vs I (p &lt; .001); E vs J (p &lt; .001); F vs G (p &lt; .001); F vs H (p &lt; .001); F vs I (p &lt; .001); F vs J (p &lt; .001); G vs H (p &lt; .001); G vs I (p &lt; .001); G vs J (p &lt; .001); H vs I (p &lt; .001); H vs J (p &lt; .001); I vs J (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
   }
  ]
 }

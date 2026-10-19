@@ -77,5 +77,15 @@
    "dv": "score"
   },
   "why": "no categorical column: sf_iv is '', tukey reads no column name, statsGroupBy finds no group, so the toast counts fewer than 3 groups"
+ },
+ {
+  "id": "tukey-f5-exact-zero",
+  "csv": "group,score\nA,9.7\nA,10\nA,10.3\nB,19.7\nB,20\nB,20.3\nC,29.7\nC,30\nC,30.3\nD,39.7\nD,40\nD,40.3\nE,49.7\nE,50\nE,50.3\nF,59.7\nF,60\nF,60.3\nG,69.7\nG,70\nG,70.3\nH,79.7\nH,80\nH,80.3\nI,89.7\nI,90\nI,90.3\nJ,99.7\nJ,100\nJ,100.3",
+  "test": "tukey",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "register row F5 at 12714: ten groups of three, means 10 apart, SD 0.3, df 20, so every q is 57.7 or more and stkPtukey returns exactly 1: each of the 45 p (adjusted) is exactly 0 (scipy a tiny positive number) and prints < .001. With 8 groups or fewer the quadrature never reaches 1 at a whole-number df (the tail floors near 1e-11), so this needs 10 groups"
  }
 ]

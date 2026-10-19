@@ -163,5 +163,16 @@
    "iv2": "dose"
   },
   "why": "a balanced 3 x 2 with no effect anywhere: therapy has 3 levels but its main effect is not significant and neither is the interaction, so no pairwise table"
+ },
+ {
+  "id": "anova2-f5-tukey-floor",
+  "csv": "therapy,dose,score\nCBT,Low,9.8\nCBT,Low,9.9\nCBT,Low,10\nCBT,Low,10.1\nCBT,Low,10.2\nCBT,High,10.1\nCBT,High,9.8\nCBT,High,10.2\nCBT,High,10\nCBT,High,9.9\nMindful,Low,19.8\nMindful,Low,19.9\nMindful,Low,20\nMindful,Low,20.1\nMindful,Low,20.2\nMindful,High,20.1\nMindful,High,19.8\nMindful,High,20.2\nMindful,High,20\nMindful,High,19.9\nWaitlist,Low,29.8\nWaitlist,Low,29.9\nWaitlist,Low,30\nWaitlist,Low,30.1\nWaitlist,Low,30.2\nWaitlist,High,30.1\nWaitlist,High,29.8\nWaitlist,High,30.2\nWaitlist,High,30\nWaitlist,High,29.9",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "register row F5 at 12908, mirroring anova2-main-effect-3-levels: therapy means 10, 20, 30 with SD 0.16 in every cell and no dose effect or interaction (every cell mean is its therapy's), so the Tukey table on the marginal means. The therapy F of 40000 makes p_A exactly 0 (F5 in pFromF), but the marginal-means Tukey p cannot be exactly 0: with at most 6 levels and a whole-number error df stkPtukey stays below 1 (1 - 1.05e-11 here), so the Tukey p is about 1e-11 and prints < .001"
  }
 ]

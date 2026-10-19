@@ -78,5 +78,15 @@
    "iv": "group"
   },
   "why": "groups 10, 2 and 3 come out 2, 3, 10 (F4); the row x with an empty score makes the column categorical; significant, so Games-Howell pairs in that order"
+ },
+ {
+  "id": "welchAnova-f5-exact-zero",
+  "csv": "group,score\nA,100\nA,100.1\nB,200\nB,200.3\nC,300\nC,300.2",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "register row F5 at 9264: three groups of two with unequal spread, means 100 apart, so each Games-Howell df is between 1 and 2 (1.22, 1.47, 1.74), where stkPtukey's quadrature (hi widened by 4 below df 5) reaches 1: every p (adjusted) is exactly 0, the cell prints &lt; .001 and the sentence p < .001"
  }
 ]
