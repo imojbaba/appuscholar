@@ -80,6 +80,8 @@ function calls(v1: V1): Array<[fn: string, tuples: unknown[][]]> {
   const lg = logisticSample();
   const logit = v1.call<{ pr: number[] }>("stkLogit", [lg.x1, lg.x2], lg.y);
   const sepY = [0, 0, 1, 0, 1, 1, 0, 1, 1, 0];
+  // quasi-separated: Newton converges to a full fit whose slope (about 1145) and SE (about 928) pass the 30 and 500 cut-offs (8974), so `sep` is true on the full object (F12)
+  const quasiSep = [[[0.001, 0.002, 0.003, 0.004, 0.005, 0.006]], [0, 1, 0, 1, 1, 1]];
 
   const d22 = design([[[4, 5, 6], [7, 8, 6]], [[5, 6, 4], [9, 10, 11]]]);
   const d23 = design([[[3, 4, 5], [6, 7], [5, 6, 8, 7]], [[4, 2], [8, 9, 10], [3, 5, 4]]]);
@@ -102,7 +104,7 @@ function calls(v1: V1): Array<[fn: string, tuples: unknown[][]]> {
     ["stkBrownForsythe", [[arms], [[[1, 2, 3], [1, 2, 3]]], [[[2, 2], [3, 3]]], [[[1, 3, 5, 2], [4, 6, 8], [2, 2, 3, 9, 7], [10, 12]]]]],
     ["stkRSS", [[ols1.cols, ols1.y], [[one8, ...p3.xs], p3.y], [dep.xs, dep.y], [[one4, ...zero.xs], zero.y]]],
     ["stkOLS", [[ols1.cols.slice(1), ols1.y], [p3.xs, p3.y], [dep.xs, dep.y], [zero.xs, zero.y]]],
-    ["stkLogit", [[[lg.x1, lg.x2], lg.y], [[lg.x1], lg.y.map(() => 1)], [[sepY], sepY], [[lg.x1, lg.x1], lg.y]]],
+    ["stkLogit", [[[lg.x1, lg.x2], lg.y], [[lg.x1], lg.y.map(() => 1)], [[sepY], sepY], [[lg.x1, lg.x1], lg.y], quasiSep]],
     ["stkAUC", [[logit.pr, lg.y]]],
     ["stkAnova2", [d22, d23, d22one, d22min].map((d) => [d.y, d.a, d.b, d.la, d.lb])],
     ["stkSimpleEffects", [[d23.cellMap, d23.la, d23.lb, a23.mse, a23.dfe]]],
@@ -110,9 +112,9 @@ function calls(v1: V1): Array<[fn: string, tuples: unknown[][]]> {
     ["plNorm", [[7]]],
     ["plSim", [[0.5, 10, 5, 1], [0.2, 20, 3, 42], [1, 5, 2, 99]]],
     ["pwLogPois", [[0, 1], [3, 2.5], [10, 50]]],
-    ["pwNcChiSf", [[3.84, 1, 0], [3.84, 1, 4], [11.07, 5, 10], [100, 10, 50]]],
-    ["pwNcFSf", [[4.0, 1, 10, 0], [4.0, 1, 10, 5], [2.5, 3, 60, 8]]],
-    ["pwNctCdf", [[2.0, 10, 0], [2.0, 10, 1.5], [-1, 30, 2], [1.7, 100, 3]]],
+    ["pwNcChiSf", [[3.84, 1, 0], [3.84, 1, 4], [11.07, 5, 10], [100, 10, 50], [0, 1, 4]]],
+    ["pwNcFSf", [[4.0, 1, 10, 0], [4.0, 1, 10, 5], [2.5, 3, 60, 8], [0, 1, 10, 5]]],
+    ["pwNctCdf", [[2.0, 10, 0], [2.0, 10, 1.5], [-1, 30, 2], [1.7, 100, 3], [1, 0, 1]]],
     ["pwChiCrit", [[0.05, 1], [0.01, 5], [0.05, 100]]],
     ["pwPowerT", [[2, 30, 0.05, 2], [2, 30, 0.05, 1]]],
     ["pwPowerF", [[0.0625, 3, 76, 0.05, 80]]],
@@ -122,6 +124,7 @@ function calls(v1: V1): Array<[fn: string, tuples: unknown[][]]> {
       [power("ind", 0.5), 1], [power("paired", 0.5), 1], [power("paired", 0.5), 30], [power("one", 0.5), 100],
       [power("anova", 0.25, { k: 4 }), 2], [power("regr", 0.15, { p: 3 }), 4], [power("regr", 0.15, { p: 3 }), 100],
       [power("chisq", 0.3, { df: 1 }), 100], [power("corr", 0.3), 3], [power("x", 0.5), 50],
+      [{ ...power("corr", 0.3), tails: 1 }, 85], [power("anova", 0.25, { k: 4 }), 1],
     ]],
     ["pwSolveN", [
       [power("ind", 0.5), 0.8], [power("ind", 0.2), 0.9], [power("corr", 0.3), 0.8],

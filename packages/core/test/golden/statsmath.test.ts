@@ -51,12 +51,12 @@ describe("statsmath.ts is v1's statistics maths (8691-9347)", () => {
     expect(new Set(fx.cases.map((c) => c.fn))).toEqual(new Set(Object.keys(fns)));
     expect(new Set(Object.keys(statsmath))).toEqual(new Set(Object.keys(fns)));
   });
-  it("the fixture holds Task 1's grids (201 cases over 54 functions)", () => {
+  it("the fixture holds Task 1's grids (207 cases over 54 functions)", () => {
     const counts: Record<string, number> = {};
     for (const c of fx.cases) counts[c.fn] = (counts[c.fn] ?? 0) + 1;
     expect(counts).toEqual({
-      smean: 5, svar: 5, ssd: 5, smedian: 5, ranks: 5, stkNormCdf: 6, stkQnorm: 5, stkPoly: 2, stkShapiro: 13, stkBrownForsythe: 4, stkRSS: 4, stkOLS: 4, stkLogit: 4, stkAUC: 1,
-      stkAnova2: 4, stkSimpleEffects: 1, plRng: 5, plNorm: 1, plSim: 3, pwLogPois: 3, pwNcChiSf: 4, pwNcFSf: 3, pwNctCdf: 4, pwChiCrit: 3, pwPowerT: 2, pwPowerF: 1, pwPower: 15,
+      smean: 5, svar: 5, ssd: 5, smedian: 5, ranks: 5, stkNormCdf: 6, stkQnorm: 5, stkPoly: 2, stkShapiro: 13, stkBrownForsythe: 4, stkRSS: 4, stkOLS: 4, stkLogit: 5, stkAUC: 1,
+      stkAnova2: 4, stkSimpleEffects: 1, plRng: 5, plNorm: 1, plSim: 3, pwLogPois: 3, pwNcChiSf: 5, pwNcFSf: 4, pwNctCdf: 5, pwChiCrit: 3, pwPowerT: 2, pwPowerF: 1, pwPower: 17,
       pwSolveN: 7, pwSolveEffect: 4, stkTCrit: 4, stkFQuant: 3, stkTieTerm: 2, stkHolm: 3, stkKruskal: 2, stkDunn: 1, stkSpearman: 3, stkCorrMat: 2, stkAlpha: 1, stkOmega: 1,
       stkRng: 2, stkOmegaBoot: 3, STK_GL: 1, stkGL: 2, stkPhi: 3, stkPtukey: 7, stkQtukey: 5, stkWelchAnova: 2, stkGamesHowell: 2, stkLogChoose: 3, stkFisherRC: 5,
       stkFisher2x2: 5, stkExactMW: 5, stkExactSR: 3, stkBinomTwo: 3,
@@ -66,8 +66,8 @@ describe("statsmath.ts is v1's statistics maths (8691-9347)", () => {
 });
 
 /**
- * The cases where scipy has no value (it returns NaN) and v1 has one; nothing is compared there. Each names why.
- * - every score tied: v1's Kruskal-Wallis skips the tie correction when C = 1 − T/(N³ − N) is 0 (`if(C>0)H/=C`, 9150) and reports H = 0, p = 1; scipy divides by C = 0 and returns NaN.
+ * The cases where scipy has no value (it returns NaN) and v1 has one; nothing is compared there. Each names why and its register row.
+ * - every score tied: v1's Kruskal-Wallis skips the tie correction when C = 1 − T/(N³ − N) is 0 (`if(C>0)H/=C`, 9150) and reports H = 0, p = 1; scipy divides by C = 0 and returns NaN (register row D-W2-16).
  */
 const V1_HAS_A_VALUE = new Set(["stkKruskal([[[2,2,2],[2,2],[2,2,2]]])"]);
 
