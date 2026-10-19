@@ -4,8 +4,8 @@
 // it on its root), written to innertext-chrome.json, and toLocaleString("en-IN") of a fixed list of numbers (audit F28: v1's styleMeasured
 // 6454 prints word totals with it, and the output depends on the runtime's ICU data), written to en-in-numbers.json.
 // --check never writes: it captures again, prints `same` or the first differing field or case id, and exits 1 on any difference.
-// The capture date on disk is kept while nothing else changes, so a re-capture on a later day is still `same`. The header names the Node version that ran the capture
-// (`node`, as every golden fixture's header does: register row D-W1-16) beside the Chromium and Playwright versions.
+// The capture date on disk is kept while nothing else changes, so a re-capture on a later day is still `same`. The header names the Node version, platform and architecture
+// that ran the capture (`node`, `platform`, `arch`, as every golden fixture's header does: register row D-W1-16) beside the Chromium and Playwright versions.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -103,7 +103,7 @@ try {
     });
   }, corpus);
   const numbers = await page.evaluate((list) => list.map((n) => [n, n.toLocaleString("en-IN")]), NUMBERS);
-  const fields = { node: process.version, chromium: browser.version(), playwright, css: CSS };
+  const fields = { node: process.version, platform: process.platform, arch: process.arch, chromium: browser.version(), playwright, css: CSS };
   const statuses = [save("innertext-chrome", fields, { cases }), save("en-in-numbers", fields, { cases: numbers })];
   differs = statuses.includes("differs");
 } finally {

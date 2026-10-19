@@ -4,17 +4,18 @@ import { fileURLToPath } from "node:url";
 import type { V1 } from "./v1";
 
 /**
- * Every fixture opens with this header. `node` is the Node version that ran the capture (process.version): a number computed through Math.exp or Math.log is exact only on the platform that
- * computed it, so the golden tests hold computed numbers within a relative 1e-12 (harness/compare.ts, register row D-W1-16), and the header records which Node computed the fixture's digits.
+ * Every fixture opens with this header. `node`, `platform` and `arch` are the Node version, the operating system and the CPU architecture that ran the capture (process.version,
+ * process.platform, process.arch): a number computed through Math.exp or Math.log is exact only on the platform that computed it, so the golden tests hold computed numbers within a relative
+ * 1e-12 (harness/compare.ts, register row D-W1-16), and the header records where the fixture's digits were computed.
  */
-export type FixtureHeader = { engine: string; captured: string; node: string; v1: { build: string; sha256: string; lines: number } };
+export type FixtureHeader = { engine: string; captured: string; node: string; platform: string; arch: string; v1: { build: string; sha256: string; lines: number } };
 export type Fixture<T> = FixtureHeader & T;
 export type FixtureStatus = "written" | "same" | "differs";
 
 const PACKAGE_DIR = fileURLToPath(new URL("../../../", import.meta.url));
 const GOLDEN_DIR = resolve(PACKAGE_DIR, "test/golden");
 const DATA_DIR = resolve(PACKAGE_DIR, "src/data");
-const HEADER_KEYS = ["engine", "captured", "node", "v1"];
+const HEADER_KEYS = ["engine", "captured", "node", "platform", "arch", "v1"];
 
 /**
  * A plain object from either realm: its prototype is null or a realm's Object.prototype
@@ -94,7 +95,7 @@ function today(): string {
 }
 
 function fixtureText(engine: string, captured: string, v1: V1, body: object): string {
-  const header: FixtureHeader = { engine, captured, node: process.version, v1: { build: v1.build, sha256: v1.sha256, lines: v1.lines } };
+  const header: FixtureHeader = { engine, captured, node: process.version, platform: process.platform, arch: process.arch, v1: { build: v1.build, sha256: v1.sha256, lines: v1.lines } };
   return JSON.stringify(encodeSpecial({ ...header, ...body }), null, 1) + "\n";
 }
 

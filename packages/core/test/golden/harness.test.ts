@@ -64,8 +64,8 @@ describe("writeFixture and emitTables", () => {
     expect(writeFixture(dir, "cases", { cases: [1, 2] }, v1, true)).toBe("differs");
     expect(log).toHaveBeenLastCalledWith(expect.stringMatching(/cases\.json differs at \$\.cases\[1\]: fixture \{"\$n":"NaN"\}, v1 now 2$/));
     expect(readFileSync(join(dir, "cases.json"), "utf8")).toBe(before);
-    expect(readFixture<{ cases: number[] }>(dir, "cases")).toEqual({ engine: dir, captured: "2026-10-17", node: process.version, v1: { build: "2026.10.13a", sha256: v1.sha256, lines: 13699 }, cases: [1, NaN] });
-    expect(Object.keys(JSON.parse(readFileSync(join(dir, "cases.json"), "utf8")) as object)).toEqual(["engine", "captured", "node", "v1", "cases"]); // the header first, in this order
+    expect(readFixture<{ cases: number[] }>(dir, "cases")).toEqual({ engine: dir, captured: "2026-10-17", node: process.version, platform: process.platform, arch: process.arch, v1: { build: "2026.10.13a", sha256: v1.sha256, lines: 13699 }, cases: [1, NaN] });
+    expect(Object.keys(JSON.parse(readFileSync(join(dir, "cases.json"), "utf8")) as object)).toEqual(["engine", "captured", "node", "platform", "arch", "v1", "cases"]); // the header first, in this order
     expect(writeFixture(dir, "cases", { cases: [1, 2] }, v1, false)).toBe("written");
     expect(readFixture(dir, "cases").captured).toBe("2026-10-18");
   }));
