@@ -9,6 +9,7 @@ import {
   decryptText, encryptText, generateDek, generateKeypair, generateRecoveryCode, generateVaultKey, sealVaultCheck, unwrapKey,
   unwrapWithPassphrase, unwrapWithRecovery, VaultError, verifyVaultKey, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery
 } from "./crypto";
+import { heldBlobs } from "@/lib/blobs/held";
 import { migrateToVault } from "./migrate";
 import { forgetRemembered, hasRemembered, readRemembered, rememberVault } from "./remember";
 
@@ -276,6 +277,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (statusRef.current !== "migrating") setStatus("unlocked");
     startMigration();
     void addKeypair(key);
+    // Stage-blob values held after their panel went away go out now (sealed after the migration, which encryptBody waits for).
+    void heldBlobs.drain();
   }, [setStatus, startMigration, addKeypair]);
 
   /** Keeps the remembered copy's passphrase wrap current after a change, when this computer remembers the vault. */

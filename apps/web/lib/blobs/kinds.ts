@@ -31,8 +31,8 @@ const CitationEntrySchema = z.looseObject({
   container: str.optional(), editors: str.optional(), number: str.optional(), degree: str.optional(), type: str.optional(), style: str.optional(), lang: str.optional()
 });
 const CitationLibrarySchema = z.array(CitationEntrySchema);
-/** By normalised DOI: retracted or not, and when it was looked up (ms). */
-const RetractionCacheSchema = z.record(str, z.looseObject({ r: z.boolean(), at: num }));
+/** By normalised DOI: retracted or not (`r`), and when it was looked up (`t`, ms), as v1 7569 stores it: `c[d]={r:!!flag,t:Date.now()}`. */
+const RetractionCacheSchema = z.record(str, z.looseObject({ r: z.boolean(), t: num }));
 /** By reference key: the Crossref check's result. Its inner shape belongs to the reference-check engine and is not checked here. */
 const RefCheckCacheSchema = z.record(str, z.unknown());
 /** The Reading shelf's list of papers; each paper's text is its own `shelf_paper:<id>` blob. `added` is v1's ISO date string. */

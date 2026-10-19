@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { originCount, sanitizeHtml, wordCount, type OriginStats } from "@appuscholar/core";
-import { ApiError, apiFetch } from "./api";
+import { apiFetch } from "./api";
+import { isStaleKeys, isVaultLocked } from "./vault/errors";
 import { useVault, type VaultValue, type WrappedDek } from "./vault/useVault";
 
 /** "locked": the vault is locked and the student has not opened it, so the text is held in the editor and nothing is sent. */
@@ -21,12 +22,6 @@ export function shouldWarnOnUnload(status: SaveStatus): boolean {
   return status !== "saved";
 }
 
-const isVaultLocked = (e: unknown) => e instanceof Error && e.message === "vault-locked";
-/**
- * The document's keys or the vault changed under this tab: "vault-required" (a vault was set up elsewhere after this body was sealed in
- * plaintext) or "dek-exists" (a first key reached the server but its answer did not, and the vault was locked since, so a new first key was made).
- */
-const isStaleKeys = (e: unknown) => e instanceof ApiError && e.status === 409 && (e.code === "vault-required" || e.code === "dek-exists");
 const plaintext = async (html: string): Promise<SaveBody> => ({ bodyHtml: html, keyVersion: 0 });
 
 export function createAutosaver(o: {

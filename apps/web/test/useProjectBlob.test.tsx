@@ -15,6 +15,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 import { ApiError } from "../lib/api";
 import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../lib/vault/useVault";
 import { BLOB_SAVE_DEBOUNCE_MS, useProjectBlob, type ProjectBlob } from "../lib/blobs/useProjectBlob";
+import { heldBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
 import { BLOB_KINDS, blobId, isBlobKind, parseBlob, shelfPaperKind, type BlobKind, type IdeaIntake } from "../lib/blobs/kinds";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -81,12 +82,13 @@ async function openSealed(vk: CryptoKey, b: { body: string; deks: WrappedDek[]; 
 }
 
 const roots: Root[] = [];
-type Mounted = { readonly v: VaultValue; readonly b: ProjectBlob<unknown>; rerender(projectId: string | null, kind?: BlobKind): Promise<void>; unmount(): void };
+type Mounted = { readonly v: VaultValue; readonly b: ProjectBlob<any>; rerender(projectId: string | null, kind?: BlobKind): Promise<void>; unmount(): void };
 async function mount(kind: BlobKind, projectId: string | null, opts?: { readOnly?: boolean }): Promise<Mounted> {
-  const box: { v: VaultValue | null; b: ProjectBlob<unknown> | null } = { v: null, b: null };
+  // The probe serves every kind; each test knows its own shape.
+  const box: { v: VaultValue | null; b: ProjectBlob<any> | null } = { v: null, b: null };
   function Probe({ k, pid }: { k: BlobKind; pid: string | null }) {
     box.v = useVault();
-    box.b = useProjectBlob(k, pid, opts) as ProjectBlob<unknown>;
+    box.b = useProjectBlob(k, pid, opts);
     return null;
   }
   const root = createRoot(document.createElement("div"));
@@ -118,6 +120,7 @@ beforeEach(async () => {
   h.api.mockReset().mockImplementation(fakeApi);
   h.ask.mockReset();
   h.toast.mockReset();
+  heldBlobs.clear();
   await forgetRemembered("u1");
 });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); });
@@ -141,8 +144,10 @@ describe("blob kinds", () => {
     expect(parseBlob("idea_intake", JSON.stringify({ ...INTAKE, topic: 5 }))).toBeNull();
     expect(parseBlob("citations", JSON.stringify([{ author: "Ng, A.", year: "2020", title: "T" }]))).toEqual([{ author: "Ng, A.", year: "2020", title: "T" }]);
     expect(parseBlob("citations", JSON.stringify({ author: "x" }))).toBeNull();
-    expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: true, at: 1 } }))).toEqual({ "10.1/x": { r: true, at: 1 } });
-    expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: "yes", at: 1 } }))).toBeNull();
+    // v1's field names (7569): r, t.
+    expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: true, t: 1 } }))).toEqual({ "10.1/x": { r: true, t: 1 } });
+    expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: "yes", t: 1 } }))).toBeNull();
+    expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: true, at: 1 } }))).toBeNull();
     expect(parseBlob("refcheck_cache", JSON.stringify({ k: { anything: [1] } }))).toEqual({ k: { anything: [1] } });
     const paper = { id: "p1", title: "A", file: "a.pdf", size: 10, added: "2026-10-19T00:00:00.000Z", total: 3, kept: 3 };
     expect(parseBlob("shelf_index", JSON.stringify([paper]))).toEqual([paper]);
@@ -370,6 +375,171 @@ describe("useProjectBlob", () => {
     await act(async () => { await s.b.flush(); });
     expect(s.b.value).toEqual(["Sample size"]);
     expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+  });
+
+  describe("updates set before the stored value is known", () => {
+    const A = { author: "Ng, A.", year: "2020", title: "Stored earlier" };
+    const B = { author: "Ho, B.", year: "2024", title: "Added now" };
+    const add = (e: typeof B) => (prev: unknown[] | null) => [...(prev ?? []), e];
+
+    it("an update set while locked (the ask cancelled) lands on top of the stored list after unlock; the entry the panel never saw survives", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      server.blobs = [await sealedBlob(vk, "p1", "citations", [A])];
+      h.ask.mockResolvedValue(null);
+      const s = await mount("citations", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ locked: true, value: null });
+      act(() => { s.b.set(add(B)); });
+      await until(() => h.ask.mock.calls.length === 2);
+      await settle();
+      // Held: shown as the panel set it, nothing sent.
+      expect(s.b.locked).toBe(true);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => putsTo("p1", "citations").length === 1);
+      await until(() => !s.b.locked);
+      const sent = putsTo("p1", "citations")[0]!.body as { body: string; keyVersion: number };
+      expect(await openSealed(vk, { body: sent.body, deks: server.blobs[0]!.deks, keyVersion: sent.keyVersion })).toEqual([A, B]);
+      expect(s.b.value).toEqual([A, B]);
+    }, 30_000);
+
+    it("a set while the first read is still in flight is applied to the loaded value, not over it", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      let release!: () => void;
+      const gate = new Promise<void>((r) => { release = r; });
+      h.api.mockImplementation(async (path: string, init?: RequestInit) => { if (path.includes("/blobs/") && !init?.method) await gate; return fakeApi(path, init); });
+      const s = await mount("citations", "p1");
+      expect(s.b.loading).toBe(true);
+      act(() => { s.b.set(add(B)); });
+      await act(async () => { release(); });
+      await until(() => !s.b.loading);
+      expect(s.b.value).toEqual([A, B]);
+      let ok: boolean | undefined;
+      await act(async () => { ok = await s.b.flush(); });
+      expect(ok).toBe(true);
+      expect(putsTo("p1", "citations").map((c) => JSON.parse((c.body as { body: string }).body))).toEqual([[A, B]]);
+    });
+
+    it("a failed read is retried by flush, and what was set meanwhile is applied to the stored value", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      let offline = true;
+      h.api.mockImplementation((path: string, init?: RequestInit) => (offline && path.includes("/blobs/") && !init?.method ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+      const s = await mount("citations", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: null, error: true, locked: false });
+      act(() => { s.b.set(add(B)); });
+      offline = false;
+      let ok: boolean | undefined;
+      await act(async () => { ok = await s.b.flush(); });
+      expect(ok).toBe(true);
+      expect(s.b).toMatchObject({ value: [A, B], error: false });
+      expect(putsTo("p1", "citations").map((c) => JSON.parse((c.body as { body: string }).body))).toEqual([[A, B]]);
+    });
+  });
+
+  it("409 dek-exists (another tab created the blob under its own key): the keys are read again and the value sealed under that key", async () => {
+    const vk = await generateVaultKey();
+    server.vault = await vaultFor(vk, "right");
+    h.ask.mockResolvedValue("right");
+    const s = await mount("rs_prefs", "p1");
+    await until(() => !s.b.loading);
+    expect(s.b.value).toBeNull();
+    // Meanwhile another tab creates the blob, with its own first dek.
+    const theirs = await sealedBlob(vk, "p1", "rs_prefs", { rank: false });
+    server.blobs.push(theirs);
+    act(() => { s.b.set({ rank: true }); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    const puts = putsTo("p1", "rs_prefs").map((c) => c.body as { body: string; keyVersion: number; dek?: WrappedDek });
+    expect(puts).toHaveLength(2);
+    expect(puts[0]!.dek).toBeDefined();
+    expect(puts[0]!.dek!.wrapped).not.toBe(theirs.deks[0]!.wrapped);
+    expect(puts[1]!.dek).toBeUndefined();
+    expect(server.blobs[0]!.deks).toEqual(theirs.deks);
+    expect(await openSealed(vk, server.blobs[0]!)).toEqual({ rank: true });
+    expect(s.b.error).toBeFalsy();
+  }, 30_000);
+
+  it("a broken blob shows broken until the panel sets a value over it", async () => {
+    server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: "{not json", keyVersion: 0, deks: [] }];
+    const s = await mount("rs_prefs", "p1");
+    await until(() => !s.b.loading);
+    expect(s.b.broken).toBe(true);
+    act(() => { s.b.set({ rank: true }); });
+    expect(s.b).toMatchObject({ value: { rank: true }, broken: false });
+  });
+
+  describe("values held when the panel goes away", () => {
+    it("unmounted while locked and declined: the value is held by blob id, and a new mount of the same blob adopts it and saves it onto the stored value", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      const A = { author: "Ng, A." }, B = { author: "Ho, B." };
+      server.blobs = [await sealedBlob(vk, "p1", "citations", [A])];
+      h.ask.mockResolvedValue(null);
+      const s = await mount("citations", "p1");
+      await until(() => !s.b.loading);
+      act(() => { s.b.set((prev: unknown[] | null) => [...(prev ?? []), B]); });
+      await until(() => h.ask.mock.calls.length === 2);
+      await settle();
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      s.unmount();
+      await until(() => heldBlobs.has("blob:p1:citations"));
+      // No prompt from a panel that is gone.
+      expect(h.ask).toHaveBeenCalledTimes(2);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      // Leaving the page now asks first.
+      const ev = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(ev);
+      expect(ev.defaultPrevented).toBe(true);
+      // The panel opens again; this time the student unlocks.
+      h.ask.mockResolvedValue("right");
+      const t = await mount("citations", "p1");
+      await until(() => putsTo("p1", "citations").length === 1);
+      expect(heldBlobs.size).toBe(0);
+      await until(() => !t.b.loading && !t.b.locked);
+      expect(t.b.value).toEqual([A, B]);
+      expect(await openSealed(vk, server.blobs[0]!)).toEqual([A, B]);
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    }, 30_000);
+
+    it("held after the panel went away, it is sent when the vault unlocks, with no panel for that blob mounted", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      h.ask.mockResolvedValue(null);
+      const s = await mount("rs_prefs", "p1");
+      await until(() => !s.b.loading);
+      act(() => { s.b.set({ rank: true }); });
+      await act(async () => { await s.b.flush(); });
+      expect(s.b.locked).toBe(true);
+      // Another project: this blob's client goes away, the vault (same provider) stays.
+      await s.rerender(null);
+      await until(() => heldBlobs.has("blob:p1:rs_prefs"));
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => putsTo("p1", "rs_prefs").length === 1);
+      await until(() => heldBlobs.size === 0);
+      expect(await openSealed(vk, server.blobs[0]!)).toEqual({ rank: true });
+    }, 30_000);
+
+    it("a final save that fails (offline) is held and sent when the browser comes back online", async () => {
+      let offline = false;
+      h.api.mockImplementation((path: string, init?: RequestInit) => {
+        if (offline && init?.method === "PUT") { server.calls.push({ path, method: "PUT" }); return Promise.reject(new TypeError("Failed to fetch")); }
+        return fakeApi(path, init);
+      });
+      const s = await mount("ap_cols", "p1");
+      await until(() => !s.b.loading);
+      offline = true;
+      act(() => { s.b.set(["Sample size"]); });
+      s.unmount();
+      await until(() => heldBlobs.has("blob:p1:ap_cols"));
+      expect(server.blobs).toHaveLength(0);
+      offline = false;
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await until(() => heldBlobs.size === 0 && server.blobs.length === 1);
+      expect(server.blobs[0]).toMatchObject({ body: JSON.stringify(["Sample size"]), keyVersion: 0 });
+    });
   });
 
   it("a shelf paper's blob kind goes in the path encoded", async () => {

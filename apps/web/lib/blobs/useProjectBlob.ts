@@ -1,23 +1,33 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { useVault, type VaultValue, type WrappedDek } from "@/lib/vault/useVault";
+import { applyOps, compactOps, heldBlobs, type HeldOp } from "./held";
 import { blobId, parseBlob, type BlobKind, type BlobShape } from "./kinds";
 
 /** A set() is saved this long after the last one (three in a row are one PUT). */
 export const BLOB_SAVE_DEBOUNCE_MS = 800;
 
 /**
- * `locked`: the vault is locked and the student has not opened it. While the read is what is locked, `value` is null (never a default);
- * a value set while locked is shown here and held until the vault opens. `broken`: the stored blob does not open or is not of its kind's
- * shape (the panel says so; it never crashes). `error`: the last save failed; the value is kept and goes with the next save or flush.
+ * `locked`: the vault is locked and the student has not opened it. While the read is what is locked, `value` is null (never a default),
+ * or what the panel set since, held; a held value is sent once the vault opens. `broken`: the stored blob does not open or is not of its
+ * kind's shape, and the panel has set nothing over it (the panel says so; it never crashes). `error`: the last read or save failed; what
+ * was set is kept and goes with the next set, flush or unlock.
  */
 export type ProjectBlobState<T> = { value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean };
+/** A new value, or an update of the current one (`prev` is null while there is no blob yet). */
+export type BlobUpdate<T> = T | ((prev: T | null) => T);
 export type ProjectBlob<T> = ProjectBlobState<T> & {
-  /** Shows `next` at once and saves it BLOB_SAVE_DEBOUNCE_MS later (sealed under the blob's key unless the vault is off). */
-  set(next: T): void;
-  /** Sends a pending save now (before switching documents or unmounting). */
-  flush(): Promise<void>;
+  /**
+   * Shows the result at once and saves it BLOB_SAVE_DEBOUNCE_MS later (sealed under the blob's key unless the vault is off). Set while
+   * the stored value is not known yet (loading, locked, a failed read), it is queued and replayed onto the value once it is read.
+   * Panels holding a collection (citations, caches, ap_notes, shelf_index, ap_cols) must use the update form, so an entry added before
+   * the read lands on top of the stored ones instead of replacing them.
+   */
+  set(next: BlobUpdate<T>): void;
+  /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server. */
+  flush(): Promise<boolean>;
 };
 export type ProjectBlobOptions = {
   /** The value is read but set() sends nothing (the pop-out writes only citations and retraction_cache; Task 14 decides which). */
@@ -28,86 +38,101 @@ export type ProjectBlobOptions = {
 type BlobWire = { kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: string };
 type BlobPut = { body: string; keyVersion: number; dek?: WrappedDek };
 type BlobVault = Pick<VaultValue, "known" | "ensureUnlocked" | "encryptBody" | "decryptBody">;
-
-const isVaultLocked = (e: unknown) => e instanceof Error && e.message === "vault-locked";
-/** The blob's keys or the vault changed under this tab (useAutosave's isStaleKeys): re-read them and seal once more. */
-const isStaleKeys = (e: unknown) => e instanceof ApiError && e.status === 409 && (e.code === "vault-required" || e.code === "dek-exists");
-
-/**
- * One blob of one project, outside React: its read, its value and the debounced, sealed save. The hook makes one per (kind, projectId).
- * `get` answers null when there is no blob yet (404).
- */
-export function createBlobClient<T>(o: {
+type ClientDeps<T> = {
   id: string;
   parse: (json: string) => T | null;
+  /** Null when there is no blob yet (404). */
   get: () => Promise<BlobWire | null>;
   put: (body: BlobPut) => Promise<BlobWire>;
   vault: () => BlobVault;
-  delayMs: number;
-  onState: (s: ProjectBlobState<T>) => void;
-}) {
-  let state: ProjectBlobState<T> = { value: null, loading: true, locked: false };
+};
+
+const toOp = <T,>(u: BlobUpdate<T>): HeldOp<T> => (typeof u === "function" ? { update: u as (prev: T | null) => T } : { value: u });
+
+/**
+ * One blob of one project, outside React. Reads and saves run one at a time, in order. The stored value is "known" once a read has
+ * answered (a blob, broken or not, or none); until then every set is queued and replayed onto it, so nothing the panel never saw is
+ * overwritten. `prompt: false` (a drain with no panel) never asks for the passphrase.
+ */
+export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onState: (s: ProjectBlobState<T>) => void; prompt?: boolean }) {
+  /** A read has answered: `value` is the stored value with every later set applied. */
+  let known = false;
+  let value: T | null = null;
+  /** Sets made while the stored value is not known, in order. */
+  let ops: HeldOp<T>[] = [];
+  /** Known, set here and not yet on the server. Newer values replace it. */
+  let pending: { value: T } | null = null;
   /** The blob's keys as the server has them: from every read and every save. */
   let deks: WrappedDek[] = [];
-  /** A value set here and not yet saved. Newer values replace it. */
-  let pending: { value: T } | null = null;
-  /** Once a value is set here, reads never replace it with the server's (a read racing the save would show the older value). */
-  let local = false;
-  /** The read could not open the blob (locked, cancelled): there is no value until the vault opens. */
+  let attempted = false;
+  /** The last read could not open the blob: the vault is locked. */
   let lockedRead = false;
-  /** The student cancelled the unlock a save asked for: values are held without asking again until the vault opens (resume). */
-  let declined = false;
+  /** A save is held because the vault stayed locked. */
+  let heldByLock = false;
+  let broken = false;
+  let error = false;
+  /** The student cancelled an unlock this blob asked for after its first read: no prompt again until the vault opens (resume). */
+  let declined = o.prompt === false;
+  let firstRead = true;
   let active = true;
-  let readSeq = 0;
-  let reading: Promise<void> | null = null;
-  let inflight: Promise<void> | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let chain: Promise<unknown> = Promise.resolve();
+  const self = {};
 
-  const emit = (patch: Partial<ProjectBlobState<T>>) => {
-    state = { ...state, ...patch };
-    if (active) o.onState(state);
+  const holds = () => pending !== null || ops.length > 0;
+  const snapshot = (): ProjectBlobState<T> => ({
+    value: known ? value : applyOps(ops, null),
+    loading: !attempted,
+    locked: (!known && lockedRead) || heldByLock,
+    broken: known && broken && value === null,
+    error
+  });
+  const emit = () => {
+    if (!active) return;
+    heldBlobs.markDirty(self, holds());
+    o.onState(snapshot());
   };
   const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };
 
   async function read(): Promise<void> {
-    const mine = ++readSeq;
-    const current = () => active && mine === readSeq;
     let w: BlobWire | null;
-    try { w = await o.get(); } catch {
-      if (current()) emit({ loading: false, error: true });
-      return;
-    }
+    try { w = await o.get(); } catch { attempted = true; error = true; return; }
     if (w) deks = w.deks;
-    if (!current()) return;
-    if (!w) { lockedRead = false; emit({ loading: false, locked: false, broken: false, ...(local ? {} : { value: null }) }); return; }
-    const doc = { id: o.id, deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion };
     let text: string | null = null;
     let locked = false;
-    try { text = await o.vault().decryptBody(doc); } catch (e) {
-      if (!isVaultLocked(e)) text = null; // VaultError("corrupt"): broken
-      else if (!current()) return;
-      // The first read of a locked blob asks once; the vault shares one prompt between every caller waiting on it.
-      else if (await o.vault().ensureUnlocked().catch(() => false)) {
-        try { text = await o.vault().decryptBody(doc); } catch (e2) { locked = isVaultLocked(e2); }
-      } else locked = true;
+    let bad = false;
+    if (w) {
+      const doc = { id: o.id, deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion };
+      try { text = await o.vault().decryptBody(doc); } catch (e) {
+        if (!isVaultLocked(e)) bad = true; // VaultError("corrupt")
+        // The vault shares one prompt between every caller waiting on it (the document, other panels).
+        else if (!declined && await o.vault().ensureUnlocked().catch(() => false)) {
+          try { text = await o.vault().decryptBody(doc); } catch (e2) { if (isVaultLocked(e2)) locked = true; else bad = true; }
+        } else locked = true;
+      }
     }
-    if (!current()) return;
-    lockedRead = locked;
-    const value = text === null ? null : o.parse(text);
-    emit({ loading: false, locked: locked || (declined && pending !== null), broken: !locked && value === null, ...(local ? {} : { value }) });
-  }
-  function load(): Promise<void> {
-    const run = read();
-    reading = run;
-    void run.finally(() => { if (reading === run) reading = null; });
-    return run;
+    attempted = true;
+    // The first read asks once; a set while still locked may ask once more, and a cancel then holds without asking again.
+    if (locked && !firstRead) declined = true;
+    firstRead = false;
+    if (locked) { lockedRead = true; return; }
+    lockedRead = false;
+    error = false;
+    const parsed = w && !bad && text !== null ? o.parse(text) : null;
+    broken = w !== null && parsed === null;
+    known = true;
+    value = parsed;
+    if (ops.length) {
+      value = applyOps(ops, value);
+      ops = [];
+      if (value !== null) pending = { value };
+    }
   }
 
   /** The body to send, or null when the vault stays locked (the value is held). Never plaintext in place of ciphertext. */
   async function seal(json: string): Promise<BlobPut | null> {
-    const v = o.vault();
     // A vault still "loading" is waited for, never taken for "off".
-    if ((await v.known()) === "off") return { body: json, keyVersion: 0 };
+    if ((await o.vault().known()) === "off") return { body: json, keyVersion: 0 };
     const sealNow = async () => {
       const s = await o.vault().encryptBody({ id: o.id, deks }, json);
       return { body: s.bodyHtml, keyVersion: s.keyVersion, ...(s.dek ? { dek: s.dek } : {}) };
@@ -122,18 +147,16 @@ export function createBlobClient<T>(o: {
   }
 
   /** Keeps a value that could not be sent; a newer one set meanwhile wins. */
-  const hold = (value: T) => { if (!pending) pending = { value }; };
+  const hold = (v: T) => { if (!pending) pending = { value: v }; };
 
-  async function save(): Promise<void> {
-    // The keys come with the read: a save waits for it.
-    while (reading) await reading;
-    if (!pending) return;
-    const { value } = pending;
+  async function save(): Promise<boolean> {
+    if (!pending) return true;
+    const v = pending.value;
     pending = null;
-    const json = JSON.stringify(value);
+    const json = JSON.stringify(v);
     try {
       let body = await seal(json);
-      if (!body) { hold(value); emit({ locked: true }); return; }
+      if (!body) { hold(v); heldByLock = true; return false; }
       let w: BlobWire;
       try { w = await o.put(body); } catch (e) {
         if (!isStaleKeys(e)) throw e;
@@ -142,54 +165,96 @@ export function createBlobClient<T>(o: {
         deks = fresh?.deks ?? [];
         await o.vault().known(true);
         body = await seal(json);
-        if (!body) { hold(value); emit({ locked: true }); return; }
+        if (!body) { hold(v); heldByLock = true; return false; }
         w = await o.put(body);
       }
       deks = w.deks;
-      lockedRead = false;
-      emit({ error: false, broken: false, locked: false });
+      heldByLock = false;
+      broken = false;
+      error = false;
+      return true;
     } catch {
-      hold(value);
-      emit({ error: true });
+      hold(v);
+      error = true;
+      return false;
     }
   }
 
-  async function flush(): Promise<void> {
+  /** One turn: read when the stored value is not known (a retry after a failure or a lock), then send what is pending. */
+  async function step(): Promise<boolean> {
+    if (!known) await read();
+    if (!known) { emit(); return ops.length === 0; }
+    const ok = await save();
+    emit();
+    return ok && !holds();
+  }
+  function queue(run: () => Promise<boolean>): Promise<boolean> {
+    const p = chain.then(run, run);
+    chain = p.catch(() => false);
+    return p;
+  }
+  function flush(): Promise<boolean> {
     clearTimer();
-    // Waiting on an unlock can take a while; a second flush queued behind the first sends what is left after it.
-    while (inflight) await inflight;
-    if (!pending) return;
-    const run = save();
-    inflight = run;
-    try { await run; } finally { if (inflight === run) inflight = null; }
+    return queue(step);
   }
 
+  /** What is still not on the server, as ops (a known value as a plain one). */
+  const leftover = (): HeldOp<T>[] => (known ? (pending ? [{ value: pending.value }] : []) : [...ops]);
+
+  /** For the registry: a client with no panel, sending `held` the way this one would. */
+  const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
+    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, prompt: false });
+    c.adopt(held as HeldOp<T>[]);
+    await c.flush();
+    return c.leftover() as HeldOp[];
+  };
+
   return {
-    load,
+    /** Takes ops held for this blob (from a panel that went away) before the first read; they replay onto the loaded value. */
+    adopt(held: HeldOp<T>[]) { ops = compactOps([...held, ...ops]); },
+    leftover,
+    /** The first read, after any last save of this blob from a panel that went away; what it held is adopted. */
+    start(): Promise<boolean> {
+      return queue(async () => {
+        await heldBlobs.idle(o.id);
+        const held = heldBlobs.take(o.id);
+        if (held) ops = compactOps([...(held as HeldOp<T>[]), ...ops]);
+        return step();
+      });
+    },
     flush,
-    set(next: T) {
-      pending = { value: next };
-      local = true;
-      emit({ value: next, broken: false });
+    set(next: BlobUpdate<T>) {
+      const op = toOp(next);
+      if (known) {
+        value = "value" in op ? op.value : op.update(value);
+        pending = { value };
+      } else ops = compactOps([...ops, op]);
+      emit();
       clearTimer();
-      if (declined) return; // held until the vault opens
-      // Locked: ask now (one prompt) rather than after the debounce.
-      if (state.locked) { void flush(); return; }
+      if (declined && (heldByLock || !known)) return; // held until the vault opens
+      // The read is locked: ask now (one prompt) rather than after the debounce.
+      if (!known && lockedRead) { void flush(); return; }
       timer = setTimeout(() => { timer = null; void flush(); }, o.delayMs);
     },
-    /** The vault opened (the header pill, another prompt): a read that was locked is made again, and a held value is sent. */
+    /** The vault opened (the header pill, another prompt): a read that was locked or failed is made again, and a held value is sent. */
     resume() {
       if (!active) return;
-      const wasDeclined = declined;
-      declined = false;
-      if (lockedRead) void load();
-      if (pending && (wasDeclined || state.locked)) void flush();
+      declined = o.prompt === false;
+      if (!known || pending) void flush();
     },
-    /** Another project or kind, or unmount: the pending save is sent first, then nothing here touches the state any more. */
+    /**
+     * Another project or kind, or unmount: what is pending is sent now, without a prompt (the panel is gone). What still cannot go is
+     * kept in the held-blobs registry for this blob id, and nothing here touches the panel's state any more.
+     */
     dispose() {
-      void flush();
+      if (!active) return;
       active = false;
-      readSeq++;
+      heldBlobs.markDirty(self, false);
+      clearTimer();
+      declined = true;
+      if (!holds()) return;
+      const last = flush().then(() => { heldBlobs.put(o.id, leftover() as HeldOp[], send); });
+      heldBlobs.track(o.id, last);
     }
   };
 }
@@ -201,7 +266,8 @@ type Tagged<T> = { key: string; s: ProjectBlobState<T> };
  * project is open) reads nothing and set() is a no-op. Reads decrypt in the browser; a locked vault asks once (shared with every other
  * caller), and a cancelled ask leaves `locked: true` with no value. Saves are debounced, sealed under the blob's key unless the vault is
  * off (keyVersion 0), held while the vault stays locked and sent once it opens; a 409 vault-required or dek-exists re-reads the keys
- * and retries once.
+ * and retries once. Set while the value is unknown, updates are replayed onto it once read (see `set`). A value still unsent when the
+ * panel goes away is kept for this tab (held.ts) and sent at the next mount of the same blob, unlock, or return online.
  */
 export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | null, opts: ProjectBlobOptions = {}): ProjectBlob<BlobShape<K>> {
   type T = BlobShape<K>;
@@ -229,7 +295,7 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
       onState: (s) => setTagged({ key, s })
     });
     client.current = c;
-    void c.load();
+    void c.start();
     return () => { if (client.current === c) client.current = null; c.dispose(); };
   }, [kind, projectId, key]);
 
@@ -237,8 +303,8 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
   useEffect(() => { if (open) client.current?.resume(); }, [open, key]);
 
   const readOnly = opts.readOnly ?? false;
-  const set = useCallback((next: T) => { if (!readOnly) client.current?.set(next); }, [readOnly]);
-  const flush = useCallback(async () => { await client.current?.flush(); }, []);
+  const set = useCallback((next: BlobUpdate<T>) => { if (!readOnly) client.current?.set(next); }, [readOnly]);
+  const flush = useCallback(async () => (await client.current?.flush()) ?? true, []);
 
   const s: ProjectBlobState<T> = key === null
     ? { value: null, loading: false, locked: false }
