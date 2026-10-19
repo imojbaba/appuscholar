@@ -1935,6 +1935,504 @@
    "resultsText": "ResultsStepPredictorsR²Adjusted R²ΔR²F changedfp1age, sleep.751.738.75155.882, 37< .0012+ group: Control (vs Online), group: Group (vs Online).811.790.0605.552, 35.008F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results.Model: y predicted from age, sleep, group: Control (vs Online), group: Group (vs Online). N = 40.R²Adjusted R²Fdfp.811.79037.594, 35< .001PredictorbSEβtp95% CI for bVIFIntercept11.6692.7554.24< .001[6.077, 17.261]age0.5190.044.88211.81< .001[0.430, 0.608]1.03sleep-0.1790.096-.139-1.86.071[-0.374, 0.016]1.03group: Control (vs Online)-3.5011.132-3.09.004[-5.798, -1.204]1.27group: Group (vs Online)-0.3971.272-0.31.757[-2.979, 2.184]1.28b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Each categorical predictor is turned into 0/1 columns, one per level except the reference level, and each b is the difference from the reference level with the other predictors held constant. Reference levels: group = Online (the largest group). Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.Assumption checksVariableNShapiro-Wilk WpResiduals400.986.890No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A multiple linear regression with age, sleep, group: Control (vs Online), group: Group (vs Online) as predictors of y was significant, F(4, 35) = 37.59, p < .001, R² = .81, adjusted R² = .79. Individual predictors: age (β = .88, p < .001); sleep (β = -.14, p = .071); group: Control (vs Online) (b = -3.50, p = .004); group: Group (vs Online) (b = -0.40, p = .757). In step 1, age, sleep accounted for 75.1% of the variance in y, F(2, 37) = 55.88, p < .001. Adding group: Control (vs Online), group: Group (vs Online) in step 2 significantly improved the model, ΔR² = .060, F(2, 35) = 5.55, p = .008.Insert into documentCopy💡 Explain in plain language",
    "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Step</th><th>Predictors</th><th>R²</th><th>Adjusted R²</th><th>ΔR²</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>1</td><td>age, sleep</td><td>.751</td><td>.738</td><td>.751</td><td>55.88</td><td>2, 37</td><td>&lt; .001</td></tr><tr><td>2</td><td>+ group: Control (vs Online), group: Group (vs Online)</td><td>.811</td><td>.790</td><td>.060</td><td>5.55</td><td>2, 35</td><td>.008</td></tr></tbody></table><p class=\"desc\">F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results.</p><p class=\"desc\">Model: y predicted from age, sleep, group: Control (vs Online), group: Group (vs Online). N = 40.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>Adjusted R²</th><th>F</th><th>df</th><th>p</th></tr><tr><td>.811</td><td>.790</td><td>37.59</td><td>4, 35</td><td>&lt; .001</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Predictor</th><th>b</th><th>SE</th><th>β</th><th>t</th><th>p</th><th>95% CI for b</th><th>VIF</th></tr><tr><td>Intercept</td><td>11.669</td><td>2.755</td><td></td><td>4.24</td><td>&lt; .001</td><td>[6.077, 17.261]</td><td></td></tr><tr><td>age</td><td>0.519</td><td>0.044</td><td>.882</td><td>11.81</td><td>&lt; .001</td><td>[0.430, 0.608]</td><td>1.03</td></tr><tr><td>sleep</td><td>-0.179</td><td>0.096</td><td>-.139</td><td>-1.86</td><td>.071</td><td>[-0.374, 0.016]</td><td>1.03</td></tr><tr><td>group: Control (vs Online)</td><td>-3.501</td><td>1.132</td><td></td><td>-3.09</td><td>.004</td><td>[-5.798, -1.204]</td><td>1.27</td></tr><tr><td>group: Group (vs Online)</td><td>-0.397</td><td>1.272</td><td></td><td>-0.31</td><td>.757</td><td>[-2.979, 2.184]</td><td>1.28</td></tr></tbody></table><p class=\"desc\">b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Each categorical predictor is turned into 0/1 columns, one per level except the reference level, and each b is the difference from the reference level with the other predictors held constant. Reference levels: group = Online (the largest group). Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>40</td><td>0.986</td><td>.890</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A multiple linear regression with age, sleep, group: Control (vs Online), group: Group (vs Online) as predictors of y was significant, F(4, 35) = 37.59, p &lt; .001, R² = .81, adjusted R² = .79. Individual predictors: age (β = .88, p &lt; .001); sleep (β = -.14, p = .071); group: Control (vs Online) (b = -3.50, p = .004); group: Group (vs Online) (b = -0.40, p = .757). In step 1, age, sleep accounted for 75.1% of the variance in y, F(2, 37) = 55.88, p &lt; .001. Adding group: Control (vs Online), group: Group (vs Online) in step 2 significantly improved the model, ΔR² = .060, F(2, 35) = 5.55, p = .008.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
    "toasts": []
+  },
+  {
+   "id": "mregress-step1-categorical-3-levels",
+   "test": "mregress",
+   "csv": "y,age,group\n27.8,41.5,Control\n37.6,65.7,Online\n38.2,56.3,Group\n41.3,65.8,Online\n37.8,62.4,Control\n28.9,46.0,Control\n27.0,46.4,Online\n45.1,64.8,Group\n43.6,64.0,Control\n37.0,54.2,Group\n38.3,64.0,Online\n42.9,66.8,Online\n33.3,46.5,Online\n42.2,67.3,Group\n41.2,59.4,Online\n29.8,42.4,Group\n39.5,58.1,Online\n36.7,53.6,Online\n34.6,53.4,Online\n37.2,50.9,Group\n33.2,57.5,Control\n35.7,40.0,Group\n34.3,45.7,Group\n35.9,64.3,Control\n31.7,37.1,Online\n32.8,44.7,Group\n29.6,36.1,Group\n31.7,50.2,Online\n33.4,57.1,Control\n38.2,70.7,Control\n21.8,36.9,Control\n42.1,60.3,Online\n39.9,54.4,Group\n42.8,68.4,Group\n34.8,46.0,Online\n34.3,57.5,Control",
+   "values": {
+    "dv": "y"
+   },
+   "ticked": {
+    "cats": [
+     "group"
+    ],
+    "preds2": [
+     "age"
+    ]
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "ref": ""
+    },
+    "ticked": {
+     "preds": [],
+     "cats": [
+      2
+     ],
+     "preds2": [
+      1
+     ],
+     "cats2": []
+    }
+   },
+   "apa": "A multiple linear regression with group: Control (vs Online), group: Group (vs Online), age as predictors of y was significant, F(3, 32) = 41.01, p < .001, R² = .79, adjusted R² = .77. Individual predictors: group: Control (vs Online) (b = -3.38, p = .003); group: Group (vs Online) (b = 1.84, p = .074); age (β = .85, p < .001). In step 1, group: Control (vs Online) accounted for 8.2% of the variance in y, F(1, 34) = 3.04, p = .090. Adding group: Group (vs Online), age in step 2 significantly improved the model, ΔR² = .711, F(2, 32) = 55.14, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Step",
+       "Predictors",
+       "R²",
+       "Adjusted R²",
+       "ΔR²",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       "1",
+       "group: Control (vs Online)",
+       ".082",
+       ".055",
+       ".082",
+       "3.04",
+       "1, 34",
+       ".090"
+      ],
+      [
+       "2",
+       "+ group: Group (vs Online), age",
+       ".794",
+       ".774",
+       ".711",
+       "55.14",
+       "2, 32",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results."
+    },
+    {
+     "kind": "note",
+     "html": "Model: y predicted from group: Control (vs Online), group: Group (vs Online), age. N = 36."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "Adjusted R²",
+       "F",
+       "df",
+       "p"
+      ],
+      [
+       ".794",
+       ".774",
+       "41.01",
+       "3, 32",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Predictor",
+       "b",
+       "SE",
+       "β",
+       "t",
+       "p",
+       "95% CI for b",
+       "VIF"
+      ],
+      [
+       "Intercept",
+       "11.824",
+       "2.456",
+       "",
+       "4.81",
+       "&lt; .001",
+       "[6.820, 16.827]",
+       ""
+      ],
+      [
+       "group: Control (vs Online)",
+       "-3.380",
+       "1.038",
+       "",
+       "-3.26",
+       ".003",
+       "[-5.495, -1.266]",
+       "1.24"
+      ],
+      [
+       "group: Group (vs Online)",
+       "1.836",
+       "0.995",
+       "",
+       "1.85",
+       ".074",
+       "[-0.191, 3.863]",
+       "1.26"
+      ],
+      [
+       "age",
+       "0.449",
+       "0.043",
+       ".854",
+       "10.49",
+       "&lt; .001",
+       "[0.362, 0.536]",
+       "1.03"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Each categorical predictor is turned into 0/1 columns, one per level except the reference level, and each b is the difference from the reference level with the other predictors held constant. Reference levels: group = Online (the largest group). Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "36",
+       "0.991",
+       ".992"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsStepPredictorsR²Adjusted R²ΔR²F changedfp1group: Control (vs Online).082.055.0823.041, 34.0902+ group: Group (vs Online), age.794.774.71155.142, 32< .001F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results.Model: y predicted from group: Control (vs Online), group: Group (vs Online), age. N = 36.R²Adjusted R²Fdfp.794.77441.013, 32< .001PredictorbSEβtp95% CI for bVIFIntercept11.8242.4564.81< .001[6.820, 16.827]group: Control (vs Online)-3.3801.038-3.26.003[-5.495, -1.266]1.24group: Group (vs Online)1.8360.9951.85.074[-0.191, 3.863]1.26age0.4490.043.85410.49< .001[0.362, 0.536]1.03b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Each categorical predictor is turned into 0/1 columns, one per level except the reference level, and each b is the difference from the reference level with the other predictors held constant. Reference levels: group = Online (the largest group). Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.Assumption checksVariableNShapiro-Wilk WpResiduals360.991.992No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A multiple linear regression with group: Control (vs Online), group: Group (vs Online), age as predictors of y was significant, F(3, 32) = 41.01, p < .001, R² = .79, adjusted R² = .77. Individual predictors: group: Control (vs Online) (b = -3.38, p = .003); group: Group (vs Online) (b = 1.84, p = .074); age (β = .85, p < .001). In step 1, group: Control (vs Online) accounted for 8.2% of the variance in y, F(1, 34) = 3.04, p = .090. Adding group: Group (vs Online), age in step 2 significantly improved the model, ΔR² = .711, F(2, 32) = 55.14, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Step</th><th>Predictors</th><th>R²</th><th>Adjusted R²</th><th>ΔR²</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>1</td><td>group: Control (vs Online)</td><td>.082</td><td>.055</td><td>.082</td><td>3.04</td><td>1, 34</td><td>.090</td></tr><tr><td>2</td><td>+ group: Group (vs Online), age</td><td>.794</td><td>.774</td><td>.711</td><td>55.14</td><td>2, 32</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results.</p><p class=\"desc\">Model: y predicted from group: Control (vs Online), group: Group (vs Online), age. N = 36.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>Adjusted R²</th><th>F</th><th>df</th><th>p</th></tr><tr><td>.794</td><td>.774</td><td>41.01</td><td>3, 32</td><td>&lt; .001</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Predictor</th><th>b</th><th>SE</th><th>β</th><th>t</th><th>p</th><th>95% CI for b</th><th>VIF</th></tr><tr><td>Intercept</td><td>11.824</td><td>2.456</td><td></td><td>4.81</td><td>&lt; .001</td><td>[6.820, 16.827]</td><td></td></tr><tr><td>group: Control (vs Online)</td><td>-3.380</td><td>1.038</td><td></td><td>-3.26</td><td>.003</td><td>[-5.495, -1.266]</td><td>1.24</td></tr><tr><td>group: Group (vs Online)</td><td>1.836</td><td>0.995</td><td></td><td>1.85</td><td>.074</td><td>[-0.191, 3.863]</td><td>1.26</td></tr><tr><td>age</td><td>0.449</td><td>0.043</td><td>.854</td><td>10.49</td><td>&lt; .001</td><td>[0.362, 0.536]</td><td>1.03</td></tr></tbody></table><p class=\"desc\">b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Each categorical predictor is turned into 0/1 columns, one per level except the reference level, and each b is the difference from the reference level with the other predictors held constant. Reference levels: group = Online (the largest group). Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>36</td><td>0.991</td><td>.992</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A multiple linear regression with group: Control (vs Online), group: Group (vs Online), age as predictors of y was significant, F(3, 32) = 41.01, p &lt; .001, R² = .79, adjusted R² = .77. Individual predictors: group: Control (vs Online) (b = -3.38, p = .003); group: Group (vs Online) (b = 1.84, p = .074); age (β = .85, p &lt; .001). In step 1, group: Control (vs Online) accounted for 8.2% of the variance in y, F(1, 34) = 3.04, p = .090. Adding group: Group (vs Online), age in step 2 significantly improved the model, ΔR² = .711, F(2, 32) = 55.14, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mregress-not-significant",
+   "test": "mregress",
+   "csv": "y,hours,stress\n49.0,56.7,38.1\n39.8,55.0,37.8\n51.1,53.5,48.9\n39.8,49.4,46.7\n53.4,41.6,60.9\n33.2,48.2,50.1\n59.6,43.9,55.5\n44.3,57.4,67.4\n46.0,54.4,40.7\n59.7,62.1,50.4\n38.7,54.0,61.5\n60.9,58.1,31.7\n43.2,64.2,37.7\n61.3,68.8,57.6\n61.2,46.7,37.7\n49.0,48.0,49.5\n57.0,48.6,51.9\n54.2,49.9,68.4\n54.4,50.8,47.9\n43.7,63.4,51.5\n39.2,44.4,48.6\n45.5,60.8,38.4\n54.9,51.4,38.2\n50.5,49.1,55.0\n45.5,53.0,33.3",
+   "values": {
+    "dv": "y"
+   },
+   "ticked": {
+    "preds": [
+     "hours",
+     "stress"
+    ]
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "ref": ""
+    },
+    "ticked": {
+     "preds": [
+      1,
+      2
+     ],
+     "preds2": []
+    }
+   },
+   "apa": "A multiple linear regression with hours, stress as predictors of y was not significant, F(2, 22) = 0.02, p = .984, R² = .00, adjusted R² = -.09. Individual predictors: hours (β = .03, p = .876); stress (β = .02, p = .916).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: y predicted from hours, stress. N = 25."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "Adjusted R²",
+       "F",
+       "df",
+       "p"
+      ],
+      [
+       ".001",
+       "-.089",
+       "0.02",
+       "2, 22",
+       ".984"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Predictor",
+       "b",
+       "SE",
+       "β",
+       "t",
+       "p",
+       "95% CI for b",
+       "VIF"
+      ],
+      [
+       "Intercept",
+       "46.362",
+       "17.247",
+       "",
+       "2.69",
+       ".013",
+       "[10.595, 82.129]",
+       ""
+      ],
+      [
+       "hours",
+       "0.040",
+       "0.256",
+       ".034",
+       "0.16",
+       ".876",
+       "[-0.491, 0.572]",
+       "1.03"
+      ],
+      [
+       "stress",
+       "0.018",
+       "0.172",
+       ".023",
+       "0.11",
+       ".916",
+       "[-0.338, 0.374]",
+       "1.03"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "25",
+       "0.958",
+       ".372"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsModel: y predicted from hours, stress. N = 25.R²Adjusted R²Fdfp.001-.0890.022, 22.984PredictorbSEβtp95% CI for bVIFIntercept46.36217.2472.69.013[10.595, 82.129]hours0.0400.256.0340.16.876[-0.491, 0.572]1.03stress0.0180.172.0230.11.916[-0.338, 0.374]1.03b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.Assumption checksVariableNShapiro-Wilk WpResiduals250.958.372No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A multiple linear regression with hours, stress as predictors of y was not significant, F(2, 22) = 0.02, p = .984, R² = .00, adjusted R² = -.09. Individual predictors: hours (β = .03, p = .876); stress (β = .02, p = .916).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: y predicted from hours, stress. N = 25.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>Adjusted R²</th><th>F</th><th>df</th><th>p</th></tr><tr><td>.001</td><td>-.089</td><td>0.02</td><td>2, 22</td><td>.984</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Predictor</th><th>b</th><th>SE</th><th>β</th><th>t</th><th>p</th><th>95% CI for b</th><th>VIF</th></tr><tr><td>Intercept</td><td>46.362</td><td>17.247</td><td></td><td>2.69</td><td>.013</td><td>[10.595, 82.129]</td><td></td></tr><tr><td>hours</td><td>0.040</td><td>0.256</td><td>.034</td><td>0.16</td><td>.876</td><td>[-0.491, 0.572]</td><td>1.03</td></tr><tr><td>stress</td><td>0.018</td><td>0.172</td><td>.023</td><td>0.11</td><td>.916</td><td>[-0.338, 0.374]</td><td>1.03</td></tr></tbody></table><p class=\"desc\">b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>25</td><td>0.958</td><td>.372</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A multiple linear regression with hours, stress as predictors of y was not significant, F(2, 22) = 0.02, p = .984, R² = .00, adjusted R² = -.09. Individual predictors: hours (β = .03, p = .876); stress (β = .02, p = .916).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mregress-step2-not-significant",
+   "test": "mregress",
+   "csv": "y,hours,stress,sleep\n24.6,39.2,57.8,25.2\n24.6,44.0,60.8,9.5\n27.7,56.7,56.5,14.8\n37.4,64.5,51.5,15.5\n36.7,59.0,24.1,25.6\n23.0,29.2,57.7,11.1\n32.0,54.0,72.5,16.9\n34.1,60.5,43.6,16.5\n31.3,49.3,39.2,22.4\n34.3,50.7,67.0,18.4\n27.8,44.5,57.6,10.3\n28.1,48.2,45.0,16.9\n24.8,42.8,28.1,17.0\n29.8,44.8,39.4,19.3\n31.7,47.5,45.1,26.8\n34.2,59.2,61.6,18.4\n36.7,61.1,44.5,19.4\n31.3,53.7,47.2,24.9\n35.9,57.3,60.7,23.3\n25.6,38.4,36.9,16.9\n34.9,65.0,37.8,21.5\n27.0,42.7,47.2,23.5\n38.7,61.8,40.1,24.4\n27.1,50.7,54.8,17.2\n26.5,45.9,43.6,34.5\n40.5,66.5,52.0,21.6\n21.6,42.2,59.2,21.9\n37.8,56.0,55.5,22.3\n25.2,45.9,55.1,23.7\n37.6,62.0,35.5,13.5",
+   "values": {
+    "dv": "y"
+   },
+   "ticked": {
+    "preds": [
+     "hours"
+    ],
+    "preds2": [
+     "stress",
+     "sleep"
+    ]
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "ref": ""
+    },
+    "ticked": {
+     "preds": [
+      1
+     ],
+     "preds2": [
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A multiple linear regression with hours, stress, sleep as predictors of y was significant, F(3, 26) = 31.09, p < .001, R² = .78, adjusted R² = .76. Individual predictors: hours (β = .87, p < .001); stress (β = -.03, p = .718); sleep (β = .04, p = .650). In step 1, hours accounted for 77.8% of the variance in y, F(1, 28) = 98.26, p < .001. Adding stress, sleep in step 2 did not significantly improve the model, ΔR² = .004, F(2, 26) = 0.22, p = .801.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Step",
+       "Predictors",
+       "R²",
+       "Adjusted R²",
+       "ΔR²",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       "1",
+       "hours",
+       ".778",
+       ".770",
+       ".778",
+       "98.26",
+       "1, 28",
+       "&lt; .001"
+      ],
+      [
+       "2",
+       "+ stress, sleep",
+       ".782",
+       ".757",
+       ".004",
+       "0.22",
+       "2, 26",
+       ".801"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results."
+    },
+    {
+     "kind": "note",
+     "html": "Model: y predicted from hours, stress, sleep. N = 30."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "Adjusted R²",
+       "F",
+       "df",
+       "p"
+      ],
+      [
+       ".782",
+       ".757",
+       "31.09",
+       "3, 26",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Predictor",
+       "b",
+       "SE",
+       "β",
+       "t",
+       "p",
+       "95% CI for b",
+       "VIF"
+      ],
+      [
+       "Intercept",
+       "4.837",
+       "4.335",
+       "",
+       "1.12",
+       ".275",
+       "[-4.074, 13.747]",
+       ""
+      ],
+      [
+       "hours",
+       "0.507",
+       "0.054",
+       ".873",
+       "9.43",
+       "&lt; .001",
+       "[0.396, 0.617]",
+       "1.02"
+      ],
+      [
+       "stress",
+       "-0.016",
+       "0.045",
+       "-.035",
+       "-0.37",
+       ".718",
+       "[-0.109, 0.076]",
+       "1.08"
+      ],
+      [
+       "sleep",
+       "0.043",
+       "0.094",
+       ".043",
+       "0.46",
+       ".650",
+       "[-0.150, 0.236]",
+       "1.07"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "30",
+       "0.980",
+       ".812"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsStepPredictorsR²Adjusted R²ΔR²F changedfp1hours.778.770.77898.261, 28< .0012+ stress, sleep.782.757.0040.222, 26.801F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results.Model: y predicted from hours, stress, sleep. N = 30.R²Adjusted R²Fdfp.782.75731.093, 26< .001PredictorbSEβtp95% CI for bVIFIntercept4.8374.3351.12.275[-4.074, 13.747]hours0.5070.054.8739.43< .001[0.396, 0.617]1.02stress-0.0160.045-.035-0.37.718[-0.109, 0.076]1.08sleep0.0430.094.0430.46.650[-0.150, 0.236]1.07b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.Assumption checksVariableNShapiro-Wilk WpResiduals300.980.812No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A multiple linear regression with hours, stress, sleep as predictors of y was significant, F(3, 26) = 31.09, p < .001, R² = .78, adjusted R² = .76. Individual predictors: hours (β = .87, p < .001); stress (β = -.03, p = .718); sleep (β = .04, p = .650). In step 1, hours accounted for 77.8% of the variance in y, F(1, 28) = 98.26, p < .001. Adding stress, sleep in step 2 did not significantly improve the model, ΔR² = .004, F(2, 26) = 0.22, p = .801.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Step</th><th>Predictors</th><th>R²</th><th>Adjusted R²</th><th>ΔR²</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>1</td><td>hours</td><td>.778</td><td>.770</td><td>.778</td><td>98.26</td><td>1, 28</td><td>&lt; .001</td></tr><tr><td>2</td><td>+ stress, sleep</td><td>.782</td><td>.757</td><td>.004</td><td>0.22</td><td>2, 26</td><td>.801</td></tr></tbody></table><p class=\"desc\">F change tests whether the step 2 predictors add anything beyond step 1. The coefficients below are for the final model with every predictor in. Which predictors go in step 1 should come from theory, written down before you look at the results.</p><p class=\"desc\">Model: y predicted from hours, stress, sleep. N = 30.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>Adjusted R²</th><th>F</th><th>df</th><th>p</th></tr><tr><td>.782</td><td>.757</td><td>31.09</td><td>3, 26</td><td>&lt; .001</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Predictor</th><th>b</th><th>SE</th><th>β</th><th>t</th><th>p</th><th>95% CI for b</th><th>VIF</th></tr><tr><td>Intercept</td><td>4.837</td><td>4.335</td><td></td><td>1.12</td><td>.275</td><td>[-4.074, 13.747]</td><td></td></tr><tr><td>hours</td><td>0.507</td><td>0.054</td><td>.873</td><td>9.43</td><td>&lt; .001</td><td>[0.396, 0.617]</td><td>1.02</td></tr><tr><td>stress</td><td>-0.016</td><td>0.045</td><td>-.035</td><td>-0.37</td><td>.718</td><td>[-0.109, 0.076]</td><td>1.08</td></tr><tr><td>sleep</td><td>0.043</td><td>0.094</td><td>.043</td><td>0.46</td><td>.650</td><td>[-0.150, 0.236]</td><td>1.07</td></tr></tbody></table><p class=\"desc\">b is in the units of the outcome per one unit of the predictor, holding the other predictors constant. β is the standardised coefficient, useful for comparing predictors measured on different scales. Standardised β is not shown for 0/1 columns, since a one-standard-deviation change in a yes/no column means little.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>30</td><td>0.980</td><td>.812</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A multiple linear regression with hours, stress, sleep as predictors of y was significant, F(3, 26) = 31.09, p &lt; .001, R² = .78, adjusted R² = .76. Individual predictors: hours (β = .87, p &lt; .001); stress (β = -.03, p = .718); sleep (β = .04, p = .650). In step 1, hours accounted for 77.8% of the variance in y, F(1, 28) = 98.26, p &lt; .001. Adding stress, sleep in step 2 did not significantly improve the model, ΔR² = .004, F(2, 26) = 0.22, p = .801.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
   }
  ]
 }

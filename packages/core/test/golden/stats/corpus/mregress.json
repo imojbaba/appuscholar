@@ -314,5 +314,55 @@
    ]
   },
   "why": "age and sleep in step 1, the categorical group in step 2 (cats2): its dummies come last in the design; Control and Online tie at 15, so the first seen is the reference"
+ },
+ {
+  "id": "mregress-step1-categorical-3-levels",
+  "csv": "y,age,group\n27.8,41.5,Control\n37.6,65.7,Online\n38.2,56.3,Group\n41.3,65.8,Online\n37.8,62.4,Control\n28.9,46.0,Control\n27.0,46.4,Online\n45.1,64.8,Group\n43.6,64.0,Control\n37.0,54.2,Group\n38.3,64.0,Online\n42.9,66.8,Online\n33.3,46.5,Online\n42.2,67.3,Group\n41.2,59.4,Online\n29.8,42.4,Group\n39.5,58.1,Online\n36.7,53.6,Online\n34.6,53.4,Online\n37.2,50.9,Group\n33.2,57.5,Control\n35.7,40.0,Group\n34.3,45.7,Group\n35.9,64.3,Control\n31.7,37.1,Online\n32.8,44.7,Group\n29.6,36.1,Group\n31.7,50.2,Online\n33.4,57.1,Control\n38.2,70.7,Control\n21.8,36.9,Control\n42.1,60.3,Online\n39.9,54.4,Group\n42.8,68.4,Group\n34.8,46.0,Online\n34.3,57.5,Control",
+  "test": "mregress",
+  "values": {
+   "dv": "y"
+  },
+  "ticked": {
+   "cats": [
+    "group"
+   ],
+   "preds2": [
+    "age"
+   ]
+  },
+  "why": "a 3-level categorical in step 1 and age in step 2: v1's step1n counts ticked columns (1), not design columns (2), so step 1 is fitted on the first dummy only and the second dummy is reported as a step 2 predictor (register row D-W2-18)"
+ },
+ {
+  "id": "mregress-not-significant",
+  "csv": "y,hours,stress\n49.0,56.7,38.1\n39.8,55.0,37.8\n51.1,53.5,48.9\n39.8,49.4,46.7\n53.4,41.6,60.9\n33.2,48.2,50.1\n59.6,43.9,55.5\n44.3,57.4,67.4\n46.0,54.4,40.7\n59.7,62.1,50.4\n38.7,54.0,61.5\n60.9,58.1,31.7\n43.2,64.2,37.7\n61.3,68.8,57.6\n61.2,46.7,37.7\n49.0,48.0,49.5\n57.0,48.6,51.9\n54.2,49.9,68.4\n54.4,50.8,47.9\n43.7,63.4,51.5\n39.2,44.4,48.6\n45.5,60.8,38.4\n54.9,51.4,38.2\n50.5,49.1,55.0\n45.5,53.0,33.3",
+  "test": "mregress",
+  "values": {
+   "dv": "y"
+  },
+  "ticked": {
+   "preds": [
+    "hours",
+    "stress"
+   ]
+  },
+  "why": "the outcome unrelated to both predictors: the 'was not significant' sentence"
+ },
+ {
+  "id": "mregress-step2-not-significant",
+  "csv": "y,hours,stress,sleep\n24.6,39.2,57.8,25.2\n24.6,44.0,60.8,9.5\n27.7,56.7,56.5,14.8\n37.4,64.5,51.5,15.5\n36.7,59.0,24.1,25.6\n23.0,29.2,57.7,11.1\n32.0,54.0,72.5,16.9\n34.1,60.5,43.6,16.5\n31.3,49.3,39.2,22.4\n34.3,50.7,67.0,18.4\n27.8,44.5,57.6,10.3\n28.1,48.2,45.0,16.9\n24.8,42.8,28.1,17.0\n29.8,44.8,39.4,19.3\n31.7,47.5,45.1,26.8\n34.2,59.2,61.6,18.4\n36.7,61.1,44.5,19.4\n31.3,53.7,47.2,24.9\n35.9,57.3,60.7,23.3\n25.6,38.4,36.9,16.9\n34.9,65.0,37.8,21.5\n27.0,42.7,47.2,23.5\n38.7,61.8,40.1,24.4\n27.1,50.7,54.8,17.2\n26.5,45.9,43.6,34.5\n40.5,66.5,52.0,21.6\n21.6,42.2,59.2,21.9\n37.8,56.0,55.5,22.3\n25.2,45.9,55.1,23.7\n37.6,62.0,35.5,13.5",
+  "test": "mregress",
+  "values": {
+   "dv": "y"
+  },
+  "ticked": {
+   "preds": [
+    "hours"
+   ],
+   "preds2": [
+    "stress",
+    "sleep"
+   ]
+  },
+  "why": "stress and sleep add nothing to hours: 'did not significantly improve' in the step sentence"
  }
 ]

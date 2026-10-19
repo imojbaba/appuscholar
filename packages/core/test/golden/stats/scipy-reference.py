@@ -323,7 +323,9 @@ def mr_design(rows, form):
     """stkMRData rebuilt from the inputs: the ticked columns without the outcome (preds, then cats without preds, then preds2 and cats2 without the ones taken), the rows with an outcome
     and every numeric predictor present and finite and every categorical predictor present, then the design in v1's order addNum(preds), addCat(cats), addNum(preds2), addCat(cats2).
     A categorical predictor's levels are in first-seen order over the rows kept; its reference level is the one `ref` names (`name=level`, parts split on , or ;, names and levels
-    case-insensitive, the last level that matches), else the largest group, ties to the first seen; one 0/1 column for every other level, in level order."""
+    case-insensitive, the last level that matches), else the largest group, ties to the first seen; one 0/1 column for every other level, in level order.
+    The step 1 count is v1's step1n, the number of ticked step 1 columns (len(idxs1) + len(cidx1)), not the number of design columns they add: copied by design, so a case
+    with a 3-level categorical in step 1 agrees with v1's numbers, and register row D-W2-18 (proposed) is what reports that count to OJ."""
     dv = col(form, "dv")
     ticked = form["ticked"]
 
@@ -347,7 +349,7 @@ def mr_design(rows, form):
             and all(r[i] != "" for i in cidxs)]
     y = [parse_float(r[dv]) for r in kept]
     xs, dummy = [], []
-    headers = form["headers"]
+    names = [h or "Col%d" % (i + 1) for i, h in enumerate(form["headers"])]  # d.cols[i].name: statsParseText names a blank header 'Col'+(i+1)
 
     def add_num(lst):
         for i in lst:
@@ -358,7 +360,7 @@ def mr_design(rows, form):
         for i in lst:
             lv = first_seen([r[i] for r in kept])
             cnt = {g: sum(1 for r in kept if r[i] == g) for g in lv}
-            want = spec.get(headers[i].lower())
+            want = spec.get(names[i].lower())
             ref = None
             if want is not None:
                 for g in lv:

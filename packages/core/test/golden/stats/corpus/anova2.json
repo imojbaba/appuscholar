@@ -152,5 +152,16 @@
    "iv2": "dose"
   },
   "why": "two digit strings that overflow parseFloat (a 401-digit 1 and a 400-digit negative): stkAnova2Cells skips them, v1 adds c.skipped once (12864); the assumption pass reads stkAnova2Cells again without adding, so the note says 2"
+ },
+ {
+  "id": "anova2-3-level-not-significant",
+  "csv": "therapy,dose,score\nCBT,Low,16.6\nCBT,Low,11.9\nCBT,Low,13.4\nCBT,Low,13.0\nCBT,Low,12.5\nCBT,High,11.6\nCBT,High,11.8\nCBT,High,10.4\nCBT,High,12.4\nCBT,High,12.0\nMindful,Low,12.6\nMindful,Low,10.3\nMindful,Low,12.1\nMindful,Low,12.1\nMindful,Low,13.2\nMindful,High,9.9\nMindful,High,12.8\nMindful,High,14.0\nMindful,High,13.2\nMindful,High,11.3\nWaitlist,Low,11.0\nWaitlist,Low,11.5\nWaitlist,Low,13.5\nWaitlist,Low,15.1\nWaitlist,Low,11.7\nWaitlist,High,10.7\nWaitlist,High,12.8\nWaitlist,High,12.4\nWaitlist,High,10.2\nWaitlist,High,10.5",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a balanced 3 x 2 with no effect anywhere: therapy has 3 levels but its main effect is not significant and neither is the interaction, so no pairwise table"
  }
 ]

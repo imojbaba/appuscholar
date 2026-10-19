@@ -1857,6 +1857,167 @@
    "resultsText": "ResultstherapydoseNMSDCBTLow514.362.36CBTHigh517.481.35WaitlistLow512.021.83WaitlistHigh512.641.65SourceSSdfMSFpPartial η²therapy64.44164.4419.07< .001.544dose17.48117.485.17.037.244therapy × dose7.8117.812.31.148.126Error54.06163.38Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)200.973.815Equal spread (Brown-Forsythe): F(3, 16) = 0.15, p = .930.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.2 entries that are not a number were left out.A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 16) = 19.07, p < .001, ηp² = .544; the main effect of dose was significant, F(1, 16) = 5.17, p = .037, ηp² = .244; the interaction between therapy and dose was not significant, F(1, 16) = 2.31, p = .148, ηp² = .126.Insert into documentCopy💡 Explain in plain language",
    "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>5</td><td>14.36</td><td>2.36</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>17.48</td><td>1.35</td></tr><tr><td>Waitlist</td><td>Low</td><td>5</td><td>12.02</td><td>1.83</td></tr><tr><td>Waitlist</td><td>High</td><td>5</td><td>12.64</td><td>1.65</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>64.44</td><td>1</td><td>64.44</td><td>19.07</td><td>&lt; .001</td><td>.544</td></tr><tr><td>dose</td><td>17.48</td><td>1</td><td>17.48</td><td>5.17</td><td>.037</td><td>.244</td></tr><tr><td>therapy × dose</td><td>7.81</td><td>1</td><td>7.81</td><td>2.31</td><td>.148</td><td>.126</td></tr><tr><td>Error</td><td>54.06</td><td>16</td><td>3.38</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>20</td><td>0.973</td><td>.815</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(3, 16) = 0.15, p = .930.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 16) = 19.07, p &lt; .001, ηp² = .544; the main effect of dose was significant, F(1, 16) = 5.17, p = .037, ηp² = .244; the interaction between therapy and dose was not significant, F(1, 16) = 2.31, p = .148, ηp² = .126.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
    "toasts": []
+  },
+  {
+   "id": "anova2-3-level-not-significant",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,16.6\nCBT,Low,11.9\nCBT,Low,13.4\nCBT,Low,13.0\nCBT,Low,12.5\nCBT,High,11.6\nCBT,High,11.8\nCBT,High,10.4\nCBT,High,12.4\nCBT,High,12.0\nMindful,Low,12.6\nMindful,Low,10.3\nMindful,Low,12.1\nMindful,Low,12.1\nMindful,Low,13.2\nMindful,High,9.9\nMindful,High,12.8\nMindful,High,14.0\nMindful,High,13.2\nMindful,High,11.3\nWaitlist,Low,11.0\nWaitlist,Low,11.5\nWaitlist,Low,13.5\nWaitlist,Low,15.1\nWaitlist,Low,11.7\nWaitlist,High,10.7\nWaitlist,High,12.8\nWaitlist,High,12.4\nWaitlist,High,10.2\nWaitlist,High,10.5",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 24) = 0.49, p = .617, ηp² = .039; the main effect of dose was not significant, F(1, 24) = 3.48, p = .075, ηp² = .127; the interaction between therapy and dose was not significant, F(2, 24) = 1.33, p = .282, ηp² = .100.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "5",
+       "13.48",
+       "1.83"
+      ],
+      [
+       "CBT",
+       "High",
+       "5",
+       "11.64",
+       "0.75"
+      ],
+      [
+       "Mindful",
+       "Low",
+       "5",
+       "12.06",
+       "1.08"
+      ],
+      [
+       "Mindful",
+       "High",
+       "5",
+       "12.24",
+       "1.63"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "5",
+       "12.56",
+       "1.71"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "5",
+       "11.32",
+       "1.19"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "1.99",
+       "2",
+       "0.99",
+       "0.49",
+       ".617",
+       ".039"
+      ],
+      [
+       "dose",
+       "7.01",
+       "1",
+       "7.01",
+       "3.48",
+       ".075",
+       ".127"
+      ],
+      [
+       "therapy × dose",
+       "5.38",
+       "2",
+       "2.69",
+       "1.33",
+       ".282",
+       ".100"
+      ],
+      [
+       "Error",
+       "48.38",
+       "24",
+       "2.02",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "30",
+       "0.977",
+       ".733"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 24) = 0.39, p = .852."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow513.481.83CBTHigh511.640.75MindfulLow512.061.08MindfulHigh512.241.63WaitlistLow512.561.71WaitlistHigh511.321.19SourceSSdfMSFpPartial η²therapy1.9920.990.49.617.039dose7.0117.013.48.075.127therapy × dose5.3822.691.33.282.100Error48.38242.02Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)300.977.733Equal spread (Brown-Forsythe): F(5, 24) = 0.39, p = .852.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 24) = 0.49, p = .617, ηp² = .039; the main effect of dose was not significant, F(1, 24) = 3.48, p = .075, ηp² = .127; the interaction between therapy and dose was not significant, F(2, 24) = 1.33, p = .282, ηp² = .100.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>5</td><td>13.48</td><td>1.83</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>11.64</td><td>0.75</td></tr><tr><td>Mindful</td><td>Low</td><td>5</td><td>12.06</td><td>1.08</td></tr><tr><td>Mindful</td><td>High</td><td>5</td><td>12.24</td><td>1.63</td></tr><tr><td>Waitlist</td><td>Low</td><td>5</td><td>12.56</td><td>1.71</td></tr><tr><td>Waitlist</td><td>High</td><td>5</td><td>11.32</td><td>1.19</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>1.99</td><td>2</td><td>0.99</td><td>0.49</td><td>.617</td><td>.039</td></tr><tr><td>dose</td><td>7.01</td><td>1</td><td>7.01</td><td>3.48</td><td>.075</td><td>.127</td></tr><tr><td>therapy × dose</td><td>5.38</td><td>2</td><td>2.69</td><td>1.33</td><td>.282</td><td>.100</td></tr><tr><td>Error</td><td>48.38</td><td>24</td><td>2.02</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>30</td><td>0.977</td><td>.733</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 24) = 0.39, p = .852.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 24) = 0.49, p = .617, ηp² = .039; the main effect of dose was not significant, F(1, 24) = 3.48, p = .075, ηp² = .127; the interaction between therapy and dose was not significant, F(2, 24) = 1.33, p = .282, ηp² = .100.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
   }
  ]
 }

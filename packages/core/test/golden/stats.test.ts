@@ -50,7 +50,7 @@ const REQUIRED: Record<string, string[]> = {
     "anova2-one-level", "anova2-seven-levels", "anova2-empty-cell", "anova2-dfe-zero", "anova2-no-spread", "anova2-text-in-numeric"],
   mregress: ["mregress-two-numeric", "mregress-categorical-3-levels", "mregress-ref-given", "mregress-step2", "mregress-step2-no-step1", "mregress-one-predictor",
     "mregress-thirteen-columns", "mregress-few-rows", "mregress-collinear", "mregress-exact-fit", "mregress-vif-high", "mregress-small-level", "mregress-missing-rows",
-    "mregress-dv-ticked-as-predictor"],
+    "mregress-dv-ticked-as-predictor", "mregress-step1-categorical-3-levels"],
 };
 
 for (const file of fixtures) {
@@ -459,6 +459,11 @@ describe("stats: two-way ANOVA and multiple regression (anova2, mregress)", () =
     expect(run(c)).toMatchObject({ ok: true, values: { k: 2 } });
     expect(notes(find("mregress", "mregress-vif-high"))[1]).toContain(" A VIF of 10 or more means");
     expect(notes(find("mregress", "mregress-vif-moderate"))[1]).toContain(" A VIF above 5 means");
+  });
+  it("D-W2-18 (proposed): step1n counts ticked columns, so a 3-level categorical in step 1 enters step 1 with its first dummy only (v1 reproduced exactly)", () => {
+    const c = find("mregress", "mregress-step1-categorical-3-levels");
+    expect(tables(c)[0]!.slice(1).map((r) => r[1])).toEqual(["group: Control (vs Online)", "+ group: Group (vs Online), age"]);
+    expect(run(c)).toMatchObject({ ok: true, values: { k: 3, k1: 1 } });
   });
   it("mregress: the step values exist only with the step table; values are the numbers behind the cells", () => {
     for (const c of load("mregress").cases) {
