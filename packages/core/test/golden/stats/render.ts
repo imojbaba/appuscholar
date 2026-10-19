@@ -6,9 +6,12 @@ import type { StatsBlock, StatsResult } from "../../../src/stats-core";
 
 const ENTITIES: Record<string, string> = { lt: "<", gt: ">", amp: "&", quot: '"', "#39": "'", nbsp: " " };
 
-/** An HTML fragment's text: the tags stripped, then `&lt; &gt; &amp; &quot; &#39; &nbsp;` decoded in one pass (so `&amp;lt;` is `&lt;`), as `textContent` reads it. */
+/**
+ * An HTML fragment's text: the tags stripped (only real tags, `<` then a letter or `/` and a letter, so the literal `<` of fmtP's `p < .001` inside a note stays), then `&lt; &gt; &amp; &quot; &#39; &nbsp;` decoded in one pass (so `&amp;lt;` is `&lt;`),
+ * as `textContent` reads it.
+ */
 export function decodeText(html: string): string {
-  return html.replace(/<[^>]*>/g, "").replace(/&(lt|gt|amp|quot|#39|nbsp);/g, (_m: string, e: string) => ENTITIES[e]!);
+  return html.replace(/<\/?[A-Za-z][^>]*>/g, "").replace(/&(lt|gt|amp|quot|#39|nbsp);/g, (_m: string, e: string) => ENTITIES[e]!);
 }
 
 /** A block's text as the DOM's `textContent` gives it: a table's cells (decoded) joined with nothing, a note's html decoded, a heading's text, a list's items (decoded) joined with nothing. */

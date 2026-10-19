@@ -3,6 +3,7 @@ import { statsParseText } from "../../src/intake";
 import { STAT_TESTS } from "../../src/stats-core";
 import type { StatsBlock, StatsResult } from "../../src/stats-core";
 import { runStats } from "../../src/stats";
+import { fmtP } from "../../src/statfmt";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles, readCorpus } from "./stats/capture";
 import { blockAsText, decodeText, renderResultsText } from "./stats/render";
@@ -34,14 +35,15 @@ for (const file of fixtures) {
     const fx = load(file);
     const mode = goldenMode(fx);
     it("the fixture was captured from this corpus as it is on disk", () => {
-      expect(fx.cases.map((c) => ({ id: c.id, csv: c.csv, test: c.test }))).toEqual(readCorpus(`${file}.json`).map((c) => ({ id: c.id, csv: c.csv, test: c.test })));
+      const given = (c: { id: string; csv: string; test: string; values?: unknown; ticked?: unknown }) => ({ id: c.id, csv: c.csv, test: c.test, values: c.values, ticked: c.ticked });
+      expect(fx.cases.map(given)).toEqual(readCorpus(`${file}.json`).map(given));
       for (const id of REQUIRED[file] ?? []) expect(fx.cases.some((c) => c.id === id), id).toBe(true);
     });
     for (const c of fx.cases) {
       it(c.id, () => {
         const r = run(c);
         if (c.apa === null && c.toasts.length > 0) {
-          expect(r).toMatchObject({ ok: false, reason: "toast", toast: c.toasts[0] });
+          expect(r).toMatchObject({ ok: false, test: c.test, reason: "toast", toast: c.toasts[0] });
           expect(c.toasts).toHaveLength(1);
           return;
         }
@@ -50,6 +52,7 @@ for (const file of fixtures) {
         else {
           expect(r.ok).toBe(true);
           if (r.ok) expect(r.apa).toBe(c.apa);
+          expect(r.test).toBe(c.test);
         }
         const blocks = blocksOf(r);
         expect(blocks.map((b) => b.kind)).toEqual(c.blocks.map((b) => b.kind));
@@ -62,6 +65,13 @@ for (const file of fixtures) {
     }
   });
 }
+
+describe("stats/render.ts (the test-only renderer)", () => {
+  it("decodeText strips real tags only, so fmtP's literal < before a </b> stays", () => {
+    expect(decodeText("<b>Fisher-Freeman-Halton exact test: " + fmtP(0.0001) + ".</b> All 12 tables")).toBe("Fisher-Freeman-Halton exact test: p < .001. All 12 tables");
+    expect(decodeText('<p class="desc">a &lt; b &amp;amp; <i>c</i>&nbsp;&#39;d&#39; &quot;e&quot;</p>')).toBe("a < b &amp; c\u00a0'd' \"e\"");
+  });
+});
 
 describe("stats: the frame", () => {
   it("STAT_TESTS equals v1's table, in v1's key order", () => {
@@ -109,5 +119,13 @@ describe("stats: the frame", () => {
     const data = statsParseText("score\n1\n2\n3")!;
     const toast = "Could not run that test — check the columns you picked match what the test needs";
     expect(runStats(data, "nope" as "desc", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "nope", reason: "toast", toast });
+    // A real key whose runner a later task ports: the task that ports ttestInd updates this line.
+    expect(runStats(data, "ttestInd", { values: { dv: "0", iv: "0" }, ticked: {} })).toEqual({ ok: false, test: "ttestInd", reason: "toast", toast });
+  });
+  it("desc-one-left-out: one dropped entry gives the singular note (11994)", () => {
+    const c = load("desc").cases.find((x) => x.id === "desc-one-left-out")!;
+    const last = c.blocks[c.blocks.length - 1]!;
+    expect(last.kind === "note" && last.html.startsWith("1 entry that is")).toBe(true);
+    expect(run(c)).toMatchObject({ ok: true, skipped: 1 });
   });
 });

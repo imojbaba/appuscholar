@@ -14,6 +14,10 @@
    "id": "ttest1-demo",
    "test": "ttest1",
    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "50"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -84,6 +88,10 @@
    "id": "ttest1-mu-empty",
    "test": "ttest1",
    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": ""
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -154,6 +162,10 @@
    "id": "ttest1-mu-text",
    "test": "ttest1",
    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "abc"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -224,6 +236,10 @@
    "id": "ttest1-mu-decimal-lower",
    "test": "ttest1",
    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "55.5"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -294,6 +310,10 @@
    "id": "ttest1-higher",
    "test": "ttest1",
    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "49"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -364,6 +384,10 @@
    "id": "ttest1-all-same",
    "test": "ttest1",
    "csv": "score\n5\n5\n5\n5",
+   "values": {
+    "dv": "score",
+    "mu": "3"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -383,6 +407,10 @@
    "id": "ttest1-one-value",
    "test": "ttest1",
    "csv": "score\n5",
+   "values": {
+    "dv": "score",
+    "mu": "3"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -402,6 +430,10 @@
    "id": "ttest1-text-in-numeric",
    "test": "ttest1",
    "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "score",
+    "mu": "50"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -476,6 +508,10 @@
    "id": "ttest1-n3",
    "test": "ttest1",
    "csv": "score\n4\n7\n9",
+   "values": {
+    "dv": "score",
+    "mu": "5"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -546,6 +582,10 @@
    "id": "ttest1-n2-assumptions-skip",
    "test": "ttest1",
    "csv": "score\n4\n7",
+   "values": {
+    "dv": "score",
+    "mu": "5"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -615,6 +655,9 @@
    "id": "ttest1-no-numeric-column",
    "test": "ttest1",
    "csv": "grp\na\nb\nc",
+   "values": {
+    "mu": "1"
+   },
    "form": {
     "values": {
      "dv": "",
@@ -634,6 +677,10 @@
    "id": "ttest1-skewed",
    "test": "ttest1",
    "csv": "score\n1\n1\n1\n1\n1\n1\n1\n1\n2\n2\n30\n50",
+   "values": {
+    "dv": "score",
+    "mu": "1"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -704,6 +751,10 @@
    "id": "ttest1-n25",
    "test": "ttest1",
    "csv": "score\n12\n15\n11\n14\n13\n16\n12\n15\n14\n13\n17\n12\n14\n15\n13\n16\n11\n14\n15\n13\n12\n16\n14\n13\n15",
+   "values": {
+    "dv": "score",
+    "mu": "14"
+   },
    "form": {
     "values": {
      "dv": "0",
@@ -774,6 +825,9 @@
    "id": "ttest1-name-needs-escaping",
    "test": "ttest1",
    "csv": "Tom's <score> & more\n3\n5\n4\n6",
+   "values": {
+    "dv": "Tom's <score> & more"
+   },
    "form": {
     "values": {
      "dv": "0",

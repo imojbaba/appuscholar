@@ -10,11 +10,11 @@ import { decodeText } from "./render";
 export type StatsCase = { id: string; csv: string; test: StatsTestKey; values?: Record<string, string>; ticked?: Record<string, string[]>; why?: string };
 
 /**
- * What v1 showed for a case. `form` is what the port receives: every `#sf_<id>` of the rendered form with its value (a select's value is the column index as a string, an extra its text) and,
+ * What v1 showed for a case. `values` and `ticked` are the case's own (by column name), kept so the test can tell a fixture captured from an older corpus. `form` is what the port receives: every `#sf_<id>` of the rendered form with its value (a select's value is the column index as a string, an extra its text) and,
  * for every multi field, the indexes of its checked boxes in column order. `apa` is #statsSentence's text, null when v1 showed none (a toast, or the safety net). `blocks` is #statsResults
  * read back in order (see readBlocks); `resultsText` is `#statsResults.textContent` with white space collapsed, `resultsHtml` its innerHTML; `toasts` what showToast received during the run.
  */
-export type CapturedRun = { id: string; test: StatsTestKey; csv: string; form: StatsForm; apa: string | null; blocks: StatsBlock[]; resultsText: string; resultsHtml: string; toasts: string[] };
+export type CapturedRun = { id: string; test: StatsTestKey; csv: string; values?: Record<string, string>; ticked?: Record<string, string[]>; form: StatsForm; apa: string | null; blocks: StatsBlock[]; resultsText: string; resultsHtml: string; toasts: string[] };
 
 /**
  * #statsResults's children, in order, as blocks: `table.stats-table` gives its rows, each the `th`/`td` cells; any `p` a note of its innerHTML; `h4` a heading of its text; `ul` a list of its
@@ -58,6 +58,7 @@ function readBlocks(parent: Element, caseId: string): StatsBlock[] {
 export function driveV1Stats(v1: V1, c: StatsCase): CapturedRun {
   const w = v1.window, d = v1.document;
   v1.setValue("statsPaste", c.csv);
+  w._statsData = undefined; // a refused statsParse ("Paste some data first") leaves the previous case's data, which the guard below must not take for this one
   w._rtSkip = true;
   try { v1.call("statsParse"); } finally { w._rtSkip = false; }
   const data = w._statsData as { cols: Array<{ name: string; index: number }> } | undefined;
@@ -105,7 +106,7 @@ export function driveV1Stats(v1: V1, c: StatsCase): CapturedRun {
   v1.call("statsRunNow");
   const sentence = d.getElementById("statsSentence");
   return {
-    id: c.id, test: c.test, csv: c.csv, form,
+    id: c.id, test: c.test, csv: c.csv, values: c.values, ticked: c.ticked, form,
     apa: sentence ? sentence.textContent : null,
     blocks: readBlocks(results, c.id),
     resultsText: (results.textContent ?? "").replace(/\s+/g, " "),
