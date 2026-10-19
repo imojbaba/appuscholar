@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/core";
-import { provHash } from "@appuscholar/core";
+import type { Mark } from "@tiptap/pm/model";
+import { provHash, type Formatted } from "@appuscholar/core";
 
 /**
  * Inserts HTML that is not AI text (a template): at the end of the document with `atEnd`, otherwise at the cursor, after the last block when the cursor is collapsed at the end of the document,
@@ -50,6 +51,23 @@ export function selectionRange(editor: Editor): SelectionRange | null {
 /** Moves a saved range through a transaction's changes, so edits made before it do not leave it pointing at the wrong words. */
 export function mapRange(range: SelectionRange, mapping: { map(pos: number, assoc?: number): number }): SelectionRange {
   return { ...range, from: mapping.map(range.from, 1), to: mapping.map(range.to, -1) };
+}
+
+/**
+ * v1 citPutIntext's insert (7500-7501): an in-text citation at the cursor, over the selection if there is one, as v1's insertHTML put it there. AMA's
+ * number goes in as `<sup>n</sup>` with no space; every other style as plain text, `' ' + intext`. It is the student's own text: it keeps the formatting
+ * the cursor sits in (bold, italics) but never an `ai-ins` span, even inside AI text, and the cursor ends after it so a second citation follows it.
+ */
+export function insertCitation(editor: Editor, fmt: Formatted): void {
+  editor.chain().focus().command(({ tr, state }) => {
+    const { schema } = state;
+    const aiIns = (m: Mark) => m.type.name === "classSpan" && /(^|\s)ai-ins(\s|$)/.test(String(m.attrs.class ?? ""));
+    let marks: readonly Mark[] = (state.storedMarks ?? state.selection.$from.marks()).filter((m) => !aiIns(m));
+    const sup = schema.marks.superscript;
+    if (fmt.sup && sup) marks = sup.create().addToSet(marks);
+    tr.replaceSelectionWith(schema.text(fmt.sup ? String(fmt.num) : " " + fmt.intext, marks), false);
+    return true;
+  }).run();
 }
 
 /** v1 selCite: collapses the selection to its end without moving focus, so a citation inserted later goes right after the passage instead of replacing it. */

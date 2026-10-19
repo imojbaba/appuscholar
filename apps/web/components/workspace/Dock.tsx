@@ -6,6 +6,7 @@ import { canPopOut, toolLabelKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
 import { AiPane } from "@/components/tools/AiPane";
 import { ChatPanel, useChatLog } from "@/components/tools/ChatPanel";
+import { CitePanel } from "@/components/tools/cite/CitePanel";
 import { HelpersPanel } from "@/components/tools/HelpersPanel";
 import { IdeaPanel } from "@/components/tools/IdeaPanel";
 import { StubPanel } from "@/components/tools/StubPanel";
@@ -107,7 +108,7 @@ export function Dock() {
         ) : (
           <>
             <StageGuide />
-            {activeTool === "idea" ? <IdeaPanel /> : activeTool === "psych" ? <HelpersPanel /> : activeTool === "chat" ? <ChatPanel chat={chat} /> : <StubPanel id={activeTool} />}
+            {activeTool === "idea" ? <IdeaPanel /> : activeTool === "psych" ? <HelpersPanel /> : activeTool === "chat" ? <ChatPanel chat={chat} /> : activeTool === "cite" ? <CitePanel /> : <StubPanel id={activeTool} />}
           </>
         )}
       </div>

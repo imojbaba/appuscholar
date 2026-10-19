@@ -1,0 +1,38 @@
+"use client";
+import type { Formatted } from "@appuscholar/core";
+import { plain, useT } from "@/lib/i18n";
+import { useSuggestion } from "@/lib/ai/suggestion";
+import { insertCitation } from "@/lib/editor/insert";
+import type { CiteDeps } from "@/lib/cite/actions";
+import { useLibrary } from "@/lib/cite/useLibrary";
+import { toast } from "@/components/ui/toast";
+import { CiteForm } from "./CiteForm";
+import { CiteLibrary } from "./CiteLibrary";
+
+/**
+ * 📚 Citation Manager (v1 873-947). In v1's order: the heading and description, the form (CiteForm), the quote block and the one-click capture
+ * (Task 8), the library (CiteLibrary). Citations go in at the open document's cursor (after the selection bubble's Cite the cursor is already at the
+ * end of the passage); the library is the open project's `citations` blob.
+ */
+export function CitePanel() {
+  const t = useT();
+  const library = useLibrary();
+  const { editor } = useSuggestion();
+  const insertReady = !!editor && !editor.isDestroyed;
+  const deps = (): CiteDeps => ({
+    lib: library.lib, style: library.style, toast, t,
+    insert: (f: Formatted) => { if (editor && !editor.isDestroyed) insertCitation(editor, f); }
+  });
+  return (
+    <div className="panel" data-testid="panel-cite">
+      <h3>{plain(t("tab_cite"))}</h3>
+      <p className="desc">{t("cite_panel_desc")}</p>
+      {library.locked && <p className="note cite-state" role="status" data-testid="cite-locked">{t("vault_cite_locked")}</p>}
+      {library.broken && <p className="note cite-state" role="status" data-testid="cite-broken">{t("vault_cite_broken")}</p>}
+      <CiteForm library={library} deps={deps} insertReady={insertReady} />
+      {/* Task 8 (v1 914-919): "Quote from this source (optional)", its description and "Insert quote". */}
+      {/* Task 8 (v1 921-928): "🔖 One-click capture from any page" (the bookmarklet). */}
+      <CiteLibrary library={library} deps={deps} insertReady={insertReady} />
+    </div>
+  );
+}

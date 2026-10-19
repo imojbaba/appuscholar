@@ -102,6 +102,11 @@ export const V2_STRINGS = {
   vault_save_locked: { en: "Unlock your vault to save your changes.", hi: "अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   // Idea & Feasibility while the vault is locked: the saved intake cannot be read, and what is typed waits for the unlock. DRAFT Hindi.
   vault_idea_locked: { en: "Your saved idea is locked. Unlock your vault to read it and save your changes.", hi: "आपका सहेजा हुआ विचार बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
+  // The Citation Manager's library while the vault is locked (the library cannot be read; + Library asks for the passphrase and saves after the unlock),
+  // and a stored library that does not open on this device (shown, and confirmed before the first save replaces it: ruling R16). DRAFT Hindi.
+  vault_cite_locked: { en: "Your saved library is locked. Unlock your vault to read it and save your sources.", hi: "आपकी सहेजी हुई लाइब्रेरी बंद है। इसे पढ़ने और अपने स्रोत सहेजने के लिए अपनी तिजोरी खोलें।" },
+  vault_cite_broken: { en: "Your saved library cannot be opened on this device. Nothing was changed.", hi: "आपकी सहेजी हुई लाइब्रेरी इस डिवाइस पर नहीं खुल सकती। कुछ भी बदला नहीं गया।" },
+  vault_cite_broken_confirm: { en: "Your saved library cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "आपकी सहेजी हुई लाइब्रेरी इस डिवाइस पर नहीं खुल सकती। अभी सहेजने से वह बदल जाएगी। फिर भी सहेजें?" },
   vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
   vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
   vault_forget_btn: { en: "Forget on this computer", hi: "इस कंप्यूटर पर भुला दें" },
