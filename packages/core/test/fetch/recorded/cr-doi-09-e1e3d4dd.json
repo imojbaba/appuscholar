@@ -1,0 +1,8 @@
+{
+ "url": "https://api.crossref.org/works/10.1007%2Fspringerreference_69775",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": "{\"status\":\"ok\",\"message-type\":\"work\",\"message-version\":\"1.0.0\",\"message\":{\"indexed\":{\"date-parts\":[[2024,9,6]],\"date-time\":\"2024-09-06T02:49:40Z\",\"timestamp\":1725590980168},\"publisher-location\":\"Berlin\\/Heidelberg\",\"reference-count\":0,\"publisher\":\"Springer-Verlag\",\"content-domain\":{\"domain\":[],\"crossmark-restriction\":false},\"short-container-title\":[],\"DOI\":\"10.1007\\/springerreference_69775\",\"type\":\"reference-entry\",\"created\":{\"date-parts\":[[2012,1,20]],\"date-time\":\"2012-01-20T08:10:42Z\",\"timestamp\":1327047042000},\"source\":\"Crossref\",\"is-referenced-by-count\":0,\"title\":[\"Anxiety\"],\"prefix\":\"10.1007\",\"member\":\"297\",\"container-title\":[\"SpringerReference\"],\"original-title\":[],\"language\":\"en\",\"deposited\":{\"date-parts\":[[2012,1,20]],\"date-time\":\"2012-01-20T08:11:46Z\",\"timestamp\":1327047106000},\"score\":1,\"resource\":{\"primary\":{\"URL\":\"http:\\/\\/www.springerreference.com\\/index\\/doi\\/10.1007\\/SpringerReference_69775\"}},\"subtitle\":[],\"short-title\":[],\"issued\":{\"date-parts\":[[null]]},\"references-count\":0,\"URL\":\"https:\\/\\/doi.org\\/10.1007\\/springerreference_69775\",\"relation\":{},\"subject\":[]}}"
+}

@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(exam%20anxiety)%20OR%20%22test%20anxiety%22%5Btiab%5D%20OR%20%22evaluation%20anxiety%22%5Btiab%5D",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"54938\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42893823\",\"42893016\",\"42892986\",\"42892812\",\"42892686\",\"42892500\"],\"translationset\":[{\"from\":\"exam anxiety\",\"to\":\"\\\"test anxiety\\\"[MeSH Terms] OR (\\\"test\\\"[All Fields] AND \\\"anxiety\\\"[All Fields]) OR \\\"test anxiety\\\"[All Fields] OR (\\\"exam\\\"[All Fields] AND \\\"anxiety\\\"[All Fields]) OR \\\"exam anxiety\\\"[All Fields]\"}],\"querytranslation\":\"\\\"test anxiety\\\"[MeSH Terms] OR (\\\"test\\\"[All Fields] AND \\\"anxiety\\\"[All Fields]) OR \\\"test anxiety\\\"[All Fields] OR (\\\"exam\\\"[All Fields] AND \\\"anxiety\\\"[All Fields]) OR \\\"exam anxiety\\\"[All Fields] OR \\\"test anxiety\\\"[Title/Abstract] OR \\\"evaluation anxiety\\\"[Title/Abstract]\"}}\n"
+}
