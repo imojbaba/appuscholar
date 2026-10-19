@@ -64,3 +64,5 @@ export type {
   TgQuestionKey, TgAnswers, TgQuestion, TgResKey, TgResEntry, TgResult, TgNextOut, TgWhyItem, TgExtra, TgDemo, GenDesignKey, GenDesign,
   TgCheckSel, TgNumbersRow, TgNumbers, TgCounts, TgCheckOut, GenVerdict,
 } from "./guide";
+export { PW_INFO, POWER_FOOTER_NOTE, pwArt, pwNum, powerCompute, simulatorParse, simulatorCompute, simulatorHtml } from "./power";
+export type { PowerTestKey, PowerMode, PowerInput, PowerResult, SimBin, SimLast, SimResult } from "./power";
