@@ -12,9 +12,10 @@ import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
+import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 
-const APP = "http://localhost:3000/";
-const API = "http://localhost:8788";
+const APP = WEB_ORIGIN + "/";
+const API = API_ORIGIN;
 const PASS_1 = "correct horse";
 const PASS_2 = "battery staple";
 const PASS_3 = "third pass";

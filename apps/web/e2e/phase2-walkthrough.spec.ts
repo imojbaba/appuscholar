@@ -11,8 +11,8 @@ import path from "node:path";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { e2eEmail, signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
+import { WEB_ORIGIN } from "./support/origins";
 
-const API_ORIGIN = "http://localhost:8788";
 /** The vault passphrase (at least 10 characters). Since Phase 3A "Protect with a passphrase" locks the key under the vault, so this one passphrase opens both. */
 const PASS = "secret passphrase 1";
 const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
@@ -25,7 +25,7 @@ const CHAT_REPLY = "Name the habit you study, then say who it affects and why th
 const EMAIL_LINE = "Write to asha@uni.ac.in about the survey.";
 const fixture = (name: string) => path.join(__dirname, "fixtures", name);
 
-const CORS = { "access-control-allow-origin": "http://localhost:3000", "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS" };
+const CORS = { "access-control-allow-origin": WEB_ORIGIN, "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS" };
 const json = (route: Route, body: unknown) => route.fulfill({ status: 200, contentType: "application/json", headers: CORS, body: JSON.stringify(body) });
 
 /** Selects `text` inside the editor the way a drag would (the browser selection, which ProseMirror then adopts). */

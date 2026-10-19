@@ -8,6 +8,7 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import { signIn } from "./support/signin";
+import { WORKSPACE_URL } from "./support/origins";
 
 const fixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-small.json");
 
@@ -19,7 +20,7 @@ test("sign in, write, reload, import a v1 backup", async ({ page }) => {
 
   // The old Research Projects screen redirects to the workspace.
   await page.goto("/projects");
-  await expect(page).toHaveURL(/localhost:3000\/$/);
+  await expect(page).toHaveURL(WORKSPACE_URL);
   await expect(page.getByTestId("doc-select")).toBeVisible();
 
   // Write: the text is stored by autosave and is there after a reload.
