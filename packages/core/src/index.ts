@@ -73,3 +73,5 @@ export {
 export type { VzType, VzOptions, VzGroup, VzSummary, VzScale, VzFrame, VzChart, VzTr } from "./charts";
 export { chartParseLines, vennNum, vennSvg } from "./quickchart";
 export type { ChartRow, VennInput } from "./quickchart";
+export { rtHash, rtSetRecord, rtRunRecord, rtFirstP, rtSig, rtFlip, rtScanTags } from "./rtlink";
+export type { RtRun, RtSavedRun, RtSet, RtTag, RtStatus, RtWhy, RtScanItem, RtFirstP } from "./rtlink";
