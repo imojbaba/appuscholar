@@ -61,8 +61,22 @@ const SKIP_DECLS = new Set(["AP_SAMPLE", "AP_STOP", "AP_RULES", "AP_HEADS", "SH_
 const SKIP_PROPS = new Set(["brief", "terms", "none", "why"]);
 const SKIP_CALLS = new Set(["callAI", "apCall"]);
 const SKIP_CONTENT = [/^You are /, /^RULES:/, /PAPER (START|END)/, /^PAPER TEXT/, /^\[[^\]]*\]$/];
-/** Lesson copy that sits among the panel's own tab labels (not in this line), and word endings that are not copy. */
-const SKIP_TEXT = new Set(["🎓 Lesson on this paper", "s are"]); // "s are" is the plural half of a ternary, not a sentence
+/** Word endings that are not copy on their own (FRAGMENTS below keys the ones a panel composes). The Lesson tab's label (11284) is extracted: Task 12 shows the tab for the sample. */
+const SKIP_TEXT = new Set(["s are"]); // "s are" is the plural half of a ternary, not a sentence
+
+/**
+ * Fixed parts of a sentence that the rules above cannot keep (a lower-case word, a plural ending, a part whose neighbour is an expression), keyed for the panel that composes the
+ * sentence (ruling R10, Task 12): the v1 line, a piece of that line's source the part sits in (checked to be there), the literal itself (checked to be inside that piece), the key,
+ * and the text: the literal trimmed, with the neighbouring operand as a {placeholder} where the panel fills one in.
+ */
+export const FRAGMENTS = [
+  { prefix: "ap2", line: 10016, src: "'page '+u.page", literal: "page ", key: "ap2_page_n", text: "page {page}" },
+  { prefix: "ap2", line: 10016, src: "'section: '+u.sec", literal: "section: ", key: "ap2_section_sec", text: "section: {sec}" },
+  { prefix: "ap2", line: 11263, src: "(R.dois.length===1?'':'s')", literal: "s", key: "ap2_dois_s", text: "s" },
+  { prefix: "ap2", line: 11265, src: "(fl.length===1?' is':'s are')", literal: " is", key: "ap2_reference_is", text: "is" },
+  { prefix: "ap2", line: 11265, src: "(fl.length===1?' is':'s are')", literal: "s are", key: "ap2_references_are", text: "s are" },
+  { prefix: "ap2", line: 11280, src: "d.pages.length+' pages, '", literal: " pages, ", key: "ap2_n_pages", text: "{n} pages," },
+];
 const MAX_COPY_CHARS = 900;
 
 const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", middot: "·", hellip: "…", mdash: "—", ndash: "–", rsquo: "’", lsquo: "‘", ldquo: "“", rdquo: "”", times: "×", larr: "←", rarr: "→" };
@@ -404,7 +418,7 @@ function keyFor({ prefix, text, id, attr, k, prop, taken, byText, line }) {
 const lineOf = (starts, off) => { let lo = 0, hi = starts.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= off) lo = mid; else hi = mid - 1; } return lo; };
 
 /** Extracts the panel copy from the text of v1's index.html. */
-export function extractV1Panels(src, windows = V1_WINDOWS) {
+export function extractV1Panels(src, windows = V1_WINDOWS, fragments = windows === V1_WINDOWS ? FRAGMENTS : []) {
   const lines = src.split("\n");
   const taken = new Map(); // key -> text
   const byText = new Map(); // prefix, attr, text -> key
@@ -446,6 +460,15 @@ export function extractV1Panels(src, windows = V1_WINDOWS) {
         }
       }
     }
+  }
+  for (const f of fragments) {
+    const at = lines[f.line - 1] ?? "";
+    if (!at.includes(f.src)) throw new Error(`fragment ${f.key}: line ${f.line} does not hold ${f.src}`);
+    if (!f.src.includes("'" + f.literal + "'")) throw new Error(`fragment ${f.key}: ${f.src} does not hold '${f.literal}'`);
+    if (f.text.replace(/\{[^}]*\}/g, "").trim() !== f.literal.trim()) throw new Error(`fragment ${f.key}: "${f.text}" is not the literal '${f.literal}'`);
+    if (taken.has(f.key)) throw new Error(`fragment key collision: ${f.key}`);
+    taken.set(f.key, f.text);
+    manifest[f.key] = { lines: `${f.line}-${f.line}`, sha256: sha(lines, f.line, f.line) };
   }
   const keys = Object.keys(manifest).sort();
   return { en: Object.fromEntries(keys.map(k => [k, taken.get(k)])), manifest: Object.fromEntries(keys.map(k => [k, manifest[k]])) };

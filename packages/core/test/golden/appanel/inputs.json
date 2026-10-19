@@ -1,0 +1,251 @@
+{
+ "files": [
+  {
+   "id": "pdf-sample",
+   "name": "Sleep Paper.PDF",
+   "pdf": {
+    "paper": "sample"
+   }
+  },
+  {
+   "id": "pdf-three-pages",
+   "name": "reading-aloud.pdf",
+   "pdf": {
+    "paper": "pdf-three-pages"
+   }
+  },
+  {
+   "id": "pdf-untitled",
+   "name": "notes.pdf",
+   "pdf": {
+    "pages": [
+     "Page 1\nStudents wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture.",
+     "Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture."
+    ]
+   }
+  },
+  {
+   "id": "pdf-scanned",
+   "name": "scan.pdf",
+   "pdf": {
+    "pages": [
+     "",
+     " ",
+     "Fig. 1"
+    ]
+   }
+  },
+  {
+   "id": "pdf-error",
+   "name": "broken.pdf",
+   "pdfError": "Invalid PDF structure."
+  },
+  {
+   "id": "docx-headings",
+   "name": "Night phone.docx",
+   "docx": {
+    "paper": "numbered-headings",
+    "spread": 4
+   }
+  },
+  {
+   "id": "docx-untitled",
+   "name": "lines.DOCX",
+   "docx": {
+    "text": "Abcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg"
+   }
+  },
+  {
+   "id": "docx-long-title",
+   "name": "long.docx",
+   "docx": {
+    "text": "Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture.\n\nStudents wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture."
+   }
+  },
+  {
+   "id": "docx-short",
+   "name": "short.docx",
+   "docx": {
+    "text": "A short Word file.\n\n\n\nOnly two lines."
+   }
+  },
+  {
+   "id": "docx-no-reader",
+   "name": "offline.docx",
+   "docx": null
+  },
+  {
+   "id": "txt",
+   "name": "My Paper.TXT",
+   "text": {
+    "paper": "pasted-headings"
+   }
+  },
+  {
+   "id": "txt-short",
+   "name": "tiny.txt",
+   "text": {
+    "text": "Too little text here."
+   }
+  },
+  {
+   "id": "doc",
+   "name": "old.DOC"
+  },
+  {
+   "id": "other",
+   "name": "paper.rtf"
+  }
+ ],
+ "pastes": [
+  {
+   "id": "empty",
+   "text": ""
+  },
+  {
+   "id": "blank",
+   "text": "   \n\t  \n"
+  },
+  {
+   "id": "short",
+   "text": "Too short to read as a paper."
+  },
+  {
+   "id": "pasted-headings",
+   "text": {
+    "paper": "pasted-headings"
+   }
+  },
+  {
+   "id": "no-headings",
+   "text": {
+    "paper": "no-headings"
+   }
+  },
+  {
+   "id": "short-first-lines",
+   "text": {
+    "prefix": "Draft\nv2\n\n",
+    "paper": "pasted-headings"
+   }
+  },
+  {
+   "id": "untitled",
+   "text": {
+    "text": "Abcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg\nAbcdefg"
+   }
+  },
+  {
+   "id": "long-first-line",
+   "text": {
+    "text": "  Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture.  \n\nStudents wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture. Students wrote notes by hand or on a laptop in each lecture, and a short quiz one week later asked about the main ideas of each lecture."
+   }
+  }
+ ],
+ "loads": [
+  {
+   "id": "abstract-ok",
+   "paper": "abstract-only"
+  },
+  {
+   "id": "abstract-149",
+   "title": "A thin abstract",
+   "pages": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \n "
+   ],
+   "src": "abstract"
+  },
+  {
+   "id": "abstract-150",
+   "title": "An abstract of 150",
+   "pages": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   ],
+   "src": "abstract"
+  },
+  {
+   "id": "text-499",
+   "title": "Almost enough",
+   "pages": [
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   ],
+   "src": "pdf"
+  },
+  {
+   "id": "text-500",
+   "title": "Just enough",
+   "pages": [
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   ],
+   "src": "pdf"
+  }
+ ],
+ "asks": [
+  {
+   "id": "sample-json",
+   "paper": "sample@apSample",
+   "q": "  What was the research gap?  ",
+   "reply": "{\"in_paper\": true, \"answer\": \"Earlier work was mostly observational, so it could not say whether sleep changes anxiety.\", \"quotes\": [\"Sixty first-year students from one college were randomly placed in a routine group or a waiting group.\", \"Students slept for nine hours every night during the exam weeks and their marks rose.\"]}"
+  },
+  {
+   "id": "sample-fence-five",
+   "paper": "sample@apSample",
+   "q": "Who were the participants and how were they chosen?",
+   "reply": "```json\n{\"in_paper\": true, \"answer\": \"Sixty first-year students from one college, who volunteered.\", \"quotes\": [\"Sixty first-year students from one college were randomly placed in a routine group or a waiting group.\", \"The sample size of 60 was set by the number of students who volunteered before the deadline; no power calculation was done.\", \"Sixty students\", \"Students slept for nine hours every night during the exam weeks and their marks rose.\", \"A coin toss decided the group for each student.\"]}\n```"
+  },
+  {
+   "id": "sample-not-in-paper",
+   "paper": "sample@apSample",
+   "q": "What did the students eat?",
+   "reply": "{\"in_paper\": false, \"answer\": \"This paper does not say what the students ate.\", \"quotes\": []}"
+  },
+  {
+   "id": "sample-raw",
+   "paper": "sample@apSample",
+   "q": "Which statistical test was used and why?",
+   "reply": "An independent-samples t-test, because two groups were compared."
+  },
+  {
+   "id": "sample-bare",
+   "paper": "sample@apSample",
+   "q": "What are the limitations?",
+   "reply": "{\"in_paper\": true}"
+  },
+  {
+   "id": "long-partial",
+   "paper": "sample-x3",
+   "q": "Which statistical test was used and why?",
+   "reply": "{\"in_paper\": true, \"answer\": \"An independent-samples t-test compared the change scores.\", \"quotes\": [\"Change scores of the two groups were compared with an independent-samples t-test.\"]}",
+   "consent": true
+  },
+  {
+   "id": "pasted-section",
+   "paper": "pasted-headings",
+   "consent": true,
+   "q": "How many students took part?",
+   "reply": "{\"in_paper\": true, \"answer\": \"Forty-two second-year students.\", \"quotes\": [\"Forty-two second-year students were recruited from two statistics classes.\"]}"
+  },
+  {
+   "id": "no-headings-text",
+   "paper": "no-headings",
+   "consent": true,
+   "q": "Who kept a diary?",
+   "reply": "{\"in_paper\": true, \"answer\": \"Students in Class 9.\", \"quotes\": [\"Two hundred students in Class 9 from four schools kept a diary\"]}"
+  },
+  {
+   "id": "no-consent",
+   "paper": "pasted-headings",
+   "consent": false,
+   "q": "How many students took part?",
+   "reply": "{}"
+  },
+  {
+   "id": "too-short",
+   "paper": "sample@apSample",
+   "q": " gap ",
+   "reply": "{}"
+  }
+ ]
+}

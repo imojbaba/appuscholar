@@ -509,3 +509,27 @@
 .sh-matrix td { vertical-align: top; padding: 4px; }
 .sh-matrix td textarea { width: 100%; min-width: 130px; }
 .sh-matrix .sh-matrix-title { font-weight: 700; min-width: 140px; }
+
+/* Analyse a paper (v1 743: .ap-box, .ap-q, .ap-bad, .ap-warn, .ap-ok, .ap-banner), in the design system's tokens. */
+.ap-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }
+.ap-row.ap-wrap { flex-wrap: wrap; }
+.panel .desc.ap-lect-desc { margin: 0; }
+.ap-shelf { flex: 1; min-width: 180px; width: auto; }
+.ap-consent { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; margin: 8px 0; }
+.ap-consent input { margin-top: 3px; accent-color: var(--purple-600); }
+.panel .note.ap-note { margin: 4px 0 0; }
+.ap-box { border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 8px 10px; margin: 8px 0; background: var(--soft); font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+.ap-q { border-left: 3px solid var(--purple-600); margin: 6px 0; padding: 4px 10px; font-size: 13px; }
+.ap-q.ap-bad { border-left-color: var(--flag-ink); background: var(--flag-bg); }
+.ap-warn { color: var(--flag-ink); font-size: 12px; }
+.ap-ok { color: var(--ok-ink); font-size: 12px; }
+.ap-banner { background: var(--flag-bg); border: 1px solid var(--flag-ink); border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 12px; }
+.ap-small { font-size: 12px; color: var(--muted); }
+.ap-tiny, .ap-caveat { font-size: 11px; color: var(--muted); }
+.ap-caveat { margin-top: 4px; }
+.ap-gap, .ap-sections, .ap-read, .ap-num { margin-top: 6px; }
+.ap-sections { font-size: 12px; }
+.ap-read summary { cursor: pointer; font-size: 12px; }
+.ap-read pre { white-space: pre-wrap; font-size: 11px; max-height: 180px; overflow: auto; font-family: var(--font-mono); }
+.ap-flags { margin: 4px 0; padding-left: 18px; }
+.ap-flags a { color: var(--accent-ink); text-decoration: underline; }

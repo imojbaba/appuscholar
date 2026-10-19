@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, it, expect } from "vitest";
 import { applyV1Panels, decodeEntities, extractV1Panels } from "../scripts/extract-v1-panels.mjs";
 
@@ -67,7 +68,6 @@ describe("extractV1Panels", () => {
     expect(Object.values(out.en)).not.toContain("lowercase");
   });
   it("records the v1 lines and the sha256 of exactly those lines", async () => {
-    const { createHash } = await import("node:crypto");
     const lines = SRC.split("\n");
     for (const [k, m] of Object.entries(out.manifest)) {
       const [a, b] = m.lines.split("-").map(Number) as [number, number];
@@ -85,6 +85,17 @@ describe("extractV1Panels", () => {
     expect(r.hi.rs2_terms_btn).toBe("Suggest terms");
     expect(r.hi.a).toBe("ए");
     expect(() => applyV1Panels({ rs2_terms_btn: "x" }, {}, out)).toThrow(/collides/);
+  });
+  it("keys a fixed fragment from its line (ruling R10), and throws when the line, the literal or the text does not hold it", () => {
+    const src = "x\nh+=d.pages.length+' pages, '+d.chars;\n";
+    const frag = { prefix: "ap2", line: 2, src: "d.pages.length+' pages, '", literal: " pages, ", key: "ap2_n_pages", text: "{n} pages," };
+    const r = extractV1Panels(src, [], [frag]) as { en: Record<string, string>; manifest: Record<string, { lines: string; sha256: string }> };
+    expect(r.en).toEqual({ ap2_n_pages: "{n} pages," });
+    expect(r.manifest.ap2_n_pages!.lines).toBe("2-2");
+    expect(r.manifest.ap2_n_pages!.sha256).toBe(createHash("sha256").update("h+=d.pages.length+' pages, '+d.chars;").digest("hex"));
+    expect(() => extractV1Panels(src, [], [{ ...frag, line: 1 }])).toThrow(/does not hold/);
+    expect(() => extractV1Panels(src, [], [{ ...frag, literal: " page " }])).toThrow(/does not hold/);
+    expect(() => extractV1Panels(src, [], [{ ...frag, text: "{n} sheets," }])).toThrow(/is not the literal/);
   });
   it("decodes entities", () => {
     expect(decodeEntities("A &amp; B &lt;i&gt; &#39;x&#39; &#x2014; &nbsp;")).toBe("A & B <i> 'x' —  ");

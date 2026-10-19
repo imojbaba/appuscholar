@@ -99,6 +99,10 @@
     "lines": "9938-9938",
     "sha256": "a7b5a960cf1e65e9aedf4effb17b8910b5df07b39b52cc8fe1945c2997a949fc"
   },
+  "ap2_dois_s": {
+    "lines": "11263-11263",
+    "sha256": "37ea4364b39915b42663e5887bb3d5014a8080c735c0e94d199fb82b36061b35"
+  },
   "ap2_flagged_as_retracted": {
     "lines": "10132-10132",
     "sha256": "7c53cf9104cca023a282afc222538fb1b3db6658b6691ab9a91654053811fe4c"
@@ -130,6 +134,10 @@
   "ap2_known_to_openalex": {
     "lines": "10132-10132",
     "sha256": "7c53cf9104cca023a282afc222538fb1b3db6658b6691ab9a91654053811fe4c"
+  },
+  "ap2_lesson_on_this_paper": {
+    "lines": "11284-11284",
+    "sha256": "db86af4d0e582323beb729982a1c98832511a58c0c3ce62f4d3854cdabe5a7e0"
   },
   "ap2_lib_open_btn": {
     "lines": "744-744",
@@ -166,6 +174,10 @@
   "ap2_my_words_2": {
     "lines": "10130-10130",
     "sha256": "77d65a0de66d1fe6a345885e0664c93abdb576c6a5c39e18e4e1de2d3d71c102"
+  },
+  "ap2_n_pages": {
+    "lines": "11280-11280",
+    "sha256": "b015bbda133fa8b5b27159a27ff11d3e573f583acb1d06bd06d91713cc0d94c6"
   },
   "ap2_next_stage": {
     "lines": "11322-11322",
@@ -234,6 +246,10 @@
   "ap2_p": {
     "lines": "11282-11282",
     "sha256": "3e695c1083cbdb38dfe1101fb7454a4ca4253fb6e727ff92dabaa6ec1c7fa66e"
+  },
+  "ap2_page_n": {
+    "lines": "10016-10016",
+    "sha256": "bb3727b081e88abb384334445fe2827fbecceb146723cbcb52f94748036d3ec7"
   },
   "ap2_paper": {
     "lines": "9925-9925",
@@ -311,6 +327,10 @@
     "lines": "11265-11265",
     "sha256": "e466410d3ef6ed146b514e28c493882642b47fd1f5ea880150c4a0e0f30f090a"
   },
+  "ap2_reference_is": {
+    "lines": "11265-11265",
+    "sha256": "e466410d3ef6ed146b514e28c493882642b47fd1f5ea880150c4a0e0f30f090a"
+  },
   "ap2_reference_list_check": {
     "lines": "11263-11263",
     "sha256": "37ea4364b39915b42663e5887bb3d5014a8080c735c0e94d199fb82b36061b35"
@@ -318,6 +338,10 @@
   "ap2_reference_list_check_openalex": {
     "lines": "10132-10132",
     "sha256": "7c53cf9104cca023a282afc222538fb1b3db6658b6691ab9a91654053811fe4c"
+  },
+  "ap2_references_are": {
+    "lines": "11265-11265",
+    "sha256": "e466410d3ef6ed146b514e28c493882642b47fd1f5ea880150c4a0e0f30f090a"
   },
   "ap2_remove_the_saved_card": {
     "lines": "9980-9980",
@@ -338,6 +362,10 @@
   "ap2_sample_btn": {
     "lines": "750-750",
     "sha256": "94f3a4741c7ff707542e79e056e5c5d730ad302c6cd2e11a6cd22fdcbdc98d8d"
+  },
+  "ap2_section_sec": {
+    "lines": "10016-10016",
+    "sha256": "bb3727b081e88abb384334445fe2827fbecceb146723cbcb52f94748036d3ec7"
   },
   "ap2_sections_found": {
     "lines": "11282-11282",

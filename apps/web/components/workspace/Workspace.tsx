@@ -157,6 +157,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
       if (!live) return;
       setProject(r.project);
       setProjectId(r.projectId);
+      // An abstract Research kept for Analyse a paper belongs to the project it was found in (ruling R7).
+      if (r.projectId !== projectIdRef.current) setPendingAnalyse(null);
       setDocuments(byCreated(r.documents));
       setCurrentDoc(r.doc);
       if (!toolInit.current) {
