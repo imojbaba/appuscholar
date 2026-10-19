@@ -53,6 +53,7 @@ export const RANGES: Array<[first: number, last: number]> = [
   [8592, 8615], // PSYCH_PROMPTS and psychTool (Task 13, prompts-helpers.ts: buildHelperPrompt, HELPER_TEMPS, HELPER_MIN_CHARS)
   [8619, 8630], // devilTool (Task 13, prompts-helpers.ts: buildDevilPrompt, DEVIL_MIN_WORDS)
   [8633, 8690], // the distribution core (Task 6, pvalue.ts)
+  [9411, 9423], // the personal-data scan's opening comment and PD_HDR (Wave 2 Task 2, pdscan.ts); PD_HDR's name pattern holds the Devanagari word in a regex literal
   [9461, 9462], // pdCsvCell and pdCsv (Task 12, csv.ts)
   [9837, 9837], // AP_SAMPLE (Task 11, data/analyse-tables.ts)
   [9839, 9881], // AP_STAGES (data/analyse-tables.ts), AP_HEADS, AP_STOP (its words in data/analyse-tables.ts), apSquash, apToks, apHeadName and apBuild (Task 11, analyse.ts); not apLoad, 9882-9891

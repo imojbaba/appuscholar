@@ -43,3 +43,7 @@ export {
   STK_GL, stkGL, stkPhi, stkPtukey, stkQtukey, stkWelchAnova, stkGamesHowell, stkLogChoose, stkFisherRC, stkFisher2x2, stkExactMW, stkExactSR, stkBinomTwo,
 } from "./statsmath";
 export type { Anova2, Anova2Row, Ols, Logit, LogitFit, Eff, SimRun, PowerTest, PowerSpec, Kruskal, DunnPair, Spearman, Omega, Welch, GamesHowellPair, FisherRC } from "./statsmath";
+export { statsSplitLine, statsParseText } from "./intake";
+export type { ParsedData, ParsedCol } from "./intake";
+export { PD_HDR, PD_LABEL, PD_DEFAULT, pdTestVal, pdScan, pdTransform } from "./pdscan";
+export type { PdKind, PdFound, PdChoice, PdTransform } from "./pdscan";
