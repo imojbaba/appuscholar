@@ -1,6 +1,7 @@
 {
  "engine": "doctext",
- "captured": "2026-10-17",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
  "chromium": "156.0.8078.4",
  "playwright": "1.64.0",
  "css": {

@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { gammaln, betai, gammaq, erf, normalCDF, pFromT, pFromF, pFromChi, pFromZ } from "../../src/pvalue";
+import { expectGolden } from "./harness/compare";
 import { decodeSpecial, readFixture } from "./harness/fixture";
 
 /**
- * pvalue.ts (v1 8633-8690) against v1 running, point by point with toBe, and against scipy where scipy has the statistic (spec 5.9).
+ * pvalue.ts (v1 8633-8690) against v1 running, point by point with expectGolden (harness/compare.ts: within a relative 1e-12, since V8's Math.exp and Math.log land a few ULP apart on arm64
+ * and x64, register row D-W1-16; whole numbers exactly, so an F5 point's 0 still has to be 0), and against scipy where scipy has the statistic (spec 5.9).
  * Every expected value is read from a file: test/golden/pvalue/cases.json (`golden:capture pvalue`, from v1) and pvalue/scipy-reference.json (written by scipy-reference.py, never by hand).
  * The scipy file was produced from the repository root with
  *   uv run --no-project --with scipy==1.17.1 --python 3.13 python -I packages/core/test/golden/pvalue/scipy-reference.py packages/core/test/golden/pvalue
@@ -40,7 +42,7 @@ describe("pvalue.ts is v1's distribution code", () => {
     for (const c of fx.cases) counts[c.fn] = (counts[c.fn] ?? 0) + 1;
     expect(counts).toEqual({ pFromT: 80, pFromF: 42, pFromChi: 20, pFromZ: 6, normalCDF: 9, erf: 6, gammaln: 6, betai: 6, gammaq: 5 });
   });
-  for (const c of fx.cases) it(at(c), () => expect(fns[c.fn]!(...c.args)).toBe(c.out));
+  for (const c of fx.cases) it(at(c), () => expectGolden(fns[c.fn]!(...c.args), c.out, at(c)));
 });
 
 describe("pvalue.ts agrees with scipy where scipy has the statistic (spec §5.9)", () => {

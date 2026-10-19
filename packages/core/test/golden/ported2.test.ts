@@ -195,13 +195,13 @@ describe("v1import.ts reads what v1 exports", () => {
 });
 
 describe("v1locked.ts opens what v1 locks", () => {
-  type LockedFile = { locked: { app: string; v: number; locked: boolean; enc: { iter: number; z: number } }; plain: string; pass: string; node: string };
+  type LockedFile = { locked: { app: string; v: number; locked: boolean; enc: { iter: number; z: number } }; plain: string; pass: string };
   for (const [file, z] of [["locked-gzip", 1], ["locked-plain", 0]] as const) {
     it(file, async () => {
       const fx = readFixture<LockedFile>("v1locked", file);
       expect(fx.locked.enc.z).toBe(z); // v1 compressed the one file and not the other
       expect(fx.locked.enc.iter).toBe(600000); // the rounds v1 ships
-      expect(fx.node).toMatch(/^v/); // the Node the file was made on (the z = 1 ciphertext depends on its zlib)
+      expect(fx.node).toMatch(/^v/); // the Node the file was made on, from the fixture header (the z = 1 ciphertext depends on its zlib)
       const text = JSON.stringify(fx.locked);
       expect(isLockedV1Backup(text)).toBe(true);
       expect(await unlockV1Backup(text, fx.pass)).toEqual({ ok: true, text: fx.plain });

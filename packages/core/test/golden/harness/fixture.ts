@@ -3,20 +3,24 @@ import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { V1 } from "./v1";
 
-export type FixtureHeader = { engine: string; captured: string; v1: { build: string; sha256: string; lines: number } };
+/**
+ * Every fixture opens with this header. `node` is the Node version that ran the capture (process.version): a number computed through Math.exp or Math.log is exact only on the platform that
+ * computed it, so the golden tests hold computed numbers within a relative 1e-12 (harness/compare.ts, register row D-W1-16), and the header records which Node computed the fixture's digits.
+ */
+export type FixtureHeader = { engine: string; captured: string; node: string; v1: { build: string; sha256: string; lines: number } };
 export type Fixture<T> = FixtureHeader & T;
 export type FixtureStatus = "written" | "same" | "differs";
 
 const PACKAGE_DIR = fileURLToPath(new URL("../../../", import.meta.url));
 const GOLDEN_DIR = resolve(PACKAGE_DIR, "test/golden");
 const DATA_DIR = resolve(PACKAGE_DIR, "src/data");
-const HEADER_KEYS = ["engine", "captured", "v1"];
+const HEADER_KEYS = ["engine", "captured", "node", "v1"];
 
 /**
  * A plain object from either realm: its prototype is null or a realm's Object.prototype
  * (v1's objects come from the jsdom window, so `instanceof Object` or `=== Object.prototype` would be false).
  */
-function isPlainObject(v: unknown): v is Record<string, unknown> {
+export function isPlainObject(v: unknown): v is Record<string, unknown> {
   if (Object.prototype.toString.call(v) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(v) as object | null;
   return proto === null || Object.getPrototypeOf(proto) === null;
@@ -90,7 +94,7 @@ function today(): string {
 }
 
 function fixtureText(engine: string, captured: string, v1: V1, body: object): string {
-  const header: FixtureHeader = { engine, captured, v1: { build: v1.build, sha256: v1.sha256, lines: v1.lines } };
+  const header: FixtureHeader = { engine, captured, node: process.version, v1: { build: v1.build, sha256: v1.sha256, lines: v1.lines } };
   return JSON.stringify(encodeSpecial({ ...header, ...body }), null, 1) + "\n";
 }
 

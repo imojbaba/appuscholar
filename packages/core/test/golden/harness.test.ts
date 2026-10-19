@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
+import { expectGolden } from "./harness/compare";
 import { emitTables, encodeSpecial, readFixture, writeFixture } from "./harness/fixture";
 import type { V1 } from "./harness/v1";
 
@@ -17,7 +18,7 @@ describe("golden harness fixtures", () => {
     expect(new Set(fx.cases.map(c => c.fn)).size).toBe(20);
     for (const fn of ["pFromT", "pFromF", "pFromChi", "pFromZ", "normalCDF", "gammaln", "betai", "gammaq", "erf", "stkShapiro", "stkPtukey", "stkQtukey", "stkExactMW", "pwPower", "pwSolveN", "accItems", "pdScanText", "provHash", "aiuClassify", "ccNorm"])
       expect(fx.cases.filter(c => c.fn === fn).length).toBeGreaterThanOrEqual(3);
-    expect(fx.cases.find(c => c.fn === "pFromT" && c.args[0] === 2.15 && c.args[1] === 21)?.out).toBe(0.043360276354708106);
+    expectGolden(fx.cases.find(c => c.fn === "pFromT" && c.args[0] === 2.15 && c.args[1] === 21)?.out, 0.043360276354708106); // v1's computed p: within a relative 1e-12 (D-W1-16)
   });
   it("stats-demos: the 13 TG_DEMO datasets ran through statsRunNow and agree with the audit's capture", () => {
     const fx = readFixture<{ demos: Demo[] }>("stats-demos", "demos");
@@ -63,7 +64,8 @@ describe("writeFixture and emitTables", () => {
     expect(writeFixture(dir, "cases", { cases: [1, 2] }, v1, true)).toBe("differs");
     expect(log).toHaveBeenLastCalledWith(expect.stringMatching(/cases\.json differs at \$\.cases\[1\]: fixture \{"\$n":"NaN"\}, v1 now 2$/));
     expect(readFileSync(join(dir, "cases.json"), "utf8")).toBe(before);
-    expect(readFixture<{ cases: number[] }>(dir, "cases")).toEqual({ engine: dir, captured: "2026-10-17", v1: { build: "2026.10.13a", sha256: v1.sha256, lines: 13699 }, cases: [1, NaN] });
+    expect(readFixture<{ cases: number[] }>(dir, "cases")).toEqual({ engine: dir, captured: "2026-10-17", node: process.version, v1: { build: "2026.10.13a", sha256: v1.sha256, lines: 13699 }, cases: [1, NaN] });
+    expect(Object.keys(JSON.parse(readFileSync(join(dir, "cases.json"), "utf8")) as object)).toEqual(["engine", "captured", "node", "v1", "cases"]); // the header first, in this order
     expect(writeFixture(dir, "cases", { cases: [1, 2] }, v1, false)).toBe("written");
     expect(readFixture(dir, "cases").captured).toBe("2026-10-18");
   }));

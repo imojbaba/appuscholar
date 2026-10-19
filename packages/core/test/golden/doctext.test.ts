@@ -39,11 +39,12 @@ describe("the contract's edges and the capture files", () => {
   });
   it("textcontent.json covers the corpus ids, and en-in-numbers.json comes from the same Chromium run", () => {
     expect(tc.cases.map(c => c.id)).toEqual(corpus.map(c => c.id));
-    type Header = { engine: string; chromium: string; playwright: string; cases: unknown[] };
+    type Header = { engine: string; node: string; chromium: string; playwright: string; cases: unknown[] };
     const read = (file: string) => JSON.parse(readFileSync(new URL(`./doctext/${file}.json`, import.meta.url), "utf8")) as Header;
     const inner = read("innertext-chrome"), enIn = read("en-in-numbers");
     for (const h of [inner, enIn]) expect(h.engine).toBe("doctext");
-    expect([enIn.chromium, enIn.playwright]).toEqual([inner.chromium, inner.playwright]);
+    expect(inner.node).toMatch(/^v\d+\.\d+\.\d+$/); // the Node that ran the capture, as in every fixture header (D-W1-16)
+    expect([enIn.node, enIn.chromium, enIn.playwright]).toEqual([inner.node, inner.chromium, inner.playwright]);
     expect(enIn.cases.length).toBeGreaterThan(0);
   });
 });

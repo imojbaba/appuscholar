@@ -4,6 +4,7 @@ import { AP_HEADS, AP_NAME, AP_SAMPLE, AP_STAGES, AP_STOP, apBuild, apCheckQuote
 import type { ApDoc, ApNumber } from "../../src/analyse";
 import * as TABLES from "../../src/data/analyse-tables";
 import type { Paper } from "./analyse/capture";
+import { expectGolden } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
 
 /**
@@ -89,7 +90,13 @@ describe("analyse.ts is v1's Analyse-a-paper engine", () => {
   });
   for (const c of fx.picks) it(`apPick ${c.id} ${c.q.slice(0, 20)} (budget ${c.budget})`, () => expect(apPick(docOf(c.id), c.q, c.terms, c.budget)).toEqual(c.out));
   for (const c of fx.quotes) it(`apCheckQuote ${c.q.slice(0, 20)}`, () => expect(apCheckQuote(docOf(c.id), c.q)).toEqual(c.out));
-  for (const p of fx.papers) it(`apNumbers ${p.id}`, () => expect(apNumbers(docOf(p.id))).toEqual(p.numbers));
+  for (const p of fx.papers) it(`apNumbers ${p.id}`, () => {
+    // lo and hi are p values at the window's edges (pFromT, pFromF and pFromChi, through Math.exp and Math.log) and rep.h is 0.5 * Math.pow(10, -d): computed, so held with expectGolden (within a
+    // relative 1e-12, register row D-W1-16), label, op and ok exactly. rep.v is parseFloat of the text, the nearest double in every engine, so it is also held exactly.
+    const got = apNumbers(docOf(p.id));
+    expectGolden(got, p.numbers, `apNumbers ${p.id}`);
+    expect(got.map((x) => x.rep.v)).toEqual(p.numbers.map((x) => x.rep.v));
+  });
   for (const p of fx.papers) it(`apRefDois ${p.id}`, () => expect(apRefDois(docOf(p.id))).toEqual(p.dois));
   it("the sample paper's two statistics are judged ok (t(58) = 2.36, p = .022; r(58) = .31, p = .016)", () => expect(apNumbers(apBuild(AP_SAMPLE[0]!.split("\n")[0]!, [...AP_SAMPLE], "pdf")).map((x) => x.ok)).toEqual([true, true]));
   it("AP_HEADS source and flags equal v1's", () => {

@@ -32,13 +32,13 @@ function pinRandomAndClock(v1: V1): void {
 }
 
 /** bkEncrypt, then v1's own bkDecrypt (4032) on what it returned, so the recorded bundle is known to open under v1 itself. */
-async function lock(v1: V1, plain: string, z: 0 | 1): Promise<{ locked: Locked; plain: string; pass: string; node: string }> {
+async function lock(v1: V1, plain: string, z: 0 | 1): Promise<{ locked: Locked; plain: string; pass: string }> {
   const locked = await v1.call<Promise<Locked>>("bkEncrypt", plain, PASS);
   if (locked.enc.z !== z) throw new Error(`v1locked: bkEncrypt chose z = ${locked.enc.z}, wanted ${z}`);
   if (locked.enc.iter !== 600000) throw new Error(`v1locked: iter is ${locked.enc.iter}, v1 ships 600000`);
   const back = await v1.call<Promise<string>>("bkDecrypt", locked, PASS);
   if (back !== plain) throw new Error("v1locked: v1's bkDecrypt does not return the plain text it was given");
-  return { locked, plain, pass: PASS, node: process.version };
+  return { locked, plain, pass: PASS };
 }
 
 /**
@@ -46,8 +46,8 @@ async function lock(v1: V1, plain: string, z: 0 | 1): Promise<{ locked: Locked; 
  * one not (z = 0). The browser v1 ships for has CompressionStream; jsdom has neither it nor the Response that bkStream (4019) reads the result through, so for z = 1 the capture
  * installs Node's CompressionStream, DecompressionStream and Response on the window, and for z = 0 it sets CompressionStream to undefined (bkEncrypt then skips compression, 4026).
  * Without Response, bkEncrypt would fall back to z = 0 silently, which is why the capture checks `enc.z`.
- * The ciphertext of the z = 1 bundle also depends on Node's zlib, so each file records the Node it was made on (`node`, beside `locked`, which stays exactly what bkEncrypt returned):
- * a Node upgrade makes --check say "differs" at $.node, with v1 unchanged, and the test opens the committed file either way.
+ * The ciphertext of the z = 1 bundle also depends on Node's zlib, so the Node it was made on matters; the fixture header records it (`node`, as in every fixture: register row D-W1-16), and
+ * `locked` stays exactly what bkEncrypt returned. A Node upgrade makes --check say "differs" at $.node, with v1 unchanged, and the test opens the committed file either way.
  */
 export const v1locked: Engine = {
   name: "v1locked",

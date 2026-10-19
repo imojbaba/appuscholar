@@ -1,6 +1,7 @@
 {
  "engine": "pvalue",
- "captured": "2026-10-18",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
  "v1": {
   "build": "2026.10.13a",
   "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
