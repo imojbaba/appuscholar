@@ -36,7 +36,7 @@ export type ApNotesStore = {
   broken: boolean;
   /** v1's apNoteGet without its write: the paper's note, or undefined. */
   note(id: string): ApNote | undefined;
-  /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (it writes only citations and retraction_cache, v1 1964). */
+  /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (ap_notes is read-only there, v1 1964). */
   put(doc: { id: string; title: string }, fn: (n: ApNote) => void): boolean;
   /** apAcrossDel's delete (9981). */
   remove(id: string): boolean;

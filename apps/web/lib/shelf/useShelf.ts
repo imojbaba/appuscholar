@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { useVault } from "@/lib/vault/useVault";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { toast } from "@/components/ui/toast";
 import { EMPTY_PAPER, type ShelfEntry, type ShelfItem, type ShelfOps } from "./actions";
 
 export type PaperState = ProjectBlobState<ShelfPaper>;
@@ -27,7 +28,7 @@ async function sealNew(vault: BlobVault, id: string, json: string): Promise<{ bo
  */
 export async function putNewPaper(projectId: string, paperId: string, paper: ShelfPaper, vault: BlobVault, t: (k: string) => string): Promise<void> {
   const kind = shelfPaperKind(paperId);
-  // The pop-out writes only citations and retraction_cache (v1 1964): a paper is not stored from there.
+  // The guard (lib/popout/mode.ts); a shelf paper is writable everywhere (R29), so this only stops a kind the guard refuses.
   if (!blobWritable(kind)) throw new Error(t("sh2_could_not_be_read"));
   const id = blobId(projectId, kind), json = JSON.stringify(paper), path = blobPath(projectId, kind);
   const seal = async () => {
@@ -98,6 +99,9 @@ export function useShelf(): { projectId: string | null; index: ShelfIndex | null
   return { projectId, index: index.value, loading: index.loading, locked: index.locked, broken: !!index.broken, error: !!index.error, loadPaper };
 }
 
+/** New V2 copy (register row D-S2-17; ruling R15: an English constant): a pop-out does not store the matrix's columns (v1 refuses appu_shelf_cols there). */
+export const COLS_POPOUT = "Columns can be changed only in the writing window.";
+
 /** What the dialog holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */
 export type ShelfStore = {
   projectId: string | null;
@@ -107,8 +111,8 @@ export type ShelfStore = {
   /** The index's papers in v1's order (by date added, 11600) with their blobs. */
   items: ShelfItem[];
   ops: Omit<ShelfOps, "t" | "extract" | "setStatus" | "toast" | "now">;
-  /** An update of shelf_cols, R16-guarded. */
-  setCols(u: (prev: ShelfCols | null) => ShelfCols): void;
+  /** An update of shelf_cols, R16-guarded; false when nothing is stored (kept, or read-only in a pop-out, where it says so). */
+  setCols(u: (prev: ShelfCols | null) => ShelfCols): boolean;
 };
 
 /**
@@ -180,10 +184,11 @@ export function useShelfStore(): ShelfStore {
     entries: () => current.current.index.value ?? [],
     canWriteIndex: () => mayWrite("index", current.current.index.broken),
     updateIndex: (u) => {
-      if (!projectId) return false;
+      // A refused write never reports success (a pop-out's guard, lib/popout/mode.ts).
+      if (!projectId || !blobWritable("shelf_index")) return false;
       // Closed (or another project) while a paper was being stored: its entry goes through a client of its own, so no stored paper is left out of its index.
       if (!here()) { writeIndexDetached(projectId, u, () => vaultRef.current); return true; }
-      if (!mayWrite("index", current.current.index.broken)) return false;
+      if (current.current.index.readOnly || !mayWrite("index", current.current.index.broken)) return false;
       current.current.index.set(u);
       return true;
     },
@@ -193,7 +198,7 @@ export function useShelfStore(): ShelfStore {
     },
     updatePaper: (id, u) => {
       const c = clients.current.get(id);
-      if (!c || !mayWrite("paper:" + id, current.current.papers.get(id)?.broken)) return false;
+      if (!c || c.readOnly || !mayWrite("paper:" + id, current.current.papers.get(id)?.broken)) return false;
       c.set((prev) => u(prev ?? EMPTY_PAPER));
       return true;
     },
@@ -217,8 +222,11 @@ export function useShelfStore(): ShelfStore {
   }, [projectId, mayWrite, t, ensureClient]);
 
   const setCols = useCallback((u: (prev: ShelfCols | null) => ShelfCols) => {
-    if (!mayWrite("cols", cols.broken)) return;
+    // v1's pop-out refuses appu_shelf_cols silently (LS.set, 1967); here the student is told (register row D-S2-17).
+    if (cols.readOnly) { toast(COLS_POPOUT); return false; }
+    if (!mayWrite("cols", cols.broken)) return false;
     cols.set(u);
+    return true;
   }, [cols, mayWrite]);
 
   const map = useMemo(() => (papers.projectId === projectId ? papers.map : new Map<string, PaperState>()), [papers, projectId]);

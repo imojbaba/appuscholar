@@ -18,7 +18,13 @@ export function isPopout(): boolean {
 /** v1 POPOUT_WRITABLE (1964), `['appu_citations','appu_retraction_cache']`: the blob kinds of the two tools a pop-out shows. */
 export const POPOUT_WRITABLE: readonly BlobKind[] = ["citations", "retraction_cache"];
 
-/** v1 LS.set/LS.rm's guard (1967, 1969): in a pop-out, every other kind is read-only. */
+/**
+ * v1's Reading shelf keeps its papers (the list, each paper's text, highlights and cells) in IndexedDB `appu_shelf` (11520), which LS's guard never
+ * sees, so a v1 pop-out stores them (ruling R29); only its columns, `appu_shelf_cols` (11697), are a localStorage key and refused there.
+ */
+export const isShelfStoreKind = (kind: BlobKind): boolean => kind === "shelf_index" || kind.startsWith("shelf_paper:");
+
+/** v1 LS.set/LS.rm's guard (1967, 1969): in a pop-out, every kind but the two tools' own and the shelf's papers is read-only. */
 export function blobWritable(kind: BlobKind): boolean {
-  return !isPopout() || POPOUT_WRITABLE.includes(kind);
+  return !isPopout() || POPOUT_WRITABLE.includes(kind) || isShelfStoreKind(kind);
 }

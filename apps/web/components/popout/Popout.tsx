@@ -19,7 +19,7 @@ import { WorkspaceProvider, type DocumentSummary, type PendingAnalyse, type Proj
 /**
  * The pop-out window (v1 boot 13692-13696: `body.popout`, `showTool(POPOUT)`): one tool alone, the Citation Manager or Research, with no sidebar, dock,
  * document or editor. Any other `tool` shows v1's pop_unsupported. Its inserts go to the writing window (lib/popout/sync.ts); it writes only the
- * citations and the retraction cache (the guard in useProjectBlob). Register row D-S2-17.
+ * citations, the retraction cache and the Reading shelf's papers (the guard in the blob client, R29). Register row D-S2-17.
  */
 export function Popout({ tool }: { tool: string | undefined }) {
   const t = useT();

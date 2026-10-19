@@ -84,11 +84,11 @@ describe("the pop-out's write guard (v1 POPOUT_WRITABLE 1964)", () => {
     window.history.replaceState(null, "", "/popout?tool=cite");
     expect(isPopout()).toBe(true);
   });
-  it("writes only citations and retraction_cache there; everything is writable in the writing window", () => {
+  it("writes only citations, retraction_cache and the shelf's papers there (R29: v1's shelf is IndexedDB, outside the guard); everything is writable in the writing window", () => {
     expect(POPOUT_WRITABLE).toEqual(["citations", "retraction_cache"]);
     expect((["citations", "retraction_cache", "idea_intake", "refcheck_cache", "ap_notes", "shelf_paper:a1"] as BlobKind[]).map((k) => blobWritable(k))).toEqual([true, true, true, true, true, true]);
     window.history.replaceState(null, "", "/popout?tool=research");
     expect((["citations", "retraction_cache", "idea_intake", "refcheck_cache", "ap_notes", "rs_prefs", "shelf_index", "shelf_cols", "ap_cols", "shelf_paper:a1"] as BlobKind[]).map((k) => blobWritable(k)))
-      .toEqual([true, true, false, false, false, false, false, false, false, false]);
+      .toEqual([true, true, false, false, false, false, true, false, false, true]);
   });
 });

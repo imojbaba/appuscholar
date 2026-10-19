@@ -667,7 +667,7 @@ describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABL
     expect(heldBlobs.take(blobId("p1", "idea_intake"))).toBeFalsy();
   });
 
-  it.each(["refcheck_cache", "rs_prefs", "ap_notes", "shelf_index", "shelf_cols", "ap_cols"] as const)("in the pop-out %s sends nothing", async (kind) => {
+  it.each(["refcheck_cache", "rs_prefs", "ap_notes", "shelf_cols", "ap_cols"] as const)("in the pop-out %s sends nothing", async (kind) => {
     popout();
     const s = await mount(kind, "p1");
     await until(() => !s.b.loading);
@@ -684,6 +684,19 @@ describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABL
     expect(c.b.readOnly).toBe(false);
     act(() => { c.b.set([{ author: "Ng, A.", title: "T" }]); r.b.set({ "10.1/x": { r: false, t: 1 } }); });
     await until(() => putsTo("p1", "citations").length === 1 && putsTo("p1", "retraction_cache").length === 1);
+  });
+
+  it("in the pop-out the shelf's list and a paper write (R29: v1's IndexedDB shelf); its columns do not", async () => {
+    popout();
+    const i = await mount("shelf_index", "p1");
+    const p = await mount(shelfPaperKind("x"), "p1");
+    const c = await mount("shelf_cols", "p1");
+    await until(() => !i.b.loading && !p.b.loading && !c.b.loading);
+    expect([i.b.readOnly, p.b.readOnly, c.b.readOnly]).toEqual([false, false, true]);
+    act(() => { i.b.set([]); p.b.set({ pages: ["t"], notes: [], cells: {} }); c.b.set(["Age"]); });
+    await until(() => putsTo("p1", "shelf_index").length === 1 && putsTo("p1", shelfPaperKind("x")).length === 1);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(putsTo("p1", "shelf_cols")).toHaveLength(0);
   });
 
   it("the writing window writes every kind", async () => {
@@ -717,6 +730,43 @@ describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABL
     await until(() => (s.b.value as unknown[]).length === 2);
     expect(s.b.value).toEqual([A, B]);
     expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+  });
+
+  it("an edit made while a re-read is out lands on the fresh value and is sent", async () => {
+    const A = { author: "Ng, A.", title: "Stored" }, C = { author: "Li, C.", title: "From the pop-out" }, B = { author: "Ho, B.", title: "Added here meanwhile" };
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A, C]), keyVersion: 0, deks: [] }];
+    let answer: (() => void) | null = null;
+    h.api.mockImplementation((path: string, init?: RequestInit) => (!init?.method && path.endsWith("/citations") && !answer
+      ? new Promise((done) => { answer = () => done(fakeApi(path, init)); }) : fakeApi(path, init)));
+    act(() => { ch.deliver({ type: "blob", id: blobId("p1", "citations") }); });
+    await until(() => answer !== null);
+    act(() => { s.b.set((prev: unknown[] | null) => [...(prev ?? []), B]); });
+    await act(async () => { answer!(); });
+    await until(() => putsTo("p1", "citations").length === 1);
+    expect(JSON.parse((putsTo("p1", "citations")[0]!.body as { body: string }).body)).toEqual([A, C, B]);
+    expect(s.b.value).toEqual([A, C, B]);
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  it("an edit made while a re-read is out that then fails lands on what was shown and is sent", async () => {
+    const A = { author: "Ng, A.", title: "Stored" }, B = { author: "Ho, B.", title: "Added here meanwhile" };
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    let fail: (() => void) | null = null;
+    h.api.mockImplementation((path: string, init?: RequestInit) => (!init?.method && path.endsWith("/citations") && !fail
+      ? new Promise((_done, reject) => { fail = () => reject(new TypeError("Failed to fetch")); }) : fakeApi(path, init)));
+    act(() => { ch.deliver({ type: "blob", id: blobId("p1", "citations") }); });
+    await until(() => fail !== null);
+    act(() => { s.b.set((prev: unknown[] | null) => [...(prev ?? []), B]); });
+    await act(async () => { fail!(); });
+    await until(() => putsTo("p1", "citations").length === 1);
+    expect(JSON.parse((putsTo("p1", "citations")[0]!.body as { body: string }).body)).toEqual([A, B]);
+    expect(s.b.value).toEqual([A, B]);
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
   });
 
   it("a re-read that fails keeps what was shown", async () => {

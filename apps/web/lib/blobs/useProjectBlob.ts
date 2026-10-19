@@ -30,11 +30,11 @@ export type ProjectBlob<T> = ProjectBlobState<T> & {
   set(next: BlobUpdate<T>): void;
   /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server; false always when read-only. */
   flush(): Promise<boolean>;
-  /** set() sends nothing here: `opts.readOnly`, or the pop-out's guard (only citations and retraction_cache are written from a pop-out, v1 1964). */
+  /** set() sends nothing here: `opts.readOnly`, or the pop-out's guard (a pop-out writes only citations, retraction_cache and the shelf's papers, v1 1964 and R29). */
   readOnly: boolean;
 };
 export type ProjectBlobOptions = {
-  /** The value is read but set() is a no-op that holds nothing, and flush() resolves false. A pop-out makes every kind but citations and retraction_cache read-only on its own (blobWritable). */
+  /** The value is read but set() is a no-op that holds nothing, and flush() resolves false. A pop-out makes every other kind than citations, retraction_cache and the shelf's papers read-only on its own (blobWritable). */
   readOnly?: boolean;
 };
 
@@ -238,6 +238,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       });
     },
     flush,
+    /** set() is a no-op here (the pop-out's guard, or `readOnly`). */
+    readOnly: o.readOnly === true,
     set(next: BlobUpdate<T>) {
       if (o.readOnly) return;
       const op = toOp(next);
@@ -265,7 +267,13 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
         declined = true;
         await read();
         declined = wasDeclined;
-        if (!known) { known = true; value = was; deks = wasDeks; broken = wasBroken; lockedRead = false; error = false; }
+        if (!known) {
+          known = true; value = was; deks = wasDeks; broken = wasBroken; lockedRead = false; error = false;
+          // A set made while the re-read was out went into ops (no timer while declined): it lands on what was shown and is sent.
+          if (ops.length) { value = applyOps(ops, value); ops = []; if (value !== null) pending = { value }; }
+        }
+        // read() replays such a set onto the fresh value as pending; either way it is sent after the usual debounce.
+        if (pending && !timer && active) timer = setTimeout(() => { timer = null; void flush(); }, o.delayMs);
         emit();
         return true;
       });
@@ -321,8 +329,11 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
   });
 }
 
-/** v1's storage listener reacts to appu_citations and appu_retraction_cache only (7615): the two kinds a pop-out writes. */
-const syncedKind = (kind: BlobKind): boolean => POPOUT_WRITABLE.includes(kind);
+/**
+ * v1's storage listener reacts to appu_citations and appu_retraction_cache (7615), the two keys a pop-out writes. The shelf's list, which a pop-out
+ * also writes (R29), is one blob here where v1 kept one IndexedDB record per paper, so it is re-read the same way and a window does not save an old list over the other's.
+ */
+const syncedKind = (kind: BlobKind): boolean => POPOUT_WRITABLE.includes(kind) || kind === "shelf_index";
 
 type Tagged<T> = { key: string; s: ProjectBlobState<T> };
 
