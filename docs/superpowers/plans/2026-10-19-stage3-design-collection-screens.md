@@ -24,7 +24,7 @@
 - Tests: TDD per task; vitest for web, api and core; core goldens captured from v1 running for any new engine code; Playwright journeys on the pglite recipe (api and web on one `DATABASE_URL`).
 - Conventional commits; never commit `.env*`; never print secrets.
 
-## Rulings made in this plan (each also a register row; OJ can overturn)
+## Rulings made in this plan (approved by OJ on 2026-10-19; each becomes a register row with that approver)
 
 - **R1, rows stay in memory.** v1 never stores participant rows ("No participant rows persisted", chapter, cross-cutting). The lab keeps the paste box in memory; "Re-run on current data" uses whatever data is loaded under the same name, as v1. The Statistics Lab's v1 sentence "your data is never sent anywhere unless you tap Explain…" stays true. Storing encrypted datasets waits for the copilot door (Phase 6), where it is needed and where that sentence would change with Dr. Sharma. Cost if wrong: one blob kind and a copy change later.
 - **R2, result-chart bars from zero.** Register F27 left the result-chart approach to this wave. v1's `statsChart*` bars start above zero, which breaks BLUEPRINT §2 rule 14 and is listed by the chapter as a fix for the rebuild. Result bar charts here start at zero; F27 becomes "ruled". Cost if wrong: one Chart.js option.
