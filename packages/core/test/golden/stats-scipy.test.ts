@@ -110,4 +110,18 @@ describe("stats runners agree with scipy (spec §5.9)", () => {
     });
   }
   it("the loop above skips exactly the slow cases, which stats-slow.test.ts runs", () => expect(skipped).toEqual([...SLOW_CASES]));
+  it("D-W2-18 (approved): mregress-step1-categorical-3-levels's step table is an OLS of exactly block 1's two design columns, against numpy", () => {
+    // the reference fits step 1 on the design columns preds and cats add (k1 = 2: both dummies of the 3-level group), independently of the port's step1n
+    const rc = ref.cases.find((x) => x.id === "mregress-step1-categorical-3-levels")!;
+    const w = rc.ref!, n = w.n!, k = w.k!, k1 = w.k1!;
+    expect([k1, k]).toEqual([2, 3]);
+    const r = runCase(cases.get(rc.id)!);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    for (const key of ["k1", "r21", "adj1", "F1", "p1", "dR", "Fc", "pc"]) expect(Math.abs(r.values[key]! - w[key]!) <= Math.max(1e-6 * Math.abs(w[key]!), key === "pc" || key === "p1" ? 2 ** -53 : 0), `${key}: port ${r.values[key]}, numpy ${w[key]}`).toBe(true);
+    const nl = (x: number) => x.toFixed(3).replace(/^(-?)0\./, "$1.");
+    const rows = (r.blocks[0] as { rows: string[][] }).rows;
+    expect([rows[1]![2], rows[1]![3], rows[1]![5], rows[1]![6]]).toEqual([nl(w.r21!), nl(w.adj1!), w.F1!.toFixed(2), `${k1}, ${n - k1 - 1}`]);
+    expect([rows[2]![4], rows[2]![5], rows[2]![6]]).toEqual([nl(w.dR!), w.Fc!.toFixed(2), `${k - k1}, ${n - k - 1}`]);
+  });
 });

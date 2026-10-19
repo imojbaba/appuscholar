@@ -8,9 +8,9 @@ import { fmtP } from "../../src/statfmt";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles, readCorpus } from "./stats/capture";
 import { blockAsText, decodeText } from "./stats/render";
-import { goldenMode } from "./harness/compare";
+import { expectGolden, goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
-import { SLOW_CASES, expectSameAsV1 } from "./stats/check";
+import { SLOW_CASES, cellsOf, expectSameAsV1 } from "./stats/check";
 
 /**
  * The Statistics Lab (stats-core.ts, stats.ts and the runner modules) against v1 running: for every `test/golden/stats/<test>.json` (`golden:capture stats`), each case's CSV goes through
@@ -66,6 +66,22 @@ const REQUIRED: Record<string, string[]> = {
 };
 
 const skippedSlow: string[] = [];
+/** The one case whose step 1 v2 computes differently from v1 by an approved fix (register row D-W2-18): a 3-level categorical in step 1. */
+const DW2_18_CASE = "mregress-step1-categorical-3-levels";
+/** expectSameAsV1 for DW2_18_CASE: block 0 (the step table) must differ from v1's, the sentence must equal v1's up to its step sentence and differ in it, every other block equals v1's. */
+function expectSameAsV1ExceptStep1(c: CapturedRun, r: StatsResult, mode: ReturnType<typeof goldenMode>): void {
+  expect(c.toasts).toEqual([]);
+  expect(r.ok).toBe(true);
+  if (!r.ok) return;
+  const [head, step] = r.apa.split(" In step 1, "), [v1Head, v1Step] = c.apa!.split(" In step 1, ");
+  expect(head).toBe(v1Head);
+  expect(step).toBeDefined();
+  expect(step).not.toBe(v1Step);
+  expect(r.blocks.map((b) => b.kind)).toEqual(c.blocks.map((b) => b.kind));
+  expect(cellsOf(r.blocks[0]!)).not.toEqual(cellsOf(c.blocks[0]!));
+  r.blocks.forEach((b, i) => { if (i > 0) expectGolden(cellsOf(b), cellsOf(c.blocks[i]!), mode, `${c.id} block ${i} cells`); });
+}
+
 for (const file of fixtures) {
   describe(`stats: ${file}`, () => {
     const fx = load(file);
@@ -77,6 +93,9 @@ for (const file of fixtures) {
     });
     for (const c of fx.cases) {
       if (SLOW_CASES.includes(c.id)) { skippedSlow.push(c.id); continue; }
+      // Register row D-W2-18 (approved): v2 fits step 1 on every design column of block 1, so this one case's step table, its step sentence and the results text differ from v1's
+      // fixture by design; it is checked against v1 everywhere else, and against numpy in stats-scipy.test.ts, by the test "D-W2-18 (approved)" below
+      if (c.id === DW2_18_CASE) { it(`${c.id} (D-W2-18: equal to v1 except step 1)`, () => expectSameAsV1ExceptStep1(c, run(c), mode)); continue; }
       it(c.id, () => expectSameAsV1(c, run(c), mode));
     }
   });
@@ -460,10 +479,15 @@ describe("stats: two-way ANOVA and multiple regression (anova2, mregress)", () =
     expect(notes(find("mregress", "mregress-vif-high"))[1]).toContain(" A VIF of 10 or more means");
     expect(notes(find("mregress", "mregress-vif-moderate"))[1]).toContain(" A VIF above 5 means");
   });
-  it("D-W2-18 (proposed): step1n counts ticked columns, so a 3-level categorical in step 1 enters step 1 with its first dummy only (v1 reproduced exactly)", () => {
+  it("D-W2-18 (approved): v2 enters a 3-level categorical in step 1 with both its dummies; the fixture keeps v1's split, step 1 on the first dummy only", () => {
     const c = find("mregress", "mregress-step1-categorical-3-levels");
     expect(tables(c)[0]!.slice(1).map((r) => r[1])).toEqual(["group: Control (vs Online)", "+ group: Group (vs Online), age"]);
-    expect(run(c)).toMatchObject({ ok: true, values: { k: 3, k1: 1 } });
+    const r = run(c);
+    expect(r).toMatchObject({ ok: true, values: { k: 3, k1: 2 } });
+    const rows = r.ok ? (r.blocks[0] as { rows: string[][] }).rows : [];
+    expect(rows.slice(1).map((x) => x[1])).toEqual(["group: Control (vs Online), group: Group (vs Online)", "+ age"]);
+    expect(rows.slice(1).map((x) => x.slice(2))).not.toEqual(tables(c)[0]!.slice(1).map((x) => x.slice(2)));
+    expect(r.ok && r.apa).toContain(" In step 1, group: Control (vs Online), group: Group (vs Online) accounted for ");
   });
   it("mregress: the step values exist only with the step table; values are the numbers behind the cells", () => {
     for (const c of load("mregress").cases) {

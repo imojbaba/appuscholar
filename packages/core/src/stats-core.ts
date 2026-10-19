@@ -28,6 +28,10 @@ import { smean, stkShapiro, stkBrownForsythe, stkOLS } from "./statsmath";
      becomes `gv(ctx,'ref')||''`, `(posEl&&posEl.value)||''` becomes `gv(ctx,'pos')||''` and `posEl.value.trim()` `gv(ctx,'pos').trim()`; its `ticked(cls,skip)` reads
      `ctx.form.ticked[cls] ?? []`, called with the field ids ('preds', 'cats', 'preds2', 'cats2') where v1 passed the class names ('sfm_preds', ...), and drops v1's
      `parseInt(c.value,10)` because the form already holds numbers; the unused `refEl` and `posEl` bindings go;
+   - the one knowing difference from v1 in stkMRData (register row D-W2-18, approved by OJ 2026-10-19): `step1n` is the number of design columns of block 1,
+     `blk.filter(function(b){return b===1}).length`, where v1 (8937) counted the ticked step 1 columns `idxs1.length+cidx1.length`; `blk` is pushed once per design column in the
+     order addNum(idxs1,1), addCat(cidx1,1), addNum(idxs2,2), addCat(cidx2,2), so the block 1 columns lead and mregress's `m.xs.slice(0,k1)` is exactly step 1; the two counts differ
+     only when a categorical predictor of 3 or more levels (2 or more dummies) is in step 1, where v1 fitted step 1 on part of its dummies;
    - stkAssumpBlock returns blocks where v1 returned an HTML string: the heading "Assumption checks", one table (header row `[escHTML(what), 'N', 'Shapiro-Wilk W', 'p']`, then a row per
      item: v1's `<td colspan="2">` message is one cell), the Brown-Forsythe note when there is one, the message note (empty when there is no message, as v1's `<p class="desc"></p>`);
      a cell v1 wrote as `'<td>'+n+'</td>'` is `String(n)`, the same text;
@@ -245,7 +249,7 @@ export function stkMRData(ctx: StatsCtx, bin?: boolean): MRData{
     });
   }
   addNum(idxs1,1);addCat(cidx1,1);addNum(idxs2,2);addCat(cidx2,2);
-  return{posL:posL,negL:negL,dvI:dvI,idxs:idxs,cidxs:cidxs,y:y,xs:xs,labels:labels,isDummy:isDummy,blk:blk,hasStep2:(idxs2.length+cidx2.length)>0,step1n:idxs1.length+cidx1.length,refs:refs,dropped:dropped,err:err};
+  return{posL:posL,negL:negL,dvI:dvI,idxs:idxs,cidxs:cidxs,y:y,xs:xs,labels:labels,isDummy:isDummy,blk:blk,hasStep2:(idxs2.length+cidx2.length)>0,step1n:blk.filter(function(b){return b===1}).length,refs:refs,dropped:dropped,err:err};
 }
 
 /** The blocks' strings joined with nothing (a table's cells, a note's html, a heading's text, a list's items): the words statsResultsShow's safety net looks at. */

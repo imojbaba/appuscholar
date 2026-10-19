@@ -35,6 +35,10 @@ import type { StatsBlock, StatsCtx, StatsResult } from "./stats-core";
      F1, p1, dR, Fc, pc;
    - the chart code after statsResultsShow is not ported (F27): anova2's lab/mv/er arrays and statsChartInteraction (12928-12930), mregress's statsChartHistogram (12981); they read
      nothing that can throw.
+   - the one knowing difference from v1 in this file (register row D-W2-18, approved by OJ 2026-10-19): mregress's `const k1=m.step1n` (12955) reads stkMRData's step1n, which
+     is now the number of design columns in block 1 (stats-core.ts), not v1's count of ticked step 1 columns; so with a categorical of 3 or more levels in step 1, step 1 is fitted on
+     all its dummies (`m.xs.slice(0,k1)`), and `names.slice(0,k1)`, `names.slice(k1)`, `dfe1=n-k1-1`, `dk=k-k1`, the step table, its df cells and the step sentence follow; the
+     `k1<1` guard and every string are v1's;
    Per branch, the rest is v1's character for character, including:
    - anova2: the toasts in v1's order (the same column twice, fewer than 2 levels, more than 6, the empty cells with the count and 'combination has' / 'combinations have', stkAnova2's
      null for dfe < 1 or a singular design, `!(res.sse>0)`); the levels in stkAnova2Cells's first-seen order; `balanced` from the cell sizes in Object.keys order; the Type III note

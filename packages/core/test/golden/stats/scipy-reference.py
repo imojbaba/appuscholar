@@ -324,8 +324,8 @@ def mr_design(rows, form, bin=False):
     and every numeric predictor present and finite and every categorical predictor present, then the design in v1's order addNum(preds), addCat(cats), addNum(preds2), addCat(cats2).
     A categorical predictor's levels are in first-seen order over the rows kept; its reference level is the one `ref` names (`name=level`, parts split on , or ;, names and levels
     case-insensitive, the last level that matches), else the largest group, ties to the first seen; one 0/1 column for every other level, in level order.
-    The step 1 count is v1's step1n, the number of ticked step 1 columns (len(idxs1) + len(cidx1)), not the number of design columns they add: copied by design, so a case
-    with a 3-level categorical in step 1 agrees with v1's numbers, and register row D-W2-18 (proposed) is what reports that count to OJ.
+    The step 1 count k1 is the number of design columns added by preds and cats (register row D-W2-18, approved by OJ: v2 fits step 1 on all of block 1's columns, where v1's
+    step1n counted the ticked step 1 columns and so left part of a 3-or-more-level categorical's dummies out of step 1); the step 1 model is fitted on exactly those columns.
     With `bin` (logistic, stkMRData(true)) the outcome only has to be present, and y is 1 for the event and 0 otherwise: the event is the answer `pos` names (case-insensitive,
     the last match), else the last of the outcome's answers (first-seen order over the rows kept) that is 1, yes, true, y, present or agree (case-insensitive), else the second of
     the two answers sorted by number when both parse, else by text."""
@@ -401,9 +401,10 @@ def mr_design(rows, form, bin=False):
 
     add_num(idxs1)
     add_cat(cidx1)
+    k1 = len(xs)  # the design columns of block 1 (D-W2-18)
     add_num(idxs2)
     add_cat(cidx2)
-    return np.array(y), [np.array(x) for x in xs], dummy, len(idxs1) + len(cidx1), len(idxs2) + len(cidx2) > 0
+    return np.array(y), [np.array(x) for x in xs], dummy, k1, len(idxs2) + len(cidx2) > 0
 
 
 def ols(xs, y):
