@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { expectGolden, goldenMode } from "./harness/compare";
+import { expectGolden, expectSvgGolden, goldenMode } from "./harness/compare";
 import type { GoldenMode, GoldenPlatform } from "./harness/compare";
 import { decodeSpecial, readFixture } from "./harness/fixture";
 
@@ -162,5 +162,26 @@ describe("both branches on every machine, from forced headers, on the same fixtu
     expect(mode).toBe("exact");
     fails(ulpUp(value), value, "$", mode);
     passes(value, value, mode);
+  });
+});
+
+describe("expectSvgGolden: an SVG string exact where the fixture was captured, number-tolerant at 1e-12 elsewhere (D-W1-16, register row D-W2-23)", () => {
+  // its numbers, as SVG_NUMBER splits them: 0, 0, 640, 420, the 1 of x1, x, the 1 of y1, y, the 2, 78 and 6 of the colour, 1.5, -12.5, 1e-7, 8
+  const svg = (y: number, x = 64) => `<svg viewBox="0 0 640 420"><line x1="${x}" y1="${y}" stroke="#2a78d6" stroke-width="1.5"/><text x="-12.5" y="1e-7">n = 8</text></svg>`;
+  const y = 313.3333333333333;
+  it("exact mode passes the same string and rejects a one-ULP change of a raw coordinate", () => {
+    expect(() => expectSvgGolden(svg(y), svg(y), "exact")).not.toThrow();
+    expect(() => expectSvgGolden(svg(ulpUp(y)), svg(y), "exact")).toThrow();
+  });
+  it("tolerant mode accepts a 1e-13 relative change and a one-ULP change of a raw coordinate", () => {
+    expect(() => expectSvgGolden(svg(y * (1 + 1e-13)), svg(y), "tolerant")).not.toThrow();
+    expect(() => expectSvgGolden(svg(ulpUp(y)), svg(y), "tolerant")).not.toThrow();
+  });
+  it("tolerant mode rejects a 1e-9 relative change, an integer that moved, a skeleton change and a missing number", () => {
+    expect(() => expectSvgGolden(svg(y * (1 + 1e-9)), svg(y), "tolerant", "chart")).toThrow("chart: number 7 differs by");
+    expect(() => expectSvgGolden(svg(y, 65), svg(y), "tolerant")).toThrow("number 5 differs (two integers are compared exactly)");
+    expect(() => expectSvgGolden(svg(y).replace("stroke-width", "stroke-wide"), svg(y), "tolerant")).toThrow("the text around the numbers differs");
+    expect(() => expectSvgGolden(svg(y).replace(' y="1e-7"', ""), svg(y), "tolerant")).toThrow("the text around the numbers differs");
+    expect(() => expectSvgGolden(svg(y) + "7", svg(y) + "", "tolerant")).toThrow();
   });
 });

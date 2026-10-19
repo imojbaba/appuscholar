@@ -81,3 +81,33 @@ export function expectGolden<T>(actual: T, expected: NoInfer<T>, mode: GoldenMod
   const d = goldenDiff(actual, expected, mode);
   if (d !== null) expect.fail(d.actual, d.expected, `${label === undefined ? "" : `${label}: `}${d.path} ${d.why}`);
 }
+
+/** A number as an SVG or HTML string prints one: an optional minus, digits with an optional fraction (or a bare fraction), an optional exponent. */
+const SVG_NUMBER = /-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/g;
+
+/**
+ * Asserts that `actual`, an SVG (or HTML) string a port built by concatenating raw doubles, equals `expected`, the string v1 built, under D-W1-16 (register row D-W2-23):
+ * - "exact": the two strings are equal (toBe), as on the platform that captured the fixture;
+ * - "tolerant": both strings are split on SVG_NUMBER; the text between the numbers (the skeleton) must be identical, the two must print as many numbers, and each pair is held to
+ *   goldenDiff's number rule (two integers exactly, otherwise within 1e-12 relative with the 1e-300 floor; NaN, ±Infinity and −0 by Object.is). Digits inside a hex colour or a
+ *   name are numbers to the split too, and both sides split them the same way, so they are compared as equal integers.
+ * On a break it fails with `label`, the index of the number or the skeleton piece, and the two values.
+ */
+export function expectSvgGolden(actual: string, expected: string, mode: GoldenMode, label?: string): void {
+  const at = label === undefined ? "" : `${label}: `;
+  if (mode === "exact") {
+    expect(actual, label).toBe(expected);
+    return;
+  }
+  const nums = (s: string) => (s.match(SVG_NUMBER) ?? []).map(Number);
+  const skeleton = (s: string) => s.split(SVG_NUMBER);
+  const sa = skeleton(actual), se = skeleton(expected);
+  for (let i = 0; i < Math.max(sa.length, se.length); i++)
+    if (sa[i] !== se[i]) expect.fail(sa[i], se[i], `${at}the text around the numbers differs at piece ${i}: ${JSON.stringify(sa[i])} against ${JSON.stringify(se[i])}`);
+  const na = nums(actual), ne = nums(expected);
+  if (na.length !== ne.length) expect.fail(na.length, ne.length, `${at}prints ${na.length} numbers, the fixture ${ne.length}`);
+  for (let i = 0; i < ne.length; i++) {
+    const d = goldenDiff(na[i], ne[i], mode, `number ${i}`);
+    if (d !== null) expect.fail(d.actual, d.expected, `${at}${d.path} ${d.why}`);
+  }
+}

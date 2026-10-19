@@ -71,6 +71,7 @@ function specs(anova1: string): Spec[] {
   out.push({ id: "anova1-bar-ymin-neg2", csv: anova1, y: "score", g: "arm", type: "bar", yMin: "-2" });
   out.push({ id: "anova1-bar-ymax-50", csv: anova1, y: "score", g: "arm", type: "bar", yMax: "50" });
   out.push({ id: "anova1-hist-ymax-100", csv: anova1, y: "score", g: "arm", type: "hist", yMax: "100" });
+  out.push({ id: "anova1-hist-ymax-3-below-peak", csv: anova1, y: "score", g: "arm", type: "hist", yMax: "3" }); // the curve clipped at ysc.max and the ticks above it dropped
   out.push({ id: "anova1-hist-ymin-5-ignored", csv: anova1, y: "score", g: "arm", type: "hist", yMin: "5" });
   out.push({ id: "anova1-box-ymin-10-ymax-30", csv: anova1, y: "score", g: "arm", type: "box", yMin: "10", yMax: "30" });
   out.push({ id: "anova1-box-ymin-above-ymax", csv: anova1, y: "score", g: "arm", type: "box", yMin: "30", yMax: "10" });

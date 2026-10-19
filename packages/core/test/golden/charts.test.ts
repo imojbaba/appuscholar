@@ -8,13 +8,13 @@ import { statsParseText } from "../../src/intake";
 import type { StatsBlock } from "../../src/stats-core";
 import type { ChartCase, ChartDirect } from "./charts/capture";
 import { decodeText } from "./stats/render";
-import { expectGolden, goldenMode } from "./harness/compare";
+import { expectGolden, expectSvgGolden, goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
 
 /**
  * The Chart Studio (charts.ts) against v1's dialog (`golden:capture charts`, charts/capture.ts): every expected string and number is what v1 drew or returned. A case's svg is held to
- * VZ.svg by toBe (the coordinates come from the same arithmetic; register row D-W1-16 for the ones that pass through Math.exp or Math.log: the bar chart's 95% CI and the Q-Q plot's
- * theoretical quantiles are printed raw), its table blocks to #vzTable read back by cell text and, joined into v1's markup, to the string vzDraw assigned to #vzTable by toBe; its
+ * VZ.svg by expectSvgGolden (register rows D-W1-16 and D-W2-23: exact on the platform that captured the fixture; elsewhere the text around the numbers exact and each number within
+ * 1e-12 relative, since vzJit's Math.sin, vzNice's Math.log10, the bar chart's 95% CI through pFromT and the Q-Q plot's quantiles through normalCDF are printed raw), its table blocks to #vzTable read back by cell text and, joined into v1's markup, to the string vzDraw assigned to #vzTable by toBe; its
  * warning, caption, defaults and axis labels by toEqual. The direct calls by expectGolden. `tr` is v1's t() (2439): the Hindi string when the key is in I18N.hi, else I18N.en's, else the key.
  */
 
@@ -94,7 +94,7 @@ describe("charts: every case against v1's dialog", () => {
         return;
       }
       expect(r).not.toBeNull();
-      expect(r!.svg).toBe(c.svg);
+      expectSvgGolden(r!.svg, c.svg, mode, c.id);
       expectGolden(r!.table.map(cells), c.table.map(cells), mode, "table");
       expect(tableHtml(r!.table)).toBe(c.tableHtml);
       expect(r!.warn ? r!.warn : null).toEqual(c.warn);
@@ -106,7 +106,7 @@ describe("charts: every case against v1's dialog", () => {
     expect(c.given.vzBins).toBe("abc");
     expect(c.options.bins).toBe("");
     const gs = vzGroups(statsParseText(c.csv)!, c.yIdx!, c.gIdx);
-    expect(vzChart({ ...(c.options as VzOptions), bins: "abc" }, gs, trFor("en"))!.svg).toBe(c.svg);
+    expectSvgGolden(vzChart({ ...(c.options as VzOptions), bins: "abc" }, gs, trFor("en"))!.svg, c.svg, mode, c.id);
   });
   it("F16 (noted): the histogram's skew in its key note is Σ((x-m)/s)³/n (3858), not tgSkew's adjusted form", () => {
     const c = fx.cases.find((x) => x.id === "skewed-hist")!;
@@ -129,6 +129,11 @@ describe("charts: direct calls against v1's functions", () => {
   it("vzTCrit (through pFromT)", () => { for (const d of fx.direct.tcrit) expectGolden(vzTCrit(d.args[0] as number), d.out as number, mode, JSON.stringify(d.args)); });
   it("vzQNorm (through normalCDF)", () => { for (const d of fx.direct.qnorm) expectGolden(vzQNorm(d.args[0] as number), d.out as number, mode, JSON.stringify(d.args)); });
   it("vzEsc (v1's own: & < > \" escaped, ' left)", () => { for (const d of fx.direct.esc) expect(vzEsc(d.args[0])).toBe(d.out); });
+  it("vzChart draws nothing (null) for a type other than the four, as vzDraw's `ty==='box'||…` test does", () => {
+    const c = fx.cases[0]!;
+    const gs = vzGroups(statsParseText(c.csv)!, c.yIdx!, c.gIdx);
+    expect(vzChart({ ...(c.options as VzOptions), type: "pie" as VzType }, gs, trFor("en"))).toBeNull();
+  });
   it("vzChart gives null for no groups, for every type", () => {
     for (const type of types) expect(vzChart({ ...(fx.cases[0]!.options as VzOptions), type }, [], trFor("en"))).toBeNull();
   });

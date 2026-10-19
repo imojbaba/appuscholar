@@ -4,14 +4,14 @@ import type { PowerInput } from "../../src/power";
 import type { StatsBlock } from "../../src/stats-core";
 import type { PowerCase, PowerFooter, SimCase } from "./power/capture";
 import { blockAsText, decodeText } from "./stats/render";
-import { expectGolden, goldenMode } from "./harness/compare";
+import { expectGolden, expectSvgGolden, goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
 
 /**
  * The power calculator and the power simulator (power.ts) against v1's page (`golden:capture power`, power/capture.ts): every expected string and number is what v1 showed or computed.
  * A calculator case is the raw field strings; its blocks are held to #pwOut's by text and by cell (stats/render.ts's blockAsText and decodeText, as the stats tests hold #statsResults) and
  * also as HTML, its sentence and its error by toBe, its values (v1's own pwSolveN, pwPower and pwSolveEffect returns, and the integers v1 printed) by expectGolden. A simulator case is
- * parsed by simulatorParse (plRun 9009) and run by simulatorCompute; its svg, banner and warning by toBe, simulatorHtml by toBe against the whole string v1 assigned to #plOut, its paragraphs by toEqual, window._plLast by expectGolden (register row D-W1-16:
+ * parsed by simulatorParse (plRun 9009) and run by simulatorCompute; its banner and warning by toBe, its svg and simulatorHtml (against the whole string v1 assigned to #plOut) by expectSvgGolden (register row D-W2-23: the bins come from plNorm's Math.log and Math.cos draws; every coordinate is toFixed(1), and `+tx(d)+4` prints a raw sum), its paragraphs by toEqual, window._plLast by expectGolden (register row D-W1-16:
  * the seeded draws go through Math.log, Math.cos and Math.sqrt).
  */
 
@@ -104,16 +104,16 @@ describe("power: the simulator against v1's page", () => {
       const r = simulatorCompute(p.d, p.n, p.k, p.seed);
       if (c.warn !== null) {
         expect(r).toEqual({ ok: false, warn: c.warn });
-        expect(simulatorHtml(r)).toBe(c.html);
+        expectSvgGolden(simulatorHtml(r), c.html, mode, `${c.id} html`);
         return;
       }
       expect(r.ok).toBe(true);
       if (!r.ok) return;
       expect(r.banner).toBe(c.banner);
-      expect(r.svg).toBe(c.svg);
+      expectSvgGolden(r.svg, c.svg!, mode, `${c.id} svg`);
       expect(r.texts).toEqual(c.texts);
       expectGolden(r.last, c.last!, mode, `${c.id} last`);
-      expect(simulatorHtml(r)).toBe(c.html);
+      expectSvgGolden(simulatorHtml(r), c.html, mode, `${c.id} html`);
       expect(r.sig.length).toBe(c.last!.sig);
       expect(r.rate).toBe(Math.round(100 * r.sig.length / p.k));
       expect(r.bins.reduce((s, b) => s + b.s + b.u, 0)).toBe(p.k);

@@ -2703,6 +2703,88 @@
    "threw": null
   },
   {
+   "id": "anova1-hist-ymax-3-below-peak",
+   "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+   "lang": "en",
+   "yIdx": 1,
+   "gIdx": 0,
+   "options": {
+    "type": "hist",
+    "palette": "color",
+    "title": "",
+    "showPts": true,
+    "showN": true,
+    "err": "ci",
+    "bins": "",
+    "yMin": "",
+    "yMax": "3",
+    "yLabel": "score",
+    "xLabel": "score"
+   },
+   "fig": "1",
+   "given": {
+    "vzBins": "",
+    "vzFig": "1",
+    "vzYMin": "",
+    "vzYMax": "3"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 420\" width=\"640\" height=\"420\" style=\"max-width:100%;height:auto\" font-family=\"Arial, Helvetica, sans-serif\" role=\"img\" aria-label=\"Histogram of score\"><rect width=\"640\" height=\"420\" fill=\"#ffffff\"/><line x1=\"64\" y1=\"20\" x2=\"64\" y2=\"358\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"59\" y1=\"358\" x2=\"64\" y2=\"358\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"55\" y=\"362\" text-anchor=\"end\" font-size=\"12\" fill=\"#333\">0</text><line x1=\"59\" y1=\"245.33333333333334\" x2=\"64\" y2=\"245.33333333333334\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"55\" y=\"249.33333333333334\" text-anchor=\"end\" font-size=\"12\" fill=\"#333\">1</text><line x1=\"59\" y1=\"132.66666666666669\" x2=\"64\" y2=\"132.66666666666669\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"55\" y=\"136.66666666666669\" text-anchor=\"end\" font-size=\"12\" fill=\"#333\">2</text><line x1=\"59\" y1=\"20\" x2=\"64\" y2=\"20\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"55\" y=\"24\" text-anchor=\"end\" font-size=\"12\" fill=\"#333\">3</text><text transform=\"rotate(-90)\" x=\"-189\" y=\"16\" text-anchor=\"middle\" font-size=\"13\" fill=\"#1a1a1a\">Frequency</text><line x1=\"64\" y1=\"358\" x2=\"620\" y2=\"358\" stroke=\"#333\" stroke-width=\"1.5\"/><rect x=\"65\" y=\"20\" width=\"90.66666666666666\" height=\"338\" fill=\"#2a78d6\" fill-opacity=\"0.8\" stroke=\"none\" rx=\"2\"/><rect x=\"157.66666666666666\" y=\"-318\" width=\"90.66666666666666\" height=\"676\" fill=\"#2a78d6\" fill-opacity=\"0.8\" stroke=\"none\" rx=\"2\"/><rect x=\"250.33333333333331\" y=\"-318\" width=\"90.66666666666669\" height=\"676\" fill=\"#2a78d6\" fill-opacity=\"0.8\" stroke=\"none\" rx=\"2\"/><rect x=\"343\" y=\"20\" width=\"90.66666666666663\" height=\"338\" fill=\"#2a78d6\" fill-opacity=\"0.8\" stroke=\"none\" rx=\"2\"/><rect x=\"435.66666666666663\" y=\"20\" width=\"90.66666666666674\" height=\"338\" fill=\"#2a78d6\" fill-opacity=\"0.8\" stroke=\"none\" rx=\"2\"/><rect x=\"528.3333333333334\" y=\"20\" width=\"90.66666666666663\" height=\"338\" fill=\"#2a78d6\" fill-opacity=\"0.8\" stroke=\"none\" rx=\"2\"/><polyline fill=\"none\" stroke=\"#1a1a1a\" stroke-width=\"2\" stroke-dasharray=\"6 4\" points=\"64.0,184.2 70.9,170.1 77.9,155.4 84.9,140.1 91.8,124.1 98.8,107.6 105.7,90.4 112.6,72.7 119.6,54.6 126.6,36.0 133.5,20.0 140.4,20.0 147.4,20.0 154.4,20.0 161.3,20.0 168.3,20.0 175.2,20.0 182.1,20.0 189.1,20.0 196.1,20.0 203.0,20.0 209.9,20.0 216.9,20.0 223.9,20.0 230.8,20.0 237.8,20.0 244.7,20.0 251.6,20.0 258.6,20.0 265.5,20.0 272.5,20.0 279.5,20.0 286.4,20.0 293.4,20.0 300.3,20.0 307.3,20.0 314.2,20.0 321.1,20.0 328.1,20.0 335.0,20.0 342.0,20.0 349.0,20.0 355.9,20.0 362.9,20.0 369.8,20.0 376.8,20.0 383.7,20.0 390.6,20.0 397.6,20.0 404.5,20.0 411.5,20.0 418.5,20.0 425.4,20.0 432.4,20.0 439.3,20.0 446.3,20.0 453.2,20.0 460.1,20.0 467.1,20.0 474.0,20.0 481.0,24.1 488.0,42.9 494.9,61.3 501.9,79.3 508.8,96.8 515.8,113.8 522.7,130.1 529.6,145.9 536.6,161.0 543.5,175.4 550.5,189.2 557.5,202.2 564.4,214.6 571.4,226.3 578.3,237.4 585.3,247.7 592.2,257.4 599.1,266.4 606.1,274.9 613.0,282.7 620.0,289.9\"/><line x1=\"64\" y1=\"358\" x2=\"64\" y2=\"363\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"64\" y=\"377\" text-anchor=\"middle\" font-size=\"12\" fill=\"#333\">10</text><line x1=\"218.44444444444446\" y1=\"358\" x2=\"218.44444444444446\" y2=\"363\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"218.44444444444446\" y=\"377\" text-anchor=\"middle\" font-size=\"12\" fill=\"#333\">15</text><line x1=\"372.8888888888889\" y1=\"358\" x2=\"372.8888888888889\" y2=\"363\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"372.8888888888889\" y=\"377\" text-anchor=\"middle\" font-size=\"12\" fill=\"#333\">20</text><line x1=\"527.3333333333334\" y1=\"358\" x2=\"527.3333333333334\" y2=\"363\" stroke=\"#333\" stroke-width=\"1.5\"/><text x=\"527.3333333333334\" y=\"377\" text-anchor=\"middle\" font-size=\"12\" fill=\"#333\">25</text><text x=\"342\" y=\"412\" text-anchor=\"middle\" font-size=\"13\" fill=\"#1a1a1a\">score</text></svg>",
+   "tableHtml": "<p class=\"desc\" style=\"margin:6px 0\">Bars count scores in each range. Dashed curve = the normal curve with the same mean and spread. Skewness = 0.42 (0 is symmetric; beyond about 1 or below -1 is clearly lopsided).</p><table class=\"stats-table\"><tr><th>Group</th><th>n</th><th>M</th><th>SD</th><th>Mdn</th><th>Q1</th><th>Q3</th><th>Min</th><th>Max</th></tr><tr><td>All</td><td>24</td><td>17.83</td><td>4.73</td><td>17.00</td><td>14.00</td><td>21.25</td><td>11.00</td><td>27.00</td></tr></table>",
+   "table": [
+    {
+     "kind": "note",
+     "html": "Bars count scores in each range. Dashed curve = the normal curve with the same mean and spread. Skewness = 0.42 (0 is symmetric; beyond about 1 or below -1 is clearly lopsided)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "n",
+       "M",
+       "SD",
+       "Mdn",
+       "Q1",
+       "Q3",
+       "Min",
+       "Max"
+      ],
+      [
+       "All",
+       "24",
+       "17.83",
+       "4.73",
+       "17.00",
+       "14.00",
+       "21.25",
+       "11.00",
+       "27.00"
+      ]
+     ]
+    }
+   ],
+   "warn": null,
+   "caption": {
+    "n": 1,
+    "title": "Distribution of score",
+    "note": "The dashed curve is a normal distribution with the same mean and standard deviation as the data."
+   },
+   "typed": false,
+   "fields": {
+    "title": "Distribution of score",
+    "note": "The dashed curve is a normal distribution with the same mean and standard deviation as the data.",
+    "xl": "score",
+    "yl": "score"
+   },
+   "selects": {
+    "yName": "score",
+    "gName": "arm",
+    "gLabel": "arm"
+   },
+   "nodata": null,
+   "threw": null
+  },
+  {
    "id": "anova1-hist-ymin-5-ignored",
    "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
    "lang": "en",

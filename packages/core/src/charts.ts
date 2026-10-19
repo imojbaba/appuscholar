@@ -33,7 +33,10 @@ export { VZ_COL, VZ_GRAY, VZ_I18N };
    - vzTableHTML becomes vzTableBlock, a table block whose first row is the header cells and then one row per group, each cell the string v1 put between the tags (vzEsc'd text, the n,
      the six toFixed(2) numbers); each chart returns `{ svg, table, warn? }` where `table` is v1's `key+vzTableHTML(rows)` as blocks: the `<p class="desc" style="margin:6px 0">` key a note
      of its innerHTML (vzKey(text), the note of vzEsc(text)), then the table block; vzBar returns `warn` ('' when there is none, as v1 does) and vzBox, vzHist and vzQQ none;
-   - vzChart(o, gs, tr) is vzDraw's dispatch `{box:vzBox,bar:vzBar,hist:vzHist,qq:vzQQ}[ty]`, and returns null where vzDraw shows vz_nodata (no groups);
+   - vzChart(o, gs, tr) is vzDraw's dispatch `{box:vzBox,bar:vzBar,hist:vzHist,qq:vzQQ}[ty]` behind its `ty==='box'||…` test, and returns null where vzDraw draws nothing
+     (another type) or shows vz_nodata (no groups);
+   - vzGroups is called for every type: vzDraw reads #vzG for the histogram and the Q-Q plot too, although vzSync hides the grouping select for them (vzGWrap), so with a grouping
+     column picked the rows whose group cell is empty are dropped from those charts as well; the panel must pass the same gIdx for hist and qq as the select holds;
    - vzHist's `a` (#vzYMin, read and never used: the histogram's axis starts at 0) is dropped (no-unused-vars); `new Array(k).fill(0)` is typed `new Array<number>(k)`. */
 
 export type VzType = "box" | "bar" | "hist" | "qq";
@@ -241,9 +244,16 @@ export function vzQQ(gs: VzGroup[],o: VzOptions,tr: VzTr): VzChart {
   g+=vzXLabel(F,o.xLabel)+'</svg>';
   return{svg:g,table:[vzKey(tr('vz_qq_key')),vzTableBlock([{name:'All',s:s}],tr)]};
 }
-/** vzDraw's dispatch (3727-3731): null where vzDraw shows t('vz_nodata') instead of a chart (no groups). */
+/**
+ * vzDraw's dispatch (3727-3736), in its order: a type other than the four draws nothing (null), then the chart function is looked up, then no groups gives null where vzDraw shows
+ * t('vz_nodata') instead of a chart (the caller has already run vzGroups, which vzDraw runs between the lookup and that check).
+ */
 export function vzChart(o: VzOptions,gs: VzGroup[],tr: VzTr): VzChart | null {
-  const fn={box:vzBox,bar:vzBar,hist:vzHist,qq:vzQQ}[o.type];
-  if(!gs.length)return null;
-  return fn(gs,o,tr);
+  const ty=o.type;
+  if(ty==='box'||ty==='bar'||ty==='hist'||ty==='qq'){
+    const fn={box:vzBox,bar:vzBar,hist:vzHist,qq:vzQQ}[ty];
+    if(!gs.length)return null;
+    return fn(gs,o,tr);
+  }
+  return null;
 }
