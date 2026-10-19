@@ -1,8 +1,8 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, type JSX } from "react";
 import { plain, plainText, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
-import { toolLabelKey } from "@/lib/tools";
+import { BUILT_IN, toolLabelKey, type ToolId } from "@/lib/tools";
 import { openPopout } from "@/lib/popout/sync";
 import { AiPane } from "@/components/tools/AiPane";
 import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
@@ -14,6 +14,17 @@ import { ResearchPanel } from "@/components/tools/research/ResearchPanel";
 import { StubPanel } from "@/components/tools/StubPanel";
 import { StageGuide } from "./StageGuide";
 import { useWorkspace } from "./WorkspaceContext";
+
+type Chat = ReturnType<typeof useChatLog>;
+/** The panel each built-in tool mounts. BUILT_IN and these keys are the same set (pinned in dock.test.tsx); every other tool renders StubPanel. */
+export const PANELS: Partial<Record<ToolId, (p: { chat: Chat }) => JSX.Element>> = {
+  idea: () => <IdeaPanel />,
+  psych: () => <HelpersPanel />,
+  research: () => <ResearchPanel />,
+  analyse: () => <AnalysePanel />,
+  cite: () => <CitePanel />,
+  chat: ({ chat }) => <ChatPanel chat={chat} />
+};
 
 const MIN_W = 320;
 const MAX_W = 760;
@@ -110,7 +121,7 @@ export function Dock() {
         ) : (
           <>
             <StageGuide />
-            {activeTool === "idea" ? <IdeaPanel /> : activeTool === "psych" ? <HelpersPanel /> : activeTool === "chat" ? <ChatPanel chat={chat} /> : activeTool === "cite" ? <CitePanel /> : activeTool === "research" ? <ResearchPanel /> : activeTool === "analyse" ? <AnalysePanel /> : <StubPanel id={activeTool} />}
+            {(BUILT_IN.includes(activeTool) ? PANELS[activeTool]?.({ chat }) : undefined) ?? <StubPanel id={activeTool} />}
           </>
         )}
       </div>

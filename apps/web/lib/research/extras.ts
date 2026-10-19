@@ -1,4 +1,4 @@
-import { oaConnected, rsCsvText, type RsFilter, type RsPaper } from "@appuscholar/core";
+import { oaConnected, QUICK_READ_MIN_CHARS, rsCsvText, type RsFilter, type RsPaper } from "@appuscholar/core";
 import type { PendingAnalyse } from "@/components/workspace/WorkspaceContext";
 import { filterActive, type ConnectedBox } from "./useSearch";
 
@@ -11,9 +11,6 @@ import { filterActive, type ConnectedBox } from "./useSearch";
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
-/** v1's limit, in rsAnalyse (8410) as in apLoad's abstract check (9884): fewer characters than this once white space is removed is no abstract. */
-const ABSTRACT_MIN = 150;
-
 /**
  * rsAnalyse (8407-8419): the abstract with v1's head (title, authors, year, venue, then "Abstract") is kept for Analyse a paper as an
  * abstract-only load (v1's apLoad(title, [head+ab], 'abstract', false)); the tool opens and v1's toast says what kind of read it is. With no
@@ -21,7 +18,7 @@ const ABSTRACT_MIN = 150;
  */
 export function analysePaper(p: RsPaper, d: { keep(v: PendingAnalyse): void; showTool(id: "analyse"): void; toast(msg: string): void; t: T }): boolean {
   const ab = String(p.abstract || "").trim();
-  if (ab.replace(/\s+/g, "").length < ABSTRACT_MIN) { d.toast(p.oaUrl ? d.t("rs2_no_abstract_came_with") : d.t("rs2_no_abstract_came_with_2")); return false; }
+  if (ab.replace(/\s+/g, "").length < QUICK_READ_MIN_CHARS) { d.toast(p.oaUrl ? d.t("rs2_no_abstract_came_with") : d.t("rs2_no_abstract_came_with_2")); return false; }
   // v1 8411, as written: 'Abstract' is the head's last line (a literal of v1's script, kept in English as v1 does in every language).
   const head = p.title + "\n" + (p.authors || "") + (p.year ? " (" + p.year + ")" : "") + (p.venue ? ". " + p.venue : "") + "\nAbstract\n";
   d.keep({ title: p.title, pages: [head + ab], src: "abstract" });
