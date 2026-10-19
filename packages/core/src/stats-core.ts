@@ -48,12 +48,25 @@ export type StatsTestDef = { readonly label: string; readonly fields: readonly S
 /** v1's STAT_TESTS (11750-11777), as emitted: the label, the column fields and the extra text fields of each of the 26 tests, in v1's order. */
 export const STAT_TESTS: Readonly<Record<StatsTestKey, StatsTestDef>> = STAT_TESTS_TABLE;
 
-/** What the Statistics Lab form held when Run was pressed: `values[id]` is `#sf_<id>`'s value, `ticked[id]` the column indexes of the checked `.sfm_<id>` boxes in column order. */
+/**
+ * What the Statistics Lab form held when Run was pressed: `values[id]` is `#sf_<id>`'s value, `ticked[id]` the column indexes of the checked `.sfm_<id>` boxes in column order.
+ * - `ticked[id]` must be in column order (ascending), as v1's querySelectorAll read the boxes: stkMRData builds its design columns and `labels` in that order, so a panel that keeps the
+ *   order in which the boxes were ticked changes the coefficient order and the table.
+ * - A select's value is the column index as a string ('0', '1', ...); an empty select is '', which parseInt makes NaN, so the runner throws and runStats returns the catch toast.
+ */
 export type StatsForm = { values: Record<string, string>; ticked: Record<string, number[]> };
 /** One run: the parsed data, the form, and the count of entries left out because they are not a number (v1's `window._statsSkipped`). */
 export type StatsCtx = { data: ParsedData; form: StatsForm; skipped: number };
 
+/**
+ * One piece of what v1 put into #statsResults. A table's cells, a note's `html` and a list's items are HTML fragments as v1 built them: labels went through escHTML (`&amp;`, `&lt;`,
+ * `&quot;`, `&#39;`), pCell's `&lt; .001`, `<b>`, `<sub>`; render them as HTML, never as text, and never escape them again. A heading's `text` is plain text.
+ */
 export type StatsBlock = { kind: "table"; rows: string[][] } | { kind: "note"; html: string } | { kind: "heading"; text: string } | { kind: "list"; items: string[] };
+/**
+ * A result v1 showed. `blocks` are HTML fragments as StatsBlock says; `apa` is plain text (v1 escapes it on display, `escHTML(apa)` at 11997), so it is escaped when rendered and
+ * inserted as text. `values` holds the raw numbers behind the cells and the sentence (not toFixed'd strings), possibly ±Infinity (pearson-perfect's t); `skipped` is the "left out" count.
+ */
 export type StatsOk = { ok: true; test: StatsTestKey; apa: string; blocks: StatsBlock[]; skipped: number; values: Record<string, number> };
 export type StatsFail = { ok: false; test: StatsTestKey; reason: "toast"; toast: string } | { ok: false; test: StatsTestKey; reason: "undefined"; blocks: StatsBlock[] };
 export type StatsResult = StatsOk | StatsFail;

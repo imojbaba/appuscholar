@@ -19,7 +19,9 @@ export { QUAL_PALETTE };
      confirm text; asking, unwrapping the spans, storing and the toast are the panel's;
    - qualPassageText(raw) is qualFindPassages' `(span.textContent||'').trim()` and `if(txt)`: the trimmed text, null when it is empty;
    - qualBuildMarkdown takes the codes (v1's qualCodesGet()) and passagesOf (v1's qualFindPassages: every tagged span of that code, in document order, as { doc, text }).
-   - `!` on qualNextColor's indexed read (noUncheckedIndexedAccess): the modulo keeps the index in range for a count of 0 or more. */
+   - `!` on qualNextColor's indexed read (noUncheckedIndexedAccess): the modulo keeps the index in range for a count of 0 or more.
+   Caution: qualDescendantIds, and so qualDeleteCascade, recurse through parentId with no cycle guard, as v1's do, so a code whose parent chain cycles (a self-parent included)
+   recurses until the stack overflows. v1's own prompts never make one, but a stored or imported code list can hold one: the panel must reject such a list before calling them. */
 
 export type QualCode = { id: string; name: string; parentId: string | null; color: string };
 export type QualPassage = { doc: string; text: string };

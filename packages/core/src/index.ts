@@ -50,7 +50,7 @@ export type { PdKind, PdFound, PdChoice, PdTransform } from "./pdscan";
 export { STAT_TESTS, statsColVals, statsGroupBy, stkIsBinaryCol, stkBinData, stkBinom5, sig, stkAssumpBlock, stkAssumpFor, stkAnova2Cells, stkMRData, finishResult } from "./stats-core";
 export type { StatsTestKey, StatsForm, StatsCtx, StatsBlock, StatsResult, StatsOk, StatsFail, StatsTestDef, StatsField, StatsFieldType, StatsExtra, BinData, Anova2Cells, MRData, MRRef } from "./stats-core";
 export { runStats } from "./stats";
-export { runTtestInd, runTtestPaired, runAnova1, runTukey, runRegression, runPearson } from "./stats-means";
+export { runDesc, runTtest1, runTtestInd, runTtestPaired, runAnova1, runTukey, runRegression, runPearson } from "./stats-means";
 export { runMannwhitney, runWilcoxon, runKruskal, runSpearman, runWelchAnova } from "./stats-ranks";
 export { runChisq, runGof, runMcnemar, runCochran, runFriedman } from "./stats-counts";
 export { runAnova2, runMregress } from "./stats-factorial";
