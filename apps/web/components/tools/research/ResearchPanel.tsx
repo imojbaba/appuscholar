@@ -61,6 +61,7 @@ export function ResearchPanel() {
 
   const addDeps = (): AddDeps => ({
     lib: library.lib, style: library.style, update: library.update, toast, t,
+    known: !library.loading && !library.locked, whenRead: library.flush,
     seedRetraction: (doi, flag) => retrCacheSet(retr.set, doi, flag, Date.now())
   });
   const actionsFor = (p: RsPaper): CardActions => ({

@@ -187,7 +187,23 @@ describe("Rank by fit (rsRank 8220-8234)", () => {
     await expect(rankPapers(papers, "q", { field: "psychology", t, callAI: async () => { throw new Error("Your API key was rejected."); } })).rejects.toThrow("Your API key was rejected.");
   });
 
-  it("a ranked search sets the sort to fit and writes the disclosure; a thrown ranking says it failed", async () => {
+  it("a superseded ranking sends no further batch", async () => {
+    let current = true, n = 0;
+    const out = await rankPapers(papers, "q", { field: "psychology", t, isCurrent: () => current, callAI: async () => { n++; current = false; return reply(12, () => 2); } });
+    expect(n).toBe(1);
+    expect(out.scored).toBe(12);
+  });
+
+  it("a superseded search writes nothing after the newer one began and returns null", async () => {
+    const c = FX.searches.find((x) => x.name === "oa-rank")!;
+    let current = true;
+    const { d, log } = deps({ isCurrent: () => current, callAI: async () => { current = false; return reply(12, () => 3); } });
+    expect(await runSearch(input(c.in), d)).toBeNull();
+    expect(log.statuses).toEqual(["🔎 Searching…", "🔎 22 papers found. Reading titles and abstracts to rank them…"]);
+    expect(log.ai).toHaveLength(0);
+  });
+
+  it("a ranked search sets the sort to fit and writes the disclosure; a thrown ranking says it failed (callAI's sentence, register D-S2-12)", async () => {
     const c = FX.searches.find((x) => x.name === "oa-rank")!;
     let k = 0;
     const scored = deps({ callAI: async () => reply(12, () => (k++ % 2 ? 3 : 1)) });
@@ -253,7 +269,7 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
   function make(lib: core.CitationEntry[] = [], updateOk = true) {
     const log = { toasts: [] as string[], seeds: [] as Array<[string, boolean]>, next: null as core.CitationEntry[] | null, inserted: [] as core.Formatted[] };
     const d: AddDeps & { insert(f: core.Formatted): void } = {
-      lib, style: "apa", t,
+      lib, style: "apa", t, known: true, whenRead: async () => true,
       update: (fn) => { if (!updateOk) return false; log.next = fn(lib); return true; },
       seedRetraction: (doi, flag) => { log.seeds.push([doi, flag]); },
       toast: (m) => { log.toasts.push(m); },
@@ -285,11 +301,34 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
     expect(log.next).toBeNull();
     expect(log.seeds).toEqual([]);
   });
-  it("added while the library is unread, a title the stored library holds is not added twice", () => {
+  it("added while the library is unread, a title the stored library holds is not added twice: once read, 'Already in your library', no seed", async () => {
     const stored = [{ author: "X, Y", title: "Growth mindset and grades" }];
-    const log = { next: null as core.CitationEntry[] | null };
-    addResult(oaPaper, { lib: [], style: "apa", t, toast: () => {}, seedRetraction: () => {}, update: (fn) => { log.next = fn(stored); return true; } });
+    const log = { next: null as core.CitationEntry[] | null, toasts: [] as string[], seeds: 0 };
+    let read!: (ok: boolean) => void;
+    const whenRead = () => new Promise<boolean>((r) => { read = r; });
+    // the blob applies the update to a stand-in while unread, then to the stored library once it is read
+    let apply!: () => void;
+    addResult(oaPaper, { lib: [], style: "apa", t, known: false, whenRead, toast: (m) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; },
+      update: (fn) => { fn([]); apply = () => { log.next = fn(stored); }; return true; } });
+    expect(log.toasts).toEqual([]);
+    apply();
+    read(true);
+    await new Promise((r) => setTimeout(r, 0));
     expect(log.next).toEqual(stored);
+    expect(log.toasts).toEqual(["Already in your library"]);
+    expect(log.seeds).toBe(0);
+  });
+  it("added while unread and new: once read, the seed and v1's toast; a read still declined says nothing", async () => {
+    const log = { toasts: [] as string[], seeds: 0 };
+    const base = { lib: [], style: "apa" as const, t, known: false, toast: (m: string) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; }, update: (fn: (p: core.CitationEntry[]) => core.CitationEntry[]) => { fn([]); return true; } };
+    addResult(oaPaper, { ...base, whenRead: async () => true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(log.toasts).toEqual(["Added to citation library ✓ — check author formatting before you submit"]);
+    expect(log.seeds).toBe(1);
+    addResult(oaPaper, { ...base, whenRead: async () => false });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(log.toasts).toHaveLength(1);
+    expect(log.seeds).toBe(1);
   });
   it("Insert citation saves quietly, then inserts with the library's number and toasts rs_inserted", () => {
     const { d, log } = make([{ author: "A, B", title: "Other", year: "2000" }]);

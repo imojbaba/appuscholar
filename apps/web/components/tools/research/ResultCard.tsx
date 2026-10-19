@@ -63,7 +63,7 @@ export function ResultCard({ p, i, ticked, open, insertReady, onTick, onToggleAb
           <div className="row">
             <Button variant="primary" size="sm" data-testid="rs-insert" disabled={!insertReady} onClick={actions.insert}>{t("rs_insert_cite")}</Button>
             <Button variant="ghost" size="sm" data-testid="rs-add" onClick={actions.add}>{t("rs2_citation_library")}</Button>
-            {p.url && <Button variant="ghost" size="sm" data-testid="rs-open" onClick={() => { window.open(p.url, "_blank"); }}>{t("rs2_open_source")}</Button>}
+            {p.url && <Button variant="ghost" size="sm" data-testid="rs-open" onClick={() => { window.open(p.url, "_blank", "noopener"); }}>{t("rs2_open_source")}</Button>}
             {p.oaUrl && <Button variant="ghost" size="sm" data-testid="rs-free" onClick={() => { window.open(p.oaUrl, "_blank", "noopener"); }}>{"📄 " + t("oa_free_btn")}</Button>}
             {oaId && <Button variant="ghost" size="sm" data-testid="rs-connected" onClick={actions.connected}>{t("rs2_connected_papers")}</Button>}
             <Button variant="ghost" size="sm" data-testid="rs-quick" title={t("rs2_one_line_summary_kind_title")} onClick={actions.quick}>{t("rs2_quick_read_3")}</Button>

@@ -328,6 +328,31 @@ describe("Research: Rank by fit (rsRank 8220-8234, the fold 8402-8403)", () => {
     expect((set.mock.calls[0]![0] as (p: unknown) => unknown)({ rank: false, other: 1 })).toEqual({ rank: true, other: 1 });
   });
 
+  it("two overlapping ranked searches: the first stops calling the AI once the second begins, and the second's results stay", async () => {
+    let release!: (v: string) => void;
+    const reply = (prompt: string, score: number) => JSON.stringify({ scores: Array.from({ length: (prompt.match(/^\[\d+\] TITLE:/gm) ?? []).length }, (_, k) => ({ id: k + 1, score, reason: "R" })) });
+    h.callAI.mockImplementationOnce(() => new Promise<string>((r) => { release = r; }));
+    h.callAI.mockImplementation(async (...a: unknown[]) => reply(a[0] as string, 3));
+    await mount();
+    const c = run("oa-rank");
+    type("rsTopic", c.in.topic);
+    tick(field("rsSrcPubmed"), false);
+    tick(field("rsRank"), true);
+    await click(tid("rs-find"));
+    await until(() => h.callAI.mock.calls.length === 1);
+    // the second search, while the first waits on its first batch
+    await click(tid("rs-find"));
+    await until(() => tid("rs-status")!.textContent === "22 papers found · ranked by fit to your question (22 of 22 scored, about " + tid("rs-status")!.textContent!.split("about ")[1]);
+    expect(h.callAI).toHaveBeenCalledTimes(3);
+    const second = tid("rs-status")!.textContent;
+    // the first search's batch comes back (with no scores): it neither ranks on nor writes
+    await act(async () => { release(reply(String(h.callAI.mock.calls[0]![0]), 0)); await new Promise((r) => setTimeout(r, 20)); });
+    expect(h.callAI).toHaveBeenCalledTimes(3);
+    expect(tid("rs-status")!.textContent).toBe(second);
+    expect(cards()[0]!.querySelector('[data-testid="rs-fit"]')!.textContent).toMatch(/^Fit 3\/3/);
+    expect(tid("rs-fold")).toBeNull();
+  });
+
   it("a stored rank preference ticks the box on mount (fieldInit 2511)", async () => {
     h.blobs.rs_prefs = blob({ rank: true });
     await mount();

@@ -48,8 +48,10 @@ export type SearchDeps = ResearchAiDeps & {
   oaKey: string | null;
   toast(msg: string): void;
   setStatus(text: string): void;
-  /** The search has started: the old results and the ticked papers' actions go (8293-8294). */
+  /** The search has started: the old results and the ticked papers' actions go (8293-8294). From here on it is the current search. */
   begin(): void;
+  /** False once a newer search has begun: this one then writes nothing more and stops ranking (no further AI call). */
+  isCurrent?(): boolean;
   /** 8306: the rank box is remembered at each search. */
   persistRank(rank: boolean): void;
 };
@@ -59,7 +61,8 @@ export type SearchOutcome = { papers: RsPaper[]; sort: SortMode; status: string 
 /**
  * researchSearch (8283-8330). Refusals first, with v1's toasts and status sentences; then both sources at once (OpenAlex then PubMed, v1's job
  * order), 25 and 15 papers when ranking, else 8 and 6, with the ticked related terms; a source that fails is named in the status, the other's
- * papers are kept; the two lists are merged in job order and de-duplicated by core; ticked "Rank by fit" ranks them (rankPapers). Null when refused.
+ * papers are kept; the two lists are merged in job order and de-duplicated by core; ticked "Rank by fit" ranks them (rankPapers). Null when refused,
+ * and null (with nothing written after it) when a newer search began meanwhile.
  */
 export async function runSearch(input: SearchInput, d: SearchDeps): Promise<SearchOutcome | null> {
   const q = input.topic.trim();
@@ -67,14 +70,16 @@ export async function runSearch(input: SearchInput, d: SearchDeps): Promise<Sear
   if (q.length > TOPIC_MAX) { d.setStatus(d.t("rs2_that_search_is_too")); return null; }
   if (!/[\p{L}\p{N}]/u.test(q)) { d.setStatus(d.t("rs2_use_some_words_or")); return null; }
   if (!input.oa && !input.pm) { d.toast(d.t("rs2_pick_at_least_one")); return null; }
-  d.setStatus(d.t("rs2_searching"));
   d.begin();
+  const live = () => !d.isCurrent || d.isCurrent();
+  d.setStatus(d.t("rs2_searching"));
   const { design, terms, rank } = input;
   d.persistRank(rank);
   const jobs: Array<Promise<{ source: string; papers: RsPaper[]; error?: string; fellBack?: true }>> = [];
   if (input.oa) jobs.push(oaSearch(d.fetch, { q, terms, design, perPage: rank ? 25 : 8, key: d.oaKey ?? undefined }).then((r) => ({ source: "OpenAlex", ...r })));
   if (input.pm) jobs.push(pmSearch(d.fetch, { q, terms, design, retmax: rank ? 15 : 6 }).then((r) => ({ source: "PubMed", ...r })));
   const outcomes = await Promise.all(jobs);
+  if (!live()) return null;
   let merged: RsPaper[] = [];
   const failed: string[] = [];
   // v1 shares one fellBack flag between the two sources (8296).
@@ -87,8 +92,10 @@ export async function runSearch(input: SearchInput, d: SearchDeps): Promise<Sear
   let papers = merged, note = "";
   if (rank && merged.length) {
     d.setStatus(rankingStatus(d.t, merged.length));
-    try { const rr = await rankPapers(merged, q, d); papers = rr.papers; note = rankNote(d.t, rr, merged.length); }
+    // v1 shows the error's message (8320); here it is callAI's sentence for the student (register D-S2-12).
+    try { const rr = await rankPapers(merged, q, { ...d, isCurrent: live }); papers = rr.papers; note = rankNote(d.t, rr, merged.length); }
     catch (e) { note = rankFailedNote(d.t, (e instanceof Error && e.message) || "error"); }
+    if (!live()) return null;
   }
   const sort: SortMode = rank && papers.some((x) => x.rel) ? "fit" : "relevance";
   const status = statusLine(d.t, { count: merged.length, termsCount: terms.length, fellBack, design, designLabel: input.designLabel, rankNote: note, failed });
@@ -125,6 +132,8 @@ const INITIAL: ResearchState = {
   original: [], sort: "relevance", ticked: new Set(), actions: false, open: new Set()
 };
 let state: ResearchState = INITIAL;
+/** The newest search's number: a search that is not the newest writes nothing more. */
+let searchGen = 0;
 const listeners = new Set<() => void>();
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
 const read = () => state;
@@ -158,6 +167,8 @@ export function useSearch(opts: { rankStored: boolean; persistRank(rank: boolean
 
   /** researchSearch, on the topic in the box (or `topic`, the selection bubble's text, 7655). */
   const search = useCallback(async (topic?: string) => {
+    // This search's turn: taken when it begins (a refused press does not stop the one running).
+    let gen = -1;
     const cur = getResearch();
     const q = (topic ?? cur.topic).trim();
     const design = cur.design;
@@ -168,10 +179,11 @@ export function useSearch(opts: { rankStored: boolean; persistRank(rank: boolean
       {
         callAI, field, t, toast, fetch: f, oaKey, persistRank,
         setStatus: (status) => setResearch({ status }),
-        begin: () => setResearch({ original: [], ticked: new Set(), actions: false, open: new Set() })
+        begin: () => { gen = ++searchGen; setResearch({ original: [], ticked: new Set(), actions: false, open: new Set() }); },
+        isCurrent: () => gen === searchGen
       }
     );
-    if (out) setResearch({ original: out.papers, sort: out.sort, status: out.status, ticked: new Set(), actions: false, open: new Set() });
+    if (out && gen === searchGen) setResearch({ original: out.papers, sort: out.sort, status: out.status, ticked: new Set(), actions: false, open: new Set() });
   }, [callAI, field, t, oaKey, persistRank, opts.rankStored]);
 
   const suggest = useCallback(() => suggestTerms(getResearch().topic, {

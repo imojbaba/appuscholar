@@ -194,11 +194,14 @@ export type ResearchAiDeps = {
  * rsRank (v1 8220-8234): the papers in batches of 12, each batch's prompt from core's buildRankPrompt (its words counted as v1 counts them, the
  * prompt split on white space), each reply read by rsRankParse. A batch whose call fails or whose reply gives no score counts as failed; a key,
  * 401, 403, quota or limit error on the first batch stops the ranking (the caller reports "ranking failed"). Scores land on copies of the papers.
+ * `isCurrent`, when given, is asked before each batch: false stops the loop (the search was superseded).
  */
-export async function rankPapers(list: RsPaper[], q: string, d: ResearchAiDeps): Promise<{ papers: RsPaper[]; scored: number; words: number; failed: number }> {
+export async function rankPapers(list: RsPaper[], q: string, d: ResearchAiDeps & { isCurrent?(): boolean }): Promise<{ papers: RsPaper[]; scored: number; words: number; failed: number }> {
   const papers = list.map((p) => ({ ...p }));
   let words = 0, scored = 0, failed = 0;
   for (let i = 0; i < papers.length; i += 12) {
+    // A newer search has begun: no more of this one's batches go to the AI.
+    if (d.isCurrent && !d.isCurrent()) break;
     const batch = papers.slice(i, i + 12);
     const built = buildRankPrompt(d.field, q, batch);
     words += built.prompt.split(/\s+/).length;

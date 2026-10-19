@@ -14,19 +14,33 @@ export type AddDeps = {
   update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean;
   /** retrCacheSet on the project's retraction cache. */
   seedRetraction(doi: string, flag: boolean): void;
+  /** The stored library has been read (not loading, not locked): `lib` is what is stored, and an update is applied to it at once. */
+  known: boolean;
+  /** Reads the library (useLibrary().flush); true once it has been read and the update applied and sent. Used when `known` is false. */
+  whenRead(): Promise<boolean>;
   toast(msg: string): void;
   t(key: string, vars?: Record<string, string | number>): string;
 };
 
-/** rsAddToLibrary(i, quiet): the entry saved (or the one already there) and the library with it; null when nothing could be saved. */
+/**
+ * rsAddToLibrary(i, quiet): the entry saved (or the one already there) and the library with it; null when nothing could be saved.
+ * The duplicate check runs on the stored library inside the update. When the panel's copy is unread (a locked vault), the toast and the
+ * retraction seed wait until the library is read and say what happened there: "Already in your library" and no seed when the title was
+ * stored already; nothing when the read is still declined (the update is held and re-checked at the next unlock).
+ */
 export function addResult(p: RsPaper, d: AddDeps, quiet = false): { entry: CitationEntry; lib: CitationEntry[] } | null {
   const entry = rsEntryFromResult(p, d.style);
   const dup = d.lib.find((e) => e.title === entry.title);
   if (dup) { if (!quiet) d.toast(d.t("rs2_already_in_your_library")); return { entry: dup, lib: d.lib }; }
-  // Checked again on the stored library: added before it was read, a title already there is still not added twice.
-  if (!d.update((prev) => (prev.some((e) => e.title === entry.title) ? prev : [...prev, entry]))) return null;
-  if (entry.doi && p.source === "OpenAlex") d.seedRetraction(entry.doi, !!p.retracted);
-  if (!quiet) d.toast(p.retracted ? d.t("retr_added_warn") : d.t("rs2_added_to_citation_library_2"));
+  // Pure (the blob may apply it more than once, to a stand-in while unread): it records whether the stored library held the title.
+  let stored = false;
+  if (!d.update((prev) => { stored = prev.some((e) => e.title === entry.title); return stored ? prev : [...prev, entry]; })) return null;
+  const done = () => {
+    if (stored) { if (!quiet) d.toast(d.t("rs2_already_in_your_library")); return; }
+    if (entry.doi && p.source === "OpenAlex") d.seedRetraction(entry.doi, !!p.retracted);
+    if (!quiet) d.toast(p.retracted ? d.t("retr_added_warn") : d.t("rs2_added_to_citation_library_2"));
+  };
+  if (d.known) done(); else void d.whenRead().then((ok) => { if (ok) done(); }, () => {});
   return { entry, lib: [...d.lib, entry] };
 }
 
