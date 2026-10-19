@@ -494,3 +494,79 @@ describe("notePut is apNotePut (9895) as an update", () => {
     expect(notePut(null, doc, () => {})).toEqual({ [doc.id]: { stages: {}, card: {}, title: SAMPLE_TITLE } });
   });
 });
+
+describe("stored notes not read yet, locked or not openable are never shown as empty (Task 12's rule: unread is not empty)", () => {
+  async function openAcross() { const d = $("#apAcrossBox") as HTMLDetailsElement; await act(async () => { d.open = true; d.dispatchEvent(new Event("toggle")); }); }
+  const stored = (id: string) => ({ a1: { stages: { design: { mine: "Saved design words" } }, card: { verdict: "Saved verdict" }, title: "Paper one" }, [id]: { stages: { gap: { mine: "Saved gap words" } }, card: { weak: "Saved weakness" }, title: SAMPLE_TITLE } });
+
+  it("locked: the locked line in place of the cards, no field to type in, nothing written; once the vault opens the saved words are there, unchanged", async () => {
+    h.blobs.ap_notes = { value: null, locked: true };
+    await mount();
+    load("sample@apSample");
+    const id = getAp().doc!.id;
+    await openAcross();
+    expect($("#apAcross")!.textContent).toBe(E.vault_ap_locked);
+    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
+    await openTab("card");
+    expect(tid("ap-card")!.textContent).toBe("Paper card. Your own words come first. Edit freely; it saves as you type, in this browser." + E.vault_ap_locked);
+    expect($("#apC_weak")).toBeNull();
+    expect($("#apCardBtn")).toBeNull();
+    await openTab("walk");
+    const box = $("#apTry") as HTMLTextAreaElement;
+    expect([box.readOnly, box.value, ($("#apShowBtn") as HTMLButtonElement).disabled, tid("ap-notes-locked")!.textContent]).toEqual([true, "", true, E.vault_ap_locked]);
+    typeIn(box, "New words over nothing seen");
+    expect(h.sets).toEqual([]);
+    expect(getAp().tryDraft).toEqual({});
+    // The vault opens: the stored notes are read, as they were.
+    await act(async () => { h.blobs.ap_notes = { value: stored(id) }; for (const l of h.listeners) l(); });
+    expect(($("#apTry") as HTMLTextAreaElement).value).toBe("Saved gap words");
+    expect(tid("ap-notes-locked")).toBeNull();
+    await openTab("card");
+    expect(($("#apC_weak") as HTMLTextAreaElement).value).toBe("Saved weakness");
+    expect(notes()).toEqual(stored(id));
+    expect($("#apAcross tbody")!.textContent).toContain("Saved design words");
+  });
+
+  it("being read: neither the empty sentences nor a field, and no locked line", async () => {
+    h.blobs.ap_notes = { value: null, loading: true };
+    await mount();
+    load("sample@apSample");
+    await openAcross();
+    expect($("#apAcross")!.textContent).toBe("");
+    await openTab("card");
+    expect(tid("ap-card")!.textContent).toBe("Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.");
+    expect($("#apC_notes")).toBeNull();
+    await openTab("walk");
+    expect(($("#apTry") as HTMLTextAreaElement).readOnly).toBe(true);
+    typeIn($("#apTry") as HTMLTextAreaElement, "x");
+    expect(h.sets).toEqual([]);
+  });
+
+  it("broken, the student keeps it: the broken line, the card's typed words stay in their boxes (memory only), the walk's reply is shown without ✓ (only a stored reply has one, v1 11302)", async () => {
+    h.blobs.ap_notes = { value: null, broken: true };
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    await mount();
+    load("sample@apSample");
+    await openAcross();
+    expect($("#apAcross p")!.textContent).toBe(E.vault_ap_broken);
+    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
+    await openTab("card");
+    expect(tid("ap-notes-broken")!.textContent).toBe(E.vault_ap_broken);
+    typeIn($("#apC_strengths") as HTMLTextAreaElement, "S");
+    typeIn($("#apC_strengths") as HTMLTextAreaElement, "Strong");
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(h.sets).toEqual([]);
+    expect(($("#apC_strengths") as HTMLTextAreaElement).value).toBe("Strong");
+    expect(tid("ap-notes-broken")).not.toBeNull();
+    // The download is the card as the student sees it.
+    await click($("#apCardBtn"));
+    expect(await blobText(h.download.mock.calls[0]!)).toContain("STRENGTHS\nStrong\n\n");
+    await openTab("walk");
+    h.callAI.mockResolvedValue(FX.walks[0]!.reply);
+    await click($("#apShowBtn"));
+    await until(() => !getAp().busy);
+    expect(tid("ap-walk-reply")).not.toBeNull();
+    expect(tid("ap-stages")!.querySelectorAll("button")[0]!.textContent).toBe("1");
+    expect(h.sets).toEqual([]);
+  });
+});

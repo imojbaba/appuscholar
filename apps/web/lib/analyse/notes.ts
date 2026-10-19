@@ -25,6 +25,15 @@ export function notePut(prev: ApNotes | null, doc: { id: string; title: string }
 export type ApNotesStore = {
   /** The stored notes (with the writes made here), {} while none is known. */
   all: ApNotes;
+  /**
+   * The stored notes are not known yet: being read, locked (the student has not opened the vault), or the read failed. Nothing is shown as empty and nothing can be written meanwhile, so
+   * words typed into a box that only looks empty never replace stored ones (Task 12's rule: unread is not empty).
+   */
+  unread: boolean;
+  /** Unread because the vault is locked (the panels say so: vault_ap_locked). */
+  locked: boolean;
+  /** The stored notes do not open on this device (the panels say so: vault_ap_broken; the first write asks first, R16). */
+  broken: boolean;
   /** v1's apNoteGet without its write: the paper's note, or undefined. */
   note(id: string): ApNote | undefined;
   /** apNotePut: false when no project is open or the student kept a broken blob. */
@@ -36,6 +45,12 @@ export type ApNotesStore = {
   /** apAcrossColToggle, stored. */
   toggleCol(k: string, on: boolean): boolean;
 };
+
+/**
+ * A blob whose stored value is not known yet: still loading, or its read was locked or failed with nothing read (useProjectBlob's `locked` and `error` also describe a save held or failed
+ * after a read, when the value is known; then the value is shown). With no project open nothing is read and nothing can be written (put refuses), so it counts as read.
+ */
+const unread = (b: { value: unknown; loading: boolean; locked: boolean; error?: boolean }): boolean => b.loading || ((b.locked || !!b.error) && b.value === null);
 
 /** The two blobs of the project the workspace has open (or the scratch project), as one store. */
 export function useApNotes(projectId: string | null): ApNotesStore {
@@ -56,22 +71,24 @@ export function useApNotes(projectId: string | null): ApNotesStore {
   const all = useMemo(() => notes.value ?? {}, [notes.value]);
   const { set: setNotes, broken: notesBroken } = notes;
   const { set: setCols, broken: colsBroken, value: colsValue } = cols;
+  const notesUnread = unread(notes);
+  const colsUnread = unread(cols);
   const put = useCallback((doc: { id: string; title: string }, fn: (n: ApNote) => void) => {
-    if (!projectId || !mayWrite("ap_notes", notesBroken)) return false;
+    if (!projectId || notesUnread || !mayWrite("ap_notes", notesBroken)) return false;
     setNotes((prev) => notePut(prev, doc, fn));
     return true;
-  }, [projectId, mayWrite, notesBroken, setNotes]);
+  }, [projectId, notesUnread, mayWrite, notesBroken, setNotes]);
   const remove = useCallback((id: string) => {
-    if (!projectId || !mayWrite("ap_notes", notesBroken)) return false;
+    if (!projectId || notesUnread || !mayWrite("ap_notes", notesBroken)) return false;
     setNotes((prev) => { const next = { ...(prev ?? {}) }; delete next[id]; return next; });
     return true;
-  }, [projectId, mayWrite, notesBroken, setNotes]);
+  }, [projectId, notesUnread, mayWrite, notesBroken, setNotes]);
   const toggleCol = useCallback((k: string, on: boolean) => {
-    if (!projectId || !mayWrite("ap_cols", colsBroken)) return false;
+    if (!projectId || colsUnread || !mayWrite("ap_cols", colsBroken)) return false;
     setCols((prev) => apAcrossColToggle(apAcrossCols(prev), k, on));
     return true;
-  }, [projectId, mayWrite, colsBroken, setCols]);
+  }, [projectId, colsUnread, mayWrite, colsBroken, setCols]);
   const colList = useMemo(() => apAcrossCols(colsValue), [colsValue]);
   const note = useCallback((id: string) => all[id], [all]);
-  return { all, note, put, remove, cols: colList, toggleCol };
+  return { all, unread: notesUnread, locked: notesUnread && notes.locked, broken: !!notesBroken, note, put, remove, cols: colList, toggleCol };
 }

@@ -117,6 +117,9 @@ export const V2_STRINGS = {
   vault_shelf_broken_confirm: { en: "This part of your saved Reading shelf cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का यह हिस्सा इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
   // Analyse a paper: stored paper cards (the ap_notes blob) or a stored choice of the cards' columns (ap_cols) that does not open on this device, confirmed before the first write
   // replaces it (ruling R16). DRAFT Hindi.
+  // …and while the stored paper cards cannot be read: locked (shown in place of the cards, nothing can be typed until the vault opens) or not openable on this device. DRAFT Hindi.
+  vault_ap_locked: { en: "Your saved paper cards are locked. Unlock your vault to read them and save your changes.", hi: "आपके सहेजे हुए पेपर कार्ड बंद हैं। इन्हें पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
+  vault_ap_broken: { en: "Your saved paper cards cannot be opened on this device. Nothing was changed.", hi: "आपके सहेजे हुए पेपर कार्ड इस डिवाइस पर नहीं खुल सकते। कुछ भी बदला नहीं गया।" },
   vault_ap_broken_confirm: { en: "Your saved paper cards cannot be opened on this device. Saving now replaces them. Save anyway?", hi: "आपके सहेजे हुए पेपर कार्ड इस डिवाइस पर नहीं खुल सकते। अभी सहेजने से वे बदल जाएँगे। फिर भी सहेजें?" },
   vault_ap_cols_broken_confirm: { en: "Your saved choice of columns cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "कॉलम का आपका सहेजा हुआ चुनाव इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
   // Reading shelf copy with no v1 sentence (v1 has no failure path for a removal, and always knows a paper's highlights): a removal the server refused, and a paper's line

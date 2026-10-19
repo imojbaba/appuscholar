@@ -48,10 +48,19 @@ function Reply({ d, k, r }: { d: ApLoaded; k: string; r: Res }) {
   );
 }
 
+/** The stored notes' state when it is not their content (v2): locked (vault_ap_locked) or not openable on this device (vault_ap_broken); nothing while they are being read. */
+export function NotesState({ notes }: { notes: ApNotesStore }) {
+  const t = useT();
+  if (notes.locked) return <p className="note ap-note" data-testid="ap-notes-locked">{t("vault_ap_locked")}</p>;
+  if (notes.broken) return <p className="note ap-note" data-testid="ap-notes-broken">{t("vault_ap_broken")}</p>;
+  return null;
+}
+
 /**
- * "🧭 Walk me through it" (apRender 11300-11320): the twelve stage buttons (✓ on a stage whose reply is stored), "Stage N of 12: name", "Try first." with the stage's question and the box
+ * "🧭 Walk me through it" (apRender 11300-11320): the twelve stage buttons (✓ on a stage whose reply is stored, as v1 11302), "Stage N of 12: name", "Try first." with the stage's question and the box
  * (saved to the paper's note as it is typed, apDraft 10118), "Show what the paper says" ("Read it again" once there is a reply; disabled while a request runs), the reply, and the previous and
- * next stage buttons (disabled at the ends; apSetStage 10114 keeps the stage inside 1 to 12).
+ * next stage buttons (disabled at the ends; apSetStage 10114 keeps the stage inside 1 to 12). While the stored notes are not known (being read, locked) the box is read-only and empty and the
+ * reply cannot be asked for, since neither the words nor the reply could be stored; a locked or broken store says so under the box.
  */
 export function Walk({ notes }: { notes: ApNotesStore }) {
   const t = useT();
@@ -65,6 +74,7 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
   const r: Res | undefined = s.res[st.k] ?? stored[st.k]?.res;
   const go = (i: number) => setAp({ stage: Math.max(0, Math.min(AP_STAGES.length - 1, i)) });
   const type = (v: string) => {
+    if (notes.unread) return; // the stored words are not known yet: nothing typed may replace them
     setAp((x) => ({ tryDraft: { ...x.tryDraft, [st.k]: v } }));
     notes.put(d, (n) => { n.stages[st.k] = { ...(n.stages[st.k] ?? {}), mine: v }; });
   };
@@ -74,17 +84,18 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
       <div className="ap-row ap-wrap ap-stages" data-testid="ap-stages">
         {AP_STAGES.map((x, i) => (
           <Button key={x.k} variant={i === s.stage ? "primary" : "ghost"} size="xs" data-on={i === s.stage} title={stageName(t, x.k)} onClick={() => go(i)}>
-            {i + 1}{stored[x.k]?.res || s.res[x.k] ? " ✓" : ""}
+            {i + 1}{stored[x.k]?.res ? " ✓" : ""}
           </Button>
         ))}
       </div>
       <h4 className="ap-stage-h">{t("ap2_stage")} {s.stage + 1} {t("ap2_of", { apStagesCount: AP_STAGES.length })} {stageName(t, st.k)}</h4>
       <div className="ap-box">{tHtml(t("ap2_try_first"))} {stageAsk(t, st.k)}</div>
       <div className="field">
-        <textarea className="input" id="apTry" rows={3} placeholder={t("ap2_try_placeholder")} value={walkDraft(s, note, st.k)} onChange={(e) => type(e.target.value)} />
+        <textarea className="input" id="apTry" rows={3} placeholder={t("ap2_try_placeholder")} readOnly={notes.unread} value={notes.unread ? "" : walkDraft(s, note, st.k)} onChange={(e) => type(e.target.value)} />
       </div>
+      <NotesState notes={notes} />
       <div className="ap-row">
-        <Button variant="primary" size="sm" id="apShowBtn" disabled={s.busy} onClick={show}>{r ? t("ap2_read_it_again") : t("ap2_show_what_the_paper")}</Button>
+        <Button variant="primary" size="sm" id="apShowBtn" disabled={s.busy || notes.unread} onClick={show}>{r ? t("ap2_read_it_again") : t("ap2_show_what_the_paper")}</Button>
       </div>
       {r && <Reply d={d} k={st.k} r={r} />}
       <div className="ap-row ap-gap">

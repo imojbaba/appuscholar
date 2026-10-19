@@ -5,16 +5,20 @@ import { acrossData, colLabel, downloadAcross } from "@/lib/analyse/cards";
 import type { ApNotesStore } from "@/lib/analyse/notes";
 import { getAp, setAp, useApState } from "@/lib/analyse/useApDoc";
 import { Button } from "@/components/ui/button";
+import { NotesState } from "./Walk";
 
 /**
  * apAcrossRender (9965-9976): the column boxes (AP_COLS, ticked for the stored columns; a toggle stores the new list, apAcrossColToggle) and "Also show the AI readings…" (the tab's memory,
  * ruling R28); then "No paper card yet…", or the table (core's apAcrossData: one row per paper with a title and any card or stage text) with "×" on each row, "⬇ Download as CSV"
  * (paper_cards.csv, core's apAcrossCsv) and v1's note. "×" asks v1's question (apAcrossDel 9978-9984) and deletes the paper's note; for the paper loaded now, its replies and words of
- * this visit go too.
+ * this visit go too, and the card fields typed for it in this tab. While the stored notes are not known only the locked line is drawn (nothing while they are read); a broken store
+ * shows its line in place of "No paper card yet…".
  */
 function AcrossBody({ notes }: { notes: ApNotesStore }) {
   const t = useT();
   const s = useApState();
+  // Not read yet: the locked line (or nothing while it is read), never "No paper card yet…".
+  if (notes.unread) return <NotesState notes={notes} />;
   const d = acrossData(t, notes.all, notes.cols, s.acrossAi);
   const sel = (
     <>
@@ -28,13 +32,14 @@ function AcrossBody({ notes }: { notes: ApNotesStore }) {
       <label className="ap-check ap-cols"><input type="checkbox" id="apAcrossAi" checked={s.acrossAi} onChange={(e) => setAp({ acrossAi: e.target.checked })} />{t("ap2_also_show_the_ai")}</label>
     </>
   );
-  if (!d.body.length) return <><p className="ap-small">{t("ap2_no_paper_card_yet")}</p>{sel}</>;
+  if (!d.body.length) return <>{notes.broken ? <NotesState notes={notes} /> : <p className="ap-small">{t("ap2_no_paper_card_yet")}</p>}{sel}</>;
   const del = (i: number) => {
     const id = d.ids[i];
     if (!id) return;
     if (!window.confirm(t("ap2_remove_the_saved_card") + d.body[i]![0] + t("ap2_your_words_for_this"))) return;
     if (!notes.remove(id)) return;
     if (getAp().doc?.id === id) setAp({ res: {}, tryDraft: {} });
+    setAp((x) => { const cardDraft = { ...x.cardDraft }; delete cardDraft[id]; return { cardDraft }; });
   };
   return (
     <>

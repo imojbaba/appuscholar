@@ -41,13 +41,15 @@ export type ApState = {
   chkDraft: Record<string, string>;
   shown: Record<string, boolean>;
   res: Record<string, ApWalkRes>;
+  /** The paper card's fields as typed in this tab, by docId then field: shown in place of the stored ones, so words a refused write (R16) did not store stay in the box. */
+  cardDraft: Record<string, Record<string, string>>;
   acrossOpen: boolean;
   acrossAi: boolean;
 };
 
 const INITIAL: ApState = {
   doc: null, gen: 0, mode: "ask", log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false,
-  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, acrossOpen: false, acrossAi: false
+  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, cardDraft: {}, acrossOpen: false, acrossAi: false
 };
 let state: ApState = INITIAL;
 const listeners = new Set<() => void>();
