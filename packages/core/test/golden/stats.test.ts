@@ -46,6 +46,11 @@ const REQUIRED: Record<string, string[]> = {
   mcnemar: ["mcnemar-yes-no", "mcnemar-pos-given", "mcnemar-pos-unknown", "mcnemar-no-changers", "mcnemar-nd25", "mcnemar-three-answers", "mcnemar-same-column"],
   cochran: ["cochran-four-conditions", "cochran-non-significant", "cochran-two-columns", "cochran-all-same", "cochran-nine-columns"],
   friedman: ["friedman-four-conditions", "friedman-ties", "friedman-all-same", "friedman-n2", "friedman-two-columns", "friedman-missing-row"],
+  anova2: ["anova2-2x2-balanced", "anova2-2x3-unbalanced", "anova2-integer-labels", "anova2-interaction-significant", "anova2-main-effect-3-levels", "anova2-same-factor-twice",
+    "anova2-one-level", "anova2-seven-levels", "anova2-empty-cell", "anova2-dfe-zero", "anova2-no-spread", "anova2-text-in-numeric"],
+  mregress: ["mregress-two-numeric", "mregress-categorical-3-levels", "mregress-ref-given", "mregress-step2", "mregress-step2-no-step1", "mregress-one-predictor",
+    "mregress-thirteen-columns", "mregress-few-rows", "mregress-collinear", "mregress-exact-fit", "mregress-vif-high", "mregress-small-level", "mregress-missing-rows",
+    "mregress-dv-ticked-as-predictor"],
 };
 
 for (const file of fixtures) {
@@ -137,8 +142,8 @@ describe("stats: the frame", () => {
     const data = statsParseText("score\n1\n2\n3")!;
     const toast = "Could not run that test — check the columns you picked match what the test needs";
     expect(runStats(data, "nope" as "desc", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "nope", reason: "toast", toast });
-    // A real key whose runner a later task ports: the task that ports anova2 updates this line.
-    expect(runStats(data, "anova2", { values: { dv: "0", iv: "0", iv2: "0" }, ticked: {} })).toEqual({ ok: false, test: "anova2", reason: "toast", toast });
+    // A real key whose runner a later task ports: the task that ports logistic updates this line.
+    expect(runStats(data, "logistic", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "logistic", reason: "toast", toast });
   });
   it("desc-one-left-out: one dropped entry gives the singular note (11994)", () => {
     const c = load("desc").cases.find((x) => x.id === "desc-one-left-out")!;
@@ -370,5 +375,104 @@ describe("stats: tests on counts (chisq, gof, mcnemar, cochran, friedman)", () =
       expect((r.blocks[1] as { rows: string[][] }).rows[1]!.slice(0, 3), c.id).toEqual([String(v.n), fixed(v.Q!), String(v.df)]); }
     for (const c of load("friedman").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
       expect((r.blocks[1] as { rows: string[][] }).rows[1]!, c.id).toEqual([String(v.n), fixed(v.chi!), String(v.df), v.pF! < 0.001 ? "&lt; .001" : nl(fixed(v.pF!, 3)), nl(fixed(v.W!, 3))]); }
+  });
+});
+
+describe("stats: two-way ANOVA and multiple regression (anova2, mregress)", () => {
+  const find = (file: string, id: string) => load(file).cases.find((x) => x.id === id)!;
+  const notes = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "note").map((b) => (b as { html: string }).html);
+  const tables = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "table").map((b) => (b as { rows: string[][] }).rows);
+  const fixed = (x: number, k = 2) => x.toFixed(k);
+  const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
+  const pc = (p: number) => (p < 0.001 ? "&lt; .001" : nl(p.toFixed(3)));
+  it("every note of the runner's own is v1's innerHTML, tags included (the <code>anova()</code> of the Type III note, the <b> titles of the follow-up tables)", () => {
+    // up to the assumption checks: stkAssumpBlock's Brown-Forsythe note holds fmtP's literal '<', which v1's DOM reads back as &lt; (stats/render.ts decodes both)
+    const own = (bs: StatsBlock[]) => { const h = bs.findIndex((b) => b.kind === "heading"); return (h < 0 ? bs : bs.slice(0, h)).filter((b) => b.kind === "note").map((b) => (b as { html: string }).html); };
+    for (const file of ["anova2", "mregress"]) for (const c of load(file).cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      expect(own(r.blocks), c.id).toEqual(own(c.blocks));
+    }
+    expect(notes(find("anova2", "anova2-2x3-unbalanced"))[0]).toContain("R's <code>anova()</code> uses Type I and will differ.");
+  });
+  it("anova2 keeps stkAnova2Cells's first-seen level order: 10, then 2", () => {
+    const c = find("anova2", "anova2-integer-labels");
+    expect(tables(c)[0]!.slice(1).map((r) => r[0])).toEqual(["10", "10", "2", "2"]);
+    expect(run(c)).toMatchObject({ ok: true, values: { la: 2, lb: 2, N: 20 } });
+  });
+  it("anova2 counts stkAnova2Cells's skipped entries once (12864; the assumption pass adds nothing)", () => {
+    const c = find("anova2", "anova2-text-in-numeric");
+    expect(notes(c)[notes(c).length - 1]).toBe("2 entries that are not a number were left out.");
+    expect(run(c)).toMatchObject({ ok: true, skipped: 2 });
+  });
+  it("a significant interaction: the simple-effects tables and the Bonferroni table within levels; no Tukey", () => {
+    const c = find("anova2", "anova2-interaction-significant");
+    const n = notes(c);
+    expect(n).toContain("<b>Effect of dose at each level of therapy</b>");
+    expect(n).toContain("<b>Effect of therapy at each level of dose</b>");
+    expect(n).toContain("<b>Pairwise comparisons of dose within each level of therapy (Bonferroni)</b>");
+    expect(tables(c).some((t) => t[0]![5] === "p, Bonferroni (×6)")).toBe(true);
+    expect(n.some((h) => h.includes("(Tukey)"))).toBe(false);
+    const r = run(c);
+    expect(r.ok && r.values.p_AB! < 0.05).toBe(true);
+    expect(r.ok && ["se_A_0_F", "se_A_1_F", "se_B_0_F", "se_B_1_F", "se_B_2_F", "se_B_2_p"].every((k) => k in r.values)).toBe(true);
+    const both = find("anova2", "anova2-3x3-interaction");
+    expect(notes(both).filter((h) => h.endsWith("(Bonferroni)</b>"))).toEqual(["<b>Pairwise comparisons of therapy within each level of dose (Bonferroni)</b>", "<b>Pairwise comparisons of dose within each level of therapy (Bonferroni)</b>"]);
+  });
+  it("a significant 3-level main effect without the interaction: Tukey on the estimated marginal means, Tukey-Kramer only when unbalanced", () => {
+    const c = find("anova2", "anova2-main-effect-3-levels");
+    expect(notes(c)).toContain("<b>Pairwise comparisons of therapy (Tukey)</b>");
+    expect(notes(c).some((h) => h.includes("Tukey-Kramer"))).toBe(false);
+    expect(c.apa).toContain("For therapy, Tukey comparisons of estimated marginal means gave: ");
+    const r = run(c);
+    expect(r.ok && r.values.p_AB! >= 0.05 && r.values.balanced).toBe(1);
+    expect(r.ok && Object.keys(r.values).some((k) => k.startsWith("se_"))).toBe(false);
+    const u = find("anova2", "anova2-2x3-unbalanced");
+    expect(notes(u).some((h) => h.includes("and the Tukey-Kramer adjustment for unequal cell sizes"))).toBe(true);
+    expect(run(u)).toMatchObject({ ok: true, values: { balanced: 0 } });
+  });
+  it("anova2 values are the numbers behind the Source table", () => {
+    for (const c of load("anova2").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, t = r.blocks[1] as { rows: string[][] };
+      expect(t.rows.slice(1, 4).map((x) => x.slice(4)), c.id).toEqual(["A", "B", "AB"].map((e) => [fixed(v["F_" + e]!), pc(v["p_" + e]!), nl(fixed(v["eta_" + e]!, 3))]));
+      expect(t.rows[4], c.id).toEqual(["Error", fixed(v.sse!), String(v.dfe), fixed(v.mse!), "", "", ""]);
+    }
+  });
+  it("mregress: the reference level is the largest group (ties to the first seen) or the one named", () => {
+    expect(notes(find("mregress", "mregress-categorical-3-levels"))[1]).toContain("Reference levels: group = Online (the largest group).");
+    expect(notes(find("mregress", "mregress-ref-given"))[1]).toContain("Reference levels: group = Control (your choice).");
+    expect(notes(find("mregress", "mregress-step2-categorical"))[2]).toContain("Reference levels: group = Online (the largest group).");
+    expect(notes(find("mregress", "mregress-small-level"))[1]).toContain(" At least one level of a categorical predictor has fewer than 5 rows");
+  });
+  it("mregress reports dropped rows in its note, not through the left-out counter", () => {
+    const c = find("mregress", "mregress-missing-rows");
+    expect(notes(c)[1]).toContain(" 3 rows were left out because a value was missing.");
+    expect(notes(c).some((h) => h.includes("not a number"))).toBe(false);
+    expect(run(c)).toMatchObject({ ok: true, skipped: 0, values: { n: 22 } });
+    expect(notes(find("mregress", "mregress-one-missing-row"))[1]).toContain(" 1 row was left out because a value was missing.");
+  });
+  it("mregress: the outcome ticked as a predictor is filtered out; the VIF notes at 10 and at 5", () => {
+    const c = find("mregress", "mregress-dv-ticked-as-predictor");
+    expect(c.form.ticked.preds).toContain(parseInt(c.form.values.dv!, 10));
+    expect(run(c)).toMatchObject({ ok: true, values: { k: 2 } });
+    expect(notes(find("mregress", "mregress-vif-high"))[1]).toContain(" A VIF of 10 or more means");
+    expect(notes(find("mregress", "mregress-vif-moderate"))[1]).toContain(" A VIF above 5 means");
+  });
+  it("mregress: the step values exist only with the step table; values are the numbers behind the cells", () => {
+    for (const c of load("mregress").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, k = v.k!, step = "k1" in v, off = step ? 1 : 0;
+      expect(r.blocks[0]!.kind === "table" && (r.blocks[0] as { rows: string[][] }).rows[0]![0] === "Step", c.id).toBe(step);
+      expect((r.blocks[1 + off + off] as { rows: string[][] }).rows[1], c.id).toEqual([nl(fixed(v.r2!, 3)), nl(fixed(v.adj!, 3)), fixed(v.F!), `${k}, ${v.dfe}`, pc(v.pF!)]);
+      const coef = (r.blocks[2 + off + off] as { rows: string[][] }).rows;
+      for (let j = 0; j <= k; j++) {
+        const row = coef[j + 1]!, beta = v["beta_" + j];
+        expect([row[1], row[2], row[3], row[4], row[5], row[7]], `${c.id} ${j}`).toEqual([fixed(v["b_" + j]!, 3), fixed(v["se_" + j]!, 3), beta === undefined ? "" : nl(fixed(beta, 3)), fixed(v["t_" + j]!), pc(v["p_" + j]!), j === 0 ? "" : fixed(v["vif_" + j]!)]);
+      }
+      if (step) expect((r.blocks[0] as { rows: string[][] }).rows[2]!.slice(2), c.id).toEqual([nl(fixed(v.r2!, 3)), nl(fixed(v.adj!, 3)), nl(fixed(v.dR!, 3)), fixed(v.Fc!), `${k - v.k1!}, ${v.dfe}`, pc(v.pc!)]);
+    }
   });
 });

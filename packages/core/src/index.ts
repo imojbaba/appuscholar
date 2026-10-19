@@ -53,3 +53,4 @@ export { runStats } from "./stats";
 export { runTtestInd, runTtestPaired, runAnova1, runTukey, runRegression, runPearson } from "./stats-means";
 export { runMannwhitney, runWilcoxon, runKruskal, runSpearman, runWelchAnova } from "./stats-ranks";
 export { runChisq, runGof, runMcnemar, runCochran, runFriedman } from "./stats-counts";
+export { runAnova2, runMregress } from "./stats-factorial";

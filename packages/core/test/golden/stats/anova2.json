@@ -1,0 +1,1862 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "anova2-2x2-balanced",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,13.5\nCBT,Low,15.0\nCBT,Low,13.5\nCBT,Low,13.4\nCBT,Low,12.1\nCBT,Low,13.6\nCBT,High,20.2\nCBT,High,18.8\nCBT,High,20.1\nCBT,High,18.5\nCBT,High,18.8\nCBT,High,18.4\nWaitlist,Low,7.7\nWaitlist,Low,12.7\nWaitlist,Low,12.0\nWaitlist,Low,12.0\nWaitlist,Low,7.6\nWaitlist,Low,7.5\nWaitlist,High,10.2\nWaitlist,High,11.1\nWaitlist,High,12.6\nWaitlist,High,11.9\nWaitlist,High,13.0\nWaitlist,High,10.7",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 20) = 80.94, p < .001, ηp² = .802; the main effect of dose was significant, F(1, 20) = 34.54, p < .001, ηp² = .633; the interaction between therapy and dose was significant, F(1, 20) = 10.16, p = .005, ηp² = .337. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(1, 20) = 41.08, p < .001; Waitlist, F(1, 20) = 3.62, p = .143.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "6",
+       "13.52",
+       "0.92"
+      ],
+      [
+       "CBT",
+       "High",
+       "6",
+       "19.13",
+       "0.80"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "6",
+       "9.92",
+       "2.55"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "6",
+       "11.58",
+       "1.10"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "186.48",
+       "1",
+       "186.48",
+       "80.94",
+       "&lt; .001",
+       ".802"
+      ],
+      [
+       "dose",
+       "79.57",
+       "1",
+       "79.57",
+       "34.54",
+       "&lt; .001",
+       ".633"
+      ],
+      [
+       "therapy × dose",
+       "23.40",
+       "1",
+       "23.40",
+       "10.16",
+       ".005",
+       ".337"
+      ],
+      [
+       "Error",
+       "46.08",
+       "20",
+       "2.30",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Effect of dose at each level of therapy</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level",
+       "SS",
+       "df",
+       "F",
+       "p",
+       "p, Bonferroni (×2)"
+      ],
+      [
+       "CBT",
+       "94.64",
+       "1, 20",
+       "41.08",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "Waitlist",
+       "8.33",
+       "1, 20",
+       "3.62",
+       ".072",
+       ".143"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Effect of therapy at each level of dose</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level",
+       "SS",
+       "df",
+       "F",
+       "p",
+       "p, Bonferroni (×2)"
+      ],
+      [
+       "Low",
+       "38.88",
+       "1, 20",
+       "16.88",
+       "&lt; .001",
+       ".001"
+      ],
+      [
+       "High",
+       "171.01",
+       "1, 20",
+       "74.22",
+       "&lt; .001",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Simple effects use the error term of the whole design (MSE = 2.30, df = 20). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "24",
+       "0.973",
+       ".735"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(3, 20) = 14.14, p &lt; .001."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow613.520.92CBTHigh619.130.80WaitlistLow69.922.55WaitlistHigh611.581.10SourceSSdfMSFpPartial η²therapy186.481186.4880.94< .001.802dose79.57179.5734.54< .001.633therapy × dose23.40123.4010.16.005.337Error46.08202.30Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone.Effect of dose at each level of therapyLevelSSdfFpp, Bonferroni (×2)CBT94.641, 2041.08< .001< .001Waitlist8.331, 203.62.072.143Effect of therapy at each level of doseLevelSSdfFpp, Bonferroni (×2)Low38.881, 2016.88< .001.001High171.011, 2074.22< .001< .001Simple effects use the error term of the whole design (MSE = 2.30, df = 20). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)240.973.735Equal spread (Brown-Forsythe): F(3, 20) = 14.14, p < .001.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not.A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 20) = 80.94, p < .001, ηp² = .802; the main effect of dose was significant, F(1, 20) = 34.54, p < .001, ηp² = .633; the interaction between therapy and dose was significant, F(1, 20) = 10.16, p = .005, ηp² = .337. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(1, 20) = 41.08, p < .001; Waitlist, F(1, 20) = 3.62, p = .143.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>6</td><td>13.52</td><td>0.92</td></tr><tr><td>CBT</td><td>High</td><td>6</td><td>19.13</td><td>0.80</td></tr><tr><td>Waitlist</td><td>Low</td><td>6</td><td>9.92</td><td>2.55</td></tr><tr><td>Waitlist</td><td>High</td><td>6</td><td>11.58</td><td>1.10</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>186.48</td><td>1</td><td>186.48</td><td>80.94</td><td>&lt; .001</td><td>.802</td></tr><tr><td>dose</td><td>79.57</td><td>1</td><td>79.57</td><td>34.54</td><td>&lt; .001</td><td>.633</td></tr><tr><td>therapy × dose</td><td>23.40</td><td>1</td><td>23.40</td><td>10.16</td><td>.005</td><td>.337</td></tr><tr><td>Error</td><td>46.08</td><td>20</td><td>2.30</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Effect of dose at each level of therapy</b></p><table class=\"stats-table\"><tbody><tr><th>Level</th><th>SS</th><th>df</th><th>F</th><th>p</th><th>p, Bonferroni (×2)</th></tr><tr><td>CBT</td><td>94.64</td><td>1, 20</td><td>41.08</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>Waitlist</td><td>8.33</td><td>1, 20</td><td>3.62</td><td>.072</td><td>.143</td></tr></tbody></table><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Effect of therapy at each level of dose</b></p><table class=\"stats-table\"><tbody><tr><th>Level</th><th>SS</th><th>df</th><th>F</th><th>p</th><th>p, Bonferroni (×2)</th></tr><tr><td>Low</td><td>38.88</td><td>1, 20</td><td>16.88</td><td>&lt; .001</td><td>.001</td></tr><tr><td>High</td><td>171.01</td><td>1, 20</td><td>74.22</td><td>&lt; .001</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Simple effects use the error term of the whole design (MSE = 2.30, df = 20). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>24</td><td>0.973</td><td>.735</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(3, 20) = 14.14, p &lt; .001.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. The spreads differ (p below .05). Welch t and Welch ANOVA with Games-Howell already allow for that; the classic Student t and one-way ANOVA do not.</p></div><div id=\"statsSentence\">A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 20) = 80.94, p &lt; .001, ηp² = .802; the main effect of dose was significant, F(1, 20) = 34.54, p &lt; .001, ηp² = .633; the interaction between therapy and dose was significant, F(1, 20) = 10.16, p = .005, ηp² = .337. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(1, 20) = 41.08, p &lt; .001; Waitlist, F(1, 20) = 3.62, p = .143.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova2-2x3-unbalanced",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,14.8\nCBT,Low,15.0\nCBT,Low,12.3\nCBT,Low,18.3\nCBT,Mid,17.4\nCBT,Mid,19.0\nCBT,Mid,14.4\nCBT,Mid,14.2\nCBT,Mid,15.1\nCBT,Mid,15.7\nCBT,High,20.6\nCBT,High,19.6\nCBT,High,17.9\nCBT,High,16.6\nCBT,High,17.7\nWaitlist,Low,15.1\nWaitlist,Low,10.0\nWaitlist,Low,12.6\nWaitlist,Low,13.1\nWaitlist,Low,8.3\nWaitlist,Low,12.1\nWaitlist,Low,15.3\nWaitlist,Mid,9.0\nWaitlist,Mid,13.2\nWaitlist,Mid,13.7\nWaitlist,Mid,12.0\nWaitlist,Mid,15.2\nWaitlist,High,16.8\nWaitlist,High,13.3\nWaitlist,High,19.1\nWaitlist,High,18.7",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 2 × 3 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 25) = 9.34, p = .005, ηp² = .272; the main effect of dose was significant, F(2, 25) = 8.58, p = .001, ηp² = .407; the interaction between therapy and dose was not significant, F(2, 25) = 0.42, p = .665, ηp² = .032. For dose, Tukey comparisons of estimated marginal means gave: Low vs Mid (p = .835); Low vs High (p = .002); Mid vs High (p = .007).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "4",
+       "15.10",
+       "2.46"
+      ],
+      [
+       "CBT",
+       "Mid",
+       "6",
+       "15.97",
+       "1.88"
+      ],
+      [
+       "CBT",
+       "High",
+       "5",
+       "18.48",
+       "1.60"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "7",
+       "12.36",
+       "2.55"
+      ],
+      [
+       "Waitlist",
+       "Mid",
+       "5",
+       "12.62",
+       "2.33"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "4",
+       "16.98",
+       "2.65"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "47.69",
+       "1",
+       "47.69",
+       "9.34",
+       ".005",
+       ".272"
+      ],
+      [
+       "dose",
+       "87.60",
+       "2",
+       "43.80",
+       "8.58",
+       ".001",
+       ".407"
+      ],
+      [
+       "therapy × dose",
+       "4.24",
+       "2",
+       "2.12",
+       "0.42",
+       ".665",
+       ".032"
+      ],
+      [
+       "Error",
+       "127.61",
+       "25",
+       "5.10",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The cell sizes are unequal, so the sums-of-squares type matters. SPSS and JASP use Type III, which is what is shown; R's <code>anova()</code> uses Type I and will differ."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise comparisons of dose (Tukey)</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "q",
+       "p (Tukey)"
+      ],
+      [
+       "Low − Mid",
+       "-0.56",
+       "0.81",
+       ".835"
+      ],
+      [
+       "Low − High",
+       "-4.00",
+       "5.45",
+       ".002"
+      ],
+      [
+       "Mid − High",
+       "-3.43",
+       "4.76",
+       ".007"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Differences between estimated marginal means of dose (each level's mean averaged over the cell means of therapy), using the design's error term (MSE = 5.10, df = 25) and the Tukey-Kramer adjustment for unequal cell sizes. Run these only because the main effect is significant and the interaction is not."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "31",
+       "0.963",
+       ".351"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 25) = 0.19, p = .965."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow415.102.46CBTMid615.971.88CBTHigh518.481.60WaitlistLow712.362.55WaitlistMid512.622.33WaitlistHigh416.982.65SourceSSdfMSFpPartial η²therapy47.69147.699.34.005.272dose87.60243.808.58.001.407therapy × dose4.2422.120.42.665.032Error127.61255.10Type III sums of squares, the default in SPSS and JASP. The cell sizes are unequal, so the sums-of-squares type matters. SPSS and JASP use Type III, which is what is shown; R's anova() uses Type I and will differ.Pairwise comparisons of dose (Tukey)PairMean diffqp (Tukey)Low − Mid-0.560.81.835Low − High-4.005.45.002Mid − High-3.434.76.007Differences between estimated marginal means of dose (each level's mean averaged over the cell means of therapy), using the design's error term (MSE = 5.10, df = 25) and the Tukey-Kramer adjustment for unequal cell sizes. Run these only because the main effect is significant and the interaction is not.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)310.963.351Equal spread (Brown-Forsythe): F(5, 25) = 0.19, p = .965.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 2 × 3 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 25) = 9.34, p = .005, ηp² = .272; the main effect of dose was significant, F(2, 25) = 8.58, p = .001, ηp² = .407; the interaction between therapy and dose was not significant, F(2, 25) = 0.42, p = .665, ηp² = .032. For dose, Tukey comparisons of estimated marginal means gave: Low vs Mid (p = .835); Low vs High (p = .002); Mid vs High (p = .007).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>4</td><td>15.10</td><td>2.46</td></tr><tr><td>CBT</td><td>Mid</td><td>6</td><td>15.97</td><td>1.88</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>18.48</td><td>1.60</td></tr><tr><td>Waitlist</td><td>Low</td><td>7</td><td>12.36</td><td>2.55</td></tr><tr><td>Waitlist</td><td>Mid</td><td>5</td><td>12.62</td><td>2.33</td></tr><tr><td>Waitlist</td><td>High</td><td>4</td><td>16.98</td><td>2.65</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>47.69</td><td>1</td><td>47.69</td><td>9.34</td><td>.005</td><td>.272</td></tr><tr><td>dose</td><td>87.60</td><td>2</td><td>43.80</td><td>8.58</td><td>.001</td><td>.407</td></tr><tr><td>therapy × dose</td><td>4.24</td><td>2</td><td>2.12</td><td>0.42</td><td>.665</td><td>.032</td></tr><tr><td>Error</td><td>127.61</td><td>25</td><td>5.10</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The cell sizes are unequal, so the sums-of-squares type matters. SPSS and JASP use Type III, which is what is shown; R's <code>anova()</code> uses Type I and will differ.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Pairwise comparisons of dose (Tukey)</b></p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>q</th><th>p (Tukey)</th></tr><tr><td>Low − Mid</td><td>-0.56</td><td>0.81</td><td>.835</td></tr><tr><td>Low − High</td><td>-4.00</td><td>5.45</td><td>.002</td></tr><tr><td>Mid − High</td><td>-3.43</td><td>4.76</td><td>.007</td></tr></tbody></table><p class=\"desc\">Differences between estimated marginal means of dose (each level's mean averaged over the cell means of therapy), using the design's error term (MSE = 5.10, df = 25) and the Tukey-Kramer adjustment for unequal cell sizes. Run these only because the main effect is significant and the interaction is not.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>31</td><td>0.963</td><td>.351</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 25) = 0.19, p = .965.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 2 × 3 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 25) = 9.34, p = .005, ηp² = .272; the main effect of dose was significant, F(2, 25) = 8.58, p = .001, ηp² = .407; the interaction between therapy and dose was not significant, F(2, 25) = 0.42, p = .665, ηp² = .032. For dose, Tukey comparisons of estimated marginal means gave: Low vs Mid (p = .835); Low vs High (p = .002); Mid vs High (p = .007).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova2-integer-labels",
+   "test": "anova2",
+   "csv": "arm,sex,score\n10,M,17.9\n10,M,16.1\n10,F,17.4\n10,F,20.2\n10,F,22.9\n10,F,20.7\n10,M,19.5\n10,F,21.9\n10,M,21.6\n10,M,14.9\n2,M,16.9\n2,F,13.8\n2,F,12.5\n2,M,14.7\n2,F,16.2\n2,M,15.2\n2,M,10.2\n2,F,14.1\n2,F,13.1\n2,M,9.0\nx,F,",
+   "values": {
+    "dv": "score",
+    "iv": "arm",
+    "iv2": "sex"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 2 × 2 between-subjects ANOVA on score showed that the main effect of arm was significant, F(1, 16) = 26.27, p < .001, ηp² = .621; the main effect of sex was not significant, F(1, 16) = 2.25, p = .153, ηp² = .123; the interaction between arm and sex was not significant, F(1, 16) = 0.70, p = .414, ηp² = .042.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "arm",
+       "sex",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "10",
+       "M",
+       "5",
+       "18.00",
+       "2.67"
+      ],
+      [
+       "10",
+       "F",
+       "5",
+       "20.62",
+       "2.08"
+      ],
+      [
+       "2",
+       "M",
+       "5",
+       "13.20",
+       "3.41"
+      ],
+      [
+       "2",
+       "F",
+       "5",
+       "13.94",
+       "1.41"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "arm",
+       "164.74",
+       "1",
+       "164.74",
+       "26.27",
+       "&lt; .001",
+       ".621"
+      ],
+      [
+       "sex",
+       "14.11",
+       "1",
+       "14.11",
+       "2.25",
+       ".153",
+       ".123"
+      ],
+      [
+       "arm × sex",
+       "4.42",
+       "1",
+       "4.42",
+       "0.70",
+       ".414",
+       ".042"
+      ],
+      [
+       "Error",
+       "100.34",
+       "16",
+       "6.27",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "20",
+       "0.963",
+       ".603"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(3, 16) = 0.93, p = .448."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultsarmsexNMSD10M518.002.6710F520.622.082M513.203.412F513.941.41SourceSSdfMSFpPartial η²arm164.741164.7426.27< .001.621sex14.11114.112.25.153.123arm × sex4.4214.420.70.414.042Error100.34166.27Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)200.963.603Equal spread (Brown-Forsythe): F(3, 16) = 0.93, p = .448.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 2 × 2 between-subjects ANOVA on score showed that the main effect of arm was significant, F(1, 16) = 26.27, p < .001, ηp² = .621; the main effect of sex was not significant, F(1, 16) = 2.25, p = .153, ηp² = .123; the interaction between arm and sex was not significant, F(1, 16) = 0.70, p = .414, ηp² = .042.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>arm</th><th>sex</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>10</td><td>M</td><td>5</td><td>18.00</td><td>2.67</td></tr><tr><td>10</td><td>F</td><td>5</td><td>20.62</td><td>2.08</td></tr><tr><td>2</td><td>M</td><td>5</td><td>13.20</td><td>3.41</td></tr><tr><td>2</td><td>F</td><td>5</td><td>13.94</td><td>1.41</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>arm</td><td>164.74</td><td>1</td><td>164.74</td><td>26.27</td><td>&lt; .001</td><td>.621</td></tr><tr><td>sex</td><td>14.11</td><td>1</td><td>14.11</td><td>2.25</td><td>.153</td><td>.123</td></tr><tr><td>arm × sex</td><td>4.42</td><td>1</td><td>4.42</td><td>0.70</td><td>.414</td><td>.042</td></tr><tr><td>Error</td><td>100.34</td><td>16</td><td>6.27</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>20</td><td>0.963</td><td>.603</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(3, 16) = 0.93, p = .448.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 2 × 2 between-subjects ANOVA on score showed that the main effect of arm was significant, F(1, 16) = 26.27, p &lt; .001, ηp² = .621; the main effect of sex was not significant, F(1, 16) = 2.25, p = .153, ηp² = .123; the interaction between arm and sex was not significant, F(1, 16) = 0.70, p = .414, ηp² = .042.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova2-interaction-significant",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,8.5\nCBT,Low,11.0\nCBT,Low,11.8\nCBT,Low,9.8\nCBT,Low,11.1\nCBT,Low,7.7\nCBT,Mid,15.1\nCBT,Mid,12.4\nCBT,Mid,8.4\nCBT,Mid,13.2\nCBT,Mid,12.2\nCBT,Mid,14.1\nCBT,High,18.8\nCBT,High,19.7\nCBT,High,20.4\nCBT,High,21.8\nCBT,High,18.3\nCBT,High,18.7\nWaitlist,Low,19.5\nWaitlist,Low,19.5\nWaitlist,Low,20.0\nWaitlist,Low,16.6\nWaitlist,Low,16.9\nWaitlist,Low,20.8\nWaitlist,Mid,16.8\nWaitlist,Mid,16.8\nWaitlist,Mid,13.1\nWaitlist,Mid,13.9\nWaitlist,Mid,11.8\nWaitlist,Mid,17.4\nWaitlist,High,6.4\nWaitlist,High,8.9\nWaitlist,High,7.7\nWaitlist,High,8.4\nWaitlist,High,11.2\nWaitlist,High,8.0",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 2 × 3 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(1, 30) = 0.00, p = .950, ηp² = .000; the main effect of dose was not significant, F(2, 30) = 0.39, p = .678, ηp² = .026; the interaction between therapy and dose was significant, F(2, 30) = 91.58, p < .001, ηp² = .859. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(2, 30) = 43.36, p < .001; Waitlist, F(2, 30) = 48.61, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "6",
+       "9.98",
+       "1.61"
+      ],
+      [
+       "CBT",
+       "Mid",
+       "6",
+       "12.57",
+       "2.31"
+      ],
+      [
+       "CBT",
+       "High",
+       "6",
+       "19.62",
+       "1.31"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "6",
+       "18.88",
+       "1.72"
+      ],
+      [
+       "Waitlist",
+       "Mid",
+       "6",
+       "14.97",
+       "2.34"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "6",
+       "8.43",
+       "1.60"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "0.01",
+       "1",
+       "0.01",
+       "0.00",
+       ".950",
+       ".000"
+      ],
+      [
+       "dose",
+       "2.71",
+       "2",
+       "1.36",
+       "0.39",
+       ".678",
+       ".026"
+      ],
+      [
+       "therapy × dose",
+       "630.10",
+       "2",
+       "315.05",
+       "91.58",
+       "&lt; .001",
+       ".859"
+      ],
+      [
+       "Error",
+       "103.20",
+       "30",
+       "3.44",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Effect of dose at each level of therapy</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level",
+       "SS",
+       "df",
+       "F",
+       "p",
+       "p, Bonferroni (×2)"
+      ],
+      [
+       "CBT",
+       "298.35",
+       "2, 30",
+       "43.36",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "Waitlist",
+       "334.45",
+       "2, 30",
+       "48.61",
+       "&lt; .001",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Effect of therapy at each level of dose</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level",
+       "SS",
+       "df",
+       "F",
+       "p",
+       "p, Bonferroni (×3)"
+      ],
+      [
+       "Low",
+       "237.63",
+       "1, 30",
+       "69.08",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "Mid",
+       "17.28",
+       "1, 30",
+       "5.02",
+       ".033",
+       ".098"
+      ],
+      [
+       "High",
+       "375.20",
+       "1, 30",
+       "109.06",
+       "&lt; .001",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Simple effects use the error term of the whole design (MSE = 3.44, df = 30). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise comparisons of dose within each level of therapy (Bonferroni)</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "Pair",
+       "Mean diff",
+       "t",
+       "p",
+       "p, Bonferroni (×6)"
+      ],
+      [
+       "CBT",
+       "Low − Mid",
+       "-2.58",
+       "-2.41",
+       ".022",
+       ".133"
+      ],
+      [
+       "CBT",
+       "Low − High",
+       "-9.63",
+       "-9.00",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "CBT",
+       "Mid − High",
+       "-7.05",
+       "-6.58",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "Waitlist",
+       "Low − Mid",
+       "3.92",
+       "3.66",
+       "&lt; .001",
+       ".006"
+      ],
+      [
+       "Waitlist",
+       "Low − High",
+       "10.45",
+       "9.76",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "Waitlist",
+       "Mid − High",
+       "6.53",
+       "6.10",
+       "&lt; .001",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Because the interaction is significant, the levels of dose are compared inside each level of therapy, not averaged over it. Every test uses the design's error term (MSE = 3.44, df = 30), and the Bonferroni column multiplies each p by all 6 tests in the table."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "36",
+       "0.974",
+       ".530"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 30) = 0.70, p = .626."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow69.981.61CBTMid612.572.31CBTHigh619.621.31WaitlistLow618.881.72WaitlistMid614.972.34WaitlistHigh68.431.60SourceSSdfMSFpPartial η²therapy0.0110.010.00.950.000dose2.7121.360.39.678.026therapy × dose630.102315.0591.58< .001.859Error103.20303.44Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone.Effect of dose at each level of therapyLevelSSdfFpp, Bonferroni (×2)CBT298.352, 3043.36< .001< .001Waitlist334.452, 3048.61< .001< .001Effect of therapy at each level of doseLevelSSdfFpp, Bonferroni (×3)Low237.631, 3069.08< .001< .001Mid17.281, 305.02.033.098High375.201, 30109.06< .001< .001Simple effects use the error term of the whole design (MSE = 3.44, df = 30). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels.Pairwise comparisons of dose within each level of therapy (Bonferroni)therapyPairMean difftpp, Bonferroni (×6)CBTLow − Mid-2.58-2.41.022.133CBTLow − High-9.63-9.00< .001< .001CBTMid − High-7.05-6.58< .001< .001WaitlistLow − Mid3.923.66< .001.006WaitlistLow − High10.459.76< .001< .001WaitlistMid − High6.536.10< .001< .001Because the interaction is significant, the levels of dose are compared inside each level of therapy, not averaged over it. Every test uses the design's error term (MSE = 3.44, df = 30), and the Bonferroni column multiplies each p by all 6 tests in the table.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)360.974.530Equal spread (Brown-Forsythe): F(5, 30) = 0.70, p = .626.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 2 × 3 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(1, 30) = 0.00, p = .950, ηp² = .000; the main effect of dose was not significant, F(2, 30) = 0.39, p = .678, ηp² = .026; the interaction between therapy and dose was significant, F(2, 30) = 91.58, p < .001, ηp² = .859. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(2, 30) = 43.36, p < .001; Waitlist, F(2, 30) = 48.61, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>6</td><td>9.98</td><td>1.61</td></tr><tr><td>CBT</td><td>Mid</td><td>6</td><td>12.57</td><td>2.31</td></tr><tr><td>CBT</td><td>High</td><td>6</td><td>19.62</td><td>1.31</td></tr><tr><td>Waitlist</td><td>Low</td><td>6</td><td>18.88</td><td>1.72</td></tr><tr><td>Waitlist</td><td>Mid</td><td>6</td><td>14.97</td><td>2.34</td></tr><tr><td>Waitlist</td><td>High</td><td>6</td><td>8.43</td><td>1.60</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>0.01</td><td>1</td><td>0.01</td><td>0.00</td><td>.950</td><td>.000</td></tr><tr><td>dose</td><td>2.71</td><td>2</td><td>1.36</td><td>0.39</td><td>.678</td><td>.026</td></tr><tr><td>therapy × dose</td><td>630.10</td><td>2</td><td>315.05</td><td>91.58</td><td>&lt; .001</td><td>.859</td></tr><tr><td>Error</td><td>103.20</td><td>30</td><td>3.44</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Effect of dose at each level of therapy</b></p><table class=\"stats-table\"><tbody><tr><th>Level</th><th>SS</th><th>df</th><th>F</th><th>p</th><th>p, Bonferroni (×2)</th></tr><tr><td>CBT</td><td>298.35</td><td>2, 30</td><td>43.36</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>Waitlist</td><td>334.45</td><td>2, 30</td><td>48.61</td><td>&lt; .001</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Effect of therapy at each level of dose</b></p><table class=\"stats-table\"><tbody><tr><th>Level</th><th>SS</th><th>df</th><th>F</th><th>p</th><th>p, Bonferroni (×3)</th></tr><tr><td>Low</td><td>237.63</td><td>1, 30</td><td>69.08</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>Mid</td><td>17.28</td><td>1, 30</td><td>5.02</td><td>.033</td><td>.098</td></tr><tr><td>High</td><td>375.20</td><td>1, 30</td><td>109.06</td><td>&lt; .001</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Simple effects use the error term of the whole design (MSE = 3.44, df = 30). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Pairwise comparisons of dose within each level of therapy (Bonferroni)</b></p><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>Pair</th><th>Mean diff</th><th>t</th><th>p</th><th>p, Bonferroni (×6)</th></tr><tr><td>CBT</td><td>Low − Mid</td><td>-2.58</td><td>-2.41</td><td>.022</td><td>.133</td></tr><tr><td>CBT</td><td>Low − High</td><td>-9.63</td><td>-9.00</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>CBT</td><td>Mid − High</td><td>-7.05</td><td>-6.58</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>Waitlist</td><td>Low − Mid</td><td>3.92</td><td>3.66</td><td>&lt; .001</td><td>.006</td></tr><tr><td>Waitlist</td><td>Low − High</td><td>10.45</td><td>9.76</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>Waitlist</td><td>Mid − High</td><td>6.53</td><td>6.10</td><td>&lt; .001</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Because the interaction is significant, the levels of dose are compared inside each level of therapy, not averaged over it. Every test uses the design's error term (MSE = 3.44, df = 30), and the Bonferroni column multiplies each p by all 6 tests in the table.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>36</td><td>0.974</td><td>.530</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 30) = 0.70, p = .626.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 2 × 3 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(1, 30) = 0.00, p = .950, ηp² = .000; the main effect of dose was not significant, F(2, 30) = 0.39, p = .678, ηp² = .026; the interaction between therapy and dose was significant, F(2, 30) = 91.58, p &lt; .001, ηp² = .859. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(2, 30) = 43.36, p &lt; .001; Waitlist, F(2, 30) = 48.61, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova2-main-effect-3-levels",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,10.2\nCBT,Low,12.1\nCBT,Low,15.4\nCBT,Low,9.1\nCBT,Low,10.4\nCBT,High,10.3\nCBT,High,10.5\nCBT,High,8.7\nCBT,High,10.0\nCBT,High,13.6\nMindful,Low,12.1\nMindful,Low,14.2\nMindful,Low,13.6\nMindful,Low,11.0\nMindful,Low,15.0\nMindful,High,16.6\nMindful,High,13.2\nMindful,High,13.0\nMindful,High,14.2\nMindful,High,8.5\nWaitlist,Low,16.4\nWaitlist,Low,14.3\nWaitlist,Low,16.2\nWaitlist,Low,18.1\nWaitlist,Low,18.6\nWaitlist,High,16.9\nWaitlist,High,14.7\nWaitlist,High,16.1\nWaitlist,High,14.7\nWaitlist,High,18.4",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(2, 24) = 17.18, p < .001, ηp² = .589; the main effect of dose was not significant, F(1, 24) = 0.41, p = .528, ηp² = .017; the interaction between therapy and dose was not significant, F(2, 24) = 0.08, p = .922, ηp² = .007. For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p = .080); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p = .005).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "5",
+       "11.44",
+       "2.46"
+      ],
+      [
+       "CBT",
+       "High",
+       "5",
+       "10.62",
+       "1.81"
+      ],
+      [
+       "Mindful",
+       "Low",
+       "5",
+       "13.18",
+       "1.62"
+      ],
+      [
+       "Mindful",
+       "High",
+       "5",
+       "13.10",
+       "2.94"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "5",
+       "16.72",
+       "1.71"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "5",
+       "16.16",
+       "1.57"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "148.70",
+       "2",
+       "74.35",
+       "17.18",
+       "&lt; .001",
+       ".589"
+      ],
+      [
+       "dose",
+       "1.78",
+       "1",
+       "1.78",
+       "0.41",
+       ".528",
+       ".017"
+      ],
+      [
+       "therapy × dose",
+       "0.70",
+       "2",
+       "0.35",
+       "0.08",
+       ".922",
+       ".007"
+      ],
+      [
+       "Error",
+       "103.87",
+       "24",
+       "4.33",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise comparisons of therapy (Tukey)</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "q",
+       "p (Tukey)"
+      ],
+      [
+       "CBT − Mindful",
+       "-2.11",
+       "3.21",
+       ".080"
+      ],
+      [
+       "CBT − Waitlist",
+       "-5.41",
+       "8.22",
+       "&lt; .001"
+      ],
+      [
+       "Mindful − Waitlist",
+       "-3.30",
+       "5.02",
+       ".005"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Differences between estimated marginal means of therapy (each level's mean averaged over the cell means of dose), using the design's error term (MSE = 4.33, df = 24). Run these only because the main effect is significant and the interaction is not."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "30",
+       "0.986",
+       ".956"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 24) = 0.22, p = .952."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow511.442.46CBTHigh510.621.81MindfulLow513.181.62MindfulHigh513.102.94WaitlistLow516.721.71WaitlistHigh516.161.57SourceSSdfMSFpPartial η²therapy148.70274.3517.18< .001.589dose1.7811.780.41.528.017therapy × dose0.7020.350.08.922.007Error103.87244.33Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Pairwise comparisons of therapy (Tukey)PairMean diffqp (Tukey)CBT − Mindful-2.113.21.080CBT − Waitlist-5.418.22< .001Mindful − Waitlist-3.305.02.005Differences between estimated marginal means of therapy (each level's mean averaged over the cell means of dose), using the design's error term (MSE = 4.33, df = 24). Run these only because the main effect is significant and the interaction is not.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)300.986.956Equal spread (Brown-Forsythe): F(5, 24) = 0.22, p = .952.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(2, 24) = 17.18, p < .001, ηp² = .589; the main effect of dose was not significant, F(1, 24) = 0.41, p = .528, ηp² = .017; the interaction between therapy and dose was not significant, F(2, 24) = 0.08, p = .922, ηp² = .007. For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p = .080); CBT vs Waitlist (p < .001); Mindful vs Waitlist (p = .005).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>5</td><td>11.44</td><td>2.46</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>10.62</td><td>1.81</td></tr><tr><td>Mindful</td><td>Low</td><td>5</td><td>13.18</td><td>1.62</td></tr><tr><td>Mindful</td><td>High</td><td>5</td><td>13.10</td><td>2.94</td></tr><tr><td>Waitlist</td><td>Low</td><td>5</td><td>16.72</td><td>1.71</td></tr><tr><td>Waitlist</td><td>High</td><td>5</td><td>16.16</td><td>1.57</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>148.70</td><td>2</td><td>74.35</td><td>17.18</td><td>&lt; .001</td><td>.589</td></tr><tr><td>dose</td><td>1.78</td><td>1</td><td>1.78</td><td>0.41</td><td>.528</td><td>.017</td></tr><tr><td>therapy × dose</td><td>0.70</td><td>2</td><td>0.35</td><td>0.08</td><td>.922</td><td>.007</td></tr><tr><td>Error</td><td>103.87</td><td>24</td><td>4.33</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Pairwise comparisons of therapy (Tukey)</b></p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>q</th><th>p (Tukey)</th></tr><tr><td>CBT − Mindful</td><td>-2.11</td><td>3.21</td><td>.080</td></tr><tr><td>CBT − Waitlist</td><td>-5.41</td><td>8.22</td><td>&lt; .001</td></tr><tr><td>Mindful − Waitlist</td><td>-3.30</td><td>5.02</td><td>.005</td></tr></tbody></table><p class=\"desc\">Differences between estimated marginal means of therapy (each level's mean averaged over the cell means of dose), using the design's error term (MSE = 4.33, df = 24). Run these only because the main effect is significant and the interaction is not.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>30</td><td>0.986</td><td>.956</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 24) = 0.22, p = .952.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 3 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(2, 24) = 17.18, p &lt; .001, ηp² = .589; the main effect of dose was not significant, F(1, 24) = 0.41, p = .528, ηp² = .017; the interaction between therapy and dose was not significant, F(2, 24) = 0.08, p = .922, ηp² = .007. For therapy, Tukey comparisons of estimated marginal means gave: CBT vs Mindful (p = .080); CBT vs Waitlist (p &lt; .001); Mindful vs Waitlist (p = .005).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova2-3x3-interaction",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,14.7\nCBT,Low,8.0\nCBT,Low,12.3\nCBT,Low,12.9\nCBT,Mid,12.3\nCBT,Mid,13.1\nCBT,Mid,16.7\nCBT,Mid,17.3\nCBT,High,20.1\nCBT,High,13.7\nCBT,High,17.5\nCBT,High,17.1\nMindful,Low,15.1\nMindful,Low,11.7\nMindful,Low,13.4\nMindful,Low,12.2\nMindful,Mid,11.9\nMindful,Mid,14.8\nMindful,Mid,10.7\nMindful,Mid,14.5\nMindful,High,15.4\nMindful,High,11.1\nMindful,High,16.1\nMindful,High,14.7\nWaitlist,Low,20.2\nWaitlist,Low,17.3\nWaitlist,Low,12.0\nWaitlist,Low,18.6\nWaitlist,Mid,11.8\nWaitlist,Mid,14.9\nWaitlist,Mid,16.6\nWaitlist,Mid,12.0\nWaitlist,High,13.0\nWaitlist,High,9.7\nWaitlist,High,8.2\nWaitlist,High,10.8",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 3 × 3 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 27) = 0.74, p = .487, ηp² = .052; the main effect of dose was not significant, F(2, 27) = 0.01, p = .989, ηp² = .001; the interaction between therapy and dose was significant, F(4, 27) = 5.94, p = .001, ηp² = .468. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(2, 27) = 4.35, p = .069; Mindful, F(2, 27) = 0.37, p = 1.000; Waitlist, F(2, 27) = 7.17, p = .010.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "4",
+       "11.97",
+       "2.84"
+      ],
+      [
+       "CBT",
+       "Mid",
+       "4",
+       "14.85",
+       "2.52"
+      ],
+      [
+       "CBT",
+       "High",
+       "4",
+       "17.10",
+       "2.63"
+      ],
+      [
+       "Mindful",
+       "Low",
+       "4",
+       "13.10",
+       "1.51"
+      ],
+      [
+       "Mindful",
+       "Mid",
+       "4",
+       "12.98",
+       "2.00"
+      ],
+      [
+       "Mindful",
+       "High",
+       "4",
+       "14.32",
+       "2.22"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "4",
+       "17.02",
+       "3.55"
+      ],
+      [
+       "Waitlist",
+       "Mid",
+       "4",
+       "13.83",
+       "2.33"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "4",
+       "10.43",
+       "2.02"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "8.98",
+       "2",
+       "4.49",
+       "0.74",
+       ".487",
+       ".052"
+      ],
+      [
+       "dose",
+       "0.14",
+       "2",
+       "0.07",
+       "0.01",
+       ".989",
+       ".001"
+      ],
+      [
+       "therapy × dose",
+       "144.25",
+       "4",
+       "36.06",
+       "5.94",
+       ".001",
+       ".468"
+      ],
+      [
+       "Error",
+       "164.01",
+       "27",
+       "6.07",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Effect of dose at each level of therapy</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level",
+       "SS",
+       "df",
+       "F",
+       "p",
+       "p, Bonferroni (×3)"
+      ],
+      [
+       "CBT",
+       "52.79",
+       "2, 27",
+       "4.35",
+       ".023",
+       ".069"
+      ],
+      [
+       "Mindful",
+       "4.45",
+       "2, 27",
+       "0.37",
+       ".697",
+       "1.000"
+      ],
+      [
+       "Waitlist",
+       "87.15",
+       "2, 27",
+       "7.17",
+       ".003",
+       ".010"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Effect of therapy at each level of dose</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level",
+       "SS",
+       "df",
+       "F",
+       "p",
+       "p, Bonferroni (×3)"
+      ],
+      [
+       "Low",
+       "56.23",
+       "2, 27",
+       "4.63",
+       ".019",
+       ".056"
+      ],
+      [
+       "Mid",
+       "7.05",
+       "2, 27",
+       "0.58",
+       ".566",
+       "1.000"
+      ],
+      [
+       "High",
+       "89.96",
+       "2, 27",
+       "7.40",
+       ".003",
+       ".008"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Simple effects use the error term of the whole design (MSE = 6.07, df = 27). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise comparisons of therapy within each level of dose (Bonferroni)</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "dose",
+       "Pair",
+       "Mean diff",
+       "t",
+       "p",
+       "p, Bonferroni (×9)"
+      ],
+      [
+       "Low",
+       "CBT − Mindful",
+       "-1.12",
+       "-0.65",
+       ".524",
+       "1.000"
+      ],
+      [
+       "Low",
+       "CBT − Waitlist",
+       "-5.05",
+       "-2.90",
+       ".007",
+       ".066"
+      ],
+      [
+       "Low",
+       "Mindful − Waitlist",
+       "-3.93",
+       "-2.25",
+       ".033",
+       ".294"
+      ],
+      [
+       "Mid",
+       "CBT − Mindful",
+       "1.87",
+       "1.08",
+       ".292",
+       "1.000"
+      ],
+      [
+       "Mid",
+       "CBT − Waitlist",
+       "1.02",
+       "0.59",
+       ".561",
+       "1.000"
+      ],
+      [
+       "Mid",
+       "Mindful − Waitlist",
+       "-0.85",
+       "-0.49",
+       ".630",
+       "1.000"
+      ],
+      [
+       "High",
+       "CBT − Mindful",
+       "2.78",
+       "1.59",
+       ".123",
+       "1.000"
+      ],
+      [
+       "High",
+       "CBT − Waitlist",
+       "6.68",
+       "3.83",
+       "&lt; .001",
+       ".006"
+      ],
+      [
+       "High",
+       "Mindful − Waitlist",
+       "3.90",
+       "2.24",
+       ".034",
+       ".303"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Because the interaction is significant, the levels of therapy are compared inside each level of dose, not averaged over it. Every test uses the design's error term (MSE = 6.07, df = 27), and the Bonferroni column multiplies each p by all 9 tests in the table."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise comparisons of dose within each level of therapy (Bonferroni)</b>"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "Pair",
+       "Mean diff",
+       "t",
+       "p",
+       "p, Bonferroni (×9)"
+      ],
+      [
+       "CBT",
+       "Low − Mid",
+       "-2.87",
+       "-1.65",
+       ".111",
+       ".995"
+      ],
+      [
+       "CBT",
+       "Low − High",
+       "-5.13",
+       "-2.94",
+       ".007",
+       ".060"
+      ],
+      [
+       "CBT",
+       "Mid − High",
+       "-2.25",
+       "-1.29",
+       ".208",
+       "1.000"
+      ],
+      [
+       "Mindful",
+       "Low − Mid",
+       "0.12",
+       "0.07",
+       ".943",
+       "1.000"
+      ],
+      [
+       "Mindful",
+       "Low − High",
+       "-1.23",
+       "-0.70",
+       ".488",
+       "1.000"
+      ],
+      [
+       "Mindful",
+       "Mid − High",
+       "-1.35",
+       "-0.77",
+       ".445",
+       "1.000"
+      ],
+      [
+       "Waitlist",
+       "Low − Mid",
+       "3.20",
+       "1.84",
+       ".077",
+       ".696"
+      ],
+      [
+       "Waitlist",
+       "Low − High",
+       "6.60",
+       "3.79",
+       "&lt; .001",
+       ".007"
+      ],
+      [
+       "Waitlist",
+       "Mid − High",
+       "3.40",
+       "1.95",
+       ".062",
+       ".554"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Because the interaction is significant, the levels of dose are compared inside each level of therapy, not averaged over it. Every test uses the design's error term (MSE = 6.07, df = 27), and the Bonferroni column multiplies each p by all 9 tests in the table."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "36",
+       "0.956",
+       ".159"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(8, 27) = 0.26, p = .973."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow411.972.84CBTMid414.852.52CBTHigh417.102.63MindfulLow413.101.51MindfulMid412.982.00MindfulHigh414.322.22WaitlistLow417.023.55WaitlistMid413.832.33WaitlistHigh410.432.02SourceSSdfMSFpPartial η²therapy8.9824.490.74.487.052dose0.1420.070.01.989.001therapy × dose144.25436.065.94.001.468Error164.01276.07Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone.Effect of dose at each level of therapyLevelSSdfFpp, Bonferroni (×3)CBT52.792, 274.35.023.069Mindful4.452, 270.37.6971.000Waitlist87.152, 277.17.003.010Effect of therapy at each level of doseLevelSSdfFpp, Bonferroni (×3)Low56.232, 274.63.019.056Mid7.052, 270.58.5661.000High89.962, 277.40.003.008Simple effects use the error term of the whole design (MSE = 6.07, df = 27). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels.Pairwise comparisons of therapy within each level of dose (Bonferroni)dosePairMean difftpp, Bonferroni (×9)LowCBT − Mindful-1.12-0.65.5241.000LowCBT − Waitlist-5.05-2.90.007.066LowMindful − Waitlist-3.93-2.25.033.294MidCBT − Mindful1.871.08.2921.000MidCBT − Waitlist1.020.59.5611.000MidMindful − Waitlist-0.85-0.49.6301.000HighCBT − Mindful2.781.59.1231.000HighCBT − Waitlist6.683.83< .001.006HighMindful − Waitlist3.902.24.034.303Because the interaction is significant, the levels of therapy are compared inside each level of dose, not averaged over it. Every test uses the design's error term (MSE = 6.07, df = 27), and the Bonferroni column multiplies each p by all 9 tests in the table.Pairwise comparisons of dose within each level of therapy (Bonferroni)therapyPairMean difftpp, Bonferroni (×9)CBTLow − Mid-2.87-1.65.111.995CBTLow − High-5.13-2.94.007.060CBTMid − High-2.25-1.29.2081.000MindfulLow − Mid0.120.07.9431.000MindfulLow − High-1.23-0.70.4881.000MindfulMid − High-1.35-0.77.4451.000WaitlistLow − Mid3.201.84.077.696WaitlistLow − High6.603.79< .001.007WaitlistMid − High3.401.95.062.554Because the interaction is significant, the levels of dose are compared inside each level of therapy, not averaged over it. Every test uses the design's error term (MSE = 6.07, df = 27), and the Bonferroni column multiplies each p by all 9 tests in the table.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)360.956.159Equal spread (Brown-Forsythe): F(8, 27) = 0.26, p = .973.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.A 3 × 3 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 27) = 0.74, p = .487, ηp² = .052; the main effect of dose was not significant, F(2, 27) = 0.01, p = .989, ηp² = .001; the interaction between therapy and dose was significant, F(4, 27) = 5.94, p = .001, ηp² = .468. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(2, 27) = 4.35, p = .069; Mindful, F(2, 27) = 0.37, p = 1.000; Waitlist, F(2, 27) = 7.17, p = .010.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>4</td><td>11.97</td><td>2.84</td></tr><tr><td>CBT</td><td>Mid</td><td>4</td><td>14.85</td><td>2.52</td></tr><tr><td>CBT</td><td>High</td><td>4</td><td>17.10</td><td>2.63</td></tr><tr><td>Mindful</td><td>Low</td><td>4</td><td>13.10</td><td>1.51</td></tr><tr><td>Mindful</td><td>Mid</td><td>4</td><td>12.98</td><td>2.00</td></tr><tr><td>Mindful</td><td>High</td><td>4</td><td>14.32</td><td>2.22</td></tr><tr><td>Waitlist</td><td>Low</td><td>4</td><td>17.02</td><td>3.55</td></tr><tr><td>Waitlist</td><td>Mid</td><td>4</td><td>13.83</td><td>2.33</td></tr><tr><td>Waitlist</td><td>High</td><td>4</td><td>10.43</td><td>2.02</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>8.98</td><td>2</td><td>4.49</td><td>0.74</td><td>.487</td><td>.052</td></tr><tr><td>dose</td><td>0.14</td><td>2</td><td>0.07</td><td>0.01</td><td>.989</td><td>.001</td></tr><tr><td>therapy × dose</td><td>144.25</td><td>4</td><td>36.06</td><td>5.94</td><td>.001</td><td>.468</td></tr><tr><td>Error</td><td>164.01</td><td>27</td><td>6.07</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer. The interaction is significant: read the main effects with care, because the effect of one factor depends on the level of the other. Look at the cell means and test simple effects before you interpret a main effect alone.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Effect of dose at each level of therapy</b></p><table class=\"stats-table\"><tbody><tr><th>Level</th><th>SS</th><th>df</th><th>F</th><th>p</th><th>p, Bonferroni (×3)</th></tr><tr><td>CBT</td><td>52.79</td><td>2, 27</td><td>4.35</td><td>.023</td><td>.069</td></tr><tr><td>Mindful</td><td>4.45</td><td>2, 27</td><td>0.37</td><td>.697</td><td>1.000</td></tr><tr><td>Waitlist</td><td>87.15</td><td>2, 27</td><td>7.17</td><td>.003</td><td>.010</td></tr></tbody></table><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Effect of therapy at each level of dose</b></p><table class=\"stats-table\"><tbody><tr><th>Level</th><th>SS</th><th>df</th><th>F</th><th>p</th><th>p, Bonferroni (×3)</th></tr><tr><td>Low</td><td>56.23</td><td>2, 27</td><td>4.63</td><td>.019</td><td>.056</td></tr><tr><td>Mid</td><td>7.05</td><td>2, 27</td><td>0.58</td><td>.566</td><td>1.000</td></tr><tr><td>High</td><td>89.96</td><td>2, 27</td><td>7.40</td><td>.003</td><td>.008</td></tr></tbody></table><p class=\"desc\">Simple effects use the error term of the whole design (MSE = 6.07, df = 27). The Bonferroni column multiplies each p by the number of tests in its table. They show where a difference lives; they do not say which pairs of groups differ when a factor has three or more levels.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Pairwise comparisons of therapy within each level of dose (Bonferroni)</b></p><table class=\"stats-table\"><tbody><tr><th>dose</th><th>Pair</th><th>Mean diff</th><th>t</th><th>p</th><th>p, Bonferroni (×9)</th></tr><tr><td>Low</td><td>CBT − Mindful</td><td>-1.12</td><td>-0.65</td><td>.524</td><td>1.000</td></tr><tr><td>Low</td><td>CBT − Waitlist</td><td>-5.05</td><td>-2.90</td><td>.007</td><td>.066</td></tr><tr><td>Low</td><td>Mindful − Waitlist</td><td>-3.93</td><td>-2.25</td><td>.033</td><td>.294</td></tr><tr><td>Mid</td><td>CBT − Mindful</td><td>1.87</td><td>1.08</td><td>.292</td><td>1.000</td></tr><tr><td>Mid</td><td>CBT − Waitlist</td><td>1.02</td><td>0.59</td><td>.561</td><td>1.000</td></tr><tr><td>Mid</td><td>Mindful − Waitlist</td><td>-0.85</td><td>-0.49</td><td>.630</td><td>1.000</td></tr><tr><td>High</td><td>CBT − Mindful</td><td>2.78</td><td>1.59</td><td>.123</td><td>1.000</td></tr><tr><td>High</td><td>CBT − Waitlist</td><td>6.68</td><td>3.83</td><td>&lt; .001</td><td>.006</td></tr><tr><td>High</td><td>Mindful − Waitlist</td><td>3.90</td><td>2.24</td><td>.034</td><td>.303</td></tr></tbody></table><p class=\"desc\">Because the interaction is significant, the levels of therapy are compared inside each level of dose, not averaged over it. Every test uses the design's error term (MSE = 6.07, df = 27), and the Bonferroni column multiplies each p by all 9 tests in the table.</p><p class=\"desc\" style=\"margin:10px 0 2px\"><b>Pairwise comparisons of dose within each level of therapy (Bonferroni)</b></p><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>Pair</th><th>Mean diff</th><th>t</th><th>p</th><th>p, Bonferroni (×9)</th></tr><tr><td>CBT</td><td>Low − Mid</td><td>-2.87</td><td>-1.65</td><td>.111</td><td>.995</td></tr><tr><td>CBT</td><td>Low − High</td><td>-5.13</td><td>-2.94</td><td>.007</td><td>.060</td></tr><tr><td>CBT</td><td>Mid − High</td><td>-2.25</td><td>-1.29</td><td>.208</td><td>1.000</td></tr><tr><td>Mindful</td><td>Low − Mid</td><td>0.12</td><td>0.07</td><td>.943</td><td>1.000</td></tr><tr><td>Mindful</td><td>Low − High</td><td>-1.23</td><td>-0.70</td><td>.488</td><td>1.000</td></tr><tr><td>Mindful</td><td>Mid − High</td><td>-1.35</td><td>-0.77</td><td>.445</td><td>1.000</td></tr><tr><td>Waitlist</td><td>Low − Mid</td><td>3.20</td><td>1.84</td><td>.077</td><td>.696</td></tr><tr><td>Waitlist</td><td>Low − High</td><td>6.60</td><td>3.79</td><td>&lt; .001</td><td>.007</td></tr><tr><td>Waitlist</td><td>Mid − High</td><td>3.40</td><td>1.95</td><td>.062</td><td>.554</td></tr></tbody></table><p class=\"desc\">Because the interaction is significant, the levels of dose are compared inside each level of therapy, not averaged over it. Every test uses the design's error term (MSE = 6.07, df = 27), and the Bonferroni column multiplies each p by all 9 tests in the table.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>36</td><td>0.956</td><td>.159</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(8, 27) = 0.26, p = .973.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><div id=\"statsSentence\">A 3 × 3 between-subjects ANOVA on score showed that the main effect of therapy was not significant, F(2, 27) = 0.74, p = .487, ηp² = .052; the main effect of dose was not significant, F(2, 27) = 0.01, p = .989, ηp² = .001; the interaction between therapy and dose was significant, F(4, 27) = 5.94, p = .001, ηp² = .468. Because the interaction was significant, the simple effects of dose within each level of therapy were examined (Bonferroni-adjusted): CBT, F(2, 27) = 4.35, p = .069; Mindful, F(2, 27) = 0.37, p = 1.000; Waitlist, F(2, 27) = 7.17, p = .010.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova2-same-factor-twice",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,13.9\nCBT,Low,15.8\nCBT,Low,15.3\nCBT,Low,12.8\nCBT,High,20.0\nCBT,High,20.7\nCBT,High,17.7\nCBT,High,22.4\nWaitlist,Low,11.1\nWaitlist,Low,9.4\nWaitlist,Low,13.4\nWaitlist,Low,11.5\nWaitlist,High,11.1\nWaitlist,High,9.6\nWaitlist,High,14.0\nWaitlist,High,13.3",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "therapy"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Choose two different grouping variables"
+   ]
+  },
+  {
+   "id": "anova2-one-level",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,18.0\nCBT,Low,11.4\nCBT,Low,15.1\nCBT,Low,18.1\nWaitlist,Low,13.5\nWaitlist,Low,10.6\nWaitlist,Low,8.8\nWaitlist,Low,11.0",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Each grouping variable needs at least 2 levels"
+   ]
+  },
+  {
+   "id": "anova2-seven-levels",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nA1,Low,11.2\nA1,Low,15.4\nA1,High,17.3\nA1,High,14.6\nA2,Low,13.5\nA2,Low,10.1\nA2,High,13.6\nA2,High,10.9\nA3,Low,12.3\nA3,Low,9.4\nA3,High,14.8\nA3,High,15.4\nA4,Low,17.1\nA4,Low,18.6\nA4,High,15.5\nA4,High,14.9\nA5,Low,15.1\nA5,Low,16.0\nA5,High,14.9\nA5,High,17.3\nA6,Low,16.9\nA6,Low,17.3\nA6,High,16.7\nA6,High,17.5\nA7,Low,20.3\nA7,Low,18.2\nA7,High,16.2\nA7,High,14.4",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This test handles up to 6 levels per factor"
+   ]
+  },
+  {
+   "id": "anova2-empty-cell",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,13.0\nCBT,Low,17.0\nCBT,Low,15.2\nCBT,Low,16.4\nCBT,High,16.2\nCBT,High,19.0\nCBT,High,15.8\nCBT,High,19.9\nWaitlist,Low,7.4\nWaitlist,Low,11.8\nWaitlist,Low,11.8\nWaitlist,Low,6.9\nWaitlist,Mid,11.7\nWaitlist,Mid,12.5\nWaitlist,Mid,9.3\nWaitlist,Mid,12.2\nCBT,Mid,11.9\nCBT,Mid,14.8\nCBT,Mid,15.2\nCBT,Mid,13.5",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every combination of the two factors needs at least one score, and 1 combination has none. A two-way ANOVA cannot be calculated from this layout."
+   ]
+  },
+  {
+   "id": "anova2-empty-cells-three",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,14.5\nCBT,Low,13.0\nCBT,Low,11.8\nCBT,Low,10.6\nCBT,High,18.4\nCBT,High,18.5\nCBT,High,17.5\nCBT,High,18.2\nWaitlist,Low,11.5\nWaitlist,Low,12.8\nWaitlist,Low,12.3\nWaitlist,Low,15.2\nMindful,Mid,12.7\nMindful,Mid,13.6\nMindful,Mid,12.7\nMindful,Mid,14.7\nCBT,Mid,12.5\nCBT,Mid,13.5\nCBT,Mid,14.5\nCBT,Mid,9.4\nMindful,Low,14.8\nMindful,Low,13.5\nMindful,Low,14.9\nMindful,Low,11.0",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every combination of the two factors needs at least one score, and 3 combinations have none. A two-way ANOVA cannot be calculated from this layout."
+   ]
+  },
+  {
+   "id": "anova2-dfe-zero",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,14\nCBT,High,18\nWaitlist,Low,11\nWaitlist,High,12",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "There are too few scores for this many cells (the error degrees of freedom must be at least 1), so the two-way ANOVA cannot be calculated."
+   ]
+  },
+  {
+   "id": "anova2-no-spread",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,14\nCBT,Low,14\nCBT,High,18\nCBT,High,18\nWaitlist,Low,11\nWaitlist,Low,11\nWaitlist,High,12\nWaitlist,High,12",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "No cell has any spread (all scores inside each cell are the same), so the F tests cannot be calculated."
+   ]
+  },
+  {
+   "id": "anova2-text-in-numeric",
+   "test": "anova2",
+   "csv": "therapy,dose,score\nCBT,Low,13.4\nCBT,Low,18.1\nCBT,Low,12.0\nCBT,Low,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nCBT,Low,15.1\nCBT,Low,13.2\nCBT,High,16.0\nCBT,High,18.7\nCBT,High,16.6\nCBT,High,19.1\nCBT,High,17.0\nWaitlist,Low,9.1\nWaitlist,High,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\nWaitlist,Low,11.4\nWaitlist,Low,12.7\nWaitlist,Low,13.5\nWaitlist,Low,13.4\nWaitlist,High,14.7\nWaitlist,High,10.9\nWaitlist,High,11.0\nWaitlist,High,13.1\nWaitlist,High,13.5",
+   "values": {
+    "dv": "score",
+    "iv": "therapy",
+    "iv2": "dose"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "iv": "0",
+     "iv2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 16) = 19.07, p < .001, ηp² = .544; the main effect of dose was significant, F(1, 16) = 5.17, p = .037, ηp² = .244; the interaction between therapy and dose was not significant, F(1, 16) = 2.31, p = .148, ηp² = .126.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "therapy",
+       "dose",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "Low",
+       "5",
+       "14.36",
+       "2.36"
+      ],
+      [
+       "CBT",
+       "High",
+       "5",
+       "17.48",
+       "1.35"
+      ],
+      [
+       "Waitlist",
+       "Low",
+       "5",
+       "12.02",
+       "1.83"
+      ],
+      [
+       "Waitlist",
+       "High",
+       "5",
+       "12.64",
+       "1.65"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "therapy",
+       "64.44",
+       "1",
+       "64.44",
+       "19.07",
+       "&lt; .001",
+       ".544"
+      ],
+      [
+       "dose",
+       "17.48",
+       "1",
+       "17.48",
+       "5.17",
+       ".037",
+       ".244"
+      ],
+      [
+       "therapy × dose",
+       "7.81",
+       "1",
+       "7.81",
+       "2.31",
+       ".148",
+       ".126"
+      ],
+      [
+       "Error",
+       "54.06",
+       "16",
+       "3.38",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals (all cells)",
+       "20",
+       "0.973",
+       ".815"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(3, 16) = 0.15, p = .930."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultstherapydoseNMSDCBTLow514.362.36CBTHigh517.481.35WaitlistLow512.021.83WaitlistHigh512.641.65SourceSSdfMSFpPartial η²therapy64.44164.4419.07< .001.544dose17.48117.485.17.037.244therapy × dose7.8117.812.31.148.126Error54.06163.38Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.Assumption checksVariableNShapiro-Wilk WpResiduals (all cells)200.973.815Equal spread (Brown-Forsythe): F(3, 16) = 0.15, p = .930.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.2 entries that are not a number were left out.A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 16) = 19.07, p < .001, ηp² = .544; the main effect of dose was significant, F(1, 16) = 5.17, p = .037, ηp² = .244; the interaction between therapy and dose was not significant, F(1, 16) = 2.31, p = .148, ηp² = .126.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>therapy</th><th>dose</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>Low</td><td>5</td><td>14.36</td><td>2.36</td></tr><tr><td>CBT</td><td>High</td><td>5</td><td>17.48</td><td>1.35</td></tr><tr><td>Waitlist</td><td>Low</td><td>5</td><td>12.02</td><td>1.83</td></tr><tr><td>Waitlist</td><td>High</td><td>5</td><td>12.64</td><td>1.65</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td>therapy</td><td>64.44</td><td>1</td><td>64.44</td><td>19.07</td><td>&lt; .001</td><td>.544</td></tr><tr><td>dose</td><td>17.48</td><td>1</td><td>17.48</td><td>5.17</td><td>.037</td><td>.244</td></tr><tr><td>therapy × dose</td><td>7.81</td><td>1</td><td>7.81</td><td>2.31</td><td>.148</td><td>.126</td></tr><tr><td>Error</td><td>54.06</td><td>16</td><td>3.38</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Type III sums of squares, the default in SPSS and JASP. The design is balanced (equal cell sizes), so every sums-of-squares type gives the same answer.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals (all cells)</td><td>20</td><td>0.973</td><td>.815</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(3, 16) = 0.15, p = .930.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself.</p></div><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A 2 × 2 between-subjects ANOVA on score showed that the main effect of therapy was significant, F(1, 16) = 19.07, p &lt; .001, ηp² = .544; the main effect of dose was significant, F(1, 16) = 5.17, p = .037, ηp² = .244; the interaction between therapy and dose was not significant, F(1, 16) = 2.31, p = .148, ηp² = .126.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

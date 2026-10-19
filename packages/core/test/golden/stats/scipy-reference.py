@@ -319,11 +319,120 @@ def friedman(rows, form):
     return {"chi": res.statistic, "pF": res.pvalue}
 
 
+def mr_design(rows, form):
+    """stkMRData rebuilt from the inputs: the ticked columns without the outcome (preds, then cats without preds, then preds2 and cats2 without the ones taken), the rows with an outcome
+    and every numeric predictor present and finite and every categorical predictor present, then the design in v1's order addNum(preds), addCat(cats), addNum(preds2), addCat(cats2).
+    A categorical predictor's levels are in first-seen order over the rows kept; its reference level is the one `ref` names (`name=level`, parts split on , or ;, names and levels
+    case-insensitive, the last level that matches), else the largest group, ties to the first seen; one 0/1 column for every other level, in level order."""
+    dv = col(form, "dv")
+    ticked = form["ticked"]
+
+    def tick(cls, skip):
+        return [i for i in ticked.get(cls, []) if i != dv and i not in skip]
+
+    idxs1 = tick("preds", [])
+    cidx1 = tick("cats", idxs1)
+    taken = idxs1 + cidx1
+    idxs2 = tick("preds2", taken)
+    cidx2 = tick("cats2", taken + idxs2)
+    idxs, cidxs = idxs1 + idxs2, cidx1 + cidx2
+    spec = {}
+    for part in re.split(r"[,;]", form["values"].get("ref", "")):
+        q = part.split("=")
+        if len(q) == 2:
+            spec[js_trim(q[0]).lower()] = js_trim(q[1])
+    kept = [r for r in rows
+            if r[dv] != "" and math.isfinite(parse_float(r[dv]))
+            and all(r[i] != "" and math.isfinite(parse_float(r[i])) for i in idxs)
+            and all(r[i] != "" for i in cidxs)]
+    y = [parse_float(r[dv]) for r in kept]
+    xs, dummy = [], []
+    headers = form["headers"]
+
+    def add_num(lst):
+        for i in lst:
+            xs.append([parse_float(r[i]) for r in kept])
+            dummy.append(False)
+
+    def add_cat(lst):
+        for i in lst:
+            lv = first_seen([r[i] for r in kept])
+            cnt = {g: sum(1 for r in kept if r[i] == g) for g in lv}
+            want = spec.get(headers[i].lower())
+            ref = None
+            if want is not None:
+                for g in lv:
+                    if g.lower() == want.lower():
+                        ref = g
+            if ref is None:
+                ref = lv[0]
+                for g in lv:
+                    if cnt[g] > cnt[ref]:
+                        ref = g
+            for g in lv:
+                if g != ref:
+                    xs.append([1.0 if r[i] == g else 0.0 for r in kept])
+                    dummy.append(True)
+
+    add_num(idxs1)
+    add_cat(cidx1)
+    add_num(idxs2)
+    add_cat(cidx2)
+    return np.array(y), [np.array(x) for x in xs], dummy, len(idxs1) + len(cidx1), len(idxs2) + len(cidx2) > 0
+
+
+def ols(xs, y):
+    """numpy's least squares on the design with an intercept: (coefficients, X, residual sum of squares, total sum of squares)."""
+    X = np.column_stack([np.ones(len(y))] + xs)
+    b = np.linalg.lstsq(X, y, rcond=None)[0]
+    res = y - X @ b
+    return b, X, float(res @ res), float(((y - y.mean()) ** 2).sum())
+
+
+def mregress(rows, form):
+    """An independent numpy computation of v1's multiple regression: lstsq on the design stkMRData builds (rebuilt by mr_design) -> b_j (j 0 the intercept, j >= 1 the j-th
+    predictor in m.labels order), se_j = sqrt(mse * (X'X)^-1_jj), t_j, p_j = 2 t.sf(|t_j|, dfe), r2, adj, F, pF = f.sf; vif_j = 1/(1 - R2_j) from regressing predictor j on the
+    others (with an intercept); beta_j = b_j sd(x_j)/sd(y) for the predictors that are not 0/1 dummies; with a step 2, the step 1 model on its first k1 columns -> k1, r21, adj1, F1,
+    p1 and the F change dR, Fc, pc."""
+    y, xs, dummy, k1, step2 = mr_design(rows, form)
+    n, k = len(y), len(xs)
+    dfe = n - k - 1
+    b, X, sse, sst = ols(xs, y)
+    mse = sse / dfe
+    inv = np.linalg.inv(X.T @ X)
+    r2 = 1 - sse / sst
+    adj = 1 - (1 - r2) * (n - 1) / dfe
+    F = (r2 / k) / ((1 - r2) / dfe)
+    out = {"n": n, "k": k, "dfe": dfe, "r2": r2, "adj": adj, "F": F, "pF": stats.f.sf(F, k, dfe)}
+    sdy = float(np.std(y, ddof=1))
+    for j in range(k + 1):
+        se = math.sqrt(mse * inv[j][j])
+        t = b[j] / se
+        out["b_%d" % j], out["se_%d" % j], out["t_%d" % j], out["p_%d" % j] = b[j], se, t, 2 * stats.t.sf(abs(t), dfe)
+        if j > 0:
+            others = [x for i, x in enumerate(xs) if i != j - 1]
+            _, _, sse_j, sst_j = ols(others, xs[j - 1])
+            if sse_j > 0:  # v1's VIF is Infinity where stkOLS(others, x) is null; the reference has no number for that key (the safety net then refuses the case in v1 anyway)
+                out["vif_%d" % j] = 1 / (1 - (1 - sse_j / sst_j))
+            if not dummy[j - 1]:
+                out["beta_%d" % j] = b[j] * float(np.std(xs[j - 1], ddof=1)) / sdy
+    if step2:
+        _, _, sse1, sst1 = ols(xs[:k1], y)
+        dfe1 = n - k1 - 1
+        r21 = 1 - sse1 / sst1
+        F1 = (r21 / k1) / ((1 - r21) / dfe1)
+        dk, dR = k - k1, r2 - r21
+        Fc = (dR / dk) / ((1 - r2) / dfe)
+        out.update(k1=k1, r21=r21, adj1=1 - (1 - r21) * (n - 1) / dfe1, F1=F1, p1=stats.f.sf(F1, k1, dfe1), dR=dR, Fc=Fc, pc=stats.f.sf(Fc, dk, dfe))
+    return out
+
+
 class NoReference(Exception):
     """A test this scipy has no counterpart for: the case is written with ref null and the message as why."""
 
 
-# The scipy counterpart of each runner: (rows, form) -> { values key: scipy's number }, under the runner's `values` keys.
+# The scipy counterpart of each runner: (rows, form) -> { values key: scipy's number }, under the runner's `values` keys. `form` is the fixture's form with the parsed
+# `headers` added (mregress names a categorical predictor's reference level by its column name).
 REFERENCE = {
     "ttest1": ttest1,               # ttest_1samp(vals, mu) -> t, p
     "ttestInd": ttest_ind,          # ttest_ind(equal_var=False) -> t, p, df; equal_var=True -> tS, pS
@@ -341,13 +450,16 @@ REFERENCE = {
     "gof": gof,                     # chisquare(obs, exp) -> chi2, p; two categories with an expected count below 5: binomtest(obs[0], N, share[0]) -> binomP
     "mcnemar": mcnemar,             # binomtest(b, nd, 0.5) -> pEx; chi = (|b - c| - 1)^2 / nd ("formula"), chi2.sf(chi, 1) -> pChi
     "friedman": friedman,           # friedmanchisquare -> chi, pF
+    "mregress": mregress,           # an independent numpy computation: lstsq -> b_j, se_j, t_j, p_j (t.sf), r2, adj, F, pF (f.sf), vif_j, beta_j; step 2: k1, r21, adj1, F1, p1, dR, Fc, pc
 }
 # Tests with no scipy counterpart at all: every case is written with ref null and this reason, and the port's values are held to v1 only, by the golden fixtures ("matches v1").
 NO_COUNTERPART = {
     "cochran": "no scipy counterpart: Cochran's Q matches v1",
+    "anova2": "matches v1 (Type III, no R here)",
 }
 # No scipy counterpart, so these values are held to v1 only ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal padj_i_j), the Spearman interval (lo, hi), omega2 and eps2,
-# the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramer's V (v), Cohen's w, Kendall's W, the Cochran and Friedman pairwise p (pair_p_i_j), and all of Cochran's Q.
+# the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramer's V (v), Cohen's w, Kendall's W, the Cochran and Friedman pairwise p (pair_p_i_j), all of Cochran's Q, and all of the two-way ANOVA (Type III sums of squares,
+# simple effects, the marginal-means Tukey and the within-level Bonferroni tests: anova2 matches v1).
 
 
 def main():
@@ -371,10 +483,11 @@ def main():
                 entry.update(ref=None, why="v1's safety net suppressed the result")
             else:
                 headers, rows = parse_text(case["csv"])
+                form = dict(case["form"], headers=headers)
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")  # scipy warns on a perfect fit or a tiny sample; the value is what is recorded
-                        ref = {k: float(v) for k, v in REFERENCE[case["test"]](rows, case["form"]).items()}
+                        ref = {k: float(v) for k, v in REFERENCE[case["test"]](rows, form).items()}
                 except NoReference as e:
                     entry.update(ref=None, why=str(e))
                     out.append(entry)
