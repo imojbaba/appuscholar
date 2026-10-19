@@ -16,7 +16,7 @@ export function Intake() {
   const s = useApState();
   const shelf = useShelf();
   const [pick, setPick] = useState("");
-  const opts = shelfOptions(shelf.index, t);
+  const opts = shelfOptions(shelf.index, shelf.loading || shelf.locked || shelf.broken, t);
   const d = { toast, t };
   return (
     <>
@@ -40,6 +40,7 @@ export function Intake() {
         <Button variant="ghost" size="sm" id="apSampleBtn" data-testid="ap-sample-btn" onClick={() => fromSample(d)}>{t("ap2_sample_btn")}</Button>
       </div>
       {shelf.locked && <p className="note ap-note" data-testid="ap-shelf-locked">{t("vault_shelf_locked")}</p>}
+      {shelf.broken && <p className="note ap-note" data-testid="ap-shelf-broken">{t("vault_shelf_broken")}</p>}
       <label className="ap-consent" data-testid="ap-consent">
         <input type="checkbox" id="apOK" checked={s.ok} onChange={(e) => setAp({ ok: e.target.checked })} />
         <span>{t("ap2_consent")}</span>

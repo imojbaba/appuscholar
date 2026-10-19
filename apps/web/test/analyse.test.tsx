@@ -22,6 +22,7 @@ const h = vi.hoisted(() => ({
   index: null as null | Array<{ id: string; title: string; file: string; size: number; added: string; total: number; kept: number }>,
   locked: false,
   loading: false,
+  broken: false,
   loadPaper: vi.fn(async (_id: string) => null as null | { pages: string[]; notes: unknown[]; cells: Record<string, string> }),
   extract: vi.fn(async (_f: File) => "no-text" as unknown),
   mammoth: vi.fn(async (_o: unknown) => ({ value: "" })),
@@ -32,7 +33,7 @@ vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
-vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: h.index, loading: h.loading, locked: h.locked, broken: false, loadPaper: h.loadPaper }) }));
+vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
 vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) throw new Error("chunk failed"); return { extractRawText: h.mammoth }; } }));
 
@@ -108,7 +109,7 @@ beforeEach(() => {
   resetAp();
   for (const f of [h.toast, h.setPending, h.loadPaper, h.extract, h.mammoth]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.noMammoth = false;
+  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.noMammoth = false;
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -201,12 +202,20 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
   });
 
   it("the Reading shelf: v1's first line (empty, or choose), one line per paper, the paper's text read once and loaded as a PDF under its title", async () => {
-    h.index = [];
-    const r = await mount();
-    expect([...$("#apShelf")!.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Your Reading shelf is empty"]);
+    // useShelf after a read that found no shelf_index blob (a project with no paper yet: index null, nothing loading, locked or broken), then after a read of an empty index.
+    for (const index of [null, []]) {
+      h.index = index;
+      const r = await mount();
+      expect([...$("#apShelf")!.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Your Reading shelf is empty"]);
+      expect(tid("ap-shelf-locked")).toBeNull();
+      expect(tid("ap-shelf-broken")).toBeNull();
+      act(() => r.unmount()); roots.length = 0; document.body.innerHTML = "";
+    }
+    h.index = null;
+    await mount();
     await click(tid("ap-shelf-btn"));
     expect(toasts()).toEqual(["Choose a paper first"]);
-    act(() => r.unmount()); roots.length = 0; document.body.innerHTML = "";
+    act(() => { for (const x of roots.splice(0)) x.unmount(); }); document.body.innerHTML = "";
     const p = paperOf("pdf-wrapped-lines");
     h.index = [{ id: "sh1", title: "", file: "reading.pdf", size: 10, added: "2026-10-01", total: 2, kept: 2 }, { id: "sh2", title: p.title, file: "vocab.pdf", size: 10, added: "2026-10-02", total: 2, kept: 2 }];
     h.loadPaper.mockResolvedValue({ pages: p.pages, notes: [], cells: {} });
@@ -220,14 +229,14 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
     expect(docRecord()).toEqual({ title: p.title, src: "pdf", pages: p.pages, sample: false, abstractOnly: false });
   });
 
-  it.each([["locked", { locked: true }], ["loading", { loading: true }]] as const)("a shelf not read yet (%s, useShelf's index null) offers \"Choose a paper\", never \"empty\"; Use this paper asks for a choice", async (kind, st) => {
+  it.each([["locked", { locked: true }], ["loading", { loading: true }], ["broken", { broken: true }]] as const)("a shelf not read yet (%s, useShelf's index null) offers \"Choose a paper\", never \"empty\"; Use this paper asks for a choice", async (kind, st) => {
     h.index = null;
     Object.assign(h, st);
     await mount();
     expect([...$("#apShelf")!.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Choose a paper from your Reading shelf"]);
     expect(document.body.textContent).not.toContain("Your Reading shelf is empty");
-    if (kind === "locked") expect(tid("ap-shelf-locked")!.textContent).toBe(E.vault_shelf_locked);
-    else expect(tid("ap-shelf-locked")).toBeNull();
+    expect(tid("ap-shelf-locked")?.textContent ?? null).toBe(kind === "locked" ? E.vault_shelf_locked : null);
+    expect(tid("ap-shelf-broken")?.textContent ?? null).toBe(kind === "broken" ? E.vault_shelf_broken : null);
     await click(tid("ap-shelf-btn"));
     expect(toasts()).toEqual(["Choose a paper first"]);
     expect(h.loadPaper).not.toHaveBeenCalled();
@@ -287,6 +296,18 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
     h.pending = { title: "Thin", pages: ["Thin\n\nAbstract\nToo short."], src: "abstract" };
     await mount(<StrictMode><AnalysePanel /></StrictMode>);
     expect(toasts()).toEqual(["This search result has no abstract to read. Open the source and paste the paper text instead."]);
+  });
+
+  it("a second, different abstract kept later is loaded too (the first one's guard does not block it)", async () => {
+    const a = paperOf("abstract-only");
+    h.pending = { title: a.title, pages: a.pages, src: "abstract" };
+    const root = await mount();
+    expect(getAp().doc!.title).toBe(a.title);
+    const second = { title: "A second abstract", pages: ["A second abstract\n\nAbstract\n" + "Students who slept longer before the exam reported less worry. ".repeat(4)], src: "abstract" as const };
+    h.pending = second;
+    await act(async () => { root.render(<AnalysePanel />); });
+    expect(docRecord()).toEqual({ title: second.title, src: "abstract", pages: second.pages, sample: false, abstractOnly: true });
+    expect(h.setPending).toHaveBeenCalledTimes(2);
   });
 
   it("an abstract too short to read is refused with v1's sentence", async () => {

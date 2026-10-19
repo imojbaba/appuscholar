@@ -74,12 +74,13 @@ export function fromPaste(text: string, d: Pick<IntakeDeps, "toast" | "t">): boo
 }
 
 /**
- * apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. "Your Reading shelf is empty" only once the index is read and holds nothing; while it is not read
- * (loading, locked, broken: useShelf gives null) the first line is "Choose a paper from your Reading shelf" (register D-S2-15).
+ * apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. `unread` is useShelf's loading, locked or broken: while the index is not read the first line is
+ * "Choose a paper from your Reading shelf" (register D-S2-15); a read shelf with no index yet (null: no paper was ever added) or an empty one is "Your Reading shelf is empty", as v1.
  */
-export function shelfOptions(index: ShelfIndex | null, t: T): { empty: string; items: Array<{ id: string; label: string }> } {
-  if (index === null) return { empty: t("ap2_choose_a_paper_from"), items: [] };
-  return { empty: index.length ? t("ap2_choose_a_paper_from") : t("ap2_your_reading_shelf_is"), items: index.map((p) => ({ id: p.id, label: apShelfLabel(p, t("ap2_paper")) })) };
+export function shelfOptions(index: ShelfIndex | null, unread: boolean, t: T): { empty: string; items: Array<{ id: string; label: string }> } {
+  if (index === null && unread) return { empty: t("ap2_choose_a_paper_from"), items: [] };
+  const list = index ?? [];
+  return { empty: list.length ? t("ap2_choose_a_paper_from") : t("ap2_your_reading_shelf_is"), items: list.map((p) => ({ id: p.id, label: apShelfLabel(p, t("ap2_paper")) })) };
 }
 
 /**
