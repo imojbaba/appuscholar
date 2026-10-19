@@ -1,0 +1,693 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "anova1-demo",
+   "test": "anova1",
+   "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+   "values": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-way ANOVA showed a significant effect of arm on score, F(2, 21) = 71.48, p < .001, η² = 0.872. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "8",
+       "13.00",
+       "1.31"
+      ],
+      [
+       "Mindful",
+       "8",
+       "17.00",
+       "1.31"
+      ],
+      [
+       "Waitlist",
+       "8",
+       "23.50",
+       "2.45"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F(2, 21) = 71.48, p &lt; .001, η² = 0.872"
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "CBT",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Mindful",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Waitlist",
+       "8",
+       "0.975",
+       ".933"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDCBT813.001.31Mindful817.001.31Waitlist823.502.45F(2, 21) = 71.48, p < .001, η² = 0.872Assumption checksGroupNShapiro-Wilk WpCBT80.965.857Mindful80.965.857Waitlist80.975.933Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-way ANOVA showed a significant effect of arm on score, F(2, 21) = 71.48, p < .001, η² = 0.872. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>8</td><td>13.00</td><td>1.31</td></tr><tr><td>Mindful</td><td>8</td><td>17.00</td><td>1.31</td></tr><tr><td>Waitlist</td><td>8</td><td>23.50</td><td>2.45</td></tr></tbody></table><p class=\"desc\">F(2, 21) = 71.48, p &lt; .001, η² = 0.872</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>CBT</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Mindful</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Waitlist</td><td>8</td><td>0.975</td><td>.933</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-way ANOVA showed a significant effect of arm on score, F(2, 21) = 71.48, p &lt; .001, η² = 0.872. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1-text-in-numeric",
+   "test": "anova1",
+   "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20\nCBT,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nWaitlist,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-way ANOVA showed a significant effect of arm on score, F(2, 21) = 71.48, p < .001, η² = 0.872. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "CBT",
+       "8",
+       "13.00",
+       "1.31"
+      ],
+      [
+       "Mindful",
+       "8",
+       "17.00",
+       "1.31"
+      ],
+      [
+       "Waitlist",
+       "8",
+       "23.50",
+       "2.45"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F(2, 21) = 71.48, p &lt; .001, η² = 0.872"
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "CBT",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Mindful",
+       "8",
+       "0.965",
+       ".857"
+      ],
+      [
+       "Waitlist",
+       "8",
+       "0.975",
+       ".933"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    },
+    {
+     "kind": "note",
+     "html": "4 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDCBT813.001.31Mindful817.001.31Waitlist823.502.45F(2, 21) = 71.48, p < .001, η² = 0.872Assumption checksGroupNShapiro-Wilk WpCBT80.965.857Mindful80.965.857Waitlist80.975.933Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.4 entries that are not a number were left out.A one-way ANOVA showed a significant effect of arm on score, F(2, 21) = 71.48, p < .001, η² = 0.872. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>CBT</td><td>8</td><td>13.00</td><td>1.31</td></tr><tr><td>Mindful</td><td>8</td><td>17.00</td><td>1.31</td></tr><tr><td>Waitlist</td><td>8</td><td>23.50</td><td>2.45</td></tr></tbody></table><p class=\"desc\">F(2, 21) = 71.48, p &lt; .001, η² = 0.872</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>CBT</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Mindful</td><td>8</td><td>0.965</td><td>.857</td></tr><tr><td>Waitlist</td><td>8</td><td>0.975</td><td>.933</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 21) = 3.11, p = .066.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><p class=\"desc\">4 entries that are not a number were left out.</p><div id=\"statsSentence\">A one-way ANOVA showed a significant effect of arm on score, F(2, 21) = 71.48, p &lt; .001, η² = 0.872. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1-two-groups",
+   "test": "anova1",
+   "csv": "group,score\nA,4\nA,6\nA,5\nB,7\nB,9\nB,8",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "One-way ANOVA needs 3 or more groups — use the t-test for 2"
+   ]
+  },
+  {
+   "id": "anova1-one-row-group",
+   "test": "anova1",
+   "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nA,9\nB,14\nB,15\nB,13\nB,16\nB,15\nC,20",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-way ANOVA showed a significant effect of group on score, F(2, 8) = 20.93, p < .001, η² = 0.840. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "5",
+       "11.00",
+       "1.58"
+      ],
+      [
+       "B",
+       "5",
+       "14.60",
+       "1.14"
+      ],
+      [
+       "C",
+       "1",
+       "20.00",
+       "—"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F(2, 8) = 20.93, p &lt; .001, η² = 0.840"
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "5",
+       "0.987",
+       ".967"
+      ],
+      [
+       "B",
+       "5",
+       "0.961",
+       ".814"
+      ],
+      [
+       "C",
+       "1",
+       "needs 3 or more values"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA511.001.58B514.601.14C120.00—F(2, 8) = 20.93, p < .001, η² = 0.840Assumption checksGroupNShapiro-Wilk WpA50.987.967B50.961.814C1needs 3 or more valuesNo Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-way ANOVA showed a significant effect of group on score, F(2, 8) = 20.93, p < .001, η² = 0.840. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>5</td><td>11.00</td><td>1.58</td></tr><tr><td>B</td><td>5</td><td>14.60</td><td>1.14</td></tr><tr><td>C</td><td>1</td><td>20.00</td><td>—</td></tr></tbody></table><p class=\"desc\">F(2, 8) = 20.93, p &lt; .001, η² = 0.840</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>5</td><td>0.987</td><td>.967</td></tr><tr><td>B</td><td>5</td><td>0.961</td><td>.814</td></tr><tr><td>C</td><td>1</td><td colspan=\"2\">needs 3 or more values</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-way ANOVA showed a significant effect of group on score, F(2, 8) = 20.93, p &lt; .001, η² = 0.840. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1-no-spread",
+   "test": "anova1",
+   "csv": "group,score\nA,5\nA,5\nB,7\nB,7\nC,9\nC,9",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "No group has any spread, or there are too few values for the number of groups, so the ANOVA cannot be calculated."
+   ]
+  },
+  {
+   "id": "anova1-six-groups",
+   "test": "anova1",
+   "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,12\nB,14\nB,13\nB,15\nC,11\nC,13\nC,12\nC,10\nD,15\nD,17\nD,16\nD,18\nE,13\nE,12\nE,14\nE,15\nF,20\nF,22\nF,19\nF,21",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-way ANOVA showed a significant effect of group on score, F(5, 18) = 28.80, p < .001, η² = 0.889. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "4",
+       "11.50",
+       "1.29"
+      ],
+      [
+       "B",
+       "4",
+       "13.50",
+       "1.29"
+      ],
+      [
+       "C",
+       "4",
+       "11.50",
+       "1.29"
+      ],
+      [
+       "D",
+       "4",
+       "16.50",
+       "1.29"
+      ],
+      [
+       "E",
+       "4",
+       "13.50",
+       "1.29"
+      ],
+      [
+       "F",
+       "4",
+       "20.50",
+       "1.29"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F(5, 18) = 28.80, p &lt; .001, η² = 0.889"
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "B",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "C",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "D",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "E",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "F",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(5, 18) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA411.501.29B413.501.29C411.501.29D416.501.29E413.501.29F420.501.29F(5, 18) = 28.80, p < .001, η² = 0.889Assumption checksGroupNShapiro-Wilk WpA40.993.972B40.993.972C40.993.972D40.993.972E40.993.972F40.993.972Equal spread (Brown-Forsythe): F(5, 18) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-way ANOVA showed a significant effect of group on score, F(5, 18) = 28.80, p < .001, η² = 0.889. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>4</td><td>11.50</td><td>1.29</td></tr><tr><td>B</td><td>4</td><td>13.50</td><td>1.29</td></tr><tr><td>C</td><td>4</td><td>11.50</td><td>1.29</td></tr><tr><td>D</td><td>4</td><td>16.50</td><td>1.29</td></tr><tr><td>E</td><td>4</td><td>13.50</td><td>1.29</td></tr><tr><td>F</td><td>4</td><td>20.50</td><td>1.29</td></tr></tbody></table><p class=\"desc\">F(5, 18) = 28.80, p &lt; .001, η² = 0.889</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>B</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>C</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>D</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>E</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>F</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(5, 18) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-way ANOVA showed a significant effect of group on score, F(5, 18) = 28.80, p &lt; .001, η² = 0.889. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1-hindi-labels",
+   "test": "anova1",
+   "csv": "समूह,अंक\nनियंत्रण,12\nनियंत्रण,14\nनियंत्रण,11\nनियंत्रण,13\nध्यान,15\nध्यान,17\nध्यान,16\nध्यान,18\nव्यायाम,13\nव्यायाम,15\nव्यायाम,14\nव्यायाम,12",
+   "values": {
+    "dv": "अंक",
+    "iv": "समूह"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-way ANOVA showed a significant effect of समूह on अंक, F(2, 9) = 10.40, p = .005, η² = 0.698. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "नियंत्रण",
+       "4",
+       "12.50",
+       "1.29"
+      ],
+      [
+       "ध्यान",
+       "4",
+       "16.50",
+       "1.29"
+      ],
+      [
+       "व्यायाम",
+       "4",
+       "13.50",
+       "1.29"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F(2, 9) = 10.40, p = .005, η² = 0.698"
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "नियंत्रण",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "ध्यान",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "व्यायाम",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 9) = 0.00, p = 1.000."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDनियंत्रण412.501.29ध्यान416.501.29व्यायाम413.501.29F(2, 9) = 10.40, p = .005, η² = 0.698Assumption checksGroupNShapiro-Wilk Wpनियंत्रण40.993.972ध्यान40.993.972व्यायाम40.993.972Equal spread (Brown-Forsythe): F(2, 9) = 0.00, p = 1.000.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-way ANOVA showed a significant effect of समूह on अंक, F(2, 9) = 10.40, p = .005, η² = 0.698. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>नियंत्रण</td><td>4</td><td>12.50</td><td>1.29</td></tr><tr><td>ध्यान</td><td>4</td><td>16.50</td><td>1.29</td></tr><tr><td>व्यायाम</td><td>4</td><td>13.50</td><td>1.29</td></tr></tbody></table><p class=\"desc\">F(2, 9) = 10.40, p = .005, η² = 0.698</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>नियंत्रण</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>ध्यान</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>व्यायाम</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 9) = 0.00, p = 1.000.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-way ANOVA showed a significant effect of समूह on अंक, F(2, 9) = 10.40, p = .005, η² = 0.698. Post-hoc comparisons (e.g. Tukey HSD) are needed to locate which groups differ.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1-nonsignificant",
+   "test": "anova1",
+   "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,11\nB,13\nB,12\nB,10\nC,12\nC,11\nC,14\nC,10",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-way ANOVA showed a non-significant effect of group on score, F(2, 9) = 0.04, p = .961, η² = 0.009.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "4",
+       "11.50",
+       "1.29"
+      ],
+      [
+       "B",
+       "4",
+       "11.50",
+       "1.29"
+      ],
+      [
+       "C",
+       "4",
+       "11.75",
+       "1.71"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "F(2, 9) = 0.04, p = .961, η² = 0.009"
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "A",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "B",
+       "4",
+       "0.993",
+       ".972"
+      ],
+      [
+       "C",
+       "4",
+       "0.971",
+       ".850"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Equal spread (Brown-Forsythe): F(2, 9) = 0.16, p = .856."
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsGroupNMSDA411.501.29B411.501.29C411.751.71F(2, 9) = 0.04, p = .961, η² = 0.009Assumption checksGroupNShapiro-Wilk WpA40.993.972B40.993.972C40.971.850Equal spread (Brown-Forsythe): F(2, 9) = 0.16, p = .856.No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-way ANOVA showed a non-significant effect of group on score, F(2, 9) = 0.04, p = .961, η² = 0.009.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>4</td><td>11.50</td><td>1.29</td></tr><tr><td>B</td><td>4</td><td>11.50</td><td>1.29</td></tr><tr><td>C</td><td>4</td><td>11.75</td><td>1.71</td></tr></tbody></table><p class=\"desc\">F(2, 9) = 0.04, p = .961, η² = 0.009</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>A</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>B</td><td>4</td><td>0.993</td><td>.972</td></tr><tr><td>C</td><td>4</td><td>0.971</td><td>.850</td></tr></tbody></table><p class=\"desc\">Equal spread (Brown-Forsythe): F(2, 9) = 0.16, p = .856.</p><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. No sign of unequal spread, but with a group under 10 people this test almost never fires, even when the spreads differ a lot. Compare the SDs in the table yourself. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-way ANOVA showed a non-significant effect of group on score, F(2, 9) = 0.04, p = .961, η² = 0.009.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "anova1-no-categorical-column",
+   "test": "anova1",
+   "csv": "score\n4\n6\n5\n7",
+   "values": {
+    "dv": "score"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "iv": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Could not run that test — check the columns you picked match what the test needs"
+   ]
+  }
+ ]
+}

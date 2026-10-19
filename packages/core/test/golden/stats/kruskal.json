@@ -1,0 +1,654 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "kruskal-demo",
+   "test": "kruskal",
+   "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+   "values": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "A",
+       "7",
+       "3.00",
+       "10.3"
+      ],
+      [
+       "B",
+       "7",
+       "4.00",
+       "17.4"
+      ],
+      [
+       "C",
+       "7",
+       "2.00",
+       "5.4"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Dunn comparison",
+       "z",
+       "p (Holm-adjusted)"
+      ],
+      [
+       "A vs B",
+       "-2.18",
+       ".058"
+      ],
+      [
+       "A vs C",
+       "1.52",
+       ".128"
+      ],
+      [
+       "B vs C",
+       "3.71",
+       "&lt; .001"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankA73.0010.3B74.0017.4C72.005.4H(2) = 13.89, p < .001, epsilon-squared = .69 (corrected for tied scores).Dunn comparisonzp (Holm-adjusted)A vs B-2.18.058A vs C1.52.128B vs C3.71< .001A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>7</td><td>3.00</td><td>10.3</td></tr><tr><td>B</td><td>7</td><td>4.00</td><td>17.4</td></tr><tr><td>C</td><td>7</td><td>2.00</td><td>5.4</td></tr></tbody></table><p class=\"desc\">H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores).</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>A vs B</td><td>-2.18</td><td>.058</td></tr><tr><td>A vs C</td><td>1.52</td><td>.128</td></tr><tr><td>B vs C</td><td>3.71</td><td>&lt; .001</td></tr></tbody></table><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p &lt; .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-group-column-named-group",
+   "test": "kruskal",
+   "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+   "values": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "A",
+       "7",
+       "3.00",
+       "10.3"
+      ],
+      [
+       "B",
+       "7",
+       "4.00",
+       "17.4"
+      ],
+      [
+       "C",
+       "7",
+       "2.00",
+       "5.4"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Dunn comparison",
+       "z",
+       "p (Holm-adjusted)"
+      ],
+      [
+       "A vs B",
+       "-2.18",
+       ".058"
+      ],
+      [
+       "A vs C",
+       "1.52",
+       ".128"
+      ],
+      [
+       "B vs C",
+       "3.71",
+       "&lt; .001"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankA73.0010.3B74.0017.4C72.005.4H(2) = 13.89, p < .001, epsilon-squared = .69 (corrected for tied scores).Dunn comparisonzp (Holm-adjusted)A vs B-2.18.058A vs C1.52.128B vs C3.71< .001A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>7</td><td>3.00</td><td>10.3</td></tr><tr><td>B</td><td>7</td><td>4.00</td><td>17.4</td></tr><tr><td>C</td><td>7</td><td>2.00</td><td>5.4</td></tr></tbody></table><p class=\"desc\">H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores).</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>A vs B</td><td>-2.18</td><td>.058</td></tr><tr><td>A vs C</td><td>1.52</td><td>.128</td></tr><tr><td>B vs C</td><td>3.71</td><td>&lt; .001</td></tr></tbody></table><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p &lt; .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-non-significant",
+   "test": "kruskal",
+   "csv": "arm,score\nA,10\nA,12\nA,11\nA,13\nA,9\nB,11\nB,13\nB,12\nB,10\nB,14\nC,12\nC,11\nC,14\nC,10\nC,13",
+   "values": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed no significant difference in score across the arm groups, H(2) = 1.25, p = .534, ε² = .09.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "A",
+       "5",
+       "11.00",
+       "6.2"
+      ],
+      [
+       "B",
+       "5",
+       "12.00",
+       "8.9"
+      ],
+      [
+       "C",
+       "5",
+       "12.00",
+       "8.9"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 1.25, p = .534, epsilon-squared = .09 (corrected for tied scores)."
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankA511.006.2B512.008.9C512.008.9H(2) = 1.25, p = .534, epsilon-squared = .09 (corrected for tied scores).A Kruskal-Wallis test showed no significant difference in score across the arm groups, H(2) = 1.25, p = .534, ε² = .09.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>5</td><td>11.00</td><td>6.2</td></tr><tr><td>B</td><td>5</td><td>12.00</td><td>8.9</td></tr><tr><td>C</td><td>5</td><td>12.00</td><td>8.9</td></tr></tbody></table><p class=\"desc\">H(2) = 1.25, p = .534, epsilon-squared = .09 (corrected for tied scores).</p><div id=\"statsSentence\">A Kruskal-Wallis test showed no significant difference in score across the arm groups, H(2) = 1.25, p = .534, ε² = .09.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-small-group",
+   "test": "kruskal",
+   "csv": "arm,score\nA,1\nA,2\nA,3\nB,7\nB,8\nB,9\nB,10\nB,11\nB,12\nC,14\nC,15\nC,16\nC,17\nC,18\nC,19",
+   "values": {
+    "dv": "score",
+    "iv": "arm"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in score across the arm groups, H(2) = 12.15, p = .002, ε² = .87. Dunn post-hoc tests with Holm adjustment found significant differences between A and C; B and C.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "A",
+       "3",
+       "2.00",
+       "2.0"
+      ],
+      [
+       "B",
+       "6",
+       "9.50",
+       "6.5"
+      ],
+      [
+       "C",
+       "6",
+       "16.50",
+       "12.5"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 12.15, p = .002, epsilon-squared = .87 (corrected for tied scores). A group has fewer than 5 values, so the p-value is rough. Treat it with care."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Dunn comparison",
+       "z",
+       "p (Holm-adjusted)"
+      ],
+      [
+       "A vs B",
+       "-1.42",
+       ".155"
+      ],
+      [
+       "A vs C",
+       "-3.32",
+       ".003"
+      ],
+      [
+       "B vs C",
+       "-2.32",
+       ".040"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankA32.002.0B69.506.5C616.5012.5H(2) = 12.15, p = .002, epsilon-squared = .87 (corrected for tied scores). A group has fewer than 5 values, so the p-value is rough. Treat it with care.Dunn comparisonzp (Holm-adjusted)A vs B-1.42.155A vs C-3.32.003B vs C-2.32.040A Kruskal-Wallis test showed a significant difference in score across the arm groups, H(2) = 12.15, p = .002, ε² = .87. Dunn post-hoc tests with Holm adjustment found significant differences between A and C; B and C.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>3</td><td>2.00</td><td>2.0</td></tr><tr><td>B</td><td>6</td><td>9.50</td><td>6.5</td></tr><tr><td>C</td><td>6</td><td>16.50</td><td>12.5</td></tr></tbody></table><p class=\"desc\">H(2) = 12.15, p = .002, epsilon-squared = .87 (corrected for tied scores). A group has fewer than 5 values, so the p-value is rough. Treat it with care.</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>A vs B</td><td>-1.42</td><td>.155</td></tr><tr><td>A vs C</td><td>-3.32</td><td>.003</td></tr><tr><td>B vs C</td><td>-2.32</td><td>.040</td></tr></tbody></table><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in score across the arm groups, H(2) = 12.15, p = .002, ε² = .87. Dunn post-hoc tests with Holm adjustment found significant differences between A and C; B and C.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-all-same",
+   "test": "kruskal",
+   "csv": "group,score\nA,3\nA,3\nA,3\nB,3\nB,3\nB,3\nC,3\nC,3\nC,3",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed no significant difference in score across the group groups, H(2) = 0.00, p = 1.000, ε² = .00.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "A",
+       "3",
+       "3.00",
+       "5.0"
+      ],
+      [
+       "B",
+       "3",
+       "3.00",
+       "5.0"
+      ],
+      [
+       "C",
+       "3",
+       "3.00",
+       "5.0"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 0.00, p = 1.000, epsilon-squared = .00 (corrected for tied scores). A group has fewer than 5 values, so the p-value is rough. Treat it with care."
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankA33.005.0B33.005.0C33.005.0H(2) = 0.00, p = 1.000, epsilon-squared = .00 (corrected for tied scores). A group has fewer than 5 values, so the p-value is rough. Treat it with care.A Kruskal-Wallis test showed no significant difference in score across the group groups, H(2) = 0.00, p = 1.000, ε² = .00.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>3</td><td>3.00</td><td>5.0</td></tr><tr><td>B</td><td>3</td><td>3.00</td><td>5.0</td></tr><tr><td>C</td><td>3</td><td>3.00</td><td>5.0</td></tr></tbody></table><p class=\"desc\">H(2) = 0.00, p = 1.000, epsilon-squared = .00 (corrected for tied scores). A group has fewer than 5 values, so the p-value is rough. Treat it with care.</p><div id=\"statsSentence\">A Kruskal-Wallis test showed no significant difference in score across the group groups, H(2) = 0.00, p = 1.000, ε² = .00.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-two-groups",
+   "test": "kruskal",
+   "csv": "group,score\nA,1\nA,2\nA,3\nB,4\nB,5\nB,6",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Kruskal-Wallis needs 3 or more groups. For 2 groups use Mann-Whitney U"
+   ]
+  },
+  {
+   "id": "kruskal-one-value-group",
+   "test": "kruskal",
+   "csv": "group,score\nA,1\nA,2\nA,3\nB,4\nB,5\nB,6\nC,7",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Each group needs at least 2 values"
+   ]
+  },
+  {
+   "id": "kruskal-text-in-numeric",
+   "test": "kruskal",
+   "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3\nA,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nC,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "A",
+       "7",
+       "3.00",
+       "10.3"
+      ],
+      [
+       "B",
+       "7",
+       "4.00",
+       "17.4"
+      ],
+      [
+       "C",
+       "7",
+       "2.00",
+       "5.4"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Dunn comparison",
+       "z",
+       "p (Holm-adjusted)"
+      ],
+      [
+       "A vs B",
+       "-2.18",
+       ".058"
+      ],
+      [
+       "A vs C",
+       "1.52",
+       ".128"
+      ],
+      [
+       "B vs C",
+       "3.71",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankA73.0010.3B74.0017.4C72.005.4H(2) = 13.89, p < .001, epsilon-squared = .69 (corrected for tied scores).Dunn comparisonzp (Holm-adjusted)A vs B-2.18.058A vs C1.52.128B vs C3.71< .0012 entries that are not a number were left out.A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p < .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>A</td><td>7</td><td>3.00</td><td>10.3</td></tr><tr><td>B</td><td>7</td><td>4.00</td><td>17.4</td></tr><tr><td>C</td><td>7</td><td>2.00</td><td>5.4</td></tr></tbody></table><p class=\"desc\">H(2) = 13.89, p &lt; .001, epsilon-squared = .69 (corrected for tied scores).</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>A vs B</td><td>-2.18</td><td>.058</td></tr><tr><td>A vs C</td><td>1.52</td><td>.128</td></tr><tr><td>B vs C</td><td>3.71</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in rating across the group groups, H(2) = 13.89, p &lt; .001, ε² = .69. Dunn post-hoc tests with Holm adjustment found significant differences between B and C.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-integer-labels",
+   "test": "kruskal",
+   "csv": "group,score\n10,20\n10,22\n10,21\n10,24\n10,23\n2,1\n2,3\n2,2\n2,4\n2,5\n3,10\n3,12\n3,11\n3,13\n3,14\nx,",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in score across the group groups, H(2) = 12.50, p = .002, ε² = .89. Dunn post-hoc tests with Holm adjustment found significant differences between 2 and 10.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "2",
+       "5",
+       "3.00",
+       "3.0"
+      ],
+      [
+       "3",
+       "5",
+       "12.00",
+       "8.0"
+      ],
+      [
+       "10",
+       "5",
+       "22.00",
+       "13.0"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 12.50, p = .002, epsilon-squared = .89 (corrected for tied scores)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Dunn comparison",
+       "z",
+       "p (Holm-adjusted)"
+      ],
+      [
+       "2 vs 3",
+       "-1.77",
+       ".154"
+      ],
+      [
+       "2 vs 10",
+       "-3.54",
+       ".001"
+      ],
+      [
+       "3 vs 10",
+       "-1.77",
+       ".154"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rank253.003.03512.008.010522.0013.0H(2) = 12.50, p = .002, epsilon-squared = .89 (corrected for tied scores).Dunn comparisonzp (Holm-adjusted)2 vs 3-1.77.1542 vs 10-3.54.0013 vs 10-1.77.154A Kruskal-Wallis test showed a significant difference in score across the group groups, H(2) = 12.50, p = .002, ε² = .89. Dunn post-hoc tests with Holm adjustment found significant differences between 2 and 10.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>2</td><td>5</td><td>3.00</td><td>3.0</td></tr><tr><td>3</td><td>5</td><td>12.00</td><td>8.0</td></tr><tr><td>10</td><td>5</td><td>22.00</td><td>13.0</td></tr></tbody></table><p class=\"desc\">H(2) = 12.50, p = .002, epsilon-squared = .89 (corrected for tied scores).</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>2 vs 3</td><td>-1.77</td><td>.154</td></tr><tr><td>2 vs 10</td><td>-3.54</td><td>.001</td></tr><tr><td>3 vs 10</td><td>-1.77</td><td>.154</td></tr></tbody></table><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in score across the group groups, H(2) = 12.50, p = .002, ε² = .89. Dunn post-hoc tests with Holm adjustment found significant differences between 2 and 10.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "kruskal-hindi-labels",
+   "test": "kruskal",
+   "csv": "समूह,अंक\nनियंत्रण,2\nनियंत्रण,3\nनियंत्रण,2\nनियंत्रण,3\nनियंत्रण,4\nनियंत्रण,2\nध्यान,4\nध्यान,5\nध्यान,4\nध्यान,5\nध्यान,4\nध्यान,5\nव्यायाम,1\nव्यायाम,1\nव्यायाम,2\nव्यायाम,2\nव्यायाम,1\nव्यायाम,2",
+   "values": {
+    "dv": "अंक",
+    "iv": "समूह"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Kruskal-Wallis test showed a significant difference in अंक across the समूह groups, H(2) = 13.57, p = .001, ε² = .80. Dunn post-hoc tests with Holm adjustment found significant differences between ध्यान and व्यायाम.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Mdn",
+       "Mean rank"
+      ],
+      [
+       "नियंत्रण",
+       "6",
+       "2.50",
+       "9.0"
+      ],
+      [
+       "ध्यान",
+       "6",
+       "4.50",
+       "15.3"
+      ],
+      [
+       "व्यायाम",
+       "6",
+       "1.50",
+       "4.3"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "H(2) = 13.57, p = .001, epsilon-squared = .80 (corrected for tied scores)."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Dunn comparison",
+       "z",
+       "p (Holm-adjusted)"
+      ],
+      [
+       "नियंत्रण vs ध्यान",
+       "-2.09",
+       ".074"
+      ],
+      [
+       "नियंत्रण vs व्यायाम",
+       "1.59",
+       ".113"
+      ],
+      [
+       "ध्यान vs व्यायाम",
+       "3.67",
+       "&lt; .001"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsGroupNMdnMean rankनियंत्रण62.509.0ध्यान64.5015.3व्यायाम61.504.3H(2) = 13.57, p = .001, epsilon-squared = .80 (corrected for tied scores).Dunn comparisonzp (Holm-adjusted)नियंत्रण vs ध्यान-2.09.074नियंत्रण vs व्यायाम1.59.113ध्यान vs व्यायाम3.67< .001A Kruskal-Wallis test showed a significant difference in अंक across the समूह groups, H(2) = 13.57, p = .001, ε² = .80. Dunn post-hoc tests with Holm adjustment found significant differences between ध्यान and व्यायाम.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Mdn</th><th>Mean rank</th></tr><tr><td>नियंत्रण</td><td>6</td><td>2.50</td><td>9.0</td></tr><tr><td>ध्यान</td><td>6</td><td>4.50</td><td>15.3</td></tr><tr><td>व्यायाम</td><td>6</td><td>1.50</td><td>4.3</td></tr></tbody></table><p class=\"desc\">H(2) = 13.57, p = .001, epsilon-squared = .80 (corrected for tied scores).</p><table class=\"stats-table\"><tbody><tr><th>Dunn comparison</th><th>z</th><th>p (Holm-adjusted)</th></tr><tr><td>नियंत्रण vs ध्यान</td><td>-2.09</td><td>.074</td></tr><tr><td>नियंत्रण vs व्यायाम</td><td>1.59</td><td>.113</td></tr><tr><td>ध्यान vs व्यायाम</td><td>3.67</td><td>&lt; .001</td></tr></tbody></table><div id=\"statsSentence\">A Kruskal-Wallis test showed a significant difference in अंक across the समूह groups, H(2) = 13.57, p = .001, ε² = .80. Dunn post-hoc tests with Holm adjustment found significant differences between ध्यान and व्यायाम.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

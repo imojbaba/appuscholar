@@ -1,0 +1,1355 @@
+{
+ "engine": "rtlink",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "hash": [
+  {
+   "id": "demo-ttest1",
+   "source": "demo",
+   "text": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "hash": "69172614-b7492d30-49"
+  },
+  {
+   "id": "demo-ttestInd",
+   "source": "demo",
+   "text": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7",
+   "hash": "697deca9-2b932cab-163"
+  },
+  {
+   "id": "demo-mannwhitney",
+   "source": "demo",
+   "text": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3",
+   "hash": "3f94547e-1a80c592-112"
+  },
+  {
+   "id": "demo-ttestPaired",
+   "source": "demo",
+   "text": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24",
+   "hash": "68508e84-d93a0bf8-100"
+  },
+  {
+   "id": "demo-wilcoxon",
+   "source": "demo",
+   "text": "before,after\n5,3\n6,4\n4,4\n5,3\n6,4\n5,3\n4,2\n6,4\n5,3\n4,3\n6,4\n5,4",
+   "hash": "b6e4e4d6-6d1bbdb6-76"
+  },
+  {
+   "id": "demo-anova1",
+   "source": "demo",
+   "text": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+   "hash": "d5a9baba-41d7cee2-269"
+  },
+  {
+   "id": "demo-kruskal",
+   "source": "demo",
+   "text": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+   "hash": "f099f65a-ee5176ac-116"
+  },
+  {
+   "id": "demo-pearson",
+   "source": "demo",
+   "text": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+   "hash": "4bdbc7d4-376aa152-98"
+  },
+  {
+   "id": "demo-spearman",
+   "source": "demo",
+   "text": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12",
+   "hash": "b043cd45-ae587efb-88"
+  },
+  {
+   "id": "demo-regression",
+   "source": "demo",
+   "text": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+   "hash": "4bdbc7d4-376aa152-98"
+  },
+  {
+   "id": "demo-chisq",
+   "source": "demo",
+   "text": "counselling,passed\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "hash": "55d64016-f79ff2f8-465"
+  },
+  {
+   "id": "demo-gof",
+   "source": "demo",
+   "text": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+   "hash": "eeb25a1f-ef8bdbed-576"
+  },
+  {
+   "id": "demo-alpha",
+   "source": "demo",
+   "text": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",
+   "hash": "6fbbc60b-93b264e7-245"
+  },
+  {
+   "id": "intake-tab-delimited",
+   "source": "intake",
+   "text": "name\tscore\tgroup\nAsha\t12\tA\nRavi\t15\tB\nMeena\t9\tA",
+   "hash": "2d1217a8-5ffed072-78"
+  },
+  {
+   "id": "intake-comma",
+   "source": "intake",
+   "text": "id,score,group\n1,12,A\n2,15,B\n3,9,A",
+   "hash": "788a0eb4-fdf73854-62"
+  },
+  {
+   "id": "intake-semicolon-one-column",
+   "source": "intake",
+   "text": "a;b\n1;2",
+   "hash": "70b68156-2243eb44-19"
+  },
+  {
+   "id": "intake-crlf",
+   "source": "intake",
+   "text": "x,y\r\n1,2\r\n3,4\r\n",
+   "hash": "62f319e6-76981614-27"
+  },
+  {
+   "id": "intake-lone-cr",
+   "source": "intake",
+   "text": "x,y\r1,2\r3,4",
+   "hash": "62f319e6-76981614-27"
+  },
+  {
+   "id": "intake-mixed-line-ends",
+   "source": "intake",
+   "text": "x,y\r\n1,2\n3,4\r5,6",
+   "hash": "76e6826a-92201364-31"
+  },
+  {
+   "id": "intake-blank-lines-skipped",
+   "source": "intake",
+   "text": "x,y\n\n1,2\n   \n3,4\n\n",
+   "hash": "62f319e6-76981614-27"
+  },
+  {
+   "id": "intake-quoted-comma",
+   "source": "intake",
+   "text": "label,n\n\"x, y\",1\n\"p, q\",2",
+   "hash": "1b7caa41-3da0e8ff-41"
+  },
+  {
+   "id": "intake-doubled-quote",
+   "source": "intake",
+   "text": "quote,n\n\"say \"\"hi\"\"\",2\n\"plain\",3",
+   "hash": "37a89fbb-269bedb-46"
+  },
+  {
+   "id": "intake-unterminated-quote",
+   "source": "intake",
+   "text": "a,b\n\"open,1\n2,3",
+   "hash": "7c2d6612-14278d9c-23"
+  },
+  {
+   "id": "intake-quote-mid-cell",
+   "source": "intake",
+   "text": "a,b\nab\"c,d\"e,1",
+   "hash": "41074e44-eccf8ee-32"
+  },
+  {
+   "id": "intake-quoted-tab-in-tab-file",
+   "source": "intake",
+   "text": "a\tb\n\"x\ty\"\t1\nz\t2",
+   "hash": "8bdf62e-721c8b5e-33"
+  },
+  {
+   "id": "intake-quoted-number",
+   "source": "intake",
+   "text": "x\n\"12\"\n\"3\"",
+   "hash": "d4416bb1-c9fcd22f-14"
+  },
+  {
+   "id": "intake-quoted-empty",
+   "source": "intake",
+   "text": "a,b\n\"\",1\n2,\"\"",
+   "hash": "11b4d907-b8e4449f-25"
+  },
+  {
+   "id": "intake-trailing-spaces-trimmed",
+   "source": "intake",
+   "text": "  name  , score \n  Asha , 12  \n Ravi,  15 ",
+   "hash": "8d0f0fe5-965a1b19-46"
+  },
+  {
+   "id": "intake-space-only-cell",
+   "source": "intake",
+   "text": "x,y\n1, \n2,3",
+   "hash": "5598a7b2-96e45de0-26"
+  },
+  {
+   "id": "intake-wrong-field-count-rows-dropped",
+   "source": "intake",
+   "text": "a,b,c\n1,2,3\n4,5\n6,7,8\n9,10",
+   "hash": "adf2c5de-ede5cf32-41"
+  },
+  {
+   "id": "intake-too-many-fields-dropped",
+   "source": "intake",
+   "text": "a,b\n1,2\n3,4,5\n6,7",
+   "hash": "c927acc2-8523bdec-27"
+  },
+  {
+   "id": "intake-blank-header-col3",
+   "source": "intake",
+   "text": "a,,c\n1,2,3\n4,5,6",
+   "hash": "4259ccc6-aeb76bfa-44"
+  },
+  {
+   "id": "intake-blank-header-third",
+   "source": "intake",
+   "text": "a,b,\n1,2,3\n4,5,6",
+   "hash": "de9a676-72e4cb7a-44"
+  },
+  {
+   "id": "intake-duplicate-headers",
+   "source": "intake",
+   "text": "x,x\n1,2\n3,4",
+   "hash": "beef0181-e3be3413-27"
+  },
+  {
+   "id": "intake-bom-header",
+   "source": "intake",
+   "text": "﻿id,score\n1,2\n3,4",
+   "hash": "56c77c6c-b1628cac-32"
+  },
+  {
+   "id": "intake-numeric-dot5",
+   "source": "intake",
+   "text": "x\n.5\n1\n2",
+   "hash": "7fc0706-d9b463ee-20"
+  },
+  {
+   "id": "intake-numeric-trailing-dot",
+   "source": "intake",
+   "text": "x\n1.\n2\n3",
+   "hash": "8c5152aa-e035368c-20"
+  },
+  {
+   "id": "intake-numeric-exponent",
+   "source": "intake",
+   "text": "x\n1e3\n2\n3",
+   "hash": "ab5e8f3a-6a61c6b6-21"
+  },
+  {
+   "id": "intake-numeric-plus",
+   "source": "intake",
+   "text": "x\n+2\n3\n4",
+   "hash": "be16a1c2-d27ea90c-20"
+  },
+  {
+   "id": "intake-decimal-comma",
+   "source": "intake",
+   "text": "x\ty\n1,5\t2\n2,25\t3",
+   "hash": "8bb40601-7d956011-36"
+  },
+  {
+   "id": "intake-unicode-minus",
+   "source": "intake",
+   "text": "x\n−3\n4\n5",
+   "hash": "8e9dd94e-e7a53016-20"
+  },
+  {
+   "id": "intake-space-in-number",
+   "source": "intake",
+   "text": "x\n1 000\n2000\n3000",
+   "hash": "344ab528-7b11c16e-29"
+  },
+  {
+   "id": "intake-devanagari-digits",
+   "source": "intake",
+   "text": "x\n१२\n३",
+   "hash": "784cc2c6-81880afc-18"
+  },
+  {
+   "id": "intake-leading-zeros",
+   "source": "intake",
+   "text": "x\n007\n010\n3",
+   "hash": "348a54fc-4f2a5558-19"
+  },
+  {
+   "id": "intake-negative-zero",
+   "source": "intake",
+   "text": "x\n-0\n0\n-0.0",
+   "hash": "91540d99-ff5f8145-19"
+  },
+  {
+   "id": "intake-negative-and-decimals",
+   "source": "intake",
+   "text": "x,y\n-1.25,3\n2.5,-4\n0,0.0",
+   "hash": "627d136d-5959bca9-40"
+  },
+  {
+   "id": "intake-text-in-numbers",
+   "source": "intake",
+   "text": "x\n1\n2\nNA",
+   "hash": "1514c7cc-dd55b0ba-20"
+  },
+  {
+   "id": "intake-empty-cells-not-counted",
+   "source": "intake",
+   "text": "x,y\n1,\n,2\n3,4\n5,",
+   "hash": "ca11fb3f-b6e80873-32"
+  },
+  {
+   "id": "intake-all-empty-column-categorical",
+   "source": "intake",
+   "text": "x,y\n1,\n2,\n3,",
+   "hash": "b941dd22-eae0dcf0-32"
+  },
+  {
+   "id": "intake-hindi-header-and-values",
+   "source": "intake",
+   "text": "नाम,आयु,लिंग\nआशा,21,महिला\nरवि,22,पुरुष",
+   "hash": "2238f1b7-fa3f0689-70"
+  },
+  {
+   "id": "intake-single-column",
+   "source": "intake",
+   "text": "score\n1\n2\n3",
+   "hash": "c6cf95b-266d2037-19"
+  },
+  {
+   "id": "intake-header-only",
+   "source": "intake",
+   "text": "a,b,c",
+   "hash": "422807f2-c5f43790-42"
+  },
+  {
+   "id": "intake-header-only-trailing-newline",
+   "source": "intake",
+   "text": "a,b,c\n\n",
+   "hash": "422807f2-c5f43790-42"
+  },
+  {
+   "id": "intake-ones-and-twos-numeric",
+   "source": "intake",
+   "text": "grp\n1\n2\n1",
+   "hash": "bd4ae4b8-52ae2842-17"
+  },
+  {
+   "id": "intake-tab-wins-over-comma",
+   "source": "intake",
+   "text": "name,full\tscore\nVerma, Asha\t12\nRao, Ravi\t15",
+   "hash": "fcd5e043-baba8bed-63"
+  },
+  {
+   "id": "intake-comma-first-line-tab-later",
+   "source": "intake",
+   "text": "a,b\n1\t2,3\n4,5",
+   "hash": "d2b2938d-ca5561cf-33"
+  },
+  {
+   "id": "table-no-columns-no-rows",
+   "source": "table",
+   "data": {
+    "headers": [],
+    "rows": [],
+    "cols": []
+   },
+   "hash": "60c5eb2-2b5a8-1"
+  },
+  {
+   "id": "table-devanagari-and-astral",
+   "source": "table",
+   "data": {
+    "headers": [
+     "समूह",
+     "score 𝑥"
+    ],
+    "rows": [
+     [
+      "क",
+      "1"
+     ],
+     [
+      "ख",
+      "2"
+     ],
+     [
+      "😀",
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "समूह",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     },
+     {
+      "name": "score 𝑥",
+      "index": 1,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   },
+   "hash": "403690a-c4d1167e-46"
+  },
+  {
+   "id": "table-separator-in-cell-one",
+   "source": "table",
+   "data": {
+    "headers": [
+     "a"
+    ],
+    "rows": [
+     [
+      "x\u0001y"
+     ],
+     [
+      "z\u0004w"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     }
+    ]
+   },
+   "hash": "7026b330-974e2594-21"
+  },
+  {
+   "id": "table-separator-in-cell-two",
+   "source": "table",
+   "data": {
+    "headers": [
+     "a"
+    ],
+    "rows": [
+     [
+      "x",
+      "y"
+     ],
+     [
+      "z"
+     ],
+     [
+      "w"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   },
+   "hash": "7026b330-974e2594-21"
+  }
+ ],
+ "firstP": [
+  {
+   "s": "t(11) = 2.10, p < .001, d = 0.61.",
+   "firstP": {
+    "op": "<",
+    "v": 0.001
+   },
+   "sig": true
+  },
+  {
+   "s": "t(11) = 2.10, p = .022, d = 0.61.",
+   "firstP": {
+    "op": "=",
+    "v": 0.022
+   },
+   "sig": true
+  },
+  {
+   "s": "r(30) = .40, p = 0.05.",
+   "firstP": {
+    "op": "=",
+    "v": 0.05
+   },
+   "sig": false
+  },
+  {
+   "s": "r(30) = .40, p = .05.",
+   "firstP": {
+    "op": "=",
+    "v": 0.05
+   },
+   "sig": false
+  },
+  {
+   "s": "F(2, 27) = 0.10, p = 1.000.",
+   "firstP": {
+    "op": "=",
+    "v": 1
+   },
+   "sig": false
+  },
+  {
+   "s": "z = 1.96, p ≤ .05.",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "The groups did not differ.",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "t(11) = 2.10, p = .03, and later p < .001.",
+   "firstP": {
+    "op": "=",
+    "v": 0.03
+   },
+   "sig": true
+  },
+  {
+   "s": "χ²(1) = 4.20, P = .03.",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "U = 12, p=.04.",
+   "firstP": {
+    "op": "=",
+    "v": 0.04
+   },
+   "sig": true
+  },
+  {
+   "s": "W = 3, p  <  .049.",
+   "firstP": {
+    "op": "<",
+    "v": 0.049
+   },
+   "sig": true
+  },
+  {
+   "s": "p = 0.000",
+   "firstP": {
+    "op": "=",
+    "v": 0
+   },
+   "sig": true
+  },
+  {
+   "s": "p < 0.05",
+   "firstP": {
+    "op": "<",
+    "v": 0.05
+   },
+   "sig": true
+  },
+  {
+   "s": "p = 1.0",
+   "firstP": {
+    "op": "=",
+    "v": 1
+   },
+   "sig": false
+  },
+  {
+   "s": "p = 1",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "p > .05",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "p = .050",
+   "firstP": {
+    "op": "=",
+    "v": 0.05
+   },
+   "sig": false
+  },
+  {
+   "s": "p = .0499",
+   "firstP": {
+    "op": "=",
+    "v": 0.0499
+   },
+   "sig": true
+  },
+  {
+   "s": "",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "p = 0,03",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "ps < .05 for every pair",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "partial η²p = .30",
+   "firstP": {
+    "op": "=",
+    "v": 0.3
+   },
+   "sig": false
+  },
+  {
+   "s": "p = 00.5",
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "s": "p = 1.05",
+   "firstP": {
+    "op": "=",
+    "v": 1
+   },
+   "sig": false
+  },
+  {
+   "s": "p = 0.5e-3",
+   "firstP": {
+    "op": "=",
+    "v": 0.5
+   },
+   "sig": false
+  },
+  {
+   "s": "p < .051",
+   "firstP": {
+    "op": "<",
+    "v": 0.051
+   },
+   "sig": false
+  },
+  {
+   "s": "p = .049",
+   "firstP": {
+    "op": "=",
+    "v": 0.049
+   },
+   "sig": true
+  },
+  {
+   "s": "p < .05 (two-tailed)",
+   "firstP": {
+    "op": "<",
+    "v": 0.05
+   },
+   "sig": true
+  },
+  {
+   "s": null,
+   "firstP": null,
+   "sig": null
+  },
+  {
+   "firstP": null,
+   "sig": null
+  }
+ ],
+ "flip": [
+  {
+   "old": "t(11) = 2.10, p < .001.",
+   "neu": "t(11) = 1.10, p = .20.",
+   "flip": true
+  },
+  {
+   "old": "t(11) = 2.10, p = .03.",
+   "neu": "t(11) = 2.00, p = .04.",
+   "flip": false
+  },
+  {
+   "old": "The groups did not differ.",
+   "neu": "t(11) = 2.10, p = .03.",
+   "flip": false
+  },
+  {
+   "old": "t(11) = 2.10, p = .03.",
+   "neu": "The groups did not differ.",
+   "flip": false
+  },
+  {
+   "old": "r(30) = .40, p = .05.",
+   "neu": "r(30) = .41, p < .05.",
+   "flip": true
+  },
+  {
+   "old": "r(30) = .20, p = .06.",
+   "neu": "r(30) = .18, p = .07.",
+   "flip": false
+  },
+  {
+   "old": "χ²(1) = 4.20, P = .03.",
+   "neu": "χ²(1) = 0.40, p = .50.",
+   "flip": false
+  },
+  {
+   "old": "F(2, 27) = 0.10, p = 1.000.",
+   "neu": "F(2, 27) = 9.10, p < .001.",
+   "flip": true
+  },
+  {
+   "old": "p = .049",
+   "neu": "p = .050",
+   "flip": true
+  },
+  {
+   "old": "p < .05",
+   "neu": "p = .05",
+   "flip": true
+  }
+ ],
+ "steps": [
+  {
+   "id": "ttest1-new-name",
+   "caseId": "ttest1-demo",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "test": "ttest1",
+   "skip": false,
+   "dsField": "Study 1 survey",
+   "now": 1760000000000,
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "50"
+    },
+    "ticked": {}
+   },
+   "statsHash": "69172614-b7492d30-49",
+   "statsDsName": "Study 1 survey",
+   "run": {
+    "test": "ttest1",
+    "label": "One-sample t-test",
+    "ds": "Study 1 survey",
+    "hash": "69172614-b7492d30-49",
+    "fields": {
+     "dv": "score"
+    },
+    "multi": {},
+    "extra": {
+     "mu": "50"
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "69172614-b7492d30-49",
+     "ts": 1760000000000,
+     "n": 12
+    }
+   }
+  },
+  {
+   "id": "alpha-second-name",
+   "caseId": "alpha-demo",
+   "csv": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",
+   "test": "alpha",
+   "skip": false,
+   "dsField": "Scale pilot",
+   "now": 1760000060000,
+   "form": {
+    "values": {
+     "rev": "q6",
+     "rrange": "1-5"
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   },
+   "statsHash": "6fbbc60b-93b264e7-245",
+   "statsDsName": "Scale pilot",
+   "run": {
+    "test": "alpha",
+    "label": "Cronbach's alpha and McDonald's omega",
+    "ds": "Scale pilot",
+    "hash": "6fbbc60b-93b264e7-245",
+    "fields": {},
+    "multi": {
+     "items": [
+      "q1",
+      "q2",
+      "q3",
+      "q4",
+      "q5",
+      "q6"
+     ]
+    },
+    "extra": {
+     "rev": "q6",
+     "rrange": "1-5"
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "69172614-b7492d30-49",
+     "ts": 1760000000000,
+     "n": 12
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    }
+   }
+  },
+  {
+   "id": "mregress-empty-name",
+   "caseId": "mregress-step2",
+   "csv": "y,hours,stress,sleep\n56.3,41.0,46.3,51.0\n55.8,41.2,60.2,56.7\n49.5,38.7,57.0,32.0\n59.5,66.7,51.7,64.4\n64.6,54.8,69.5,60.2\n51.7,53.0,45.5,45.1\n46.5,44.7,41.1,37.5\n51.7,46.3,38.5,51.3\n57.0,49.2,52.3,61.4\n51.3,42.1,33.3,53.6\n52.7,49.5,48.4,53.9\n69.4,51.4,60.5,55.5\n53.5,48.9,33.1,64.5\n60.1,48.3,64.0,58.9\n53.4,59.4,38.7,41.5\n58.5,54.8,42.2,58.8\n59.0,43.0,63.2,70.6\n47.7,40.7,48.5,39.7\n55.1,53.6,45.7,57.7\n64.7,58.6,56.1,47.6\n51.5,51.2,49.9,53.7\n68.5,62.9,70.2,60.5\n45.4,30.4,49.4,53.2\n56.8,37.9,65.8,71.4\n53.0,53.4,52.5,32.6\n56.3,51.1,50.7,39.9\n55.4,41.1,51.2,53.9\n53.7,45.8,45.9,46.4\n55.0,41.6,60.8,43.4\n59.4,59.1,48.5,57.5\n43.8,35.5,43.9,54.1\n63.9,51.6,60.5,59.8\n53.7,55.4,54.8,38.3\n52.0,52.6,50.6,39.5\n56.9,47.8,55.8,61.3\n64.0,58.7,52.4,43.7\n55.1,52.5,37.7,61.1\n53.3,57.7,50.2,38.3\n51.0,45.7,45.2,38.7\n51.9,31.2,67.8,61.7",
+   "test": "mregress",
+   "skip": false,
+   "dsField": "",
+   "now": 1760000120000,
+   "form": {
+    "values": {
+     "dv": "0",
+     "ref": ""
+    },
+    "ticked": {
+     "preds": [
+      1
+     ],
+     "preds2": [
+      2,
+      3
+     ]
+    }
+   },
+   "statsHash": "dfc61179-f2ae6167-852",
+   "statsDsName": "Untitled data",
+   "run": {
+    "test": "mregress",
+    "label": "Multiple linear regression",
+    "ds": "Untitled data",
+    "hash": "dfc61179-f2ae6167-852",
+    "fields": {
+     "dv": "y"
+    },
+    "multi": {
+     "preds": [
+      "hours"
+     ],
+     "cats": [],
+     "preds2": [
+      "stress",
+      "sleep"
+     ],
+     "cats2": []
+    },
+    "extra": {
+     "ref": ""
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "69172614-b7492d30-49",
+     "ts": 1760000000000,
+     "n": 12
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    },
+    "Untitled data": {
+     "hash": "dfc61179-f2ae6167-852",
+     "ts": 1760000120000,
+     "n": 40
+    }
+   }
+  },
+  {
+   "id": "mcnemar-first-name-padded-new-data",
+   "caseId": "mcnemar-yes-no",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "test": "mcnemar",
+   "skip": false,
+   "dsField": "  Study 1 survey  ",
+   "now": 1760000180000,
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "statsHash": "cd9701fc-d598ed68-251",
+   "statsDsName": "Study 1 survey",
+   "run": {
+    "test": "mcnemar",
+    "label": "McNemar test (same people, a yes/no answer at two times)",
+    "ds": "Study 1 survey",
+    "hash": "cd9701fc-d598ed68-251",
+    "fields": {
+     "v1": "before",
+     "v2": "after"
+    },
+    "multi": {},
+    "extra": {
+     "pos": ""
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "cd9701fc-d598ed68-251",
+     "ts": 1760000180000,
+     "n": 30
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    },
+    "Untitled data": {
+     "hash": "dfc61179-f2ae6167-852",
+     "ts": 1760000120000,
+     "n": 40
+    }
+   }
+  },
+  {
+   "id": "alpha-second-name-same-data",
+   "caseId": "alpha-demo",
+   "csv": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",
+   "test": "alpha",
+   "skip": false,
+   "dsField": "Scale pilot",
+   "now": 1760000240000,
+   "form": {
+    "values": {
+     "rev": "q6",
+     "rrange": "1-5"
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   },
+   "statsHash": "6fbbc60b-93b264e7-245",
+   "statsDsName": "Scale pilot",
+   "run": {
+    "test": "alpha",
+    "label": "Cronbach's alpha and McDonald's omega",
+    "ds": "Scale pilot",
+    "hash": "6fbbc60b-93b264e7-245",
+    "fields": {},
+    "multi": {
+     "items": [
+      "q1",
+      "q2",
+      "q3",
+      "q4",
+      "q5",
+      "q6"
+     ]
+    },
+    "extra": {
+     "rev": "q6",
+     "rrange": "1-5"
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "cd9701fc-d598ed68-251",
+     "ts": 1760000180000,
+     "n": 30
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    },
+    "Untitled data": {
+     "hash": "dfc61179-f2ae6167-852",
+     "ts": 1760000120000,
+     "n": 40
+    }
+   }
+  },
+  {
+   "id": "mregress-categorical-step2",
+   "caseId": "mregress-step2-categorical",
+   "csv": "y,age,group,sleep\n31.5,41.2,Online,21.1\n27.7,36.1,Online,23.0\n29.9,36.8,Online,18.6\n40.1,60.0,Control,15.5\n20.5,27.5,Control,15.3\n37.6,64.4,Control,18.0\n28.0,43.1,Online,17.2\n31.4,42.8,Group,19.7\n22.0,45.5,Control,36.4\n32.0,38.3,Group,24.7\n23.6,32.9,Group,18.3\n48.6,75.1,Online,21.7\n39.8,66.4,Control,14.1\n26.3,31.1,Online,13.5\n30.7,39.1,Online,23.7\n29.7,51.7,Control,25.6\n27.7,49.3,Control,16.6\n42.7,61.0,Online,25.0\n33.2,43.3,Online,21.3\n41.6,68.7,Online,20.2\n31.1,51.3,Control,30.0\n31.6,40.6,Online,19.4\n37.4,49.3,Control,13.6\n21.1,39.1,Control,20.6\n25.5,41.2,Group,19.4\n34.2,57.6,Group,28.7\n39.9,57.8,Group,9.2\n39.5,66.5,Online,25.4\n27.1,48.6,Control,21.0\n27.2,42.9,Online,10.8\n29.4,49.7,Control,23.7\n28.3,46.5,Control,19.1\n31.4,43.9,Control,23.3\n24.9,44.6,Online,20.8\n35.2,52.9,Group,20.9\n46.6,68.3,Group,21.9\n37.0,60.8,Group,26.1\n28.5,49.5,Control,22.0\n34.5,58.4,Group,23.8\n28.2,42.4,Online,16.0",
+   "test": "mregress",
+   "skip": false,
+   "dsField": "Cohort B",
+   "now": 1760000300000,
+   "form": {
+    "values": {
+     "dv": "0",
+     "ref": ""
+    },
+    "ticked": {
+     "preds": [
+      1,
+      3
+     ],
+     "cats": [],
+     "preds2": [],
+     "cats2": [
+      2
+     ]
+    }
+   },
+   "statsHash": "9f39443c-af648a6e-937",
+   "statsDsName": "Cohort B",
+   "run": {
+    "test": "mregress",
+    "label": "Multiple linear regression",
+    "ds": "Cohort B",
+    "hash": "9f39443c-af648a6e-937",
+    "fields": {
+     "dv": "y"
+    },
+    "multi": {
+     "preds": [
+      "age",
+      "sleep"
+     ],
+     "cats": [],
+     "preds2": [],
+     "cats2": [
+      "group"
+     ]
+    },
+    "extra": {
+     "ref": ""
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "cd9701fc-d598ed68-251",
+     "ts": 1760000180000,
+     "n": 30
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    },
+    "Untitled data": {
+     "hash": "dfc61179-f2ae6167-852",
+     "ts": 1760000120000,
+     "n": 40
+    },
+    "Cohort B": {
+     "hash": "9f39443c-af648a6e-937",
+     "ts": 1760000300000,
+     "n": 40
+    }
+   }
+  },
+  {
+   "id": "mcnemar-pos-given-skipped",
+   "caseId": "mcnemar-pos-given",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "test": "mcnemar",
+   "skip": true,
+   "dsField": null,
+   "now": null,
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": "no"
+    },
+    "ticked": {}
+   },
+   "statsHash": null,
+   "statsDsName": "Cohort B",
+   "run": {
+    "test": "mcnemar",
+    "label": "McNemar test (same people, a yes/no answer at two times)",
+    "ds": "Cohort B",
+    "hash": null,
+    "fields": {
+     "v1": "before",
+     "v2": "after"
+    },
+    "multi": {},
+    "extra": {
+     "pos": "no"
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "cd9701fc-d598ed68-251",
+     "ts": 1760000180000,
+     "n": 30
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    },
+    "Untitled data": {
+     "hash": "dfc61179-f2ae6167-852",
+     "ts": 1760000120000,
+     "n": 40
+    },
+    "Cohort B": {
+     "hash": "9f39443c-af648a6e-937",
+     "ts": 1760000300000,
+     "n": 40
+    }
+   }
+  }
+ ],
+ "scans": [
+  {
+   "id": "current-stale-noset-norec",
+   "runs": {
+    "r1": {
+     "test": "alpha",
+     "label": "Cronbach's alpha and McDonald's omega",
+     "ds": "Scale pilot",
+     "hash": "6fbbc60b-93b264e7-245",
+     "fields": {},
+     "multi": {
+      "items": [
+       "q1",
+       "q2",
+       "q3",
+       "q4",
+       "q5",
+       "q6"
+      ]
+     },
+     "extra": {
+      "rev": "q6",
+      "rrange": "1-5"
+     },
+     "sentence": "the sentence of alpha-second-name",
+     "ts": 1760000400000
+    },
+    "r2": {
+     "test": "ttest1",
+     "label": "One-sample t-test",
+     "ds": "Study 1 survey",
+     "hash": "69172614-b7492d30-49",
+     "fields": {
+      "dv": "score"
+     },
+     "multi": {},
+     "extra": {
+      "mu": "50"
+     },
+     "sentence": "the sentence of ttest1-new-name",
+     "ts": 1760000410000
+    },
+    "r3": {
+     "test": "mregress",
+     "label": "Multiple linear regression",
+     "ds": "Deleted study",
+     "hash": "dfc61179-f2ae6167-852",
+     "fields": {
+      "dv": "y"
+     },
+     "multi": {
+      "preds": [
+       "hours"
+      ],
+      "cats": [],
+      "preds2": [
+       "stress",
+       "sleep"
+      ],
+      "cats2": []
+     },
+     "extra": {
+      "ref": ""
+     },
+     "sentence": "the sentence of mregress-empty-name",
+     "ts": 1760000420000
+    }
+   },
+   "sets": {
+    "Study 1 survey": {
+     "hash": "cd9701fc-d598ed68-251",
+     "ts": 1760000180000,
+     "n": 30
+    },
+    "Scale pilot": {
+     "hash": "6fbbc60b-93b264e7-245",
+     "ts": 1760000060000,
+     "n": 15
+    },
+    "Untitled data": {
+     "hash": "dfc61179-f2ae6167-852",
+     "ts": 1760000120000,
+     "n": 40
+    },
+    "Cohort B": {
+     "hash": "9f39443c-af648a6e-937",
+     "ts": 1760000300000,
+     "n": 40
+    }
+   },
+   "tags": [
+    "r1",
+    "r2",
+    "r3",
+    "r4"
+   ],
+   "out": [
+    {
+     "id": "r1",
+     "status": "cur",
+     "why": "",
+     "stale": false
+    },
+    {
+     "id": "r2",
+     "status": "stale",
+     "why": "rt_why_stale",
+     "stale": true,
+     "when": 1760000180000
+    },
+    {
+     "id": "r3",
+     "status": "unk",
+     "why": "rt_why_noset",
+     "stale": false
+    },
+    {
+     "id": "r4",
+     "status": "unk",
+     "why": "rt_why_norec",
+     "stale": false
+    }
+   ]
+  },
+  {
+   "id": "no-storage",
+   "runs": {},
+   "sets": {},
+   "tags": [
+    "r1",
+    "r2",
+    "r3",
+    "r4"
+   ],
+   "out": [
+    {
+     "id": "r1",
+     "status": "unk",
+     "why": "rt_why_norec",
+     "stale": false
+    },
+    {
+     "id": "r2",
+     "status": "unk",
+     "why": "rt_why_norec",
+     "stale": false
+    },
+    {
+     "id": "r3",
+     "status": "unk",
+     "why": "rt_why_norec",
+     "stale": false
+    },
+    {
+     "id": "r4",
+     "status": "unk",
+     "why": "rt_why_norec",
+     "stale": false
+    }
+   ]
+  },
+  {
+   "id": "runs-but-no-sets",
+   "runs": {
+    "r1": {
+     "test": "alpha",
+     "label": "Cronbach's alpha and McDonald's omega",
+     "ds": "Scale pilot",
+     "hash": "6fbbc60b-93b264e7-245",
+     "fields": {},
+     "multi": {
+      "items": [
+       "q1",
+       "q2",
+       "q3",
+       "q4",
+       "q5",
+       "q6"
+      ]
+     },
+     "extra": {
+      "rev": "q6",
+      "rrange": "1-5"
+     },
+     "sentence": "the sentence of alpha-second-name",
+     "ts": 1760000400000
+    },
+    "r2": {
+     "test": "ttest1",
+     "label": "One-sample t-test",
+     "ds": "Study 1 survey",
+     "hash": "69172614-b7492d30-49",
+     "fields": {
+      "dv": "score"
+     },
+     "multi": {},
+     "extra": {
+      "mu": "50"
+     },
+     "sentence": "the sentence of ttest1-new-name",
+     "ts": 1760000410000
+    }
+   },
+   "sets": {},
+   "tags": [
+    "r2",
+    "r1",
+    "r1"
+   ],
+   "out": [
+    {
+     "id": "r2",
+     "status": "unk",
+     "why": "rt_why_noset",
+     "stale": false
+    },
+    {
+     "id": "r1",
+     "status": "unk",
+     "why": "rt_why_noset",
+     "stale": false
+    },
+    {
+     "id": "r1",
+     "status": "unk",
+     "why": "rt_why_noset",
+     "stale": false
+    }
+   ]
+  }
+ ]
+}

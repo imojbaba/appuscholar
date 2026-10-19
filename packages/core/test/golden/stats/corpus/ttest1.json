@@ -1,0 +1,140 @@
+[
+ {
+  "id": "ttest1-demo",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "50"
+  },
+  "why": "TG_DEMO's ttest1"
+ },
+ {
+  "id": "ttest1-mu-empty",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": ""
+  },
+  "why": "an empty test value is 0 (parseFloat('') || 0), so p < .001"
+ },
+ {
+  "id": "ttest1-mu-text",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "abc"
+  },
+  "why": "a test value that is not a number is 0"
+ },
+ {
+  "id": "ttest1-mu-decimal-lower",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "55.5"
+  },
+  "why": "significantly lower than a decimal test value"
+ },
+ {
+  "id": "ttest1-higher",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "49"
+  },
+  "why": "significantly higher"
+ },
+ {
+  "id": "ttest1-all-same",
+  "csv": "score\n5\n5\n5\n5",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "3"
+  },
+  "why": "no spread: the toast"
+ },
+ {
+  "id": "ttest1-one-value",
+  "csv": "score\n5",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "3"
+  },
+  "why": "one value: the toast"
+ },
+ {
+  "id": "ttest1-text-in-numeric",
+  "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "50"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the only entries statsColVals drops from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to Infinity, as these two do (a 401-digit 1 and a 400-digit negative). The assumption pass reads the column again, so the note says 4 (Review Focus 1, register D-W2-4)."
+ },
+ {
+  "id": "ttest1-n3",
+  "csv": "score\n4\n7\n9",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "5"
+  },
+  "why": "n 3: Shapiro-Wilk's exact n = 3 path"
+ },
+ {
+  "id": "ttest1-n2-assumptions-skip",
+  "csv": "score\n4\n7",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "5"
+  },
+  "why": "n 2: the assumption table says needs 3 or more values, and the message note is empty"
+ },
+ {
+  "id": "ttest1-no-numeric-column",
+  "csv": "grp\na\nb\nc",
+  "test": "ttest1",
+  "values": {
+   "mu": "1"
+  },
+  "why": "no numeric column: sf_dv has no option, its value is '', and the run falls to the catch toast"
+ },
+ {
+  "id": "ttest1-skewed",
+  "csv": "score\n1\n1\n1\n1\n1\n1\n1\n1\n2\n2\n30\n50",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "1"
+  },
+  "why": "a Shapiro-Wilk p below .05: the departs-from-normal message"
+ },
+ {
+  "id": "ttest1-n25",
+  "csv": "score\n12\n15\n11\n14\n13\n16\n12\n15\n14\n13\n17\n12\n14\n15\n13\n16\n11\n14\n15\n13\n12\n16\n14\n13\n15",
+  "test": "ttest1",
+  "values": {
+   "dv": "score",
+   "mu": "14"
+  },
+  "why": "n 25: no fewer-than-20 sentence"
+ },
+ {
+  "id": "ttest1-name-needs-escaping",
+  "csv": "Tom's <score> & more\n3\n5\n4\n6",
+  "test": "ttest1",
+  "values": {
+   "dv": "Tom's <score> & more"
+  },
+  "why": "the column name goes through escHTML in the assumption table and raw into the sentence; the test value is left empty"
+ }
+]

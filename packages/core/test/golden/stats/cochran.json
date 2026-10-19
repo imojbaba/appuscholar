@@ -1,0 +1,528 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "cochran-four-conditions",
+   "test": "cochran",
+   "csv": "t1,t2,t3,t4\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n0,1,0,1\n1,0,1,1\n0,0,0,0\n0,0,1,1\n0,1,1,1\n0,0,1,1\n0,0,1,1\n1,1,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1",
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3",
+     "t4"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "Cochran's Q test showed that the proportion answering 1 differed significantly across the 4 conditions (t1, t2, t3, t4), Q(3, N = 20) = 30.39, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Answered “1”",
+       "Proportion"
+      ],
+      [
+       "t1",
+       "20",
+       "4",
+       ".20"
+      ],
+      [
+       "t2",
+       "20",
+       "5",
+       ".25"
+      ],
+      [
+       "t3",
+       "20",
+       "14",
+       ".70"
+      ],
+      [
+       "t4",
+       "20",
+       "19",
+       ".95"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Q",
+       "df",
+       "p"
+      ],
+      [
+       "20",
+       "30.39",
+       "3",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Cochran's Q asks whether the proportion answering “1” differs across the 4 conditions, using the same people each time. "
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (exact McNemar tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Yes → no",
+       "No → yes",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "t1 − t2",
+       "1",
+       "2",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "t1 − t3",
+       "1",
+       "11",
+       ".006",
+       ".038"
+      ],
+      [
+       "t1 − t4",
+       "0",
+       "15",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "t2 − t3",
+       "2",
+       "11",
+       ".022",
+       ".135"
+      ],
+      [
+       "t2 − t4",
+       "0",
+       "14",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "t3 − t4",
+       "0",
+       "5",
+       ".063",
+       ".375"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNAnswered “1”Proportiont1204.20t2205.25t32014.70t42019.95N peopleQdfp2030.393< .001Cochran's Q asks whether the proportion answering “1” differs across the 4 conditions, using the same people each time. Pairwise follow-ups (exact McNemar tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairYes → noNo → yespp (Bonferroni)t1 − t2121.0001.000t1 − t3111.006.038t1 − t4015< .001< .001t2 − t3211.022.135t2 − t4014< .001< .001t3 − t405.063.375Cochran's Q test showed that the proportion answering 1 differed significantly across the 4 conditions (t1, t2, t3, t4), Q(3, N = 20) = 30.39, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Answered “1”</th><th>Proportion</th></tr><tr><td>t1</td><td>20</td><td>4</td><td>.20</td></tr><tr><td>t2</td><td>20</td><td>5</td><td>.25</td></tr><tr><td>t3</td><td>20</td><td>14</td><td>.70</td></tr><tr><td>t4</td><td>20</td><td>19</td><td>.95</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Q</th><th>df</th><th>p</th></tr><tr><td>20</td><td>30.39</td><td>3</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Cochran's Q asks whether the proportion answering “1” differs across the 4 conditions, using the same people each time. </p><p class=\"desc\"><b>Pairwise follow-ups</b> (exact McNemar tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Yes → no</th><th>No → yes</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>t1 − t2</td><td>1</td><td>2</td><td>1.000</td><td>1.000</td></tr><tr><td>t1 − t3</td><td>1</td><td>11</td><td>.006</td><td>.038</td></tr><tr><td>t1 − t4</td><td>0</td><td>15</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>t2 − t3</td><td>2</td><td>11</td><td>.022</td><td>.135</td></tr><tr><td>t2 − t4</td><td>0</td><td>14</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>t3 − t4</td><td>0</td><td>5</td><td>.063</td><td>.375</td></tr></tbody></table><div id=\"statsSentence\">Cochran's Q test showed that the proportion answering 1 differed significantly across the 4 conditions (t1, t2, t3, t4), Q(3, N = 20) = 30.39, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "cochran-non-significant",
+   "test": "cochran",
+   "csv": "a,b,c\n0,0,0\n0,0,0\n1,1,0\n0,0,1\n1,1,0\n0,1,1\n1,0,0\n1,0,1\n0,1,1\n0,1,1\n0,0,1\n0,1,0",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "Cochran's Q test showed no significant difference in the proportion answering 1 across the 3 conditions (a, b, c), Q(2, N = 12) = 0.80, p = .670.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Answered “1”",
+       "Proportion"
+      ],
+      [
+       "a",
+       "12",
+       "4",
+       ".33"
+      ],
+      [
+       "b",
+       "12",
+       "6",
+       ".50"
+      ],
+      [
+       "c",
+       "12",
+       "6",
+       ".50"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Q",
+       "df",
+       "p"
+      ],
+      [
+       "12",
+       "0.80",
+       "2",
+       ".670"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Cochran's Q asks whether the proportion answering “1” differs across the 3 conditions, using the same people each time. With fewer than 20 people the χ² approximation is rough; read the p value with care."
+    },
+    {
+     "kind": "note",
+     "html": "The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives."
+    }
+   ],
+   "resultsText": "ResultsConditionNAnswered “1”Proportiona124.33b126.50c126.50N peopleQdfp120.802.670Cochran's Q asks whether the proportion answering “1” differs across the 3 conditions, using the same people each time. With fewer than 20 people the χ² approximation is rough; read the p value with care.The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives.Cochran's Q test showed no significant difference in the proportion answering 1 across the 3 conditions (a, b, c), Q(2, N = 12) = 0.80, p = .670.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Answered “1”</th><th>Proportion</th></tr><tr><td>a</td><td>12</td><td>4</td><td>.33</td></tr><tr><td>b</td><td>12</td><td>6</td><td>.50</td></tr><tr><td>c</td><td>12</td><td>6</td><td>.50</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Q</th><th>df</th><th>p</th></tr><tr><td>12</td><td>0.80</td><td>2</td><td>.670</td></tr></tbody></table><p class=\"desc\">Cochran's Q asks whether the proportion answering “1” differs across the 3 conditions, using the same people each time. With fewer than 20 people the χ² approximation is rough; read the p value with care.</p><p class=\"desc\">The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives.</p><div id=\"statsSentence\">Cochran's Q test showed no significant difference in the proportion answering 1 across the 3 conditions (a, b, c), Q(2, N = 12) = 0.80, p = .670.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "cochran-two-columns",
+   "test": "cochran",
+   "csv": "t1,t2,t3,t4\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n0,1,0,1\n1,0,1,1\n0,0,0,0\n0,0,1,1\n0,1,1,1\n0,0,1,1\n0,0,1,1\n1,1,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1",
+   "ticked": {
+    "items": [
+     "t1",
+     "t2"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Tick at least 3 columns, one for each time or condition. For two, use the McNemar test."
+   ]
+  },
+  {
+   "id": "cochran-all-same",
+   "test": "cochran",
+   "csv": "a,b,c\nyes,yes,yes\nyes,yes,yes\nyes,yes,yes\nyes,yes,yes\nno,no,no\nno,no,no\nno,no,no",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every person gave the same answer in every column, so the test cannot be calculated."
+   ]
+  },
+  {
+   "id": "cochran-nine-columns",
+   "test": "cochran",
+   "csv": "c1,c2,c3,c4,c5,c6,c7,c8,c9\n1,0,1,0,0,1,1,0,1\n1,0,1,0,1,0,1,0,0\n0,0,0,1,0,0,1,1,0\n1,0,0,0,0,1,0,1,0\n0,1,1,1,0,1,0,1,0\n1,1,0,0,0,0,0,0,0\n0,1,0,0,0,0,0,1,0\n0,1,1,0,0,1,0,1,1\n1,0,0,1,0,1,0,1,0\n0,0,0,1,1,0,1,1,1",
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3",
+     "c4",
+     "c5",
+     "c6",
+     "c7",
+     "c8",
+     "c9"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This test handles up to 8 conditions."
+   ]
+  },
+  {
+   "id": "cochran-n2",
+   "test": "cochran",
+   "csv": "a,b,c\n1,0,1\n0,1,0",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 3 people with an answer in every ticked column."
+   ]
+  },
+  {
+   "id": "cochran-missing-answer",
+   "test": "cochran",
+   "csv": "t1,t2,t3,t4\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n0,1,0,1\n1,0,1,1\n0,0,0,0\n0,0,1,1\n0,1,1,1\n0,0,1,1\n0,0,1,1\n1,1,0,1\n0,0,1,1\n0,0,1,1\n1,1,1,1\n1,,0,1",
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3",
+     "t4"
+    ]
+   },
+   "form": {
+    "values": {
+     "pos": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "Cochran's Q test showed that the proportion answering 1 differed significantly across the 4 conditions (t1, t2, t3, t4), Q(3, N = 20) = 30.39, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Answered “1”",
+       "Proportion"
+      ],
+      [
+       "t1",
+       "20",
+       "4",
+       ".20"
+      ],
+      [
+       "t2",
+       "20",
+       "5",
+       ".25"
+      ],
+      [
+       "t3",
+       "20",
+       "14",
+       ".70"
+      ],
+      [
+       "t4",
+       "20",
+       "19",
+       ".95"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Q",
+       "df",
+       "p"
+      ],
+      [
+       "20",
+       "30.39",
+       "3",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Cochran's Q asks whether the proportion answering “1” differs across the 4 conditions, using the same people each time. "
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (exact McNemar tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Yes → no",
+       "No → yes",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "t1 − t2",
+       "1",
+       "2",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "t1 − t3",
+       "1",
+       "11",
+       ".006",
+       ".038"
+      ],
+      [
+       "t1 − t4",
+       "0",
+       "15",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "t2 − t3",
+       "2",
+       "11",
+       ".022",
+       ".135"
+      ],
+      [
+       "t2 − t4",
+       "0",
+       "14",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "t3 − t4",
+       "0",
+       "5",
+       ".063",
+       ".375"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "1 entry that is not a number was left out."
+    }
+   ],
+   "resultsText": "ResultsConditionNAnswered “1”Proportiont1204.20t2205.25t32014.70t42019.95N peopleQdfp2030.393< .001Cochran's Q asks whether the proportion answering “1” differs across the 4 conditions, using the same people each time. Pairwise follow-ups (exact McNemar tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairYes → noNo → yespp (Bonferroni)t1 − t2121.0001.000t1 − t3111.006.038t1 − t4015< .001< .001t2 − t3211.022.135t2 − t4014< .001< .001t3 − t405.063.3751 entry that is not a number was left out.Cochran's Q test showed that the proportion answering 1 differed significantly across the 4 conditions (t1, t2, t3, t4), Q(3, N = 20) = 30.39, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Answered “1”</th><th>Proportion</th></tr><tr><td>t1</td><td>20</td><td>4</td><td>.20</td></tr><tr><td>t2</td><td>20</td><td>5</td><td>.25</td></tr><tr><td>t3</td><td>20</td><td>14</td><td>.70</td></tr><tr><td>t4</td><td>20</td><td>19</td><td>.95</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Q</th><th>df</th><th>p</th></tr><tr><td>20</td><td>30.39</td><td>3</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Cochran's Q asks whether the proportion answering “1” differs across the 4 conditions, using the same people each time. </p><p class=\"desc\"><b>Pairwise follow-ups</b> (exact McNemar tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Yes → no</th><th>No → yes</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>t1 − t2</td><td>1</td><td>2</td><td>1.000</td><td>1.000</td></tr><tr><td>t1 − t3</td><td>1</td><td>11</td><td>.006</td><td>.038</td></tr><tr><td>t1 − t4</td><td>0</td><td>15</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>t2 − t3</td><td>2</td><td>11</td><td>.022</td><td>.135</td></tr><tr><td>t2 − t4</td><td>0</td><td>14</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>t3 − t4</td><td>0</td><td>5</td><td>.063</td><td>.375</td></tr></tbody></table><p class=\"desc\">1 entry that is not a number was left out.</p><div id=\"statsSentence\">Cochran's Q test showed that the proportion answering 1 differed significantly across the 4 conditions (t1, t2, t3, t4), Q(3, N = 20) = 30.39, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

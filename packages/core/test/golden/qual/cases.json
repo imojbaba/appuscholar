@@ -1,0 +1,1876 @@
+{
+ "engine": "qual",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "tree",
+   "codes": [
+    {
+     "id": "qa",
+     "name": "Coping",
+     "parentId": null,
+     "color": "#f59e0b"
+    },
+    {
+     "id": "qb",
+     "name": "Barriers",
+     "parentId": null,
+     "color": "#10b981"
+    },
+    {
+     "id": "qc",
+     "name": "Social support",
+     "parentId": "qa",
+     "color": "#3b82f6"
+    },
+    {
+     "id": "qd",
+     "name": "Family",
+     "parentId": "qc",
+     "color": "#ef4444"
+    },
+    {
+     "id": "qe",
+     "name": "परिवार का दबाव",
+     "parentId": "qd",
+     "color": "#8b5cf6"
+    },
+    {
+     "id": "qf",
+     "name": "The \"good student\" ideal",
+     "parentId": "qe",
+     "color": "#ec4899"
+    },
+    {
+     "id": "qg",
+     "name": "Deepest",
+     "parentId": "qf",
+     "color": "#14b8a6"
+    },
+    {
+     "id": "qh",
+     "name": "Avoidance",
+     "parentId": "qa",
+     "color": "#f97316"
+    },
+    {
+     "id": "qi",
+     "name": "Cost",
+     "parentId": "qb",
+     "color": "#6366f1"
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Interview 1 — Riya",
+     "body": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">an old passage</span> once.</p>",
+     "updated": 1
+    },
+    {
+     "id": "d2",
+     "title": "साक्षात्कार 2",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">friends listen</span> and <span class=\"qual-tag\" data-qcode=\"qa\" title=\"t\" style=\"background:#f59e0b55\">I pray</span></p><ul><li><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\"> bus fare </span></li></ul><p><span class=\"qual-tag\" data-qcode=\"qd\" title=\"t\" style=\"background:#f59e0b55\">  </span></p>",
+     "updated": 2
+    },
+    {
+     "id": "d3",
+     "title": "",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">from a document with no title</span> <span class=\"qual-tag\" data-qcode=\"zz\" title=\"t\" style=\"background:#f59e0b55\">a code that is gone</span></p>",
+     "updated": 3
+    },
+    {
+     "id": "d4",
+     "title": "No body",
+     "updated": 4
+    }
+   ],
+   "current": "d1",
+   "editor": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">my <b>mother</b> and <i>aunt</i> help me</span> every day.</p><p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">   </span></p><p><span class=\"qual-tag\" data-qcode=\"qh\" title=\"t\" style=\"background:#f59e0b55\">I   just\n\n  keep\tgoing&nbsp;</span></p><p><span class=\"qual-tag\" data-qcode=\"qe\" title=\"t\" style=\"background:#f59e0b55\">घर में <span class=\"qual-tag\" data-qcode=\"qf\" title=\"t\" style=\"background:#f59e0b55\">\"topper\" बनो</span> कहते हैं</span></p><p><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\">Fees are **too** high</span></p><p><span class=\"qual-tag\" data-qcode=\"qg\" title=\"t\" style=\"background:#f59e0b55\"><br></span></p>",
+   "markdown": "# Coded passages\n\n## Coping\n- **साक्षात्कार 2:** \"I pray\"\n\n### Social support\n- **Interview 1 — Riya:** \"my mother and aunt help me\"\n- **साक्षात्कार 2:** \"friends listen\"\n- **Untitled:** \"from a document with no title\"\n\n#### Family\n_No passages tagged yet._\n\n##### परिवार का दबाव\n- **Interview 1 — Riya:** \"घर में \"topper\" बनो कहते हैं\"\n\n###### The \"good student\" ideal\n- **Interview 1 — Riya:** \"\"topper\" बनो\"\n\n###### Deepest\n_No passages tagged yet._\n\n### Avoidance\n- **Interview 1 — Riya:** \"I just keep going\"\n\n## Barriers\n_No passages tagged yet._\n\n### Cost\n- **Interview 1 — Riya:** \"Fees are **too** high\"\n- **साक्षात्कार 2:** \"bus fare\"\n",
+   "passages": {
+    "qa": [
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "I pray"
+     }
+    ],
+    "qb": [],
+    "qc": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "my mother and aunt help me"
+     },
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "friends listen"
+     },
+     {
+      "doc": "Untitled",
+      "text": "from a document with no title"
+     }
+    ],
+    "qd": [],
+    "qe": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "घर में \"topper\" बनो कहते हैं"
+     }
+    ],
+    "qf": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "\"topper\" बनो"
+     }
+    ],
+    "qg": [],
+    "qh": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "I   just\n\n  keep\tgoing"
+     }
+    ],
+    "qi": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "Fees are **too** high"
+     },
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "bus fare"
+     }
+    ],
+    "nope": []
+   },
+   "raws": {
+    "qa": [
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "I pray"
+     }
+    ],
+    "qb": [],
+    "qc": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "my mother and aunt help me"
+     },
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "   "
+     },
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "friends listen"
+     },
+     {
+      "title": "",
+      "raw": "from a document with no title"
+     }
+    ],
+    "qd": [
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "  "
+     }
+    ],
+    "qe": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "घर में \"topper\" बनो कहते हैं"
+     }
+    ],
+    "qf": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "\"topper\" बनो"
+     }
+    ],
+    "qg": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": ""
+     }
+    ],
+    "qh": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "I   just\n\n  keep\tgoing "
+     }
+    ],
+    "qi": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "Fees are **too** high"
+     },
+     {
+      "title": "साक्षात्कार 2",
+      "raw": " bus fare "
+     }
+    ],
+    "nope": []
+   },
+   "descendants": {
+    "qa": [
+     "qa",
+     "qc",
+     "qd",
+     "qe",
+     "qf",
+     "qg",
+     "qh"
+    ],
+    "qb": [
+     "qb",
+     "qi"
+    ],
+    "qc": [
+     "qc",
+     "qd",
+     "qe",
+     "qf",
+     "qg"
+    ],
+    "qd": [
+     "qd",
+     "qe",
+     "qf",
+     "qg"
+    ],
+    "qe": [
+     "qe",
+     "qf",
+     "qg"
+    ],
+    "qf": [
+     "qf",
+     "qg"
+    ],
+    "qg": [
+     "qg"
+    ],
+    "qh": [
+     "qh"
+    ],
+    "qi": [
+     "qi"
+    ]
+   },
+   "deletes": [
+    {
+     "id": "qa",
+     "confirm": "Delete \"Coping\" and its 6 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qb",
+     "confirm": "Delete \"Barriers\" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      }
+     ]
+    },
+    {
+     "id": "qc",
+     "confirm": "Delete \"Social support\" and its 4 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qd",
+     "confirm": "Delete \"Family\" and its 3 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qe",
+     "confirm": "Delete \"परिवार का दबाव\" and its 2 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qf",
+     "confirm": "Delete \"The \"good student\" ideal\" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qg",
+     "confirm": "Delete \"Deepest\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qh",
+     "confirm": "Delete \"Avoidance\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qi",
+     "confirm": "Delete \"Cost\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      }
+     ]
+    },
+    {
+     "id": "nope",
+     "confirm": null,
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tree-current-d2",
+   "codes": [
+    {
+     "id": "qa",
+     "name": "Coping",
+     "parentId": null,
+     "color": "#f59e0b"
+    },
+    {
+     "id": "qb",
+     "name": "Barriers",
+     "parentId": null,
+     "color": "#10b981"
+    },
+    {
+     "id": "qc",
+     "name": "Social support",
+     "parentId": "qa",
+     "color": "#3b82f6"
+    },
+    {
+     "id": "qd",
+     "name": "Family",
+     "parentId": "qc",
+     "color": "#ef4444"
+    },
+    {
+     "id": "qe",
+     "name": "परिवार का दबाव",
+     "parentId": "qd",
+     "color": "#8b5cf6"
+    },
+    {
+     "id": "qf",
+     "name": "The \"good student\" ideal",
+     "parentId": "qe",
+     "color": "#ec4899"
+    },
+    {
+     "id": "qg",
+     "name": "Deepest",
+     "parentId": "qf",
+     "color": "#14b8a6"
+    },
+    {
+     "id": "qh",
+     "name": "Avoidance",
+     "parentId": "qa",
+     "color": "#f97316"
+    },
+    {
+     "id": "qi",
+     "name": "Cost",
+     "parentId": "qb",
+     "color": "#6366f1"
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Interview 1 — Riya",
+     "body": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">an old passage</span> once.</p>",
+     "updated": 1
+    },
+    {
+     "id": "d2",
+     "title": "साक्षात्कार 2",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">friends listen</span> and <span class=\"qual-tag\" data-qcode=\"qa\" title=\"t\" style=\"background:#f59e0b55\">I pray</span></p><ul><li><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\"> bus fare </span></li></ul><p><span class=\"qual-tag\" data-qcode=\"qd\" title=\"t\" style=\"background:#f59e0b55\">  </span></p>",
+     "updated": 2
+    },
+    {
+     "id": "d3",
+     "title": "",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">from a document with no title</span> <span class=\"qual-tag\" data-qcode=\"zz\" title=\"t\" style=\"background:#f59e0b55\">a code that is gone</span></p>",
+     "updated": 3
+    },
+    {
+     "id": "d4",
+     "title": "No body",
+     "updated": 4
+    }
+   ],
+   "current": "d2",
+   "editor": "<p><span class=\"qual-tag\" data-qcode=\"qb\" title=\"t\" style=\"background:#f59e0b55\">Rewritten in the editor</span> <span class=\"qual-tag\" data-qcode=\"qa\" title=\"t\" style=\"background:#f59e0b55\">and kept</span></p>",
+   "markdown": "# Coded passages\n\n## Coping\n- **साक्षात्कार 2:** \"and kept\"\n\n### Social support\n- **Interview 1 — Riya:** \"an old passage\"\n- **Untitled:** \"from a document with no title\"\n\n#### Family\n_No passages tagged yet._\n\n##### परिवार का दबाव\n_No passages tagged yet._\n\n###### The \"good student\" ideal\n_No passages tagged yet._\n\n###### Deepest\n_No passages tagged yet._\n\n### Avoidance\n_No passages tagged yet._\n\n## Barriers\n- **साक्षात्कार 2:** \"Rewritten in the editor\"\n\n### Cost\n_No passages tagged yet._\n",
+   "passages": {
+    "qa": [
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "and kept"
+     }
+    ],
+    "qb": [
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "Rewritten in the editor"
+     }
+    ],
+    "qc": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "an old passage"
+     },
+     {
+      "doc": "Untitled",
+      "text": "from a document with no title"
+     }
+    ],
+    "qd": [],
+    "qe": [],
+    "qf": [],
+    "qg": [],
+    "qh": [],
+    "qi": [],
+    "nope": []
+   },
+   "raws": {
+    "qa": [
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "and kept"
+     }
+    ],
+    "qb": [
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "Rewritten in the editor"
+     }
+    ],
+    "qc": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "an old passage"
+     },
+     {
+      "title": "",
+      "raw": "from a document with no title"
+     }
+    ],
+    "qd": [],
+    "qe": [],
+    "qf": [],
+    "qg": [],
+    "qh": [],
+    "qi": [],
+    "nope": []
+   },
+   "descendants": {
+    "qa": [
+     "qa",
+     "qc",
+     "qd",
+     "qe",
+     "qf",
+     "qg",
+     "qh"
+    ],
+    "qb": [
+     "qb",
+     "qi"
+    ],
+    "qc": [
+     "qc",
+     "qd",
+     "qe",
+     "qf",
+     "qg"
+    ],
+    "qd": [
+     "qd",
+     "qe",
+     "qf",
+     "qg"
+    ],
+    "qe": [
+     "qe",
+     "qf",
+     "qg"
+    ],
+    "qf": [
+     "qf",
+     "qg"
+    ],
+    "qg": [
+     "qg"
+    ],
+    "qh": [
+     "qh"
+    ],
+    "qi": [
+     "qi"
+    ]
+   },
+   "deletes": [
+    {
+     "id": "qa",
+     "confirm": "Delete \"Coping\" and its 6 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qb",
+     "confirm": "Delete \"Barriers\" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      }
+     ]
+    },
+    {
+     "id": "qc",
+     "confirm": "Delete \"Social support\" and its 4 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qd",
+     "confirm": "Delete \"Family\" and its 3 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qe",
+     "confirm": "Delete \"परिवार का दबाव\" and its 2 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qf",
+     "confirm": "Delete \"The \"good student\" ideal\" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qg",
+     "confirm": "Delete \"Deepest\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qh",
+     "confirm": "Delete \"Avoidance\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    },
+    {
+     "id": "qi",
+     "confirm": "Delete \"Cost\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      }
+     ]
+    },
+    {
+     "id": "nope",
+     "confirm": null,
+     "after": [
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qb",
+       "name": "Barriers",
+       "parentId": null,
+       "color": "#10b981"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qd",
+       "name": "Family",
+       "parentId": "qc",
+       "color": "#ef4444"
+      },
+      {
+       "id": "qe",
+       "name": "परिवार का दबाव",
+       "parentId": "qd",
+       "color": "#8b5cf6"
+      },
+      {
+       "id": "qf",
+       "name": "The \"good student\" ideal",
+       "parentId": "qe",
+       "color": "#ec4899"
+      },
+      {
+       "id": "qg",
+       "name": "Deepest",
+       "parentId": "qf",
+       "color": "#14b8a6"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qi",
+       "name": "Cost",
+       "parentId": "qb",
+       "color": "#6366f1"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "no-codes",
+   "codes": [],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Interview 1 — Riya",
+     "body": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">an old passage</span> once.</p>",
+     "updated": 1
+    },
+    {
+     "id": "d2",
+     "title": "साक्षात्कार 2",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">friends listen</span> and <span class=\"qual-tag\" data-qcode=\"qa\" title=\"t\" style=\"background:#f59e0b55\">I pray</span></p><ul><li><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\"> bus fare </span></li></ul><p><span class=\"qual-tag\" data-qcode=\"qd\" title=\"t\" style=\"background:#f59e0b55\">  </span></p>",
+     "updated": 2
+    },
+    {
+     "id": "d3",
+     "title": "",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">from a document with no title</span> <span class=\"qual-tag\" data-qcode=\"zz\" title=\"t\" style=\"background:#f59e0b55\">a code that is gone</span></p>",
+     "updated": 3
+    },
+    {
+     "id": "d4",
+     "title": "No body",
+     "updated": 4
+    }
+   ],
+   "current": "d1",
+   "editor": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">my <b>mother</b> and <i>aunt</i> help me</span> every day.</p><p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">   </span></p><p><span class=\"qual-tag\" data-qcode=\"qh\" title=\"t\" style=\"background:#f59e0b55\">I   just\n\n  keep\tgoing&nbsp;</span></p><p><span class=\"qual-tag\" data-qcode=\"qe\" title=\"t\" style=\"background:#f59e0b55\">घर में <span class=\"qual-tag\" data-qcode=\"qf\" title=\"t\" style=\"background:#f59e0b55\">\"topper\" बनो</span> कहते हैं</span></p><p><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\">Fees are **too** high</span></p><p><span class=\"qual-tag\" data-qcode=\"qg\" title=\"t\" style=\"background:#f59e0b55\"><br></span></p>",
+   "markdown": "# Coded passages\n",
+   "passages": {
+    "nope": []
+   },
+   "raws": {
+    "nope": []
+   },
+   "descendants": {},
+   "deletes": [
+    {
+     "id": "nope",
+     "confirm": null,
+     "after": []
+    }
+   ]
+  },
+  {
+   "id": "no-passages",
+   "codes": [
+    {
+     "id": "qx",
+     "name": "Hope",
+     "parentId": null,
+     "color": "#84cc16"
+    },
+    {
+     "id": "qy",
+     "name": "Future plans",
+     "parentId": "qx",
+     "color": "#f59e0b"
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Interview 1 — Riya",
+     "body": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">an old passage</span> once.</p>",
+     "updated": 1
+    },
+    {
+     "id": "d2",
+     "title": "साक्षात्कार 2",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">friends listen</span> and <span class=\"qual-tag\" data-qcode=\"qa\" title=\"t\" style=\"background:#f59e0b55\">I pray</span></p><ul><li><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\"> bus fare </span></li></ul><p><span class=\"qual-tag\" data-qcode=\"qd\" title=\"t\" style=\"background:#f59e0b55\">  </span></p>",
+     "updated": 2
+    },
+    {
+     "id": "d3",
+     "title": "",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">from a document with no title</span> <span class=\"qual-tag\" data-qcode=\"zz\" title=\"t\" style=\"background:#f59e0b55\">a code that is gone</span></p>",
+     "updated": 3
+    },
+    {
+     "id": "d4",
+     "title": "No body",
+     "updated": 4
+    }
+   ],
+   "current": "d1",
+   "editor": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">my <b>mother</b> and <i>aunt</i> help me</span> every day.</p><p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">   </span></p><p><span class=\"qual-tag\" data-qcode=\"qh\" title=\"t\" style=\"background:#f59e0b55\">I   just\n\n  keep\tgoing&nbsp;</span></p><p><span class=\"qual-tag\" data-qcode=\"qe\" title=\"t\" style=\"background:#f59e0b55\">घर में <span class=\"qual-tag\" data-qcode=\"qf\" title=\"t\" style=\"background:#f59e0b55\">\"topper\" बनो</span> कहते हैं</span></p><p><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\">Fees are **too** high</span></p><p><span class=\"qual-tag\" data-qcode=\"qg\" title=\"t\" style=\"background:#f59e0b55\"><br></span></p>",
+   "markdown": "# Coded passages\n\n## Hope\n_No passages tagged yet._\n\n### Future plans\n_No passages tagged yet._\n",
+   "passages": {
+    "qx": [],
+    "qy": [],
+    "nope": []
+   },
+   "raws": {
+    "qx": [],
+    "qy": [],
+    "nope": []
+   },
+   "descendants": {
+    "qx": [
+     "qx",
+     "qy"
+    ],
+    "qy": [
+     "qy"
+    ]
+   },
+   "deletes": [
+    {
+     "id": "qx",
+     "confirm": "Delete \"Hope\" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": []
+    },
+    {
+     "id": "qy",
+     "confirm": "Delete \"Future plans\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qx",
+       "name": "Hope",
+       "parentId": null,
+       "color": "#84cc16"
+      }
+     ]
+    },
+    {
+     "id": "nope",
+     "confirm": null,
+     "after": [
+      {
+       "id": "qx",
+       "name": "Hope",
+       "parentId": null,
+       "color": "#84cc16"
+      },
+      {
+       "id": "qy",
+       "name": "Future plans",
+       "parentId": "qx",
+       "color": "#f59e0b"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "orphan-and-order",
+   "codes": [
+    {
+     "id": "qo",
+     "name": "Lost child",
+     "parentId": "gone",
+     "color": "#10b981"
+    },
+    {
+     "id": "qh",
+     "name": "Avoidance",
+     "parentId": "qa",
+     "color": "#f97316"
+    },
+    {
+     "id": "qa",
+     "name": "Coping",
+     "parentId": null,
+     "color": "#f59e0b"
+    },
+    {
+     "id": "qc",
+     "name": "Social support",
+     "parentId": "qa",
+     "color": "#3b82f6"
+    },
+    {
+     "id": "qp",
+     "name": "Child of the lost",
+     "parentId": "qo",
+     "color": "#3b82f6"
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Interview 1 — Riya",
+     "body": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">an old passage</span> once.</p>",
+     "updated": 1
+    },
+    {
+     "id": "d2",
+     "title": "साक्षात्कार 2",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">friends listen</span> and <span class=\"qual-tag\" data-qcode=\"qa\" title=\"t\" style=\"background:#f59e0b55\">I pray</span></p><ul><li><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\"> bus fare </span></li></ul><p><span class=\"qual-tag\" data-qcode=\"qd\" title=\"t\" style=\"background:#f59e0b55\">  </span></p>",
+     "updated": 2
+    },
+    {
+     "id": "d3",
+     "title": "",
+     "body": "<p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">from a document with no title</span> <span class=\"qual-tag\" data-qcode=\"zz\" title=\"t\" style=\"background:#f59e0b55\">a code that is gone</span></p>",
+     "updated": 3
+    },
+    {
+     "id": "d4",
+     "title": "No body",
+     "updated": 4
+    }
+   ],
+   "current": "d1",
+   "editor": "<p>She said <span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">my <b>mother</b> and <i>aunt</i> help me</span> every day.</p><p><span class=\"qual-tag\" data-qcode=\"qc\" title=\"t\" style=\"background:#f59e0b55\">   </span></p><p><span class=\"qual-tag\" data-qcode=\"qh\" title=\"t\" style=\"background:#f59e0b55\">I   just\n\n  keep\tgoing&nbsp;</span></p><p><span class=\"qual-tag\" data-qcode=\"qe\" title=\"t\" style=\"background:#f59e0b55\">घर में <span class=\"qual-tag\" data-qcode=\"qf\" title=\"t\" style=\"background:#f59e0b55\">\"topper\" बनो</span> कहते हैं</span></p><p><span class=\"qual-tag\" data-qcode=\"qi\" title=\"t\" style=\"background:#f59e0b55\">Fees are **too** high</span></p><p><span class=\"qual-tag\" data-qcode=\"qg\" title=\"t\" style=\"background:#f59e0b55\"><br></span></p>",
+   "markdown": "# Coded passages\n\n## Coping\n- **साक्षात्कार 2:** \"I pray\"\n\n### Avoidance\n- **Interview 1 — Riya:** \"I just keep going\"\n\n### Social support\n- **Interview 1 — Riya:** \"my mother and aunt help me\"\n- **साक्षात्कार 2:** \"friends listen\"\n- **Untitled:** \"from a document with no title\"\n",
+   "passages": {
+    "qo": [],
+    "qh": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "I   just\n\n  keep\tgoing"
+     }
+    ],
+    "qa": [
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "I pray"
+     }
+    ],
+    "qc": [
+     {
+      "doc": "Interview 1 — Riya",
+      "text": "my mother and aunt help me"
+     },
+     {
+      "doc": "साक्षात्कार 2",
+      "text": "friends listen"
+     },
+     {
+      "doc": "Untitled",
+      "text": "from a document with no title"
+     }
+    ],
+    "qp": [],
+    "nope": []
+   },
+   "raws": {
+    "qo": [],
+    "qh": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "I   just\n\n  keep\tgoing "
+     }
+    ],
+    "qa": [
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "I pray"
+     }
+    ],
+    "qc": [
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "my mother and aunt help me"
+     },
+     {
+      "title": "Interview 1 — Riya",
+      "raw": "   "
+     },
+     {
+      "title": "साक्षात्कार 2",
+      "raw": "friends listen"
+     },
+     {
+      "title": "",
+      "raw": "from a document with no title"
+     }
+    ],
+    "qp": [],
+    "nope": []
+   },
+   "descendants": {
+    "qo": [
+     "qo",
+     "qp"
+    ],
+    "qh": [
+     "qh"
+    ],
+    "qa": [
+     "qa",
+     "qh",
+     "qc"
+    ],
+    "qc": [
+     "qc"
+    ],
+    "qp": [
+     "qp"
+    ]
+   },
+   "deletes": [
+    {
+     "id": "qo",
+     "confirm": "Delete \"Lost child\" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      }
+     ]
+    },
+    {
+     "id": "qh",
+     "confirm": "Delete \"Avoidance\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qo",
+       "name": "Lost child",
+       "parentId": "gone",
+       "color": "#10b981"
+      },
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qp",
+       "name": "Child of the lost",
+       "parentId": "qo",
+       "color": "#3b82f6"
+      }
+     ]
+    },
+    {
+     "id": "qa",
+     "confirm": "Delete \"Coping\" and its 2 sub-code(s)? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qo",
+       "name": "Lost child",
+       "parentId": "gone",
+       "color": "#10b981"
+      },
+      {
+       "id": "qp",
+       "name": "Child of the lost",
+       "parentId": "qo",
+       "color": "#3b82f6"
+      }
+     ]
+    },
+    {
+     "id": "qc",
+     "confirm": "Delete \"Social support\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qo",
+       "name": "Lost child",
+       "parentId": "gone",
+       "color": "#10b981"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qp",
+       "name": "Child of the lost",
+       "parentId": "qo",
+       "color": "#3b82f6"
+      }
+     ]
+    },
+    {
+     "id": "qp",
+     "confirm": "Delete \"Child of the lost\"? The passage text itself stays in your document — only the tag is removed.",
+     "after": [
+      {
+       "id": "qo",
+       "name": "Lost child",
+       "parentId": "gone",
+       "color": "#10b981"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      }
+     ]
+    },
+    {
+     "id": "nope",
+     "confirm": null,
+     "after": [
+      {
+       "id": "qo",
+       "name": "Lost child",
+       "parentId": "gone",
+       "color": "#10b981"
+      },
+      {
+       "id": "qh",
+       "name": "Avoidance",
+       "parentId": "qa",
+       "color": "#f97316"
+      },
+      {
+       "id": "qa",
+       "name": "Coping",
+       "parentId": null,
+       "color": "#f59e0b"
+      },
+      {
+       "id": "qc",
+       "name": "Social support",
+       "parentId": "qa",
+       "color": "#3b82f6"
+      },
+      {
+       "id": "qp",
+       "name": "Child of the lost",
+       "parentId": "qo",
+       "color": "#3b82f6"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "nextColor": [
+  {
+   "count": 0,
+   "color": "#f59e0b"
+  },
+  {
+   "count": 1,
+   "color": "#10b981"
+  },
+  {
+   "count": 2,
+   "color": "#3b82f6"
+  },
+  {
+   "count": 3,
+   "color": "#ef4444"
+  },
+  {
+   "count": 4,
+   "color": "#8b5cf6"
+  },
+  {
+   "count": 5,
+   "color": "#ec4899"
+  },
+  {
+   "count": 6,
+   "color": "#14b8a6"
+  },
+  {
+   "count": 7,
+   "color": "#f97316"
+  },
+  {
+   "count": 8,
+   "color": "#6366f1"
+  },
+  {
+   "count": 9,
+   "color": "#84cc16"
+  },
+  {
+   "count": 10,
+   "color": "#f59e0b"
+  },
+  {
+   "count": 11,
+   "color": "#10b981"
+  },
+  {
+   "count": 12,
+   "color": "#3b82f6"
+  }
+ ]
+}

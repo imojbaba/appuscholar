@@ -1,0 +1,832 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "mediate-significant",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n44.2,12.5,31.8\n43.8,6.2,28.9\n50.8,13.0,31.4\n62.5,16.6,34.6\n46.8,15.1,29.9\n39.0,2.1,20.2\n42.0,11.9,36.2\n67.8,18.8,26.5\n46.5,7.9,30.0\n38.2,16.0,33.3\n47.0,16.8,35.2\n53.0,4.4,25.9\n52.9,11.7,31.3\n68.6,20.7,43.6\n48.1,14.1,22.1\n34.5,-1.4,23.3\n65.1,18.0,41.5\n52.9,12.1,32.2\n53.0,7.8,28.0\n43.2,10.8,34.8\n39.6,3.6,34.8\n65.8,16.1,45.2\n34.8,-0.3,27.5\n43.8,9.5,19.1\n38.5,7.6,36.2\n64.4,14.4,35.5\n53.2,7.6,25.0\n42.9,7.2,28.7\n57.1,14.0,40.4\n69.4,18.5,29.5\n40.4,5.0,29.2\n41.1,10.8,27.0\n54.0,10.1,31.1\n52.4,11.2,29.7\n38.6,12.3,34.7\n43.6,3.7,24.8\n49.8,10.1,26.3\n58.6,14.7,30.0\n35.1,0.7,18.2\n56.7,6.6,31.1\n55.1,7.8,24.7\n70.6,8.9,35.5\n26.0,0.4,26.6\n46.6,8.3,29.7\n46.1,11.5,20.1\n65.4,24.4,45.3\n38.2,6.0,28.6\n44.5,8.6,33.4\n52.7,13.2,34.4\n56.3,10.3,38.6\n55.1,5.3,34.9\n37.0,1.4,22.5\n70.0,18.6,43.4\n43.0,7.1,37.4\n54.6,12.0,35.8\n59.9,11.2,34.6\n46.4,8.7,39.6\n55.6,10.8,20.7\n34.6,3.1,30.8\n48.8,3.8,23.6\n44.5,4.0,13.4\n34.2,3.6,28.5\n42.9,13.7,40.2\n39.3,6.1,25.7\n59.8,16.5,39.3\n41.4,14.7,39.0\n33.8,4.7,22.1\n47.7,7.7,29.9\n46.3,-0.1,25.8\n76.9,19.2,36.7\n68.7,22.7,41.8\n51.7,6.3,22.6\n41.7,5.0,20.1\n74.0,18.7,38.9\n52.9,12.1,34.2\n31.9,-1.9,19.9\n54.1,15.1,37.9\n31.8,5.2,28.4\n63.0,10.7,35.7\n54.2,-0.8,18.9\n37.6,7.6,25.2\n43.2,7.8,20.8\n26.4,0.6,28.5\n68.1,9.2,35.9\n50.6,6.5,25.8\n56.8,11.4,31.5\n63.7,16.4,41.0\n45.3,7.5,23.0\n43.5,11.4,28.2\n44.5,2.7,19.1\n52.9,5.7,26.7\n40.6,5.8,32.5\n45.8,13.4,29.7\n52.6,5.2,32.9\n51.1,4.0,27.2\n43.4,14.7,31.7\n37.8,1.8,26.6\n43.5,7.7,21.6\n56.6,18.5,38.3\n64.0,11.1,32.9",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.256, 95% CI [0.167, 0.359]. stress significantly predicted sleep (a = 0.36, p < .001), and sleep significantly predicted grades when stress was controlled (b = 0.72, p < .001). The direct effect was c′ = 0.06 (p = .334) and the total effect was c = 0.32 (p < .001).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 100."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "0.356",
+       "0.038",
+       "9.27",
+       "&lt; .001",
+       "[0.280, 0.433]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.718",
+       "0.122",
+       "5.88",
+       "&lt; .001",
+       "[0.476, 0.961]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "0.062",
+       "0.064",
+       "0.97",
+       ".334",
+       "[-0.065, 0.188]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.318",
+       "0.054",
+       "5.90",
+       "&lt; .001",
+       "[0.211, 0.425]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "0.256",
+       "0.049",
+       "[0.167, 0.359]",
+       "0.412",
+       ".467",
+       ".456"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 100.PathbSEtp95% CIa: stress → sleep0.3560.0389.27< .001[0.280, 0.433]b: sleep → grades (controlling for stress)0.7180.1225.88< .001[0.476, 0.961]c′ (direct): stress → grades (controlling for sleep)0.0620.0640.97.334[-0.065, 0.188]c (total): stress → grades0.3180.0545.90< .001[0.211, 0.425]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y0.2560.049[0.167, 0.359]0.412.467.456The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.256, 95% CI [0.167, 0.359]. stress significantly predicted sleep (a = 0.36, p < .001), and sleep significantly predicted grades when stress was controlled (b = 0.72, p < .001). The direct effect was c′ = 0.06 (p = .334) and the total effect was c = 0.32 (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 100.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>0.356</td><td>0.038</td><td>9.27</td><td>&lt; .001</td><td>[0.280, 0.433]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.718</td><td>0.122</td><td>5.88</td><td>&lt; .001</td><td>[0.476, 0.961]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>0.062</td><td>0.064</td><td>0.97</td><td>.334</td><td>[-0.065, 0.188]</td></tr><tr><td>c (total): stress → grades</td><td>0.318</td><td>0.054</td><td>5.90</td><td>&lt; .001</td><td>[0.211, 0.425]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>0.256</td><td>0.049</td><td>[0.167, 0.359]</td><td>0.412</td><td>.467</td><td>.456</td></tr></tbody></table><p class=\"desc\">The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.256, 95% CI [0.167, 0.359]. stress significantly predicted sleep (a = 0.36, p &lt; .001), and sleep significantly predicted grades when stress was controlled (b = 0.72, p &lt; .001). The direct effect was c′ = 0.06 (p = .334) and the total effect was c = 0.32 (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mediate-non-significant",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n41.7,8.9,25.1\n52.4,9.8,38.3\n49.4,2.7,27.8\n49.1,7.8,25.8\n53.2,12.7,32.8\n56.7,12.2,26.6\n51.9,4.8,28.4\n51.8,11.0,34.3\n38.6,10.2,17.7\n55.8,5.0,33.0\n46.7,10.5,26.6\n59.9,11.8,33.0\n63.1,9.8,38.7\n33.7,16.9,26.9\n63.3,7.6,37.0\n43.2,10.9,25.5\n39.6,11.8,33.8\n47.7,11.8,31.5\n53.0,8.1,21.4\n60.1,12.0,39.5\n78.2,11.2,32.2\n35.4,19.2,31.6\n46.3,15.2,24.2\n53.8,9.9,33.6\n44.7,15.4,33.9\n32.8,6.2,23.7\n47.7,11.0,31.1\n49.7,16.4,33.0\n53.9,2.6,22.3\n46.1,14.2,38.1\n63.5,12.0,33.2\n52.2,7.5,33.0\n57.9,13.4,33.1\n39.7,5.2,31.5\n24.5,13.7,22.7\n57.8,9.9,26.3\n53.6,13.9,35.4\n57.0,5.3,20.7\n51.5,12.3,35.0\n47.0,13.3,20.4\n47.6,6.0,34.9\n60.3,16.4,36.1\n42.6,5.5,28.1\n47.3,18.5,26.9\n49.8,18.0,30.0\n53.4,6.7,26.9\n72.2,16.6,39.9\n44.9,11.4,30.9\n75.4,11.5,42.4\n51.8,11.4,26.1\n50.4,3.1,27.0\n45.8,9.9,26.0\n59.3,8.9,22.9\n67.0,12.2,28.4\n41.3,1.2,29.1\n49.2,10.0,36.0\n47.7,14.0,26.9\n44.8,7.3,24.4\n40.3,12.2,34.4\n54.6,12.3,22.2\n57.8,9.0,37.1\n53.3,11.2,22.3\n45.2,13.4,30.9\n52.6,3.9,30.6\n60.1,12.5,36.0\n54.9,8.8,32.6\n60.3,10.1,31.1\n48.6,8.2,28.3\n58.6,7.7,30.0\n57.1,12.8,37.3\n44.7,11.7,23.3\n49.2,8.7,34.9\n43.7,3.5,26.8\n51.9,11.5,24.6\n48.9,12.0,36.2\n51.1,17.9,24.4\n50.2,7.3,24.2\n44.7,10.7,28.1\n55.4,9.0,32.6\n39.3,-0.6,32.2\n50.4,7.1,35.5\n27.4,11.7,20.3\n40.2,7.3,26.4\n57.3,16.6,30.3\n47.8,12.0,20.2\n53.0,8.7,29.4\n40.7,14.2,17.5\n35.0,8.6,24.5\n39.4,14.2,21.4\n50.0,11.2,26.3\n46.0,12.0,31.0\n67.5,7.6,36.9\n68.9,10.3,41.4\n58.7,11.6,24.6\n41.9,10.8,28.7\n51.4,12.6,35.9\n45.5,17.1,22.0\n44.7,9.4,22.5\n46.8,7.1,25.7\n50.3,12.9,31.2",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.001, 95% CI [-0.016, 0.011]. stress did not significantly predict sleep (a = 0.01, p = .841), and sleep did not significantly predict grades when stress was controlled (b = 0.08, p = .545). The direct effect was c′ = 0.30 (p < .001) and the total effect was c = 0.30 (p < .001).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 100."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "0.009",
+       "0.042",
+       "0.20",
+       ".841",
+       "[-0.076, 0.093]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.078",
+       "0.128",
+       "0.61",
+       ".545",
+       "[-0.177, 0.332]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "0.297",
+       "0.054",
+       "5.50",
+       "&lt; .001",
+       "[0.190, 0.404]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.297",
+       "0.054",
+       "5.53",
+       "&lt; .001",
+       "[0.191, 0.404]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "0.001",
+       "0.006",
+       "[-0.016, 0.011]",
+       "0.001",
+       ".000",
+       ".241"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 100.PathbSEtp95% CIa: stress → sleep0.0090.0420.20.841[-0.076, 0.093]b: sleep → grades (controlling for stress)0.0780.1280.61.545[-0.177, 0.332]c′ (direct): stress → grades (controlling for sleep)0.2970.0545.50< .001[0.190, 0.404]c (total): stress → grades0.2970.0545.53< .001[0.191, 0.404]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y0.0010.006[-0.016, 0.011]0.001.000.241The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.001, 95% CI [-0.016, 0.011]. stress did not significantly predict sleep (a = 0.01, p = .841), and sleep did not significantly predict grades when stress was controlled (b = 0.08, p = .545). The direct effect was c′ = 0.30 (p < .001) and the total effect was c = 0.30 (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 100.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>0.009</td><td>0.042</td><td>0.20</td><td>.841</td><td>[-0.076, 0.093]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.078</td><td>0.128</td><td>0.61</td><td>.545</td><td>[-0.177, 0.332]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>0.297</td><td>0.054</td><td>5.50</td><td>&lt; .001</td><td>[0.190, 0.404]</td></tr><tr><td>c (total): stress → grades</td><td>0.297</td><td>0.054</td><td>5.53</td><td>&lt; .001</td><td>[0.191, 0.404]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>0.001</td><td>0.006</td><td>[-0.016, 0.011]</td><td>0.001</td><td>.000</td><td>.241</td></tr></tbody></table><p class=\"desc\">The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.001, 95% CI [-0.016, 0.011]. stress did not significantly predict sleep (a = 0.01, p = .841), and sleep did not significantly predict grades when stress was controlled (b = 0.08, p = .545). The direct effect was c′ = 0.30 (p &lt; .001) and the total effect was c = 0.30 (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mediate-n19",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n51.0,5.6,20.2\n41.9,13.9,36.0\n58.9,16.4,32.1\n40.7,5.7,26.1\n38.6,9.3,35.8\n55.1,12.8,42.8\n63.2,13.1,22.4\n62.8,15.2,32.9\n63.6,14.9,33.2\n54.0,26.2,47.6\n46.5,4.7,23.2\n55.8,1.2,18.9\n55.8,15.4,42.5\n50.7,5.0,32.7\n43.0,1.6,23.2\n48.2,14.7,22.9\n52.7,7.5,27.6\n38.4,0.1,13.9\n46.4,8.6,38.9",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 20 people with all three values; there are 19. A bootstrap interval needs more, ideally 100 or more."
+   ]
+  },
+  {
+   "id": "mediate-no-spread",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n40.3,10.0,21.0\n48.0,10.0,27.2\n62.5,10.0,29.5\n67.5,10.0,39.0\n44.8,10.0,24.5\n63.0,10.0,40.3\n44.3,10.0,25.3\n50.5,10.0,33.9\n60.7,10.0,34.1\n46.7,10.0,18.4\n73.7,10.0,41.2\n24.7,10.0,17.3\n47.0,10.0,21.8\n41.9,10.0,28.7\n47.7,10.0,37.2\n50.7,10.0,32.3\n33.9,10.0,27.1\n61.3,10.0,36.4\n37.6,10.0,32.6\n55.7,10.0,27.8\n59.8,10.0,32.6\n38.7,10.0,28.2\n61.3,10.0,33.3\n52.5,10.0,27.0\n46.6,10.0,21.5\n58.2,10.0,24.3\n66.0,10.0,45.1\n63.8,10.0,35.4\n53.4,10.0,42.2\n46.7,10.0,30.7",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "X, M and Y each need some variation"
+   ]
+  },
+  {
+   "id": "mediate-m-copy-of-x",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n58.4,58.4,35.8\n20.2,20.2,5.2\n46.9,46.9,24.6\n64.5,64.5,42.1\n37.6,37.6,41.4\n50.5,50.5,33.2\n65.0,65.0,34.7\n38.3,38.3,24.6\n58.1,58.1,46.1\n69.0,69.0,55.4\n54.5,54.5,38.1\n66.3,66.3,32.6\n48.6,48.6,41.9\n45.8,45.8,34.6\n54.7,54.7,34.9\n35.6,35.6,20.0\n61.1,61.1,32.4\n50.4,50.4,24.3\n37.1,37.1,21.0\n61.3,61.3,43.3\n56.8,56.8,42.1\n46.7,46.7,15.6\n43.7,43.7,18.6\n53.8,53.8,27.4\n34.2,34.2,17.8\n38.4,38.4,32.3\n62.9,62.9,33.3\n53.6,53.6,32.7\n62.7,62.7,30.8\n52.4,52.4,25.5",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "X and M carry the same information (one is a copy of the other), so the paths cannot be separated."
+   ]
+  },
+  {
+   "id": "mediate-exact-path",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n24,18,60\n39,19,77\n25,7,39\n10,7,24\n48,10,68\n49,4,57\n34,11,56\n38,6,50\n11,6,23\n31,14,59\n22,6,34\n19,7,33\n28,13,54\n34,11,56\n16,18,52\n24,8,40\n49,14,77\n33,5,43\n40,18,76\n20,12,44\n12,2,16\n11,14,39\n22,7,36\n33,8,49\n34,9,52\n45,15,75\n31,18,67\n12,16,44\n24,7,38\n44,16,76",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "A path fits perfectly, so standard errors cannot be calculated"
+   ]
+  },
+  {
+   "id": "mediate-n-under-100",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n53.3,7.7,32.9\n54.6,11.2,36.4\n65.6,11.9,34.1\n63.3,13.7,34.7\n51.6,11.4,34.8\n53.7,11.9,34.5\n38.1,11.2,32.5\n46.0,9.1,30.9\n53.2,10.2,28.1\n57.8,10.0,37.5\n41.9,8.7,21.1\n41.7,4.7,24.8\n55.2,17.2,38.4\n57.4,4.2,34.6\n39.1,2.7,30.8\n53.3,6.1,22.3\n63.4,10.1,35.8\n50.2,9.6,28.0\n59.0,11.3,28.8\n60.4,12.7,38.6\n42.5,9.6,32.6\n45.6,13.6,28.1\n36.6,-1.2,16.7\n38.5,5.3,20.9\n48.0,7.5,27.5\n56.6,9.7,26.3\n55.2,13.8,33.3\n45.2,3.7,24.7\n32.5,-0.4,19.4\n49.8,5.9,27.6\n59.1,16.0,39.9\n53.6,12.4,30.1\n55.4,10.0,28.9\n69.9,20.2,38.9\n64.9,13.0,33.4\n48.3,5.8,30.3\n28.0,6.6,26.2\n62.5,17.3,41.9\n45.3,8.9,32.0\n55.3,18.9,43.5\n40.9,7.5,30.9\n53.5,10.3,25.8\n41.4,0.5,33.6\n54.3,5.9,26.1\n42.7,6.3,30.2\n45.9,10.8,33.4\n42.0,8.4,32.4\n54.1,11.9,29.1\n52.4,9.9,29.7\n52.5,10.1,35.2",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.242, 95% CI [0.088, 0.437]. stress significantly predicted sleep (a = 0.34, p < .001), and sleep significantly predicted grades when stress was controlled (b = 0.72, p < .001). The direct effect was c′ = 0.13 (p = .133) and the total effect was c = 0.37 (p < .001).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 50."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "0.339",
+       "0.054",
+       "6.29",
+       "&lt; .001",
+       "[0.230, 0.447]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.715",
+       "0.171",
+       "4.19",
+       "&lt; .001",
+       "[0.372, 1.058]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "0.132",
+       "0.086",
+       "1.53",
+       ".133",
+       "[-0.041, 0.305]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.374",
+       "0.074",
+       "5.06",
+       "&lt; .001",
+       "[0.225, 0.522]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "0.242",
+       "0.088",
+       "[0.088, 0.437]",
+       "0.382",
+       ".452",
+       ".525"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 50.PathbSEtp95% CIa: stress → sleep0.3390.0546.29< .001[0.230, 0.447]b: sleep → grades (controlling for stress)0.7150.1714.19< .001[0.372, 1.058]c′ (direct): stress → grades (controlling for sleep)0.1320.0861.53.133[-0.041, 0.305]c (total): stress → grades0.3740.0745.06< .001[0.225, 0.522]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y0.2420.088[0.088, 0.437]0.382.452.525The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.242, 95% CI [0.088, 0.437]. stress significantly predicted sleep (a = 0.34, p < .001), and sleep significantly predicted grades when stress was controlled (b = 0.72, p < .001). The direct effect was c′ = 0.13 (p = .133) and the total effect was c = 0.37 (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 50.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>0.339</td><td>0.054</td><td>6.29</td><td>&lt; .001</td><td>[0.230, 0.447]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.715</td><td>0.171</td><td>4.19</td><td>&lt; .001</td><td>[0.372, 1.058]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>0.132</td><td>0.086</td><td>1.53</td><td>.133</td><td>[-0.041, 0.305]</td></tr><tr><td>c (total): stress → grades</td><td>0.374</td><td>0.074</td><td>5.06</td><td>&lt; .001</td><td>[0.225, 0.522]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>0.242</td><td>0.088</td><td>[0.088, 0.437]</td><td>0.382</td><td>.452</td><td>.525</td></tr></tbody></table><p class=\"desc\">The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.242, 95% CI [0.088, 0.437]. stress significantly predicted sleep (a = 0.34, p &lt; .001), and sleep significantly predicted grades when stress was controlled (b = 0.72, p &lt; .001). The direct effect was c′ = 0.13 (p = .133) and the total effect was c = 0.37 (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mediate-same-n-different-data",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n44.2,14.9,27.2\n50.9,9.2,37.7\n28.9,4.9,19.1\n36.0,8.8,15.7\n42.4,4.7,26.9\n47.8,11.5,28.5\n57.4,13.4,37.0\n51.1,11.0,27.5\n45.7,10.9,39.9\n46.8,4.6,28.3\n47.8,9.5,30.5\n46.9,6.3,33.6\n42.1,4.5,37.2\n42.7,6.3,24.5\n49.4,13.5,33.7\n47.2,9.8,25.8\n40.2,10.4,20.5\n51.7,7.9,21.8\n52.8,16.2,36.3\n43.8,6.2,24.1\n46.0,3.7,27.9\n50.6,7.9,27.4\n61.6,16.8,35.7\n35.7,0.5,15.4\n46.6,11.1,24.9\n71.9,13.6,40.4\n44.4,1.8,21.5\n36.3,5.4,24.1\n54.0,12.5,33.6\n49.3,14.1,28.0\n57.7,10.8,36.5\n51.2,13.2,28.1\n47.0,3.9,31.9\n57.2,18.7,41.6\n44.0,8.7,22.0\n41.9,8.3,33.0\n33.7,5.8,15.8\n58.9,11.3,27.5\n33.9,2.1,25.2\n48.6,11.5,30.1\n64.6,19.8,30.7\n51.7,18.4,34.4\n43.2,3.5,30.9\n65.0,11.8,30.3\n68.5,19.5,33.5\n38.4,5.9,31.1\n38.8,5.5,22.7\n23.8,6.9,16.2\n48.3,7.2,26.4\n39.4,-0.5,12.4\n60.2,22.6,33.9\n42.2,8.1,32.4\n57.8,11.6,24.4\n64.4,11.1,32.4\n48.3,9.4,22.0\n73.3,22.9,35.5\n36.1,4.1,27.5\n57.4,17.3,30.4\n37.4,3.7,24.5\n58.9,16.3,31.4",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.087, 95% CI [-0.057, 0.258]. stress significantly predicted sleep (a = 0.40, p < .001), and sleep did not significantly predict grades when stress was controlled (b = 0.22, p = .241). The direct effect was c′ = 0.32 (p = .002) and the total effect was c = 0.41 (p < .001).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 60."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "0.396",
+       "0.046",
+       "8.63",
+       "&lt; .001",
+       "[0.304, 0.488]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.220",
+       "0.186",
+       "1.19",
+       ".241",
+       "[-0.152, 0.592]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "0.322",
+       "0.098",
+       "3.28",
+       ".002",
+       "[0.125, 0.519]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.409",
+       "0.065",
+       "6.28",
+       "&lt; .001",
+       "[0.279, 0.540]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "0.087",
+       "0.080",
+       "[-0.057, 0.258]",
+       "0.136",
+       ".562",
+       ".419"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 60.PathbSEtp95% CIa: stress → sleep0.3960.0468.63< .001[0.304, 0.488]b: sleep → grades (controlling for stress)0.2200.1861.19.241[-0.152, 0.592]c′ (direct): stress → grades (controlling for sleep)0.3220.0983.28.002[0.125, 0.519]c (total): stress → grades0.4090.0656.28< .001[0.279, 0.540]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y0.0870.080[-0.057, 0.258]0.136.562.419The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.087, 95% CI [-0.057, 0.258]. stress significantly predicted sleep (a = 0.40, p < .001), and sleep did not significantly predict grades when stress was controlled (b = 0.22, p = .241). The direct effect was c′ = 0.32 (p = .002) and the total effect was c = 0.41 (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 60.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>0.396</td><td>0.046</td><td>8.63</td><td>&lt; .001</td><td>[0.304, 0.488]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.220</td><td>0.186</td><td>1.19</td><td>.241</td><td>[-0.152, 0.592]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>0.322</td><td>0.098</td><td>3.28</td><td>.002</td><td>[0.125, 0.519]</td></tr><tr><td>c (total): stress → grades</td><td>0.409</td><td>0.065</td><td>6.28</td><td>&lt; .001</td><td>[0.279, 0.540]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>0.087</td><td>0.080</td><td>[-0.057, 0.258]</td><td>0.136</td><td>.562</td><td>.419</td></tr></tbody></table><p class=\"desc\">The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.087, 95% CI [-0.057, 0.258]. stress significantly predicted sleep (a = 0.40, p &lt; .001), and sleep did not significantly predict grades when stress was controlled (b = 0.22, p = .241). The direct effect was c′ = 0.32 (p = .002) and the total effect was c = 0.41 (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mediate-same-n-different-data-2",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n44.2,14.9,54.4\n50.9,9.2,75.4\n28.9,4.9,38.2\n36.0,8.8,31.4\n42.4,4.7,53.8\n47.8,11.5,57.0\n57.4,13.4,74.0\n51.1,11.0,55.0\n45.7,10.9,79.8\n46.8,4.6,56.6\n47.8,9.5,61.0\n46.9,6.3,67.2\n42.1,4.5,74.4\n42.7,6.3,49.0\n49.4,13.5,67.4\n47.2,9.8,51.6\n40.2,10.4,41.0\n51.7,7.9,43.6\n52.8,16.2,72.6\n43.8,6.2,48.2\n46.0,3.7,55.8\n50.6,7.9,54.8\n61.6,16.8,71.4\n35.7,0.5,30.8\n46.6,11.1,49.8\n71.9,13.6,80.8\n44.4,1.8,43.0\n36.3,5.4,48.2\n54.0,12.5,67.2\n49.3,14.1,56.0\n57.7,10.8,73.0\n51.2,13.2,56.2\n47.0,3.9,63.8\n57.2,18.7,83.2\n44.0,8.7,44.0\n41.9,8.3,66.0\n33.7,5.8,31.6\n58.9,11.3,55.0\n33.9,2.1,50.4\n48.6,11.5,60.2\n64.6,19.8,61.4\n51.7,18.4,68.8\n43.2,3.5,61.8\n65.0,11.8,60.6\n68.5,19.5,67.0\n38.4,5.9,62.2\n38.8,5.5,45.4\n23.8,6.9,32.4\n48.3,7.2,52.8\n39.4,-0.5,24.8\n60.2,22.6,67.8\n42.2,8.1,64.8\n57.8,11.6,48.8\n64.4,11.1,64.8\n48.3,9.4,44.0\n73.3,22.9,71.0\n36.1,4.1,55.0\n57.4,17.3,60.8\n37.4,3.7,49.0\n58.9,16.3,62.8",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.174, 95% CI [-0.113, 0.517]. stress significantly predicted sleep (a = 0.40, p < .001), and sleep did not significantly predict grades when stress was controlled (b = 0.44, p = .241). The direct effect was c′ = 0.64 (p = .002) and the total effect was c = 0.82 (p < .001).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 60."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "0.396",
+       "0.046",
+       "8.63",
+       "&lt; .001",
+       "[0.304, 0.488]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.440",
+       "0.372",
+       "1.19",
+       ".241",
+       "[-0.304, 1.184]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "0.644",
+       "0.196",
+       "3.28",
+       ".002",
+       "[0.251, 1.037]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.818",
+       "0.130",
+       "6.28",
+       "&lt; .001",
+       "[0.557, 1.079]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "0.174",
+       "0.160",
+       "[-0.113, 0.517]",
+       "0.136",
+       ".562",
+       ".419"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 60.PathbSEtp95% CIa: stress → sleep0.3960.0468.63< .001[0.304, 0.488]b: sleep → grades (controlling for stress)0.4400.3721.19.241[-0.304, 1.184]c′ (direct): stress → grades (controlling for sleep)0.6440.1963.28.002[0.251, 1.037]c (total): stress → grades0.8180.1306.28< .001[0.557, 1.079]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y0.1740.160[-0.113, 0.517]0.136.562.419The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.174, 95% CI [-0.113, 0.517]. stress significantly predicted sleep (a = 0.40, p < .001), and sleep did not significantly predict grades when stress was controlled (b = 0.44, p = .241). The direct effect was c′ = 0.64 (p = .002) and the total effect was c = 0.82 (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 60.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>0.396</td><td>0.046</td><td>8.63</td><td>&lt; .001</td><td>[0.304, 0.488]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.440</td><td>0.372</td><td>1.19</td><td>.241</td><td>[-0.304, 1.184]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>0.644</td><td>0.196</td><td>3.28</td><td>.002</td><td>[0.251, 1.037]</td></tr><tr><td>c (total): stress → grades</td><td>0.818</td><td>0.130</td><td>6.28</td><td>&lt; .001</td><td>[0.557, 1.079]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>0.174</td><td>0.160</td><td>[-0.113, 0.517]</td><td>0.136</td><td>.562</td><td>.419</td></tr></tbody></table><p class=\"desc\">The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = 0.174, 95% CI [-0.113, 0.517]. stress significantly predicted sleep (a = 0.40, p &lt; .001), and sleep did not significantly predict grades when stress was controlled (b = 0.44, p = .241). The direct effect was c′ = 0.64 (p = .002) and the total effect was c = 0.82 (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mediate-missing-rows",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n39.9,4.7,26.4\n66.0,13.3,30.6\n69.2,15.1,40.8\n49.8,10.0,32.3\n40.6,13.4,38.8\n44.1,,26.3\n49.1,-0.1,25.1\n39.1,5.0,31.6\n71.7,22.1,41.2\n52.5,9.4,23.6\n60.2,4.4,27.1\n55.5,8.6,35.9\n61.0,10.8,\n50.4,2.6,25.2\n43.1,9.9,24.1\n63.2,16.4,31.4\n44.8,2.8,22.9\n41.3,9.2,24.6\n60.7,12.0,31.9\n40.4,11.8,32.9\n39.1,8.3,32.8\n65.7,23.6,46.4\n55.5,11.9,38.4\n45.6,11.8,26.4\n44.6,5.0,17.1\n36.2,4.4,21.3\n61.4,17.0,29.3\n52.8,11.9,33.6\n59.7,13.9,37.1\n62.6,16.3,46.0\n44.8,7.5,22.7\n62.8,11.9,29.8\n54.2,12.6,26.1\n55.6,11.9,28.1\n34.4,4.5,27.6\n56.8,11.8,31.3\n47.1,10.7,31.9\n44.4,7.5,21.8\n50.5,2.5,22.1\n45.2,10.6,29.3",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.304, 95% CI [0.143, 0.473]. stress significantly predicted sleep (a = 0.35, p < .001), and sleep significantly predicted grades when stress was controlled (b = 0.87, p < .001). The direct effect was c′ = 0.07 (p = .493) and the total effect was c = 0.38 (p < .001).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 38."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "0.348",
+       "0.067",
+       "5.23",
+       "&lt; .001",
+       "[0.213, 0.483]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.872",
+       "0.197",
+       "4.42",
+       "&lt; .001",
+       "[0.471, 1.273]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "0.073",
+       "0.105",
+       "0.69",
+       ".493",
+       "[-0.140, 0.285]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.376",
+       "0.097",
+       "3.88",
+       "&lt; .001",
+       "[0.179, 0.573]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "0.304",
+       "0.083",
+       "[0.143, 0.473]",
+       "0.438",
+       ".432",
+       ".547"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power. 2 rows were left out because a value was missing."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 38.PathbSEtp95% CIa: stress → sleep0.3480.0675.23< .001[0.213, 0.483]b: sleep → grades (controlling for stress)0.8720.1974.42< .001[0.471, 1.273]c′ (direct): stress → grades (controlling for sleep)0.0730.1050.69.493[-0.140, 0.285]c (total): stress → grades0.3760.0973.88< .001[0.179, 0.573]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y0.3040.083[0.143, 0.473]0.438.432.547The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power. 2 rows were left out because a value was missing.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.2 entries that are not a number were left out.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.304, 95% CI [0.143, 0.473]. stress significantly predicted sleep (a = 0.35, p < .001), and sleep significantly predicted grades when stress was controlled (b = 0.87, p < .001). The direct effect was c′ = 0.07 (p = .493) and the total effect was c = 0.38 (p < .001).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 38.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>0.348</td><td>0.067</td><td>5.23</td><td>&lt; .001</td><td>[0.213, 0.483]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.872</td><td>0.197</td><td>4.42</td><td>&lt; .001</td><td>[0.471, 1.273]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>0.073</td><td>0.105</td><td>0.69</td><td>.493</td><td>[-0.140, 0.285]</td></tr><tr><td>c (total): stress → grades</td><td>0.376</td><td>0.097</td><td>3.88</td><td>&lt; .001</td><td>[0.179, 0.573]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>0.304</td><td>0.083</td><td>[0.143, 0.473]</td><td>0.438</td><td>.432</td><td>.547</td></tr></tbody></table><p class=\"desc\">The indirect effect is significant: the interval does not contain zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power. 2 rows were left out because a value was missing.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was significant, ab = 0.304, 95% CI [0.143, 0.473]. stress significantly predicted sleep (a = 0.35, p &lt; .001), and sleep significantly predicted grades when stress was controlled (b = 0.87, p &lt; .001). The direct effect was c′ = 0.07 (p = .493) and the total effect was c = 0.38 (p &lt; .001).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mediate-resamples-left-out",
+   "test": "mediate",
+   "csv": "stress,sleep,grades\n1,6.8,31.7\n0,8.9,29.9\n0,12.4,30.0\n0,6.2,24.4\n0,6.2,23.7\n0,13.2,36.6\n0,13.5,37.1\n0,15.2,37.7\n0,9.5,26.3\n0,12.8,25.2\n0,11.6,28.8\n0,10.7,32.7\n0,12.4,34.8\n0,10.9,32.6\n0,15.4,31.9\n0,12.1,30.0\n0,8.6,27.6\n0,12.5,34.1\n0,12.8,23.2\n0,4.6,38.5",
+   "values": {
+    "x": "stress",
+    "m": "sleep",
+    "dv": "grades"
+   },
+   "form": {
+    "values": {
+     "x": "0",
+     "m": "1",
+     "dv": "2"
+    },
+    "ticked": {}
+   },
+   "apa": "A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = -2.011, 95% CI [-7.088, 1.892]. stress did not significantly predict sleep (a = -4.23, p = .186), and sleep did not significantly predict grades when stress was controlled (b = 0.48, p = .227). The direct effect was c′ = 2.92 (p = .582) and the total effect was c = 0.91 (p = .859).",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: stress (X) → sleep (M) → grades (Y). N = 20."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Path",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "a: stress → sleep",
+       "-4.226",
+       "3.077",
+       "-1.37",
+       ".186",
+       "[-10.690, 2.237]"
+      ],
+      [
+       "b: sleep → grades (controlling for stress)",
+       "0.476",
+       "0.379",
+       "1.25",
+       ".227",
+       "[-0.324, 1.276]"
+      ],
+      [
+       "c′ (direct): stress → grades (controlling for sleep)",
+       "2.916",
+       "5.202",
+       "0.56",
+       ".582",
+       "[-8.060, 13.892]"
+      ],
+      [
+       "c (total): stress → grades",
+       "0.905",
+       "5.028",
+       "0.18",
+       ".859",
+       "[-9.658, 11.468]"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Indirect effect (a × b)",
+       "Bootstrap SE",
+       "95% bootstrap CI",
+       "Standardised (X in SD units, Y in SD units)",
+       "R² of M",
+       "R² of Y"
+      ],
+      [
+       "-2.011",
+       "2.447",
+       "[-7.088, 1.892]",
+       "-0.094",
+       ".095",
+       ".086"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power. 1818 of the 5000 resamples could not be calculated and were left out."
+    },
+    {
+     "kind": "note",
+     "html": "Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval."
+    }
+   ],
+   "resultsText": "ResultsModel: stress (X) → sleep (M) → grades (Y). N = 20.PathbSEtp95% CIa: stress → sleep-4.2263.077-1.37.186[-10.690, 2.237]b: sleep → grades (controlling for stress)0.4760.3791.25.227[-0.324, 1.276]c′ (direct): stress → grades (controlling for sleep)2.9165.2020.56.582[-8.060, 13.892]c (total): stress → grades0.9055.0280.18.859[-9.658, 11.468]Indirect effect (a × b)Bootstrap SE95% bootstrap CIStandardised (X in SD units, Y in SD units)R² of MR² of Y-2.0112.447[-7.088, 1.892]-0.094.095.086The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power. 1818 of the 5000 resamples could not be calculated and were left out.Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = -2.011, 95% CI [-7.088, 1.892]. stress did not significantly predict sleep (a = -4.23, p = .186), and sleep did not significantly predict grades when stress was controlled (b = 0.48, p = .227). The direct effect was c′ = 2.92 (p = .582) and the total effect was c = 0.91 (p = .859).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: stress (X) → sleep (M) → grades (Y). N = 20.</p><table class=\"stats-table\"><tbody><tr><th>Path</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>a: stress → sleep</td><td>-4.226</td><td>3.077</td><td>-1.37</td><td>.186</td><td>[-10.690, 2.237]</td></tr><tr><td>b: sleep → grades (controlling for stress)</td><td>0.476</td><td>0.379</td><td>1.25</td><td>.227</td><td>[-0.324, 1.276]</td></tr><tr><td>c′ (direct): stress → grades (controlling for sleep)</td><td>2.916</td><td>5.202</td><td>0.56</td><td>.582</td><td>[-8.060, 13.892]</td></tr><tr><td>c (total): stress → grades</td><td>0.905</td><td>5.028</td><td>0.18</td><td>.859</td><td>[-9.658, 11.468]</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Indirect effect (a × b)</th><th>Bootstrap SE</th><th>95% bootstrap CI</th><th>Standardised (X in SD units, Y in SD units)</th><th>R² of M</th><th>R² of Y</th></tr><tr><td>-2.011</td><td>2.447</td><td>[-7.088, 1.892]</td><td>-0.094</td><td>.095</td><td>.086</td></tr></tbody></table><p class=\"desc\">The indirect effect is not significant: the interval contains zero. The interval is a percentile bootstrap from 5,000 resamples with a fixed seed, so the same data always give the same interval. The total effect c equals the direct effect c′ plus the indirect effect a × b. The standardised value is a × b multiplied by the SD of X and divided by the SD of Y. With fewer than 100 people the bootstrap interval is unstable and the test has low power. 1818 of the 5000 resamples could not be calculated and were left out.</p><p class=\"desc\">Mediation is a claim about causes. The statistics show whether the pattern fits the chain X → M → Y. They cannot show that M comes between X and Y in time, or rule out another variable that affects both M and Y. Data on all three variables measured at one time cannot establish the order. The p-values of the a, b and c paths are ordinary regression tests; the indirect effect is judged by its bootstrap interval.</p><div id=\"statsSentence\">A mediation analysis with a percentile bootstrap (5,000 resamples) showed that the indirect effect of stress on grades through sleep was not significant, ab = -2.011, 95% CI [-7.088, 1.892]. stress did not significantly predict sleep (a = -4.23, p = .186), and sleep did not significantly predict grades when stress was controlled (b = 0.48, p = .227). The direct effect was c′ = 2.92 (p = .582) and the total effect was c = 0.91 (p = .859).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

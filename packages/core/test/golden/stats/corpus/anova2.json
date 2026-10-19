@@ -1,0 +1,178 @@
+[
+ {
+  "id": "anova2-2x2-balanced",
+  "csv": "therapy,dose,score\nCBT,Low,13.5\nCBT,Low,15.0\nCBT,Low,13.5\nCBT,Low,13.4\nCBT,Low,12.1\nCBT,Low,13.6\nCBT,High,20.2\nCBT,High,18.8\nCBT,High,20.1\nCBT,High,18.5\nCBT,High,18.8\nCBT,High,18.4\nWaitlist,Low,7.7\nWaitlist,Low,12.7\nWaitlist,Low,12.0\nWaitlist,Low,12.0\nWaitlist,Low,7.6\nWaitlist,Low,7.5\nWaitlist,High,10.2\nWaitlist,High,11.1\nWaitlist,High,12.6\nWaitlist,High,11.9\nWaitlist,High,13.0\nWaitlist,High,10.7",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a 2 x 2 with 6 per cell: the balanced note"
+ },
+ {
+  "id": "anova2-2x3-unbalanced",
+  "csv": "therapy,dose,score\nCBT,Low,14.8\nCBT,Low,15.0\nCBT,Low,12.3\nCBT,Low,18.3\nCBT,Mid,17.4\nCBT,Mid,19.0\nCBT,Mid,14.4\nCBT,Mid,14.2\nCBT,Mid,15.1\nCBT,Mid,15.7\nCBT,High,20.6\nCBT,High,19.6\nCBT,High,17.9\nCBT,High,16.6\nCBT,High,17.7\nWaitlist,Low,15.1\nWaitlist,Low,10.0\nWaitlist,Low,12.6\nWaitlist,Low,13.1\nWaitlist,Low,8.3\nWaitlist,Low,12.1\nWaitlist,Low,15.3\nWaitlist,Mid,9.0\nWaitlist,Mid,13.2\nWaitlist,Mid,13.7\nWaitlist,Mid,12.0\nWaitlist,Mid,15.2\nWaitlist,High,16.8\nWaitlist,High,13.3\nWaitlist,High,19.1\nWaitlist,High,18.7",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a 2 x 3 with unequal cells: the unequal-cells note with <code>anova()</code>; the 3-level dose effect is significant and the interaction is not, so the Tukey-Kramer marginal-means table"
+ },
+ {
+  "id": "anova2-integer-labels",
+  "csv": "arm,sex,score\n10,M,17.9\n10,M,16.1\n10,F,17.4\n10,F,20.2\n10,F,22.9\n10,F,20.7\n10,M,19.5\n10,F,21.9\n10,M,21.6\n10,M,14.9\n2,M,16.9\n2,F,13.8\n2,F,12.5\n2,M,14.7\n2,F,16.2\n2,M,15.2\n2,M,10.2\n2,F,14.1\n2,F,13.1\n2,M,9.0\nx,F,",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "arm",
+   "iv2": "sex"
+  },
+  "why": "factor A's levels 10 and 2 stay in data order (10, then 2: stkAnova2Cells 8786, indexOf in first-seen order), not object-key order; the row x with an empty score makes arm categorical and is skipped"
+ },
+ {
+  "id": "anova2-interaction-significant",
+  "csv": "therapy,dose,score\nCBT,Low,8.5\nCBT,Low,11.0\nCBT,Low,11.8\nCBT,Low,9.8\nCBT,Low,11.1\nCBT,Low,7.7\nCBT,Mid,15.1\nCBT,Mid,12.4\nCBT,Mid,8.4\nCBT,Mid,13.2\nCBT,Mid,12.2\nCBT,Mid,14.1\nCBT,High,18.8\nCBT,High,19.7\nCBT,High,20.4\nCBT,High,21.8\nCBT,High,18.3\nCBT,High,18.7\nWaitlist,Low,19.5\nWaitlist,Low,19.5\nWaitlist,Low,20.0\nWaitlist,Low,16.6\nWaitlist,Low,16.9\nWaitlist,Low,20.8\nWaitlist,Mid,16.8\nWaitlist,Mid,16.8\nWaitlist,Mid,13.1\nWaitlist,Mid,13.9\nWaitlist,Mid,11.8\nWaitlist,Mid,17.4\nWaitlist,High,6.4\nWaitlist,High,8.9\nWaitlist,High,7.7\nWaitlist,High,8.4\nWaitlist,High,11.2\nWaitlist,High,8.0",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a crossing 2 x 3: the interaction is significant, so the simple-effects tables and the Bonferroni table of dose within each level of therapy"
+ },
+ {
+  "id": "anova2-main-effect-3-levels",
+  "csv": "therapy,dose,score\nCBT,Low,10.2\nCBT,Low,12.1\nCBT,Low,15.4\nCBT,Low,9.1\nCBT,Low,10.4\nCBT,High,10.3\nCBT,High,10.5\nCBT,High,8.7\nCBT,High,10.0\nCBT,High,13.6\nMindful,Low,12.1\nMindful,Low,14.2\nMindful,Low,13.6\nMindful,Low,11.0\nMindful,Low,15.0\nMindful,High,16.6\nMindful,High,13.2\nMindful,High,13.0\nMindful,High,14.2\nMindful,High,8.5\nWaitlist,Low,16.4\nWaitlist,Low,14.3\nWaitlist,Low,16.2\nWaitlist,Low,18.1\nWaitlist,Low,18.6\nWaitlist,High,16.9\nWaitlist,High,14.7\nWaitlist,High,16.1\nWaitlist,High,14.7\nWaitlist,High,18.4",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a balanced 3 x 2: therapy (3 levels) significant, the interaction not, so the Tukey table on the estimated marginal means of therapy (factor A, cellOf with fac 0)"
+ },
+ {
+  "id": "anova2-3x3-interaction",
+  "csv": "therapy,dose,score\nCBT,Low,14.7\nCBT,Low,8.0\nCBT,Low,12.3\nCBT,Low,12.9\nCBT,Mid,12.3\nCBT,Mid,13.1\nCBT,Mid,16.7\nCBT,Mid,17.3\nCBT,High,20.1\nCBT,High,13.7\nCBT,High,17.5\nCBT,High,17.1\nMindful,Low,15.1\nMindful,Low,11.7\nMindful,Low,13.4\nMindful,Low,12.2\nMindful,Mid,11.9\nMindful,Mid,14.8\nMindful,Mid,10.7\nMindful,Mid,14.5\nMindful,High,15.4\nMindful,High,11.1\nMindful,High,16.1\nMindful,High,14.7\nWaitlist,Low,20.2\nWaitlist,Low,17.3\nWaitlist,Low,12.0\nWaitlist,Low,18.6\nWaitlist,Mid,11.8\nWaitlist,Mid,14.9\nWaitlist,Mid,16.6\nWaitlist,Mid,12.0\nWaitlist,High,13.0\nWaitlist,High,9.7\nWaitlist,High,8.2\nWaitlist,High,10.8",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a crossing 3 x 3: both Bonferroni within-level tables (cellOf with fac 0 and 1), Bonferroni factor 9"
+ },
+ {
+  "id": "anova2-same-factor-twice",
+  "csv": "therapy,dose,score\nCBT,Low,13.9\nCBT,Low,15.8\nCBT,Low,15.3\nCBT,Low,12.8\nCBT,High,20.0\nCBT,High,20.7\nCBT,High,17.7\nCBT,High,22.4\nWaitlist,Low,11.1\nWaitlist,Low,9.4\nWaitlist,Low,13.4\nWaitlist,Low,11.5\nWaitlist,High,11.1\nWaitlist,High,9.6\nWaitlist,High,14.0\nWaitlist,High,13.3",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "therapy"
+  },
+  "why": "the same column as both factors: toast"
+ },
+ {
+  "id": "anova2-one-level",
+  "csv": "therapy,dose,score\nCBT,Low,18.0\nCBT,Low,11.4\nCBT,Low,15.1\nCBT,Low,18.1\nWaitlist,Low,13.5\nWaitlist,Low,10.6\nWaitlist,Low,8.8\nWaitlist,Low,11.0",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "factor B has one level: toast"
+ },
+ {
+  "id": "anova2-seven-levels",
+  "csv": "therapy,dose,score\nA1,Low,11.2\nA1,Low,15.4\nA1,High,17.3\nA1,High,14.6\nA2,Low,13.5\nA2,Low,10.1\nA2,High,13.6\nA2,High,10.9\nA3,Low,12.3\nA3,Low,9.4\nA3,High,14.8\nA3,High,15.4\nA4,Low,17.1\nA4,Low,18.6\nA4,High,15.5\nA4,High,14.9\nA5,Low,15.1\nA5,Low,16.0\nA5,High,14.9\nA5,High,17.3\nA6,Low,16.9\nA6,Low,17.3\nA6,High,16.7\nA6,High,17.5\nA7,Low,20.3\nA7,Low,18.2\nA7,High,16.2\nA7,High,14.4",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "factor A has 7 levels: toast"
+ },
+ {
+  "id": "anova2-empty-cell",
+  "csv": "therapy,dose,score\nCBT,Low,13.0\nCBT,Low,17.0\nCBT,Low,15.2\nCBT,Low,16.4\nCBT,High,16.2\nCBT,High,19.0\nCBT,High,15.8\nCBT,High,19.9\nWaitlist,Low,7.4\nWaitlist,Low,11.8\nWaitlist,Low,11.8\nWaitlist,Low,6.9\nWaitlist,Mid,11.7\nWaitlist,Mid,12.5\nWaitlist,Mid,9.3\nWaitlist,Mid,12.2\nCBT,Mid,11.9\nCBT,Mid,14.8\nCBT,Mid,15.2\nCBT,Mid,13.5",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "Waitlist x High has no score: the toast with the count 1 ('combination has')"
+ },
+ {
+  "id": "anova2-empty-cells-three",
+  "csv": "therapy,dose,score\nCBT,Low,14.5\nCBT,Low,13.0\nCBT,Low,11.8\nCBT,Low,10.6\nCBT,High,18.4\nCBT,High,18.5\nCBT,High,17.5\nCBT,High,18.2\nWaitlist,Low,11.5\nWaitlist,Low,12.8\nWaitlist,Low,12.3\nWaitlist,Low,15.2\nMindful,Mid,12.7\nMindful,Mid,13.6\nMindful,Mid,12.7\nMindful,Mid,14.7\nCBT,Mid,12.5\nCBT,Mid,13.5\nCBT,Mid,14.5\nCBT,Mid,9.4\nMindful,Low,14.8\nMindful,Low,13.5\nMindful,Low,14.9\nMindful,Low,11.0",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "three by three with six cells filled, so three empty: the plural 'combinations have'"
+ },
+ {
+  "id": "anova2-dfe-zero",
+  "csv": "therapy,dose,score\nCBT,Low,14\nCBT,High,18\nWaitlist,Low,11\nWaitlist,High,12",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "one score per cell: the error df is 0, stkAnova2 returns null, toast"
+ },
+ {
+  "id": "anova2-no-spread",
+  "csv": "therapy,dose,score\nCBT,Low,14\nCBT,Low,14\nCBT,High,18\nCBT,High,18\nWaitlist,Low,11\nWaitlist,Low,11\nWaitlist,High,12\nWaitlist,High,12",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "every cell's scores the same: SSE 0, toast"
+ },
+ {
+  "id": "anova2-text-in-numeric",
+  "csv": "therapy,dose,score\nCBT,Low,13.4\nCBT,Low,18.1\nCBT,Low,12.0\nCBT,Low,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nCBT,Low,15.1\nCBT,Low,13.2\nCBT,High,16.0\nCBT,High,18.7\nCBT,High,16.6\nCBT,High,19.1\nCBT,High,17.0\nWaitlist,Low,9.1\nWaitlist,High,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\nWaitlist,Low,11.4\nWaitlist,Low,12.7\nWaitlist,Low,13.5\nWaitlist,Low,13.4\nWaitlist,High,14.7\nWaitlist,High,10.9\nWaitlist,High,11.0\nWaitlist,High,13.1\nWaitlist,High,13.5",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "two digit strings that overflow parseFloat (a 401-digit 1 and a 400-digit negative): stkAnova2Cells skips them, v1 adds c.skipped once (12864); the assumption pass reads stkAnova2Cells again without adding, so the note says 2"
+ },
+ {
+  "id": "anova2-3-level-not-significant",
+  "csv": "therapy,dose,score\nCBT,Low,16.6\nCBT,Low,11.9\nCBT,Low,13.4\nCBT,Low,13.0\nCBT,Low,12.5\nCBT,High,11.6\nCBT,High,11.8\nCBT,High,10.4\nCBT,High,12.4\nCBT,High,12.0\nMindful,Low,12.6\nMindful,Low,10.3\nMindful,Low,12.1\nMindful,Low,12.1\nMindful,Low,13.2\nMindful,High,9.9\nMindful,High,12.8\nMindful,High,14.0\nMindful,High,13.2\nMindful,High,11.3\nWaitlist,Low,11.0\nWaitlist,Low,11.5\nWaitlist,Low,13.5\nWaitlist,Low,15.1\nWaitlist,Low,11.7\nWaitlist,High,10.7\nWaitlist,High,12.8\nWaitlist,High,12.4\nWaitlist,High,10.2\nWaitlist,High,10.5",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "a balanced 3 x 2 with no effect anywhere: therapy has 3 levels but its main effect is not significant and neither is the interaction, so no pairwise table"
+ },
+ {
+  "id": "anova2-f5-tukey-floor",
+  "csv": "therapy,dose,score\nCBT,Low,9.8\nCBT,Low,9.9\nCBT,Low,10\nCBT,Low,10.1\nCBT,Low,10.2\nCBT,High,10.1\nCBT,High,9.8\nCBT,High,10.2\nCBT,High,10\nCBT,High,9.9\nMindful,Low,19.8\nMindful,Low,19.9\nMindful,Low,20\nMindful,Low,20.1\nMindful,Low,20.2\nMindful,High,20.1\nMindful,High,19.8\nMindful,High,20.2\nMindful,High,20\nMindful,High,19.9\nWaitlist,Low,29.8\nWaitlist,Low,29.9\nWaitlist,Low,30\nWaitlist,Low,30.1\nWaitlist,Low,30.2\nWaitlist,High,30.1\nWaitlist,High,29.8\nWaitlist,High,30.2\nWaitlist,High,30\nWaitlist,High,29.9",
+  "test": "anova2",
+  "values": {
+   "dv": "score",
+   "iv": "therapy",
+   "iv2": "dose"
+  },
+  "why": "register row F5 at 12908, mirroring anova2-main-effect-3-levels: therapy means 10, 20, 30 with SD 0.16 in every cell and no dose effect or interaction (every cell mean is its therapy's), so the Tukey table on the marginal means. The therapy F of 40000 makes p_A exactly 0 (F5 in pFromF), but the marginal-means Tukey p cannot be exactly 0: with at most 6 levels and a whole-number error df stkPtukey stays below 1 (1 - 1.05e-11 here), so the Tukey p is about 1e-11 and prints < .001"
+ }
+]

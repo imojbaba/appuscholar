@@ -1,0 +1,131 @@
+[
+ {
+  "id": "ttestInd-demo",
+  "csv": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7",
+  "test": "ttestInd",
+  "values": {
+   "dv": "hours",
+   "iv": "group"
+  },
+  "why": "TG_DEMO's ttestInd"
+ },
+ {
+  "id": "ttestInd-text-in-numeric",
+  "csv": "group,hours\nA,7.5\nA,8\nA,7\nA,8.5\nA,7.8\nA,8.2\nA,7.4\nA,8.1\nA,7.9\nA,8.4\nA,7.2\nA,8\nB,6.5\nB,7\nB,6.2\nB,7.1\nB,6.8\nB,6\nB,7.3\nB,6.6\nB,6.9\nB,6.4\nB,7\nB,6.7\nA,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nB,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "ttestInd",
+  "values": {
+   "dv": "hours",
+   "iv": "group"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). statsGroupBy drops both, and the assumption pass calls statsGroupBy again, so the note says 4 (D-W2-4)."
+ },
+ {
+  "id": "ttestInd-integer-labels",
+  "csv": "group,score\n3,4\n2,5\n10,6\nNA,7\n3,5\n2,6\n10,7\nNA,8",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "groups 3, 2, 10 and NA: the toast counts 4 groups"
+ },
+ {
+  "id": "ttestInd-two-integer-labels",
+  "csv": "group,score\n10,12\n10,14\n10,13\n10,15\n2,9\n2,11\n2,10\n2,8\nx,",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "groups 10 and 2 (10 first in the file); the row x with an empty score makes the column categorical and is dropped by statsGroupBy. Object-key order puts 2 before 10, so the difference is 2 minus 10 (F4)."
+ },
+ {
+  "id": "ttestInd-group-named-NaN",
+  "csv": "group,score\nNaN,4\nNaN,6\nNaN,5\nB,7\nB,9\nB,8",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "a group named NaN puts NaN into the sentence, so the safety net suppresses the result (F22)"
+ },
+ {
+  "id": "ttestInd-one-value-in-a-group",
+  "csv": "group,score\nA,4\nA,6\nA,5\nB,7",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "one value in B: the toast"
+ },
+ {
+  "id": "ttestInd-no-spread-both",
+  "csv": "group,score\nA,5\nA,5\nA,5\nB,7\nB,7\nB,7",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "no spread in either group: the toast"
+ },
+ {
+  "id": "ttestInd-no-spread-one",
+  "csv": "group,score\nA,5\nA,5\nA,5\nA,5\nB,7\nB,9\nB,8\nB,6",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "no spread in A only: the test runs, Shapiro says all values the same for A"
+ },
+ {
+  "id": "ttestInd-unequal-n",
+  "csv": "group,score\nA,12\nA,15\nA,11\nA,14\nA,13\nB,16\nB,18\nB,15\nB,19\nB,17\nB,20\nB,14\nB,18\nB,17",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "5 against 9: Welch df differs from Student's"
+ },
+ {
+  "id": "ttestInd-one-group",
+  "csv": "group,score\nA,4\nA,6\nA,5",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "a single group: the toast counts 1"
+ },
+ {
+  "id": "ttestInd-name-needs-escaping",
+  "csv": "Tom's <score> & more,team\n3,<ctl>\n5,<ctl>\n4,<ctl>\n7,A&B\n6,A&B\n8,A&B",
+  "test": "ttestInd",
+  "values": {
+   "dv": "Tom's <score> & more",
+   "iv": "team"
+  },
+  "why": "group labels go through escHTML in the table and raw into the sentence"
+ },
+ {
+  "id": "ttestInd-nonsignificant",
+  "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nA,9\nA,12\nB,11\nB,12\nB,10\nB,13\nB,12\nB,11",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "did not differ significantly"
+ },
+ {
+  "id": "ttestInd-no-categorical-column",
+  "csv": "score\n4\n6\n5\n7",
+  "test": "ttestInd",
+  "values": {
+   "dv": "score"
+  },
+  "why": "no categorical column: sf_iv has no option, its value is '', d.cols[NaN].name throws (ivName is read though only the chart uses it), and the run falls to the catch toast"
+ }
+]

@@ -1,0 +1,82 @@
+[
+ {
+  "id": "ttestPaired-demo",
+  "csv": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "TG_DEMO's ttestPaired"
+ },
+ {
+  "id": "ttestPaired-text-in-numeric",
+  "csv": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,25\n30,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). The pair filter counts each dropped pair once; the assumption pass filters the pairs itself without counting, so the note says 2."
+ },
+ {
+  "id": "ttestPaired-same-diffs",
+  "csv": "before,after\n10,8\n12,10\n9,7\n15,13",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "every difference is 2: the toast"
+ },
+ {
+  "id": "ttestPaired-missing-cells",
+  "csv": "before,after\n28,24\n31,\n25,24\n,30\n30,25\n27,26\n33,28",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "rows with an empty cell are dropped without being counted"
+ },
+ {
+  "id": "ttestPaired-n2",
+  "csv": "before,after\n10,7\n12,10",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "two pairs: df 1, Shapiro needs 3 or more values"
+ },
+ {
+  "id": "ttestPaired-one-pair",
+  "csv": "before,after\n10,7",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "one pair: the toast"
+ },
+ {
+  "id": "ttestPaired-nonsignificant",
+  "csv": "before,after\n10,11\n12,10\n9,10\n15,14\n11,12\n13,12",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "before",
+   "v2": "after"
+  },
+  "why": "a non-significant difference"
+ },
+ {
+  "id": "ttestPaired-names-need-escaping",
+  "csv": "pre <a>,post & b\n5,3\n6,5\n7,4\n4,4\n8,5",
+  "test": "ttestPaired",
+  "values": {
+   "v1": "pre <a>",
+   "v2": "post & b"
+  },
+  "why": "the column names go raw into the sentence and through escHTML into the assumption label"
+ }
+]

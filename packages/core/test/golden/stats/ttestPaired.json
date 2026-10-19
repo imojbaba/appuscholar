@@ -1,0 +1,495 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "ttestPaired-demo",
+   "test": "ttestPaired",
+   "csv": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p < .001, 95% CI [2.80, 4.54], d = 2.68.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N pairs",
+       "Mean diff",
+       "SD diff",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "12",
+       "3.67",
+       "1.37",
+       "9.27",
+       "11",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 3.67, 95% CI [2.80, 4.54], d<sub>z</sub> = 2.68."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Differences (before − after)",
+       "12",
+       "0.770",
+       ".004"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsN pairsMean diffSD difftdfp123.671.379.2711< .001Mean difference 3.67, 95% CI [2.80, 4.54], dz = 2.68.Assumption checksVariableNShapiro-Wilk WpDifferences (before − after)120.770.004At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p < .001, 95% CI [2.80, 4.54], d = 2.68.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>12</td><td>3.67</td><td>1.37</td><td>9.27</td><td>11</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Mean difference 3.67, 95% CI [2.80, 4.54], d<sub>z</sub> = 2.68.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (before − after)</td><td>12</td><td>0.770</td><td>.004</td></tr></tbody></table><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p &lt; .001, 95% CI [2.80, 4.54], d = 2.68.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestPaired-text-in-numeric",
+   "test": "ttestPaired",
+   "csv": "before,after\n28,24\n31,27\n25,24\n35,30\n30,25\n27,26\n33,28\n29,25\n26,22\n32,29\n34,30\n28,24\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,25\n30,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p < .001, 95% CI [2.80, 4.54], d = 2.68.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N pairs",
+       "Mean diff",
+       "SD diff",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "12",
+       "3.67",
+       "1.37",
+       "9.27",
+       "11",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 3.67, 95% CI [2.80, 4.54], d<sub>z</sub> = 2.68."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Differences (before − after)",
+       "12",
+       "0.770",
+       ".004"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsN pairsMean diffSD difftdfp123.671.379.2711< .001Mean difference 3.67, 95% CI [2.80, 4.54], dz = 2.68.Assumption checksVariableNShapiro-Wilk WpDifferences (before − after)120.770.004At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.2 entries that are not a number were left out.A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p < .001, 95% CI [2.80, 4.54], d = 2.68.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>12</td><td>3.67</td><td>1.37</td><td>9.27</td><td>11</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Mean difference 3.67, 95% CI [2.80, 4.54], d<sub>z</sub> = 2.68.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (before − after)</td><td>12</td><td>0.770</td><td>.004</td></tr></tbody></table><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A paired-samples t-test showed a significant difference between before and after (M diff = 3.67, SD = 1.37), t(11) = 9.27, p &lt; .001, 95% CI [2.80, 4.54], d = 2.68.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestPaired-same-diffs",
+   "test": "ttestPaired",
+   "csv": "before,after\n10,8\n12,10\n9,7\n15,13",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every pair has exactly the same difference, so there is no spread and the paired t-test cannot be calculated."
+   ]
+  },
+  {
+   "id": "ttestPaired-missing-cells",
+   "test": "ttestPaired",
+   "csv": "before,after\n28,24\n31,\n25,24\n,30\n30,25\n27,26\n33,28",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A paired-samples t-test showed a significant difference between before and after (M diff = 3.20, SD = 2.05), t(4) = 3.49, p = .025, 95% CI [0.66, 5.74], d = 1.56.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N pairs",
+       "Mean diff",
+       "SD diff",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "5",
+       "3.20",
+       "2.05",
+       "3.49",
+       "4",
+       ".025"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 3.20, 95% CI [0.66, 5.74], d<sub>z</sub> = 1.56."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Differences (before − after)",
+       "5",
+       "0.782",
+       ".057"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsN pairsMean diffSD difftdfp53.202.053.494.025Mean difference 3.20, 95% CI [0.66, 5.74], dz = 1.56.Assumption checksVariableNShapiro-Wilk WpDifferences (before − after)50.782.057No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A paired-samples t-test showed a significant difference between before and after (M diff = 3.20, SD = 2.05), t(4) = 3.49, p = .025, 95% CI [0.66, 5.74], d = 1.56.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>5</td><td>3.20</td><td>2.05</td><td>3.49</td><td>4</td><td>.025</td></tr></tbody></table><p class=\"desc\">Mean difference 3.20, 95% CI [0.66, 5.74], d<sub>z</sub> = 1.56.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (before − after)</td><td>5</td><td>0.782</td><td>.057</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A paired-samples t-test showed a significant difference between before and after (M diff = 3.20, SD = 2.05), t(4) = 3.49, p = .025, 95% CI [0.66, 5.74], d = 1.56.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestPaired-n2",
+   "test": "ttestPaired",
+   "csv": "before,after\n10,7\n12,10",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A paired-samples t-test showed a non-significant difference between before and after (M diff = 2.50, SD = 0.71), t(1) = 5.00, p = .126, 95% CI [-3.85, 8.85], d = 3.54.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N pairs",
+       "Mean diff",
+       "SD diff",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "2",
+       "2.50",
+       "0.71",
+       "5.00",
+       "1",
+       ".126"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 2.50, 95% CI [-3.85, 8.85], d<sub>z</sub> = 3.54."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Differences (before − after)",
+       "2",
+       "needs 3 or more values"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": ""
+    }
+   ],
+   "resultsText": "ResultsN pairsMean diffSD difftdfp22.500.715.001.126Mean difference 2.50, 95% CI [-3.85, 8.85], dz = 3.54.Assumption checksVariableNShapiro-Wilk WpDifferences (before − after)2needs 3 or more valuesA paired-samples t-test showed a non-significant difference between before and after (M diff = 2.50, SD = 0.71), t(1) = 5.00, p = .126, 95% CI [-3.85, 8.85], d = 3.54.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>2</td><td>2.50</td><td>0.71</td><td>5.00</td><td>1</td><td>.126</td></tr></tbody></table><p class=\"desc\">Mean difference 2.50, 95% CI [-3.85, 8.85], d<sub>z</sub> = 3.54.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (before − after)</td><td>2</td><td colspan=\"2\">needs 3 or more values</td></tr></tbody></table><p class=\"desc\"></p></div><div id=\"statsSentence\">A paired-samples t-test showed a non-significant difference between before and after (M diff = 2.50, SD = 0.71), t(1) = 5.00, p = .126, 95% CI [-3.85, 8.85], d = 3.54.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestPaired-one-pair",
+   "test": "ttestPaired",
+   "csv": "before,after\n10,7",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 2 complete pairs"
+   ]
+  },
+  {
+   "id": "ttestPaired-nonsignificant",
+   "test": "ttestPaired",
+   "csv": "before,after\n10,11\n12,10\n9,10\n15,14\n11,12\n13,12",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A paired-samples t-test showed a non-significant difference between before and after (M diff = 0.17, SD = 1.33), t(5) = 0.31, p = .771, 95% CI [-1.23, 1.56], d = 0.13.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N pairs",
+       "Mean diff",
+       "SD diff",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "6",
+       "0.17",
+       "1.33",
+       "0.31",
+       "5",
+       ".771"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 0.17, 95% CI [-1.23, 1.56], d<sub>z</sub> = 0.13."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Differences (before − after)",
+       "6",
+       "0.805",
+       ".065"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsN pairsMean diffSD difftdfp60.171.330.315.771Mean difference 0.17, 95% CI [-1.23, 1.56], dz = 0.13.Assumption checksVariableNShapiro-Wilk WpDifferences (before − after)60.805.065No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A paired-samples t-test showed a non-significant difference between before and after (M diff = 0.17, SD = 1.33), t(5) = 0.31, p = .771, 95% CI [-1.23, 1.56], d = 0.13.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>6</td><td>0.17</td><td>1.33</td><td>0.31</td><td>5</td><td>.771</td></tr></tbody></table><p class=\"desc\">Mean difference 0.17, 95% CI [-1.23, 1.56], d<sub>z</sub> = 0.13.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (before − after)</td><td>6</td><td>0.805</td><td>.065</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A paired-samples t-test showed a non-significant difference between before and after (M diff = 0.17, SD = 1.33), t(5) = 0.31, p = .771, 95% CI [-1.23, 1.56], d = 0.13.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttestPaired-names-need-escaping",
+   "test": "ttestPaired",
+   "csv": "pre <a>,post & b\n5,3\n6,5\n7,4\n4,4\n8,5",
+   "values": {
+    "v1": "pre <a>",
+    "v2": "post & b"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A paired-samples t-test showed a significant difference between pre <a> and post & b (M diff = 1.80, SD = 1.30), t(4) = 3.09, p = .037, 95% CI [0.18, 3.42], d = 1.38.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N pairs",
+       "Mean diff",
+       "SD diff",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "5",
+       "1.80",
+       "1.30",
+       "3.09",
+       "4",
+       ".037"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 1.80, 95% CI [0.18, 3.42], d<sub>z</sub> = 1.38."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Differences (pre &lt;a&gt; − post &amp; b)",
+       "5",
+       "0.902",
+       ".421"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsN pairsMean diffSD difftdfp51.801.303.094.037Mean difference 1.80, 95% CI [0.18, 3.42], dz = 1.38.Assumption checksVariableNShapiro-Wilk WpDifferences (pre <a> − post & b)50.902.421No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A paired-samples t-test showed a significant difference between pre <a> and post & b (M diff = 1.80, SD = 1.30), t(4) = 3.09, p = .037, 95% CI [0.18, 3.42], d = 1.38.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N pairs</th><th>Mean diff</th><th>SD diff</th><th>t</th><th>df</th><th>p</th></tr><tr><td>5</td><td>1.80</td><td>1.30</td><td>3.09</td><td>4</td><td>.037</td></tr></tbody></table><p class=\"desc\">Mean difference 1.80, 95% CI [0.18, 3.42], d<sub>z</sub> = 1.38.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Differences (pre &lt;a&gt; − post &amp; b)</td><td>5</td><td>0.902</td><td>.421</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A paired-samples t-test showed a significant difference between pre &lt;a&gt; and post &amp; b (M diff = 1.80, SD = 1.30), t(4) = 3.09, p = .037, 95% CI [0.18, 3.42], d = 1.38.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

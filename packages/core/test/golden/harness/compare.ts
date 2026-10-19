@@ -7,17 +7,19 @@ import type { FixtureHeader } from "./fixture";
  * arm64 (whose libm is FMA-contracted) and V8 on x64 land a few ULP apart for some arguments (CI run 39172854113 on Node 22 x64 missed the fixtures captured on darwin arm64 by 3 to 14 ULP,
  * at most 1.7e-15 relative). So the comparison has two modes, which goldenMode reads off the fixture's header:
  * - "exact" where the fixture was captured (the header's Node major version, platform and architecture are this process's): every number by Object.is, as it was before D-W1-16;
- * - "tolerant" anywhere else (CI on Node 22 linux x64): two numbers that are not both integers agree when |a − e| ≤ max(1e-12 × max(|a|, |e|), 1e-300). The tolerance admits the engines'
- *   drift and cannot see a port change smaller than 1e-12 relative (a reordered exponent sum in betai moved 57 of 117 pFromT points by up to 1.4e-13, which it accepts), so exactness is
- *   the capturing platform's guard and CI guards the other engines within 1e-12. The absolute floor lets a zero meet a number of at most 1e-300 and nothing larger, so an exact zero (F5)
- *   stays exact.
+ * - "tolerant" anywhere else (CI on Node 22 linux x64): two numbers that are not both integers agree when |a − e| ≤ max(1e-12 × max(|a|, |e|), 1e-13). The relative 1e-12 admits the
+ *   engines' drift and cannot see a port change smaller than 1e-12 relative (a reordered exponent sum in betai moved 57 of 117 pFromT points by up to 1.4e-13, which it accepts), so
+ *   exactness is the capturing platform's guard and CI guards the other engines within 1e-12. The absolute 1e-13 is for complement probabilities: a p computed as 1 − CDF (1 − betai,
+ *   register F5a; 1 − stkPtukey at 9264 and 12714, D-W2-17) carries the CDF's absolute drift, and a CDF near 1 that drifts by tens of ULP of 1 leaves a small tail with a large relative
+ *   error (CI run 39261262089 on Node 22 x64: stkGamesHowell's p of 7.5e-5 missed the darwin arm64 fixture by 3.5e-15, 4.6e-11 relative). It replaces a 1e-300 floor that let an exact
+ *   zero meet only a number of at most 1e-300; off the capture platform an exact zero (F5) now meets anything within 1e-13, the same cancellation, and exact mode still holds it exactly.
  * In both modes, recursively through the fixture's objects and arrays:
  * - two integers (Number.isInteger on both sides) must be equal, as must strings, booleans, null and undefined (a status or a note is a string);
  * - NaN, ±Infinity and −0 are compared by Object.is (a fixture writes them as {"$n": …} and readFixture decodes them);
  * - objects must be plain and have the same keys (a key whose value is undefined counts as absent, since encodeSpecial drops it from a fixture), arrays the same length.
  */
 const RELATIVE = 1e-12;
-const FLOOR = 1e-300;
+const ABSOLUTE = 1e-13;
 
 export type GoldenMode = "exact" | "tolerant";
 export type GoldenPlatform = Pick<FixtureHeader, "node" | "platform" | "arch">;
@@ -38,7 +40,7 @@ function numberWhy(a: number, e: number, mode: GoldenMode): string | null {
   if (!Number.isFinite(a) || !Number.isFinite(e) || Object.is(a, -0) || Object.is(e, -0)) return Object.is(a, e) ? null : "differs (NaN, ±Infinity and −0 are compared by Object.is)";
   if (Number.isInteger(a) && Number.isInteger(e)) return a === e ? null : "differs (two integers are compared exactly)";
   const off = Math.abs(a - e), scale = Math.max(Math.abs(a), Math.abs(e));
-  return off <= Math.max(RELATIVE * scale, FLOOR) ? null : `differs by ${(off / scale).toPrecision(2)} relative, more than ${RELATIVE}`;
+  return off <= Math.max(RELATIVE * scale, ABSOLUTE) ? null : `differs by ${(off / scale).toPrecision(2)} relative, more than ${RELATIVE}`;
 }
 
 const definedKeys = (o: Record<string, unknown>) => Object.keys(o).filter((k) => o[k] !== undefined);
@@ -80,4 +82,34 @@ export function goldenDiff(actual: unknown, expected: unknown, mode: GoldenMode,
 export function expectGolden<T>(actual: T, expected: NoInfer<T>, mode: GoldenMode, label?: string): void {
   const d = goldenDiff(actual, expected, mode);
   if (d !== null) expect.fail(d.actual, d.expected, `${label === undefined ? "" : `${label}: `}${d.path} ${d.why}`);
+}
+
+/** A number as an SVG or HTML string prints one: an optional minus, digits with an optional fraction (or a bare fraction), an optional exponent. */
+const SVG_NUMBER = /-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/g;
+
+/**
+ * Asserts that `actual`, an SVG (or HTML) string a port built by concatenating raw doubles, equals `expected`, the string v1 built, under D-W1-16 (register row D-W2-23):
+ * - "exact": the two strings are equal (toBe), as on the platform that captured the fixture;
+ * - "tolerant": both strings are split on SVG_NUMBER; the text between the numbers (the skeleton) must be identical, the two must print as many numbers, and each pair is held to
+ *   goldenDiff's number rule (two integers exactly, otherwise within 1e-12 relative or 1e-13 absolute; NaN, ±Infinity and −0 by Object.is). Digits inside a hex colour or a
+ *   name are numbers to the split too, and both sides split them the same way, so they are compared as equal integers.
+ * On a break it fails with `label`, the index of the number or the skeleton piece, and the two values.
+ */
+export function expectSvgGolden(actual: string, expected: string, mode: GoldenMode, label?: string): void {
+  const at = label === undefined ? "" : `${label}: `;
+  if (mode === "exact") {
+    expect(actual, label).toBe(expected);
+    return;
+  }
+  const nums = (s: string) => (s.match(SVG_NUMBER) ?? []).map(Number);
+  const skeleton = (s: string) => s.split(SVG_NUMBER);
+  const sa = skeleton(actual), se = skeleton(expected);
+  for (let i = 0; i < Math.max(sa.length, se.length); i++)
+    if (sa[i] !== se[i]) expect.fail(sa[i], se[i], `${at}the text around the numbers differs at piece ${i}: ${JSON.stringify(sa[i])} against ${JSON.stringify(se[i])}`);
+  const na = nums(actual), ne = nums(expected);
+  if (na.length !== ne.length) expect.fail(na.length, ne.length, `${at}prints ${na.length} numbers, the fixture ${ne.length}`);
+  for (let i = 0; i < ne.length; i++) {
+    const d = goldenDiff(na[i], ne[i], mode, `number ${i}`);
+    if (d !== null) expect.fail(d.actual, d.expected, `${at}${d.path} ${d.why}`);
+  }
 }

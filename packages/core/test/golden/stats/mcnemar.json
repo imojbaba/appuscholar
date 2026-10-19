@@ -1,0 +1,412 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "mcnemar-yes-no",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A McNemar test (exact binomial) showed that the proportion answering yes changed significantly from before (.43) to after (.73), p = .035; 12 people changed from no to yes and 3 from yes to no.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "after: yes",
+       "after: no"
+      ],
+      [
+       "before: yes",
+       "10",
+       "3"
+      ],
+      [
+       "before: no",
+       "12",
+       "5"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Changed yes → no",
+       "Changed no → yes",
+       "Test",
+       "Exact",
+       "p"
+      ],
+      [
+       "30",
+       "3",
+       "12",
+       "Exact binomial",
+       "—",
+       ".035"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Answering “yes”: .43 of people at the first time (13 of 30) and .73 at the second (22 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039."
+    }
+   ],
+   "resultsText": "Resultsafter: yesafter: nobefore: yes103before: no125N peopleChanged yes → noChanged no → yesTestExactp30312Exact binomial—.035Answering “yes”: .43 of people at the first time (13 of 30) and .73 at the second (22 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039.A McNemar test (exact binomial) showed that the proportion answering yes changed significantly from before (.43) to after (.73), p = .035; 12 people changed from no to yes and 3 from yes to no.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>after: yes</th><th>after: no</th></tr><tr><th>before: yes</th><td>10</td><td>3</td></tr><tr><th>before: no</th><td>12</td><td>5</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Changed yes → no</th><th>Changed no → yes</th><th>Test</th><th>Exact</th><th>p</th></tr><tr><td>30</td><td>3</td><td>12</td><td>Exact binomial</td><td>—</td><td>.035</td></tr></tbody></table><p class=\"desc\">Answering “yes”: .43 of people at the first time (13 of 30) and .73 at the second (22 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039.</p><div id=\"statsSentence\">A McNemar test (exact binomial) showed that the proportion answering yes changed significantly from before (.43) to after (.73), p = .035; 12 people changed from no to yes and 3 from yes to no.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mcnemar-pos-given",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "before",
+    "v2": "after",
+    "pos": "no"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": "no"
+    },
+    "ticked": {}
+   },
+   "apa": "A McNemar test (exact binomial) showed that the proportion answering no changed significantly from before (.57) to after (.27), p = .035; 3 people changed from no to yes and 12 from yes to no.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "after: no",
+       "after: yes"
+      ],
+      [
+       "before: no",
+       "5",
+       "12"
+      ],
+      [
+       "before: yes",
+       "3",
+       "10"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Changed yes → no",
+       "Changed no → yes",
+       "Test",
+       "Exact",
+       "p"
+      ],
+      [
+       "30",
+       "12",
+       "3",
+       "Exact binomial",
+       "—",
+       ".035"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Answering “no”: .57 of people at the first time (17 of 30) and .27 at the second (8 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039."
+    }
+   ],
+   "resultsText": "Resultsafter: noafter: yesbefore: no512before: yes310N peopleChanged yes → noChanged no → yesTestExactp30123Exact binomial—.035Answering “no”: .57 of people at the first time (17 of 30) and .27 at the second (8 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039.A McNemar test (exact binomial) showed that the proportion answering no changed significantly from before (.57) to after (.27), p = .035; 3 people changed from no to yes and 12 from yes to no.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>after: no</th><th>after: yes</th></tr><tr><th>before: no</th><td>5</td><td>12</td></tr><tr><th>before: yes</th><td>3</td><td>10</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Changed yes → no</th><th>Changed no → yes</th><th>Test</th><th>Exact</th><th>p</th></tr><tr><td>30</td><td>12</td><td>3</td><td>Exact binomial</td><td>—</td><td>.035</td></tr></tbody></table><p class=\"desc\">Answering “no”: .57 of people at the first time (17 of 30) and .27 at the second (8 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039.</p><div id=\"statsSentence\">A McNemar test (exact binomial) showed that the proportion answering no changed significantly from before (.57) to after (.27), p = .035; 3 people changed from no to yes and 12 from yes to no.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mcnemar-pos-unknown",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "before",
+    "v2": "after",
+    "pos": "maybe"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": "maybe"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "“maybe” is not one of the two answers (yes, no)."
+   ]
+  },
+  {
+   "id": "mcnemar-no-changers",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Nobody changed their answer between the two times, so there is nothing to test."
+   ]
+  },
+  {
+   "id": "mcnemar-nd25",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A McNemar test showed that the proportion answering yes changed significantly from before (.36) to after (.64), χ²(1, N = 50) = 5.63, p = .018; 22 people changed from no to yes and 8 from yes to no.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "after: yes",
+       "after: no"
+      ],
+      [
+       "before: yes",
+       "10",
+       "8"
+      ],
+      [
+       "before: no",
+       "22",
+       "10"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Changed yes → no",
+       "Changed no → yes",
+       "Test",
+       "χ²(1)",
+       "p"
+      ],
+      [
+       "50",
+       "8",
+       "22",
+       "McNemar with continuity correction",
+       "5.63",
+       ".018"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Answering “yes”: .36 of people at the first time (18 of 50) and .64 at the second (32 of 50). Only the 30 people who changed their answer enter the test. With 25 or more changers the χ² version is used; for comparison, the exact test gives p = .016."
+    }
+   ],
+   "resultsText": "Resultsafter: yesafter: nobefore: yes108before: no2210N peopleChanged yes → noChanged no → yesTestχ²(1)p50822McNemar with continuity correction5.63.018Answering “yes”: .36 of people at the first time (18 of 50) and .64 at the second (32 of 50). Only the 30 people who changed their answer enter the test. With 25 or more changers the χ² version is used; for comparison, the exact test gives p = .016.A McNemar test showed that the proportion answering yes changed significantly from before (.36) to after (.64), χ²(1, N = 50) = 5.63, p = .018; 22 people changed from no to yes and 8 from yes to no.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>after: yes</th><th>after: no</th></tr><tr><th>before: yes</th><td>10</td><td>8</td></tr><tr><th>before: no</th><td>22</td><td>10</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Changed yes → no</th><th>Changed no → yes</th><th>Test</th><th>χ²(1)</th><th>p</th></tr><tr><td>50</td><td>8</td><td>22</td><td>McNemar with continuity correction</td><td>5.63</td><td>.018</td></tr></tbody></table><p class=\"desc\">Answering “yes”: .36 of people at the first time (18 of 50) and .64 at the second (32 of 50). Only the 30 people who changed their answer enter the test. With 25 or more changers the χ² version is used; for comparison, the exact test gives p = .016.</p><div id=\"statsSentence\">A McNemar test showed that the proportion answering yes changed significantly from before (.36) to after (.64), χ²(1, N = 50) = 5.63, p = .018; 22 people changed from no to yes and 8 from yes to no.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mcnemar-three-answers",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nno,maybe\nno,maybe\nno,maybe\nyes,maybe\nyes,maybe",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "The ticked columns hold 3 different answers in total (yes, no, maybe). They must all use the same two answers, for example 0 and 1."
+   ]
+  },
+  {
+   "id": "mcnemar-same-column",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no",
+   "values": {
+    "v1": "before",
+    "v2": "before"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "0",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Choose two different columns, the first and the second time."
+   ]
+  },
+  {
+   "id": "mcnemar-one-person",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nno,\n,no",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 2 people with an answer at both times."
+   ]
+  },
+  {
+   "id": "mcnemar-missing-answer",
+   "test": "mcnemar",
+   "csv": "before,after\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,yes\nyes,no\nyes,no\nyes,no\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,yes\nno,no\nno,no\nno,no\nno,no\nno,no\nyes,\n,no",
+   "values": {
+    "v1": "before",
+    "v2": "after"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1",
+     "pos": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A McNemar test (exact binomial) showed that the proportion answering yes changed significantly from before (.43) to after (.73), p = .035; 12 people changed from no to yes and 3 from yes to no.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "",
+       "after: yes",
+       "after: no"
+      ],
+      [
+       "before: yes",
+       "10",
+       "3"
+      ],
+      [
+       "before: no",
+       "12",
+       "5"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "Changed yes → no",
+       "Changed no → yes",
+       "Test",
+       "Exact",
+       "p"
+      ],
+      [
+       "30",
+       "3",
+       "12",
+       "Exact binomial",
+       "—",
+       ".035"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Answering “yes”: .43 of people at the first time (13 of 30) and .73 at the second (22 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "Resultsafter: yesafter: nobefore: yes103before: no125N peopleChanged yes → noChanged no → yesTestExactp30312Exact binomial—.035Answering “yes”: .43 of people at the first time (13 of 30) and .73 at the second (22 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039.2 entries that are not a number were left out.A McNemar test (exact binomial) showed that the proportion answering yes changed significantly from before (.43) to after (.73), p = .035; 12 people changed from no to yes and 3 from yes to no.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th></th><th>after: yes</th><th>after: no</th></tr><tr><th>before: yes</th><td>10</td><td>3</td></tr><tr><th>before: no</th><td>12</td><td>5</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>Changed yes → no</th><th>Changed no → yes</th><th>Test</th><th>Exact</th><th>p</th></tr><tr><td>30</td><td>3</td><td>12</td><td>Exact binomial</td><td>—</td><td>.035</td></tr></tbody></table><p class=\"desc\">Answering “yes”: .43 of people at the first time (13 of 30) and .73 at the second (22 of 30). Only the 15 people who changed their answer enter the test. With fewer than 25 changers the exact binomial test is used; for comparison, the χ² version gives χ²(1) = 4.27, p = .039.</p><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A McNemar test (exact binomial) showed that the proportion answering yes changed significantly from before (.43) to after (.73), p = .035; 12 people changed from no to yes and 3 from yes to no.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+[
+ {
+  "id": "gof-demo",
+  "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+  "test": "gof",
+  "values": {
+   "v1": "method"
+  },
+  "why": "TG_DEMO's gof: equal shares, significant"
+ },
+ {
+  "id": "gof-expected-shares",
+  "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+  "test": "gof",
+  "values": {
+   "v1": "method",
+   "exp": "Notes:30, Flashcards:50, Rereading:20"
+  },
+  "why": "expected shares 30/50/20"
+ },
+ {
+  "id": "gof-expected-bad",
+  "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+  "test": "gof",
+  "values": {
+   "v1": "method",
+   "exp": "Notes 30, Flashcards:50, Rereading:20"
+  },
+  "why": "a part without : or =: the toast listing the categories"
+ },
+ {
+  "id": "gof-expected-missing-category",
+  "csv": "method\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nNotes\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nFlashcards\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading\nRereading",
+  "test": "gof",
+  "values": {
+   "v1": "method",
+   "exp": "Notes:30, Flashcards:70"
+  },
+  "why": "Rereading has no share: the same toast"
+ },
+ {
+  "id": "gof-two-categories-small",
+  "csv": "hand\nright\nright\nright\nright\nright\nright\nright\nleft\nleft",
+  "test": "gof",
+  "values": {
+   "v1": "hand"
+  },
+  "why": "two categories, N = 9, expected 4.5: the exact binomial sentence"
+ },
+ {
+  "id": "gof-three-categories-small",
+  "csv": "colour\nred\nred\nred\nred\nred\nred\nblue\nblue\nblue\nblue\ngreen\ngreen",
+  "test": "gof",
+  "values": {
+   "v1": "colour"
+  },
+  "why": "three categories, expected 4: the note only, the chi-square sentence stays"
+ },
+ {
+  "id": "gof-one-category",
+  "csv": "colour\nred\nred\nred\nred\nred\nred",
+  "test": "gof",
+  "values": {
+   "v1": "colour"
+  },
+  "why": "one category: the toast"
+ }
+]

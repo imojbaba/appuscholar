@@ -1,0 +1,3706 @@
+{
+ "engine": "scales",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "varNames": {
+  "RSES": [
+   "RSES_01",
+   "RSES_02",
+   "RSES_03",
+   "RSES_04",
+   "RSES_05",
+   "RSES_06",
+   "RSES_07",
+   "RSES_08",
+   "RSES_09",
+   "RSES_10"
+  ],
+  "SWLS": [
+   "SWLS_01",
+   "SWLS_02",
+   "SWLS_03",
+   "SWLS_04",
+   "SWLS_05"
+  ]
+ },
+ "text": {
+  "RSES": {
+   "plain": "Rosenberg Self-Esteem Scale (RSES)\n\nBelow is a list of statements dealing with your general feelings about yourself. Please indicate how strongly you agree or disagree with each statement.\n\nResponse options: Strongly agree | Agree | Disagree | Strongly disagree\n\n1. On the whole, I am satisfied with myself.\n2. At times, I think I am no good at all.\n3. I feel that I have a number of good qualities.\n4. I am able to do things as well as most other people.\n5. I feel I do not have much to be proud of.\n6. I certainly feel useless at times.\n7. I feel that I'm a person of worth, at least on an equal plane with others.\n8. I wish I could have more respect for myself.\n9. All in all, I am inclined to feel that I am a failure.\n10. I take a positive attitude toward myself.\n\nSource: Rosenberg, M. (1965). Society and the adolescent self-image. Princeton University Press.",
+   "credit": "Rosenberg Self-Esteem Scale (RSES)\n\nBelow is a list of statements dealing with your general feelings about yourself. Please indicate how strongly you agree or disagree with each statement.\n\nResponse options: Strongly agree | Agree | Disagree | Strongly disagree\n\n1. On the whole, I am satisfied with myself.\n2. At times, I think I am no good at all.\n3. I feel that I have a number of good qualities.\n4. I am able to do things as well as most other people.\n5. I feel I do not have much to be proud of.\n6. I certainly feel useless at times.\n7. I feel that I'm a person of worth, at least on an equal plane with others.\n8. I wish I could have more respect for myself.\n9. All in all, I am inclined to feel that I am a failure.\n10. I take a positive attitude toward myself.\n\nSource: Rosenberg, M. (1965). Society and the adolescent self-image. Princeton University Press.",
+   "none": "Rosenberg Self-Esteem Scale (RSES)\n\nBelow is a list of statements dealing with your general feelings about yourself. Please indicate how strongly you agree or disagree with each statement.\n\nResponse options: Strongly agree | Agree | Disagree | Strongly disagree\n\n1. On the whole, I am satisfied with myself.\n2. At times, I think I am no good at all.\n3. I feel that I have a number of good qualities.\n4. I am able to do things as well as most other people.\n5. I feel I do not have much to be proud of.\n6. I certainly feel useless at times.\n7. I feel that I'm a person of worth, at least on an equal plane with others.\n8. I wish I could have more respect for myself.\n9. All in all, I am inclined to feel that I am a failure.\n10. I take a positive attitude toward myself."
+  },
+  "SWLS": {
+   "plain": "Satisfaction With Life Scale (SWLS)\n\nBelow are five statements that you may agree or disagree with. Using the 1 to 7 scale below, indicate your agreement with each item. Please be open and honest in your responding.\n\nResponse options: Strongly disagree | Disagree | Slightly disagree | Neither agree nor disagree | Slightly agree | Agree | Strongly agree\n\n1. In most ways my life is close to my ideal.\n2. The conditions of my life are excellent.\n3. I am satisfied with my life.\n4. So far I have gotten the important things I want in life.\n5. If I could live my life over, I would change almost nothing.\n\nSource: Diener, E., Emmons, R. A., Larsen, R. J., & Griffin, S. (1985). The Satisfaction With Life Scale. Journal of Personality Assessment, 49(1), 71-75.",
+   "credit": "Satisfaction With Life Scale (SWLS)\n\nBelow are five statements that you may agree or disagree with. Using the 1 to 7 scale below, indicate your agreement with each item. Please be open and honest in your responding.\n\nResponse options: Strongly disagree | Disagree | Slightly disagree | Neither agree nor disagree | Slightly agree | Agree | Strongly agree\n\n1. In most ways my life is close to my ideal.\n2. The conditions of my life are excellent.\n3. I am satisfied with my life.\n4. So far I have gotten the important things I want in life.\n5. If I could live my life over, I would change almost nothing.\n\nSource: Diener, E., Emmons, R. A., Larsen, R. J., & Griffin, S. (1985). The Satisfaction With Life Scale. Journal of Personality Assessment, 49(1), 71-75.",
+   "none": "Satisfaction With Life Scale (SWLS)\n\nBelow are five statements that you may agree or disagree with. Using the 1 to 7 scale below, indicate your agreement with each item. Please be open and honest in your responding.\n\nResponse options: Strongly disagree | Disagree | Slightly disagree | Neither agree nor disagree | Slightly agree | Agree | Strongly agree\n\n1. In most ways my life is close to my ideal.\n2. The conditions of my life are excellent.\n3. I am satisfied with my life.\n4. So far I have gotten the important things I want in life.\n5. If I could live my life over, I would change almost nothing."
+  }
+ },
+ "codebook": {
+  "RSES": {
+   "name": "RSES_items.csv",
+   "text": "variable,label,reverse_scored,response_codes,scale\nRSES_01,\"On the whole, I am satisfied with myself.\",no,0 to 3,RSES\nRSES_02,\"At times, I think I am no good at all.\",yes,0 to 3,RSES\nRSES_03,I feel that I have a number of good qualities.,no,0 to 3,RSES\nRSES_04,I am able to do things as well as most other people.,no,0 to 3,RSES\nRSES_05,I feel I do not have much to be proud of.,yes,0 to 3,RSES\nRSES_06,I certainly feel useless at times.,yes,0 to 3,RSES\nRSES_07,\"I feel that I'm a person of worth, at least on an equal plane with others.\",no,0 to 3,RSES\nRSES_08,I wish I could have more respect for myself.,yes,0 to 3,RSES\nRSES_09,\"All in all, I am inclined to feel that I am a failure.\",yes,0 to 3,RSES\nRSES_10,I take a positive attitude toward myself.,no,0 to 3,RSES"
+  },
+  "SWLS": {
+   "name": "SWLS_items.csv",
+   "text": "variable,label,reverse_scored,response_codes,scale\nSWLS_01,In most ways my life is close to my ideal.,no,1 to 7,SWLS\nSWLS_02,The conditions of my life are excellent.,no,1 to 7,SWLS\nSWLS_03,I am satisfied with my life.,no,1 to 7,SWLS\nSWLS_04,So far I have gotten the important things I want in life.,no,1 to 7,SWLS\nSWLS_05,\"If I could live my life over, I would change almost nothing.\",no,1 to 7,SWLS"
+  }
+ },
+ "score": [
+  {
+   "id": "RSES-c0-clean",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     0,
+     1,
+     2,
+     3,
+     0,
+     1,
+     2,
+     3,
+     0,
+     1
+    ],
+    [
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ]
+   ],
+   "out": {
+    "totals": [
+     18,
+     15
+    ],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c0-missing",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     2,
+     null,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 0,
+    "miss": 1
+   }
+  },
+  {
+   "id": "RSES-c0-out-of-range",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     4,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    [
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     -1
+    ]
+   ],
+   "out": {
+    "totals": [
+     null,
+     null
+    ],
+    "bad": 2,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c0-non-integer",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     2,
+     2,
+     2.5,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 1,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c0-nan",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     2,
+     2,
+     2,
+     {
+      "$n": "NaN"
+     },
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 0,
+    "miss": 1
+   }
+  },
+  {
+   "id": "RSES-c0-mixed",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    [
+     null,
+     4,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    [
+     1.5,
+     1.5,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    [
+     3,
+     null,
+     3,
+     null,
+     3,
+     null,
+     3,
+     null,
+     3,
+     null
+    ]
+   ],
+   "out": {
+    "totals": [
+     15,
+     15,
+     null,
+     null,
+     null
+    ],
+    "bad": 3,
+    "miss": 6
+   }
+  },
+  {
+   "id": "RSES-c0-extremes",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [
+    [
+     3,
+     0,
+     3,
+     0,
+     3,
+     0,
+     3,
+     0,
+     3,
+     0
+    ]
+   ],
+   "out": {
+    "totals": [
+     18
+    ],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c0-empty",
+   "scale": "RSES",
+   "coding": 0,
+   "mat": [],
+   "out": {
+    "totals": [],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c1-clean",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     1,
+     2,
+     3,
+     4,
+     1,
+     2,
+     3,
+     4,
+     1,
+     2
+    ],
+    [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ]
+   ],
+   "out": {
+    "totals": [
+     28,
+     25
+    ],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c1-missing",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     3,
+     null,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 0,
+    "miss": 1
+   }
+  },
+  {
+   "id": "RSES-c1-out-of-range",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     5,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     0
+    ]
+   ],
+   "out": {
+    "totals": [
+     null,
+     null
+    ],
+    "bad": 2,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c1-non-integer",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     3,
+     3,
+     3.5,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 1,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c1-nan",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     3,
+     3,
+     3,
+     {
+      "$n": "NaN"
+     },
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 0,
+    "miss": 1
+   }
+  },
+  {
+   "id": "RSES-c1-mixed",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    [
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4
+    ],
+    [
+     null,
+     5,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    [
+     1.5,
+     1.5,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    [
+     4,
+     null,
+     4,
+     null,
+     4,
+     null,
+     4,
+     null,
+     4,
+     null
+    ]
+   ],
+   "out": {
+    "totals": [
+     25,
+     25,
+     null,
+     null,
+     null
+    ],
+    "bad": 3,
+    "miss": 6
+   }
+  },
+  {
+   "id": "RSES-c1-extremes",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [
+    [
+     4,
+     1,
+     4,
+     1,
+     4,
+     1,
+     4,
+     1,
+     4,
+     1
+    ]
+   ],
+   "out": {
+    "totals": [
+     28
+    ],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "RSES-c1-empty",
+   "scale": "RSES",
+   "coding": 1,
+   "mat": [],
+   "out": {
+    "totals": [],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "SWLS-c0-clean",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    [
+     4,
+     4,
+     4,
+     4,
+     4
+    ]
+   ],
+   "out": {
+    "totals": [
+     15,
+     20
+    ],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "SWLS-c0-missing",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     4,
+     null,
+     4,
+     4,
+     4
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 0,
+    "miss": 1
+   }
+  },
+  {
+   "id": "SWLS-c0-out-of-range",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     8,
+     4,
+     4,
+     4,
+     4
+    ],
+    [
+     4,
+     4,
+     4,
+     4,
+     0
+    ]
+   ],
+   "out": {
+    "totals": [
+     null,
+     null
+    ],
+    "bad": 2,
+    "miss": 0
+   }
+  },
+  {
+   "id": "SWLS-c0-non-integer",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     4,
+     4,
+     4.5,
+     4,
+     4
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 1,
+    "miss": 0
+   }
+  },
+  {
+   "id": "SWLS-c0-nan",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     4,
+     4,
+     4,
+     {
+      "$n": "NaN"
+     },
+     4
+    ]
+   ],
+   "out": {
+    "totals": [
+     null
+    ],
+    "bad": 0,
+    "miss": 1
+   }
+  },
+  {
+   "id": "SWLS-c0-mixed",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    [
+     7,
+     7,
+     7,
+     7,
+     7
+    ],
+    [
+     null,
+     8,
+     4,
+     4,
+     4
+    ],
+    [
+     1.5,
+     1.5,
+     4,
+     4,
+     4
+    ],
+    [
+     7,
+     null,
+     7,
+     null,
+     7
+    ]
+   ],
+   "out": {
+    "totals": [
+     5,
+     35,
+     null,
+     null,
+     null
+    ],
+    "bad": 3,
+    "miss": 3
+   }
+  },
+  {
+   "id": "SWLS-c0-extremes",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [
+    [
+     7,
+     1,
+     7,
+     1,
+     7
+    ]
+   ],
+   "out": {
+    "totals": [
+     23
+    ],
+    "bad": 0,
+    "miss": 0
+   }
+  },
+  {
+   "id": "SWLS-c0-empty",
+   "scale": "SWLS",
+   "coding": 0,
+   "mat": [],
+   "out": {
+    "totals": [],
+    "bad": 0,
+    "miss": 0
+   }
+  }
+ ],
+ "band": [
+  {
+   "scale": "SWLS",
+   "t": 9,
+   "band": "Extremely dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": 10,
+   "band": "Dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": 14,
+   "band": "Dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": 15,
+   "band": "Slightly below average"
+  },
+  {
+   "scale": "SWLS",
+   "t": 19,
+   "band": "Slightly below average"
+  },
+  {
+   "scale": "SWLS",
+   "t": 20,
+   "band": "Average"
+  },
+  {
+   "scale": "SWLS",
+   "t": 24,
+   "band": "Average"
+  },
+  {
+   "scale": "SWLS",
+   "t": 25,
+   "band": "High satisfaction"
+  },
+  {
+   "scale": "SWLS",
+   "t": 29,
+   "band": "High satisfaction"
+  },
+  {
+   "scale": "SWLS",
+   "t": 30,
+   "band": "Very high satisfaction"
+  },
+  {
+   "scale": "SWLS",
+   "t": 35,
+   "band": "Very high satisfaction"
+  },
+  {
+   "scale": "SWLS",
+   "t": 36,
+   "band": "Very high satisfaction"
+  },
+  {
+   "scale": "SWLS",
+   "t": 4,
+   "band": "Extremely dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": 9.5,
+   "band": "Dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": 0,
+   "band": "Extremely dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": -1,
+   "band": "Extremely dissatisfied"
+  },
+  {
+   "scale": "SWLS",
+   "t": null,
+   "band": ""
+  },
+  {
+   "scale": "RSES",
+   "t": 20,
+   "band": ""
+  },
+  {
+   "scale": "RSES",
+   "t": 0,
+   "band": ""
+  },
+  {
+   "scale": "RSES",
+   "t": null,
+   "band": ""
+  }
+ ],
+ "runs": [
+  {
+   "id": "rses-by-name-clean",
+   "scale": "RSES",
+   "csv": "id,RSES_01,RSES_02,RSES_03,RSES_04,RSES_05,RSES_06,RSES_07,RSES_08,RSES_09,RSES_10,age\nP1,1,3,0,1,3,3,1,3,3,1,18\nP2,1,2,1,1,2,2,1,2,2,1,19\nP3,2,1,2,2,1,1,2,1,1,2,20\nP4,3,0,3,3,0,0,3,0,0,3,21\nP5,0,3,0,0,3,3,0,3,3,0,22\nP6,2,2,1,2,2,2,2,2,2,2,23\nP7,2,1,2,2,1,1,2,1,1,2,24\nP8,3,0,3,3,0,0,3,0,0,3,25\nP9,0,3,0,0,3,3,0,3,3,0,26\nP10,1,2,1,1,2,2,1,2,2,1,27\nP11,3,1,2,3,1,1,3,1,1,3,28\nP12,3,0,3,3,0,0,3,0,0,3,29",
+   "data": {
+    "headers": [
+     "id",
+     "RSES_01",
+     "RSES_02",
+     "RSES_03",
+     "RSES_04",
+     "RSES_05",
+     "RSES_06",
+     "RSES_07",
+     "RSES_08",
+     "RSES_09",
+     "RSES_10",
+     "age"
+    ],
+    "rows": [
+     [
+      "P1",
+      "1",
+      "3",
+      "0",
+      "1",
+      "3",
+      "3",
+      "1",
+      "3",
+      "3",
+      "1",
+      "18"
+     ],
+     [
+      "P2",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "19"
+     ],
+     [
+      "P3",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "20"
+     ],
+     [
+      "P4",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "21"
+     ],
+     [
+      "P5",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "22"
+     ],
+     [
+      "P6",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "23"
+     ],
+     [
+      "P7",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "24"
+     ],
+     [
+      "P8",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "25"
+     ],
+     [
+      "P9",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "26"
+     ],
+     [
+      "P10",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "27"
+     ],
+     [
+      "P11",
+      "3",
+      "1",
+      "2",
+      "3",
+      "1",
+      "1",
+      "3",
+      "1",
+      "1",
+      "3",
+      "28"
+     ],
+     [
+      "P12",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "29"
+     ]
+    ]
+   },
+   "guess": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "idx": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "coding": 0,
+   "html": "Added <b>RSES_total</b> to your data. Scored 12 of 12 rows (M = 16.00, SD = 11.35). Cronbach's alpha in your sample: 1.00.",
+   "text": "Added RSES_total to your data. Scored 12 of 12 rows (M = 16.00, SD = 11.35). Cronbach's alpha in your sample: 1.00.",
+   "paste": "id,RSES_01,RSES_02,RSES_03,RSES_04,RSES_05,RSES_06,RSES_07,RSES_08,RSES_09,RSES_10,age,RSES_total\nP1,1,3,0,1,3,3,1,3,3,1,18,4\nP2,1,2,1,1,2,2,1,2,2,1,19,10\nP3,2,1,2,2,1,1,2,1,1,2,20,20\nP4,3,0,3,3,0,0,3,0,0,3,21,30\nP5,0,3,0,0,3,3,0,3,3,0,22,0\nP6,2,2,1,2,2,2,2,2,2,2,23,14\nP7,2,1,2,2,1,1,2,1,1,2,24,20\nP8,3,0,3,3,0,0,3,0,0,3,25,30\nP9,0,3,0,0,3,3,0,3,3,0,26,0\nP10,1,2,1,1,2,2,1,2,2,1,27,10\nP11,3,1,2,3,1,1,3,1,1,3,28,24\nP12,3,0,3,3,0,0,3,0,0,3,29,30",
+   "alpha": 0.9957627118644069,
+   "mean": 16,
+   "sd": 11.345804190416505,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "rses-by-prefix-coding1-blanks",
+   "scale": "RSES",
+   "csv": "id,rses1,rses2,rses3,rses4,rses5,rses6,rses7,rses8,rses9,rses10\nP1,2,4,1,2,4,4,2,4,4,2\nP2,2,3,2,,3,3,2,3,3,2\nP3,3,2,3,3,2,2,3,2,2,3\nP4,4,1,4,4,1,1,4,1,1,4\nP5,5,4,1,1,4,4,1,4,4,1\nP6,3,3,2,3,3,3,3,3,3,3\nP7,3,2,3,3,2,2,3,2,2,2.5\nP8,4,1,4,4,1,1,4,1,1,4\nP9,1,4,1,1,4,often,1,4,4,1\nP10,2,3,2,2,3,3,2,3,3,2\nP11,4,2, 3 ,4,2,2,4,2,2,4\nP12,4,1,4,4,1,1,4,1.0,1,4",
+   "data": {
+    "headers": [
+     "id",
+     "rses1",
+     "rses2",
+     "rses3",
+     "rses4",
+     "rses5",
+     "rses6",
+     "rses7",
+     "rses8",
+     "rses9",
+     "rses10"
+    ],
+    "rows": [
+     [
+      "P1",
+      "2",
+      "4",
+      "1",
+      "2",
+      "4",
+      "4",
+      "2",
+      "4",
+      "4",
+      "2"
+     ],
+     [
+      "P2",
+      "2",
+      "3",
+      "2",
+      "",
+      "3",
+      "3",
+      "2",
+      "3",
+      "3",
+      "2"
+     ],
+     [
+      "P3",
+      "3",
+      "2",
+      "3",
+      "3",
+      "2",
+      "2",
+      "3",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "P4",
+      "4",
+      "1",
+      "4",
+      "4",
+      "1",
+      "1",
+      "4",
+      "1",
+      "1",
+      "4"
+     ],
+     [
+      "P5",
+      "5",
+      "4",
+      "1",
+      "1",
+      "4",
+      "4",
+      "1",
+      "4",
+      "4",
+      "1"
+     ],
+     [
+      "P6",
+      "3",
+      "3",
+      "2",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3"
+     ],
+     [
+      "P7",
+      "3",
+      "2",
+      "3",
+      "3",
+      "2",
+      "2",
+      "3",
+      "2",
+      "2",
+      "2.5"
+     ],
+     [
+      "P8",
+      "4",
+      "1",
+      "4",
+      "4",
+      "1",
+      "1",
+      "4",
+      "1",
+      "1",
+      "4"
+     ],
+     [
+      "P9",
+      "1",
+      "4",
+      "1",
+      "1",
+      "4",
+      "often",
+      "1",
+      "4",
+      "4",
+      "1"
+     ],
+     [
+      "P10",
+      "2",
+      "3",
+      "2",
+      "2",
+      "3",
+      "3",
+      "2",
+      "3",
+      "3",
+      "2"
+     ],
+     [
+      "P11",
+      "4",
+      "2",
+      "3",
+      "4",
+      "2",
+      "2",
+      "4",
+      "2",
+      "2",
+      "4"
+     ],
+     [
+      "P12",
+      "4",
+      "1",
+      "4",
+      "4",
+      "1",
+      "1",
+      "4",
+      "1.0",
+      "1",
+      "4"
+     ]
+    ]
+   },
+   "guess": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "idx": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "coding": 1,
+   "html": "Added <b>RSES_total</b> to your data. Scored 8 of 12 rows (M = 30.25, SD = 10.05). Cronbach's alpha in your sample: .99. 4 rows were left blank because an answer was missing or outside the allowed codes.",
+   "text": "Added RSES_total to your data. Scored 8 of 12 rows (M = 30.25, SD = 10.05). Cronbach's alpha in your sample: .99. 4 rows were left blank because an answer was missing or outside the allowed codes.",
+   "paste": "id,rses1,rses2,rses3,rses4,rses5,rses6,rses7,rses8,rses9,rses10,RSES_total\nP1,2,4,1,2,4,4,2,4,4,2,14\nP2,2,3,2,,3,3,2,3,3,2,\nP3,3,2,3,3,2,2,3,2,2,3,30\nP4,4,1,4,4,1,1,4,1,1,4,40\nP5,5,4,1,1,4,4,1,4,4,1,\nP6,3,3,2,3,3,3,3,3,3,3,24\nP7,3,2,3,3,2,2,3,2,2,2.5,\nP8,4,1,4,4,1,1,4,1,1,4,40\nP9,1,4,1,1,4,often,1,4,4,1,\nP10,2,3,2,2,3,3,2,3,3,2,20\nP11,4,2,3,4,2,2,4,2,2,4,34\nP12,4,1,4,4,1,1,4,1.0,1,4,40",
+   "alpha": 0.9929328621908128,
+   "mean": 30.25,
+   "sd": 10.05342869728674,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "rses-unrelated-name-taken",
+   "scale": "RSES",
+   "csv": "q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,RSES_total,RSES_total_2\n1,3,0,1,3,3,1,3,3,1,x0,\n1,2,1,1,2,2,1,2,2,1,x1,\n2,1,2,2,1,1,2,1,1,2,x2,\n3,0,3,3,0,0,3,0,0,3,x3,\n0,3,0,0,3,3,0,3,3,0,x4,\n2,2,1,2,2,2,2,2,2,2,x5,\n2,1,2,2,1,1,2,1,1,2,x6,\n3,0,3,3,0,0,3,0,0,3,x7,\n0,3,0,0,3,3,0,3,3,0,x8,\n1,2,1,1,2,2,1,2,2,1,x9,\n3,1,2,3,1,1,3,1,1,3,x10,\n3,0,3,3,0,0,3,0,0,3,x11,",
+   "data": {
+    "headers": [
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "q5",
+     "q6",
+     "q7",
+     "q8",
+     "q9",
+     "q10",
+     "RSES_total",
+     "RSES_total_2"
+    ],
+    "rows": [
+     [
+      "1",
+      "3",
+      "0",
+      "1",
+      "3",
+      "3",
+      "1",
+      "3",
+      "3",
+      "1",
+      "x0",
+      ""
+     ],
+     [
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "x1",
+      ""
+     ],
+     [
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "x2",
+      ""
+     ],
+     [
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "x3",
+      ""
+     ],
+     [
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "x4",
+      ""
+     ],
+     [
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "x5",
+      ""
+     ],
+     [
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "x6",
+      ""
+     ],
+     [
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "x7",
+      ""
+     ],
+     [
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "x8",
+      ""
+     ],
+     [
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "x9",
+      ""
+     ],
+     [
+      "3",
+      "1",
+      "2",
+      "3",
+      "1",
+      "1",
+      "3",
+      "1",
+      "1",
+      "3",
+      "x10",
+      ""
+     ],
+     [
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "x11",
+      ""
+     ]
+    ]
+   },
+   "guess": [
+    -1,
+    11,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "coding": 0,
+   "html": "Added <b>RSES_total_3</b> to your data. Scored 12 of 12 rows (M = 16.00, SD = 11.35). Cronbach's alpha in your sample: 1.00.",
+   "text": "Added RSES_total_3 to your data. Scored 12 of 12 rows (M = 16.00, SD = 11.35). Cronbach's alpha in your sample: 1.00.",
+   "paste": "q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,RSES_total,RSES_total_2,RSES_total_3\n1,3,0,1,3,3,1,3,3,1,x0,,4\n1,2,1,1,2,2,1,2,2,1,x1,,10\n2,1,2,2,1,1,2,1,1,2,x2,,20\n3,0,3,3,0,0,3,0,0,3,x3,,30\n0,3,0,0,3,3,0,3,3,0,x4,,0\n2,2,1,2,2,2,2,2,2,2,x5,,14\n2,1,2,2,1,1,2,1,1,2,x6,,20\n3,0,3,3,0,0,3,0,0,3,x7,,30\n0,3,0,0,3,3,0,3,3,0,x8,,0\n1,2,1,1,2,2,1,2,2,1,x9,,10\n3,1,2,3,1,1,3,1,1,3,x10,,24\n3,0,3,3,0,0,3,0,0,3,x11,,30",
+   "alpha": 0.9957627118644069,
+   "mean": 16,
+   "sd": 11.345804190416505,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "rses-unrelated-shuffled",
+   "scale": "RSES",
+   "csv": "itema,itemb,itemc,itemd,iteme,itemf,itemg,itemh,itemi,itemj\n1,3,3,1,3,3,1,1,3,0\n1,2,2,1,2,2,1,1,2,1\n2,1,1,2,1,1,2,2,1,2\n3,0,0,3,0,0,3,3,0,3\n0,3,3,0,3,3,0,0,3,0\n2,2,2,2,2,2,2,2,2,1\n2,1,1,2,1,1,2,2,1,2\n3,0,0,3,0,0,3,3,0,3\n0,3,3,0,3,3,0,0,3,0\n1,2,2,1,2,2,1,1,2,1\n3,1,1,3,1,1,3,3,1,2\n3,0,0,3,0,0,3,3,0,3",
+   "data": {
+    "headers": [
+     "itema",
+     "itemb",
+     "itemc",
+     "itemd",
+     "iteme",
+     "itemf",
+     "itemg",
+     "itemh",
+     "itemi",
+     "itemj"
+    ],
+    "rows": [
+     [
+      "1",
+      "3",
+      "3",
+      "1",
+      "3",
+      "3",
+      "1",
+      "1",
+      "3",
+      "0"
+     ],
+     [
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1"
+     ],
+     [
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3"
+     ],
+     [
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "1"
+     ],
+     [
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3"
+     ],
+     [
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0"
+     ],
+     [
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1"
+     ],
+     [
+      "3",
+      "1",
+      "1",
+      "3",
+      "1",
+      "1",
+      "3",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3"
+     ]
+    ]
+   },
+   "guess": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "idx": [
+    7,
+    8,
+    9,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "coding": 0,
+   "html": "Added <b>RSES_total</b> to your data. Scored 12 of 12 rows (M = 16.00, SD = 11.35). Cronbach's alpha in your sample: 1.00.",
+   "text": "Added RSES_total to your data. Scored 12 of 12 rows (M = 16.00, SD = 11.35). Cronbach's alpha in your sample: 1.00.",
+   "paste": "itema,itemb,itemc,itemd,iteme,itemf,itemg,itemh,itemi,itemj,RSES_total\n1,3,3,1,3,3,1,1,3,0,4\n1,2,2,1,2,2,1,1,2,1,10\n2,1,1,2,1,1,2,2,1,2,20\n3,0,0,3,0,0,3,3,0,3,30\n0,3,3,0,3,3,0,0,3,0,0\n2,2,2,2,2,2,2,2,2,1,14\n2,1,1,2,1,1,2,2,1,2,20\n3,0,0,3,0,0,3,3,0,3,30\n0,3,3,0,3,3,0,0,3,0,0\n1,2,2,1,2,2,1,1,2,1,10\n3,1,1,3,1,1,3,3,1,2,24\n3,0,0,3,0,0,3,3,0,3,30",
+   "alpha": 0.9957627118644069,
+   "mean": 16,
+   "sd": 11.345804190416505,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-by-name-band-taken",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_band\n1,1,3,1,2,old\n2,2,2,2,3,old\n3,3,3,3,4,old\n4,4,6,4,5,old\n5,5,5,5,6,old\n6,6,6,6,7,old\n7,7,2,7,1,old\n1,1,1,1,2,old\n2,2,2,2,3,old\n3,3,5,3,4,old\n4,4,4,4,5,old\n5,5,5,5,6,old",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05",
+     "SWLS_band"
+    ],
+    "rows": [
+     [
+      "1",
+      "1",
+      "3",
+      "1",
+      "2",
+      "old"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "3",
+      "old"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "3",
+      "4",
+      "old"
+     ],
+     [
+      "4",
+      "4",
+      "6",
+      "4",
+      "5",
+      "old"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "6",
+      "old"
+     ],
+     [
+      "6",
+      "6",
+      "6",
+      "6",
+      "7",
+      "old"
+     ],
+     [
+      "7",
+      "7",
+      "2",
+      "7",
+      "1",
+      "old"
+     ],
+     [
+      "1",
+      "1",
+      "1",
+      "1",
+      "2",
+      "old"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "3",
+      "old"
+     ],
+     [
+      "3",
+      "3",
+      "5",
+      "3",
+      "4",
+      "old"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "5",
+      "old"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "6",
+      "old"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band_2</b> to your data. Scored 12 of 12 rows (M = 18.42, SD = 8.04). Cronbach's alpha in your sample: .91.",
+   "text": "Added SWLS_total and SWLS_band_2 to your data. Scored 12 of 12 rows (M = 18.42, SD = 8.04). Cronbach's alpha in your sample: .91.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_band,SWLS_total,SWLS_band_2\n1,1,3,1,2,old,8,Extremely dissatisfied\n2,2,2,2,3,old,11,Dissatisfied\n3,3,3,3,4,old,16,Slightly below average\n4,4,6,4,5,old,23,Average\n5,5,5,5,6,old,26,High satisfaction\n6,6,6,6,7,old,31,Very high satisfaction\n7,7,2,7,1,old,24,Average\n1,1,1,1,2,old,6,Extremely dissatisfied\n2,2,2,2,3,old,11,Dissatisfied\n3,3,5,3,4,old,18,Slightly below average\n4,4,4,4,5,old,21,Average\n5,5,5,5,6,old,26,High satisfaction",
+   "alpha": 0.9099167741179228,
+   "mean": 18.416666666666668,
+   "sd": 8.039203186808248,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-by-prefix-blanks",
+   "scale": "SWLS",
+   "csv": "id,SWLS_1,SWLS_2,SWLS_3,SWLS_4,SWLS_5\nP1,1,1,3,1,2\nP2,2,2,2,2,3\nP3,3,0,3,3,4\nP4,4,4,6,4,5\nP5,5,5,5,5,6\nP6,6,6,6,6,7\nP7,7,7,2,7,1\nP8,1,1,1,1,\nP9,2,2,2,2,3\nP10,8,3,5,3,4\nP11,4,4,4,4,5\nP12,5,5,5,5,6",
+   "data": {
+    "headers": [
+     "id",
+     "SWLS_1",
+     "SWLS_2",
+     "SWLS_3",
+     "SWLS_4",
+     "SWLS_5"
+    ],
+    "rows": [
+     [
+      "P1",
+      "1",
+      "1",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "P2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "P3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "4"
+     ],
+     [
+      "P4",
+      "4",
+      "4",
+      "6",
+      "4",
+      "5"
+     ],
+     [
+      "P5",
+      "5",
+      "5",
+      "5",
+      "5",
+      "6"
+     ],
+     [
+      "P6",
+      "6",
+      "6",
+      "6",
+      "6",
+      "7"
+     ],
+     [
+      "P7",
+      "7",
+      "7",
+      "2",
+      "7",
+      "1"
+     ],
+     [
+      "P8",
+      "1",
+      "1",
+      "1",
+      "1",
+      ""
+     ],
+     [
+      "P9",
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "P10",
+      "8",
+      "3",
+      "5",
+      "3",
+      "4"
+     ],
+     [
+      "P11",
+      "4",
+      "4",
+      "4",
+      "4",
+      "5"
+     ],
+     [
+      "P12",
+      "5",
+      "5",
+      "5",
+      "5",
+      "6"
+     ]
+    ]
+   },
+   "guess": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "idx": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 9 of 12 rows (M = 20.11, SD = 8.10). Cronbach's alpha in your sample: .89. 3 rows were left blank because an answer was missing or outside the allowed codes.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 9 of 12 rows (M = 20.11, SD = 8.10). Cronbach's alpha in your sample: .89. 3 rows were left blank because an answer was missing or outside the allowed codes.",
+   "paste": "id,SWLS_1,SWLS_2,SWLS_3,SWLS_4,SWLS_5,SWLS_total,SWLS_band\nP1,1,1,3,1,2,8,Extremely dissatisfied\nP2,2,2,2,2,3,11,Dissatisfied\nP3,3,0,3,3,4,,\nP4,4,4,6,4,5,23,Average\nP5,5,5,5,5,6,26,High satisfaction\nP6,6,6,6,6,7,31,Very high satisfaction\nP7,7,7,2,7,1,24,Average\nP8,1,1,1,1,,,\nP9,2,2,2,2,3,11,Dissatisfied\nP10,8,3,5,3,4,,\nP11,4,4,4,4,5,21,Average\nP12,5,5,5,5,6,26,High satisfaction",
+   "alpha": 0.8869602032176122,
+   "mean": 20.11111111111111,
+   "sd": 8.100068586815244,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-negative-alpha",
+   "scale": "SWLS",
+   "csv": "lifeA,lifeB,lifeC,lifeD,lifeE\n1,7,1,7,1\n2,6,2,6,2\n3,5,3,5,3\n4,4,4,4,4\n5,3,5,3,5\n6,2,6,2,6\n7,1,7,1,7\n1,7,1,7,1\n2,6,2,6,2\n3,5,3,5,3\n4,4,4,4,4\n5,3,5,3,5",
+   "data": {
+    "headers": [
+     "lifeA",
+     "lifeB",
+     "lifeC",
+     "lifeD",
+     "lifeE"
+    ],
+    "rows": [
+     [
+      "1",
+      "7",
+      "1",
+      "7",
+      "1"
+     ],
+     [
+      "2",
+      "6",
+      "2",
+      "6",
+      "2"
+     ],
+     [
+      "3",
+      "5",
+      "3",
+      "5",
+      "3"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "5",
+      "3",
+      "5",
+      "3",
+      "5"
+     ],
+     [
+      "6",
+      "2",
+      "6",
+      "2",
+      "6"
+     ],
+     [
+      "7",
+      "1",
+      "7",
+      "1",
+      "7"
+     ],
+     [
+      "1",
+      "7",
+      "1",
+      "7",
+      "1"
+     ],
+     [
+      "2",
+      "6",
+      "2",
+      "6",
+      "2"
+     ],
+     [
+      "3",
+      "5",
+      "3",
+      "5",
+      "3"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "5",
+      "3",
+      "5",
+      "3",
+      "5"
+     ]
+    ]
+   },
+   "guess": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 12 of 12 rows (M = 19.58, SD = 1.93). Cronbach's alpha in your sample: -5.00.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 12 of 12 rows (M = 19.58, SD = 1.93). Cronbach's alpha in your sample: -5.00.",
+   "paste": "lifeA,lifeB,lifeC,lifeD,lifeE,SWLS_total,SWLS_band\n1,7,1,7,1,17,Slightly below average\n2,6,2,6,2,18,Slightly below average\n3,5,3,5,3,19,Slightly below average\n4,4,4,4,4,20,Average\n5,3,5,3,5,21,Average\n6,2,6,2,6,22,Average\n7,1,7,1,7,23,Average\n1,7,1,7,1,17,Slightly below average\n2,6,2,6,2,18,Slightly below average\n3,5,3,5,3,19,Slightly below average\n4,4,4,4,4,20,Average\n5,3,5,3,5,21,Average",
+   "alpha": -4.999999999999998,
+   "mean": 19.583333333333332,
+   "sd": 1.928651593652148,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-small-negative-alpha",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,5,3,7,4\n5,7,3,1,6\n5,1,4,6,6\n5,5,3,4,7\n2,7,7,7,5\n5,1,2,6,2\n7,5,6,7,5\n7,5,5,5,3\n7,4,5,3,7\n7,2,2,3,4\n1,4,5,7,7\n6,7,2,5,5",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "1",
+      "5",
+      "3",
+      "7",
+      "4"
+     ],
+     [
+      "5",
+      "7",
+      "3",
+      "1",
+      "6"
+     ],
+     [
+      "5",
+      "1",
+      "4",
+      "6",
+      "6"
+     ],
+     [
+      "5",
+      "5",
+      "3",
+      "4",
+      "7"
+     ],
+     [
+      "2",
+      "7",
+      "7",
+      "7",
+      "5"
+     ],
+     [
+      "5",
+      "1",
+      "2",
+      "6",
+      "2"
+     ],
+     [
+      "7",
+      "5",
+      "6",
+      "7",
+      "5"
+     ],
+     [
+      "7",
+      "5",
+      "5",
+      "5",
+      "3"
+     ],
+     [
+      "7",
+      "4",
+      "5",
+      "3",
+      "7"
+     ],
+     [
+      "7",
+      "2",
+      "2",
+      "3",
+      "4"
+     ],
+     [
+      "1",
+      "4",
+      "5",
+      "7",
+      "7"
+     ],
+     [
+      "6",
+      "7",
+      "2",
+      "5",
+      "5"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 12 of 12 rows (M = 23.33, SD = 4.01). Cronbach's alpha in your sample: -.25.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 12 of 12 rows (M = 23.33, SD = 4.01). Cronbach's alpha in your sample: -.25.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_total,SWLS_band\n1,5,3,7,4,20,Average\n5,7,3,1,6,22,Average\n5,1,4,6,6,22,Average\n5,5,3,4,7,24,Average\n2,7,7,7,5,28,High satisfaction\n5,1,2,6,2,16,Slightly below average\n7,5,6,7,5,30,Very high satisfaction\n7,5,5,5,3,25,High satisfaction\n7,4,5,3,7,26,High satisfaction\n7,2,2,3,4,18,Slightly below average\n1,4,5,7,7,24,Average\n6,7,2,5,5,25,High satisfaction",
+   "alpha": -0.24528301886792475,
+   "mean": 23.333333333333332,
+   "sd": 4.007568597117966,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-constant-alpha-nan",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4\n4,4,4,4,4",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 12 of 12 rows (M = 20.00, SD = 0.00).",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 12 of 12 rows (M = 20.00, SD = 0.00).",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_total,SWLS_band\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average\n4,4,4,4,4,20,Average",
+   "alpha": {
+    "$n": "NaN"
+   },
+   "mean": 20,
+   "sd": 0,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-two-valid-rows",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,3,1,2\n2,2,2,2,3\n3,3,3,,4\n4,4,6,,5\n5,5,5,,6\n6,6,6,,7\n7,7,2,,1\n1,1,1,,2\n2,2,2,,3\n3,3,5,,4\n4,4,4,,5\n5,5,5,,6",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "1",
+      "1",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "6",
+      "",
+      "5"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "",
+      "6"
+     ],
+     [
+      "6",
+      "6",
+      "6",
+      "",
+      "7"
+     ],
+     [
+      "7",
+      "7",
+      "2",
+      "",
+      "1"
+     ],
+     [
+      "1",
+      "1",
+      "1",
+      "",
+      "2"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "",
+      "3"
+     ],
+     [
+      "3",
+      "3",
+      "5",
+      "",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "",
+      "5"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "",
+      "6"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 2 of 12 rows (M = 9.50, SD = 2.12). 10 rows were left blank because an answer was missing or outside the allowed codes.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 2 of 12 rows (M = 9.50, SD = 2.12). 10 rows were left blank because an answer was missing or outside the allowed codes.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_total,SWLS_band\n1,1,3,1,2,8,Extremely dissatisfied\n2,2,2,2,3,11,Dissatisfied\n3,3,3,,4,,\n4,4,6,,5,,\n5,5,5,,6,,\n6,6,6,,7,,\n7,7,2,,1,,\n1,1,1,,2,,\n2,2,2,,3,,\n3,3,5,,4,,\n4,4,4,,5,,\n5,5,5,,6,,",
+   "alpha": null,
+   "mean": 9.5,
+   "sd": 2.1213203435596424,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-three-valid-rows",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,3,1,2\n2,2,2,2,3\n3,3,3,3,4\n9,4,6,4,5\n9,5,5,5,6\n9,6,6,6,7\n9,7,2,7,1\n9,1,1,1,2\n9,2,2,2,3\n9,3,5,3,4\n9,4,4,4,5\n9,5,5,5,6",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "1",
+      "1",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "3",
+      "4"
+     ],
+     [
+      "9",
+      "4",
+      "6",
+      "4",
+      "5"
+     ],
+     [
+      "9",
+      "5",
+      "5",
+      "5",
+      "6"
+     ],
+     [
+      "9",
+      "6",
+      "6",
+      "6",
+      "7"
+     ],
+     [
+      "9",
+      "7",
+      "2",
+      "7",
+      "1"
+     ],
+     [
+      "9",
+      "1",
+      "1",
+      "1",
+      "2"
+     ],
+     [
+      "9",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "9",
+      "3",
+      "5",
+      "3",
+      "4"
+     ],
+     [
+      "9",
+      "4",
+      "4",
+      "4",
+      "5"
+     ],
+     [
+      "9",
+      "5",
+      "5",
+      "5",
+      "6"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 3 of 12 rows (M = 11.67, SD = 4.04). Cronbach's alpha in your sample: .92. 9 rows were left blank because an answer was missing or outside the allowed codes.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 3 of 12 rows (M = 11.67, SD = 4.04). Cronbach's alpha in your sample: .92. 9 rows were left blank because an answer was missing or outside the allowed codes.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_total,SWLS_band\n1,1,3,1,2,8,Extremely dissatisfied\n2,2,2,2,3,11,Dissatisfied\n3,3,3,3,4,16,Slightly below average\n9,4,6,4,5,,\n9,5,5,5,6,,\n9,6,6,6,7,,\n9,7,2,7,1,,\n9,1,1,1,2,,\n9,2,2,2,3,,\n9,3,5,3,4,,\n9,4,4,4,5,,\n9,5,5,5,6,,",
+   "alpha": 0.9183673469387754,
+   "mean": 11.666666666666666,
+   "sd": 4.041451884327381,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "swls-alpha-one",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,1,1,1\n2,2,2,2,2\n3,3,3,3,3\n4,4,4,4,4\n5,5,5,5,5\n6,6,6,6,6\n7,7,7,7,7\n1,1,1,1,1\n2,2,2,2,2\n3,3,3,3,3\n4,4,4,4,4\n5,5,5,5,5",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "2"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "3",
+      "3"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "5"
+     ],
+     [
+      "6",
+      "6",
+      "6",
+      "6",
+      "6"
+     ],
+     [
+      "7",
+      "7",
+      "7",
+      "7",
+      "7"
+     ],
+     [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "2"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "3",
+      "3"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "4"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "5"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 12 of 12 rows (M = 17.92, SD = 9.64). Cronbach's alpha in your sample: 1.00.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 12 of 12 rows (M = 17.92, SD = 9.64). Cronbach's alpha in your sample: 1.00.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_total,SWLS_band\n1,1,1,1,1,5,Extremely dissatisfied\n2,2,2,2,2,10,Dissatisfied\n3,3,3,3,3,15,Slightly below average\n4,4,4,4,4,20,Average\n5,5,5,5,5,25,High satisfaction\n6,6,6,6,6,30,Very high satisfaction\n7,7,7,7,7,35,Very high satisfaction\n1,1,1,1,1,5,Extremely dissatisfied\n2,2,2,2,2,10,Dissatisfied\n3,3,3,3,3,15,Slightly below average\n4,4,4,4,4,20,Average\n5,5,5,5,5,25,High satisfaction",
+   "alpha": 0.9999999999999999,
+   "mean": 17.916666666666668,
+   "sd": 9.64325796826074,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  },
+  {
+   "id": "refuse-choose-column",
+   "scale": "RSES",
+   "csv": "id,RSES_01,RSES_02,RSES_03,RSES_04,RSES_05,RSES_06,RSES_07,RSES_08,RSES_09,RSES_10\nP1,1,3,0,1,3,3,1,3,3,1\nP2,1,2,1,1,2,2,1,2,2,1\nP3,2,1,2,2,1,1,2,1,1,2\nP4,3,0,3,3,0,0,3,0,0,3\nP5,0,3,0,0,3,3,0,3,3,0\nP6,2,2,1,2,2,2,2,2,2,2\nP7,2,1,2,2,1,1,2,1,1,2\nP8,3,0,3,3,0,0,3,0,0,3\nP9,0,3,0,0,3,3,0,3,3,0\nP10,1,2,1,1,2,2,1,2,2,1\nP11,3,1,2,3,1,1,3,1,1,3\nP12,3,0,3,3,0,0,3,0,0,3",
+   "data": {
+    "headers": [
+     "id",
+     "RSES_01",
+     "RSES_02",
+     "RSES_03",
+     "RSES_04",
+     "RSES_05",
+     "RSES_06",
+     "RSES_07",
+     "RSES_08",
+     "RSES_09",
+     "RSES_10"
+    ],
+    "rows": [
+     [
+      "P1",
+      "1",
+      "3",
+      "0",
+      "1",
+      "3",
+      "3",
+      "1",
+      "3",
+      "3",
+      "1"
+     ],
+     [
+      "P2",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1"
+     ],
+     [
+      "P3",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2"
+     ],
+     [
+      "P4",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3"
+     ],
+     [
+      "P5",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0"
+     ],
+     [
+      "P6",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2"
+     ],
+     [
+      "P7",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2"
+     ],
+     [
+      "P8",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3"
+     ],
+     [
+      "P9",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0"
+     ],
+     [
+      "P10",
+      "1",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2",
+      "1"
+     ],
+     [
+      "P11",
+      "3",
+      "1",
+      "2",
+      "3",
+      "1",
+      "1",
+      "3",
+      "1",
+      "1",
+      "3"
+     ],
+     [
+      "P12",
+      "3",
+      "0",
+      "3",
+      "3",
+      "0",
+      "0",
+      "3",
+      "0",
+      "0",
+      "3"
+     ]
+    ]
+   },
+   "guess": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "idx": [
+    1,
+    2,
+    3,
+    4,
+    -1,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "coding": 0,
+   "html": "Choose a column for every item.",
+   "text": "Choose a column for every item.",
+   "paste": "id,RSES_01,RSES_02,RSES_03,RSES_04,RSES_05,RSES_06,RSES_07,RSES_08,RSES_09,RSES_10\nP1,1,3,0,1,3,3,1,3,3,1\nP2,1,2,1,1,2,2,1,2,2,1\nP3,2,1,2,2,1,1,2,1,1,2\nP4,3,0,3,3,0,0,3,0,0,3\nP5,0,3,0,0,3,3,0,3,3,0\nP6,2,2,1,2,2,2,2,2,2,2\nP7,2,1,2,2,1,1,2,1,1,2\nP8,3,0,3,3,0,0,3,0,0,3\nP9,0,3,0,0,3,3,0,3,3,0\nP10,1,2,1,1,2,2,1,2,2,1\nP11,3,1,2,3,1,1,3,1,1,3\nP12,3,0,3,3,0,0,3,0,0,3",
+   "alpha": null,
+   "mean": null,
+   "sd": null,
+   "toasts": []
+  },
+  {
+   "id": "refuse-same-column",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,3,1,2\n2,2,2,2,3\n3,3,3,3,4\n4,4,6,4,5\n5,5,5,5,6\n6,6,6,6,7\n7,7,2,7,1\n1,1,1,1,2\n2,2,2,2,3\n3,3,5,3,4\n4,4,4,4,5\n5,5,5,5,6",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "1",
+      "1",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "3",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "6",
+      "4",
+      "5"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "6"
+     ],
+     [
+      "6",
+      "6",
+      "6",
+      "6",
+      "7"
+     ],
+     [
+      "7",
+      "7",
+      "2",
+      "7",
+      "1"
+     ],
+     [
+      "1",
+      "1",
+      "1",
+      "1",
+      "2"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "3",
+      "3",
+      "5",
+      "3",
+      "4"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "5"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "6"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    0,
+    4
+   ],
+   "coding": 0,
+   "html": "Each item needs its own column.",
+   "text": "Each item needs its own column.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,3,1,2\n2,2,2,2,3\n3,3,3,3,4\n4,4,6,4,5\n5,5,5,5,6\n6,6,6,6,7\n7,7,2,7,1\n1,1,1,1,2\n2,2,2,2,3\n3,3,5,3,4\n4,4,4,4,5\n5,5,5,5,6",
+   "alpha": null,
+   "mean": null,
+   "sd": null,
+   "toasts": []
+  },
+  {
+   "id": "no-row-bad-and-missing",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n,1,3,1,2\n0,2,2,2,3\n,3,3,3,4\n0,4,6,4,5\n,5,5,5,6\n0,6,6,6,7\n,7,2,7,1\n0,1,1,1,2\n,2,2,2,3\n0,3,5,3,4\n,4,4,4,5\n0,5,5,5,6",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "",
+      "1",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "0",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "",
+      "3",
+      "3",
+      "3",
+      "4"
+     ],
+     [
+      "0",
+      "4",
+      "6",
+      "4",
+      "5"
+     ],
+     [
+      "",
+      "5",
+      "5",
+      "5",
+      "6"
+     ],
+     [
+      "0",
+      "6",
+      "6",
+      "6",
+      "7"
+     ],
+     [
+      "",
+      "7",
+      "2",
+      "7",
+      "1"
+     ],
+     [
+      "0",
+      "1",
+      "1",
+      "1",
+      "2"
+     ],
+     [
+      "",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "0",
+      "3",
+      "5",
+      "3",
+      "4"
+     ],
+     [
+      "",
+      "4",
+      "4",
+      "4",
+      "5"
+     ],
+     [
+      "0",
+      "5",
+      "5",
+      "5",
+      "6"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "No row could be scored. 6 answers fall outside 1 to 7. Check the coding choice above. 6 answers are missing.",
+   "text": "No row could be scored. 6 answers fall outside 1 to 7. Check the coding choice above. 6 answers are missing.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n,1,3,1,2\n0,2,2,2,3\n,3,3,3,4\n0,4,6,4,5\n,5,5,5,6\n0,6,6,6,7\n,7,2,7,1\n0,1,1,1,2\n,2,2,2,3\n0,3,5,3,4\n,4,4,4,5\n0,5,5,5,6",
+   "alpha": null,
+   "mean": null,
+   "sd": null,
+   "toasts": []
+  },
+  {
+   "id": "no-row-bad-only",
+   "scale": "RSES",
+   "csv": "RSES_01,RSES_02,RSES_03,RSES_04,RSES_05,RSES_06,RSES_07,RSES_08,RSES_09,RSES_10\n2,4,0,2,4,4,2,4,4,2\n2,3,0,2,3,3,2,3,3,2\n3,2,0,3,2,2,3,2,2,3\n4,1,0,4,1,1,4,1,1,4\n1,4,0,1,4,4,1,4,4,1\n3,3,0,3,3,3,3,3,3,3\n3,2,0,3,2,2,3,2,2,3\n4,1,0,4,1,1,4,1,1,4\n1,4,0,1,4,4,1,4,4,1\n2,3,0,2,3,3,2,3,3,2\n4,2,0,4,2,2,4,2,2,4\n4,1,0,4,1,1,4,1,1,4",
+   "data": {
+    "headers": [
+     "RSES_01",
+     "RSES_02",
+     "RSES_03",
+     "RSES_04",
+     "RSES_05",
+     "RSES_06",
+     "RSES_07",
+     "RSES_08",
+     "RSES_09",
+     "RSES_10"
+    ],
+    "rows": [
+     [
+      "2",
+      "4",
+      "0",
+      "2",
+      "4",
+      "4",
+      "2",
+      "4",
+      "4",
+      "2"
+     ],
+     [
+      "2",
+      "3",
+      "0",
+      "2",
+      "3",
+      "3",
+      "2",
+      "3",
+      "3",
+      "2"
+     ],
+     [
+      "3",
+      "2",
+      "0",
+      "3",
+      "2",
+      "2",
+      "3",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "4",
+      "1",
+      "0",
+      "4",
+      "1",
+      "1",
+      "4",
+      "1",
+      "1",
+      "4"
+     ],
+     [
+      "1",
+      "4",
+      "0",
+      "1",
+      "4",
+      "4",
+      "1",
+      "4",
+      "4",
+      "1"
+     ],
+     [
+      "3",
+      "3",
+      "0",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3"
+     ],
+     [
+      "3",
+      "2",
+      "0",
+      "3",
+      "2",
+      "2",
+      "3",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "4",
+      "1",
+      "0",
+      "4",
+      "1",
+      "1",
+      "4",
+      "1",
+      "1",
+      "4"
+     ],
+     [
+      "1",
+      "4",
+      "0",
+      "1",
+      "4",
+      "4",
+      "1",
+      "4",
+      "4",
+      "1"
+     ],
+     [
+      "2",
+      "3",
+      "0",
+      "2",
+      "3",
+      "3",
+      "2",
+      "3",
+      "3",
+      "2"
+     ],
+     [
+      "4",
+      "2",
+      "0",
+      "4",
+      "2",
+      "2",
+      "4",
+      "2",
+      "2",
+      "4"
+     ],
+     [
+      "4",
+      "1",
+      "0",
+      "4",
+      "1",
+      "1",
+      "4",
+      "1",
+      "1",
+      "4"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "coding": 1,
+   "html": "No row could be scored. 12 answers fall outside 1 to 4. Check the coding choice above. ",
+   "text": "No row could be scored. 12 answers fall outside 1 to 4. Check the coding choice above. ",
+   "paste": "RSES_01,RSES_02,RSES_03,RSES_04,RSES_05,RSES_06,RSES_07,RSES_08,RSES_09,RSES_10\n2,4,0,2,4,4,2,4,4,2\n2,3,0,2,3,3,2,3,3,2\n3,2,0,3,2,2,3,2,2,3\n4,1,0,4,1,1,4,1,1,4\n1,4,0,1,4,4,1,4,4,1\n3,3,0,3,3,3,3,3,3,3\n3,2,0,3,2,2,3,2,2,3\n4,1,0,4,1,1,4,1,1,4\n1,4,0,1,4,4,1,4,4,1\n2,3,0,2,3,3,2,3,3,2\n4,2,0,4,2,2,4,2,2,4\n4,1,0,4,1,1,4,1,1,4",
+   "alpha": null,
+   "mean": null,
+   "sd": null,
+   "toasts": []
+  },
+  {
+   "id": "no-row-missing-only",
+   "scale": "SWLS",
+   "csv": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,3,1,na\n2,2,2,2,na\n3,3,3,3,na\n4,4,6,4,na\n5,5,5,5,na\n6,6,6,6,na\n7,7,2,7,na\n1,1,1,1,na\n2,2,2,2,na\n3,3,5,3,na\n4,4,4,4,na\n5,5,5,5,na",
+   "data": {
+    "headers": [
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "1",
+      "1",
+      "3",
+      "1",
+      "na"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "na"
+     ],
+     [
+      "3",
+      "3",
+      "3",
+      "3",
+      "na"
+     ],
+     [
+      "4",
+      "4",
+      "6",
+      "4",
+      "na"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "na"
+     ],
+     [
+      "6",
+      "6",
+      "6",
+      "6",
+      "na"
+     ],
+     [
+      "7",
+      "7",
+      "2",
+      "7",
+      "na"
+     ],
+     [
+      "1",
+      "1",
+      "1",
+      "1",
+      "na"
+     ],
+     [
+      "2",
+      "2",
+      "2",
+      "2",
+      "na"
+     ],
+     [
+      "3",
+      "3",
+      "5",
+      "3",
+      "na"
+     ],
+     [
+      "4",
+      "4",
+      "4",
+      "4",
+      "na"
+     ],
+     [
+      "5",
+      "5",
+      "5",
+      "5",
+      "na"
+     ]
+    ]
+   },
+   "guess": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "idx": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "coding": 0,
+   "html": "No row could be scored. 12 answers are missing.",
+   "text": "No row could be scored. 12 answers are missing.",
+   "paste": "SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,1,3,1,na\n2,2,2,2,na\n3,3,3,3,na\n4,4,6,4,na\n5,5,5,5,na\n6,6,6,6,na\n7,7,2,7,na\n1,1,1,1,na\n2,2,2,2,na\n3,3,5,3,na\n4,4,4,4,na\n5,5,5,5,na",
+   "alpha": null,
+   "mean": null,
+   "sd": null,
+   "toasts": []
+  },
+  {
+   "id": "swls-quoted-header",
+   "scale": "SWLS",
+   "csv": "\"name, first\",SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n\"Rao, \"\"A\"\"\",1,1,3,1,2\n\"Rao, \"\"A\"\"\",2,2,2,2,3\n\"Rao, \"\"A\"\"\",3,3,3,3,4\n\"Rao, \"\"A\"\"\",4,4,6,4,5\n\"Rao, \"\"A\"\"\",5,5,5,5,6\n\"Rao, \"\"A\"\"\",6,6,6,6,7\n\"Rao, \"\"A\"\"\",7,7,2,7,1\n\"Rao, \"\"A\"\"\",1,1,1,1,2\n\"Rao, \"\"A\"\"\",2,2,2,2,3\n\"Rao, \"\"A\"\"\",3,3,5,3,4\n\"Rao, \"\"A\"\"\",4,4,4,4,5\n\"Rao, \"\"A\"\"\",5,5,5,5,6",
+   "data": {
+    "headers": [
+     "name, first",
+     "SWLS_01",
+     "SWLS_02",
+     "SWLS_03",
+     "SWLS_04",
+     "SWLS_05"
+    ],
+    "rows": [
+     [
+      "Rao, \"A\"",
+      "1",
+      "1",
+      "3",
+      "1",
+      "2"
+     ],
+     [
+      "Rao, \"A\"",
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "Rao, \"A\"",
+      "3",
+      "3",
+      "3",
+      "3",
+      "4"
+     ],
+     [
+      "Rao, \"A\"",
+      "4",
+      "4",
+      "6",
+      "4",
+      "5"
+     ],
+     [
+      "Rao, \"A\"",
+      "5",
+      "5",
+      "5",
+      "5",
+      "6"
+     ],
+     [
+      "Rao, \"A\"",
+      "6",
+      "6",
+      "6",
+      "6",
+      "7"
+     ],
+     [
+      "Rao, \"A\"",
+      "7",
+      "7",
+      "2",
+      "7",
+      "1"
+     ],
+     [
+      "Rao, \"A\"",
+      "1",
+      "1",
+      "1",
+      "1",
+      "2"
+     ],
+     [
+      "Rao, \"A\"",
+      "2",
+      "2",
+      "2",
+      "2",
+      "3"
+     ],
+     [
+      "Rao, \"A\"",
+      "3",
+      "3",
+      "5",
+      "3",
+      "4"
+     ],
+     [
+      "Rao, \"A\"",
+      "4",
+      "4",
+      "4",
+      "4",
+      "5"
+     ],
+     [
+      "Rao, \"A\"",
+      "5",
+      "5",
+      "5",
+      "5",
+      "6"
+     ]
+    ]
+   },
+   "guess": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "idx": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "coding": 0,
+   "html": "Added <b>SWLS_total</b> and <b>SWLS_band</b> to your data. Scored 12 of 12 rows (M = 18.42, SD = 8.04). Cronbach's alpha in your sample: .91.",
+   "text": "Added SWLS_total and SWLS_band to your data. Scored 12 of 12 rows (M = 18.42, SD = 8.04). Cronbach's alpha in your sample: .91.",
+   "paste": "\"name, first\",SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05,SWLS_total,SWLS_band\n\"Rao, \"\"A\"\"\",1,1,3,1,2,8,Extremely dissatisfied\n\"Rao, \"\"A\"\"\",2,2,2,2,3,11,Dissatisfied\n\"Rao, \"\"A\"\"\",3,3,3,3,4,16,Slightly below average\n\"Rao, \"\"A\"\"\",4,4,6,4,5,23,Average\n\"Rao, \"\"A\"\"\",5,5,5,5,6,26,High satisfaction\n\"Rao, \"\"A\"\"\",6,6,6,6,7,31,Very high satisfaction\n\"Rao, \"\"A\"\"\",7,7,2,7,1,24,Average\n\"Rao, \"\"A\"\"\",1,1,1,1,2,6,Extremely dissatisfied\n\"Rao, \"\"A\"\"\",2,2,2,2,3,11,Dissatisfied\n\"Rao, \"\"A\"\"\",3,3,5,3,4,18,Slightly below average\n\"Rao, \"\"A\"\"\",4,4,4,4,5,21,Average\n\"Rao, \"\"A\"\"\",5,5,5,5,6,26,High satisfaction",
+   "alpha": 0.9099167741179228,
+   "mean": 18.416666666666668,
+   "sd": 8.039203186808248,
+   "toasts": [
+    "Data parsed ✓"
+   ]
+  }
+ ]
+}

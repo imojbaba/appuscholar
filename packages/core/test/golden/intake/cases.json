@@ -1,0 +1,1598 @@
+{
+ "engine": "intake",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "tab-delimited",
+   "text": "name\tscore\tgroup\nAsha\t12\tA\nRavi\t15\tB\nMeena\t9\tA",
+   "out": {
+    "headers": [
+     "name",
+     "score",
+     "group"
+    ],
+    "rows": [
+     [
+      "Asha",
+      "12",
+      "A"
+     ],
+     [
+      "Ravi",
+      "15",
+      "B"
+     ],
+     [
+      "Meena",
+      "9",
+      "A"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "name",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     },
+     {
+      "name": "score",
+      "index": 1,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "group",
+      "index": 2,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "comma",
+   "text": "id,score,group\n1,12,A\n2,15,B\n3,9,A",
+   "out": {
+    "headers": [
+     "id",
+     "score",
+     "group"
+    ],
+    "rows": [
+     [
+      "1",
+      "12",
+      "A"
+     ],
+     [
+      "2",
+      "15",
+      "B"
+     ],
+     [
+      "3",
+      "9",
+      "A"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "id",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "score",
+      "index": 1,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "group",
+      "index": 2,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "semicolon-one-column",
+   "text": "a;b\n1;2",
+   "out": {
+    "headers": [
+     "a;b"
+    ],
+    "rows": [
+     [
+      "1;2"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a;b",
+      "index": 0,
+      "type": "categorical",
+      "n": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "crlf",
+   "text": "x,y\r\n1,2\r\n3,4\r\n",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "lone-cr",
+   "text": "x,y\r1,2\r3,4",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "mixed-line-ends",
+   "text": "x,y\r\n1,2\n3,4\r5,6",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ],
+     [
+      "5",
+      "6"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "blank-lines-skipped",
+   "text": "x,y\n\n1,2\n   \n3,4\n\n",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "quoted-comma",
+   "text": "label,n\n\"x, y\",1\n\"p, q\",2",
+   "out": {
+    "headers": [
+     "label",
+     "n"
+    ],
+    "rows": [
+     [
+      "x, y",
+      "1"
+     ],
+     [
+      "p, q",
+      "2"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "label",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "n",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "doubled-quote",
+   "text": "quote,n\n\"say \"\"hi\"\"\",2\n\"plain\",3",
+   "out": {
+    "headers": [
+     "quote",
+     "n"
+    ],
+    "rows": [
+     [
+      "say \"hi\"",
+      "2"
+     ],
+     [
+      "plain",
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "quote",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "n",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "unterminated-quote",
+   "text": "a,b\n\"open,1\n2,3",
+   "out": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "2",
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "numeric",
+      "n": 1
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "quote-mid-cell",
+   "text": "a,b\nab\"c,d\"e,1",
+   "out": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "abc,de",
+      "1"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 1
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "quoted-tab-in-tab-file",
+   "text": "a\tb\n\"x\ty\"\t1\nz\t2",
+   "out": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "x\ty",
+      "1"
+     ],
+     [
+      "z",
+      "2"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "quoted-number",
+   "text": "x\n\"12\"\n\"3\"",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "12"
+     ],
+     [
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "quoted-empty",
+   "text": "a,b\n\"\",1\n2,\"\"",
+   "out": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "",
+      "1"
+     ],
+     [
+      "2",
+      ""
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "numeric",
+      "n": 1
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "trailing-spaces-trimmed",
+   "text": "  name  , score \n  Asha , 12  \n Ravi,  15 ",
+   "out": {
+    "headers": [
+     "name",
+     "score"
+    ],
+    "rows": [
+     [
+      "Asha",
+      "12"
+     ],
+     [
+      "Ravi",
+      "15"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "name",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "score",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "space-only-cell",
+   "text": "x,y\n1, \n2,3",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      ""
+     ],
+     [
+      "2",
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "wrong-field-count-rows-dropped",
+   "text": "a,b,c\n1,2,3\n4,5\n6,7,8\n9,10",
+   "out": {
+    "headers": [
+     "a",
+     "b",
+     "c"
+    ],
+    "rows": [
+     [
+      "1",
+      "2",
+      "3"
+     ],
+     [
+      "6",
+      "7",
+      "8"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "c",
+      "index": 2,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "too-many-fields-dropped",
+   "text": "a,b\n1,2\n3,4,5\n6,7",
+   "out": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "6",
+      "7"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "blank-header-col3",
+   "text": "a,,c\n1,2,3\n4,5,6",
+   "out": {
+    "headers": [
+     "a",
+     "",
+     "c"
+    ],
+    "rows": [
+     [
+      "1",
+      "2",
+      "3"
+     ],
+     [
+      "4",
+      "5",
+      "6"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "Col2",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "c",
+      "index": 2,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "blank-header-third",
+   "text": "a,b,\n1,2,3\n4,5,6",
+   "out": {
+    "headers": [
+     "a",
+     "b",
+     ""
+    ],
+    "rows": [
+     [
+      "1",
+      "2",
+      "3"
+     ],
+     [
+      "4",
+      "5",
+      "6"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "Col3",
+      "index": 2,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "duplicate-headers",
+   "text": "x,x\n1,2\n3,4",
+   "out": {
+    "headers": [
+     "x",
+     "x"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "x",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "bom-header",
+   "text": "﻿id,score\n1,2\n3,4",
+   "out": {
+    "headers": [
+     "id",
+     "score"
+    ],
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "id",
+      "index": 0,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "score",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "numeric-dot5",
+   "text": "x\n.5\n1\n2",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      ".5"
+     ],
+     [
+      "1"
+     ],
+     [
+      "2"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "numeric-trailing-dot",
+   "text": "x\n1.\n2\n3",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "1."
+     ],
+     [
+      "2"
+     ],
+     [
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "numeric-exponent",
+   "text": "x\n1e3\n2\n3",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "1e3"
+     ],
+     [
+      "2"
+     ],
+     [
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "numeric-plus",
+   "text": "x\n+2\n3\n4",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "+2"
+     ],
+     [
+      "3"
+     ],
+     [
+      "4"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "decimal-comma",
+   "text": "x\ty\n1,5\t2\n2,25\t3",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1,5",
+      "2"
+     ],
+     [
+      "2,25",
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "unicode-minus",
+   "text": "x\n−3\n4\n5",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "−3"
+     ],
+     [
+      "4"
+     ],
+     [
+      "5"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "space-in-number",
+   "text": "x\n1 000\n2000\n3000",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "1 000"
+     ],
+     [
+      "2000"
+     ],
+     [
+      "3000"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "devanagari-digits",
+   "text": "x\n१२\n३",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "१२"
+     ],
+     [
+      "३"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "leading-zeros",
+   "text": "x\n007\n010\n3",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "007"
+     ],
+     [
+      "010"
+     ],
+     [
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "negative-zero",
+   "text": "x\n-0\n0\n-0.0",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "-0"
+     ],
+     [
+      "0"
+     ],
+     [
+      "-0.0"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "negative-and-decimals",
+   "text": "x,y\n-1.25,3\n2.5,-4\n0,0.0",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "-1.25",
+      "3"
+     ],
+     [
+      "2.5",
+      "-4"
+     ],
+     [
+      "0",
+      "0.0"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "text-in-numbers",
+   "text": "x\n1\n2\nNA",
+   "out": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "2"
+     ],
+     [
+      "NA"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "categorical",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "empty-cells-not-counted",
+   "text": "x,y\n1,\n,2\n3,4\n5,",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      ""
+     ],
+     [
+      "",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ],
+     [
+      "5",
+      ""
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "all-empty-column-categorical",
+   "text": "x,y\n1,\n2,\n3,",
+   "out": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      ""
+     ],
+     [
+      "2",
+      ""
+     ],
+     [
+      "3",
+      ""
+     ]
+    ],
+    "cols": [
+     {
+      "name": "x",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     },
+     {
+      "name": "y",
+      "index": 1,
+      "type": "categorical",
+      "n": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "hindi-header-and-values",
+   "text": "नाम,आयु,लिंग\nआशा,21,महिला\nरवि,22,पुरुष",
+   "out": {
+    "headers": [
+     "नाम",
+     "आयु",
+     "लिंग"
+    ],
+    "rows": [
+     [
+      "आशा",
+      "21",
+      "महिला"
+     ],
+     [
+      "रवि",
+      "22",
+      "पुरुष"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "नाम",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "आयु",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     },
+     {
+      "name": "लिंग",
+      "index": 2,
+      "type": "categorical",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "single-column",
+   "text": "score\n1\n2\n3",
+   "out": {
+    "headers": [
+     "score"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "2"
+     ],
+     [
+      "3"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "score",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "header-only",
+   "text": "a,b,c",
+   "out": {
+    "headers": [
+     "a",
+     "b",
+     "c"
+    ],
+    "rows": [],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 0
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "categorical",
+      "n": 0
+     },
+     {
+      "name": "c",
+      "index": 2,
+      "type": "categorical",
+      "n": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "header-only-trailing-newline",
+   "text": "a,b,c\n\n",
+   "out": {
+    "headers": [
+     "a",
+     "b",
+     "c"
+    ],
+    "rows": [],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 0
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "categorical",
+      "n": 0
+     },
+     {
+      "name": "c",
+      "index": 2,
+      "type": "categorical",
+      "n": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "empty-text",
+   "text": "",
+   "out": null
+  },
+  {
+   "id": "whitespace-only",
+   "text": "   \n\t\n  \r\n",
+   "out": null
+  },
+  {
+   "id": "ones-and-twos-numeric",
+   "text": "grp\n1\n2\n1",
+   "out": {
+    "headers": [
+     "grp"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "2"
+     ],
+     [
+      "1"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "grp",
+      "index": 0,
+      "type": "numeric",
+      "n": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "tab-wins-over-comma",
+   "text": "name,full\tscore\nVerma, Asha\t12\nRao, Ravi\t15",
+   "out": {
+    "headers": [
+     "name,full",
+     "score"
+    ],
+    "rows": [
+     [
+      "Verma, Asha",
+      "12"
+     ],
+     [
+      "Rao, Ravi",
+      "15"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "name,full",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "score",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "comma-first-line-tab-later",
+   "text": "a,b\n1\t2,3\n4,5",
+   "out": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "1\t2",
+      "3"
+     ],
+     [
+      "4",
+      "5"
+     ]
+    ],
+    "cols": [
+     {
+      "name": "a",
+      "index": 0,
+      "type": "categorical",
+      "n": 2
+     },
+     {
+      "name": "b",
+      "index": 1,
+      "type": "numeric",
+      "n": 2
+     }
+    ]
+   }
+  }
+ ],
+ "split": [
+  {
+   "line": "label,n",
+   "delim": ",",
+   "out": [
+    "label",
+    "n"
+   ]
+  },
+  {
+   "line": "label,n",
+   "delim": "\t",
+   "out": [
+    "label,n"
+   ]
+  },
+  {
+   "line": "\"x, y\",1",
+   "delim": ",",
+   "out": [
+    "x, y",
+    "1"
+   ]
+  },
+  {
+   "line": "\"x, y\",1",
+   "delim": "\t",
+   "out": [
+    "x, y,1"
+   ]
+  },
+  {
+   "line": "\"p, q\",2",
+   "delim": ",",
+   "out": [
+    "p, q",
+    "2"
+   ]
+  },
+  {
+   "line": "\"p, q\",2",
+   "delim": "\t",
+   "out": [
+    "p, q,2"
+   ]
+  },
+  {
+   "line": "quote,n",
+   "delim": ",",
+   "out": [
+    "quote",
+    "n"
+   ]
+  },
+  {
+   "line": "quote,n",
+   "delim": "\t",
+   "out": [
+    "quote,n"
+   ]
+  },
+  {
+   "line": "\"say \"\"hi\"\"\",2",
+   "delim": ",",
+   "out": [
+    "say \"hi\"",
+    "2"
+   ]
+  },
+  {
+   "line": "\"say \"\"hi\"\"\",2",
+   "delim": "\t",
+   "out": [
+    "say \"hi\",2"
+   ]
+  },
+  {
+   "line": "\"plain\",3",
+   "delim": ",",
+   "out": [
+    "plain",
+    "3"
+   ]
+  },
+  {
+   "line": "\"plain\",3",
+   "delim": "\t",
+   "out": [
+    "plain,3"
+   ]
+  },
+  {
+   "line": "a,b",
+   "delim": ",",
+   "out": [
+    "a",
+    "b"
+   ]
+  },
+  {
+   "line": "a,b",
+   "delim": "\t",
+   "out": [
+    "a,b"
+   ]
+  },
+  {
+   "line": "\"open,1",
+   "delim": ",",
+   "out": [
+    "open,1"
+   ]
+  },
+  {
+   "line": "\"open,1",
+   "delim": "\t",
+   "out": [
+    "open,1"
+   ]
+  },
+  {
+   "line": "2,3",
+   "delim": ",",
+   "out": [
+    "2",
+    "3"
+   ]
+  },
+  {
+   "line": "2,3",
+   "delim": "\t",
+   "out": [
+    "2,3"
+   ]
+  }
+ ]
+}

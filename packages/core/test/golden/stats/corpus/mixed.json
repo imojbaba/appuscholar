@@ -1,0 +1,223 @@
+[
+ {
+  "id": "mixed-two-groups-two-times",
+  "csv": "group,pre,post\nControl,22.1,22.9\nControl,18.0,18.7\nControl,21.6,23.8\nControl,16.8,15.3\nControl,21.8,22.5\nControl,22.6,22.1\nControl,20.6,19.2\nControl,16.0,15.5\nControl,13.0,14.5\nControl,14.2,17.5\nTraining,22.8,26.1\nTraining,22.7,25.2\nTraining,23.7,25.8\nTraining,18.6,22.4\nTraining,21.9,26.8\nTraining,15.4,22.2\nTraining,21.0,28.2\nTraining,23.9,27.6\nTraining,21.4,28.3\nTraining,19.7,26.8",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "pre",
+    "post"
+   ]
+  },
+  "why": "two groups of 10, two conditions: no sphericity rows, epsV 1, the note 'With two conditions...'"
+ },
+ {
+  "id": "mixed-two-groups-three-times",
+  "csv": "group,t1,t2,t3\nA,20.5,21.7,27.0\nA,24.3,25.2,17.6\nA,20.2,20.7,25.1\nA,14.3,14.4,28.7\nA,23.1,23.6,29.0\nA,21.8,22.5,23.2\nA,17.9,18.9,15.1\nA,21.5,24.1,19.9\nA,17.7,19.2,18.6\nA,20.3,21.7,35.3\nA,20.9,23.2,22.3\nA,22.1,22.4,10.3\nB,20.2,20.6,25.0\nB,23.7,26.2,37.3\nB,24.8,26.3,42.0\nB,21.6,23.2,17.2\nB,15.9,17.7,21.7\nB,15.4,17.1,17.1\nB,21.2,23.1,24.5\nB,22.3,22.7,26.5\nB,23.4,24.6,30.5\nB,22.6,23.7,28.6\nB,22.0,25.0,21.7\nB,20.4,22.1,12.3",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "two groups of 12, three conditions whose noise SD grows (.5, 1, 7): Greenhouse-Geisser epsilon below .75, the Greenhouse-Geisser rows; no interaction"
+ },
+ {
+  "id": "mixed-three-groups-unequal",
+  "csv": "dose,t1,t2,t3\nLow,20.9,27.9,27.1\nLow,24.5,27.7,25.5\nLow,19.3,20.1,19.4\nLow,20.3,21.3,20.0\nLow,16.2,22.4,20.1\nLow,24.6,27.9,27.8\nLow,23.2,20.5,24.3\nLow,16.1,18.2,17.4\nMid,18.7,20.4,23.0\nMid,23.3,22.8,26.2\nMid,15.9,16.5,19.3\nMid,22.4,23.1,22.2\nMid,24.7,23.6,25.1\nMid,22.2,22.6,23.4\nMid,24.5,22.5,23.0\nMid,20.1,19.3,19.8\nMid,24.9,25.0,20.7\nMid,16.5,17.3,19.0\nHigh,27.0,27.3,30.0\nHigh,22.4,22.2,23.7\nHigh,20.4,21.9,26.4\nHigh,23.8,24.0,25.8\nHigh,17.9,21.9,20.1\nHigh,25.2,27.1,29.1\nHigh,17.5,18.8,19.9\nHigh,27.7,25.4,27.8\nHigh,17.9,23.4,19.2\nHigh,21.6,25.0,24.7\nHigh,22.3,25.1,22.5\nHigh,18.1,22.8,20.9",
+  "test": "mixed",
+  "values": {
+   "grp": "dose"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "groups of 8, 10 and 12: the unequal-sizes note; equal noise, so Huynh-Feldt"
+ },
+ {
+  "id": "mixed-integer-labels",
+  "csv": "year,t1,t2,t3\n10,20.6,20.7,19.7\n10,20.8,20.0,21.7\n10,21.7,28.0,23.8\n10,25.2,21.9,23.3\n10,19.0,16.3,19.5\n10,25.4,25.7,27.6\n10,21.5,23.1,20.8\n10,20.8,24.0,23.7\n2,18.9,18.5,22.5\n2,23.2,21.2,26.3\n2,23.1,23.4,21.4\n2,22.2,24.6,27.1\n2,25.7,23.3,26.4\n2,24.7,23.1,25.9\n2,21.0,22.7,26.0\n2,16.6,20.8,20.9\nx,,,",
+  "test": "mixed",
+  "values": {
+   "grp": "year"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "groups 10 and 2 (10 first in the file) stay in data order, 10 then 2 (gl.indexOf, 13341), not object-key order; the row x with empty scores makes year categorical and is counted as skipped"
+ },
+ {
+  "id": "mixed-interaction-significant",
+  "csv": "arm,t1,t2,t3\nDrug,14.3,13.3,8.9\nDrug,22.8,16.4,17.1\nDrug,21.4,16.3,11.4\nDrug,20.9,18.1,16.7\nDrug,24.1,19.5,15.3\nDrug,13.1,12.7,10.5\nDrug,23.4,21.4,17.1\nDrug,15.3,16.8,11.6\nDrug,20.5,17.3,11.8\nDrug,25.7,22.3,17.6\nDrug,12.7,11.9,9.4\nDrug,20.6,15.3,13.4\nPlacebo,21.1,24.2,23.4\nPlacebo,17.3,17.8,17.7\nPlacebo,21.0,22.8,22.3\nPlacebo,20.3,21.9,21.3\nPlacebo,18.9,20.0,18.0\nPlacebo,14.5,15.2,13.0\nPlacebo,17.7,20.8,20.6\nPlacebo,17.9,20.2,18.8\nPlacebo,19.6,16.8,15.9\nPlacebo,25.0,24.8,23.5\nPlacebo,25.7,29.5,29.4\nPlacebo,19.6,17.0,17.4",
+  "test": "mixed",
+  "values": {
+   "grp": "arm"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "the drug group falls across the conditions, the placebo group does not: a significant interaction"
+ },
+ {
+  "id": "mixed-one-group",
+  "csv": "group,pre,post\nA,18.8,20.3\nA,24.9,23.7\nA,21.3,21.2\nA,18.0,18.0\nA,20.5,21.0\nA,22.1,22.5\nA,15.4,13.9\nA,20.5,21.8\nA,20.4,22.7\nA,16.9,15.5",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "pre",
+    "post"
+   ]
+  },
+  "why": "one group: the 'at least 2 groups' toast"
+ },
+ {
+  "id": "mixed-group-of-one",
+  "csv": "group,pre,post\nA,23.6,23.8\nA,14.3,17.2\nA,16.7,18.3\nA,17.6,21.8\nA,15.8,15.5\nA,19.9,19.6\nB,22.2,24.2\nB,22.3,23.6\nB,20.8,19.7\nB,23.9,25.0\nB,16.7,19.0\nB,18.9,20.5\nC,19.0,18.8",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "pre",
+    "post"
+   ]
+  },
+  "why": "group C has one person: the toast names it"
+ },
+ {
+  "id": "mixed-seven-groups",
+  "csv": "group,pre,post\nA,17.6,20.4\nA,18.7,18.6\nA,19.5,21.5\nB,27.6,30.6\nB,21.3,23.6\nB,22.6,22.0\nC,20.4,21.0\nC,19.3,21.2\nC,20.5,21.5\nD,21.4,23.8\nD,19.6,20.3\nD,23.5,23.7\nE,20.5,20.2\nE,16.6,17.4\nE,21.9,22.4\nF,22.0,23.6\nF,17.9,19.3\nF,21.0,19.4\nG,29.6,29.2\nG,17.8,17.1\nG,20.1,21.7",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "pre",
+    "post"
+   ]
+  },
+  "why": "seven groups: the 'up to 6 groups' toast"
+ },
+ {
+  "id": "mixed-one-column",
+  "csv": "group,pre,post\nA,19.9,20.3\nA,18.8,17.7\nA,21.2,23.4\nA,20.6,22.8\nA,20.4,24.0\nA,21.2,22.4\nB,21.3,21.2\nB,23.7,23.8\nB,18.7,18.3\nB,15.7,18.2\nB,20.6,23.2\nB,16.3,16.9",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "pre"
+   ]
+  },
+  "why": "one ticked column: the 'at least 2 columns' toast"
+ },
+ {
+  "id": "mixed-group-column-ticked",
+  "csv": "group,pre,post\n1,20.1,21.3\n1,21.4,21.5\n1,16.4,17.3\n1,22.7,23.9\n1,17.0,17.9\n1,18.1,18.5\n2,18.4,18.2\n2,22.5,24.7\n2,23.9,26.0\n2,17.9,17.1\n2,19.3,20.5\n2,13.5,15.4",
+  "test": "mixed",
+  "ticked": {
+   "items": [
+    "group",
+    "pre",
+    "post"
+   ]
+  },
+  "why": "the groups are coded 1 and 2, so the column is numeric: it is offered among the condition boxes and the student ticks it, while the grouping select offers categorical columns only and is empty here; gv('grp') is '', parseInt gives NaN, the filter i!==gI removes nothing and d.cols[NaN].name throws: v1's catch toast. Through v1's form the filter never acts, since the grouping column is never a numeric column"
+ },
+ {
+  "id": "mixed-no-variation",
+  "csv": "group,t1,t2,t3\nA,23.0,24.0,25.0\nA,19.0,20.0,21.0\nA,24.0,25.0,26.0\nA,20.0,21.0,22.0\nA,22.0,23.0,24.0\nA,18.0,19.0,20.0\nB,28.0,31.0,34.0\nB,24.0,27.0,30.0\nB,29.0,32.0,35.0\nB,25.0,28.0,31.0\nB,27.0,30.0,33.0\nB,23.0,26.0,29.0",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "every person in a group changes by exactly the same amounts: E is 0, the 'no variation left inside the groups' toast"
+ },
+ {
+  "id": "mixed-missing-row",
+  "csv": "group,t1,t2,t3\nA,23.3,19.4,25.6\nA,18.7,19.7,20.2\nA,20.6,21.2,22.3\nA,12.6,18.2,18.4\nA,28.4,,30.5\nA,22.2,21.7,23.9\nA,20.9,20.7,23.9\nA,18.4,19.4,18.4\nA,18.0,18.2,18.2\nB,21.2,24.5,25.3\nB,23.0,23.1,26.8\nB,17.5,17.9,21.7\nB,20.9,22.8,27.2\nB,23.4,29.0,26.7\nB,18.5,21.0,21.2\nB,18.9,19.8,21.9\nB,24.4,24.9,27.0\nB,20.3,22.2,23.4",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "one person has an empty score: skipped, counted (ctx.skipped++), n 17"
+ },
+ {
+  "id": "mixed-too-few-people",
+  "csv": "group,t1,t2,t3\nA,14.6,15.5,17.2\nA,22.7,26.3,27.6\nB,18.2,20.4,22.1\nB,27.4,29.1,28.0",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3"
+   ]
+  },
+  "why": "4 people in 2 groups for 3 conditions (n - G < k): the 'Need more people' toast"
+ },
+ {
+  "id": "mixed-nine-columns",
+  "csv": "group,c1,c2,c3,c4,c5,c6,c7,c8,c9\nA,21.9,21.6,19.3,22.1,19.5,22.6,22.3,22.5,22.5\nA,20.4,20.6,22.4,20.3,20.7,20.2,20.4,20.6,21.2\nA,18.8,18.5,19.2,17.8,19.2,20.4,18.4,19.1,21.9\nA,15.4,16.6,18.8,19.1,15.8,17.6,17.0,16.4,15.1\nA,22.2,23.4,23.2,24.9,24.2,21.9,22.8,24.1,21.7\nA,19.1,17.2,17.6,17.1,19.1,18.3,19.8,18.9,19.4\nB,20.5,19.6,18.8,20.9,20.7,22.0,19.6,19.2,18.3\nB,7.1,8.9,7.5,5.8,9.0,7.8,8.1,8.0,8.3\nB,19.7,21.2,20.9,22.6,20.4,23.1,22.0,23.0,20.7\nB,22.8,20.9,22.2,22.0,21.5,21.6,21.0,22.0,22.8\nB,16.1,18.7,17.3,17.7,17.4,17.1,18.3,17.1,17.7\nB,14.0,15.3,17.6,15.8,17.6,16.1,16.1,15.1,15.6",
+  "test": "mixed",
+  "values": {
+   "grp": "group"
+  },
+  "ticked": {
+   "items": [
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6",
+    "c7",
+    "c8",
+    "c9"
+   ]
+  },
+  "why": "nine ticked columns: the 'up to 8 conditions' toast"
+ }
+]

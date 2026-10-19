@@ -1,0 +1,1425 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "mixed-two-groups-two-times",
+   "test": "mixed",
+   "csv": "group,pre,post\nControl,22.1,22.9\nControl,18.0,18.7\nControl,21.6,23.8\nControl,16.8,15.3\nControl,21.8,22.5\nControl,22.6,22.1\nControl,20.6,19.2\nControl,16.0,15.5\nControl,13.0,14.5\nControl,14.2,17.5\nTraining,22.8,26.1\nTraining,22.7,25.2\nTraining,23.7,25.8\nTraining,18.6,22.4\nTraining,21.9,26.8\nTraining,15.4,22.2\nTraining,21.0,28.2\nTraining,23.9,27.6\nTraining,21.4,28.3\nTraining,19.7,26.8",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "pre",
+     "post"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (2 levels) showed a significant main effect of group, F(1, 18) = 12.84, p = .002, ηp² = .42; a significant main effect of condition, F(1, 18) = 44.58, p < .001, ηp² = .71; and a significant interaction, F(1, 18) = 28.69, p < .001, ηp² = .61.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "group",
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "Control",
+       "pre",
+       "10",
+       "18.67",
+       "3.54"
+      ],
+      [
+       "Control",
+       "post",
+       "10",
+       "19.20",
+       "3.47"
+      ],
+      [
+       "Training",
+       "pre",
+       "10",
+       "21.11",
+       "2.61"
+      ],
+      [
+       "Training",
+       "post",
+       "10",
+       "25.94",
+       "2.16"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "<b>Between people</b>"
+      ],
+      [
+       "group",
+       "210.68",
+       "1",
+       "210.68",
+       "12.84",
+       ".002",
+       ".416"
+      ],
+      [
+       "People within groups (error)",
+       "295.31",
+       "18",
+       "16.41",
+       "",
+       "",
+       ""
+      ],
+      [
+       "<b>Within people</b>"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "71.82",
+       "1",
+       "71.82",
+       "44.58",
+       "&lt; .001",
+       ".712"
+      ],
+      [
+       "group × conditions (sphericity assumed)",
+       "46.23",
+       "1",
+       "46.23",
+       "28.69",
+       "&lt; .001",
+       ".614"
+      ],
+      [
+       "Error (assumed)",
+       "29.00",
+       "18",
+       "1.61",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "With two conditions there is only one difference between them, so sphericity cannot be violated and no correction is needed."
+    },
+    {
+     "kind": "note",
+     "html": "Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care."
+    },
+    {
+     "kind": "note",
+     "html": "<b>The interaction is significant</b>, so the groups change differently across the conditions. Interpret the plot and the group-by-condition means first; main effects alone can mislead. To follow up, run a repeated-measures ANOVA inside each group, or compare the groups at each condition with a one-way test."
+    }
+   ],
+   "resultsText": "ResultsgroupConditionNMSDControlpre1018.673.54Controlpost1019.203.47Trainingpre1021.112.61Trainingpost1025.942.16SourceSSdfMSFpPartial η²Between peoplegroup210.681210.6812.84.002.416People within groups (error)295.311816.41Within peopleConditions (sphericity assumed)71.82171.8244.58< .001.712group × conditions (sphericity assumed)46.23146.2328.69< .001.614Error (assumed)29.00181.61With two conditions there is only one difference between them, so sphericity cannot be violated and no correction is needed.Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.The interaction is significant, so the groups change differently across the conditions. Interpret the plot and the group-by-condition means first; main effects alone can mislead. To follow up, run a repeated-measures ANOVA inside each group, or compare the groups at each condition with a one-way test.A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (2 levels) showed a significant main effect of group, F(1, 18) = 12.84, p = .002, ηp² = .42; a significant main effect of condition, F(1, 18) = 44.58, p < .001, ηp² = .71; and a significant interaction, F(1, 18) = 28.69, p < .001, ηp² = .61.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>group</th><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>Control</td><td>pre</td><td>10</td><td>18.67</td><td>3.54</td></tr><tr><td>Control</td><td>post</td><td>10</td><td>19.20</td><td>3.47</td></tr><tr><td>Training</td><td>pre</td><td>10</td><td>21.11</td><td>2.61</td></tr><tr><td>Training</td><td>post</td><td>10</td><td>25.94</td><td>2.16</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td colspan=\"7\"><b>Between people</b></td></tr><tr><td>group</td><td>210.68</td><td>1</td><td>210.68</td><td>12.84</td><td>.002</td><td>.416</td></tr><tr><td>People within groups (error)</td><td>295.31</td><td>18</td><td>16.41</td><td></td><td></td><td></td></tr><tr><td colspan=\"7\"><b>Within people</b></td></tr><tr><td>Conditions (sphericity assumed)</td><td>71.82</td><td>1</td><td>71.82</td><td>44.58</td><td>&lt; .001</td><td>.712</td></tr><tr><td>group × conditions (sphericity assumed)</td><td>46.23</td><td>1</td><td>46.23</td><td>28.69</td><td>&lt; .001</td><td>.614</td></tr><tr><td>Error (assumed)</td><td>29.00</td><td>18</td><td>1.61</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">With two conditions there is only one difference between them, so sphericity cannot be violated and no correction is needed.</p><p class=\"desc\">Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.</p><p class=\"desc\"><b>The interaction is significant</b>, so the groups change differently across the conditions. Interpret the plot and the group-by-condition means first; main effects alone can mislead. To follow up, run a repeated-measures ANOVA inside each group, or compare the groups at each condition with a one-way test.</p><div id=\"statsSentence\">A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (2 levels) showed a significant main effect of group, F(1, 18) = 12.84, p = .002, ηp² = .42; a significant main effect of condition, F(1, 18) = 44.58, p &lt; .001, ηp² = .71; and a significant interaction, F(1, 18) = 28.69, p &lt; .001, ηp² = .61.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mixed-two-groups-three-times",
+   "test": "mixed",
+   "csv": "group,t1,t2,t3\nA,20.5,21.7,27.0\nA,24.3,25.2,17.6\nA,20.2,20.7,25.1\nA,14.3,14.4,28.7\nA,23.1,23.6,29.0\nA,21.8,22.5,23.2\nA,17.9,18.9,15.1\nA,21.5,24.1,19.9\nA,17.7,19.2,18.6\nA,20.3,21.7,35.3\nA,20.9,23.2,22.3\nA,22.1,22.4,10.3\nB,20.2,20.6,25.0\nB,23.7,26.2,37.3\nB,24.8,26.3,42.0\nB,21.6,23.2,17.2\nB,15.9,17.7,21.7\nB,15.4,17.1,17.1\nB,21.2,23.1,24.5\nB,22.3,22.7,26.5\nB,23.4,24.6,30.5\nB,22.6,23.7,28.6\nB,22.0,25.0,21.7\nB,20.4,22.1,12.3",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed no significant main effect of group, F(1, 22) = 1.11, p = .304, ηp² = .05; no significant main effect of condition, F(1.02, 22.34) = 3.52, p = .073, ηp² = .14; and no significant interaction, F(1.02, 22.34) = 0.34, p = .571, ηp² = .02. Degrees of freedom for the within-people effects use the Greenhouse-Geisser correction (ε = .51); Mauchly's test indicated that sphericity was violated, χ²(2) = 73.14, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "group",
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "t1",
+       "12",
+       "20.38",
+       "2.69"
+      ],
+      [
+       "A",
+       "t2",
+       "12",
+       "21.47",
+       "2.90"
+      ],
+      [
+       "A",
+       "t3",
+       "12",
+       "22.68",
+       "6.88"
+      ],
+      [
+       "B",
+       "t1",
+       "12",
+       "21.13",
+       "2.88"
+      ],
+      [
+       "B",
+       "t2",
+       "12",
+       "22.69",
+       "2.96"
+      ],
+      [
+       "B",
+       "t3",
+       "12",
+       "25.37",
+       "8.48"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "<b>Between people</b>"
+      ],
+      [
+       "group",
+       "43.40",
+       "1",
+       "43.40",
+       "1.11",
+       ".304",
+       ".048"
+      ],
+      [
+       "People within groups (error)",
+       "862.09",
+       "22",
+       "39.19",
+       "",
+       "",
+       ""
+      ],
+      [
+       "<b>Within people</b>"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "129.57",
+       "2",
+       "64.79",
+       "3.52",
+       ".038",
+       ".138"
+      ],
+      [
+       "Conditions (Greenhouse-Geisser)",
+       "129.57",
+       "1.02",
+       "127.58",
+       "3.52",
+       ".073",
+       ".138"
+      ],
+      [
+       "group × conditions (sphericity assumed)",
+       "12.37",
+       "2",
+       "6.19",
+       "0.34",
+       ".716",
+       ".015"
+      ],
+      [
+       "group × conditions (Greenhouse-Geisser)",
+       "12.37",
+       "1.02",
+       "12.18",
+       "0.34",
+       ".571",
+       ".015"
+      ],
+      [
+       "Error (assumed)",
+       "810.22",
+       "44",
+       "18.41",
+       "",
+       "",
+       ""
+      ],
+      [
+       "Error (Greenhouse-Geisser)",
+       "810.22",
+       "22.34",
+       "36.26",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.031, χ²(2) = 73.14, p &lt; .001. Greenhouse-Geisser ε = .508, Huynh-Feldt ε = .533. The corrected rows to report are Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise."
+    },
+    {
+     "kind": "note",
+     "html": "Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care."
+    },
+    {
+     "kind": "note",
+     "html": "The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own."
+    }
+   ],
+   "resultsText": "ResultsgroupConditionNMSDAt11220.382.69At21221.472.90At31222.686.88Bt11221.132.88Bt21222.692.96Bt31225.378.48SourceSSdfMSFpPartial η²Between peoplegroup43.40143.401.11.304.048People within groups (error)862.092239.19Within peopleConditions (sphericity assumed)129.57264.793.52.038.138Conditions (Greenhouse-Geisser)129.571.02127.583.52.073.138group × conditions (sphericity assumed)12.3726.190.34.716.015group × conditions (Greenhouse-Geisser)12.371.0212.180.34.571.015Error (assumed)810.224418.41Error (Greenhouse-Geisser)810.2222.3436.26Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.031, χ²(2) = 73.14, p < .001. Greenhouse-Geisser ε = .508, Huynh-Feldt ε = .533. The corrected rows to report are Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed no significant main effect of group, F(1, 22) = 1.11, p = .304, ηp² = .05; no significant main effect of condition, F(1.02, 22.34) = 3.52, p = .073, ηp² = .14; and no significant interaction, F(1.02, 22.34) = 0.34, p = .571, ηp² = .02. Degrees of freedom for the within-people effects use the Greenhouse-Geisser correction (ε = .51); Mauchly's test indicated that sphericity was violated, χ²(2) = 73.14, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>group</th><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>t1</td><td>12</td><td>20.38</td><td>2.69</td></tr><tr><td>A</td><td>t2</td><td>12</td><td>21.47</td><td>2.90</td></tr><tr><td>A</td><td>t3</td><td>12</td><td>22.68</td><td>6.88</td></tr><tr><td>B</td><td>t1</td><td>12</td><td>21.13</td><td>2.88</td></tr><tr><td>B</td><td>t2</td><td>12</td><td>22.69</td><td>2.96</td></tr><tr><td>B</td><td>t3</td><td>12</td><td>25.37</td><td>8.48</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td colspan=\"7\"><b>Between people</b></td></tr><tr><td>group</td><td>43.40</td><td>1</td><td>43.40</td><td>1.11</td><td>.304</td><td>.048</td></tr><tr><td>People within groups (error)</td><td>862.09</td><td>22</td><td>39.19</td><td></td><td></td><td></td></tr><tr><td colspan=\"7\"><b>Within people</b></td></tr><tr><td>Conditions (sphericity assumed)</td><td>129.57</td><td>2</td><td>64.79</td><td>3.52</td><td>.038</td><td>.138</td></tr><tr><td>Conditions (Greenhouse-Geisser)</td><td>129.57</td><td>1.02</td><td>127.58</td><td>3.52</td><td>.073</td><td>.138</td></tr><tr><td>group × conditions (sphericity assumed)</td><td>12.37</td><td>2</td><td>6.19</td><td>0.34</td><td>.716</td><td>.015</td></tr><tr><td>group × conditions (Greenhouse-Geisser)</td><td>12.37</td><td>1.02</td><td>12.18</td><td>0.34</td><td>.571</td><td>.015</td></tr><tr><td>Error (assumed)</td><td>810.22</td><td>44</td><td>18.41</td><td></td><td></td><td></td></tr><tr><td>Error (Greenhouse-Geisser)</td><td>810.22</td><td>22.34</td><td>36.26</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.031, χ²(2) = 73.14, p &lt; .001. Greenhouse-Geisser ε = .508, Huynh-Feldt ε = .533. The corrected rows to report are Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.</p><p class=\"desc\">Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.</p><p class=\"desc\">The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.</p><div id=\"statsSentence\">A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed no significant main effect of group, F(1, 22) = 1.11, p = .304, ηp² = .05; no significant main effect of condition, F(1.02, 22.34) = 3.52, p = .073, ηp² = .14; and no significant interaction, F(1.02, 22.34) = 0.34, p = .571, ηp² = .02. Degrees of freedom for the within-people effects use the Greenhouse-Geisser correction (ε = .51); Mauchly's test indicated that sphericity was violated, χ²(2) = 73.14, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mixed-three-groups-unequal",
+   "test": "mixed",
+   "csv": "dose,t1,t2,t3\nLow,20.9,27.9,27.1\nLow,24.5,27.7,25.5\nLow,19.3,20.1,19.4\nLow,20.3,21.3,20.0\nLow,16.2,22.4,20.1\nLow,24.6,27.9,27.8\nLow,23.2,20.5,24.3\nLow,16.1,18.2,17.4\nMid,18.7,20.4,23.0\nMid,23.3,22.8,26.2\nMid,15.9,16.5,19.3\nMid,22.4,23.1,22.2\nMid,24.7,23.6,25.1\nMid,22.2,22.6,23.4\nMid,24.5,22.5,23.0\nMid,20.1,19.3,19.8\nMid,24.9,25.0,20.7\nMid,16.5,17.3,19.0\nHigh,27.0,27.3,30.0\nHigh,22.4,22.2,23.7\nHigh,20.4,21.9,26.4\nHigh,23.8,24.0,25.8\nHigh,17.9,21.9,20.1\nHigh,25.2,27.1,29.1\nHigh,17.5,18.8,19.9\nHigh,27.7,25.4,27.8\nHigh,17.9,23.4,19.2\nHigh,21.6,25.0,24.7\nHigh,22.3,25.1,22.5\nHigh,18.1,22.8,20.9",
+   "values": {
+    "grp": "dose"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A mixed ANOVA with dose as the between-people factor (3 groups) and condition as the within-people factor (3 levels) showed no significant main effect of dose, F(2, 27) = 0.82, p = .450, ηp² = .06; a significant main effect of condition, F(2, 54) = 10.71, p < .001, ηp² = .28; and no significant interaction, F(4, 54) = 1.94, p = .118, ηp² = .13. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 0.22, p = .895.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "dose",
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "Low",
+       "t1",
+       "8",
+       "20.64",
+       "3.37"
+      ],
+      [
+       "Low",
+       "t2",
+       "8",
+       "23.25",
+       "3.97"
+      ],
+      [
+       "Low",
+       "t3",
+       "8",
+       "22.70",
+       "3.94"
+      ],
+      [
+       "Mid",
+       "t1",
+       "10",
+       "21.32",
+       "3.35"
+      ],
+      [
+       "Mid",
+       "t2",
+       "10",
+       "21.31",
+       "2.82"
+      ],
+      [
+       "Mid",
+       "t3",
+       "10",
+       "22.17",
+       "2.44"
+      ],
+      [
+       "High",
+       "t1",
+       "12",
+       "21.82",
+       "3.60"
+      ],
+      [
+       "High",
+       "t2",
+       "12",
+       "23.74",
+       "2.43"
+      ],
+      [
+       "High",
+       "t3",
+       "12",
+       "24.17",
+       "3.72"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "<b>Between people</b>"
+      ],
+      [
+       "dose",
+       "45.85",
+       "2",
+       "22.92",
+       "0.82",
+       ".450",
+       ".057"
+      ],
+      [
+       "People within groups (error)",
+       "752.11",
+       "27",
+       "27.86",
+       "",
+       "",
+       ""
+      ],
+      [
+       "<b>Within people</b>"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "52.79",
+       "2",
+       "26.40",
+       "10.71",
+       "&lt; .001",
+       ".284"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "52.79",
+       "2",
+       "26.40",
+       "10.71",
+       "&lt; .001",
+       ".284"
+      ],
+      [
+       "dose × conditions (sphericity assumed)",
+       "19.08",
+       "4",
+       "4.77",
+       "1.94",
+       ".118",
+       ".125"
+      ],
+      [
+       "dose × conditions (Huynh-Feldt)",
+       "19.08",
+       "4",
+       "4.77",
+       "1.94",
+       ".118",
+       ".125"
+      ],
+      [
+       "Error (assumed)",
+       "133.07",
+       "54",
+       "2.46",
+       "",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "133.07",
+       "54",
+       "2.46",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.992, χ²(2) = 0.22, p = .895. Greenhouse-Geisser ε = .992, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise."
+    },
+    {
+     "kind": "note",
+     "html": "The groups have unequal sizes (8, 10, 12). The between-groups test weights people equally, and the conditions test and the interaction treat each group equally, which is the SPSS default (Type III). Check that this matches the question you are asking."
+    },
+    {
+     "kind": "note",
+     "html": "Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care."
+    },
+    {
+     "kind": "note",
+     "html": "The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own."
+    }
+   ],
+   "resultsText": "ResultsdoseConditionNMSDLowt1820.643.37Lowt2823.253.97Lowt3822.703.94Midt11021.323.35Midt21021.312.82Midt31022.172.44Hight11221.823.60Hight21223.742.43Hight31224.173.72SourceSSdfMSFpPartial η²Between peopledose45.85222.920.82.450.057People within groups (error)752.112727.86Within peopleConditions (sphericity assumed)52.79226.4010.71< .001.284Conditions (Huynh-Feldt)52.79226.4010.71< .001.284dose × conditions (sphericity assumed)19.0844.771.94.118.125dose × conditions (Huynh-Feldt)19.0844.771.94.118.125Error (assumed)133.07542.46Error (Huynh-Feldt)133.07542.46Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.992, χ²(2) = 0.22, p = .895. Greenhouse-Geisser ε = .992, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.The groups have unequal sizes (8, 10, 12). The between-groups test weights people equally, and the conditions test and the interaction treat each group equally, which is the SPSS default (Type III). Check that this matches the question you are asking.Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.A mixed ANOVA with dose as the between-people factor (3 groups) and condition as the within-people factor (3 levels) showed no significant main effect of dose, F(2, 27) = 0.82, p = .450, ηp² = .06; a significant main effect of condition, F(2, 54) = 10.71, p < .001, ηp² = .28; and no significant interaction, F(4, 54) = 1.94, p = .118, ηp² = .13. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 0.22, p = .895.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>dose</th><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>Low</td><td>t1</td><td>8</td><td>20.64</td><td>3.37</td></tr><tr><td>Low</td><td>t2</td><td>8</td><td>23.25</td><td>3.97</td></tr><tr><td>Low</td><td>t3</td><td>8</td><td>22.70</td><td>3.94</td></tr><tr><td>Mid</td><td>t1</td><td>10</td><td>21.32</td><td>3.35</td></tr><tr><td>Mid</td><td>t2</td><td>10</td><td>21.31</td><td>2.82</td></tr><tr><td>Mid</td><td>t3</td><td>10</td><td>22.17</td><td>2.44</td></tr><tr><td>High</td><td>t1</td><td>12</td><td>21.82</td><td>3.60</td></tr><tr><td>High</td><td>t2</td><td>12</td><td>23.74</td><td>2.43</td></tr><tr><td>High</td><td>t3</td><td>12</td><td>24.17</td><td>3.72</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td colspan=\"7\"><b>Between people</b></td></tr><tr><td>dose</td><td>45.85</td><td>2</td><td>22.92</td><td>0.82</td><td>.450</td><td>.057</td></tr><tr><td>People within groups (error)</td><td>752.11</td><td>27</td><td>27.86</td><td></td><td></td><td></td></tr><tr><td colspan=\"7\"><b>Within people</b></td></tr><tr><td>Conditions (sphericity assumed)</td><td>52.79</td><td>2</td><td>26.40</td><td>10.71</td><td>&lt; .001</td><td>.284</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>52.79</td><td>2</td><td>26.40</td><td>10.71</td><td>&lt; .001</td><td>.284</td></tr><tr><td>dose × conditions (sphericity assumed)</td><td>19.08</td><td>4</td><td>4.77</td><td>1.94</td><td>.118</td><td>.125</td></tr><tr><td>dose × conditions (Huynh-Feldt)</td><td>19.08</td><td>4</td><td>4.77</td><td>1.94</td><td>.118</td><td>.125</td></tr><tr><td>Error (assumed)</td><td>133.07</td><td>54</td><td>2.46</td><td></td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>133.07</td><td>54</td><td>2.46</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.992, χ²(2) = 0.22, p = .895. Greenhouse-Geisser ε = .992, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.</p><p class=\"desc\">The groups have unequal sizes (8, 10, 12). The between-groups test weights people equally, and the conditions test and the interaction treat each group equally, which is the SPSS default (Type III). Check that this matches the question you are asking.</p><p class=\"desc\">Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.</p><p class=\"desc\">The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.</p><div id=\"statsSentence\">A mixed ANOVA with dose as the between-people factor (3 groups) and condition as the within-people factor (3 levels) showed no significant main effect of dose, F(2, 27) = 0.82, p = .450, ηp² = .06; a significant main effect of condition, F(2, 54) = 10.71, p &lt; .001, ηp² = .28; and no significant interaction, F(4, 54) = 1.94, p = .118, ηp² = .13. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 0.22, p = .895.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mixed-integer-labels",
+   "test": "mixed",
+   "csv": "year,t1,t2,t3\n10,20.6,20.7,19.7\n10,20.8,20.0,21.7\n10,21.7,28.0,23.8\n10,25.2,21.9,23.3\n10,19.0,16.3,19.5\n10,25.4,25.7,27.6\n10,21.5,23.1,20.8\n10,20.8,24.0,23.7\n2,18.9,18.5,22.5\n2,23.2,21.2,26.3\n2,23.1,23.4,21.4\n2,22.2,24.6,27.1\n2,25.7,23.3,26.4\n2,24.7,23.1,25.9\n2,21.0,22.7,26.0\n2,16.6,20.8,20.9\nx,,,",
+   "values": {
+    "grp": "year"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A mixed ANOVA with year as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed no significant main effect of year, F(1, 14) = 0.27, p = .608, ηp² = .02; a significant main effect of condition, F(2, 28) = 3.95, p = .031, ηp² = .22; and no significant interaction, F(2, 28) = 2.16, p = .134, ηp² = .13. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 1.56, p = .459.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "year",
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "10",
+       "t1",
+       "8",
+       "21.88",
+       "2.26"
+      ],
+      [
+       "10",
+       "t2",
+       "8",
+       "22.46",
+       "3.61"
+      ],
+      [
+       "10",
+       "t3",
+       "8",
+       "22.51",
+       "2.68"
+      ],
+      [
+       "2",
+       "t1",
+       "8",
+       "21.92",
+       "3.01"
+      ],
+      [
+       "2",
+       "t2",
+       "8",
+       "22.20",
+       "1.93"
+      ],
+      [
+       "2",
+       "t3",
+       "8",
+       "24.56",
+       "2.52"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "<b>Between people</b>"
+      ],
+      [
+       "year",
+       "4.50",
+       "1",
+       "4.50",
+       "0.27",
+       ".608",
+       ".019"
+      ],
+      [
+       "People within groups (error)",
+       "229.53",
+       "14",
+       "16.39",
+       "",
+       "",
+       ""
+      ],
+      [
+       "<b>Within people</b>"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "23.05",
+       "2",
+       "11.53",
+       "3.95",
+       ".031",
+       ".220"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "23.05",
+       "2",
+       "11.53",
+       "3.95",
+       ".031",
+       ".220"
+      ],
+      [
+       "year × conditions (sphericity assumed)",
+       "12.59",
+       "2",
+       "6.30",
+       "2.16",
+       ".134",
+       ".134"
+      ],
+      [
+       "year × conditions (Huynh-Feldt)",
+       "12.59",
+       "2",
+       "6.30",
+       "2.16",
+       ".134",
+       ".134"
+      ],
+      [
+       "Error (assumed)",
+       "81.73",
+       "28",
+       "2.92",
+       "",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "81.73",
+       "28",
+       "2.92",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.887, χ²(2) = 1.56, p = .459. Greenhouse-Geisser ε = .898, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise."
+    },
+    {
+     "kind": "note",
+     "html": "Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care."
+    },
+    {
+     "kind": "note",
+     "html": "The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own."
+    },
+    {
+     "kind": "note",
+     "html": "1 entry that is not a number was left out."
+    }
+   ],
+   "resultsText": "ResultsyearConditionNMSD10t1821.882.2610t2822.463.6110t3822.512.682t1821.923.012t2822.201.932t3824.562.52SourceSSdfMSFpPartial η²Between peopleyear4.5014.500.27.608.019People within groups (error)229.531416.39Within peopleConditions (sphericity assumed)23.05211.533.95.031.220Conditions (Huynh-Feldt)23.05211.533.95.031.220year × conditions (sphericity assumed)12.5926.302.16.134.134year × conditions (Huynh-Feldt)12.5926.302.16.134.134Error (assumed)81.73282.92Error (Huynh-Feldt)81.73282.92Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.887, χ²(2) = 1.56, p = .459. Greenhouse-Geisser ε = .898, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.1 entry that is not a number was left out.A mixed ANOVA with year as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed no significant main effect of year, F(1, 14) = 0.27, p = .608, ηp² = .02; a significant main effect of condition, F(2, 28) = 3.95, p = .031, ηp² = .22; and no significant interaction, F(2, 28) = 2.16, p = .134, ηp² = .13. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 1.56, p = .459.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>year</th><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>10</td><td>t1</td><td>8</td><td>21.88</td><td>2.26</td></tr><tr><td>10</td><td>t2</td><td>8</td><td>22.46</td><td>3.61</td></tr><tr><td>10</td><td>t3</td><td>8</td><td>22.51</td><td>2.68</td></tr><tr><td>2</td><td>t1</td><td>8</td><td>21.92</td><td>3.01</td></tr><tr><td>2</td><td>t2</td><td>8</td><td>22.20</td><td>1.93</td></tr><tr><td>2</td><td>t3</td><td>8</td><td>24.56</td><td>2.52</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td colspan=\"7\"><b>Between people</b></td></tr><tr><td>year</td><td>4.50</td><td>1</td><td>4.50</td><td>0.27</td><td>.608</td><td>.019</td></tr><tr><td>People within groups (error)</td><td>229.53</td><td>14</td><td>16.39</td><td></td><td></td><td></td></tr><tr><td colspan=\"7\"><b>Within people</b></td></tr><tr><td>Conditions (sphericity assumed)</td><td>23.05</td><td>2</td><td>11.53</td><td>3.95</td><td>.031</td><td>.220</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>23.05</td><td>2</td><td>11.53</td><td>3.95</td><td>.031</td><td>.220</td></tr><tr><td>year × conditions (sphericity assumed)</td><td>12.59</td><td>2</td><td>6.30</td><td>2.16</td><td>.134</td><td>.134</td></tr><tr><td>year × conditions (Huynh-Feldt)</td><td>12.59</td><td>2</td><td>6.30</td><td>2.16</td><td>.134</td><td>.134</td></tr><tr><td>Error (assumed)</td><td>81.73</td><td>28</td><td>2.92</td><td></td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>81.73</td><td>28</td><td>2.92</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.887, χ²(2) = 1.56, p = .459. Greenhouse-Geisser ε = .898, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.</p><p class=\"desc\">Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.</p><p class=\"desc\">The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.</p><p class=\"desc\">1 entry that is not a number was left out.</p><div id=\"statsSentence\">A mixed ANOVA with year as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed no significant main effect of year, F(1, 14) = 0.27, p = .608, ηp² = .02; a significant main effect of condition, F(2, 28) = 3.95, p = .031, ηp² = .22; and no significant interaction, F(2, 28) = 2.16, p = .134, ηp² = .13. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 1.56, p = .459.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mixed-interaction-significant",
+   "test": "mixed",
+   "csv": "arm,t1,t2,t3\nDrug,14.3,13.3,8.9\nDrug,22.8,16.4,17.1\nDrug,21.4,16.3,11.4\nDrug,20.9,18.1,16.7\nDrug,24.1,19.5,15.3\nDrug,13.1,12.7,10.5\nDrug,23.4,21.4,17.1\nDrug,15.3,16.8,11.6\nDrug,20.5,17.3,11.8\nDrug,25.7,22.3,17.6\nDrug,12.7,11.9,9.4\nDrug,20.6,15.3,13.4\nPlacebo,21.1,24.2,23.4\nPlacebo,17.3,17.8,17.7\nPlacebo,21.0,22.8,22.3\nPlacebo,20.3,21.9,21.3\nPlacebo,18.9,20.0,18.0\nPlacebo,14.5,15.2,13.0\nPlacebo,17.7,20.8,20.6\nPlacebo,17.9,20.2,18.8\nPlacebo,19.6,16.8,15.9\nPlacebo,25.0,24.8,23.5\nPlacebo,25.7,29.5,29.4\nPlacebo,19.6,17.0,17.4",
+   "values": {
+    "grp": "arm"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A mixed ANOVA with arm as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed a significant main effect of arm, F(1, 22) = 6.41, p = .019, ηp² = .23; a significant main effect of condition, F(1.79, 39.35) = 26.92, p < .001, ηp² = .55; and a significant interaction, F(1.79, 39.35) = 29.90, p < .001, ηp² = .58. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = .89); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 5.97, p = .051.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "arm",
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "Drug",
+       "t1",
+       "12",
+       "19.57",
+       "4.53"
+      ],
+      [
+       "Drug",
+       "t2",
+       "12",
+       "16.78",
+       "3.25"
+      ],
+      [
+       "Drug",
+       "t3",
+       "12",
+       "13.40",
+       "3.22"
+      ],
+      [
+       "Placebo",
+       "t1",
+       "12",
+       "19.88",
+       "3.14"
+      ],
+      [
+       "Placebo",
+       "t2",
+       "12",
+       "20.92",
+       "4.05"
+      ],
+      [
+       "Placebo",
+       "t3",
+       "12",
+       "20.11",
+       "4.29"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "<b>Between people</b>"
+      ],
+      [
+       "arm",
+       "249.39",
+       "1",
+       "249.39",
+       "6.41",
+       ".019",
+       ".226"
+      ],
+      [
+       "People within groups (error)",
+       "855.47",
+       "22",
+       "38.88",
+       "",
+       "",
+       ""
+      ],
+      [
+       "<b>Within people</b>"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "111.79",
+       "2",
+       "55.90",
+       "26.92",
+       "&lt; .001",
+       ".550"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "111.79",
+       "1.79",
+       "62.51",
+       "26.92",
+       "&lt; .001",
+       ".550"
+      ],
+      [
+       "arm × conditions (sphericity assumed)",
+       "124.14",
+       "2",
+       "62.07",
+       "29.90",
+       "&lt; .001",
+       ".576"
+      ],
+      [
+       "arm × conditions (Huynh-Feldt)",
+       "124.14",
+       "1.79",
+       "69.41",
+       "29.90",
+       "&lt; .001",
+       ".576"
+      ],
+      [
+       "Error (assumed)",
+       "91.35",
+       "44",
+       "2.08",
+       "",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "91.35",
+       "39.35",
+       "2.32",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.753, χ²(2) = 5.97, p = .051. Greenhouse-Geisser ε = .802, Huynh-Feldt ε = .894. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise."
+    },
+    {
+     "kind": "note",
+     "html": "Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care."
+    },
+    {
+     "kind": "note",
+     "html": "<b>The interaction is significant</b>, so the groups change differently across the conditions. Interpret the plot and the group-by-condition means first; main effects alone can mislead. To follow up, run a repeated-measures ANOVA inside each group, or compare the groups at each condition with a one-way test."
+    }
+   ],
+   "resultsText": "ResultsarmConditionNMSDDrugt11219.574.53Drugt21216.783.25Drugt31213.403.22Placebot11219.883.14Placebot21220.924.05Placebot31220.114.29SourceSSdfMSFpPartial η²Between peoplearm249.391249.396.41.019.226People within groups (error)855.472238.88Within peopleConditions (sphericity assumed)111.79255.9026.92< .001.550Conditions (Huynh-Feldt)111.791.7962.5126.92< .001.550arm × conditions (sphericity assumed)124.14262.0729.90< .001.576arm × conditions (Huynh-Feldt)124.141.7969.4129.90< .001.576Error (assumed)91.35442.08Error (Huynh-Feldt)91.3539.352.32Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.753, χ²(2) = 5.97, p = .051. Greenhouse-Geisser ε = .802, Huynh-Feldt ε = .894. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.The interaction is significant, so the groups change differently across the conditions. Interpret the plot and the group-by-condition means first; main effects alone can mislead. To follow up, run a repeated-measures ANOVA inside each group, or compare the groups at each condition with a one-way test.A mixed ANOVA with arm as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed a significant main effect of arm, F(1, 22) = 6.41, p = .019, ηp² = .23; a significant main effect of condition, F(1.79, 39.35) = 26.92, p < .001, ηp² = .55; and a significant interaction, F(1.79, 39.35) = 29.90, p < .001, ηp² = .58. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = .89); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 5.97, p = .051.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>arm</th><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>Drug</td><td>t1</td><td>12</td><td>19.57</td><td>4.53</td></tr><tr><td>Drug</td><td>t2</td><td>12</td><td>16.78</td><td>3.25</td></tr><tr><td>Drug</td><td>t3</td><td>12</td><td>13.40</td><td>3.22</td></tr><tr><td>Placebo</td><td>t1</td><td>12</td><td>19.88</td><td>3.14</td></tr><tr><td>Placebo</td><td>t2</td><td>12</td><td>20.92</td><td>4.05</td></tr><tr><td>Placebo</td><td>t3</td><td>12</td><td>20.11</td><td>4.29</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td colspan=\"7\"><b>Between people</b></td></tr><tr><td>arm</td><td>249.39</td><td>1</td><td>249.39</td><td>6.41</td><td>.019</td><td>.226</td></tr><tr><td>People within groups (error)</td><td>855.47</td><td>22</td><td>38.88</td><td></td><td></td><td></td></tr><tr><td colspan=\"7\"><b>Within people</b></td></tr><tr><td>Conditions (sphericity assumed)</td><td>111.79</td><td>2</td><td>55.90</td><td>26.92</td><td>&lt; .001</td><td>.550</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>111.79</td><td>1.79</td><td>62.51</td><td>26.92</td><td>&lt; .001</td><td>.550</td></tr><tr><td>arm × conditions (sphericity assumed)</td><td>124.14</td><td>2</td><td>62.07</td><td>29.90</td><td>&lt; .001</td><td>.576</td></tr><tr><td>arm × conditions (Huynh-Feldt)</td><td>124.14</td><td>1.79</td><td>69.41</td><td>29.90</td><td>&lt; .001</td><td>.576</td></tr><tr><td>Error (assumed)</td><td>91.35</td><td>44</td><td>2.08</td><td></td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>91.35</td><td>39.35</td><td>2.32</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.753, χ²(2) = 5.97, p = .051. Greenhouse-Geisser ε = .802, Huynh-Feldt ε = .894. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.</p><p class=\"desc\">Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.</p><p class=\"desc\"><b>The interaction is significant</b>, so the groups change differently across the conditions. Interpret the plot and the group-by-condition means first; main effects alone can mislead. To follow up, run a repeated-measures ANOVA inside each group, or compare the groups at each condition with a one-way test.</p><div id=\"statsSentence\">A mixed ANOVA with arm as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed a significant main effect of arm, F(1, 22) = 6.41, p = .019, ηp² = .23; a significant main effect of condition, F(1.79, 39.35) = 26.92, p &lt; .001, ηp² = .55; and a significant interaction, F(1.79, 39.35) = 29.90, p &lt; .001, ηp² = .58. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = .89); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 5.97, p = .051.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mixed-one-group",
+   "test": "mixed",
+   "csv": "group,pre,post\nA,18.8,20.3\nA,24.9,23.7\nA,21.3,21.2\nA,18.0,18.0\nA,20.5,21.0\nA,22.1,22.5\nA,15.4,13.9\nA,20.5,21.8\nA,20.4,22.7\nA,16.9,15.5",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "pre",
+     "post"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "The grouping variable needs at least 2 groups among the people with complete scores."
+   ]
+  },
+  {
+   "id": "mixed-group-of-one",
+   "test": "mixed",
+   "csv": "group,pre,post\nA,23.6,23.8\nA,14.3,17.2\nA,16.7,18.3\nA,17.6,21.8\nA,15.8,15.5\nA,19.9,19.6\nB,22.2,24.2\nB,22.3,23.6\nB,20.8,19.7\nB,23.9,25.0\nB,16.7,19.0\nB,18.9,20.5\nC,19.0,18.8",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "pre",
+     "post"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every group needs at least 2 people with a score in every ticked column. Group \"C\" has fewer."
+   ]
+  },
+  {
+   "id": "mixed-seven-groups",
+   "test": "mixed",
+   "csv": "group,pre,post\nA,17.6,20.4\nA,18.7,18.6\nA,19.5,21.5\nB,27.6,30.6\nB,21.3,23.6\nB,22.6,22.0\nC,20.4,21.0\nC,19.3,21.2\nC,20.5,21.5\nD,21.4,23.8\nD,19.6,20.3\nD,23.5,23.7\nE,20.5,20.2\nE,16.6,17.4\nE,21.9,22.4\nF,22.0,23.6\nF,17.9,19.3\nF,21.0,19.4\nG,29.6,29.2\nG,17.8,17.1\nG,20.1,21.7",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "pre",
+     "post"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This test handles up to 6 groups."
+   ]
+  },
+  {
+   "id": "mixed-one-column",
+   "test": "mixed",
+   "csv": "group,pre,post\nA,19.9,20.3\nA,18.8,17.7\nA,21.2,23.4\nA,20.6,22.8\nA,20.4,24.0\nA,21.2,22.4\nB,21.3,21.2\nB,23.7,23.8\nB,18.7,18.3\nB,15.7,18.2\nB,20.6,23.2\nB,16.3,16.9",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "pre"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Tick at least 2 columns, one for each time point or condition."
+   ]
+  },
+  {
+   "id": "mixed-group-column-ticked",
+   "test": "mixed",
+   "csv": "group,pre,post\n1,20.1,21.3\n1,21.4,21.5\n1,16.4,17.3\n1,22.7,23.9\n1,17.0,17.9\n1,18.1,18.5\n2,18.4,18.2\n2,22.5,24.7\n2,23.9,26.0\n2,17.9,17.1\n2,19.3,20.5\n2,13.5,15.4",
+   "ticked": {
+    "items": [
+     "group",
+     "pre",
+     "post"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Could not run that test — check the columns you picked match what the test needs"
+   ]
+  },
+  {
+   "id": "mixed-no-variation",
+   "test": "mixed",
+   "csv": "group,t1,t2,t3\nA,23.0,24.0,25.0\nA,19.0,20.0,21.0\nA,24.0,25.0,26.0\nA,20.0,21.0,22.0\nA,22.0,23.0,24.0\nA,18.0,19.0,20.0\nB,28.0,31.0,34.0\nB,24.0,27.0,30.0\nB,29.0,32.0,35.0\nB,25.0,28.0,31.0\nB,27.0,30.0,33.0\nB,23.0,26.0,29.0",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "There is no variation left inside the groups once the group means are removed, so the F tests cannot be calculated."
+   ]
+  },
+  {
+   "id": "mixed-missing-row",
+   "test": "mixed",
+   "csv": "group,t1,t2,t3\nA,23.3,19.4,25.6\nA,18.7,19.7,20.2\nA,20.6,21.2,22.3\nA,12.6,18.2,18.4\nA,28.4,,30.5\nA,22.2,21.7,23.9\nA,20.9,20.7,23.9\nA,18.4,19.4,18.4\nA,18.0,18.2,18.2\nB,21.2,24.5,25.3\nB,23.0,23.1,26.8\nB,17.5,17.9,21.7\nB,20.9,22.8,27.2\nB,23.4,29.0,26.7\nB,18.5,21.0,21.2\nB,18.9,19.8,21.9\nB,24.4,24.9,27.0\nB,20.3,22.2,23.4",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed a significant main effect of group, F(1, 15) = 4.77, p = .045, ηp² = .24; a significant main effect of condition, F(2, 30) = 17.61, p < .001, ηp² = .54; and no significant interaction, F(2, 30) = 1.72, p = .196, ηp² = .10. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 2.90, p = .235.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "group",
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "A",
+       "t1",
+       "8",
+       "19.34",
+       "3.30"
+      ],
+      [
+       "A",
+       "t2",
+       "8",
+       "19.81",
+       "1.30"
+      ],
+      [
+       "A",
+       "t3",
+       "8",
+       "21.36",
+       "2.94"
+      ],
+      [
+       "B",
+       "t1",
+       "9",
+       "20.90",
+       "2.36"
+      ],
+      [
+       "B",
+       "t2",
+       "9",
+       "22.80",
+       "3.21"
+      ],
+      [
+       "B",
+       "t3",
+       "9",
+       "24.58",
+       "2.52"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p",
+       "Partial η²"
+      ],
+      [
+       "<b>Between people</b>"
+      ],
+      [
+       "group",
+       "85.13",
+       "1",
+       "85.13",
+       "4.77",
+       ".045",
+       ".241"
+      ],
+      [
+       "People within groups (error)",
+       "267.73",
+       "15",
+       "17.85",
+       "",
+       "",
+       ""
+      ],
+      [
+       "<b>Within people</b>"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "69.51",
+       "2",
+       "34.76",
+       "17.61",
+       "&lt; .001",
+       ".540"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "69.51",
+       "2",
+       "34.76",
+       "17.61",
+       "&lt; .001",
+       ".540"
+      ],
+      [
+       "group × conditions (sphericity assumed)",
+       "6.80",
+       "2",
+       "3.40",
+       "1.72",
+       ".196",
+       ".103"
+      ],
+      [
+       "group × conditions (Huynh-Feldt)",
+       "6.80",
+       "2",
+       "3.40",
+       "1.72",
+       ".196",
+       ".103"
+      ],
+      [
+       "Error (assumed)",
+       "59.19",
+       "30",
+       "1.97",
+       "",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "59.19",
+       "30",
+       "1.97",
+       "",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.813, χ²(2) = 2.90, p = .235. Greenhouse-Geisser ε = .842, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise."
+    },
+    {
+     "kind": "note",
+     "html": "The groups have unequal sizes (8, 9). The between-groups test weights people equally, and the conditions test and the interaction treat each group equally, which is the SPSS default (Type III). Check that this matches the question you are asking."
+    },
+    {
+     "kind": "note",
+     "html": "Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care."
+    },
+    {
+     "kind": "note",
+     "html": "The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own."
+    },
+    {
+     "kind": "note",
+     "html": "1 entry that is not a number was left out."
+    }
+   ],
+   "resultsText": "ResultsgroupConditionNMSDAt1819.343.30At2819.811.30At3821.362.94Bt1920.902.36Bt2922.803.21Bt3924.582.52SourceSSdfMSFpPartial η²Between peoplegroup85.13185.134.77.045.241People within groups (error)267.731517.85Within peopleConditions (sphericity assumed)69.51234.7617.61< .001.540Conditions (Huynh-Feldt)69.51234.7617.61< .001.540group × conditions (sphericity assumed)6.8023.401.72.196.103group × conditions (Huynh-Feldt)6.8023.401.72.196.103Error (assumed)59.19301.97Error (Huynh-Feldt)59.19301.97Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.813, χ²(2) = 2.90, p = .235. Greenhouse-Geisser ε = .842, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.The groups have unequal sizes (8, 9). The between-groups test weights people equally, and the conditions test and the interaction treat each group equally, which is the SPSS default (Type III). Check that this matches the question you are asking.Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.1 entry that is not a number was left out.A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed a significant main effect of group, F(1, 15) = 4.77, p = .045, ηp² = .24; a significant main effect of condition, F(2, 30) = 17.61, p < .001, ηp² = .54; and no significant interaction, F(2, 30) = 1.72, p = .196, ηp² = .10. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 2.90, p = .235.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>group</th><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>A</td><td>t1</td><td>8</td><td>19.34</td><td>3.30</td></tr><tr><td>A</td><td>t2</td><td>8</td><td>19.81</td><td>1.30</td></tr><tr><td>A</td><td>t3</td><td>8</td><td>21.36</td><td>2.94</td></tr><tr><td>B</td><td>t1</td><td>9</td><td>20.90</td><td>2.36</td></tr><tr><td>B</td><td>t2</td><td>9</td><td>22.80</td><td>3.21</td></tr><tr><td>B</td><td>t3</td><td>9</td><td>24.58</td><td>2.52</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th><th>Partial η²</th></tr><tr><td colspan=\"7\"><b>Between people</b></td></tr><tr><td>group</td><td>85.13</td><td>1</td><td>85.13</td><td>4.77</td><td>.045</td><td>.241</td></tr><tr><td>People within groups (error)</td><td>267.73</td><td>15</td><td>17.85</td><td></td><td></td><td></td></tr><tr><td colspan=\"7\"><b>Within people</b></td></tr><tr><td>Conditions (sphericity assumed)</td><td>69.51</td><td>2</td><td>34.76</td><td>17.61</td><td>&lt; .001</td><td>.540</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>69.51</td><td>2</td><td>34.76</td><td>17.61</td><td>&lt; .001</td><td>.540</td></tr><tr><td>group × conditions (sphericity assumed)</td><td>6.80</td><td>2</td><td>3.40</td><td>1.72</td><td>.196</td><td>.103</td></tr><tr><td>group × conditions (Huynh-Feldt)</td><td>6.80</td><td>2</td><td>3.40</td><td>1.72</td><td>.196</td><td>.103</td></tr><tr><td>Error (assumed)</td><td>59.19</td><td>30</td><td>1.97</td><td></td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>59.19</td><td>30</td><td>1.97</td><td></td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread), checked on the within-group covariance pooled over all groups. Mauchly's W = 0.813, χ²(2) = 2.90, p = .235. Greenhouse-Geisser ε = .842, Huynh-Feldt ε = 1.000. The corrected rows to report are Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise.</p><p class=\"desc\">The groups have unequal sizes (8, 9). The between-groups test weights people equally, and the conditions test and the interaction treat each group equally, which is the SPSS default (Type III). Check that this matches the question you are asking.</p><p class=\"desc\">Box's M for equal covariance matrices across groups is not run. With groups of very different size and clearly different spread, treat the within-people p-values with care.</p><p class=\"desc\">The interaction is not significant, so there is no evidence that the groups change differently across the conditions. The two main effects can be read on their own.</p><p class=\"desc\">1 entry that is not a number was left out.</p><div id=\"statsSentence\">A mixed ANOVA with group as the between-people factor (2 groups) and condition as the within-people factor (3 levels) showed a significant main effect of group, F(1, 15) = 4.77, p = .045, ηp² = .24; a significant main effect of condition, F(2, 30) = 17.61, p &lt; .001, ηp² = .54; and no significant interaction, F(2, 30) = 1.72, p = .196, ηp² = .10. Degrees of freedom for the within-people effects use the Huynh-Feldt correction (ε = 1.00); Mauchly's test did not indicate a violation of sphericity, χ²(2) = 2.90, p = .235.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mixed-too-few-people",
+   "test": "mixed",
+   "csv": "group,t1,t2,t3\nA,14.6,15.5,17.2\nA,22.7,26.3,27.6\nB,18.2,20.4,22.1\nB,27.4,29.1,28.0",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need more people: 4 people in 2 groups leave too few degrees of freedom for 3 conditions."
+   ]
+  },
+  {
+   "id": "mixed-nine-columns",
+   "test": "mixed",
+   "csv": "group,c1,c2,c3,c4,c5,c6,c7,c8,c9\nA,21.9,21.6,19.3,22.1,19.5,22.6,22.3,22.5,22.5\nA,20.4,20.6,22.4,20.3,20.7,20.2,20.4,20.6,21.2\nA,18.8,18.5,19.2,17.8,19.2,20.4,18.4,19.1,21.9\nA,15.4,16.6,18.8,19.1,15.8,17.6,17.0,16.4,15.1\nA,22.2,23.4,23.2,24.9,24.2,21.9,22.8,24.1,21.7\nA,19.1,17.2,17.6,17.1,19.1,18.3,19.8,18.9,19.4\nB,20.5,19.6,18.8,20.9,20.7,22.0,19.6,19.2,18.3\nB,7.1,8.9,7.5,5.8,9.0,7.8,8.1,8.0,8.3\nB,19.7,21.2,20.9,22.6,20.4,23.1,22.0,23.0,20.7\nB,22.8,20.9,22.2,22.0,21.5,21.6,21.0,22.0,22.8\nB,16.1,18.7,17.3,17.7,17.4,17.1,18.3,17.1,17.7\nB,14.0,15.3,17.6,15.8,17.6,16.1,16.1,15.1,15.6",
+   "values": {
+    "grp": "group"
+   },
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3",
+     "c4",
+     "c5",
+     "c6",
+     "c7",
+     "c8",
+     "c9"
+    ]
+   },
+   "form": {
+    "values": {
+     "grp": "0"
+    },
+    "ticked": {
+     "items": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This test handles up to 8 conditions."
+   ]
+  }
+ ]
+}
