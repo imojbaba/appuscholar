@@ -23,6 +23,8 @@ const h = vi.hoisted(() => ({
   locked: false,
   loading: false,
   broken: false,
+  error: false,
+  projectId: "p-1" as string | null,
   loadPaper: vi.fn(async (_id: string) => null as null | { pages: string[]; notes: unknown[]; cells: Record<string, string> }),
   extract: vi.fn(async (_f: File) => "no-text" as unknown),
   mammoth: vi.fn(async (_o: unknown) => ({ value: "" })),
@@ -33,7 +35,7 @@ vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
-vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, loadPaper: h.loadPaper }) }));
+vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: h.projectId, index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
 vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) throw new Error("chunk failed"); return { extractRawText: h.mammoth }; } }));
 
@@ -109,7 +111,7 @@ beforeEach(() => {
   resetAp();
   for (const f of [h.toast, h.setPending, h.loadPaper, h.extract, h.mammoth]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.noMammoth = false;
+  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.error = false; h.projectId = "p-1"; h.noMammoth = false;
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -229,7 +231,7 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
     expect(docRecord()).toEqual({ title: p.title, src: "pdf", pages: p.pages, sample: false, abstractOnly: false });
   });
 
-  it.each([["locked", { locked: true }], ["loading", { loading: true }], ["broken", { broken: true }]] as const)("a shelf not read yet (%s, useShelf's index null) offers \"Choose a paper\", never \"empty\"; Use this paper asks for a choice", async (kind, st) => {
+  it.each([["locked", { locked: true }], ["loading", { loading: true }], ["broken", { broken: true }], ["a failed read", { error: true }], ["no project", { projectId: null }]] as const)("a shelf not read yet (%s, useShelf's index null) offers \"Choose a paper\", never \"empty\"; Use this paper asks for a choice", async (kind, st) => {
     h.index = null;
     Object.assign(h, st);
     await mount();

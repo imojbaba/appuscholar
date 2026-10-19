@@ -81,17 +81,17 @@ function useShelfProject(): string | null {
 }
 
 /**
- * The Reading shelf for another tool (Task 12's "Choose a paper from your Reading shelf"): the index as stored (read only; null while it is not read, locked or broken) and
- * `loadPaper(id)`, one read of that paper's text, highlights and cells.
+ * The Reading shelf for another tool (Task 12's "Choose a paper from your Reading shelf"): the index as stored (read only; null while it is not read, locked or broken, when its read
+ * failed (`error`), and when the project has no index yet) and `loadPaper(id)`, one read of that paper's text, highlights and cells.
  */
-export function useShelf(): { projectId: string | null; index: ShelfIndex | null; loading: boolean; locked: boolean; broken: boolean; loadPaper(id: string): Promise<ShelfPaper | null> } {
+export function useShelf(): { projectId: string | null; index: ShelfIndex | null; loading: boolean; locked: boolean; broken: boolean; error: boolean; loadPaper(id: string): Promise<ShelfPaper | null> } {
   const projectId = useShelfProject();
   const index = useProjectBlob("shelf_index", projectId, { readOnly: true });
   const vault = useVault();
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
   const loadPaper = useCallback(async (id: string) => (projectId ? readPaperOnce(projectId, id, vaultRef.current) : null), [projectId]);
-  return { projectId, index: index.value, loading: index.loading, locked: index.locked, broken: !!index.broken, loadPaper };
+  return { projectId, index: index.value, loading: index.loading, locked: index.locked, broken: !!index.broken, error: !!index.error, loadPaper };
 }
 
 /** What the dialog holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */

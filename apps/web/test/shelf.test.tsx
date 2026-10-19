@@ -671,4 +671,20 @@ describe("useShelf, the shelf for another tool (Task 12's dropdown)", () => {
     await settle(900);
     expect(server.calls.filter((c) => c.method !== "GET")).toEqual([]);
   });
+  it("a failed read of the index is `error` (index null), apart from a read that found no index (index null, error false)", async () => {
+    const box: { v: ReturnType<typeof useShelf> | null } = { v: null };
+    function Probe() { box.v = useShelf(); return null; }
+    const root = createRoot(document.createElement("div"));
+    roots.push(root);
+    await act(async () => { root.render(<Probe />); });
+    await until(() => box.v !== null && !box.v.loading, "the first read");
+    expect([box.v!.index, box.v!.loading, box.v!.locked, box.v!.broken, box.v!.error]).toEqual([null, false, false, false, false]);
+    act(() => root.unmount()); roots.length = 0;
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => (/shelf_index/.test(path) && (init.method ?? "GET") === "GET" ? Promise.reject(new ApiError(500, "server")) : fakeApi(path, init)));
+    const root2 = createRoot(document.createElement("div"));
+    roots.push(root2);
+    await act(async () => { root2.render(<Probe />); });
+    await until(() => box.v!.error, "the failed read");
+    expect([box.v!.index, box.v!.loading, box.v!.locked, box.v!.broken, box.v!.error]).toEqual([null, false, false, false, true]);
+  });
 });

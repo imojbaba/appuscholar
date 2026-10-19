@@ -74,7 +74,7 @@ export function fromPaste(text: string, d: Pick<IntakeDeps, "toast" | "t">): boo
 }
 
 /**
- * apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. `unread` is useShelf's loading, locked or broken: while the index is not read the first line is
+ * apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. `unread` is useShelf's loading, locked, broken or error, or no project: while the index is not read the first line is
  * "Choose a paper from your Reading shelf" (register D-S2-15); a read shelf with no index yet (null: no paper was ever added) or an empty one is "Your Reading shelf is empty", as v1.
  */
 export function shelfOptions(index: ShelfIndex | null, unread: boolean, t: T): { empty: string; items: Array<{ id: string; label: string }> } {

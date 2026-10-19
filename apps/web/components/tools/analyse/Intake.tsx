@@ -16,7 +16,8 @@ export function Intake() {
   const s = useApState();
   const shelf = useShelf();
   const [pick, setPick] = useState("");
-  const opts = shelfOptions(shelf.index, shelf.loading || shelf.locked || shelf.broken, t);
+  // Not read: loading, locked, broken, a failed read, or no project yet; a read shelf with no index is v1's "empty".
+  const opts = shelfOptions(shelf.index, shelf.projectId === null || shelf.loading || shelf.locked || shelf.broken || shelf.error, t);
   const d = { toast, t };
   return (
     <>
