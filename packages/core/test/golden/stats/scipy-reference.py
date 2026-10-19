@@ -6,7 +6,7 @@
 # Independent of v1's numbers: of each case only the inputs are read, the `csv` (re-parsed here with v1's rules, intake.ts) and the `form` (the column indexes v1's form held); of v1's output
 # only whether it refused the case (a toast, or the safety net's apa null), which sets `ref` to null with `why`, so that no reference stands where the port has no values to compare.
 # The groups come out in statsGroupBy's order (a plain object's key order: canonical array-index keys ascending, then the rest in first-seen order: register row F4), so the pairs and the sign
-# of a difference are the ones v1 reports. A test with no entry in REFERENCE has `ref: null` ("no scipy reference for this test yet"); Tasks 5-9 add theirs.
+# of a difference are the ones v1 reports. A test with no entry in REFERENCE has `ref: null` ("no scipy reference for this test yet"); Tasks 6-9 add theirs.
 # JSON cannot hold NaN or an infinity: a case where scipy returns one is written with ref null and the reason.
 import json
 import math
@@ -88,7 +88,7 @@ def group_by(rows, dv, iv):
 
 
 def pairs(rows, a, b):
-    """The pair filter of ttestPaired, regression and pearson: both cells present, both finite."""
+    """The pair filter of ttestPaired, regression, pearson, wilcoxon and spearman: both cells present, both finite."""
     out = []
     for r in rows:
         if r[a] == "" or r[b] == "":
@@ -162,6 +162,57 @@ def pearson(rows, form):
     return out
 
 
+def mannwhitney(rows, form):
+    """mannwhitneyu with v1's choice of method: exact when no two scores are equal (exact floating-point equality, F15) and both groups are under 50, else the normal
+    approximation with continuity (and scipy's tie correction). scipy's statistic is U1 of the first group; v1 reports the smaller U, so U = min(U1, n1*n2 - U1)."""
+    keys, groups = group_by(rows, col(form, "dv"), col(form, "iv"))
+    g1, g2 = groups[0], groups[1]
+    combined = g1 + g2
+    exact_ok = len(set(combined)) == len(combined) and len(g1) < 50 and len(g2) < 50
+    r = stats.mannwhitneyu(g1, g2, use_continuity=True, alternative="two-sided", method="exact" if exact_ok else "asymptotic")
+    u1 = float(r.statistic)
+    return {"U": min(u1, len(g1) * len(g2) - u1), "p": r.pvalue}
+
+
+def wilcoxon(rows, form):
+    """wilcoxon on the pairs v1 keeps, zeros dropped (zero_method="wilcox"); exact when the absolute differences hold no tie (exact floating-point equality, F15), no pair is
+    equal and fewer than 50 remain, else the normal approximation with continuity (correction=True). The two-sided statistic is min(W+, W-), v1's W."""
+    xs, ys = pairs(rows, col(form, "v1"), col(form, "v2"))
+    diffs = [x - y for x, y in zip(xs, ys)]
+    nz = [d for d in diffs if d != 0]
+    absd = [abs(d) for d in nz]
+    exact_ok = len(set(absd)) == len(absd) and len(nz) == len(diffs) and len(nz) < 50
+    r = stats.wilcoxon(xs, ys, zero_method="wilcox", correction=True, alternative="two-sided", method="exact" if exact_ok else "approx")
+    return {"W": r.statistic, "p": r.pvalue}
+
+
+def kruskal(rows, form):
+    keys, groups = group_by(rows, col(form, "dv"), col(form, "iv"))
+    r = stats.kruskal(*groups)
+    return {"H": r.statistic, "p": r.pvalue}
+
+
+def spearman(rows, form):
+    """spearmanr on the pairs v1 keeps (the same filter as pearson's, though v1 does not count what it drops: F18); p from the t approximation, scipy's default (F7)."""
+    xs, ys = pairs(rows, col(form, "v1"), col(form, "v2"))
+    r = stats.spearmanr(xs, ys)
+    return {"rho": r.statistic, "p": r.pvalue}
+
+
+def welch_anova(rows, form):
+    """f_oneway(equal_var=False), Welch's ANOVA (scipy 1.17.1 has the parameter; an older scipy without it raises TypeError, recorded as ref null)."""
+    keys, groups = group_by(rows, col(form, "dv"), col(form, "iv"))
+    try:
+        r = stats.f_oneway(*groups, equal_var=False)
+    except TypeError:
+        raise NoReference("no Welch ANOVA in scipy")
+    return {"F": r.statistic, "p": r.pvalue}
+
+
+class NoReference(Exception):
+    """A test this scipy has no counterpart for: the case is written with ref null and the message as why."""
+
+
 # The scipy counterpart of each runner: (rows, form) -> { values key: scipy's number }, under the runner's `values` keys.
 REFERENCE = {
     "ttest1": ttest1,               # ttest_1samp(vals, mu) -> t, p
@@ -171,7 +222,13 @@ REFERENCE = {
     "tukey": tukey,                 # tukey_hsd -> p_i_j for every pair i < j
     "regression": regression,       # linregress -> b1, b0, seB1, p, r2 = rvalue**2, F = (slope / stderr)**2
     "pearson": pearson,             # pearsonr -> r, p; confidence_interval() -> cl, ch (n > 3)
+    "mannwhitney": mannwhitney,     # mannwhitneyu(method exact or asymptotic by v1's exactOK, use_continuity=True) -> U = min(U1, n1*n2 - U1), p
+    "wilcoxon": wilcoxon,           # wilcoxon(method exact or approx by v1's exactOK, correction=True, zero_method="wilcox") -> W = min(W+, W-), p
+    "kruskal": kruskal,             # kruskal -> H, p
+    "spearman": spearman,           # spearmanr -> rho, p (the interval, lo and hi, is v1's own: no scipy counterpart)
+    "welchAnova": welch_anova,      # f_oneway(equal_var=False) -> F, p (Games-Howell, gh_*: no scipy counterpart)
 }
+# No scipy counterpart, so these values are held to v1 only ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal padj_i_j), the Spearman interval (lo, hi), omega2 and eps2.
 
 
 def main():
@@ -193,9 +250,14 @@ def main():
                 entry.update(ref=None, why="v1's safety net suppressed the result")
             else:
                 headers, rows = parse_text(case["csv"])
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")  # scipy warns on a perfect fit or a tiny sample; the value is what is recorded
-                    ref = {k: float(v) for k, v in REFERENCE[case["test"]](rows, case["form"]).items()}
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")  # scipy warns on a perfect fit or a tiny sample; the value is what is recorded
+                        ref = {k: float(v) for k, v in REFERENCE[case["test"]](rows, case["form"]).items()}
+                except NoReference as e:
+                    entry.update(ref=None, why=str(e))
+                    out.append(entry)
+                    continue
                 bad = sorted(k for k, v in ref.items() if not math.isfinite(v))
                 if bad:
                     entry.update(ref=None, why="scipy returns no finite value for " + ", ".join(bad))

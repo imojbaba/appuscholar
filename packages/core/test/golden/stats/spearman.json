@@ -1,0 +1,375 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "spearman-demo",
+   "test": "spearman",
+   "csv": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12",
+   "values": {
+    "v1": "effort",
+    "v2": "result"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p < .001, 95% CI [.83, .99].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "13",
+       ".96",
+       "[.83, .99]",
+       "11",
+       ".000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp13.96[.83, .99]11.000Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p < .001, 95% CI [.83, .99].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>13</td><td>.96</td><td>[.83, .99]</td><td>11</td><td>.000</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.</p><div id=\"statsSentence\">There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p &lt; .001, 95% CI [.83, .99].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman-tiny-p",
+   "test": "spearman",
+   "csv": "x,y\n1,1\n2,2\n3,3\n4,4\n5,5\n6,6\n7,7\n8,8\n9,9\n10,10\n11,11\n12,13\n13,12",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(11) = .99, p < .001, 95% CI [.98, 1.00].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "13",
+       ".99",
+       "[.98, 1.00]",
+       "11",
+       ".000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp13.99[.98, 1.00]11.000Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(11) = .99, p < .001, 95% CI [.98, 1.00].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>13</td><td>.99</td><td>[.98, 1.00]</td><td>11</td><td>.000</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.</p><div id=\"statsSentence\">There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(11) = .99, p &lt; .001, 95% CI [.98, 1.00].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman-text-dropped-uncounted",
+   "test": "spearman",
+   "csv": "effort,result\n1,2\n2,1\n3,4\n4,3\n5,6\n6,6\n7,8\n8,7\n9,10\n10,9\n11,9\n12,13\n13,12\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,3\n4,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "v1": "effort",
+    "v2": "result"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p < .001, 95% CI [.83, .99].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "13",
+       ".96",
+       "[.83, .99]",
+       "11",
+       ".000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp13.96[.83, .99]11.000Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p < .001, 95% CI [.83, .99].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>13</td><td>.96</td><td>[.83, .99]</td><td>11</td><td>.000</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.</p><div id=\"statsSentence\">There was a very strong positive monotonic association between effort and result, which was statistically significant, rₛ(11) = .96, p &lt; .001, 95% CI [.83, .99].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman-n4",
+   "test": "spearman",
+   "csv": "x,y\n1,2\n2,3\n3,1\n4,4",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 5 complete pairs"
+   ]
+  },
+  {
+   "id": "spearman-n9",
+   "test": "spearman",
+   "csv": "x,y\n1,2\n2,1\n3,4\n4,3\n5,6\n6,5\n7,9\n8,7\n9,8",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(7) = .90, p < .001, 95% CI [.48, .98].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "9",
+       ".90",
+       "[.48, .98]",
+       "7",
+       ".001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp9.90[.48, .98]7.001Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate.There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(7) = .90, p < .001, 95% CI [.48, .98].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>9</td><td>.90</td><td>[.48, .98]</td><td>7</td><td>.001</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate.</p><div id=\"statsSentence\">There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(7) = .90, p &lt; .001, 95% CI [.48, .98].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman-perfect-negative",
+   "test": "spearman",
+   "csv": "x,y\n1,18\n2,16\n3,14\n4,12\n5,10\n6,8\n7,6\n8,4",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong negative monotonic association between x and y, which was statistically significant, rₛ(6) = -1.00, p < .001, 95% CI [-1.00, -1.00].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "8",
+       "-1.00",
+       "[-1.00, -1.00]",
+       "6",
+       ".000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp8-1.00[-1.00, -1.00]6.000Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate.There was a very strong negative monotonic association between x and y, which was statistically significant, rₛ(6) = -1.00, p < .001, 95% CI [-1.00, -1.00].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>8</td><td>-1.00</td><td>[-1.00, -1.00]</td><td>6</td><td>.000</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate.</p><div id=\"statsSentence\">There was a very strong negative monotonic association between x and y, which was statistically significant, rₛ(6) = -1.00, p &lt; .001, 95% CI [-1.00, -1.00].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman-no-spread",
+   "test": "spearman",
+   "csv": "x,y\n1,4\n2,4\n3,4\n4,4\n5,4",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "One of the variables has the same value in every row, so there is nothing to correlate"
+   ]
+  },
+  {
+   "id": "spearman-weak",
+   "test": "spearman",
+   "csv": "x,y\n1,5\n2,3\n3,6\n4,4\n5,5\n6,3\n7,6\n8,5\n9,2\n10,7",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a weak positive monotonic association between x and y, which was not statistically significant, rₛ(8) = .14, p = .696, 95% CI [-.54, .71].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "10",
+       ".14",
+       "[-.54, .71]",
+       "8",
+       ".696"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp10.14[-.54, .71]8.696Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.There was a weak positive monotonic association between x and y, which was not statistically significant, rₛ(8) = .14, p = .696, 95% CI [-.54, .71].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>10</td><td>.14</td><td>[-.54, .71]</td><td>8</td><td>.696</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line.</p><div id=\"statsSentence\">There was a weak positive monotonic association between x and y, which was not statistically significant, rₛ(8) = .14, p = .696, 95% CI [-.54, .71].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "spearman-missing-cells",
+   "test": "spearman",
+   "csv": "x,y\n1,2\n2,\n3,4\n,3\n5,6\n6,5\n7,8\n8,7\n9,10\n10,9\n11,12",
+   "values": {
+    "v1": "x",
+    "v2": "y"
+   },
+   "form": {
+    "values": {
+     "v1": "0",
+     "v2": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(7) = .95, p < .001, 95% CI [.70, .99].",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N",
+       "rₛ",
+       "95% CI",
+       "df",
+       "p"
+      ],
+      [
+       "9",
+       ".95",
+       "[.70, .99]",
+       "7",
+       ".000"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate."
+    }
+   ],
+   "resultsText": "ResultsNrₛ95% CIdfp9.95[.70, .99]7.000Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate.There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(7) = .95, p < .001, 95% CI [.70, .99].Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>N</th><th>rₛ</th><th>95% CI</th><th>df</th><th>p</th></tr><tr><td>9</td><td>.95</td><td>[.70, .99]</td><td>7</td><td>.000</td></tr></tbody></table><p class=\"desc\">Spearman works on ranks, so it fits ordinal scores and relationships that rise or fall steadily without being a straight line. With fewer than 10 pairs the p-value is approximate.</p><div id=\"statsSentence\">There was a very strong positive monotonic association between x and y, which was statistically significant, rₛ(7) = .95, p &lt; .001, 95% CI [.70, .99].</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

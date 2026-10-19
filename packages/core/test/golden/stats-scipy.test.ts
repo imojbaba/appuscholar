@@ -11,7 +11,7 @@ import { readFixture } from "./harness/fixture";
  * never by hand; from the repository root:
  *   uv run --no-project --with scipy==1.17.1 --python 3.13 python -I packages/core/test/golden/stats/scipy-reference.py packages/core/test/golden/stats
  * ) the port runs the fixture case and each `values[key]` is held to `ref[key]`: within 1e-6 relative, or 1e-9 absolute where scipy's value is 0. `t` (and `tS`) is compared by absolute
- * value, since the group order sets its sign; Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17). A case with `ref: null` is one v1 refused (a toast, or the safety net) or a test with no scipy reference yet; the port refuses it too.
+ * value, since the group order sets its sign; Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17). A case with `ref: null` is one v1 refused (a toast, or the safety net), which the port refuses too, a test with no scipy reference yet, or one where scipy has no finite value and v1 has (D-W2-16), which the port runs.
  * Typed here: the scipy pin, the tolerances, and for each test the keys its reference holds (KEYS), so that a reference that loses a statistic is noticed.
  */
 
@@ -21,7 +21,11 @@ const fixtures = corpusFiles().map((f) => f.replace(/\.json$/, ""));
 const cases = new Map<string, CapturedRun>();
 for (const f of fixtures) for (const c of readFixture<{ cases: CapturedRun[] }>("stats", f).cases) cases.set(c.id, c);
 
-/** The keys scipy gives for each test (pearson's cl and ch only when n > 3; tukey's p_i_j for every pair). */
+/**
+ * The keys scipy gives for each test (pearson's cl and ch only when n > 3; tukey's p_i_j for every pair; mannwhitney's U is min(U1, n1*n2 - U1) and wilcoxon's W is min(W+, W-), the
+ * statistic v1 prints). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
+ * padj_i_j), the Spearman interval (lo, hi), ω² (omega2, F9) and ε² (eps2).
+ */
 const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
   ttest1: (r) => sameKeys(r, ["t", "p"]),
   ttestInd: (r) => sameKeys(r, ["t", "p", "df", "tS", "pS"]),
@@ -30,6 +34,11 @@ const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
   tukey: (r) => Object.keys(r).length >= 3 && Object.keys(r).every((k) => /^p_\d+_\d+$/.test(k)),
   regression: (r) => sameKeys(r, ["b1", "b0", "seB1", "p", "r2", "F"]),
   pearson: (r) => sameKeys(r, ["r", "p"]) || sameKeys(r, ["r", "p", "cl", "ch"]),
+  mannwhitney: (r) => sameKeys(r, ["U", "p"]),
+  wilcoxon: (r) => sameKeys(r, ["W", "p"]),
+  kruskal: (r) => sameKeys(r, ["H", "p"]),
+  spearman: (r) => sameKeys(r, ["rho", "p"]),
+  welchAnova: (r) => sameKeys(r, ["F", "p"]),
 };
 function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Object.keys(r).sort().join() === keys.slice().sort().join()}
 
@@ -62,7 +71,9 @@ describe("stats runners agree with scipy (spec §5.9)", () => {
       const r = runStats(statsParseText(fx.csv)!, fx.test, fx.form);
       if (c.ref === null) {
         expect(c.why, c.id).toBeTruthy();
-        if (c.test in KEYS) expect(r.ok, `${c.id}: ${c.why}`).toBe(false);
+        // scipy has no finite value where v1 has one (kruskal-all-same: scipy divides by the zero tie correction, v1 skips it, register row D-W2-16): the port runs, as v1 did
+        if (c.why!.startsWith("scipy returns no finite value")) expect(r.ok, `${c.id}: ${c.why}`).toBe(true);
+        else if (c.test in KEYS) expect(r.ok, `${c.id}: ${c.why}`).toBe(false);
         return;
       }
       expect(r.ok, c.id).toBe(true);

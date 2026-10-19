@@ -1,0 +1,102 @@
+[
+ {
+  "id": "kruskal-demo",
+  "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+  "test": "kruskal",
+  "values": {
+   "dv": "rating",
+   "iv": "group"
+  },
+  "why": "TG_DEMO's kruskal: significant, so the Dunn table"
+ },
+ {
+  "id": "kruskal-group-column-named-group",
+  "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3",
+  "test": "kruskal",
+  "values": {
+   "dv": "rating",
+   "iv": "group"
+  },
+  "why": "the demo again, for F2: the grouping column is called group, so the sentence says 'across the group groups'"
+ },
+ {
+  "id": "kruskal-non-significant",
+  "csv": "arm,score\nA,10\nA,12\nA,11\nA,13\nA,9\nB,11\nB,13\nB,12\nB,10\nB,14\nC,12\nC,11\nC,14\nC,10\nC,13",
+  "test": "kruskal",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "not significant: no Dunn table and no post-hoc sentence"
+ },
+ {
+  "id": "kruskal-small-group",
+  "csv": "arm,score\nA,1\nA,2\nA,3\nB,7\nB,8\nB,9\nB,10\nB,11\nB,12\nC,14\nC,15\nC,16\nC,17\nC,18\nC,19",
+  "test": "kruskal",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "A has 3 values: the 'fewer than 5 values' note"
+ },
+ {
+  "id": "kruskal-all-same",
+  "csv": "group,score\nA,3\nA,3\nA,3\nB,3\nB,3\nB,3\nC,3\nC,3\nC,3",
+  "test": "kruskal",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "every score the same. The brief expected the toast, but stkKruskal skips the tie division when C is 0 (register row D-W2-16) and returns H = 0, which is finite, so v1 runs the test: H(2) = 0.00, p = 1.000. The toast 'All values are identical' cannot fire for three or more groups of two or more values; scipy's kruskal returns NaN here"
+ },
+ {
+  "id": "kruskal-two-groups",
+  "csv": "group,score\nA,1\nA,2\nA,3\nB,4\nB,5\nB,6",
+  "test": "kruskal",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "two groups: the toast"
+ },
+ {
+  "id": "kruskal-one-value-group",
+  "csv": "group,score\nA,1\nA,2\nA,3\nB,4\nB,5\nB,6\nC,7",
+  "test": "kruskal",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "C has one value: the toast"
+ },
+ {
+  "id": "kruskal-text-in-numeric",
+  "csv": "group,rating\nA,2\nA,3\nA,2\nA,3\nA,4\nA,2\nA,3\nB,4\nB,5\nB,4\nB,5\nB,4\nB,3\nB,5\nC,1\nC,1\nC,2\nC,2\nC,1\nC,2\nC,3\nA,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nC,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "kruskal",
+  "values": {
+   "dv": "rating",
+   "iv": "group"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). statsGroupBy drops both; kruskal has no assumption pass, so the note says 2."
+ },
+ {
+  "id": "kruskal-integer-labels",
+  "csv": "group,score\n10,20\n10,22\n10,21\n10,24\n10,23\n2,1\n2,3\n2,2\n2,4\n2,5\n3,10\n3,12\n3,11\n3,13\n3,14\nx,",
+  "test": "kruskal",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "groups 10, 2 and 3 come out 2, 3, 10 (F4); the row x with an empty score makes the column categorical; significant, so the Dunn table in that order"
+ },
+ {
+  "id": "kruskal-hindi-labels",
+  "csv": "समूह,अंक\nनियंत्रण,2\nनियंत्रण,3\nनियंत्रण,2\nनियंत्रण,3\nनियंत्रण,4\nनियंत्रण,2\nध्यान,4\nध्यान,5\nध्यान,4\nध्यान,5\nध्यान,4\nध्यान,5\nव्यायाम,1\nव्यायाम,1\nव्यायाम,2\nव्यायाम,2\nव्यायाम,1\nव्यायाम,2",
+  "test": "kruskal",
+  "values": {
+   "dv": "अंक",
+   "iv": "समूह"
+  },
+  "why": "Devanagari group labels and column names"
+ }
+]

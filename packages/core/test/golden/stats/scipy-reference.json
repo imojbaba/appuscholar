@@ -122,6 +122,156 @@
    "why": "no scipy reference for this test yet"
   },
   {
+   "test": "kruskal",
+   "id": "kruskal-demo",
+   "ref": {
+    "H": 13.888401986561504,
+    "p": 0.0009642104353153797
+   }
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-group-column-named-group",
+   "ref": {
+    "H": 13.888401986561504,
+    "p": 0.0009642104353153797
+   }
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-non-significant",
+   "ref": {
+    "H": 1.2530386740331527,
+    "p": 0.5344488034990534
+   }
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-small-group",
+   "ref": {
+    "H": 12.150000000000006,
+    "p": 0.0022996461861249295
+   }
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-all-same",
+   "ref": null,
+   "why": "scipy returns no finite value for H, p"
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-two-groups",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-one-value-group",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-text-in-numeric",
+   "ref": {
+    "H": 13.888401986561504,
+    "p": 0.0009642104353153797
+   }
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-integer-labels",
+   "ref": {
+    "H": 12.5,
+    "p": 0.0019304541362277095
+   }
+  },
+  {
+   "test": "kruskal",
+   "id": "kruskal-hindi-labels",
+   "ref": {
+    "H": 13.572131147540977,
+    "p": 0.0011294035993527677
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-demo",
+   "ref": {
+    "U": 9.0,
+    "p": 0.0015208806666164587
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-integer-labels",
+   "ref": {
+    "U": 1.0,
+    "p": 0.015873015873015872
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-decimal-ties",
+   "ref": {
+    "U": 6.0,
+    "p": 0.4126984126984127
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-ties",
+   "ref": {
+    "U": 4.0,
+    "p": 0.02833523769688201
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-n50",
+   "ref": {
+    "U": 186.0,
+    "p": 0.04314777118294289
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-all-same",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-three-groups",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-text-in-numeric",
+   "ref": {
+    "U": 9.0,
+    "p": 0.0015208806666164587
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-non-significant",
+   "ref": {
+    "U": 12.0,
+    "p": 1.0
+   }
+  },
+  {
+   "test": "mannwhitney",
+   "id": "mannwhitney-name-needs-escaping",
+   "ref": {
+    "U": 0.0,
+    "p": 0.02857142857142857
+   }
+  },
+  {
    "test": "pearson",
    "id": "pearson-demo",
    "ref": {
@@ -267,6 +417,74 @@
     "p": 0.33333333333333326,
     "r2": 0.7500000000000001,
     "F": 3.0000000000000013
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-demo",
+   "ref": {
+    "rho": 0.9586813236920011,
+    "p": 2.4066764125016135e-07
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-tiny-p",
+   "ref": {
+    "rho": 0.9945054945054945,
+    "p": 3.909411051466975e-12
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-text-dropped-uncounted",
+   "ref": {
+    "rho": 0.9586813236920011,
+    "p": 2.4066764125016135e-07
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-n4",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-n9",
+   "ref": {
+    "rho": 0.9,
+    "p": 0.0009430623223403288
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-perfect-negative",
+   "ref": {
+    "rho": -1.0,
+    "p": 0.0
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-no-spread",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-weak",
+   "ref": {
+    "rho": 0.14199965909385526,
+    "p": 0.6955637301970292
+   }
+  },
+  {
+   "test": "spearman",
+   "id": "spearman-missing-cells",
+   "ref": {
+    "rho": 0.9500000000000001,
+    "p": 8.762523965086185e-05
    }
   },
   {
@@ -622,6 +840,142 @@
    "id": "tukey-no-categorical-column",
    "ref": null,
    "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-demo",
+   "ref": {
+    "F": 57.91974488440074,
+    "p": 2.6343501671228097e-07
+   }
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-non-significant",
+   "ref": {
+    "F": 0.02995839112343967,
+    "p": 0.9706321241473708
+   }
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-constant-group",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-two-groups",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-one-value-group",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-text-in-numeric",
+   "ref": {
+    "F": 57.91974488440074,
+    "p": 2.6343501671228097e-07
+   }
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-hindi-labels",
+   "ref": {
+    "F": 9.36,
+    "p": 0.014299088427393119
+   }
+  },
+  {
+   "test": "welchAnova",
+   "id": "welchAnova-integer-labels",
+   "ref": {
+    "F": 166.56321920225912,
+    "p": 3.2803024266670274e-07
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-demo",
+   "ref": {
+    "W": 0.0,
+    "p": 0.0020730250092553548
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-decimal-ties",
+   "ref": {
+    "W": 5.0,
+    "p": 0.15625
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-decimal-ties-same-double",
+   "ref": {
+    "W": 5.0,
+    "p": 0.15005569529769436
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-zero-diffs",
+   "ref": {
+    "W": 0.0,
+    "p": 0.022494271222449656
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-one-diff",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-n50",
+   "ref": {
+    "W": 408.0,
+    "p": 0.0270634921760479
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-n49",
+   "ref": {
+    "W": 408.0,
+    "p": 0.04170385423242351
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-exact-small",
+   "ref": {
+    "W": 1.0,
+    "p": 0.015625
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-text-in-numeric",
+   "ref": {
+    "W": 0.0,
+    "p": 0.0020730250092553548
+   }
+  },
+  {
+   "test": "wilcoxon",
+   "id": "wilcoxon-missing-cells",
+   "ref": {
+    "W": 0.0,
+    "p": 0.0625
+   }
   }
  ]
 }

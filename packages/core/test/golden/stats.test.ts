@@ -35,6 +35,11 @@ const REQUIRED: Record<string, string[]> = {
   tukey: ["tukey-demo-arms", "tukey-text-in-numeric", "tukey-integer-labels", "tukey-two-groups", "tukey-six-groups"],
   regression: ["regression-demo", "regression-text-in-numeric", "regression-exact-line", "regression-no-spread-x", "regression-n2", "regression-negative-slope"],
   pearson: ["pearson-demo", "pearson-text-in-numeric", "pearson-n3", "pearson-perfect", "pearson-negative", "pearson-no-spread"],
+  mannwhitney: ["mannwhitney-demo", "mannwhitney-integer-labels", "mannwhitney-decimal-ties", "mannwhitney-ties", "mannwhitney-n50", "mannwhitney-all-same", "mannwhitney-three-groups"],
+  wilcoxon: ["wilcoxon-demo", "wilcoxon-decimal-ties", "wilcoxon-zero-diffs", "wilcoxon-one-diff", "wilcoxon-n50"],
+  kruskal: ["kruskal-demo", "kruskal-group-column-named-group", "kruskal-non-significant", "kruskal-small-group", "kruskal-all-same", "kruskal-two-groups"],
+  spearman: ["spearman-demo", "spearman-tiny-p", "spearman-text-dropped-uncounted", "spearman-n4", "spearman-n9", "spearman-perfect-negative"],
+  welchAnova: ["welchAnova-demo", "welchAnova-non-significant", "welchAnova-constant-group", "welchAnova-two-groups", "welchAnova-text-in-numeric", "welchAnova-hindi-labels"],
 };
 
 for (const file of fixtures) {
@@ -126,8 +131,8 @@ describe("stats: the frame", () => {
     const data = statsParseText("score\n1\n2\n3")!;
     const toast = "Could not run that test — check the columns you picked match what the test needs";
     expect(runStats(data, "nope" as "desc", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "nope", reason: "toast", toast });
-    // A real key whose runner a later task ports: the task that ports mannwhitney updates this line.
-    expect(runStats(data, "mannwhitney", { values: { dv: "0", iv: "0" }, ticked: {} })).toEqual({ ok: false, test: "mannwhitney", reason: "toast", toast });
+    // A real key whose runner a later task ports: the task that ports chisq updates this line.
+    expect(runStats(data, "chisq", { values: { v1: "0", v2: "0" }, ticked: {} })).toEqual({ ok: false, test: "chisq", reason: "toast", toast });
   });
   it("desc-one-left-out: one dropped entry gives the singular note (11994)", () => {
     const c = load("desc").cases.find((x) => x.id === "desc-one-left-out")!;
@@ -198,5 +203,88 @@ describe("stats: tests on means (ttestInd, ttestPaired, anova1, tukey, regressio
       expect(row(r).slice(0, 6)).toEqual([String(v.n), fixed(v.b0!, 3), fixed(v.b1!, 3), fixed(v.seB1!, 3), fixed(v.t!), String(v.df)]); expect(row(r)[7]).toBe(fixed(v.r2!, 3)); }
     for (const c of load("pearson").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
       expect(row(r)[0]).toBe(String(v.n)); expect(row(r)[2]).toBe(String(v.df)); expect("cl" in v).toBe(v.n! > 3); }
+  });
+});
+
+describe("stats: rank tests and Welch ANOVA (mannwhitney, wilcoxon, kruskal, spearman, welchAnova)", () => {
+  const find = (file: string, id: string) => load(file).cases.find((x) => x.id === id)!;
+  const rowsOf = (c: CapturedRun, b = 0) => (c.blocks[b] as { rows: string[][] }).rows;
+  const lastNote = (c: CapturedRun) => { const b = c.blocks[c.blocks.length - 1]!; return b.kind === "note" ? b.html : ""; };
+  it("F1: the Spearman p cell is noLead(p.toFixed(3)), .000 for a tiny p, while the sentence says p < .001", () => {
+    const c = find("spearman", "spearman-tiny-p");
+    expect(rowsOf(c)[1]![4]).toBe(".000");
+    expect(c.apa).toContain("p < .001");
+    const r = run(c);
+    expect(r.ok && r.values.p! < 0.0005 && r.values.p! > 0).toBe(true);
+  });
+  it("F2: the Kruskal-Wallis sentence appends ' groups' to the column name", () => {
+    expect(find("kruskal", "kruskal-group-column-named-group").apa).toContain("across the group groups,");
+    expect(find("kruskal", "kruskal-non-significant").apa).toContain("across the arm groups,");
+  });
+  it("F15: ties are exact floating-point equality, so decimal differences that are 0.1 on paper may or may not tie", () => {
+    expect(1.1 - 1.0).not.toBe(3.3 - 3.2);
+    expect(1.1 - 1.0).toBe(2.2 - 2.1);
+    expect(run(find("wilcoxon", "wilcoxon-decimal-ties"))).toMatchObject({ ok: true, values: { exact: 1 } });
+    expect(run(find("wilcoxon", "wilcoxon-decimal-ties-same-double"))).toMatchObject({ ok: true, values: { exact: 0 } });
+    expect(find("wilcoxon", "wilcoxon-decimal-ties").apa).toContain("(exact)");
+    expect(find("wilcoxon", "wilcoxon-decimal-ties-same-double").apa).toContain("normal approximation");
+    expect(run(find("mannwhitney", "mannwhitney-decimal-ties"))).toMatchObject({ ok: true, values: { exact: 1 } });
+  });
+  it("Mann-Whitney and Wilcoxon take the normal approximation at 50, the exact p below it", () => {
+    expect(run(find("mannwhitney", "mannwhitney-n50"))).toMatchObject({ ok: true, values: { n1: 50, exact: 0 } });
+    expect(run(find("wilcoxon", "wilcoxon-n50"))).toMatchObject({ ok: true, values: { n: 50, exact: 0 } });
+    expect(run(find("wilcoxon", "wilcoxon-n49"))).toMatchObject({ ok: true, values: { n: 49, exact: 1 } });
+    expect(run(find("wilcoxon", "wilcoxon-zero-diffs"))).toMatchObject({ ok: true, values: { n: 7, exact: 0 } });
+  });
+  it("F4: integer-like labels come out in object-key order, and the Mann-Whitney note names the first key", () => {
+    const c = find("mannwhitney", "mannwhitney-integer-labels");
+    expect(rowsOf(c).slice(1).map((r) => r[0])).toEqual(["2", "10"]);
+    expect(lastNote(c)).toContain("(positive: 2 tends to score higher)");
+    const r = run(c);
+    expect(r.ok && r.values.rrb! < 0).toBe(true);
+  });
+  it("F18 and D-W2-4: Spearman counts nothing it drops; Welch ANOVA's count is doubled by its assumption pass; the others count once", () => {
+    const sp = find("spearman", "spearman-text-dropped-uncounted");
+    expect(sp.resultsText).not.toContain("left out");
+    expect(run(sp)).toMatchObject({ ok: true, skipped: 0 });
+    for (const [file, id, n] of [["welchAnova", "welchAnova-text-in-numeric", 4], ["mannwhitney", "mannwhitney-text-in-numeric", 2], ["wilcoxon", "wilcoxon-text-in-numeric", 2], ["kruskal", "kruskal-text-in-numeric", 2]] as const) {
+      const c = find(file, id);
+      expect(lastNote(c), id).toBe(`${n} entries that are not a number were left out.`);
+      expect(run(c), id).toMatchObject({ ok: true, skipped: n });
+    }
+  });
+  it("kruskal-all-same: v1 runs the test with H = 0 (D-W2-16), its 'All values are identical' toast is not reached", () => {
+    const c = find("kruskal", "kruskal-all-same");
+    expect(c.toasts).toEqual([]);
+    expect(run(c)).toMatchObject({ ok: true, values: { H: 0, p: 1 } });
+  });
+  it("the post-hoc values exist only when the post-hoc table is shown", () => {
+    for (const file of ["kruskal", "welchAnova"]) for (const c of load(file).cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const tables = r.blocks.filter((b) => b.kind === "table").length;
+      const post = Object.keys(r.values).filter((k) => /^(padj|gh_p)_\d+_\d+$/.test(k)).length;
+      const k = (r.blocks[0] as { rows: string[][] }).rows.length - 1;
+      expect(post, c.id).toBe(r.values.p! < 0.05 ? k * (k - 1) / 2 : 0);
+      expect(tables, c.id).toBe((r.values.p! < 0.05 ? 2 : 1) + (file === "welchAnova" ? 1 : 0));
+    }
+  });
+  it("values are the numbers behind the table cells (register row F27)", () => {
+    const fixed = (x: number, k = 2) => x.toFixed(k);
+    const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
+    for (const c of load("mannwhitney").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(blockAsText(r.blocks[1]!).startsWith(`U = ${fixed(v.U!, 1)}${v.exact ? "" : `, z = ${fixed(v.z!)}`}, `), c.id).toBe(true);
+      expect(blockAsText(r.blocks[1]!)).toContain(`rank-biserial r = ${nl(fixed(v.rrb!))}`); expect(v.U).toBe(Math.min(v.U1!, v.U2!)); }
+    for (const c of load("wilcoxon").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect((r.blocks[0] as { rows: string[][] }).rows[1]!.slice(0, 3), c.id).toEqual([String(v.n), fixed(v.W!, 1), v.exact ? "—" : fixed(v.z!)]); expect(v.W).toBe(Math.min(v.wPlus!, v.wMinus!)); }
+    for (const c of load("kruskal").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(blockAsText(r.blocks[1]!).startsWith(`H(${v.df}) = ${fixed(v.H!)}, `), c.id).toBe(true); }
+    for (const c of load("spearman").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect((r.blocks[0] as { rows: string[][] }).rows[1], c.id).toEqual([String(v.n), nl(fixed(v.rho!)), `[${nl(fixed(v.lo!))}, ${nl(fixed(v.hi!))}]`, String(v.df), nl(fixed(v.p!, 3))]); }
+    for (const c of load("welchAnova").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(blockAsText(r.blocks[1]!).startsWith(`Welch F(${v.df1}, ${fixed(v.df2!)}) = ${fixed(v.F!)}, `), c.id).toBe(true);
+      expect(blockAsText(r.blocks[1]!)).toContain(`ω² = ${nl(fixed(v.omega2!))} `);
+      if (v.p! < 0.05) { const rows = (r.blocks[2] as { rows: string[][] }).rows.slice(1); const k = (r.blocks[0] as { rows: string[][] }).rows.length - 1;
+        let n = 0; for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) { expect(rows[n++]!.slice(1, 3), c.id).toEqual([fixed(v[`gh_diff_${i}_${j}`]!), `[${fixed(v[`gh_lo_${i}_${j}`]!)}, ${fixed(v[`gh_hi_${i}_${j}`]!)}]`]); } } }
   });
 });

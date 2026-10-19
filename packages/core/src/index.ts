@@ -51,3 +51,4 @@ export { STAT_TESTS, statsColVals, statsGroupBy, stkIsBinaryCol, stkBinData, stk
 export type { StatsTestKey, StatsForm, StatsCtx, StatsBlock, StatsResult, StatsOk, StatsFail, StatsTestDef, StatsField, StatsFieldType, StatsExtra, BinData, Anova2Cells, MRData, MRRef } from "./stats-core";
 export { runStats } from "./stats";
 export { runTtestInd, runTtestPaired, runAnova1, runTukey, runRegression, runPearson } from "./stats-means";
+export { runMannwhitney, runWilcoxon, runKruskal, runSpearman, runWelchAnova } from "./stats-ranks";
