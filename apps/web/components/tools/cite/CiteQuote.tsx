@@ -1,4 +1,5 @@
 "use client";
+import { bookmarkletHref } from "@appuscholar/core";
 import { useEffect, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -7,7 +8,6 @@ import { contentLangOf, useCallAI } from "@/lib/ai/useCallAI";
 import { insertHtmlBlock, insertTextAtCursor } from "@/lib/editor/insert";
 import { getCiteForm, setCiteForm, useCiteForm } from "@/lib/cite/form";
 import { citeInsertQuote } from "@/lib/cite/quote";
-import { bookmarkletHref } from "@/lib/cite/capture";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
@@ -28,8 +28,9 @@ export function CiteQuote({ insertReady }: { insertReady: boolean }) {
     const cur = getCiteForm();
     void citeInsertQuote({
       quote: cur.quote, srcLang: cur.lang, contentLang: contentLangOf(project, settings), callAI,
-      insertBlock: (html) => { const e = live(); if (e) insertHtmlBlock(e, html); },
-      insertAtCursor: (text) => { const e = live(); if (e) insertTextAtCursor(e, text); },
+      // The editor of the document the request was made in: if the student has switched document by the time the AI answers, it is destroyed and nothing goes in.
+      insertBlock: (html) => { const e = live(); if (!e || e.isDestroyed) return false; insertHtmlBlock(e, html); return true; },
+      insertAtCursor: (text) => { const e = live(); if (!e) return false; insertTextAtCursor(e, text); return true; },
       clearQuote: () => setCiteForm((p) => ({ ...p, quote: "" })),
       toast
     });

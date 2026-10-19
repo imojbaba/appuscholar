@@ -5,10 +5,11 @@ import { createElement } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CitationEntry } from "@appuscholar/core";
+import { captureRecord, decodeCapture, type CitationEntry } from "@appuscholar/core";
 
 /*
- * The one-click capture (v1 citSetupBookmarklet 13622-13636, citCheckCaptureHash 13637-13655, called at boot 13676-13677). Every expected value is v1's own, from
+ * The one-click capture's page side (v1 citCheckCaptureHash 13637-13655, called at boot 13676-13677): the address, the confirm, the save and the toasts. The bookmarklet's
+ * source, the decode, the question and the entry are core's (packages/core/test/golden/citcapture.test.ts). Every expected value is v1's own, from
  * test/golden/citshare/cases.json: the bookmarklet's href at http://localhost/, the hash it opened the app with on each article page (run in jsdom), and for each hash what v1's
  * citCheckCaptureHash asked, toasted, saved and left in the address bar.
  */
@@ -24,52 +25,23 @@ const FX = JSON.parse(readFileSync(join(__dirname, "../../../packages/core/test/
 
 const h = vi.hoisted(() => ({
   library: null as unknown as { lib: CitationEntry[]; ready: boolean; loading: boolean; locked: boolean; update: ReturnType<typeof vi.fn> },
-  toast: vi.fn()
+  toast: vi.fn(),
+  /** How many mounted components ask for the library (the provider's `demands`). */
+  demands: 0
 }));
-vi.mock("@/lib/cite/useLibrary", () => ({ useLibrary: () => h.library }));
+vi.mock("@/lib/cite/useLibrary", async () => {
+  const { useEffect } = await import("react");
+  return { useLibrary: () => { useEffect(() => { h.demands++; return () => { h.demands--; }; }, []); return h.library; } };
+});
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
-import {
-  bookmarkletHref, bookmarkletSource, CAPTURE_UNREADABLE, captureConfirmText, captureRecord, CaptureHash, decodeCapture, fileCapture, resetCaptureHash, takeCaptureHash
-} from "../lib/cite/capture";
+import { CaptureHash, fileCapture, resetCaptureHash, takeCaptureHash } from "../lib/cite/capture";
 import { ALREADY_IN_LIBRARY } from "../lib/cite/actions";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const raw = (hash: string) => hash.slice("#capture=".length);
 /** The address without its origin: v1 ran at http://localhost/, these tests at jsdom's own origin. */
 const path = (href: string) => { const u = new URL(href); return u.pathname + u.search + u.hash; };
-
-describe("the bookmarklet (citSetupBookmarklet 13622-13636)", () => {
-  it("its href equals v1's for http://localhost/", () => {
-    expect(bookmarkletHref("http://localhost/")).toBe(FX.bookmarklet.href);
-    expect(bookmarkletSource("http://localhost/")).toBe(FX.bookmarklet.source);
-  });
-  it("on every article page v1's bookmarklet opened the app with a hash, or alerted when the page has no title", () => {
-    expect(FX.pages.filter((p) => p.opened.length === 1).map((p) => p.id)).toEqual(FX.captures.map((c) => c.id));
-    expect(FX.pages.find((p) => p.id === "nothing")!.alerts).toEqual(["No citation info found on this page — this works best on a journal article, PubMed, or arXiv page."]);
-    for (const p of FX.pages) for (const o of p.opened) { expect(o.url.startsWith("http://localhost/#capture=")).toBe(true); expect(o.target).toBe("_blank"); }
-  });
-});
-
-describe("decodeCapture, captureRecord and the confirm (citCheckCaptureHash 13643-13651)", () => {
-  for (const c of FX.captures) {
-    it(`${c.id}: the record v1 saved and the question it asked`, () => {
-      const d = decodeCapture(raw(c.hash));
-      expect(d).not.toBeNull();
-      expect(captureConfirmText(d!)).toBe(c.accepted.confirms[0]);
-      expect(captureRecord(d!)).toEqual(c.accepted.libAfter[c.accepted.libAfter.length - 1]);
-    });
-  }
-  it("a hash v1 could not read is null; one with no title has an empty title (v1 returns quietly)", () => {
-    for (const b of FX.bad) {
-      if (!b.hash.startsWith("#capture=")) continue;
-      const d = decodeCapture(raw(b.hash));
-      if (b.toasts[0] === CAPTURE_UNREADABLE) expect(d, b.id).toBeNull();
-      else { expect(d, b.id).not.toBeNull(); expect(d!.title, b.id).toBe(""); }
-    }
-    expect(FX.bad.filter((b) => b.toasts[0] === CAPTURE_UNREADABLE).map((b) => b.id)).toEqual(["not-base64", "not-json", "empty-capture"]);
-  });
-});
 
 describe("takeCaptureHash strips the hash as v1 does (13642)", () => {
   it("a capture hash is taken and the address left without it; any other hash is left alone", () => {
@@ -126,6 +98,7 @@ describe("<CaptureHash/>: the load-time check", () => {
       update: vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); h.library = { ...h.library, lib: stored }; return true; })
     };
     h.toast.mockReset();
+    h.demands = 0;
     resetCaptureHash();
   });
   afterEach(() => {
@@ -194,6 +167,24 @@ describe("<CaptureHash/>: the load-time check", () => {
     expect(h.library.update).toHaveBeenCalledTimes(1);
     expect(stored).toEqual(c.accepted.libAfter);
     expect(toasts()).toEqual(c.accepted.toasts);
+  });
+  it("asks for the library only while an entry waits: released once it is filed, or when there is nothing to file", () => {
+    const c = FX.captures[0]!;
+    h.library = { ...h.library, ready: false, loading: true };
+    window.history.replaceState(null, "", "/" + c.hash);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mount();
+    expect(h.demands).toBe(1);
+    h.library = { ...h.library, ready: true, loading: false };
+    rerender();
+    expect(h.library.update).toHaveBeenCalledTimes(1);
+    expect(h.demands).toBe(0);
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    resetCaptureHash();
+    window.history.replaceState(null, "", "/" + c.hash);
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    mount();
+    expect(h.demands).toBe(0);
   });
   it("the hash is read once per page load: a second mount finds nothing to do", () => {
     const c = FX.captures[0]!;

@@ -48,3 +48,6 @@ export type { CrWork, RcCheck } from "./fetch/crossref";
 export { citMissingNumbers, citCaretEntry } from "./citlib";
 // Stage 2: Citation Manager classic sources (Task 8b), generated from v1 by the golden harness
 export { PSYCH_STARTERS } from "./data/classic-sources";
+// Stage 2: Citation Manager one-click capture (Task 8b)
+export { bookmarkletSource, bookmarkletHref, decodeCapture, captureConfirmText, captureRecord, captureIsDuplicate } from "./citcapture";
+export type { CaptureData } from "./citcapture";

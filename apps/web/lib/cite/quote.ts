@@ -33,10 +33,10 @@ export type QuoteDeps = {
   /** The project's content language, else the default in Settings (getContentLang 2472; the language useCallAI sends). */
   contentLang: "en" | "hi";
   callAI(prompt: string, opts: { temp: number; max: number; noLang: boolean }): Promise<string>;
-  /** insertHTMLBlockIntoEditor (insertHtmlBlock). */
-  insertBlock(html: string): void;
-  /** citInsertAtCursor (insertTextAtCursor). */
-  insertAtCursor(text: string): void;
+  /** insertHTMLBlockIntoEditor (insertHtmlBlock); false when the document the request was made in is no longer open (nothing was inserted). */
+  insertBlock(html: string): boolean;
+  /** citInsertAtCursor (insertTextAtCursor); false when no document is open. */
+  insertAtCursor(text: string): boolean;
   clearQuote(): void;
   toast(msg: string): void;
 };
@@ -50,12 +50,13 @@ export async function citeInsertQuote(d: QuoteDeps): Promise<void> {
     d.toast(TRANSLATING_QUOTE);
     try {
       const translated = await d.callAI(quotePrompt(txt), { ...QUOTE_OPTS });
-      d.insertBlock(translatedQuoteHtml(txt, translated));
+      // v1 has one editor; here the student may have switched document while the AI answered. Nothing went in, so the box keeps the quote and no success is claimed.
+      if (!d.insertBlock(translatedQuoteHtml(txt, translated))) return;
       d.clearQuote();
       d.toast(QUOTE_TRANSLATED);
     } catch (e) { d.toast(e instanceof Error && e.message ? e.message : SOMETHING_WRONG); }
   } else {
-    d.insertAtCursor("“" + txt + "” ");
+    if (!d.insertAtCursor("“" + txt + "” ")) return;
     d.clearQuote();
     d.toast(QUOTE_INSERTED);
   }

@@ -5,7 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
+import { bookmarkletHref, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 
@@ -40,7 +40,6 @@ import { CitePanel } from "../components/tools/cite/CitePanel";
 import { resetCiteForm } from "../lib/cite/form";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
 import { IMPORT_TOO_LARGE, LIBRARY_EXPORTED, readFileText } from "../lib/cite/share";
-import { bookmarkletHref } from "../lib/cite/capture";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -283,6 +282,20 @@ describe("Insert quote", () => {
     await click("cite-insertquote");
     expect(h.callAI).not.toHaveBeenCalled();
     expect(e.getText()).toContain("“स्मृति की क्षमता सीमित है।” ");
+  });
+  it("a translation that finishes after a document switch inserts nothing, leaves the box and shows no success", async () => {
+    const e = new Editor({ extensions: editorExtensions, content: "<p>Mine.</p>" });
+    h.editor = e;
+    h.project = { id: "p1", contentLang: "hi" };
+    let answer: (v: string) => void = () => {};
+    h.callAI.mockImplementation(() => new Promise<string>((r) => { answer = r; }));
+    mount();
+    typeArea("citQuoteText", "The span of absolute judgment is limited.");
+    await click("cite-insertquote");
+    e.destroy(); // the document switch: the editor the request was made in is gone
+    await act(async () => { answer("अनुवाद"); await new Promise((r) => setTimeout(r, 0)); });
+    expect(toasts()).toEqual(["🔎 Translating quote…"]);
+    expect(($("#citQuoteText") as HTMLTextAreaElement).value).toBe("The span of absolute judgment is limited.");
   });
   it("disabled with no document open", () => {
     mount();
