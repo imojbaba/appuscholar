@@ -7,9 +7,10 @@ import { runStats } from "../../src/stats";
 import { fmtP } from "../../src/statfmt";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles, readCorpus } from "./stats/capture";
-import { blockAsText, decodeText, renderResultsText } from "./stats/render";
-import { expectGolden, goldenMode } from "./harness/compare";
+import { blockAsText, decodeText } from "./stats/render";
+import { goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
+import { SLOW_CASES, expectSameAsV1 } from "./stats/check";
 
 /**
  * The Statistics Lab (stats-core.ts, stats.ts and the runner modules) against v1 running: for every `test/golden/stats/<test>.json` (`golden:capture stats`), each case's CSV goes through
@@ -21,9 +22,6 @@ import { readFixture } from "./harness/fixture";
 
 const fixtures = corpusFiles().map((f) => f.replace(/\.json$/, ""));
 const load = (file: string) => readFixture<{ cases: CapturedRun[] }>("stats", file);
-const blocksOf = (r: StatsResult): StatsBlock[] => (r.ok ? r.blocks : r.reason === "undefined" ? r.blocks : []);
-/** A block as its decoded cells, so a table is compared cell by cell and not only as joined text. */
-const cellsOf = (b: StatsBlock): unknown => (b.kind === "table" ? b.rows.map((r) => r.map(decodeText)) : b.kind === "list" ? b.items.map(decodeText) : blockAsText(b));
 const run = (c: CapturedRun) => runStats(statsParseText(c.csv)!, c.test, c.form);
 
 const REQUIRED: Record<string, string[]> = {
@@ -60,9 +58,8 @@ const REQUIRED: Record<string, string[]> = {
   alpha: ["alpha-demo", "alpha-no-reverse", "alpha-rev-not-found", "alpha-rev-no-range", "alpha-rev-bad-range", "alpha-two-items", "alpha-n4", "alpha-constant-item",
     "alpha-negative-item", "alpha-weak-item", "alpha-above-95", "alpha-n-under-30", "alpha-large-boot-200"],
 };
-/** v1's alpha bootstrap (stkOmegaBoot) runs 200 or 400 omega fits over n rows, each recomputing the item SDs n·n times (stkCorrMat): alpha-large-boot-200 takes about 15 s, and is first in its corpus because after the small alpha cases V8 runs it about eight times slower. */
-const SLOW_CASE_MS = 120_000;
 
+const skippedSlow: string[] = [];
 for (const file of fixtures) {
   describe(`stats: ${file}`, () => {
     const fx = load(file);
@@ -73,31 +70,14 @@ for (const file of fixtures) {
       for (const id of REQUIRED[file] ?? []) expect(fx.cases.some((c) => c.id === id), id).toBe(true);
     });
     for (const c of fx.cases) {
-      it(c.id, () => {
-        const r = run(c);
-        if (c.apa === null && c.toasts.length > 0) {
-          expect(r).toMatchObject({ ok: false, test: c.test, reason: "toast", toast: c.toasts[0] });
-          expect(c.toasts).toHaveLength(1);
-          return;
-        }
-        expect(c.toasts).toEqual([]);
-        if (c.apa === null) expect(r).toMatchObject({ ok: false, reason: "undefined" });
-        else {
-          expect(r.ok).toBe(true);
-          if (r.ok) expect(r.apa).toBe(c.apa);
-          expect(r.test).toBe(c.test);
-        }
-        const blocks = blocksOf(r);
-        expect(blocks.map((b) => b.kind)).toEqual(c.blocks.map((b) => b.kind));
-        blocks.forEach((b, i) => {
-          expectGolden(blockAsText(b), blockAsText(c.blocks[i]!), mode, `${c.id} block ${i}`);
-          expectGolden(cellsOf(b), cellsOf(c.blocks[i]!), mode, `${c.id} block ${i} cells`);
-        });
-        expect(renderResultsText(r)).toBe(c.resultsText);
-      }, SLOW_CASE_MS);
+      if (SLOW_CASES.includes(c.id)) { skippedSlow.push(c.id); continue; }
+      it(c.id, () => expectSameAsV1(c, run(c), mode));
     }
   });
 }
+describe("stats: the slow cases", () => {
+  it("the loops above skip exactly the slow cases, which stats-slow.test.ts runs", () => expect(skippedSlow).toEqual([...SLOW_CASES]));
+});
 
 describe("stats/render.ts (the test-only renderer)", () => {
   it("decodeText strips real tags only, so fmtP's literal < before a </b> stays", () => {
@@ -528,6 +508,9 @@ describe("stats: logistic regression, repeated-measures ANOVA and alpha (logisti
     expect(run(c)).toMatchObject({ ok: true, skipped: 0, values: { n: 57 } });
     expect(notes(find("logistic", "logistic-epv-note"))[2]).toContain(" Only 13 cases in the rarer outcome for 3 predictor columns (4.3 per predictor).");
     expect(notes(find("logistic", "logistic-ref-given"))[2]).toContain("Reference levels: group = Control.");
+    expect(notes(find("logistic", "logistic-one-missing-row"))[2]).toContain(" 1 row was left out because a value was missing.");
+    expect(notes(find("logistic", "logistic-vif-moderate"))[2]).toContain(" A VIF above 5 means some predictors overlap noticeably");
+    expect(notes(find("logistic", "logistic-vif-high"))[2]).toContain(" A VIF of 10 or more means");
     expect(notes(find("logistic", "logistic-categorical-predictor"))[2]).toContain("Reference levels: group = Online (the largest group).");
   });
   it("logistic values are the numbers behind the cells", () => {
@@ -566,6 +549,8 @@ describe("stats: logistic regression, repeated-measures ANOVA and alpha (logisti
     expect(r.ok && "pair_t_0_1" in r.values).toBe(false);
     expect(r.ok && "pair_t_0_2" in r.values).toBe(true);
     expect(tables(find("rmanova", "rmanova-non-significant"))).toHaveLength(2);
+    const ns = run(find("rmanova", "rmanova-non-significant"));
+    expect(ns.ok && Object.keys(ns.values).some((k) => k.startsWith("pair_"))).toBe(false); // recorded only when the table is shown, as friedman and cochran
     expect(notes(find("rmanova", "rmanova-non-significant"))[2]).toMatch(/^The overall test is not significant/);
     expect(run(find("rmanova", "rmanova-missing-row"))).toMatchObject({ ok: true, skipped: 1, values: { n: 11 } });
   });
@@ -601,6 +586,9 @@ describe("stats: logistic regression, repeated-measures ANOVA and alpha (logisti
     expect(rl.ok && rl.values.load_2! > 1).toBe(true);
     expect(tables(l)[1]![3]![5]).toBe("1.00");
     expect(items(l)).toContain("i3 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.");
+    expect(tables(find("alpha", "alpha-rev-range-en-dash"))[1]![6]![0]).toBe("q6 (reversed)");
+    const one = run(find("alpha", "alpha-exactly-1"));
+    expect(one).toMatchObject({ ok: true, values: { alpha: 1, aciLo: 1, aciHi: 1 } }); // alpha is not below 1: v1's [1,1], no stkFQuant
     const m = find("alpha", "alpha-missing-rows");
     expect(items(m)).toContain("2 row(s) with a missing answer were left out.");
     expect(run(m)).toMatchObject({ ok: true, skipped: 0, values: { n: 34 } });

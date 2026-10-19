@@ -37,8 +37,8 @@ import type { StatsBlock, StatsCtx, StatsResult } from "./stats-core";
    - each runner returns finishResult's result with `values`, the raw numbers behind the cells (register row F27): logistic n, k, ev, ne, lr, pLR, cs, nag, mcf, auc, acc, sens, spec,
      tp, tn, fp, fn and, for each coefficient j of v1's loop (0 the intercept, j >= 1 the predictor names[j-1], in m.labels order, dummies included), b_<j>, se_<j>, z_<j>, p_<j>,
      and for j >= 1 or_<j>, lo_<j>, hi_<j> (the cells v1 fills; the intercept's are blank) and vif_<j>; rmanova n, k, ssc, sss, sst, sse, F, d1, d2, pU, gg, hf, W, chi, pM, dfM, eps,
-     pC, pe2, ge2 and, for each pair i < j in the ticked order whose differences have spread, pair_t_<i>_<j> and pair_p_<i>_<j> (the paired t and its p before the Bonferroni factor,
-     computed by v1's loop whether or not the table is shown); alpha n, k, alpha, aciLo, aciHi, meanR, and for each item j (0-based, ticked order) rit_<j> and ad_<j>, with omega and
+     pC, pe2, ge2 and, when the pairwise table is shown (`sig(pC)`, the test v1 makes after the loop as showPW, here also inside it, where it changes nothing v1 computes), for each pair
+     i < j in the ticked order whose differences have spread, pair_t_<i>_<j> and pair_p_<i>_<j> (the paired t and its p before the Bonferroni factor), as friedman and cochran do; alpha n, k, alpha, aciLo, aciHi, meanR, and for each item j (0-based, ticked order) rit_<j> and ad_<j>, with omega and
      load_<j> (the raw loading, before the cell's clamp to 1) when stkOmega returned a model, and ociLo, ociHi when the bootstrap returned an interval.
    Per branch, the rest is v1's character for character, including:
    - logistic: the toasts in v1's order (stkMRData's err, `k<1`, `k>12`, `n<k+10||ev<3||ne<3` with the counts, stkLogit's null, then `o.sep&&!o.beta`, `o.singular`, `o.sep`, two of
@@ -153,7 +153,7 @@ export function runRmanova(ctx: StatsCtx): StatsResult{
     if(!(sd2>0)){pw.push([escHTML(names[i]+' − '+names[j]),md.toFixed(2),'—',String(n-1),'—','—']);continue}
     const t2=md/(sd2/Math.sqrt(n)),p2=pFromT(t2,n-1),pb=Math.min(1,p2*mPW);
     pw.push([escHTML(names[i]+' − '+names[j]),md.toFixed(2),t2.toFixed(2),String(n-1),pCell(p2),pCell(pb)]);
-    values['pair_t_'+i+'_'+j]=t2;values['pair_p_'+i+'_'+j]=p2;
+    if(sig(pC)){values['pair_t_'+i+'_'+j]=t2;values['pair_p_'+i+'_'+j]=p2}
   }
   const showPW=sig(pC);
   if(showPW)html.push({kind:'note',html:'<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by '+mPW+' for the Bonferroni correction). Read these only because the overall test is significant.'},{kind:'table',rows:pw});

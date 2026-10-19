@@ -1017,6 +1017,246 @@
    "toasts": []
   },
   {
+   "id": "alpha-rev-range-en-dash",
+   "test": "alpha",
+   "csv": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",
+   "values": {
+    "rev": "q6",
+    "rrange": "1–5"
+   },
+   "ticked": {
+    "items": [
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "q5",
+     "q6"
+    ]
+   },
+   "form": {
+    "values": {
+     "rev": "q6",
+     "rrange": "1–5"
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   },
+   "apa": "Internal consistency was α = .79, 95% CI [.58, .92], and McDonald's ω = .81, 95% CI [.43, .92] (k = 6 items, N = 15).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "People",
+       "Items",
+       "Cronbach's α",
+       "95% CI",
+       "McDonald's ω",
+       "95% CI",
+       "Mean inter-item r"
+      ],
+      [
+       "15",
+       "6",
+       ".79",
+       "[.58, .92]",
+       ".81",
+       "[.43, .92]",
+       ".40"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Item",
+       "M",
+       "SD",
+       "Corrected item-total r",
+       "α if item deleted",
+       "Loading"
+      ],
+      [
+       "q1",
+       "3.33",
+       "0.98",
+       ".68",
+       ".73",
+       ".75"
+      ],
+      [
+       "q2",
+       "3.20",
+       "0.86",
+       ".40",
+       ".79",
+       ".42"
+      ],
+      [
+       "q3",
+       "3.07",
+       "0.88",
+       ".40",
+       ".79",
+       ".45"
+      ],
+      [
+       "q4",
+       "3.07",
+       "1.28",
+       ".69",
+       ".73",
+       ".82"
+      ],
+      [
+       "q5",
+       "3.13",
+       "0.92",
+       ".64",
+       ".74",
+       ".73"
+      ],
+      [
+       "q6 (reversed)",
+       "2.73",
+       "0.59",
+       ".58",
+       ".77",
+       ".65"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples."
+    },
+    {
+     "kind": "list",
+     "items": [
+      "With fewer than 30 people the intervals are wide and the values are unstable."
+     ]
+    }
+   ],
+   "resultsText": "ResultsPeopleItemsCronbach's α95% CIMcDonald's ω95% CIMean inter-item r156.79[.58, .92].81[.43, .92].40ItemMSDCorrected item-total rα if item deletedLoadingq13.330.98.68.73.75q23.200.86.40.79.42q33.070.88.40.79.45q43.071.28.69.73.82q53.130.92.64.74.73q6 (reversed)2.730.59.58.77.65There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples.With fewer than 30 people the intervals are wide and the values are unstable.Internal consistency was α = .79, 95% CI [.58, .92], and McDonald's ω = .81, 95% CI [.43, .92] (k = 6 items, N = 15).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>People</th><th>Items</th><th>Cronbach's α</th><th>95% CI</th><th>McDonald's ω</th><th>95% CI</th><th>Mean inter-item r</th></tr><tr><td>15</td><td>6</td><td>.79</td><td>[.58, .92]</td><td>.81</td><td>[.43, .92]</td><td>.40</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Item</th><th>M</th><th>SD</th><th>Corrected item-total r</th><th>α if item deleted</th><th>Loading</th></tr><tr><td>q1</td><td>3.33</td><td>0.98</td><td>.68</td><td>.73</td><td>.75</td></tr><tr><td>q2</td><td>3.20</td><td>0.86</td><td>.40</td><td>.79</td><td>.42</td></tr><tr><td>q3</td><td>3.07</td><td>0.88</td><td>.40</td><td>.79</td><td>.45</td></tr><tr><td>q4</td><td>3.07</td><td>1.28</td><td>.69</td><td>.73</td><td>.82</td></tr><tr><td>q5</td><td>3.13</td><td>0.92</td><td>.64</td><td>.74</td><td>.73</td></tr><tr><td>q6 (reversed)</td><td>2.73</td><td>0.59</td><td>.58</td><td>.77</td><td>.65</td></tr></tbody></table><p class=\"desc\">There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples.</p><ul style=\"font-size:13px;margin:6px 0 6px 18px\"><li>With fewer than 30 people the intervals are wide and the values are unstable.</li></ul><div id=\"statsSentence\">Internal consistency was α = .79, 95% CI [.58, .92], and McDonald's ω = .81, 95% CI [.43, .92] (k = 6 items, N = 15).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "alpha-exactly-1",
+   "test": "alpha",
+   "csv": "i1,i2,i3\n1,1,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n2,2,2\n4,4,4",
+   "ticked": {
+    "items": [
+     "i1",
+     "i2",
+     "i3"
+    ]
+   },
+   "form": {
+    "values": {
+     "rev": "",
+     "rrange": ""
+    },
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "Internal consistency was α = 1.00, 95% CI [1.00, 1.00], and McDonald's ω = 1.00, 95% CI [1.00, 1.00] (k = 3 items, N = 7).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "People",
+       "Items",
+       "Cronbach's α",
+       "95% CI",
+       "McDonald's ω",
+       "95% CI",
+       "Mean inter-item r"
+      ],
+      [
+       "7",
+       "3",
+       "1.00",
+       "[1.00, 1.00]",
+       "1.00",
+       "[1.00, 1.00]",
+       "1.00"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Item",
+       "M",
+       "SD",
+       "Corrected item-total r",
+       "α if item deleted",
+       "Loading"
+      ],
+      [
+       "i1",
+       "3.00",
+       "1.41",
+       "1.00",
+       "1.00",
+       "1.00"
+      ],
+      [
+       "i2",
+       "3.00",
+       "1.41",
+       "1.00",
+       "1.00",
+       "1.00"
+      ],
+      [
+       "i3",
+       "3.00",
+       "1.41",
+       "1.00",
+       "1.00",
+       "1.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples."
+    },
+    {
+     "kind": "list",
+     "items": [
+      "An alpha above .95 can mean some items repeat each other.",
+      "With fewer than 30 people the intervals are wide and the values are unstable.",
+      "i1 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.",
+      "i2 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.",
+      "i3 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate."
+     ]
+    }
+   ],
+   "resultsText": "ResultsPeopleItemsCronbach's α95% CIMcDonald's ω95% CIMean inter-item r731.00[1.00, 1.00]1.00[1.00, 1.00]1.00ItemMSDCorrected item-total rα if item deletedLoadingi13.001.411.001.001.00i23.001.411.001.001.00i33.001.411.001.001.00There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples.An alpha above .95 can mean some items repeat each other.With fewer than 30 people the intervals are wide and the values are unstable.i1 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.i2 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.i3 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.Internal consistency was α = 1.00, 95% CI [1.00, 1.00], and McDonald's ω = 1.00, 95% CI [1.00, 1.00] (k = 3 items, N = 7).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>People</th><th>Items</th><th>Cronbach's α</th><th>95% CI</th><th>McDonald's ω</th><th>95% CI</th><th>Mean inter-item r</th></tr><tr><td>7</td><td>3</td><td>1.00</td><td>[1.00, 1.00]</td><td>1.00</td><td>[1.00, 1.00]</td><td>1.00</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Item</th><th>M</th><th>SD</th><th>Corrected item-total r</th><th>α if item deleted</th><th>Loading</th></tr><tr><td>i1</td><td>3.00</td><td>1.41</td><td>1.00</td><td>1.00</td><td>1.00</td></tr><tr><td>i2</td><td>3.00</td><td>1.41</td><td>1.00</td><td>1.00</td><td>1.00</td></tr><tr><td>i3</td><td>3.00</td><td>1.41</td><td>1.00</td><td>1.00</td><td>1.00</td></tr></tbody></table><p class=\"desc\">There is no single pass mark for either value. What counts as acceptable depends on the purpose, so report the value with its interval. Omega assumes the items measure one thing. If the scale has subscales, run each subscale separately. Omega here comes from a one-factor model; its interval is a bootstrap of 400 resamples.</p><ul style=\"font-size:13px;margin:6px 0 6px 18px\"><li>An alpha above .95 can mean some items repeat each other.</li><li>With fewer than 30 people the intervals are wide and the values are unstable.</li><li>i1 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.</li><li>i2 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.</li><li>i3 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.</li></ul><div id=\"statsSentence\">Internal consistency was α = 1.00, 95% CI [1.00, 1.00], and McDonald's ω = 1.00, 95% CI [1.00, 1.00] (k = 3 items, N = 7).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
    "id": "alpha-two-items",
    "test": "alpha",
    "csv": "q1,q2,q3,q4,q5,q6\n2,3,2,1,2,4\n3,3,4,4,5,3\n3,5,3,2,2,3\n3,3,3,4,4,3\n2,1,2,1,2,4\n5,3,4,2,3,3\n3,3,2,3,2,4\n3,3,3,2,3,3\n5,4,3,5,4,3\n3,3,3,3,3,3\n2,3,3,3,3,4\n4,4,5,3,3,4\n4,4,2,5,4,3\n4,3,3,4,4,3\n4,3,4,4,3,2",

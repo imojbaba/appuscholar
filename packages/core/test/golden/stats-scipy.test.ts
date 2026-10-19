@@ -1,21 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { statsParseText } from "../../src/intake";
-import { runStats } from "../../src/stats";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles } from "./stats/capture";
 import { readFixture } from "./harness/fixture";
+import { SLOW_CASES, expectSameAsScipy, runCase } from "./stats/check";
+import type { RefCase } from "./stats/check";
 
 /**
  * The Statistics Lab runners against scipy (parity-port spec 5.9): for every case of stats/scipy-reference.json (written by stats/scipy-reference.py from each fixture case's csv and form,
  * never by hand; from the repository root:
  *   uv run --no-project --with scipy==1.17.1 --python 3.13 python -I packages/core/test/golden/stats/scipy-reference.py packages/core/test/golden/stats
  * ) the port runs the fixture case and each `values[key]` is held to `ref[key]`: within 1e-6 relative, or 1e-9 absolute where scipy's value is 0. `t` (and `tS`) is compared by absolute
- * value, since the group order sets its sign; logistic's coefficients and what follows from them alone within 1e-5 (closeOpt, the optimiser); Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17), and mregress's pF, p1 and pc within 2^-53 absolute (closeF5a, register row F5a). A case with `ref: null` is one v1 refused (a toast, or the safety net), which the port refuses too, a test with no scipy reference yet, or one where scipy has no finite value and v1 has (D-W2-16), which the port runs.
+ * value, since the group order sets its sign; logistic's coefficients and what follows from them alone within 1e-5 (closeOpt, the optimiser); Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17), and mregress's pF, p1 and pc within 2^-53 absolute (closeF5a, register row F5a). A case with `ref: null` is one v1 refused (a toast, or the safety net), which the port refuses too, a test with no scipy reference yet, or one where scipy has no finite value and v1 has (D-W2-16), which the port runs. The tolerances and the per-case check are in stats/check.ts, shared with stats-slow.test.ts, which runs the ids in SLOW_CASES that the loop below skips.
  * Typed here: the scipy pin, the tolerances, and for each test the keys its reference holds (KEYS), so that a reference that loses a statistic is noticed.
  */
 
-type RefCase = { test: string; id: string; ref: Record<string, number> | null; why?: string };
 const ref = JSON.parse(readFileSync(new URL("./stats/scipy-reference.json", import.meta.url), "utf8")) as { scipy: string; cases: RefCase[] };
 const fixtures = corpusFiles().map((f) => f.replace(/\.json$/, ""));
 const cases = new Map<string, CapturedRun>();
@@ -77,32 +76,6 @@ const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
 };
 function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Object.keys(r).sort().join() === keys.slice().sort().join()}
 
-const REL = 1e-6, ABS_AT_ZERO = 1e-9;
-function close(got: number, want: number): boolean {return want === 0 ? Math.abs(got) <= ABS_AT_ZERO : Math.abs(got - want) <= REL * Math.abs(want)}
-/**
- * The one exception (register row D-W2-17): Tukey's p_i_j is v1's `Math.max(0,1-stkPtukey(q,kk,dfw))` (12711), a difference from 1, so its error is stkPtukey's absolute error (at most 5e-11 on these fixtures) and
- * its relative error grows without bound as p goes to 0 (4% at p = 2.7e-10 in tukey-demo-arms). It is held to 1e-6 relative or 1e-9 absolute, whichever is looser; every p that loose
- * bound admits is below .001, where the cell prints `< .001` and the sentence `p < .001` whatever the digits.
- */
-function closeTukeyP(got: number, want: number): boolean {return Math.abs(got - want) <= Math.max(REL * Math.abs(want), ABS_AT_ZERO)}
-/**
- * pFromF's `1 - betai` (register row F5a): betai near 1 is a whole number of steps of 2^-53, so a right tail below about 1e-10 is off by up to half a step, a relative error above 1e-6.
- * mregress's pF, p1 and pc are pFromF's; they are held to 1e-6 relative or one step (2^-53) absolute, whichever is looser, F5a's own bound in pvalue.test.ts, and only a p below .001
- * may take the absolute bound (the cell prints `< .001`, the sentence `p < .001`).
- */
-const F5A_STEP = 2 ** -53;
-const F5A_KEYS: Record<string, string[]> = { mregress: ["pF", "p1", "pc"] };
-/**
- * logistic's coefficients against an optimiser (the brief's tolerance for an iterative fit): b_j, se_j and what v1 computes from them alone (z_j, p_j, or_j, lo_j, hi_j) are held to
- * 1e-5 relative, every other logistic key to the global 1e-6.
- */
-const OPT_REL = 1e-5;
-const OPT_KEY = /^(b|se|z|p|or|lo|hi)_\d+$/;
-function closeOpt(got: number, want: number): boolean {return want === 0 ? Math.abs(got) <= ABS_AT_ZERO : Math.abs(got - want) <= OPT_REL * Math.abs(want)}
-/** v1's alpha bootstrap (stkOmegaBoot) runs 200 or 400 omega fits over n rows, each recomputing the item SDs n·n times (stkCorrMat): alpha-large-boot-200 takes about 15 s, and is first in its corpus because after the small alpha cases V8 runs it about eight times slower. */
-const SLOW_CASE_MS = 120_000;
-function closeF5a(got: number, want: number): boolean {return Math.abs(got - want) <= Math.max(REL * Math.abs(want), F5A_STEP)}
-
 describe("stats runners agree with scipy (spec §5.9)", () => {
   it("names scipy 1.17.1", () => expect(ref.scipy).toBe("1.17.1"));
   it("the reference has an entry for every fixture case, in the fixtures' order", () => {
@@ -117,29 +90,13 @@ describe("stats runners agree with scipy (spec §5.9)", () => {
     }
     for (const c of ref.cases) if (!(c.test in KEYS)) expect(c.ref, c.id).toBeNull();
   });
+  const skipped: string[] = [];
   for (const c of ref.cases) {
+    if (SLOW_CASES.includes(c.id)) { skipped.push(c.id); continue; }
     it(`${c.id} vs scipy`, () => {
       const fx = cases.get(c.id)!;
-      const r = runStats(statsParseText(fx.csv)!, fx.test, fx.form);
-      if (c.ref === null) {
-        expect(c.why, c.id).toBeTruthy();
-        // scipy has no finite value where v1 has one (kruskal-all-same: scipy divides by the zero tie correction, v1 skips it, register row D-W2-16): the port runs, as v1 did
-        if (c.why!.startsWith("scipy returns no finite value")) expect(r.ok, `${c.id}: ${c.why}`).toBe(true);
-        else if (c.test in KEYS) expect(r.ok, `${c.id}: ${c.why}`).toBe(false);
-        return;
-      }
-      expect(r.ok, c.id).toBe(true);
-      if (!r.ok) return;
-      for (const [key, want] of Object.entries(c.ref)) {
-        const raw = r.values[key];
-        expect(typeof raw, `${c.id} values.${key}`).toBe("number");
-        const got = key === "t" || key === "tS" ? Math.abs(raw!) : raw!;
-        const w = key === "t" || key === "tS" ? Math.abs(want) : want;
-        const f5a = F5A_KEYS[c.test]?.includes(key) ?? false;
-        const ok = c.test === "tukey" && key.startsWith("p_") ? closeTukeyP(got, w) : f5a ? closeF5a(got, w) : c.test === "logistic" && OPT_KEY.test(key) ? closeOpt(got, w) : close(got, w);
-        expect(ok, `${c.id} ${key}: port ${raw}, scipy ${want}`).toBe(true);
-        if ((c.test === "tukey" || f5a) && !close(got, w)) expect(want, `${c.id} ${key}: only a p below .001 may take the absolute bound`).toBeLessThan(0.001);
-      }
-    }, SLOW_CASE_MS);
+      expectSameAsScipy(c, runCase(fx), c.test in KEYS);
+    });
   }
+  it("the loop above skips exactly the slow cases, which stats-slow.test.ts runs", () => expect(skipped).toEqual([...SLOW_CASES]));
 });

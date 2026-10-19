@@ -454,7 +454,9 @@ def mregress(rows, form):
 
 def logistic(rows, form):
     """An independent numpy/scipy computation of v1's logistic regression on the design stkMRData(true) builds (rebuilt by mr_design with bin): the coefficients b_j minimise the
-    negative log-likelihood by scipy.optimize.minimize (Newton-CG with the analytic gradient and Hessian, xtol 1e-14), se_j = sqrt of the diagonal of the inverse of the analytic
+    negative log-likelihood by scipy.optimize.minimize (Newton-CG with the analytic gradient and Hessian, xtol 1e-14: the brief named BFGS with tol 1e-10, but BFGS stops on
+    a gradient norm and leaves the coefficients accurate only to about the square root of that, which against v1's Newton fit to 1e-11 would use most of the 1e-5 tolerance; with the
+    exact Hessian Newton-CG converges quadratically, to about 1e-7 of v1 on these fixtures), se_j = sqrt of the diagonal of the inverse of the analytic
     Hessian X'WX at the optimum; z_j, p_j = 2 norm.sf(|z_j|), or_j, lo_j, hi_j = exp(b_j -/+ norm.ppf(.975) se_j) for j >= 1; the log-likelihood of the intercept-only model in closed
     form, lr, pLR = chi2.sf(lr, k), Cox-Snell (cs), Nagelkerke (nag), McFadden (mcf); auc = the Mann-Whitney U of the fitted probabilities (events against non-events) over n1 n0
     (mannwhitneyu's statistic); the classification at p >= .5: tp, tn, fp, fn, acc, sens, spec (left out when not finite); vif_j as for mregress (1 for a single predictor)."""
@@ -521,7 +523,7 @@ def rmanova(rows, form):
     (y_ij - row mean - column mean + grand mean), F, pU = f.sf(F, k-1, (n-1)(k-1)); the sphericity statistics on A = C S C' with S = np.cov of the scores and C scipy.linalg.helmert's
     orthonormal contrasts (a different basis from v1's: epsilon and W do not depend on it): gg = tr(A)^2 / ((k-1) tr(A^2)), Huynh-Feldt's hf = min(1, (n(k-1)gg - 2) / ((k-1)(n-1-(k-1)gg))),
     Mauchly's W = det(A) / (tr(A)/(k-1))^(k-1) by np.linalg.det, chi = -(n-1-f) ln W with f = (2p^2+p+2)/(6p), p = k-1, pM = chi2.sf(chi, k(k-1)/2-1); eps (gg below .75, else hf),
-    pC = f.sf(F, eps(k-1), eps(n-1)(k-1)), pe2, ge2; for each pair i < j whose differences have spread, ttest_rel -> pair_t_i_j, pair_p_i_j. Where A is singular (its condition
+    pC = f.sf(F, eps(k-1), eps(n-1)(k-1)), pe2, ge2; when pC is below .05 (v1 then shows the pairwise table) for each pair i < j whose differences have spread, ttest_rel -> pair_t_i_j, pair_p_i_j. Where A is singular (its condition
     number above 1e12: a pair of conditions differing by a constant), W, chi and pM are left out (v1 reports Mauchly's test as not calculable there, chi 0 and p 1), and so is a pair
     whose differences have no spread beyond rounding (an SD below 1e-9 of the mean difference)."""
     from scipy.linalg import helmert
@@ -546,7 +548,7 @@ def rmanova(rows, form):
         W = float(np.linalg.det(A)) / (trA / p) ** p
         chi = -(n - 1 - (2 * p * p + p + 2) / (6 * p)) * math.log(W)
         out.update(W=W, chi=chi, pM=stats.chi2.sf(chi, out["dfM"]))
-    for i in range(k):
+    for i in range(k if out["pC"] < 0.05 else 0):  # v1 shows the pairwise table, and the runner records its values, only after a significant corrected test
         for j in range(i + 1, k):
             dd = Y[:, i] - Y[:, j]
             if np.std(dd, ddof=1) > 1e-9 * abs(dd.mean()):
