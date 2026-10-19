@@ -1,0 +1,80 @@
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { statsParseText } from "../../src/intake";
+import { runStats } from "../../src/stats";
+import type { CapturedRun } from "./stats/drive";
+import { corpusFiles } from "./stats/capture";
+import { readFixture } from "./harness/fixture";
+
+/**
+ * The Statistics Lab runners against scipy (parity-port spec 5.9): for every case of stats/scipy-reference.json (written by stats/scipy-reference.py from each fixture case's csv and form,
+ * never by hand; from the repository root:
+ *   uv run --no-project --with scipy==1.17.1 --python 3.13 python -I packages/core/test/golden/stats/scipy-reference.py packages/core/test/golden/stats
+ * ) the port runs the fixture case and each `values[key]` is held to `ref[key]`: within 1e-6 relative, or 1e-9 absolute where scipy's value is 0. `t` (and `tS`) is compared by absolute
+ * value, since the group order sets its sign; Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP). A case with `ref: null` is one v1 refused (a toast, or the safety net) or a test with no scipy reference yet; the port refuses it too.
+ * Typed here: the scipy pin, the tolerances, and for each test the keys its reference holds (KEYS), so that a reference that loses a statistic is noticed.
+ */
+
+type RefCase = { test: string; id: string; ref: Record<string, number> | null; why?: string };
+const ref = JSON.parse(readFileSync(new URL("./stats/scipy-reference.json", import.meta.url), "utf8")) as { scipy: string; cases: RefCase[] };
+const fixtures = corpusFiles().map((f) => f.replace(/\.json$/, ""));
+const cases = new Map<string, CapturedRun>();
+for (const f of fixtures) for (const c of readFixture<{ cases: CapturedRun[] }>("stats", f).cases) cases.set(c.id, c);
+
+/** The keys scipy gives for each test (pearson's cl and ch only when n > 3; tukey's p_i_j for every pair). */
+const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
+  ttestInd: (r) => sameKeys(r, ["t", "p", "df", "tS", "pS"]),
+  ttestPaired: (r) => sameKeys(r, ["t", "p"]),
+  anova1: (r) => sameKeys(r, ["F", "p"]),
+  tukey: (r) => Object.keys(r).length >= 3 && Object.keys(r).every((k) => /^p_\d+_\d+$/.test(k)),
+  regression: (r) => sameKeys(r, ["b1", "b0", "seB1", "p", "r2", "F"]),
+  pearson: (r) => sameKeys(r, ["r", "p"]) || sameKeys(r, ["r", "p", "cl", "ch"]),
+};
+function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Object.keys(r).sort().join() === keys.slice().sort().join()}
+
+const REL = 1e-6, ABS_AT_ZERO = 1e-9;
+function close(got: number, want: number): boolean {return want === 0 ? Math.abs(got) <= ABS_AT_ZERO : Math.abs(got - want) <= REL * Math.abs(want)}
+/**
+ * The one exception: Tukey's p_i_j is v1's `Math.max(0,1-stkPtukey(q,kk,dfw))` (12711), a difference from 1, so its error is stkPtukey's absolute error (at most 5e-11 on these fixtures) and
+ * its relative error grows without bound as p goes to 0 (4% at p = 2.7e-10 in tukey-demo-arms). It is held to 1e-6 relative or 1e-9 absolute, whichever is looser; every p that loose
+ * bound admits is below .001, where the cell prints `< .001` and the sentence `p < .001` whatever the digits.
+ */
+function closeTukeyP(got: number, want: number): boolean {return Math.abs(got - want) <= Math.max(REL * Math.abs(want), ABS_AT_ZERO)}
+
+describe("stats runners agree with scipy (spec §5.9)", () => {
+  it("names scipy 1.17.1", () => expect(ref.scipy).toBe("1.17.1"));
+  it("the reference has an entry for every fixture case, in the fixtures' order", () => {
+    expect(ref.cases.map((c) => c.id)).toEqual([...cases.keys()]);
+    for (const c of ref.cases) expect(c.test, c.id).toBe(cases.get(c.id)!.test);
+  });
+  it("every test with a scipy counterpart has references, under the keys it names", () => {
+    for (const test of Object.keys(KEYS)) {
+      const withRef = ref.cases.filter((c) => c.test === test && c.ref !== null);
+      expect(withRef.length, test).toBeGreaterThanOrEqual(4);
+      for (const c of withRef) expect(KEYS[test]!(c.ref!), `${c.id}: ${Object.keys(c.ref!).join(", ")}`).toBe(true);
+    }
+    for (const c of ref.cases) if (!(c.test in KEYS)) expect(c.ref, c.id).toBeNull();
+  });
+  for (const c of ref.cases) {
+    it(`${c.id} vs scipy`, () => {
+      const fx = cases.get(c.id)!;
+      const r = runStats(statsParseText(fx.csv)!, fx.test, fx.form);
+      if (c.ref === null) {
+        expect(c.why, c.id).toBeTruthy();
+        if (c.test in KEYS) expect(r.ok, `${c.id}: ${c.why}`).toBe(false);
+        return;
+      }
+      expect(r.ok, c.id).toBe(true);
+      if (!r.ok) return;
+      for (const [key, want] of Object.entries(c.ref)) {
+        const raw = r.values[key];
+        expect(typeof raw, `${c.id} values.${key}`).toBe("number");
+        const got = key === "t" || key === "tS" ? Math.abs(raw!) : raw!;
+        const w = key === "t" || key === "tS" ? Math.abs(want) : want;
+        const ok = c.test === "tukey" && key.startsWith("p_") ? closeTukeyP(got, w) : close(got, w);
+        expect(ok, `${c.id} ${key}: port ${raw}, scipy ${want}`).toBe(true);
+        if (c.test === "tukey" && !close(got, w)) expect(want, `${c.id} ${key}: only a p below .001 may take the absolute bound`).toBeLessThan(0.001);
+      }
+    });
+  }
+});

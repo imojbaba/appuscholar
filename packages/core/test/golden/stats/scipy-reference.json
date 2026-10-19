@@ -1,0 +1,605 @@
+{
+ "scipy": "1.17.1",
+ "cases": [
+  {
+   "test": "anova1",
+   "id": "anova1-demo",
+   "ref": {
+    "F": 71.48484848484843,
+    "p": 4.248981665829981e-10
+   }
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-text-in-numeric",
+   "ref": {
+    "F": 71.48484848484843,
+    "p": 4.248981665829981e-10
+   }
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-two-groups",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-one-row-group",
+   "ref": {
+    "F": 20.92822966507177,
+    "p": 0.000662939988703696
+   }
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-no-spread",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-six-groups",
+   "ref": {
+    "F": 28.799999999999997,
+    "p": 5.43660908736811e-08
+   }
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-hindi-labels",
+   "ref": {
+    "F": 10.399999999999999,
+    "p": 0.004572125092826608
+   }
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-nonsignificant",
+   "ref": {
+    "F": 0.04,
+    "p": 0.9609592556798315
+   }
+  },
+  {
+   "test": "anova1",
+   "id": "anova1-no-categorical-column",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "desc",
+   "id": "desc-demo-score",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-one-value",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-text-in-numeric",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-hindi-column-name",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-column-named-undefined",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-negative-decimals",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-second-column",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-empty-cells",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "desc",
+   "id": "desc-one-left-out",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-demo",
+   "ref": {
+    "r": 0.9950232370376748,
+    "p": 2.1703894616337347e-13,
+    "cl": 0.983863673729521,
+    "ch": 0.9984710157627943
+   }
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-text-in-numeric",
+   "ref": {
+    "r": 0.9950232370376748,
+    "p": 2.1703894616337347e-13,
+    "cl": 0.983863673729521,
+    "ch": 0.9984710157627943
+   }
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-n3",
+   "ref": {
+    "r": 0.654653670707977,
+    "p": 0.5456289483429901
+   }
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-perfect",
+   "ref": {
+    "r": 1.0,
+    "p": 0.0,
+    "cl": 1.0,
+    "ch": 1.0
+   }
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-negative",
+   "ref": {
+    "r": -0.9911676247181233,
+    "p": 1.7111623089498116e-06,
+    "cl": -0.9984642226300631,
+    "ch": -0.9500704336202908
+   }
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-no-spread",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-weak",
+   "ref": {
+    "r": 0.17186001564908274,
+    "p": 0.6840512915318456,
+    "cl": -0.6062305209588839,
+    "ch": 0.7818472538279028
+   }
+  },
+  {
+   "test": "pearson",
+   "id": "pearson-n2",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "regression",
+   "id": "regression-demo",
+   "ref": {
+    "b1": 4.371727748691099,
+    "b0": 35.455497382198956,
+    "seB1": 0.1263795252372193,
+    "p": 2.1703894616334444e-13,
+    "r2": 0.990071242244933,
+    "F": 1196.6104118993146
+   }
+  },
+  {
+   "test": "regression",
+   "id": "regression-text-in-numeric",
+   "ref": {
+    "b1": 4.371727748691099,
+    "b0": 35.455497382198956,
+    "seB1": 0.1263795252372193,
+    "p": 2.1703894616334444e-13,
+    "r2": 0.990071242244933,
+    "F": 1196.6104118993146
+   }
+  },
+  {
+   "test": "regression",
+   "id": "regression-exact-line",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "regression",
+   "id": "regression-no-spread-x",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "regression",
+   "id": "regression-n2",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "regression",
+   "id": "regression-negative-slope",
+   "ref": {
+    "b1": -2.2261904761904763,
+    "b0": 22.642857142857142,
+    "seB1": 0.12159963052416356,
+    "p": 1.7111623089498764e-06,
+    "r2": 0.9824132602893664,
+    "F": 335.16613418530153
+   }
+  },
+  {
+   "test": "regression",
+   "id": "regression-nonsignificant",
+   "ref": {
+    "b1": 0.07142857142857142,
+    "b0": 4.285714285714286,
+    "seB1": 0.2614715031103304,
+    "p": 0.7956397770796768,
+    "r2": 0.014705882352941173,
+    "F": 0.07462686567164176
+   }
+  },
+  {
+   "test": "regression",
+   "id": "regression-n3",
+   "ref": {
+    "b1": 1.5,
+    "b0": 1.0,
+    "seB1": 0.8660254037844385,
+    "p": 0.33333333333333326,
+    "r2": 0.7500000000000001,
+    "F": 3.0000000000000013
+   }
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-demo",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-mu-empty",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-mu-text",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-mu-decimal-lower",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-higher",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-all-same",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-one-value",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-text-in-numeric",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-n3",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-n2-assumptions-skip",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-no-numeric-column",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-skewed",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-n25",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttest1",
+   "id": "ttest1-name-needs-escaping",
+   "ref": null,
+   "why": "no scipy reference for this test yet"
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-demo",
+   "ref": {
+    "t": 6.417995938904118,
+    "p": 2.2251670767631524e-06,
+    "df": 21.181065828825105,
+    "tS": 6.417995938904119,
+    "pS": 1.8576849441879355e-06
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-text-in-numeric",
+   "ref": {
+    "t": 6.417995938904118,
+    "p": 2.2251670767631524e-06,
+    "df": 21.181065828825105,
+    "tS": 6.417995938904119,
+    "pS": 1.8576849441879355e-06
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-integer-labels",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-two-integer-labels",
+   "ref": {
+    "t": -4.3817804600413295,
+    "p": 0.004659214943993929,
+    "df": 6.0,
+    "tS": -4.381780460041329,
+    "pS": 0.004659214943993935
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-group-named-NaN",
+   "ref": null,
+   "why": "v1's safety net suppressed the result"
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-one-value-in-a-group",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-no-spread-both",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-no-spread-one",
+   "ref": {
+    "t": -3.872983346207417,
+    "p": 0.030466291662170977,
+    "df": 3.0,
+    "tS": -3.872983346207417,
+    "pS": 0.008237354145108101
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-unequal-n",
+   "ref": {
+    "t": -4.33052244625683,
+    "p": 0.0015488100069347439,
+    "df": 9.830402951518995,
+    "tS": -4.094296680276412,
+    "pS": 0.0014874633290523642
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-one-group",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-name-needs-escaping",
+   "ref": {
+    "t": -3.6742346141747673,
+    "p": 0.021311641128756713,
+    "df": 4.0,
+    "tS": -3.6742346141747673,
+    "pS": 0.021311641128756713
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-nonsignificant",
+   "ref": {
+    "t": -0.4517539514526264,
+    "p": 0.6620938971442419,
+    "df": 9.036507339104253,
+    "tS": -0.4517539514526264,
+    "pS": 0.661086188463837
+   }
+  },
+  {
+   "test": "ttestInd",
+   "id": "ttestInd-no-categorical-column",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-demo",
+   "ref": {
+    "t": 9.266658930916552,
+    "p": 1.5738426699949077e-06
+   }
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-text-in-numeric",
+   "ref": {
+    "t": 9.266658930916552,
+    "p": 1.5738426699949077e-06
+   }
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-same-diffs",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-missing-cells",
+   "ref": {
+    "t": 3.4914862437758787,
+    "p": 0.025089001332627536
+   }
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-n2",
+   "ref": {
+    "t": 5.0,
+    "p": 0.1256659163780024
+   }
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-one-pair",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-nonsignificant",
+   "ref": {
+    "t": 0.30714755841697555,
+    "p": 0.771111856358894
+   }
+  },
+  {
+   "test": "ttestPaired",
+   "id": "ttestPaired-names-need-escaping",
+   "ref": {
+    "t": 3.0869745325651587,
+    "p": 0.03668198940044108
+   }
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-demo-arms",
+   "ref": {
+    "p_0_1": 0.0005375067715056581,
+    "p_0_2": 2.721223246737736e-10,
+    "p_1_2": 9.405962423381098e-07
+   }
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-text-in-numeric",
+   "ref": {
+    "p_0_1": 0.0005375067715056581,
+    "p_0_2": 2.721223246737736e-10,
+    "p_1_2": 9.405962423381098e-07
+   }
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-integer-labels",
+   "ref": {
+    "p_0_1": 0.004512220274839329,
+    "p_0_2": 2.8279766213223922e-05,
+    "p_1_2": 0.004512220274839329
+   }
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-two-groups",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-six-groups",
+   "ref": {
+    "p_0_1": 0.2889127491722767,
+    "p_0_2": 1.0,
+    "p_0_3": 0.0004115493149103866,
+    "p_0_4": 0.2889127491722767,
+    "p_0_5": 1.4907543355313635e-07,
+    "p_1_2": 0.2889127491722767,
+    "p_1_3": 0.040304757166973015,
+    "p_1_4": 1.0,
+    "p_1_5": 5.836881678322747e-06,
+    "p_2_3": 0.0004115493149103866,
+    "p_2_4": 0.2889127491722767,
+    "p_2_5": 1.4907543355313635e-07,
+    "p_3_4": 0.040304757166973015,
+    "p_3_5": 0.004113557285982727,
+    "p_4_5": 5.836881678322747e-06
+   }
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-no-spread",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-unequal-n",
+   "ref": {
+    "p_0_1": 0.0022876601031176502,
+    "p_0_2": 0.31388748704239444,
+    "p_1_2": 0.014203587146120356
+   }
+  },
+  {
+   "test": "tukey",
+   "id": "tukey-no-categorical-column",
+   "ref": null,
+   "why": "v1 refused the case with a toast"
+  }
+ ]
+}

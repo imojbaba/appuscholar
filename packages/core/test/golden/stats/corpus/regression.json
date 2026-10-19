@@ -1,0 +1,82 @@
+[
+ {
+  "id": "regression-demo",
+  "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72",
+  "test": "regression",
+  "values": {
+   "iv": "hours",
+   "dv": "marks"
+  },
+  "why": "TG_DEMO's regression"
+ },
+ {
+  "id": "regression-text-in-numeric",
+  "csv": "hours,marks\n2,45\n3,50\n4,52\n5,58\n6,60\n7,66\n8,70\n1,40\n9,74\n10,80\n3,48\n6,63\n5,55\n8,72\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,50\n4,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "regression",
+  "values": {
+   "iv": "hours",
+   "dv": "marks"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). The pair filter counts each dropped pair once; the assumption pass does not count, so the note says 2."
+ },
+ {
+  "id": "regression-exact-line",
+  "csv": "x,y\n1,3\n2,5\n3,7\n4,9\n5,11",
+  "test": "regression",
+  "values": {
+   "iv": "x",
+   "dv": "y"
+  },
+  "why": "y = 2x + 1 exactly: the toast \"fall exactly on a straight line\""
+ },
+ {
+  "id": "regression-no-spread-x",
+  "csv": "x,y\n4,3\n4,5\n4,7\n4,6",
+  "test": "regression",
+  "values": {
+   "iv": "x",
+   "dv": "y"
+  },
+  "why": "x has no spread: the toast"
+ },
+ {
+  "id": "regression-n2",
+  "csv": "x,y\n1,3\n2,5",
+  "test": "regression",
+  "values": {
+   "iv": "x",
+   "dv": "y"
+  },
+  "why": "two pairs: the toast"
+ },
+ {
+  "id": "regression-negative-slope",
+  "csv": "x,y\n1,20\n2,18\n3,17\n4,13\n5,12\n6,9\n7,8\n8,4",
+  "test": "regression",
+  "values": {
+   "iv": "x",
+   "dv": "y"
+  },
+  "why": "a negative slope and beta"
+ },
+ {
+  "id": "regression-nonsignificant",
+  "csv": "x,y\n1,5\n2,3\n3,6\n4,4\n5,5\n6,3\n7,6",
+  "test": "regression",
+  "values": {
+   "iv": "x",
+   "dv": "y"
+  },
+  "why": "did not significantly predict"
+ },
+ {
+  "id": "regression-n3",
+  "csv": "x,y\n1,2\n2,5\n3,5",
+  "test": "regression",
+  "values": {
+   "iv": "x",
+   "dv": "y"
+  },
+  "why": "three pairs: df 1"
+ }
+]
