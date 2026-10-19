@@ -20,7 +20,7 @@ export const CARET_CHIP_DELAY_MS = 120;
  */
 export function CaretChip({ editor }: { editor: Editor }) {
   const t = useT();
-  const { lib } = useLibrary();
+  const { lib } = useLibrary({ passive: true });
   const { showTool } = useWorkspace();
   /** citCaretIdx and the chip's text, as v1 sets them at each update. */
   const [chip, setChip] = useState<{ index: number; c: string }>({ index: -1, c: "" });

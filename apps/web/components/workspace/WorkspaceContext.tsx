@@ -35,6 +35,11 @@ export type WorkspaceValue = {
   /** The active project's stage, or null in scratch space or once the project is complete. */
   currentStage: StageKey | null;
   project: Project | null;
+  /**
+   * The project the workspace has loaded: the open project's id, the scratch project's in scratch space; null until the first load has
+   * answered (while `project` is still null for a student whose active project is loading). Stage blobs shared across the workspace key on it.
+   */
+  projectId: string | null;
   documents: DocumentSummary[];
   currentDoc: DocumentWithBody | null;
   /** Shows another document of this project, after the open one's autosave has stored its text. When that save fails the student is asked "Switch anyway?"; false means they stayed on the open document. */

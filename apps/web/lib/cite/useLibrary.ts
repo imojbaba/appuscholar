@@ -1,9 +1,10 @@
 "use client";
-import { createContext, createElement, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CitationEntry, CitationStyle } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
+import { useVault } from "@/lib/vault/useVault";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import type { AddResult } from "./actions";
 
@@ -53,26 +54,42 @@ export type Library = {
  * One library for the whole workspace: the Citation Manager, the caret chip under the document and (later) Research read the same blob through
  * the same client, so an entry saved in one is seen by the others at once. Without the provider (a panel rendered on its own) the hook holds
  * its own.
+ *
+ * The provider waits for the workspace's loaded project (never the scratch project while the active one is still loading). It never asks for
+ * the passphrase on its own: it reads only while the vault is off or open, so the document's unlock comes first and a cancelled one is not
+ * asked again for the chip. A panel that writes to the library (the Citation Manager) asks for it (`useLibrary()`, not passive): the library
+ * is then read even while the vault is locked, and the blob asks for the passphrase as Task 7's panel did (ruling R5).
  */
-const Shared = createContext<Library | null>(null);
+type SharedLibrary = { library: Library; demand(): () => void };
+const Shared = createContext<SharedLibrary | null>(null);
 export function CiteLibraryProvider({ children }: { children: ReactNode }) {
-  const library = useOwnLibrary(false);
-  return createElement(Shared.Provider, { value: library }, children);
+  const { projectId } = useWorkspace();
+  const { status } = useVault();
+  const [demands, setDemands] = useState(0);
+  const open = status === "off" || status === "unlocked" || status === "migrating";
+  const library = useOwnLibrary(open || demands > 0 ? projectId : null);
+  const demand = useCallback(() => { setDemands((n) => n + 1); return () => setDemands((n) => n - 1); }, []);
+  const value = useMemo(() => ({ library, demand }), [library, demand]);
+  return createElement(Shared.Provider, { value }, children);
 }
 
-/** The Citation Library: the open project's `citations` blob (the scratch project's in scratch space), sealed under the vault, and the style. */
-export function useLibrary(): Library {
+/**
+ * The Citation Library: the open project's `citations` blob (the scratch project's in scratch space), sealed under the vault, and the style.
+ * `passive`: only reads what the workspace's library holds (the caret chip), without asking for it to be read while the vault is locked.
+ */
+export function useLibrary(opts: { passive?: boolean } = {}): Library {
   const shared = useContext(Shared);
-  // Inside the provider the hook's own blob is never opened (no project id).
-  const own = useOwnLibrary(shared !== null);
-  return shared ?? own;
-}
-
-function useOwnLibrary(off: boolean): Library {
-  const t = useT();
   const { project } = useWorkspace();
   const { me } = useSettings();
-  const projectId = off ? null : project?.id ?? me?.scratchProjectId ?? null;
+  // Inside the provider the hook's own blob is never opened (no project id).
+  const own = useOwnLibrary(shared !== null ? null : project?.id ?? me?.scratchProjectId ?? null);
+  const passive = opts.passive === true;
+  useEffect(() => { if (shared && !passive) return shared.demand(); }, [shared, passive]);
+  return shared?.library ?? own;
+}
+
+function useOwnLibrary(projectId: string | null): Library {
+  const t = useT();
   const blob = useProjectBlob("citations", projectId);
   const current = useSyncExternalStore(subscribe, read, read);
   const { value, loading, locked, set, flush } = blob;

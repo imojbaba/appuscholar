@@ -15,13 +15,14 @@ const h = vi.hoisted(() => ({
   documents: [] as Array<{ id: string; title: string; updatedAt: string }>,
   currentDoc: null as null | { id: string },
   selectDoc: vi.fn(async () => true),
-  stored: {} as Record<string, { bodyHtml: string; keyVersion: number }>
+  stored: {} as Record<string, { bodyHtml: string; keyVersion: number }>,
+  project: null as null | { id: string }
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: (kind: string) => h.blobs[kind] }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: {} }) }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({
-  useWorkspace: () => ({ project: null, documents: h.documents, currentDoc: h.currentDoc, selectDoc: h.selectDoc, showTool: vi.fn() })
+  useWorkspace: () => ({ project: h.project, documents: h.documents, currentDoc: h.currentDoc, selectDoc: h.selectDoc, showTool: vi.fn() })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "unlocked", decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml.replace(/^sealed:/, "") }) }));
 vi.mock("@/lib/api", () => ({
@@ -94,6 +95,7 @@ beforeEach(() => {
   h.currentDoc = null;
   h.selectDoc.mockClear();
   h.stored = {};
+  h.project = null;
   resetCheckBusy();
   resetCiteActive();
   resetCiteStyle();
@@ -212,6 +214,30 @@ describe("the retraction check (v1 citRetractionRefresh 7579-7600)", () => {
     await click(tid("cite-retract-btn")!);
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(toasts()).toEqual([E.retr_done]);
+  });
+
+  it("a broken cache with nothing to look up asks nothing: the forced check toasts retr_nodoi", async () => {
+    h.blobs.citations = blob([RAO]);
+    h.blobs.retraction_cache = { ...blob(null), broken: true };
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mount();
+    await settle();
+    await click(tid("cite-retract-btn")!);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(toasts()).toEqual([E.retr_nodoi]);
+  });
+
+  it("a project switch with the Cite tab open refreshes quietly for the new project", async () => {
+    const fetchFn = openAlex([]);
+    vi.stubGlobal("fetch", fetchFn);
+    mount();
+    await settle();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    h.project = { id: "p-2" };
+    act(() => { for (const r of roots) r.render(<CitePanel />); });
+    await settle();
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(toasts()).toEqual([]);
   });
 
   it("nothing checked yet: the summary line is empty", async () => {

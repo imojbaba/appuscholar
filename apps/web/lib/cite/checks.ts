@@ -49,6 +49,8 @@ export type RetractionDeps = {
   save: Save<RetractionCache>;
   toast(msg: string): void;
   t: T;
+  /** Asked once there is something to look up and store (ruling R16 for a cache that does not open); false stops the check. */
+  mayWrite?: () => boolean;
 };
 
 let retrBusy = false;
@@ -64,6 +66,7 @@ export async function retractionRefresh(force: boolean, deps: RetractionDeps): P
   const cache = deps.cache ?? {}, now = deps.now();
   const stale = dois.filter((d) => force || !cache[d] || now - cache[d].t > RETRACT_TTL);
   if (!stale.length) return;
+  if (deps.mayWrite && !deps.mayWrite()) return;
   retrBusy = true;
   try {
     await oaRetractions(deps.fetch, stale, deps.oaKey, (batch) => {
@@ -146,8 +149,9 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
 
   const refreshRetractions = useCallback(async (force: boolean) => {
     const c = live.current;
-    if (c.retr.broken && (!force || !mayWrite(true))) return;
-    await retractionRefresh(force, { lib: c.lib, cache: c.retr.value, fetch: f, oaKey: c.oaKey, now: () => Date.now(), save: c.retr.set, toast, t });
+    // Over a cache that does not open, the quiet refresh writes nothing and a forced check asks, once there is something to store.
+    const ask = c.retr.broken ? () => force && mayWrite(true) : undefined;
+    await retractionRefresh(force, { lib: c.lib, cache: c.retr.value, fetch: f, oaKey: c.oaKey, now: () => Date.now(), save: c.retr.set, toast, t, mayWrite: ask });
   }, [f, mayWrite, t]);
   const runRefCheck = useCallback(async (force: boolean) => {
     const c = live.current;
@@ -156,12 +160,13 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
   }, [f, mayWrite, t]);
 
   const ready = !library.loading && !library.locked && !retr.loading && !retr.locked && library.projectId !== null;
-  const ran = useRef(false);
+  /** The project the quiet refresh last ran for: a project switch with the tab open refreshes for the new one. */
+  const ranFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!ready || ran.current) return;
-    ran.current = true;
+    if (!ready || ranFor.current === library.projectId) return;
+    ranFor.current = library.projectId;
     void refreshRetractions(false);
-  }, [ready, refreshRetractions]);
+  }, [ready, library.projectId, refreshRetractions]);
 
   return { retraction, rc, rcSum, refreshRetractions, runRefCheck };
 }

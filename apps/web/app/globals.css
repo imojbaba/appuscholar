@@ -238,7 +238,8 @@
 .retr-warn { background: rgba(220, 38, 38, .12); border: 1px solid #dc2626; color: var(--ink); border-radius: 8px; padding: 6px 9px; font-size: 12px; line-height: 1.5; margin-top: 5px; }
 .panel .desc.cite-usage-sum { margin-top: 6px; font-weight: 600; }
 .panel .desc.cite-retr-sum, .panel .desc.cite-rc-sum, .panel .desc.cite-num-missing { margin-top: 2px; }
-.panel .desc.cite-retr-sum.cite-flagged, .panel .desc.cite-num-missing { font-weight: 700; }
+.panel .desc.cite-retr-sum.cite-flagged { font-weight: 700; }
+.panel .desc.cite-num-missing { font-weight: 600; }
 .cit-caret-chip { border-color: var(--purple-600, #6d28d9); color: var(--accent-ink); }
 .cc-dlg { max-height: 85vh; overflow-y: auto; }
 .cc-dlg .cc-desc, .cc-dlg .cc-src { font-size: 13px; }
