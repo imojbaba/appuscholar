@@ -52,16 +52,20 @@ export const CITE_ONLY = { container: "chapter conf", editors: "chapter", number
 /** citTypeChanged 7806-7811: a group is shown when the chosen type's kind is in its `data-for`. */
 export function citOnlyShown(type: string, dataFor: string): boolean { return dataFor.split(" ").indexOf(citKind(type)) >= 0; }
 
-/** The form's fields, by the entry key each one fills (citReadForm 7466-7473); the style is the panel's style select, held apart (useLibrary). */
+/**
+ * The form's fields, by the entry key each one fills (citReadForm 7466-7473); the style is the panel's style select, held apart (useLibrary).
+ * `quote` is #citQuoteText (914-916), part of the form though no entry holds it: citClearForm empties it (7475) and citInsertQuote reads it (7890).
+ */
 export type CiteForm = {
   author: string; year: string; title: string; source: string; volume: string; issue: string; pages: string; doi: string; url: string;
   month: string; day: string; accessed: string; container: string; editors: string; number: string; degree: string; type: string; lang: string;
+  quote: string;
 };
 /** citReadForm's element ids (7467-7472), by the key each one fills: the form's inputs carry v1's ids. */
 export const CITE_FIELD_IDS: Readonly<Record<keyof CiteForm, string>> = {
   author: "citAuthor", year: "citYear", title: "citTitle", source: "citSource", volume: "citVol", issue: "citIssue", pages: "citPages", doi: "citDOI", url: "citURL",
   month: "citMonth", day: "citDay", accessed: "citAccessed", container: "citContainer", editors: "citEditors", number: "citNumber", degree: "citDegree",
-  type: "citType", lang: "citSourceLang"
+  type: "citType", lang: "citSourceLang", quote: "citQuoteText"
 };
 /** The form key an input fills, by its element id (undefined for any other element). */
 export const citeFieldOf = (id: string): keyof CiteForm | undefined =>
@@ -69,7 +73,7 @@ export const citeFieldOf = (id: string): keyof CiteForm | undefined =>
 /** The form as the page opens: every field empty, the first type and the first language (v1's selects start on their first option). */
 export const EMPTY_CITE_FORM: CiteForm = {
   author: "", year: "", title: "", source: "", volume: "", issue: "", pages: "", doi: "", url: "",
-  month: "", day: "", accessed: "", container: "", editors: "", number: "", degree: "", type: "Journal article", lang: "en"
+  month: "", day: "", accessed: "", container: "", editors: "", number: "", degree: "", type: "Journal article", lang: "en", quote: ""
 };
 
 /** citReadForm 7466-7473: every value trimmed, in v1's key order, the style of the style select, `lang` "en" when empty. */
@@ -84,7 +88,7 @@ export function readForm(f: CiteForm, style: CitationStyle): CitationEntry {
   };
 }
 
-/** citClearForm 7474-7479: every field emptied but the type (and the style), and the language set back to English. */
+/** citClearForm 7474-7479: every field emptied, the quote too, but the type (and the style), and the language set back to English. */
 export function clearedForm(f: CiteForm): CiteForm { return { ...EMPTY_CITE_FORM, type: f.type }; }
 
 /** What citLookup's fill writes (7948-7964). A select set to a value it has no option for reads back "", so a month outside 1-12 is dropped. */

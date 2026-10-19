@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { CiteChecks, CiteUsed, RcLine, RetrWarn } from "./CiteChecks";
+import { CiteShare } from "./CiteShare";
 
 /**
  * "🗂 My library" (v1 930-946, citRender 7819-7866): the heading with the count badge, then one card per source in library order, numbered by its
@@ -59,7 +60,8 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
           </div>
         ))}
       </div>
-      {/* Task 8b, in v1's order (940-946): "Insert reference list", "📖 Load classic psychology sources", "⬆ Export library" / "⬇ Import library", the class-sharing note. */}
+      {/* v1 940-946: "Insert reference list", "📖 Load classic psychology sources", "⬆ Export library" / "⬇ Import library", the class-sharing note. */}
+      <CiteShare library={library} insertReady={insertReady} />
     </>
   );
 }

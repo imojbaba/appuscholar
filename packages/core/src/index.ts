@@ -46,3 +46,5 @@ export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, c
 export type { CrWork, RcCheck } from "./fetch/crossref";
 // Stage 2: Citation Manager checks (Task 8a)
 export { citMissingNumbers, citCaretEntry } from "./citlib";
+// Stage 2: Citation Manager classic sources (Task 8b), generated from v1 by the golden harness
+export { PSYCH_STARTERS } from "./data/classic-sources";

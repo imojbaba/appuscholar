@@ -17,6 +17,8 @@ const idle = () => ({ value: null, loading: false, locked: false, set: vi.fn(), 
 vi.mock("@/lib/blobs/useProjectBlob", () => ({
   useProjectBlob: (kind: string) => (kind === "citations" ? { value: h.lib, loading: false, locked: false, set: vi.fn(), flush: vi.fn(async () => true) } : idle())
 }));
+// The quote box calls the AI through useCallAI (Task 8b); these tests make no call.
+vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: {} }) }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({

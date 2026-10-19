@@ -8,6 +8,7 @@ import { useLibrary } from "@/lib/cite/useLibrary";
 import { toast } from "@/components/ui/toast";
 import { CiteForm } from "./CiteForm";
 import { CiteLibrary } from "./CiteLibrary";
+import { CiteCapture, CiteQuote } from "./CiteQuote";
 
 /**
  * 📚 Citation Manager (v1 873-947). In v1's order: the heading and description, the form (CiteForm), the quote block and the one-click capture
@@ -30,8 +31,8 @@ export function CitePanel() {
       {library.locked && <p className="note cite-state" role="status" data-testid="cite-locked">{t("vault_cite_locked")}</p>}
       {library.broken && <p className="note cite-state" role="status" data-testid="cite-broken">{t("vault_cite_broken")}</p>}
       <CiteForm library={library} deps={deps} insertReady={insertReady} />
-      {/* Task 8b (v1 914-919): "Quote from this source (optional)", its description and "Insert quote". */}
-      {/* Task 8b (v1 921-928): "🔖 One-click capture from any page" (the bookmarklet). */}
+      <CiteQuote insertReady={insertReady} />
+      <CiteCapture />
       <CiteLibrary library={library} deps={deps} insertReady={insertReady} />
     </div>
   );

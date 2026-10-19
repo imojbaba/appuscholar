@@ -16,6 +16,7 @@ import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
+import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
 import { ProjectBar } from "./ProjectBar";
@@ -325,6 +326,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
       <SuggestionProvider>
         {/* One citation library for the Citation Manager and the caret chip under the document. */}
         <CiteLibraryProvider>
+        {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash. */}
+        <CaptureHash />
         <Header />
         <ChromeDialogs />
         <Subbar />

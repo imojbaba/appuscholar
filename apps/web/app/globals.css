@@ -410,3 +410,12 @@
   [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }
   .splitter { display: none; }
 }
+/* Task 8b: a translated quote (v1 250), the quote box, the one-click capture's <details> (v1 921-928) and the library's last buttons (v1 940-946). */
+.editor .ProseMirror .translated-quote { border-bottom: 2px dotted #7c3aed; cursor: help; }
+.panel .cite-quote { margin-top: 10px; }
+.panel details.cite-capture { margin-top: 14px; }
+.panel details.cite-capture summary { cursor: pointer; font-weight: 700; color: var(--purple-800); font-size: 13.5px; }
+.panel details.cite-capture .desc { margin-top: 8px; }
+.panel .cite-capture-link { text-align: center; margin: 10px 0; }
+.panel .cite-share { margin-top: 8px; }
+.panel .desc.cite-sharing { margin-top: 10px; }

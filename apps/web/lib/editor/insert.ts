@@ -72,6 +72,16 @@ export function cursorPlaced(editor: Editor): boolean { return placed.has(editor
  * in (bold, italics) but never an `ai-ins` span, even inside AI text, and the cursor ends after it so a second citation follows it.
  */
 export function insertCitation(editor: Editor, fmt: Formatted): void {
+  putText(editor, fmt.sup ? String(fmt.num) : " " + fmt.intext, !!fmt.sup);
+}
+
+/**
+ * v1 citInsertAtCursor (7481-7487) for text the student wrote (a quote "as is", 7905): insertIntoEditor's rule, the same as a citation's. At the cursor
+ * when one is placed, else at the end of the document on a new line; each newline a line break (insertIntoEditor's `.replace(/\n/g,'<br>')`, 4200).
+ */
+export function insertTextAtCursor(editor: Editor, text: string): void { putText(editor, text, false); }
+
+function putText(editor: Editor, text: string, sup: boolean): void {
   const atCursor = cursorPlaced(editor);
   const blank = editor.isEmpty;
   editor.chain().focus().command(({ tr, state }) => {
@@ -79,13 +89,27 @@ export function insertCitation(editor: Editor, fmt: Formatted): void {
     if (!atCursor) tr.setSelection(Selection.atEnd(tr.doc));
     const aiIns = (m: Mark) => m.type.name === "classSpan" && /(^|\s)ai-ins(\s|$)/.test(String(m.attrs.class ?? ""));
     let marks: readonly Mark[] = ((atCursor ? state.storedMarks : null) ?? tr.selection.$from.marks()).filter((m) => !aiIns(m));
-    const sup = schema.marks.superscript;
-    if (fmt.sup && sup) marks = sup.create().addToSet(marks);
+    const supMark = schema.marks.superscript;
+    if (sup && supMark) marks = supMark.create().addToSet(marks);
     const br = schema.nodes.hardBreak;
-    if (!atCursor && !fmt.sup && !blank && br) tr.replaceSelectionWith(br.create(), false);
-    tr.replaceSelectionWith(schema.text(fmt.sup ? String(fmt.num) : " " + fmt.intext, marks), false);
+    if (!atCursor && !sup && !blank && br) tr.replaceSelectionWith(br.create(), false);
+    text.split("\n").forEach((line, i) => {
+      if (i > 0 && br) tr.replaceSelectionWith(br.create(), false);
+      if (line) tr.replaceSelectionWith(schema.text(line, marks), false);
+    });
     return true;
   }).run();
+  markCursorPlaced(editor);
+}
+
+/**
+ * v1 insertHTMLBlockIntoEditor (4228-4244), for markup the app built (the reference list, a translated quote): at the cursor when the student has
+ * placed one (`savedRange`, cursorPlaced), else after everything written (placeCaretAtEnd); one insertion, with no provenance mark. v1 keeps
+ * savedRange after inserting (4242), so the next insert follows this one.
+ */
+export function insertHtmlBlock(editor: Editor, html: string): void {
+  if (cursorPlaced(editor)) editor.chain().focus().insertContent(html).run();
+  else insertPlainHtml(editor, html, { atEnd: true });
   markCursorPlaced(editor);
 }
 

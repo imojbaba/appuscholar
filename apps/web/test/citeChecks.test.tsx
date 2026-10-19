@@ -19,6 +19,8 @@ const h = vi.hoisted(() => ({
   project: null as null | { id: string }
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: (kind: string) => h.blobs[kind] }));
+// The quote box calls the AI through useCallAI (Task 8b); these tests make no call.
+vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: {} }) }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({
