@@ -46,3 +46,22 @@ jobs:
       - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
       # playwright.config.ts starts the api and the web server, both on the job's DATABASE_URL (one database, as in production).
       - run: pnpm --filter @appuscholar/web e2e
+  golden-exact:
+    # The golden comparer is exact (Object.is) only on the platform that captured the fixtures, Node 26 on darwin arm64 (register row D-W1-16); the checks job above runs on
+    # Node 22 linux x64 and so compares computed probabilities within 1e-12. This job runs the same golden suite on a GitHub-hosted Apple Silicon runner with Node 26, where the
+    # mode is exact, and GOLDEN_EXPECT_MODE makes compare.test.ts fail if it is not, so a runner image or fixture platform change does not quietly fall back to the tolerance.
+    runs-on: macos-15
+    env:
+      GOLDEN_EXPECT_MODE: exact
+    steps:
+      - uses: actions/checkout@v4
+      # Node 25 and later no longer ship corepack; pnpm/action-setup reads the version from packageManager in package.json.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26 }
+      - run: node -p "'golden-exact runs on ' + process.version + ' ' + process.platform + ' ' + process.arch"
+      - run: pnpm install --frozen-lockfile
+      # The comparer's own test file first, verbosely: the default reporter prints console output for failing tests only, so this step is where the log shows the mode line
+      # ("golden mode on this machine (…): 33 fixtures in exact mode (…)") and the test that fails when it is not exact. The full suite then runs under the same variable.
+      - run: pnpm --filter @appuscholar/core exec vitest run test/golden/compare.test.ts --reporter=verbose
+      - run: pnpm --filter @appuscholar/core test:golden

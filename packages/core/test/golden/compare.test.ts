@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import { expectGolden, expectSvgGolden, goldenMode } from "./harness/compare";
 import type { GoldenMode, GoldenPlatform } from "./harness/compare";
@@ -193,5 +196,43 @@ describe("expectSvgGolden: an SVG string exact where the fixture was captured, n
     expect(() => expectSvgGolden(svg(y).replace("stroke-width", "stroke-wide"), svg(y), "tolerant")).toThrow("the text around the numbers differs");
     expect(() => expectSvgGolden(svg(y).replace(' y="1e-7"', ""), svg(y), "tolerant")).toThrow("the text around the numbers differs");
     expect(() => expectSvgGolden(svg(y) + "7", svg(y) + "", "tolerant")).toThrow();
+  });
+});
+
+// The golden-exact CI job (.github/workflows/ci.yml) runs this suite on a macOS arm64 runner with Node 26, the capture platform, with GOLDEN_EXPECT_MODE=exact. The headers of the
+// committed fixtures are read here (every test/golden/<engine>/*.json whose top level names node, platform and arch), the mode this machine holds each in is printed, and when the
+// variable is set the test fails unless every fixture is held in that mode, so a runner image change, a Node major bump or a fixture captured elsewhere does not quietly fall back
+// to the 1e-12 tolerance.
+const GOLDEN_DIR = fileURLToPath(new URL("./", import.meta.url));
+function fixtureHeaders(): Array<{ file: string } & GoldenPlatform> {
+  const out: Array<{ file: string } & GoldenPlatform> = [];
+  for (const dir of readdirSync(GOLDEN_DIR, { withFileTypes: true })) {
+    if (!dir.isDirectory() || dir.name === "harness") continue;
+    for (const name of readdirSync(resolve(GOLDEN_DIR, dir.name))) {
+      if (!name.endsWith(".json")) continue;
+      const top = JSON.parse(readFileSync(resolve(GOLDEN_DIR, dir.name, name), "utf8")) as Record<string, unknown>;
+      if (typeof top.node === "string" && typeof top.platform === "string" && typeof top.arch === "string")
+        out.push({ file: `${dir.name}/${name}`, node: top.node, platform: top.platform, arch: top.arch });
+    }
+  }
+  return out;
+}
+const thisMachine = `${process.version} ${process.platform} ${process.arch}`;
+describe("the mode this machine holds every committed fixture in is printed, and is GOLDEN_EXPECT_MODE's when that is set (the golden-exact CI job)", () => {
+  it(`GOLDEN_EXPECT_MODE=${process.env.GOLDEN_EXPECT_MODE ?? "(unset)"}`, () => {
+    const headers = fixtureHeaders();
+    expect(headers.length, "no fixture header found under test/golden").toBeGreaterThan(0);
+    const files = new Map<string, string[]>();
+    for (const h of headers) {
+      const key = `${goldenMode(h)} mode (captured on ${h.node} ${h.platform} ${h.arch})`;
+      files.set(key, [...(files.get(key) ?? []), h.file]);
+    }
+    const summary = [...files].map(([key, names]) => `${names.length} fixture${names.length === 1 ? "" : "s"} in ${key}`).join("; ");
+    console.log(`golden mode on this machine (${thisMachine}): ${summary}`);
+    const want = process.env.GOLDEN_EXPECT_MODE;
+    if (want === undefined || want === "") return;
+    expect(["exact", "tolerant"], `GOLDEN_EXPECT_MODE is "${want}"; it must be exact or tolerant`).toContain(want);
+    const wrong = headers.filter((h) => goldenMode(h) !== want).map((h) => `${h.file} (captured on ${h.node} ${h.platform} ${h.arch})`);
+    expect(wrong, `GOLDEN_EXPECT_MODE=${want}, but this machine (${thisMachine}) does not hold these fixtures in ${want} mode`).toEqual([]);
   });
 });
