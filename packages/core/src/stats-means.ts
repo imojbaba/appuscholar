@@ -30,7 +30,9 @@ import type { StatsBlock, StatsCtx, StatsResult } from "./stats-core";
    - tukey's p cell keeps v1's `noLead(pq<0.001?'< .001':pq.toFixed(3))` (a raw `<`, not pCell's `&lt;`: register row D-W2-6);
    - `values`: ttestInd n1, n2, m1, m2, v1, v2, t, df, p, tS, dfS, pS, dcohen, gH, ciLo, ciHi; ttestPaired n, md, sdv, t, df, p, dz, plo, phi; anova1 N, k, F, dfb, dfw, p, eta2;
      tukey kk, dfw, msw, qc and diff_i_j, q_i_j, p_i_j for each pair i < j in gk order; regression n, b0, b1, seB1, t, df, p, F, pF, r2, lo1, hi1, seB0, beta (sxy/Math.sqrt(sxx*syy),
-     the number noLead prints); pearson n, r, df, t, p, and cl, ch when n > 3. */
+     the number noLead prints); pearson n, r, df, t, p, and cl, ch when n > 3;
+   - a value may be ±Infinity where v1's closure held one without printing it (pearson-perfect: r = 1 makes t = r*Math.sqrt(df/(1-r*r)) Infinity, which no cell or sentence shows, so the
+     safety net does not fire); JSON.stringify writes such a value as null. */
 
 export function runDesc(ctx: StatsCtx): StatsResult{
   const d=ctx.data;

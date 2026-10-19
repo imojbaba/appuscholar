@@ -272,86 +272,108 @@
   {
    "test": "ttest1",
    "id": "ttest1-demo",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 1.307134564694171,
+    "p": 0.21783091895932608
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-mu-empty",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 72.60538354801277,
+    "p": 4.2052656232939924e-16
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-mu-text",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 72.60538354801277,
+    "p": 4.2052656232939924e-16
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-mu-decimal-lower",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": -6.5356728234708745,
+    "p": 4.217050096825502e-05
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-higher",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 2.733099544360543,
+    "p": 0.019470160439035277
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-all-same",
    "ref": null,
-   "why": "no scipy reference for this test yet"
+   "why": "v1 refused the case with a toast"
   },
   {
    "test": "ttest1",
    "id": "ttest1-one-value",
    "ref": null,
-   "why": "no scipy reference for this test yet"
+   "why": "v1 refused the case with a toast"
   },
   {
    "test": "ttest1",
    "id": "ttest1-text-in-numeric",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 1.307134564694171,
+    "p": 0.21783091895932608
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-n3",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 1.147078669352809,
+    "p": 0.37005921165128797
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-n2-assumptions-skip",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 0.3333333333333333,
+    "p": 0.7951672353008665
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-no-numeric-column",
    "ref": null,
-   "why": "no scipy reference for this test yet"
+   "why": "v1 refused the case with a toast"
   },
   {
    "test": "ttest1",
    "id": "ttest1-skewed",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 1.4711523468839836,
+    "p": 0.16927001688032636
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-n25",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": -0.6123724356957924,
+    "p": 0.5460502262323657
+   }
   },
   {
    "test": "ttest1",
    "id": "ttest1-name-needs-escaping",
-   "ref": null,
-   "why": "no scipy reference for this test yet"
+   "ref": {
+    "t": 6.971370023173351,
+    "p": 0.006056848795908392
+   }
   },
   {
    "test": "ttestInd",

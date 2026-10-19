@@ -11,7 +11,7 @@ import { readFixture } from "./harness/fixture";
  * never by hand; from the repository root:
  *   uv run --no-project --with scipy==1.17.1 --python 3.13 python -I packages/core/test/golden/stats/scipy-reference.py packages/core/test/golden/stats
  * ) the port runs the fixture case and each `values[key]` is held to `ref[key]`: within 1e-6 relative, or 1e-9 absolute where scipy's value is 0. `t` (and `tS`) is compared by absolute
- * value, since the group order sets its sign; Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP). A case with `ref: null` is one v1 refused (a toast, or the safety net) or a test with no scipy reference yet; the port refuses it too.
+ * value, since the group order sets its sign; Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17). A case with `ref: null` is one v1 refused (a toast, or the safety net) or a test with no scipy reference yet; the port refuses it too.
  * Typed here: the scipy pin, the tolerances, and for each test the keys its reference holds (KEYS), so that a reference that loses a statistic is noticed.
  */
 
@@ -23,6 +23,7 @@ for (const f of fixtures) for (const c of readFixture<{ cases: CapturedRun[] }>(
 
 /** The keys scipy gives for each test (pearson's cl and ch only when n > 3; tukey's p_i_j for every pair). */
 const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
+  ttest1: (r) => sameKeys(r, ["t", "p"]),
   ttestInd: (r) => sameKeys(r, ["t", "p", "df", "tS", "pS"]),
   ttestPaired: (r) => sameKeys(r, ["t", "p"]),
   anova1: (r) => sameKeys(r, ["F", "p"]),
@@ -35,7 +36,7 @@ function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Ob
 const REL = 1e-6, ABS_AT_ZERO = 1e-9;
 function close(got: number, want: number): boolean {return want === 0 ? Math.abs(got) <= ABS_AT_ZERO : Math.abs(got - want) <= REL * Math.abs(want)}
 /**
- * The one exception: Tukey's p_i_j is v1's `Math.max(0,1-stkPtukey(q,kk,dfw))` (12711), a difference from 1, so its error is stkPtukey's absolute error (at most 5e-11 on these fixtures) and
+ * The one exception (register row D-W2-17): Tukey's p_i_j is v1's `Math.max(0,1-stkPtukey(q,kk,dfw))` (12711), a difference from 1, so its error is stkPtukey's absolute error (at most 5e-11 on these fixtures) and
  * its relative error grows without bound as p goes to 0 (4% at p = 2.7e-10 in tukey-demo-arms). It is held to 1e-6 relative or 1e-9 absolute, whichever is looser; every p that loose
  * bound admits is below .001, where the cell prints `< .001` and the sentence `p < .001` whatever the digits.
  */

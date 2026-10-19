@@ -19,8 +19,8 @@ import numpy as np
 import scipy
 from scipy import stats
 
-NUMERIC = re.compile(r"^-?\d+(\.\d+)?$")
-PARSE_FLOAT = re.compile(r"^[+-]?(Infinity|\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)")
+# ASCII digits only: Python's \d and float() also accept other scripts' digits (Arabic-Indic, Devanagari), JavaScript's \d and parseFloat do not, so a label like "1٢" must stay text here too
+PARSE_FLOAT = re.compile(r"^[+-]?(Infinity|[0-9]+\.?[0-9]*(?:[eE][+-]?[0-9]+)?|\.[0-9]+(?:[eE][+-]?[0-9]+)?)")
 JS_WS = " \t\n\r\x0b\x0c                 　﻿"
 
 
@@ -50,16 +50,13 @@ def split_line(line, delim):
 
 
 def parse_text(text):
-    """statsParseText: lines on CRLF, CR or LF, blank ones dropped; tab when the first line holds one, else comma; rows of the wrong length dropped."""
+    """statsParseText: lines on CRLF, CR or LF, blank ones dropped; tab when the first line holds one, else comma; rows of the wrong length dropped.
+    The columns' numeric/categorical typing is not needed: the fixture's form already names the columns v1's selects offered."""
     lines = [l for l in re.split(r"\r\n|\r|\n", text) if js_trim(l)]
     delim = "\t" if "\t" in lines[0] else ","
     headers = split_line(lines[0], delim)
     rows = [r for r in (split_line(l, delim) for l in lines[1:]) if len(r) == len(headers)]
-    numeric = []
-    for i in range(len(headers)):
-        vals = [r[i] for r in rows if r[i] != ""]
-        numeric.append(len(vals) > 0 and all(NUMERIC.match(v) for v in vals))
-    return headers, rows, numeric
+    return headers, rows
 
 
 def parse_float(s):
@@ -72,7 +69,7 @@ def parse_float(s):
 
 
 def is_array_index(k):
-    return re.fullmatch(r"0|[1-9]\d*", k) is not None and int(k) < 2**32 - 1
+    return re.fullmatch(r"0|[1-9][0-9]*", k) is not None and int(k) < 2**32 - 1
 
 
 def group_by(rows, dv, iv):
@@ -104,6 +101,19 @@ def pairs(rows, a, b):
 
 def col(form, field):
     return int(form["values"][field])
+
+
+def col_vals(rows, idx):
+    """statsColVals(idx, true): the column's cells that are not empty, through parseFloat, the finite ones."""
+    return [x for x in (parse_float(r[idx]) for r in rows if r[idx] != "") if math.isfinite(x)]
+
+
+def ttest1(rows, form):
+    vals = col_vals(rows, col(form, "dv"))
+    mu = parse_float(form["values"].get("mu", ""))
+    mu = 0.0 if math.isnan(mu) or mu == 0 else mu  # v1's parseFloat(gv('mu'))||0
+    r = stats.ttest_1samp(vals, mu)
+    return {"t": r.statistic, "p": r.pvalue}
 
 
 def ttest_ind(rows, form):
@@ -154,6 +164,7 @@ def pearson(rows, form):
 
 # The scipy counterpart of each runner: (rows, form) -> { values key: scipy's number }, under the runner's `values` keys.
 REFERENCE = {
+    "ttest1": ttest1,               # ttest_1samp(vals, mu) -> t, p
     "ttestInd": ttest_ind,          # ttest_ind(equal_var=False) -> t, p, df; equal_var=True -> tS, pS
     "ttestPaired": ttest_paired,    # ttest_rel -> t, p
     "anova1": anova1,               # f_oneway -> F, p
@@ -181,7 +192,7 @@ def main():
             elif case["apa"] is None:
                 entry.update(ref=None, why="v1's safety net suppressed the result")
             else:
-                headers, rows, numeric = parse_text(case["csv"])
+                headers, rows = parse_text(case["csv"])
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")  # scipy warns on a perfect fit or a tiny sample; the value is what is recorded
                     ref = {k: float(v) for k, v in REFERENCE[case["test"]](rows, case["form"]).items()}
