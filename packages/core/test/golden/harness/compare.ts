@@ -4,8 +4,9 @@ import { isPlainObject } from "./fixture";
 /**
  * How a golden test holds a port's output to its fixture (register row D-W1-16). Goldens compare computed numbers within a relative 1e-12, and strings, integers and statuses exactly,
  * because a number computed through Math.exp or Math.log is engine-exact only on the engine that captured it: V8 on arm64 (whose libm is FMA-contracted) and V8 on x64 land a few ULP apart
- * for some arguments (CI on Node 22 x64 missed the fixtures captured on darwin arm64 by 3 to 14 ULP, relative 4.4e-16 to 1.7e-15), so a port difference now hides only if it moves every
- * number it touches by less than 1e-12 relative.
+ * for some arguments (CI run 39172854113 on Node 22 x64 missed the fixtures captured on darwin arm64 by 3 to 14 ULP, at most 1.7e-15 relative). The tolerance admits that drift and cannot
+ * see a port change smaller than 1e-12 relative (a reordered exponent sum in betai moved 57 of 117 pFromT points by up to 1.4e-13, which this comparer accepts), so exactness is the capture
+ * platform's guard: there `golden:capture all --check` re-captures byte-equal and every port was differentially checked against v1 with Object.is; CI on x64 guards the engines within 1e-12.
  * The rules, applied recursively through the fixture's objects and arrays:
  * - two numbers that are not both integers agree when |a − e| ≤ max(1e-12 × max(|a|, |e|), 1e-300): the absolute floor lets a zero meet a number of at most 1e-300, and nothing larger;
  * - two integers (Number.isInteger on both sides) must be equal, as must strings, booleans, null and undefined (a status or a note is a string);
