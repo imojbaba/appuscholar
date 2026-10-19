@@ -34,7 +34,7 @@
     }
   ],
   "queries": ["", "   ", "the and of", "sleep", "Sleep memory", "sleep anxiety", "memory screens", "consolidation picture", "xyzzy", "xyzzy sleep", "sleep sleep", "quotes", "students'", "mémoire élèves", "MEMORY!!", "re-test", "anxiety", "sleeping memories adolescents", "working memory", "hours"],
-  "sentences": ["", "the and of it", "Sleep improves memory in adolescents.", "Anxiety is common.", "Screens cause anxiety in adolescents at night.", "memory screens", "The cat sat on the mat while xyzzy happened.", "Short sleep impaired recall in the small sample."],
+  "sentences": ["", "the and of it", "Sleep improves memory in adolescents.", "Anxiety is common.", "Screens cause anxiety in adolescents at night.", "memory screens", "The cat sat on the mat while xyzzy happened.", "Short sleep impaired recall in the small sample.", "Anxiety."],
   "counts": [["Anxiety, anxiety and more anxiety", "anxiety"], ["aaaa", "aa"], ["Sleep sleeping SLEEP", "sleep"], ["", "x"], ["memory", "memories"]],
   "snippets": [
     ["Short text with sleep in it.", ["sleep"], 220],

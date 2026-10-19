@@ -92,10 +92,11 @@ const blobText = (b: Blob) => new Promise<string>((done, fail) => {
 });
 
 /** ShelfOps over plain arrays, recording what was stored and in what order. */
-function fakeOps(init: { entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; canWrite?: boolean; create?: ShelfOps["createPaper"] } = {}) {
+function fakeOps(init: { entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; canWrite?: boolean; create?: ShelfOps["createPaper"]; alive?: () => boolean } = {}) {
   const st = { index: init.entries ?? [] as ShelfIndex, papers: { ...(init.papers ?? {}) } as Record<string, ShelfPaper>, status: [] as string[], toasts: [] as string[], log: [] as string[], created: [] as Array<[string, ShelfPaper]> };
   const ops: ShelfOps = {
     t,
+    alive: init.alive ?? (() => true),
     entries: () => st.index,
     canWriteIndex: () => init.canWrite ?? true,
     updateIndex: (u) => { st.index = u(st.index); st.log.push("index"); return true; },
@@ -145,6 +146,33 @@ describe("addFiles is shAddFiles", () => {
     await addFiles([fileOf("c.pdf", 3)], three.ops);
     expect(three.st.status).toEqual([]);
     expect(three.ops.extract).not.toHaveBeenCalled();
+  });
+});
+
+describe("a batch stops once the dialog that started it has gone (alive() false)", () => {
+  it("addFiles stores no paper after the close, and a paper whose text was already being stored still gets its index entry", async () => {
+    let alive = true;
+    const { st, ops } = fakeOps({
+      alive: () => alive,
+      extract: async (f) => { if (f.name === "b.pdf") alive = false; return { pages: ["x".repeat(300)], total: 1 }; },
+      create: async (id, p) => { st.created.push([id, p]); st.log.push("create:" + id); if (st.created.length === 1) alive = false; }
+    });
+    await addFiles([fileOf("a.pdf", 1), fileOf("b.pdf", 2), fileOf("c.pdf", 3)], ops);
+    // a: closed while its text was stored, so its entry is still written; b and c: nothing.
+    expect(st.created).toHaveLength(1);
+    expect(st.index.map((e) => e.file)).toEqual(["a.pdf"]);
+    alive = true;
+    const two = fakeOps({ alive: () => alive, extract: async () => { alive = false; return { pages: ["x".repeat(300)], total: 1 }; } });
+    await addFiles([fileOf("a.pdf", 1)], two.ops);
+    expect(two.st.created).toEqual([]);
+    expect(two.st.index).toEqual([]);
+  });
+  it("restoreShelf stops before the next paper", async () => {
+    let alive = true;
+    const { st, ops } = fakeOps({ alive: () => alive, create: async (id, p) => { st.created.push([id, p]); alive = false; } });
+    await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p1", pages: ["a"] }, { id: "p2", pages: ["b"] }] }), ops);
+    expect(st.created.map(([id]) => id)).toEqual(["p1"]);
+    expect(st.index.map((e) => e.id)).toEqual(["p1"]);
   });
 });
 
@@ -306,6 +334,7 @@ async function until(pred: () => boolean, what = "condition") {
   for (let i = 0; i < 400; i++) { if (pred()) return; await settle(10); }
   throw new Error(what + " not reached");
 }
+/** Mounts the dialog open; the answer closes it as Close, Escape or the overlay does (the parent sets open to false, which unmounts its body). */
 async function mount() {
   const el = document.createElement("div");
   document.body.appendChild(el);
@@ -313,7 +342,21 @@ async function mount() {
   roots.push(root);
   await act(async () => { root.render(<ShelfDialog open onOpenChange={() => {}} />); });
   await settle(20);
+  return { close: async () => { await act(async () => { root.render(<ShelfDialog open={false} onOpenChange={() => {}} />); }); } };
 }
+/** Holds the n-th PUT of a shelf paper until `release()`; `reached` once it has been made. */
+function holdPaperPut(n: number) {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const box = { reached: false, release: () => release() };
+  let seen = 0;
+  h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+    if (init.method === "PUT" && decodeURIComponent(path).includes("/blobs/shelf_paper:") && ++seen === n) { box.reached = true; await gate; }
+    return fakeApi(path, init);
+  });
+  return box;
+}
+const paperIds = () => server.blobs.filter((b) => b.kind.startsWith("shelf_paper:")).map((b) => b.kind.slice("shelf_paper:".length)).sort();
 async function click(el: HTMLElement | null) { await act(async () => { el!.click(); await new Promise((r) => setTimeout(r, 0)); }); }
 function typeIn(el: HTMLElement, value: string) {
   const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
@@ -543,6 +586,53 @@ describe("the Reading shelf dialog", () => {
     expect(stored<ShelfPaper>("shelf_paper:p9")).toEqual({ pages: ["Restored text"], notes: [], cells: { Sample: "12" } });
     await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 1, "the index save");
     expect(stored<ShelfIndex>("shelf_index")![0]).toEqual({ id: "p9", title: "Restored", file: "r.pdf", size: 3, added: "2026-03-01T00:00:00.000Z", total: 1, kept: 1 });
+  });
+
+  it("closing the dialog during Add PDFs: the paper being stored still gets its index entry, and no other paper is stored after the close", async () => {
+    const held = holdPaperPut(2);
+    h.extract.mockImplementation(async (f: File) => ({ pages: [f.name + " " + "word ".repeat(60)], total: 1 }));
+    const d = await mount();
+    await pick(tid("sh-file")!, [fileOf("a.pdf", 1), fileOf("b.pdf", 2), fileOf("c.pdf", 3)]);
+    await until(() => held.reached, "b's text being stored");
+    await d.close();
+    expect(tid("shelf-dialog")).toBeNull();
+    held.release();
+    await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 2, "both entries");
+    await settle(1000);
+    const index = stored<ShelfIndex>("shelf_index")!;
+    expect(index.map((e) => e.file)).toEqual(["a.pdf", "b.pdf"]);
+    expect(paperIds()).toEqual(index.map((e) => e.id).sort());
+    expect(h.extract).toHaveBeenCalledTimes(2);
+  });
+
+  it("closing the dialog during a restore: the same", async () => {
+    const held = holdPaperPut(2);
+    const d = await mount();
+    const text = JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: ["p1", "p2", "p3"].map((id) => ({ id, title: id, file: id + ".pdf", size: 1, added: "2026-03-01T00:00:00.000Z", pages: ["t"], total: 1 })) });
+    await pick(tid("sh-rest")!, [new File([text], "b.json")]);
+    await until(() => held.reached, "p2's text being stored");
+    await d.close();
+    held.release();
+    await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 2, "both entries");
+    await settle(1000);
+    expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.id)).toEqual(["p1", "p2"]);
+    expect(paperIds()).toEqual(["p1", "p2"]);
+  });
+
+  it("a removal the server refuses says so and keeps the paper; a paper whose blob is not read shows its pages only", async () => {
+    seedCorpus();
+    server.blobs = server.blobs.map((b) => (b.kind === "shelf_paper:pc" ? { ...b, body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1 } : b));
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => (init.method === "DELETE" ? Promise.reject(new ApiError(500, "server")) : fakeApi(path, init)));
+    await mount();
+    await until(() => tids("sh-paper").length === 4 && !(tids("sh-read")[0] as HTMLButtonElement).disabled, "the papers");
+    expect(tids("sh-paper-meta")[2]!.textContent).toBe("pc.pdf · 2 pages");
+    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pa.pdf · 3 pages · 0 highlights");
+    await click(tids("sh-remove")[0]!);
+    await click(tids("sh-remove")[0]!);
+    await until(() => tid("sh-status")?.textContent === E.shelf_remove_fail, "the failure");
+    expect(tid("sh-status")!.textContent).toBe("That paper could not be removed. Check your connection and try again.");
+    expect(tids("sh-paper")).toHaveLength(4);
+    expect(server.blobs.some((b) => b.kind === "shelf_paper:pa")).toBe(true);
   });
 
   it("a stored index that does not open is reported, and the first write over it asks first (R16): no means nothing is stored", async () => {

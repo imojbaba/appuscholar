@@ -13,6 +13,8 @@ export type ShelfItem = ShelfEntry & { paper: ShelfPaper | null };
 /** What the shelf's orchestration touches, so it can be driven with fakes. The panels compute nothing; this composes v1's steps from core's functions and the sh2_* copy. */
 export type ShelfOps = {
   t: T;
+  /** False once the dialog that started a batch has closed (or another project is open): Add PDFs and a restore stop before storing another paper. */
+  alive(): boolean;
   /** The papers as the index holds them now. */
   entries(): ShelfEntry[];
   /** Whether the index may be written: asks first when the stored index does not open on this device (R16). Asked before a paper is stored, so no paper is left out of the index. */
@@ -48,6 +50,7 @@ export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
   const have: Array<{ file: string; size: number }> = d.entries().map((e) => ({ file: e.file, size: e.size }));
   const msgs: string[] = [];
   for (const f of files) {
+    if (!d.alive()) return;
     d.setStatus(d.t("sh2_reading", { name: f.name }));
     if (!/\.pdf$/i.test(f.name)) { msgs.push(f.name + d.t("sh2_not_a_pdf")); continue; }
     if (have.some((p) => p.file === f.name && p.size === f.size)) { msgs.push(f.name + d.t("sh2_already_on_the_shelf")); continue; }
@@ -55,8 +58,11 @@ export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
       const r = await d.extract(f);
       if (r === "not-a-pdf") { msgs.push(f.name + d.t("sh2_not_a_pdf")); continue; }
       if (r === "no-text") { msgs.push(f.name + d.t("sh2_no_readable_text_it")); continue; }
+      // Closed while the PDF was read: nothing more is stored.
+      if (!d.alive()) return;
       const now = d.now();
       const id = shPaperId(now.getTime());
+      // Once its text is stored the entry is always added, the dialog open or not (updateIndex writes it through a client of its own after a close).
       await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
       const entry: ShelfEntry = { id, title: shTitleGuess(r.pages, f.name.replace(/\.pdf$/i, "")), file: f.name, size: f.size, added: now.toISOString(), total: r.total, kept: r.pages.length };
       d.updateIndex((prev) => [...(prev ?? []), entry]);
@@ -160,6 +166,7 @@ export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
   const onShelf = new Set(d.entries().map((e) => e.id));
   let n = 0;
   for (const p of last.values()) {
+    if (!d.alive()) return;
     const pages = p.pages.map((x) => str(x));
     const notes = (p.notes as Array<Record<string, unknown> | null>).filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
       .map((x) => ({ ...x, id: str(x.id), page: num(x.page, 0), quote: str(x.quote), note: str(x.note), at: str(x.at) }));

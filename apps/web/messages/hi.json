@@ -893,6 +893,8 @@
   "sh2_title_aria": "Title",
   "sh2_type_a_word_or": "Type a word or two.",
   "sh2_write_a_sentence_first": "Write a sentence first.",
+  "shelf_pages_only": "· {pagesCount} पृष्ठ",
+  "shelf_remove_fail": "वह पेपर हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "slides_download_btn": "⬇ PowerPoint (.pptx) के रूप में डाउनलोड करें",
   "slides_generate_btn": "स्लाइड पूर्वावलोकन बनाएं",
   "slides_panel_desc": "आपकी Heading 1 / Heading 2 शैलियों को स्लाइड विभाजन के रूप में उपयोग करता है — हर हेडिंग के नीचे का टेक्स्ट बुलेट पॉइंट बन जाता है, और कोई भी चित्र अपनी स्वयं की स्लाइड बन जाता है। यदि अभी तक नहीं जोड़ी हैं, तो ऊपर फॉर्मेटिंग बार में हेडिंग जोड़ें।",

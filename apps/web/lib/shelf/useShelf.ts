@@ -65,6 +65,16 @@ export async function readPaperOnce(projectId: string, paperId: string, vault: B
   return parseBlob(kind, text);
 }
 
+/**
+ * An update of a project's shelf_index made after the dialog that started it went away (closed, or another project opened): a client of its own reads the index (after any
+ * last save of the dialog's client), applies the update, sends it, and is disposed of; what it cannot send is held and sent later, as any blob value is (held.ts).
+ */
+export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | null) => ShelfIndex, vault: () => BlobVault): void {
+  const c = projectBlobClient("shelf_index", projectId, vault, () => {});
+  c.set(u);
+  void c.start().then(() => c.flush()).finally(() => c.dispose());
+}
+
 /** The shelf of the project the workspace has loaded (the scratch project's in scratch space). */
 function useShelfProject(): string | null {
   return useWorkspace().projectId;
@@ -116,6 +126,15 @@ export function useShelfStore(): ShelfStore {
   const current = useRef({ index, papers: papers.map });
   useEffect(() => { current.current = { index, papers: papers.projectId === projectId ? papers.map : new Map() }; });
 
+  /** Whether this store is still mounted, and for which project: a batch (Add PDFs, a restore) started before a close or a project switch must not write through it. */
+  const live = useRef({ mounted: true, projectId });
+  useEffect(() => { live.current.projectId = projectId; });
+  useEffect(() => {
+    const l = live.current;
+    l.mounted = true;
+    return () => { l.mounted = false; };
+  }, []);
+
   // A project's clients go with it.
   useEffect(() => {
     const mine = clients.current;
@@ -150,10 +169,16 @@ export function useShelfStore(): ShelfStore {
     return true;
   }, [t]);
 
-  const ops = useMemo<ShelfStore["ops"]>(() => ({
+  const ops = useMemo<ShelfStore["ops"]>(() => {
+    const here = () => live.current.mounted && live.current.projectId === projectId;
+    return {
+    alive: here,
     entries: () => current.current.index.value ?? [],
     canWriteIndex: () => mayWrite("index", current.current.index.broken),
     updateIndex: (u) => {
+      if (!projectId) return false;
+      // Closed (or another project) while a paper was being stored: its entry goes through a client of its own, so no stored paper is left out of its index.
+      if (!here()) { writeIndexDetached(projectId, u, () => vaultRef.current); return true; }
       if (!mayWrite("index", current.current.index.broken)) return false;
       current.current.index.set(u);
       return true;
@@ -184,7 +209,8 @@ export function useShelfStore(): ShelfStore {
       return true;
     },
     paper: (id) => current.current.papers.get(id)?.value ?? null
-  }), [projectId, mayWrite, t, ensureClient]);
+    };
+  }, [projectId, mayWrite, t, ensureClient]);
 
   const setCols = useCallback((u: (prev: ShelfCols | null) => ShelfCols) => {
     if (!mayWrite("cols", cols.broken)) return;

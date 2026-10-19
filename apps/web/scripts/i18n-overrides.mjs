@@ -115,6 +115,10 @@ export const V2_STRINGS = {
   vault_shelf_locked: { en: "Your Reading shelf is locked. Unlock your vault to read it and save your changes.", hi: "आपकी रीडिंग शेल्फ़ बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   vault_shelf_broken: { en: "Part of your saved Reading shelf cannot be opened on this device. Nothing was changed.", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का कुछ हिस्सा इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
   vault_shelf_broken_confirm: { en: "This part of your saved Reading shelf cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का यह हिस्सा इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
+  // Reading shelf copy with no v1 sentence (v1 has no failure path for a removal, and always knows a paper's highlights): a removal the server refused, and a paper's line
+  // while its blob is not read yet (the pages only). DRAFT Hindi.
+  shelf_remove_fail: { en: "That paper could not be removed. Check your connection and try again.", hi: "वह पेपर हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
+  shelf_pages_only: { en: "· {pagesCount} pages", hi: "· {pagesCount} पृष्ठ" },
   vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
   vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
   vault_forget_btn: { en: "Forget on this computer", hi: "इस कंप्यूटर पर भुला दें" },

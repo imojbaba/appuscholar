@@ -7,7 +7,8 @@ import type { ShelfItem } from "@/lib/shelf/actions";
 /**
  * Papers (shPapersRender 11616-11620): "➕ Add PDFs" (several at once), "Back up the shelf", "Restore a shelf backup", the status line (shStatusHTML 11614), then each paper: its
  * title in a box (renamed when the box is left), the file, the pages and highlights, "Read" and "Remove from shelf", which asks to be pressed again ("Press again to remove it and
- * its highlights"); "The shelf is empty. Add a PDF to start." when it is; v1's note that the shelf is kept apart from the normal backup. v1's storage line (shUsage 11615) is not
+ * its highlights"; a removal the server refuses says so in the status line); while a paper's blob is not read yet its line gives the pages only, its highlights being unknown;
+ * "The shelf is empty. Add a PDF to start." when it is; v1's note that the shelf is kept apart from the normal backup. v1's storage line (shUsage 11615) is not
  * shown: v2 keeps the shelf on the server, not in the browser's storage (register row D-S2-14).
  */
 export function Papers({ items, status, busy, canWrite, onAdd, onBackup, onRestore, onRename, onRead, onRemove }: {
@@ -40,7 +41,7 @@ export function Papers({ items, status, busy, canWrite, onAdd, onBackup, onResto
           <input className="input sh-title" type="text" defaultValue={p.title} key={p.title} aria-label={t("sh2_title_aria")} data-testid="sh-title"
             onBlur={(e) => { if (e.target.value !== p.title) onRename(p.id, e.target.value); }}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
-          <div className="sh-small sh-muted" data-testid="sh-paper-meta">{p.file + " " + t("sh2_pages_highlights", { pagesCount: p.paper?.pages.length ?? p.kept, notesCount: p.paper?.notes.length ?? 0 })}</div>
+          <div className="sh-small sh-muted" data-testid="sh-paper-meta">{p.file + " " + (p.paper ? t("sh2_pages_highlights", { pagesCount: p.paper.pages.length, notesCount: p.paper.notes.length }) : t("shelf_pages_only", { pagesCount: p.kept }))}</div>
           <div className="sh-row">
             <Button variant="primary" size="sm" data-testid="sh-read" disabled={!p.paper} onClick={() => onRead(p.id)}>{t("sh2_read")}</Button>
             <Button variant="ghost" size="sm" data-testid="sh-remove" onClick={() => { void remove(p.id); }}>{sure.has(p.id) ? t("sh2_press_again_to_remove") : t("sh2_remove_from_shelf")}</Button>

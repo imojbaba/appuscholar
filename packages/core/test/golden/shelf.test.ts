@@ -104,6 +104,8 @@ describe("shRank, shRankPages and shFindPassages are v1's ranking", () => {
     expect(fx.find.some((s) => s.empty === "No page shares enough words with that sentence.")).toBe(true);
     expect(fx.find.some((s) => s.empty === "Write a sentence first.")).toBe(true);
     expect(fx.find.some((s) => s.cards.length > 0)).toBe(true);
+    // A sentence with one term: shFindRun keeps pages sharing min(2, 1) = 1 term.
+    expect(fx.find.some((s) => shTokens(s.q).length === 1 && s.cards.length > 0)).toBe(true);
     for (const s of fx.find) {
       const r = shFindPassages(fx.papers, s.q);
       if (s.empty !== null) {

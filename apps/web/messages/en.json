@@ -893,6 +893,8 @@
   "sh2_title_aria": "Title",
   "sh2_type_a_word_or": "Type a word or two.",
   "sh2_write_a_sentence_first": "Write a sentence first.",
+  "shelf_pages_only": "· {pagesCount} pages",
+  "shelf_remove_fail": "That paper could not be removed. Check your connection and try again.",
   "slides_download_btn": "⬇ Download as PowerPoint (.pptx)",
   "slides_generate_btn": "Generate slide preview",
   "slides_panel_desc": "Uses your Heading 1 / Heading 2 styles as slide breaks — the text under each heading becomes bullet points, and any picture becomes its own slide. Add headings in the formatting bar above if you haven't yet.",

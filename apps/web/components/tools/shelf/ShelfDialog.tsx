@@ -92,7 +92,7 @@ function ShelfBody() {
             onRestore={(f) => { void run(async () => restoreShelf(await readFileText(f), ops)); }}
             onRename={(id, title) => renamePaper(id, title, ops)}
             onRead={(id) => read(id, 1)}
-            onRemove={(id) => removePaper(id, ops)} />
+            onRemove={async (id) => { const ok = await removePaper(id, ops); if (!ok) setStatus(t("shelf_remove_fail")); return ok; }} />
         ) : tab === "search" ? (
           <Search items={items} onOpen={read} />
         ) : tab === "find" ? (
