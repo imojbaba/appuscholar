@@ -13,7 +13,15 @@ import { readFixture } from "./harness/fixture";
 
 const fx = readFixture<{ ranges: Array<[number, number]>; strings: string[]; runs: string[] }>("citation", "devanagari");
 const root = new URL("../../src/", import.meta.url);
-const srcFiles = readdirSync(root, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".ts")).map((f) => readFileSync(new URL(f, root), "utf8"));
+/**
+ * data/chart-tables.ts is left out: its VZ_I18N.hi holds the Hindi `vz_*` strings of v1's one-line Hindi interface block (2330, thousands of strings, which RANGES cannot list), and the file
+ * is pinned byte for byte to v1 by its own golden instead: emitTables writes charts/tables.json from the same eval of I18N, and charts.test.ts ("VZ_I18N.en and .hi hold every vz_* string of
+ * v1's I18N byte for byte") compares every string.
+ */
+const EXEMPT = new Set(["data/chart-tables.ts"]);
+const srcFiles = readdirSync(root, { recursive: true, encoding: "utf8" })
+  .filter((f) => f.endsWith(".ts") && !EXEMPT.has(f.split("\\").join("/")))
+  .map((f) => readFileSync(new URL(f, root), "utf8"));
 const coreStrings = srcFiles.flatMap((f) => [...f.matchAll(DEVANAGARI_STRING)].map((m) => decodeEscapes(m[1]!)));
 const coreRuns = srcFiles.flatMap((f) => f.match(DEVANAGARI_RUN) ?? []);
 

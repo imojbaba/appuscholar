@@ -66,3 +66,10 @@ export type {
 } from "./guide";
 export { PW_INFO, POWER_FOOTER_NOTE, pwArt, pwNum, powerCompute, simulatorParse, simulatorCompute, simulatorHtml } from "./power";
 export type { PowerTestKey, PowerMode, PowerInput, PowerResult, SimBin, SimLast, SimResult } from "./power";
+export {
+  VZ_COL, VZ_GRAY, VZ_I18N, vzPalette, vzEsc, vzQuant, vzTCrit, vzQNorm, vzNice, vzFmt, vzSummary, vzGroups, vzAxisDefaults, vzDefaults, vzCaption,
+  vzFrame, vzSvgOpen, vzYAxis, vzXLabel, vzScaleY, vzJit, vzTableBlock, vzCatLabel, vzBox, vzBar, vzHist, vzQQ, vzChart,
+} from "./charts";
+export type { VzType, VzOptions, VzGroup, VzSummary, VzScale, VzFrame, VzChart, VzTr } from "./charts";
+export { chartParseLines, vennNum, vennSvg } from "./quickchart";
+export type { ChartRow, VennInput } from "./quickchart";
