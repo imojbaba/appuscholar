@@ -56,6 +56,10 @@ describe("exact mode, on the capturing platform: every number by Object.is", () 
     fails({ judged: [{ status: "warn", note: "", pHi: p }] }, { judged: [{ status: "ok", note: "", pHi: p }] }, "$.judged[0].status", "exact");
     fails({ status: "ok" }, { status: "ok", note: "" }, "$", "exact");
   });
+  it("an integer off by one and a string off by one character are rejected", () => {
+    fails(4, 3, "$", "exact");
+    fails("t(21) = 2.15, p = .048", "t(21) = 2.15, p = .043", "$", "exact");
+  });
   it("the message names the mode's rule", () => {
     expect(() => expectGolden([ulpUp(p)], [p], "exact", "t-round-edge")).toThrow(/^t-round-edge: \$\[0\] differs \(exact on the capturing platform: Object\.is\)$/);
   });
@@ -137,5 +141,26 @@ describe(`this machine (${process.version} ${process.platform} ${process.arch}) 
   else it("tolerant branch: a fixture value one ULP away is accepted, one 1e-11 away rejected", () => {
     passes(ulpUp(value), value, here);
     fails(value * (1 + 1e-11), value, "$", here);
+  });
+});
+
+// Both branches on every machine, whichever this one takes above: a header from another platform (every field differs from this process) and this process's own header.
+const elsewhere: GoldenPlatform = {
+  node: process.version.split(".")[0] === "v22" ? "v26.0.0" : "v22.0.0",
+  platform: process.platform === "linux" ? "darwin" : "linux",
+  arch: process.arch === "x64" ? "arm64" : "x64",
+};
+describe("both branches on every machine, from forced headers, on the same fixture value", () => {
+  it(`a header from elsewhere (${elsewhere.node} ${elsewhere.platform} ${elsewhere.arch}) gives the tolerant branch: one ULP away is accepted, 1e-11 away rejected`, () => {
+    const mode = goldenMode(elsewhere);
+    expect(mode).toBe("tolerant");
+    passes(ulpUp(value), value, mode);
+    fails(value * (1 + 1e-11), value, "$", mode);
+  });
+  it(`this process's own header (${process.version} ${process.platform} ${process.arch}) gives the exact branch: one ULP away is rejected`, () => {
+    const mode = goldenMode({ node: process.version, platform: process.platform, arch: process.arch });
+    expect(mode).toBe("exact");
+    fails(ulpUp(value), value, "$", mode);
+    passes(value, value, mode);
   });
 });
