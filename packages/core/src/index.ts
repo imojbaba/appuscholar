@@ -56,3 +56,11 @@ export { runChisq, runGof, runMcnemar, runCochran, runFriedman } from "./stats-c
 export { runAnova2, runMregress } from "./stats-factorial";
 export { runLogistic, runRmanova, runAlpha } from "./stats-models";
 export { runModerate, runMediate, runMixed } from "./stats-advanced";
+export {
+  TG_Q, TG_RES, TG_IMP, TG_EXTRA, TG_DEMO, GEN_DESIGNS, STATS_TEST_OPTIONS, TG_CHECK_TEXT, TG_CHECK_FALLBACK,
+  tgNext, tgRes, tgWhyItems, tgExtra, tgSkew, tgQuant, tgOutliers, tgCheck, tgCheckNumbers, tgCheckCounts, genVerdict,
+} from "./guide";
+export type {
+  TgQuestionKey, TgAnswers, TgQuestion, TgResKey, TgResEntry, TgResult, TgNextOut, TgWhyItem, TgExtra, TgDemo, GenDesignKey, GenDesign,
+  TgCheckSel, TgNumbersRow, TgNumbers, TgCounts, TgCheckOut, GenVerdict,
+} from "./guide";

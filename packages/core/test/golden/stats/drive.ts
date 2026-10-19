@@ -28,7 +28,7 @@ function cellHtml(el: Element, caseId: string): string {
   return el.innerHTML;
 }
 
-function readBlocks(parent: Element, caseId: string): StatsBlock[] {
+export function readBlocks(parent: Element, caseId: string): StatsBlock[] {
   const out: StatsBlock[] = [];
   for (const node of Array.from(parent.childNodes)) {
     if (node.nodeType === 3) {
