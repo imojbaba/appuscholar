@@ -88,6 +88,29 @@ describe("SuggestionProvider", () => {
     ed.destroy();
   });
 
+  it("a label given to setThinking is the pane's text while it thinks; set, setFeedback and clear drop it", () => {
+    const ed = make("<p>one</p>");
+    act(() => api.setEditor(ed));
+    let token = 0;
+    act(() => { token = api.setThinking("polishing"); });
+    expect(api.statusLabel).toBeNull();
+    act(() => { token = api.setThinking("custom", null, "💜 Thinking this through…"); });
+    expect(api.status).toBe("custom");
+    expect(api.statusLabel).toBe("💜 Thinking this through…");
+    act(() => api.set("the read", null, token));
+    expect(api.statusLabel).toBeNull();
+    expect(api.sug).toBe("the read");
+    expect(api.note).toBeNull();
+    act(() => { token = api.setThinking("custom", null, "💜 Thinking this through…"); });
+    act(() => api.setFeedback("questions", token));
+    expect(api.statusLabel).toBeNull();
+    act(() => { api.setThinking("custom", null, "💜 Thinking this through…"); });
+    act(() => api.clear("Network error"));
+    expect(api.statusLabel).toBeNull();
+    expect(api.status).toBe("idle");
+    ed.destroy();
+  });
+
   it("feedback resets selectionAtRequest and is never insertable", () => {
     const ed = make("<p>one two</p>");
     act(() => api.setEditor(ed));

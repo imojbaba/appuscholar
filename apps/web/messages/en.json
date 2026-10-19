@@ -916,6 +916,7 @@
   "vault_forget_q": "Forget the vault on this computer?",
   "vault_forgot": "Forgot it? Use your recovery sheet",
   "vault_forgotten": "The vault is no longer remembered on this computer.",
+  "vault_idea_locked": "Your saved idea is locked. Unlock your vault to read it and save your changes.",
   "vault_migrate_fail": "Some documents are not yet in your vault. Reconnect, or open the vault again, to finish.",
   "vault_migrated": "All your documents are now locked in your vault ✓",
   "vault_migrating_n": "Securing document {n} of {total}…",

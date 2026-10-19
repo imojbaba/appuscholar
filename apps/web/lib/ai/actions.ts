@@ -1,7 +1,8 @@
 import type { SelectionRange } from "@/lib/editor/insert";
-import { accCheck, buildDraftFirstPrompt, buildWritingPrompt, type WritingKind } from "@appuscholar/core";
+import { accCheck, buildDraftFirstPrompt, buildIdeaPrompt, buildWritingPrompt, type WritingKind } from "@appuscholar/core";
 
-export type SuggestionStatus = "idle" | "thinking" | "polishing" | "expanding" | "reading";
+/** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
+export type SuggestionStatus = "idle" | "thinking" | "polishing" | "expanding" | "reading" | "custom";
 export type SuggestionNote = { msg: string; warn: boolean };
 
 /** Everything the three writing buttons and Draft first touch, so the orchestration can be driven with fakes in a test. */
@@ -12,12 +13,12 @@ export type ActionDeps = {
   /** The selection with its position, captured when the request starts so Accept can replace that range later (v1 savedRange). */
   selectionRange(): SelectionRange | null;
   tailText(): string;
-  /** Starts a request and returns its token. `range` is the text the answer will replace (Improve, Extend), null to append (Continue): the provider keeps it mapped through edits made while the AI thinks. Starting another request, dismissing, or switching document makes the token stale. */
-  setThinking(status: SuggestionStatus, range?: SelectionRange | null): number;
+  /** Starts a request and returns its token. `range` is the text the answer will replace (Improve, Extend), null to append (Continue): the provider keeps it mapped through edits made while the AI thinks. `label`, when given, is the pane's text while it waits (v1's sentence for that tool) in place of the status's own. Starting another request, dismissing, or switching document makes the token stale. */
+  setThinking(status: SuggestionStatus, range?: SelectionRange | null, label?: string): number;
   /** False once the request that was given `token` has been superseded: its answer (or error) must be dropped. */
   isCurrent(token: number): boolean;
-  /** A suggestion the student can accept: Tab and Accept insert it, over the range given to `setThinking` or at the end. */
-  set(text: string, note: SuggestionNote, token: number): void;
+  /** A suggestion the student can accept: Tab and Accept insert it, over the range given to `setThinking` or at the end. `note` is the accuracy check, null where v1 shows none. */
+  set(text: string, note: SuggestionNote | null, token: number): void;
   /** Draft first feedback: shown in the pane, never insertable (rule 4). */
   setFeedback(text: string, token: number): void;
   clear(msg?: string): void;
@@ -36,7 +37,7 @@ const NEED_SELECTION: Record<"improve" | "expand", string> = {
 };
 
 /** v1 showAIError: the pane stays open on the message and a toast repeats it. */
-function fail(d: ActionDeps, e: unknown): void {
+function fail(d: Pick<ActionDeps, "clear" | "dockShow" | "toast">, e: unknown): void {
   const msg = e instanceof Error && e.message ? e.message : "Something went wrong. Try again.";
   d.clear(msg);
   d.dockShow("ai");
@@ -82,5 +83,34 @@ export async function runDraftFirst(kind: "tail" | "improve" | "expand", d: Acti
     d.setFeedback(d.t("df_label") + "\n\n" + reply, token);
     d.dockShow("ai");
     d.toast(d.t("df_ready"));
+  } catch (e) { if (d.isCurrent(token)) fail(d, e); }
+}
+
+/** v1 ideaAssess's three sentences (8572, 8574, 8578): toasts and pane text of v1's script, English in both languages as in v1, like the writing actions' toasts. */
+export const IDEA_NEED_TOPIC = "Describe your working idea first";
+export const IDEA_THINKING = "💜 Thinking this through…";
+export const IDEA_READY = "Ready — press Tab in the editor to insert";
+
+/** What Assess feasibility touches: the suggestion pane, the AI, and the four fields as the student typed them. */
+export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast"> & {
+  /** fieldLabel(settings.field): v1 fieldName(). */
+  field: string;
+  intake: { topic: string; resources: string; timeframe: string; constraints: string };
+};
+
+/** Idea & Feasibility's "🔎 Assess feasibility" (v1 ideaAssess 8568-8580): the advisor's read lands in the suggestion pane, insertable with Tab or Accept. */
+export async function assessIdea(d: IdeaDeps): Promise<void> {
+  if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return; }
+  // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000).
+  const built = buildIdeaPrompt(d.field, d.intake);
+  const token = d.setThinking("custom", null, IDEA_THINKING);
+  d.dockShow("ai");
+  try {
+    const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+    if (!d.isCurrent(token)) return;
+    // v1 shows no accuracy check for this answer (setSug with no note, 8577).
+    d.set(reply, null, token);
+    d.dockShow("ai");
+    d.toast(IDEA_READY);
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }

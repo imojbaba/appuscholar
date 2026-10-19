@@ -100,6 +100,8 @@ export const V2_STRINGS = {
   vault_doc_locked: { en: "This document is locked. Unlock your vault to read it.", hi: "यह दस्तावेज़ बंद है। इसे पढ़ने के लिए अपनी तिजोरी खोलें।" },
   vault_doc_broken: { en: "This document cannot be opened on this device. Nothing was changed.", hi: "यह दस्तावेज़ इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
   vault_save_locked: { en: "Unlock your vault to save your changes.", hi: "अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
+  // Idea & Feasibility while the vault is locked: the saved intake cannot be read, and what is typed waits for the unlock. DRAFT Hindi.
+  vault_idea_locked: { en: "Your saved idea is locked. Unlock your vault to read it and save your changes.", hi: "आपका सहेजा हुआ विचार बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
   vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
   vault_forget_btn: { en: "Forget on this computer", hi: "इस कंप्यूटर पर भुला दें" },
