@@ -1,8 +1,8 @@
 /* v1's distribution core: gammaln, betai, gammaq, erf, normalCDF, pFromT, pFromF, pFromChi and pFromZ, with the three helpers _betacf, _gser and _gcf that they call (index.html:8633-8690).
    pFromT, pFromF, pFromChi and pFromZ are the p values of v1's t, F, chi-square and z statistics; its power, studentized-range and exact-test code (9044-9269) reuses gammaln, betai and gammaq.
    The arithmetic is v1's as v1 wrote it, line for line: the same operation order, literal coefficients, loop bounds (MAXIT and ITMAX 200),
-   tolerances (EPS 3e-9, FPMIN 1e-30) and early returns, so on the engine that runs v1 the functions return v1's doubles to the last bit; test/golden/pvalue.test.ts compares them within a
-   relative 1e-12, since V8's Math.exp and Math.log land a few ULP apart on arm64 and x64 (register row D-W1-16).
+   tolerances (EPS 3e-9, FPMIN 1e-30) and early returns, so on the engine that runs v1 the functions return v1's doubles to the last bit; test/golden/pvalue.test.ts compares them with
+   Object.is on the platform that captured the fixture and within a relative 1e-12 elsewhere, since V8's Math.exp and Math.log land a few ULP apart on arm64 and x64 (register row D-W1-16).
    What differs from v1's text is only what TypeScript and this package's lint need: parameter and return types; `export` (not on _betacf, _gser and _gcf); `const` or `let` where v1 wrote `var`
    (the no-var rule), a `var` list that mixes bindings kept and bindings reassigned being split in two statements in the same order; and one `!` on cof[j] (noUncheckedIndexedAccess).
    pFromF is `1 - betai(...)`, so a right tail below about 1e-16 comes out as exactly 0 (register row F5). */

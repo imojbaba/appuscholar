@@ -5,8 +5,8 @@ import type { V1 } from "./v1";
 
 /**
  * Every fixture opens with this header. `node`, `platform` and `arch` are the Node version, the operating system and the CPU architecture that ran the capture (process.version,
- * process.platform, process.arch): a number computed through Math.exp or Math.log is exact only on the platform that computed it, so the golden tests hold computed numbers within a relative
- * 1e-12 (harness/compare.ts, register row D-W1-16), and the header records where the fixture's digits were computed.
+ * process.platform, process.arch): a number computed through Math.exp or Math.log is exact only on the platform that computed it, so the golden tests compare computed numbers exactly where
+ * the header says the fixture was captured and within a relative 1e-12 elsewhere (goldenMode in harness/compare.ts, register row D-W1-16).
  */
 export type FixtureHeader = { engine: string; captured: string; node: string; platform: string; arch: string; v1: { build: string; sha256: string; lines: number } };
 export type Fixture<T> = FixtureHeader & T;

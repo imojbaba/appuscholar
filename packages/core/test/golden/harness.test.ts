@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
-import { expectGolden } from "./harness/compare";
+import { expectGolden, goldenMode } from "./harness/compare";
 import { emitTables, encodeSpecial, readFixture, writeFixture } from "./harness/fixture";
 import type { V1 } from "./harness/v1";
 
@@ -18,7 +18,7 @@ describe("golden harness fixtures", () => {
     expect(new Set(fx.cases.map(c => c.fn)).size).toBe(20);
     for (const fn of ["pFromT", "pFromF", "pFromChi", "pFromZ", "normalCDF", "gammaln", "betai", "gammaq", "erf", "stkShapiro", "stkPtukey", "stkQtukey", "stkExactMW", "pwPower", "pwSolveN", "accItems", "pdScanText", "provHash", "aiuClassify", "ccNorm"])
       expect(fx.cases.filter(c => c.fn === fn).length).toBeGreaterThanOrEqual(3);
-    expectGolden(fx.cases.find(c => c.fn === "pFromT" && c.args[0] === 2.15 && c.args[1] === 21)?.out, 0.043360276354708106); // v1's computed p: within a relative 1e-12 (D-W1-16)
+    expectGolden(fx.cases.find(c => c.fn === "pFromT" && c.args[0] === 2.15 && c.args[1] === 21)?.out, 0.043360276354708106, goldenMode(fx)); // v1's computed p, in the fixture's mode (D-W1-16)
   });
   it("stats-demos: the 13 TG_DEMO datasets ran through statsRunNow and agree with the audit's capture", () => {
     const fx = readFixture<{ demos: Demo[] }>("stats-demos", "demos");

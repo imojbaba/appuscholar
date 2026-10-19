@@ -3,16 +3,17 @@ import { readFileSync } from "node:fs";
 import { docTextContent } from "../../src/doctext";
 import { ncFind, ncFmtP, ncJudge, ncPOf, numbersCheck, numbersCheckHtml, numbersSummary } from "../../src/numbers";
 import type { NcFind, NcJudge, NcNote } from "../../src/numbers";
-import { expectGolden } from "./harness/compare";
+import { expectGolden, goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
 
 /**
  * numbers.ts (v1 12195-12257, the Numbers check) against v1 running. Every expected value is read from test/golden/numbers/cases.json (`golden:capture numbers`), which holds, for each entry of the
  * hand-written sentences.json, v1's ncFind and ncJudge results and the counts that ncOpen (12351-12367) showed in the dialog, plus ncPOf called by itself and ncFmtP's outputs.
  * What is typed here is what the brief and the register spell out: the F5 and split-paragraph literals, the anchor ids, the corpus minimums, the kinds of the ncPOf grid and the rule that warn counts every item that is not ok.
- * The verdicts (`judged`) and ncPOf's values are computed through Math.exp and Math.log, so they are held with expectGolden (harness/compare.ts, register row D-W1-16): their numbers within a
- * relative 1e-12, status and note exactly, except on the boundary below. `find` is held exactly: its numbers (stat, p, df) are parseFloat of the text, which the language rounds to the nearest
- * double in every engine, and the rest of it is integers and strings.
+ * The verdicts (`judged`) and ncPOf's values are computed through Math.exp and Math.log, so they are held with expectGolden in the fixture's mode (harness/compare.ts, register row D-W1-16):
+ * on the platform that captured the fixture every number by Object.is and status and note exactly; elsewhere their numbers within a relative 1e-12 and status and note exactly, except on the
+ * boundary below. `find` is held exactly: its numbers (stat, p, df) are parseFloat of the text, which the language rounds to the nearest double in every engine, and the rest of it is
+ * integers and strings.
  */
 
 type Case = { id: string; text?: string; html?: string; textContent?: string; find: NcFind[]; judged: NcJudge[] };
@@ -21,6 +22,7 @@ type Pof = { f: Pick<NcFind, "kind" | "df1" | "df2">; x: number; out?: number };
 type Item = ReturnType<typeof numbersCheck>[number];
 
 const fx = readFixture<{ cases: Case[]; pof: Pof[]; fmt: Array<{ p: number; out: string }>; summary: Shown[] }>("numbers", "cases");
+const mode = goldenMode(fx);
 const corpus = JSON.parse(readFileSync(new URL("./numbers/sentences.json", import.meta.url), "utf8")) as Array<{ id: string; text?: string; html?: string }>;
 const byId = (id: string) => fx.cases.find((c) => c.id === id)!;
 const itemsOf = (c: Case): Item[] => (c.html !== undefined ? numbersCheckHtml(c.html) : numbersCheck(c.text!));
@@ -32,7 +34,8 @@ const foundOf = (item: Item): NcFind => {
 };
 
 /**
- * Register row D-W1-16: three items sit on the two sides of one boundary of ncJudge's windows, and each also passes with the status and note of the other side. Their statistic is t(21) = 2.15
+ * Register row D-W1-16: three items sit on the two sides of one boundary of ncJudge's windows, and off the capturing platform (tolerant mode) each also passes with the status and note of
+ * the other side; where the fixture was captured (exact mode) their status and note are exact like every item's. Their statistic is t(21) = 2.15
  * (h = .005): pLo = p(2.155) = .04292, pHi = p(2.145) = .04380, pHi being p at the lower edge of 2.15's rounding window and the number V8 on x64 put 3 ULP from the capture's. The boundary is
  * the upper edge of the '=' branch's window test, `ok = !(p + hp < pLo - eps || p - hp > pHi + eps)` with hp = .0005 and eps = 1e-12, at p - hp = pHi + eps. The other side, from ncJudge's code:
  * - t-round-edge, p = .043: p - hp = .0425 is 1.3e-3 below the edge, so ok with no note. Across it ok is false; repSig (.043 < .05) and calcSig (pMid .04336 < .05) agree, so the status is
@@ -47,11 +50,11 @@ const OTHER_SIDE: Record<string, { item: number; pair: Pick<NcJudge, "status" | 
   "t-round-warn": { item: 0, pair: { status: "ok", note: "" }, counts: { n: 1, ok: 1, warn: 0, err: 0 } },
   "three-stats-mixed": { item: 2, pair: { status: "ok", note: "" }, counts: { n: 3, ok: 2, warn: 1, err: 1 } },
 };
-/** Whether the boundary item of case `id` came out on the other side. */
+/** Whether, off the capturing platform, the boundary item of case `id` came out on the other side (always false in exact mode). */
 const onOtherSide = (id: string, judged: NcJudge[]): boolean => {
   const o = OTHER_SIDE[id];
   const j = o === undefined ? undefined : judged[o.item];
-  return o !== undefined && j !== undefined && j.status === o.pair.status && j.note === o.pair.note;
+  return mode === "tolerant" && o !== undefined && j !== undefined && j.status === o.pair.status && j.note === o.pair.note;
 };
 /** The fixture's verdicts for case `id`, the boundary item's status and note taken from the other side when the port's came out there. */
 const judgedFor = (id: string, got: NcJudge[], want: NcJudge[]): NcJudge[] => {
@@ -73,13 +76,13 @@ describe("numbers.ts is v1's Numbers check", () => {
     const items = itemsOf(c);
     expect(items.map(foundOf)).toEqual(c.find);
     const judged = items.map((i) => i.j);
-    expectGolden(judged, judgedFor(c.id, judged, c.judged), c.id);
+    expectGolden(judged, judgedFor(c.id, judged, c.judged), mode, c.id);
     // The pieces by themselves, on the text v1 read: a sentence as it stands, a body as the editor's textContent.
     if (c.html !== undefined) expect(docTextContent(c.html)).toBe(c.textContent);
     const found = ncFind(c.html !== undefined ? c.textContent! : c.text!);
     expect(found).toEqual(c.find);
     const verdicts = found.map((f) => ncJudge(f));
-    expectGolden(verdicts, judgedFor(c.id, verdicts, c.judged), c.id);
+    expectGolden(verdicts, judgedFor(c.id, verdicts, c.judged), mode, c.id);
   });
   it("the corpus reaches every note id, every status and every kind, and at least six entries for each kind", () => {
     const notes = new Set(fx.cases.flatMap((c) => c.judged.map((j) => j.note)));
@@ -92,11 +95,11 @@ describe("numbers.ts is v1's Numbers check", () => {
   it("ncPOf gives the judged pcalc at the absolute statistic for every item the corpus judges", () => {
     for (const c of fx.cases) c.find.forEach((f, i) => {
       const pcalc = c.judged[i]!.pcalc;
-      if (pcalc !== undefined && !Number.isNaN(pcalc)) expectGolden(ncPOf(f, Math.abs(f.stat)), pcalc, `${c.id}[${i}]`);
+      if (pcalc !== undefined && !Number.isNaN(pcalc)) expectGolden(ncPOf(f, Math.abs(f.stat)), pcalc, mode, `${c.id}[${i}]`);
     });
   });
   // ncPOf by itself: the signs ncJudge never passes, r's clip, and a kind the switch does not know, which is undefined in v1 (the record has no out).
-  for (const c of fx.pof) it(`ncPOf(${c.f.kind}, ${c.x})`, () => expectGolden(ncPOf(c.f, c.x), c.out, `ncPOf(${c.f.kind}, ${c.x})`));
+  for (const c of fx.pof) it(`ncPOf(${c.f.kind}, ${c.x})`, () => expectGolden(ncPOf(c.f, c.x), c.out, mode, `ncPOf(${c.f.kind}, ${c.x})`));
   it("the ncPOf grid has every kind, a negative statistic for each, and a kind that gives undefined", () => {
     expect([...new Set(fx.pof.map((c) => c.f.kind))].sort()).toEqual(["F", "H", "chi", "r", "t", "x", "z"]);
     for (const k of KINDS) expect(fx.pof.some((c) => c.f.kind === k && c.x < 0), k).toBe(true);
