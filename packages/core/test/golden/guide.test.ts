@@ -3,8 +3,8 @@ import { statsParseText } from "../../src/intake";
 import { STAT_TESTS } from "../../src/stats-core";
 import type { StatsBlock, StatsCtx, StatsTestKey } from "../../src/stats-core";
 import {
-  TG_Q, TG_RES, TG_IMP, TG_EXTRA, TG_DEMO, GEN_DESIGNS, STATS_TEST_OPTIONS, TG_CHECK_TEXT, TG_CHECK_FALLBACK,
-  tgNext, tgRes, tgWhyItems, tgExtra, tgSkew, tgQuant, tgOutliers, tgCheck, tgCheckNumbers, tgCheckCounts, genVerdict,
+  TG_Q, TG_RES, TG_IMP, TG_EXTRA, TG_DEMO, GEN_DESIGNS, STATS_TEST_OPTIONS, TG_CHECK_TEXT, TG_CHECK_FALLBACK, TG_WHY_TEXT, GEN_TEXT,
+  tgNext, tgRes, tgWhyItems, tgExtra, tgSkew, tgQuant, tgOutliers, tgCheck, tgCheckNumbers, tgCheckCounts, tgCountsText, genVerdict,
 } from "../../src/guide";
 import type { TgAnswers, TgCheckOut, TgResKey } from "../../src/guide";
 import type { CheckCase, CheckDataset, GenCase, NumbersCase, PathNode, WhyCase } from "./guide/capture";
@@ -15,8 +15,8 @@ import { readFixture } from "./harness/fixture";
 /**
  * The which-test guide, "Check my numbers" and the practice gate (guide.ts) against v1 running (`golden:capture guide`, guide/capture.ts): every expected value is v1's. The tests here
  * assert coverage (every answer path has a result, every check dataset every combination of its four selects, every GEN_DESIGNS × #statsTest pair) and equality.
- * tgCheck's notes are rebuilt from the port's fields with TG_CHECK_TEXT, as a panel would, and held to the notes v1 put into #tgCheckOut; genReveal's paragraphs and buttons from
- * genVerdict, with `labelOf` the text of #statsTest's option (STATS_TEST_OPTIONS), which is what genReveal reads.
+ * tgCheck's table and notes are rebuilt from the port's fields with TG_CHECK_TEXT and tgCountsText, as a panel would, and held to the notes v1 put into #tgCheckOut; genReveal's paragraphs and buttons from
+ * genVerdict and GEN_TEXT, with `labelOf` the text of #statsTest's option (STATS_TEST_OPTIONS), which is what genReveal reads.
  */
 
 type Fx = { paths: PathNode[]; leaves: number; results: Array<{ key: string; out: unknown }>; why: WhyCase[]; numbers: NumbersCase[]; datasets: CheckDataset[]; checks: CheckCase[]; gen: GenCase[]; labelDiffers: string[] };
@@ -61,9 +61,9 @@ describe("which-test guide: tgNext and tgRes", () => {
     for (const w of fx.why) {
       const r = tgRes(w.id as TgResKey, {});
       const items = tgWhyItems(w.answers as TgAnswers, r);
-      expect(items.map((x) => x.answer + ". " + x.why), w.id).toEqual(w.items);
+      expect(items.map((x) => x.answer + TG_WHY_TEXT.item + x.why), w.id).toEqual(w.items);
       const ex = tgExtra(r.id);
-      expect("Why this fits" + items.map((x) => x.answer + ". " + x.why).join("") + r.why + (ex ? "What it assumes. " + ex.assume + "When it stops fitting. " + ex.watch : "")).toBe(w.text);
+      expect(TG_WHY_TEXT.head + items.map((x) => x.answer + TG_WHY_TEXT.item + x.why).join("") + r.why + (ex ? TG_WHY_TEXT.assume + ex.assume + TG_WHY_TEXT.watch + ex.watch : "")).toBe(w.text);
     }
     expect(fx.why.some((w) => tgExtra(w.id) === undefined)).toBe(true);
   });
@@ -87,19 +87,16 @@ describe("check my numbers: tgSkew, tgQuant, tgOutliers", () => {
   });
 });
 
-/** #tgCheckOut as v1 builds it (12534-12561), from the port's fields and TG_CHECK_TEXT. */
+/** #tgCheckOut as v1 builds it (12534-12556), from the port's fields, TG_CHECK_TEXT and tgCountsText: nothing of v1's text is typed here. */
 function rebuild(out: TgCheckOut): StatsBlock[] {
   const blocks: StatsBlock[] = [];
   if (out.numbers) {
     const n = out.numbers;
-    blocks.push({ kind: "table", rows: [["Group", "n", "Skew", "Outliers"], ...n.rows.map((r) => [r.group, String(r.n), r.skew, String(r.outliers)])] });
+    blocks.push({ kind: "table", rows: [[...TG_CHECK_TEXT.head], ...n.rows.map((r) => [r.group, String(r.n), r.skew, String(r.outliers)])] });
     blocks.push({ kind: "note", html: (n.rank ? TG_CHECK_TEXT.rank : TG_CHECK_TEXT.means) + TG_CHECK_TEXT.thumb });
     if (n.tiny) blocks.push({ kind: "note", html: TG_CHECK_TEXT.tiny });
   }
-  if (out.counts) {
-    const c = out.counts;
-    blocks.push({ kind: "note", html: "Table of " + c.r + " by " + c.c + ", N = " + c.N + ". Smallest expected count: " + c.minE + ". " + c.low + " of " + c.cells + " cells are below 5. " + (c.ok ? TG_CHECK_TEXT.fine : TG_CHECK_TEXT.low) });
-  }
+  if (out.counts) blocks.push({ kind: "note", html: tgCountsText(out.counts) });
   return blocks;
 }
 /** A block's text as textContent reads it; the rebuilt blocks are text, the captured ones HTML (a cell's escHTML), so only the captured side is decoded. */
@@ -164,11 +161,12 @@ describe("practice gate: genVerdict", () => {
     for (const g of fx.gen) {
       const v = genVerdict(g.design, g.test, labelOf);
       expect([v.head, v.why], `${g.design} ${g.test}`).toEqual(g.ps);
-      expect([...(v.switchTo ? ["Switch to " + v.switchTo.label] : []), "Run " + labelOf(g.test)]).toEqual(g.buttons);
+      expect([...(v.switchTo ? [GEN_TEXT.switchTo + v.switchTo.label] : []), GEN_TEXT.run + labelOf(g.test)]).toEqual(g.buttons);
       expect(v.cls === "warn").toBe(v.switchTo !== undefined);
       if (v.switchTo) expect(v.switchTo.key).toBe(GEN_DESIGNS[g.design as keyof typeof GEN_DESIGNS].ok[0]);
     }
-    expect(new Set(fx.gen.map((g) => genVerdict(g.design, g.test, labelOf).head.startsWith("Your choice") ? 0 : genVerdict(g.design, g.test, labelOf).cls === "good" ? 1 : 2)).size).toBe(3);
+    const D = (g: GenCase) => GEN_DESIGNS[g.design as keyof typeof GEN_DESIGNS];
+    expect(new Set(fx.gen.map((g) => (D(g).ok.includes(g.test) ? "ok" : D(g).alt.includes(g.test) ? "alt" : "other")))).toEqual(new Set(["ok", "alt", "other"]));
   });
 
   it("STATS_TEST_OPTIONS, the text genReveal reads, differs from STAT_TESTS's label for the keys the capture recorded", () => {

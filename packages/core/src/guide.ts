@@ -11,9 +11,9 @@ import { smean, ssd } from "./statsmath";
    - Emitted from v1 into data/guide-tables.ts (golden:capture guide --emit), never retyped: TG_Q (12038-12047), TG_RES (12076-12099), TG_IMP (12385-12394), TG_EXTRA (12395-12417),
      TG_DEMO (12418-12432, its csv strings as v1 evaluated them), GEN_DESIGNS (12562-12573), and STATS_TEST_OPTIONS, the text of each `<option>` of #statsTest (static HTML, 1559-1597),
      which genReveal reads for its names: it differs from STAT_TESTS's label for 12 of the 26 tests (tukey, mcnemar, cochran, chisq, moderate, mediate, logistic, friedman, rmanova,
-     mixed, kruskal, spearman), so a panel that wants v1's sentences passes genVerdict a `labelOf` reading this table.
+     mixed, kruskal, spearman: register row D-W2-19), so a panel that wants v1's sentences passes genVerdict a `labelOf` reading this table.
    - Ported: tgNext (12048-12075), tgRes (12484), the data of tgWhyHTML's items (12434-12436) as tgWhyItems and its TG_EXTRA lookup (12437) as tgExtra, tgSkew, tgQuant, tgOutliers
-     (12531-12533), tgCheck (12534-12561) as tgCheck with its two halves tgCheckNumbers (12537-12546) and tgCheckCounts (12548-12554), and genReveal (12588-12600) as genVerdict.
+     (12531-12533), tgCheck (12534-12556) as tgCheck with its two halves tgCheckNumbers (12537-12546) and tgCheckCounts (12548-12553), and the paragraph of 12553 as tgCountsText, and genReveal (12588-12600) as genVerdict.
    - Not ported (page code, the panel's): tgState, tgToggle, tgAnswer, tgBack, tgRender, tgUse, tgWhyHTML's markup, tgDemoHTML, tgDemo, tgBackToMine, tgCheckHTML, genFirstOn,
      genFirstToggle, genGateHide, genGateShow, genSwitch, genRunMine, and genReveal's `if(!dk){showToast('Pick the design first');return}` guard (12590; the panel does not call
      genVerdict without a design).
@@ -32,7 +32,10 @@ import { smean, ssd } from "./statsmath";
      `Record<string, number[]>`; `window._statsData` is `ctx.data`, and statsColVals and statsGroupBy add to `ctx.skipped` as v1's add to `window._statsSkipped` (nothing reads it here);
    - tgCheckCounts takes `data` and the two parsed indexes and returns `{ r, c, N, minE, low, cells, ok }` where v1 built the paragraph: `r` and `c` are `Object.keys(r1).length` and
      `Object.keys(r2).length`, `minE` the printed `isFinite(minE)?minE.toFixed(2):'–'`, `ok` is `!(low>0)` (v1's choice of sentence); its `cnt` is kept, written and never read, as in v1;
-   - the paragraphs' fixed sentences are TG_CHECK_TEXT, copied from 12543, 12545 and 12554, and the fallback TG_CHECK_FALLBACK from 12560;
+   - the table's header row (12540) and the paragraphs' fixed sentences (12544, 12545, 12553) are TG_CHECK_TEXT, and the fallback is TG_CHECK_FALLBACK (12555); tgCountsText(c)
+     returns 12553's paragraph as text, v1's concatenation with `Object.keys(r1).length`, `Object.keys(r2).length`, `N`, the printed minE, `low` and `cells` read from c's fields;
+   - the fixed words of tgWhyHTML's markup (12436-12438) are TG_WHY_TEXT, each as its textContent reads (`<b>What it assumes.</b> ` is `'What it assumes. '`; an item's `<b>label.</b> `
+     is the label then `TG_WHY_TEXT.item`), and the button labels' prefixes of genReveal (12599-12600) are GEN_TEXT;
    - genVerdict takes the design and test keys and `labelOf` where v1 read #genDesign, #statsTest and the option's textContent: `labelOf(key)||key` is v1's
      `(document.querySelector('#statsTest option[value="'+key+'"]')||{}).textContent||key`; it returns `{ head, cls, why, switchTo }` where v1 wrote the paragraphs and buttons,
      `switchTo` (`{ key: first, label: firstName }`) present exactly when v1 showed the "Switch to" button (`cls==='warn'`). */
@@ -74,8 +77,9 @@ export const GEN_DESIGNS: Readonly<Record<GenDesignKey, GenDesign>> = GEN_DESIGN
 /** The text of each `<option>` of v1's #statsTest (1559-1597) by its value: what genReveal names a test by. */
 export const STATS_TEST_OPTIONS: Readonly<Record<StatsTestKey, string>> = STATS_TEST_OPTIONS_TABLE;
 
-/** The fixed sentences of tgCheck's paragraphs: 12543 (`rank` or `means`, then `thumb`), 12545 (`tiny`), 12554 (`low` or `fine`, after the counts). */
+/** tgCheck's fixed text: the table's header row (12540, `head`) and its paragraphs' fixed sentences, 12544 (`rank` or `means`, then `thumb`), 12545 (`tiny`), 12553 (`low` or `fine`, after the counts; see tgCountsText). */
 export const TG_CHECK_TEXT = {
+  head: ['Group', 'n', 'Skew', 'Outliers'],
   rank: 'Some groups have fewer than 20 people and either strong skew (beyond ±1) or extreme values. A rank-based test is the safer choice here.',
   means: 'Nothing here points away from a test on means.',
   thumb: ' This is a rule of thumb with no formal source behind it, and you can still choose differently. Do not rely on a normality test to decide: with small groups it has little power, and with large groups it flags differences too small to matter.',
@@ -83,8 +87,12 @@ export const TG_CHECK_TEXT = {
   low: 'Chi-square is not trustworthy here. Fisher\'s exact test (2 by 2) or merging sparse categories is the usual answer. On a 2 by 2 table the app switches to Fisher\'s exact test by itself.',
   fine: 'Chi-square is fine on this count.',
 } as const;
-/** tgCheck's text when neither a score column nor two different category columns are picked (12560). */
+/** tgCheck's text when neither a score column nor two different category columns are picked (12555). */
 export const TG_CHECK_FALLBACK = 'Pick a score column, or two category columns, then tap Check.';
+/** tgWhyHTML's fixed words (12436-12438) as its textContent reads them: the heading, the separator after an item's label, and the two labels before TG_EXTRA's texts. */
+export const TG_WHY_TEXT = { head: 'Why this fits', item: '. ', assume: 'What it assumes. ', watch: 'When it stops fitting. ' } as const;
+/** The prefixes of genReveal's two button labels (12599-12600), before the test's name. */
+export const GEN_TEXT = { switchTo: 'Switch to ', run: 'Run ' } as const;
 
 export function tgNext(a: TgAnswers): TgNextOut{
   const g=a.goal;
@@ -150,7 +158,7 @@ export function tgCheckNumbers(ctx: StatsCtx, numIdx: number, grpIdx: number | n
     return{group:k,n:g.length,skew:isFinite(sk)?sk.toFixed(2):'–',outliers:ol}});
   return{rows,rank,tiny:keys.some(k=>groups[k]!.length<5)};
 }
-/** 12548-12554: the counts table of two category columns, its smallest expected count and the cells below 5. */
+/** 12548-12553: the counts table of two category columns, its smallest expected count and the cells below 5. */
 export function tgCheckCounts(data: ParsedData, i1: number, i2: number): TgCounts{
   const d=data,cnt: Record<string, number>={},r1: Record<string, number>={},r2: Record<string, number>={};let N=0;
   d.rows.forEach(r=>{const x=r[i1],y=r[i2];if(x===undefined||x===''||y===undefined||y==='')return;const k=x+'\u0001'+y;cnt[k]=(cnt[k]||0)+1;r1[x]=(r1[x]||0)+1;r2[y]=(r2[y]||0)+1;N++});
@@ -158,6 +166,8 @@ export function tgCheckCounts(data: ParsedData, i1: number, i2: number): TgCount
   Object.keys(r1).forEach(x=>Object.keys(r2).forEach(y=>{const e=r1[x]!*r2[y]!/N;cells++;if(e<minE)minE=e;if(e<5)low++}));
   return{r:Object.keys(r1).length,c:Object.keys(r2).length,N,minE:isFinite(minE)?minE.toFixed(2):'–',low,cells,ok:!(low>0)};
 }
+/** 12553's paragraph, as text, from tgCheckCounts's fields. */
+export function tgCountsText(c: TgCounts): string{return 'Table of '+c.r+' by '+c.c+', N = '+c.N+'. Smallest expected count: '+c.minE+'. '+c.low+' of '+c.cells+' cells are below 5. '+(c.low>0?TG_CHECK_TEXT.low:TG_CHECK_TEXT.fine)}
 
 /** genReveal (12588-12600): whether the picked test fits the stated design, with the reason, and the usual test to switch to when it does not. */
 export function genVerdict(designKey: string, testKey: string, labelOf: (key: string) => string | undefined): GenVerdict{

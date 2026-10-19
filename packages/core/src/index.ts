@@ -57,8 +57,8 @@ export { runAnova2, runMregress } from "./stats-factorial";
 export { runLogistic, runRmanova, runAlpha } from "./stats-models";
 export { runModerate, runMediate, runMixed } from "./stats-advanced";
 export {
-  TG_Q, TG_RES, TG_IMP, TG_EXTRA, TG_DEMO, GEN_DESIGNS, STATS_TEST_OPTIONS, TG_CHECK_TEXT, TG_CHECK_FALLBACK,
-  tgNext, tgRes, tgWhyItems, tgExtra, tgSkew, tgQuant, tgOutliers, tgCheck, tgCheckNumbers, tgCheckCounts, genVerdict,
+  TG_Q, TG_RES, TG_IMP, TG_EXTRA, TG_DEMO, GEN_DESIGNS, STATS_TEST_OPTIONS, TG_CHECK_TEXT, TG_CHECK_FALLBACK, TG_WHY_TEXT, GEN_TEXT,
+  tgNext, tgRes, tgWhyItems, tgExtra, tgSkew, tgQuant, tgOutliers, tgCheck, tgCheckNumbers, tgCheckCounts, tgCountsText, genVerdict,
 } from "./guide";
 export type {
   TgQuestionKey, TgAnswers, TgQuestion, TgResKey, TgResEntry, TgResult, TgNextOut, TgWhyItem, TgExtra, TgDemo, GenDesignKey, GenDesign,
