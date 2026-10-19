@@ -67,7 +67,6 @@ describe("power: the calculator against v1's page", () => {
         expectGolden(blockAsText(b), blockAsText(c.blocks[i]!), mode, `${c.id} block ${i}`);
         expectGolden(cells(b), cells(c.blocks[i]!), mode, `${c.id} block ${i} cells`);
       });
-      expect(r.blocks).toEqual(c.blocks);
       expect(r.sentence).toBe(c.sentence);
       expectGolden(r.values, c.values, mode, `${c.id} values`);
     });

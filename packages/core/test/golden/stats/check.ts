@@ -3,7 +3,7 @@ import { statsParseText } from "../../../src/intake";
 import { runStats } from "../../../src/stats";
 import type { StatsBlock, StatsResult } from "../../../src/stats-core";
 import type { CapturedRun } from "./drive";
-import { blockAsText, decodeText, renderResultsText } from "./render";
+import { asInnerHTML, blockAsText, decodeText, renderResultsText } from "./render";
 import { expectGolden } from "../harness/compare";
 import type { GoldenMode } from "../harness/compare";
 
@@ -19,13 +19,23 @@ import type { GoldenMode } from "../harness/compare";
  */
 export const SLOW_CASES: readonly string[] = ["alpha-large-boot-200"];
 export const SLOW_CASE_MS = 300_000;
+/**
+ * Cases the generic loops run, each in its own test, with an explicit time budget above vitest's 5 s default: welchAnova-f5-exact-zero (about 1.8 s on an arm64 Mac, stkPtukey's
+ * Games-Howell p at df between 1 and 2) and tukey-f5-exact-zero (about 1.2 s, stkPtukey for 45 pairs of ten groups); CI's 2-vCPU x64 runner is 2-3 times slower, with test files in
+ * parallel workers. Used by id in stats.test.ts's fixture loop and its per-case values loops, and in stats-scipy.test.ts's scipy loop.
+ */
+export const HEAVY_CASE_MS: Readonly<Record<string, number>> = { "welchAnova-f5-exact-zero": 30_000, "tukey-f5-exact-zero": 30_000 };
 
 export const runCase = (c: CapturedRun): StatsResult => runStats(statsParseText(c.csv)!, c.test, c.form);
 export const blocksOf = (r: StatsResult): StatsBlock[] => (r.ok ? r.blocks : r.reason === "undefined" ? r.blocks : []);
 /** A block as its decoded cells, so a table is compared cell by cell and not only as joined text. */
 export const cellsOf = (b: StatsBlock): unknown => (b.kind === "table" ? b.rows.map((r) => r.map(decodeText)) : b.kind === "list" ? b.items.map(decodeText) : blockAsText(b));
 
-/** The port's result `r` for fixture case `c` is what v1 showed: the same toast, or the same sentence, blocks (kinds, decoded text, cells) and results text. */
+/**
+ * The port's result `r` for fixture case `c` is what v1 showed: the same toast, or the same sentence, blocks (kinds, decoded text, cells) and results text. A table's cells and a
+ * list's items are also compared raw: the port's cell as the DOM would serialise it (asInnerHTML) is v1's recorded innerHTML, so a label that lost escHTML is caught even where
+ * its decoded text is the same.
+ */
 export function expectSameAsV1(c: CapturedRun, r: StatsResult, mode: GoldenMode): void {
   if (c.apa === null && c.toasts.length > 0) {
     expect(r).toMatchObject({ ok: false, test: c.test, reason: "toast", toast: c.toasts[0] });
@@ -44,6 +54,9 @@ export function expectSameAsV1(c: CapturedRun, r: StatsResult, mode: GoldenMode)
   blocks.forEach((b, i) => {
     expectGolden(blockAsText(b), blockAsText(c.blocks[i]!), mode, `${c.id} block ${i}`);
     expectGolden(cellsOf(b), cellsOf(c.blocks[i]!), mode, `${c.id} block ${i} cells`);
+    const v1 = c.blocks[i]!;
+    if (b.kind === "table" && v1.kind === "table") expectGolden(b.rows.map((row) => row.map(asInnerHTML)), v1.rows, mode, `${c.id} block ${i} raw cells`);
+    if (b.kind === "list" && v1.kind === "list") expectGolden(b.items.map(asInnerHTML), v1.items, mode, `${c.id} block ${i} raw items`);
   });
   expect(renderResultsText(r)).toBe(c.resultsText);
 }

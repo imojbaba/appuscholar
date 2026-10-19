@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles } from "./stats/capture";
 import { readFixture } from "./harness/fixture";
-import { SLOW_CASES, expectSameAsScipy, runCase } from "./stats/check";
+import { HEAVY_CASE_MS, SLOW_CASES, expectSameAsScipy, runCase } from "./stats/check";
 import type { RefCase } from "./stats/check";
 
 /**
@@ -107,7 +107,7 @@ describe("stats runners agree with scipy (spec §5.9)", () => {
     it(`${c.id} vs scipy`, () => {
       const fx = cases.get(c.id)!;
       expectSameAsScipy(c, runCase(fx), c.test in KEYS);
-    });
+    }, HEAVY_CASE_MS[c.id]); // the two heavy ids (stats/check.ts) get 30 s, the rest vitest's default
   }
   it("the loop above skips exactly the slow cases, which stats-slow.test.ts runs", () => expect(skipped).toEqual([...SLOW_CASES]));
   it("D-W2-18 (approved): mregress-step1-categorical-3-levels's step table is an OLS of exactly block 1's two design columns, against numpy", () => {

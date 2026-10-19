@@ -1,17 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
+import { JSDOM } from "jsdom";
+import { escHTML } from "../../src/html";
 import { statsParseText } from "../../src/intake";
 import { STAT_TESTS, stkMRData } from "../../src/stats-core";
-import type { StatsBlock, StatsCtx, StatsResult } from "../../src/stats-core";
+import type { StatsBlock, StatsCtx, StatsOk, StatsResult } from "../../src/stats-core";
 import { stkLogit } from "../../src/statsmath";
 import { runStats } from "../../src/stats";
 import { fmtP } from "../../src/statfmt";
 import type { CapturedRun } from "./stats/drive";
 import { corpusFiles, readCorpus } from "./stats/capture";
-import { blockAsText, decodeText, renderResultsText } from "./stats/render";
+import { asInnerHTML, blockAsText, decodeText, renderResultsText } from "./stats/render";
 import { expectGolden, goldenMode } from "./harness/compare";
 import { readFixture } from "./harness/fixture";
-import { SLOW_CASES, cellsOf, expectSameAsV1 } from "./stats/check";
+import { HEAVY_CASE_MS, SLOW_CASES, cellsOf, expectSameAsV1 } from "./stats/check";
 
 /**
  * The Statistics Lab (stats-core.ts, stats.ts and the runner modules) against v1 running: for every `test/golden/stats/<test>.json` (`golden:capture stats`), each case's CSV goes through
@@ -97,7 +99,7 @@ for (const file of fixtures) {
       // Register row D-W2-18 (approved): v2 fits step 1 on every design column of block 1, so this one case's step table, its step sentence and the results text differ from v1's
       // fixture by design; it is checked against v1 everywhere else, and against numpy in stats-scipy.test.ts, by the test "D-W2-18 (approved)" below
       if (c.id === DW2_18_CASE) { it(`${c.id} (D-W2-18: equal to v1 except step 1)`, () => expectSameAsV1ExceptStep1(c, run(c), mode)); continue; }
-      it(c.id, () => expectSameAsV1(c, run(c), mode));
+      it(c.id, () => expectSameAsV1(c, run(c), mode), HEAVY_CASE_MS[c.id]); // the two heavy ids (stats/check.ts) get 30 s, the rest vitest's default
     }
   });
 }
@@ -109,6 +111,23 @@ describe("stats/render.ts (the test-only renderer)", () => {
   it("decodeText strips real tags only, so fmtP's literal < before a </b> stays", () => {
     expect(decodeText("<b>Fisher-Freeman-Halton exact test: " + fmtP(0.0001) + ".</b> All 12 tables")).toBe("Fisher-Freeman-Halton exact test: p < .001. All 12 tables");
     expect(decodeText('<p class="desc">a &lt; b &amp;amp; <i>c</i>&nbsp;&#39;d&#39; &quot;e&quot;</p>')).toBe("a < b &amp; c\u00a0'd' \"e\"");
+  });
+  it("asInnerHTML is what jsdom's serialiser makes of v1's fragments in a cell, except a raw &, which it keeps (a port cell that lost escHTML)", () => {
+    const td = new JSDOM("<!doctype html><table><tr><td></td></tr></table>").window.document.querySelector("td")!;
+    const dom = (html: string) => { td.innerHTML = html; return td.innerHTML; };
+    for (const html of [escHTML(`Tom's <score> & "more"`), "A&amp;B", "&lt;ctl&gt;", "&lt; .001", "< .001", "<b>p < .001</b> a > b", "a&nbsp;b &amp;lt;", "x<sub>2</sub>", "ω² = .12 — 1.00", ""])
+      expect(asInnerHTML(html), JSON.stringify(html)).toBe(dom(html));
+    expect([asInnerHTML(escHTML(`Tom's "x"`)), dom(escHTML(`Tom's "x"`))]).toEqual([`Tom's "x"`, `Tom's "x"`]);
+    expect([asInnerHTML("A&B"), dom("A&B")]).toEqual(["A&B", "A&amp;B"]);
+    // D-W2-6: the port's Tukey p cell is v1's raw `< .001`, which v1's DOM recorded as `&lt; .001`; Games-Howell's pCell `&lt; .001` is recorded as it is
+    const tk = load("tukey").cases.find((x) => x.id === "tukey-demo-arms")!, tr = run(tk);
+    const tkPort = tr.ok ? (tr.blocks[0] as { rows: string[][] }).rows.slice(1).map((x) => x[3]!) : [];
+    expect(tkPort).toEqual(["< .001", "< .001", "< .001"]);
+    expect(tkPort.map(asInnerHTML)).toEqual((tk.blocks[0] as { rows: string[][] }).rows.slice(1).map((x) => x[3]));
+    const gh = load("welchAnova").cases.find((x) => x.id === "welchAnova-demo")!, gr = run(gh);
+    const ghPort = gr.ok ? (gr.blocks[2] as { rows: string[][] }).rows.slice(1).map((x) => x[4]!) : [];
+    expect(ghPort.filter((x) => x === "&lt; .001").length).toBeGreaterThan(0);
+    expect(ghPort.map(asInnerHTML)).toEqual((gh.blocks[2] as { rows: string[][] }).rows.slice(1).map((x) => x[4]));
   });
 });
 
@@ -228,26 +247,31 @@ describe("stats: tests on means (ttestInd, ttestPaired, anova1, tukey, regressio
     expect(find("anova1", "anova1-no-categorical-column").toasts).toEqual([toast]);
     expect(find("tukey", "tukey-no-categorical-column").toasts).toEqual(["Tukey HSD needs 3 or more groups"]);
   });
-  it("values are the numbers behind the table cells (register row F27)", () => {
-    const fixed = (x: number, k = 2) => x.toFixed(k);
-    const row = (r: StatsResult, b = 0, i = 1) => (r.ok ? (r.blocks[b] as { rows: string[][] }).rows[i]! : []);
-    for (const c of load("ttestInd").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+  // Register row F27, one test per case (as the alpha cases, commit 02f01a8), so each case has its own time budget (tukey-f5-exact-zero alone takes about a second, and has
+  // HEAVY_CASE_MS's 30 s); a case the port refuses has nothing to check.
+  const fixed = (x: number, k = 2) => x.toFixed(k);
+  const row = (r: StatsResult, b = 0, i = 1) => (r.ok ? (r.blocks[b] as { rows: string[][] }).rows[i]! : []);
+  const F27: Record<string, (r: StatsOk, v: StatsOk["values"]) => void> = {
+    ttestInd: (r, v) => {
       expect(row(r, 0, 1).slice(1)).toEqual([String(v.n1), fixed(v.m1!), fixed(Math.sqrt(v.v1!))]);
       expect(row(r, 0, 2).slice(1)).toEqual([String(v.n2), fixed(v.m2!), fixed(Math.sqrt(v.v2!))]);
-      expect(r.apa).toContain(`t(${fixed(v.df!)}) = ${fixed(v.t!)}`); }
-    for (const c of load("ttestPaired").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect(row(r).slice(0, 5)).toEqual([String(v.n), fixed(v.md!), fixed(v.sdv!), fixed(v.t!), String(v.df)]); }
-    for (const c of load("anova1").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect(blockAsText(r.blocks[1]!)).toContain(`F(${v.dfb}, ${v.dfw}) = ${fixed(v.F!)}`); expect(v.N! - v.k!).toBe(v.dfw); }
-    for (const c of load("tukey").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(r.apa).toContain(`t(${fixed(v.df!)}) = ${fixed(v.t!)}`); },
+    ttestPaired: (r, v) => {
+      expect(row(r).slice(0, 5)).toEqual([String(v.n), fixed(v.md!), fixed(v.sdv!), fixed(v.t!), String(v.df)]); },
+    anova1: (r, v) => {
+      expect(blockAsText(r.blocks[1]!)).toContain(`F(${v.dfb}, ${v.dfw}) = ${fixed(v.F!)}`); expect(v.N! - v.k!).toBe(v.dfw); },
+    tukey: (r, v) => {
       const rows = (r.blocks[0] as { rows: string[][] }).rows.slice(1);
       expect(rows).toHaveLength(v.kk! * (v.kk! - 1) / 2);
-      let n = 0; for (let i = 0; i < v.kk!; i++) for (let j = i + 1; j < v.kk!; j++) { expect(rows[n++]!.slice(1, 3)).toEqual([fixed(v[`diff_${i}_${j}`]!), fixed(v[`q_${i}_${j}`]!)]); } }
-    for (const c of load("regression").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect(row(r).slice(0, 6)).toEqual([String(v.n), fixed(v.b0!, 3), fixed(v.b1!, 3), fixed(v.seB1!, 3), fixed(v.t!), String(v.df)]); expect(row(r)[7]).toBe(fixed(v.r2!, 3)); }
-    for (const c of load("pearson").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect(row(r)[0]).toBe(String(v.n)); expect(row(r)[2]).toBe(String(v.df)); expect("cl" in v).toBe(v.n! > 3); }
-  });
+      let n = 0; for (let i = 0; i < v.kk!; i++) for (let j = i + 1; j < v.kk!; j++) { expect(rows[n++]!.slice(1, 3)).toEqual([fixed(v[`diff_${i}_${j}`]!), fixed(v[`q_${i}_${j}`]!)]); } },
+    regression: (r, v) => {
+      expect(row(r).slice(0, 6)).toEqual([String(v.n), fixed(v.b0!, 3), fixed(v.b1!, 3), fixed(v.seB1!, 3), fixed(v.t!), String(v.df)]); expect(row(r)[7]).toBe(fixed(v.r2!, 3)); },
+    pearson: (r, v) => {
+      expect(row(r)[0]).toBe(String(v.n)); expect(row(r)[2]).toBe(String(v.df)); expect("cl" in v).toBe(v.n! > 3); },
+  };
+  for (const [file, check] of Object.entries(F27)) for (const c of load(file).cases) {
+    it(`values are the numbers behind the table cells (register row F27): ${c.id}`, () => { const r = run(c); if (!r.ok) return; check(r, r.values); }, HEAVY_CASE_MS[c.id]);
+  }
 });
 
 describe("stats: rank tests and Welch ANOVA (mannwhitney, wilcoxon, kruskal, spearman, welchAnova)", () => {
@@ -312,35 +336,41 @@ describe("stats: rank tests and Welch ANOVA (mannwhitney, wilcoxon, kruskal, spe
     expect(c.toasts).toEqual([]);
     expect(run(c)).toMatchObject({ ok: true, values: { H: 0, p: 1 } });
   });
-  it("the post-hoc values exist only when the post-hoc table is shown", () => {
-    for (const file of ["kruskal", "welchAnova"]) for (const c of load(file).cases) {
+  // One test per case (as the alpha cases, commit 02f01a8), so each case has its own time budget (welchAnova-f5-exact-zero alone takes about two seconds, and has HEAVY_CASE_MS's 30 s).
+  for (const file of ["kruskal", "welchAnova"]) for (const c of load(file).cases) {
+    it(`the post-hoc values exist only when the post-hoc table is shown: ${c.id}`, () => {
       const r = run(c);
-      if (!r.ok) continue;
+      if (!r.ok) return;
       const tables = r.blocks.filter((b) => b.kind === "table").length;
       const post = Object.keys(r.values).filter((k) => /^(padj|gh_p)_\d+_\d+$/.test(k)).length;
       const k = (r.blocks[0] as { rows: string[][] }).rows.length - 1;
       expect(post, c.id).toBe(r.values.p! < 0.05 ? k * (k - 1) / 2 : 0);
       expect(tables, c.id).toBe((r.values.p! < 0.05 ? 2 : 1) + (file === "welchAnova" ? 1 : 0));
-    }
-  });
-  it("values are the numbers behind the table cells (register row F27)", () => {
-    const fixed = (x: number, k = 2) => x.toFixed(k);
-    const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
-    for (const c of load("mannwhitney").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+    }, HEAVY_CASE_MS[c.id]);
+  }
+  // Register row F27, one test per case (as the alpha cases, commit 02f01a8), so each case has its own time budget (HEAVY_CASE_MS's 30 s for welchAnova-f5-exact-zero); a case the
+  // port refuses has nothing to check.
+  const fixed = (x: number, k = 2) => x.toFixed(k);
+  const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
+  const F27: Record<string, (c: CapturedRun, r: StatsOk, v: StatsOk["values"]) => void> = {
+    mannwhitney: (c, r, v) => {
       expect(blockAsText(r.blocks[1]!).startsWith(`U = ${fixed(v.U!, 1)}${v.exact ? "" : `, z = ${fixed(v.z!)}`}, `), c.id).toBe(true);
-      expect(blockAsText(r.blocks[1]!)).toContain(`rank-biserial r = ${nl(fixed(v.rrb!))}`); expect(v.U).toBe(Math.min(v.U1!, v.U2!)); }
-    for (const c of load("wilcoxon").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect((r.blocks[0] as { rows: string[][] }).rows[1]!.slice(0, 3), c.id).toEqual([String(v.n), fixed(v.W!, 1), v.exact ? "—" : fixed(v.z!)]); expect(v.W).toBe(Math.min(v.wPlus!, v.wMinus!)); }
-    for (const c of load("kruskal").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect(blockAsText(r.blocks[1]!).startsWith(`H(${v.df}) = ${fixed(v.H!)}, `), c.id).toBe(true); }
-    for (const c of load("spearman").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
-      expect((r.blocks[0] as { rows: string[][] }).rows[1], c.id).toEqual([String(v.n), nl(fixed(v.rho!)), `[${nl(fixed(v.lo!))}, ${nl(fixed(v.hi!))}]`, String(v.df), nl(fixed(v.p!, 3))]); }
-    for (const c of load("welchAnova").cases) { const r = run(c); if (!r.ok) continue; const v = r.values;
+      expect(blockAsText(r.blocks[1]!)).toContain(`rank-biserial r = ${nl(fixed(v.rrb!))}`); expect(v.U).toBe(Math.min(v.U1!, v.U2!)); },
+    wilcoxon: (c, r, v) => {
+      expect((r.blocks[0] as { rows: string[][] }).rows[1]!.slice(0, 3), c.id).toEqual([String(v.n), fixed(v.W!, 1), v.exact ? "—" : fixed(v.z!)]); expect(v.W).toBe(Math.min(v.wPlus!, v.wMinus!)); },
+    kruskal: (c, r, v) => {
+      expect(blockAsText(r.blocks[1]!).startsWith(`H(${v.df}) = ${fixed(v.H!)}, `), c.id).toBe(true); },
+    spearman: (c, r, v) => {
+      expect((r.blocks[0] as { rows: string[][] }).rows[1], c.id).toEqual([String(v.n), nl(fixed(v.rho!)), `[${nl(fixed(v.lo!))}, ${nl(fixed(v.hi!))}]`, String(v.df), nl(fixed(v.p!, 3))]); },
+    welchAnova: (c, r, v) => {
       expect(blockAsText(r.blocks[1]!).startsWith(`Welch F(${v.df1}, ${fixed(v.df2!)}) = ${fixed(v.F!)}, `), c.id).toBe(true);
       expect(blockAsText(r.blocks[1]!)).toContain(`ω² = ${nl(fixed(v.omega2!))} `);
       if (v.p! < 0.05) { const rows = (r.blocks[2] as { rows: string[][] }).rows.slice(1); const k = (r.blocks[0] as { rows: string[][] }).rows.length - 1;
-        let n = 0; for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) { expect(rows[n++]!.slice(1, 3), c.id).toEqual([fixed(v[`gh_diff_${i}_${j}`]!), `[${fixed(v[`gh_lo_${i}_${j}`]!)}, ${fixed(v[`gh_hi_${i}_${j}`]!)}]`]); } } }
-  });
+        let n = 0; for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) { expect(rows[n++]!.slice(1, 3), c.id).toEqual([fixed(v[`gh_diff_${i}_${j}`]!), `[${fixed(v[`gh_lo_${i}_${j}`]!)}, ${fixed(v[`gh_hi_${i}_${j}`]!)}]`]); } } },
+  };
+  for (const [file, check] of Object.entries(F27)) for (const c of load(file).cases) {
+    it(`values are the numbers behind the table cells (register row F27): ${c.id}`, () => { const r = run(c); if (!r.ok) return; check(c, r, r.values); }, HEAVY_CASE_MS[c.id]);
+  }
 });
 
 describe("stats: tests on counts (chisq, gof, mcnemar, cochran, friedman)", () => {

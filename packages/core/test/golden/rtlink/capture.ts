@@ -141,6 +141,7 @@ const sets = (v1: V1): Record<string, RtSetOut> => JSON.parse(v1.window.localSto
 const plain = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 /** statsParse with rtRegister running, then the form as drive.ts sets it, then statsRunNow. */
+// The form filling and reading below mirror stats/drive.ts 72-100 (driveV1Stats's fields, boxes and StatsForm); change both together.
 function registeredRun(v1: V1, c: StatsCase, dsField: string, now: number): StatsForm {
   const w = v1.window, d = v1.document;
   v1.setValue("statsPaste", c.csv);
