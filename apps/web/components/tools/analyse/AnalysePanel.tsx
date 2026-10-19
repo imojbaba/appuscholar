@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { apPreview } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { fromPending } from "@/lib/analyse/intake";
@@ -58,8 +58,11 @@ export function AnalysePanel() {
   const t = useT();
   const s = useApState();
   const { pendingAnalyse, setPendingAnalyse } = useWorkspace();
+  // The kept abstract is loaded once: a second run of the effect for the same value (React's StrictMode, or a language change before the clear lands) does nothing.
+  const consumed = useRef<typeof pendingAnalyse>(null);
   useEffect(() => {
-    if (!pendingAnalyse) return;
+    if (!pendingAnalyse || consumed.current === pendingAnalyse) return;
+    consumed.current = pendingAnalyse;
     setPendingAnalyse(null);
     fromPending(pendingAnalyse, { toast, t });
   }, [pendingAnalyse, setPendingAnalyse, t]);

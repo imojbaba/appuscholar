@@ -73,10 +73,13 @@ export function fromPaste(text: string, d: Pick<IntakeDeps, "toast" | "t">): boo
   return loadPaper(apTitleOf(t, d.t("ap2_pasted_paper")), [t], "paste", false, d);
 }
 
-/** apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. */
+/**
+ * apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. "Your Reading shelf is empty" only once the index is read and holds nothing; while it is not read
+ * (loading, locked, broken: useShelf gives null) the first line is "Choose a paper from your Reading shelf" (register D-S2-15).
+ */
 export function shelfOptions(index: ShelfIndex | null, t: T): { empty: string; items: Array<{ id: string; label: string }> } {
-  const list = index ?? [];
-  return { empty: list.length ? t("ap2_choose_a_paper_from") : t("ap2_your_reading_shelf_is"), items: list.map((p) => ({ id: p.id, label: apShelfLabel(p, t("ap2_paper")) })) };
+  if (index === null) return { empty: t("ap2_choose_a_paper_from"), items: [] };
+  return { empty: index.length ? t("ap2_choose_a_paper_from") : t("ap2_your_reading_shelf_is"), items: index.map((p) => ({ id: p.id, label: apShelfLabel(p, t("ap2_paper")) })) };
 }
 
 /**

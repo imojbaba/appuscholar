@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { act } from "react";
+import { act, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, apBuild, apRefDois, buildAskPrompt, fieldLabel } from "@appuscholar/core";
@@ -21,6 +21,7 @@ const h = vi.hoisted(() => ({
   setPending: vi.fn(),
   index: null as null | Array<{ id: string; title: string; file: string; size: number; added: string; total: number; kept: number }>,
   locked: false,
+  loading: false,
   loadPaper: vi.fn(async (_id: string) => null as null | { pages: string[]; notes: unknown[]; cells: Record<string, string> }),
   extract: vi.fn(async (_f: File) => "no-text" as unknown),
   mammoth: vi.fn(async (_o: unknown) => ({ value: "" })),
@@ -31,7 +32,7 @@ vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
-vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: h.index, loading: false, locked: h.locked, broken: false, loadPaper: h.loadPaper }) }));
+vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: h.index, loading: h.loading, locked: h.locked, broken: false, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
 vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) throw new Error("chunk failed"); return { extractRawText: h.mammoth }; } }));
 
@@ -107,7 +108,7 @@ beforeEach(() => {
   resetAp();
   for (const f of [h.toast, h.setPending, h.loadPaper, h.extract, h.mammoth]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.noMammoth = false;
+  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.noMammoth = false;
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -219,11 +220,23 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
     expect(docRecord()).toEqual({ title: p.title, src: "pdf", pages: p.pages, sample: false, abstractOnly: false });
   });
 
-  it("a shelf paper whose text cannot be read here says so and loads nothing; a locked shelf says it is locked", async () => {
-    h.locked = true;
+  it.each([["locked", { locked: true }], ["loading", { loading: true }]] as const)("a shelf not read yet (%s, useShelf's index null) offers \"Choose a paper\", never \"empty\"; Use this paper asks for a choice", async (kind, st) => {
+    h.index = null;
+    Object.assign(h, st);
+    await mount();
+    expect([...$("#apShelf")!.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Choose a paper from your Reading shelf"]);
+    expect(document.body.textContent).not.toContain("Your Reading shelf is empty");
+    if (kind === "locked") expect(tid("ap-shelf-locked")!.textContent).toBe(E.vault_shelf_locked);
+    else expect(tid("ap-shelf-locked")).toBeNull();
+    await click(tid("ap-shelf-btn"));
+    expect(toasts()).toEqual(["Choose a paper first"]);
+    expect(h.loadPaper).not.toHaveBeenCalled();
+    expect(getAp().doc).toBeNull();
+  });
+
+  it("a shelf paper whose text cannot be read here says so and loads nothing", async () => {
     h.index = [{ id: "sh1", title: "Locked paper", file: "l.pdf", size: 1, added: "", total: 1, kept: 1 }];
     await mount();
-    expect(tid("ap-shelf-locked")!.textContent).toBe(E.vault_shelf_locked);
     const sel = $("#apShelf") as HTMLSelectElement;
     act(() => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(sel, "sh1"); sel.dispatchEvent(new Event("change", { bubbles: true })); });
     await click(tid("ap-shelf-btn"));
@@ -259,6 +272,21 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
     await click(tid("ap-ask-btn"));
     await until(() => !!tid("ap-answer"));
     expect(toasts()).toEqual([]);
+  });
+
+  it("under StrictMode (the effect runs twice) the kept abstract is loaded once, and a refusal toasted once", async () => {
+    const p = paperOf("abstract-only");
+    h.pending = { title: p.title, pages: p.pages, src: "abstract" };
+    const g = getAp().gen;
+    await mount(<StrictMode><AnalysePanel /></StrictMode>);
+    expect(getAp().gen).toBe(g + 1);
+    expect(getAp().doc!.abstractOnly).toBe(true);
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    resetAp();
+    h.pending = { title: "Thin", pages: ["Thin\n\nAbstract\nToo short."], src: "abstract" };
+    await mount(<StrictMode><AnalysePanel /></StrictMode>);
+    expect(toasts()).toEqual(["This search result has no abstract to read. Open the source and paste the paper text instead."]);
   });
 
   it("an abstract too short to read is refused with v1's sentence", async () => {
