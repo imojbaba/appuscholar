@@ -7,10 +7,11 @@ import { useWritingRun } from "@/lib/ai/useWritingRun";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { OriginBadge } from "./OriginBadge";
+import { CaretChip } from "./CaretChip";
 import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
-/** The writing actions under the document (mockup 02): Continue / Improve / Extend, Template, AI text, Viva question, Draft first, and the live word count. */
+/** The writing actions under the document (mockup 02): Continue / Improve / Extend, Template, AI text, Viva question, Draft first, the caret chip, and the live word count. */
 export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Editor; highlightAi: boolean; onHighlightAi(on: boolean): void }) {
   const t = useT();
   const { settings, update } = useSettings();
@@ -32,6 +33,8 @@ export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Edit
       <Button type="button" variant="ghost" size="sm" title={t("viva_btn_title")} data-testid="act-viva" onClick={() => toast("Viva question arrives in a later phase.")}>{t("viva_btn")}</Button>
       <Button type="button" variant={draftFirst ? "toggle" : "ghost"} size="sm" aria-pressed={draftFirst} title={t("df_btn_title")} data-testid="act-draft-first"
         onClick={() => { void update({ draftFirst: !draftFirst }); toast(draftFirst ? t("df_off") : t("df_on")); }}>{t("df_btn")}</Button>
+      {/* v1 618: the caret chip sits after Draft first, before the word count. */}
+      <CaretChip editor={editor} />
       <span className="spacer" />
       <span className="count" data-testid="word-count">{plural(words, "word", "words")}</span>
       <OriginBadge editor={editor} />

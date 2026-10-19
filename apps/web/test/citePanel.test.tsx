@@ -19,10 +19,18 @@ const h = vi.hoisted(() => ({
   editor: null as unknown,
   me: null as { id: string; scratchProjectId: string } | null
 }));
-vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: (...a: unknown[]) => { h.blobArgs = a; return h.blob; } }));
+// The library is the `citations` blob; the check caches (Task 8a) are read through the same hook and are empty here.
+vi.mock("@/lib/blobs/useProjectBlob", () => ({
+  useProjectBlob: (...a: unknown[]) => {
+    if (a[0] !== "citations") return { value: {}, loading: false, locked: false, set: () => {}, flush: async () => true };
+    h.blobArgs = a;
+    return h.blob;
+  }
+}));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {} }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.project }) }));
+vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, showTool: () => {} }) }));
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { CitePanel } from "../components/tools/cite/CitePanel";

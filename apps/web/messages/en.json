@@ -910,6 +910,7 @@
   "vault_change_new": "New passphrase",
   "vault_change_old": "Current passphrase",
   "vault_changed": "Passphrase changed ✓",
+  "vault_check_broken_confirm": "Your saved check results cannot be opened on this device. Checking now replaces them. Check anyway?",
   "vault_cite_broken": "Your saved library cannot be opened on this device. Nothing was changed.",
   "vault_cite_broken_confirm": "Your saved library cannot be opened on this device. Saving now replaces it. Save anyway?",
   "vault_cite_locked": "Your saved library is locked. Unlock your vault to read it and save your sources.",

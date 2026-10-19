@@ -15,6 +15,7 @@ import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, t
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider } from "@/lib/ai/suggestion";
+import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
 import { ProjectBar } from "./ProjectBar";
@@ -322,6 +323,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   return (
     <WorkspaceProvider value={value}>
       <SuggestionProvider>
+        {/* One citation library for the Citation Manager and the caret chip under the document. */}
+        <CiteLibraryProvider>
         <Header />
         <ChromeDialogs />
         <Subbar />
@@ -357,6 +360,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
         ) : (
           <div className="grid gap-4 p-6" aria-busy="true"><Skeleton className="h-6 w-60" /><Skeleton className="h-96" /></div>
         )}
+        </CiteLibraryProvider>
       </SuggestionProvider>
     </WorkspaceProvider>
   );

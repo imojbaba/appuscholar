@@ -227,6 +227,28 @@
 .cit-item .del { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: var(--r-ctl); color: var(--muted); }
 .cit-item .del:hover { background: var(--chip); color: var(--ink); }
 .cit-item .cite-card-row { margin-top: 6px; }
+/* Task 8a: the card the caret chip points at (v1 84), the checks' lines and the retraction warning (v1 305), the cross-check dialog (v1 1614). */
+.cit-item.cit-active { outline: 2px solid var(--purple-600, #6d28d9); background: #f3ebff; }
+.cit-item .cite-used, .cit-item .rc-line { margin-top: 4px; }
+.cit-item .cite-not-used { opacity: .75; }
+.cit-item .rc-ok { color: #166534; }
+.cit-item .rc-nf { color: #92400e; }
+.cit-item .rc-diff { color: #92400e; font-weight: 600; }
+.cit-item .rc-diff .rc-sub { font-weight: 400; }
+.retr-warn { background: rgba(220, 38, 38, .12); border: 1px solid #dc2626; color: var(--ink); border-radius: 8px; padding: 6px 9px; font-size: 12px; line-height: 1.5; margin-top: 5px; }
+.panel .desc.cite-usage-sum { margin-top: 6px; font-weight: 600; }
+.panel .desc.cite-retr-sum, .panel .desc.cite-rc-sum, .panel .desc.cite-num-missing { margin-top: 2px; }
+.panel .desc.cite-retr-sum.cite-flagged, .panel .desc.cite-num-missing { font-weight: 700; }
+.cit-caret-chip { border-color: var(--purple-600, #6d28d9); color: var(--accent-ink); }
+.cc-dlg { max-height: 85vh; overflow-y: auto; }
+.cc-dlg .cc-desc, .cc-dlg .cc-src { font-size: 13px; }
+.cc-dlg .cc-sum { font-weight: 700; }
+.cc-dlg h3 { font-size: 14px; margin: 12px 0 4px; }
+.cc-item { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; font-size: 13px; }
+.cc-missing { border-left: 4px solid #b91c1c; }
+.cc-unused { border-left: 4px solid #b45309; }
+.cc-item .cc-near { margin-top: 3px; }
+.cc-item .cc-go { margin-top: 4px; }
 .input:focus-visible, .field .input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
 /* Phone-only pieces, off above 700px: the header's menu button and line break, the sheet's handle, the drawer. The wrappers add no box on desktop. */

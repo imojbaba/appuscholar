@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CitationEntry } from "@appuscholar/core";
+import type { CitationEntry, RcCheck } from "@appuscholar/core";
 
 /**
  * The stage panels' blob kinds, one blob per kind per project, as the api lists them (apps/api/src/routes/blobWrite.ts BLOB_KINDS and
@@ -33,8 +33,18 @@ const CitationEntrySchema = z.looseObject({
 const CitationLibrarySchema = z.array(CitationEntrySchema);
 /** By normalised DOI: retracted or not (`r`), and when it was looked up (`t`, ms), as v1 7569 stores it: `c[d]={r:!!flag,t:Date.now()}`. */
 const RetractionCacheSchema = z.record(str, z.looseObject({ r: z.boolean(), t: num }));
-/** By reference key: the Crossref check's result. Its inner shape belongs to the reference-check engine and is not checked here. */
-const RefCheckCacheSchema = z.record(str, z.unknown());
+/**
+ * By citKey (surname|year|lowercase title, v1 rcRun 7780): the Crossref check's result as core's rcCheckOne returns it and v1 stores it in appu_refcheck:
+ * `s` ok/diff/nf/err, the differences `m`, what Crossref holds `f`, `viaTitle` when it came from a title search, and `t` (ms).
+ */
+const RcCheckSchema = z.looseObject({
+  s: z.enum(["ok", "diff", "nf", "err"]),
+  m: z.array(z.looseObject({ k: z.enum(["title", "year", "author"]), v: str })).optional(),
+  f: z.looseObject({ title: str, year: z.union([num, str]), author: str, doi: str }).optional(),
+  viaTitle: z.literal(true).optional(),
+  t: num
+});
+const RefCheckCacheSchema = z.record(str, RcCheckSchema);
 /** The Reading shelf's list of papers; each paper's text is its own `shelf_paper:<id>` blob. `added` is v1's ISO date string. */
 const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num }));
 /** A highlight or note on a shelf paper (v1 11681: id, page, quote, note, at). */
@@ -59,7 +69,7 @@ const RsPrefsSchema = z.looseObject({ rank: z.boolean() });
 export type IdeaIntake = z.infer<typeof IdeaIntakeSchema>;
 export type CitationLibrary = CitationEntry[];
 export type RetractionCache = z.infer<typeof RetractionCacheSchema>;
-export type RefCheckCache = z.infer<typeof RefCheckCacheSchema>;
+export type RefCheckCache = Record<string, RcCheck>;
 export type ShelfIndex = z.infer<typeof ShelfIndexSchema>;
 export type Highlight = z.infer<typeof HighlightSchema>;
 export type ShelfPaper = z.infer<typeof ShelfPaperSchema>;

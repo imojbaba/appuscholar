@@ -148,7 +148,11 @@ describe("blob kinds", () => {
     expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: true, t: 1 } }))).toEqual({ "10.1/x": { r: true, t: 1 } });
     expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: "yes", t: 1 } }))).toBeNull();
     expect(parseBlob("retraction_cache", JSON.stringify({ "10.1/x": { r: true, at: 1 } }))).toBeNull();
-    expect(parseBlob("refcheck_cache", JSON.stringify({ k: { anything: [1] } }))).toEqual({ k: { anything: [1] } });
+    // core's RcCheck, as v1 stores it per citKey (rcCheckOne 7750-7771).
+    const rc = { "smith|2020|t": { s: "diff", m: [{ k: "year", v: "2019" }], f: { title: "T", year: 2019, author: "Smith", doi: "10.1/x" }, viaTitle: true, t: 5 }, "lee|2018|u": { s: "nf", t: 6 } };
+    expect(parseBlob("refcheck_cache", JSON.stringify(rc))).toEqual(rc);
+    expect(parseBlob("refcheck_cache", JSON.stringify({ k: { anything: [1] } }))).toBeNull();
+    expect(parseBlob("refcheck_cache", JSON.stringify({ k: { s: "maybe", t: 1 } }))).toBeNull();
     const paper = { id: "p1", title: "A", file: "a.pdf", size: 10, added: "2026-10-19T00:00:00.000Z", total: 3, kept: 3 };
     expect(parseBlob("shelf_index", JSON.stringify([paper]))).toEqual([paper]);
     const sp = { pages: ["one", "two"], notes: [{ id: "n1", page: 1, quote: "q", note: "", at: "2026-10-19T00:00:00.000Z" }], cells: { "Sample size": "40" } };

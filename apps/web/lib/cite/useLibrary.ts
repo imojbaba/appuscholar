@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { createContext, createElement, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type { CitationEntry, CitationStyle } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -30,6 +30,8 @@ export type Library = {
   broken: boolean;
   /** No project id yet (before /me answers): nothing can be saved. */
   ready: boolean;
+  /** The project the library (and its check caches) belong to: the open project, else the scratch project; null before /me answers. */
+  projectId: string | null;
   /**
    * citAdd 7507-7508: needs author and title, then appends, as an update, so an add made before the library is read lands on top of the stored
    * entries. Like v1's citAdd it does not look for a duplicate (refusing one by citKey is register row D-S2-9's proposal, awaiting Dr. Sharma);
@@ -47,12 +49,30 @@ export type Library = {
   setStyle(style: CitationStyle): void;
 };
 
+/**
+ * One library for the whole workspace: the Citation Manager, the caret chip under the document and (later) Research read the same blob through
+ * the same client, so an entry saved in one is seen by the others at once. Without the provider (a panel rendered on its own) the hook holds
+ * its own.
+ */
+const Shared = createContext<Library | null>(null);
+export function CiteLibraryProvider({ children }: { children: ReactNode }) {
+  const library = useOwnLibrary(false);
+  return createElement(Shared.Provider, { value: library }, children);
+}
+
 /** The Citation Library: the open project's `citations` blob (the scratch project's in scratch space), sealed under the vault, and the style. */
 export function useLibrary(): Library {
+  const shared = useContext(Shared);
+  // Inside the provider the hook's own blob is never opened (no project id).
+  const own = useOwnLibrary(shared !== null);
+  return shared ?? own;
+}
+
+function useOwnLibrary(off: boolean): Library {
   const t = useT();
   const { project } = useWorkspace();
   const { me } = useSettings();
-  const projectId = project?.id ?? me?.scratchProjectId ?? null;
+  const projectId = off ? null : project?.id ?? me?.scratchProjectId ?? null;
   const blob = useProjectBlob("citations", projectId);
   const current = useSyncExternalStore(subscribe, read, read);
   const { value, loading, locked, set, flush } = blob;
@@ -74,5 +94,5 @@ export function useLibrary(): Library {
   }, [ready, update]);
   const remove = useCallback((index: number) => { update((prev) => prev.filter((_, i) => i !== index)); }, [update]);
 
-  return { lib, loading, locked, broken, ready, add, remove, update, flush, style: current, setStyle: writeStyle };
+  return { lib, loading, locked, broken, ready, projectId, add, remove, update, flush, style: current, setStyle: writeStyle };
 }

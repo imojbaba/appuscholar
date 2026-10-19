@@ -107,6 +107,9 @@ export const V2_STRINGS = {
   vault_cite_locked: { en: "Your saved library is locked. Unlock your vault to read it and save your sources.", hi: "आपकी सहेजी हुई लाइब्रेरी बंद है। इसे पढ़ने और अपने स्रोत सहेजने के लिए अपनी तिजोरी खोलें।" },
   vault_cite_broken: { en: "Your saved library cannot be opened on this device. Nothing was changed.", hi: "आपकी सहेजी हुई लाइब्रेरी इस डिवाइस पर नहीं खुल सकती। कुछ भी बदला नहीं गया।" },
   vault_cite_broken_confirm: { en: "Your saved library cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "आपकी सहेजी हुई लाइब्रेरी इस डिवाइस पर नहीं खुल सकती। अभी सहेजने से वह बदल जाएगी। फिर भी सहेजें?" },
+  // A stored retraction or Crossref check cache that does not open on this device: a forced check asks before replacing it (ruling R16); the quiet
+  // refresh on opening the tab leaves it alone. DRAFT Hindi.
+  vault_check_broken_confirm: { en: "Your saved check results cannot be opened on this device. Checking now replaces them. Check anyway?", hi: "आपके सहेजे हुए जाँच परिणाम इस डिवाइस पर नहीं खुल सकते। अभी जाँचने से वे बदल जाएँगे। फिर भी जाँचें?" },
   vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
   vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
   vault_forget_btn: { en: "Forget on this computer", hi: "इस कंप्यूटर पर भुला दें" },

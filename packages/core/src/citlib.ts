@@ -124,3 +124,28 @@ export function mergeLibrary(existing: CitationEntry[],incoming: unknown): { ok:
     return{ok:true,lib:l,added:added};
   }catch{return{ok:false,reason:'not-a-library'}}
 }
+
+/* Task 8a (Stage 2): two pieces of the Citation Manager's page code, cut from index.html as v1 wrote them, with these edits only:
+   - citMissingNumbers(docs, cur, libLen) is 7810-7817: v1's `const cur=docCurrentId()` (3116, the open document's id from localStorage) is the parameter `cur`; types; the `!` v1 trusts nowhere
+     (no indexed read is made here). The `[n]` bracket pattern and the superscript test `/^[\d,\s–-]+$/` (with v1's en dash) are v1's.
+   - citCaretEntry(lib, text, s, e) is the matching loop of citCaretEntry 7686-7693. v1 reads the selection (7676-7684): the caret's block element (P, DIV, LI, H1-H6, BLOCKQUOTE, TD, TH, PRE),
+     its textContent `text`, and `s`/`e`, the lengths of the block's text before the selection's start and end; here the caller hands those three and the library (`citGetLib()` 7685 is `lib`).
+     v1's `return null` (no selection in the editor) and `return -1` (no block) stay the caller's. */
+export function citMissingNumbers(docs: PlainDoc[],cur: string,libLen: number): number[]{
+  const d=docs.find(x=>x.id===cur);if(!d)return[];
+  const all=new Set<number>();
+  (d.text.match(/\[\s*\d{1,3}(?:\s*[,–-]\s*\d{1,3})*\s*\]/g)||[]).forEach(g=>citNumsIn(g.replace(/[\[\]]/g,'')).forEach(n=>all.add(n)));
+  (d.sups||[]).forEach(sx=>{if(/^[\d,\s–-]+$/.test(sx))citNumsIn(sx).forEach(n=>all.add(n))});
+  return Array.from(all).filter(n=>n>libLen).sort((a,b)=>a-b);
+}
+export function citCaretEntry(lib: CitationEntry[],text: string,s: number,e: number): number{
+  for(let i=0;i<lib.length;i++){
+    const re=citRegex(lib[i]!);if(!re)continue;
+    let m;
+    while((m=re.exec(text))){
+      if(m.index-1<=e&&m.index+m[0].length+1>=s)return i;
+      if(m[0].length===0)re.lastIndex++;
+    }
+  }
+  return -1;
+}

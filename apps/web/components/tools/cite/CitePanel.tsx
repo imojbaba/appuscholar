@@ -30,8 +30,8 @@ export function CitePanel() {
       {library.locked && <p className="note cite-state" role="status" data-testid="cite-locked">{t("vault_cite_locked")}</p>}
       {library.broken && <p className="note cite-state" role="status" data-testid="cite-broken">{t("vault_cite_broken")}</p>}
       <CiteForm library={library} deps={deps} insertReady={insertReady} />
-      {/* Task 8 (v1 914-919): "Quote from this source (optional)", its description and "Insert quote". */}
-      {/* Task 8 (v1 921-928): "🔖 One-click capture from any page" (the bookmarklet). */}
+      {/* Task 8b (v1 914-919): "Quote from this source (optional)", its description and "Insert quote". */}
+      {/* Task 8b (v1 921-928): "🔖 One-click capture from any page" (the bookmarklet). */}
       <CiteLibrary library={library} deps={deps} insertReady={insertReady} />
     </div>
   );

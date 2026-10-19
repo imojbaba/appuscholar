@@ -44,3 +44,5 @@ export type { ApRefs } from "./fetch/openalex";
 export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmidToDoi } from "./fetch/pubmed";
 export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
 export type { CrWork, RcCheck } from "./fetch/crossref";
+// Stage 2: Citation Manager checks (Task 8a)
+export { citMissingNumbers, citCaretEntry } from "./citlib";
