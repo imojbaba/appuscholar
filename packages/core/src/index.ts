@@ -55,3 +55,4 @@ export { runMannwhitney, runWilcoxon, runKruskal, runSpearman, runWelchAnova } f
 export { runChisq, runGof, runMcnemar, runCochran, runFriedman } from "./stats-counts";
 export { runAnova2, runMregress } from "./stats-factorial";
 export { runLogistic, runRmanova, runAlpha } from "./stats-models";
+export { runModerate, runMediate, runMixed } from "./stats-advanced";

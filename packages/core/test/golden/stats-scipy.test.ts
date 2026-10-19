@@ -29,10 +29,14 @@ for (const f of fixtures) for (const c of readFixture<{ cases: CapturedRun[] }>(
  * k1, r21, adj1, F1, p1, dR, Fc, pc when a step 2 ran; logistic is an independent numpy computation, scipy.optimize.minimize of the negative log-likelihood on the design stkMRData(true)
  * builds: n, k, ev, ne, lr, pLR, cs, nag, mcf, auc, acc, tp, tn, fp, fn, sens, spec, and for each coefficient j b_j, se_j, z_j, p_j, with or_j, lo_j, hi_j and vif_j for j >= 1;
  * rmanova is an independent numpy computation: n, k, ssc, sss, sst, sse, F, d1, d2, pU, gg, hf, dfM, eps, pC, pe2, ge2, W, chi and pM where the contrast covariance is not singular, and
- * pair_t_i_j, pair_p_i_j (ttest_rel) for each pair whose differences have spread; alpha: n, k, alpha, aciLo, aciHi (f.ppf), meanR, rit_j, ad_j). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
+ * pair_t_i_j, pair_p_i_j (ttest_rel) for each pair whose differences have spread; alpha: n, k, alpha, aciLo, aciHi (f.ppf), meanR, rit_j, ad_j; moderate is an independent numpy computation, lstsq on the centred design [1, Xc, Wc, Xc*Wc]: n, r2, F, dr2, Fc, and for
+ * each coefficient j in v1's order (the intercept, X, W, the product) b_j, se_j, t_j, p_j, and the simple slopes at W's mean - 1 SD, the mean and + 1 SD, sl_q_b, sl_q_se, sl_q_p for q lo, mid,
+ * hi; mediate is an independent numpy computation, lstsq for the four paths: n, a_b, a_p, b_b, b_p, cp_b, cp_p, c_b, c_p, r2m, r2y). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
  * padj_i_j), the Spearman interval (lo, hi), ω² (omega2, F9), ε² (eps2), the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramér's V, Cohen's w, Kendall's W, the Cochran
  * and Friedman pairwise p (pair_p_i_j), Cochran's Q (every cochran case is ref null, "no scipy counterpart") and the two-way ANOVA (every anova2 case is ref null,
- * "matches v1 (Type III, no R here)", register row F11), and McDonald's omega with its loadings and bootstrap interval (alpha's omega, load_j, ociLo, ociHi).
+ * "matches v1 (Type III, no R here)", register row F11), McDonald's omega with its loadings and bootstrap interval (alpha's omega, load_j, ociLo, ociHi), the mixed ANOVA (every mixed case is ref null, "matches v1 (F10)"), moderation's pF and
+ * pFc (pFromF's 1 - betai, register row F5a) and its Johnson-Neyman points (roots), and mediation's indirect effect with its seeded percentile bootstrap (ab, lo, hi, bse, abStd, okCount:
+ * "matches v1 (seeded bootstrap, F14)").
  */
 const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
   ttest1: (r) => sameKeys(r, ["t", "p"]),
@@ -73,6 +77,13 @@ const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
     for (let j = 0; j < k; j++) keys.push(`rit_${j}`, `ad_${j}`);
     return sameKeys(r, keys);
   },
+  moderate: (r) => {
+    const keys = ["n", "r2", "F", "dr2", "Fc"];
+    for (let j = 0; j < 4; j++) keys.push(`b_${j}`, `se_${j}`, `t_${j}`, `p_${j}`);
+    for (const q of ["lo", "mid", "hi"]) keys.push(`sl_${q}_b`, `sl_${q}_se`, `sl_${q}_p`);
+    return sameKeys(r, keys);
+  },
+  mediate: (r) => sameKeys(r, ["n", "a_b", "a_p", "b_b", "b_p", "cp_b", "cp_p", "c_b", "c_p", "r2m", "r2y"]),
 };
 function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Object.keys(r).sort().join() === keys.slice().sort().join()}
 

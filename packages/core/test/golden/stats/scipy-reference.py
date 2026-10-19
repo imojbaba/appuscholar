@@ -6,7 +6,7 @@
 # Independent of v1's numbers: of each case only the inputs are read, the `csv` (re-parsed here with v1's rules, intake.ts) and the `form` (the column indexes v1's form held); of v1's output
 # only whether it refused the case (a toast, or the safety net's apa null), which sets `ref` to null with `why`, so that no reference stands where the port has no values to compare.
 # The groups come out in statsGroupBy's order (a plain object's key order: canonical array-index keys ascending, then the rest in first-seen order: register row F4), so the pairs and the sign
-# of a difference are the ones v1 reports. A test with no entry in REFERENCE has `ref: null` ("no scipy reference for this test yet"); Tasks 6-9 add theirs.
+# of a difference are the ones v1 reports. A test with no entry in REFERENCE or NO_COUNTERPART would have `ref: null` ("no scipy reference for this test yet"); after Task 9 every test has one or the other.
 # JSON cannot hold NaN or an infinity: a case where scipy returns one is written with ref null and the reason.
 import json
 import math
@@ -595,6 +595,69 @@ def alpha(rows, form):
     return out
 
 
+def three_cols(rows, i1, i2, i3):
+    """The row filter of moderate and mediate: the three cells present and all three finite through parseFloat, in data order."""
+    out = []
+    for r in rows:
+        if r[i1] == "" or r[i2] == "" or r[i3] == "":
+            continue
+        a, b, c = parse_float(r[i1]), parse_float(r[i2]), parse_float(r[i3])
+        if math.isfinite(a) and math.isfinite(b) and math.isfinite(c):
+            out.append((a, b, c))
+    return np.array(out)
+
+
+def ols_fit(cols, y):
+    """numpy's least squares on [1, cols...]: (coefficients, the covariance matrix mse (X'X)^-1, sse, sst, the residual df)."""
+    X = np.column_stack([np.ones(len(y))] + list(cols))
+    beta = np.linalg.lstsq(X, y, rcond=None)[0]
+    sse = float(((y - X @ beta) ** 2).sum())
+    sst = float(((y - y.mean()) ** 2).sum())
+    dfe = len(y) - X.shape[1]
+    return beta, (sse / dfe) * np.linalg.inv(X.T @ X), sse, sst, dfe
+
+
+def moderate(rows, form):
+    """An independent numpy computation of v1's moderation model: the rows with all three values, X and W centred on their means, lstsq of Y on [1, Xc, Wc, Xc*Wc] -> b_j, se_j
+    (the square root of the diagonal of mse (X'X)^-1), t_j, p_j (2 t.sf on n-4 df) for j in v1's order (the intercept, X, W, the product), r2, F = (r2/3)/((1-r2)/(n-4)), dr2 the rise in
+    R² over [1, Xc, Wc], Fc = (sse0 - sse)/mse; the simple slopes of X at W centred at -1 SD, 0 and +1 SD (np.std ddof 1): sl_*_b = b1 + b3 w, sl_*_se from the covariance
+    matrix, sl_*_p (2 t.sf). pF and pFc (pFromF's 1 - betai, register row F5a, below 1e-10 on these fixtures) and the Johnson-Neyman region (roots) are held to v1 only."""
+    D = three_cols(rows, col(form, "x"), col(form, "w"), col(form, "dv"))
+    x, w, y = D[:, 0], D[:, 1], D[:, 2]
+    n = len(y)
+    xc, wc = x - x.mean(), w - w.mean()
+    beta, V, sse, sst, dfe = ols_fit([xc, wc, xc * wc], y)
+    _, _, sse0, _, _ = ols_fit([xc, wc], y)
+    r2 = 1 - sse / sst
+    out = {"n": n, "r2": r2, "F": (r2 / 3) / ((1 - r2) / dfe), "dr2": (sse0 - sse) / sst, "Fc": (sse0 - sse) / (sse / dfe)}
+    for j in range(4):
+        se = math.sqrt(V[j, j])
+        out["b_%d" % j], out["se_%d" % j], out["t_%d" % j], out["p_%d" % j] = beta[j], se, beta[j] / se, 2 * stats.t.sf(abs(beta[j] / se), dfe)
+    sdw = float(np.std(w, ddof=1))
+    for name, lev in (("lo", -sdw), ("mid", 0.0), ("hi", sdw)):
+        b = beta[1] + beta[3] * lev
+        se = math.sqrt(V[1, 1] + 2 * lev * V[1, 3] + lev * lev * V[3, 3])
+        out["sl_%s_b" % name], out["sl_%s_se" % name], out["sl_%s_p" % name] = b, se, 2 * stats.t.sf(abs(b / se), dfe)
+    return out
+
+
+def mediate(rows, form):
+    """An independent numpy computation of v1's mediation paths: the rows with all three values; lstsq of M on [1, X] (a), of Y on [1, X, M] (b the M coefficient, cp the X
+    coefficient) and of Y on [1, X] (c) -> a_b, b_b, cp_b, c_b and their p (2 t.sf on n-2, n-3, n-3 and n-2 df), r2m, r2y. The indirect effect and its seeded percentile bootstrap
+    (ab, lo, hi, bse, abStd, okCount) are held to v1 only: matches v1 (seeded bootstrap, F14)."""
+    D = three_cols(rows, col(form, "x"), col(form, "m"), col(form, "dv"))
+    x, m, y = D[:, 0], D[:, 1], D[:, 2]
+    out = {"n": len(y)}
+    for name, cols, dv, j in (("a", [x], m, 1), ("b", [x, m], y, 2), ("cp", [x, m], y, 1), ("c", [x], y, 1)):
+        beta, V, sse, sst, dfe = ols_fit(cols, dv)
+        out[name + "_b"], out[name + "_p"] = beta[j], 2 * stats.t.sf(abs(beta[j] / math.sqrt(V[j, j])), dfe)
+        if name == "a":
+            out["r2m"] = 1 - sse / sst
+        if name == "b":
+            out["r2y"] = 1 - sse / sst
+    return out
+
+
 class NoReference(Exception):
     """A test this scipy has no counterpart for: the case is written with ref null and the message as why."""
 
@@ -622,15 +685,20 @@ REFERENCE = {
     "logistic": logistic,           # an independent numpy computation: minimize (Newton-CG) -> b_j, se_j (inverse Hessian), z_j, p_j, or_j, lo_j, hi_j; lr, pLR (chi2.sf), cs, nag, mcf, auc (mannwhitneyu), the classification, vif_j
     "rmanova": rmanova,             # an independent numpy computation: the sums of squares, F, pU (f.sf), gg, hf, W, chi, pM (chi2.sf) on Helmert contrasts, eps, pC, pe2, ge2; ttest_rel -> pair_t_i_j, pair_p_i_j
     "alpha": alpha,                 # alpha from the variance formula, its interval from f.ppf, meanR, rit_j, ad_j (omega and its bootstrap interval: matches v1)
+    "moderate": moderate,           # an independent numpy computation: lstsq on the centred design -> b_j, se_j, t_j, p_j (t.sf), r2, F, dr2, Fc, the simple slopes sl_*_b, sl_*_se, sl_*_p (Johnson-Neyman, pF, pFc: matches v1)
+    "mediate": mediate,             # an independent numpy computation: lstsq for the a, b, c' and c paths -> a_b, a_p, b_b, b_p, cp_b, cp_p, c_b, c_p (t.sf), r2m, r2y (the bootstrap: matches v1, F14)
 }
 # Tests with no scipy counterpart at all: every case is written with ref null and this reason, and the port's values are held to v1 only, by the golden fixtures ("matches v1").
 NO_COUNTERPART = {
     "cochran": "no scipy counterpart: Cochran's Q matches v1",
     "anova2": "matches v1 (Type III, no R here)",
+    "mixed": "matches v1 (F10)",
 }
 # No scipy counterpart, so these values are held to v1 only ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal padj_i_j), the Spearman interval (lo, hi), omega2 and eps2,
 # the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramer's V (v), Cohen's w, Kendall's W, the Cochran and Friedman pairwise p (pair_p_i_j), all of Cochran's Q, and all of the two-way ANOVA (Type III sums of squares,
-# simple effects, the marginal-means Tukey and the within-level Bonferroni tests: anova2 matches v1), and McDonald's omega with its loadings and bootstrap interval (alpha's omega, load_j, ociLo, ociHi).
+# simple effects, the marginal-means Tukey and the within-level Bonferroni tests: anova2 matches v1), McDonald's omega with its loadings and bootstrap interval (alpha's omega, load_j, ociLo, ociHi),
+# all of the mixed ANOVA (mixed matches v1, register row F10), moderation's pF, pFc and Johnson-Neyman region (roots), and mediation's indirect effect with its seeded bootstrap (ab, lo, hi,
+# bse, abStd, okCount: register row F14).
 
 
 def main():

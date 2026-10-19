@@ -57,6 +57,12 @@ const REQUIRED: Record<string, string[]> = {
     "rmanova-two-columns", "rmanova-missing-row", "rmanova-nine-columns"],
   alpha: ["alpha-demo", "alpha-no-reverse", "alpha-rev-not-found", "alpha-rev-no-range", "alpha-rev-bad-range", "alpha-two-items", "alpha-n4", "alpha-constant-item",
     "alpha-negative-item", "alpha-weak-item", "alpha-above-95", "alpha-n-under-30", "alpha-large-boot-200"],
+  mixed: ["mixed-two-groups-two-times", "mixed-two-groups-three-times", "mixed-three-groups-unequal", "mixed-integer-labels", "mixed-interaction-significant", "mixed-one-group",
+    "mixed-group-of-one", "mixed-seven-groups", "mixed-one-column", "mixed-group-column-ticked", "mixed-no-variation", "mixed-missing-row"],
+  moderate: ["moderate-significant", "moderate-everywhere-significant", "moderate-nowhere-significant", "moderate-one-root", "moderate-n9", "moderate-same-columns",
+    "moderate-no-spread-w", "moderate-w-copy-of-x", "moderate-exact-fit", "moderate-n-under-50", "moderate-missing-rows"],
+  mediate: ["mediate-significant", "mediate-non-significant", "mediate-n19", "mediate-no-spread", "mediate-m-copy-of-x", "mediate-exact-path", "mediate-n-under-100",
+    "mediate-same-n-different-data"],
 };
 
 const skippedSlow: string[] = [];
@@ -128,12 +134,16 @@ describe("stats: the frame", () => {
       expect(r.apa).toContain(v.p! < 0.001 ? "p < .001" : `p = ${v.p!.toFixed(3).replace(/^0\./, ".")}`);
     }
   });
-  it("a key no runner handles yet, or no key v1 knows, gets the catch toast (register row D-W2-3)", () => {
+  it("a key v1 does not know gets the catch toast (register row D-W2-3); every one of the 26 keys has its branch", () => {
     const data = statsParseText("score\n1\n2\n3")!;
     const toast = "Could not run that test — check the columns you picked match what the test needs";
     expect(runStats(data, "nope" as "desc", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "nope", reason: "toast", toast });
-    // A real key whose runner a later task ports: the task that ports moderate updates this line.
-    expect(runStats(data, "moderate", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "moderate", reason: "toast", toast });
+    // Since Task 9 all 26 keys dispatch, so no real key falls through to this toast: every key has a fixture whose cases ran (the loops above), and the three last ported refuse a
+    // one-column form with their own first toast, not the catch toast.
+    expect(Object.keys(STAT_TESTS).filter((k) => !fixtures.includes(k))).toEqual([]);
+    expect(runStats(data, "moderate", { values: { dv: "0", x: "0", w: "0" }, ticked: {} })).toEqual({ ok: false, test: "moderate", reason: "toast", toast: "Choose three different columns for Y, X and W" });
+    expect(runStats(data, "mediate", { values: { dv: "0", x: "0", m: "0" }, ticked: {} })).toEqual({ ok: false, test: "mediate", reason: "toast", toast: "Choose three different columns for X, M and Y" });
+    expect(runStats(data, "mixed", { values: { grp: "" }, ticked: { items: [0] } })).toEqual({ ok: false, test: "mixed", reason: "toast", toast: "Tick at least 2 columns, one for each time point or condition." });
   });
   it("desc-one-left-out: one dropped entry gives the singular note (11994)", () => {
     const c = load("desc").cases.find((x) => x.id === "desc-one-left-out")!;
@@ -604,6 +614,131 @@ describe("stats: logistic regression, repeated-measures ANOVA and alpha (logisti
       for (let j = 0; j < v.k!; j++) expect([t[1]![j + 1]![3], t[1]![j + 1]![4]], `${c.id} ${j}`).toEqual([fq(v["rit_" + j]!), fq(v["ad_" + j]!)]);
       if ("omega" in v) expect(t[0]![1]![4], c.id).toBe(fq(v.omega!));
       if ("ociLo" in v) expect(t[0]![1]![5], c.id).toBe(`[${fq(v.ociLo!)}, ${fq(v.ociHi!)}]`);
+    }
+  });
+});
+
+describe("stats: mixed ANOVA, moderation and mediation (mixed, moderate, mediate)", () => {
+  const find = (file: string, id: string) => load(file).cases.find((x) => x.id === id)!;
+  const notes = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "note").map((b) => (b as { html: string }).html);
+  const tables = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "table").map((b) => (b as { rows: string[][] }).rows);
+  const fixed = (x: number, k = 2) => x.toFixed(k);
+  const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
+  const pc = (p: number) => (p < 0.001 ? "&lt; .001" : nl(p.toFixed(3)));
+  const catchToast = "Could not run that test — check the columns you picked match what the test needs";
+  it("mixed-integer-labels: the groups 10 and 2 stay in data order, 10 before 2 (gl.indexOf, 13341), and the row x is counted as skipped", () => {
+    const c = find("mixed", "mixed-integer-labels");
+    expect(c.csv.indexOf("\n10,")).toBeLessThan(c.csv.indexOf("\n2,"));
+    expect(tables(c)[0]!.slice(1).map((r) => r[0])).toEqual(["10", "10", "10", "2", "2", "2"]);
+    expect(run(c)).toMatchObject({ ok: true, skipped: 1, values: { G: 2, n: 16 } });
+  });
+  it("mixed with two conditions: no corrected rows and no sphericity figures, epsV 1, the 'With two conditions' note", () => {
+    const c = find("mixed", "mixed-two-groups-two-times");
+    expect(tables(c)[1]!.map((r) => r[0])).toEqual(["Source", "<b>Between people</b>", "group", "People within groups (error)", "<b>Within people</b>",
+      "Conditions (sphericity assumed)", "group × conditions (sphericity assumed)", "Error (assumed)"]);
+    expect(notes(c)[0]).toBe("With two conditions there is only one difference between them, so sphericity cannot be violated and no correction is needed.");
+    expect(run(c)).toMatchObject({ ok: true, values: { k: 2, epsV: 1, gg: 1, hf: 1, W: 1, chi: 0, pM: 1 } });
+    expect(c.apa).not.toContain("Degrees of freedom for the within-people effects");
+  });
+  it("mixed with three conditions: the corrected rows are Greenhouse-Geisser when gg < .75, else Huynh-Feldt, with df printed whole when they are (dd's 1e-9)", () => {
+    const seen = new Set<string>();
+    for (const c of load("mixed").cases) {
+      const r = run(c);
+      if (!r.ok || r.values.k === 2) continue;
+      const v = r.values, name = v.gg! < 0.75 ? "Greenhouse-Geisser" : "Huynh-Feldt";
+      seen.add(name);
+      expect(tables(c)[1]![6]![0], c.id).toBe(`Conditions (${name})`);
+      expect(v.epsV, c.id).toBe(v.gg! < 0.75 ? v.gg : v.hf);
+    }
+    expect([...seen].sort()).toEqual(["Greenhouse-Geisser", "Huynh-Feldt"]);
+    expect(find("mixed", "mixed-three-groups-unequal").apa).toContain("main effect of condition, F(2, 54) = "); // Huynh-Feldt epsilon is 1: whole df
+    expect(find("mixed", "mixed-interaction-significant").apa).toContain("main effect of condition, F(1.79, 39.35) = ");
+  });
+  it("mixed: the unequal-sizes note only for unequal groups; the interaction note's two arms; the toasts, one naming the group", () => {
+    expect(notes(find("mixed", "mixed-three-groups-unequal"))[1]).toMatch(/^The groups have unequal sizes \(8, 10, 12\)\./);
+    expect(notes(find("mixed", "mixed-two-groups-three-times")).some((h) => h.startsWith("The groups have unequal sizes"))).toBe(false);
+    expect(notes(find("mixed", "mixed-interaction-significant")).at(-1)).toMatch(/^<b>The interaction is significant<\/b>/);
+    expect(notes(find("mixed", "mixed-two-groups-three-times")).at(-1)).toMatch(/^The interaction is not significant/);
+    expect(find("mixed", "mixed-group-of-one").toasts).toEqual(['Every group needs at least 2 people with a score in every ticked column. Group "C" has fewer.']);
+    expect(run(find("mixed", "mixed-missing-row"))).toMatchObject({ ok: true, skipped: 1, values: { n: 17 } });
+  });
+  it("mixed-group-column-ticked: a grouping column coded 1/2 is numeric, so the student can tick it but the grouping select (categorical columns only) is empty: v1's catch toast", () => {
+    const c = find("mixed", "mixed-group-column-ticked");
+    expect(c.form.values.grp).toBe("");
+    expect(c.form.ticked.items).toEqual([0, 1, 2]);
+    expect(c.toasts).toEqual([catchToast]);
+  });
+  it("mixed values are the numbers behind the Source table", () => {
+    for (const c of load("mixed").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, t = tables(c)[1]!, k2 = v.k! > 2;
+      expect(t[2]!.slice(1), c.id).toEqual([fixed(v.SSg!), String(v.G! - 1), fixed(v.SSg! / (v.G! - 1)), fixed(v.Fg!), pc(v.pg!), nl(fixed(v.peg!, 3))]);
+      expect(t[3]!.slice(1, 3), c.id).toEqual([fixed(v.SSs!), String(v.n! - v.G!)]);
+      expect(t[5]!.slice(1), c.id).toEqual([fixed(v.SSt!), String(v.k! - 1), fixed(v.SSt! / (v.k! - 1)), fixed(v.Ft!), pc(v.pt!), nl(fixed(v.pet!, 3))]);
+      expect(t[k2 ? 7 : 6]!.slice(4, 6), c.id).toEqual([fixed(v.Fi!), pc(v.pi!)]);
+      if (k2) expect([t[6]![5], t[8]![5]], c.id).toEqual([pc(v.ptc!), pc(v.pic!)]);
+      expect(t[k2 ? 9 : 7]!.slice(1, 2), c.id).toEqual([fixed(v.E!)]);
+    }
+  });
+  it("moderate: the Johnson-Neyman sentence's three arms, with the number of points inside the range", () => {
+    const jn = (id: string) => notes(find("moderate", id))[2]!;
+    const roots = (id: string) => { const r = run(find("moderate", id)); return r.ok ? r.values.roots : -1; };
+    expect(jn("moderate-significant")).toMatch(/is significant where support is at or below \d+\.\d\d and from \d+\.\d\d upward, and not significant elsewhere/);
+    expect(roots("moderate-significant")).toBe(2);
+    expect(jn("moderate-one-root")).toMatch(/is significant where support is from \d+\.\d\d upward, and not significant elsewhere/);
+    expect(roots("moderate-one-root")).toBe(1);
+    expect(jn("moderate-everywhere-significant")).toMatch(/is significant at every value of support in your data/);
+    expect(roots("moderate-everywhere-significant")).toBe(0);
+    expect(jn("moderate-nowhere-significant")).toMatch(/is not significant at any value of support in your data/);
+    expect(roots("moderate-nowhere-significant")).toBe(0);
+  });
+  it("moderate: the n < 50 note, and dropped rows in the note and in the left-out counter (13030)", () => {
+    expect(notes(find("moderate", "moderate-n-under-50"))[2]).toContain(" With fewer than 50 people the test of an interaction has very little power");
+    expect(notes(find("moderate", "moderate-significant"))[2]).not.toContain("fewer than 50");
+    const c = find("moderate", "moderate-missing-rows");
+    expect(notes(c)[2]).toContain(" 3 rows were left out because a value was missing.");
+    expect(notes(c).at(-1)).toBe("3 entries that are not a number were left out.");
+    expect(run(c)).toMatchObject({ ok: true, skipped: 3, values: { n: 57 } });
+  });
+  it("moderate values are the numbers behind the cells", () => {
+    for (const c of load("moderate").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, t = tables(c);
+      expect(t[0]![1], c.id).toEqual([nl(fixed(v.r2!, 3)), fixed(v.F!), `3, ${v.n! - 4}`, pc(v.pF!), nl(fixed(v.dr2!, 3)), fixed(v.Fc!), `1, ${v.n! - 4}`, pc(v.pFc!)]);
+      for (let j = 0; j < 4; j++) expect(t[1]![j + 1]!.slice(1, 5), `${c.id} ${j}`).toEqual([fixed(v["b_" + j]!, 3), fixed(v["se_" + j]!, 3), fixed(v["t_" + j]!), pc(v["p_" + j]!)]);
+      ["lo", "mid", "hi"].forEach((q, i) => expect(t[2]![i + 1]!.slice(1, 3).concat(t[2]![i + 1]![4]!), `${c.id} ${q}`).toEqual([fixed(v[`sl_${q}_b`]!, 3), fixed(v[`sl_${q}_se`]!, 3), pc(v[`sl_${q}_p`]!)]));
+    }
+  });
+  it("F14: mediate-same-n-different-data and its -2 have the same n, so the same seed and the same resamples: with Y doubled every bootstrap figure is exactly twice the first's, a different interval", () => {
+    const a = run(find("mediate", "mediate-same-n-different-data")), b = run(find("mediate", "mediate-same-n-different-data-2"));
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(a.values.n).toBe(60);
+    expect(b.values.n).toBe(a.values.n);
+    expect([b.values.lo, b.values.hi]).not.toEqual([a.values.lo, a.values.hi]);
+    for (const k of ["ab", "lo", "hi", "bse"]) expect(b.values[k], k).toBe(2 * a.values[k]!);
+  });
+  it("mediate: the n < 100 note, the resamples left out, the dropped rows in the note and the counter (13078)", () => {
+    expect(notes(find("mediate", "mediate-n-under-100"))[1]).toContain(" With fewer than 100 people the bootstrap interval is unstable");
+    expect(notes(find("mediate", "mediate-significant"))[1]).not.toContain("fewer than 100");
+    const l = find("mediate", "mediate-resamples-left-out"), rl = run(l);
+    expect(rl.ok && rl.values.okCount! < 5000).toBe(true);
+    expect(notes(l)[1]).toContain(` ${5000 - (rl.ok ? rl.values.okCount! : 0)} of the 5000 resamples could not be calculated and were left out.`);
+    expect(notes(find("mediate", "mediate-significant"))[1]).toContain("a percentile bootstrap from 5,000 resamples with a fixed seed");
+    const m = find("mediate", "mediate-missing-rows");
+    expect(notes(m)[1]).toContain(" 2 rows were left out because a value was missing.");
+    expect(run(m)).toMatchObject({ ok: true, skipped: 2, values: { n: 38 } });
+  });
+  it("mediate values are the numbers behind the cells", () => {
+    for (const c of load("mediate").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, t = tables(c);
+      ["a", "b", "cp", "c"].forEach((p, i) => expect([t[0]![i + 1]![1], t[0]![i + 1]![4]], `${c.id} ${p}`).toEqual([fixed(v[p + "_b"]!, 3), pc(v[p + "_p"]!)]));
+      expect(t[1]![1], c.id).toEqual([fixed(v.ab!, 3), fixed(v.bse!, 3), `[${fixed(v.lo!, 3)}, ${fixed(v.hi!, 3)}]`, fixed(v.abStd!, 3), nl(fixed(v.r2m!, 3)), nl(fixed(v.r2y!, 3))]);
+      expect(v.ab, c.id).toBe(v.a_b! * v.b_b!);
     }
   });
 });
