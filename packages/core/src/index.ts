@@ -75,3 +75,11 @@ export { chartParseLines, vennNum, vennSvg } from "./quickchart";
 export type { ChartRow, VennInput } from "./quickchart";
 export { rtHash, rtSetRecord, rtRunRecord, rtFirstP, rtSig, rtFlip, rtScanTags } from "./rtlink";
 export type { RtRun, RtSavedRun, RtSet, RtTag, RtStatus, RtWhy, RtScanItem, RtFirstP } from "./rtlink";
+export {
+  DESIGN_ITEMS, EC_DOCS, CTRI_FIELDS, PI_ITEMS, BUDGET_DEFAULTS, DESIGN_TOASTS, REG_WARN, regPathway, regDone, protoDone, protocolMarkdown, ecMinorsNote, checklistDone,
+  ecDoneAfterToggle, ecDoneAfterSave, ethicsStatement, consentMarkdown, ctriMarkdown, piDone, piCvText, budgetRows, budgetTotal, budgetTotalText, budgetMarkdown, budgetDone,
+  designDashboard,
+} from "./design";
+export type { DesignKey, RegState, ProtoFields, EcState, BudgetRow, DesignDashboard } from "./design";
+export { AIU_MONTHS, aiuDate, aiuJoin, aiuInRange, aiuBuild } from "./aiustatement";
+export type { AiuEntry, AiuTicks, AiuStyle, AiuInput, AiuBuilt } from "./aiustatement";
