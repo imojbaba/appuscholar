@@ -91,7 +91,7 @@ export const projectBlobs = pgTable("project_blobs", {
   keyVersion: integer("key_version").notNull().default(0),
   deks: jsonb("deks").$type<{ v: number; wrapped: string }[]>().notNull().default([]),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
-}, (t) => [uniqueIndex("project_blobs_project_kind_idx").on(t.projectId, t.kind), index("project_blobs_project_idx").on(t.projectId)]);
+}, (t) => [uniqueIndex("project_blobs_project_kind_idx").on(t.projectId, t.kind)]);
 
 export const credentials = pgTable("credentials", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),

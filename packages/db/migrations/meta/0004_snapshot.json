@@ -1,5 +1,5 @@
 {
-  "id": "51c26077-c49a-4fef-bc58-2d5391d121ff",
+  "id": "be6e282d-fdf9-4788-9e50-23ab0952e0e4",
   "prevId": "9f9894f9-7ff1-42ec-bf37-fb163ea3db95",
   "version": "7",
   "dialect": "postgresql",
@@ -609,21 +609,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "project_blobs_project_idx": {
-          "name": "project_blobs_project_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
