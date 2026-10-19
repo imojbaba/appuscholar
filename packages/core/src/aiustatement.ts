@@ -8,7 +8,7 @@ export { AIU_MONTHS };
    The strings, branch order and early returns are v1's: aiuDate's regex `^(\d{4})-(\d{2})-(\d{2})$` and `parseInt(m[3],10)+' '+AIU_MONTHS[parseInt(m[2],10)-1]+' '+m[1]` (a month
    out of range prints "undefined", as v1's does), its `String(d||'')` fallback; aiuJoin; aiuInRange's `(!f||e.d>=f)&&(!t||e.d<=t)` string comparison; in aiuBuild the refusal (with
    its `request`/`requests`), the no-use text, the provider and model pairs in first-use order (`PROVIDERS[e.p]?PROVIDERS[e.p].name:e.p`, ` (model)` only when there is a model),
-   `on` one date or `between` two (the sorted dates' first and last), `by.g`'s four groups (text, feedback, explain, other; an unknown group counts as other), fmtG's
+   `on` one date or `between` two (the sorted dates' first and last), `by.g`'s four groups (text, feedback, explain, other; v1's `by.g[e.g]||by.g.other` fallback counts an entry of any other group as other, ported but not pinned: every logged `g` is one of the four), fmtG's
    `sort((a,b)=>g[b]-g[a])` (stable: equal counts keep first-use order) and `(n request[s])`, the J (journal) phrasings, `other.replace(/[.\s]+$/,'')` and "Outside Appuscholar, " only
    when the log was used, the five tick sentences, the style-profile sentence, the `[Say which passages…]` rule (used, some text help, the reword box not ticked), the thesis count
    sentence (with v1's "1 request were logged"), the closing sentence and the head by format.

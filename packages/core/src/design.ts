@@ -86,7 +86,10 @@ export function regDone(): true {return true}
 
 /** protoSave's done rule (5955). */
 export function protoDone(o: ProtoFields): boolean {return Object.values(o).some(v=>v)}
-/** protoGenerate's document (5961-5970), or null when every field is empty (v1 toasts DESIGN_TOASTS.protoEmpty and stops). */
+/**
+ * protoGenerate's document (5961-5970), or null when every field is empty (v1 toasts DESIGN_TOASTS.protoEmpty and stops).
+ * The caller passes only the eight fields, as v1's protoRead builds a fresh object of them: a stored blob carrying `done` (or any other key) would make the all-empty check see a value.
+ */
 export function protocolMarkdown(o: ProtoFields): string | null {
   if(!Object.values(o).some(v=>v)){return null}
   const doc='# Research protocol / synopsis\n\n'
