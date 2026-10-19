@@ -21,7 +21,29 @@ import { useVault, VaultProvider, type VaultValue } from "../lib/vault/useVault"
 type Rec = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
 type SRev = { seq: number; bodyHtml: string; keyVersion: number };
 type SDoc = { id: string; projectId: string; deletedAt: string | null; deks: { v: number; wrapped: string }[]; revs: SRev[] };
-let server: { vault: Rec | null; calls: { path: string; method: string; body?: Record<string, unknown> }[]; projects: string[]; docs: SDoc[] };
+type SBlob = { projectId: string; kind: string; body: string; keyVersion: number; deks: { v: number; wrapped: string }[] };
+let server: { vault: Rec | null; calls: { path: string; method: string; body?: Record<string, unknown> }[]; projects: string[]; docs: SDoc[]; blobs: SBlob[] };
+
+/** The blob routes the migration uses (list, read, rewrite), with the rewrite's dek rules as the api applies them. */
+function blobApi(path: string, method: string, body: Record<string, unknown> | undefined): Promise<unknown> | null {
+  let m = /^\/projects\/([^/]+)\/blobs$/.exec(path);
+  if (m && method === "GET") return Promise.resolve(server.blobs.filter((b) => b.projectId === m![1]).map((b) => ({ kind: b.kind, keyVersion: b.keyVersion, updatedAt: "2026-10-19T00:00:00.000Z" })));
+  m = /^\/projects\/([^/]+)\/blobs\/([^/]+)(\/rewrite)?$/.exec(path);
+  if (!m) return null;
+  const b = server.blobs.find((x) => x.projectId === m![1] && x.kind === decodeURIComponent(m![2]!));
+  if (!b) return Promise.reject(new ApiError(404, "not-found"));
+  if (!m[3] && method === "GET") return Promise.resolve({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: [...b.deks], updatedAt: "2026-10-19T00:00:00.000Z" });
+  if (m[3] && method === "PUT") {
+    if (server.vault?.complete) return Promise.reject(new ApiError(409, "migration-closed"));
+    const w = body as { body: string; keyVersion: number; dek?: { v: number; wrapped: string } };
+    if (w.dek && b.deks.some((k) => k.v === w.dek!.v && k.wrapped !== w.dek!.wrapped)) return Promise.reject(new ApiError(409, "dek-exists"));
+    if (w.dek && !b.deks.some((k) => k.v === w.dek!.v)) b.deks.push(w.dek);
+    if (!b.deks.some((k) => k.v === w.keyVersion)) return Promise.reject(new ApiError(400, "unknown-key-version"));
+    Object.assign(b, { body: w.body, keyVersion: w.keyVersion });
+    return Promise.resolve({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: [...b.deks], updatedAt: "2026-10-19T00:00:00.000Z" });
+  }
+  return null;
+}
 
 /** The document routes the migration uses; a soft-deleted document is reached only with ?includeDeleted=1, as the api does. */
 function docApi(path: string, method: string, body: Record<string, unknown> | undefined): Promise<unknown> | null {
@@ -65,13 +87,13 @@ function fakeApi(path: string, init: RequestInit = {}) {
   const method = init.method ?? "GET";
   const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined;
   server.calls.push({ path, method, body });
-  const doc = docApi(path, method, body);
+  const doc = docApi(path, method, body) ?? blobApi(path, method, body);
   if (doc) return doc;
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
   if (path === "/me/vault" && method === "PUT") { if (server.vault) return Promise.reject(new ApiError(409, "vault-exists")); server.vault = { ...(body as Omit<Rec, "complete" | "updatedAt">), complete: false, updatedAt: new Date().toISOString() }; return Promise.resolve({ ...server.vault }); }
   if (path === "/me/vault/wraps" && method === "PATCH") return patchWraps(body!);
   if (path === "/me/vault/complete" && method === "POST" && !server.vault?.complete) {
-    const count = server.docs.flatMap((d) => d.revs).filter((r) => r.keyVersion === 0).length;
+    const count = server.docs.flatMap((d) => d.revs).filter((r) => r.keyVersion === 0).length + server.blobs.filter((b) => b.keyVersion === 0).length;
     if (count) return Promise.reject(new ApiError(409, "plaintext-remains"));
   }
   if (path === "/me/vault/complete" && method === "POST") { server.vault = { ...server.vault!, complete: true }; return Promise.resolve(undefined); }
@@ -124,7 +146,7 @@ async function until(pred: () => boolean) {
 const CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 
 beforeEach(async () => {
-  server = { vault: null, calls: [], projects: [], docs: [] };
+  server = { vault: null, calls: [], projects: [], docs: [], blobs: [] };
   h.uid = "u1";
   h.scratch = undefined;
   h.api.mockReset().mockImplementation(fakeApi);
@@ -199,6 +221,33 @@ describe("useVault", () => {
     await expect(s.v.encryptBody({ id: "d1", deks }, "x")).rejects.toMatchObject({ message: "vault-locked" });
     await act(async () => { await s.v.unlock("right", false); });
     expect(await s.v.decryptBody({ id: "d1", deks, bodyHtml: second.bodyHtml, keyVersion: 1 })).toBe("<p>v2</p>");
+  }, 30_000);
+
+  it("a blob id (blob:<projectId>:<kind>) gets its own first key and its own cache line, never a document's", async () => {
+    server.vault = await vaultWith("right");
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    await act(async () => { await s.v.unlock("right", false); });
+    // Pending first keys are by id: a blob's is never the document's, even sealed one right after the other.
+    const doc = await s.v.encryptBody({ id: "d1", deks: [] }, "<p>doc</p>");
+    const blob = await s.v.encryptBody({ id: "blob:p1:citations", deks: [] }, "[]");
+    expect(blob.dek!.wrapped).not.toBe(doc.dek!.wrapped);
+    expect(await s.v.decryptBody({ id: "blob:p1:citations", deks: [blob.dek!], bodyHtml: blob.bodyHtml, keyVersion: 1 })).toBe("[]");
+    // The same deks under a blob id and a document id: each unwraps once into its own cache line.
+    act(() => { s.v.lock(); });
+    await act(async () => { await s.v.unlock("right", false); });
+    const deks = [doc.dek!];
+    const imports = vi.spyOn(crypto.subtle, "importKey");
+    const raw = () => imports.mock.calls.filter(([fmt]) => fmt === "raw").length;
+    expect(await s.v.decryptBody({ id: "d1", deks, bodyHtml: doc.bodyHtml, keyVersion: 1 })).toBe("<p>doc</p>");
+    expect(raw()).toBe(1);
+    await s.v.decryptBody({ id: "d1", deks, bodyHtml: doc.bodyHtml, keyVersion: 1 });
+    expect(raw()).toBe(1);
+    expect(await s.v.decryptBody({ id: "blob:p1:citations", deks, bodyHtml: doc.bodyHtml, keyVersion: 1 })).toBe("<p>doc</p>");
+    expect(raw()).toBe(2);
+    await s.v.decryptBody({ id: "blob:p1:citations", deks, bodyHtml: doc.bodyHtml, keyVersion: 1 });
+    expect(raw()).toBe(2);
+    imports.mockRestore();
   }, 30_000);
 
   it("decryptBody of keyVersion 0 passes through; corrupt ciphertext throws corrupt", async () => {
@@ -720,6 +769,35 @@ describe("useVault", () => {
       expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 0))).toBe(true);
     }, 30_000);
 
+    it("seals every plaintext blob of every project, the scratch project's included, under its own key; complete waits for them", async () => {
+      seed();
+      server.blobs = [
+        { projectId: "p1", kind: "citations", body: JSON.stringify([{ author: "Ng, A.", title: "Sleep" }]), keyVersion: 0, deks: [] },
+        { projectId: "scratch", kind: "idea_intake", body: JSON.stringify({ topic: "scratch idea", resources: "", timeframe: "", constraints: "" }), keyVersion: 0, deks: [] }
+      ];
+      server.vault = await vaultWith("right");
+      const s = await mount();
+      await until(() => s.v.status === "locked");
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => s.v.complete && s.v.status === "unlocked");
+      expect(server.calls.filter((c) => c.method === "GET" && /^\/projects\/[^/]+\/blobs$/.test(c.path)).map((c) => c.path)).toContain("/projects/scratch/blobs");
+      const rewrites = server.calls.filter((c) => c.path.includes("/blobs/") && c.path.endsWith("/rewrite"));
+      expect(rewrites.map((c) => c.path)).toEqual(["/projects/p1/blobs/citations/rewrite", "/projects/scratch/blobs/idea_intake/rewrite"]);
+      // One request each: the ciphertext and the blob's first key together.
+      for (const r of rewrites) expect(r.body).toMatchObject({ keyVersion: 1, dek: { v: 1 } });
+      for (const b of server.blobs) {
+        expect(b.keyVersion).toBe(1);
+        expect(b.deks).toHaveLength(1);
+        expect(b.body).not.toContain("Sleep");
+        expect(b.body).not.toContain("scratch idea");
+      }
+      const [cit, idea] = server.blobs;
+      expect(JSON.parse(await s.v.decryptBody({ id: "blob:p1:citations", deks: cit!.deks, bodyHtml: cit!.body, keyVersion: 1 }))).toEqual([{ author: "Ng, A.", title: "Sleep" }]);
+      expect(JSON.parse(await s.v.decryptBody({ id: "blob:scratch:idea_intake", deks: idea!.deks, bodyHtml: idea!.body, keyVersion: 1 }))).toMatchObject({ topic: "scratch idea" });
+      // Progress counted the documents only.
+      expect(server.calls.filter((c) => c.path === "/me/vault/complete")).toHaveLength(1);
+    }, 30_000);
+
     it("holds writes while migrating: encryptBody refuses as locked and ensureUnlocked resolves once the migration is done", async () => {
       seed();
       server.vault = await vaultWith("right");
@@ -781,20 +859,21 @@ describe("useVault", () => {
       expect(h.toast).toHaveBeenCalledTimes(1);
       expect(h.toast).toHaveBeenCalledWith(en.vault_migrate_fail);
       expect(server.calls.some((c) => c.path === "/me/vault/complete")).toBe(false);
-      // Listings of every project: a failed run here lists once (its first rewrite fails), a finished run twice (its pass and the checking pass).
+      // Listings of every project: a failed run here lists once (its first rewrite fails); a finished run four times, its pass and the
+      // checking pass each listing the projects for the documents and again for the blobs.
       const listings = () => server.calls.filter((c) => c.path === "/projects" && c.method === "GET").length;
       expect(listings()).toBe(1);
       // The browser comes back online: a second run, without a prompt, finishes the job.
       offline = false;
       await act(async () => { window.dispatchEvent(new Event("online")); });
       await until(() => s.v.complete);
-      expect(listings()).toBe(3);
+      expect(listings()).toBe(5);
       expect(h.ask).not.toHaveBeenCalled();
       expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrated);
       expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 1))).toBe(true);
       // Complete now: another online event starts nothing.
       await act(async () => { window.dispatchEvent(new Event("online")); await new Promise((r) => setTimeout(r, 20)); });
-      expect(listings()).toBe(3);
+      expect(listings()).toBe(5);
     }, 30_000);
 
     it("resumeMigration (the pill) runs an unfinished migration again, unlocking first when the vault is locked", async () => {
@@ -806,7 +885,8 @@ describe("useVault", () => {
       await until(() => s.v.status === "locked");
       await act(async () => { await s.v.unlock("right", false); });
       await until(() => s.v.status === "unlocked" && h.toast.mock.calls.length === 1);
-      // Listings of every project: a failed run here lists once (its first rewrite fails), a finished run twice (its pass and the checking pass).
+      // Listings of every project: a failed run here lists once (its first rewrite fails); a finished run four times (two passes, each
+      // listing the projects for the documents and again for the blobs).
       const listings = () => server.calls.filter((c) => c.path === "/projects" && c.method === "GET").length;
       // Still offline: the pill's retry runs and fails again, and says so again.
       await act(async () => { await s.v.resumeMigration(); });
@@ -819,12 +899,12 @@ describe("useVault", () => {
       await act(async () => { await s.v.resumeMigration(); });
       expect(h.ask).toHaveBeenCalledTimes(1);
       await until(() => s.v.complete && s.v.status === "unlocked");
-      expect(listings()).toBe(4);
+      expect(listings()).toBe(6);
       expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrated);
       expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 1))).toBe(true);
       // Complete: nothing more to do.
       await act(async () => { await s.v.resumeMigration(); });
-      expect(listings()).toBe(4);
+      expect(listings()).toBe(6);
     }, 30_000);
   });
 });
