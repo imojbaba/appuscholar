@@ -12,10 +12,10 @@ const backup = (n = 2, extra: Record<string, unknown> = {}) => ({
 });
 
 function deps(over: Partial<V1ImportDeps> = {}) {
-  const created: { projectId: string; title: string; body: V1DocumentBody }[] = [];
+  const created: { projectId: string; title: string; body: V1DocumentBody; kind: "draft" | "source" }[] = [];
   const base = {
     createProject: vi.fn(async (_title: string) => ({ id: "p-new" })),
-    createDocument: vi.fn(async (projectId: string, title: string, body: V1DocumentBody) => { created.push({ projectId, title, body }); }),
+    createDocument: vi.fn(async (projectId: string, title: string, body: V1DocumentBody, kind: "draft" | "source") => { created.push({ projectId, title, body, kind }); }),
     encrypt: null as VaultValue["encryptBody"] | null,
     yieldToUi: vi.fn(async () => {})
   };
@@ -52,6 +52,26 @@ describe("importV1Backup", () => {
     expect(created[0]!.body).toEqual({ bodyHtml: "<p>ok</p><img>", keyVersion: 0 });
     expect(JSON.stringify(created)).not.toContain("onerror");
     expect(JSON.stringify(created)).not.toContain("<script");
+  });
+
+  // D-W0-4, approved by OJ 2026-10-19: a paper v1 marked as a source (origin "source", index.html 3230) is saved as a source, so the
+  // writing record leaves it out of the student's counts as v1's provScan did (3428); every other document stays a draft.
+  it("saves a v1 source paper as a source and every other document as a draft", async () => {
+    const { d, created } = deps();
+    const b = backup(3);
+    Object.assign(b.documents[1]!, { origin: "source", src: "Walker 2017.pdf" });
+    Object.assign(b.documents[2]!, { origin: "something else" });
+    await importV1Backup(b, {}, d);
+    expect(created.map((c) => [c.title, c.kind])).toEqual([["Doc 1", "draft"], ["Doc 2", "source"], ["Doc 3", "draft"]]);
+  });
+
+  it("reads a source mark from JSON text too, and ignores an origin that is not a string", async () => {
+    const { d, created } = deps();
+    const b = backup(2);
+    Object.assign(b.documents[0]!, { origin: "source" });
+    Object.assign(b.documents[1]!, { origin: 1 });
+    await importV1Backup(JSON.stringify(b), {}, d);
+    expect(created.map((c) => c.kind)).toEqual(["source", "draft"]);
   });
 
   it("adds to an existing project when given its id, and never creates another", async () => {

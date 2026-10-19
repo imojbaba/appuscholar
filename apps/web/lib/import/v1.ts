@@ -7,7 +7,8 @@ export type V1DocumentBody = Awaited<ReturnType<VaultValue["encryptBody"]>> & { 
 
 export type V1ImportDeps = {
   createProject(title: string): Promise<{ id: string }>;
-  createDocument(projectId: string, title: string, body: V1DocumentBody): Promise<void>;
+  /** `kind` is "source" for a paper v1 marked as one (origin "source"), so the writing record leaves it out as v1's counts did (3428). */
+  createDocument(projectId: string, title: string, body: V1DocumentBody, kind: "draft" | "source"): Promise<void>;
   /** The vault's encryptBody, or null when the account has no vault. There is no other fallback: a vault that refuses stops the import. */
   encrypt: VaultValue["encryptBody"] | null;
   /** Called with the project once it exists and after each stored document (the dialog's progress and its "stopped part-way" message). */
@@ -20,7 +21,11 @@ export type V1ImportDeps = {
 export const V1_BATCH = 20;
 const DEFAULT_TITLE = "Imported from v1";
 
-type V1Doc = { title: string; bodyHtml: string };
+/**
+ * v1's source mark travels with the document (D-W0-4): `origin` decides the kind; `src`, the file name, has no column in v2 and no v1 reader
+ * (only 3230 writes it), so it is carried this far and not sent. The title already holds the file name without its extension (3229).
+ */
+type V1Doc = { title: string; bodyHtml: string; origin?: string; src?: string };
 
 function read(json: unknown): { projectTitle?: string; documents: V1Doc[] } {
   let v = json;
@@ -31,14 +36,15 @@ function read(json: unknown): { projectTitle?: string; documents: V1Doc[] } {
   const docs: V1Doc[] = [];
   for (const d of documents) {
     if (typeof d !== "object" || d === null || typeof (d as V1Doc).title !== "string" || typeof (d as V1Doc).bodyHtml !== "string") throw new ImportError("That backup could not be read.");
-    docs.push({ title: (d as V1Doc).title, bodyHtml: (d as V1Doc).bodyHtml });
+    const { title, bodyHtml, origin, src } = d as { title: string; bodyHtml: string; origin?: unknown; src?: unknown };
+    docs.push({ title, bodyHtml, ...(typeof origin === "string" ? { origin } : {}), ...(typeof src === "string" ? { src } : {}) });
   }
   return { projectTitle: typeof projectTitle === "string" ? projectTitle : undefined, documents: docs };
 }
 
 /**
  * Stores a v1 backup's documents, all in the browser: each body is sanitised here, then (when the vault exists) encrypted under a key made
- * for that document, so the server only ever sees ciphertext. `json` is the backup's documents as `{ projectTitle?, documents: { title, bodyHtml }[] }`,
+ * for that document, so the server only ever sees ciphertext. `json` is the backup's documents as `{ projectTitle?, documents: { title, bodyHtml, origin?, src? }[] }`,
  * parsed or as JSON text. With `target.projectId` the documents join that project; otherwise a project is created first.
  * Documents are stored one at a time, 20 between each turn given back to the UI. A document that fails stops the import: those before it stay.
  */
@@ -60,7 +66,8 @@ export async function importV1Backup(json: unknown, target: { projectId?: string
     } else {
       body = { bodyHtml: clean, keyVersion: 0 };
     }
-    await deps.createDocument(projectId, d.title.trim().slice(0, 200) || "Untitled", body);
+    // v1's own test for a source paper (3155, 3428): origin is exactly "source".
+    await deps.createDocument(projectId, d.title.trim().slice(0, 200) || "Untitled", body, d.origin === "source" ? "source" : "draft");
     imported++;
     deps.onProgress?.({ projectId, imported, total });
     if (imported % V1_BATCH === 0 && i < total - 1) await yieldToUi();
