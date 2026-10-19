@@ -319,13 +319,16 @@ def friedman(rows, form):
     return {"chi": res.statistic, "pF": res.pvalue}
 
 
-def mr_design(rows, form):
+def mr_design(rows, form, bin=False):
     """stkMRData rebuilt from the inputs: the ticked columns without the outcome (preds, then cats without preds, then preds2 and cats2 without the ones taken), the rows with an outcome
     and every numeric predictor present and finite and every categorical predictor present, then the design in v1's order addNum(preds), addCat(cats), addNum(preds2), addCat(cats2).
     A categorical predictor's levels are in first-seen order over the rows kept; its reference level is the one `ref` names (`name=level`, parts split on , or ;, names and levels
     case-insensitive, the last level that matches), else the largest group, ties to the first seen; one 0/1 column for every other level, in level order.
     The step 1 count is v1's step1n, the number of ticked step 1 columns (len(idxs1) + len(cidx1)), not the number of design columns they add: copied by design, so a case
-    with a 3-level categorical in step 1 agrees with v1's numbers, and register row D-W2-18 (proposed) is what reports that count to OJ."""
+    with a 3-level categorical in step 1 agrees with v1's numbers, and register row D-W2-18 (proposed) is what reports that count to OJ.
+    With `bin` (logistic, stkMRData(true)) the outcome only has to be present, and y is 1 for the event and 0 otherwise: the event is the answer `pos` names (case-insensitive,
+    the last match), else the last of the outcome's answers (first-seen order over the rows kept) that is 1, yes, true, y, present or agree (case-insensitive), else the second of
+    the two answers sorted by number when both parse, else by text."""
     dv = col(form, "dv")
     ticked = form["ticked"]
 
@@ -344,10 +347,30 @@ def mr_design(rows, form):
         if len(q) == 2:
             spec[js_trim(q[0]).lower()] = js_trim(q[1])
     kept = [r for r in rows
-            if r[dv] != "" and math.isfinite(parse_float(r[dv]))
+            if r[dv] != "" and (bin or math.isfinite(parse_float(r[dv])))
             and all(r[i] != "" and math.isfinite(parse_float(r[i])) for i in idxs)
             and all(r[i] != "" for i in cidxs)]
     y = [parse_float(r[dv]) for r in kept]
+    if bin:
+        lv = first_seen([js_trim(r[dv]) for r in kept])
+        want = js_trim(form["values"].get("pos", "")).lower()
+        pos = None
+        if want:
+            for v in lv:
+                if v.lower() == want:
+                    pos = v
+        else:
+            for v in lv:
+                if v.lower() in ("1", "yes", "true", "y", "present", "agree"):
+                    pos = v
+            if pos is None:
+                a, b = lv  # the comparator's sort of two answers, stable when it returns 0; pos is the second
+                x, z = parse_float(a), parse_float(b)
+                if math.isfinite(x) and math.isfinite(z):
+                    pos = a if x > z else b
+                else:
+                    pos = a if a > b else b
+        y = [1.0 if js_trim(r[dv]) == pos else 0.0 for r in kept]
     xs, dummy = [], []
     names = [h or "Col%d" % (i + 1) for i, h in enumerate(form["headers"])]  # d.cols[i].name: statsParseText names a blank header 'Col'+(i+1)
 
@@ -429,6 +452,147 @@ def mregress(rows, form):
     return out
 
 
+def logistic(rows, form):
+    """An independent numpy/scipy computation of v1's logistic regression on the design stkMRData(true) builds (rebuilt by mr_design with bin): the coefficients b_j minimise the
+    negative log-likelihood by scipy.optimize.minimize (Newton-CG with the analytic gradient and Hessian, xtol 1e-14), se_j = sqrt of the diagonal of the inverse of the analytic
+    Hessian X'WX at the optimum; z_j, p_j = 2 norm.sf(|z_j|), or_j, lo_j, hi_j = exp(b_j -/+ norm.ppf(.975) se_j) for j >= 1; the log-likelihood of the intercept-only model in closed
+    form, lr, pLR = chi2.sf(lr, k), Cox-Snell (cs), Nagelkerke (nag), McFadden (mcf); auc = the Mann-Whitney U of the fitted probabilities (events against non-events) over n1 n0
+    (mannwhitneyu's statistic); the classification at p >= .5: tp, tn, fp, fn, acc, sens, spec (left out when not finite); vif_j as for mregress (1 for a single predictor)."""
+    from scipy import optimize
+    y, xs, dummy, _, _ = mr_design(rows, form, bin=True)
+    n, k = len(y), len(xs)
+    X = np.column_stack([np.ones(n)] + xs)
+
+    def nll(b):
+        z = X @ b
+        return float(np.sum(np.logaddexp(0, z) - y * z))
+
+    def grad(b):
+        return X.T @ (1 / (1 + np.exp(-(X @ b))) - y)
+
+    def hess(b):
+        p = 1 / (1 + np.exp(-(X @ b)))
+        return X.T @ (X * (p * (1 - p))[:, None])
+
+    res = optimize.minimize(nll, np.zeros(k + 1), jac=grad, hess=hess, method="Newton-CG", options={"xtol": 1e-14, "maxiter": 1000})
+    b = res.x
+    se = np.sqrt(np.diag(np.linalg.inv(hess(b))))
+    pr = 1 / (1 + np.exp(-(X @ b)))
+    ll = -nll(b)
+    ev = float(y.sum())
+    ne = n - ev
+    ll0 = ev * math.log(ev / n) + ne * math.log(ne / n)
+    lr = 2 * (ll - ll0)
+    cs = 1 - math.exp((2 / n) * (ll0 - ll))
+    out = {"n": n, "k": k, "ev": ev, "ne": ne, "lr": lr, "pLR": stats.chi2.sf(lr, k), "cs": cs, "nag": cs / (1 - math.exp((2 / n) * ll0)), "mcf": 1 - ll / ll0}
+    out["auc"] = stats.mannwhitneyu(pr[y == 1], pr[y == 0]).statistic / (ev * ne)
+    pd = pr >= 0.5
+    tp, tn = int(np.sum(pd & (y == 1))), int(np.sum(~pd & (y == 0)))
+    fp, fn = int(np.sum(pd & (y == 0))), int(np.sum(~pd & (y == 1)))
+    out.update(tp=tp, tn=tn, fp=fp, fn=fn, acc=(tp + tn) / n)
+    if tp + fn:
+        out["sens"] = tp / (tp + fn)
+    if tn + fp:
+        out["spec"] = tn / (tn + fp)
+    zc = stats.norm.ppf(0.975)
+    for j in range(k + 1):
+        z = b[j] / se[j]
+        out["b_%d" % j], out["se_%d" % j], out["z_%d" % j], out["p_%d" % j] = b[j], se[j], z, 2 * stats.norm.sf(abs(z))
+        if j > 0:
+            out["or_%d" % j], out["lo_%d" % j], out["hi_%d" % j] = math.exp(b[j]), math.exp(b[j] - zc * se[j]), math.exp(b[j] + zc * se[j])
+            if k == 1:
+                out["vif_%d" % j] = 1.0
+            else:
+                others = [x for i, x in enumerate(xs) if i != j - 1]
+                _, _, sse_j, sst_j = ols(others, xs[j - 1])
+                out["vif_%d" % j] = 1 / (1 - (1 - sse_j / sst_j))
+    return out
+
+
+def rm_scores(rows, form):
+    """The rows of rmanova and alpha with a number in every ticked column ('' is no number), as an n x k array in the ticked order."""
+    idxs = form["ticked"]["items"]
+    X = [[parse_float(r[i]) if r[i] != "" else math.nan for i in idxs] for r in rows]
+    return np.array([x for x in X if all(math.isfinite(v) for v in x)])
+
+
+def rmanova(rows, form):
+    """An independent numpy computation of v1's repeated-measures ANOVA: ssc, sss and sst about the grand mean, sse as the residual sum of squares of the additive two-way fit
+    (y_ij - row mean - column mean + grand mean), F, pU = f.sf(F, k-1, (n-1)(k-1)); the sphericity statistics on A = C S C' with S = np.cov of the scores and C scipy.linalg.helmert's
+    orthonormal contrasts (a different basis from v1's: epsilon and W do not depend on it): gg = tr(A)^2 / ((k-1) tr(A^2)), Huynh-Feldt's hf = min(1, (n(k-1)gg - 2) / ((k-1)(n-1-(k-1)gg))),
+    Mauchly's W = det(A) / (tr(A)/(k-1))^(k-1) by np.linalg.det, chi = -(n-1-f) ln W with f = (2p^2+p+2)/(6p), p = k-1, pM = chi2.sf(chi, k(k-1)/2-1); eps (gg below .75, else hf),
+    pC = f.sf(F, eps(k-1), eps(n-1)(k-1)), pe2, ge2; for each pair i < j whose differences have spread, ttest_rel -> pair_t_i_j, pair_p_i_j. Where A is singular (its condition
+    number above 1e12: a pair of conditions differing by a constant), W, chi and pM are left out (v1 reports Mauchly's test as not calculable there, chi 0 and p 1), and so is a pair
+    whose differences have no spread beyond rounding (an SD below 1e-9 of the mean difference)."""
+    from scipy.linalg import helmert
+    Y = rm_scores(rows, form)
+    n, k = Y.shape
+    gm = Y.mean()
+    cm, sm = Y.mean(axis=0), Y.mean(axis=1)
+    ssc, sss, sst = n * float(((cm - gm) ** 2).sum()), k * float(((sm - gm) ** 2).sum()), float(((Y - gm) ** 2).sum())
+    sse = float(((Y - sm[:, None] - cm[None, :] + gm) ** 2).sum())
+    d1, d2 = k - 1, (n - 1) * (k - 1)
+    F = (ssc / d1) / (sse / d2)
+    C = helmert(k)
+    A = C @ np.cov(Y.T) @ C.T
+    trA = float(np.trace(A))
+    gg = trA * trA / ((k - 1) * float(np.trace(A @ A)))
+    hf = min(1.0, (n * (k - 1) * gg - 2) / ((k - 1) * (n - 1 - (k - 1) * gg)))
+    eps = gg if gg < 0.75 else hf
+    out = {"n": n, "k": k, "ssc": ssc, "sss": sss, "sst": sst, "sse": sse, "F": F, "d1": d1, "d2": d2, "pU": stats.f.sf(F, d1, d2), "gg": gg, "hf": hf,
+           "dfM": k * (k - 1) / 2 - 1, "eps": eps, "pC": stats.f.sf(F, eps * d1, eps * d2), "pe2": ssc / (ssc + sse), "ge2": ssc / (ssc + sss + sse)}
+    if np.linalg.cond(A) < 1e12:
+        p = k - 1
+        W = float(np.linalg.det(A)) / (trA / p) ** p
+        chi = -(n - 1 - (2 * p * p + p + 2) / (6 * p)) * math.log(W)
+        out.update(W=W, chi=chi, pM=stats.chi2.sf(chi, out["dfM"]))
+    for i in range(k):
+        for j in range(i + 1, k):
+            dd = Y[:, i] - Y[:, j]
+            if np.std(dd, ddof=1) > 1e-9 * abs(dd.mean()):
+                t = stats.ttest_rel(Y[:, i], Y[:, j])
+                out["pair_t_%d_%d" % (i, j)], out["pair_p_%d_%d" % (i, j)] = t.statistic, t.pvalue
+    return out
+
+
+# v1's rrange pattern /^\s*(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)\s*$/ with JavaScript's \s (JS_WS), \d (ASCII digits) and $ (the end of the string)
+RRANGE = re.compile(r"^[" + re.escape(JS_WS) + r"]*([0-9]+(?:\.[0-9]+)?)[" + re.escape(JS_WS) + r"]*(?:-|–|to)[" + re.escape(JS_WS) + r"]*([0-9]+(?:\.[0-9]+)?)[" + re.escape(JS_WS) + r"]*\Z")
+
+
+def alpha(rows, form):
+    """An independent numpy/scipy computation of v1's reliability table (omega and its bootstrap have no counterpart here: matches v1): the rows with a number in every ticked
+    item (alpha's filter is parseFloat alone, so an empty cell drops the row too), the items `rev` names reversed as lo + hi - x with lo and hi from `rrange`; Cronbach's alpha =
+    k/(k-1) (1 - sum of the item variances / the variance of the total), np.var with ddof 1; its interval 1 - (1 - alpha) f.ppf(.975 and .025, n-1, (n-1)(k-1)); meanR the mean of
+    np.corrcoef's off-diagonal; for each item rit_j = np.corrcoef(item, the total of the others) and ad_j the same alpha without the item."""
+    idxs = form["ticked"]["items"]
+    X = np.array([x for x in ([parse_float(r[i]) for i in idxs] for r in rows) if all(math.isfinite(v) for v in x)])
+    names = [(h or "Col%d" % (i + 1)) for i, h in enumerate(form["headers"])]
+    rev_txt = js_trim(form["values"].get("rev", ""))
+    if rev_txt:
+        want = [w for w in (js_trim(x).lower() for x in rev_txt.split(",")) if w]
+        m = RRANGE.match(form["values"].get("rrange", ""))
+        lo, hi = float(m.group(1)), float(m.group(2))
+        for j, i in enumerate(idxs):
+            if names[i].lower() in want:
+                X[:, j] = lo + hi - X[:, j]
+    n, k = X.shape
+
+    def cronbach(M):
+        q = M.shape[1]
+        return q / (q - 1) * (1 - float(np.var(M, axis=0, ddof=1).sum()) / float(np.var(M.sum(axis=1), ddof=1)))
+
+    a = cronbach(X)
+    d1, d2 = n - 1, (n - 1) * (k - 1)
+    out = {"n": n, "k": k, "alpha": a, "aciLo": 1 - (1 - a) * stats.f.ppf(0.975, d1, d2), "aciHi": 1 - (1 - a) * stats.f.ppf(0.025, d1, d2)}
+    R = np.corrcoef(X.T)
+    out["meanR"] = float(R[np.triu_indices(k, 1)].mean())
+    for j in range(k):
+        rest = X.sum(axis=1) - X[:, j]
+        out["rit_%d" % j] = float(np.corrcoef(X[:, j], rest)[0, 1])
+        out["ad_%d" % j] = cronbach(np.delete(X, j, axis=1))
+    return out
+
+
 class NoReference(Exception):
     """A test this scipy has no counterpart for: the case is written with ref null and the message as why."""
 
@@ -453,6 +617,9 @@ REFERENCE = {
     "mcnemar": mcnemar,             # binomtest(b, nd, 0.5) -> pEx; chi = (|b - c| - 1)^2 / nd ("formula"), chi2.sf(chi, 1) -> pChi
     "friedman": friedman,           # friedmanchisquare -> chi, pF
     "mregress": mregress,           # an independent numpy computation: lstsq -> b_j, se_j, t_j, p_j (t.sf), r2, adj, F, pF (f.sf), vif_j, beta_j; step 2: k1, r21, adj1, F1, p1, dR, Fc, pc
+    "logistic": logistic,           # an independent numpy computation: minimize (Newton-CG) -> b_j, se_j (inverse Hessian), z_j, p_j, or_j, lo_j, hi_j; lr, pLR (chi2.sf), cs, nag, mcf, auc (mannwhitneyu), the classification, vif_j
+    "rmanova": rmanova,             # an independent numpy computation: the sums of squares, F, pU (f.sf), gg, hf, W, chi, pM (chi2.sf) on Helmert contrasts, eps, pC, pe2, ge2; ttest_rel -> pair_t_i_j, pair_p_i_j
+    "alpha": alpha,                 # alpha from the variance formula, its interval from f.ppf, meanR, rit_j, ad_j (omega and its bootstrap interval: matches v1)
 }
 # Tests with no scipy counterpart at all: every case is written with ref null and this reason, and the port's values are held to v1 only, by the golden fixtures ("matches v1").
 NO_COUNTERPART = {
@@ -461,7 +628,7 @@ NO_COUNTERPART = {
 }
 # No scipy counterpart, so these values are held to v1 only ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal padj_i_j), the Spearman interval (lo, hi), omega2 and eps2,
 # the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramer's V (v), Cohen's w, Kendall's W, the Cochran and Friedman pairwise p (pair_p_i_j), all of Cochran's Q, and all of the two-way ANOVA (Type III sums of squares,
-# simple effects, the marginal-means Tukey and the within-level Bonferroni tests: anova2 matches v1).
+# simple effects, the marginal-means Tukey and the within-level Bonferroni tests: anova2 matches v1), and McDonald's omega with its loadings and bootstrap interval (alpha's omega, load_j, ociLo, ociHi).
 
 
 def main():

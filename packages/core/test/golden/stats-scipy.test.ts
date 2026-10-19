@@ -11,7 +11,7 @@ import { readFixture } from "./harness/fixture";
  * never by hand; from the repository root:
  *   uv run --no-project --with scipy==1.17.1 --python 3.13 python -I packages/core/test/golden/stats/scipy-reference.py packages/core/test/golden/stats
  * ) the port runs the fixture case and each `values[key]` is held to `ref[key]`: within 1e-6 relative, or 1e-9 absolute where scipy's value is 0. `t` (and `tS`) is compared by absolute
- * value, since the group order sets its sign; Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17), and mregress's pF, p1 and pc within 2^-53 absolute (closeF5a, register row F5a). A case with `ref: null` is one v1 refused (a toast, or the safety net), which the port refuses too, a test with no scipy reference yet, or one where scipy has no finite value and v1 has (D-W2-16), which the port runs.
+ * value, since the group order sets its sign; logistic's coefficients and what follows from them alone within 1e-5 (closeOpt, the optimiser); Tukey's p_i_j may instead be within 1e-9 absolute (closeTukeyP, register row D-W2-17), and mregress's pF, p1 and pc within 2^-53 absolute (closeF5a, register row F5a). A case with `ref: null` is one v1 refused (a toast, or the safety net), which the port refuses too, a test with no scipy reference yet, or one where scipy has no finite value and v1 has (D-W2-16), which the port runs.
  * Typed here: the scipy pin, the tolerances, and for each test the keys its reference holds (KEYS), so that a reference that loses a statistic is noticed.
  */
 
@@ -27,10 +27,13 @@ for (const f of fixtures) for (const c of readFixture<{ cases: CapturedRun[] }>(
  * computes (F8); gof's binomP with two categories and an expected count below 5; mcnemar's chi is the continuity-corrected formula computed in the script, "matches v1 (formula)",
  * with pChi from chi2.sf; mregress is an independent numpy computation, lstsq on the design stkMRData builds, rebuilt by the script from the inputs: n, k, dfe, r2, adj, F, pF, and for
  * each coefficient j (0 the intercept, j >= 1 the j-th predictor in m.labels order) b_j, se_j, t_j, p_j, and vif_j for every predictor, beta_j for the ones that are not 0/1 columns, and
- * k1, r21, adj1, F1, p1, dR, Fc, pc when a step 2 ran). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
+ * k1, r21, adj1, F1, p1, dR, Fc, pc when a step 2 ran; logistic is an independent numpy computation, scipy.optimize.minimize of the negative log-likelihood on the design stkMRData(true)
+ * builds: n, k, ev, ne, lr, pLR, cs, nag, mcf, auc, acc, tp, tn, fp, fn, sens, spec, and for each coefficient j b_j, se_j, z_j, p_j, with or_j, lo_j, hi_j and vif_j for j >= 1;
+ * rmanova is an independent numpy computation: n, k, ssc, sss, sst, sse, F, d1, d2, pU, gg, hf, dfM, eps, pC, pe2, ge2, W, chi and pM where the contrast covariance is not singular, and
+ * pair_t_i_j, pair_p_i_j (ttest_rel) for each pair whose differences have spread; alpha: n, k, alpha, aciLo, aciHi (f.ppf), meanR, rit_j, ad_j). The values with no scipy counterpart are held to v1 only, by the golden fixtures ("matches v1"): Games-Howell (welchAnova gh_*), Dunn with Holm (kruskal
  * padj_i_j), the Spearman interval (lo, hi), ω² (omega2, F9), ε² (eps2), the Fisher-Freeman-Halton test (chisq ffhP, ffhTables), Cramér's V, Cohen's w, Kendall's W, the Cochran
  * and Friedman pairwise p (pair_p_i_j), Cochran's Q (every cochran case is ref null, "no scipy counterpart") and the two-way ANOVA (every anova2 case is ref null,
- * "matches v1 (Type III, no R here)", register row F11).
+ * "matches v1 (Type III, no R here)", register row F11), and McDonald's omega with its loadings and bootstrap interval (alpha's omega, load_j, ociLo, ociHi).
  */
 const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
   ttest1: (r) => sameKeys(r, ["t", "p"]),
@@ -56,6 +59,21 @@ const KEYS: Record<string, (r: Record<string, number>) => boolean> = {
     const betas = Object.keys(r).filter((x) => /^beta_\d+$/.test(x));
     return betas.every((x) => { const j = Number(x.slice(5)); return j >= 1 && j <= k; }) && sameKeys(Object.fromEntries(Object.entries(r).filter(([x]) => !betas.includes(x))), keys);
   },
+  logistic: (r) => {
+    const k = r.k!, keys = ["n", "k", "ev", "ne", "lr", "pLR", "cs", "nag", "mcf", "auc", "acc", "tp", "tn", "fp", "fn", "sens", "spec"];
+    for (let j = 0; j <= k; j++) keys.push(`b_${j}`, `se_${j}`, `z_${j}`, `p_${j}`, ...(j > 0 ? [`or_${j}`, `lo_${j}`, `hi_${j}`, `vif_${j}`] : []));
+    return sameKeys(r, keys);
+  },
+  rmanova: (r) => {
+    const k = r.k!, keys = ["n", "k", "ssc", "sss", "sst", "sse", "F", "d1", "d2", "pU", "gg", "hf", "dfM", "eps", "pC", "pe2", "ge2", ...("W" in r ? ["W", "chi", "pM"] : [])];
+    for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) if (`pair_t_${i}_${j}` in r) keys.push(`pair_t_${i}_${j}`, `pair_p_${i}_${j}`);
+    return sameKeys(r, keys);
+  },
+  alpha: (r) => {
+    const k = r.k!, keys = ["n", "k", "alpha", "aciLo", "aciHi", "meanR"];
+    for (let j = 0; j < k; j++) keys.push(`rit_${j}`, `ad_${j}`);
+    return sameKeys(r, keys);
+  },
 };
 function sameKeys(r: Record<string, number>, keys: string[]): boolean {return Object.keys(r).sort().join() === keys.slice().sort().join()}
 
@@ -74,6 +92,15 @@ function closeTukeyP(got: number, want: number): boolean {return Math.abs(got - 
  */
 const F5A_STEP = 2 ** -53;
 const F5A_KEYS: Record<string, string[]> = { mregress: ["pF", "p1", "pc"] };
+/**
+ * logistic's coefficients against an optimiser (the brief's tolerance for an iterative fit): b_j, se_j and what v1 computes from them alone (z_j, p_j, or_j, lo_j, hi_j) are held to
+ * 1e-5 relative, every other logistic key to the global 1e-6.
+ */
+const OPT_REL = 1e-5;
+const OPT_KEY = /^(b|se|z|p|or|lo|hi)_\d+$/;
+function closeOpt(got: number, want: number): boolean {return want === 0 ? Math.abs(got) <= ABS_AT_ZERO : Math.abs(got - want) <= OPT_REL * Math.abs(want)}
+/** v1's alpha bootstrap (stkOmegaBoot) runs 200 or 400 omega fits over n rows, each recomputing the item SDs n·n times (stkCorrMat): alpha-large-boot-200 takes about 15 s, and is first in its corpus because after the small alpha cases V8 runs it about eight times slower. */
+const SLOW_CASE_MS = 120_000;
 function closeF5a(got: number, want: number): boolean {return Math.abs(got - want) <= Math.max(REL * Math.abs(want), F5A_STEP)}
 
 describe("stats runners agree with scipy (spec §5.9)", () => {
@@ -109,10 +136,10 @@ describe("stats runners agree with scipy (spec §5.9)", () => {
         const got = key === "t" || key === "tS" ? Math.abs(raw!) : raw!;
         const w = key === "t" || key === "tS" ? Math.abs(want) : want;
         const f5a = F5A_KEYS[c.test]?.includes(key) ?? false;
-        const ok = c.test === "tukey" && key.startsWith("p_") ? closeTukeyP(got, w) : f5a ? closeF5a(got, w) : close(got, w);
+        const ok = c.test === "tukey" && key.startsWith("p_") ? closeTukeyP(got, w) : f5a ? closeF5a(got, w) : c.test === "logistic" && OPT_KEY.test(key) ? closeOpt(got, w) : close(got, w);
         expect(ok, `${c.id} ${key}: port ${raw}, scipy ${want}`).toBe(true);
         if ((c.test === "tukey" || f5a) && !close(got, w)) expect(want, `${c.id} ${key}: only a p below .001 may take the absolute bound`).toBeLessThan(0.001);
       }
-    });
+    }, SLOW_CASE_MS);
   }
 });

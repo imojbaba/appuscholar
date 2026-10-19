@@ -1,0 +1,1504 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "rmanova-three-conditions",
+   "test": "rmanova",
+   "csv": "pre,post,followup\n18.2,21.5,20.5\n22.6,26.0,22.8\n16.9,25.0,19.6\n16.2,20.7,21.6\n19.1,28.8,26.3\n19.8,24.6,26.1\n21.9,30.6,29.0\n23.6,25.4,22.8\n11.5,14.8,12.3\n21.7,27.1,25.3\n19.7,20.0,19.2\n14.9,12.5,21.8",
+   "ticked": {
+    "items": [
+     "pre",
+     "post",
+     "followup"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 3 conditions (pre, post, followup), F(2.00, 22.00) = 10.39, p < .001, ηp² = .49. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 0.41, p = .817.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "pre",
+       "12",
+       "18.84",
+       "3.52"
+      ],
+      [
+       "post",
+       "12",
+       "23.08",
+       "5.42"
+      ],
+      [
+       "followup",
+       "12",
+       "22.28",
+       "4.32"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "121.73",
+       "2",
+       "60.87",
+       "10.39",
+       "&lt; .001"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "121.73",
+       "2.00",
+       "60.87",
+       "10.39",
+       "&lt; .001"
+      ],
+      [
+       "People",
+       "536.94",
+       "11",
+       "48.81",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "128.85",
+       "22",
+       "5.86",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "128.85",
+       "22.00",
+       "5.86",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.960, χ²(2) = 0.41, p = .817. Greenhouse-Geisser ε = .962, Huynh-Feldt ε = 1.000. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .486, generalized η² = .155. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "pre − post",
+       "-4.24",
+       "-4.20",
+       "11",
+       ".001",
+       ".004"
+      ],
+      [
+       "pre − followup",
+       "-3.43",
+       "-3.86",
+       "11",
+       ".003",
+       ".008"
+      ],
+      [
+       "post − followup",
+       "0.81",
+       "0.76",
+       "11",
+       ".461",
+       "1.000"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDpre1218.843.52post1223.085.42followup1222.284.32SourceSSdfMSFpConditions (sphericity assumed)121.73260.8710.39< .001Conditions (Huynh-Feldt)121.732.0060.8710.39< .001People536.941148.81Error (assumed)128.85225.86Error (Huynh-Feldt)128.8522.005.86Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.960, χ²(2) = 0.41, p = .817. Greenhouse-Geisser ε = .962, Huynh-Feldt ε = 1.000. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .486, generalized η² = .155. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)pre − post-4.24-4.2011.001.004pre − followup-3.43-3.8611.003.008post − followup0.810.7611.4611.000A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 3 conditions (pre, post, followup), F(2.00, 22.00) = 10.39, p < .001, ηp² = .49. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 0.41, p = .817.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>pre</td><td>12</td><td>18.84</td><td>3.52</td></tr><tr><td>post</td><td>12</td><td>23.08</td><td>5.42</td></tr><tr><td>followup</td><td>12</td><td>22.28</td><td>4.32</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>121.73</td><td>2</td><td>60.87</td><td>10.39</td><td>&lt; .001</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>121.73</td><td>2.00</td><td>60.87</td><td>10.39</td><td>&lt; .001</td></tr><tr><td>People</td><td>536.94</td><td>11</td><td>48.81</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>128.85</td><td>22</td><td>5.86</td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>128.85</td><td>22.00</td><td>5.86</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.960, χ²(2) = 0.41, p = .817. Greenhouse-Geisser ε = .962, Huynh-Feldt ε = 1.000. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .486, generalized η² = .155. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>pre − post</td><td>-4.24</td><td>-4.20</td><td>11</td><td>.001</td><td>.004</td></tr><tr><td>pre − followup</td><td>-3.43</td><td>-3.86</td><td>11</td><td>.003</td><td>.008</td></tr><tr><td>post − followup</td><td>0.81</td><td>0.76</td><td>11</td><td>.461</td><td>1.000</td></tr></tbody></table><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 3 conditions (pre, post, followup), F(2.00, 22.00) = 10.39, p &lt; .001, ηp² = .49. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 0.41, p = .817.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-four-conditions-gg",
+   "test": "rmanova",
+   "csv": "t1,t2,t3,t4\n9.2,9.7,13.4,16.8\n9.2,12.0,9.0,13.9\n10.9,11.1,12.6,20.6\n9.3,12.9,10.3,21.7\n8.8,10.4,12.0,15.3\n9.3,10.0,11.1,23.0\n8.0,8.1,11.8,10.9\n10.3,10.6,12.4,0.8\n10.4,12.2,11.9,29.2\n9.0,10.5,13.3,8.3\n10.1,10.9,18.8,22.6\n10.9,11.5,11.1,17.9\n9.8,11.4,14.2,14.8\n9.5,11.9,14.1,12.5\n11.4,12.3,9.1,14.8",
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3",
+     "t4"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .44) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(1.32, 18.43) = 9.01, p = .005, ηp² = .39. Mauchly's test indicated that sphericity was violated, χ²(5) = 42.93, p < .001.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "t1",
+       "15",
+       "9.74",
+       "0.92"
+      ],
+      [
+       "t2",
+       "15",
+       "11.03",
+       "1.22"
+      ],
+      [
+       "t3",
+       "15",
+       "12.34",
+       "2.39"
+      ],
+      [
+       "t4",
+       "15",
+       "16.21",
+       "6.87"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "351.27",
+       "3",
+       "117.09",
+       "9.01",
+       "&lt; .001"
+      ],
+      [
+       "Conditions (Greenhouse-Geisser)",
+       "351.27",
+       "1.32",
+       "266.89",
+       "9.01",
+       ".005"
+      ],
+      [
+       "People",
+       "226.96",
+       "14",
+       "16.21",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "546.01",
+       "42",
+       "13.00",
+       "",
+       ""
+      ],
+      [
+       "Error (Greenhouse-Geisser)",
+       "546.01",
+       "18.43",
+       "29.63",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.034, χ²(5) = 42.93, p &lt; .001. Greenhouse-Geisser ε = .439, Huynh-Feldt ε = .466. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .391, generalized η² = .312. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "t1 − t2",
+       "-1.29",
+       "-4.88",
+       "14",
+       "&lt; .001",
+       ".001"
+      ],
+      [
+       "t1 − t3",
+       "-2.60",
+       "-3.87",
+       "14",
+       ".002",
+       ".010"
+      ],
+      [
+       "t1 − t4",
+       "-6.47",
+       "-3.72",
+       "14",
+       ".002",
+       ".014"
+      ],
+      [
+       "t2 − t3",
+       "-1.31",
+       "-1.73",
+       "14",
+       ".106",
+       ".637"
+      ],
+      [
+       "t2 − t4",
+       "-5.17",
+       "-3.04",
+       "14",
+       ".009",
+       ".053"
+      ],
+      [
+       "t3 − t4",
+       "-3.87",
+       "-2.10",
+       "14",
+       ".055",
+       ".327"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDt1159.740.92t21511.031.22t31512.342.39t41516.216.87SourceSSdfMSFpConditions (sphericity assumed)351.273117.099.01< .001Conditions (Greenhouse-Geisser)351.271.32266.899.01.005People226.961416.21Error (assumed)546.014213.00Error (Greenhouse-Geisser)546.0118.4329.63Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.034, χ²(5) = 42.93, p < .001. Greenhouse-Geisser ε = .439, Huynh-Feldt ε = .466. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .391, generalized η² = .312. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)t1 − t2-1.29-4.8814< .001.001t1 − t3-2.60-3.8714.002.010t1 − t4-6.47-3.7214.002.014t2 − t3-1.31-1.7314.106.637t2 − t4-5.17-3.0414.009.053t3 − t4-3.87-2.1014.055.327A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .44) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(1.32, 18.43) = 9.01, p = .005, ηp² = .39. Mauchly's test indicated that sphericity was violated, χ²(5) = 42.93, p < .001.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>t1</td><td>15</td><td>9.74</td><td>0.92</td></tr><tr><td>t2</td><td>15</td><td>11.03</td><td>1.22</td></tr><tr><td>t3</td><td>15</td><td>12.34</td><td>2.39</td></tr><tr><td>t4</td><td>15</td><td>16.21</td><td>6.87</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>351.27</td><td>3</td><td>117.09</td><td>9.01</td><td>&lt; .001</td></tr><tr><td>Conditions (Greenhouse-Geisser)</td><td>351.27</td><td>1.32</td><td>266.89</td><td>9.01</td><td>.005</td></tr><tr><td>People</td><td>226.96</td><td>14</td><td>16.21</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>546.01</td><td>42</td><td>13.00</td><td></td><td></td></tr><tr><td>Error (Greenhouse-Geisser)</td><td>546.01</td><td>18.43</td><td>29.63</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.034, χ²(5) = 42.93, p &lt; .001. Greenhouse-Geisser ε = .439, Huynh-Feldt ε = .466. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .391, generalized η² = .312. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>t1 − t2</td><td>-1.29</td><td>-4.88</td><td>14</td><td>&lt; .001</td><td>.001</td></tr><tr><td>t1 − t3</td><td>-2.60</td><td>-3.87</td><td>14</td><td>.002</td><td>.010</td></tr><tr><td>t1 − t4</td><td>-6.47</td><td>-3.72</td><td>14</td><td>.002</td><td>.014</td></tr><tr><td>t2 − t3</td><td>-1.31</td><td>-1.73</td><td>14</td><td>.106</td><td>.637</td></tr><tr><td>t2 − t4</td><td>-5.17</td><td>-3.04</td><td>14</td><td>.009</td><td>.053</td></tr><tr><td>t3 − t4</td><td>-3.87</td><td>-2.10</td><td>14</td><td>.055</td><td>.327</td></tr></tbody></table><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .44) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(1.32, 18.43) = 9.01, p = .005, ηp² = .39. Mauchly's test indicated that sphericity was violated, χ²(5) = 42.93, p &lt; .001.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-hf",
+   "test": "rmanova",
+   "csv": "t1,t2,t3,t4\n10.9,11.1,11.0,11.1\n6.0,8.1,7.4,7.8\n8.8,8.8,12.4,11.6\n18.8,18.6,22.2,19.4\n12.5,12.6,19.5,17.2\n12.0,10.2,11.3,11.3\n13.1,15.3,19.3,19.5\n16.6,14.7,18.0,17.2\n17.4,17.8,19.4,18.7\n17.8,25.3,24.6,20.4\n9.8,9.8,9.1,12.3\n12.6,15.9,17.4,16.3\n11.0,11.7,13.3,11.1\n10.8,10.3,12.5,16.3\n5.6,11.3,13.8,8.6",
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3",
+     "t4"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(2.99, 41.90) = 9.15, p < .001, ηp² = .40. Mauchly's test did not indicate a violation of sphericity, χ²(5) = 5.28, p = .382.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "t1",
+       "15",
+       "12.25",
+       "4.02"
+      ],
+      [
+       "t2",
+       "15",
+       "13.43",
+       "4.59"
+      ],
+      [
+       "t3",
+       "15",
+       "15.41",
+       "5.03"
+      ],
+      [
+       "t4",
+       "15",
+       "14.59",
+       "4.21"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "85.67",
+       "3",
+       "28.56",
+       "9.15",
+       "&lt; .001"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "85.67",
+       "2.99",
+       "28.62",
+       "9.15",
+       "&lt; .001"
+      ],
+      [
+       "People",
+       "993.14",
+       "14",
+       "70.94",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "131.11",
+       "42",
+       "3.12",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "131.11",
+       "41.90",
+       "3.13",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.660, χ²(5) = 5.28, p = .382. Greenhouse-Geisser ε = .813, Huynh-Feldt ε = .998. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .395, generalized η² = .071. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "t1 − t2",
+       "-1.19",
+       "-1.76",
+       "14",
+       ".100",
+       ".603"
+      ],
+      [
+       "t1 − t3",
+       "-3.17",
+       "-4.28",
+       "14",
+       "&lt; .001",
+       ".005"
+      ],
+      [
+       "t1 − t4",
+       "-2.34",
+       "-4.35",
+       "14",
+       "&lt; .001",
+       ".004"
+      ],
+      [
+       "t2 − t3",
+       "-1.98",
+       "-3.62",
+       "14",
+       ".003",
+       ".017"
+      ],
+      [
+       "t2 − t4",
+       "-1.15",
+       "-1.60",
+       "14",
+       ".133",
+       ".798"
+      ],
+      [
+       "t3 − t4",
+       "0.83",
+       "1.34",
+       "14",
+       ".203",
+       "1.000"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDt11512.254.02t21513.434.59t31515.415.03t41514.594.21SourceSSdfMSFpConditions (sphericity assumed)85.67328.569.15< .001Conditions (Huynh-Feldt)85.672.9928.629.15< .001People993.141470.94Error (assumed)131.11423.12Error (Huynh-Feldt)131.1141.903.13Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.660, χ²(5) = 5.28, p = .382. Greenhouse-Geisser ε = .813, Huynh-Feldt ε = .998. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .395, generalized η² = .071. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)t1 − t2-1.19-1.7614.100.603t1 − t3-3.17-4.2814< .001.005t1 − t4-2.34-4.3514< .001.004t2 − t3-1.98-3.6214.003.017t2 − t4-1.15-1.6014.133.798t3 − t40.831.3414.2031.000A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(2.99, 41.90) = 9.15, p < .001, ηp² = .40. Mauchly's test did not indicate a violation of sphericity, χ²(5) = 5.28, p = .382.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>t1</td><td>15</td><td>12.25</td><td>4.02</td></tr><tr><td>t2</td><td>15</td><td>13.43</td><td>4.59</td></tr><tr><td>t3</td><td>15</td><td>15.41</td><td>5.03</td></tr><tr><td>t4</td><td>15</td><td>14.59</td><td>4.21</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>85.67</td><td>3</td><td>28.56</td><td>9.15</td><td>&lt; .001</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>85.67</td><td>2.99</td><td>28.62</td><td>9.15</td><td>&lt; .001</td></tr><tr><td>People</td><td>993.14</td><td>14</td><td>70.94</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>131.11</td><td>42</td><td>3.12</td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>131.11</td><td>41.90</td><td>3.13</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.660, χ²(5) = 5.28, p = .382. Greenhouse-Geisser ε = .813, Huynh-Feldt ε = .998. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .395, generalized η² = .071. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>t1 − t2</td><td>-1.19</td><td>-1.76</td><td>14</td><td>.100</td><td>.603</td></tr><tr><td>t1 − t3</td><td>-3.17</td><td>-4.28</td><td>14</td><td>&lt; .001</td><td>.005</td></tr><tr><td>t1 − t4</td><td>-2.34</td><td>-4.35</td><td>14</td><td>&lt; .001</td><td>.004</td></tr><tr><td>t2 − t3</td><td>-1.98</td><td>-3.62</td><td>14</td><td>.003</td><td>.017</td></tr><tr><td>t2 − t4</td><td>-1.15</td><td>-1.60</td><td>14</td><td>.133</td><td>.798</td></tr><tr><td>t3 − t4</td><td>0.83</td><td>1.34</td><td>14</td><td>.203</td><td>1.000</td></tr></tbody></table><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(2.99, 41.90) = 9.15, p &lt; .001, ηp² = .40. Mauchly's test did not indicate a violation of sphericity, χ²(5) = 5.28, p = .382.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-non-significant",
+   "test": "rmanova",
+   "csv": "a,b,c\n17.2,20.7,21.6\n17.1,16.9,16.0\n19.4,22.1,18.1\n16.1,16.5,15.8\n20.8,17.7,20.0\n21.5,19.2,19.9\n27.0,20.5,22.0\n25.5,26.2,25.9\n20.3,20.1,19.5\n7.1,10.9,11.2\n11.2,9.5,9.1\n17.7,19.4,18.4",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .72) showed that scores did not differ significantly across the 3 conditions (a, b, c), F(1.44, 15.84) = 0.08, p = .861, ηp² = .01. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 4.93, p = .085.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "a",
+       "12",
+       "18.41",
+       "5.50"
+      ],
+      [
+       "b",
+       "12",
+       "18.31",
+       "4.58"
+      ],
+      [
+       "c",
+       "12",
+       "18.13",
+       "4.63"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "0.50",
+       "2",
+       "0.25",
+       "0.08",
+       ".921"
+      ],
+      [
+       "Conditions (Greenhouse-Geisser)",
+       "0.50",
+       "1.44",
+       "0.34",
+       "0.08",
+       ".861"
+      ],
+      [
+       "People",
+       "733.08",
+       "11",
+       "66.64",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "65.68",
+       "22",
+       "2.99",
+       "",
+       ""
+      ],
+      [
+       "Error (Greenhouse-Geisser)",
+       "65.68",
+       "15.84",
+       "4.15",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.611, χ²(2) = 4.93, p = .085. Greenhouse-Geisser ε = .720, Huynh-Feldt ε = .799. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .007, generalized η² = .001. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives."
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDa1218.415.50b1218.314.58c1218.134.63SourceSSdfMSFpConditions (sphericity assumed)0.5020.250.08.921Conditions (Greenhouse-Geisser)0.501.440.340.08.861People733.081166.64Error (assumed)65.68222.99Error (Greenhouse-Geisser)65.6815.844.15Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.611, χ²(2) = 4.93, p = .085. Greenhouse-Geisser ε = .720, Huynh-Feldt ε = .799. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .007, generalized η² = .001. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives.A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .72) showed that scores did not differ significantly across the 3 conditions (a, b, c), F(1.44, 15.84) = 0.08, p = .861, ηp² = .01. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 4.93, p = .085.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>a</td><td>12</td><td>18.41</td><td>5.50</td></tr><tr><td>b</td><td>12</td><td>18.31</td><td>4.58</td></tr><tr><td>c</td><td>12</td><td>18.13</td><td>4.63</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>0.50</td><td>2</td><td>0.25</td><td>0.08</td><td>.921</td></tr><tr><td>Conditions (Greenhouse-Geisser)</td><td>0.50</td><td>1.44</td><td>0.34</td><td>0.08</td><td>.861</td></tr><tr><td>People</td><td>733.08</td><td>11</td><td>66.64</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>65.68</td><td>22</td><td>2.99</td><td></td><td></td></tr><tr><td>Error (Greenhouse-Geisser)</td><td>65.68</td><td>15.84</td><td>4.15</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.611, χ²(2) = 4.93, p = .085. Greenhouse-Geisser ε = .720, Huynh-Feldt ε = .799. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .007, generalized η² = .001. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\">The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives.</p><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .72) showed that scores did not differ significantly across the 3 conditions (a, b, c), F(1.44, 15.84) = 0.08, p = .861, ηp² = .01. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 4.93, p = .085.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-pair-no-spread",
+   "test": "rmanova",
+   "csv": "s1,s2,s3\n15,18,25\n21,24,18\n19,22,26\n28,31,28\n20,23,30\n24,27,28\n20,23,19\n16,19,25\n23,26,30\n21,24,29\n16,19,23\n24,27,24",
+   "ticked": {
+    "items": [
+     "s1",
+     "s2",
+     "s3"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .50) showed that scores differed significantly across the 3 conditions (s1, s2, s3), F(1.00, 11.00) = 9.92, p = .009, ηp² = .47.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "s1",
+       "12",
+       "20.58",
+       "3.82"
+      ],
+      [
+       "s2",
+       "12",
+       "23.58",
+       "3.82"
+      ],
+      [
+       "s3",
+       "12",
+       "25.42",
+       "3.96"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "142.89",
+       "2",
+       "71.44",
+       "9.92",
+       "&lt; .001"
+      ],
+      [
+       "Conditions (Greenhouse-Geisser)",
+       "142.89",
+       "1.00",
+       "142.89",
+       "9.92",
+       ".009"
+      ],
+      [
+       "People",
+       "336.31",
+       "11",
+       "30.57",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "158.44",
+       "22",
+       "7.20",
+       "",
+       ""
+      ],
+      [
+       "Error (Greenhouse-Geisser)",
+       "158.44",
+       "11.00",
+       "14.40",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's test could not be calculated for these data. Greenhouse-Geisser ε = .500, Huynh-Feldt ε = .500. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .474, generalized η² = .224. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "s1 − s2",
+       "-3.00",
+       "—",
+       "11",
+       "—",
+       "—"
+      ],
+      [
+       "s1 − s3",
+       "-4.83",
+       "-3.60",
+       "11",
+       ".004",
+       ".012"
+      ],
+      [
+       "s2 − s3",
+       "-1.83",
+       "-1.37",
+       "11",
+       ".199",
+       ".597"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDs11220.583.82s21223.583.82s31225.423.96SourceSSdfMSFpConditions (sphericity assumed)142.89271.449.92< .001Conditions (Greenhouse-Geisser)142.891.00142.899.92.009People336.311130.57Error (assumed)158.44227.20Error (Greenhouse-Geisser)158.4411.0014.40Sphericity (the differences between every pair of conditions have equal spread). Mauchly's test could not be calculated for these data. Greenhouse-Geisser ε = .500, Huynh-Feldt ε = .500. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .474, generalized η² = .224. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)s1 − s2-3.00—11——s1 − s3-4.83-3.6011.004.012s2 − s3-1.83-1.3711.199.597A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .50) showed that scores differed significantly across the 3 conditions (s1, s2, s3), F(1.00, 11.00) = 9.92, p = .009, ηp² = .47.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>s1</td><td>12</td><td>20.58</td><td>3.82</td></tr><tr><td>s2</td><td>12</td><td>23.58</td><td>3.82</td></tr><tr><td>s3</td><td>12</td><td>25.42</td><td>3.96</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>142.89</td><td>2</td><td>71.44</td><td>9.92</td><td>&lt; .001</td></tr><tr><td>Conditions (Greenhouse-Geisser)</td><td>142.89</td><td>1.00</td><td>142.89</td><td>9.92</td><td>.009</td></tr><tr><td>People</td><td>336.31</td><td>11</td><td>30.57</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>158.44</td><td>22</td><td>7.20</td><td></td><td></td></tr><tr><td>Error (Greenhouse-Geisser)</td><td>158.44</td><td>11.00</td><td>14.40</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's test could not be calculated for these data. Greenhouse-Geisser ε = .500, Huynh-Feldt ε = .500. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .474, generalized η² = .224. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>s1 − s2</td><td>-3.00</td><td>—</td><td>11</td><td>—</td><td>—</td></tr><tr><td>s1 − s3</td><td>-4.83</td><td>-3.60</td><td>11</td><td>.004</td><td>.012</td></tr><tr><td>s2 − s3</td><td>-1.83</td><td>-1.37</td><td>11</td><td>.199</td><td>.597</td></tr></tbody></table><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .50) showed that scores differed significantly across the 3 conditions (s1, s2, s3), F(1.00, 11.00) = 9.92, p = .009, ηp² = .47.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-pair-decimal-diffs",
+   "test": "rmanova",
+   "csv": "s1,s2,s3\n14.6,17.6,19.8\n21.4,24.4,12.9\n19.5,22.5,21.2\n27.7,30.7,23.4\n19.9,22.9,25.4\n24.0,27.0,22.7\n20.4,23.4,14.2\n16.3,19.3,19.9\n22.6,25.6,24.8\n20.9,23.9,23.9\n15.6,18.6,18.4\n23.7,26.7,19.5",
+   "ticked": {
+    "items": [
+     "s1",
+     "s2",
+     "s3"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .50) showed that scores differed significantly across the 3 conditions (s1, s2, s3), F(1.00, 11.00) = 4.95, p = .048, ηp² = .31.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "s1",
+       "12",
+       "20.55",
+       "3.78"
+      ],
+      [
+       "s2",
+       "12",
+       "23.55",
+       "3.78"
+      ],
+      [
+       "s3",
+       "12",
+       "20.51",
+       "3.95"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "73.01",
+       "2",
+       "36.51",
+       "4.95",
+       ".017"
+      ],
+      [
+       "Conditions (Greenhouse-Geisser)",
+       "73.01",
+       "1.00",
+       "73.01",
+       "4.95",
+       ".048"
+      ],
+      [
+       "People",
+       "324.32",
+       "11",
+       "29.48",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "162.21",
+       "22",
+       "7.37",
+       "",
+       ""
+      ],
+      [
+       "Error (Greenhouse-Geisser)",
+       "162.21",
+       "11.00",
+       "14.75",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's test could not be calculated for these data. Greenhouse-Geisser ε = .500, Huynh-Feldt ε = .500. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .310, generalized η² = .130. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "s1 − s2",
+       "-3.00",
+       "-13720281124448290.00",
+       "11",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "s1 − s3",
+       "0.04",
+       "0.03",
+       "11",
+       ".976",
+       "1.000"
+      ],
+      [
+       "s2 − s3",
+       "3.04",
+       "2.24",
+       "11",
+       ".047",
+       ".140"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDs11220.553.78s21223.553.78s31220.513.95SourceSSdfMSFpConditions (sphericity assumed)73.01236.514.95.017Conditions (Greenhouse-Geisser)73.011.0073.014.95.048People324.321129.48Error (assumed)162.21227.37Error (Greenhouse-Geisser)162.2111.0014.75Sphericity (the differences between every pair of conditions have equal spread). Mauchly's test could not be calculated for these data. Greenhouse-Geisser ε = .500, Huynh-Feldt ε = .500. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .310, generalized η² = .130. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)s1 − s2-3.00-13720281124448290.0011< .001< .001s1 − s30.040.0311.9761.000s2 − s33.042.2411.047.140A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .50) showed that scores differed significantly across the 3 conditions (s1, s2, s3), F(1.00, 11.00) = 4.95, p = .048, ηp² = .31.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>s1</td><td>12</td><td>20.55</td><td>3.78</td></tr><tr><td>s2</td><td>12</td><td>23.55</td><td>3.78</td></tr><tr><td>s3</td><td>12</td><td>20.51</td><td>3.95</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>73.01</td><td>2</td><td>36.51</td><td>4.95</td><td>.017</td></tr><tr><td>Conditions (Greenhouse-Geisser)</td><td>73.01</td><td>1.00</td><td>73.01</td><td>4.95</td><td>.048</td></tr><tr><td>People</td><td>324.32</td><td>11</td><td>29.48</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>162.21</td><td>22</td><td>7.37</td><td></td><td></td></tr><tr><td>Error (Greenhouse-Geisser)</td><td>162.21</td><td>11.00</td><td>14.75</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's test could not be calculated for these data. Greenhouse-Geisser ε = .500, Huynh-Feldt ε = .500. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .310, generalized η² = .130. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>s1 − s2</td><td>-3.00</td><td>-13720281124448290.00</td><td>11</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>s1 − s3</td><td>0.04</td><td>0.03</td><td>11</td><td>.976</td><td>1.000</td></tr><tr><td>s2 − s3</td><td>3.04</td><td>2.24</td><td>11</td><td>.047</td><td>.140</td></tr></tbody></table><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .50) showed that scores differed significantly across the 3 conditions (s1, s2, s3), F(1.00, 11.00) = 4.95, p = .048, ηp² = .31.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-n-le-k",
+   "test": "rmanova",
+   "csv": "a,b,c\n1,2,4\n2,4,3\n3,3,6",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need more people than conditions (3 conditions, 3 people with complete scores). Sphericity cannot be checked otherwise."
+   ]
+  },
+  {
+   "id": "rmanova-n2",
+   "test": "rmanova",
+   "csv": "a,b,c\n1,2,4\n2,4,3",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 3 people who have a score in every ticked column."
+   ]
+  },
+  {
+   "id": "rmanova-same-change",
+   "test": "rmanova",
+   "csv": "a,b,c\n1,2,4\n2,3,5\n5,6,8\n3,4,6\n7,8,10",
+   "ticked": {
+    "items": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every person changes by exactly the same amount across the conditions, so there is no error variance and the F test cannot be calculated."
+   ]
+  },
+  {
+   "id": "rmanova-two-columns",
+   "test": "rmanova",
+   "csv": "a,b,c\n1,2,4\n2,3,5\n5,6,8\n3,4,6",
+   "ticked": {
+    "items": [
+     "a",
+     "b"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Tick at least 3 columns, one for each time point or condition. For two, use the paired t-test."
+   ]
+  },
+  {
+   "id": "rmanova-missing-row",
+   "test": "rmanova",
+   "csv": "pre,post,followup\n22.4,22.2,22.0\n17.3,22.7,24.7\n17.5,29.6,23.9\n14.8,23.2,23.1\n29.4,37.0,29.7\n22.6,,21.9\n13.0,21.6,19.9\n9.9,20.6,17.0\n31.4,33.2,31.2\n13.1,22.4,22.1\n14.8,18.0,19.4\n18.0,22.1,22.1",
+   "ticked": {
+    "items": [
+     "pre",
+     "post",
+     "followup"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 3 conditions (pre, post, followup), F(2.00, 20.00) = 20.94, p < .001, ηp² = .68. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 1.01, p = .602.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "pre",
+       "11",
+       "18.33",
+       "6.81"
+      ],
+      [
+       "post",
+       "11",
+       "24.78",
+       "5.86"
+      ],
+      [
+       "followup",
+       "11",
+       "23.19",
+       "4.20"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "248.77",
+       "2",
+       "124.39",
+       "20.94",
+       "&lt; .001"
+      ],
+      [
+       "Conditions (Huynh-Feldt)",
+       "248.77",
+       "2.00",
+       "124.39",
+       "20.94",
+       "&lt; .001"
+      ],
+      [
+       "People",
+       "864.69",
+       "10",
+       "86.47",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "118.82",
+       "20",
+       "5.94",
+       "",
+       ""
+      ],
+      [
+       "Error (Huynh-Feldt)",
+       "118.82",
+       "20.00",
+       "5.94",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.893, χ²(2) = 1.01, p = .602. Greenhouse-Geisser ε = .904, Huynh-Feldt ε = 1.000. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .677, generalized η² = .202. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "pre − post",
+       "-6.45",
+       "-5.51",
+       "10",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "pre − followup",
+       "-4.86",
+       "-4.62",
+       "10",
+       "&lt; .001",
+       ".003"
+      ],
+      [
+       "post − followup",
+       "1.59",
+       "1.82",
+       "10",
+       ".098",
+       ".295"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "1 entry that is not a number was left out."
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDpre1118.336.81post1124.785.86followup1123.194.20SourceSSdfMSFpConditions (sphericity assumed)248.772124.3920.94< .001Conditions (Huynh-Feldt)248.772.00124.3920.94< .001People864.691086.47Error (assumed)118.82205.94Error (Huynh-Feldt)118.8220.005.94Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.893, χ²(2) = 1.01, p = .602. Greenhouse-Geisser ε = .904, Huynh-Feldt ε = 1.000. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .677, generalized η² = .202. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)pre − post-6.45-5.5110< .001< .001pre − followup-4.86-4.6210< .001.003post − followup1.591.8210.098.2951 entry that is not a number was left out.A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 3 conditions (pre, post, followup), F(2.00, 20.00) = 20.94, p < .001, ηp² = .68. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 1.01, p = .602.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>pre</td><td>11</td><td>18.33</td><td>6.81</td></tr><tr><td>post</td><td>11</td><td>24.78</td><td>5.86</td></tr><tr><td>followup</td><td>11</td><td>23.19</td><td>4.20</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>248.77</td><td>2</td><td>124.39</td><td>20.94</td><td>&lt; .001</td></tr><tr><td>Conditions (Huynh-Feldt)</td><td>248.77</td><td>2.00</td><td>124.39</td><td>20.94</td><td>&lt; .001</td></tr><tr><td>People</td><td>864.69</td><td>10</td><td>86.47</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>118.82</td><td>20</td><td>5.94</td><td></td><td></td></tr><tr><td>Error (Huynh-Feldt)</td><td>118.82</td><td>20.00</td><td>5.94</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.893, χ²(2) = 1.01, p = .602. Greenhouse-Geisser ε = .904, Huynh-Feldt ε = 1.000. The corrected row to report is Huynh-Feldt, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .677, generalized η² = .202. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 3 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>pre − post</td><td>-6.45</td><td>-5.51</td><td>10</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>pre − followup</td><td>-4.86</td><td>-4.62</td><td>10</td><td>&lt; .001</td><td>.003</td></tr><tr><td>post − followup</td><td>1.59</td><td>1.82</td><td>10</td><td>.098</td><td>.295</td></tr></tbody></table><p class=\"desc\">1 entry that is not a number was left out.</p><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Huynh-Feldt correction (ε = 1.00) showed that scores differed significantly across the 3 conditions (pre, post, followup), F(2.00, 20.00) = 20.94, p &lt; .001, ηp² = .68. Mauchly's test did not indicate a violation of sphericity, χ²(2) = 1.01, p = .602.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "rmanova-nine-columns",
+   "test": "rmanova",
+   "csv": "c1,c2,c3,c4,c5,c6,c7,c8,c9\n-1.7,0.1,2.1,1.1,2.7,3.5,4.9,5.0,7.2\n-1.4,-0.1,-0.1,2.4,3.3,3.5,5.5,5.6,6.9\n5.5,5.5,5.2,6.4,7.8,9.6,9.7,12.2,10.5\n1.7,1.7,3.6,5.3,8.1,8.8,6.8,8.6,8.9\n4.7,3.2,4.0,5.8,6.9,9.0,6.9,9.1,10.4\n1.6,1.7,3.5,2.8,3.5,4.8,6.9,8.0,9.5\n-0.7,0.7,-0.5,1.5,2.8,4.0,5.1,4.3,6.4\n2.7,2.9,3.9,6.1,5.5,8.6,9.4,9.2,10.1\n2.9,4.2,5.0,6.4,8.0,7.4,9.3,12.2,13.2\n0.8,3.6,4.5,3.4,5.1,5.8,5.1,8.2,9.4",
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3",
+     "c4",
+     "c5",
+     "c6",
+     "c7",
+     "c8",
+     "c9"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This test handles up to 8 conditions."
+   ]
+  },
+  {
+   "id": "rmanova-evidence-05",
+   "test": "rmanova",
+   "csv": "t1,t2,t3,t4\n8,9,13,10\n7,8,11,9\n9,11,14,10\n6,9,10,8\n10,10,15,12\n8,12,12,9\n7,7,12,11\n9,10,13,9\n5,8,11,7\n8,11,14,10",
+   "ticked": {
+    "items": [
+     "t1",
+     "t2",
+     "t3",
+     "t4"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .56) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(1.67, 15.05) = 42.43, p < .001, ηp² = .82. Mauchly's test did not indicate a violation of sphericity, χ²(5) = 9.40, p = .094.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "M",
+       "SD"
+      ],
+      [
+       "t1",
+       "10",
+       "7.70",
+       "1.49"
+      ],
+      [
+       "t2",
+       "10",
+       "9.50",
+       "1.58"
+      ],
+      [
+       "t3",
+       "10",
+       "12.50",
+       "1.58"
+      ],
+      [
+       "t4",
+       "10",
+       "9.50",
+       "1.43"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Source",
+       "SS",
+       "df",
+       "MS",
+       "F",
+       "p"
+      ],
+      [
+       "Conditions (sphericity assumed)",
+       "118.80",
+       "3",
+       "39.60",
+       "42.43",
+       "&lt; .001"
+      ],
+      [
+       "Conditions (Greenhouse-Geisser)",
+       "118.80",
+       "1.67",
+       "71.02",
+       "42.43",
+       "&lt; .001"
+      ],
+      [
+       "People",
+       "58.40",
+       "9",
+       "6.49",
+       "",
+       ""
+      ],
+      [
+       "Error (assumed)",
+       "25.20",
+       "27",
+       "0.93",
+       "",
+       ""
+      ],
+      [
+       "Error (Greenhouse-Geisser)",
+       "25.20",
+       "15.05",
+       "1.67",
+       "",
+       ""
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.296, χ²(5) = 9.40, p = .094. Greenhouse-Geisser ε = .558, Huynh-Feldt ε = .670. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing."
+    },
+    {
+     "kind": "note",
+     "html": "Effect size: partial η² = .825, generalized η² = .587. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean diff",
+       "t",
+       "df",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "t1 − t2",
+       "-1.80",
+       "-4.07",
+       "9",
+       ".003",
+       ".017"
+      ],
+      [
+       "t1 − t3",
+       "-4.80",
+       "-19.24",
+       "9",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "t1 − t4",
+       "-1.80",
+       "-5.51",
+       "9",
+       "&lt; .001",
+       ".002"
+      ],
+      [
+       "t2 − t3",
+       "-3.00",
+       "-6.07",
+       "9",
+       "&lt; .001",
+       ".001"
+      ],
+      [
+       "t2 − t4",
+       "0.00",
+       "0.00",
+       "9",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "t3 − t4",
+       "3.00",
+       "9.00",
+       "9",
+       "&lt; .001",
+       "&lt; .001"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMSDt1107.701.49t2109.501.58t31012.501.58t4109.501.43SourceSSdfMSFpConditions (sphericity assumed)118.80339.6042.43< .001Conditions (Greenhouse-Geisser)118.801.6771.0242.43< .001People58.4096.49Error (assumed)25.20270.93Error (Greenhouse-Geisser)25.2015.051.67Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.296, χ²(5) = 9.40, p = .094. Greenhouse-Geisser ε = .558, Huynh-Feldt ε = .670. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.Effect size: partial η² = .825, generalized η² = .587. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.Pairwise follow-ups (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairMean difftdfpp (Bonferroni)t1 − t2-1.80-4.079.003.017t1 − t3-4.80-19.249< .001< .001t1 − t4-1.80-5.519< .001.002t2 − t3-3.00-6.079< .001.001t2 − t40.000.0091.0001.000t3 − t43.009.009< .001< .001A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .56) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(1.67, 15.05) = 42.43, p < .001, ηp² = .82. Mauchly's test did not indicate a violation of sphericity, χ²(5) = 9.40, p = .094.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>M</th><th>SD</th></tr><tr><td>t1</td><td>10</td><td>7.70</td><td>1.49</td></tr><tr><td>t2</td><td>10</td><td>9.50</td><td>1.58</td></tr><tr><td>t3</td><td>10</td><td>12.50</td><td>1.58</td></tr><tr><td>t4</td><td>10</td><td>9.50</td><td>1.43</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p</th></tr><tr><td>Conditions (sphericity assumed)</td><td>118.80</td><td>3</td><td>39.60</td><td>42.43</td><td>&lt; .001</td></tr><tr><td>Conditions (Greenhouse-Geisser)</td><td>118.80</td><td>1.67</td><td>71.02</td><td>42.43</td><td>&lt; .001</td></tr><tr><td>People</td><td>58.40</td><td>9</td><td>6.49</td><td></td><td></td></tr><tr><td>Error (assumed)</td><td>25.20</td><td>27</td><td>0.93</td><td></td><td></td></tr><tr><td>Error (Greenhouse-Geisser)</td><td>25.20</td><td>15.05</td><td>1.67</td><td></td><td></td></tr></tbody></table><p class=\"desc\">Sphericity (the differences between every pair of conditions have equal spread). Mauchly's W = 0.296, χ²(5) = 9.40, p = .094. Greenhouse-Geisser ε = .558, Huynh-Feldt ε = .670. The corrected row to report is Greenhouse-Geisser, chosen by the usual rule: Greenhouse-Geisser when ε is below .75, Huynh-Feldt otherwise. It is safe to report even when sphericity holds, because the correction then changes almost nothing.</p><p class=\"desc\">Effect size: partial η² = .825, generalized η² = .587. Partial η² is what SPSS prints and what most journals expect; generalized η² allows comparison with between-groups designs.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (paired t-tests, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean diff</th><th>t</th><th>df</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>t1 − t2</td><td>-1.80</td><td>-4.07</td><td>9</td><td>.003</td><td>.017</td></tr><tr><td>t1 − t3</td><td>-4.80</td><td>-19.24</td><td>9</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>t1 − t4</td><td>-1.80</td><td>-5.51</td><td>9</td><td>&lt; .001</td><td>.002</td></tr><tr><td>t2 − t3</td><td>-3.00</td><td>-6.07</td><td>9</td><td>&lt; .001</td><td>.001</td></tr><tr><td>t2 − t4</td><td>0.00</td><td>0.00</td><td>9</td><td>1.000</td><td>1.000</td></tr><tr><td>t3 − t4</td><td>3.00</td><td>9.00</td><td>9</td><td>&lt; .001</td><td>&lt; .001</td></tr></tbody></table><div id=\"statsSentence\">A one-way repeated-measures ANOVA with a Greenhouse-Geisser correction (ε = .56) showed that scores differed significantly across the 4 conditions (t1, t2, t3, t4), F(1.67, 15.05) = 42.43, p &lt; .001, ηp² = .82. Mauchly's test did not indicate a violation of sphericity, χ²(5) = 9.40, p = .094.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { statsParseText } from "../../src/intake";
-import { STAT_TESTS } from "../../src/stats-core";
-import type { StatsBlock, StatsResult } from "../../src/stats-core";
+import { STAT_TESTS, stkMRData } from "../../src/stats-core";
+import type { StatsBlock, StatsCtx, StatsResult } from "../../src/stats-core";
+import { stkLogit } from "../../src/statsmath";
 import { runStats } from "../../src/stats";
 import { fmtP } from "../../src/statfmt";
 import type { CapturedRun } from "./stats/drive";
@@ -51,7 +52,16 @@ const REQUIRED: Record<string, string[]> = {
   mregress: ["mregress-two-numeric", "mregress-categorical-3-levels", "mregress-ref-given", "mregress-step2", "mregress-step2-no-step1", "mregress-one-predictor",
     "mregress-thirteen-columns", "mregress-few-rows", "mregress-collinear", "mregress-exact-fit", "mregress-vif-high", "mregress-small-level", "mregress-missing-rows",
     "mregress-dv-ticked-as-predictor", "mregress-step1-categorical-3-levels"],
+  logistic: ["logistic-evidence-05", "logistic-yes-no-outcome", "logistic-pos-given", "logistic-categorical-predictor", "logistic-ref-given", "logistic-separation",
+    "logistic-collinear", "logistic-few-events", "logistic-no-predictor", "logistic-epv-note", "logistic-three-answers", "logistic-missing-rows", "logistic-one-answer-in-rows-used",
+    "logistic-separation-cutoffs", "logistic-copy-of-outcome"],
+  rmanova: ["rmanova-three-conditions", "rmanova-four-conditions-gg", "rmanova-hf", "rmanova-non-significant", "rmanova-pair-no-spread", "rmanova-n-le-k", "rmanova-same-change",
+    "rmanova-two-columns", "rmanova-missing-row", "rmanova-nine-columns"],
+  alpha: ["alpha-demo", "alpha-no-reverse", "alpha-rev-not-found", "alpha-rev-no-range", "alpha-rev-bad-range", "alpha-two-items", "alpha-n4", "alpha-constant-item",
+    "alpha-negative-item", "alpha-weak-item", "alpha-above-95", "alpha-n-under-30", "alpha-large-boot-200"],
 };
+/** v1's alpha bootstrap (stkOmegaBoot) runs 200 or 400 omega fits over n rows, each recomputing the item SDs n·n times (stkCorrMat): alpha-large-boot-200 takes about 15 s, and is first in its corpus because after the small alpha cases V8 runs it about eight times slower. */
+const SLOW_CASE_MS = 120_000;
 
 for (const file of fixtures) {
   describe(`stats: ${file}`, () => {
@@ -84,7 +94,7 @@ for (const file of fixtures) {
           expectGolden(cellsOf(b), cellsOf(c.blocks[i]!), mode, `${c.id} block ${i} cells`);
         });
         expect(renderResultsText(r)).toBe(c.resultsText);
-      });
+      }, SLOW_CASE_MS);
     }
   });
 }
@@ -142,8 +152,8 @@ describe("stats: the frame", () => {
     const data = statsParseText("score\n1\n2\n3")!;
     const toast = "Could not run that test — check the columns you picked match what the test needs";
     expect(runStats(data, "nope" as "desc", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "nope", reason: "toast", toast });
-    // A real key whose runner a later task ports: the task that ports logistic updates this line.
-    expect(runStats(data, "logistic", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "logistic", reason: "toast", toast });
+    // A real key whose runner a later task ports: the task that ports moderate updates this line.
+    expect(runStats(data, "moderate", { values: { dv: "0" }, ticked: {} })).toEqual({ ok: false, test: "moderate", reason: "toast", toast });
   });
   it("desc-one-left-out: one dropped entry gives the singular note (11994)", () => {
     const c = load("desc").cases.find((x) => x.id === "desc-one-left-out")!;
@@ -478,6 +488,134 @@ describe("stats: two-way ANOVA and multiple regression (anova2, mregress)", () =
         expect([row[1], row[2], row[3], row[4], row[5], row[7]], `${c.id} ${j}`).toEqual([fixed(v["b_" + j]!, 3), fixed(v["se_" + j]!, 3), beta === undefined ? "" : nl(fixed(beta, 3)), fixed(v["t_" + j]!), pc(v["p_" + j]!), j === 0 ? "" : fixed(v["vif_" + j]!)]);
       }
       if (step) expect((r.blocks[0] as { rows: string[][] }).rows[2]!.slice(2), c.id).toEqual([nl(fixed(v.r2!, 3)), nl(fixed(v.adj!, 3)), nl(fixed(v.dR!, 3)), fixed(v.Fc!), `${k - v.k1!}, ${v.dfe}`, pc(v.pc!)]);
+    }
+  });
+});
+
+describe("stats: logistic regression, repeated-measures ANOVA and alpha (logistic, rmanova, alpha)", () => {
+  const find = (file: string, id: string) => load(file).cases.find((x) => x.id === id)!;
+  const notes = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "note").map((b) => (b as { html: string }).html);
+  const tables = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "table").map((b) => (b as { rows: string[][] }).rows);
+  const items = (c: CapturedRun) => c.blocks.filter((b) => b.kind === "list").flatMap((b) => (b as { items: string[] }).items);
+  const fixed = (x: number, k = 2) => x.toFixed(k);
+  const nl = (s: string) => s.replace(/^(-?)0\./, "$1.");
+  const pc = (p: number) => (p < 0.001 ? "&lt; .001" : nl(p.toFixed(3)));
+  const ctxOf = (c: CapturedRun): StatsCtx => ({ data: statsParseText(c.csv)!, form: c.form, skipped: 0 });
+  it("F12: the three logistic refusals reach v1's three tests on stkLogit's three objects", () => {
+    const fit = (id: string) => { const m = stkMRData(ctxOf(find("logistic", id)), true); return stkLogit(m.xs, m.y) as Record<string, unknown>; };
+    const sepToast = "The model could not be fitted. A predictor (or a combination of them) separates the two outcomes perfectly, or almost perfectly, so the estimates run off to infinity. This usually means too many predictors for the number of events. Remove a predictor, or merge small categories.";
+    for (const id of ["logistic-separation", "logistic-copy-of-outcome"]) {
+      expect(fit(id), id).toEqual({ sep: true }); // the early object: o.sep&&!o.beta
+      expect(find("logistic", id).toasts, id).toEqual([sepToast]);
+    }
+    const late = fit("logistic-separation-cutoffs");
+    expect(late.conv && late.sep && Array.isArray(late.beta)).toBe(true); // converged, separated by the |b| > 30 and SE > 500 cut-offs: the third test, o.sep
+    expect(find("logistic", "logistic-separation-cutoffs").toasts).toEqual([sepToast]);
+    expect(fit("logistic-collinear")).toEqual({ singular: true }); // no sep and no beta: the second test
+    expect(find("logistic", "logistic-collinear").toasts[0]).toMatch(/^Two or more predictors carry the same information/);
+  });
+  it("logistic: the outcome select offers binary columns only, so a three-answer outcome leaves it empty and v1's catch toast follows", () => {
+    const c = find("logistic", "logistic-three-answers");
+    expect(c.form.values.dv).toBe("");
+    expect(c.toasts).toEqual(["Could not run that test — check the columns you picked match what the test needs"]);
+    expect(find("logistic", "logistic-one-answer-in-rows-used").toasts).toEqual(["The outcome has only one answer among the rows used, so there is nothing to predict."]);
+  });
+  it("logistic: the event is the named answer, else yes, else the later answer; dropped rows go to the note, not the counter; the epv note", () => {
+    expect(notes(find("logistic", "logistic-yes-no-outcome"))[0]).toContain(" = <b>yes</b> (the event) rather than no,");
+    expect(notes(find("logistic", "logistic-pos-given"))[0]).toContain(" = <b>Fail</b> (the event) rather than Pass,");
+    const c = find("logistic", "logistic-missing-rows");
+    expect(notes(c)[2]).toContain(" 3 rows were left out because a value was missing.");
+    expect(run(c)).toMatchObject({ ok: true, skipped: 0, values: { n: 57 } });
+    expect(notes(find("logistic", "logistic-epv-note"))[2]).toContain(" Only 13 cases in the rarer outcome for 3 predictor columns (4.3 per predictor).");
+    expect(notes(find("logistic", "logistic-ref-given"))[2]).toContain("Reference levels: group = Control.");
+    expect(notes(find("logistic", "logistic-categorical-predictor"))[2]).toContain("Reference levels: group = Online (the largest group).");
+  });
+  it("logistic values are the numbers behind the cells", () => {
+    for (const c of load("logistic").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, k = v.k!, t = r.blocks.filter((b) => b.kind === "table").map((b) => (b as { rows: string[][] }).rows);
+      expect(t[0]![1], c.id).toEqual([fixed(v.lr!), String(k), pc(v.pLR!), nl(fixed(v.mcf!, 3)), nl(fixed(v.cs!, 3)), nl(fixed(v.nag!, 3)), nl(fixed(v.auc!, 3))]);
+      for (let j = 0; j <= k; j++) {
+        const row = t[1]![j + 1]!;
+        expect(row.slice(1), `${c.id} ${j}`).toEqual([fixed(v["b_" + j]!, 3), fixed(v["se_" + j]!, 3), fixed(v["z_" + j]!), pc(v["p_" + j]!),
+          j === 0 ? "" : fixed(v["or_" + j]!, 3), j === 0 ? "" : `[${fixed(v["lo_" + j]!, 3)}, ${fixed(v["hi_" + j]!, 3)}]`]);
+      }
+      expect(t[2]!.slice(1).map((x) => x.slice(1)), c.id).toEqual([[String(v.tn), String(v.fp)], [String(v.fn), String(v.tp)]]);
+      expect(v.tp! + v.tn! + v.fp! + v.fn!, c.id).toBe(v.n);
+    }
+  });
+  it("rmanova: the corrected rows are Greenhouse-Geisser when gg < .75, else Huynh-Feldt; Mauchly's test where it can be calculated", () => {
+    const seen = new Set<string>();
+    for (const c of load("rmanova").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, name = v.gg! < 0.75 ? "Greenhouse-Geisser" : "Huynh-Feldt";
+      seen.add(name);
+      expect(tables(c)[1]![2]![0], c.id).toBe(`Conditions (${name})`);
+      expect(v.eps, c.id).toBe(v.gg! < 0.75 ? v.gg : v.hf);
+      expect(notes(c)[0]!.includes("Mauchly's test could not be calculated"), c.id).toBe(!(v.W! > 0));
+    }
+    expect([...seen].sort()).toEqual(["Greenhouse-Geisser", "Huynh-Feldt"]);
+    expect(notes(find("rmanova", "rmanova-pair-no-spread"))[0]).toContain("Mauchly's test could not be calculated for these data.");
+  });
+  it("rmanova: a pair without spread gets the '—' row and no values; the pairwise table only after a significant test; a skipped row is counted", () => {
+    const c = find("rmanova", "rmanova-pair-no-spread");
+    expect(tables(c)[2]![1]).toEqual(["s1 − s2", "-3.00", "—", "11", "—", "—"]);
+    const r = run(c);
+    expect(r.ok && "pair_t_0_1" in r.values).toBe(false);
+    expect(r.ok && "pair_t_0_2" in r.values).toBe(true);
+    expect(tables(find("rmanova", "rmanova-non-significant"))).toHaveLength(2);
+    expect(notes(find("rmanova", "rmanova-non-significant"))[2]).toMatch(/^The overall test is not significant/);
+    expect(run(find("rmanova", "rmanova-missing-row"))).toMatchObject({ ok: true, skipped: 1, values: { n: 11 } });
+  });
+  it("rmanova values are the numbers behind the Source table", () => {
+    for (const c of load("rmanova").cases) {
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, t = tables(c)[1]!;
+      expect(t[1], c.id).toEqual(["Conditions (sphericity assumed)", fixed(v.ssc!), String(v.d1), fixed(v.ssc! / v.d1!), fixed(v.F!), pc(v.pU!)]);
+      expect(t[2]!.slice(1), c.id).toEqual([fixed(v.ssc!), fixed(v.eps! * v.d1!), fixed(v.ssc! / (v.eps! * v.d1!)), fixed(v.F!), pc(v.pC!)]);
+      expect(t[4]!.slice(1, 3), c.id).toEqual([fixed(v.sse!), String(v.d2)]);
+    }
+  });
+  it("F13 (proposed): alpha-large-boot-200 has n·k above 40,000, so 200 resamples run while the note says 400", () => {
+    const c = find("alpha", "alpha-large-boot-200");
+    const t = tables(c)[0]![1]!;
+    expect(Number(t[0]) * Number(t[1])).toBeGreaterThan(40000);
+    expect(notes(c)[0]).toContain("its interval is a bootstrap of 400 resamples.");
+    // stkOmegaBoot(X, 200) on this sample prints [.82, .84]; stkOmegaBoot(X, 400) prints [.82, .85] (the corpus builder chose the seed for that difference)
+    expect(t[5]).toBe("[.82, .84]");
+    const d = tables(find("alpha", "alpha-demo"))[0]![1]!;
+    expect(Number(d[0]) * Number(d[1])).toBeLessThanOrEqual(40000);
+    expect(notes(find("alpha", "alpha-demo"))[0]).toContain("its interval is a bootstrap of 400 resamples.");
+  });
+  it("alpha: the reversed label, omega not computed, the loading cell clamped to 1, dropped rows in the list and not in the counter", () => {
+    expect(tables(find("alpha", "alpha-demo"))[1]!.slice(1).map((r) => r[0])).toEqual(["q1", "q2", "q3", "q4", "q5", "q6 (reversed)"]);
+    const o = find("alpha", "alpha-omega-not-computed");
+    expect(tables(o)[0]![1]!.slice(4, 6)).toEqual(["–", "–"]);
+    expect(items(o)).toContain("Omega could not be computed for these items.");
+    const ro = run(o);
+    expect(ro.ok && ["omega", "ociLo", "ociHi", "load_0"].some((k) => k in ro.values)).toBe(false);
+    const l = find("alpha", "alpha-loading-ceiling"), rl = run(l);
+    expect(rl.ok && rl.values.load_2! > 1).toBe(true);
+    expect(tables(l)[1]![3]![5]).toBe("1.00");
+    expect(items(l)).toContain("i3 has a loading at the ceiling of 1.00. The item is almost a copy of the scale, or the sample is too small for a stable estimate. Treat omega as approximate.");
+    const m = find("alpha", "alpha-missing-rows");
+    expect(items(m)).toContain("2 row(s) with a missing answer were left out.");
+    expect(run(m)).toMatchObject({ ok: true, skipped: 0, values: { n: 34 } });
+  });
+  it("alpha values are the numbers behind the cells", () => {
+    const fq = (x: number) => nl(fixed(x));
+    for (const c of load("alpha").cases) {
+      if (c.id === "alpha-large-boot-200") continue; // its bootstrap takes seconds; the fixture comparison above already runs it
+      const r = run(c);
+      if (!r.ok) continue;
+      const v = r.values, t = tables(c);
+      expect(t[0]![1]!.slice(0, 4).concat(t[0]![1]![6]!), c.id).toEqual([String(v.n), String(v.k), fq(v.alpha!), `[${fq(v.aciLo!)}, ${fq(v.aciHi!)}]`, fq(v.meanR!)]);
+      for (let j = 0; j < v.k!; j++) expect([t[1]![j + 1]![3], t[1]![j + 1]![4]], `${c.id} ${j}`).toEqual([fq(v["rit_" + j]!), fq(v["ad_" + j]!)]);
+      if ("omega" in v) expect(t[0]![1]![4], c.id).toBe(fq(v.omega!));
+      if ("ociLo" in v) expect(t[0]![1]![5], c.id).toBe(`[${fq(v.ociLo!)}, ${fq(v.ociHi!)}]`);
     }
   });
 });
