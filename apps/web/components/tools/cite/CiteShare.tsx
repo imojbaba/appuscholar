@@ -20,7 +20,7 @@ export function CiteShare({ library, insertReady }: { library: Library; insertRe
   const insertBib = () => citeInsertBib({ lib, style, toast, t, insert: (html) => { target.block(html); } });
   const onFile = async (input: HTMLInputElement) => {
     const f = input.files?.[0];
-    try { await citeImport(f, { lib, update, toast }); } finally { input.value = ""; }
+    try { await citeImport(f, { lib, update, toast, t }); } finally { input.value = ""; }
   };
   return (
     <div className="stack cite-share">

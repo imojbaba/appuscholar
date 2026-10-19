@@ -36,7 +36,10 @@ vi.mock("@/lib/cite/useLibrary", async () => {
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { CaptureHash, fileCapture, resetCaptureHash, takeCaptureHash } from "../lib/cite/capture";
-import { ALREADY_IN_LIBRARY } from "../lib/cite/actions";
+import en from "../messages/en.json";
+
+const ALREADY_IN_LIBRARY = en.rs2_already_in_your_library;
+const t = (k: string) => (en as Record<string, string>)[k] ?? k;
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const raw = (hash: string) => hash.slice("#capture=".length);
@@ -62,11 +65,11 @@ describe("fileCapture: the duplicate rule and the toasts (13650-13653)", () => {
       const toast = vi.fn();
       let stored: CitationEntry[] = FX.libBefore.slice();
       const update = vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); return true; });
-      fileCapture(rec, { lib: stored, update, toast });
+      fileCapture(rec, { lib: stored, update, toast, t });
       expect(stored).toEqual(c.accepted.libAfter);
       expect(toast.mock.calls.map((x) => x[0])).toEqual(c.accepted.toasts);
       toast.mockClear();
-      fileCapture(rec, { lib: stored, update, toast });
+      fileCapture(rec, { lib: stored, update, toast, t });
       expect(stored).toEqual(c.again.libAfter);
       expect(toast.mock.calls.map((x) => x[0])).toEqual(c.again.toasts);
       expect(c.again.toasts).toEqual([ALREADY_IN_LIBRARY]);
@@ -74,7 +77,7 @@ describe("fileCapture: the duplicate rule and the toasts (13650-13653)", () => {
   }
   it("a broken library the student keeps is left alone, with no toast", () => {
     const toast = vi.fn();
-    fileCapture(captureRecord(decodeCapture(raw(FX.captures[0]!.hash))!), { lib: [], update: () => false, toast });
+    fileCapture(captureRecord(decodeCapture(raw(FX.captures[0]!.hash))!), { lib: [], update: () => false, toast, t });
     expect(toast).not.toHaveBeenCalled();
   });
 });

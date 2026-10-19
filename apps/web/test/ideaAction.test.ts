@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
 import { buildIdeaPrompt, classifyAiUse, fieldLabel } from "@appuscholar/core";
-import { assessIdea, IDEA_NEED_TOPIC, IDEA_READY, IDEA_THINKING, type IdeaDeps } from "../lib/ai/actions";
+import { assessIdea, IDEA_NEED_TOPIC, IDEA_THINKING, type IdeaDeps } from "../lib/ai/actions";
 import { apiMsg } from "../lib/ai/callAI";
+import en from "../messages/en.json";
 
 const INTAKE = { topic: "  Does sleep quality predict exam performance?  ", resources: "120 first-years", timeframe: "one semester", constraints: "" };
 
@@ -16,6 +17,7 @@ function deps(over: Partial<IdeaDeps> = {}) {
     clear: vi.fn(() => void log.push("clear")),
     dockShow: vi.fn((w: string) => void log.push("dock:" + w)),
     toast: vi.fn((m: string) => void log.push("toast:" + m)),
+    t: vi.fn((k: string) => (en as Record<string, string>)[k] ?? k),
     field: fieldLabel("psychology"),
     intake: INTAKE,
     ...over
@@ -63,7 +65,7 @@ describe("assessIdea (v1 ideaAssess 8568-8580)", () => {
     expect(IDEA_THINKING).toBe("💜 Thinking this through…");
     expect(m.setThinking).toHaveBeenCalledWith("custom", null, "💜 Thinking this through…");
     expect(m.set).toHaveBeenCalledWith("Topic clarity: High. ...", null, 7);
-    expect(IDEA_READY).toBe("Ready — press Tab in the editor to insert");
+    expect(m.t).toHaveBeenCalledWith("rs2_ready_press_tab_in");
     expect(log).toEqual(["thinking:custom:💜 Thinking this through…", "dock:ai", "call", "set", "dock:ai", "toast:Ready — press Tab in the editor to insert"]);
   });
 

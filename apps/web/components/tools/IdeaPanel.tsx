@@ -35,7 +35,7 @@ export function IdeaPanel() {
   };
   const assess = () => assessIdea({
     callAI, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear,
-    dockShow, toast, field: fieldLabel(settings.field), intake
+    dockShow, toast, t, field: fieldLabel(settings.field), intake
   });
   return (
     <div className="panel" data-testid="panel-idea">

@@ -93,10 +93,10 @@ export async function runDraftFirst(kind: "tail" | "improve" | "expand", d: Acti
 /** v1 ideaAssess's three sentences (8572, 8574, 8578): toasts and pane text of v1's script, English in both languages as in v1, like the writing actions' toasts. */
 export const IDEA_NEED_TOPIC = "Describe your working idea first";
 export const IDEA_THINKING = "💜 Thinking this through…";
-export const IDEA_READY = "Ready — press Tab in the editor to insert";
+// The "Ready — press Tab in the editor to insert" toast is the keyed `rs2_ready_press_tab_in`, read through `t` (Assess feasibility and the helpers).
 
 /** What Assess feasibility touches: the suggestion pane, the AI, and the four fields as the student typed them. */
-export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast"> & {
+export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast" | "t"> & {
   /** fieldLabel(settings.field): v1 fieldName(). */
   field: string;
   intake: { topic: string; resources: string; timeframe: string; constraints: string };
@@ -115,7 +115,7 @@ export async function assessIdea(d: IdeaDeps): Promise<void> {
     // v1 shows no accuracy check for this answer (setSug with no note, 8577).
     d.set(reply, null, token);
     d.dockShow("ai");
-    d.toast(IDEA_READY);
+    d.toast(d.t("rs2_ready_press_tab_in"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
 
@@ -124,7 +124,6 @@ export const HELPER_NEED_TEXT = "Write or select some text first, then tap the t
 export const HELPER_CASE_CONFIRM = "This text will be sent to your AI provider.\n\nRemove names, dates of birth, addresses and any other identifying details before you continue (APA Ethics 4.07).\n\nContinue?";
 export const HELPER_LONG_DOC = "Long document — analyzing the first 12,000 characters. Select a section for a sharper answer.";
 export const HELPER_THINKING = "💜 Thinking…";
-export const HELPER_READY = "Ready — press Tab in the editor to insert";
 /** Where the case tool's yes is kept for the session (v1 sessionKeys['appu_case_ack'], 8605-8607). */
 export const HELPER_CASE_ACK_KEY = "appu_case_ack";
 
@@ -162,7 +161,7 @@ export async function runHelper(kind: HelperKind, d: HelperDeps): Promise<void> 
     // v1 shows no accuracy check for this answer (setSug with no note, 8612).
     d.set(reply, null, token);
     d.dockShow("ai");
-    d.toast(HELPER_READY);
+    d.toast(d.t("rs2_ready_press_tab_in"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
 
@@ -296,7 +295,7 @@ export async function quickReadTicked(ticked: RsPaper[], d: QuickDeps): Promise<
 }
 
 /** What the literature review and the gap finder touch: the suggestion pane, the AI, the field and the copy. */
-export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast"> & {
+export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast" | "t"> & {
   /** fieldLabel(settings.field): v1 fieldName(). */
   field: string;
   t: ResearchAiDeps["t"];

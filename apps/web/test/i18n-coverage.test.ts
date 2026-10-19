@@ -15,26 +15,25 @@ function walk(dir: string, ext: (p: string) => boolean = p => p.endsWith(".tsx")
 }
 
 /**
- * What the .ts modules of the stage-2 directories carry that equals a dictionary value, and why each is not a missed t():
- * - stored data tokens, not copy: the source type values of v1 880 ("Journal article", "Book" ... saved in the record, labelled through cite_type_*),
- *   the sort and field ids ("year"), the source name "PubMed" and the "year" key of the retraction check's reply;
- * - two student-facing English sentences of the Citation Manager's constants (ruling R15: v1's script literals, English in every language,
- *   listed in the Task 15 report): ALREADY_IN_LIBRARY (lib/cite/actions.ts) and IMPORT_READ_FAILED (lib/cite/share.ts).
- * A new literal anywhere in these directories fails this test until it goes through t() or is added here with its reason.
+ * What the .ts modules of the stage-2 directories (and lib/ai, whose action modules the stage-2 panels call) carry that equals a dictionary value,
+ * one entry per occurrence. Each is a stored data token, not copy: the source type values of v1 880 ("Journal article", "Book" ... saved in the record,
+ * labelled through cite_type_*), the sort and field ids ("year"), the source name "PubMed" and the "year" key of the retraction check's reply.
+ * One entry is not a data token: lib/ai/callAI.ts's "bad-pass" sentence equals `vault_wrong`, which has Hindi. It is v1's apiMsg, a pure function with no
+ * `t`, from before stage 2; pinned here so it shows, and reported to the controller. A new literal anywhere in these directories, or a second use of a pinned one in the same file, fails this test until it goes through t() or is
+ * added here with its reason. (The English constants that have no dictionary key, ruling R15, are not hits and are not listed.)
  */
 const STAGE2_TS_KNOWN = [
-  'lib/cite/actions.ts "Already in your library"',
   'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "Book"', 'lib/cite/form.ts "Website"', 'lib/cite/form.ts "Book chapter"',
-  'lib/cite/form.ts "Report"', 'lib/cite/form.ts "Conference paper"', 'lib/cite/form.ts "year"',
-  'lib/cite/share.ts "Could not read that file"',
-  'lib/research/library.ts "Journal article"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "PubMed"',
+  'lib/cite/form.ts "Report"', 'lib/cite/form.ts "Conference paper"', 'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "year"',
+  'lib/research/library.ts "Journal article"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "PubMed"',
   'lib/blobs/kinds.ts "year"',
+  'lib/ai/callAI.ts "Wrong passphrase — nothing was unlocked. Try again."',
 ];
 
 /** The stage-2 directories. The walk above reads .tsx only; these also have their .ts modules read (the action modules carry student-facing sentences). */
 const STAGE2_DIRS = [
   "components/tools/cite", "components/tools/research", "components/tools/shelf", "components/tools/analyse",
-  "lib/cite", "lib/research", "lib/shelf", "lib/analyse", "lib/popout", "lib/blobs",
+  "lib/cite", "lib/research", "lib/shelf", "lib/analyse", "lib/popout", "lib/blobs", "lib/ai",
 ];
 
 /** Keys whose value is a typed confirmation token, not copy: "DELETE" is also the HTTP method the API client sends. */
@@ -119,7 +118,7 @@ describe("i18n coverage", () => {
     const files = STAGE2_DIRS.flatMap(d => walk(join(ROOT, d), p => p.endsWith(".ts") || p.endsWith(".tsx")));
     expect(files.length).toBeGreaterThan(40);
     expect(files.map(f => relative(ROOT, f))).toEqual(expect.arrayContaining(["lib/cite/actions.ts", "lib/shelf/actions.ts", "lib/analyse/walk.ts", "lib/research/extras.ts", "components/tools/analyse/Walk.tsx"]));
-    const offenders = [...new Set(files.flatMap(f => findOffenders(f, readFileSync(f, "utf8"))).map(h => h.replace(/:\d+ /, " ")))].sort();
+    const offenders = [...files.flatMap(f => findOffenders(f, readFileSync(f, "utf8"))).map(h => h.replace(/:\d+ /, " "))].sort();
     expect(offenders).toEqual([...STAGE2_TS_KNOWN].sort());
   });
   it("every rs2_, ap2_ and sh2_ key in English is in Hindi too (English text until Dr. Sharma gives Hindi), so none counts as an untranslated literal", () => {

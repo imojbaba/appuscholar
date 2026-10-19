@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
 import { buildDevilPrompt, buildHelperPrompt, DEVIL_MIN_WORDS, fieldLabel, HELPER_MIN_CHARS, HELPER_TEMPS, type HelperKind } from "@appuscholar/core";
 import {
-  HELPER_CASE_ACK_KEY, HELPER_CASE_CONFIRM, HELPER_LONG_DOC, HELPER_NEED_TEXT, HELPER_READY, HELPER_THINKING,
+  HELPER_CASE_ACK_KEY, HELPER_CASE_CONFIRM, HELPER_LONG_DOC, HELPER_NEED_TEXT, HELPER_THINKING,
   runDevil, runHelper, type HelperDeps
 } from "../lib/ai/actions";
 import { apiMsg } from "../lib/ai/callAI";
@@ -40,7 +40,7 @@ describe("runHelper (v1 psychTool 8600-8615)", () => {
   it("v1's script sentences, byte for byte", () => {
     expect(HELPER_NEED_TEXT).toBe("Write or select some text first, then tap the tool");
     expect(HELPER_LONG_DOC).toBe("Long document — analyzing the first 12,000 characters. Select a section for a sharper answer.");
-    expect(HELPER_READY).toBe("Ready — press Tab in the editor to insert");
+    expect(E.rs2_ready_press_tab_in).toBe("Ready — press Tab in the editor to insert");
     expect(HELPER_THINKING).toBe("\u{1F49C} Thinking…");
     expect(HELPER_CASE_CONFIRM).toBe("This text will be sent to your AI provider.\n\nRemove names, dates of birth, addresses and any other identifying details before you continue (APA Ethics 4.07).\n\nContinue?");
     expect(HELPER_CASE_ACK_KEY).toBe("appu_case_ack");

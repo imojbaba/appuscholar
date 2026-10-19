@@ -2,7 +2,7 @@
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 import { captureConfirmText, captureIsDuplicate, captureRecord, decodeCapture, type CitationEntry } from "@appuscholar/core";
 import { toast } from "@/components/ui/toast";
-import { ALREADY_IN_LIBRARY } from "./actions";
+import { useT } from "@/lib/i18n";
 import { useLibrary } from "./useLibrary";
 
 /*
@@ -11,7 +11,7 @@ import { useLibrary } from "./useLibrary";
  * a server (the hash never leaves the browser). On load the hash is taken off the address, decoded, and after a confirm saved to the library unless
  * the same title and author are already there (13651). The bookmarklet's source, the decode, the question, the entry and the duplicate rule are core's
  * (citcapture.ts); this module reads and strips the address, asks, saves and toasts. Held to v1 running by test/golden/citshare.
- * The sentences are literals of v1's script (no data-i18n key): English constants byte-equal to v1 (ruling R15).
+ * The unreadable and captured sentences are literals of v1's script (no data-i18n key): English constants byte-equal to v1 (ruling R15); the duplicate toast is the keyed `rs2_already_in_your_library`, through `t`.
  */
 
 export const CAPTURE_PREFIX = "#capture=";
@@ -28,8 +28,8 @@ export function takeCaptureHash(loc: { hash: string; pathname: string; search: s
 }
 
 /** 13650-13653: the duplicate rule (same title and same author), then the entry appended as an update and the toast; nothing when a broken library is kept (R16). */
-export function fileCapture(rec: CitationEntry, d: { lib: CitationEntry[]; update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean; toast(msg: string): void }): void {
-  if (captureIsDuplicate(d.lib, rec)) { d.toast(ALREADY_IN_LIBRARY); return; }
+export function fileCapture(rec: CitationEntry, d: { lib: CitationEntry[]; update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean; toast(msg: string): void; t(key: string): string }): void {
+  if (captureIsDuplicate(d.lib, rec)) { d.toast(d.t("rs2_already_in_your_library")); return; }
   if (!d.update((prev) => [...prev, rec])) return;
   d.toast(capturedToast(rec.title ?? ""));
 }
@@ -69,13 +69,14 @@ export function CaptureHash() {
 
 function CaptureFile({ rec, onDone }: { rec: CitationEntry; onDone(): void }) {
   const library = useLibrary();
+  const t = useT();
   const done = useRef(false);
   const { lib, ready, loading, locked, update } = library;
   useEffect(() => {
     if (done.current || !ready || loading || locked) return;
     done.current = true;
-    fileCapture(rec, { lib, update, toast });
+    fileCapture(rec, { lib, update, toast, t });
     onDone();
-  }, [rec, lib, ready, loading, locked, update, onDone]);
+  }, [rec, lib, ready, loading, locked, update, onDone, t]);
   return null;
 }

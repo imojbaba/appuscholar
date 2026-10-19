@@ -9,12 +9,7 @@ import { citFmt, citIsNumbered, citLookup, citNumFor, type CitationEntry, type C
 export const ADD_AUTHOR_TITLE = "Add author and title first";
 export const CITATION_INSERTED = "Citation inserted ✓";
 export const SAVED_TO_LIBRARY = "Saved to library ✓";
-/**
- * v1's duplicate toast, for the adds that refuse a duplicate in v1: Research's manual add (8448, same title and author), a search result
- * (8476, same title) and the bookmarklet (13651, same title and author). The Citation Manager's own + Library (citAdd 7507) saves duplicates.
- * Research's card buttons show the same words through the key extracted from 8448 (`rs2_already_in_your_library`, lib/research/library.ts).
- */
-export const ALREADY_IN_LIBRARY = "Already in your library";
+/** v1's duplicate toast ("Already in your library", 8448, 8476, 13651) is the keyed `rs2_already_in_your_library`, read through `t` by Research and the capture. */
 export const FORM_CLEARED = "Form cleared";
 /** A library card's button (7864): "Insert " and the in-text form, or "¹ (n)" for AMA's superscript. */
 export const insertLabel = (f: Formatted): string => "Insert " + (f.sup ? "¹ (" + f.num + ")" : f.intext);

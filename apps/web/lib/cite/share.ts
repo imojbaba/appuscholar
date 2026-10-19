@@ -6,13 +6,12 @@ import {
  * The library block's buttons after the cards (v1 940-946) as pure orchestration: Insert reference list (citInsertBib 7871-7881), Load classic psychology
  * sources (psychLoadStarters 7983-7987), Export library (citExport 7991-7998) and Import library (citImport 7999-8023). The list, the file and the merge are
  * core's (bibliographyHtml, exportLibrary, mergeLibrary, PSYCH_STARTERS); the panel hands in the library, its update, the editor's insert and the toast.
- * The sentences below are literals of v1's script (no data-i18n key), English constants byte-equal to v1 (ruling R15); cite_bib_fmt(_num) go through `t`.
+ * The sentences below are literals of v1's script (no data-i18n key), English constants byte-equal to v1 (ruling R15); cite_bib_fmt(_num) and the unreadable-file toast (`ap2_could_not_read_that`) go through `t`.
  */
 export const LIBRARY_EMPTY = "Library is empty — add a source first";
 export const LIBRARY_EXPORTED = "Library exported ✓ — share the file with your class";
 export const IMPORT_TOO_LARGE = "That file is too large to be a citation library";
 export const IMPORT_NOT_A_LIBRARY = "Could not read that file — it must be a library JSON exported from Appuscholar";
-export const IMPORT_READ_FAILED = "Could not read that file";
 export const STARTERS_ALREADY = "Starter library already loaded ✓";
 /** 8018: `added+' sources merged into your library ✓'`. */
 export const importedToast = (added: number): string => added + " sources merged into your library ✓";
@@ -69,11 +68,11 @@ export function readFileText(file: Blob): Promise<string> {
  * not JSON or whose root is not a list each have v1's toast; otherwise core's mergeLibrary adds the entries v1 adds (12 fields, 2,000 at most, the
  * title-and-author duplicate rule), written as an update, and v1's count. The caller empties the file input afterwards (8001, 8019, 8021).
  */
-export async function citeImport(file: File | null | undefined, d: LibraryWrite & { read?(file: File): Promise<string> }): Promise<void> {
+export async function citeImport(file: File | null | undefined, d: LibraryWrite & { t: (key: string) => string; read?(file: File): Promise<string> }): Promise<void> {
   if (!file) return;
   if (file.size > LIBRARY_IMPORT_MAX_BYTES) { d.toast(IMPORT_TOO_LARGE); return; }
   let text: string;
-  try { text = await (d.read ?? readFileText)(file); } catch { d.toast(IMPORT_READ_FAILED); return; }
+  try { text = await (d.read ?? readFileText)(file); } catch { d.toast(d.t("ap2_could_not_read_that")); return; }
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch { d.toast(IMPORT_NOT_A_LIBRARY); return; }
   const r = mergeLibrary(d.lib, parsed);
