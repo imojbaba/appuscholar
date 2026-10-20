@@ -10,7 +10,10 @@
    - oaRetractions(f, dois): the DOIs are normalised, kept when valid and de-duplicated as citRetractionRefresh does with the library's (7581), and
      each batch's answer is handed to `onBatch` where v1 writes it to the cache (7592); a failing batch rejects (v1 then toasts retr_failed);
    - apRefCheck(f, dois) returns AP.refs as apRefCheck leaves it (11240-11252), given apRefDois' list; the 429 error is "429" here too;
-   - types, and `as` casts on the JSON read. */
+   - types, and `as` casts on the JSON read.
+   Wave A (walk fault W2, register row D-S2-24): rsFetchOpenAlex's result also carries `authorList`, every author's display name (`authors` is still v1's card line,
+   four names and "et al."). The select list is v1's, so OpenAlex sends no volume, issue or pages; the web fills them from Crossref after "+ Citation library".
+   test/fetch/openalex.test.ts holds v1View(result) to the golden. */
 import { retrNormDoi, retrValidDoi } from "../analyse";
 import { RS_DESIGN, rsBuildQuery, rsOaStatus, rsReconstructAbstract } from "../research";
 import { settle, withFallback } from "./types";
@@ -45,7 +48,8 @@ export async function rsFetchOpenAlex(f: typeof fetch,q: string,extra?: { filter
       citedByApiUrl:w.cited_by_api_url||'',
       retracted:w.is_retracted===true,
       oaStatus:rsOaStatus(w.open_access),
-      oaUrl:(w.open_access&&w.open_access.is_oa&&/^https?:\/\//i.test(w.open_access.oa_url||''))?w.open_access.oa_url!:''
+      oaUrl:(w.open_access&&w.open_access.is_oa&&/^https?:\/\//i.test(w.open_access.oa_url||''))?w.open_access.oa_url!:'',
+      authorList:authors
     };
   });
 }

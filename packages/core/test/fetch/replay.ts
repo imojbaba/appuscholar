@@ -58,3 +58,14 @@ export type Fx = {
 
 export const fx = readFixture<Fx>("fetch", "cases");
 export const mode = goldenMode(fx);
+
+/** The fields wave A added to a search result (W2: every author, the volume, the issue and the pages), which v1's parse does not have. */
+export const V2_PAPER_KEYS = ["authorList", "volume", "issue", "pages"] as const;
+/** A paper (or a list of them) as v1 built it: without V2_PAPER_KEYS. The golden comparisons hold this view to v1's parse, so the added fields cannot hide a change in v1's. */
+export function v1View<T>(x: T): T {
+  if (Array.isArray(x)) return x.map((p) => v1View(p)) as T;
+  if (x === null || typeof x !== "object") return x;
+  const o = { ...(x as Record<string, unknown>) };
+  for (const k of V2_PAPER_KEYS) delete o[k];
+  return o as T;
+}

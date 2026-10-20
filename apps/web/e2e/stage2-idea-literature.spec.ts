@@ -549,6 +549,13 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("cite-card").nth(1)).toContainText("Cohen, 1988");
     await expect(page.getByTestId("cite-card").nth(2)).toContainText("Mu, 2022");
     await expect(page.getByTestId("cite-card").nth(3)).toContainText("DordiNejad, 2011");
+    // W2 (fix wave A, Task 8): the two from the search list every author (v1 kept four and "et al."), and the volume and pages Crossref lists for their DOIs
+    // (e2e/fixtures/recorded/cr-doi-mu, cr-doi-dordinejad), filled in after the add.
+    const ref = (i: number) => page.getByTestId("cite-card").nth(i).getByTestId("cite-ref");
+    await expect(ref(2)).toContainText("Mu, L., Du, B., & Hou, X. (2022).");
+    await expect(ref(2)).toContainText("Frontiers in Psychology, 13.");
+    await expect(ref(3)).toContainText("DordiNejad, F. G., Hakimi, H., Ashouri, M., Dehghani, M., Zeinali, Z., Daghighi, M. S., & Bahrami, N. (2011).");
+    await expect(ref(3)).toContainText("Procedia - Social and Behavioral Sciences, 15, 3774–3778.");
     quiet();
   });
 

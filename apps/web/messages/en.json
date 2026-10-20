@@ -218,6 +218,7 @@
   "cap_btn": "🏷 Caption",
   "cap_desc": "Adds \"Figure 1\" or \"Table 1\" with a title above the picture or table, in APA 7 style. Click a picture or a table, or put the cursor where the caption should go. Numbers update by themselves.",
   "cap_fig": "Figure",
+  "cap_filled": "Updated \"{title}\" in your citation library with what this page lists.",
   "cap_h": "🏷 Numbered caption",
   "cap_insert": "Insert caption",
   "cap_inserted": "Caption added ✓",

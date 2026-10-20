@@ -86,7 +86,9 @@ export function ResearchPanel() {
   const addDeps = (): AddDeps => ({
     lib: library.lib, style: library.style, update: library.update, toast, t,
     known: !library.loading && !library.locked, whenRead: library.flush,
-    seedRetraction: (doi, flag) => retrCacheSet(retr.set, doi, flag, Date.now())
+    seedRetraction: (doi, flag) => retrCacheSet(retr.set, doi, flag, Date.now()),
+    // W2: Crossref's volume, issue and pages for an OpenAlex paper, filled into the saved entry.
+    fetch: (input, init) => fetch(input, init), fillEmpty: library.fillEmpty
   });
   const quickDeps = (): QuickDeps => ({ callAI, field, t, toast, apply: applyQuick });
   const genDeps = (): GeneratorDeps => ({

@@ -7,6 +7,7 @@ import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useVault } from "@/lib/vault/useVault";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import type { AddResult } from "./actions";
+import { fillEmptyIn } from "./fillEmpty";
 
 /*
  * The citation style: v1 keeps it only in the #citStyle select (no localStorage key), so it starts on APA 7th at every page load and is shared by
@@ -44,6 +45,11 @@ export type Library = {
   remove(index: number): void;
   /** Any other change of the whole library (Task 8: import, the classics), as an update; false when a broken library is kept. */
   update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean;
+  /**
+   * Fix wave A (W1, W2): the first stored entry `match` finds gets the fields of `fill` that are empty there (fillEmptyIn), as an update, so it lands on the
+   * stored library. False when nothing could be saved (no project yet, or a broken library kept); nothing is written when no entry matches.
+   */
+  fillEmpty(match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>): boolean;
   /** Sends what is pending now; true once nothing is left off the server. */
   flush(): Promise<boolean>;
   style: CitationStyle;
@@ -110,6 +116,7 @@ function useOwnLibrary(projectId: string | null): Library {
     return update((prev) => [...prev, entry]) ? "added" : "declined";
   }, [ready, update]);
   const remove = useCallback((index: number) => { update((prev) => prev.filter((_, i) => i !== index)); }, [update]);
+  const fillEmpty = useCallback((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => update((prev) => fillEmptyIn(prev, match, fill)), [update]);
 
-  return { lib, loading, locked, broken, ready, projectId, add, remove, update, flush, style: current, setStyle: writeStyle };
+  return { lib, loading, locked, broken, ready, projectId, add, remove, update, fillEmpty, flush, style: current, setStyle: writeStyle };
 }

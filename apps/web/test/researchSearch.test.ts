@@ -95,6 +95,10 @@ describe("researchSearch's refusals (8284-8290)", () => {
   });
 });
 
+/** A paper list as v1 built it: without the fields wave A added (W2), as packages/core/test/fetch/replay.ts's v1View. */
+const V2_PAPER_KEYS = ["authorList", "volume", "issue", "pages"];
+const v1View = (papers: Array<Record<string, unknown>>) => papers.map((p) => Object.fromEntries(Object.entries(p).filter(([k]) => !V2_PAPER_KEYS.includes(k))));
+
 describe("researchSearch over the recorded responses equals v1", () => {
   for (const c of FX.searches) {
     it(`${c.name}: the fetchers' inputs, the merged papers and #rsStatus byte-equal to v1`, async () => {
@@ -110,7 +114,9 @@ describe("researchSearch over the recorded responses equals v1", () => {
       if (c.in.pm) expect(pm).toHaveBeenCalledWith(expect.any(Function), { q: c.in.topic.trim(), terms: c.in.terms, design: c.in.design, retmax: c.in.rank ? 15 : 6 });
       else expect(pm).not.toHaveBeenCalled();
       expect([...requested].sort()).toEqual([...c.requested].sort());
-      expect(JSON.parse(JSON.stringify(out!.papers))).toEqual(c.merged);
+      // Wave A (W2) adds authorList, volume, issue and pages to each paper (core's test/fetch v1View); the rest is v1's, byte for byte.
+      expect(v1View(JSON.parse(JSON.stringify(out!.papers)) as Array<Record<string, unknown>>)).toEqual(c.merged);
+      for (const p of out!.papers) expect(Array.isArray(p.authorList)).toBe(true);
       expect(out!.status).toBe(c.status);
       if (c.in.rank) expect(log.statuses[1]).toBe(`🔎 ${c.merged.length} papers found. Reading titles and abstracts to rank them…`);
     });
@@ -265,11 +271,14 @@ describe("Suggest related terms (rsSuggestTerms 8251-8263)", () => {
 });
 
 describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 8486-8491)", () => {
+  // Wave A (W2): addResult then asks Crossref for an OpenAlex paper's volume, issue and pages; here Crossref is offline, so nothing is filled (research.test.tsx covers the fill).
+  const offline = (async () => { throw new TypeError("Failed to fetch"); }) as typeof fetch;
+  const noFill = () => true;
   const oaPaper = { source: "OpenAlex", title: "Growth mindset and grades", authors: "Carol S. Dweck, David Yeager, et al.", year: "2019", venue: "Nature", doi: "10.1038/S41586-019-1466-Y", url: "https://doi.org/10.1038/s41586-019-1466-y", retracted: false, citationCount: 3 };
   function make(lib: core.CitationEntry[] = [], updateOk = true) {
     const log = { toasts: [] as string[], seeds: [] as Array<[string, boolean]>, next: null as core.CitationEntry[] | null, inserted: [] as core.Formatted[] };
     const d: AddDeps & { insert(f: core.Formatted): void } = {
-      lib, style: "apa", t, known: true, whenRead: async () => true,
+      lib, style: "apa", t, known: true, whenRead: async () => true, fetch: offline, fillEmpty: noFill,
       update: (fn) => { if (!updateOk) return false; log.next = fn(lib); return true; },
       seedRetraction: (doi, flag) => { log.seeds.push([doi, flag]); },
       toast: (m) => { log.toasts.push(m); },
@@ -308,7 +317,7 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
     const whenRead = () => new Promise<boolean>((r) => { read = r; });
     // the blob applies the update to a stand-in while unread, then to the stored library once it is read
     let apply!: () => void;
-    addResult(oaPaper, { lib: [], style: "apa", t, known: false, whenRead, toast: (m) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; },
+    addResult(oaPaper, { lib: [], style: "apa", t, known: false, whenRead, fetch: offline, fillEmpty: noFill, toast: (m) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; },
       update: (fn) => { fn([]); apply = () => { log.next = fn(stored); }; return true; } });
     expect(log.toasts).toEqual([]);
     apply();
@@ -320,7 +329,7 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
   });
   it("added while unread and new: once read, the seed and v1's toast; a read still declined says nothing", async () => {
     const log = { toasts: [] as string[], seeds: 0 };
-    const base = { lib: [], style: "apa" as const, t, known: false, toast: (m: string) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; }, update: (fn: (p: core.CitationEntry[]) => core.CitationEntry[]) => { fn([]); return true; } };
+    const base = { lib: [], style: "apa" as const, t, known: false, fetch: offline, fillEmpty: noFill, toast: (m: string) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; }, update: (fn: (p: core.CitationEntry[]) => core.CitationEntry[]) => { fn([]); return true; } };
     addResult(oaPaper, { ...base, whenRead: async () => true });
     await new Promise((r) => setTimeout(r, 0));
     expect(log.toasts).toEqual(["Added to citation library ✓ — check author formatting before you submit"]);

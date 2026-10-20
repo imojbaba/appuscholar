@@ -36,7 +36,9 @@ import { RS_DESIGN as RS_DESIGN_TABLE, RS_DESIGNS as RS_DESIGNS_TABLE } from "./
  * ok only when its quoted words are in the abstract (and, for the sample, hold the number). */
 export type RsQuick = { summary?: string; summaryDropped?: true; design?: { type: string; quote?: string; ok: boolean }; sample?: { n: number; quote?: string; ok: boolean } };
 /** One search result as rsFetchOpenAlex (8061) and rsFetchPubmed (8103) build it (each adds fields of its own, which these helpers do not read), with `rel` from rsRank (8231) and `quick` from rsQuickP (8180). */
-export type RsPaper = { title: string; authors: string; year: string | number; venue: string; doi: string; url?: string; source: string; abstract?: string; retracted?: boolean; oaStatus?: string; oaUrl?: string; citationCount?: number; rel?: { score: number; reason: string; titleOnly?: boolean }; quick?: RsQuick };
+export type RsPaper = { title: string; authors: string; year: string | number; venue: string; doi: string; url?: string; source: string; abstract?: string; retracted?: boolean; oaStatus?: string; oaUrl?: string; citationCount?: number; rel?: { score: number; reason: string; titleOnly?: boolean }; quick?: RsQuick;
+  /** Wave A (W2): every author name, in the source's order (`authors` stays v1's card line, four names and "et al."), and the paper's volume, issue and pages. v1 has none of them. */
+  authorList?: string[]; volume?: string; issue?: string; pages?: string };
 /** The result filters as rsFilterVals (8332-8335) reads them from the page: a year from, open access only, hide retracted, a confirmed kind of study, a confirmed sample of at least n (0, false or "" when not set). */
 export type RsFilter = { year: number; oa: boolean; ret: boolean; des: string; n: number };
 /** What rsQuickCheck reads of the AI's reply (apJson's object): any of it may be missing or of another type, which v1's own checks handle. */
@@ -188,4 +190,23 @@ export function rsSortResults(results: RsPaper[],mode: string): RsPaper[]{
 }
 export function rsFoldIndex(results: RsPaper[],mode: string): number{
   return (mode==='fit')?results.findIndex(p=>p.rel&&p.rel.score<=1):-1;
+}
+/* Wave A (walk fault W2, register row D-S2-24): a search result into the library keeps every author and its volume, issue and pages. Siblings of rsAuthorsToCit and
+   rsEntryFromResult, which stay v1's; held to their stated differences by test/research-v2.test.ts and test/references-w28.test.ts. */
+/** rsAuthorsToCit's rule for one name (8458-8462): one word as it is; a surname and one to four capitals as "Surname, Initials"; else the last word, a comma, the rest. */
+function rsNameToCit(n: string): string{
+  const parts=n.split(/\s+/);
+  if(parts.length===1)return n;
+  if(parts.length===2&&/^[A-Z]{1,4}$/.test(parts[1]!))return parts[0]+', '+parts[1];
+  return parts[parts.length-1]+', '+parts.slice(0,-1).join(' ');
+}
+/** Every name of a result's authorList by rsAuthorsToCit's per-name rule, joined "; ". The names come one by one, so a name with a comma is kept whole (as written). */
+export function rsAuthorListToCit(names: string[]): string{
+  return names.map(n=>String(n||'').trim()).filter(Boolean).map(n=>n.indexOf(',')>=0?n:rsNameToCit(n)).join('; ');
+}
+/** rsEntryFromResult (8465-8470) with the author written from `authorList` when it has a name, and the paper's volume, issue and pages. */
+export function rsEntryFromResultV2(p: RsPaper,style: string): CitationEntry{
+  const e=rsEntryFromResult(p,style);
+  const all=rsAuthorListToCit(p.authorList||[]);
+  return{...e,author:all||e.author,volume:p.volume||'',issue:p.issue||'',pages:p.pages||''};
 }

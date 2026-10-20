@@ -41,7 +41,7 @@ export { pace } from "./fetch/types";
 export type { OaPaper, PmPaper, RsBrief, SearchResult } from "./fetch/types";
 export { oaUrl, rsFetchOpenAlex, oaSearch, rsOaBrief, oaConnected, retrFetchBatch, oaRetractions, apRefCheck } from "./fetch/openalex";
 export type { ApRefs } from "./fetch/openalex";
-export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmidToDoi } from "./fetch/pubmed";
+export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmidToDoi, pmFullPages } from "./fetch/pubmed";
 export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
 export type { CrWork, RcCheck } from "./fetch/crossref";
 // Stage 2: Citation Manager checks (Task 8a)
@@ -50,6 +50,9 @@ export { citMissingNumbers, citCaretEntry } from "./citlib";
 export { PSYCH_STARTERS } from "./data/classic-sources";
 // Stage 2: Citation Manager one-click capture (Task 8b)
 export { bookmarkletSource, bookmarkletHref, decodeCapture, captureConfirmText, captureRecord, captureIsDuplicate } from "./citcapture";
+// Fix wave A, Task 8 (W1, W2): the capture and the search keep every author, the volume, the issue and the pages
+export { bookmarkletSourceV2, bookmarkletHrefV2, capNameToCit, captureRecordV2, captureMatch } from "./citcapture";
+export { rsAuthorListToCit, rsEntryFromResultV2 } from "./research";
 export type { CaptureData } from "./citcapture";
 // Stage 2: Research related terms, sort orders and fold (Task 9)
 export { rsParseTerms, rsSortResults, rsFoldIndex } from "./research";

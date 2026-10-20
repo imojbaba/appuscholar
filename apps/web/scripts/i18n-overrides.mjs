@@ -161,6 +161,12 @@ export const V2_STRINGS = {
   blob_conflict: {
     en: "This was changed in another window at the same time, so your change is not saved yet. It is kept here and saved with your next edit.",
     hi: "इसे उसी समय किसी दूसरी विंडो में बदला गया, इसलिए आपका बदलाव अभी सहेजा नहीं गया है। यह यहीं रखा है और आपके अगले बदलाव के साथ सहेजा जाएगा।"
+  },
+  // The one-click capture filled an entry of the same title that had no author (fix wave A, Task 8; walk fault W1, register D-S2-23) in place of adding a second one.
+  // DRAFT Hindi: उद्धरण लाइब्रेरी as in cc_src_lib, पेज as in cite_bookmarklet_desc.
+  cap_filled: {
+    en: 'Updated "{title}" in your citation library with what this page lists.',
+    hi: 'आपकी उद्धरण लाइब्रेरी में "{title}" को इस पेज पर दी गई जानकारी से अपडेट किया गया।'
   }
 };
 

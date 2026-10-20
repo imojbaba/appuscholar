@@ -5,7 +5,7 @@ import { pmSearch } from "../../src/fetch/pubmed";
 import { rsDedupe } from "../../src/research";
 import type { RsPaper } from "../../src/research";
 import { expectGolden } from "../golden/harness/compare";
-import { RECORDINGS, fx, mode, replay, sha256 } from "./replay";
+import { RECORDINGS, fx, mode, replay, sha256, v1View } from "./replay";
 
 /**
  * openalex.ts (v1 oaUrl 8030, oaHttpError 8032, rsFetchOpenAlex 8061, researchSearch's withFallback and catch 8297-8310, rsOaBrief 8492, rsConnected 8498,
@@ -82,8 +82,8 @@ describe("oaSearch is v1's rsFetchOpenAlex inside researchSearch", () => {
       expect(r.unknown).toEqual([]);
       expect(r.requested).toEqual(s.requested);
       const last = s.oa[s.oa.length - 1]!;
-      expectGolden(out.papers, (last ?? []) as typeof out.papers, mode, "papers");
-      expectGolden(rsDedupe(out.papers), s.merged as RsPaper[], mode, "rsResultsOriginal");
+      expectGolden(v1View(out.papers), (last ?? []) as typeof out.papers, mode, "papers");
+      expectGolden(v1View(rsDedupe(out.papers)), s.merged as RsPaper[], mode, "rsResultsOriginal");
       if (last === null) expect(out.error).toBeDefined();
       else expect(out.error).toBeUndefined();
       if (out.error === "429") expect(s.status).toContain(`could not reach: OpenAlex (${OA_SENTENCE})`);
@@ -91,6 +91,26 @@ describe("oaSearch is v1's rsFetchOpenAlex inside researchSearch", () => {
       expect(out.fellBack === true).toBe(s.status.includes("the related terms made the search fail"));
     });
 
+  it("oaSearch's v1 view equals the golden, and authorList holds every author (W2)", async () => {
+    let longest = 0;
+    for (const s of oaRuns) {
+      const r = replay(s.in.throwFor);
+      const out = await oaSearch(r.f, oaIn(s));
+      const last = s.oa[s.oa.length - 1];
+      expectGolden(v1View(out.papers), (last ?? []) as typeof out.papers, mode, "papers");
+      // The body of the request that gave these papers: every display name, in OpenAlex's order.
+      const body = out.papers.length ? JSON.parse(RECORDINGS.get(r.requested[r.requested.length - 1]!)!.body) as { results: Array<{ authorships?: Array<{ author?: { display_name?: string } | null }> }> } : { results: [] };
+      out.papers.forEach((p, i) => {
+        const names = (body.results[i]!.authorships ?? []).map((a) => a.author?.display_name).filter(Boolean);
+        expect(p.authorList, `${s.name} #${i}`).toEqual(names);
+        longest = Math.max(longest, names.length);
+        // The card's line stays v1's: four names, then et al.
+        if (names.length > 4) expect(p.authors).toBe(names.slice(0, 4).join(", ") + ", et al.");
+        expect(p).not.toHaveProperty("volume");
+      });
+    }
+    expect(longest).toBeGreaterThan(4);
+  });
   it("HTTP 429 yields error \"429\" and no papers", async () => {
     const s = oaRuns.find((x) => x.name === "oa-429")!;
     const out = await oaSearch(replay().f, oaIn(s));
@@ -127,7 +147,7 @@ describe("both sources: one failing leaves the other's papers (Review Focus 2)",
       const [oa, pm] = await Promise.all([oaSearch(r.f, oaIn(s)), pmSearch(r.f, pmIn(s))]);
       expect(r.unknown).toEqual([]);
       expect([...r.requested].sort()).toEqual([...s.requested].sort());
-      expectGolden(rsDedupe([...oa.papers, ...pm.papers]), s.merged as RsPaper[], mode, "rsResultsOriginal");
+      expectGolden(v1View(rsDedupe([...oa.papers, ...pm.papers])), s.merged as RsPaper[], mode, "rsResultsOriginal");
       for (const [name, out, calls] of [["OpenAlex", oa, s.oa], ["PubMed", pm, s.pm]] as const) {
         if (calls[calls.length - 1] === null) {
           expect(out.papers).toEqual([]);

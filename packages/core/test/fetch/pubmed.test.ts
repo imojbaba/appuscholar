@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { JSDOM } from "jsdom";
 import { xmlAll, xmlParse, xmlText } from "../../src/fetch/xml";
-import { pmSearch, pmidToDoi, rsPubmedAbstracts } from "../../src/fetch/pubmed";
-import { rsDedupe } from "../../src/research";
+import { pmFullPages, pmSearch, pmidToDoi, rsFetchPubmed, rsPubmedAbstracts } from "../../src/fetch/pubmed";
+import { rsBuildQuery, rsDedupe } from "../../src/research";
 import type { RsPaper } from "../../src/research";
 import { expectGolden } from "../golden/harness/compare";
-import { RECORDINGS, fx, mode, replay } from "./replay";
+import { RECORDINGS, fx, mode, replay, v1View } from "./replay";
 
 /**
  * pubmed.ts (v1 rsPubmedAbstracts 8088, rsFetchPubmed 8103, researchSearch's withFallback and catch 8297-8310, citPmidToDoi 7920) on the recorded
@@ -31,8 +31,8 @@ describe("pmSearch is v1's rsFetchPubmed inside researchSearch", () => {
       const out = await pmSearch(r.f, { q: s.in.topic, terms: s.in.terms, design: s.in.design, retmax: s.in.rank ? 15 : 6 });
       expect(r.unknown).toEqual([]);
       expect(r.requested).toEqual(s.requested);
-      expectGolden(out.papers, (s.pm[s.pm.length - 1] ?? []) as typeof out.papers, mode, "papers");
-      expectGolden(rsDedupe(out.papers), s.merged as typeof out.papers, mode, "rsResultsOriginal");
+      expectGolden(v1View(out.papers), (s.pm[s.pm.length - 1] ?? []) as typeof out.papers, mode, "papers");
+      expectGolden(v1View(rsDedupe(out.papers)), s.merged as typeof out.papers, mode, "rsResultsOriginal");
       expect(out.error).toBeUndefined();
     });
 
@@ -52,6 +52,47 @@ describe("pmSearch is v1's rsFetchPubmed inside researchSearch", () => {
   it("an efetch failure (HTTP, a throw, or XML that does not parse) only means no abstracts", async () => {
     for (const efetch of [() => new Response("", { status: 500 }), () => { throw new Error("down"); }, () => new Response("<PubmedArticleSet><PubmedArticle>")])
       expect(await rsPubmedAbstracts((async () => efetch()) as typeof fetch, ["1"])).toEqual({});
+  });
+});
+
+type EsItem = { authors?: Array<{ name?: string }>; volume?: string; issue?: string; pages?: string };
+describe("rsFetchPubmed keeps what v1 dropped (W2)", () => {
+  it("rsFetchPubmed keeps every author, the volume, the issue and the full page range (W2)", async () => {
+    const s = pmRuns.find((x) => x.name === "pm-rct")!;
+    const r = replay(s.in.throwFor);
+    // researchSearch's PubMed query for the case (rsBuildQuery), as pmSearch builds it, through rsFetchPubmed.
+    const papers = await rsFetchPubmed(r.f, rsBuildQuery(s.in.topic, "pm", s.in.terms, s.in.design), s.in.rank ? 15 : 6);
+    expect(r.unknown).toEqual([]);
+    const esummary = JSON.parse([...RECORDINGS.values()].find((x) => x.url === r.requested[1])!.body) as { result: Record<string, EsItem> };
+    expect(r.requested[1]).toContain("/esummary.fcgi?");
+    expect(papers.length).toBe(6);
+    for (const p of papers) {
+      const it = esummary.result[p.pmid]!;
+      expect(p.authorList, p.pmid).toEqual((it.authors ?? []).map((a) => a.name));
+      expect(p.volume, p.pmid).toBe(it.volume ?? "");
+      expect(p.issue, p.pmid).toBe(it.issue ?? "");
+      expect(p.pages, p.pmid).toBe(pmFullPages(it.pages ?? ""));
+      if ((it.authors ?? []).length > 4) expect(p.authors).toMatch(/, et al\.$/);
+    }
+    // Paper 42847411 has 15 authors: v1 kept four.
+    expect(papers.find((p) => p.pmid === "42847411")!.authorList).toHaveLength(15);
+    expect(papers.find((p) => p.pmid === "42870746")).toMatchObject({ volume: "42", issue: "5", pages: "e70228" });
+  });
+  it("a short range in a recorded esummary is written out in full (pm-noabstract: 949-50, 1327-8)", async () => {
+    const s = pmRuns.find((x) => x.name === "pm-noabstract")!;
+    const out = await pmSearch(replay(s.in.throwFor).f, { q: s.in.topic, terms: s.in.terms, design: s.in.design, retmax: s.in.rank ? 15 : 6 });
+    expect(out.papers.map((p) => p.pages)).toEqual(["c7452", "1327-1328; discussion 1328", "949-950"]);
+  });
+  it("pmFullPages expands PubMed's short ranges", () => {
+    expect(pmFullPages("123-30")).toBe("123-130");
+    expect(pmFullPages("1171-9")).toBe("1171-1179");
+    expect(pmFullPages("e0123")).toBe("e0123");
+    expect(pmFullPages("13317")).toBe("13317");
+    expect(pmFullPages("563-573")).toBe("563-573");
+    expect(pmFullPages("1-10")).toBe("1-10");
+    expect(pmFullPages("")).toBe("");
+    // A range the short reading would turn backwards is left as it is.
+    expect(pmFullPages("199-5")).toBe("199-5");
   });
 });
 
