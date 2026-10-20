@@ -90,7 +90,9 @@ export const projectBlobs = pgTable("project_blobs", {
   body: text("body").notNull(),
   keyVersion: integer("key_version").notNull().default(0),
   deks: jsonb("deks").$type<{ v: number; wrapped: string }[]>().notNull().default([]),
-  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  /** Bumped by every write of the body; a save may name the version it read, and loses (409) when another window wrote since. */
+  version: integer("version").notNull().default(0)
 }, (t) => [uniqueIndex("project_blobs_project_kind_idx").on(t.projectId, t.kind)]);
 
 export const credentials = pgTable("credentials", {

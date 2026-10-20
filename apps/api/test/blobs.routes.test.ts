@@ -45,7 +45,7 @@ describe("blob routes", () => {
     expect(put.status).toBe(200);
     const got = await json(put);
     // Stored as given: a blob body is JSON, never sanitised as HTML.
-    expect(got).toEqual({ kind: "idea_intake", body: '{"q":"<b>sleep</b>"}', keyVersion: 0, deks: [], updatedAt: expect.any(String) });
+    expect(got).toEqual({ kind: "idea_intake", body: '{"q":"<b>sleep</b>"}', keyVersion: 0, deks: [], updatedAt: expect.any(String), version: 1 });
     expect(await json(await req("GET", blob("idea_intake")))).toEqual(got);
     const again = await json(await req("PUT", blob("idea_intake"), { body: "{}", keyVersion: 0 }));
     expect(again.body).toBe("{}");
@@ -167,7 +167,7 @@ describe("blob routes", () => {
     expect(await json(await req("PUT", blob("citations") + "/rewrite", { body: ct("a.b"), keyVersion: 1, dek: { v: 1, wrapped: "k" } }))).toEqual({ error: "not-found" });
     const sealed = await req("PUT", blob("idea_intake") + "/rewrite", { body: ct("a.b"), keyVersion: 1, dek: { v: 1, wrapped: "k" } });
     expect(sealed.status).toBe(200);
-    expect(await json(sealed)).toEqual({ kind: "idea_intake", body: ct("a.b"), keyVersion: 1, deks: [{ v: 1, wrapped: "k" }], updatedAt: expect.any(String) });
+    expect(await json(sealed)).toEqual({ kind: "idea_intake", body: ct("a.b"), keyVersion: 1, deks: [{ v: 1, wrapped: "k" }], updatedAt: expect.any(String), version: 2 });
     // Retried: the same wrap is fine, another wrap for v1 is refused.
     expect((await req("PUT", blob("idea_intake") + "/rewrite", { body: ct("a.b"), keyVersion: 1, dek: { v: 1, wrapped: "k" } })).status).toBe(200);
     expect(await json(await req("PUT", blob("idea_intake") + "/rewrite", { body: ct("c.d"), keyVersion: 1, dek: { v: 1, wrapped: "x" } }))).toEqual({ error: "dek-exists" });
@@ -184,6 +184,57 @@ describe("blob routes", () => {
     expect((await req("PUT", blob("shelf_cols"), { body: '["Sample","Method"]', keyVersion: 0 })).status).toBe(200);
     expect(await json(await req("GET", blob("shelf_cols")))).toMatchObject({ kind: "shelf_cols", body: '["Sample","Method"]', keyVersion: 0 });
     expect((await req("GET", blob("shelf_cols:x"))).status).toBe(400);
+  });
+
+  /** A PUT with an If-Match header, as a wave A tab sends it. */
+  const putIf = (kind: string, ifMatch: string, body: unknown) =>
+    app.request(blob(kind), { method: "PUT", headers: { authorization: "Bearer " + tokens.u1, "content-type": "application/json", "if-match": ifMatch }, body: JSON.stringify(body) });
+
+  it("PUT with a stale If-Match is 409 version-conflict with the current version", async () => {
+    await req("PUT", blob("citations"), { body: "[1]", keyVersion: 0 });
+    await req("PUT", blob("citations"), { body: "[2]", keyVersion: 0 });
+    const res = await putIf("citations", '"1"', { body: "[stale]", keyVersion: 0 });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "version-conflict", version: 2 });
+    expect(await json(await req("GET", blob("citations")))).toMatchObject({ body: "[2]", version: 2 });
+    // The current version, quoted or bare, writes and answers the next one.
+    const ok = await putIf("citations", '"2"', { body: "[3]", keyVersion: 0 });
+    expect(ok.status).toBe(200);
+    expect(await json(ok)).toMatchObject({ body: "[3]", version: 3 });
+    expect((await putIf("citations", "3", { body: "[4]", keyVersion: 0 })).status).toBe(200);
+    // A save that expects a blob deleted in another window does not bring it back.
+    const gone = await putIf("shelf_paper:p9", '"4"', { body: "{}", keyVersion: 0 });
+    expect(gone.status).toBe(409);
+    expect(await json(gone)).toEqual({ error: "version-conflict", version: 0 });
+    expect((await req("GET", blob("shelf_paper:p9"))).status).toBe(404);
+    // "0" creates a missing blob once; the second create conflicts.
+    expect(await json(await putIf("ap_notes", '"0"', { body: "{}", keyVersion: 0 }))).toMatchObject({ version: 1 });
+    expect(await json(await putIf("ap_notes", '"0"', { body: "{}", keyVersion: 0 }))).toEqual({ error: "version-conflict", version: 1 });
+    // A stale tab hears version-conflict, not a dek clash judged against a blob it has not seen.
+    await req("PUT", blob("ap_cols"), { body: ct("a.b"), keyVersion: 1, dek: { v: 1, wrapped: "k1" } });
+    const clash = await putIf("ap_cols", '"0"', { body: ct("c.d"), keyVersion: 1, dek: { v: 1, wrapped: "other" } });
+    expect(clash.status).toBe(409);
+    expect(await json(clash)).toEqual({ error: "version-conflict", version: 1 });
+  });
+
+  it("GET answers the version in the body and as the ETag", async () => {
+    await req("PUT", blob("idea_intake"), { body: "{}", keyVersion: 0 });
+    const res = await req("GET", blob("idea_intake"));
+    expect(res.headers.get("etag")).toBe('"1"');
+    expect(await json(res)).toMatchObject({ version: 1 });
+    // A PUT without If-Match (a tab from before wave A) still writes, and still bumps the version.
+    expect((await json(await req("PUT", blob("idea_intake"), { body: '{"q":1}', keyVersion: 0 }))).version).toBe(2);
+    expect((await req("GET", blob("idea_intake"))).headers.get("etag")).toBe('"2"');
+  });
+
+  it("a malformed If-Match is 400 invalid", async () => {
+    await req("PUT", blob("citations"), { body: "[1]", keyVersion: 0 });
+    for (const h of ['W/"x"', 'W/"1"', "*", '"1", "2"', '"-1"', '"1.5"', "abc", '""']) {
+      const r = await putIf("citations", h, { body: "[bad]", keyVersion: 0 });
+      expect(r.status, h).toBe(400);
+      expect(await json(r)).toEqual({ error: "invalid" });
+    }
+    expect(await json(await req("GET", blob("citations")))).toMatchObject({ body: "[1]", version: 1 });
   });
 
   it("DELETE removes one blob (204), then answers 404; the project's other blobs stay", async () => {

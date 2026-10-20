@@ -1,5 +1,5 @@
 import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
-import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError } from "./types";
+import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 /** A vault record's next updatedAt: now, but always after the last one, so a precondition never matches two versions. */
 const after = (prev: Date): Date => new Date(Math.max(Date.now(), prev.getTime() + 1));
@@ -275,9 +275,12 @@ export class MemoryStore implements Store {
     if (!this.ownsProject(userId, projectId)) return null;
     const key = projectId + "\n" + kind;
     const prev = this.blobs.get(key);
+    // A missing blob is version 0, so expectedVersion above 0 never creates one. The version is checked before the dek rule, as the Drizzle
+    // store reports them; either refusal writes nothing.
+    if (w.expectedVersion !== undefined && (prev?.version ?? 0) !== w.expectedVersion) throw new VersionConflictError(prev?.version ?? 0);
     const deks = this.withDek(prev?.deks ?? [], w.dek);
     const updatedAt = new Date(Math.max(Date.now(), (prev?.updatedAt.getTime() ?? 0) + 1));
-    const b: ProjectBlob = { id: prev?.id ?? crypto.randomUUID(), projectId, kind, body: w.body, keyVersion: w.keyVersion, deks, updatedAt };
+    const b: ProjectBlob = { id: prev?.id ?? crypto.randomUUID(), projectId, kind, body: w.body, keyVersion: w.keyVersion, deks, updatedAt, version: (prev?.version ?? 0) + 1 };
     this.blobs.set(key, b);
     return this.blobCopy(b);
   }
@@ -292,6 +295,7 @@ export class MemoryStore implements Store {
     b.deks = this.withDek(b.deks, w.dek);
     b.body = w.body;
     b.keyVersion = w.keyVersion;
+    b.version += 1;
     return this.blobCopy(b);
   }
 

@@ -23,6 +23,13 @@ describe("api routes", () => {
     expect(await r.json()).toEqual({ ok: true });
   });
 
+  it("CORS preflight allows If-Match", async () => {
+    const r = await app.request("/projects/p/blobs/citations", { method: "OPTIONS", headers: { origin: "https://app.example", "access-control-request-method": "PUT", "access-control-request-headers": "authorization, content-type, if-match" } });
+    expect(r.status).toBe(204);
+    const allowed = (r.headers.get("access-control-allow-headers") ?? "").toLowerCase().split(",").map((h) => h.trim());
+    expect(allowed).toEqual(expect.arrayContaining(["authorization", "content-type", "if-match"]));
+  });
+
   it("rejects missing and expired tokens with 401", async () => {
     expect((await app.request("/projects")).status).toBe(401);
     const expired = await token("u1", -10);
