@@ -1,6 +1,6 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
-  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPrompt, buildHelperPrompt, buildIdeaPrompt, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
+  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPrompt, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
   buildShelfSummaryPrompt, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
   shSummaryNoteId, shSummaryText, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
 } from "@appuscholar/core";
@@ -324,7 +324,7 @@ export const litReview = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
 
 /** "🕳 Find a research gap" (researchGapFinder 8541-8551) on the ticked papers shown. */
 export const gapFinder = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
-  generate(buildGapFinderPrompt, d.t("rs2_looking_for_what_these"), papers, d);
+  generate(buildGapFinderPromptV2, d.t("rs2_looking_for_what_these"), papers, d);
 
 /** What the Reading shelf's summary touches: the AI (callAI scans for personal data first), the field, the copy, the paper, the note store and the reader's summary box. */
 export type ShelfSummaryDeps = Pick<ResearchAiDeps, "callAI" | "field" | "t"> & {
