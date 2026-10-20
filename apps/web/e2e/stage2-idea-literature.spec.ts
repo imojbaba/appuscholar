@@ -337,6 +337,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_on"));
 
     await expect(page.getByTestId("app-version")).toHaveText(/^Version \S+$/);
+    if (process.env.GITHUB_SHA) await expect(page.getByTestId("app-version")).toHaveText("Version " + process.env.GITHUB_SHA.slice(0, 7));
     await page.getByTestId("new-project").click();
     await expect(page.getByTestId("sap-dialog")).toBeVisible();
     await page.getByTestId("sap-name").fill(PROJECT);
