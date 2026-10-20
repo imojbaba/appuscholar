@@ -1,5 +1,7 @@
 import type { Editor } from "@tiptap/core";
-import { provHash } from "@appuscholar/core";
+import type { Mark } from "@tiptap/pm/model";
+import { Selection } from "@tiptap/pm/state";
+import { provHash, type Formatted } from "@appuscholar/core";
 
 /**
  * Inserts HTML that is not AI text (a template): at the end of the document with `atEnd`, otherwise at the cursor, after the last block when the cursor is collapsed at the end of the document,
@@ -50,6 +52,65 @@ export function selectionRange(editor: Editor): SelectionRange | null {
 /** Moves a saved range through a transaction's changes, so edits made before it do not leave it pointing at the wrong words. */
 export function mapRange(range: SelectionRange, mapping: { map(pos: number, assoc?: number): number }): SelectionRange {
   return { ...range, from: mapping.map(range.from, 1), to: mapping.map(range.to, -1) };
+}
+
+/** Editors the student has been in (focused by a click or a key), or that a citation went into: v1's savedRange exists (4195, 4230). */
+const placed = new WeakSet<Editor>();
+/** Called by the CursorPlaced extension on the editor's focus, and after a citation is inserted (v1 keeps savedRange after inserting, 4220-4225). */
+export function markCursorPlaced(editor: Editor): void { placed.add(editor); }
+/**
+ * v1's `hasSelection()||!!savedRange` (7486) and insertHTMLBlockIntoEditor's `savedRange` (4230): the student has put the cursor in this document
+ * (it has had focus since it was opened, or holds a selection). Until then a citation goes at the end of the document.
+ */
+export function cursorPlaced(editor: Editor): boolean { return placed.has(editor) || editor.isFocused || !editor.state.selection.empty; }
+
+/**
+ * v1 citPutIntext's insert (7500-7501). With the cursor placed (cursorPlaced), the citation goes at the cursor, over the selection if there is one, as
+ * v1's insertHTML put it there; otherwise at the end of the document (placeCaretAtEnd), the text on a new line when the document holds something
+ * (insertIntoEditor's `'\n'+text`, 4199, a line break here) and AMA's number with none (insertHTMLBlockIntoEditor 4230). AMA's number goes in as
+ * `<sup>n</sup>` with no space; every other style as plain text, `' ' + intext`. It is the student's own text: it keeps the formatting the cursor sits
+ * in (bold, italics) but never an `ai-ins` span, even inside AI text, and the cursor ends after it so a second citation follows it.
+ */
+export function insertCitation(editor: Editor, fmt: Formatted): void {
+  putText(editor, fmt.sup ? String(fmt.num) : " " + fmt.intext, !!fmt.sup);
+}
+
+/**
+ * v1 citInsertAtCursor (7481-7487) for text the student wrote (a quote "as is", 7905): insertIntoEditor's rule, the same as a citation's. At the cursor
+ * when one is placed, else at the end of the document on a new line; each newline a line break (insertIntoEditor's `.replace(/\n/g,'<br>')`, 4200).
+ */
+export function insertTextAtCursor(editor: Editor, text: string): void { putText(editor, text, false); }
+
+function putText(editor: Editor, text: string, sup: boolean): void {
+  const atCursor = cursorPlaced(editor);
+  const blank = editor.isEmpty;
+  editor.chain().focus().command(({ tr, state }) => {
+    const { schema } = state;
+    if (!atCursor) tr.setSelection(Selection.atEnd(tr.doc));
+    const aiIns = (m: Mark) => m.type.name === "classSpan" && /(^|\s)ai-ins(\s|$)/.test(String(m.attrs.class ?? ""));
+    let marks: readonly Mark[] = ((atCursor ? state.storedMarks : null) ?? tr.selection.$from.marks()).filter((m) => !aiIns(m));
+    const supMark = schema.marks.superscript;
+    if (sup && supMark) marks = supMark.create().addToSet(marks);
+    const br = schema.nodes.hardBreak;
+    if (!atCursor && !sup && !blank && br) tr.replaceSelectionWith(br.create(), false);
+    text.split("\n").forEach((line, i) => {
+      if (i > 0 && br) tr.replaceSelectionWith(br.create(), false);
+      if (line) tr.replaceSelectionWith(schema.text(line, marks), false);
+    });
+    return true;
+  }).run();
+  markCursorPlaced(editor);
+}
+
+/**
+ * v1 insertHTMLBlockIntoEditor (4228-4244), for markup the app built (the reference list, a translated quote): at the cursor when the student has
+ * placed one (`savedRange`, cursorPlaced), else after everything written (placeCaretAtEnd); one insertion, with no provenance mark. v1 keeps
+ * savedRange after inserting (4242), so the next insert follows this one.
+ */
+export function insertHtmlBlock(editor: Editor, html: string): void {
+  if (cursorPlaced(editor)) editor.chain().focus().insertContent(html).run();
+  else insertPlainHtml(editor, html, { atEnd: true });
+  markCursorPlaced(editor);
 }
 
 /** v1 selCite: collapses the selection to its end without moving focus, so a citation inserted later goes right after the passage instead of replacing it. */

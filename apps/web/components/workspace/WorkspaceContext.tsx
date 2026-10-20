@@ -13,12 +13,18 @@ export type DocumentSummary = { id: string; projectId: string; title: string; ki
  */
 export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion: number; deks: WrappedDek[]; unreadable?: "locked" | "broken" };
 
+/** v1's apLoad(title, [head+ab], 'abstract', false) (8412): the title, the pages (one: the head and the abstract) and the source kind, for apBuild(title, pages, "abstract"). */
+export type PendingAnalyse = { title: string; pages: string[]; src: "abstract" };
+
 export type WorkspaceValue = {
   activeTool: ToolId;
   showTool(id: ToolId): void;
   /** The text the selection bubble's Find papers kept for the Research tool (up to 200 characters), or null. */
   pendingSearch: string | null;
   setPendingSearch(text: string | null): void;
+  /** The paper Research's "📄 Analyse this paper" kept for Analyse a paper (v1 rsAnalyse 8407-8419), or null; Task 12's intake loads it abstract-only. */
+  pendingAnalyse: PendingAnalyse | null;
+  setPendingAnalyse(v: PendingAnalyse | null): void;
   dock: "tools" | "ai";
   dockShow(which: "tools" | "ai"): void;
   aiWaiting: boolean;
@@ -35,6 +41,11 @@ export type WorkspaceValue = {
   /** The active project's stage, or null in scratch space or once the project is complete. */
   currentStage: StageKey | null;
   project: Project | null;
+  /**
+   * The project the workspace has loaded: the open project's id, the scratch project's in scratch space; null until the first load has
+   * answered (while `project` is still null for a student whose active project is loading). Stage blobs shared across the workspace key on it.
+   */
+  projectId: string | null;
   documents: DocumentSummary[];
   currentDoc: DocumentWithBody | null;
   /** Shows another document of this project, after the open one's autosave has stored its text. When that save fails the student is asked "Switch anyway?"; false means they stayed on the open document. */

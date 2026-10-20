@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(teacher%20burnout)%20AND%20(qualitative%5Btiab%5D%20OR%20%22thematic%20analysis%22%5Btiab%5D)",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"93\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42728907\",\"42718920\",\"42468302\",\"42256038\",\"42190355\",\"42145553\"],\"translationset\":[{\"from\":\"teacher\",\"to\":\"\\\"teacher\\\"[All Fields] OR \\\"teacher's\\\"[All Fields] OR \\\"teachers\\\"[All Fields]\"},{\"from\":\"burnout\",\"to\":\"\\\"burnout's\\\"[All Fields] OR \\\"burnout, psychological\\\"[MeSH Terms] OR (\\\"burnout\\\"[All Fields] AND \\\"psychological\\\"[All Fields]) OR \\\"psychological burnout\\\"[All Fields] OR \\\"burnout\\\"[All Fields] OR \\\"burnouts\\\"[All Fields]\"}],\"querytranslation\":\"(\\\"teacher\\\"[All Fields] OR \\\"teacher s\\\"[All Fields] OR \\\"teachers\\\"[All Fields]) AND (\\\"burnout s\\\"[All Fields] OR \\\"burnout, psychological\\\"[MeSH Terms] OR (\\\"burnout\\\"[All Fields] AND \\\"psychological\\\"[All Fields]) OR \\\"psychological burnout\\\"[All Fields] OR \\\"burnout\\\"[All Fields] OR \\\"burnouts\\\"[All Fields]) AND (\\\"qualitative\\\"[Title/Abstract] OR \\\"thematic analysis\\\"[Title/Abstract])\"}}\n"
+}

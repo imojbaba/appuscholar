@@ -36,6 +36,31 @@ export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildH
 export type { HelperKind } from "./prompts-helpers";
 export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt } from "./prompts-research";
 export { AP_RULES, LESSON_QUESTION_MAX_CHARS, buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "./prompts-analyse";
+// Stage 2: network fetchers (Task 4)
+export { pace } from "./fetch/types";
+export type { OaPaper, PmPaper, RsBrief, SearchResult } from "./fetch/types";
+export { oaUrl, rsFetchOpenAlex, oaSearch, rsOaBrief, oaConnected, retrFetchBatch, oaRetractions, apRefCheck } from "./fetch/openalex";
+export type { ApRefs } from "./fetch/openalex";
+export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmidToDoi } from "./fetch/pubmed";
+export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
+export type { CrWork, RcCheck } from "./fetch/crossref";
+// Stage 2: Citation Manager checks (Task 8a)
+export { citMissingNumbers, citCaretEntry } from "./citlib";
+// Stage 2: Citation Manager classic sources (Task 8b), generated from v1 by the golden harness
+export { PSYCH_STARTERS } from "./data/classic-sources";
+// Stage 2: Citation Manager one-click capture (Task 8b)
+export { bookmarkletSource, bookmarkletHref, decodeCapture, captureConfirmText, captureRecord, captureIsDuplicate } from "./citcapture";
+export type { CaptureData } from "./citcapture";
+// Stage 2: Research related terms, sort orders and fold (Task 9)
+export { rsParseTerms, rsSortResults, rsFoldIndex } from "./research";
+// Stage 2: Reading shelf (Task 11)
+export { appuStem, SH_STOP, shTokens, shCount, shSnippet, shSnippetParts, htmlMarksToParts, shRank, shBestSentence, shRankPages, shFindPassages, SH_MAX_PAGES, SH_MIN_CHARS, shPageText, shChars, shTitleGuess, shPaperId, shNoteId, shSummaryNoteId, shMarkedParts, shQuoteFind, shMineOk, shStripEmails, shSummaryText, SHELF_SUMMARY_MAX_CHARS, buildShelfSummaryPrompt, SHELF_DEFAULT_COLS, shColsOf, shColsAdd, shColsDel, shMatrixCsv, shBackupBundle, shBackupFileName, shRestoreParse } from "./shelf";
+export type { SnippetPart, ShHit, ShSearchHit, ShPassage, ShTextItem, ShNote, ShRecord } from "./shelf";
+// Stage 2: Analyse a paper, the page's rules and formats (Task 12)
+export { apFileKind, apFileStem, apDocxText, apTitleOf, apLoadRefusal, apShelfLabel, apPreview, apNumP } from "./analyse-page";
+// Stage 2: Analyse a paper, the walk-through's reply, the paper card and the cards side by side (Task 13)
+export { apWalkRes, apCardText, AP_COLS, apAcrossCols, apAcrossColToggle, apAcrossCell, apAcrossRows, apAcrossData, apAcrossCsv } from "./analyse-cards";
+export type { ApWalkRes, ApNoteLike, ApCardLabels, ApCardRefs, ApAcrossLabels, ApQuoteCheck } from "./analyse-cards";
 export {
   smean, svar, ssd, smedian, ranks, stkNormCdf, stkQnorm, stkPoly, stkShapiro, stkBrownForsythe, stkRSS, stkAnova2, stkOLS, stkLogit, stkAUC, stkSimpleEffects,
   plRng, plNorm, plSim, pwLogPois, pwNcChiSf, pwNcFSf, pwNctCdf, pwChiCrit, pwPowerT, pwPowerF, pwPower, pwSolveN, pwSolveEffect,

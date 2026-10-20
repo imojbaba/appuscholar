@@ -14,7 +14,10 @@ import { VaultError } from "@/lib/vault/crypto";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { SuggestionProvider } from "@/lib/ai/suggestion";
+import { SuggestionProvider, useSuggestion } from "@/lib/ai/suggestion";
+import { useSyncReceiver } from "@/lib/popout/sync";
+import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
+import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dock } from "./Dock";
 import { ProjectBar } from "./ProjectBar";
@@ -29,7 +32,7 @@ import { Sidebar } from "./Sidebar";
 import { SidebarDrawer } from "./SidebarDrawer";
 import { MID_QUERY, PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { Subbar } from "./Subbar";
-import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type Project, type WorkspaceValue } from "./WorkspaceContext";
+import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type WorkspaceValue } from "./WorkspaceContext";
 
 const BUSY = "Another import is still running. Wait for it to finish.";
 
@@ -65,7 +68,7 @@ export async function readableDoc(vault: Pick<VaultValue, "ensureUnlocked" | "de
 }
 
 /** Creation order, as v1 listed documents (the API answers most recently updated first). */
-function byCreated(list: DocumentSummary[]): DocumentSummary[] {
+export function byCreated(list: DocumentSummary[]): DocumentSummary[] {
   return [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
@@ -92,6 +95,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting, setAiWaiting] = useState(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
+  const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
@@ -154,6 +158,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
       if (!live) return;
       setProject(r.project);
       setProjectId(r.projectId);
+      // An abstract Research kept for Analyse a paper belongs to the project it was found in (ruling R7).
+      if (r.projectId !== projectIdRef.current) setPendingAnalyse(null);
       setDocuments(byCreated(r.documents));
       setCurrentDoc(r.doc);
       if (!toolInit.current) {
@@ -308,8 +314,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
 
   const value: WorkspaceValue = {
-    activeTool, showTool, pendingSearch, setPendingSearch, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
-    currentStage, project, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
+    activeTool, showTool, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
+    currentStage, project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
@@ -322,6 +328,12 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   return (
     <WorkspaceProvider value={value}>
       <SuggestionProvider>
+        {/* One citation library for the Citation Manager and the caret chip under the document. */}
+        <CiteLibraryProvider>
+        {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash. */}
+        <CaptureHash />
+        {/* v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor. */}
+        <SyncReceiver />
         <Header />
         <ChromeDialogs />
         <Subbar />
@@ -357,7 +369,15 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
         ) : (
           <div className="grid gap-4 p-6" aria-busy="true"><Skeleton className="h-6 w-60" /><Skeleton className="h-96" /></div>
         )}
+        </CiteLibraryProvider>
       </SuggestionProvider>
     </WorkspaceProvider>
   );
+}
+
+/** The writing window's end of the pop-out channel, on the open document's editor (lib/popout/sync.ts). */
+function SyncReceiver() {
+  const { editor } = useSuggestion();
+  useSyncReceiver(editor);
+  return null;
 }

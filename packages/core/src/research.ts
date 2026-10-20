@@ -163,3 +163,29 @@ export function rsCorpusText(papers: RsPaper[]): string{
     (p.abstract?'\nAbstract: '+p.abstract:'\nAbstract: not available.')+
     (p.retracted?'\nWARNING: this paper is marked as retracted. Do not present its findings as reliable; mention the retraction if you refer to it.':'')).join('\n\n');
 }
+/* Stage 2 (Task 9), golden test/golden/rspanel (`golden:capture rspanel`), cut from v1 as the lines above and changed only as listed:
+   - rsParseTerms(out, q): the related terms rsSuggestTerms (8251-8263) keeps of the AI's reply, its lines 8257-8258 as v1 wrote them, inside a function that returns `terms`; `out` and `q` are
+     parameters (v1's reply of callAI and its trimmed #rsTopic, 8252: the caller trims), apJson's result is read `as { terms?: unknown } | null`, the map hands rsCleanTerm its value `as string`
+     (v1 passes any JSON value; rsCleanTerm's String(t||'') reads it either way), and `seen` is typed;
+   - rsSortResults(results, mode): the four orders of rsApplySort (8356-8362) as v1 wrote them, on a copy of the list it is given (v1 sorts the filtered copy of rsResultsOriginal, 8355, `let list`),
+     returned; `mode` is #rsSort's value (8351) and `parseInt(b.year,10)` takes `String(b.year)` (a year may be a number; parseInt reads its String either way);
+   - rsFoldIndex(results, mode): rsRenderResults' fold, `(document.getElementById('rsSort').value==='fit')?rsResults.findIndex(p=>p.rel&&p.rel.score<=1):-1` (8402) with the mode a parameter;
+     the panel folds only when it is above 0, as 8403 does. */
+export function rsParseTerms(out: string,q: string): string[]{
+  const j=apJson(out) as { terms?: unknown } | null;
+  const seen: Record<string, number>={};const terms=((j&&Array.isArray(j.terms))?j.terms:[]).map(x=>rsCleanTerm(x as string,q)).filter(x=>{if(!x||seen[x.toLowerCase()])return false;seen[x.toLowerCase()]=1;return true}).slice(0,8);
+  return terms;
+}
+export function rsSortResults(results: RsPaper[],mode: string): RsPaper[]{
+  let list=results.slice();
+  if(mode==='citations')list.sort((a,b)=>(b.citationCount||0)-(a.citationCount||0));
+  else if(mode==='year')list.sort((a,b)=>(parseInt(String(b.year),10)||0)-(parseInt(String(a.year),10)||0));
+  else if(mode==='fit'){
+    const rk=(x: RsPaper)=>x.rel?(x.rel.score>=2?3-x.rel.score:(x.rel.score===1?3:4)):2; /* 3, 2, unscored, 1, 0 */
+    list=list.map((x,i)=>({x:x,i:i})).sort((a,b)=>rk(a.x)-rk(b.x)||a.i-b.i).map(o=>o.x);
+  }
+  return list;
+}
+export function rsFoldIndex(results: RsPaper[],mode: string): number{
+  return (mode==='fit')?results.findIndex(p=>p.rel&&p.rel.score<=1):-1;
+}

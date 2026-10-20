@@ -1,0 +1,8 @@
+{
+ "url": "https://api.crossref.org/works/10.9999%2Fappuscholar-no-such-doi-2026",
+ "status": 404,
+ "headers": {
+  "content-type": "text/plain"
+ },
+ "body": "Resource not found."
+}

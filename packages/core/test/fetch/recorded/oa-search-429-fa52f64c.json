@@ -1,0 +1,10 @@
+{
+ "url": "https://api.openalex.org/works?search=caffeine%20sleep%20quality&per-page=8&select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted",
+ "status": 429,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": "{\"error\":\"Rate limit exceeded\",\"message\":\"Synthetic body written by hand for the 429 test: the daily budget for keyless use is spent.\"}",
+ "synthetic": true,
+ "note": "Written by hand, never served by OpenAlex: the 429 case (v1 oaHttpError 8032)."
+}

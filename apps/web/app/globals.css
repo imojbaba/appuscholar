@@ -216,6 +216,40 @@
 .field label { font-size: 13px; line-height: 18px; font-weight: 500; }
 .input, .field .input { width: 100%; min-height: var(--ctl); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font-size: 14px; line-height: 20px; resize: vertical; }
 .input::placeholder, .field .input::placeholder { color: var(--muted); }
+/* Citation Manager (v1 874-947): side-by-side fields, the style note under its select, the library cards. */
+.cite-row { display: flex; gap: 8px; }
+.cite-row > .field, .cite-row > .flex-1 { min-width: 0; }
+.panel .desc.cite-note { margin: 4px 0 0; }
+.panel .note.cite-state { margin: 0 0 12px; }
+.panel h3.cite-lib-h { margin-top: 18px; display: flex; align-items: center; gap: 8px; }
+.cite-lib { margin-top: 8px; }
+.cit-item { position: relative; margin-bottom: 8px; padding: 10px 32px 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--card); font-size: 13px; line-height: 19px; overflow-wrap: anywhere; }
+.cit-item .del { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: var(--r-ctl); color: var(--muted); }
+.cit-item .del:hover { background: var(--chip); color: var(--ink); }
+.cit-item .cite-card-row { margin-top: 6px; }
+/* Task 8a: the card the caret chip points at (v1 84), the checks' lines and the retraction warning (v1 305), the cross-check dialog (v1 1614). */
+.cit-item.cit-active { outline: 2px solid var(--purple-600, #6d28d9); background: #f3ebff; }
+.cit-item .cite-used, .cit-item .rc-line { margin-top: 4px; }
+.cit-item .cite-not-used { opacity: .75; }
+.cit-item .rc-ok { color: #166534; }
+.cit-item .rc-nf { color: #92400e; }
+.cit-item .rc-diff { color: #92400e; font-weight: 600; }
+.cit-item .rc-diff .rc-sub { font-weight: 400; }
+.retr-warn { background: rgba(220, 38, 38, .12); border: 1px solid #dc2626; color: var(--ink); border-radius: 8px; padding: 6px 9px; font-size: 12px; line-height: 1.5; margin-top: 5px; }
+.panel .desc.cite-usage-sum { margin-top: 6px; font-weight: 600; }
+.panel .desc.cite-retr-sum, .panel .desc.cite-rc-sum, .panel .desc.cite-num-missing { margin-top: 2px; }
+.panel .desc.cite-retr-sum.cite-flagged { font-weight: 700; }
+.panel .desc.cite-num-missing { font-weight: 600; }
+.cit-caret-chip { border-color: var(--purple-600, #6d28d9); color: var(--accent-ink); }
+.cc-dlg { max-height: 85vh; overflow-y: auto; }
+.cc-dlg .cc-desc, .cc-dlg .cc-src { font-size: 13px; }
+.cc-dlg .cc-sum { font-weight: 700; }
+.cc-dlg h3 { font-size: 14px; margin: 12px 0 4px; }
+.cc-item { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; font-size: 13px; }
+.cc-missing { border-left: 4px solid #b91c1c; }
+.cc-unused { border-left: 4px solid #b45309; }
+.cc-item .cc-near { margin-top: 3px; }
+.cc-item .cc-go { margin-top: 4px; }
 .input:focus-visible, .field .input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
 /* Phone-only pieces, off above 700px: the header's menu button and line break, the sheet's handle, the drawer. The wrappers add no box on desktop. */
@@ -376,3 +410,145 @@
   [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }
   .splitter { display: none; }
 }
+/* Task 8b: a translated quote (v1 250), the quote box, the one-click capture's <details> (v1 921-928) and the library's last buttons (v1 940-946). */
+.editor .ProseMirror .translated-quote { border-bottom: 2px dotted #7c3aed; cursor: help; }
+.panel .cite-quote { margin-top: 10px; }
+.panel details.cite-capture { margin-top: 14px; }
+.panel details.cite-capture summary { cursor: pointer; font-weight: 700; color: var(--purple-800); font-size: 13.5px; }
+.panel details.cite-capture .desc { margin-top: 8px; }
+.panel .cite-capture-link { text-align: center; margin: 10px 0; }
+.panel .cite-share { margin-top: 8px; }
+.panel .desc.cite-sharing { margin-top: 10px; }
+/* Task 9: Research (v1 950-1034): the form's rows, the status line, the result cards and their badges (v1 293-311), the fit chip (8204), the fold (8403). */
+.rs-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 2px 0 6px; font-size: 12.5px; }
+.rs-row { display: flex; gap: 8px; margin-top: 8px; }
+.rs-select { width: auto; min-height: 0; padding: 4px 8px; font-size: 12.5px; }
+.rs-check { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; cursor: pointer; }
+.rs-check input { margin-top: 3px; }
+.rs-rank { margin: 2px 0 6px; }
+.rs-sources { gap: 14px; margin-bottom: 4px; }
+.rs-sources input, .paper-check input { accent-color: var(--purple-600); }
+.rs-terms-note { font-size: 12.5px; margin: 2px 0 4px; }
+.rs-terms-list label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.panel .desc.rs-status { margin-top: 8px; }
+.rs-sort-row { margin: 4px 0 8px; gap: 8px; }
+.rs-sort-row label { font-weight: 700; color: var(--muted); }
+#rsResults { margin-top: 8px; }
+.paper-card { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55; margin-bottom: 8px; overflow-wrap: anywhere; }
+.paper-card h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--purple-800); }
+.paper-card .meta { color: var(--muted); font-size: 11.5px; margin-bottom: 5px; }
+.paper-card .abs { margin: 5px 0; max-height: 4.6em; overflow: hidden; }
+.paper-card .abs.open { max-height: none; }
+.paper-card .rs-more { font-size: 11.5px; color: var(--accent-ink); text-decoration: underline; }
+.paper-card .src-tag { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); background: var(--purple-100); padding: 1px 7px; border-radius: 10px; margin-right: 6px; }
+.paper-card .oa-badge { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--ink); padding: 1px 7px; border-radius: 10px; margin-right: 6px; border: 1px solid; cursor: help; }
+.paper-card .oa-gold { background: rgba(240, 173, 63, .22); border-color: #c9932e; }
+.paper-card .oa-green { background: rgba(34, 160, 90, .18); border-color: #22a05a; }
+.paper-card .oa-hybrid { background: rgba(59, 130, 246, .18); border-color: #3b82f6; }
+.paper-card .oa-bronze { background: rgba(194, 110, 60, .2); border-color: #c26e3c; }
+.paper-card .retr-badge { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--ink); background: rgba(220, 38, 38, .16); border: 1px solid #dc2626; padding: 1px 7px; border-radius: 10px; margin-right: 6px; cursor: help; }
+.paper-card .row { display: flex; flex-wrap: wrap; margin-top: 6px; gap: 6px; }
+.paper-check { display: flex; align-items: flex-start; gap: 6px; }
+.paper-check > input { margin-top: 4px; width: 15px; height: 15px; flex: 0 0 auto; }
+.rs-fit { font-size: 12px; margin: 2px 0; }
+.rs-fit-chip { padding: 1px 7px; border-radius: 8px; background: rgba(109, 40, 217, .12); }
+.rs-fit-why { color: var(--muted); }
+.rs-fold { margin-top: 8px; }
+.rs-fold > summary { cursor: pointer; font-weight: 700; font-size: 13px; }
+/* Task 10: the quick-read box (v1 8163), the filters (976-989), the CSV row (991), the actions block (993-997), the three <details> below (999-1030) and connected papers (8515-8520, v1 310-311). */
+.rs-quick { font-size: 12.5px; margin: 3px 0; padding: 5px 8px; border-left: 3px solid var(--purple-600); background: rgba(109, 40, 217, .06); }
+.rs-quick-note { color: var(--muted); }
+.rs-quick .ap-warn { color: #b45309; font-size: 12px; }
+.panel details.rs-filters { margin: 4px 0 8px; font-size: 12.5px; }
+.panel details.rs-filters > summary { cursor: pointer; font-weight: 700; color: var(--muted); }
+.rs-filter-row { gap: 10px; margin: 6px 0; }
+.rs-num { width: 80px; min-height: 0; padding: 4px 6px; font-size: 12.5px; display: inline-block; }
+.rs-filter-note { font-size: 11.5px; color: var(--muted); }
+.rs-fstat { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.panel #rsResults { margin-top: 8px; }
+.rs-csv-row { margin-top: 6px; }
+.rs-actions { margin-top: 12px; }
+/* The pop-out window (v1 80-83): the tool alone, at its natural height, 10px from the edge; Research's ticked-papers actions (#rsActions), which answer in
+   the AI pane, are hidden there as v1 hides them. */
+.popout { display: block; height: auto; padding: 10px; }
+.popout > .panel { overflow: visible; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.popout #rsActions { display: none !important; }
+.panel .desc.rs-grounded { margin-top: 6px; }
+.panel details.rs-more-box { margin-top: 10px; }
+.panel details.rs-more-box > summary { cursor: pointer; font-weight: 700; color: var(--purple-800); font-size: 13.5px; }
+.panel details.rs-more-box > .desc { margin-top: 8px; }
+.panel details[data-testid="rs-external"] { margin-top: 14px; }
+.rs-fields { display: flex; gap: 10px; }
+.rs-conn-h { margin: 10px 0 4px; }
+.connected-list { margin-top: 8px; padding-left: 2px; }
+.connected-list .paper-card { margin-bottom: 6px; }
+.connected-list .paper-card b { font-size: 12.5px; }
+
+/* Reading shelf (v1 shelfDlg 1247-1254 and the sh* renderers 11607-11703) */
+.sh-dlg { max-height: 90vh; overflow-y: auto; }
+.sh-dlg .sh-desc { font-size: 13px; color: var(--muted); margin: 0; }
+.sh-body { max-height: 64vh; overflow: auto; padding-right: 4px; }
+.sh-row { display: flex; gap: 6px; margin-top: 6px; }
+.sh-row.sh-wrap { flex-wrap: wrap; }
+.sh-row.sh-center { align-items: center; }
+.sh-grow { flex: 1; }
+.sh-wide { width: 100%; }
+.sh-text { font-size: 13.5px; }
+.sh-intro { margin: 0 0 6px; }
+.sh-small { font-size: 12.5px; margin: 6px 0; }
+.sh-muted { color: var(--muted); }
+.sh-status { font-size: 13px; margin: 6px 0; }
+.sh-paper, .sh-card { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+.sh-paper .sh-title { width: 100%; font-weight: 700; }
+.sh-card-head { font-weight: 700; font-size: 13.5px; }
+.sh-card-head .sh-muted { font-weight: 400; }
+.sh-snippet { font-size: 13px; line-height: 1.55; margin: 4px 0; }
+.sh-page { white-space: pre-wrap; font-size: 14px; line-height: 1.65; border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin: 8px 0; user-select: text; }
+.sh-pg { width: 64px; display: inline-block; }
+.sh-h3 { margin: 12px 0 4px; font-size: 14px; }
+.sh-hl { border-left: 3px solid #d97706; padding: 2px 8px; margin: 6px 0; font-size: 13px; }
+.sh-ai { margin-top: 8px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+.sh-matrix { overflow: auto; margin-top: 8px; }
+.sh-matrix table { border-collapse: collapse; font-size: 13px; width: 100%; }
+.sh-matrix th { text-align: left; padding: 4px; }
+.sh-matrix td { vertical-align: top; padding: 4px; }
+.sh-matrix td textarea { width: 100%; min-width: 130px; }
+.sh-matrix .sh-matrix-title { font-weight: 700; min-width: 140px; }
+
+/* Analyse a paper (v1 743: .ap-box, .ap-q, .ap-bad, .ap-warn, .ap-ok, .ap-banner), in the design system's tokens. */
+.ap-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }
+.ap-row.ap-wrap { flex-wrap: wrap; }
+.panel .desc.ap-lect-desc { margin: 0; }
+.ap-shelf { flex: 1; min-width: 180px; width: auto; }
+.ap-consent { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; margin: 8px 0; }
+.ap-consent input { margin-top: 3px; accent-color: var(--purple-600); }
+.panel .note.ap-note { margin: 4px 0 0; }
+.ap-box { border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 8px 10px; margin: 8px 0; background: var(--soft); font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+.ap-q { border-left: 3px solid var(--purple-600); margin: 6px 0; padding: 4px 10px; font-size: 13px; }
+.ap-q.ap-bad { border-left-color: var(--flag-ink); background: var(--flag-bg); }
+.ap-warn { color: var(--flag-ink); font-size: 12px; }
+.ap-ok { color: var(--ok-ink); font-size: 12px; }
+.ap-banner { background: var(--flag-bg); border: 1px solid var(--flag-ink); border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 12px; }
+.ap-small { font-size: 12px; color: var(--muted); }
+.ap-tiny, .ap-caveat { font-size: 11px; color: var(--muted); }
+.ap-caveat { margin-top: 4px; }
+.ap-gap, .ap-sections, .ap-read, .ap-num { margin-top: 6px; }
+.ap-sections { font-size: 12px; }
+.ap-read summary { cursor: pointer; font-size: 12px; }
+.ap-read pre { white-space: pre-wrap; font-size: 11px; max-height: 180px; overflow: auto; font-family: var(--font-mono); }
+.ap-flags { margin: 4px 0; padding-left: 18px; }
+.ap-flags a { color: var(--accent-ink); text-decoration: underline; }
+/* The walk-through, the paper card and the cards side by side (v1 11302-11331, 9968-9975). */
+.ap-stage-h { margin: 6px 0; font-size: 14px; font-weight: 600; }
+.ap-check { display: flex; gap: 4px; align-items: center; cursor: pointer; font-size: 12.5px; }
+.ap-cols { gap: 10px; margin-bottom: 6px; }
+.ap-check input { accent-color: var(--purple-600); }
+.ap-across { margin-top: 14px; }
+.ap-across > summary { cursor: pointer; font-weight: 700; }
+.ap-across #apAcross { margin-top: 8px; }
+.ap-table { overflow: auto; }
+.ap-table table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
+.ap-table th { text-align: left; padding: 4px; border-bottom: 1px solid var(--line); }
+.ap-table td { vertical-align: top; padding: 4px; min-width: 130px; }
+.ap-table td.ap-paper { font-weight: 700; min-width: 140px; }
+.ap-table td:last-child { min-width: 0; }

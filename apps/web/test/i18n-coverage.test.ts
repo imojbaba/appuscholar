@@ -2,16 +2,39 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import en from "../messages/en.json";
+import hi from "../messages/hi.json";
 
 const ROOT = join(__dirname, "..");
 const DIRS = ["components", "lib"];
 
-function walk(dir: string): string[] {
+function walk(dir: string, ext: (p: string) => boolean = p => p.endsWith(".tsx")): string[] {
   return readdirSync(dir).flatMap(f => {
     const p = join(dir, f);
-    return statSync(p).isDirectory() ? walk(p) : p.endsWith(".tsx") ? [p] : [];
+    return statSync(p).isDirectory() ? walk(p, ext) : ext(p) ? [p] : [];
   });
 }
+
+/**
+ * What the .ts modules of the stage-2 directories (and lib/ai, whose action modules the stage-2 panels call) carry that equals a dictionary value,
+ * one entry per occurrence. Each is a stored data token, not copy: the source type values of v1 880 ("Journal article", "Book" ... saved in the record,
+ * labelled through cite_type_*), the sort and field ids ("year"), the source name "PubMed" and the "year" key of the retraction check's reply.
+ * One entry is not a data token: lib/ai/callAI.ts's "bad-pass" sentence equals `vault_wrong`, which has Hindi. It is v1's apiMsg, a pure function with no
+ * `t`, from before stage 2 (Phase 3A code); it stays pinned by controller ruling R31. A new literal anywhere in these directories, or a second use of a pinned one in the same file, fails this test until it goes through t() or is
+ * added here with its reason. (The English constants that have no dictionary key, ruling R15, are not hits and are not listed.)
+ */
+const STAGE2_TS_KNOWN = [
+  'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "Book"', 'lib/cite/form.ts "Website"', 'lib/cite/form.ts "Book chapter"',
+  'lib/cite/form.ts "Report"', 'lib/cite/form.ts "Conference paper"', 'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "year"',
+  'lib/research/library.ts "Journal article"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "PubMed"',
+  'lib/blobs/kinds.ts "year"',
+  'lib/ai/callAI.ts "Wrong passphrase — nothing was unlocked. Try again."',
+];
+
+/** The stage-2 directories. The walk above reads .tsx only; these also have their .ts modules read (the action modules carry student-facing sentences). */
+const STAGE2_DIRS = [
+  "components/tools/cite", "components/tools/research", "components/tools/shelf", "components/tools/analyse",
+  "lib/cite", "lib/research", "lib/shelf", "lib/analyse", "lib/popout", "lib/blobs", "lib/ai",
+];
 
 /** Keys whose value is a typed confirmation token, not copy: "DELETE" is also the HTTP method the API client sends. */
 const NOT_COPY = new Set(["erase_confirm_word"]);
@@ -90,5 +113,18 @@ describe("i18n coverage", () => {
   it("no component or lib file carries a literal that equals a v1 en.json value outside t()", () => {
     const offenders = DIRS.flatMap(d => walk(join(ROOT, d))).flatMap(f => findOffenders(f, readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
+  });
+  it("the stage-2 components and lib modules (.ts and .tsx) carry no new such literal", () => {
+    const files = STAGE2_DIRS.flatMap(d => walk(join(ROOT, d), p => p.endsWith(".ts") || p.endsWith(".tsx")));
+    expect(files.length).toBeGreaterThan(40);
+    expect(files.map(f => relative(ROOT, f))).toEqual(expect.arrayContaining(["lib/cite/actions.ts", "lib/shelf/actions.ts", "lib/analyse/walk.ts", "lib/research/extras.ts", "components/tools/analyse/Walk.tsx"]));
+    const offenders = [...files.flatMap(f => findOffenders(f, readFileSync(f, "utf8"))).map(h => h.replace(/:\d+ /, " "))].sort();
+    expect(offenders).toEqual([...STAGE2_TS_KNOWN].sort());
+  });
+  it("every rs2_, ap2_ and sh2_ key in English is in Hindi too (English text until Dr. Sharma gives Hindi), so none counts as an untranslated literal", () => {
+    const keys = Object.keys(en).filter(k => /^(rs2|ap2|sh2)_/.test(k));
+    expect(keys.length).toBeGreaterThan(0);
+    const hindi = hi as Record<string, string>;
+    expect(keys.filter(k => !(k in hindi))).toEqual([]);
   });
 });

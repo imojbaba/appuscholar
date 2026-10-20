@@ -21,8 +21,8 @@ export const TOOLS_BY_STAGE: Record<StageKey, ToolId[]> = {
   review: ["close", "slides"]
 };
 
-/** Tools with a real panel in phase 2; every other tool renders StubPanel. */
-export const BUILT_IN_PHASE_2: ToolId[] = ["chat"];
+/** Tools with a real panel (chat, and the six stage-2 tools); every other tool renders StubPanel. Dock's PANELS map carries exactly these. */
+export const BUILT_IN: ToolId[] = ["chat", "idea", "psych", "research", "analyse", "cite"];
 
 export function isToolId(v: unknown): v is ToolId { return typeof v === "string" && Object.prototype.hasOwnProperty.call(TOOL_TO_STAGE, v); }
 export function isStageKey(v: unknown): v is StageKey { return typeof v === "string" && (STAGE_ORDER as string[]).includes(v); }

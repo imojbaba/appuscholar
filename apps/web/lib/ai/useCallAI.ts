@@ -11,13 +11,18 @@ import { askPd } from "./pdDialog";
 import { isProvider } from "./keys";
 import { useKeys } from "./useKeys";
 
+/** The content language a request is written in: the open project's, else the default in Settings (v1 getContentLang 2472). */
+export function contentLangOf(project: { contentLang?: string } | null | undefined, settings: { contentLang?: string }): "en" | "hi" {
+  return project ? (project.contentLang === "hi" ? "hi" : "en") : settings.contentLang === "hi" ? "hi" : "en";
+}
+
 /** The AI button's entry point (Task 14): callAI with the workspace's provider, keys, language and dialogs filled in. */
 export function useCallAI(): (prompt: string, opts?: CallOpts) => Promise<string> {
   const { settings } = useSettings();
   const { project, openSettings } = useWorkspace();
   const keys = useKeys();
   const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
-  const contentLang = project ? (project.contentLang === "hi" ? "hi" : "en") : settings.contentLang === "hi" ? "hi" : "en";
+  const contentLang = contentLangOf(project, settings);
   const { blobs, hasKey, getUnlocked } = keys;
   const fallbackOn = settings.aiFallback !== false;
   const projectId = project?.id ?? null;

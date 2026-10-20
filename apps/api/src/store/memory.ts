@@ -1,4 +1,4 @@
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek } from "./types";
+import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
 import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError } from "./types";
 
 /** A vault record's next updatedAt: now, but always after the last one, so a precondition never matches two versions. */
@@ -15,6 +15,8 @@ export class MemoryStore implements Store {
   private vaults = new Map<string, VaultRecord>();
   private audit: { userId: string; action: AuditAction; target: string | null; at: Date }[] = [];
   private aiUse: { userId: string; projectId: string | null; e: AiUseEntry }[] = [];
+  /** Keyed by projectId + "\n" + kind (a kind never holds a newline). */
+  private blobs = new Map<string, ProjectBlob>();
 
   private ownsProject(userId: string, projectId: string): boolean {
     return this.projects.get(projectId)?.userId === userId;
@@ -22,6 +24,16 @@ export class MemoryStore implements Store {
   private ownedDoc(userId: string, docId: string, includeDeleted = false): DocRow | null {
     const d = this.docs.get(docId);
     return d && this.ownsProject(userId, d.projectId) && (includeDeleted || d.deletedAt === null) ? d : null;
+  }
+  private blobCopy(b: ProjectBlob): ProjectBlob {
+    return { ...b, deks: b.deks.map(k => ({ v: k.v, wrapped: k.wrapped })) };
+  }
+  /** The deks after adding `dek`: unchanged when its wrap is already there, DekExistsError when another wrap holds its `v`. */
+  private withDek(deks: WrappedDek[], dek?: WrappedDek): WrappedDek[] {
+    if (!dek) return deks;
+    const known = deks.find(k => k.v === dek.v);
+    if (known && known.wrapped !== dek.wrapped) throw new DekExistsError(dek.v);
+    return known ? deks : [...deks, { v: dek.v, wrapped: dek.wrapped }];
   }
   private latest(docId: string): DocumentRevision | null {
     const list = this.revs.get(docId) ?? [];
@@ -98,6 +110,7 @@ export class MemoryStore implements Store {
     const p = this.projects.get(id);
     if (!p || p.userId !== userId) return false;
     for (const d of [...this.docs.values()]) if (d.projectId === id) { this.docs.delete(d.id); this.revs.delete(d.id); }
+    for (const [k, b] of [...this.blobs]) if (b.projectId === id) this.blobs.delete(k);
     this.projects.delete(id);
     return true;
   }
@@ -225,6 +238,7 @@ export class MemoryStore implements Store {
   async countPlaintextRevisions(userId: string): Promise<number> {
     let n = 0;
     for (const d of this.docs.values()) if (this.ownsProject(userId, d.projectId)) n += (this.revs.get(d.id) ?? []).filter(r => r.keyVersion === 0).length;
+    for (const b of this.blobs.values()) if (b.keyVersion === 0 && this.ownsProject(userId, b.projectId)) n++;
     return n;
   }
   async markVaultComplete(userId: string): Promise<boolean> {
@@ -250,6 +264,40 @@ export class MemoryStore implements Store {
     r.keyVersion = patch.keyVersion;
     if (r.originStats === null && patch.originStats) r.originStats = { ...patch.originStats };
     return { id: r.id, documentId: r.documentId, seq: r.seq, authorKind: r.authorKind, authorLabel: r.authorLabel, wordCount: r.wordCount, originStats: r.originStats, keyVersion: r.keyVersion, createdAt: r.createdAt };
+  }
+
+  async getBlob(userId: string, projectId: string, kind: string): Promise<ProjectBlob | null> {
+    if (!this.ownsProject(userId, projectId)) return null;
+    const b = this.blobs.get(projectId + "\n" + kind);
+    return b ? this.blobCopy(b) : null;
+  }
+  async putBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {
+    if (!this.ownsProject(userId, projectId)) return null;
+    const key = projectId + "\n" + kind;
+    const prev = this.blobs.get(key);
+    const deks = this.withDek(prev?.deks ?? [], w.dek);
+    const updatedAt = new Date(Math.max(Date.now(), (prev?.updatedAt.getTime() ?? 0) + 1));
+    const b: ProjectBlob = { id: prev?.id ?? crypto.randomUUID(), projectId, kind, body: w.body, keyVersion: w.keyVersion, deks, updatedAt };
+    this.blobs.set(key, b);
+    return this.blobCopy(b);
+  }
+  async listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null> {
+    if (!this.ownsProject(userId, projectId)) return null;
+    return [...this.blobs.values()].filter(b => b.projectId === projectId).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, keyVersion: b.keyVersion, updatedAt: b.updatedAt }));
+  }
+  async rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {
+    if (!this.ownsProject(userId, projectId)) return null;
+    const b = this.blobs.get(projectId + "\n" + kind);
+    if (!b) return null;
+    b.deks = this.withDek(b.deks, w.dek);
+    b.body = w.body;
+    b.keyVersion = w.keyVersion;
+    return this.blobCopy(b);
+  }
+
+  async deleteBlob(userId: string, projectId: string, kind: string): Promise<boolean> {
+    if (!this.ownsProject(userId, projectId)) return false;
+    return this.blobs.delete(projectId + "\n" + kind);
   }
 
   async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {

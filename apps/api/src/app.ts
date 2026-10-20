@@ -4,6 +4,7 @@ import { apiAuth, type AuthEnv } from "./auth";
 import type { Store } from "./store/types";
 import { projectRoutes } from "./routes/projects";
 import { documentRoutes } from "./routes/documents";
+import { blobRoutes } from "./routes/blobs";
 import { meRoutes } from "./routes/me";
 import { vaultRoutes } from "./routes/vault";
 import { aiRoutes } from "./routes/ai";
@@ -29,6 +30,7 @@ export function createApp(o: AppOptions) {
   app.use("/me", apiAuth(o.jwtSecret, o.store));
   app.use("/ai/*", apiAuth(o.jwtSecret, o.store));
   app.route("/projects", projectRoutes(o.store, maxBodyBytes));
+  app.route("/projects", blobRoutes(o.store, maxBodyBytes));
   app.route("/documents", documentRoutes(o.store, maxBodyBytes));
   app.route("/me/vault", vaultRoutes(o.store));
   app.route("/me", meRoutes(o.store));

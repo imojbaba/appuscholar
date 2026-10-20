@@ -406,6 +406,111 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(plain.deks).toEqual([]);
     });
 
+    it("blobs: put and get round trip, one per (project, kind), listed without bodies", async () => {
+      const p = await s.createProject(a, "P");
+      expect(await s.getBlob(a, p.id, "idea_intake")).toBeNull();
+      expect(await s.listBlobs(a, p.id)).toEqual([]);
+      const put = (await s.putBlob(a, p.id, "idea_intake", { body: '{"q":"sleep"}', keyVersion: 0 }))!;
+      expect(put).toMatchObject({ projectId: p.id, kind: "idea_intake", body: '{"q":"sleep"}', keyVersion: 0, deks: [] });
+      expect(typeof put.id).toBe("string");
+      expect(put.updatedAt).toBeInstanceOf(Date);
+      expect(await s.getBlob(a, p.id, "idea_intake")).toEqual(put);
+      await new Promise((r) => setTimeout(r, 5));
+      const again = (await s.putBlob(a, p.id, "idea_intake", { body: '{"q":"memory"}', keyVersion: 0 }))!;
+      expect(again.id).toBe(put.id);
+      expect(again.body).toBe('{"q":"memory"}');
+      expect(again.updatedAt.getTime()).toBeGreaterThan(put.updatedAt.getTime());
+      await s.putBlob(a, p.id, "shelf_paper:abc-1", { body: "[]", keyVersion: 0 });
+      const list = (await s.listBlobs(a, p.id))!;
+      expect(list.map((x) => x.kind)).toEqual(["idea_intake", "shelf_paper:abc-1"]);
+      expect(list[0]).toEqual({ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt });
+      // Another project's kinds are its own.
+      const q = await s.createProject(a, "Q");
+      expect(await s.getBlob(a, q.id, "idea_intake")).toBeNull();
+      expect(await s.listBlobs(a, q.id)).toEqual([]);
+    });
+
+    it("blobs are owner-scoped: another user reads, lists, writes and rewrites nothing", async () => {
+      const p = await s.createProject(a, "P");
+      await s.putBlob(a, p.id, "citations", { body: "[]", keyVersion: 0 });
+      expect(await s.getBlob(b, p.id, "citations")).toBeNull();
+      expect(await s.listBlobs(b, p.id)).toBeNull();
+      expect(await s.putBlob(b, p.id, "citations", { body: "mine", keyVersion: 0 })).toBeNull();
+      expect(await s.rewriteBlob(b, p.id, "citations", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k" } })).toBeNull();
+      expect((await s.getBlob(a, p.id, "citations"))).toMatchObject({ body: "[]", keyVersion: 0, deks: [] });
+      expect(await s.putBlob(a, "no-such-project", "citations", { body: "[]", keyVersion: 0 })).toBeNull();
+    });
+
+    it("blobs: a dek is added once per version; the same wrap retried is fine, a different wrap is DekExistsError", async () => {
+      const p = await s.createProject(a, "P");
+      const one = (await s.putBlob(a, p.id, "citations", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k1" } }))!;
+      expect(one.deks).toEqual([{ v: 1, wrapped: "k1" }]);
+      expect((await s.putBlob(a, p.id, "citations", { body: "cC.dD", keyVersion: 1, dek: { v: 1, wrapped: "k1" } }))!.deks).toEqual([{ v: 1, wrapped: "k1" }]);
+      expect((await s.putBlob(a, p.id, "citations", { body: "eE.fF", keyVersion: 1 }))!.body).toBe("eE.fF");
+      await expect(s.putBlob(a, p.id, "citations", { body: "gG.hH", keyVersion: 1, dek: { v: 1, wrapped: "other" } })).rejects.toBeInstanceOf(DekExistsError);
+      // A refused write changes nothing.
+      expect(await s.getBlob(a, p.id, "citations")).toMatchObject({ body: "eE.fF", deks: [{ v: 1, wrapped: "k1" }] });
+      expect((await s.putBlob(a, p.id, "citations", { body: "iI.jJ", keyVersion: 2, dek: { v: 2, wrapped: "k2" } }))!.deks).toEqual([{ v: 1, wrapped: "k1" }, { v: 2, wrapped: "k2" }]);
+    });
+
+    it("rewriteBlob seals a plaintext blob with its dek in one step, null for a missing blob", async () => {
+      const p = await s.createProject(a, "P");
+      const plain = (await s.putBlob(a, p.id, "ap_notes", { body: '{"n":1}', keyVersion: 0 }))!;
+      const sealed = (await s.rewriteBlob(a, p.id, "ap_notes", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k" } }))!;
+      expect(sealed).toMatchObject({ id: plain.id, kind: "ap_notes", body: "aA.bB", keyVersion: 1, deks: [{ v: 1, wrapped: "k" }] });
+      expect(await s.getBlob(a, p.id, "ap_notes")).toEqual(sealed);
+      // Retried with the same wrap: fine; another wrap for v1: refused, nothing changes.
+      expect((await s.rewriteBlob(a, p.id, "ap_notes", { body: "cC.dD", keyVersion: 1, dek: { v: 1, wrapped: "k" } }))!.deks).toEqual([{ v: 1, wrapped: "k" }]);
+      await expect(s.rewriteBlob(a, p.id, "ap_notes", { body: "eE.fF", keyVersion: 1, dek: { v: 1, wrapped: "x" } })).rejects.toBeInstanceOf(DekExistsError);
+      expect((await s.getBlob(a, p.id, "ap_notes"))!.body).toBe("cC.dD");
+      expect(await s.rewriteBlob(a, p.id, "ap_cols", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k" } })).toBeNull();
+      expect(await s.getBlob(a, p.id, "ap_cols")).toBeNull();
+    });
+
+    it("countPlaintextRevisions also counts the owner's plaintext blobs, the scratch project's included, until they are rewritten", async () => {
+      const p = await s.createProject(a, "P");
+      const scratch = await s.getScratchProject(a);
+      await s.putBlob(a, p.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      await s.putBlob(a, scratch.id, "rs_prefs", { body: "{}", keyVersion: 0 });
+      await s.putBlob(a, p.id, "citations", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k" } });
+      const pb = await s.createProject(b, "B");
+      await s.putBlob(b, pb.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      expect(await s.countPlaintextRevisions(a)).toBe(2);
+      expect(await s.countPlaintextRevisions(b)).toBe(1);
+      await s.rewriteBlob(a, p.id, "idea_intake", { body: "cC.dD", keyVersion: 1, dek: { v: 1, wrapped: "k" } });
+      expect(await s.countPlaintextRevisions(a)).toBe(1);
+      await s.rewriteBlob(a, scratch.id, "rs_prefs", { body: "eE.fF", keyVersion: 1, dek: { v: 1, wrapped: "k" } });
+      expect(await s.countPlaintextRevisions(a)).toBe(0);
+    });
+
+    it("deleteBlob removes one (project, kind) blob: true once, then false; owner-scoped; other kinds stay", async () => {
+      const p = await s.createProject(a, "P");
+      await s.putBlob(a, p.id, "shelf_paper:p1", { body: '{"pages":[]}', keyVersion: 0 });
+      await s.putBlob(a, p.id, "shelf_cols", { body: "[]", keyVersion: 0 });
+      expect(await s.deleteBlob(b, p.id, "shelf_paper:p1")).toBe(false);
+      expect(await s.getBlob(a, p.id, "shelf_paper:p1")).not.toBeNull();
+      expect(await s.deleteBlob(a, p.id, "shelf_paper:p1")).toBe(true);
+      expect(await s.getBlob(a, p.id, "shelf_paper:p1")).toBeNull();
+      expect(await s.deleteBlob(a, p.id, "shelf_paper:p1")).toBe(false);
+      expect(await s.deleteBlob(a, "no-such-project", "shelf_cols")).toBe(false);
+      expect((await s.listBlobs(a, p.id))!.map((x) => x.kind)).toEqual(["shelf_cols"]);
+      expect(await s.countPlaintextRevisions(a)).toBe(1);
+      // A deleted kind can be written again.
+      expect((await s.putBlob(a, p.id, "shelf_paper:p1", { body: "{}", keyVersion: 0 }))!.body).toBe("{}");
+    });
+
+    it("blobs work on the scratch project, and go with their project when it is deleted", async () => {
+      const scratch = await s.getScratchProject(a);
+      expect((await s.putBlob(a, scratch.id, "shelf_index", { body: "[]", keyVersion: 0 }))!.projectId).toBe(scratch.id);
+      expect((await s.getBlob(a, scratch.id, "shelf_index"))!.body).toBe("[]");
+      const p = await s.createProject(a, "P");
+      await s.putBlob(a, p.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      expect(await s.deleteProject(a, p.id)).toBe(true);
+      expect(await s.getBlob(a, p.id, "idea_intake")).toBeNull();
+      expect(await s.listBlobs(a, p.id)).toBeNull();
+      expect(await s.countPlaintextRevisions(a)).toBe(1);
+    });
+
     it("audit survives erasure; erasure removes every other row", async () => {
       const p = await s.createProject(a, "P");
       await s.createDocument(a, p.id, "D", "draft", { bodyHtml: "<p>x</p>", authorKind: "web", authorLabel: "t", wordCount: 1, keyVersion: 0 });

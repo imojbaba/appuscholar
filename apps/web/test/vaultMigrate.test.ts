@@ -7,10 +7,17 @@ type Rev = { seq: number; bodyHtml: string; keyVersion: number };
 const refused = (code: string) => Object.assign(new Error(code), { code });
 type Doc = { id: string; deks: WrappedDek[]; deletedAt: string | null; revs: Rev[] };
 
-/** A server in memory, with the calls the migration makes recorded in order. Bodies are "sealed" by prefixing the key version. */
-function fakeServer(docs: Doc[]) {
+/** A project's stage blob as the server holds it. */
+type Blob = { projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[] };
+
+/**
+ * A server in memory, with the calls the migration makes recorded in order. Bodies are "sealed" by prefixing the key version. `projects`
+ * is what listProjects answers (the scratch project among them); a project missing from `blobs`' owners still lists no blobs.
+ */
+function fakeServer(docs: Doc[], blobs: Blob[] = [], projects: string[] = []) {
   const calls: string[] = [];
   const doc = (id: string) => docs.find((d) => d.id === id)!;
+  const blob = (projectId: string, kind: string) => blobs.find((b) => b.projectId === projectId && b.kind === kind)!;
   const deps = {
     // The api lists most recently updated first; the migration must not depend on that.
     listAll: vi.fn(async () => docs.map((d) => ({ id: d.id, deks: [...d.deks], deletedAt: d.deletedAt })).reverse()),
@@ -29,8 +36,22 @@ function fakeServer(docs: Doc[]) {
     }),
     complete: vi.fn(async () => {
       calls.push("complete");
-      const left = docs.flatMap((d) => d.revs).filter((r) => r.keyVersion === 0).length;
+      // The server counts plaintext blobs too.
+      const left = docs.flatMap((d) => d.revs).filter((r) => r.keyVersion === 0).length + blobs.filter((b) => b.keyVersion === 0).length;
       if (left) throw refused("plaintext-remains");
+    }),
+    listProjects: vi.fn(async () => [...projects]),
+    // Most recently updated first, as GET /projects/:id/blobs answers; the migration must not depend on that.
+    listBlobs: vi.fn(async (projectId: string) => blobs.filter((b) => b.projectId === projectId).map((b) => ({ kind: b.kind, keyVersion: b.keyVersion })).reverse()),
+    getBlob: vi.fn(async (projectId: string, kind: string) => { const b = blob(projectId, kind); return { body: b.body, keyVersion: b.keyVersion, deks: [...b.deks] }; }),
+    rewriteBlob: vi.fn(async (projectId: string, kind: string, body: { body: string; keyVersion: number; dek?: WrappedDek }) => {
+      calls.push(`blob ${projectId}:${kind}`);
+      const b = blob(projectId, kind);
+      // The documents' rules: a dek for this version that clashes with the blob's is refused; ciphertext must name a key the blob has.
+      if (body.dek && b.deks.some((k) => k.v === body.dek!.v && k.wrapped !== body.dek!.wrapped)) throw refused("dek-exists");
+      const deks = body.dek && !b.deks.some((k) => k.v === body.dek!.v) ? [...b.deks, body.dek] : b.deks;
+      if (!deks.some((k) => k.v === body.keyVersion)) throw new Error("unknown-key-version");
+      Object.assign(b, { body: body.body, keyVersion: body.keyVersion, deks });
     }),
     encrypt: vi.fn(async (d: { id: string; deks: WrappedDek[] }, html: string) => {
       if (d.deks.length === 0) return { bodyHtml: `k1:${html}`, keyVersion: 1, dek: { v: 1, wrapped: `w-${d.id}` } };
@@ -214,5 +235,88 @@ describe("migrateToVault", () => {
     deps.addDek.mockRejectedValueOnce(refused("not-found"));
     await expect(migrateToVault(deps)).rejects.toMatchObject({ code: "not-found" });
     expect(deps.complete).not.toHaveBeenCalled();
+  });
+
+  describe("project blobs", () => {
+    const plainBlob = (projectId: string, kind: string, value: unknown): Blob => ({ projectId, kind, body: JSON.stringify(value), keyVersion: 0, deks: [] });
+
+    it("after the documents, every plaintext blob of every project is sealed under its own first dek, in one rewrite, and counted", async () => {
+      const docs = twoDocs();
+      const blobs = [plainBlob("p1", "citations", [{ author: "Ng, A." }]), plainBlob("p1", "idea_intake", { topic: "t" }), plainBlob("scratch", "rs_prefs", { rank: true })];
+      const { deps, calls } = fakeServer(docs, blobs, ["scratch", "p1"]);
+      const out = await migrateToVault(deps);
+      expect(out).toEqual({ rewritten: 6 });
+      // Projects by id, kinds by name, after the documents of the same listing; the checking pass finds nothing more.
+      expect(calls).toEqual(["rewrite a:1", "dek b", "rewrite b:1", "rewrite b:2", "blob p1:citations", "blob p1:idea_intake", "blob scratch:rs_prefs", "complete"]);
+      // The dek travels with the rewrite: no separate key request for a blob.
+      expect(deps.addDek).toHaveBeenCalledTimes(1);
+      expect(deps.rewriteBlob).toHaveBeenCalledWith("p1", "citations", { body: `k1:${JSON.stringify([{ author: "Ng, A." }])}`, keyVersion: 1, dek: { v: 1, wrapped: "w-blob:p1:citations" } });
+      // Each blob is sealed under its own id, never a document's.
+      expect(deps.encrypt.mock.calls.map(([d]) => d.id).filter((id) => id.startsWith("blob:"))).toEqual(["blob:p1:citations", "blob:p1:idea_intake", "blob:scratch:rs_prefs"]);
+      expect(blobs.every((b) => b.keyVersion === 1 && b.body.startsWith("k1:") && b.deks.length === 1)).toBe(true);
+      // Progress counts documents only.
+      expect(deps.onProgress.mock.calls).toEqual([[1, 2], [2, 2]]);
+      expect(deps.complete).toHaveBeenCalledTimes(1);
+    });
+
+    it("a blob already sealed is left as it is, and so is one sealed between the listing and the read", async () => {
+      const blobs: Blob[] = [
+        { projectId: "p1", kind: "citations", body: "k1:sealed", keyVersion: 1, deks: [{ v: 1, wrapped: "w-x" }] },
+        plainBlob("p1", "rs_prefs", { rank: true })
+      ];
+      const { deps, calls } = fakeServer([], blobs, ["p1"]);
+      const get = deps.getBlob.getMockImplementation()!;
+      // Another tab seals rs_prefs after this tab listed it.
+      deps.getBlob.mockImplementationOnce(async (p, k) => { Object.assign(blobs[1]!, { body: "k1:other", keyVersion: 1, deks: [{ v: 1, wrapped: "w-o" }] }); return get(p, k); });
+      expect(await migrateToVault(deps)).toEqual({ rewritten: 0 });
+      expect(calls).toEqual(["complete"]);
+      expect(deps.getBlob).not.toHaveBeenCalledWith("p1", "citations");
+      expect(blobs[0]!.body).toBe("k1:sealed");
+      expect(blobs[1]!.body).toBe("k1:other");
+    });
+
+    it("409 dek-exists on a blob's rewrite (another tab gave it a key first): the blob is read again and sealed under that key", async () => {
+      const blobs = [plainBlob("p1", "citations", [])];
+      const { deps, calls } = fakeServer([], blobs, ["p1"]);
+      const rewrite = deps.rewriteBlob.getMockImplementation()!;
+      deps.rewriteBlob.mockImplementationOnce(async (p, k, body) => { blobs[0]!.deks.push({ v: 1, wrapped: "w-other" }); return rewrite(p, k, body); });
+      expect(await migrateToVault(deps)).toEqual({ rewritten: 1 });
+      expect(calls).toEqual(["blob p1:citations", "blob p1:citations", "complete"]);
+      expect(deps.rewriteBlob.mock.calls[1]).toEqual(["p1", "citations", { body: "k1:[]", keyVersion: 1 }]);
+      expect(blobs[0]).toMatchObject({ keyVersion: 1, deks: [{ v: 1, wrapped: "w-other" }] });
+      expect(deps.encrypt.mock.calls.map(([d]) => d.deks)).toEqual([[], [{ v: 1, wrapped: "w-other" }]]);
+    });
+
+    it("a project gone from the list (deleted meanwhile, not-found) is skipped; any other blob failure stops the run", async () => {
+      const blobs = [plainBlob("p2", "ap_cols", ["A"])];
+      const { deps, calls } = fakeServer([], blobs, ["gone", "p2"]);
+      const list = deps.listBlobs.getMockImplementation()!;
+      deps.listBlobs.mockImplementation(async (p) => { if (p === "gone") throw refused("not-found"); return list(p); });
+      expect(await migrateToVault(deps)).toEqual({ rewritten: 1 });
+      expect(calls).toEqual(["blob p2:ap_cols", "complete"]);
+
+      // Gone between its listing and the read of a blob: skipped too.
+      const late = fakeServer([], [plainBlob("p1", "ap_cols", []), plainBlob("p2", "ap_cols", [])], ["p1", "p2"]);
+      const get = late.deps.getBlob.getMockImplementation()!;
+      late.deps.getBlob.mockImplementation(async (p, k) => { if (p === "p1") throw refused("not-found"); return get(p, k); });
+      late.deps.complete.mockResolvedValue(undefined);
+      expect(await migrateToVault(late.deps)).toEqual({ rewritten: 1 });
+      expect(late.calls).toEqual(["blob p2:ap_cols"]);
+
+      const failing = fakeServer([], [plainBlob("p1", "ap_cols", [])], ["p1"]);
+      failing.deps.rewriteBlob.mockRejectedValueOnce(refused("too-large"));
+      await expect(migrateToVault(failing.deps)).rejects.toMatchObject({ code: "too-large" });
+      expect(failing.deps.complete).not.toHaveBeenCalled();
+    });
+
+    it("complete answered plaintext-remains because of a late plaintext blob: one more pass seals it", async () => {
+      const blobs: Blob[] = [];
+      const { deps, calls } = fakeServer([], blobs, ["p1"]);
+      const complete = deps.complete.getMockImplementation()!;
+      deps.complete.mockImplementationOnce(async () => { blobs.push(plainBlob("p1", "rs_prefs", { rank: false })); return complete(); });
+      expect(await migrateToVault(deps)).toEqual({ rewritten: 1 });
+      expect(calls).toEqual(["complete", "blob p1:rs_prefs", "complete"]);
+      expect(blobs[0]!.keyVersion).toBe(1);
+    });
   });
 });

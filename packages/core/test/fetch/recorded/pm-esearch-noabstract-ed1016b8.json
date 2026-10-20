@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=Comment%5Bpt%5D%20Wakefield%20MMR",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"3\",\"retmax\":\"3\",\"retstart\":\"0\",\"idlist\":[\"21209060\",\"15094289\",\"10489978\"],\"translationset\":[{\"from\":\"Wakefield\",\"to\":\"\\\"wakefield\\\"[All Fields] OR \\\"wakefields\\\"[All Fields]\"},{\"from\":\"MMR\",\"to\":\"\\\"Mil Med Res\\\"[Journal:__jid101643181] OR \\\"mmr\\\"[All Fields]\"}],\"querytranslation\":\"\\\"Comment\\\"[Publication Type] AND ((\\\"wakefield\\\"[All Fields] OR \\\"wakefields\\\"[All Fields]) AND (\\\"mil med res\\\"[Journal] OR \\\"mmr\\\"[All Fields]))\"}}\n"
+}

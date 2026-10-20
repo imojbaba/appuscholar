@@ -3,13 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 export function proxy(req: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8788";
+  // The stage-2 panels fetch OpenAlex, PubMed (E-utilities) and Crossref from the browser, as v1 does: the api is never a proxy for them.
+  const literature = "https://api.openalex.org https://eutils.ncbi.nlm.nih.gov https://api.crossref.org";
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' blob: data: https://*.public.blob.vercel-storage.com",
-    `connect-src 'self' ${api}`,
+    `connect-src 'self' ${api} ${literature}`,
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

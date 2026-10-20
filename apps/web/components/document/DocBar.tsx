@@ -142,7 +142,7 @@ export function DocBar() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="doc-delete-cancel">{t("sap_cancel_btn")}</AlertDialogCancel>
-            <AlertDialogAction data-testid="doc-delete-confirm" disabled={busy} onClick={(e) => { e.preventDefault(); void remove(); }}>Delete</AlertDialogAction>
+            <AlertDialogAction data-testid="doc-delete-confirm" disabled={busy} onClick={(e) => { e.preventDefault(); void remove(); }}>{t("sh2_delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

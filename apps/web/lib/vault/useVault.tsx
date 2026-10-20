@@ -9,6 +9,7 @@ import {
   decryptText, encryptText, generateDek, generateKeypair, generateRecoveryCode, generateVaultKey, sealVaultCheck, unwrapKey,
   unwrapWithPassphrase, unwrapWithRecovery, VaultError, verifyVaultKey, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery
 } from "./crypto";
+import { heldBlobs } from "@/lib/blobs/held";
 import { migrateToVault } from "./migrate";
 import { forgetRemembered, hasRemembered, readRemembered, rememberVault } from "./remember";
 
@@ -96,9 +97,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const record = useRef<VaultRecord | null>(null);
   /** The vault key. Held in this tab's memory only, never sent and never written anywhere in clear. */
   const vk = useRef<CryptoKey | null>(null);
-  /** Unwrapped document keys, by `${docId}:${v}:${wrapped}`. Cleared on lock. */
+  /** Unwrapped document and blob keys, by `${id}:${v}:${wrapped}` (a blob's id is `blob:<projectId>:<kind>`). Cleared on lock. */
   const dekCache = useRef(new Map<string, CryptoKey>());
-  /** A document's first key, generated but not yet on the server: a retried first save must carry the same one. */
+  /** A document's (or blob's) first key, generated but not yet on the server, by id: a retried first save must carry the same one. */
   const pendingDek = useRef(new Map<string, WrappedDek>());
   const unlocking = useRef<Promise<boolean> | null>(null);
   /** Settles when this account's GET /me/vault has answered (record or 404), or when the account changes. */
@@ -147,7 +148,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * The one-off migration of plaintext revisions, once per session after the first unlock while the vault is not complete. Every
-   * document of every project and the scratch space, soft-deleted ones included, is read and rewritten in place, then the vault completes.
+   * document of every project and the scratch space, soft-deleted ones included, is read and rewritten in place, and so is every plaintext
+   * stage blob of those projects; then the vault completes.
    */
   const startMigration = useCallback(() => {
     const rec = record.current;
@@ -158,6 +160,14 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     const call = <T,>(path: string, init?: RequestInit): Promise<T> => { live(); return apiFetch<T>(path, init); };
     setMigrating(null); // nothing left from a run under another account: the count arrives with the first listing
     let counted = false;
+    /** Every project of the account; the scratch project is not in GET /projects, so it is added. */
+    const projectIds = async () => {
+      const ids = (await call<{ id: string }[]>("/projects")).map((p) => p.id);
+      const scratch = scratchRef.current;
+      if (scratch && !ids.includes(scratch)) ids.push(scratch);
+      return ids;
+    };
+    const blobPath = (projectId: string, kind: string) => `/projects/${projectId}/blobs/${encodeURIComponent(kind)}`;
     setStatus("migrating");
     let run!: Promise<void>;
     run = (async () => {
@@ -166,9 +176,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       try {
         await migrateToVault({
           listAll: async () => {
-            const ids = (await call<{ id: string }[]>("/projects")).map((p) => p.id);
-            const scratch = scratchRef.current;
-            if (scratch && !ids.includes(scratch)) ids.push(scratch);
+            const ids = await projectIds();
             const docs = (await Promise.all(ids.map((id) => call<{ id: string; deks: WrappedDek[] }[]>(`/projects/${id}/documents?includeDeleted=1`)))).flat();
             live();
             // The checking passes (and a dek-exists re-read) list again; the progress stays the first pass's.
@@ -181,7 +189,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
           rewrite: async (id, seq, body) => { await call(`/documents/${id}/revisions/${seq}/rewrite`, { method: "PUT", body: JSON.stringify(body) }); },
           complete: () => call<void>("/me/vault/complete", { method: "POST" }),
           encrypt: async (doc, html) => { live(); return seal(doc, html); },
-          onProgress: (n, total) => { if (epoch.current === mine) setMigrating({ n, total }); }
+          onProgress: (n, total) => { if (epoch.current === mine) setMigrating({ n, total }); },
+          listProjects: projectIds,
+          listBlobs: (id) => call(`/projects/${id}/blobs`),
+          getBlob: (id, kind) => call(blobPath(id, kind)),
+          rewriteBlob: async (id, kind, body) => { await call(`${blobPath(id, kind)}/rewrite`, { method: "PUT", body: JSON.stringify(body) }); }
         });
         done = true;
       } catch (e) {
@@ -265,6 +277,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (statusRef.current !== "migrating") setStatus("unlocked");
     startMigration();
     void addKeypair(key);
+    // Stage-blob values held after their panel went away go out now (sealed after the migration, which encryptBody waits for).
+    void heldBlobs.drain();
   }, [setStatus, startMigration, addKeypair]);
 
   /** Keeps the remembered copy's passphrase wrap current after a change, when this computer remembers the vault. */
