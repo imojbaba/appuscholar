@@ -126,7 +126,7 @@ export function ResearchPanel() {
     <div className="panel" data-testid="panel-research">
       <h3>{plain(t("tab_research"))}</h3>
       <p className="desc">{t("research_panel_desc")}</p>
-      <SearchForm s={s} rank={rank} onRank={(on) => setResearch({ rank: on })} onSuggest={() => { void suggest(); }} onFind={() => { void search(); }} onShelf={() => setShelfOpen(true)} />
+      <SearchForm s={s} rank={rank} rankLoading={prefs.loading && !prefs.locked} onRank={(on) => setResearch({ rank: on })} onSuggest={() => { void suggest(); }} onFind={() => { void search(); }} onShelf={() => setShelfOpen(true)} />
       <ShelfDialog open={shelfOpen} onOpenChange={setShelfOpen} />
       <p className="desc rs-status" id="rsStatus" data-testid="rs-status" role="status">{s.status}</p>
       {s.original.length > 0 && (

@@ -83,11 +83,33 @@ describe("Idea & Feasibility: the intake is the project's idea_intake blob", () 
     expect(ids.map((id) => field(id).disabled)).toEqual([false, false, false, false]);
   });
 
-  it("while the intake loads the fields are disabled, not blank and editable", () => {
+  it("Idea shows the loading sign, not its empty boxes, until its data is read (W8)", () => {
     h.blob.loading = true;
-    mount();
-    expect(ids.map((id) => field(id).disabled)).toEqual([true, true, true, true]);
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const root = createRoot(el);
+    roots.push(root);
+    act(() => { root.render(<IdeaPanel />); });
+    const sign = $('[data-testid="panel-loading"]')!;
+    expect(sign.getAttribute("role")).toBe("status");
+    expect(sign.getAttribute("aria-busy")).toBe("true");
+    expect(sign.textContent).toBe(E.blob_loading);
+    expect(E.blob_loading).toBe("Opening your saved work…");
+    expect(ids.map((id) => $("#" + id))).toEqual([null, null, null, null]);
     expect(($('[data-testid="idea-assess"]') as HTMLButtonElement).disabled).toBe(true);
+    // The read lands: the sign goes and the four boxes hold the stored intake.
+    h.blob = { ...h.blob, value: STORED, loading: false };
+    act(() => { root.render(<IdeaPanel />); });
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect(ids.map((id) => field(id).value)).toEqual([STORED.topic, STORED.resources, STORED.timeframe, STORED.constraints]);
+    expect(ids.map((id) => field(id).disabled)).toEqual([false, false, false, false]);
+  });
+
+  it("a locked vault keeps its own sentence and no loading sign (W8)", () => {
+    h.blob.locked = true;
+    mount();
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect($('[data-testid="idea-locked"]')!.textContent).toBe(E.vault_idea_locked);
   });
 
   it("typing a field saves the intake as an update of the current value (a late load cannot lose a keystroke)", () => {

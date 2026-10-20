@@ -738,6 +738,52 @@ describe("the Reading shelf dialog", () => {
     expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
   });
 
+  it("Shelf shows the loading sign, not its empty state, until its data is read (W8)", async () => {
+    seedCorpus();
+    // The index's read is held: the shelf is not known to be empty, nor its papers' pages known.
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      if ((init.method ?? "GET") === "GET" && decodeURIComponent(path).endsWith("/blobs/shelf_index")) await gate;
+      return fakeApi(path, init);
+    });
+    await mount();
+    expect(tid("sh-body")!.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
+    expect(tid("sh-empty")).toBeNull();
+    expect(tids("sh-paper")).toHaveLength(0);
+    await click(tid("sh-tab-matrix"));
+    expect(tid("sh-body")!.querySelector('[data-testid="panel-loading"]')).not.toBeNull();
+    expect(tid("sh-body")!.textContent).not.toContain(E.sh2_the_shelf_is_empty_2);
+    expect(tids("sh-matrix")).toHaveLength(0);
+    release();
+    await until(() => tids("sh-matrix-row").length === 4, "the matrix");
+    expect(tid("panel-loading")).toBeNull();
+    await click(tid("sh-tab-papers"));
+    await until(() => tids("sh-paper").length === 4, "the papers");
+    expect(tid("panel-loading")).toBeNull();
+    expect(tid("sh-empty")).toBeNull();
+  });
+
+  it("a paper row shows the loading sign, not 'pages only', while that paper's text is read (W8)", async () => {
+    seedCorpus();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      if ((init.method ?? "GET") === "GET" && decodeURIComponent(path).endsWith("/blobs/shelf_paper:pa")) await gate;
+      return fakeApi(path, init);
+    });
+    await mount();
+    await until(() => tids("sh-paper").length === 4, "the papers");
+    await until(() => tids("sh-paper-meta").length === 3, "the other papers' lines");
+    expect(tid("sh-paper-loading")!.textContent).toBe(E.blob_loading);
+    expect(tids("sh-paper")[0]!.textContent).not.toContain("pages only");
+    expect(tids("sh-paper")[0]!.textContent).not.toMatch(/\d+ pages/);
+    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pb.pdf · 2 pages · 0 highlights");
+    release();
+    await until(() => tids("sh-paper-meta").length === 4 && !tid("sh-paper-loading"), "the first paper's line");
+    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pa.pdf · 3 pages · 0 highlights");
+  });
+
   it("a removal the server refuses says so and keeps the paper; a paper whose blob is not read shows its pages only", async () => {
     seedCorpus();
     server.blobs = server.blobs.map((b) => (b.kind === "shelf_paper:pc" ? { ...b, body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1 } : b));

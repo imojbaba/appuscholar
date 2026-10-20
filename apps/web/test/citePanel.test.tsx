@@ -422,6 +422,29 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
 });
 
 describe("Citation Manager: the library (citRender 7819-7866)", () => {
+  it("Cite shows the loading sign, not its empty state, until its data is read (W8)", () => {
+    h.blob.value = null; h.blob.loading = true;
+    const root = mount();
+    const lib = tid("cite-lib")!;
+    expect(lib.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
+    expect(lib.textContent).not.toContain(E.cite_no_sources);
+    expect(tid("cite-count")).toBeNull();
+    expect(document.body.textContent).not.toContain("0 sources");
+    // The read lands: the cards (or "No sources yet.") and the count replace the sign.
+    h.blob = { ...h.blob, value: [BANDURA, MILLER], loading: false };
+    act(() => { root.render(<CitePanel />); });
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect(tid("cite-count")!.textContent).toBe("2");
+    expect(tid("cite-lib")!.querySelectorAll('[data-testid="cite-card"]')).toHaveLength(2);
+  });
+
+  it("a locked library shows no loading sign (W8)", () => {
+    h.blob.value = null; h.blob.locked = true;
+    mount();
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect(tid("cite-locked")!.textContent).toBe(E.vault_cite_locked);
+  });
+
   it("an empty library shows 'No sources yet.' and a 0 badge", () => {
     mount();
     expect(tid("cite-count")!.textContent).toBe("0");

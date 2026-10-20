@@ -547,12 +547,12 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     expect($("#apAcross tbody")!.textContent).toContain("Saved design words");
   });
 
-  it("being read: neither the empty sentences nor a field, and no locked line", async () => {
+  it("being read: neither the empty sentences nor a field, no locked line, and the cards table shows the loading sign (W8)", async () => {
     h.blobs.ap_notes = { value: null, loading: true };
     await mount();
     load("sample@apSample");
     await openAcross();
-    expect($("#apAcross")!.textContent).toBe("");
+    expect($("#apAcross")!.textContent).toBe(E.blob_loading);
     await openTab("card");
     expect(tid("ap-card")!.textContent).toBe("Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.");
     expect($("#apC_notes")).toBeNull();

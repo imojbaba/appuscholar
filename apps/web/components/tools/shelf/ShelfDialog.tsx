@@ -65,6 +65,9 @@ function ShelfBody() {
   });
   const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, setStatus, toast, now: () => new Date() };
   const known = !index.loading && !index.locked;
+  // W8: while the index is read and opened the lists show the loading sign; a paper whose own blob is being read (not yet started counts) shows it in place of its pages.
+  const opening = index.loading && !index.locked;
+  const paperOpening = new Set(items.filter((x) => { const st = store.papers.get(x.id); return !st || (st.loading && !st.locked); }).map((x) => x.id));
   const anyLocked = index.locked || store.cols.locked || [...store.papers.values()].some((s) => s.locked);
   const anyBroken = !!index.broken || !!store.cols.broken || [...store.papers.values()].some((s) => s.broken);
 
@@ -95,7 +98,7 @@ function ShelfBody() {
               saveNote: async (n) => ops.updatePaper(reading.id, (p) => ({ ...p, notes: [...p.notes, n] })) && ops.flushPaper(reading.id)
             })} />
         ) : tab === "papers" ? (
-          <Papers items={items} status={status} busy={busy} canWrite={known}
+          <Papers items={items} loading={opening} reading={paperOpening} status={status} busy={busy} canWrite={known}
             onAdd={(files) => { void run(() => addFiles(files, ops)); }}
             onBackup={() => backupShelf(items, { t, now: () => new Date(), download: downloadBlob, setStatus })}
             onRestore={(f) => { void run(async () => restoreShelf(await readFileText(f), ops)); }}
@@ -107,7 +110,7 @@ function ShelfBody() {
         ) : tab === "find" ? (
           <Passages items={items} prefill={prefill} onOpen={read} />
         ) : (
-          <Matrix items={items} cols={cols}
+          <Matrix items={items} loading={opening} cols={cols}
             onAddCol={(name) => addColumn(name, defaults, store.setCols)}
             onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
             onCell={(id, col, value) => setCell(id, col, value, ops)}

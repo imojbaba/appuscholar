@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 
 /**
  * The search form (v1 952-963), in v1's order: the topic, "💡 Suggest related terms" and the kind of study, the related terms (#rsTerms,
- * rsTermsRender 8264-8268), "Rank by fit to my question", the two sources, the Reading shelf button and "🔎 Find relevant papers".
+ * rsTermsRender 8264-8268), "Rank by fit to my question" (disabled and busy while its stored choice opens, W8; no text), the two sources, the Reading shelf button and "🔎 Find relevant papers".
  */
-export function SearchForm({ s, rank, onRank, onSuggest, onFind, onShelf }: {
-  s: ResearchState; rank: boolean; onRank(on: boolean): void; onSuggest(): void; onFind(): void; onShelf(): void;
+export function SearchForm({ s, rank, rankLoading, onRank, onSuggest, onFind, onShelf }: {
+  s: ResearchState; rank: boolean; /** W8: the stored rank choice is being read and opened. */ rankLoading: boolean; onRank(on: boolean): void; onSuggest(): void; onFind(): void; onShelf(): void;
 }) {
   const t = useT();
   const { terms } = s;
@@ -46,7 +46,7 @@ export function SearchForm({ s, rank, onRank, onSuggest, onFind, onShelf }: {
         )}
       </div>
       <label className="rs-check rs-rank" data-testid="rs-rank">
-        <input type="checkbox" id="rsRank" checked={rank} onChange={(e) => onRank(e.target.checked)} /><span>{t("rs2_rank_by_fit_to")}</span>
+        <input type="checkbox" id="rsRank" checked={rank} disabled={rankLoading} aria-busy={rankLoading || undefined} onChange={(e) => onRank(e.target.checked)} /><span>{t("rs2_rank_by_fit_to")}</span>
       </label>
       <div className="rs-line rs-sources">
         <label className="rs-check" data-testid="rs-src-oa"><input type="checkbox" id="rsSrcOA" checked={s.oa} onChange={(e) => setResearch({ oa: e.target.checked })} /><span>{t("research_src_openalex")}</span></label>

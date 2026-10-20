@@ -193,7 +193,9 @@ export const V2_STRINGS = {
   rc_fld_author: { en: "Author", hi: "लेखक" },
   // Above each Ask answer and each walk-through reply in Analyse a paper: which paper it is about (fix wave A, Task 16; walk fault W20, register D-S2-30).
   // DRAFT Hindi: के बारे में.
-  ap_about: { en: "About: {title}", hi: "इसके बारे में: {title}" }
+  ap_about: { en: "About: {title}", hi: "इसके बारे में: {title}" },
+  // A stage panel's loading sign while its encrypted saved work is read and opened (fix wave A, Task 18; walk fault W8, register D-S2-34). DRAFT Hindi.
+  blob_loading: { en: "Opening your saved work…", hi: "आपका सहेजा हुआ काम खुल रहा है…" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

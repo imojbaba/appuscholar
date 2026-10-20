@@ -12,6 +12,7 @@ import type { Library } from "@/lib/cite/useLibrary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { PanelLoading } from "../PanelLoading";
 import { CiteChecks, CiteUsed, RcLine, RetrWarn } from "./CiteChecks";
 import { CiteShare } from "./CiteShare";
 
@@ -23,6 +24,8 @@ import { CiteShare } from "./CiteShare";
 export function CiteLibrary({ library, deps, insertReady }: { library: Library; deps: () => CiteDeps; insertReady: boolean }) {
   const t = useT();
   const { lib, style } = library;
+  // W8: while the saved library is read and opened there is neither a count nor "No sources yet." (a locked vault says so in its own sentence).
+  const opening = library.loading && !library.locked;
   const { editor } = useSuggestion();
   const { selectDoc } = useWorkspace();
   const usage = useCitationUsage(lib, style);
@@ -44,10 +47,10 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
   }), [lib, style]);
   return (
     <>
-      <h3 className="cite-lib-h">{t("cite_library_h3")} <Badge variant="chip" data-testid="cite-count">{lib.length}</Badge></h3>
+      <h3 className="cite-lib-h">{t("cite_library_h3")} {!opening && <Badge variant="chip" data-testid="cite-count">{lib.length}</Badge>}</h3>
       <CiteChecks library={library} usage={usage} checks={checks} editor={editor && !editor.isDestroyed ? editor : null} />
       <div className="cite-lib" data-testid="cite-lib" ref={box}>
-        {cards.length === 0 ? <p className="desc">{t("cite_no_sources")}</p> : cards.map(({ d, f, html }, i) => (
+        {opening ? <PanelLoading /> : cards.length === 0 ? <p className="desc">{t("cite_no_sources")}</p> : cards.map(({ d, f, html }, i) => (
           <div className={"cit-item" + (i === active.index ? " cit-active" : "")} data-testid="cite-card" data-cite-index={i} key={i}>
             {/* citDel 7509 puts the light out. */}
             <button type="button" className="del" data-testid="cite-del" title={REMOVE_TITLE} aria-label={REMOVE_TITLE} onClick={() => { setCiteActive(-1); library.remove(i); }}>✕</button>

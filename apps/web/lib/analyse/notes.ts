@@ -33,6 +33,11 @@ export type ApNotesStore = {
    * words typed into a box that only looks empty never replace stored ones (Task 12's rule: unread is not empty).
    */
   unread: boolean;
+  /**
+   * W8 (register row D-S2-34): the notes or the column choice are being read and opened (not locked, which says so itself). The cards side by side show the loading sign meanwhile;
+   * the walk-through and the card keep their read-only boxes.
+   */
+  loading: boolean;
   /** Unread because the vault is locked (the panels say so: vault_ap_locked). */
   locked: boolean;
   /** The stored notes do not open on this device (the panels say so: vault_ap_broken; the first write asks first, R16). */
@@ -95,5 +100,5 @@ export function useApNotes(projectId: string | null): ApNotesStore {
   }, [projectId, colsUnread, colsReadOnly, mayWrite, colsBroken, setCols]);
   const colList = useMemo(() => apAcrossCols(colsValue), [colsValue]);
   const note = useCallback((id: string) => all[id], [all]);
-  return { all, unread: notesUnread, locked: notesUnread && notes.locked, broken: !!notesBroken, readOnly: notesReadOnly, note, put, remove, cols: colList, toggleCol };
+  return { all, unread: notesUnread, loading: (notes.loading && !notes.locked) || (cols.loading && !cols.locked), locked: notesUnread && notes.locked, broken: !!notesBroken, readOnly: notesReadOnly, note, put, remove, cols: colList, toggleCol };
 }

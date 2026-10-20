@@ -389,6 +389,30 @@ describe("Research: Rank by fit (rsRank 8220-8234, the fold 8402-8403)", () => {
   });
 });
 
+describe("Research: the rank box while its saved choice opens (W8)", () => {
+  it("Research shows the loading sign, not its empty state, until its data is read (W8): the rank box is disabled and busy, with no text", async () => {
+    h.blobs.rs_prefs = { ...blob(null), loading: true };
+    const root = await mount();
+    expect(field("rsRank").disabled).toBe(true);
+    expect(field("rsRank").getAttribute("aria-busy")).toBe("true");
+    expect(tid("panel-loading")).toBeNull();
+    expect(document.body.textContent).not.toContain(E.blob_loading);
+    // The read lands with the stored choice: the box is ticked and usable again.
+    h.blobs.rs_prefs = blob({ rank: true });
+    await act(async () => { root.render(<ResearchPanel />); });
+    expect(field("rsRank").disabled).toBe(false);
+    expect(field("rsRank").hasAttribute("aria-busy")).toBe(false);
+    expect(field("rsRank").checked).toBe(true);
+  });
+
+  it("a locked vault leaves the rank box usable (a search asks for no passphrase)", async () => {
+    h.blobs.rs_prefs = { ...blob(null), locked: true };
+    await mount();
+    expect(field("rsRank").disabled).toBe(false);
+    expect(field("rsRank").hasAttribute("aria-busy")).toBe(false);
+  });
+});
+
 describe("Research: Suggest related terms (rsSuggestTerms 8251-8272)", () => {
   it("up to 8 ticked boxes with v1's note; the ticked terms go into the search", async () => {
     h.callAI.mockResolvedValue('{"terms":["test anxiety","evaluation anxiety"]}');
