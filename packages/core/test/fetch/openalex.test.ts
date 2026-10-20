@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { apRefCheck, oaConnected, oaRetractions, oaSearch, oaUrl, retrFetchBatch } from "../../src/fetch/openalex";
+import { apRefCheck, oaConnected, oaRetractions, oaSearch, oaUrl, retrFetchBatch, rsOaBrief } from "../../src/fetch/openalex";
 import { pmSearch } from "../../src/fetch/pubmed";
 import { rsDedupe } from "../../src/research";
 import type { RsPaper } from "../../src/research";
@@ -187,6 +187,36 @@ describe("oaConnected is v1's rsConnected", () => {
     const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response('{"results":[]}'); }) as typeof fetch;
     await oaConnected(f, { referencedWorks: ["https://openalex.org/W1"], citedByApiUrl: "https://api.openalex.org/works?filter=cites:W2", key: "k" });
     expect(urls).toEqual(["https://api.openalex.org/works?filter=openalex_id:W1&per-page=8&select=display_name,authorships,publication_year&api_key=k", "https://api.openalex.org/works?filter=cites:W2&per-page=8&select=display_name,authorships,publication_year"]);
+  });
+});
+
+describe("oaConnected asks for the papers that cite this one by filter=cites (W3)", () => {
+  const CITES = "https://api.openalex.org/works?filter=cites:W2487945683&per-page=8&select=display_name,authorships,publication_year";
+  it("with no cited-by URL and an OpenAlex id, the second request is the filter=cites URL and its answer is the list", async () => {
+    const r = replay();
+    const out = await oaConnected(r.f, { referencedWorks: [], citedByApiUrl: "", oaId: "W2487945683" });
+    expect(r.requested).toEqual([CITES]);
+    expect(r.unknown).toEqual([]);
+    const rec = JSON.parse(RECORDINGS.get(CITES)!.body) as { results: Parameters<typeof rsOaBrief>[0][] };
+    expect(out.citedBy).toEqual(rec.results.map(rsOaBrief));
+    expect(out.citedBy.length).toBeGreaterThan(0);
+  });
+  it("the key goes on the cites URL when given", async () => {
+    const urls: string[] = [];
+    const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response('{"results":[]}'); }) as typeof fetch;
+    await oaConnected(f, { referencedWorks: [], citedByApiUrl: "", oaId: "W2487945683", key: "k" });
+    expect(urls).toEqual([CITES + "&api_key=k"]);
+  });
+  it("a cited-by URL still wins (v1's request), and no id and no URL sends nothing", async () => {
+    const urls: string[] = [];
+    const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response('{"results":[]}'); }) as typeof fetch;
+    await oaConnected(f, { referencedWorks: [], citedByApiUrl: "https://api.openalex.org/works?filter=cites:W9", oaId: "W2487945683", key: "k" });
+    await oaConnected(f, { referencedWorks: [], citedByApiUrl: "" });
+    expect(urls).toEqual(["https://api.openalex.org/works?filter=cites:W9&per-page=8&select=display_name,authorships,publication_year"]);
+  });
+  it("a failing cites request is an empty list, never a throw", async () => {
+    const down = (async () => { throw new Error("down"); }) as typeof fetch;
+    expect(await oaConnected(down, { referencedWorks: [], citedByApiUrl: "", oaId: "W1" })).toEqual({ cites: [], citedBy: [] });
   });
 });
 

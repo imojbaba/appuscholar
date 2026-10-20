@@ -81,7 +81,7 @@ export async function loadConnected(p: RsPaper, d: { fetch: typeof fetch; oaKey:
   if (!o.oaId) return;
   d.setBox({ kind: "loading", title: p.title });
   try {
-    const { cites, citedBy } = await oaConnected(d.fetch, { referencedWorks: o.referencedWorks || [], citedByApiUrl: o.citedByApiUrl || "", key: d.oaKey ?? undefined });
+    const { cites, citedBy } = await oaConnected(d.fetch, { referencedWorks: o.referencedWorks || [], citedByApiUrl: o.citedByApiUrl || "", oaId: o.oaId, key: d.oaKey ?? undefined });
     if (d.isCurrent()) d.setBox({ kind: "done", title: p.title, cites, citedBy });
   } catch {
     if (d.isCurrent()) d.setBox({ kind: "failed" });

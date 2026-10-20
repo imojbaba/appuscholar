@@ -37,7 +37,7 @@ const SMITH = { author: "Smith, John", year: "2020", title: "Sleep and memory" }
 
 const CORE_TEST = join(__dirname, "../../../packages/core/test");
 type Rec = { url: string; status: number; headers: Record<string, string | null>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json")).map((f) => {
+const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
   const r = JSON.parse(readFileSync(join(CORE_TEST, "fetch/recorded", f), "utf8")) as Rec;
   return [r.url, r];
 }));

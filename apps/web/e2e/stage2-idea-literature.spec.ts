@@ -146,7 +146,7 @@ function loadRecordings(): Map<string, Recording> {
   const out = new Map<string, Recording>();
   for (const dir of [path.join(__dirname, "../../../packages/core/test/fetch/recorded"), path.join(__dirname, "fixtures/recorded")]) {
     if (!existsSync(dir)) continue;
-    for (const f of readdirSync(dir).filter((x) => x.endsWith(".json"))) {
+    for (const f of readdirSync(dir).filter((x) => x.endsWith(".json") && x !== "v2-manifest.json")) {
       const r = JSON.parse(readFileSync(path.join(dir, f), "utf8")) as Recording;
       out.set(r.url, r);
     }
@@ -520,8 +520,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     const out = page.getByTestId("rs-connected-out");
     await expect(out.locator("h3")).toHaveText(T("rs2_connected_to") + " " + DORDI.title);
     await expect(out.locator("h4").first()).toHaveText(new RegExp("^" + T("rs2_this_paper_cites") + " \\([1-8]\\)$"));
-    await expect(out.locator("h4").nth(1)).toHaveText(T("rs2_papers_that_cite_this") + " (0)");
-    await expect(out).toContainText(T("rs2_none_found"));
+    // W3: OpenAlex no longer returns a cited-by URL, so the list is asked for by filter=cites (e2e/fixtures/recorded/oa-citedby-dordinejad)
+    await expect(out.locator("h4").nth(1)).toHaveText(new RegExp("^" + T("rs2_papers_that_cite_this") + " \\([1-8]\\)$"));
+    await expect(out).not.toContainText(T("rs2_none_found"));
     expect(puts.since(before)).toEqual([]);
     quiet();
   });

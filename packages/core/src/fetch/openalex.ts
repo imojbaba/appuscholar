@@ -67,8 +67,12 @@ export function rsOaBrief(w: OaWork): RsBrief{
     year:String(w.publication_year||'')};
 }
 
-/** rsConnected's two requests (8502-8513): what the paper cites (its first 8 referenced works) and what cites it (8). A failure is an empty list. */
-export async function oaConnected(f: typeof fetch,p: { referencedWorks: string[]; citedByApiUrl: string; key?: string }): Promise<{ cites: RsBrief[]; citedBy: RsBrief[] }>{
+/**
+ * rsConnected's two requests (8502-8513): what the paper cites (its first 8 referenced works) and what cites it (8). A failure is an empty list.
+ * OpenAlex no longer returns a cited-by URL (D-S2-20), so with none and an `oaId` the papers that cite this one are asked for by
+ * `filter=cites:<oaId>` (W3, D-S2-25); a cited-by URL, when there is one, is still v1's request.
+ */
+export async function oaConnected(f: typeof fetch,p: { referencedWorks: string[]; citedByApiUrl: string; oaId?: string; key?: string }): Promise<{ cites: RsBrief[]; citedBy: RsBrief[] }>{
   const jobs: Array<Promise<RsBrief[]>>=[];
   if(p.referencedWorks&&p.referencedWorks.length){
     const ids=p.referencedWorks.map(u=>u.split('/').pop()).join('|');
@@ -78,6 +82,9 @@ export async function oaConnected(f: typeof fetch,p: { referencedWorks: string[]
   }else jobs.push(Promise.resolve([]));
   if(p.citedByApiUrl){
     jobs.push(f(p.citedByApiUrl+'&per-page=8&select=display_name,authorships,publication_year')
+      .then(r=>r.ok?r.json() as Promise<OaList>:{results:[]}).then(j=>(j.results||[]).map(rsOaBrief)).catch(()=>[]));
+  }else if(p.oaId){
+    jobs.push(f(oaUrl('https://api.openalex.org/works?filter=cites:'+p.oaId+'&per-page=8&select=display_name,authorships,publication_year',p.key))
       .then(r=>r.ok?r.json() as Promise<OaList>:{results:[]}).then(j=>(j.results||[]).map(rsOaBrief)).catch(()=>[]));
   }else jobs.push(Promise.resolve([]));
   const[refs,cits]=await Promise.all(jobs);

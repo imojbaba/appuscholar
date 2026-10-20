@@ -45,7 +45,7 @@ const E = en as Record<string, string>;
 /** The Crossref and eutils responses Task 4 recorded live (packages/core/test/fetch/recorded), served by URL. */
 const REC_DIR = join(__dirname, "../../../packages/core/test/fetch/recorded");
 type Rec = { url: string; status: number; headers: Record<string, string>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(REC_DIR).filter((f) => f.endsWith(".json")).map((f) => {
+const RECS = new Map<string, Rec>(readdirSync(REC_DIR).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
   const r = JSON.parse(readFileSync(join(REC_DIR, f), "utf8")) as Rec;
   return [r.url, r];
 }));

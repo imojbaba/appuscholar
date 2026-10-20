@@ -51,7 +51,7 @@ import { resetCiteStyle } from "../lib/cite/useLibrary";
 const E = en as Record<string, string>;
 const CORE_TEST = join(__dirname, "../../../packages/core/test");
 type Rec = { url: string; status: number; headers: Record<string, string | null>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json")).map((f) => {
+const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
   const r = JSON.parse(readFileSync(join(CORE_TEST, "fetch/recorded", f), "utf8")) as Rec;
   return [r.url, r];
 }));
@@ -436,14 +436,28 @@ describe("Research part 2: connected papers (rsConnected 8498-8523, over the rec
       release();
       await until(() => !!tid("rs-connected-out")!.querySelector("h3"));
       // the two requests run at once (the first was held above)
-      expect([...requested].sort()).toEqual([...c.requested].sort());
+      // v1 had no cited-by URL to fetch here; v2 asks OpenAlex by filter=cites for the paper's id instead (W3, D-S2-25), so the case without a URL
+      // sends the case with one's second request and shows its list
+      const withUrl = FETCH.connected.find((x) => x.in.citedByApiUrl)!;
+      const want = c.in.citedByApiUrl ? c : { ...c, requested: withUrl.requested, citedBy: withUrl.citedBy };
+      expect([...requested].sort()).toEqual([...want.requested].sort());
       expect(tid("rs-connected-out")!.querySelector("h3")!.textContent).toBe("🔗 Connected to: " + p.title);
       const none = "None found.";
       expect(lists()).toEqual([
-        { heading: c.cites.heading, cards: c.cites.cards.length ? c.cites.cards : none },
-        { heading: c.citedBy.heading, cards: c.citedBy.cards.length ? c.citedBy.cards : none }
+        { heading: want.cites.heading, cards: want.cites.cards.length ? want.cites.cards : none },
+        { heading: want.citedBy.heading, cards: want.citedBy.cards.length ? want.citedBy.cards : none }
       ]);
     });
+
+  it("a paper with no cited-by URL asks by filter=cites for its OpenAlex id, with the key (W3)", async () => {
+    h.oaKey = "oa-k";
+    const p = { ...paperFor(FETCH.connected[0]!), citedByApiUrl: "" };
+    await mount([p]);
+    await click(cardOf(p.title).querySelector('[data-testid="rs-connected"]'));
+    await until(() => !!tid("rs-connected-out")!.querySelector("h3"));
+    // the recordings hold the keyless URL; the keyed one is asked for and, unrecorded, comes back empty here
+    expect(requested).toContain("https://api.openalex.org/works?filter=cites:W2487945683&per-page=8&select=display_name,authorships,publication_year&api_key=oa-k");
+  });
 
   it("the key goes with the request; a failure shows v1's sentence", async () => {
     h.oaKey = "oa-k";
