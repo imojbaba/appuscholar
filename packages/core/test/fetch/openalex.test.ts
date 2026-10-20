@@ -17,7 +17,15 @@ const OA_SENTENCE = "the free daily OpenAlex budget is used up. Add a free OpenA
 
 describe("the recordings are the bodies the fixture was captured from", () => {
   it("one file per URL, each body's sha256 as captured", () => {
-    expect([...RECORDINGS.values()].map((r) => r.file).sort()).toEqual(fx.recorded.map((r) => r.file).sort());
+    // The v2 recordings have their own manifest: the golden fixture is v1's and is never edited.
+    const v2 = (JSON.parse(readFileSync(new URL("./recorded/v2-manifest.json", import.meta.url), "utf8")) as { recorded: typeof fx.recorded }).recorded;
+    expect([...RECORDINGS.values()].map((r) => r.file).sort()).toEqual([...fx.recorded, ...v2].map((r) => r.file).sort());
+    for (const r of v2) {
+      const rec = RECORDINGS.get(r.url)!;
+      expect(rec.file).toBe(r.file);
+      expect(rec.status).toBe(r.status);
+      expect(sha256(rec.body)).toBe(r.sha256);
+    }
     for (const r of fx.recorded) {
       const rec = RECORDINGS.get(r.url)!;
       expect(rec.file).toBe(r.file);

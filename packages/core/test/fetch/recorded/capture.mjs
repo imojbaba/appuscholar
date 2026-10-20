@@ -6,6 +6,8 @@
 // 250 ms (OpenAlex, Crossref) or 400 ms (NCBI E-utilities, whose keyless limit is 3 requests a second).
 //
 // `--only a,b` records just the named cases and deletes nothing (it also refuses to overwrite a file that exists): node capture.mjs --only pm-v2-terms,pm-v2-rct.
+// The v2 recordings (pm-*-v2-*) are also listed in v2-manifest.json (file, url, status, sha256 of the body), which save() writes or updates for each of them: the golden
+// fixture (test/golden/fetch/cases.json) is v1's and is never edited, so test/fetch/openalex.test.ts checks these files against the manifest instead.
 // Case names: oa-<name> (OA_SEARCHES), pm-<name> (PM_SEARCHES and PM_V2_SEARCHES), oa-connected, oa-retractions, cr-doi, cr-title3, cr-title1, pm-pmid.
 //
 // The URLs are built here as v1 builds them (index.html build 2026.10.13a): rsFetchOpenAlex 8061, rsFetchPubmed 8103 and rsPubmedAbstracts 8088,
@@ -13,7 +15,7 @@
 // RS_DESIGN 8237 (read from src/data/research-tables.ts, which the golden harness generates from v1). The golden capture (test/golden/fetch/capture.ts)
 // replays these files to v1 itself and throws on any URL that is not here, so a URL this script builds differently from v1 is caught there.
 
-import { readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -145,11 +147,21 @@ const written = new Map(); // url → file
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const short = (url) => createHash("sha256").update(url).digest("hex").slice(0, 8);
 
+const MANIFEST = DIR + "v2-manifest.json";
+function listInManifest(file, record) {
+  const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, "utf8")) : { note: "The v2 recordings (not v1 requests, so not in test/golden/fetch/cases.json, which is v1's and never edited). Written by capture.mjs.", recorded: [] };
+  manifest.recorded = manifest.recorded.filter((r) => r.url !== record.url && r.file !== file);
+  manifest.recorded.push({ file, url: record.url, status: record.status, sha256: createHash("sha256").update(record.body).digest("hex") });
+  manifest.recorded.sort((a, b) => (a.file < b.file ? -1 : 1));
+  writeFileSync(MANIFEST, JSON.stringify(manifest, null, 1) + "\n");
+}
+
 function save(file, record) {
   if (written.has(record.url)) return;
   written.set(record.url, file);
   if (ONLY && readdirSync(DIR).includes(file)) throw new Error(`--only: ${file} already exists and is not overwritten`);
   writeFileSync(DIR + file, JSON.stringify(record, null, 1) + "\n");
+  if (/^pm-(esearch|esummary|efetch)-v2-/.test(file)) listInManifest(file, record);
   console.log(`${file} ${record.status} ${record.body.length} chars`);
 }
 
