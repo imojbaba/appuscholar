@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, apBuild, apRefDois, buildAskPrompt, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
+import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 /*
  * Analyse a paper, part 1 (v1 741-760, apLoad and the intake 9882-9932, apAsk 10032-10047, apNumbersHTML 10106-10110, apRefCheck/apRefHTML 11221-11270, apRender 11272-11305). The expected
@@ -313,7 +314,7 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
   it.each(FX.heads.map((x) => [x.id, x] as const))("%s: the head box, the tabs and the reference check's button are v1's", async (id, c) => {
     load(id);
     await mount();
-    expect(tid("ap-head")!.textContent).toBe(c.text);
+    expect(tid("ap-head")!.textContent).toBe(withPanelFixes(c.text));
     expect(tid("ap-preview")!.textContent).toBe(c.pre);
     expect([...tid("ap-tabs")!.querySelectorAll("button")].map((b) => ({ text: b.textContent, disabled: b.disabled, title: b.getAttribute("title") }))).toEqual(c.tabs);
     expect(!!tid("ap-ref-btn")).toBe(c.refBtn);
@@ -325,7 +326,7 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
     await mount();
     expect(h.setPending).toHaveBeenCalledWith(null);
     expect(docRecord()).toEqual({ title: p.title, src: "abstract", pages: p.pages, sample: false, abstractOnly: true });
-    expect(tid("ap-head")!.textContent).toBe(FX.heads.find((x) => x.id === "abstract-only")!.text);
+    expect(tid("ap-head")!.textContent).toBe(withPanelFixes(FX.heads.find((x) => x.id === "abstract-only")!.text));
     expect(tid("ap-abstract-only")!.textContent).toBe(E.ap2_abstract_only_shallow_an);
     const walk = tid("ap-tab-walk") as HTMLButtonElement;
     expect([walk.textContent, walk.disabled, walk.title]).toEqual(["🧭 Walk me through it (full paper needed)", true, "The walk-through needs the full paper"]);

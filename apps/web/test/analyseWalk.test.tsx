@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, AP_STAGES, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
+import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 /*
  * Analyse a paper, part 2 (v1 apWalkShow 10048-10064, apDraft/apReveal/apSetStage 10114-10122, apCardText/apCardDownload 10124-10136, apAcross* 9936-9985, apRender's walk and card
@@ -353,7 +354,7 @@ describe("Paper card (apRender 11325-11331, apCardText 10124-10135)", () => {
     await click($("#apCardBtn"));
     expect(h.download.mock.calls.map((x) => x[0])).toEqual(["paper-card.txt"]);
     const text = await blobText(h.download.mock.calls[0]!);
-    expect(text).toBe("﻿" + c.text);
+    expect(text).toBe("﻿" + withPanelFixes(c.text));
     const stored = notes()?.[id];
     expect(text.slice(1)).toBe(apCardText({
       title: SAMPLE_TITLE, note: stored, refs: getAp().refs, stages: AP_STAGES,

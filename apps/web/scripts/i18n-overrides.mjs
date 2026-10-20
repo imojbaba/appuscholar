@@ -206,3 +206,31 @@ export function applyV2Strings(en, hi) {
   }
   return { en: outEn, hi: outHi };
 }
+
+// Corrections to v1 panel keys (ap2_ and the like, extracted by extract-v1-panels.mjs). v1's Analyse a paper panel says "Appuscholer"
+// (a typo) in four places; v2 says "Appuscholar" (walk fault W21). The golden fixture keeps v1's text; web tests that compare against it
+// apply withPanelFixes to the golden first. Hindi holds the English for these keys, so the replacement runs in both languages.
+export const PANEL_FIXES = {
+  keys: ["ap2_check_what_appuscholer_read", "ap2_give_appuscholer_a_research", "ap2_made_with_appuscholer_parts", "ap2_none_the_text_has"],
+  from: /Appuscholer/g,
+  to: "Appuscholar"
+};
+
+/** Applies PANEL_FIXES to both dictionaries. A key that is missing, or whose value has nothing to replace, throws (v1 or the keys moved). */
+export function applyPanelFixes(en, hi) {
+  const outEn = { ...en }, outHi = { ...hi };
+  for (const out of [outEn, outHi]) {
+    for (const k of PANEL_FIXES.keys) {
+      if (typeof out[k] !== "string") throw new Error(`panel fix key is missing: ${k}`);
+      const fixed = out[k].replace(PANEL_FIXES.from, PANEL_FIXES.to);
+      if (fixed === out[k]) throw new Error(`panel fix has no match in ${k}`);
+      out[k] = fixed;
+    }
+  }
+  return { en: outEn, hi: outHi };
+}
+
+/** The golden appanel text with the same replacement, for web tests that compare the panel with v1's recorded text (the golden is never edited). */
+export function withPanelFixes(s) {
+  return s.replace(PANEL_FIXES.from, PANEL_FIXES.to);
+}

@@ -7,7 +7,7 @@
 // Hindi = English until Dr. Sharma provides Hindi, and messages/v1-panels.manifest.json records each key's v1 lines and their sha256.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { applyOverrides, applyHindiDrafts, applyV2Strings } from "./i18n-overrides.mjs";
+import { applyOverrides, applyHindiDrafts, applyV2Strings, applyPanelFixes } from "./i18n-overrides.mjs";
 import { extractV1Panels, applyV1Panels } from "./extract-v1-panels.mjs";
 const src = readFileSync(process.argv[2], "utf8");
 const outDir = process.argv[3] ? pathToFileURL(process.argv[3].replace(/\/?$/, "/")) : new URL("../messages/", import.meta.url);
@@ -21,6 +21,7 @@ I18N.hi = applyHindiDrafts(I18N.hi);
 ({ en: I18N.en, hi: I18N.hi } = applyV2Strings(I18N.en, I18N.hi));   // new v2 copy with no v1 equivalent; throws if a key collides with a v1 key
 const panels = extractV1Panels(src);
 ({ en: I18N.en, hi: I18N.hi } = applyV1Panels(I18N.en, I18N.hi, panels));   // throws if a panel key collides with an existing key
+({ en: I18N.en, hi: I18N.hi } = applyPanelFixes(I18N.en, I18N.hi));   // v1 panel typos ("Appuscholer", W21); throws if a key is missing or has no match
 mkdirSync(outDir, { recursive: true });
 writeFileSync(new URL("v1-panels.manifest.json", outDir), JSON.stringify(panels.manifest, null, 2) + "\n");
 for (const lang of ["en", "hi"]) {
