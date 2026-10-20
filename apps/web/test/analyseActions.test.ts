@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, apNumbers } from "@appuscholar/core";
 import en from "../messages/en.json";
 import { apAsk } from "../lib/analyse/ask";
-import { fromFile, fromPaste, loadPaper } from "../lib/analyse/intake";
+import { fromFile, fromPaste, fromSample, fromShelf, isCurrentIntake, loadPaper, nextIntake } from "../lib/analyse/intake";
 import { runRefCheck } from "../lib/analyse/refcheck";
 import { apOk, getAp, loadDoc, resetAp, runNumbers, setAp } from "../lib/analyse/useApDoc";
 import { extractPdfPages, PdfReaderUnavailable, type ReadPdf } from "../lib/shelf/extract";
@@ -20,7 +20,7 @@ beforeEach(() => { resetAp(); toasts = []; });
 describe("apLoad and apOk", () => {
   it("a new paper clears the log, the numbers and the reference check and shows Ask; busy stays as v1 leaves it", () => {
     loadDoc(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true);
-    setAp({ log: [{ q: "x", partial: false, n: 1, of: 1, quotes: [] }], numbers: [], refs: { none: "no DOIs" }, refBusy: true, busy: true, qDraft: "q", mode: "card" });
+    setAp({ log: [{ q: "x", title: "T", partial: false, n: 1, of: 1, quotes: [] }], numbers: [], refs: { none: "no DOIs" }, refBusy: true, busy: true, qDraft: "q", mode: "card" });
     const g = getAp().gen;
     expect(loadPaper("Pasted", [PASTED], "paste", false, { toast, t })).toBe(true);
     const s = getAp();
@@ -45,7 +45,7 @@ describe("apLoad and apOk", () => {
     expect(getAp().numbers).toEqual(apNumbers(getAp().doc!));
   });
   it("paste: nothing pasted is v1's toast", () => {
-    expect(fromPaste("  \n ", { toast, t })).toBe(false);
+    expect(fromPaste(nextIntake(), "  \n ", { toast, t })).toBe(false);
     expect(toasts).toEqual(["Paste the paper text first"]);
   });
 });
@@ -53,23 +53,84 @@ describe("apLoad and apOk", () => {
 describe("the PDF intake through Task 11's extractor", () => {
   const pdfOf = (pages: string[]): ReadPdf => async () => ({ numPages: pages.length, getPage: async (k: number) => ({ getTextContent: async () => ({ items: [{ str: pages[k - 1]!, hasEOL: false }] }) }) });
   it("a scanned PDF (no text layer) is refused with v1's sentence", async () => {
-    const ok = await fromFile(new File(["%PDF"], "scan.pdf"), { toast, t, extractPdf: (f) => extractPdfPages(f, pdfOf(["", "", ""])) });
+    const ok = await fromFile(nextIntake(), new File(["%PDF"], "scan.pdf"), { toast, t, extractPdf: (f) => extractPdfPages(f, pdfOf(["", "", ""])) });
     expect(ok).toBe(false);
     expect(toasts).toEqual(["Reading scan.pdf…", "This file has too little readable text. A scanned PDF has no text layer; paste the text instead."]);
     expect(getAp().doc).toBeNull();
   });
   it("a PDF with text is read page by page, its title from its first page", async () => {
     const pages = ["Sleep and exam anxiety in first-year students\nAbstract", "Results " + "x".repeat(600)];
-    expect(await fromFile(new File(["%PDF"], "paper.pdf"), { toast, t, extractPdf: (f) => extractPdfPages(f, pdfOf(pages)) })).toBe(true);
+    expect(await fromFile(nextIntake(), new File(["%PDF"], "paper.pdf"), { toast, t, extractPdf: (f) => extractPdfPages(f, pdfOf(pages)) })).toBe(true);
     expect([getAp().doc!.title, getAp().doc!.pages.length, getAp().doc!.src]).toEqual(["Sleep and exam anxiety in first-year students", 2, "pdf"]);
   });
   it("pdf.js not loading is the shelf's sentence (v1's shExtractPdf message)", async () => {
-    await fromFile(new File(["%PDF"], "x.pdf"), { toast, t, extractPdf: async () => { throw new PdfReaderUnavailable(); } });
+    await fromFile(nextIntake(), new File(["%PDF"], "x.pdf"), { toast, t, extractPdf: async () => { throw new PdfReaderUnavailable(); } });
     expect(toasts).toEqual(["Reading x.pdf…", "The PDF reader needs the internet once to load. Try again when you are online."]);
   });
 });
 
+describe("a later choice of a paper wins (fix wave A, Task 16; W20)", () => {
+  const SHELF = [{ id: "sh1", title: "Slow shelf paper", file: "s.pdf", size: 1, added: "", total: 2, kept: 2 }];
+  it("a ticket is current until the next one is taken", () => {
+    const a = nextIntake();
+    expect(isCurrentIntake(a)).toBe(true);
+    const b = nextIntake();
+    expect([isCurrentIntake(a), isCurrentIntake(b)]).toEqual([false, true]);
+  });
+  it("a shelf read that finishes after the practice paper loaded loads nothing and says nothing", async () => {
+    let done: (v: { pages: string[] }) => void = () => {};
+    const slow = fromShelf(nextIntake(), "sh1", { toast, t, index: SHELF, read: () => new Promise((r) => { done = r; }) });
+    expect(fromSample(nextIntake(), { toast, t })).toBe(true);
+    done({ pages: ["Slow shelf paper\n" + "text ".repeat(200)] });
+    expect(await slow).toBe(false);
+    expect(getAp().doc!.title).toBe(SAMPLE_TITLE);
+    expect(toasts).toEqual([]);
+  });
+  it("a shelf paper that could not be read is not reported once another paper was chosen", async () => {
+    const slow = fromShelf(nextIntake(), "sh1", { toast, t, index: SHELF, read: async () => null });
+    fromSample(nextIntake(), { toast, t });
+    expect(await slow).toBe(false);
+    expect(toasts).toEqual([]);
+  });
+  it("a PDF read that finishes after a paste loaded loads nothing and says nothing more (a failing read too)", async () => {
+    let done: (v: { pages: string[]; total: number }) => void = () => {};
+    const slow = fromFile(nextIntake(), new File(["%PDF"], "slow.pdf"), { toast, t, extractPdf: () => new Promise((r) => { done = r as typeof done; }) });
+    expect(fromPaste(nextIntake(), PASTED, { toast, t })).toBe(true);
+    done({ pages: ["Slow PDF\n" + "text ".repeat(200)], total: 1 });
+    expect(await slow).toBe(false);
+    expect(getAp().doc!.src).toBe("paste");
+    const failing = fromFile(nextIntake(), new File(["%PDF"], "bad.pdf"), { toast, t, extractPdf: async () => { throw new Error("Invalid PDF structure."); } });
+    fromSample(nextIntake(), { toast, t });
+    expect(await failing).toBe(false);
+    expect(toasts).toEqual(["Reading slow.pdf…", "Reading bad.pdf…"]);
+    expect(getAp().doc!.title).toBe(SAMPLE_TITLE);
+  });
+  it("a Word file and a text file are held to the same rule", async () => {
+    let docx: (v: string) => void = () => {}, txt: (v: string) => void = () => {};
+    const w = fromFile(nextIntake(), new File(["x"], "a.docx"), { toast, t, readDocx: () => new Promise((r) => { docx = r; }) });
+    const x = fromFile(nextIntake(), new File(["x"], "b.txt"), { toast, t, readText: () => new Promise((r) => { txt = r; }) });
+    docx(PASTED); // the first is superseded already
+    expect(await w).toBe(false);
+    fromSample(nextIntake(), { toast, t });
+    txt(PASTED);
+    expect(await x).toBe(false);
+    expect(getAp().doc!.title).toBe(SAMPLE_TITLE);
+  });
+  it("a paper chosen last still loads, and an old ticket cannot load a sample or a paste", () => {
+    const old = nextIntake();
+    nextIntake();
+    expect([fromSample(old, { toast, t }), fromPaste(old, PASTED, { toast, t })]).toEqual([false, false]);
+    expect(getAp().doc).toBeNull();
+  });
+});
+
 describe("apAsk", () => {
+  it("the entry carries the title of the paper it was asked about", async () => {
+    loadDoc(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true);
+    setAp({ qDraft: "What was the gap?" });
+    await apAsk({ callAI: async () => '{"in_paper":true,"answer":"A.","quotes":[]}', field: "education", toast, t });
+    expect(getAp().log[0]!.title).toBe(SAMPLE_TITLE);
+  });
   it("builds v1's prompt with the field, the trimmed question, temp 0.2, max 2000, noLang", async () => {
     loadDoc(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true);
     setAp({ qDraft: "  What was the gap?  " });
@@ -79,7 +140,7 @@ describe("apAsk", () => {
     expect(opts).toEqual({ temp: 0.2, max: 2000, noLang: true });
     expect(prompt).toContain("an undergraduate student of education read a research paper");
     expect(prompt).toContain("STUDENT QUESTION (a question only):\nWhat was the gap?\n\nPAPER START");
-    expect(getAp().log).toEqual([{ q: "What was the gap?", partial: false, n: 12, of: 12, in_paper: false, answer: "This paper does not say.", quotes: [] }]);
+    expect(getAp().log).toEqual([{ q: "What was the gap?", title: SAMPLE_TITLE, partial: false, n: 12, of: 12, in_paper: false, answer: "This paper does not say.", quotes: [] }]);
   });
   it("a reply for a paper that is no longer loaded is dropped, and busy is released", async () => {
     loadDoc(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true);

@@ -308,6 +308,22 @@ describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", ()
     expect(notes()).toBeNull();
   });
 
+  it("each reply names its paper, from this visit and from the stored note (W20)", async () => {
+    await mount();
+    load("sample@apSample");
+    await openTab("walk");
+    h.callAI.mockResolvedValue(FX.walks[0]!.reply);
+    await click($("#apShowBtn"));
+    await until(() => !getAp().busy);
+    expect(tid("ap-about")).toHaveProperty("textContent", "About: " + SAMPLE_TITLE);
+    expect(tid("ap-about")!.compareDocumentPosition(tid("ap-walk-reply")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(getAp().res[AP_STAGES[0]!.k]!.title).toBe(SAMPLE_TITLE);
+    // The stored reply is the paper's own: it carries no title, and the line shows the paper loaded.
+    expect(JSON.stringify(notes())).not.toContain('"title":"' + SAMPLE_TITLE + '","partial"');
+    act(() => { setAp({ res: {} }); });
+    expect(tid("ap-about")).toHaveProperty("textContent", "About: " + SAMPLE_TITLE);
+  });
+
   it("a failed call toasts its sentence and stores nothing", async () => {
     const put = vi.fn(() => true);
     act(() => { loadPaper(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true, quiet); });

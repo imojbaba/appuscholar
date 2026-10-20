@@ -248,6 +248,55 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
     expect(getAp().doc).toBeNull();
   });
 
+  /** Choose shelf paper "sh1" in the dropdown. */
+  const pickShelf = (id: string) => { const sel = $("#apShelf") as HTMLSelectElement; act(() => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(sel, id); sel.dispatchEvent(new Event("change", { bubbles: true })); }); };
+  const SHELF1 = [{ id: "sh1", title: "A slow shelf paper about reading", file: "slow.pdf", size: 1, added: "", total: 2, kept: 2 }];
+
+  it("a shelf paper that finishes loading after the practice paper was chosen does not replace it (W20)", async () => {
+    h.index = SHELF1;
+    let done: (v: { pages: string[]; notes: unknown[]; cells: Record<string, string> }) => void = () => {};
+    h.loadPaper.mockImplementation(() => new Promise((r) => { done = r; }));
+    await mount();
+    pickShelf("sh1");
+    await click(tid("ap-shelf-btn"));
+    await click(tid("ap-sample-btn"));
+    expect(tid("ap-head")!.textContent).toContain(SAMPLE_TITLE);
+    await act(async () => { done({ pages: ["A slow shelf paper about reading\n" + "words ".repeat(200)], notes: [], cells: {} }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(h.loadPaper).toHaveBeenCalledWith("sh1");
+    expect(tid("ap-head")!.textContent).toContain(SAMPLE_TITLE);
+    expect(tid("ap-head")!.textContent).not.toContain("A slow shelf paper");
+    expect(getAp().doc!.sample).toBe(true);
+    expect(toasts()).toEqual([]);
+  });
+
+  it("the same holds for a PDF file read and for a paste", async () => {
+    let done: (v: unknown) => void = () => {};
+    h.extract.mockImplementation(() => new Promise((r) => { done = r; }));
+    await mount();
+    await choose(new File(["%PDF"], "slow.pdf"));
+    await click(tid("ap-sample-btn"));
+    await act(async () => { done({ pages: ["A slow PDF about reading\n" + "words ".repeat(200)], total: 1 }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(tid("ap-head")!.textContent).toContain(SAMPLE_TITLE);
+    expect(toasts()).toEqual(["Reading slow.pdf…"]);
+    // A paste chosen while a shelf paper is still being read wins too.
+    h.index = SHELF1;
+    let shelfDone: (v: { pages: string[]; notes: unknown[]; cells: Record<string, string> }) => void = () => {};
+    h.loadPaper.mockImplementation(() => new Promise((r) => { shelfDone = r; }));
+    act(() => { for (const x of roots.splice(0)) x.unmount(); }); document.body.innerHTML = "";
+    resetAp();
+    await mount();
+    pickShelf("sh1");
+    await click(tid("ap-shelf-btn"));
+    typeIn($("#apPaste") as HTMLTextAreaElement, "My pasted paper on reading\n" + "pasted words ".repeat(60));
+    await click(tid("ap-paste-btn"));
+    await act(async () => { shelfDone({ pages: ["A slow shelf paper about reading\n" + "words ".repeat(200)], notes: [], cells: {} }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(tid("ap-head")!.textContent).toContain("My pasted paper on reading");
+    expect(toasts()).toEqual(["Reading slow.pdf…"]);
+  });
+
   it("a shelf paper whose text cannot be read here says so and loads nothing", async () => {
     h.index = [{ id: "sh1", title: "Locked paper", file: "l.pdf", size: 1, added: "", total: 1, kept: 1 }];
     await mount();
@@ -378,6 +427,36 @@ describe("Analyse a paper: Ask (apAsk 10032-10047, apQuotesHTML 10018-10026, the
     await settle();
     expect($$('[data-testid="ap-answer"]').map((b) => b.textContent)).toEqual(["You asked: What are the limitations?Second.", "You asked: What was the research gap?First."]);
     expect(h.callAI).toHaveBeenCalledTimes(2);
+  });
+
+  it("an Ask reply that arrives after another paper was loaded is dropped (W20)", async () => {
+    await mount();
+    await click(tid("ap-sample-btn"));
+    let answer: (s: string) => void = () => {};
+    h.callAI.mockImplementationOnce(() => new Promise<string>((r) => { answer = r; }));
+    typeIn($("#apQ") as HTMLTextAreaElement, "What was the research gap?");
+    await click(tid("ap-ask-btn"));
+    typeIn($("#apPaste") as HTMLTextAreaElement, "My pasted paper on reading\n" + "pasted words ".repeat(60));
+    await click(tid("ap-paste-btn"));
+    await act(async () => { answer('{"in_paper":true,"answer":"For the practice paper.","quotes":[]}'); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(getAp().log).toEqual([]);
+    expect(tid("ap-answer")).toBeNull();
+    expect(tid("ap-about")).toBeNull();
+    expect(getAp().busy).toBe(false);
+  });
+
+  it("each answer names its paper", async () => {
+    await mount();
+    await click(tid("ap-sample-btn"));
+    h.callAI.mockResolvedValue('{"in_paper":true,"answer":"First.","quotes":[]}');
+    typeIn($("#apQ") as HTMLTextAreaElement, "What was the research gap?");
+    await click(tid("ap-ask-btn"));
+    await settle();
+    expect(tid("ap-about")).toHaveProperty("textContent", "About: " + SAMPLE_TITLE);
+    // The line is above the answer, not part of its box.
+    expect(tid("ap-about")!.compareDocumentPosition(tid("ap-answer")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(tid("ap-answer")!.textContent).toBe("You asked: What was the research gap?First.");
   });
 
   it("a failed call toasts callAI's sentence and keeps the question", async () => {

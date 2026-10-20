@@ -17,7 +17,7 @@ export const aiFailMessage = (e: unknown): string => (e instanceof Error && e.me
  * core's buildAskPrompt (apPick at 9,000 characters, AP_RULES; temp 0.2, max 2000, noLang) and the reply read by apJson: not JSON keeps the raw text; else in_paper (false only when the
  * reply says false), the answer, and up to 4 quotations, each checked by apCheckQuote against the paper. The entry joins the log and the question box is emptied. The answer is drawn in the
  * panel (apAskRender), not the AI pane, as v1 draws it. A failed call toasts callAI's sentence (v2's apiMsg). Beyond v1: a reply that arrives after another paper was loaded is dropped
- * (v1 would add it to the new paper's log and check its quotations against the new paper).
+ * (v1 would add it to the new paper's log and check its quotations against the new paper), and the entry carries the title of the paper it was asked about (the panel's "About:" line, register D-S2-30).
  */
 export async function apAsk(d: AskDeps): Promise<void> {
   const s = getAp();
@@ -31,7 +31,7 @@ export async function apAsk(d: AskDeps): Promise<void> {
     const built = buildAskPrompt(d.field, doc, q);
     const out = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });
     const r = apJson(out) as Record<string, unknown> | null;
-    const item: ApAskItem = { q, partial: built.pick.partial, n: built.pick.n, of: built.pick.of, quotes: [] };
+    const item: ApAskItem = { q, title: doc.title, partial: built.pick.partial, n: built.pick.n, of: built.pick.of, quotes: [] };
     if (!r) item.raw = String(out || "");
     else {
       item.in_paper = r.in_paper !== false;

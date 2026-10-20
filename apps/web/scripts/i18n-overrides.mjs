@@ -190,7 +190,10 @@ export const V2_STRINGS = {
     hi: "Crossref से भर दिया गया। आपके दस्तावेज़ में पहले से मौजूद इन-टेक्स्ट उद्धरण पुराने रूप में रहेंगे; उन्हें दोबारा डालें।"
   },
   // The name of the Author field in the Fill question's list ("Author: Schaefer, Ellen M.; ..."); the other three names are v1's cite_vol_label, cite_issue_label and cite_pages_label.
-  rc_fld_author: { en: "Author", hi: "लेखक" }
+  rc_fld_author: { en: "Author", hi: "लेखक" },
+  // Above each Ask answer and each walk-through reply in Analyse a paper: which paper it is about (fix wave A, Task 16; walk fault W20, register D-S2-30).
+  // DRAFT Hindi: के बारे में.
+  ap_about: { en: "About: {title}", hi: "इसके बारे में: {title}" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

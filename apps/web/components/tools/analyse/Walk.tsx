@@ -6,13 +6,13 @@ import { useCallAI } from "@/lib/ai/useCallAI";
 import { stageAsk, stageName } from "@/lib/analyse/cards";
 import { NOTES_POPOUT, type ApNotesStore } from "@/lib/analyse/notes";
 import { apWalkShow, walkDraft } from "@/lib/analyse/walk";
-import { setAp, useApState, type ApLoaded } from "@/lib/analyse/useApDoc";
+import { setAp, useApState, type ApLoaded, type ApWalkReply } from "@/lib/analyse/useApDoc";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { Quotes } from "./Ask";
 
 /** A stage's reply, from this visit (AP.res, core's ApWalkRes) or stored (the ap_notes blob's shape, every field optional). */
-type Res = Partial<Omit<ApWalkRes, "quotes">> & { quotes?: Array<{ q: string }> };
+type Res = Partial<Omit<ApWalkReply, "quotes">> & { quotes?: Array<{ q: string }> };
 
 /**
  * The reply's boxes (11307-11318): the raw reply under v1's warning; or "What the paper says" with the reading, the quotations (checked again against the paper loaded now: apCheckQuote),
@@ -22,11 +22,14 @@ type Res = Partial<Omit<ApWalkRes, "quotes">> & { quotes?: Array<{ q: string }> 
 function Reply({ d, k, r }: { d: ApLoaded; k: string; r: Res }) {
   const t = useT();
   const s = useApState();
-  if (r.raw !== undefined) return <div className="ap-box" data-testid="ap-walk-raw"><span className="ap-warn">{t("ap2_the_reply_could_not")}</span><br />{r.raw}</div>;
+  // Which paper the reply is about: the title it was asked under; a reply stored before this wave has none, and its note belongs to the paper loaded now (the note is keyed by the paper).
+  const about = <p className="ap-small ap-about" data-testid="ap-about">{t("ap_about", { title: r.title ?? d.title })}</p>;
+  if (r.raw !== undefined) return <>{about}<div className="ap-box" data-testid="ap-walk-raw"><span className="ap-warn">{t("ap2_the_reply_could_not")}</span><br />{r.raw}</div></>;
   const quotes = (r.quotes ?? []).map((c) => apCheckQuote(d, c.q));
   const notStated = r.not_stated ?? [];
   return (
     <>
+      {about}
       <div className="ap-box" data-testid="ap-walk-reply">
         {tHtml(t("ap2_what_the_paper_says"))}<br />{r.reading}<Quotes list={quotes} />
         {notStated.length > 0 && <div className="ap-gap">{tHtml(t("ap2_the_paper_does_not_2"))}<ul className="ap-flags">{notStated.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
