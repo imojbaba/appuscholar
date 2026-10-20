@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { wordText } from "@/lib/export/word";
 import { VaultError } from "./crypto";
 import type { WrappedDek } from "./useVault";
+import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 
 export type ExportProject = { id: string; title: string; stage: string; createdAt: string };
 export type ExportDocSummary = { id: string; title: string; kind: string; createdAt: string; updatedAt: string; deletedAt?: string | null; wordCount?: number };
@@ -14,7 +15,13 @@ export type ExportDeps = {
   getDocument(id: string): Promise<ExportDoc>;
   decrypt(doc: ExportDoc): Promise<string>;
   writingRecordText(): Promise<string>;
+  /** The kinds of stage data a project holds (GET /projects/:id/blobs), whatever this build knows of them. */
+  listBlobs(projectId: string): Promise<Array<{ kind: string; keyVersion: number; updatedAt: string }>>;
+  getBlob(projectId: string, kind: string): Promise<BlobWire>;
+  /** Opens a blob in the browser (a plaintext blob, keyVersion 0, comes back as it is). */
+  decryptBlob(projectId: string, w: BlobWire): Promise<string>;
 };
+type StageData = { kind: string; file: string; updatedAt: string } | { kind: string; updatedAt: string; unreadable: true };
 
 const z = (n: number) => String(n).padStart(2, "0");
 /** The local calendar day, YYYY-MM-DD. */
@@ -49,10 +56,15 @@ function unique(name: string, used: Set<string>): string {
   return n;
 }
 
+/** A stage-data file name from a kind: ":" becomes "-" (shelf_paper:<id> → shelf_paper-<id>), and path separators go. */
+const stageFile = (kind: string) => kind.replace(/:/g, "-").replace(/[\\/]/g, "_");
+
 /**
  * Every project's live documents, decrypted in the browser, as one zip: `<project>/<document>.html` and `.doc` (source papers under
  * `<project>/sources/`), the writing-process record, and index.json listing titles, stages and dates. Deleted documents are left out;
  * one that will not decrypt (VaultError "corrupt") is listed in index.json as unreadable, without files. Any other failure rejects.
+ * Each project's stage data (every blob kind the api lists, the scratch space's too) is decrypted here and written, one at a time, as
+ * `<project>/stage-data/<kind>.json` (pretty-printed JSON); one that does not open or is not JSON is listed as unreadable in `stageData`.
  */
 export async function exportAll(deps: ExportDeps): Promise<Blob> {
   const zip = new JSZip();
@@ -81,7 +93,22 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
       zip.file(base + ".doc", wordText(d.title, html));
       documents.push({ ...meta, html: base + ".html", doc: base + ".doc" });
     }
-    projects.push({ title: p.title, stage: p.stage, createdAt: p.createdAt, folder, documents });
+    const stageData: StageData[] = [];
+    const files = new Set<string>();
+    for (const b of await deps.listBlobs(p.id)) {
+      let json: string;
+      try {
+        json = JSON.stringify(JSON.parse(await deps.decryptBlob(p.id, await deps.getBlob(p.id, b.kind))), null, 2) + "\n";
+      } catch (e) {
+        // A blob that does not open (VaultError "corrupt") or is not JSON is listed as unreadable; the rest still export.
+        if ((e instanceof VaultError && e.code === "corrupt") || e instanceof SyntaxError) { stageData.push({ kind: b.kind, updatedAt: b.updatedAt, unreadable: true }); continue; }
+        throw e;
+      }
+      const file = `${folder}/stage-data/${unique(stageFile(b.kind), files)}.json`;
+      zip.file(file, json);
+      stageData.push({ kind: b.kind, file, updatedAt: b.updatedAt });
+    }
+    projects.push({ title: p.title, stage: p.stage, createdAt: p.createdAt, folder, documents, stageData });
   }
   zip.file("writing-process-record.txt", await deps.writingRecordText());
   zip.file("index.json", JSON.stringify({ exportedAt: new Date().toISOString(), projects }, null, 2) + "\n");

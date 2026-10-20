@@ -14,11 +14,16 @@
  *   (packages/core/test/fetch/recorded) and the few requests only this journey makes (e2e/fixtures/recorded, written live once by its capture.mjs);
  * - every other address outside localhost is answered 599 and noted; the test fails if any was asked for (UNEXPECTED), as it does for a prompt no
  *   recorded reply answers.
+ * Fix wave A (docs/walkthroughs/fix-wave-a.md is its sheet for a human): besides the assertions in steps 1, 3, 5, 6, 8 and 11, the journey ends with
+ * "11b" (an authorless capture, the Crossref check's Fill, a PubMed page captured with every author, the volume, the issue and the first page, and the
+ * same page captured again), then, after the blob check, the export of all work and two windows saving different idea boxes. The two stand-ins
+ * the 11b needs that no recording holds are marked where they are made (PUBMED_PAGE, and the OpenAlex retraction answer for GUIDELINES's DOI).
  * The vault is set up in step 1 (the key's "Protect with a passphrase"), so every stage blob the journey stores goes to the api sealed; after the
  * journey the api is asked for each one (the server never sees the text: blindness).
  */
 import path from "node:path";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import JSZip from "jszip";
 import { test, expect, type BrowserContext, type Page, type Request, type Route } from "@playwright/test";
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
@@ -62,6 +67,20 @@ const DORDI = { title: "On the relationship between test anxiety and academic pe
 const CAPTURED = { title: "Self-determination theory and the facilitation of intrinsic motivation, social development, and well-being", authors: ["Ryan, Richard M.", "Deci, Edward L."], year: "2000", journal: "American Psychologist", doi: "10.1037/0003-066X.55.1.68" };
 /** Typed into "Add a paper you found elsewhere". */
 const MANUAL = { title: "Statistical power analysis for the behavioral sciences", author: "Cohen, J.", year: "1988", source: "Lawrence Erlbaum Associates", doi: "10.4324/9780203771587" };
+/** Fix wave A, 11b: what a bookmarklet reads from a PubMed article page (a stand-in: PubMed writes one `citation_authors` tag, "Surname Initials; ...", and the volume, issue and first page). */
+const PUBMED_PAGE = "https://pubmed.ncbi.nlm.nih.gov/36000000/";
+const PUBMED = { title: "A fictional stand-in article for the capture test", authors: ["Schaefer EM", "Gonzalez CB", "Park JH", "Okafor NA", "Lindqvist PS", "Moreau AT"], year: "2023", journal: "Sleep Health Letters", volume: "12", issue: "4", firstPage: "13317" };
+const PUBMED_HTML = `<!doctype html><html><head><title>${PUBMED.title}</title>
+<meta name="citation_title" content="${PUBMED.title}">
+<meta name="citation_authors" content="${PUBMED.authors.join("; ")}">
+<meta name="citation_publication_date" content="${PUBMED.year}/04/15">
+<meta name="citation_journal_title" content="${PUBMED.journal}">
+<meta name="citation_volume" content="${PUBMED.volume}">
+<meta name="citation_issue" content="${PUBMED.issue}">
+<meta name="citation_firstpage" content="${PUBMED.firstPage}">
+</head><body><h1>${PUBMED.title}</h1></body></html>`;
+/** Fix wave A, 11b: an authorless capture, the payload the old bookmarklet sends for a page that lists no author: a title and a DOI (a paper in the core corpus's Crossref recordings, cr-doi-05). */
+const GUIDELINES = { title: "Guidelines for Human-AI Interaction", year: "2019", doi: "10.1145/3290605.3300233" };
 /** The shelf names a paper after its first line. */
 const SHELF_TITLE = "Morning light and study focus in college students";
 const HIGHLIGHT = "Forty students from one college took part.";
@@ -146,7 +165,7 @@ function loadRecordings(): Map<string, Recording> {
   const out = new Map<string, Recording>();
   for (const dir of [path.join(__dirname, "../../../packages/core/test/fetch/recorded"), path.join(__dirname, "fixtures/recorded")]) {
     if (!existsSync(dir)) continue;
-    for (const f of readdirSync(dir).filter((x) => x.endsWith(".json"))) {
+    for (const f of readdirSync(dir).filter((x) => x.endsWith(".json") && x !== "v2-manifest.json")) {
       const r = JSON.parse(readFileSync(path.join(dir, f), "utf8")) as Recording;
       out.set(r.url, r);
     }
@@ -191,6 +210,7 @@ async function stubNetwork(ctx: BrowserContext): Promise<Net> {
     return route.fulfill({ status: rec.status, headers: { ...CORS_ANY, ...(rec.headers["content-type"] ? { "content-type": rec.headers["content-type"] } : {}) }, body: rec.body });
   });
   await ctx.route(JOURNAL_PAGE, (route) => route.fulfill({ status: 200, contentType: "text/html", body: JOURNAL_HTML }));
+  await ctx.route(PUBMED_PAGE, (route) => route.fulfill({ status: 200, contentType: "text/html", body: PUBMED_HTML }));
   await ctx.route(SCHOLAR, (route) => { net.opened.push(route.request().url()); return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Google Scholar</title><p>Google Scholar (stand-in)</p>" }); });
   await ctx.route(API_ORIGIN + "/ai/complete", async (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS_APP });
@@ -309,6 +329,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
   let bearer = "";
   page.on("request", (r) => { if (!bearer && r.url().startsWith(API_ORIGIN)) { const a = r.headers()["authorization"]; if (a) bearer = a; } });
   let projectId = "";
+  /** The Citation Manager's bookmark as the student drags it (step 4), clicked again on the stand-in PubMed page in 11b. */
+  let bookmarkletSrc = "";
 
   await test.step("1. create the project: sign in, a Groq key protected by the vault's passphrase, New Research Project, the stage intro, Start with Idea & Feasibility", async () => {
     await signIn(page, { prefix: "s2" });
@@ -337,6 +359,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_on"));
 
     await expect(page.getByTestId("app-version")).toHaveText(/^Version \S+$/);
+    if (process.env.GITHUB_SHA) await expect(page.getByTestId("app-version")).toHaveText("Version " + process.env.GITHUB_SHA.slice(0, 7));
     await page.getByTestId("new-project").click();
     await expect(page.getByTestId("sap-dialog")).toBeVisible();
     await page.getByTestId("sap-name").fill(PROJECT);
@@ -436,6 +459,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     const href = (await page.getByTestId("cite-bookmarklet").getAttribute("href"))!;
     expect(href.startsWith("javascript:")).toBe(true);
     const bookmarklet = decodeURIComponent(href.slice("javascript:".length));
+    bookmarkletSrc = bookmarklet;
     // Back to Research before the capture, so the window it opens shows Research too.
     await page.getByTestId("tool-research").click();
 
@@ -519,8 +543,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     const out = page.getByTestId("rs-connected-out");
     await expect(out.locator("h3")).toHaveText(T("rs2_connected_to") + " " + DORDI.title);
     await expect(out.locator("h4").first()).toHaveText(new RegExp("^" + T("rs2_this_paper_cites") + " \\([1-8]\\)$"));
-    await expect(out.locator("h4").nth(1)).toHaveText(T("rs2_papers_that_cite_this") + " (0)");
-    await expect(out).toContainText(T("rs2_none_found"));
+    // W3: OpenAlex no longer returns a cited-by URL, so the list is asked for by filter=cites (e2e/fixtures/recorded/oa-citedby-dordinejad)
+    await expect(out.locator("h4").nth(1)).toHaveText(new RegExp("^" + T("rs2_papers_that_cite_this") + " \\([1-8]\\)$"));
+    await expect(out).not.toContainText(T("rs2_none_found"));
     expect(puts.since(before)).toEqual([]);
     quiet();
   });
@@ -548,6 +573,13 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("cite-card").nth(1)).toContainText("Cohen, 1988");
     await expect(page.getByTestId("cite-card").nth(2)).toContainText("Mu, 2022");
     await expect(page.getByTestId("cite-card").nth(3)).toContainText("DordiNejad, 2011");
+    // W2 (fix wave A, Task 8): the two from the search list every author (v1 kept four and "et al."), and the volume and pages Crossref lists for their DOIs
+    // (e2e/fixtures/recorded/cr-doi-mu, cr-doi-dordinejad), filled in after the add.
+    const ref = (i: number) => page.getByTestId("cite-card").nth(i).getByTestId("cite-ref");
+    await expect(ref(2)).toContainText("Mu, L., Du, B., & Hou, X. (2022).");
+    await expect(ref(2)).toContainText("Frontiers in Psychology, 13.");
+    await expect(ref(3)).toContainText("DordiNejad, F. G., Hakimi, H., Ashouri, M., Dehghani, M., Zeinali, Z., Daghighi, M. S., & Bahrami, N. (2011).");
+    await expect(ref(3)).toContainText("Procedia - Social and Behavioral Sciences, 15, 3774–3778.");
     quiet();
   });
 
@@ -633,6 +665,11 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(answer.getByTestId("ap-quote")).toContainText("“" + ASK_QUOTE + "”");
     await expect(answer.getByTestId("ap-quote")).toContainText(T("ap2_found_in_the_paper"));
     await expect(page.getByTestId("ap-banner")).toHaveCount(0);
+    // W20 (fix wave A, Task 16): each answer names the paper it is about.
+    await expect(page.getByTestId("ap-about").first()).toHaveText(T("ap_about", { title: "Sleep and exam anxiety in first-year students: a fictional teaching paper" }));
+    // W21 (Task 17): the product's name is spelt Appuscholar in the panel.
+    await expect(page.locator("summary", { hasText: T("ap2_check_what_appuscholer_read") })).toBeVisible();
+    await expect(page.getByTestId("panel-analyse")).not.toContainText("Appuscholer");
 
     // 🔢 Check the paper's numbers: both p-values agree with their statistics.
     await page.getByTestId("ap-num-btn").click();
@@ -758,10 +795,13 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("cite-rc-btn")).toHaveText(T("rc_btn"));
     await sealedSave(page, "refcheck_cache", ["Ryan|2000", "Cohen"], () => page.getByTestId("cite-rc-btn").click());
     await expect.poll(toasts).toEqual(expect.arrayContaining([T("rc_busy"), T("rc_done")]));
-    await expect(page.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 4, o: 3, d: 1, f: 0 }));
+    // W27, W28 (fix wave A, Task 11): the captured Ryan & Deci article has no volume, issue or pages and Crossref lists all three, so it no longer counts as a match.
+    await expect(page.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 4, o: 2, d: 2, f: 0 }));
     // Cohen 1988 is in Crossref as the 2013 edition: its card says how it differs.
     await expect(page.getByTestId("cite-card").nth(1).locator(".rc-line")).toHaveText("⚠ " + T("rc_year") + " 2013");
-    for (const i of [0, 2, 3]) await expect(page.getByTestId("cite-card").nth(i).locator(".rc-line")).toHaveText("✓ " + T("rc_ok"));
+    for (const i of [2, 3]) await expect(page.getByTestId("cite-card").nth(i).locator(".rc-line")).toHaveText("✓ " + T("rc_ok"));
+    await expect(page.getByTestId("cite-card").nth(0).locator(".rc-line")).toContainText(T("rc_missing", { fields: [T("cite_vol_label"), T("cite_issue_label"), T("cite_pages_label")].join(", ").toLowerCase() }));
+    await expect(page.getByTestId("cite-card").nth(0).getByTestId("cite-rc-fill")).toHaveText(T("rc_fill_btn"));
 
     await cursorToEnd(page);
     await page.keyboard.press("Enter");
@@ -797,6 +837,83 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
+  await test.step("11b. fix wave A: an authorless capture, Crossref's Fill; a PubMed page captured with every author, the volume, the issue and the first page; the same page again", async () => {
+    // The one request no recording holds: the quiet retraction check for the authorless source's DOI, which the Citation Manager makes as it opens in a new window.
+    // Answered here, in the shape OpenAlex answers (core's retrFetchBatch reads `results[].doi` and `is_retracted`): not retracted.
+    await context.route((url) => url.hostname === "api.openalex.org" && url.pathname === "/works" && url.search.includes(encodeURIComponent("https://doi.org/" + GUIDELINES.doi)), (route) =>
+      route.fulfill({ status: 200, headers: CORS_ANY, contentType: "application/json", body: JSON.stringify({ meta: { count: 1 }, results: [{ doi: "https://doi.org/" + GUIDELINES.doi, is_retracted: false }] }) }));
+
+    // W1: a capture with a title and a DOI only (what the old bookmark sends for a page that lists no author), opened as its address: the question says no author was found.
+    const payload = { title: GUIDELINES.title, author: "", year: GUIDELINES.year, source: "", doi: GUIDELINES.doi, url: "" };
+    const win = await context.newPage();
+    const askedWin: string[] = [];
+    win.on("dialog", (d) => { askedWin.push(d.message()); void d.accept(); });
+    await win.goto(WEB_ORIGIN + "/#capture=" + encodeURIComponent(Buffer.from(JSON.stringify(payload)).toString("base64")));
+    await sealedSave(win, "citations", [GUIDELINES.title], () => unlock(win));
+    await expect.poll(() => win.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain('Captured "' + GUIDELINES.title + '" into your citation library ✓');
+    expect(askedWin).toEqual([captureConfirmText(payload)]);
+    expect(askedWin[0]).toContain("(no author found)");
+
+    await win.getByTestId("tool-cite").click();
+    await expect(win.getByTestId("panel-cite")).toBeVisible();
+    await expect(win.getByTestId("cite-count")).toHaveText("5");
+    const toasts = await recordToasts(win);
+    await sealedSave(win, "refcheck_cache", [GUIDELINES.title], () => win.getByTestId("cite-rc-btn").click());
+    await expect.poll(toasts).toContain(T("rc_done"));
+    // W27: the source has no author and no pages, Crossref has both (it lists no volume or issue for this paper): the line says so and offers Fill.
+    const line = win.getByTestId("cite-card").nth(4).locator(".rc-line");
+    await expect(line).toContainText(T("rc_missing", { fields: [T("rc_fld_author"), T("cite_pages_label")].join(", ").toLowerCase() }));
+    await expect(win.getByTestId("cite-card").nth(4).getByTestId("cite-rc-fill")).toHaveText(T("rc_fill_btn"));
+    await expect(win.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 5, o: 2, d: 3, f: 0 }));
+    // Fill asks first (the dialog lists each field), then writes only the empty fields and the line reads that the details match.
+    await sealedSave(win, "citations", [GUIDELINES.title, "Amershi"], () => win.getByTestId("cite-card").nth(4).getByTestId("cite-rc-fill").click());
+    expect(askedWin).toHaveLength(2);
+    expect(askedWin[1]).toContain(T("rc_fill_confirm", { list: "" }).trim());
+    expect(askedWin[1]).toContain(T("rc_fld_author") + ": Amershi, Saleema; Weld, Dan;");
+    expect(askedWin[1]).toContain(T("cite_pages_label") + ": 1-13");
+    await expect.poll(toasts).toContain(T("rc_filled"));
+    await expect(line).toHaveText("✓ " + T("rc_ok"));
+    await expect(win.getByTestId("cite-card").nth(4).getByTestId("cite-ref")).toContainText("Amershi, S., Weld, D., Vorvoreanu, M.");
+    await expect(win.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 5, o: 3, d: 2, f: 0 }));
+    await win.close();
+
+    // W1, W2, W28: the bookmark clicked on a PubMed page. The question names every author; the library card holds the six names, written "Surname, Initials"
+    // (APA: "Schaefer, E. M."), the volume, the issue and the first page.
+    const pubmed = await context.newPage();
+    await pubmed.goto(PUBMED_PAGE);
+    const pubmedConfirm = captureConfirmText({ title: PUBMED.title, author: PUBMED.authors.join("; "), year: PUBMED.year, source: PUBMED.journal, doi: "", url: "" });
+    const clickBookmark = async (): Promise<{ cap: Page; asked: string[] }> => {
+      const popup = pubmed.waitForEvent("popup");
+      await pubmed.evaluate(bookmarkletSrc);
+      const cap = await popup;
+      const asked: string[] = [];
+      cap.on("dialog", (d) => { asked.push(d.message()); void d.accept(); });
+      return { cap, asked };
+    };
+    const first = await clickBookmark();
+    await sealedSave(first.cap, "citations", [PUBMED.title, "Schaefer"], () => unlock(first.cap));
+    await expect.poll(() => first.cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain('Captured "' + PUBMED.title + '" into your citation library ✓');
+    expect(first.asked).toEqual([pubmedConfirm]);
+    for (const a of PUBMED.authors) expect(first.asked[0]).toContain(a);
+    await first.cap.getByTestId("tool-cite").click();
+    await expect(first.cap.getByTestId("cite-count")).toHaveText("6");
+    const ref = first.cap.getByTestId("cite-card").nth(5).getByTestId("cite-ref");
+    await expect(ref).toContainText("Schaefer, E. M., Gonzalez, C. B., Park, J. H., Okafor, N. A., Lindqvist, P. S., & Moreau, A. T. (" + PUBMED.year + ").");
+    await expect(ref).toContainText(PUBMED.journal + ", " + PUBMED.volume + "(" + PUBMED.issue + "), " + PUBMED.firstPage + ".");
+    await first.cap.close();
+
+    // W1: the same article again is already there.
+    const again = await clickBookmark();
+    await unlock(again.cap);
+    await expect.poll(() => again.cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain(T("rs2_already_in_your_library"));
+    expect(again.asked).toEqual([pubmedConfirm]);
+    await again.cap.getByTestId("tool-cite").click();
+    await expect(again.cap.getByTestId("cite-count")).toHaveText("6");
+    await again.cap.close();
+    await pubmed.close();
+    quiet();
+  });
+
   await test.step("12. move on: the stage guide's Next: Design & Ethics → leads to stage 3", async () => {
     await page.getByTestId("tool-research").click();
     const next = page.getByTestId("stage-next");
@@ -828,5 +945,63 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     // And every request outside localhost was one the recordings answer.
     quiet();
     expect(net.fetched.length).toBeGreaterThan(0);
+  });
+
+  await test.step("13. Help, Export all my work: the zip holds the project's stage data readable, while the api holds the same blob as ciphertext", async () => {
+    await page.getByTestId("help-btn").click();
+    const toasts = await recordToasts(page);
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("help-export").click()]);
+    expect(download.suggestedFilename()).toMatch(/^appuscholar-export-\d{4}-\d{2}-\d{2}\.zip$/);
+    await expect.poll(toasts).toContain(T("export_done"));
+    const zip = await JSZip.loadAsync(readFileSync(await download.path()));
+    const index = JSON.parse(await zip.file("index.json")!.async("string")) as { projects: Array<{ title: string; folder: string; stageData: Array<{ kind: string; file?: string; unreadable?: true }> }> };
+    const project = index.projects.find((p) => p.title === PROJECT)!;
+    expect(project).toBeDefined();
+    const entry = project.stageData.find((x) => x.kind === "idea_intake")!;
+    expect(entry.file).toBe(`${project.folder}/stage-data/idea_intake.json`);
+    expect(Object.keys(zip.files)).toContain(entry.file!);
+    for (const k of ["citations", "shelf_index", "ap_notes"]) expect(project.stageData.find((x) => x.kind === k)?.file, k).toBeTruthy();
+    expect(project.stageData.some((x) => x.kind.startsWith("shelf_paper:"))).toBe(true);
+    const idea = JSON.parse(await zip.file(entry.file!)!.async("string")) as { topic: string };
+    expect(idea.topic).toBe(IDEA.topic);
+    // The same blob as the api holds it: sealed, so nothing of the idea is readable there.
+    const res = await page.request.get(`${API_ORIGIN}/projects/${projectId}/blobs/idea_intake`, { headers: { authorization: bearer } });
+    expect(res.status()).toBe(200);
+    const stored = (await res.json()) as { body: string; keyVersion: number };
+    expect(stored.keyVersion).toBeGreaterThanOrEqual(1);
+    expect(stored.body).toMatch(CIPHERTEXT);
+    expect(stored.body).not.toContain(IDEA.topic);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("help-dialog")).toBeHidden();
+    quiet();
+  });
+
+  await test.step("14. two windows on one project: each saves a different idea box, and a reload shows both", async () => {
+    const TIME_2 = "Two semesters, so the ethics approval fits before the exams";
+    const CONS_2 = "No sleep-tracking devices; no budget for incentives; the ethics committee meets once a month.";
+    const open = async (): Promise<Page> => {
+      const w = await context.newPage();
+      await w.goto("/");
+      await unlock(w);
+      await w.getByTestId("tool-idea").click();
+      await expect(w.locator("#ideaTopic")).toHaveValue(IDEA.topic);
+      return w;
+    };
+    const a = await open();
+    const b = await open();
+    // Both hold the same stored version. A saves first; B's save is then stale, the api answers 409, and B reads the newer value and replays its own edit on it.
+    await sealedSave(a, "idea_intake", [TIME_2], () => a.locator("#ideaTime").fill(TIME_2));
+    await sealedSave(b, "idea_intake", [CONS_2], () => b.locator("#ideaCons").fill(CONS_2));
+    // Neither window told the student that a change was lost.
+    for (const w of [a, b]) expect(await w.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).not.toContain(T("blob_conflict"));
+    await b.close();
+    await a.reload();
+    await unlock(a);
+    await a.getByTestId("tool-idea").click();
+    await expect(a.locator("#ideaTime")).toHaveValue(TIME_2);
+    await expect(a.locator("#ideaCons")).toHaveValue(CONS_2);
+    await expect(a.locator("#ideaTopic")).toHaveValue(IDEA.topic);
+    await a.close();
+    quiet();
   });
 });

@@ -1,5 +1,5 @@
 "use client";
-import { bookmarkletHref } from "@appuscholar/core";
+import { bookmarkletHrefV2 } from "@appuscholar/core";
 import { useEffect, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -54,7 +54,8 @@ export function CiteCapture() {
   const t = useT();
   const link = useRef<HTMLAnchorElement>(null);
   // v1 builds it for its own page (13623); here it is the writing window's address, where CaptureHash reads the capture, also when this panel is in a pop-out (/popout).
-  useEffect(() => { link.current?.setAttribute("href", bookmarkletHref(window.location.origin + "/")); }, []);
+  // Wave A (W1): bookmarkletSourceV2, which also reads PubMed's citation_authors and the volume, issue and pages.
+  useEffect(() => { link.current?.setAttribute("href", bookmarkletHrefV2(window.location.origin + "/")); }, []);
   return (
     <details className="cite-capture" data-testid="cite-bookmarklet-details">
       <summary>{t("cite_bookmarklet_summary")}</summary>
@@ -63,6 +64,8 @@ export function CiteCapture() {
         <a ref={link} href="#" className={buttonVariants({ variant: "gold" })} draggable="true" data-testid="cite-bookmarklet" onClick={(e) => e.preventDefault()}>{t("cite_bookmarklet_btn")}</a>
       </p>
       <p className="desc" data-testid="cite-bookmarklet-note">{t("cite_bookmarklet_note")}</p>
+      {/* Wave A (W1, D-S2-23): a bookmark dragged before keeps v1's capture code until it is dragged again. */}
+      <p className="desc" data-testid="cite-bookmarklet-redrag">{t("cite_bookmarklet_redrag")}</p>
     </details>
   );
 }

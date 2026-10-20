@@ -5,19 +5,22 @@ import { acrossData, colLabel, downloadAcross } from "@/lib/analyse/cards";
 import type { ApNotesStore } from "@/lib/analyse/notes";
 import { getAp, setAp, useApState } from "@/lib/analyse/useApDoc";
 import { Button } from "@/components/ui/button";
+import { PanelLoading } from "../PanelLoading";
 import { NotesState } from "./Walk";
 
 /**
  * apAcrossRender (9965-9976): the column boxes (AP_COLS, ticked for the stored columns; a toggle stores the new list, apAcrossColToggle) and "Also show the AI readings…" (the tab's memory,
  * ruling R28); then "No paper card yet…", or the table (core's apAcrossData: one row per paper with a title and any card or stage text) with "×" on each row, "⬇ Download as CSV"
  * (paper_cards.csv, core's apAcrossCsv) and v1's note. "×" asks v1's question (apAcrossDel 9978-9984) and deletes the paper's note; for the paper loaded now, its replies and words of
- * this visit go too, and the card fields typed for it in this tab. While the stored notes are not known only the locked line is drawn (nothing while they are read); a broken store
+ * this visit go too, and the card fields typed for it in this tab. While the stored notes are being read the loading sign is drawn (W8); while they are not known for another reason only the locked line is drawn; a broken store
  * shows its line in place of "No paper card yet…".
  */
 function AcrossBody({ notes }: { notes: ApNotesStore }) {
   const t = useT();
   const s = useApState();
-  // Not read yet: the locked line (or nothing while it is read), never "No paper card yet…".
+  // W8: being read and opened, the loading sign (never "No paper card yet…").
+  if (notes.loading) return <PanelLoading />;
+  // Not read yet: the locked line (or nothing when the read failed), never "No paper card yet…".
   if (notes.unread) return <NotesState notes={notes} />;
   const d = acrossData(t, notes.all, notes.cols, s.acrossAi);
   const sel = (

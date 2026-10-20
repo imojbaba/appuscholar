@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, apBuild, apRefDois, buildAskPrompt, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
+import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 /*
  * Analyse a paper, part 1 (v1 741-760, apLoad and the intake 9882-9932, apAsk 10032-10047, apNumbersHTML 10106-10110, apRefCheck/apRefHTML 11221-11270, apRender 11272-11305). The expected
@@ -29,6 +30,8 @@ const h = vi.hoisted(() => ({
   extract: vi.fn(async (_f: File) => "no-text" as unknown),
   mammoth: vi.fn(async (_o: unknown) => ({ value: "" })),
   noMammoth: false,
+  /** The panel's own blobs (ap_notes, ap_cols) are still being read. */
+  apLoading: false,
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
@@ -37,7 +40,7 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: h.projectId, index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
-vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: false, locked: false, set: () => {}, flush: async () => true }) }));
+vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: h.apLoading, locked: false, set: () => {}, flush: async () => true }) }));
 vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) throw new Error("chunk failed"); return { extractRawText: h.mammoth }; } }));
 
 import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
@@ -112,7 +115,7 @@ beforeEach(() => {
   resetAp();
   for (const f of [h.toast, h.setPending, h.loadPaper, h.extract, h.mammoth]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.error = false; h.projectId = "p-1"; h.noMammoth = false;
+  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.error = false; h.projectId = "p-1"; h.noMammoth = false; h.apLoading = false;
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -162,6 +165,27 @@ describe("Analyse a paper: the panel (v1 741-760)", () => {
     await mount(<StubPanel id="analyse" />);
     expect(tid("pending-analyse")).toBeNull();
     expect(document.body.textContent).not.toContain("Abstract kept");
+  });
+});
+
+describe("Analyse a paper: the cards side by side while the saved notes open (W8)", () => {
+  it("Analyse shows the loading sign, not its empty state, until its data is read (W8)", async () => {
+    h.apLoading = true;
+    const root = await mount();
+    load("sample@apSample");
+    const box = $("#apAcrossBox") as HTMLDetailsElement;
+    await act(async () => { box.open = true; box.dispatchEvent(new Event("toggle")); });
+    const sign = $("#apAcross")!.querySelector('[data-testid="panel-loading"]')!;
+    expect(sign.textContent).toBe(E.blob_loading);
+    expect(sign.getAttribute("aria-busy")).toBe("true");
+    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
+    // The intake's own dropdown keeps its wording (D-S2-15).
+    expect($("#apShelf")!.textContent).not.toContain(E.blob_loading);
+    // The notes are read: "No paper card yet…" (nothing is stored) replaces the sign.
+    h.apLoading = false;
+    await act(async () => { root.render(<AnalysePanel />); });
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect($("#apAcross")!.textContent).toContain(E.ap2_no_paper_card_yet);
   });
 });
 
@@ -248,6 +272,70 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
     expect(getAp().doc).toBeNull();
   });
 
+  /** Choose shelf paper "sh1" in the dropdown. */
+  const pickShelf = (id: string) => { const sel = $("#apShelf") as HTMLSelectElement; act(() => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(sel, id); sel.dispatchEvent(new Event("change", { bubbles: true })); }); };
+  const SHELF1 = [{ id: "sh1", title: "A slow shelf paper about reading", file: "slow.pdf", size: 1, added: "", total: 2, kept: 2 }];
+
+  it("a shelf paper that finishes loading after the practice paper was chosen does not replace it (W20)", async () => {
+    h.index = SHELF1;
+    let done: (v: { pages: string[]; notes: unknown[]; cells: Record<string, string> }) => void = () => {};
+    h.loadPaper.mockImplementation(() => new Promise((r) => { done = r; }));
+    await mount();
+    pickShelf("sh1");
+    await click(tid("ap-shelf-btn"));
+    await click(tid("ap-sample-btn"));
+    expect(tid("ap-head")!.textContent).toContain(SAMPLE_TITLE);
+    await act(async () => { done({ pages: ["A slow shelf paper about reading\n" + "words ".repeat(200)], notes: [], cells: {} }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(h.loadPaper).toHaveBeenCalledWith("sh1");
+    expect(tid("ap-head")!.textContent).toContain(SAMPLE_TITLE);
+    expect(tid("ap-head")!.textContent).not.toContain("A slow shelf paper");
+    expect(getAp().doc!.sample).toBe(true);
+    expect(toasts()).toEqual([]);
+  });
+
+  it("the same holds for a PDF file read and for a paste", async () => {
+    let done: (v: unknown) => void = () => {};
+    h.extract.mockImplementation(() => new Promise((r) => { done = r; }));
+    await mount();
+    await choose(new File(["%PDF"], "slow.pdf"));
+    await click(tid("ap-sample-btn"));
+    await act(async () => { done({ pages: ["A slow PDF about reading\n" + "words ".repeat(200)], total: 1 }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(tid("ap-head")!.textContent).toContain(SAMPLE_TITLE);
+    expect(toasts()).toEqual(["Reading slow.pdf…"]);
+    // A paste chosen while a shelf paper is still being read wins too.
+    h.index = SHELF1;
+    let shelfDone: (v: { pages: string[]; notes: unknown[]; cells: Record<string, string> }) => void = () => {};
+    h.loadPaper.mockImplementation(() => new Promise((r) => { shelfDone = r; }));
+    act(() => { for (const x of roots.splice(0)) x.unmount(); }); document.body.innerHTML = "";
+    resetAp();
+    await mount();
+    pickShelf("sh1");
+    await click(tid("ap-shelf-btn"));
+    typeIn($("#apPaste") as HTMLTextAreaElement, "My pasted paper on reading\n" + "pasted words ".repeat(60));
+    await click(tid("ap-paste-btn"));
+    await act(async () => { shelfDone({ pages: ["A slow shelf paper about reading\n" + "words ".repeat(200)], notes: [], cells: {} }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(tid("ap-head")!.textContent).toContain("My pasted paper on reading");
+    expect(toasts()).toEqual(["Reading slow.pdf…"]);
+  });
+
+  it("Use this paper with nothing chosen asks for a choice and does not cancel a paper still being read", async () => {
+    let done: (v: unknown) => void = () => {};
+    h.extract.mockImplementation(() => new Promise((r) => { done = r; }));
+    h.index = SHELF1;
+    await mount();
+    await choose(new File(["%PDF"], "slow.pdf"));
+    // The dropdown is still on "Choose a paper from your Reading shelf".
+    await click(tid("ap-shelf-btn"));
+    expect(toasts()).toEqual(["Reading slow.pdf…", "Choose a paper first"]);
+    await act(async () => { done({ pages: ["A slow PDF about reading\n" + "words ".repeat(200)], total: 1 }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(h.loadPaper).not.toHaveBeenCalled();
+    expect(tid("ap-head")!.textContent).toContain("A slow PDF about reading");
+  });
+
   it("a shelf paper whose text cannot be read here says so and loads nothing", async () => {
     h.index = [{ id: "sh1", title: "Locked paper", file: "l.pdf", size: 1, added: "", total: 1, kept: 1 }];
     await mount();
@@ -264,7 +352,7 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
   it.each(FX.heads.map((x) => [x.id, x] as const))("%s: the head box, the tabs and the reference check's button are v1's", async (id, c) => {
     load(id);
     await mount();
-    expect(tid("ap-head")!.textContent).toBe(c.text);
+    expect(tid("ap-head")!.textContent).toBe(withPanelFixes(c.text));
     expect(tid("ap-preview")!.textContent).toBe(c.pre);
     expect([...tid("ap-tabs")!.querySelectorAll("button")].map((b) => ({ text: b.textContent, disabled: b.disabled, title: b.getAttribute("title") }))).toEqual(c.tabs);
     expect(!!tid("ap-ref-btn")).toBe(c.refBtn);
@@ -276,7 +364,7 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
     await mount();
     expect(h.setPending).toHaveBeenCalledWith(null);
     expect(docRecord()).toEqual({ title: p.title, src: "abstract", pages: p.pages, sample: false, abstractOnly: true });
-    expect(tid("ap-head")!.textContent).toBe(FX.heads.find((x) => x.id === "abstract-only")!.text);
+    expect(tid("ap-head")!.textContent).toBe(withPanelFixes(FX.heads.find((x) => x.id === "abstract-only")!.text));
     expect(tid("ap-abstract-only")!.textContent).toBe(E.ap2_abstract_only_shallow_an);
     const walk = tid("ap-tab-walk") as HTMLButtonElement;
     expect([walk.textContent, walk.disabled, walk.title]).toEqual(["🧭 Walk me through it (full paper needed)", true, "The walk-through needs the full paper"]);
@@ -378,6 +466,36 @@ describe("Analyse a paper: Ask (apAsk 10032-10047, apQuotesHTML 10018-10026, the
     await settle();
     expect($$('[data-testid="ap-answer"]').map((b) => b.textContent)).toEqual(["You asked: What are the limitations?Second.", "You asked: What was the research gap?First."]);
     expect(h.callAI).toHaveBeenCalledTimes(2);
+  });
+
+  it("an Ask reply that arrives after another paper was loaded is dropped (W20)", async () => {
+    await mount();
+    await click(tid("ap-sample-btn"));
+    let answer: (s: string) => void = () => {};
+    h.callAI.mockImplementationOnce(() => new Promise<string>((r) => { answer = r; }));
+    typeIn($("#apQ") as HTMLTextAreaElement, "What was the research gap?");
+    await click(tid("ap-ask-btn"));
+    typeIn($("#apPaste") as HTMLTextAreaElement, "My pasted paper on reading\n" + "pasted words ".repeat(60));
+    await click(tid("ap-paste-btn"));
+    await act(async () => { answer('{"in_paper":true,"answer":"For the practice paper.","quotes":[]}'); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(getAp().log).toEqual([]);
+    expect(tid("ap-answer")).toBeNull();
+    expect(tid("ap-about")).toBeNull();
+    expect(getAp().busy).toBe(false);
+  });
+
+  it("each answer names its paper", async () => {
+    await mount();
+    await click(tid("ap-sample-btn"));
+    h.callAI.mockResolvedValue('{"in_paper":true,"answer":"First.","quotes":[]}');
+    typeIn($("#apQ") as HTMLTextAreaElement, "What was the research gap?");
+    await click(tid("ap-ask-btn"));
+    await settle();
+    expect(tid("ap-about")).toHaveProperty("textContent", "About: " + SAMPLE_TITLE);
+    // The line is above the answer, not part of its box.
+    expect(tid("ap-about")!.compareDocumentPosition(tid("ap-answer")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(tid("ap-answer")!.textContent).toBe("You asked: What was the research gap?First.");
   });
 
   it("a failed call toasts callAI's sentence and keeps the question", async () => {

@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useSyncExternalStore } from "react";
-import { fieldLabel, oaSearch, pmSearch, rsDedupe, rsFilterPass, rsSortResults, type RsBrief, type RsFilter, type RsPaper, type RsQuick } from "@appuscholar/core";
+import { fieldLabel, oaSearch, pmSearchV2, rsDedupe, rsFilterPass, rsSortResults, type RsBrief, type RsFilter, type RsPaper, type RsQuick } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { pickedTerms, rankPapers, suggestTerms, type ResearchAiDeps, type RsTerms, type RsTermsBox } from "@/lib/ai/actions";
@@ -77,7 +77,7 @@ export async function runSearch(input: SearchInput, d: SearchDeps): Promise<Sear
   d.persistRank(rank);
   const jobs: Array<Promise<{ source: string; papers: RsPaper[]; error?: string; fellBack?: true }>> = [];
   if (input.oa) jobs.push(oaSearch(d.fetch, { q, terms, design, perPage: rank ? 25 : 8, key: d.oaKey ?? undefined }).then((r) => ({ source: "OpenAlex", ...r })));
-  if (input.pm) jobs.push(pmSearch(d.fetch, { q, terms, design, retmax: rank ? 15 : 6 }).then((r) => ({ source: "PubMed", ...r })));
+  if (input.pm) jobs.push(pmSearchV2(d.fetch, { q, terms, design, retmax: rank ? 15 : 6 }).then((r) => ({ source: "PubMed", ...r })));
   const outcomes = await Promise.all(jobs);
   if (!live()) return null;
   let merged: RsPaper[] = [];

@@ -21,7 +21,7 @@ export const DEFAULT_MAX_BODY_BYTES = 2.8 * 1024 * 1024;
 export function createApp(o: AppOptions) {
   const app = new Hono<AuthEnv>();
   const maxBodyBytes = o.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
-  app.use("*", cors({ origin: o.corsOrigin ?? "*", allowHeaders: ["authorization", "content-type"] }));
+  app.use("*", cors({ origin: o.corsOrigin ?? "*", allowHeaders: ["authorization", "content-type", "if-match"] }));
   app.get("/health", (c) => c.json({ ok: true }));
   app.use("/projects/*", apiAuth(o.jwtSecret, o.store));
   app.use("/projects", apiAuth(o.jwtSecret, o.store));

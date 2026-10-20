@@ -5,7 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { rsEntryFromResult, type CitationEntry } from "@appuscholar/core";
+import { rsAuthorListToCit, rsEntryFromResult, rsEntryFromResultV2, type CitationEntry, type RsPaper } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 
@@ -50,7 +50,7 @@ import { resetCiteStyle } from "../lib/cite/useLibrary";
 const E = en as Record<string, string>;
 const CORE_TEST = join(__dirname, "../../../packages/core/test");
 type Rec = { url: string; status: number; headers: Record<string, string | null>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json")).map((f) => {
+const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
   const r = JSON.parse(readFileSync(join(CORE_TEST, "fetch/recorded", f), "utf8")) as Rec;
   return [r.url, r];
 }));
@@ -60,13 +60,35 @@ const FX = JSON.parse(readFileSync(join(CORE_TEST, "golden/fetch/cases.json"), "
 const run = (name: string) => FX.searches.find((c) => c.name === name)!;
 
 let requested: string[] = [];
-const fakeFetch = vi.fn(async (input: RequestInfo | URL) => {
+/** Crossref's answer for "+ Citation library"'s lookup (W2); null: Crossref is not recorded here, so the request fails as offline. */
+let crossref: ((url: string, init?: RequestInit) => Promise<Response>) | null = null;
+const fakeFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = String(input);
   requested.push(url);
+  if (crossref && url.startsWith("https://api.crossref.org/")) return crossref(url, init);
   const r = RECS.get(url);
+  // W12: PubMed is asked first for the topic's words tagged [tiab] (pmSearchV2). Where that search was not recorded, PubMed answers that it found nothing, so pmSearchV2
+  // runs v1's search once, which is recorded: these cases hold the panel to v1's papers and status, and the fallback is what gets them.
+  if (!r && url.startsWith("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?") && url.includes("%5Btiab%5D")) {
+    return new Response('{"esearchresult":{"idlist":[]}}', { status: 200, headers: { "content-type": "application/json; charset=UTF-8" } });
+  }
   if (!r) throw new TypeError("Failed to fetch");
   return new Response(r.body, { status: r.status, headers: r.headers["content-type"] ? { "content-type": r.headers["content-type"] } : {} });
 });
+
+/** Every author of an OpenAlex result, as the recorded search body lists them (rsFetchOpenAlex's authorList, W2). */
+function oaAuthorList(title: string): string[] {
+  for (const r of RECS.values()) {
+    if (!r.url.startsWith("https://api.openalex.org/works?search=") || r.status !== 200) continue;
+    const w = ((JSON.parse(r.body) as { results?: Array<{ display_name?: string; authorships?: Array<{ author?: { display_name?: string } | null }> }> }).results ?? []).find((x) => x.display_name === title);
+    if (w) return (w.authorships ?? []).map((a) => a.author?.display_name ?? "").filter(Boolean);
+  }
+  throw new Error("no recorded OpenAlex result titled " + title);
+}
+/** The entry "+ Citation library" saves for a result of the golden list: rsEntryFromResultV2 of the paper as the search built it (with every author). */
+const v2Entry = (p: Paper) => rsEntryFromResultV2({ ...(p as unknown as RsPaper), authorList: p.source === "OpenAlex" ? oaAuthorList(p.title) : undefined }, "apa");
+/** The library after every update the citations blob was given, in order, from `start`. */
+const libAfter = (start: CitationEntry[] = []) => h.blobs.citations!.set.mock.calls.reduce((lib: CitationEntry[], call) => (call[0] as (p: CitationEntry[] | null) => CitationEntry[])(lib), start);
 
 const roots: Root[] = [];
 const editors: Editor[] = [];
@@ -120,6 +142,7 @@ beforeEach(() => {
   h.pending = null;
   h.setPending.mockReset();
   requested = [];
+  crossref = null;
   fakeFetch.mockClear();
   vi.stubGlobal("fetch", fakeFetch);
   resetResearch();
@@ -366,6 +389,30 @@ describe("Research: Rank by fit (rsRank 8220-8234, the fold 8402-8403)", () => {
   });
 });
 
+describe("Research: the rank box while its saved choice opens (W8)", () => {
+  it("Research shows the loading sign, not its empty state, until its data is read (W8): the rank box is disabled and busy, with no text", async () => {
+    h.blobs.rs_prefs = { ...blob(null), loading: true };
+    const root = await mount();
+    expect(field("rsRank").disabled).toBe(true);
+    expect(field("rsRank").getAttribute("aria-busy")).toBe("true");
+    expect(tid("panel-loading")).toBeNull();
+    expect(document.body.textContent).not.toContain(E.blob_loading);
+    // The read lands with the stored choice: the box is ticked and usable again.
+    h.blobs.rs_prefs = blob({ rank: true });
+    await act(async () => { root.render(<ResearchPanel />); });
+    expect(field("rsRank").disabled).toBe(false);
+    expect(field("rsRank").hasAttribute("aria-busy")).toBe(false);
+    expect(field("rsRank").checked).toBe(true);
+  });
+
+  it("a locked vault leaves the rank box usable (a search asks for no passphrase)", async () => {
+    h.blobs.rs_prefs = { ...blob(null), locked: true };
+    await mount();
+    expect(field("rsRank").disabled).toBe(false);
+    expect(field("rsRank").hasAttribute("aria-busy")).toBe(false);
+  });
+});
+
 describe("Research: Suggest related terms (rsSuggestTerms 8251-8272)", () => {
   it("up to 8 ticked boxes with v1's note; the ticked terms go into the search", async () => {
     h.callAI.mockResolvedValue('{"terms":["test anxiety","evaluation anxiety"]}');
@@ -402,7 +449,9 @@ describe("Research: + Citation library and Insert citation (8471-8491)", () => {
     await click(cards()[i]!.querySelector('[data-testid="rs-add"]'));
     const set = h.blobs.citations!.set;
     expect(set).toHaveBeenCalledTimes(1);
-    const entry = rsEntryFromResult(c.merged[i] as never, "apa");
+    // W2: every author (v1's entry kept the card's four), and no Crossref answer here, so the volume, issue and pages stay empty.
+    const entry = v2Entry(c.merged[i]!);
+    expect(entry.author).toBe(rsAuthorListToCit(oaAuthorList(c.merged[i]!.title)));
     expect((set.mock.calls[0]![0] as (p: CitationEntry[] | null) => CitationEntry[])([])).toEqual([entry]);
     const retr = h.blobs.retraction_cache!.set;
     expect(retr).toHaveBeenCalledTimes(1);
@@ -430,10 +479,97 @@ describe("Research: + Citation library and Insert citation (8471-8491)", () => {
     const i = firstWithDoi(c);
     await click(cards()[i]!.querySelector('[data-testid="rs-insert"]'));
     expect(h.blobs.citations!.set).toHaveBeenCalledTimes(1);
-    const entry = rsEntryFromResult(c.merged[i] as never, "apa");
+    const entry = v2Entry(c.merged[i]!);
     const surname = entry.author!.split(",")[0]!;
+    expect(surname).toBe(rsEntryFromResult(c.merged[i] as never, "apa").author!.split(",")[0]);
     expect(ed.getText()).toContain(surname);
     expect(toasts()).toEqual([E.rs_inserted]);
+  });
+
+  it("a paper with more than four authors is saved with all of them (W2)", async () => {
+    await mount();
+    const c = run("oa-rct");
+    await search(c);
+    const i = c.merged.findIndex((p) => p.source === "OpenAlex" && oaAuthorList(p.title).length > 4);
+    expect(i).toBeGreaterThanOrEqual(0);
+    await click(cards()[i]!.querySelector('[data-testid="rs-add"]'));
+    const saved = libAfter()[0]!;
+    expect(saved.author!.split("; ")).toHaveLength(oaAuthorList(c.merged[i]!.title).length);
+    expect(c.merged[i]!.authors).toMatch(/et al\.$/);
+  });
+
+  it("+ Citation library fills an OpenAlex paper's volume, issue and pages from Crossref after adding", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    const seen: Array<{ url: string; signal: AbortSignal | null | undefined }> = [];
+    crossref = async (url, init) => {
+      seen.push({ url, signal: init?.signal });
+      return new Response(JSON.stringify({ status: "ok", message: { title: ["Another title"], author: [{ family: "Other", given: "A." }], volume: "12", issue: "3", page: "45-67", type: "journal-article" } }), { status: 200, headers: { "content-type": "application/json" } });
+    };
+    await mount();
+    const c = run("oa-plain");
+    await search(c);
+    const i = firstWithDoi(c);
+    await click(cards()[i]!.querySelector('[data-testid="rs-add"]'));
+    await until(() => h.blobs.citations!.set.mock.calls.length === 2);
+    const entry = v2Entry(c.merged[i]!);
+    // Only the empty fields are filled: the author from OpenAlex stays.
+    expect(libAfter()).toEqual([{ ...entry, volume: "12", issue: "3", pages: "45-67" }]);
+    // One request, carrying the DOI only, under a 4 s timeout.
+    expect(seen.map((x) => x.url)).toEqual(["https://api.crossref.org/works/" + encodeURIComponent(String(c.merged[i]!.doi))]);
+    expect(timeout).toHaveBeenCalledWith(4000);
+    expect(seen[0]!.signal).toBeInstanceOf(AbortSignal);
+    expect(toasts()).toEqual(["Added to citation library ✓ — check author formatting before you submit"]);
+    timeout.mockRestore();
+  });
+
+  it("a Crossref lookup that fails or takes 4 s leaves the added entry as it was, with no toast", async () => {
+    await mount();
+    const c = run("oa-plain");
+    await search(c);
+    const withDoi = c.merged.map((p, i) => (p.doi && p.source === "OpenAlex" ? i : -1)).filter((i) => i >= 0);
+    expect(withDoi.length).toBeGreaterThanOrEqual(3);
+    const add = async (i: number) => { await click(cards()[i]!.querySelector('[data-testid="rs-add"]')); await settle(20); };
+    const set = h.blobs.citations!.set;
+
+    // An HTTP error.
+    crossref = async () => new Response("", { status: 500 });
+    await add(withDoi[0]!);
+    expect(set).toHaveBeenCalledTimes(1);
+    // Not in Crossref (404).
+    crossref = async () => new Response("", { status: 404 });
+    await add(withDoi[1]!);
+    expect(set).toHaveBeenCalledTimes(2);
+    // Slow: the 4 s timeout fires (AbortSignal.timeout's signal, aborted here) and the answer never lands.
+    const ctl = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => ctl.signal);
+    let answer: (() => void) | null = null;
+    crossref = (_url, init) => new Promise<Response>((resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new DOMException("The operation timed out.", "TimeoutError")));
+      answer = () => resolve(new Response(JSON.stringify({ message: { volume: "1", issue: "2", page: "3-4" } }), { status: 200 }));
+    });
+    await add(withDoi[2]!);
+    expect(timeout).toHaveBeenCalledWith(4000);
+    act(() => { ctl.abort(); });
+    await settle(20);
+    (answer as (() => void) | null)?.();
+    await settle(20);
+    expect(set).toHaveBeenCalledTimes(3);
+    expect(libAfter().map((e) => [e.volume, e.issue, e.pages])).toEqual([["", "", ""], ["", "", ""], ["", "", ""]]);
+    expect(toasts()).toEqual(Array(3).fill("Added to citation library ✓ — check author formatting before you submit"));
+    timeout.mockRestore();
+  });
+
+  it("a PubMed paper is not looked up: its volume, issue and pages come with the search (W2)", async () => {
+    await mount();
+    const c = run("pm-rct");
+    await search(c);
+    const before = requested.length;
+    await click(cards()[0]!.querySelector('[data-testid="rs-add"]'));
+    await settle(20);
+    expect(requested.slice(before)).toEqual([]);
+    const saved = libAfter()[0]!;
+    expect(saved.volume).not.toBe("");
+    expect(saved.author!.split("; ").length).toBeGreaterThanOrEqual(1);
   });
 
   it("Insert citation is disabled while no document is open", async () => {

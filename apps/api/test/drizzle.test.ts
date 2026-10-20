@@ -9,6 +9,7 @@ import { db, users, accounts, sessions, verificationTokens, projects, documents,
 import * as schema from "../../../packages/db/src/schema";
 import { storeContract } from "./store.contract";
 import { DrizzleStore, isUniqueViolation } from "../src/store/drizzle";
+import { VersionConflictError } from "../src/store/types";
 import { createApp } from "../src/app";
 
 const migrationsFolder = fileURLToPath(new URL("../../../packages/db/migrations", import.meta.url));
@@ -118,6 +119,49 @@ if (!url) {
       expect(await d.select().from(projectBlobs)).toHaveLength(3);
       expect(await store.deleteProject(u.a, p.id)).toBe(true);
       expect((await d.select().from(projectBlobs)).map((r) => r.projectId)).toEqual([keep.id]);
+    });
+
+    it("two concurrent puts with the same expectedVersion: exactly one succeeds", async () => {
+      const { store, users: u } = await makeEnv();
+      const p = await store.createProject(u.a, "Sleep");
+      await store.putBlob(u.a, p.id, "citations", { body: "[0]", keyVersion: 0 });
+      for (const expectedVersion of [1, 2]) {
+        const results = await Promise.allSettled(["[a]", "[b]"].map((body) => store.putBlob(u.a, p.id, "citations", { body, keyVersion: 0, expectedVersion })));
+        const won = results.filter((r) => r.status === "fulfilled");
+        const lost = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+        expect(won).toHaveLength(1);
+        expect(lost).toHaveLength(1);
+        expect(lost[0]!.reason).toBeInstanceOf(VersionConflictError);
+        expect((lost[0]!.reason as VersionConflictError).current).toBe(expectedVersion + 1);
+        const stored = (await store.getBlob(u.a, p.id, "citations"))!;
+        expect(stored.version).toBe(expectedVersion + 1);
+        expect(stored.body).toBe((won[0] as PromiseFulfilledResult<{ body: string }>).value.body);
+      }
+      // Two concurrent creates of a missing kind: one inserts, the other conflicts.
+      const creates = await Promise.allSettled(["[x]", "[y]"].map((body) => store.putBlob(u.a, p.id, "shelf_index", { body, keyVersion: 0, expectedVersion: 0 })));
+      expect(creates.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      expect(creates.filter((r) => r.status === "rejected" && r.reason instanceof VersionConflictError)).toHaveLength(1);
+    });
+
+    it("a save with no dek that loses a delete-and-recreate race is a VersionConflictError, not a TypeError", async () => {
+      const { d, store: plain, users: u } = await makeEnv();
+      const p = await plain.createProject(u.a, "Sleep");
+      await plain.putBlob(u.a, p.id, "citations", { body: "[0]", keyVersion: 0 });
+      // The conditional update finds no row (deleted at that moment), and the re-read finds one re-created at the version the save named.
+      const racing = new Proxy(d, { get: (t, k, r) => (k === "update" ? () => ({ set: () => ({ where: () => ({ returning: async () => [] }) }) }) : Reflect.get(t, k, r)) });
+      const store = new DrizzleStore(racing as typeof d);
+      const err = await store.putBlob(u.a, p.id, "citations", { body: "[1]", keyVersion: 0, expectedVersion: 1 }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(VersionConflictError);
+      expect((err as VersionConflictError).current).toBe(1);
+    });
+
+    it("a row from before the version column reads as version 0 and takes a create-style save", async () => {
+      const { d, store, users: u } = await makeEnv();
+      const p = await store.createProject(u.a, "Sleep");
+      await d.execute(sql`insert into project_blobs (id, project_id, kind, body) values (${crypto.randomUUID()}, ${p.id}, 'idea_intake', '{}')`);
+      expect((await store.getBlob(u.a, p.id, "idea_intake"))!.version).toBe(0);
+      await expect(store.putBlob(u.a, p.id, "idea_intake", { body: "x", keyVersion: 0, expectedVersion: 1 })).rejects.toBeInstanceOf(VersionConflictError);
+      expect((await store.putBlob(u.a, p.id, "idea_intake", { body: '{"q":1}', keyVersion: 0, expectedVersion: 0 }))!.version).toBe(1);
     });
 
     it("tolerates an orphan document without revisions", async () => {

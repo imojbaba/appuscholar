@@ -1,8 +1,8 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
-  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPrompt, buildHelperPrompt, buildIdeaPrompt, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
-  buildShelfSummaryPrompt, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
-  shSummaryNoteId, shSummaryText, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
+  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
+  buildShelfSummaryPromptV2, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
+  shSummaryNoteId, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
 } from "@appuscholar/core";
 
 /** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
@@ -105,8 +105,8 @@ export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" |
 /** Idea & Feasibility's "🔎 Assess feasibility" (v1 ideaAssess 8568-8580): the advisor's read lands in the suggestion pane, insertable with Tab or Accept. */
 export async function assessIdea(d: IdeaDeps): Promise<void> {
   if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return; }
-  // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000).
-  const built = buildIdeaPrompt(d.field, d.intake);
+  // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000); V2 names each area's line by the area (W7).
+  const built = buildIdeaPromptV2(d.field, d.intake);
   const token = d.setThinking("custom", null, IDEA_THINKING);
   d.dockShow("ai");
   try {
@@ -324,7 +324,7 @@ export const litReview = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
 
 /** "🕳 Find a research gap" (researchGapFinder 8541-8551) on the ticked papers shown. */
 export const gapFinder = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
-  generate(buildGapFinderPrompt, d.t("rs2_looking_for_what_these"), papers, d);
+  generate(buildGapFinderPromptV2, d.t("rs2_looking_for_what_these"), papers, d);
 
 /** What the Reading shelf's summary touches: the AI (callAI scans for personal data first), the field, the copy, the paper, the note store and the reader's summary box. */
 export type ShelfSummaryDeps = Pick<ResearchAiDeps, "callAI" | "field" | "t"> & {
@@ -340,7 +340,7 @@ export type ShelfSummaryDeps = Pick<ResearchAiDeps, "callAI" | "field" | "t"> & 
 
 /**
  * "Summarise with AI" (shSummarise 11685-11696): nothing until the student's text passes core's shMineOk (2 non-empty lines, 12 words); their lines are saved first, as the note
- * "My own summary before the AI: …" on page 0 (11688); then "Reading…", core's prompt over the pages joined with email addresses replaced and cut to 12,000 characters (temp 0.2,
+ * "My own summary before the AI: …" on page 0 (11688); then "Reading…", core's buildShelfSummaryPromptV2 over the pages (email addresses replaced; the opening, any limitations, then the discussion, method and results, within 18,000 characters: W18; temp 0.2,
  * max 1000, noLang), and the reply, trimmed, with v1's comparison line. A failure shows callAI's sentence with any tag removed, else "The summary could not be made.". Beyond v1:
  * when the note cannot be stored (v1's shPut would have thrown before the call), no call is made and the box says "The summary could not be made.".
  */
@@ -349,7 +349,7 @@ export async function shelfSummarise(d: ShelfSummaryDeps): Promise<void> {
   const now = d.now ? d.now() : new Date();
   const saved = await d.saveNote({ id: shSummaryNoteId(now.getTime()), page: 0, quote: "", note: d.t("sh2_my_own_summary_before") + " " + d.mine.trim(), at: now.toISOString() });
   if (!saved) { d.setOut(d.t("sh2_the_summary_could_not")); return; }
-  const built = buildShelfSummaryPrompt(d.field, shSummaryText(d.pages));
+  const built = buildShelfSummaryPromptV2(d.field, d.pages);
   d.setOut(d.t("sh2_reading_2"));
   try {
     const a = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });

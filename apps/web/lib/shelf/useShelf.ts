@@ -118,7 +118,7 @@ export type ShelfStore = {
   papers: ReadonlyMap<string, PaperState>;
   /** The index's papers in v1's order (by date added, 11600) with their blobs. */
   items: ShelfItem[];
-  ops: Omit<ShelfOps, "t" | "extract" | "setStatus" | "toast" | "now">;
+  ops: Omit<ShelfOps, "t" | "extract" | "resolveTitle" | "setStatus" | "toast" | "now">;
   /** An update of shelf_cols, R16-guarded; false when nothing is stored (kept, or read-only in a pop-out, where it says so). */
   setCols(u: (prev: ShelfCols | null) => ShelfCols): boolean;
 };

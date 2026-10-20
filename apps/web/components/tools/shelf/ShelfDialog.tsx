@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { fieldLabel, SHELF_DEFAULT_COLS, shColsOf } from "@appuscholar/core";
+import { useEffect, useRef, useState } from "react";
+import { crLookupDoi, fieldLabel, resolveShelfTitle, SHELF_DEFAULT_COLS, SHELF_TITLE_TIMEOUT_MS, shColsOf } from "@appuscholar/core";
+import { useLibrary } from "@/lib/cite/useLibrary";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { shelfSummarise } from "@/lib/ai/actions";
@@ -54,8 +55,19 @@ function ShelfBody() {
   const { index, items } = store;
   const defaults = SHELF_DEFAULT_COLS;
   const cols = shColsOf(store.cols.value, defaults);
-  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), setStatus, toast, now: () => new Date() };
+  // W15: a new paper's title comes from the DOI on its first page (the library, then Crossref: the DOI only, 4 s at most), v1's first line as the fallback. The library is read as it is when the PDF has been read.
+  const { lib } = useLibrary({ passive: true });
+  const libRef = useRef(lib);
+  useEffect(() => { libRef.current = lib; }, [lib]);
+  const resolveTitle: ShelfOps["resolveTitle"] = (pages, stem) => resolveShelfTitle(pages, stem, {
+    lib: libRef.current,
+    lookupDoi: (doi) => crLookupDoi((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SHELF_TITLE_TIMEOUT_MS) }), doi)
+  });
+  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, setStatus, toast, now: () => new Date() };
   const known = !index.loading && !index.locked;
+  // W8: while the index is read and opened the lists show the loading sign; a paper whose own blob is being read (not yet started counts) shows it in place of its pages.
+  const opening = index.loading && !index.locked;
+  const paperOpening = new Set(items.filter((x) => { const st = store.papers.get(x.id); return !st || (st.loading && !st.locked); }).map((x) => x.id));
   const anyLocked = index.locked || store.cols.locked || [...store.papers.values()].some((s) => s.locked);
   const anyBroken = !!index.broken || !!store.cols.broken || [...store.papers.values()].some((s) => s.broken);
 
@@ -86,7 +98,7 @@ function ShelfBody() {
               saveNote: async (n) => ops.updatePaper(reading.id, (p) => ({ ...p, notes: [...p.notes, n] })) && ops.flushPaper(reading.id)
             })} />
         ) : tab === "papers" ? (
-          <Papers items={items} status={status} busy={busy} canWrite={known}
+          <Papers items={items} loading={opening} reading={paperOpening} status={status} busy={busy} canWrite={known}
             onAdd={(files) => { void run(() => addFiles(files, ops)); }}
             onBackup={() => backupShelf(items, { t, now: () => new Date(), download: downloadBlob, setStatus })}
             onRestore={(f) => { void run(async () => restoreShelf(await readFileText(f), ops)); }}
@@ -98,7 +110,7 @@ function ShelfBody() {
         ) : tab === "find" ? (
           <Passages items={items} prefill={prefill} onOpen={read} />
         ) : (
-          <Matrix items={items} cols={cols}
+          <Matrix items={items} loading={opening} cols={cols}
             onAddCol={(name) => addColumn(name, defaults, store.setCols)}
             onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
             onCell={(id, col, value) => setCell(id, col, value, ops)}

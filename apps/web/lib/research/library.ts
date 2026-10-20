@@ -1,11 +1,17 @@
-import { rsEntryFromResult, type CitationEntry, type CitationStyle, type Formatted, type RsPaper } from "@appuscholar/core";
+import { crLookupDoi, rsEntryFromResultV2, type CitationEntry, type CitationStyle, type Formatted, type RsPaper } from "@appuscholar/core";
 import { putIntext } from "@/lib/cite/actions";
 
 /*
  * A search result into the Citation Library (v1 rsAddToLibrary 8471-8483, rsInsertCitation 8486-8491): the entry is core's rsEntryFromResult in the
  * library's style; a result whose title is already in the library is not added again (8475, the title only, for both buttons: Insert citation
  * saves through rsAddToLibrary too); an OpenAlex result's retraction flag seeds the library's retraction check for its DOI (8478).
+ * Fix wave A (walk fault W2, register row D-S2-24): the entry is rsEntryFromResultV2 (every author, and PubMed's volume, issue and pages). OpenAlex's search sends
+ * no volume, issue or pages, so after an OpenAlex paper with a DOI is added, Crossref is asked for that DOI (the DOI only, 4 s at most) and the saved entry's
+ * empty fields are filled from its answer; a lookup that fails or is slow changes nothing and says nothing.
  */
+
+/** How long "+ Citation library" waits for Crossref's volume, issue and pages before it gives up (quietly). */
+export const CROSSREF_FILL_TIMEOUT_MS = 4000;
 
 export type AddDeps = {
   lib: CitationEntry[];
@@ -20,7 +26,24 @@ export type AddDeps = {
   whenRead(): Promise<boolean>;
   toast(msg: string): void;
   t(key: string, vars?: Record<string, string | number>): string;
+  /** The page's fetch, for the Crossref lookup (W2). */
+  fetch: typeof fetch;
+  /** useLibrary().fillEmpty: fills the empty fields of the first stored entry that matches. */
+  fillEmpty(match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>): boolean;
 };
+
+/**
+ * W2: an OpenAlex paper's entry saved with a DOI and an empty volume, issue or pages is filled from Crossref's record of that DOI (and its author, only when empty).
+ * The request carries the DOI only and is aborted after CROSSREF_FILL_TIMEOUT_MS; any failure (offline, HTTP error, not in Crossref, the timeout) is swallowed.
+ */
+function fillFromCrossref(p: RsPaper, entry: CitationEntry, d: AddDeps): void {
+  if (p.source !== "OpenAlex" || !entry.doi || (entry.volume && entry.issue && entry.pages)) return;
+  const f: typeof fetch = (input, init) => d.fetch(input, { ...init, signal: AbortSignal.timeout(CROSSREF_FILL_TIMEOUT_MS) });
+  void crLookupDoi(f, entry.doi).then((cr) => {
+    if (!cr) return;
+    d.fillEmpty((e) => e.title === entry.title, { volume: cr.volume ?? "", issue: cr.issue ?? "", pages: cr.pages ?? "", author: cr.author ?? "" });
+  }, () => {});
+}
 
 /**
  * rsAddToLibrary(i, quiet): the entry saved (or the one already there) and the library with it; null when nothing could be saved.
@@ -29,7 +52,7 @@ export type AddDeps = {
  * stored already; nothing when the read is still declined (the update is held and re-checked at the next unlock).
  */
 export function addResult(p: RsPaper, d: AddDeps, quiet = false): { entry: CitationEntry; lib: CitationEntry[] } | null {
-  const entry = rsEntryFromResult(p, d.style);
+  const entry = rsEntryFromResultV2(p, d.style);
   const dup = d.lib.find((e) => e.title === entry.title);
   if (dup) { if (!quiet) d.toast(d.t("rs2_already_in_your_library")); return { entry: dup, lib: d.lib }; }
   // Pure (the blob may apply it more than once, to a stand-in while unread): it records whether the stored library held the title.
@@ -39,6 +62,7 @@ export function addResult(p: RsPaper, d: AddDeps, quiet = false): { entry: Citat
     if (stored) { if (!quiet) d.toast(d.t("rs2_already_in_your_library")); return; }
     if (entry.doi && p.source === "OpenAlex") d.seedRetraction(entry.doi, !!p.retracted);
     if (!quiet) d.toast(p.retracted ? d.t("retr_added_warn") : d.t("rs2_added_to_citation_library_2"));
+    fillFromCrossref(p, entry, d);
   };
   if (d.known) done(); else void d.whenRead().then((ok) => { if (ok) done(); }, () => {});
   return { entry, lib: [...d.lib, entry] };

@@ -36,10 +36,12 @@ describe("schema", () => {
   it("project_blobs: one body per (project, kind), with its key version and wrapped data keys", () => {
     expect(getTableName(projectBlobs)).toBe("project_blobs");
     const c = getTableColumns(projectBlobs);
-    expect(Object.keys(c).sort()).toEqual(["body", "deks", "id", "keyVersion", "kind", "projectId", "updatedAt"]);
+    expect(Object.keys(c).sort()).toEqual(["body", "deks", "id", "keyVersion", "kind", "projectId", "updatedAt", "version"]);
+    expect(c.version.name).toBe("version");
+    expect(c.version.default).toBe(0);
     expect(c.projectId.name).toBe("project_id");
     expect(c.keyVersion.name).toBe("key_version");
     expect(c.updatedAt.name).toBe("updated_at");
-    for (const k of ["projectId", "kind", "body", "keyVersion", "deks", "updatedAt"] as const) expect(c[k].notNull, k).toBe(true);
+    for (const k of ["projectId", "kind", "body", "keyVersion", "deks", "updatedAt", "version"] as const) expect(c[k].notNull, k).toBe(true);
   });
 });

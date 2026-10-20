@@ -21,7 +21,15 @@ type CrDate = { "date-parts"?: Array<Array<number | null>> };
 /** A Crossref work, as much of it as citLookup and rcCompare read. */
 export type CrWork = { title?: string[]; author?: CrName[]; editor?: CrName[]; issued?: CrDate; "published-print"?: CrDate; "published-online"?: CrDate; type?: string; "container-title"?: string[]; publisher?: string; volume?: string; issue?: string; page?: string; DOI?: string };
 /** What rcCheckOne returns and rcRun stores per entry: ok, diff (with the differences), nf (not found) or err, and when found what Crossref holds. */
-export type RcCheck = { s: "ok" | "diff" | "nf" | "err"; m?: Array<{ k: "title" | "year" | "author"; v: string }>; f?: { title: string; year: number | string; author: string; doi: string }; viaTitle?: true; t: number };
+export type RcCheck = {
+  s: "ok" | "diff" | "nf" | "err";
+  m?: Array<{ k: "title" | "year" | "author"; v: string }>;
+  f?: { title: string; year: number | string; author: string; doi: string; authors?: string; volume?: string; issue?: string; pages?: string };
+  viaTitle?: true;
+  /** Fix wave A (W27, W28), rcCheckOneV2 only: the fields the saved source leaves empty that Crossref has. */
+  miss?: Array<"author" | "volume" | "issue" | "pages">;
+  t: number;
+};
 
 export function rcWords(x: unknown): string[]{return String(x||'').toLowerCase().replace(/<[^>]*>/g,' ').replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(w=>w.length>2)}
 export function rcSim(a: unknown,b: unknown): number{
@@ -77,6 +85,58 @@ export async function rcCheckOne(f: typeof fetch,d: CitationEntry): Promise<RcCh
     const c=rcCompare(d,hit.work);
     return{s:c.msgs.length?'diff':'ok',m:c.msgs,f:c.found,viaTitle:true,t:Date.now()};
   }catch{return{s:'err',t:Date.now()}}
+}
+
+/**
+ * Fix wave A (walk faults W27, W28; register row D-S2-33): rcCheckOne's lookup and rcCompare, then two things v1 does not look at. An entry with no author is no
+ * longer a full match when Crossref lists authors (v1 compares nothing when the saved author is empty, so an authorless capture came back "ok"): `m` gains
+ * { k: "author", v: <the first family name> }, the message v1 already words for an author that differs. `miss` lists the fields among author, volume, issue and pages
+ * that are empty in `d` and present in Crossref, and `f` then also carries Crossref's `authors` (all of them, as the library writes them), `volume`, `issue` and
+ * `pages` for the fill. `s` is "diff" when `m` or `miss` is not empty. When nothing is missing the result is rcCheckOne's, key for key.
+ */
+export async function rcCheckOneV2(f: typeof fetch,d: CitationEntry): Promise<RcCheck>{
+  const doi=retrNormDoi(d.doi as string);
+  try{
+    let it: CrWork | null | undefined,viaTitle=false;
+    if(retrValidDoi(doi)){
+      it=await crWork(f,doi);
+      if(it===null)return{s:'nf',t:Date.now()};
+    }else{
+      const hit=await crLookupTitle(f,d.title||'',citLastName(d.author));
+      if(!hit)return{s:'nf',t:Date.now()};
+      it=hit.work;viaTitle=true;
+    }
+    const c=rcCompare(d,it as CrWork);
+    const e=crToEntry(it as CrWork);
+    const empty=(k: keyof CitationEntry)=>!String(d[k]||'').trim();
+    const miss: NonNullable<RcCheck["miss"]>=[];
+    for(const k of ['author','volume','issue','pages'] as const)if(empty(k)&&String(e[k]||'').trim())miss.push(k);
+    if(miss.includes('author')){const fam=(((it as CrWork).author||[]).find(a=>a.family)||{}).family||'';if(fam)c.msgs.push({k:'author',v:fam})}
+    const found: NonNullable<RcCheck["f"]>={...c.found};
+    if(miss.length){
+      if(miss.includes('author'))found.authors=e.author as string;
+      for(const k of ['volume','issue','pages'] as const)if(miss.includes(k))found[k]=e[k] as string;
+    }
+    const out: RcCheck={s:c.msgs.length||miss.length?'diff':'ok',m:c.msgs,f:found,t:0};
+    if(viaTitle)out.viaTitle=true;
+    if(miss.length)out.miss=miss;
+    out.t=Date.now();
+    return out;
+  }catch{return{s:'err',t:Date.now()}}
+}
+/**
+ * What "Fill from Crossref" writes into `d` (W27, W28): for each field in `c.miss`, Crossref's value, and only where `d`'s own field is empty now (a field the student
+ * wrote since the check is never replaced). null when there is nothing to write.
+ */
+export function rcFillPatch(d: CitationEntry,c: RcCheck): Partial<CitationEntry> | null{
+  const patch: Partial<CitationEntry>={};
+  const fnd=c.f;
+  if(!fnd)return null;
+  for(const k of c.miss||[]){
+    const v=k==='author'?fnd.authors:fnd[k];
+    if(v&&!String(d[k]||'').trim())patch[k]=v;
+  }
+  return Object.keys(patch).length?patch:null;
 }
 
 export function citExtractDoi(txt: unknown): string{

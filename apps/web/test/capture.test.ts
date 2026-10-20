@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { captureRecord, decodeCapture, type CitationEntry } from "@appuscholar/core";
+import { captureRecord, captureRecordV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
 
 /*
  * The one-click capture's page side (v1 citCheckCaptureHash 13637-13655, called at boot 13676-13677): the address, the confirm, the save and the toasts. The bookmarklet's
@@ -24,7 +24,7 @@ type Fx = {
 const FX = JSON.parse(readFileSync(join(__dirname, "../../../packages/core/test/golden/citshare/cases.json"), "utf8")) as Fx;
 
 const h = vi.hoisted(() => ({
-  library: null as unknown as { lib: CitationEntry[]; ready: boolean; loading: boolean; locked: boolean; update: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> },
+  library: null as unknown as { lib: CitationEntry[]; ready: boolean; loading: boolean; locked: boolean; update: ReturnType<typeof vi.fn>; fillEmpty: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> },
   toast: vi.fn(),
   /** How many mounted components ask for the library (the provider's `demands`). */
   demands: 0
@@ -36,10 +36,17 @@ vi.mock("@/lib/cite/useLibrary", async () => {
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { CaptureHash, fileCapture, resetCaptureHash, takeCaptureHash } from "../lib/cite/capture";
+import { fillEmptyIn } from "../lib/cite/fillEmpty";
 import en from "../messages/en.json";
 
 const ALREADY_IN_LIBRARY = en.rs2_already_in_your_library;
-const t = (k: string) => (en as Record<string, string>)[k] ?? k;
+const t = (k: string, vars?: Record<string, string | number>) => ((en as Record<string, string>)[k] ?? k).replace(/\{(\w+)\}/g, (m, x: string) => (vars && x in vars ? String(vars[x]) : m));
+/** The bookmarklet's hash for a payload, encoded as the bookmarklet encodes it (btoa of the UTF-8 JSON). */
+const hashOf = (d: Record<string, string>) => "#capture=" + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(d)))));
+/** What bookmarkletSourceV2 sends from a PubMed page (citation_authors, volume, issue, first page). */
+const PM = { title: "Sleep timing and exam anxiety in first-year students", author: "Schaefer EM; Gonzalez CB; Lee K; Park J; Wu T", year: "2024", source: "Scientific reports", doi: "", url: "https://pubmed.ncbi.nlm.nih.gov/41234567/", volume: "9", issue: "1", pages: "13317" };
+/** The entry v1's bookmarklet left for the same PubMed page: no author, no volume, issue or pages. */
+const PM_V1_ENTRY = captureRecord({ ...PM, author: "", volume: undefined, issue: undefined, pages: undefined } as never);
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const raw = (hash: string) => hash.slice("#capture=".length);
@@ -65,20 +72,61 @@ describe("fileCapture: the duplicate rule and the toasts (13650-13653)", () => {
       const toast = vi.fn();
       let stored: CitationEntry[] = FX.libBefore.slice();
       const update = vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); return true; });
-      fileCapture(rec, { lib: stored, update, toast, t });
+      const fillEmpty = vi.fn(() => true);
+      fileCapture(rec, { lib: stored, update, fillEmpty, toast, t });
       expect(stored).toEqual(c.accepted.libAfter);
       expect(toast.mock.calls.map((x) => x[0])).toEqual(c.accepted.toasts);
       toast.mockClear();
-      fileCapture(rec, { lib: stored, update, toast, t });
+      fileCapture(rec, { lib: stored, update, fillEmpty, toast, t });
       expect(stored).toEqual(c.again.libAfter);
+      expect(fillEmpty).not.toHaveBeenCalled();
       expect(toast.mock.calls.map((x) => x[0])).toEqual(c.again.toasts);
       expect(c.again.toasts).toEqual([ALREADY_IN_LIBRARY]);
     });
   }
   it("a broken library the student keeps is left alone, with no toast", () => {
     const toast = vi.fn();
-    fileCapture(captureRecord(decodeCapture(raw(FX.captures[0]!.hash))!), { lib: [], update: () => false, toast, t });
+    fileCapture(captureRecord(decodeCapture(raw(FX.captures[0]!.hash))!), { lib: [], update: () => false, fillEmpty: () => false, toast, t });
     expect(toast).not.toHaveBeenCalled();
+  });
+});
+
+describe("fileCapture fills an authorless entry the same title recaptures (W1)", () => {
+  const deps = (start: CitationEntry[]) => {
+    const box = { stored: start.slice() };
+    const update = vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { box.stored = fn(box.stored); return true; });
+    const fillEmpty = vi.fn((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => update((p) => fillEmptyIn(p, match, fill)));
+    const toast = vi.fn();
+    return { box, update, fillEmpty, toast };
+  };
+  it("a recapture of an authorless source fills it instead of adding a second one", () => {
+    // The entry v1's bookmarklet left on a PubMed page, with a year the student corrected by hand.
+    const start = [...FX.libBefore, { ...PM_V1_ENTRY, year: "2023" }];
+    const d = deps(start);
+    const rec = captureRecordV2(decodeCapture(raw(hashOf(PM)))!);
+    fileCapture(rec, { lib: d.box.stored, update: d.update, fillEmpty: d.fillEmpty, toast: d.toast, t });
+    expect(d.box.stored).toHaveLength(start.length);
+    expect(d.box.stored.at(-1)).toEqual({ ...PM_V1_ENTRY, year: "2023", author: "Schaefer, EM; Gonzalez, CB; Lee, K; Park, J; Wu, T", volume: "9", issue: "1", pages: "13317" });
+    expect(d.box.stored.slice(0, -1)).toEqual(FX.libBefore);
+    expect(d.toast.mock.calls.map((x) => x[0])).toEqual([`Updated "${PM.title}" in your citation library with what this page lists.`]);
+    // Capturing it again is v1's duplicate.
+    d.toast.mockClear();
+    fileCapture(rec, { lib: d.box.stored, update: d.update, fillEmpty: d.fillEmpty, toast: d.toast, t });
+    expect(d.box.stored).toHaveLength(start.length);
+    expect(d.toast.mock.calls.map((x) => x[0])).toEqual([ALREADY_IN_LIBRARY]);
+  });
+  it("a fill the library refuses (a broken library kept) says nothing", () => {
+    const toast = vi.fn();
+    fileCapture(captureRecordV2(decodeCapture(raw(hashOf(PM)))!), { lib: [PM_V1_ENTRY], update: () => false, fillEmpty: () => false, toast, t });
+    expect(toast).not.toHaveBeenCalled();
+  });
+  it("fillEmptyIn writes only the fields that are empty in the first match, and leaves the list as it is when nothing changes", () => {
+    const lib: CitationEntry[] = [{ title: "A", author: "" }, { title: "T", author: "", year: "2020", volume: "" }, { title: "T", author: "" }];
+    const out = fillEmptyIn(lib, (e) => e.title === "T", { author: "Lee, K", year: "2024", volume: "9", pages: "" });
+    expect(out).toEqual([{ title: "A", author: "" }, { title: "T", author: "Lee, K", year: "2020", volume: "9" }, { title: "T", author: "" }]);
+    expect(lib[1]).toEqual({ title: "T", author: "", year: "2020", volume: "" });
+    expect(fillEmptyIn(out, (e) => e.title === "T", { author: "Other", year: "1999" })).toBe(out);
+    expect(fillEmptyIn(out, (e) => e.title === "nope", { author: "X" })).toBe(out);
   });
 });
 
@@ -98,9 +146,11 @@ describe("<CaptureHash/>: the load-time check", () => {
   const rerender = () => { act(() => { for (const r of roots) r.render(createElement(CaptureHash)); }); };
   beforeEach(() => {
     stored = FX.libBefore.slice();
+    const update = vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); h.library = { ...h.library, lib: stored }; return true; });
     h.library = {
-      lib: stored, ready: true, loading: false, locked: false,
-      update: vi.fn((fn: (p: CitationEntry[]) => CitationEntry[]) => { stored = fn(stored); h.library = { ...h.library, lib: stored }; return true; }),
+      lib: stored, ready: true, loading: false, locked: false, update,
+      // useLibrary's fillEmpty: fillEmptyIn as an update.
+      fillEmpty: vi.fn((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => update((p) => fillEmptyIn(p, match, fill))),
       // The library's save sent now (useProjectBlob's flush): what reaches the server is the library as it stands.
       flush: vi.fn(async () => { sent = stored.slice(); return true; })
     };
@@ -205,6 +255,26 @@ describe("<CaptureHash/>: the load-time check", () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     mount();
     expect(h.demands).toBe(0);
+  });
+  it("a PubMed capture (bookmarkletSourceV2's payload) is saved with every author as Surname, Initials and its volume, issue and pages (W1)", () => {
+    window.history.replaceState(null, "", "/" + hashOf(PM));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mount();
+    expect(stored).toEqual([...FX.libBefore, captureRecordV2(PM)]);
+    expect(stored.at(-1)).toMatchObject({ author: "Schaefer, EM; Gonzalez, CB; Lee, K; Park, J; Wu, T", volume: "9", issue: "1", pages: "13317" });
+    expect(toasts()).toEqual(['Captured "' + PM.title + '" into your citation library ✓']);
+  });
+  it("a recapture of an authorless source fills it in the library and is sent at once", () => {
+    stored = [...FX.libBefore, PM_V1_ENTRY];
+    h.library = { ...h.library, lib: stored };
+    window.history.replaceState(null, "", "/" + hashOf(PM));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mount();
+    expect(stored).toHaveLength(FX.libBefore.length + 1);
+    expect(stored.at(-1)).toMatchObject({ title: PM.title, author: "Schaefer, EM; Gonzalez, CB; Lee, K; Park, J; Wu, T", volume: "9", issue: "1", pages: "13317" });
+    expect(toasts()).toEqual([`Updated "${PM.title}" in your citation library with what this page lists.`]);
+    expect(h.library.flush).toHaveBeenCalledTimes(1);
+    expect(sent).toEqual(stored);
   });
   it("the hash is read once per page load: a second mount finds nothing to do", () => {
     const c = FX.captures[0]!;

@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { apPreview } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
-import { fromPending } from "@/lib/analyse/intake";
+import { fromPending, nextIntake } from "@/lib/analyse/intake";
 import { useApNotes } from "@/lib/analyse/notes";
 import { setAp, useApState, type ApLoaded, type ApMode } from "@/lib/analyse/useApDoc";
 import { AP_LECTURES_LATER, AP_LESSON_LATER } from "@/lib/analyse/later";
@@ -72,7 +72,7 @@ export function AnalysePanel() {
     if (!pendingAnalyse || consumed.current === pendingAnalyse) return;
     consumed.current = pendingAnalyse;
     setPendingAnalyse(null);
-    fromPending(pendingAnalyse, { toast, t });
+    fromPending(nextIntake(), pendingAnalyse, { toast, t });
   }, [pendingAnalyse, setPendingAnalyse, t]);
   const d = s.doc;
   return (

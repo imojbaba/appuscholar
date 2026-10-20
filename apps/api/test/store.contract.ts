@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, type Store } from "../src/store/types";
+import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError, type Store } from "../src/store/types";
 
 export type ContractEnv = { store: Store; users: { a: string; b: string } };
 
@@ -509,6 +509,77 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.getBlob(a, p.id, "idea_intake")).toBeNull();
       expect(await s.listBlobs(a, p.id)).toBeNull();
       expect(await s.countPlaintextRevisions(a)).toBe(1);
+    });
+
+    it("putBlob with the stored version writes and bumps it", async () => {
+      const p = await s.createProject(a, "P");
+      const one = (await s.putBlob(a, p.id, "idea_intake", { body: "{}", keyVersion: 0, expectedVersion: 0 }))!;
+      expect(one.version).toBe(1);
+      expect(await s.getBlob(a, p.id, "idea_intake")).toEqual(one);
+      const two = (await s.putBlob(a, p.id, "idea_intake", { body: '{"q":1}', keyVersion: 0, expectedVersion: 1 }))!;
+      expect(two).toMatchObject({ id: one.id, body: '{"q":1}', version: 2 });
+      expect((await s.getBlob(a, p.id, "idea_intake"))!.version).toBe(2);
+      // With the right version, a refused dek is still DekExistsError (not a version conflict), and writes nothing.
+      expect((await s.putBlob(a, p.id, "idea_intake", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k1" }, expectedVersion: 2 }))!.version).toBe(3);
+      await expect(s.putBlob(a, p.id, "idea_intake", { body: "cC.dD", keyVersion: 1, dek: { v: 1, wrapped: "other" }, expectedVersion: 3 })).rejects.toBeInstanceOf(DekExistsError);
+      expect(await s.getBlob(a, p.id, "idea_intake")).toMatchObject({ body: "aA.bB", version: 3 });
+    });
+
+    it("putBlob with a stale expectedVersion throws VersionConflictError(current) and writes nothing", async () => {
+      const p = await s.createProject(a, "P");
+      await s.putBlob(a, p.id, "citations", { body: "[1]", keyVersion: 0 });
+      await s.putBlob(a, p.id, "citations", { body: "[2]", keyVersion: 0 });
+      const err = await s.putBlob(a, p.id, "citations", { body: "[stale]", keyVersion: 0, expectedVersion: 1 }).then(() => null, (e: unknown) => e);
+      expect(err).toBeInstanceOf(VersionConflictError);
+      expect((err as VersionConflictError).current).toBe(2);
+      const zero = await s.putBlob(a, p.id, "citations", { body: "[zero]", keyVersion: 0, expectedVersion: 0 }).then(() => null, (e: unknown) => e);
+      expect(zero).toBeInstanceOf(VersionConflictError);
+      expect((zero as VersionConflictError).current).toBe(2);
+      expect(await s.getBlob(a, p.id, "citations")).toMatchObject({ body: "[2]", version: 2 });
+      // A stale write carrying a new dek adds no dek either.
+      await expect(s.putBlob(a, p.id, "citations", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k" }, expectedVersion: 1 })).rejects.toBeInstanceOf(VersionConflictError);
+      expect(await s.getBlob(a, p.id, "citations")).toMatchObject({ body: "[2]", keyVersion: 0, deks: [], version: 2 });
+    });
+
+    it("putBlob without expectedVersion writes as before (tabs older than wave A)", async () => {
+      const p = await s.createProject(a, "P");
+      expect((await s.putBlob(a, p.id, "ap_notes", { body: "{}", keyVersion: 0 }))!.version).toBe(1);
+      expect((await s.putBlob(a, p.id, "ap_notes", { body: '{"n":1}', keyVersion: 0 }))!.version).toBe(2);
+      expect(await s.getBlob(a, p.id, "ap_notes")).toMatchObject({ body: '{"n":1}', version: 2 });
+    });
+
+    it("two creates with expectedVersion 0: the second conflicts", async () => {
+      const p = await s.createProject(a, "P");
+      expect((await s.putBlob(a, p.id, "shelf_index", { body: "[1]", keyVersion: 0, expectedVersion: 0 }))!.version).toBe(1);
+      const err = await s.putBlob(a, p.id, "shelf_index", { body: "[2]", keyVersion: 0, expectedVersion: 0 }).then(() => null, (e: unknown) => e);
+      expect(err).toBeInstanceOf(VersionConflictError);
+      expect((err as VersionConflictError).current).toBe(1);
+      expect(await s.getBlob(a, p.id, "shelf_index")).toMatchObject({ body: "[1]", version: 1 });
+    });
+
+    it("expectedVersion > 0 on a missing blob conflicts and creates nothing", async () => {
+      const p = await s.createProject(a, "P");
+      await s.putBlob(a, p.id, "shelf_paper:p1", { body: "{}", keyVersion: 0 });
+      expect(await s.deleteBlob(a, p.id, "shelf_paper:p1")).toBe(true);
+      // A shelf paper deleted in another window is not resurrected by a save that still holds version 1.
+      const err = await s.putBlob(a, p.id, "shelf_paper:p1", { body: '{"pages":[1]}', keyVersion: 0, expectedVersion: 1 }).then(() => null, (e: unknown) => e);
+      expect(err).toBeInstanceOf(VersionConflictError);
+      expect((err as VersionConflictError).current).toBe(0);
+      expect(await s.getBlob(a, p.id, "shelf_paper:p1")).toBeNull();
+      expect(await s.listBlobs(a, p.id)).toEqual([]);
+    });
+
+    it("rewriteBlob bumps the version and keeps updatedAt", async () => {
+      const p = await s.createProject(a, "P");
+      const plain = (await s.putBlob(a, p.id, "ap_cols", { body: "[]", keyVersion: 0 }))!;
+      expect(plain.version).toBe(1);
+      await new Promise((r) => setTimeout(r, 5));
+      const sealed = (await s.rewriteBlob(a, p.id, "ap_cols", { body: "aA.bB", keyVersion: 1, dek: { v: 1, wrapped: "k" } }))!;
+      expect(sealed.version).toBe(2);
+      expect(sealed.updatedAt.getTime()).toBe(plain.updatedAt.getTime());
+      expect(await s.getBlob(a, p.id, "ap_cols")).toEqual(sealed);
+      // A save from a window that read version 1 before the migration now conflicts.
+      await expect(s.putBlob(a, p.id, "ap_cols", { body: "cC.dD", keyVersion: 1, expectedVersion: 1 })).rejects.toBeInstanceOf(VersionConflictError);
     });
 
     it("audit survives erasure; erasure removes every other row", async () => {

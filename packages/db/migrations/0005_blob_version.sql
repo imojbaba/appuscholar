@@ -1,0 +1,1 @@
+ALTER TABLE "project_blobs" ADD COLUMN "version" integer DEFAULT 0 NOT NULL;

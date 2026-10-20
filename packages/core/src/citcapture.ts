@@ -4,7 +4,10 @@
    - bookmarkletSource(appUrl) is the `parts` array (13625-13632) copied by script, joined as 13634 joins it; v1's appUrl is `location.origin+location.pathname` (13623), the caller's;
    - decodeCapture(raw) is the try block's decode with the JSON parse: null where v1's catch shows "Could not read that captured citation"; a value with no title has title "" (v1 returns
      quietly, 13647); every value is v1's `x||''` made a string (what a page's meta tags give is a string already);
-   - captureIsDuplicate(lib, rec) is 13651's `l.some(...)`, with the library a parameter. */
+   - captureIsDuplicate(lib, rec) is 13651's `l.some(...)`, with the library a parameter;
+   - decodeCapture also keeps `volume`, `issue` and `pages` when the payload has them (only bookmarkletSourceV2's does; a v1 payload decodes as before).
+   Wave A (walk fault W1, register row D-S2-23) adds siblings, below, and leaves v1's functions as they are: bookmarkletSourceV2 / bookmarkletHrefV2, capNameToCit,
+   captureRecordV2 and captureMatch. Held to their stated differences by test/citcapture-v2.test.ts. */
 import type { CitationEntry } from "./citation";
 
 /** citSetupBookmarklet's `parts` (13625-13632), verbatim: the bookmarklet's source for an app at `appUrl` (v1's `location.origin+location.pathname`). */
@@ -25,7 +28,7 @@ export function bookmarkletSource(appUrl: string): string {
 export const bookmarkletHref = (appUrl: string): string => "javascript:" + encodeURIComponent(bookmarkletSource(appUrl));
 
 /** What the bookmarklet sends (13628), each value as v1 reads it: a string, "" when absent. */
-export type CaptureData = { title: string; author: string; year: string; source: string; doi: string; url: string };
+export type CaptureData = { title: string; author: string; year: string; source: string; doi: string; url: string; volume?: string; issue?: string; pages?: string };
 
 /**
  * 13644-13646: the hash's text after `#capture=`, decoded as v1 decodes it, `decodeURIComponent(escape(atob(decodeURIComponent(raw))))` then JSON.
@@ -41,7 +44,10 @@ export function decodeCapture(raw: string): CaptureData | null {
   } catch { return null; }
   const o = (d && typeof d === "object" ? d : {}) as Record<string, unknown>;
   const s = (k: string) => (o[k] ? String(o[k]) : "");
-  return { title: s("title"), author: s("author"), year: s("year"), source: s("source"), doi: s("doi"), url: s("url") };
+  const out: CaptureData = { title: s("title"), author: s("author"), year: s("year"), source: s("source"), doi: s("doi"), url: s("url") };
+  // Wave A (W1): bookmarkletSourceV2 also sends these three; a v1 bookmarklet's payload has none of them and decodes exactly as before.
+  for (const k of ["volume", "issue", "pages"] as const) if (Object.prototype.hasOwnProperty.call(o, k)) out[k] = s(k);
+  return out;
 }
 
 /** 13648: the confirm's question. */
@@ -56,3 +62,51 @@ export function captureRecord(d: CaptureData): CitationEntry {
 
 /** 13651: the same title and the same author are already in the library. */
 export function captureIsDuplicate(lib: CitationEntry[], rec: CitationEntry): boolean { return lib.some((e) => e.title === rec.title && e.author === rec.author); }
+
+/* ---- Wave A (W1, register row D-S2-23): the capture keeps every author, the volume, the issue and the pages. ---- */
+
+/** v1's author part (13627), kept as it is: every `citation_author` tag, joined "; ". */
+const V1_AUTHOR_PART = "var as=Array.prototype.slice.call(document.querySelectorAll('meta[name=\"citation_author\"]')).map(function(e){return e.getAttribute('content')}).join('; ');";
+/** v1's `d` part (13628). */
+const V1_D_PART = "var d={title:m('citation_title')||document.title,author:as,year:(m('citation_publication_date')||m('citation_date')||m('citation_year')||'').slice(0,4),source:m('citation_journal_title')||m('citation_conference_title')||'',doi:m('citation_doi')||'',url:location.href};";
+/** The author part that replaces it: v1's, then, when the page has no `citation_author` (PubMed writes one `citation_authors` tag, "Schaefer EM; Gonzalez CB; …"),
+ * that tag split on ";" with each name trimmed and empty ones dropped. A page with both tags is read once: `citation_author` wins. */
+const V2_AUTHOR_PART = V1_AUTHOR_PART + "if(!as)as=(m('citation_authors')||'').split(/;\\s*/).map(function(x){return x.trim()}).filter(function(x){return x}).join('; ');";
+/** The `d` part that replaces it: v1's six fields, then the volume, the issue and the pages (the first page, or first-last when a different last page is given). */
+const V2_D_PART = "var fp=m('citation_firstpage')||'',lp=m('citation_lastpage')||'';" + V1_D_PART.replace("url:location.href};", "url:location.href,volume:m('citation_volume')||'',issue:m('citation_issue')||'',pages:fp&&lp&&lp!==fp?fp+'-'+lp:fp};");
+
+/** bookmarkletSource with two parts replaced: the authors (V2_AUTHOR_PART) and the payload (V2_D_PART). Everything else, the alert and the opened address included, is v1's. */
+export function bookmarkletSourceV2(appUrl: string): string {
+  const v1 = bookmarkletSource(appUrl);
+  if (v1.indexOf(V1_AUTHOR_PART) < 0 || v1.indexOf(V1_D_PART) < 0) throw new Error("bookmarkletSourceV2: v1's parts moved");
+  return v1.replace(V1_AUTHOR_PART, () => V2_AUTHOR_PART).replace(V1_D_PART, () => V2_D_PART);
+}
+/** The link's href for bookmarkletSourceV2, as 13635 builds v1's. */
+export const bookmarkletHrefV2 = (appUrl: string): string => "javascript:" + encodeURIComponent(bookmarkletSourceV2(appUrl));
+
+/** One captured name as the library writes it: a name with a comma unchanged; PubMed's "Surname Initials" (the last word one to four capitals) as "Surname, Initials",
+ * rsAuthorsToCit's rule for the same shape; anything else unchanged. */
+export function capNameToCit(n: string): string {
+  if (n.indexOf(",") >= 0) return n;
+  const parts = n.trim().split(/\s+/);
+  const last = parts[parts.length - 1]!;
+  if (parts.length >= 2 && /^[A-Z]{1,4}$/.test(last)) return parts.slice(0, -1).join(" ") + ", " + last;
+  return n;
+}
+
+/** captureRecord (13649) with each author name through capNameToCit and the page's volume, issue and pages. For a v1 payload it is captureRecord's entry. */
+export function captureRecordV2(d: CaptureData): CitationEntry {
+  const rec = captureRecord(d);
+  return { ...rec, author: (rec.author || "").split(/;\s*/).map(capNameToCit).join("; "), volume: d.volume || "", issue: d.issue || "", pages: d.pages || "" };
+}
+
+/** What a capture does to the library: `dup` when the same title and author are there (v1's rule, 13651); `fill` when an entry with the same title has no author and
+ * the capture has one (its index; the caller fills that entry's empty fields); otherwise `new`. */
+export function captureMatch(lib: CitationEntry[], rec: CitationEntry): { kind: "dup" } | { kind: "fill"; index: number } | { kind: "new" } {
+  if (captureIsDuplicate(lib, rec)) return { kind: "dup" };
+  if (rec.author) {
+    const index = lib.findIndex((e) => e.title === rec.title && !e.author);
+    if (index >= 0) return { kind: "fill", index };
+  }
+  return { kind: "new" };
+}

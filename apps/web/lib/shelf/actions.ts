@@ -32,6 +32,11 @@ export type ShelfOps = {
   /** The paper's blob, once read. */
   paper(id: string): ShelfPaper | null;
   extract(f: File): ReturnType<typeof extractPdfPages>;
+  /**
+   * Fix wave A (W15, register row D-S2-28): the title (and the DOI printed on page 1, if any) a NEW paper takes: core's resolveShelfTitle over the library and Crossref, v1's first-line guess
+   * as the fallback. Only addFiles asks; a stored paper keeps its title (its Analyse notes are keyed by it), and a restore keeps each record's own.
+   */
+  resolveTitle(pages: string[], fileStem: string): Promise<{ title: string; doi?: string }>;
   setStatus(s: string): void;
   toast(msg: string): void;
   now(): Date;
@@ -58,13 +63,16 @@ export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
       const r = await d.extract(f);
       if (r === "not-a-pdf") { msgs.push(f.name + d.t("sh2_not_a_pdf")); continue; }
       if (r === "no-text") { msgs.push(f.name + d.t("sh2_no_readable_text_it")); continue; }
-      // Closed while the PDF was read: nothing more is stored.
+      // W15: the title from the DOI or the library (Crossref, 4 s at most); any failure is v1's first-line guess, so the add is never blocked.
+      const stem = f.name.replace(/\.pdf$/i, "");
+      const named = await d.resolveTitle(r.pages, stem).catch(() => ({ title: shTitleGuess(r.pages, stem) } as { title: string; doi?: string }));
+      // Closed while the PDF was read (or its title looked up): nothing more is stored.
       if (!d.alive()) return;
       const now = d.now();
       const id = shPaperId(now.getTime());
       // Once its text is stored the entry is always added, the dialog open or not (updateIndex writes it through a client of its own after a close).
       await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
-      const entry: ShelfEntry = { id, title: shTitleGuess(r.pages, f.name.replace(/\.pdf$/i, "")), file: f.name, size: f.size, added: now.toISOString(), total: r.total, kept: r.pages.length };
+      const entry: ShelfEntry = { id, title: named.title, ...(named.doi ? { doi: named.doi } : {}), file: f.name, size: f.size, added: now.toISOString(), total: r.total, kept: r.pages.length };
       d.updateIndex((prev) => [...(prev ?? []), entry]);
       have.push(entry);
       const n = r.pages.length;

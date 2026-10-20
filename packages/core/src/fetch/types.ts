@@ -3,10 +3,10 @@
    uses no global fetch and no DOM, so a test hands it a replay of recorded responses. */
 import type { RsPaper } from "../research";
 
-/** One OpenAlex search result as rsFetchOpenAlex (8061-8086) builds it. */
-export type OaPaper = RsPaper & { source: "OpenAlex"; oaId: string; title: string; authors: string; year: string; venue: string; abstract: string; citationCount: number; doi: string; url: string; referencedWorks: string[]; citedByApiUrl: string; retracted: boolean; oaStatus: string; oaUrl: string };
-/** One PubMed search result as rsFetchPubmed (8103-8120) builds it. */
-export type PmPaper = RsPaper & { source: "PubMed"; ssId: null; title: string; authors: string; year: string; venue: string; abstract: string; pmid: string; citationCount: number; doi: string; url: string };
+/** One OpenAlex search result as rsFetchOpenAlex (8061-8086) builds it, with wave A's `authorList` (W2). */
+export type OaPaper = RsPaper & { source: "OpenAlex"; oaId: string; title: string; authors: string; year: string; venue: string; abstract: string; citationCount: number; doi: string; url: string; referencedWorks: string[]; citedByApiUrl: string; retracted: boolean; oaStatus: string; oaUrl: string; authorList: string[] };
+/** One PubMed search result as rsFetchPubmed (8103-8120) builds it, with wave A's `authorList`, `volume`, `issue` and `pages` (W2). */
+export type PmPaper = RsPaper & { source: "PubMed"; ssId: null; title: string; authors: string; year: string; venue: string; abstract: string; pmid: string; citationCount: number; doi: string; url: string; authorList: string[]; volume: string; issue: string; pages: string };
 /** A connected paper as rsOaBrief (8492-8497) builds it. */
 export type RsBrief = { title: string; authors: string; year: string };
 /**

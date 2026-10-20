@@ -29,14 +29,18 @@
    researchLitReview onwards. The page state (rsResults and rsResultsOriginal, 8026), the OpenAlex key helpers (8028-8032) and v1's comments between the ported lines are not copied either. */
 import { apJson, apSquash } from "./analyse";
 import type { CitationEntry } from "./citation";
+import { capNameToCit } from "./citcapture";
 import { pdCsv } from "./csv";
+import { PUBMED_STOPWORDS } from "./data/pubmed-stopwords";
 import { RS_DESIGN as RS_DESIGN_TABLE, RS_DESIGNS as RS_DESIGNS_TABLE } from "./data/research-tables";
 
 /** The quick read of one abstract as rsQuickCheck (8131-8160) returns it: the summary, or summaryDropped when it holds a number the abstract does not; the kind of study and the sample size, each
  * ok only when its quoted words are in the abstract (and, for the sample, hold the number). */
 export type RsQuick = { summary?: string; summaryDropped?: true; design?: { type: string; quote?: string; ok: boolean }; sample?: { n: number; quote?: string; ok: boolean } };
 /** One search result as rsFetchOpenAlex (8061) and rsFetchPubmed (8103) build it (each adds fields of its own, which these helpers do not read), with `rel` from rsRank (8231) and `quick` from rsQuickP (8180). */
-export type RsPaper = { title: string; authors: string; year: string | number; venue: string; doi: string; url?: string; source: string; abstract?: string; retracted?: boolean; oaStatus?: string; oaUrl?: string; citationCount?: number; rel?: { score: number; reason: string; titleOnly?: boolean }; quick?: RsQuick };
+export type RsPaper = { title: string; authors: string; year: string | number; venue: string; doi: string; url?: string; source: string; abstract?: string; retracted?: boolean; oaStatus?: string; oaUrl?: string; citationCount?: number; rel?: { score: number; reason: string; titleOnly?: boolean }; quick?: RsQuick;
+  /** Wave A (W2): every author name, in the source's order (`authors` stays v1's card line, four names and "et al."), and the paper's volume, issue and pages. v1 has none of them. */
+  authorList?: string[]; volume?: string; issue?: string; pages?: string };
 /** The result filters as rsFilterVals (8332-8335) reads them from the page: a year from, open access only, hide retracted, a confirmed kind of study, a confirmed sample of at least n (0, false or "" when not set). */
 export type RsFilter = { year: number; oa: boolean; ret: boolean; des: string; n: number };
 /** What rsQuickCheck reads of the AI's reply (apJson's object): any of it may be missing or of another type, which v1's own checks handle. */
@@ -125,6 +129,31 @@ export function rsBuildQuery(q: string,kind: "oa" | "pm",terms: string[],design:
   if(cl)core='('+core+') AND '+cl;
   return core;
 }
+/* Wave A (walk fault W12, register row D-S2-27). PubMed's automatic term mapping widens an untagged topic ("exam anxiety" became ... OR ("test"[All Fields] AND
+   "anxiety"[All Fields]) ..., and with the randomised-trial filter matched 4,406 trials, a stroke rehabilitation trial among them); each word tagged [tiab] is searched as
+   written (exam[tiab] AND anxiety[tiab]: 76 trials). rsBuildQuery is v1's and unchanged. */
+const PM_STOP=new Set(PUBMED_STOPWORDS);
+/** The topic's own words for PubMed, each `word[tiab]`, joined with AND; null when the student wrote a query (a quote, a bracket, a parenthesis, or AND, OR or NOT in capitals),
+ * or the topic has no content word or more than 5. A word is split on white space, its outer punctuation trimmed (a trailing * is kept: PubMed's truncation), and PubMed's
+ * stopwords dropped without regard to case (a stopword tagged [tiab] matches nothing). */
+export function pmTopicBlock(q: string): string | null{
+  const s=String(q||'');
+  if(/["\[\]()]/.test(s)||/\b(AND|OR|NOT)\b/.test(s))return null;
+  const words=s.split(/\s+/).map(w=>w.replace(/^[^\p{L}\p{N}]+/u,'').replace(/[^\p{L}\p{N}*]+$/u,'')).filter(w=>/[\p{L}\p{N}]/u.test(w)&&!PM_STOP.has(w.toLowerCase()));
+  if(!words.length||words.length>5)return null;
+  return words.map(w=>w+'[tiab]').join(' AND ');
+}
+/** rsBuildQuery with PubMed's topic tagged [tiab] (pmTopicBlock): v1's query for OpenAlex and for a topic pmTopicBlock refuses; otherwise the block (with the ticked terms, v1's
+ * `(block) OR "term"[tiab] OR ...`) and v1's kind-of-study step. */
+export function rsBuildQueryV2(q: string,kind: "oa" | "pm",terms: string[],design: string): string{
+  const block=kind==='oa'?null:pmTopicBlock(q);
+  if(block===null)return rsBuildQuery(q,kind,terms,design);
+  const d=RS_DESIGN[design]||{};
+  let core=block;
+  if(terms.length)core='('+block+') OR '+terms.map(t=>'"'+t+'"[tiab]').join(' OR ');
+  if(d.pm)core='('+core+') AND '+d.pm;
+  return core;
+}
 /* researchSearch's de-duplication (8312-8314), as v1 wrote it inside researchSearch, between the merge of the two sources and rsResultsOriginal=merged. */
 export function rsDedupe(merged: RsPaper[]): RsPaper[]{
   const seen=new Set();
@@ -188,4 +217,29 @@ export function rsSortResults(results: RsPaper[],mode: string): RsPaper[]{
 }
 export function rsFoldIndex(results: RsPaper[],mode: string): number{
   return (mode==='fit')?results.findIndex(p=>p.rel&&p.rel.score<=1):-1;
+}
+/* Wave A (walk fault W2, register row D-S2-24): a search result into the library keeps every author and its volume, issue and pages. Siblings of rsAuthorsToCit and
+   rsEntryFromResult, which stay v1's; held to their stated differences by test/research-v2.test.ts and test/references-w28.test.ts. */
+/** One name of a result's authorList. rsAuthorsToCit's rule (8458-8462), one word as it is, and otherwise the last word, a comma, the rest (OpenAlex's "Ellen M. Schaefer"),
+ * with one change (fix round 1): a last word of one to four capitals is read as initials at any length, not only after a single word, so PubMed's "van der Berg JH" and
+ * "Garcia Lopez M" are "van der Berg, JH" and "Garcia Lopez, M" (v1's rule wrote "JH, van der Berg"). */
+function rsNameToCit(n: string): string{
+  const parts=n.split(/\s+/);
+  if(parts.length===1)return n;
+  const last=parts[parts.length-1]!;
+  if(/^[A-Z]{1,4}$/.test(last))return parts.slice(0,-1).join(' ')+', '+last;
+  return last+', '+parts.slice(0,-1).join(' ');
+}
+/** Every name of a result's authorList by rsNameToCit, joined "; ". The names come one by one, so a name with a comma is kept whole (as written). */
+export function rsAuthorListToCit(names: string[]): string{
+  return names.map(n=>String(n||'').trim()).filter(Boolean).map(n=>n.indexOf(',')>=0?n:rsNameToCit(n)).join('; ');
+}
+/** rsEntryFromResult (8465-8470) with the author written from `authorList` when it has a name, and the paper's volume, issue and pages. A PubMed paper's names
+ * ("Surname Initials", or a collective name such as "COVID-19 Study Group") go through capNameToCit, the one-click capture's rule, so the same PubMed article saved
+ * from the search and from its page has the same author (and captureMatch sees the duplicate); any other paper's go through rsAuthorListToCit. */
+export function rsEntryFromResultV2(p: RsPaper,style: string): CitationEntry{
+  const e=rsEntryFromResult(p,style);
+  const names=(p.authorList||[]).map(n=>String(n||'').trim()).filter(Boolean);
+  const all=p.source==='PubMed'?names.map(capNameToCit).join('; '):rsAuthorListToCit(names);
+  return{...e,author:all||e.author,volume:p.volume||'',issue:p.issue||'',pages:p.pages||''};
 }

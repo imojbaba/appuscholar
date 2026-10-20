@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { apRefCheck, oaConnected, oaRetractions, oaSearch, oaUrl, retrFetchBatch } from "../../src/fetch/openalex";
+import { apRefCheck, oaConnected, oaRetractions, oaSearch, oaUrl, retrFetchBatch, rsOaBrief } from "../../src/fetch/openalex";
 import { pmSearch } from "../../src/fetch/pubmed";
 import { rsDedupe } from "../../src/research";
 import type { RsPaper } from "../../src/research";
 import { expectGolden } from "../golden/harness/compare";
-import { RECORDINGS, fx, mode, replay, sha256 } from "./replay";
+import { RECORDINGS, fx, mode, replay, sha256, v1View } from "./replay";
 
 /**
  * openalex.ts (v1 oaUrl 8030, oaHttpError 8032, rsFetchOpenAlex 8061, researchSearch's withFallback and catch 8297-8310, rsOaBrief 8492, rsConnected 8498,
@@ -17,7 +17,15 @@ const OA_SENTENCE = "the free daily OpenAlex budget is used up. Add a free OpenA
 
 describe("the recordings are the bodies the fixture was captured from", () => {
   it("one file per URL, each body's sha256 as captured", () => {
-    expect([...RECORDINGS.values()].map((r) => r.file).sort()).toEqual(fx.recorded.map((r) => r.file).sort());
+    // The v2 recordings have their own manifest: the golden fixture is v1's and is never edited.
+    const v2 = (JSON.parse(readFileSync(new URL("./recorded/v2-manifest.json", import.meta.url), "utf8")) as { recorded: typeof fx.recorded }).recorded;
+    expect([...RECORDINGS.values()].map((r) => r.file).sort()).toEqual([...fx.recorded, ...v2].map((r) => r.file).sort());
+    for (const r of v2) {
+      const rec = RECORDINGS.get(r.url)!;
+      expect(rec.file).toBe(r.file);
+      expect(rec.status).toBe(r.status);
+      expect(sha256(rec.body)).toBe(r.sha256);
+    }
     for (const r of fx.recorded) {
       const rec = RECORDINGS.get(r.url)!;
       expect(rec.file).toBe(r.file);
@@ -74,8 +82,8 @@ describe("oaSearch is v1's rsFetchOpenAlex inside researchSearch", () => {
       expect(r.unknown).toEqual([]);
       expect(r.requested).toEqual(s.requested);
       const last = s.oa[s.oa.length - 1]!;
-      expectGolden(out.papers, (last ?? []) as typeof out.papers, mode, "papers");
-      expectGolden(rsDedupe(out.papers), s.merged as RsPaper[], mode, "rsResultsOriginal");
+      expectGolden(v1View(out.papers), (last ?? []) as typeof out.papers, mode, "papers");
+      expectGolden(v1View(rsDedupe(out.papers)), s.merged as RsPaper[], mode, "rsResultsOriginal");
       if (last === null) expect(out.error).toBeDefined();
       else expect(out.error).toBeUndefined();
       if (out.error === "429") expect(s.status).toContain(`could not reach: OpenAlex (${OA_SENTENCE})`);
@@ -83,6 +91,26 @@ describe("oaSearch is v1's rsFetchOpenAlex inside researchSearch", () => {
       expect(out.fellBack === true).toBe(s.status.includes("the related terms made the search fail"));
     });
 
+  it("oaSearch's v1 view equals the golden, and authorList holds every author (W2)", async () => {
+    let longest = 0;
+    for (const s of oaRuns) {
+      const r = replay(s.in.throwFor);
+      const out = await oaSearch(r.f, oaIn(s));
+      const last = s.oa[s.oa.length - 1];
+      expectGolden(v1View(out.papers), (last ?? []) as typeof out.papers, mode, "papers");
+      // The body of the request that gave these papers: every display name, in OpenAlex's order.
+      const body = out.papers.length ? JSON.parse(RECORDINGS.get(r.requested[r.requested.length - 1]!)!.body) as { results: Array<{ authorships?: Array<{ author?: { display_name?: string } | null }> }> } : { results: [] };
+      out.papers.forEach((p, i) => {
+        const names = (body.results[i]!.authorships ?? []).map((a) => a.author?.display_name).filter(Boolean);
+        expect(p.authorList, `${s.name} #${i}`).toEqual(names);
+        longest = Math.max(longest, names.length);
+        // The card's line stays v1's: four names, then et al.
+        if (names.length > 4) expect(p.authors).toBe(names.slice(0, 4).join(", ") + ", et al.");
+        expect(p).not.toHaveProperty("volume");
+      });
+    }
+    expect(longest).toBeGreaterThan(4);
+  });
   it("HTTP 429 yields error \"429\" and no papers", async () => {
     const s = oaRuns.find((x) => x.name === "oa-429")!;
     const out = await oaSearch(replay().f, oaIn(s));
@@ -119,7 +147,7 @@ describe("both sources: one failing leaves the other's papers (Review Focus 2)",
       const [oa, pm] = await Promise.all([oaSearch(r.f, oaIn(s)), pmSearch(r.f, pmIn(s))]);
       expect(r.unknown).toEqual([]);
       expect([...r.requested].sort()).toEqual([...s.requested].sort());
-      expectGolden(rsDedupe([...oa.papers, ...pm.papers]), s.merged as RsPaper[], mode, "rsResultsOriginal");
+      expectGolden(v1View(rsDedupe([...oa.papers, ...pm.papers])), s.merged as RsPaper[], mode, "rsResultsOriginal");
       for (const [name, out, calls] of [["OpenAlex", oa, s.oa], ["PubMed", pm, s.pm]] as const) {
         if (calls[calls.length - 1] === null) {
           expect(out.papers).toEqual([]);
@@ -159,6 +187,36 @@ describe("oaConnected is v1's rsConnected", () => {
     const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response('{"results":[]}'); }) as typeof fetch;
     await oaConnected(f, { referencedWorks: ["https://openalex.org/W1"], citedByApiUrl: "https://api.openalex.org/works?filter=cites:W2", key: "k" });
     expect(urls).toEqual(["https://api.openalex.org/works?filter=openalex_id:W1&per-page=8&select=display_name,authorships,publication_year&api_key=k", "https://api.openalex.org/works?filter=cites:W2&per-page=8&select=display_name,authorships,publication_year"]);
+  });
+});
+
+describe("oaConnected asks for the papers that cite this one by filter=cites (W3)", () => {
+  const CITES = "https://api.openalex.org/works?filter=cites:W2487945683&per-page=8&select=display_name,authorships,publication_year";
+  it("with no cited-by URL and an OpenAlex id, the second request is the filter=cites URL and its answer is the list", async () => {
+    const r = replay();
+    const out = await oaConnected(r.f, { referencedWorks: [], citedByApiUrl: "", oaId: "W2487945683" });
+    expect(r.requested).toEqual([CITES]);
+    expect(r.unknown).toEqual([]);
+    const rec = JSON.parse(RECORDINGS.get(CITES)!.body) as { results: Parameters<typeof rsOaBrief>[0][] };
+    expect(out.citedBy).toEqual(rec.results.map(rsOaBrief));
+    expect(out.citedBy.length).toBeGreaterThan(0);
+  });
+  it("the key goes on the cites URL when given", async () => {
+    const urls: string[] = [];
+    const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response('{"results":[]}'); }) as typeof fetch;
+    await oaConnected(f, { referencedWorks: [], citedByApiUrl: "", oaId: "W2487945683", key: "k" });
+    expect(urls).toEqual([CITES + "&api_key=k"]);
+  });
+  it("a cited-by URL still wins (v1's request), and no id and no URL sends nothing", async () => {
+    const urls: string[] = [];
+    const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response('{"results":[]}'); }) as typeof fetch;
+    await oaConnected(f, { referencedWorks: [], citedByApiUrl: "https://api.openalex.org/works?filter=cites:W9", oaId: "W2487945683", key: "k" });
+    await oaConnected(f, { referencedWorks: [], citedByApiUrl: "" });
+    expect(urls).toEqual(["https://api.openalex.org/works?filter=cites:W9&per-page=8&select=display_name,authorships,publication_year"]);
+  });
+  it("a failing cites request is an empty list, never a throw", async () => {
+    const down = (async () => { throw new Error("down"); }) as typeof fetch;
+    expect(await oaConnected(down, { referencedWorks: [], citedByApiUrl: "", oaId: "W1" })).toEqual({ cites: [], citedBy: [] });
   });
 });
 

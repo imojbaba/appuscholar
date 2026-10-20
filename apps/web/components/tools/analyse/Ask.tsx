@@ -35,6 +35,8 @@ export function Quotes({ list }: { list: ApQuote[] }) {
 function Answer({ it }: { it: ApAskItem }) {
   const t = useT();
   return (
+    <>
+    <p className="ap-small ap-about" data-testid="ap-about">{t("ap_about", { title: it.title })}</p>
     <div className="ap-box" data-testid="ap-answer">
       {tHtml(t("ap2_you_asked"))} {it.q}<br />
       {it.raw !== undefined ? (
@@ -44,6 +46,7 @@ function Answer({ it }: { it: ApAskItem }) {
       )}
       {it.partial && <div className="ap-small ap-gap">{t("ap2_the_paper_is_long", { n: it.n, of: it.of })}</div>}
     </div>
+    </>
   );
 }
 

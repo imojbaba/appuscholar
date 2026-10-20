@@ -45,7 +45,7 @@ const E = en as Record<string, string>;
 /** The Crossref and eutils responses Task 4 recorded live (packages/core/test/fetch/recorded), served by URL. */
 const REC_DIR = join(__dirname, "../../../packages/core/test/fetch/recorded");
 type Rec = { url: string; status: number; headers: Record<string, string>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(REC_DIR).filter((f) => f.endsWith(".json")).map((f) => {
+const RECS = new Map<string, Rec>(readdirSync(REC_DIR).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
   const r = JSON.parse(readFileSync(join(REC_DIR, f), "utf8")) as Rec;
   return [r.url, r];
 }));
@@ -422,6 +422,29 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
 });
 
 describe("Citation Manager: the library (citRender 7819-7866)", () => {
+  it("Cite shows the loading sign, not its empty state, until its data is read (W8)", () => {
+    h.blob.value = null; h.blob.loading = true;
+    const root = mount();
+    const lib = tid("cite-lib")!;
+    expect(lib.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
+    expect(lib.textContent).not.toContain(E.cite_no_sources);
+    expect(tid("cite-count")).toBeNull();
+    expect(document.body.textContent).not.toContain("0 sources");
+    // The read lands: the cards (or "No sources yet.") and the count replace the sign.
+    h.blob = { ...h.blob, value: [BANDURA, MILLER], loading: false };
+    act(() => { root.render(<CitePanel />); });
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect(tid("cite-count")!.textContent).toBe("2");
+    expect(tid("cite-lib")!.querySelectorAll('[data-testid="cite-card"]')).toHaveLength(2);
+  });
+
+  it("a locked library shows no loading sign (W8)", () => {
+    h.blob.value = null; h.blob.locked = true;
+    mount();
+    expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect(tid("cite-locked")!.textContent).toBe(E.vault_cite_locked);
+  });
+
   it("an empty library shows 'No sources yet.' and a 0 badge", () => {
     mount();
     expect(tid("cite-count")!.textContent).toBe("0");
@@ -468,7 +491,7 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     expect(toasts()).toEqual(["Citation inserted ✓"]);
   });
 
-  it("✕ removes that card by index, as an update", async () => {
+  it("✕ removes that card's entry, as an update", async () => {
     h.blob.value = [BANDURA, MILLER];
     mount();
     const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[0]!;
@@ -476,5 +499,27 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
     expect(up([BANDURA, MILLER])).toEqual([MILLER]);
     expect(up(null)).toEqual([]);
+  });
+
+  it("✕ replayed onto a newer library (another window removed an earlier entry) still removes the card's own entry", async () => {
+    h.blob.value = [BANDURA, MILLER];
+    mount();
+    // The second card: MILLER.
+    const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[1]!;
+    await act(async () => { del.click(); });
+    const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
+    expect(up([BANDURA, MILLER])).toEqual([BANDURA]);
+    // A 409 replays the update onto what the other window saved: BANDURA gone, MILLER now first.
+    expect(up([MILLER])).toEqual([]);
+    // Another window added an entry before it: MILLER is still the one removed.
+    const X: CitationEntry = { type: "Book", author: "Xu, Li", year: "2001", title: "Another book", source: "Press" };
+    expect(up([X, BANDURA, MILLER])).toEqual([X, BANDURA]);
+    // The same entry with its keys in another order (a parse elsewhere) is the same entry.
+    const reordered = Object.fromEntries(Object.entries(MILLER).reverse()) as CitationEntry;
+    expect(up([BANDURA, reordered])).toEqual([BANDURA]);
+    // Already removed elsewhere: nothing else goes.
+    expect(up([BANDURA, X])).toEqual([BANDURA, X]);
+    // Two identical entries: one goes.
+    expect(up([MILLER, MILLER])).toEqual([MILLER]);
   });
 });

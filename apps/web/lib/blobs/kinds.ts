@@ -40,13 +40,16 @@ const RetractionCacheSchema = z.record(str, z.looseObject({ r: z.boolean(), t: n
 const RcCheckSchema = z.looseObject({
   s: z.enum(["ok", "diff", "nf", "err"]),
   m: z.array(z.looseObject({ k: z.enum(["title", "year", "author"]), v: str })).optional(),
-  f: z.looseObject({ title: str, year: z.union([num, str]), author: str, doi: str }).optional(),
+  f: z.looseObject({ title: str, year: z.union([num, str]), author: str, doi: str, authors: str.optional(), volume: str.optional(), issue: str.optional(), pages: str.optional() }).optional(),
   viaTitle: z.literal(true).optional(),
+  /** Fix wave A (W27, W28; register D-S2-33): the fields the source leaves empty that Crossref has. Optional keys, so build 6c38396's loose schema still reads what is written here. */
+  miss: z.array(z.enum(["author", "volume", "issue", "pages"])).optional(),
   t: num
 });
 const RefCheckCacheSchema = z.record(str, RcCheckSchema);
 /** The Reading shelf's list of papers; each paper's text is its own `shelf_paper:<id>` blob. `added` is v1's ISO date string. */
-const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num }));
+/** Fix wave A (W15, register row D-S2-28): `doi` is the DOI printed on a new paper's first page, kept optional so an entry stored before it (or by build 6c38396) still parses. */
+const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num, doi: str.optional() }));
 /** A highlight or note on a shelf paper (v1 11681: id, page, quote, note, at). */
 const HighlightSchema = z.looseObject({ id: str, page: num, quote: str, note: str, at: str });
 const ShelfPaperSchema = z.looseObject({ pages: z.array(str), notes: z.array(HighlightSchema), cells: z.record(str, str) });

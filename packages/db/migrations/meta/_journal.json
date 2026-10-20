@@ -36,6 +36,13 @@
       "when": 1792425766933,
       "tag": "0004_project_blobs",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792507005318,
+      "tag": "0005_blob_version",
+      "breakpoints": true
     }
   ]
 }

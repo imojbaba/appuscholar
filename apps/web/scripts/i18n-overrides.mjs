@@ -102,6 +102,8 @@ export const V2_STRINGS = {
   vault_save_locked: { en: "Unlock your vault to save your changes.", hi: "अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   // Idea & Feasibility while the vault is locked: the saved intake cannot be read, and what is typed waits for the unlock. DRAFT Hindi.
   vault_idea_locked: { en: "Your saved idea is locked. Unlock your vault to read it and save your changes.", hi: "आपका सहेजा हुआ विचार बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
+  // Idea & Feasibility while a save that lost a race to another window left an intake this device cannot open: the typed text stays on screen, unsaved, and the note tells the student to copy it. DRAFT Hindi.
+  vault_idea_broken: { en: "Your saved idea could not be opened, so this window will not save over it. Copy your text somewhere safe before you close or reload this page.", hi: "आपका सहेजा हुआ विचार खुल नहीं सका, इसलिए यह विंडो उसके ऊपर कुछ सहेजेगी नहीं। इस पेज को बंद या रीलोड करने से पहले अपना लिखा हुआ टेक्स्ट कहीं सुरक्षित कॉपी कर लें।" },
   // The Citation Manager's library while the vault is locked (the library cannot be read; + Library asks for the passphrase and saves after the unlock),
   // and a stored library that does not open on this device (shown, and confirmed before the first save replaces it: ruling R16). DRAFT Hindi.
   vault_cite_locked: { en: "Your saved library is locked. Unlock your vault to read it and save your sources.", hi: "आपकी सहेजी हुई लाइब्रेरी बंद है। इसे पढ़ने और अपने स्रोत सहेजने के लिए अपनी तिजोरी खोलें।" },
@@ -155,7 +157,47 @@ export const V2_STRINGS = {
   pass_show: { en: "Show passphrase", hi: "पासफ़्रेज़ दिखाएं" },
   pass_hide: { en: "Hide passphrase", hi: "पासफ़्रेज़ छिपाएं" },
   key_show: { en: "Show key", hi: "कुंजी दिखाएं" },
-  key_hide: { en: "Hide key", hi: "कुंजी छिपाएं" }
+  key_hide: { en: "Hide key", hi: "कुंजी छिपाएं" },
+  // A stage blob's save lost the race to another window three times in a row (fix wave A, Task 5; register D-S2-35): the edit is held in this window and goes
+  // with the next one. DRAFT Hindi: विंडो as v1 writes it (the pop-out strings), सहेजा and बदलाव as in the drafts above.
+  blob_conflict: {
+    en: "This was changed in another window at the same time, so your change is not saved yet. It is kept here and saved with your next edit.",
+    hi: "इसे उसी समय किसी दूसरी विंडो में बदला गया, इसलिए आपका बदलाव अभी सहेजा नहीं गया है। यह यहीं रखा है और आपके अगले बदलाव के साथ सहेजा जाएगा।"
+  },
+  // The one-click capture filled an entry of the same title that had no author (fix wave A, Task 8; walk fault W1, register D-S2-23) in place of adding a second one.
+  // DRAFT Hindi: उद्धरण लाइब्रेरी as in cc_src_lib, पेज as in cite_bookmarklet_desc.
+  cap_filled: {
+    en: 'Updated "{title}" in your citation library with what this page lists.',
+    hi: 'आपकी उद्धरण लाइब्रेरी में "{title}" को इस पेज पर दी गई जानकारी से अपडेट किया गया।'
+  },
+  // Under the one-click capture link (W1, D-S2-23): a bookmark dragged before keeps v1's code, which misses PubMed's authors, until it is dragged again.
+  // DRAFT Hindi: बुकमार्क बार as in cite_bookmarklet_desc.
+  cite_bookmarklet_redrag: {
+    en: "Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.",
+    hi: "यह बटन पहले खींचा था? इसे फिर से अपने बुकमार्क बार पर खींचें, ताकि यह PubMed के लेखक और खंड, अंक और पृष्ठ भी पढ़ सके।"
+  },
+  // The Crossref check flags a source with no author or without its volume, issue or pages, and fills them on consent (fix wave A, Task 11; walk faults W27, W28, register D-S2-33).
+  // DRAFT Hindi: Crossref in Latin letters as in the v1 rc_ strings; लेखक, खंड, अंक and पृष्ठ as in cite_bookmarklet_redrag.
+  rc_missing: {
+    en: "Missing here: {fields}. Crossref has them.",
+    hi: "यहाँ नहीं है: {fields}। Crossref में ये हैं।"
+  },
+  rc_fill_btn: { en: "Fill from Crossref", hi: "Crossref से भरें" },
+  rc_fill_confirm: {
+    en: "Fill these from Crossref? Only empty fields change.\n\n{list}",
+    hi: "इन्हें Crossref से भरें? केवल खाली खाने बदलेंगे।\n\n{list}"
+  },
+  rc_filled: {
+    en: "Filled from Crossref. In-text citations already in your document keep their old wording; insert them again.",
+    hi: "Crossref से भर दिया गया। आपके दस्तावेज़ में पहले से मौजूद इन-टेक्स्ट उद्धरण पुराने रूप में रहेंगे; उन्हें दोबारा डालें।"
+  },
+  // The name of the Author field in the Fill question's list ("Author: Schaefer, Ellen M.; ..."); the other three names are v1's cite_vol_label, cite_issue_label and cite_pages_label.
+  rc_fld_author: { en: "Author", hi: "लेखक" },
+  // Above each Ask answer and each walk-through reply in Analyse a paper: which paper it is about (fix wave A, Task 16; walk fault W20, register D-S2-30).
+  // DRAFT Hindi: के बारे में.
+  ap_about: { en: "About: {title}", hi: "इसके बारे में: {title}" },
+  // A stage panel's loading sign while its encrypted saved work is read and opened (fix wave A, Task 18; walk fault W8, register D-S2-34). DRAFT Hindi.
+  blob_loading: { en: "Opening your saved work…", hi: "आपका सहेजा हुआ काम खुल रहा है…" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */
@@ -167,4 +209,32 @@ export function applyV2Strings(en, hi) {
     outHi[k] = v.hi;
   }
   return { en: outEn, hi: outHi };
+}
+
+// Corrections to v1 panel keys (ap2_ and the like, extracted by extract-v1-panels.mjs). v1's Analyse a paper panel says "Appuscholer"
+// (a typo) in four places; v2 says "Appuscholar" (walk fault W21). The golden fixture keeps v1's text; web tests that compare against it
+// apply withPanelFixes to the golden first. Hindi holds the English for these keys, so the replacement runs in both languages.
+export const PANEL_FIXES = {
+  keys: ["ap2_check_what_appuscholer_read", "ap2_give_appuscholer_a_research", "ap2_made_with_appuscholer_parts", "ap2_none_the_text_has"],
+  from: /Appuscholer/g,
+  to: "Appuscholar"
+};
+
+/** Applies PANEL_FIXES to both dictionaries. A key that is missing, or whose value has nothing to replace, throws (v1 or the keys moved). */
+export function applyPanelFixes(en, hi) {
+  const outEn = { ...en }, outHi = { ...hi };
+  for (const out of [outEn, outHi]) {
+    for (const k of PANEL_FIXES.keys) {
+      if (typeof out[k] !== "string") throw new Error(`panel fix key is missing: ${k}`);
+      const fixed = out[k].replace(PANEL_FIXES.from, PANEL_FIXES.to);
+      if (fixed === out[k]) throw new Error(`panel fix has no match in ${k}`);
+      out[k] = fixed;
+    }
+  }
+  return { en: outEn, hi: outHi };
+}
+
+/** The golden appanel text with the same replacement, for web tests that compare the panel with v1's recorded text (the golden is never edited). */
+export function withPanelFixes(s) {
+  return s.replace(PANEL_FIXES.from, PANEL_FIXES.to);
 }

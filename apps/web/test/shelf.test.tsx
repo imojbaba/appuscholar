@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fieldLabel, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
+import { buildShelfSummaryPromptV2, fieldLabel, shTitleGuess, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
 import en from "../messages/en.json";
 
 /*
@@ -94,7 +94,7 @@ const blobText = (b: Blob) => new Promise<string>((done, fail) => {
 });
 
 /** ShelfOps over plain arrays, recording what was stored and in what order. */
-function fakeOps(init: { entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; canWrite?: boolean; create?: ShelfOps["createPaper"]; alive?: () => boolean } = {}) {
+function fakeOps(init: { entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; resolveTitle?: ShelfOps["resolveTitle"]; canWrite?: boolean; create?: ShelfOps["createPaper"]; alive?: () => boolean } = {}) {
   const st = { index: init.entries ?? [] as ShelfIndex, papers: { ...(init.papers ?? {}) } as Record<string, ShelfPaper>, status: [] as string[], toasts: [] as string[], log: [] as string[], created: [] as Array<[string, ShelfPaper]> };
   const ops: ShelfOps = {
     t,
@@ -108,6 +108,8 @@ function fakeOps(init: { entries?: ShelfEntry[]; papers?: Record<string, ShelfPa
     deletePaper: async (id) => { st.log.push("delete:" + id); delete st.papers[id]; return true; },
     paper: (id) => st.papers[id] ?? null,
     extract: init.extract ?? (async () => "no-text"),
+    // The default is v1's first-line guess, so the golden cases above hold; the W15 cases below pass their own.
+    resolveTitle: init.resolveTitle ?? (async (pages, stem) => ({ title: shTitleGuess(pages, stem) })),
     setStatus: (s) => { st.status.push(s); },
     toast: (m) => { st.toasts.push(m); },
     now: () => NOW
@@ -148,6 +150,70 @@ describe("addFiles is shAddFiles", () => {
     await addFiles([fileOf("c.pdf", 3)], three.ops);
     expect(three.st.status).toEqual([]);
     expect(three.ops.extract).not.toHaveBeenCalled();
+  });
+});
+
+describe("a new shelf paper takes its real title (W15, register row D-S2-28)", () => {
+  const PAGES = ["1 Scientific Repo R t S | (2019) 9:13317 | https://doi.org/10.1038/s41598-019-49731-x Daily screen time and sleep quality in adolescents\n" + "word ".repeat(80)];
+  const old = (id: string, title: string): ShelfEntry => ({ id, title, file: id + ".pdf", size: 1, added: "2026-01-01T00:00:00.000Z", total: 1, kept: 1 });
+  it("the resolved title and DOI go on the new entry; the file stem and the pages are what was asked of it", async () => {
+    const resolveTitle = vi.fn(async () => ({ title: "Daily screen time and sleep quality in adolescents", doi: "10.1038/s41598-019-49731-x" }));
+    const { st, ops } = fakeOps({ extract: async () => ({ pages: PAGES, total: 1 }), resolveTitle });
+    await addFiles([fileOf("scirep.pdf", 9)], ops);
+    expect(resolveTitle).toHaveBeenCalledWith(PAGES, "scirep");
+    expect(st.index).toHaveLength(1);
+    expect(st.index[0]).toMatchObject({ title: "Daily screen time and sleep quality in adolescents", doi: "10.1038/s41598-019-49731-x", file: "scirep.pdf" });
+  });
+  it("a paper with no DOI gets no doi key; a title lookup that throws falls back to v1's guess and the paper is still added", async () => {
+    const plain = fakeOps({ extract: async () => ({ pages: ["Sleep and Memory in Adolescents\n" + "word ".repeat(60)], total: 1 }), resolveTitle: async () => ({ title: "Sleep and Memory in Adolescents" }) });
+    await addFiles([fileOf("a.pdf", 1)], plain.ops);
+    expect(plain.st.index[0]).not.toHaveProperty("doi");
+    const broken = fakeOps({ extract: async () => ({ pages: PAGES, total: 1 }), resolveTitle: async () => { throw new Error("boom"); } });
+    await addFiles([fileOf("b.pdf", 2)], broken.ops);
+    expect(broken.st.index.map((e) => e.title)).toEqual([shTitleGuess(PAGES, "b")]);
+    expect(broken.st.status.at(-1)).toBe("b.pdf" + E.sh2_added_pages!.replace("{pagesCount}", "1"));
+  });
+  it("papers already on the shelf keep their titles (their Analyse notes are keyed by the title); a restore keeps each record's own", async () => {
+    const resolveTitle = vi.fn(async () => ({ title: "Resolved Title Of The New Paper", doi: "10.1/x" }));
+    const { st, ops } = fakeOps({ entries: [old("p0", "Named by the first line"), old("p1", "Renamed by the student")], extract: async () => ({ pages: PAGES, total: 1 }), resolveTitle });
+    await addFiles([fileOf("new.pdf", 3)], ops);
+    expect(resolveTitle).toHaveBeenCalledTimes(1);
+    expect(st.index.map((e) => e.title)).toEqual(["Named by the first line", "Renamed by the student", "Resolved Title Of The New Paper"]);
+    expect(st.index[0]).not.toHaveProperty("doi");
+    // The same file added again is refused before any title is asked for; a restore asks for none.
+    await addFiles([fileOf("new.pdf", 3)], ops);
+    await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p9", title: "From the backup", file: "r.pdf", pages: PAGES }] }), ops);
+    expect(resolveTitle).toHaveBeenCalledTimes(1);
+    expect(st.index.at(-1)!.title).toBe("From the backup");
+  });
+  it("the dialog asks Crossref for the DOI printed on page 1 and names the paper by the title it gives, when that title is on the page", async () => {
+    const title = "Daily screen time and sleep quality in adolescents";
+    const seen: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      seen.push(String(url));
+      return new Response(JSON.stringify({ message: { title: [title], DOI: "10.1038/s41598-019-49731-x" } }), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+    h.extract.mockImplementation(async () => ({ pages: PAGES, total: 1 }));
+    try {
+      await mount();
+      await pick(tid("sh-file")!, [fileOf("scirep.pdf", 5)]);
+      await until(() => puts("shelf_index").length > 0, "the index save");
+      const e = stored<ShelfIndex>("shelf_index")![0]!;
+      expect(e.title).toBe(title);
+      expect(e.doi).toBe("10.1038/s41598-019-49731-x");
+      expect(seen).toHaveLength(1);
+      expect(seen[0]).toContain("api.crossref.org/works/10.1038");
+    } finally { vi.unstubAllGlobals(); }
+  });
+  it("a Crossref title that is not on page 1 is not used by the dialog (Review Focus 3)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ message: { title: ["A completely different paper about reading comprehension"], DOI: "10.1038/s41598-019-49731-x" } }), { status: 200 })));
+    h.extract.mockImplementation(async () => ({ pages: PAGES, total: 1 }));
+    try {
+      await mount();
+      await pick(tid("sh-file")!, [fileOf("scirep.pdf", 5)]);
+      await until(() => puts("shelf_index").length > 0, "the index save");
+      expect(stored<ShelfIndex>("shelf_index")![0]!.title).toBe(shTitleGuess(PAGES, "scirep"));
+    } finally { vi.unstubAllGlobals(); }
   });
 });
 
@@ -273,9 +339,22 @@ describe("shelfSummarise is shSummarise", () => {
       await shelfSummarise({ callAI, field: fieldLabel(s.field), t, mine: s.mine, pages: s.pages, setOut: (x) => outs.push(x), saveNote: async (n) => { order.push("note"); saved.push(n); return true; }, now: () => NOW });
       expect(order).toEqual(["note", "call"]);
       expect(saved).toEqual([{ id: "n" + NOW.getTime().toString(36), page: 0, quote: "", note: s.notes[0]!.note, at: NOW.toISOString() }]);
-      expect(callAI).toHaveBeenCalledWith(s.prompt, s.opts);
+      // Fix wave A (W18): the prompt is buildShelfSummaryPromptV2's (the passages that matter); v1's prompt before PAPER TEXT and v1's options are unchanged.
+      const v2 = buildShelfSummaryPromptV2(fieldLabel(s.field), s.pages);
+      expect(callAI).toHaveBeenCalledWith(v2.prompt, s.opts);
+      expect(v2.prompt.slice(0, v2.prompt.indexOf("\n\nPAPER TEXT"))).toBe(s.prompt.slice(0, s.prompt.indexOf("\n\nPAPER TEXT")));
       expect(outs).toEqual([E.sh2_reading_2, s.out]);
     }
+  });
+  it("a long paper's limitations section reaches the model (W18)", async () => {
+    const filler = Array.from({ length: 400 }, (_, i) => `Filler sentence number ${i} about the study and nothing else of note at all.`).join("\n");
+    const pages = ["Abstract\nWe studied students.\nIntroduction\n" + filler, "Limitations\nA limitation is that every participant came from one university.\n" + filler];
+    const callAI = vi.fn(async (_prompt: string, _opts: object) => "OK");
+    await shelfSummarise({ callAI, field: "psychology", t, mine: FX.summaries[1]!.mine, pages, setOut: () => {}, saveNote: async () => true, now: () => NOW });
+    const sent = callAI.mock.calls[0]![0];
+    expect(sent).toContain("A limitation is that every participant came from one university.");
+    expect(sent).toContain("(selected passages: the opening, any limitations, then the discussion, method and results)");
+    expect(sent.length).toBeLessThan(20000);
   });
   it("trims the reply; does nothing before the gate passes; says the error, or v1's sentence; makes no call when the note cannot be stored", async () => {
     const outs: string[] = [];
@@ -657,6 +736,52 @@ describe("the Reading shelf dialog", () => {
     await until(() => heldBlobs.has(blobId("p1", "shelf_index")), "the held entry");
     expect(ensureUnlocked).not.toHaveBeenCalled();
     expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
+  });
+
+  it("Shelf shows the loading sign, not its empty state, until its data is read (W8)", async () => {
+    seedCorpus();
+    // The index's read is held: the shelf is not known to be empty, nor its papers' pages known.
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      if ((init.method ?? "GET") === "GET" && decodeURIComponent(path).endsWith("/blobs/shelf_index")) await gate;
+      return fakeApi(path, init);
+    });
+    await mount();
+    expect(tid("sh-body")!.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
+    expect(tid("sh-empty")).toBeNull();
+    expect(tids("sh-paper")).toHaveLength(0);
+    await click(tid("sh-tab-matrix"));
+    expect(tid("sh-body")!.querySelector('[data-testid="panel-loading"]')).not.toBeNull();
+    expect(tid("sh-body")!.textContent).not.toContain(E.sh2_the_shelf_is_empty_2);
+    expect(tids("sh-matrix")).toHaveLength(0);
+    release();
+    await until(() => tids("sh-matrix-row").length === 4, "the matrix");
+    expect(tid("panel-loading")).toBeNull();
+    await click(tid("sh-tab-papers"));
+    await until(() => tids("sh-paper").length === 4, "the papers");
+    expect(tid("panel-loading")).toBeNull();
+    expect(tid("sh-empty")).toBeNull();
+  });
+
+  it("a paper row shows the loading sign, not 'pages only', while that paper's text is read (W8)", async () => {
+    seedCorpus();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      if ((init.method ?? "GET") === "GET" && decodeURIComponent(path).endsWith("/blobs/shelf_paper:pa")) await gate;
+      return fakeApi(path, init);
+    });
+    await mount();
+    await until(() => tids("sh-paper").length === 4, "the papers");
+    await until(() => tids("sh-paper-meta").length === 3, "the other papers' lines");
+    expect(tid("sh-paper-loading")!.textContent).toBe(E.blob_loading);
+    expect(tids("sh-paper")[0]!.textContent).not.toContain("pages only");
+    expect(tids("sh-paper")[0]!.textContent).not.toMatch(/\d+ pages/);
+    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pb.pdf · 2 pages · 0 highlights");
+    release();
+    await until(() => tids("sh-paper-meta").length === 4 && !tid("sh-paper-loading"), "the first paper's line");
+    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pa.pdf · 3 pages · 0 highlights");
   });
 
   it("a removal the server refuses says so and keeps the paper; a paper whose blob is not read shows its pages only", async () => {

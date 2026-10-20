@@ -18,6 +18,14 @@ export type IntakeDeps = {
   readText?(file: File): Promise<string>;
 };
 
+/*
+ * Each choice of a paper takes a ticket (nextIntake) before anything else and every step that waits checks it again (isCurrentIntake): the latest choice wins, and a paper still being read when
+ * another was chosen is dropped without a toast and without loading (fix wave A, Task 16; walk fault W20, register D-S2-30). v1 loaded whichever read finished last.
+ */
+let intakeCount = 0;
+export const nextIntake = (): number => ++intakeCount;
+export const isCurrentIntake = (n: number): boolean => n === intakeCount;
+
 /** apLoad (9882-9891): v1's two refusals (an abstract under 150 characters that are not white space, any other paper under 500), else the paper is loaded. */
 export function loadPaper(title: string, pages: string[], src: string, isSample: boolean, d: Pick<IntakeDeps, "toast" | "t">): boolean {
   const r = apLoadRefusal(pages, src);
@@ -43,31 +51,40 @@ async function browserReadDocx(file: File, t: T): Promise<string> {
 }
 
 /** apFromFile (9900-9916): "Reading <name>…", then a PDF (its first 200 pages; the title from its first page, else the name), a Word .docx, a .txt; an old .doc and any other kind are refused. */
-export async function fromFile(f: File, d: IntakeDeps): Promise<boolean> {
+export async function fromFile(ticket: number, f: File, d: IntakeDeps): Promise<boolean> {
   const kind = apFileKind(f.name);
   try {
     d.toast(d.t("ap2_reading", { name: f.name }));
     if (kind === "pdf") {
       const r = await (d.extractPdf ?? extractPdfPages)(f);
+      if (!isCurrentIntake(ticket)) return false;
       // Task 11's extractor stops at fewer than 200 characters (a scanned PDF); v1 reads those pages and apLoad refuses them with this sentence.
       if (r === "no-text" || r === "not-a-pdf") { d.toast(d.t("ap2_this_file_has_too")); return false; }
       return loadPaper(shTitleGuess(r.pages, apFileStem(f.name, "pdf")), r.pages, "pdf", false, d);
     }
     if (kind === "docx") {
-      const t = apDocxText(await (d.readDocx ? d.readDocx(f) : browserReadDocx(f, d.t)));
+      const raw = await (d.readDocx ? d.readDocx(f) : browserReadDocx(f, d.t));
+      if (!isCurrentIntake(ticket)) return false;
+      const t = apDocxText(raw);
       return loadPaper(apTitleOf(t, f.name), [t], "docx", false, d);
     }
-    if (kind === "txt") return loadPaper(apFileStem(f.name, "txt"), [await (d.readText ?? readFileText)(f)], "txt", false, d);
+    if (kind === "txt") {
+      const text = await (d.readText ?? readFileText)(f);
+      if (!isCurrentIntake(ticket)) return false;
+      return loadPaper(apFileStem(f.name, "txt"), [text], "txt", false, d);
+    }
     d.toast(kind === "doc" ? d.t("ap2_old_doc_files_cannot") : d.t("ap2_use_a_pdf_a"));
     return false;
   } catch (e) {
+    if (!isCurrentIntake(ticket)) return false;
     d.toast(e instanceof PdfReaderUnavailable ? d.t("sh2_the_pdf_reader_needs") : e instanceof Error && e.message ? e.message : d.t("ap2_could_not_read_that"));
     return false;
   }
 }
 
 /** apFromPaste (9894-9899): the pasted text trimmed, its title the first line of more than 8 characters ("Pasted paper" when none). */
-export function fromPaste(text: string, d: Pick<IntakeDeps, "toast" | "t">): boolean {
+export function fromPaste(ticket: number, text: string, d: Pick<IntakeDeps, "toast" | "t">): boolean {
+  if (!isCurrentIntake(ticket)) return false;
   const t = (text || "").trim();
   if (!t) { d.toast(d.t("ap2_paste_the_paper_text")); return false; }
   return loadPaper(apTitleOf(t, d.t("ap2_pasted_paper")), [t], "paste", false, d);
@@ -87,20 +104,26 @@ export function shelfOptions(index: ShelfIndex | null, unread: boolean, t: T): {
  * apFromShelf (9923-9927): the paper chosen ("Choose a paper first" when none), loaded as a PDF under its title, else its file name. Its text is the shelf's own blob, read once (`loadPaper`, Task 11):
  * a paper whose text cannot be read on this device (locked and not unlocked, or broken) is reported with the shelf's own words, where v1's records always have their text.
  */
-export async function fromShelf(id: string, d: Pick<IntakeDeps, "toast" | "t"> & { index: ShelfIndex | null; read(id: string): Promise<{ pages: string[] } | null> }): Promise<boolean> {
+/** A paper of the shelf's list is chosen: the Use-this-paper button checks it before it takes a ticket, so a click with nothing chosen does not cancel a paper still being read. */
+export const shelfChosen = (index: ShelfIndex | null, id: string): boolean => (index ?? []).some((x) => x.id === id);
+
+export async function fromShelf(ticket: number, id: string, d: Pick<IntakeDeps, "toast" | "t"> & { index: ShelfIndex | null; read(id: string): Promise<{ pages: string[] } | null> }): Promise<boolean> {
   const p = (d.index ?? []).find((x) => x.id === id);
   if (!p) { d.toast(d.t("ap2_choose_a_paper_first")); return false; }
   const paper = await d.read(p.id);
+  if (!isCurrentIntake(ticket)) return false;
   if (!paper) { d.toast((p.title || p.file) + " " + d.t("sh2_could_not_be_read")); return false; }
   return loadPaper(p.title || p.file, paper.pages || [], "pdf", false, d);
 }
 
 /** apSample (9932): v1's fictional practice paper, its title the first line of its first page; no tick needed. */
-export function fromSample(d: Pick<IntakeDeps, "toast" | "t">): boolean {
+export function fromSample(ticket: number, d: Pick<IntakeDeps, "toast" | "t">): boolean {
+  if (!isCurrentIntake(ticket)) return false;
   return loadPaper(AP_SAMPLE[0]!.split("\n")[0]!, AP_SAMPLE.slice(), "pdf", true, d);
 }
 
 /** Research's "📄 Analyse this paper" (rsAnalyse 8407-8419, apLoad(title, [head+abstract], 'abstract', false)): the abstract the workspace kept (ruling R7), loaded abstract-only. */
-export function fromPending(p: { title: string; pages: string[]; src: "abstract" }, d: Pick<IntakeDeps, "toast" | "t">): boolean {
+export function fromPending(ticket: number, p: { title: string; pages: string[]; src: "abstract" }, d: Pick<IntakeDeps, "toast" | "t">): boolean {
+  if (!isCurrentIntake(ticket)) return false;
   return loadPaper(p.title, p.pages.slice(), p.src, false, d);
 }

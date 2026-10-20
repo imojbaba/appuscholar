@@ -5,7 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { bookmarkletHref, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
+import { bookmarkletHref, bookmarkletHrefV2, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 
@@ -126,6 +126,9 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(tid("cite-bookmarklet-details")!.querySelector("summary")!.textContent).toBe(E.cite_bookmarklet_summary);
     expect(tid("cite-bookmarklet-desc")!.textContent).toBe(E.cite_bookmarklet_desc);
     expect(tid("cite-bookmarklet-note")!.textContent).toBe(E.cite_bookmarklet_note);
+    // Fix wave A (W1): a bookmark dragged before keeps v1's capture code until it is dragged again.
+    expect(tid("cite-bookmarklet-redrag")!.textContent).toBe("Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.");
+    expect(tid("cite-bookmarklet-note")!.nextElementSibling).toBe(tid("cite-bookmarklet-redrag"));
   });
 
   it("the bookmarklet is a draggable link carrying v1's javascript: href for this page, and a click does not follow it", () => {
@@ -134,8 +137,9 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(a.textContent).toBe(E.cite_bookmarklet_btn);
     expect(a.getAttribute("draggable")).toBe("true");
     expect(window.location.origin + window.location.pathname).toBe("http://localhost:3000/");
-    // capture.test.ts holds bookmarkletHref to v1's href for http://localhost/; here it is built for this page, as v1 builds it for its own (13623).
-    expect(a.getAttribute("href")).toBe(bookmarkletHref("http://localhost:3000/"));
+    // capture.test.ts holds bookmarkletHref to v1's href for http://localhost/; here it is wave A's (W1: every author, the volume, the issue and the pages), built for
+    // this page, as v1 builds it for its own (13623).
+    expect(a.getAttribute("href")).toBe(bookmarkletHrefV2("http://localhost:3000/"));
     expect(bookmarkletHref("http://localhost/")).toBe(SHARE.bookmarklet.href);
     const ev = new MouseEvent("click", { bubbles: true, cancelable: true });
     act(() => { a.dispatchEvent(ev); });
@@ -146,7 +150,7 @@ describe("the panel's order and copy (v1 914-947)", () => {
     window.history.replaceState(null, "", "/popout?tool=cite");
     try {
       mount();
-      expect(tid("cite-bookmarklet")!.getAttribute("href")).toBe(bookmarkletHref("http://localhost:3000/"));
+      expect(tid("cite-bookmarklet")!.getAttribute("href")).toBe(bookmarkletHrefV2("http://localhost:3000/"));
     } finally { window.history.replaceState(null, "", "/"); }
   });
 

@@ -17,7 +17,9 @@ import { apBuild, apNumbers, type ApDoc, type ApNumber, type ApRefs, type ApWalk
 export type ApLoaded = ApDoc & { abstractOnly: boolean };
 export type ApQuote = ReturnType<typeof apCheckQuote>;
 /** One entry of v1's AP.log (apAsk 10041-10044): the question, apPick's numbers, and the raw reply (not JSON) or the answer and its checked quotations. */
-export type ApAskItem = { q: string; partial: boolean; n: number; of: number; raw?: string; in_paper?: boolean; answer?: string; quotes: ApQuote[] };
+export type ApAskItem = { q: string; title: string; partial: boolean; n: number; of: number; raw?: string; in_paper?: boolean; answer?: string; quotes: ApQuote[] };
+/** A walk-through reply as core keeps it, with the title of the paper it was asked about (fix wave A, Task 16; register D-S2-30): the panel says which paper each answer is about. */
+export type ApWalkReply = ApWalkRes & { title?: string };
 /** AP.refs as apRefCheck (11236-11252) leaves it: one of its two `none` boxes, or the check's result (core's ApRefs; `done` 0 while it runs). */
 export type ApRefState = { none: "no reference list" | "no DOIs" } | ApRefs;
 export type ApMode = "ask" | "walk" | "card" | "lesson";
@@ -40,7 +42,7 @@ export type ApState = {
   tryDraft: Record<string, string>;
   chkDraft: Record<string, string>;
   shown: Record<string, boolean>;
-  res: Record<string, ApWalkRes>;
+  res: Record<string, ApWalkReply>;
   /** The paper card's fields as typed in this tab, by docId then field: shown in place of the stored ones, so words a refused write (R16) did not store stay in the box. */
   cardDraft: Record<string, Record<string, string>>;
   acrossOpen: boolean;

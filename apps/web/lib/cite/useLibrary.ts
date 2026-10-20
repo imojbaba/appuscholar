@@ -7,6 +7,7 @@ import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useVault } from "@/lib/vault/useVault";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import type { AddResult } from "./actions";
+import { fillEmptyIn } from "./fillEmpty";
 
 /*
  * The citation style: v1 keeps it only in the #citStyle select (no localStorage key), so it starts on APA 7th at every page load and is shared by
@@ -40,10 +41,18 @@ export type Library = {
    * The toast is the caller's (citeAdd).
    */
   add(entry: CitationEntry): AddResult;
-  /** citDel 7509: removes the entry at that index. */
-  remove(index: number): void;
+  /**
+   * citDel 7509: removes that entry (v1 removes by index). The update removes the first stored entry equal to it, so a save replayed onto a
+   * newer library after a conflict (D-S2-35), where another window removed or added an entry before it, still removes this one and no other.
+   */
+  remove(entry: CitationEntry): void;
   /** Any other change of the whole library (Task 8: import, the classics), as an update; false when a broken library is kept. */
   update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean;
+  /**
+   * Fix wave A (W1, W2): the first stored entry `match` finds gets the fields of `fill` that are empty there (fillEmptyIn), as an update, so it lands on the
+   * stored library. False when nothing could be saved (no project yet, or a broken library kept); nothing is written when no entry matches.
+   */
+  fillEmpty(match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>): boolean;
   /** Sends what is pending now; true once nothing is left off the server. */
   flush(): Promise<boolean>;
   style: CitationStyle;
@@ -88,6 +97,13 @@ export function useLibrary(opts: { passive?: boolean } = {}): Library {
   return shared?.library ?? own;
 }
 
+/** An entry as JSON with its keys sorted, so the same entry parsed elsewhere (another key order) compares equal. */
+function canonical(v: unknown): string {
+  if (Array.isArray(v)) return "[" + v.map(canonical).join(",") + "]";
+  if (v && typeof v === "object") return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canonical((v as Record<string, unknown>)[k])).join(",") + "}";
+  return JSON.stringify(v) ?? "null";
+}
+
 function useOwnLibrary(projectId: string | null): Library {
   const t = useT();
   const blob = useProjectBlob("citations", projectId);
@@ -109,7 +125,14 @@ function useOwnLibrary(projectId: string | null): Library {
     if (!ready) return "not-ready";
     return update((prev) => [...prev, entry]) ? "added" : "declined";
   }, [ready, update]);
-  const remove = useCallback((index: number) => { update((prev) => prev.filter((_, i) => i !== index)); }, [update]);
+  const remove = useCallback((entry: CitationEntry) => {
+    const key = canonical(entry);
+    update((prev) => {
+      const i = prev.findIndex((e) => canonical(e) === key);
+      return i < 0 ? prev : [...prev.slice(0, i), ...prev.slice(i + 1)];
+    });
+  }, [update]);
+  const fillEmpty = useCallback((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => update((prev) => fillEmptyIn(prev, match, fill)), [update]);
 
-  return { lib, loading, locked, broken, ready, projectId, add, remove, update, flush, style: current, setStyle: writeStyle };
+  return { lib, loading, locked, broken, ready, projectId, add, remove, update, fillEmpty, flush, style: current, setStyle: writeStyle };
 }

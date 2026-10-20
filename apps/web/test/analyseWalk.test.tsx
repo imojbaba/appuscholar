@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, AP_STAGES, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
+import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 /*
  * Analyse a paper, part 2 (v1 apWalkShow 10048-10064, apDraft/apReveal/apSetStage 10114-10122, apCardText/apCardDownload 10124-10136, apAcross* 9936-9985, apRender's walk and card
@@ -308,6 +309,22 @@ describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", ()
     expect(notes()).toBeNull();
   });
 
+  it("each reply names its paper, from this visit and from the stored note (W20)", async () => {
+    await mount();
+    load("sample@apSample");
+    await openTab("walk");
+    h.callAI.mockResolvedValue(FX.walks[0]!.reply);
+    await click($("#apShowBtn"));
+    await until(() => !getAp().busy);
+    expect(tid("ap-about")).toHaveProperty("textContent", "About: " + SAMPLE_TITLE);
+    expect(tid("ap-about")!.compareDocumentPosition(tid("ap-walk-reply")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(getAp().res[AP_STAGES[0]!.k]!.title).toBe(SAMPLE_TITLE);
+    // The stored reply is the paper's own: it carries no title, and the line shows the paper loaded.
+    expect(JSON.stringify(notes())).not.toContain('"title":"' + SAMPLE_TITLE + '","partial"');
+    act(() => { setAp({ res: {} }); });
+    expect(tid("ap-about")).toHaveProperty("textContent", "About: " + SAMPLE_TITLE);
+  });
+
   it("a failed call toasts its sentence and stores nothing", async () => {
     const put = vi.fn(() => true);
     act(() => { loadPaper(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true, quiet); });
@@ -337,7 +354,7 @@ describe("Paper card (apRender 11325-11331, apCardText 10124-10135)", () => {
     await click($("#apCardBtn"));
     expect(h.download.mock.calls.map((x) => x[0])).toEqual(["paper-card.txt"]);
     const text = await blobText(h.download.mock.calls[0]!);
-    expect(text).toBe("﻿" + c.text);
+    expect(text).toBe("﻿" + withPanelFixes(c.text));
     const stored = notes()?.[id];
     expect(text.slice(1)).toBe(apCardText({
       title: SAMPLE_TITLE, note: stored, refs: getAp().refs, stages: AP_STAGES,
@@ -530,12 +547,12 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     expect($("#apAcross tbody")!.textContent).toContain("Saved design words");
   });
 
-  it("being read: neither the empty sentences nor a field, and no locked line", async () => {
+  it("being read: neither the empty sentences nor a field, no locked line, and the cards table shows the loading sign (W8)", async () => {
     h.blobs.ap_notes = { value: null, loading: true };
     await mount();
     load("sample@apSample");
     await openAcross();
-    expect($("#apAcross")!.textContent).toBe("");
+    expect($("#apAcross")!.textContent).toBe(E.blob_loading);
     await openTab("card");
     expect(tid("ap-card")!.textContent).toBe("Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.");
     expect($("#apC_notes")).toBeNull();

@@ -10,7 +10,10 @@
    - oaRetractions(f, dois): the DOIs are normalised, kept when valid and de-duplicated as citRetractionRefresh does with the library's (7581), and
      each batch's answer is handed to `onBatch` where v1 writes it to the cache (7592); a failing batch rejects (v1 then toasts retr_failed);
    - apRefCheck(f, dois) returns AP.refs as apRefCheck leaves it (11240-11252), given apRefDois' list; the 429 error is "429" here too;
-   - types, and `as` casts on the JSON read. */
+   - types, and `as` casts on the JSON read.
+   Wave A (walk fault W2, register row D-S2-24): rsFetchOpenAlex's result also carries `authorList`, every author's display name (`authors` is still v1's card line,
+   four names and "et al."). The select list is v1's, so OpenAlex sends no volume, issue or pages; the web fills them from Crossref after "+ Citation library".
+   test/fetch/openalex.test.ts holds v1View(result) to the golden. */
 import { retrNormDoi, retrValidDoi } from "../analyse";
 import { RS_DESIGN, rsBuildQuery, rsOaStatus, rsReconstructAbstract } from "../research";
 import { settle, withFallback } from "./types";
@@ -45,7 +48,8 @@ export async function rsFetchOpenAlex(f: typeof fetch,q: string,extra?: { filter
       citedByApiUrl:w.cited_by_api_url||'',
       retracted:w.is_retracted===true,
       oaStatus:rsOaStatus(w.open_access),
-      oaUrl:(w.open_access&&w.open_access.is_oa&&/^https?:\/\//i.test(w.open_access.oa_url||''))?w.open_access.oa_url!:''
+      oaUrl:(w.open_access&&w.open_access.is_oa&&/^https?:\/\//i.test(w.open_access.oa_url||''))?w.open_access.oa_url!:'',
+      authorList:authors
     };
   });
 }
@@ -63,8 +67,12 @@ export function rsOaBrief(w: OaWork): RsBrief{
     year:String(w.publication_year||'')};
 }
 
-/** rsConnected's two requests (8502-8513): what the paper cites (its first 8 referenced works) and what cites it (8). A failure is an empty list. */
-export async function oaConnected(f: typeof fetch,p: { referencedWorks: string[]; citedByApiUrl: string; key?: string }): Promise<{ cites: RsBrief[]; citedBy: RsBrief[] }>{
+/**
+ * rsConnected's two requests (8502-8513): what the paper cites (its first 8 referenced works) and what cites it (8). A failure is an empty list.
+ * OpenAlex no longer returns a cited-by URL (D-S2-20), so with none and an `oaId` the papers that cite this one are asked for by
+ * `filter=cites:<oaId>` (W3, D-S2-25); a cited-by URL, when there is one, is still v1's request.
+ */
+export async function oaConnected(f: typeof fetch,p: { referencedWorks: string[]; citedByApiUrl: string; oaId?: string; key?: string }): Promise<{ cites: RsBrief[]; citedBy: RsBrief[] }>{
   const jobs: Array<Promise<RsBrief[]>>=[];
   if(p.referencedWorks&&p.referencedWorks.length){
     const ids=p.referencedWorks.map(u=>u.split('/').pop()).join('|');
@@ -74,6 +82,9 @@ export async function oaConnected(f: typeof fetch,p: { referencedWorks: string[]
   }else jobs.push(Promise.resolve([]));
   if(p.citedByApiUrl){
     jobs.push(f(p.citedByApiUrl+'&per-page=8&select=display_name,authorships,publication_year')
+      .then(r=>r.ok?r.json() as Promise<OaList>:{results:[]}).then(j=>(j.results||[]).map(rsOaBrief)).catch(()=>[]));
+  }else if(p.oaId){
+    jobs.push(f(oaUrl('https://api.openalex.org/works?filter=cites:'+p.oaId+'&per-page=8&select=display_name,authorships,publication_year',p.key))
       .then(r=>r.ok?r.json() as Promise<OaList>:{results:[]}).then(j=>(j.results||[]).map(rsOaBrief)).catch(()=>[]));
   }else jobs.push(Promise.resolve([]));
   const[refs,cits]=await Promise.all(jobs);

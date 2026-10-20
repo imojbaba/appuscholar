@@ -19,19 +19,23 @@ import { heldBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
 import { BLOB_KINDS, blobId, isBlobKind, parseBlob, shelfPaperKind, type BlobKind, type IdeaIntake } from "../lib/blobs/kinds";
 import { setSyncChannel } from "../lib/popout/channel";
 import { FakeChannel } from "./support/fakeChannel";
+import en from "../messages/en.json";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 type Rec = { passWrapped: string; recoveryWrapped: string; checkWrapped: string; publicKey: string | null; privateKeyWrapped: string | null; complete: boolean; updatedAt: string };
-type SBlob = { projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[] };
-type Call = { path: string; method: string; body?: Record<string, unknown> };
-let server: { vault: Rec | null; calls: Call[]; blobs: SBlob[] };
+/** `version` absent is 1 (a blob a test wrote directly). */
+type SBlob = { projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[]; version?: number };
+type Call = { path: string; method: string; body?: Record<string, unknown>; ifMatch?: string };
+/** `versionless`: an api from before Task 4 (no `version` on the wire, If-Match ignored). */
+let server: { vault: Rec | null; calls: Call[]; blobs: SBlob[]; versionless?: boolean };
 
 const CIPHERTEXT = /^[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]+$/;
-const wire = (b: SBlob) => ({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: [...b.deks], updatedAt: "2026-10-19T00:00:00.000Z" });
+const versionOf = (b: SBlob | undefined): number => (b ? b.version ?? 1 : 0);
+const wire = (b: SBlob) => ({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: [...b.deks], updatedAt: "2026-10-19T00:00:00.000Z", ...(server.versionless ? {} : { version: versionOf(b) }) });
 
-/** The blob routes with the documents' vault rules, as apps/api/src/routes/blobs.ts answers them. */
-function blobApi(path: string, method: string, body: Record<string, unknown> | undefined): Promise<unknown> | null {
+/** The blob routes with the documents' vault rules and Task 4's versions, as apps/api/src/routes/blobs.ts answers them. */
+function blobApi(path: string, method: string, body: Record<string, unknown> | undefined, ifMatch?: string): Promise<unknown> | null {
   const m = /^\/projects\/([^/]+)\/blobs\/([^/]+)$/.exec(path);
   if (!m) return null;
   const projectId = m[1]!, kind = decodeURIComponent(m[2]!);
@@ -39,6 +43,11 @@ function blobApi(path: string, method: string, body: Record<string, unknown> | u
   const cur = server.blobs.find((b) => b.projectId === projectId && b.kind === kind);
   if (method === "GET") return cur ? Promise.resolve(wire(cur)) : Promise.reject(new ApiError(404, "not-found"));
   if (method !== "PUT") return null;
+  if (ifMatch !== undefined && !server.versionless) {
+    const im = /^"?(\d+)"?$/.exec(ifMatch.trim());
+    if (!im) return Promise.reject(new ApiError(400, "invalid"));
+    if (Number(im[1]) !== versionOf(cur)) return Promise.reject(new ApiError(409, "version-conflict"));
+  }
   const b = body as { body: string; keyVersion: number; dek?: WrappedDek };
   const deks = cur?.deks ?? [];
   let add: WrappedDek | undefined;
@@ -51,7 +60,7 @@ function blobApi(path: string, method: string, body: Record<string, unknown> | u
     if (clash && clash.wrapped !== b.dek!.wrapped) return Promise.reject(new ApiError(409, "dek-exists"));
     add = b.dek && !clash ? b.dek : undefined;
   }
-  const next: SBlob = { projectId, kind, body: b.body, keyVersion: b.keyVersion, deks: add ? [...deks, add] : deks };
+  const next: SBlob = { projectId, kind, body: b.body, keyVersion: b.keyVersion, deks: add ? [...deks, add] : deks, version: versionOf(cur) + 1 };
   server.blobs = [...server.blobs.filter((x) => x !== cur), next];
   return Promise.resolve(wire(next));
 }
@@ -59,8 +68,9 @@ function blobApi(path: string, method: string, body: Record<string, unknown> | u
 function fakeApi(path: string, init: RequestInit = {}) {
   const method = init.method ?? "GET";
   const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined;
-  server.calls.push({ path, method, body });
-  const blob = blobApi(path, method, body);
+  const ifMatch = (init.headers as Record<string, string> | undefined)?.["if-match"];
+  server.calls.push({ path, method, body, ...(ifMatch !== undefined ? { ifMatch } : {}) });
+  const blob = blobApi(path, method, body, ifMatch);
   if (blob) return blob;
   if (path === "/me/vault" && method === "GET") return server.vault ? Promise.resolve({ ...server.vault }) : Promise.reject(new ApiError(404, "no-vault"));
   return Promise.reject(new ApiError(404, "not-found"));
@@ -639,6 +649,421 @@ describe("useProjectBlob", () => {
     const s = await mount(shelfPaperKind("p1"), "proj");
     await until(() => !s.b.loading);
     expect(server.calls.some((c) => c.method === "GET" && c.path === "/projects/proj/blobs/shelf_paper%3Ap1")).toBe(true);
+  });
+});
+
+describe("blob save versions: a save that lost a race re-reads and replays its own edits (D-S2-35)", () => {
+  const A = { author: "Ng, A.", title: "Stored" }, X = { author: "Li, X.", title: "Added in another window" }, Y = { author: "Ho, Y.", title: "Added here" };
+  const add = (e: object) => (prev: unknown[] | null) => [...(prev ?? []), e];
+  const STORED: IdeaIntake = { topic: "A", resources: "R1", timeframe: "six months", constraints: "no lab" };
+  const blobOf = (projectId: string, kind: string) => server.blobs.find((b) => b.projectId === projectId && b.kind === kind)!;
+  /** Another window's save of a plain blob, straight into the store: the version moves on. */
+  const elsewhere = (projectId: string, kind: string, value: unknown) => {
+    const cur = blobOf(projectId, kind);
+    server.blobs = [...server.blobs.filter((b) => b !== cur), { ...cur, body: JSON.stringify(value), version: versionOf(cur) + 1 }];
+  };
+  /** The same, for a sealed blob: another window of this student seals under the blob's own key. */
+  const elsewhereSealed = async (vk: CryptoKey, projectId: string, kind: string, value: unknown) => {
+    const cur = blobOf(projectId, kind);
+    const dek = await unwrapKey(cur.deks.find((d) => d.v === cur.keyVersion)!.wrapped, vk);
+    server.blobs = [...server.blobs.filter((b) => b !== cur), { ...cur, body: await encryptText(JSON.stringify(value), dek), version: versionOf(cur) + 1 }];
+  };
+  const plainPuts = (projectId: string, kind: string) => putsTo(projectId, kind).map((c) => JSON.parse((c.body as { body: string }).body) as unknown);
+
+  it("a save sends If-Match with the version it read", async () => {
+    server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [], version: 3 }];
+    const s = await mount("rs_prefs", "p1");
+    await until(() => !s.b.loading);
+    act(() => { s.b.set({ rank: true }); });
+    await act(async () => { await s.b.flush(); });
+    expect(putsTo("p1", "rs_prefs").map((c) => c.ifMatch)).toEqual(['"3"']);
+    expect(blobOf("p1", "rs_prefs").version).toBe(4);
+    // The next save names the version the last one was given.
+    act(() => { s.b.set({ rank: false }); });
+    await act(async () => { await s.b.flush(); });
+    expect(putsTo("p1", "rs_prefs").map((c) => c.ifMatch)).toEqual(['"3"', '"4"']);
+    // A blob not there yet is version 0.
+    const t = await mount("ap_cols", "p1");
+    await until(() => !t.b.loading);
+    act(() => { t.b.set(["Age"]); });
+    await act(async () => { await t.b.flush(); });
+    expect(putsTo("p1", "ap_cols").map((c) => c.ifMatch)).toEqual(['"0"']);
+  });
+
+  it("a 409 re-reads, replays the edits made here onto the newer value and saves", async () => {
+    const vk = await generateVaultKey();
+    server.vault = await vaultFor(vk, "right");
+    server.blobs = [await sealedBlob(vk, "p1", "idea_intake", STORED)];
+    h.ask.mockResolvedValue("right");
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    expect(s.b.value).toEqual(STORED);
+    // Another window saves v2 meanwhile.
+    await elsewhereSealed(vk, "p1", "idea_intake", { ...STORED, resources: "R2" });
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, topic: "B" })); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    const puts = putsTo("p1", "idea_intake");
+    expect(puts.map((c) => c.ifMatch)).toEqual(['"1"', '"2"']);
+    const lastPut = { json: await openSealed(vk, { ...(puts[1]!.body as { body: string; keyVersion: number }), deks: blobOf("p1", "idea_intake").deks }), ifMatch: puts[1]!.ifMatch };
+    expect(lastPut.json).toMatchObject({ topic: "B", resources: "R2" });
+    expect(lastPut.ifMatch).toBe('"2"');
+    expect(await openSealed(vk, blobOf("p1", "idea_intake"))).toEqual({ ...STORED, topic: "B", resources: "R2" });
+    expect(blobOf("p1", "idea_intake").version).toBe(3);
+    expect(s.b).toMatchObject({ value: { ...STORED, topic: "B", resources: "R2" }, error: false, locked: false });
+    // One prompt, the first read's; the re-read asks nothing.
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    expect(h.toast).not.toHaveBeenCalled();
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  }, 30_000);
+
+  it("a collection keeps both sides: an entry added here and one added in another window", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    elsewhere("p1", "citations", [A, X]);
+    act(() => { s.b.set(add(Y)); });
+    expect(s.b.value).toEqual([A, Y]);
+    await act(async () => { await s.b.flush(); });
+    expect(plainPuts("p1", "citations")).toEqual([[A, Y], [A, X, Y]]);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, X, Y]);
+    expect(s.b.value).toEqual([A, X, Y]);
+  });
+
+  it("an old tab's save in between is merged, not lost (Review Focus 2)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(STORED), keyVersion: 0, deks: [] }];
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    // A tab on a build from before versions saves through the api with no If-Match: the server takes it and moves the version on.
+    await fakeApi("/projects/p1/blobs/idea_intake", { method: "PUT", body: JSON.stringify({ body: JSON.stringify({ ...STORED, resources: "R2" }), keyVersion: 0 }) });
+    expect(blobOf("p1", "idea_intake").version).toBe(2);
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, topic: "B" })); });
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "idea_intake").body)).toEqual({ ...STORED, topic: "B", resources: "R2" });
+    expect(putsTo("p1", "idea_intake").map((c) => c.ifMatch)).toEqual([undefined, '"1"', '"2"']);
+    expect(s.b.value).toEqual({ ...STORED, topic: "B", resources: "R2" });
+  });
+
+  it("three conflicts in a row hold the value, mark error and call onConflict once", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let racing = true;
+    let n = 0;
+    // Another window saves just before each of these PUTs reaches the server.
+    h.api.mockImplementation((path: string, init?: RequestInit) => {
+      if (racing && init?.method === "PUT" && path.endsWith("/citations")) { n++; elsewhere("p1", "citations", [...(JSON.parse(blobOf("p1", "citations").body) as unknown[]), { author: `W${n}` }]); }
+      return fakeApi(path, init);
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(putsTo("p1", "citations")).toHaveLength(3);
+    expect(blobOf("p1", "citations").version).toBe(4);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, { author: "W1" }, { author: "W2" }, { author: "W3" }]);
+    // Held, with the newest value read under it; shown, and leaving the page asks first.
+    expect(s.b).toMatchObject({ value: [A, { author: "W1" }, { author: "W2" }, Y], error: true });
+    expect(shouldWarnOnUnloadBlobs()).toBe(true);
+    expect(h.toast).toHaveBeenCalledTimes(1);
+    expect(h.toast).toHaveBeenCalledWith(en.blob_conflict);
+    // Nothing more is sent on its own.
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(putsTo("p1", "citations")).toHaveLength(3);
+    // The next edit saves it, replayed onto what the other window saved.
+    racing = false;
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, { author: "W1" }, { author: "W2" }, { author: "W3" }, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, { author: "W1" }, { author: "W2" }, { author: "W3" }, Y, Z], error: false });
+    expect(h.toast).toHaveBeenCalledTimes(1);
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  /** Every blob PUT reaches the store; while `lose` is on, the browser hears a network error instead of the answer. */
+  function loseAnswers() {
+    const st = { lose: false };
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      const r = await fakeApi(path, init);
+      if (st.lose && init?.method === "PUT" && path.includes("/blobs/")) throw new TypeError("Failed to fetch");
+      return r;
+    });
+    return st;
+  }
+
+  it("a save whose response is lost is not replayed twice", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const net = loseAnswers();
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    net.lose = true;
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    // Stored, but this tab does not know it.
+    expect(ok).toBe(false);
+    expect(s.b.error).toBe(true);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    expect(blobOf("p1", "citations").version).toBe(2);
+    net.lose = false;
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    // The next save named the old version (409), read the lost save back, and replayed only the later edit.
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"', '"1"', '"2"']);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, Y, Z], error: false });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  it("a save whose response is lost is not replayed twice by the held-blobs drain", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const net = loseAnswers();
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    net.lose = true;
+    act(() => { s.b.set(add(Y)); });
+    // The panel goes away; its last save is stored but its answer is lost, so the edit is held.
+    s.unmount();
+    await until(() => heldBlobs.has("blob:p1:citations"));
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    net.lose = false;
+    await act(async () => { await heldBlobs.drain(); });
+    expect(heldBlobs.size).toBe(0);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    // A new mount reads it once, too.
+    const t = await mount("citations", "p1");
+    await until(() => !t.b.loading);
+    expect(t.b.value).toEqual([A, Y]);
+  });
+
+  it("a save whose response is lost, then overwritten elsewhere, still replays the edit onto the newer value", async () => {
+    server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(STORED), keyVersion: 0, deks: [] }];
+    const net = loseAnswers();
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    // The lost save never reached the store this time (the network failed before it).
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (net.lose && init?.method === "PUT") throw new TypeError("Failed to fetch");
+      return fakeApi(path, init);
+    });
+    net.lose = true;
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, topic: "B" })); });
+    await act(async () => { await s.b.flush(); });
+    elsewhere("p1", "idea_intake", { ...STORED, resources: "R2" });
+    net.lose = false;
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "idea_intake").body)).toEqual({ ...STORED, topic: "B", resources: "R2" });
+    expect(s.b.error).toBe(false);
+  });
+
+  it("a save whose answer is a 5xx after the store took it (a gateway timeout) is not replayed twice", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let gateway = false;
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      const r = await fakeApi(path, init);
+      if (gateway && init?.method === "PUT" && path.includes("/blobs/")) throw new ApiError(504, "gateway-timeout");
+      return r;
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    gateway = true;
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(s.b.error).toBe(true);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    gateway = false;
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"', '"1"', '"2"']);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, Y, Z], error: false });
+  });
+
+  it("a 4xx answer is a known failure: the next save sends the edit again", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let refuse = false;
+    h.api.mockImplementation((path: string, init?: RequestInit) => {
+      if (refuse && init?.method === "PUT" && path.includes("/blobs/")) { server.calls.push({ path, method: "PUT" }); return Promise.reject(new ApiError(413, "too-large")); }
+      return fakeApi(path, init);
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    refuse = true;
+    act(() => { s.b.set(add(Y)); });
+    await act(async () => { await s.b.flush(); });
+    expect(s.b.error).toBe(true);
+    refuse = false;
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    expect(s.b).toMatchObject({ value: [A, Y], error: false });
+  });
+
+  it("a 409 re-read that finds a blob that will not open holds the value and shows broken; nothing is written until the panel sets over it (R16)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    // Another window (or a damaged write) leaves a body this build cannot read.
+    const cur = blobOf("p1", "citations");
+    server.blobs = [{ ...cur, body: "{not json", version: 2 }];
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"']);
+    expect(blobOf("p1", "citations").body).toBe("{not json");
+    // The panel is told (broken), and still shows the student's own held value: useLibrary asks before its next write.
+    expect(s.b).toMatchObject({ value: [A, Y], broken: true });
+    expect(shouldWarnOnUnloadBlobs()).toBe(true);
+    // Neither a flush nor the debounce sends it on its own.
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(putsTo("p1", "citations")).toHaveLength(1);
+    expect(blobOf("p1", "citations").body).toBe("{not json");
+    // The student said yes (R16): the next set goes on from what this window held, and is saved over the broken blob.
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    expect(s.b.value).toEqual([A, Y, Z]);
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"', '"2"']);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, Y, Z], broken: false, error: false });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  it("while a value is held over an unreadable blob, value is the held value (broken stays reported); a kind with an R16 guard saves it only after the next set", async () => {
+    server.blobs = [{ projectId: "p1", kind: "ap_cols", body: JSON.stringify(["a"]), keyVersion: 0, deks: [] }];
+    const s = await mount("ap_cols", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ ...blobOf("p1", "ap_cols"), body: "{not json", version: 2 }];
+    act(() => { s.b.set((p: string[] | null) => [...(p ?? []), "b"]); });
+    await act(async () => { await s.b.flush(); });
+    expect(s.b).toMatchObject({ value: ["a", "b"], broken: true });
+    // A guarded panel asks the student, then sets: the set goes on from the held value and the blob is replaced.
+    act(() => { s.b.set((p: string[] | null) => [...(p ?? []), "c"]); });
+    expect(s.b).toMatchObject({ value: ["a", "b", "c"], broken: false });
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "ap_cols").body)).toEqual(["a", "b", "c"]);
+  });
+
+  it("a kind with no R16 guard (idea_intake): the held value is shown, the next edit lands on it and is NOT saved over the unreadable blob", async () => {
+    server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(INTAKE), keyVersion: 0, deks: [] }];
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ ...blobOf("p1", "idea_intake"), body: "{not json", version: 2 }];
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, timeframe: "one year" })); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(s.b).toMatchObject({ value: NEXT, broken: true });
+    // The next keystroke goes on from the held value, so no other field is lost, and nothing is sent.
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, constraints: "evenings only" })); });
+    expect(s.b).toMatchObject({ value: { ...NEXT, constraints: "evenings only" }, broken: true });
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(putsTo("p1", "idea_intake").map((c) => c.ifMatch)).toEqual(['"1"']);
+    expect(blobOf("p1", "idea_intake").body).toBe("{not json");
+    expect(shouldWarnOnUnloadBlobs()).toBe(true);
+    // Gone with the panel: the drain has nobody to ask either.
+    s.unmount();
+    await settle(50);
+    await act(async () => { await heldBlobs.drain(); });
+    expect(putsTo("p1", "idea_intake")).toHaveLength(1);
+    expect(blobOf("p1", "idea_intake").body).toBe("{not json");
+  });
+
+  it("a value held over a broken blob is not sent by the held-blobs drain once the panel goes away (no panel to ask, R16)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ ...blobOf("p1", "citations"), body: "{not json", version: 2 }];
+    act(() => { s.b.set(add(Y)); });
+    await act(async () => { await s.b.flush(); });
+    expect(s.b.broken).toBe(true);
+    s.unmount();
+    await settle(50);
+    await act(async () => { await heldBlobs.drain(); });
+    expect(putsTo("p1", "citations")).toHaveLength(1);
+    expect(blobOf("p1", "citations").body).toBe("{not json");
+  });
+
+  it("a 409 re-read that finds the blob deleted elsewhere (a shelf paper removed) drops the edits: nothing is re-created", async () => {
+    const kind = shelfPaperKind("x1");
+    const PAPER = { pages: ["Page one."], notes: [], cells: {} };
+    server.blobs = [{ projectId: "p1", kind, body: JSON.stringify(PAPER), keyVersion: 0, deks: [], version: 3 }];
+    const s = await mount(kind, "p1");
+    await until(() => !s.b.loading);
+    // Another window removes the paper from the shelf, which deletes its blob.
+    server.blobs = [];
+    act(() => { s.b.set((p: typeof PAPER | null) => ({ ...(p ?? PAPER), cells: { Sample: "40" } })); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(putsTo("p1", kind).map((c) => c.ifMatch)).toEqual(['"3"']);
+    expect(server.blobs).toEqual([]);
+    // What the server has now: no blob. Nothing is left to send, and nothing is sent later.
+    expect(ok).toBe(true);
+    expect(s.b).toMatchObject({ value: null, error: false });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(putsTo("p1", kind)).toHaveLength(1);
+    expect(server.blobs).toEqual([]);
+  });
+
+  it("an api without versions gets no If-Match", async () => {
+    server.versionless = true;
+    server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
+    const s = await mount("rs_prefs", "p1");
+    await until(() => !s.b.loading);
+    act(() => { s.b.set({ rank: true }); });
+    await act(async () => { await s.b.flush(); });
+    act(() => { s.b.set({ rank: false }); });
+    await act(async () => { await s.b.flush(); });
+    expect(putsTo("p1", "rs_prefs")).toHaveLength(2);
+    expect(putsTo("p1", "rs_prefs").map((c) => c.ifMatch)).toEqual([undefined, undefined]);
+    const inits = h.api.mock.calls.filter(([, i]) => (i as RequestInit | undefined)?.method === "PUT").map(([, i]) => (i as RequestInit).headers);
+    expect(inits).toEqual([undefined, undefined]);
+  });
+
+  it("the held-blobs drain (headless) resolves a conflict the same way", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let offline = false;
+    let raceOnce = false;
+    const W = { author: "Wu, W.", title: "Saved while the drain was reading" };
+    h.api.mockImplementation((path: string, init?: RequestInit) => {
+      if (init?.method === "PUT" && path.endsWith("/citations")) {
+        if (offline) { server.calls.push({ path, method: "PUT" }); return Promise.reject(new TypeError("Failed to fetch")); }
+        if (raceOnce) { raceOnce = false; elsewhere("p1", "citations", [...(JSON.parse(blobOf("p1", "citations").body) as unknown[]), W]); }
+      }
+      return fakeApi(path, init);
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    offline = true;
+    act(() => { s.b.set(add(Y)); });
+    s.unmount();
+    await until(() => heldBlobs.has("blob:p1:citations"));
+    // While this tab was offline another window added X; and another save lands between the drain's read and its save.
+    elsewhere("p1", "citations", [A, X]);
+    offline = false;
+    raceOnce = true;
+    await act(async () => { await heldBlobs.drain(); });
+    expect(heldBlobs.size).toBe(0);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, X, W, Y]);
+    const sent = putsTo("p1", "citations").filter((c) => c.body);
+    expect(sent.map((c) => c.ifMatch)).toEqual(['"2"', '"3"']);
+    expect(h.ask).not.toHaveBeenCalled();
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
   });
 });
 

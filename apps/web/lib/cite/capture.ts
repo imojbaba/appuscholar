@@ -1,6 +1,6 @@
 "use client";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
-import { captureConfirmText, captureIsDuplicate, captureRecord, decodeCapture, type CitationEntry } from "@appuscholar/core";
+import { captureConfirmText, captureMatch, captureRecordV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/lib/i18n";
 import { useLibrary } from "./useLibrary";
@@ -12,6 +12,9 @@ import { useLibrary } from "./useLibrary";
  * the same title and author are already there (13651). The bookmarklet's source, the decode, the question, the entry and the duplicate rule are core's
  * (citcapture.ts); this module reads and strips the address, asks, saves and toasts. Held to v1 running by test/golden/citshare.
  * The unreadable and captured sentences are literals of v1's script (no data-i18n key): English constants byte-equal to v1 (ruling R15); the duplicate toast is the keyed `rs2_already_in_your_library`, through `t`.
+ * Fix wave A (walk fault W1, register row D-S2-23): the bookmarklet is bookmarkletSourceV2 (PubMed's `citation_authors`, the volume, the issue and the pages), the entry
+ * is captureRecordV2 (PubMed's "Surname Initials" as "Surname, Initials"), and a capture whose title is in the library without an author fills that entry's empty
+ * fields (captureMatch's `fill`, useLibrary().fillEmpty) in place of adding a second one, with the V2 toast `cap_filled`.
  */
 
 export const CAPTURE_PREFIX = "#capture=";
@@ -27,9 +30,26 @@ export function takeCaptureHash(loc: { hash: string; pathname: string; search: s
   return h.slice(CAPTURE_PREFIX.length);
 }
 
-/** 13650-13653: the duplicate rule (same title and same author), then the entry appended as an update and the toast; nothing when a broken library is kept (R16). */
-export function fileCapture(rec: CitationEntry, d: { lib: CitationEntry[]; update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean; toast(msg: string): void; t(key: string): string }): void {
-  if (captureIsDuplicate(d.lib, rec)) { d.toast(d.t("rs2_already_in_your_library")); return; }
+export type FileCaptureDeps = {
+  lib: CitationEntry[];
+  update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean;
+  /** useLibrary().fillEmpty: fills the empty fields of the first stored entry that matches. */
+  fillEmpty(match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>): boolean;
+  toast(msg: string): void;
+  t(key: string, vars?: Record<string, string | number>): string;
+};
+/**
+ * 13650-13653: the duplicate rule (same title and same author), then the entry appended as an update and the toast; nothing when a broken library is kept (R16).
+ * Wave A (W1): an entry with the same title and no author (v1's capture of a PubMed page) is filled with what this capture has, and `cap_filled` is toasted.
+ */
+export function fileCapture(rec: CitationEntry, d: FileCaptureDeps): void {
+  const m = captureMatch(d.lib, rec);
+  if (m.kind === "dup") { d.toast(d.t("rs2_already_in_your_library")); return; }
+  if (m.kind === "fill") {
+    if (!d.fillEmpty((e) => e.title === rec.title && !e.author, rec)) return;
+    d.toast(d.t("cap_filled", { title: rec.title ?? "" }));
+    return;
+  }
   if (!d.update((prev) => [...prev, rec])) return;
   d.toast(capturedToast(rec.title ?? ""));
 }
@@ -61,7 +81,7 @@ export function CaptureHash() {
     if (!window.confirm(captureConfirmText(d))) return;
     // The address is outside React and read once, on mount; the entry exists only once the student has said yes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRec(captureRecord(d));
+    setRec(captureRecordV2(d));
   }, []);
   // Once filed, CaptureFile goes: the library is no longer asked for (it would otherwise stay demanded for the session, R5's prompt on a later project switch).
   return rec ? createElement(CaptureFile, { rec, onDone: filed }) : null;
@@ -71,14 +91,14 @@ function CaptureFile({ rec, onDone }: { rec: CitationEntry; onDone(): void }) {
   const library = useLibrary();
   const t = useT();
   const done = useRef(false);
-  const { lib, ready, loading, locked, update, flush } = library;
+  const { lib, ready, loading, locked, update, fillEmpty, flush } = library;
   useEffect(() => {
     if (done.current || !ready || loading || locked) return;
     done.current = true;
-    fileCapture(rec, { lib, update, toast, t });
+    fileCapture(rec, { lib, update, fillEmpty, toast, t });
     // Sent now, not after the save delay: the toast has said ✓, so a tab closed straight after it must not lose the entry (nothing pending sends nothing).
     void flush();
     onDone();
-  }, [rec, lib, ready, loading, locked, update, flush, onDone, t]);
+  }, [rec, lib, ready, loading, locked, update, fillEmpty, flush, onDone, t]);
   return null;
 }

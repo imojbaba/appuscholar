@@ -19,7 +19,7 @@ export function walkDraft(s: Pick<ApState, "tryDraft">, note: ApNote | undefined
  * trimmed words (apPick at 10,000 characters; temp 0.2, max 2000, noLang) and the reply as core's apWalkRes keeps it (the raw text, or the reading, up to 4 quotations checked against the paper,
  * not_stated, watch_for, check_question, check_answer). The reply becomes the stage's (AP.res, its suggested answer hidden again) and is stored with the trimmed words in the paper's note
  * (`stages[k] = { …, mine, res }`). A failed call toasts callAI's sentence. Beyond v1: a reply that arrives after another paper was loaded is dropped (v1 would show it on the new paper and store
- * it in the new paper's note).
+ * it in the new paper's note). The reply shown carries the title of the paper it was asked about (the "About:" line, register D-S2-30); the stored one does not, since its note is the paper's own.
  */
 export async function apWalkShow(d: WalkDeps): Promise<void> {
   const s = getAp();
@@ -33,7 +33,7 @@ export async function apWalkShow(d: WalkDeps): Promise<void> {
     const out = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });
     const o = apWalkRes(doc, built.pick, out);
     if (getAp().gen === gen) {
-      setAp((x) => ({ res: { ...x.res, [st.k]: o }, shown: { ...x.shown, [st.k]: false } }));
+      setAp((x) => ({ res: { ...x.res, [st.k]: { ...o, title: doc.title } }, shown: { ...x.shown, [st.k]: false } }));
       d.put(doc, (n) => { n.stages[st.k] = { ...(n.stages[st.k] ?? {}), mine, res: o }; });
     }
   } catch (e) {

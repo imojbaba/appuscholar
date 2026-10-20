@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useT } from "@/lib/i18n";
+import { toast } from "@/components/ui/toast";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { announceBlob, onBlobAnnounced } from "@/lib/popout/channel";
 import { POPOUT_WRITABLE, blobWritable } from "@/lib/popout/mode";
@@ -15,7 +17,8 @@ export const BLOB_SAVE_DEBOUNCE_MS = 800;
  * `locked`: the vault is locked and the student has not opened it. While the read is what is locked, `value` is null (never a default),
  * or what the panel set since, held; a held value is sent once the vault opens. `broken`: the stored blob does not open or is not of its
  * kind's shape, and the panel has set nothing over it (the panel says so; it never crashes). `error`: the last read or save failed; what
- * was set is kept and goes with the next set, flush or unlock.
+ * was set is kept and goes with the next set, flush or unlock. While a value is held over a blob that did not open at a save's re-read (a 409), `value` is
+ * that held value (the panel shows the student's own text) and `broken` is true.
  */
 export type ProjectBlobState<T> = { value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean };
 /** A new value, or an update of the current one (`prev` is null while there is no blob yet). */
@@ -38,8 +41,8 @@ export type ProjectBlobOptions = {
   readOnly?: boolean;
 };
 
-/** What GET and PUT /projects/:id/blobs/:kind answer. */
-export type BlobWire = { kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: string };
+/** What GET and PUT /projects/:id/blobs/:kind answer. `version` moves on with every save; an api from before blob versions has none. */
+export type BlobWire = { kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: string; version?: number };
 type BlobPut = { body: string; keyVersion: number; dek?: WrappedDek };
 export type BlobVault = Pick<VaultValue, "known" | "ensureUnlocked" | "encryptBody" | "decryptBody">;
 type ClientDeps<T> = {
@@ -47,13 +50,32 @@ type ClientDeps<T> = {
   parse: (json: string) => T | null;
   /** Null when there is no blob yet (404). */
   get: () => Promise<BlobWire | null>;
-  put: (body: BlobPut) => Promise<BlobWire>;
+  /** `ifMatch`: the version the value was based on (0 for a blob not there yet); the save lands only on that version, else 409 version-conflict. */
+  put: (body: BlobPut, ifMatch?: number) => Promise<BlobWire>;
   vault: () => BlobVault;
   /** set() is a no-op that holds nothing and flush() resolves false (the pop-out's guard). */
   readOnly?: boolean;
+  /**
+   * No panel asks (R16) before it sets over a blob that does not open: idea_intake and rs_prefs. A value held over an unreadable blob then stays held, takes
+   * further sets, and is never saved over the blob unasked. False or absent: the panel asks, and its next set is the go-ahead.
+   */
+  unguarded?: boolean;
   /** Called after each save the server accepted (the pop-out sync's announce). */
   onSaved?: () => void;
+  /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). */
+  onConflict?: () => void;
 };
+
+/** PUTs one save makes while another window keeps saving first; after the last conflict the value is held. */
+export const BLOB_CONFLICT_ATTEMPTS = 3;
+const isVersionConflict = (e: unknown): boolean => e instanceof ApiError && e.status === 409 && e.code === "version-conflict";
+/** Deep equality of two JSON values (key order aside). */
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null || Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  return ka.length === kb.length && ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && sameJson((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+}
 
 const toOp = <T,>(u: BlobUpdate<T>): HeldOp<T> => (typeof u === "function" ? { update: u as (prev: T | null) => T } : { value: u });
 
@@ -72,12 +94,25 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   let pending: { value: T } | null = null;
   /** The blob's keys as the server has them: from every read and every save. */
   let deks: WrappedDek[] = [];
+  /** The server's version of the value `value` is based on: from every read (0 when there is no blob) and every save; undefined from an api without versions. */
+  let version: number | undefined;
+  /**
+   * The sets made since that value was read or accepted, in order. A save that lost the race to another window re-reads and replays these
+   * onto the newer value, so neither side's edits are lost.
+   */
+  let sinceBase: HeldOp<T>[] = [];
   let attempted = false;
   /** The last read could not open the blob: the vault is locked. */
   let lockedRead = false;
   /** A save is held because the vault stayed locked. */
   let heldByLock = false;
   let broken = false;
+  /**
+   * A save's re-read after a conflict found a blob that does not open: this window's value is held in `pending` and shown as `value` with `broken`
+   * (a guarded panel asks first, R16), and nothing is sent until the panel sets over it; that set goes on from the held value. Kinds with no
+   * guard (`unguarded`) keep the value held for good: later sets land on it, none is sent.
+   */
+  let brokenHeld = false;
   let error = false;
   /** The student cancelled an unlock this blob asked for after its first read: no prompt again until the vault opens (resume). */
   let declined = o.headless === true;
@@ -91,10 +126,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   let saving = false;
   const holds = () => pending !== null || ops.length > 0 || saving;
   const snapshot = (): ProjectBlobState<T> => ({
-    value: known ? value : applyOps(ops, null),
+    value: known ? (brokenHeld && pending ? pending.value : value) : applyOps(ops, null),
     loading: !attempted,
     locked: (!known && lockedRead) || heldByLock,
-    broken: known && broken && value === null,
+    broken: known && broken && (value === null || brokenHeld),
     error
   });
   const emit = () => {
@@ -104,34 +139,38 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   };
   const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };
 
+  /** Opens a blob as read: its value (null when broken), or "locked" when the vault stays locked. Asks for the passphrase unless declined. */
+  async function openWire(w: BlobWire): Promise<{ value: T | null } | "locked"> {
+    const doc = { id: o.id, deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion };
+    let text: string | null = null;
+    try { text = await o.vault().decryptBody(doc); } catch (e) {
+      if (!isVaultLocked(e)) return { value: null }; // VaultError("corrupt")
+      // The vault shares one prompt between every caller waiting on it (the document, other panels).
+      if (declined || !(await o.vault().ensureUnlocked().catch(() => false))) return "locked";
+      try { text = await o.vault().decryptBody(doc); } catch (e2) { if (isVaultLocked(e2)) return "locked"; return { value: null }; }
+    }
+    return { value: o.parse(text) };
+  }
+
   async function read(): Promise<void> {
     let w: BlobWire | null;
     try { w = await o.get(); } catch { attempted = true; error = true; return; }
     if (w) deks = w.deks;
-    let text: string | null = null;
-    let locked = false;
-    let bad = false;
-    if (w) {
-      const doc = { id: o.id, deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion };
-      try { text = await o.vault().decryptBody(doc); } catch (e) {
-        if (!isVaultLocked(e)) bad = true; // VaultError("corrupt")
-        // The vault shares one prompt between every caller waiting on it (the document, other panels).
-        else if (!declined && await o.vault().ensureUnlocked().catch(() => false)) {
-          try { text = await o.vault().decryptBody(doc); } catch (e2) { if (isVaultLocked(e2)) locked = true; else bad = true; }
-        } else locked = true;
-      }
-    }
+    const opened = w ? await openWire(w) : { value: null };
     attempted = true;
     // The first read asks once; a set while still locked may ask once more, and a cancel then holds without asking again.
-    if (locked && !firstRead) declined = true;
+    if (opened === "locked" && !firstRead) declined = true;
     firstRead = false;
-    if (locked) { lockedRead = true; return; }
+    if (opened === "locked") { lockedRead = true; return; }
     lockedRead = false;
     error = false;
-    const parsed = w && !bad && text !== null ? o.parse(text) : null;
+    const parsed = opened.value;
     broken = w !== null && parsed === null;
     known = true;
     value = parsed;
+    version = w ? w.version : 0;
+    // The sets queued while the value was unknown are the edits made here since this base.
+    sinceBase = [...ops];
     if (ops.length) {
       value = applyOps(ops, value);
       ops = [];
@@ -159,32 +198,106 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /** Keeps a value that could not be sent; a newer one set meanwhile wins. */
   const hold = (v: T) => { if (!pending) pending = { value: v }; };
 
+  /**
+   * The last PUT failed with no HTTP answer (offline, a dropped connection) or with a 5xx (a gateway timeout can come after the store took it):
+   * the server may have stored it. A 409 or another 4xx is a refusal: nothing was stored.
+   */
+  let outcomeUnknown = false;
+  const put = async (body: BlobPut): Promise<BlobWire> => {
+    try { return await o.put(body, version); } catch (e) { if (!(e instanceof ApiError) || e.status >= 500) outcomeUnknown = true; throw e; }
+  };
+
+  /**
+   * A save whose outcome is unknown carried the first `carried` sets of `sinceBase`: they become one update that leaves a value equal to the one
+   * sent as it is (that save was stored; replaying an addition would add it twice) and replays them onto any other. The client's re-read after
+   * a 409 and the held-blobs drain both replay through it.
+   */
+  function markUnsure(sent: string, carried: number) {
+    const sentValue: unknown = JSON.parse(sent);
+    const carriedOps = sinceBase.slice(0, carried);
+    sinceBase = [{ update: (prev: T | null) => (sameJson(prev, sentValue) ? prev : applyOps(carriedOps, prev)) as T }, ...sinceBase.slice(carried)];
+  }
+
+  /** Seals and sends `json` on the current version: the answer, or null when the vault stays locked. A version-conflict is thrown. */
+  async function sealAndPut(json: string): Promise<BlobWire | null> {
+    let body = await seal(json);
+    if (!body) return null;
+    try { return await put(body); } catch (e) {
+      if (!isStaleKeys(e)) throw e;
+      // Re-read the blob's keys (and the vault: another tab may have set one up), seal again, and try once more.
+      const fresh = await o.get();
+      deks = fresh?.deks ?? [];
+      await o.vault().known(true);
+      body = await seal(json);
+      if (!body) return null;
+      return await put(body);
+    }
+  }
+
   async function save(): Promise<boolean> {
     if (!pending) return true;
-    const v = pending.value;
+    if (brokenHeld) return false;
+    let v = pending.value;
     pending = null;
     saving = true;
-    const json = JSON.stringify(v);
+    /** How many of `sinceBase` this save carries: the sets made while it is out come after them. */
+    let carried = sinceBase.length;
     try {
-      let body = await seal(json);
-      if (!body) { hold(v); heldByLock = true; return false; }
-      let w: BlobWire;
-      try { w = await o.put(body); } catch (e) {
-        if (!isStaleKeys(e)) throw e;
-        // Re-read the blob's keys (and the vault: another tab may have set one up), seal again, and try once more.
-        const fresh = await o.get();
-        deks = fresh?.deks ?? [];
-        await o.vault().known(true);
-        body = await seal(json);
-        if (!body) { hold(v); heldByLock = true; return false; }
-        w = await o.put(body);
+      for (let conflicts = 0; ; ) {
+        let w: BlobWire | null;
+        const json = JSON.stringify(v);
+        outcomeUnknown = false;
+        try { w = await sealAndPut(json); } catch (e) {
+          if (outcomeUnknown) { markUnsure(json, carried); throw e; }
+          if (!isVersionConflict(e)) throw e;
+          // Another window saved first. After the last attempt the value is held and goes with the next edit (or flush, unlock, mount).
+          if (++conflicts >= BLOB_CONFLICT_ATTEMPTS) { hold(v); error = true; o.onConflict?.(); return false; }
+          // Read the newer value (no prompt beyond the usual rules) and replay every edit made here since the base onto it.
+          const fresh = await o.get();
+          const opened = fresh ? await openWire(fresh) : { value: null };
+          if (opened === "locked") { declined = true; hold(v); heldByLock = true; return false; }
+          if (fresh && opened.value === null) {
+            // The newer blob does not open here: replaying onto nothing would replace it unasked. Held until the panel sets over it (R16).
+            deks = fresh.deks;
+            version = fresh.version;
+            broken = true;
+            brokenHeld = true;
+            value = null;
+            hold(v);
+            return false;
+          }
+          if (!fresh && (version ?? 0) > 0) {
+            // Deleted elsewhere (a shelf paper removed in another window): a save names a version above 0 so it never re-creates the blob, and the
+            // replay must not either. The edits are dropped and the value is what the server has, none, as a re-read after a delete shows it.
+            deks = [];
+            version = 0;
+            value = null;
+            pending = null;
+            sinceBase = [];
+            broken = false;
+            error = false;
+            return true;
+          }
+          deks = fresh?.deks ?? [];
+          version = fresh ? fresh.version : 0;
+          value = applyOps(sinceBase, opened.value);
+          // The rebased value carries every set so far, a set made while this save was out included.
+          pending = null;
+          carried = sinceBase.length;
+          if (value === null) return true;
+          v = value;
+          continue;
+        }
+        if (!w) { hold(v); heldByLock = true; return false; }
+        deks = w.deks;
+        version = w.version;
+        sinceBase = sinceBase.slice(carried);
+        heldByLock = false;
+        broken = false;
+        error = false;
+        o.onSaved?.();
+        return true;
       }
-      deks = w.deks;
-      heldByLock = false;
-      broken = false;
-      error = false;
-      o.onSaved?.();
-      return true;
     } catch {
       hold(v);
       error = true;
@@ -213,12 +326,17 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     return queue(step);
   }
 
-  /** What is still not on the server, as ops (a known value as a plain one). */
-  const leftover = (): HeldOp<T>[] => (known ? (pending ? [{ value: pending.value }] : []) : [...ops]);
+  /**
+   * What is still not on the server, as ops: the sets made since the last value read or saved, so whoever sends them later replays them onto
+   * the value it reads then rather than saving this window's copy over another window's newer one. Nothing while a broken blob holds the value
+   * (brokenHeld): the drain has no panel to ask, so it would replace the blob unasked.
+   */
+  const leftover = (): HeldOp<T>[] => (known ? (pending && !brokenHeld ? compactOps([...sinceBase]) : []) : [...ops]);
 
   /** For the registry: a client with no panel, sending `held` the way this one would. */
   const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
-    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true });
+    // No panel to tell: a value still conflicting stays held for the next drain or mount.
+    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true, onConflict: undefined });
     c.adopt(held as HeldOp<T>[]);
     await c.flush();
     return c.leftover() as HeldOp[];
@@ -243,9 +361,21 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     set(next: BlobUpdate<T>) {
       if (o.readOnly) return;
       const op = toOp(next);
+      if (known && brokenHeld && o.unguarded && pending) {
+        // No panel asked the student (R16), so this edit is no go-ahead: it lands on the held value, which stays held and shown.
+        pending = { value: "value" in op ? op.value : op.update(pending.value) };
+        sinceBase.push(op);
+        emit();
+        clearTimer();
+        return;
+      }
       if (known) {
-        value = "value" in op ? op.value : op.update(value);
+        // After a re-read found a broken blob, this set is the panel's go-ahead (R16): it goes on from the value this window held.
+        const base = brokenHeld && pending ? pending.value : value;
+        brokenHeld = false;
+        value = "value" in op ? op.value : op.update(base);
         pending = { value };
+        sinceBase.push(op);
       } else ops = compactOps([...ops, op]);
       emit();
       clearTimer();
@@ -270,7 +400,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
         if (!known) {
           known = true; value = was; deks = wasDeks; broken = wasBroken; lockedRead = false; error = false;
           // A set made while the re-read was out went into ops (no timer while declined): it lands on what was shown and is sent.
-          if (ops.length) { value = applyOps(ops, value); ops = []; if (value !== null) pending = { value }; }
+          if (ops.length) { value = applyOps(ops, value); sinceBase = [...sinceBase, ...ops]; ops = []; if (value !== null) pending = { value }; }
         }
         // read() replays such a set onto the fresh value as pending; either way it is sent after the usual debounce.
         if (pending && !timer && active) timer = setTimeout(() => { timer = null; void flush(); }, o.delayMs);
@@ -309,21 +439,25 @@ export const blobPath = (projectId: string, kind: BlobKind): string => `/project
  * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
  * since the number of papers changes. The caller starts it and disposes of it.
  */
-export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean } = {}) {
+export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean; onConflict?: () => void } = {}) {
   const path = blobPath(projectId, kind);
   const id = blobId(projectId, kind);
   return createBlobClient<BlobShape<K>>({
     id,
     // The pop-out's guard, here so every client (the hook's, the shelf's papers, a detached index write) has it.
     readOnly: (opts.readOnly ?? false) || !blobWritable(kind),
+    // Idea and the Research panel's rank toggle have no R16 ask; every other kind's panel asks before it sets over a blob that does not open.
+    unguarded: kind === "idea_intake" || kind === "rs_prefs",
     // The other windows read v1's two synced keys again once they are saved here (v1's storage event, 7614).
     onSaved: syncedKind(kind) ? () => announceBlob(id) : undefined,
     parse: (json) => parseBlob(kind, json),
     get: async () => {
       try { return await apiFetch<BlobWire>(path); } catch (e) { if (e instanceof ApiError && e.status === 404) return null; throw e; }
     },
-    put: (body) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body) }),
+    // If-Match only with a version: an api from before blob versions answers none, and gets none.
+    put: (body, ifMatch) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body), ...(typeof ifMatch === "number" ? { headers: { "if-match": `"${ifMatch}"` } } : {}) }),
     vault,
+    onConflict: opts.onConflict,
     delayMs: BLOB_SAVE_DEBOUNCE_MS,
     onState,
     headless: opts.headless
@@ -356,11 +490,14 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
   // State is tagged with the blob it was read for, so another project starts at "loading" without a reset in the effect.
   const [tagged, setTagged] = useState<Tagged<T> | null>(null);
   const client = useRef<ReturnType<typeof createBlobClient<T>> | null>(null);
+  const t = useT();
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
 
   const readOnly = (opts.readOnly ?? false) || !blobWritable(kind);
   useEffect(() => {
     if (projectId === null || key === null) return;
-    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), { readOnly });
+    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), { readOnly, onConflict: () => toast(tRef.current("blob_conflict")) });
     client.current = c;
     void c.start();
     const stop = syncedKind(kind) ? onBlobAnnounced(blobId(projectId, kind), () => c.refresh()) : () => {};

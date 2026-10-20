@@ -1,11 +1,19 @@
 import { Hono, type Context } from "hono";
-import { DekExistsError, type ProjectBlob, type Store } from "../store/types";
+import { DekExistsError, VersionConflictError, type ProjectBlob, type Store } from "../store/types";
 import { checkSealed } from "./docWrite";
 import { BlobPutSchema, BlobRewriteSchema, isBlobKind, resolveBlobWrite } from "./blobWrite";
 import type { AuthEnv } from "../auth";
 
 /** What a client sees of a blob. */
-const wire = (b: ProjectBlob) => ({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: b.deks, updatedAt: b.updatedAt });
+const wire = (b: ProjectBlob) => ({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: b.deks, updatedAt: b.updatedAt, version: b.version });
+/** If-Match carries the version the client read, quoted as GET's ETag or bare. Absent is undefined (a tab from before wave A); malformed is null. */
+const IF_MATCH = /^"?(\d+)"?$/;
+const readIfMatch = (h: string | undefined): number | undefined | null => {
+  if (h === undefined) return undefined;
+  const m = IF_MATCH.exec(h.trim());
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isSafeInteger(n) ? n : null;
+};
 
 /**
  * Per-project stage data, one blob per (project, kind), mounted under /projects. Every route answers 404 for a project that is not the
@@ -32,14 +40,22 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
     const kind = c.req.param("kind");
     if (!isBlobKind(kind)) return c.json({ error: "invalid" }, 400);
     const b = await store.getBlob(c.get("userId"), c.req.param("id"), kind);
-    return b ? c.json(wire(b)) : c.json({ error: "not-found" }, 404);
+    if (!b) return c.json({ error: "not-found" }, 404);
+    c.header("ETag", `"${b.version}"`);
+    return c.json(wire(b));
   });
 
-  /** Creates or replaces the blob. keyVersion 0 is refused with 409 vault-required once the user has a vault record. */
+  /**
+   * Creates or replaces the blob. keyVersion 0 is refused with 409 vault-required once the user has a vault record. With If-Match (the
+   * version the client read; "0" for a blob it has never seen) the write lands only on that version, else 409 version-conflict with the
+   * current one; a missing blob is version 0, so a save naming a version above 0 never recreates a blob deleted elsewhere.
+   */
   r.put("/:id/blobs/:kind", async (c) => {
     if (!(await owned(c))) return c.json({ error: "not-found" }, 404);
     const kind = c.req.param("kind");
     if (!isBlobKind(kind)) return c.json({ error: "invalid" }, 400);
+    const expectedVersion = readIfMatch(c.req.header("if-match"));
+    if (expectedVersion === null) return c.json({ error: "invalid" }, 400);
     const read = await readJson(c);
     if (read === "too-large") return c.json({ error: "too-large" }, 413);
     if (read === "invalid") return c.json({ error: "invalid" }, 400);
@@ -47,12 +63,15 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const userId = c.get("userId"), projectId = c.req.param("id");
     const current = await store.getBlob(userId, projectId, kind);
+    // A stale tab hears version-conflict before any rule judged against a blob it has not seen; the store checks again, atomically.
+    if (expectedVersion !== undefined && (current?.version ?? 0) !== expectedVersion) return c.json({ error: "version-conflict", version: current?.version ?? 0 }, 409);
     const w = await resolveBlobWrite(store, userId, current?.deks ?? [], body.data);
     if (!w.ok) return c.json({ error: w.error }, w.status);
     try {
-      const b = await store.putBlob(userId, projectId, kind, { body: w.body, keyVersion: w.keyVersion, dek: w.addDek });
+      const b = await store.putBlob(userId, projectId, kind, { body: w.body, keyVersion: w.keyVersion, dek: w.addDek, expectedVersion });
       return b ? c.json(wire(b)) : c.json({ error: "not-found" }, 404);
     } catch (e) {
+      if (e instanceof VersionConflictError) return c.json({ error: "version-conflict", version: e.current }, 409);
       if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409);
       throw e;
     }

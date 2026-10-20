@@ -3,16 +3,18 @@ import { useRef, useState } from "react";
 import { tHtml, useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import type { ShelfItem } from "@/lib/shelf/actions";
+import { PanelLoading } from "../PanelLoading";
 
 /**
  * Papers (shPapersRender 11616-11620): "➕ Add PDFs" (several at once), "Back up the shelf", "Restore a shelf backup", the status line (shStatusHTML 11614), then each paper: its
  * title in a box (renamed when the box is left), the file, the pages and highlights, "Read" and "Remove from shelf", which asks to be pressed again ("Press again to remove it and
  * its highlights"; a removal the server refuses says so in the status line); while a paper's blob is not read yet its line gives the pages only, its highlights being unknown;
  * "The shelf is empty. Add a PDF to start." when it is; v1's note that the shelf is kept apart from the normal backup. v1's storage line (shUsage 11615) is not
- * shown: v2 keeps the shelf on the server, not in the browser's storage (register row D-S2-14).
+ * shown: v2 keeps the shelf on the server, not in the browser's storage (register row D-S2-14). W8 (register row D-S2-34): while the index is read and opened (`loading`) the list gives way to
+ * the loading sign, not "The shelf is empty"; a paper whose own blob is being read (`reading`) shows the sign in place of its pages, not "pages only".
  */
-export function Papers({ items, status, busy, canWrite, onAdd, onBackup, onRestore, onRename, onRead, onRemove }: {
-  items: ShelfItem[]; status: string; busy: boolean; canWrite: boolean;
+export function Papers({ items, loading, reading, status, busy, canWrite, onAdd, onBackup, onRestore, onRename, onRead, onRemove }: {
+  items: ShelfItem[]; loading: boolean; reading: ReadonlySet<string>; status: string; busy: boolean; canWrite: boolean;
   onAdd(files: File[]): void; onBackup(): void; onRestore(file: File): void; onRename(id: string, title: string): void; onRead(id: string): void; onRemove(id: string): Promise<boolean>;
 }) {
   const t = useT();
@@ -36,12 +38,14 @@ export function Papers({ items, status, busy, canWrite, onAdd, onBackup, onResto
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onRestore(f); }} />
       </div>
       {status && <p className="sh-status" role="status" data-testid="sh-status">{status}</p>}
-      {items.length ? items.map((p) => (
+      {loading ? <PanelLoading /> : items.length ? items.map((p) => (
         <div className="sh-paper" data-testid="sh-paper" key={p.id}>
           <input className="input sh-title" type="text" defaultValue={p.title} key={p.title} aria-label={t("sh2_title_aria")} data-testid="sh-title"
             onBlur={(e) => { if (e.target.value !== p.title) onRename(p.id, e.target.value); }}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} />
-          <div className="sh-small sh-muted" data-testid="sh-paper-meta">{p.file + " " + (p.paper ? t("sh2_pages_highlights", { pagesCount: p.paper.pages.length, notesCount: p.paper.notes.length }) : t("shelf_pages_only", { pagesCount: p.kept }))}</div>
+          {reading.has(p.id) && !p.paper
+            ? <PanelLoading testId="sh-paper-loading" />
+            : <div className="sh-small sh-muted" data-testid="sh-paper-meta">{p.file + " " + (p.paper ? t("sh2_pages_highlights", { pagesCount: p.paper.pages.length, notesCount: p.paper.notes.length }) : t("shelf_pages_only", { pagesCount: p.kept }))}</div>}
           <div className="sh-row">
             <Button variant="primary" size="sm" data-testid="sh-read" disabled={!p.paper} onClick={() => onRead(p.id)}>{t("sh2_read")}</Button>
             <Button variant="ghost" size="sm" data-testid="sh-remove" onClick={() => { void remove(p.id); }}>{sure.has(p.id) ? t("sh2_press_again_to_remove") : t("sh2_remove_from_shelf")}</Button>

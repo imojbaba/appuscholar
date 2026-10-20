@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { citKey, oaRetractions, pace, rcCheckOne, retrNormDoi, retrValidDoi } from "@appuscholar/core";
+import { citKey, oaRetractions, pace, rcCheckOneV2, rcFillPatch, retrNormDoi, retrValidDoi } from "@appuscholar/core";
 import type { CitationEntry, RcCheck } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
@@ -12,7 +12,7 @@ import type { Library } from "./useLibrary";
  * The library's two network checks, v1's page code around core's lookups:
  * - the retraction check, citRetractionRefresh 7579-7600 (OpenAlex's is_retracted through core's oaRetractions, a week's cache per DOI in the
  *   project's `retraction_cache` blob, v1's appu_retraction_cache), with the summary and the card warning of citRender 7826-7833, 7856;
- * - the source reality check, rcRun 7772-7790 (Crossref through core's rcCheckOne, with a 200 ms pause after each lookup, cached per citKey in
+ * - the source reality check, rcRun 7772-7790 (Crossref through core's rcCheckOneV2, v1's rcCheckOne plus the empty author, volume, issue and pages, with a 200 ms pause after each lookup, cached per citKey in
  *   the `refcheck_cache` blob, v1's appu_refcheck), with the summary 7842-7846 and rcLine 7792-7797.
  */
 
@@ -117,7 +117,7 @@ export async function rcRun(force: boolean, deps: RcDeps): Promise<void> {
     for (let i = 0; i < l.length; i++) {
       const k = citKey(l[i]!);
       if (!force && cache[k] && cache[k].s !== "err") continue;
-      const res = await rcCheckOne(deps.fetch, l[i]!);
+      const res = await rcCheckOneV2(deps.fetch, l[i]!);
       if (res.s === "err") errs++; else net = true;
       cache[k] = done[k] = res;
       await wait();
@@ -127,9 +127,25 @@ export async function rcRun(force: boolean, deps: RcDeps): Promise<void> {
   } finally { rcBusy = false; }
 }
 
+/** The field names the missing-fields line and the Fill question use, in the order Crossref's `miss` lists them. */
+const MISS_LABEL: Record<NonNullable<RcCheck["miss"]>[number], string> = { author: "rc_fld_author", volume: "cite_vol_label", issue: "cite_issue_label", pages: "cite_pages_label" };
+/** rc_missing's {fields}: the missing fields' names, lower case, joined by commas. */
+export function rcMissingFields(miss: NonNullable<RcCheck["miss"]>, t: T): string { return miss.map((k) => t(MISS_LABEL[k]).toLowerCase()).join(", "); }
+/** rc_fill_confirm's {list}: one line per field the fill would write, "Author: Schaefer, Ellen M.; Gonzalez, ...". */
+export function rcFillList(patch: Partial<CitationEntry>, t: T): string {
+  return (["author", "volume", "issue", "pages"] as const).filter((k) => patch[k]).map((k) => t(MISS_LABEL[k]) + ": " + patch[k]).join("\n");
+}
+
 export type CiteChecks = {
   retraction: RetractionStatus;
   rc: RefCheckCache;
+  /** The Crossref cache cannot be written here (the pop-out): the line says what is missing and offers no Fill. */
+  rcReadOnly: boolean;
+  /**
+   * Fix wave A (W27, W28): "Fill from Crossref" for one source. Asks (window.confirm) with each field and its value, then writes only the fields that are empty
+   * (the library's fillEmpty), moves the source's cached answer to its new key as a match, and says so. Cancel changes nothing.
+   */
+  fillFromCrossref(d: CitationEntry): void;
   rcSum: RcSummary | null;
   refreshRetractions(force: boolean): Promise<void>;
   runRefCheck(force: boolean): Promise<void>;
@@ -165,6 +181,21 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
     await rcRun(force, { lib: c.lib, cache: c.rcBlob.value, fetch: f, save: c.rcBlob.set, toast, t });
   }, [f, mayWrite, t]);
 
+  const { fillEmpty } = library;
+  const fillFromCrossref = useCallback((d: CitationEntry) => {
+    const old = citKey(d), c = live.current.rcBlob.value?.[old];
+    const patch = c ? rcFillPatch(d, c) : null;
+    if (!c || !patch) return;
+    if (!window.confirm(t("rc_fill_confirm", { list: rcFillList(patch, t) }))) return;
+    if (!fillEmpty((e) => citKey(e) === old, patch)) return;
+    const next = citKey({ ...d, ...patch });
+    // The answer moves with the source (its key holds the surname): the differences the fill settles are dropped, any other stays.
+    const m = (c.m || []).filter((x) => !(x.k === "author" && patch.author));
+    const moved: RcCheck = { s: m.length ? "diff" : "ok", m, ...(c.f ? { f: c.f } : {}), ...(c.viaTitle ? { viaTitle: c.viaTitle } : {}), t: c.t };
+    live.current.rcBlob.set((prev) => { const n = { ...(prev ?? {}) }; delete n[old]; n[next] = moved; return n; });
+    toast(t("rc_filled"));
+  }, [fillEmpty, t]);
+
   const ready = !library.loading && !library.locked && !retr.loading && !retr.locked && library.projectId !== null;
   /** The project the quiet refresh last ran for: a project switch with the tab open refreshes for the new one. */
   const ranFor = useRef<string | null>(null);
@@ -174,5 +205,5 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
     void refreshRetractions(false);
   }, [ready, library.projectId, refreshRetractions]);
 
-  return { retraction, rc, rcSum, refreshRetractions, runRefCheck };
+  return { retraction, rc, rcReadOnly: rcBlob.readOnly === true, rcSum, fillFromCrossref, refreshRetractions, runRefCheck };
 }

@@ -29,20 +29,20 @@ export type { PlainDoc, Usage } from "./citlib";
 export { AP_SAMPLE, AP_STAGES, AP_HEADS, AP_STOP, AP_NAME, apSquash, apToks, apHeadName, apBuild, apPick, apJson, apCheckQuote, apNumbers, apRefDois, retrNormDoi, retrValidDoi } from "./analyse";
 export type { ApChunk, ApDoc, ApStage, ApNumber } from "./analyse";
 export { pdCsvCell, pdCsv } from "./csv";
-export { RS_DESIGNS, RS_DESIGN, rsReconstructAbstract, rsOaStatus, rsQuickCheck, rsRankParse, rsCleanTerm, rsBuildQuery, rsDedupe, rsFilterPass, rsCsvText, rsAuthorsToCit, rsEntryFromResult, rsCorpusText } from "./research";
+export { RS_DESIGNS, RS_DESIGN, rsReconstructAbstract, rsOaStatus, rsQuickCheck, rsRankParse, rsCleanTerm, rsBuildQuery, pmTopicBlock, rsBuildQueryV2, rsDedupe, rsFilterPass, rsCsvText, rsAuthorsToCit, rsEntryFromResult, rsCorpusText } from "./research";
 export type { RsQuick, RsPaper, RsFilter } from "./research";
-export { buildIdeaPrompt } from "./prompts-idea";
+export { buildIdeaPrompt, buildIdeaPromptV2, IDEA_AREA_FORMAT_V1, IDEA_AREA_FORMAT_V2 } from "./prompts-idea";
 export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildHelperPrompt, buildDevilPrompt, buildVivaPrompt } from "./prompts-helpers";
 export type { HelperKind } from "./prompts-helpers";
-export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt } from "./prompts-research";
+export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt, buildGapFinderPromptV2 } from "./prompts-research";
 export { AP_RULES, LESSON_QUESTION_MAX_CHARS, buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "./prompts-analyse";
 // Stage 2: network fetchers (Task 4)
 export { pace } from "./fetch/types";
 export type { OaPaper, PmPaper, RsBrief, SearchResult } from "./fetch/types";
 export { oaUrl, rsFetchOpenAlex, oaSearch, rsOaBrief, oaConnected, retrFetchBatch, oaRetractions, apRefCheck } from "./fetch/openalex";
 export type { ApRefs } from "./fetch/openalex";
-export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmidToDoi } from "./fetch/pubmed";
-export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
+export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmSearchV2, pmidToDoi, pmFullPages } from "./fetch/pubmed";
+export { rcWords, rcSim, rcCompare, rcCheckOne, rcCheckOneV2, rcFillPatch, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
 export type { CrWork, RcCheck } from "./fetch/crossref";
 // Stage 2: Citation Manager checks (Task 8a)
 export { citMissingNumbers, citCaretEntry } from "./citlib";
@@ -50,12 +50,17 @@ export { citMissingNumbers, citCaretEntry } from "./citlib";
 export { PSYCH_STARTERS } from "./data/classic-sources";
 // Stage 2: Citation Manager one-click capture (Task 8b)
 export { bookmarkletSource, bookmarkletHref, decodeCapture, captureConfirmText, captureRecord, captureIsDuplicate } from "./citcapture";
+// Fix wave A, Task 8 (W1, W2): the capture and the search keep every author, the volume, the issue and the pages
+export { bookmarkletSourceV2, bookmarkletHrefV2, capNameToCit, captureRecordV2, captureMatch } from "./citcapture";
+export { rsAuthorListToCit, rsEntryFromResultV2 } from "./research";
 export type { CaptureData } from "./citcapture";
 // Stage 2: Research related terms, sort orders and fold (Task 9)
 export { rsParseTerms, rsSortResults, rsFoldIndex } from "./research";
 // Stage 2: Reading shelf (Task 11)
-export { appuStem, SH_STOP, shTokens, shCount, shSnippet, shSnippetParts, htmlMarksToParts, shRank, shBestSentence, shRankPages, shFindPassages, SH_MAX_PAGES, SH_MIN_CHARS, shPageText, shChars, shTitleGuess, shPaperId, shNoteId, shSummaryNoteId, shMarkedParts, shQuoteFind, shMineOk, shStripEmails, shSummaryText, SHELF_SUMMARY_MAX_CHARS, buildShelfSummaryPrompt, SHELF_DEFAULT_COLS, shColsOf, shColsAdd, shColsDel, shMatrixCsv, shBackupBundle, shBackupFileName, shRestoreParse } from "./shelf";
+export { appuStem, SH_STOP, shTokens, shCount, shSnippet, shSnippetParts, htmlMarksToParts, shRank, shBestSentence, shRankPages, shFindPassages, SH_MAX_PAGES, SH_MIN_CHARS, shPageText, shChars, shTitleGuess, shPaperId, shNoteId, shSummaryNoteId, shMarkedParts, shQuoteFind, shMineOk, shStripEmails, shSummaryText, SHELF_SUMMARY_MAX_CHARS, SHELF_SUMMARY_BUDGET_V2, SHELF_SUMMARY_TIER0_CAP_V2, shSummaryPick, buildShelfSummaryPrompt, buildShelfSummaryPromptV2, SHELF_DEFAULT_COLS, shColsOf, shColsAdd, shColsDel, shMatrixCsv, shBackupBundle, shBackupFileName, shRestoreParse } from "./shelf";
 export type { SnippetPart, ShHit, ShSearchHit, ShPassage, ShTextItem, ShNote, ShRecord } from "./shelf";
+// Fix wave A (W15, register row D-S2-28): a new shelf paper takes its title from its DOI or the library
+export { SHELF_TITLE_TIMEOUT_MS, shPaperDoi, shTitleOnPage, resolveShelfTitle } from "./shelf-title";
 // Stage 2: Analyse a paper, the page's rules and formats (Task 12)
 export { apFileKind, apFileStem, apDocxText, apTitleOf, apLoadRefusal, apShelfLabel, apPreview, apNumP } from "./analyse-page";
 // Stage 2: Analyse a paper, the walk-through's reply, the paper card and the cards side by side (Task 13)

@@ -6,9 +6,11 @@
 // never edited by hand. No API key and no mailto are sent; 250 ms between calls. What is sent is what the app itself would send: DOIs and OpenAlex ids.
 //
 // The URLs are the ones the journey's browser asks for (run the spec with E2E_LOG_UNRECORDED=1 to see any it asks for that are not recorded); they are
+// `--only a,b` records just the named cases (the first element of each URLS entry) and deletes nothing; it refuses to overwrite a file that exists.
+//
 // built by core's own fetchers (packages/core/src/fetch: oaConnected, oaRetractions, rcCheckOne), so they are listed here exactly as those build them.
 
-import { readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -22,6 +24,8 @@ export const URLS = [
   // Step 5, "🔗 Connected papers" on "On the relationship between test anxiety and academic performance" (W2131323061): its referenced works, as the
   // recorded "exam anxiety" search lists them (OpenAlex no longer gives cited_by_api_url, so no second request is made).
   ["oa-connected-dordinejad", "https://api.openalex.org/works?filter=openalex_id:W24263745|W1938591297|W1967508604|W2035718657|W2070711012|W2130144748|W2132913832|W2139908002&per-page=8&select=display_name,authorships,publication_year"],
+  // Fix wave A (W12): the same paper's "cited by" list, as core's oaConnected asks for it now that OpenAlex gives no cited_by_api_url.
+  ["oa-citedby-dordinejad", "https://api.openalex.org/works?filter=cites:W2131323061&per-page=8&select=display_name,authorships,publication_year"],
   // Step 6, the Citation Manager's quiet refresh as it opens: the two sources whose retraction status is not known yet (the search's two are seeded).
   ["oa-retractions-quiet", retractions([RYAN, COHEN])],
   // Step 11, "🛡 Check for retractions": every DOI of the library.
@@ -35,13 +39,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const short = (url) => createHash("sha256").update(url).digest("hex").slice(0, 8);
 
 async function main() {
-  for (const f of readdirSync(DIR).filter((x) => x.endsWith(".json"))) unlinkSync(DIR + f);
+  const argv = process.argv.slice(2);
+  const onlyAt = argv.indexOf("--only");
+  const only = onlyAt < 0 ? null : new Set((argv[onlyAt + 1] || "").split(",").filter(Boolean));
+  if (only) {
+    if (!only.size) throw new Error("--only needs a comma-separated list of case names");
+    for (const n of only) if (!URLS.some(([name]) => name === n)) throw new Error(`--only: unknown case "${n}"; the cases are ${URLS.map(([name]) => name).join(", ")}`);
+  } else for (const f of readdirSync(DIR).filter((x) => x.endsWith(".json"))) unlinkSync(DIR + f);
   for (const [name, url] of URLS) {
+    if (only && !only.has(name)) continue;
     await sleep(250);
     const r = await fetch(url);
     const body = await r.text();
     if (r.status !== 200) throw new Error(name + ": HTTP " + r.status);
-    writeFileSync(DIR + `${name}-${short(url)}.json`, JSON.stringify({ url, status: r.status, headers: { "content-type": r.headers.get("content-type") }, body }, null, 1) + "\n");
+    const file = `${name}-${short(url)}.json`;
+    if (only && existsSync(DIR + file)) throw new Error(`--only: ${file} already exists and is not overwritten`);
+    writeFileSync(DIR + file, JSON.stringify({ url, status: r.status, headers: { "content-type": r.headers.get("content-type") }, body }, null, 1) + "\n");
     console.log("recorded", name, r.status, body.length);
   }
 }

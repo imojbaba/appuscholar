@@ -41,7 +41,7 @@ const RECORDED_DIR = new URL("../../fetch/recorded/", import.meta.url);
 /** Every recording, by URL (a URL recorded twice is an error). */
 export function loadRecordings(): Map<string, Recording & { file: string }> {
   const out = new Map<string, Recording & { file: string }>();
-  for (const file of readdirSync(RECORDED_DIR).filter((f) => f.endsWith(".json")).sort()) {
+  for (const file of readdirSync(RECORDED_DIR).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").sort()) {
     const rec = JSON.parse(readFileSync(new URL(file, RECORDED_DIR), "utf8")) as Recording;
     if (out.has(rec.url)) throw new Error(`fetch: ${file} and ${out.get(rec.url)!.file} record the same URL`);
     out.set(rec.url, { ...rec, file });

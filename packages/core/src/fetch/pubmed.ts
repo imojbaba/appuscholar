@@ -6,15 +6,18 @@
      PMID whose parent is a MedlineCitation, `Abstract > AbstractText` every AbstractText whose parent is an Abstract (register D-S2-5);
    - pmSearch builds the query with rsBuildQuery, as researchSearch does (8306); retmax 15 when ranking, else 6;
    - pmidToDoi returns null where citPmidToDoi returns '' (no DOI); an HTTP error still rejects;
-   - types, and `as` casts on the JSON read. */
-import { rsBuildQuery } from "../research";
+   - types, and `as` casts on the JSON read.
+   Wave A (walk fault W2, register row D-S2-24): rsFetchPubmed's result also carries `authorList` (every name), `volume`, `issue` and `pages` (PubMed's short range
+   written out by pmFullPages); `authors` is still v1's card line. test/fetch/pubmed.test.ts holds v1View(result) to the golden.
+   Wave A (W12, register row D-S2-27): pmSearchV2 is pmSearch with the topic's own words tagged [tiab] (rsBuildQueryV2); pmSearch is v1's and unchanged. */
+import { pmTopicBlock, rsBuildQuery, rsBuildQueryV2 } from "../research";
 import { settle, withFallback } from "./types";
 import type { PmPaper, SearchResult } from "./types";
 import { xmlAll, xmlParse, xmlText } from "./xml";
 import type { XmlEl } from "./xml";
 
 type ESearch = { esearchresult?: { idlist?: string[] } };
-type ESummaryItem = { title?: string; authors?: Array<{ name?: string }>; pubdate?: string; fulljournalname?: string; source?: string; articleids?: Array<{ idtype?: string; value?: string }> };
+type ESummaryItem = { title?: string; authors?: Array<{ name?: string }>; pubdate?: string; fulljournalname?: string; source?: string; volume?: string; issue?: string; pages?: string; articleids?: Array<{ idtype?: string; value?: string }> };
 type ESummary = { result?: Record<string, ESummaryItem | undefined> };
 
 const child = (parent: string, name: string) => (el: XmlEl) => el.name === name && !!el.parent && el.parent.name === parent;
@@ -51,7 +54,8 @@ export async function rsFetchPubmed(f: typeof fetch,q: string,per?: number): Pro
     return{source:'PubMed',ssId:null,title:it.title||'Untitled',
       authors:authors.length>4?authors.slice(0,4).join(', ')+', et al.':authors.join(', ')||'Unknown authors',
       year:(it.pubdate||'').slice(0,4),venue:it.fulljournalname||it.source||'',
-      abstract:abs[id]||'',pmid:id,citationCount:0,doi:'',url:'https://pubmed.ncbi.nlm.nih.gov/'+id+'/'};
+      abstract:abs[id]||'',pmid:id,citationCount:0,doi:'',url:'https://pubmed.ncbi.nlm.nih.gov/'+id+'/',
+      authorList:authors,volume:String(it.volume||''),issue:String(it.issue||''),pages:pmFullPages(String(it.pages||''))};
   }).filter(Boolean) as PmPaper[];
 }
 
@@ -59,6 +63,15 @@ export async function rsFetchPubmed(f: typeof fetch,q: string,per?: number): Pro
 export function pmSearch(f: typeof fetch,o: { q: string; terms?: string[]; design?: string; retmax?: number }): Promise<SearchResult<PmPaper>>{
   const terms=o.terms||[],design=o.design||'any';
   return settle(fb=>withFallback(s=>rsFetchPubmed(f,s,o.retmax||6),t=>rsBuildQuery(o.q,'pm',t,design),terms,fb));
+}
+
+/** pmSearch with rsBuildQueryV2 (W12, D-S2-27): the topic's words tagged [tiab], so PubMed does not widen them. A tagged search that finds no paper (and no error) runs v1's
+ * pmSearch once, so a topic whose words are not all in titles and abstracts still gets v1's answer; a typed query was already v1's and is not asked twice. Never rejects. */
+export async function pmSearchV2(f: typeof fetch,o: { q: string; terms?: string[]; design?: string; retmax?: number }): Promise<SearchResult<PmPaper>>{
+  const terms=o.terms||[],design=o.design||'any';
+  const out=await settle(fb=>withFallback(s=>rsFetchPubmed(f,s,o.retmax||6),t=>rsBuildQueryV2(o.q,'pm',t,design),terms,fb));
+  if(out.papers.length||out.error!==undefined||pmTopicBlock(o.q)===null)return out;
+  return pmSearch(f,o);
 }
 
 /** citPmidToDoi (7920-7929): the DOI PubMed's esummary lists for the PMID, in lower case; null when it lists none. Rejects on an HTTP error. */
@@ -70,4 +83,14 @@ export async function pmidToDoi(f: typeof fetch,pmid: string): Promise<string | 
   const ids=(rec&&rec.articleids)||[];
   const d=ids.find(x=>x.idtype==='doi');
   return d?String(d.value).toLowerCase():null;
+}
+
+/** PubMed's page range written out: PubMed drops the leading digits the last page shares with the first ("123-30" is 123-130, "1171-9" is 1171-1179). Each
+ * digits-only range is widened from the first page; one that would then end before it starts, and anything else ("e0123", "13317", "S12"), is left as it is. */
+export function pmFullPages(p: string): string{
+  return String(p||'').replace(/\b(\d+)-(\d+)\b/g,(m,a: string,b: string)=>{
+    if(b.length>=a.length)return m;
+    const full=a.slice(0,a.length-b.length)+b;
+    return Number(full)>=Number(a)?a+'-'+full:m;
+  });
 }

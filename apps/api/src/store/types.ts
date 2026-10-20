@@ -30,10 +30,14 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion:
  * A stage panel's data for one project: one body per (project, kind). keyVersion 0 is plaintext JSON (only while the user has no vault);
  * 1 or more is ciphertext under the dek with that `v`, which the server stores and never opens.
  */
-export type ProjectBlob = { id: string; projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: Date };
+export type ProjectBlob = { id: string; projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: Date; version: number };
 export type BlobSummary = { kind: string; keyVersion: number; updatedAt: Date };
-/** `dek` is added to the blob's deks when its `v` is new; the same wrap again is a no-op, another wrap for a known `v` is DekExistsError. */
-export type BlobWrite = { body: string; keyVersion: number; dek?: WrappedDek };
+/**
+ * `dek` is added to the blob's deks when its `v` is new; the same wrap again is a no-op, another wrap for a known `v` is DekExistsError.
+ * `expectedVersion` is the version the writer read (putBlob only): absent, the write is an upsert as before wave A; 0, it creates the blob or
+ * updates one still at version 0; above 0, it updates only a blob at that version and never creates one. Otherwise VersionConflictError.
+ */
+export type BlobWrite = { body: string; keyVersion: number; dek?: WrappedDek; expectedVersion?: number };
 
 export type NewRevision = { bodyHtml: string; authorKind: AuthorKind; authorLabel: string; wordCount: number; originStats?: OriginStats; keyVersion: number };
 
@@ -64,6 +68,11 @@ export class VaultKeypairExistsError extends Error {
 /** Thrown by addDek when the document already has a data key with the same `v`, and by putBlob/rewriteBlob when the blob has another wrap for that `v`. */
 export class DekExistsError extends Error {
   constructor(v: number) { super(`dek v${v} already exists`); this.name = "DekExistsError"; }
+}
+
+/** Thrown by putBlob when `expectedVersion` is not the blob's version; `current` is the stored version, 0 when there is no blob. */
+export class VersionConflictError extends Error {
+  constructor(public current: number) { super(`blob is at version ${current}`); this.name = "VersionConflictError"; }
 }
 
 export interface Store {
@@ -141,15 +150,18 @@ export interface Store {
   /** Null if there is none, or the project is not the user's. */
   getBlob(userId: string, projectId: string, kind: string): Promise<ProjectBlob | null>;
   /**
-   * Creates the (project, kind) blob or replaces its body and key version, adding `dek` in the same step when its `v` is new.
-   * Null if the project is not the user's. Throws DekExistsError (and writes nothing) when the blob already has another wrap for `dek.v`.
+   * Creates the (project, kind) blob or replaces its body and key version, adding `dek` in the same step when its `v` is new, and sets the
+   * version one above the stored one (1 for a new blob). Null if the project is not the user's. Throws VersionConflictError (and writes
+   * nothing) when `expectedVersion` does not hold (see BlobWrite), else DekExistsError (and writes nothing) when the blob already has another
+   * wrap for `dek.v`. The version check and the write are one step, so of two writers holding the same version exactly one wins.
    */
   putBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null>;
   /** The project's blobs without their bodies, by kind. Null if the project is not the user's. */
   listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null>;
   /**
-   * Migration only: replaces an existing blob's body and key version, adding `dek` as putBlob does (a plaintext blob has none yet), and
-   * leaves updatedAt as it was. Null if the blob does not exist or the project is not the user's. DekExistsError as putBlob.
+   * Migration only: replaces an existing blob's body and key version, adding `dek` as putBlob does (a plaintext blob has none yet), bumps the
+   * version, and leaves updatedAt as it was. Ignores `expectedVersion`. Null if the blob does not exist or the project is not the user's.
+   * DekExistsError as putBlob.
    */
   rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null>;
   /** Deletes the (project, kind) blob (a Reading shelf paper removed from the shelf). False if there is none or the project is not the user's. */

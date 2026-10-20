@@ -9,6 +9,8 @@ import { useSession } from "@/lib/session";
 import { useVault } from "@/lib/vault/useVault";
 import { hasRemembered } from "@/lib/vault/remember";
 import { exportAll, exportFileName, localDay, type ExportDoc, type ExportDocSummary, type ExportProject } from "@/lib/vault/export";
+import { blobId, type BlobKind } from "@/lib/blobs/kinds";
+import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
 import { buildAllRecordText, type WritingRecord } from "@/lib/writingRecord";
 import { APP_VERSION } from "@/lib/version";
@@ -75,6 +77,10 @@ export function Help() {
         listDocuments: (id) => apiFetch<ExportDocSummary[]>(`/projects/${id}/documents`),
         getDocument: (id) => apiFetch<ExportDoc>(`/documents/${id}`),
         decrypt: (doc) => vault.decryptBody(doc),
+        // Every stage's data: ciphertext from the api, opened here under the blob's own key.
+        listBlobs: (id) => apiFetch<Array<{ kind: string; keyVersion: number; updatedAt: string }>>(`/projects/${id}/blobs`),
+        getBlob: (id, kind) => apiFetch<BlobWire>(`/projects/${id}/blobs/${encodeURIComponent(kind)}`),
+        decryptBlob: (id, w) => vault.decryptBody({ id: blobId(id, w.kind as BlobKind), deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion }),
         // The record MyWriting downloads: each project's words under its title, the AI-use log (the whole account's) once.
         writingRecordText: async () => {
           const parts = await Promise.all(projects.map(async (p) => ({ title: p.title, rec: await apiFetch<WritingRecord>(`/projects/${p.id}/writing-record`) })));

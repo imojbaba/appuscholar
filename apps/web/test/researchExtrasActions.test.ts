@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildGapFinderPrompt, buildLitReviewPrompt, buildQuickReadPrompt, rsCorpusText, rsCsvText, type CitationEntry, type RsPaper, type RsQuick } from "@appuscholar/core";
+import { buildGapFinderPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, rsCorpusText, rsCsvText, type CitationEntry, type RsPaper, type RsQuick } from "@appuscholar/core";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
@@ -128,7 +128,7 @@ function genDeps(reply: string | Error = "A paragraph.") {
 describe("the literature review and the research gap (researchLitReview / researchGapFinder 8530-8551)", () => {
   for (const [name, run, build, label] of [
     ["litReview", litReview, buildLitReviewPrompt, (n: number) => "💜 Reading " + n + " abstracts and drafting…"],
-    ["gapFinder", gapFinder, buildGapFinderPrompt, () => "💜 Looking for what these papers leave unanswered…"]
+    ["gapFinder", gapFinder, buildGapFinderPromptV2, () => "💜 Looking for what these papers leave unanswered…"]
   ] as const) {
     it(`${name}: fewer than 2 ticked papers toasts v1's sentence and calls nothing`, async () => {
       const { d, log } = genDeps();

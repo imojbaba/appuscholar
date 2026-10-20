@@ -1,0 +1,86 @@
+import { describe, it, expect } from "vitest";
+import { buildGapFinderPrompt, buildGapFinderPromptV2 } from "../src/prompts-research";
+import type { RsPaper } from "../src/research";
+import { buildIdeaPrompt, buildIdeaPromptV2, IDEA_AREA_FORMAT_V1, IDEA_AREA_FORMAT_V2 } from "../src/prompts-idea";
+import { fieldLabel } from "../src/prompts";
+import { readFixture } from "./golden/harness/fixture";
+
+/**
+ * The research gap prompt, fixed (walk fault W26). buildGapFinderPromptV2 is buildGapFinderPrompt with two exact replacements, and nothing else:
+ * the gap names its paper by the first author's surname and the year, not by its number, and a strength the papers share is not counted as a gap.
+ * v1's buildGapFinderPrompt and its golden test are unchanged.
+ */
+const GAP_V1_NAMING = "which numbered paper(s) it comes from";
+const GAP_V2_NAMING = `which paper(s) it comes from, named by the first author's surname and the year as listed (for example "(Surname, 2019)" or "(Surname et al., 2019)"), never by its number`;
+const GAP_V1_CLAIM = "Claim a gap only where the abstracts support it.";
+const GAP_V2_CLAIM = `Claim a gap only where the abstracts support it. A strength the papers share, such as random allocation, is not a gap, and "use other methods" is a gap only if you name what those methods could answer that these papers cannot.`;
+
+const paper = (n: number): RsPaper => ({ title: "Sleep and memory in students " + n, authors: "A. Rao", year: 2021, venue: "J. Psych", doi: "10.1/x" + n, source: "crossref", abstract: "We studied 120 students and found that sleep length predicted recall scores." });
+const P = [paper(1), paper(2)];
+const TEN = Array.from({ length: 10 }, (_, i) => paper(i + 1));
+
+describe("buildGapFinderPromptV2 (W26)", () => {
+  it("v1's prompt contains each v1 string exactly once", () => {
+    const v1 = buildGapFinderPrompt("psychology", P).prompt;
+    expect(v1.split(GAP_V1_NAMING).length - 1).toBe(1);
+    expect(v1.split(GAP_V1_CLAIM).length - 1).toBe(1);
+  });
+
+  it("v2 is v1 with the two replacements and nothing else", () => {
+    const v1 = buildGapFinderPrompt("psychology", P);
+    const v2 = buildGapFinderPromptV2("psychology", P);
+    expect(v2.prompt).toBe(v1.prompt.replace(GAP_V1_NAMING, GAP_V2_NAMING).replace(GAP_V1_CLAIM, GAP_V2_CLAIM));
+    expect(v2.prompt).not.toContain(GAP_V1_NAMING);
+    expect(v2.prompt.split(GAP_V2_CLAIM).length - 1).toBe(1);
+  });
+
+  it("keeps v1's sampling options", () => {
+    const v1 = buildGapFinderPrompt("psychology", P);
+    const v2 = buildGapFinderPromptV2("psychology", P);
+    expect(v2.temp).toBe(v1.temp);
+    expect(v2.max).toBe(v1.max);
+    expect(v2.noLang).toBe(v1.noLang);
+  });
+
+  it("stays under 60,000 characters for a full selection of papers", () => {
+    expect(buildGapFinderPromptV2("psychology", TEN).prompt.length).toBeLessThan(60000);
+  });
+});
+
+/**
+ * The idea prompt's area lines, fixed (walk fault W7). buildIdeaPromptV2 is buildIdeaPrompt with one exact replacement, and nothing else:
+ * each area's line starts with the area's name, not with the word "Area:". v1's buildIdeaPrompt and its golden test are unchanged.
+ */
+type IdeaCase = { field: string | null; inputs: { topic: string; resources?: string; timeframe?: string; constraints?: string }; prompt: string; opts: { temp: number; max: number } };
+const ideaGolden = readFixture<{ cases: IdeaCase[] }>("prompts-idea", "cases");
+
+describe("buildIdeaPromptV2 (W7)", () => {
+  it("v1's golden idea prompts each contain the v1 area format exactly once", () => {
+    expect(ideaGolden.cases).toHaveLength(9);
+    for (const c of ideaGolden.cases) expect(c.prompt.split(IDEA_AREA_FORMAT_V1).length - 1).toBe(1);
+  });
+
+  it("v2 is v1 with the one replacement and nothing else", () => {
+    const idea = { topic: "sleep and recall in college students" };
+    const v1 = buildIdeaPrompt("psychology", idea);
+    const v2 = buildIdeaPromptV2("psychology", idea);
+    expect(v2.prompt).toBe(v1.prompt.replace(IDEA_AREA_FORMAT_V1, IDEA_AREA_FORMAT_V2));
+    expect(v2.prompt).not.toContain(IDEA_AREA_FORMAT_V1);
+    expect(v2.prompt.split(IDEA_AREA_FORMAT_V2).length - 1).toBe(1);
+  });
+
+  it("keeps v1's sampling options", () => {
+    const idea = { topic: "sleep and recall in college students" };
+    const v1 = buildIdeaPrompt("psychology", idea);
+    const v2 = buildIdeaPromptV2("psychology", idea);
+    expect(v2.temp).toBe(v1.temp);
+    expect(v2.max).toBe(v1.max);
+  });
+
+  it("on each golden idea case, v2 is v1's golden prompt with the one replacement", () => {
+    for (const c of ideaGolden.cases) {
+      const v2 = buildIdeaPromptV2(fieldLabel(c.field), c.inputs);
+      expect({ prompt: v2.prompt, temp: v2.temp, max: v2.max }).toEqual({ prompt: c.prompt.replace(IDEA_AREA_FORMAT_V1, IDEA_AREA_FORMAT_V2), temp: c.opts.temp, max: c.opts.max });
+    }
+  });
+});

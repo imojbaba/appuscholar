@@ -5,12 +5,17 @@
 // never edited by hand (a mismatch with v1 is a port bug or a register row). No API key and no mailto are sent. Between live calls the script waits
 // 250 ms (OpenAlex, Crossref) or 400 ms (NCBI E-utilities, whose keyless limit is 3 requests a second).
 //
+// `--only a,b` records just the named cases and deletes nothing (it also refuses to overwrite a file that exists): node capture.mjs --only pm-v2-terms,pm-v2-rct.
+// The v2 recordings (pm-*-v2-*) are also listed in v2-manifest.json (file, url, status, sha256 of the body), which save() writes or updates for each of them: the golden
+// fixture (test/golden/fetch/cases.json) is v1's and is never edited, so test/fetch/openalex.test.ts checks these files against the manifest instead.
+// Case names: oa-<name> (OA_SEARCHES), pm-<name> (PM_SEARCHES and PM_V2_SEARCHES), oa-connected, oa-retractions, cr-doi, cr-title3, cr-title1, pm-pmid.
+//
 // The URLs are built here as v1 builds them (index.html build 2026.10.13a): rsFetchOpenAlex 8061, rsFetchPubmed 8103 and rsPubmedAbstracts 8088,
 // rsConnected 8498, retrFetchBatch 7571, apRefCheck 11245, rcCheckOne 7750, citPmidToDoi 7920 and citLookup 7944, with rsBuildQuery 8273 and
 // RS_DESIGN 8237 (read from src/data/research-tables.ts, which the golden harness generates from v1). The golden capture (test/golden/fetch/capture.ts)
 // replays these files to v1 itself and throws on any URL that is not here, so a URL this script builds differently from v1 is caught there.
 
-import { readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -44,6 +49,14 @@ export const PM_SEARCHES = [
   { name: "zero", topic: "qwxzjv flurble nonexistentterm", terms: [], design: "any", rank: false }, // esearch only
   { name: "noabstract", topic: "Comment[pt] Wakefield MMR", terms: [], design: "any", rank: false }, // efetch carries no AbstractText
   { name: "plain2", topic: "loneliness older adults intervention", terms: [], design: "any", rank: false },
+];
+/**
+ * PubMed searches of the v2 literature search (rsBuildQueryV2, Fix wave A Task 10), recorded with the exact esearch term it builds (retmax 6). Not v1 queries, so the
+ * golden capture does not replay them; only `--only` records them, and the full run does too so the corpus stays reproducible.
+ */
+export const PM_V2_SEARCHES = [
+  { name: "v2-terms", term: '(exam[tiab] AND anxiety[tiab]) OR "test anxiety"[tiab] OR "evaluation anxiety"[tiab]', rank: false },
+  { name: "v2-rct", term: '(exam[tiab] AND anxiety[tiab]) AND "Randomized Controlled Trial"[pt]', rank: false },
 ];
 /**
  * Connected papers (rsConnected 8498) of the first result of this OpenAlex search that has referenced works. OpenAlex no longer returns
@@ -105,7 +118,7 @@ const oaSearchUrl = (s) => {
   return "https://api.openalex.org/works?search=" + encodeURIComponent(rsBuildQuery(s.topic, "oa", s.terms, s.design)) + (filter ? "&filter=" + filter : "") + "&per-page=" + (s.rank ? 25 : 8) + OA_SELECT;
 };
 const EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
-const esearchUrl = (s) => EUTILS + "esearch.fcgi?db=pubmed&retmode=json&retmax=" + (s.rank ? 15 : 6) + "&term=" + encodeURIComponent(rsBuildQuery(s.topic, "pm", s.terms, s.design));
+const esearchUrl = (s) => EUTILS + "esearch.fcgi?db=pubmed&retmode=json&retmax=" + (s.rank ? 15 : 6) + "&term=" + encodeURIComponent(s.term || rsBuildQuery(s.topic, "pm", s.terms, s.design));
 const esummaryUrl = (ids) => EUTILS + "esummary.fcgi?db=pubmed&retmode=json&id=" + ids.join(",");
 const efetchUrl = (ids) => EUTILS + "efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=" + ids.join(",");
 const pmidUrl = (pmid) => EUTILS + "esummary.fcgi?db=pubmed&retmode=json&id=" + encodeURIComponent(pmid);
@@ -125,14 +138,30 @@ const crTitle1Url = (q) => "https://api.crossref.org/works?rows=1&query.bibliogr
 
 // ---- Recording ---------------------------------------------------------------------------------------------------------------------------------------
 
+const argv = process.argv.slice(2);
+const onlyAt = argv.indexOf("--only");
+const ONLY = onlyAt < 0 ? null : new Set((argv[onlyAt + 1] || "").split(",").filter(Boolean));
+if (onlyAt >= 0 && !ONLY.size) throw new Error("--only needs a comma-separated list of case names");
+const want = (name) => !ONLY || ONLY.has(name);
 const written = new Map(); // url → file
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const short = (url) => createHash("sha256").update(url).digest("hex").slice(0, 8);
 
+const MANIFEST = DIR + "v2-manifest.json";
+function listInManifest(file, record) {
+  const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, "utf8")) : { note: "The v2 recordings (not v1 requests, so not in test/golden/fetch/cases.json, which is v1's and never edited). Written by capture.mjs.", recorded: [] };
+  manifest.recorded = manifest.recorded.filter((r) => r.url !== record.url && r.file !== file);
+  manifest.recorded.push({ file, url: record.url, status: record.status, sha256: createHash("sha256").update(record.body).digest("hex") });
+  manifest.recorded.sort((a, b) => (a.file < b.file ? -1 : 1));
+  writeFileSync(MANIFEST, JSON.stringify(manifest, null, 1) + "\n");
+}
+
 function save(file, record) {
   if (written.has(record.url)) return;
   written.set(record.url, file);
+  if (ONLY && readdirSync(DIR).includes(file)) throw new Error(`--only: ${file} already exists and is not overwritten`);
   writeFileSync(DIR + file, JSON.stringify(record, null, 1) + "\n");
+  if (/^pm-(esearch|esummary|efetch)-v2-/.test(file)) listInManifest(file, record);
   console.log(`${file} ${record.status} ${record.body.length} chars`);
 }
 
@@ -149,16 +178,29 @@ async function record(name, url, expect = 200) {
 }
 
 async function main() {
-  for (const f of readdirSync(DIR)) if (f.endsWith(".json")) unlinkSync(DIR + f);
+  if (!ONLY) for (const f of readdirSync(DIR)) if (f.endsWith(".json")) unlinkSync(DIR + f);
+
+  const known = new Set(["oa-connected", "oa-retractions", "cr-doi", "cr-title3", "cr-title1", "pm-pmid"]);
+  for (const s of OA_SEARCHES) known.add("oa-" + s.name);
+  for (const s of [...PM_SEARCHES, ...PM_V2_SEARCHES]) known.add("pm-" + s.name);
+  for (const n of ONLY || []) if (!known.has(n)) throw new Error(`--only: unknown case "${n}"; the cases are ${[...known].join(", ")}`);
 
   const oaBodies = {};
-  for (const s of OA_SEARCHES) oaBodies[s.name] = JSON.parse(await record(`oa-search-${s.name}`, oaSearchUrl(s)));
-  save(`oa-search-429-${short(oaSearchUrl(OA_429))}.json`, {
+  for (const s of OA_SEARCHES) {
+    // oa-connected reads the CONNECTED_FROM search; under --only that search is fetched without being saved when it is not itself named.
+    if (want("oa-" + s.name)) oaBodies[s.name] = JSON.parse(await record(`oa-search-${s.name}`, oaSearchUrl(s)));
+    else if (ONLY && s.name === CONNECTED_FROM && want("oa-connected")) {
+      await sleep(250);
+      oaBodies[s.name] = await (await fetch(oaSearchUrl(s))).json();
+    }
+  }
+  if (!ONLY) save(`oa-search-429-${short(oaSearchUrl(OA_429))}.json`, {
     url: oaSearchUrl(OA_429), status: 429, headers: { "content-type": "application/json" }, body: SYNTHETIC_429_BODY,
     synthetic: true, note: "Written by hand, never served by OpenAlex: the 429 case (v1 oaHttpError 8032).",
   });
 
-  for (const s of PM_SEARCHES) {
+  for (const s of [...PM_SEARCHES, ...PM_V2_SEARCHES]) {
+    if (!want("pm-" + s.name)) continue;
     const sj = JSON.parse(await record(`pm-esearch-${s.name}`, esearchUrl(s)));
     const ids = (sj.esearchresult && sj.esearchresult.idlist) || [];
     if (!ids.length) continue;
@@ -166,19 +208,23 @@ async function main() {
     await record(`pm-efetch-${s.name}`, efetchUrl(ids));
   }
 
-  const p = (oaBodies[CONNECTED_FROM].results || []).find((w) => (w.referenced_works || []).length);
-  if (!p) throw new Error(`connected: no result of the ${CONNECTED_FROM} search has referenced works`);
-  const ids = p.referenced_works.slice(0, 8).map((u) => u.split("/").pop()).join("|");
-  await record("oa-connected-cites", "https://api.openalex.org/works?filter=openalex_id:" + ids + BRIEF);
-  await record("oa-connected-citedby", (p.cited_by_api_url || citedByUrlOf(p.id.split("/").pop())) + BRIEF);
+  if (want("oa-connected")) {
+    const p = (oaBodies[CONNECTED_FROM].results || []).find((w) => (w.referenced_works || []).length);
+    if (!p) throw new Error(`connected: no result of the ${CONNECTED_FROM} search has referenced works`);
+    const ids = p.referenced_works.slice(0, 8).map((u) => u.split("/").pop()).join("|");
+    await record("oa-connected-cites", "https://api.openalex.org/works?filter=openalex_id:" + ids + BRIEF);
+    await record("oa-connected-citedby", (p.cited_by_api_url || citedByUrlOf(p.id.split("/").pop())) + BRIEF);
+  }
 
-  await record("oa-retractions", retrUrl(RETRACTION_DOIS));
-  await record("oa-refcheck", apRefUrl(RETRACTION_DOIS));
+  if (want("oa-retractions")) {
+    await record("oa-retractions", retrUrl(RETRACTION_DOIS));
+    await record("oa-refcheck", apRefUrl(RETRACTION_DOIS));
+  }
 
-  for (const [i, doi] of CR_DOIS.entries()) await record(`cr-doi-${String(i + 1).padStart(2, "0")}`, crDoiUrl(doi), doi.startsWith("10.9999/") ? 404 : 200);
-  for (const [i, e] of CR_TITLE_SEARCHES.entries()) await record(`cr-title3-${i + 1}`, crTitle3Url(e));
-  for (const [i, q] of CR_FIRST_SEARCHES.entries()) await record(`cr-title1-${i + 1}`, crTitle1Url(q));
-  for (const pmid of PMIDS) await record(`pm-pmid-${pmid}`, pmidUrl(pmid));
+  if (want("cr-doi")) for (const [i, doi] of CR_DOIS.entries()) await record(`cr-doi-${String(i + 1).padStart(2, "0")}`, crDoiUrl(doi), doi.startsWith("10.9999/") ? 404 : 200);
+  if (want("cr-title3")) for (const [i, e] of CR_TITLE_SEARCHES.entries()) await record(`cr-title3-${i + 1}`, crTitle3Url(e));
+  if (want("cr-title1")) for (const [i, q] of CR_FIRST_SEARCHES.entries()) await record(`cr-title1-${i + 1}`, crTitle1Url(q));
+  if (want("pm-pmid")) for (const pmid of PMIDS) await record(`pm-pmid-${pmid}`, pmidUrl(pmid));
 
   console.log(`${written.size} files`);
 }

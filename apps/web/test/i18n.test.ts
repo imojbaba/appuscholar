@@ -7,6 +7,7 @@ import { join } from "node:path";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
 import { tFormat } from "../lib/i18n";
+import { PANEL_FIXES, applyPanelFixes, withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 describe("v1 chrome strings", () => {
   it("has the keys the workspace uses, verbatim", () => {
@@ -92,6 +93,17 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
     }
     const prefixed = Object.keys(E).filter(k => /^(rs2|ap2|sh2)_/.test(k));
     expect(prefixed.sort()).toEqual(keys);
+  });
+  it("no student-facing value says Appuscholer (W21)", () => {
+    for (const v of [...Object.values(en), ...Object.values(hi)]) expect(v).not.toMatch(/Appuscholer/);
+  });
+  it("applyPanelFixes corrects both languages and throws when a key is missing or has nothing to fix", () => {
+    const d = Object.fromEntries(PANEL_FIXES.keys.map((k) => [k, "Made with Appuscholer."]));
+    const fixed = applyPanelFixes(d, d);
+    expect(Object.values(fixed.en).concat(Object.values(fixed.hi))).toEqual(Array(8).fill("Made with Appuscholar."));
+    expect(withPanelFixes("Appuscholer and Appuscholer")).toBe("Appuscholar and Appuscholar");
+    expect(() => applyPanelFixes({}, {})).toThrow(/missing/);
+    expect(() => applyPanelFixes(fixed.en, fixed.hi)).toThrow(/no match/);
   });
   it("holds all three families, rs2_ (Research), ap2_ (Analyse) and sh2_ (Reading shelf)", () => {
     // en.json is generated and the extractor throws when a new key shadows an existing one; this pins that no family went missing.

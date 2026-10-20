@@ -9,7 +9,7 @@ import hi from "../messages/hi.json";
 // The two fetchers are core's, wrapped so the test sees what runSearch hands them.
 vi.mock("@appuscholar/core", async (orig) => {
   const m = await orig<typeof import("@appuscholar/core")>();
-  return { ...m, oaSearch: vi.fn(m.oaSearch), pmSearch: vi.fn(m.pmSearch) };
+  return { ...m, oaSearch: vi.fn(m.oaSearch), pmSearchV2: vi.fn(m.pmSearchV2) };
 });
 
 import { pickedTerms, rankPapers, suggestTerms } from "../lib/ai/actions";
@@ -29,7 +29,7 @@ const t = (key: string, vars?: Record<string, string | number>) => tFormat(E, hi
 
 const CORE_TEST = join(__dirname, "../../../packages/core/test");
 type Rec = { url: string; status: number; headers: Record<string, string | null>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json")).map((f) => {
+const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
   const r = JSON.parse(readFileSync(join(CORE_TEST, "fetch/recorded", f), "utf8")) as Rec;
   return [r.url, r];
 }));
@@ -63,8 +63,10 @@ function deps(over: Partial<SearchDeps> = {}) {
   };
   return { d, log };
 }
-const oa = vi.mocked(core.oaSearch), pm = vi.mocked(core.pmSearch);
-beforeEach(() => { requested = []; oa.mockClear(); pm.mockClear(); });
+const oa = vi.mocked(core.oaSearch), pm = vi.mocked(core.pmSearchV2);
+// runSearch hands PubMed's job to pmSearchV2 (W12). The cases below hold the orchestration to v1's recorded requests, which are the untagged ones, so pmSearchV2 stands in with
+// v1's pmSearch (core's own tests hold pmSearchV2 to its recordings); "PubMed reads the topic's own words" at the end runs the real pmSearchV2.
+beforeEach(() => { requested = []; oa.mockClear(); pm.mockReset(); pm.mockImplementation(core.pmSearch); });
 
 describe("researchSearch's refusals (8284-8290)", () => {
   const base: SearchInput = { topic: "exam anxiety", oa: true, pm: true, design: "any", designLabel: "Any", rank: false, terms: [] };
@@ -95,6 +97,10 @@ describe("researchSearch's refusals (8284-8290)", () => {
   });
 });
 
+/** A paper list as v1 built it: without the fields wave A added (W2), as packages/core/test/fetch/replay.ts's v1View. */
+const V2_PAPER_KEYS = ["authorList", "volume", "issue", "pages"];
+const v1View = (papers: Array<Record<string, unknown>>) => papers.map((p) => Object.fromEntries(Object.entries(p).filter(([k]) => !V2_PAPER_KEYS.includes(k))));
+
 describe("researchSearch over the recorded responses equals v1", () => {
   for (const c of FX.searches) {
     it(`${c.name}: the fetchers' inputs, the merged papers and #rsStatus byte-equal to v1`, async () => {
@@ -110,7 +116,9 @@ describe("researchSearch over the recorded responses equals v1", () => {
       if (c.in.pm) expect(pm).toHaveBeenCalledWith(expect.any(Function), { q: c.in.topic.trim(), terms: c.in.terms, design: c.in.design, retmax: c.in.rank ? 15 : 6 });
       else expect(pm).not.toHaveBeenCalled();
       expect([...requested].sort()).toEqual([...c.requested].sort());
-      expect(JSON.parse(JSON.stringify(out!.papers))).toEqual(c.merged);
+      // Wave A (W2) adds authorList, volume, issue and pages to each paper (core's test/fetch v1View); the rest is v1's, byte for byte.
+      expect(v1View(JSON.parse(JSON.stringify(out!.papers)) as Array<Record<string, unknown>>)).toEqual(c.merged);
+      for (const p of out!.papers) expect(Array.isArray(p.authorList)).toBe(true);
       expect(out!.status).toBe(c.status);
       if (c.in.rank) expect(log.statuses[1]).toBe(`🔎 ${c.merged.length} papers found. Reading titles and abstracts to rank them…`);
     });
@@ -265,11 +273,14 @@ describe("Suggest related terms (rsSuggestTerms 8251-8263)", () => {
 });
 
 describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 8486-8491)", () => {
+  // Wave A (W2): addResult then asks Crossref for an OpenAlex paper's volume, issue and pages; here Crossref is offline, so nothing is filled (research.test.tsx covers the fill).
+  const offline = (async () => { throw new TypeError("Failed to fetch"); }) as typeof fetch;
+  const noFill = () => true;
   const oaPaper = { source: "OpenAlex", title: "Growth mindset and grades", authors: "Carol S. Dweck, David Yeager, et al.", year: "2019", venue: "Nature", doi: "10.1038/S41586-019-1466-Y", url: "https://doi.org/10.1038/s41586-019-1466-y", retracted: false, citationCount: 3 };
   function make(lib: core.CitationEntry[] = [], updateOk = true) {
     const log = { toasts: [] as string[], seeds: [] as Array<[string, boolean]>, next: null as core.CitationEntry[] | null, inserted: [] as core.Formatted[] };
     const d: AddDeps & { insert(f: core.Formatted): void } = {
-      lib, style: "apa", t, known: true, whenRead: async () => true,
+      lib, style: "apa", t, known: true, whenRead: async () => true, fetch: offline, fillEmpty: noFill,
       update: (fn) => { if (!updateOk) return false; log.next = fn(lib); return true; },
       seedRetraction: (doi, flag) => { log.seeds.push([doi, flag]); },
       toast: (m) => { log.toasts.push(m); },
@@ -308,7 +319,7 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
     const whenRead = () => new Promise<boolean>((r) => { read = r; });
     // the blob applies the update to a stand-in while unread, then to the stored library once it is read
     let apply!: () => void;
-    addResult(oaPaper, { lib: [], style: "apa", t, known: false, whenRead, toast: (m) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; },
+    addResult(oaPaper, { lib: [], style: "apa", t, known: false, whenRead, fetch: offline, fillEmpty: noFill, toast: (m) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; },
       update: (fn) => { fn([]); apply = () => { log.next = fn(stored); }; return true; } });
     expect(log.toasts).toEqual([]);
     apply();
@@ -320,7 +331,7 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
   });
   it("added while unread and new: once read, the seed and v1's toast; a read still declined says nothing", async () => {
     const log = { toasts: [] as string[], seeds: 0 };
-    const base = { lib: [], style: "apa" as const, t, known: false, toast: (m: string) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; }, update: (fn: (p: core.CitationEntry[]) => core.CitationEntry[]) => { fn([]); return true; } };
+    const base = { lib: [], style: "apa" as const, t, known: false, fetch: offline, fillEmpty: noFill, toast: (m: string) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; }, update: (fn: (p: core.CitationEntry[]) => core.CitationEntry[]) => { fn([]); return true; } };
     addResult(oaPaper, { ...base, whenRead: async () => true });
     await new Promise((r) => setTimeout(r, 0));
     expect(log.toasts).toEqual(["Added to citation library ✓ — check author formatting before you submit"]);
@@ -345,5 +356,18 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
     expect(log.next).toBeNull();
     expect(log.inserted).toEqual([core.citFmt(saved, 0, "apa")]);
     expect(log.toasts).toEqual([E.retr_added_warn]);
+  });
+});
+
+describe("PubMed reads the topic's own words (W12)", () => {
+  it("runSearch asks PubMed with pmSearchV2: the topic's words tagged [tiab], the recorded search, and only papers about anxiety", async () => {
+    const actual = await vi.importActual<typeof import("@appuscholar/core")>("@appuscholar/core");
+    pm.mockImplementation(actual.pmSearchV2);
+    const { d } = deps({ fetch: replay() });
+    const out = await runSearch({ topic: "exam anxiety", oa: false, pm: true, design: "rct", designLabel: "Randomised trial", rank: false, terms: [] }, d);
+    expect(pm).toHaveBeenCalledWith(expect.any(Function), { q: "exam anxiety", terms: [], design: "rct", retmax: 6 });
+    expect(requested.filter((u) => u.includes("esearch")).map((u) => decodeURIComponent(u.split("term=")[1]!))).toEqual(['(exam[tiab] AND anxiety[tiab]) AND "Randomized Controlled Trial"[pt]']);
+    expect(out!.papers).toHaveLength(6);
+    for (const p of out!.papers) expect(p.title + " " + p.abstract).toMatch(/anxi/i);
   });
 });
