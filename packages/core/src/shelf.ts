@@ -197,13 +197,15 @@ export function buildShelfSummaryPrompt(field: string, full: string): Built {
 
 /** The most body text buildShelfSummaryPromptV2 sends (walk fault W18; v1 sent the first 12,000 characters). OJ approved 18,000 on 2026-10-20. */
 export const SHELF_SUMMARY_BUDGET_V2 = 18000;
+/** The most that tier 0 (the first passage and the passages under Abstract, text and labels) may take; a passage under Abstract beyond it is "the rest" (or a limitations passage, if its text says so), so an abstract that runs on cannot push out the limitations. */
+export const SHELF_SUMMARY_TIER0_CAP_V2 = 3000;
 /** The label of a passage as apPick writes it, and the blank line that joins it to the next. */
 const shPassageLabel = (c: ApChunk): string => '[ '+(c.page?'page '+c.page:'text')+(c.sec?', '+c.sec:'')+' ]\n';
 const SH_LIMITS_RX = /\b(limitations?|shortcomings?|weakness(?:es)?)\b/i;
 /** The tier of a passage (0 the first priority): see shSummaryPick. A passage takes the first tier it fits. */
-function shSummaryTier(c: ApChunk, first: boolean): number{
+function shSummaryTier(c: ApChunk, first: boolean, abstractOk: boolean = true): number{
   const sec=c.sec.toLowerCase();
-  if(first||sec==='abstract')return 0;
+  if(first||(abstractOk&&sec==='abstract'))return 0;
   if(sec==='limitations'||SH_LIMITS_RX.test(c.text))return 1;
   if(/^(discussion|general discussion|conclusions?)$/.test(sec))return 2;
   if(/^(method|methods|methodology|participants|sample|design|procedure|measures?|materials|instruments?)$/.test(sec))return 3;
@@ -236,7 +238,14 @@ export function shSummaryPick(doc: ApDoc, budget: number = SHELF_SUMMARY_BUDGET_
   if(total>budget){
     partial=true;
     ch=ch.flatMap(shSplitLong);
-    const tier=ch.map((c,i)=>shSummaryTier(c,i===0));
+    let t0=0;
+    const tier=ch.map((c,i)=>{
+      const t=shSummaryTier(c,i===0);
+      if(t!==0||i===0){if(t===0)t0+=shPassageLabel(c).length+c.text.length+2;return t}
+      const cost=shPassageLabel(c).length+c.text.length+2;
+      if(t0+cost<=SHELF_SUMMARY_TIER0_CAP_V2){t0+=cost;return 0}
+      return shSummaryTier(c,false,false);
+    });
     let used=0;const keep: boolean[]=ch.map(()=>false);
     for(let t=0;t<=5;t++)ch.forEach((c,i)=>{
       if(tier[i]!==t)return;

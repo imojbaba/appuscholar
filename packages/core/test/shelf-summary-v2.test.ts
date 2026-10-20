@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildShelfSummaryPrompt, buildShelfSummaryPromptV2, shSummaryPick, shSummaryText, SHELF_SUMMARY_BUDGET_V2 } from "../src/shelf";
+import { buildShelfSummaryPrompt, buildShelfSummaryPromptV2, shSummaryPick, SHELF_SUMMARY_TIER0_CAP_V2, shSummaryText, SHELF_SUMMARY_BUDGET_V2 } from "../src/shelf";
 import { apBuild } from "../src/analyse";
 
 /**
@@ -128,6 +128,27 @@ describe("buildShelfSummaryPromptV2 (W18)", () => {
       expect(v2.prompt).toContain("\n\nPAPER TEXT");
       expect({ temp: v2.temp, max: v2.max, noLang: v2.noLang }).toEqual({ temp: v1.temp, max: v1.max, noLang: v1.noLang });
     }
+  });
+
+  it("an abstract section that runs on (an unknown heading after the abstract) cannot push the limitations out", () => {
+    // "Study 1" is not a heading Analyse knows, so everything after the abstract stays under Abstract.
+    const text = ["Abstract\n" + filler("Abs", 4), "Study 1\n" + filler("Run", 280), "Limitations\n" + LIMITATION_SENTENCE, "Conclusion\n" + filler("Conc", 4)].join("\n");
+    const doc = apBuild("", [text], "pdf");
+    expect(doc.chunks.filter((c) => c.sec === "Abstract").reduce((a, c) => a + c.text.length, 0)).toBeGreaterThan(20000);
+    const b = buildShelfSummaryPromptV2("psychology", [text]);
+    expect(b.pick.partial).toBe(true);
+    expect(b.prompt).toContain(LIMITATION_SENTENCE);
+    expect(b.prompt).toContain("Abs sentence number 0");
+    expect(b.prompt.length).toBeLessThan(20000);
+    // with a small budget the rest of the abstract section gets what is left after the limitations
+    const small = shSummaryPick(doc, 4500);
+    expect(small.text).toContain(LIMITATION_SENTENCE);
+    expect(small.text).toContain("Abs sentence number 0");
+    expect(small.text.length).toBeLessThanOrEqual(4500);
+  });
+
+  it("the tier-0 cap is 3,000", () => {
+    expect(SHELF_SUMMARY_TIER0_CAP_V2).toBe(3000);
   });
 
   it("the budget is 18,000", () => {
