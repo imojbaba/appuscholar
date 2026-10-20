@@ -43,15 +43,28 @@ describe("resolveShelfTitle (W15)", () => {
     const r = await resolveShelfTitle(PAGES, "scirep", { lib: [], lookupDoi });
     expect(r.title).toBe(shTitleGuess(PAGES, "scirep"));
     expect(r.title).not.toContain("reading comprehension");
-    expect(r.doi).toBe(DOI);
+    expect(r).not.toHaveProperty("doi"); // the printed DOI is not proven to be this paper's
   });
 
   it("a paper already in the library by DOI takes the library's title without a lookup", async () => {
     const lookupDoi = vi.fn(async () => null);
-    const lib: CitationEntry[] = [{ title: "The Library's Own Title For It", doi: "https://doi.org/" + DOI.toUpperCase() }];
+    const lib: CitationEntry[] = [{ title: "Daily Screen Time and Sleep Quality in Adolescents", doi: "https://doi.org/" + DOI.toUpperCase() }];
     const r = await resolveShelfTitle(PAGES, "scirep", { lib, lookupDoi });
-    expect(r).toEqual({ title: "The Library's Own Title For It", doi: DOI });
+    expect(r).toEqual({ title: "Daily Screen Time and Sleep Quality in Adolescents", doi: DOI });
     expect(lookupDoi).not.toHaveBeenCalled();
+  });
+
+  it("a library entry for a DOI printed on page 1 whose title is not on page 1 does not rename the paper", async () => {
+    // Page 1 prints another paper's DOI first (a "see also"), and the student has that paper in the library.
+    const lookupDoi = vi.fn(async () => null);
+    const lib: CitationEntry[] = [{ title: "The cited paper about reading comprehension", doi: DOI }];
+    const r = await resolveShelfTitle(PAGES, "scirep", { lib, lookupDoi });
+    expect(r).toEqual({ title: shTitleGuess(PAGES, "scirep") });
+    expect(r).not.toHaveProperty("doi");
+    expect(lookupDoi).toHaveBeenCalledWith(DOI); // falls through to Crossref, whose title is checked the same way
+    // Crossref's title for it is on the page: that one is used.
+    const via = await resolveShelfTitle(PAGES, "scirep", { lib, lookupDoi: async () => ({ title: TITLE }) });
+    expect(via).toEqual({ title: TITLE, doi: DOI });
   });
 
   it("with no DOI, a library title found on page 1 is used (the longest wins)", async () => {
@@ -73,10 +86,10 @@ describe("resolveShelfTitle (W15)", () => {
 
   it("Crossref failing or taking 4 s falls back without blocking the add", async () => {
     const failed = await resolveShelfTitle(PAGES, "scirep", { lib: [], lookupDoi: async () => { throw new Error("HTTP 500"); } });
-    expect(failed).toEqual({ title: shTitleGuess(PAGES, "scirep"), doi: DOI });
+    expect(failed).toEqual({ title: shTitleGuess(PAGES, "scirep") });
     // A library title on page 1 is still found when the lookup fails.
     const viaLib = await resolveShelfTitle(PAGES, "scirep", { lib: [{ title: TITLE }], lookupDoi: async () => { throw new Error("offline"); } });
-    expect(viaLib).toEqual({ title: TITLE, doi: DOI });
+    expect(viaLib).toEqual({ title: TITLE });
 
     vi.useFakeTimers();
     const slow = resolveShelfTitle(PAGES, "scirep", { lib: [], lookupDoi: () => new Promise(() => {}) });
@@ -85,7 +98,7 @@ describe("resolveShelfTitle (W15)", () => {
     await vi.advanceTimersByTimeAsync(SHELF_TITLE_TIMEOUT_MS - 1);
     expect(done).toBe(false);
     await vi.advanceTimersByTimeAsync(2);
-    expect(await slow).toEqual({ title: shTitleGuess(PAGES, "scirep"), doi: DOI });
+    expect(await slow).toEqual({ title: shTitleGuess(PAGES, "scirep") });
     expect(SHELF_TITLE_TIMEOUT_MS).toBe(4000);
   });
 });
