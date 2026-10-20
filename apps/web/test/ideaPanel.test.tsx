@@ -146,7 +146,7 @@ describe("Idea & Feasibility: Assess feasibility", () => {
     expect(h.callAI).not.toHaveBeenCalled();
   });
 
-  it("sends v1's prompt for the four fields and the student's field, with temp 0.3 and max 1200, and lands in the suggestion pane", async () => {
+  it("sends the V2 idea prompt (buildIdeaPromptV2) for the four fields and the student's field, with temp 0.3 and max 1200, and lands in the suggestion pane", async () => {
     h.blob.value = STORED;
     mount();
     await click("idea-assess");
