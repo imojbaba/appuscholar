@@ -53,7 +53,7 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
         {opening ? <PanelLoading /> : cards.length === 0 ? <p className="desc">{t("cite_no_sources")}</p> : cards.map(({ d, f, html }, i) => (
           <div className={"cit-item" + (i === active.index ? " cit-active" : "")} data-testid="cite-card" data-cite-index={i} key={i}>
             {/* citDel 7509 puts the light out. */}
-            <button type="button" className="del" data-testid="cite-del" title={REMOVE_TITLE} aria-label={REMOVE_TITLE} onClick={() => { setCiteActive(-1); library.remove(i); }}>✕</button>
+            <button type="button" className="del" data-testid="cite-del" title={REMOVE_TITLE} aria-label={REMOVE_TITLE} onClick={() => { setCiteActive(-1); library.remove(d); }}>✕</button>
             <b>{citLastName(d.author)}, {d.year || "n.d."}</b><br />
             <span data-testid="cite-ref" dangerouslySetInnerHTML={{ __html: html }} />
             <div data-cite-slot="cite-used"><CiteUsed used={usage.usage[i] ?? []} onOpen={(id) => { void selectDoc(id); }} /></div>

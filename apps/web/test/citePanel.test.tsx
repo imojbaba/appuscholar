@@ -491,7 +491,7 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     expect(toasts()).toEqual(["Citation inserted ✓"]);
   });
 
-  it("✕ removes that card by index, as an update", async () => {
+  it("✕ removes that card's entry, as an update", async () => {
     h.blob.value = [BANDURA, MILLER];
     mount();
     const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[0]!;
@@ -499,5 +499,27 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
     expect(up([BANDURA, MILLER])).toEqual([MILLER]);
     expect(up(null)).toEqual([]);
+  });
+
+  it("✕ replayed onto a newer library (another window removed an earlier entry) still removes the card's own entry", async () => {
+    h.blob.value = [BANDURA, MILLER];
+    mount();
+    // The second card: MILLER.
+    const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[1]!;
+    await act(async () => { del.click(); });
+    const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
+    expect(up([BANDURA, MILLER])).toEqual([BANDURA]);
+    // A 409 replays the update onto what the other window saved: BANDURA gone, MILLER now first.
+    expect(up([MILLER])).toEqual([]);
+    // Another window added an entry before it: MILLER is still the one removed.
+    const X: CitationEntry = { type: "Book", author: "Xu, Li", year: "2001", title: "Another book", source: "Press" };
+    expect(up([X, BANDURA, MILLER])).toEqual([X, BANDURA]);
+    // The same entry with its keys in another order (a parse elsewhere) is the same entry.
+    const reordered = Object.fromEntries(Object.entries(MILLER).reverse()) as CitationEntry;
+    expect(up([BANDURA, reordered])).toEqual([BANDURA]);
+    // Already removed elsewhere: nothing else goes.
+    expect(up([BANDURA, X])).toEqual([BANDURA, X]);
+    // Two identical entries: one goes.
+    expect(up([MILLER, MILLER])).toEqual([MILLER]);
   });
 });

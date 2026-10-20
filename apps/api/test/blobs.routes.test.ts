@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { SignJWT } from "jose";
 import { createApp } from "../src/app";
 import { MemoryStore } from "../src/store/memory";
+import { VersionConflictError } from "../src/store/types";
 import { BLOB_KINDS, isBlobKind } from "../src/routes/blobWrite";
 
 const SECRET = "test-secret-test-secret-test-secret-1234";
@@ -215,6 +216,24 @@ describe("blob routes", () => {
     const clash = await putIf("ap_cols", '"0"', { body: ct("c.d"), keyVersion: 1, dek: { v: 1, wrapped: "other" } });
     expect(clash.status).toBe(409);
     expect(await json(clash)).toEqual({ error: "version-conflict", version: 1 });
+  });
+
+  it("a version conflict the store finds after the route's own check (a save that landed in between) is 409 version-conflict with the store's version", async () => {
+    /** A store whose write loses the race the route's early check could not see: another save lands between the check and the write. */
+    class RacingStore extends MemoryStore {
+      override async putBlob(...a: Parameters<MemoryStore["putBlob"]>): ReturnType<MemoryStore["putBlob"]> {
+        if (a[3].expectedVersion !== undefined) throw new VersionConflictError(7);
+        return super.putBlob(...a);
+      }
+    }
+    store = new RacingStore();
+    app = createApp({ store, jwtSecret: SECRET, maxBodyBytes: MAX });
+    pid = (await json<{ id: string }>(await req("POST", "/projects", { title: "Sleep" }))).id;
+    await req("PUT", blob("citations"), { body: "[1]", keyVersion: 0 });
+    const res = await putIf("citations", '"1"', { body: "[2]", keyVersion: 0 });
+    expect(res.status).toBe(409);
+    expect(await json(res)).toEqual({ error: "version-conflict", version: 7 });
+    expect(await json(await req("GET", blob("citations")))).toMatchObject({ body: "[1]", version: 1 });
   });
 
   it("GET answers the version in the body and as the ETag", async () => {

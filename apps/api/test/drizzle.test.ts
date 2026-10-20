@@ -143,6 +143,18 @@ if (!url) {
       expect(creates.filter((r) => r.status === "rejected" && r.reason instanceof VersionConflictError)).toHaveLength(1);
     });
 
+    it("a save with no dek that loses a delete-and-recreate race is a VersionConflictError, not a TypeError", async () => {
+      const { d, store: plain, users: u } = await makeEnv();
+      const p = await plain.createProject(u.a, "Sleep");
+      await plain.putBlob(u.a, p.id, "citations", { body: "[0]", keyVersion: 0 });
+      // The conditional update finds no row (deleted at that moment), and the re-read finds one re-created at the version the save named.
+      const racing = new Proxy(d, { get: (t, k, r) => (k === "update" ? () => ({ set: () => ({ where: () => ({ returning: async () => [] }) }) }) : Reflect.get(t, k, r)) });
+      const store = new DrizzleStore(racing as typeof d);
+      const err = await store.putBlob(u.a, p.id, "citations", { body: "[1]", keyVersion: 0, expectedVersion: 1 }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(VersionConflictError);
+      expect((err as VersionConflictError).current).toBe(1);
+    });
+
     it("a row from before the version column reads as version 0 and takes a create-style save", async () => {
       const { d, store, users: u } = await makeEnv();
       const p = await store.createProject(u.a, "Sleep");

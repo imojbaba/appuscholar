@@ -861,6 +861,123 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(s.b.error).toBe(false);
   });
 
+  it("a save whose answer is a 5xx after the store took it (a gateway timeout) is not replayed twice", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let gateway = false;
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      const r = await fakeApi(path, init);
+      if (gateway && init?.method === "PUT" && path.includes("/blobs/")) throw new ApiError(504, "gateway-timeout");
+      return r;
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    gateway = true;
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(s.b.error).toBe(true);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    gateway = false;
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"', '"1"', '"2"']);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, Y, Z], error: false });
+  });
+
+  it("a 4xx answer is a known failure: the next save sends the edit again", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let refuse = false;
+    h.api.mockImplementation((path: string, init?: RequestInit) => {
+      if (refuse && init?.method === "PUT" && path.includes("/blobs/")) { server.calls.push({ path, method: "PUT" }); return Promise.reject(new ApiError(413, "too-large")); }
+      return fakeApi(path, init);
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    refuse = true;
+    act(() => { s.b.set(add(Y)); });
+    await act(async () => { await s.b.flush(); });
+    expect(s.b.error).toBe(true);
+    refuse = false;
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    expect(s.b).toMatchObject({ value: [A, Y], error: false });
+  });
+
+  it("a 409 re-read that finds a blob that will not open holds the value and shows broken; nothing is written until the panel sets over it (R16)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    // Another window (or a damaged write) leaves a body this build cannot read.
+    const cur = blobOf("p1", "citations");
+    server.blobs = [{ ...cur, body: "{not json", version: 2 }];
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"']);
+    expect(blobOf("p1", "citations").body).toBe("{not json");
+    // The panel is told, as after a first read of a broken blob: useLibrary asks before its next write.
+    expect(s.b).toMatchObject({ value: null, broken: true });
+    expect(shouldWarnOnUnloadBlobs()).toBe(true);
+    // Neither a flush nor the debounce sends it on its own.
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(putsTo("p1", "citations")).toHaveLength(1);
+    expect(blobOf("p1", "citations").body).toBe("{not json");
+    // The student said yes (R16): the next set goes on from what this window held, and is saved over the broken blob.
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    expect(s.b.value).toEqual([A, Y, Z]);
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"', '"2"']);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, Y, Z], broken: false, error: false });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  it("a value held over a broken blob is not sent by the held-blobs drain once the panel goes away (no panel to ask, R16)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ ...blobOf("p1", "citations"), body: "{not json", version: 2 }];
+    act(() => { s.b.set(add(Y)); });
+    await act(async () => { await s.b.flush(); });
+    expect(s.b.broken).toBe(true);
+    s.unmount();
+    await settle(50);
+    await act(async () => { await heldBlobs.drain(); });
+    expect(putsTo("p1", "citations")).toHaveLength(1);
+    expect(blobOf("p1", "citations").body).toBe("{not json");
+  });
+
+  it("a 409 re-read that finds the blob deleted elsewhere (a shelf paper removed) drops the edits: nothing is re-created", async () => {
+    const kind = shelfPaperKind("x1");
+    const PAPER = { pages: ["Page one."], notes: [], cells: {} };
+    server.blobs = [{ projectId: "p1", kind, body: JSON.stringify(PAPER), keyVersion: 0, deks: [], version: 3 }];
+    const s = await mount(kind, "p1");
+    await until(() => !s.b.loading);
+    // Another window removes the paper from the shelf, which deletes its blob.
+    server.blobs = [];
+    act(() => { s.b.set((p: typeof PAPER | null) => ({ ...(p ?? PAPER), cells: { Sample: "40" } })); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(putsTo("p1", kind).map((c) => c.ifMatch)).toEqual(['"3"']);
+    expect(server.blobs).toEqual([]);
+    // What the server has now: no blob. Nothing is left to send, and nothing is sent later.
+    expect(ok).toBe(true);
+    expect(s.b).toMatchObject({ value: null, error: false });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(putsTo("p1", kind)).toHaveLength(1);
+    expect(server.blobs).toEqual([]);
+  });
+
   it("an api without versions gets no If-Match", async () => {
     server.versionless = true;
     server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];

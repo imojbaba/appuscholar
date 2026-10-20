@@ -343,11 +343,15 @@ export class DrizzleStore implements Store {
     }
     if (rows[0]) return this.toBlob(rows[0]);
     // Nothing written: a version that no longer holds (re-read, since the statement cannot say which rule refused), else the dek rule.
+    let current = 0;
     if (w.expectedVersion !== undefined) {
       const [cur] = await this.d.select({ version: projectBlobs.version }).from(projectBlobs).where(at).limit(1);
-      if ((cur?.version ?? 0) !== w.expectedVersion) throw new VersionConflictError(cur?.version ?? 0);
+      current = cur?.version ?? 0;
+      if (current !== w.expectedVersion) throw new VersionConflictError(current);
     }
-    throw new DekExistsError(w.dek!.v);
+    // With no dek the dek rule cannot have refused it: the row was deleted and re-created between the statement and the re-read, a lost race.
+    if (!w.dek) throw new VersionConflictError(current);
+    throw new DekExistsError(w.dek.v);
   }
   async listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null> {
     if (!(await this.getProject(userId, projectId))) return null;

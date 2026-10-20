@@ -101,6 +101,11 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /** A save is held because the vault stayed locked. */
   let heldByLock = false;
   let broken = false;
+  /**
+   * A save's re-read after a conflict found a blob that does not open: this window's value is held in `pending`, `value` is null so the panel
+   * shows broken (and useLibrary asks first, R16), and nothing is sent until the panel sets over it; that set goes on from the held value.
+   */
+  let brokenHeld = false;
   let error = false;
   /** The student cancelled an unlock this blob asked for after its first read: no prompt again until the vault opens (resume). */
   let declined = o.headless === true;
@@ -186,10 +191,13 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /** Keeps a value that could not be sent; a newer one set meanwhile wins. */
   const hold = (v: T) => { if (!pending) pending = { value: v }; };
 
-  /** The last PUT failed with no HTTP answer (offline, a dropped connection): the server may have stored it. */
+  /**
+   * The last PUT failed with no HTTP answer (offline, a dropped connection) or with a 5xx (a gateway timeout can come after the store took it):
+   * the server may have stored it. A 409 or another 4xx is a refusal: nothing was stored.
+   */
   let outcomeUnknown = false;
   const put = async (body: BlobPut): Promise<BlobWire> => {
-    try { return await o.put(body, version); } catch (e) { if (!(e instanceof ApiError)) outcomeUnknown = true; throw e; }
+    try { return await o.put(body, version); } catch (e) { if (!(e instanceof ApiError) || e.status >= 500) outcomeUnknown = true; throw e; }
   };
 
   /**
@@ -221,6 +229,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 
   async function save(): Promise<boolean> {
     if (!pending) return true;
+    if (brokenHeld) return false;
     let v = pending.value;
     pending = null;
     saving = true;
@@ -240,6 +249,28 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
           const fresh = await o.get();
           const opened = fresh ? await openWire(fresh) : { value: null };
           if (opened === "locked") { declined = true; hold(v); heldByLock = true; return false; }
+          if (fresh && opened.value === null) {
+            // The newer blob does not open here: replaying onto nothing would replace it unasked. Held until the panel sets over it (R16).
+            deks = fresh.deks;
+            version = fresh.version;
+            broken = true;
+            brokenHeld = true;
+            value = null;
+            hold(v);
+            return false;
+          }
+          if (!fresh && (version ?? 0) > 0) {
+            // Deleted elsewhere (a shelf paper removed in another window): a save names a version above 0 so it never re-creates the blob, and the
+            // replay must not either. The edits are dropped and the value is what the server has, none, as a re-read after a delete shows it.
+            deks = [];
+            version = 0;
+            value = null;
+            pending = null;
+            sinceBase = [];
+            broken = false;
+            error = false;
+            return true;
+          }
           deks = fresh?.deks ?? [];
           version = fresh ? fresh.version : 0;
           value = applyOps(sinceBase, opened.value);
@@ -290,9 +321,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 
   /**
    * What is still not on the server, as ops: the sets made since the last value read or saved, so whoever sends them later replays them onto
-   * the value it reads then rather than saving this window's copy over another window's newer one.
+   * the value it reads then rather than saving this window's copy over another window's newer one. Nothing while a broken blob holds the value
+   * (brokenHeld): the drain has no panel to ask, so it would replace the blob unasked.
    */
-  const leftover = (): HeldOp<T>[] => (known ? (pending ? compactOps([...sinceBase]) : []) : [...ops]);
+  const leftover = (): HeldOp<T>[] => (known ? (pending && !brokenHeld ? compactOps([...sinceBase]) : []) : [...ops]);
 
   /** For the registry: a client with no panel, sending `held` the way this one would. */
   const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
@@ -323,7 +355,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       if (o.readOnly) return;
       const op = toOp(next);
       if (known) {
-        value = "value" in op ? op.value : op.update(value);
+        // After a re-read found a broken blob, this set is the panel's go-ahead (R16): it goes on from the value this window held.
+        const base = brokenHeld && pending ? pending.value : value;
+        brokenHeld = false;
+        value = "value" in op ? op.value : op.update(base);
         pending = { value };
         sinceBase.push(op);
       } else ops = compactOps([...ops, op]);
