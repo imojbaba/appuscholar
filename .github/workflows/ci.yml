@@ -23,8 +23,6 @@ jobs:
       - run: pnpm --filter @appuscholar/web build
   e2e:
     runs-on: ubuntu-latest
-    # First version: the browser journey is allowed to fail without blocking a merge. Remove continue-on-error once it has been green on CI for a while.
-    continue-on-error: true
     services:
       postgres:
         image: postgres:16

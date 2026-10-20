@@ -76,4 +76,14 @@ describe("scripts/deploy-vercel.sh", () => {
     expect(unlinked.status).toBe(5);
     expect(unlinked.stdout).not.toMatch(/^vercel /m);
   });
+  it("reads the remote's branches fresh: a commit pushed to the remote outside this clone's remote refs is deployable", () => {
+    writeFileSync(join(repo, "README.md"), "pushed elsewhere\n");
+    git(repo, "commit", "-am", "elsewhere");
+    // Pushed by path, as another clone would: this clone's origin/* refs do not move until it fetches.
+    git(repo, "push", origin, "HEAD:refs/heads/side");
+    expect(git(repo, "branch", "-r", "--contains", "HEAD")).toBe("");
+    const r = deploy(repo);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("GITHUB_SHA=" + git(repo, "rev-parse", "HEAD"));
+  });
 });

@@ -24,7 +24,8 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   exit 3
 fi
 
-# 4: the pill's commit must exist on the remote.
+# 4: the pill's commit must exist on the remote, read fresh (a stale origin/* ref would say otherwise).
+git fetch -q origin
 if [ -z "$(git branch -r --contains HEAD)" ]; then
   echo "HEAD is not on any remote branch: push first" >&2
   exit 4
