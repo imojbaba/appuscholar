@@ -155,7 +155,13 @@ export const V2_STRINGS = {
   pass_show: { en: "Show passphrase", hi: "पासफ़्रेज़ दिखाएं" },
   pass_hide: { en: "Hide passphrase", hi: "पासफ़्रेज़ छिपाएं" },
   key_show: { en: "Show key", hi: "कुंजी दिखाएं" },
-  key_hide: { en: "Hide key", hi: "कुंजी छिपाएं" }
+  key_hide: { en: "Hide key", hi: "कुंजी छिपाएं" },
+  // A stage blob's save lost the race to another window three times in a row (fix wave A, Task 5; register D-S2-35): the edit is held in this window and goes
+  // with the next one. DRAFT Hindi: विंडो as v1 writes it (the pop-out strings), सहेजा and बदलाव as in the drafts above.
+  blob_conflict: {
+    en: "This was changed in another window at the same time, so your change is not saved yet. It is kept here and saved with your next edit.",
+    hi: "इसे उसी समय किसी दूसरी विंडो में बदला गया, इसलिए आपका बदलाव अभी सहेजा नहीं गया है। यह यहीं रखा है और आपके अगले बदलाव के साथ सहेजा जाएगा।"
+  }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

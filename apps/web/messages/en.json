@@ -214,6 +214,7 @@
   "bk_verify_bad": "That file cannot be read as an Appuscholar backup.",
   "bk_verify_btn": "🔍 Check a backup file",
   "bk_verify_ok": "This backup file can be read: {n} document(s), about {w} words, saved {d}. Nothing in the app was changed.",
+  "blob_conflict": "This was changed in another window at the same time, so your change is not saved yet. It is kept here and saved with your next edit.",
   "cap_btn": "🏷 Caption",
   "cap_desc": "Adds \"Figure 1\" or \"Table 1\" with a title above the picture or table, in APA 7 style. Click a picture or a table, or put the cursor where the caption should go. Numbers update by themselves.",
   "cap_fig": "Figure",
