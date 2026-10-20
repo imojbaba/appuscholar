@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fieldLabel, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
+import { buildShelfSummaryPromptV2, fieldLabel, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
 import en from "../messages/en.json";
 
 /*
@@ -273,9 +273,22 @@ describe("shelfSummarise is shSummarise", () => {
       await shelfSummarise({ callAI, field: fieldLabel(s.field), t, mine: s.mine, pages: s.pages, setOut: (x) => outs.push(x), saveNote: async (n) => { order.push("note"); saved.push(n); return true; }, now: () => NOW });
       expect(order).toEqual(["note", "call"]);
       expect(saved).toEqual([{ id: "n" + NOW.getTime().toString(36), page: 0, quote: "", note: s.notes[0]!.note, at: NOW.toISOString() }]);
-      expect(callAI).toHaveBeenCalledWith(s.prompt, s.opts);
+      // Fix wave A (W18): the prompt is buildShelfSummaryPromptV2's (the passages that matter); v1's prompt before PAPER TEXT and v1's options are unchanged.
+      const v2 = buildShelfSummaryPromptV2(fieldLabel(s.field), s.pages);
+      expect(callAI).toHaveBeenCalledWith(v2.prompt, s.opts);
+      expect(v2.prompt.slice(0, v2.prompt.indexOf("\n\nPAPER TEXT"))).toBe(s.prompt.slice(0, s.prompt.indexOf("\n\nPAPER TEXT")));
       expect(outs).toEqual([E.sh2_reading_2, s.out]);
     }
+  });
+  it("a long paper's limitations section reaches the model (W18)", async () => {
+    const filler = Array.from({ length: 400 }, (_, i) => `Filler sentence number ${i} about the study and nothing else of note at all.`).join("\n");
+    const pages = ["Abstract\nWe studied students.\nIntroduction\n" + filler, "Limitations\nA limitation is that every participant came from one university.\n" + filler];
+    const callAI = vi.fn(async (_prompt: string, _opts: object) => "OK");
+    await shelfSummarise({ callAI, field: "psychology", t, mine: FX.summaries[1]!.mine, pages, setOut: () => {}, saveNote: async () => true, now: () => NOW });
+    const sent = callAI.mock.calls[0]![0];
+    expect(sent).toContain("A limitation is that every participant came from one university.");
+    expect(sent).toContain("(selected passages: the opening, any limitations, then the discussion, method and results)");
+    expect(sent.length).toBeLessThan(20000);
   });
   it("trims the reply; does nothing before the gate passes; says the error, or v1's sentence; makes no call when the note cannot be stored", async () => {
     const outs: string[] = [];

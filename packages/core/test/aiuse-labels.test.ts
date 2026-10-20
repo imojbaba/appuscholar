@@ -6,7 +6,7 @@ import { buildIdeaPrompt, buildIdeaPromptV2 } from "../src/prompts-idea";
 import { buildHelperPrompt, buildDevilPrompt, buildVivaPrompt } from "../src/prompts-helpers";
 import { buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt, buildGapFinderPromptV2 } from "../src/prompts-research";
 import { buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "../src/prompts-analyse";
-import { buildShelfSummaryPrompt } from "../src/shelf";
+import { buildShelfSummaryPrompt, buildShelfSummaryPromptV2 } from "../src/shelf";
 import { apBuild, AP_STAGES } from "../src/analyse";
 import type { RsPaper } from "../src/research";
 
@@ -31,6 +31,7 @@ export const LABELS: Array<[name: string, build: () => string, k: string, g: AiU
   ["buildGapFinderPromptV2", () => buildGapFinderPromptV2("psychology", [paper(1), paper(2)]).prompt, "looking for research gaps in selected abstracts", "feedback"],
   ["buildLitReviewPrompt", () => buildLitReviewPrompt("psychology", [paper(1), paper(2)]).prompt, "drafting a literature review paragraph from selected abstracts", "text"],
   ["buildShelfSummaryPrompt", () => buildShelfSummaryPrompt("psychology", "Some paper text. We studied 120 students.").prompt, "summarising a paper", "explain"],
+  ["buildShelfSummaryPromptV2", () => buildShelfSummaryPromptV2("psychology", ["Abstract\nSome paper text. We studied 120 students."]).prompt, "summarising a paper", "explain"],
   // Recorded from classifyAiUse as it stands today.
   ["buildWritingPrompt continue", () => buildWritingPrompt("continue", "some text").prompt, "continuing my draft", "text"],
   ["buildWritingPrompt improve", () => buildWritingPrompt("improve", "some text").prompt, "grammar and polish", "text"],
