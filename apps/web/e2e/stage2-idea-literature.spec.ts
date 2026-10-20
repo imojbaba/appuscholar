@@ -767,10 +767,13 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("cite-rc-btn")).toHaveText(T("rc_btn"));
     await sealedSave(page, "refcheck_cache", ["Ryan|2000", "Cohen"], () => page.getByTestId("cite-rc-btn").click());
     await expect.poll(toasts).toEqual(expect.arrayContaining([T("rc_busy"), T("rc_done")]));
-    await expect(page.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 4, o: 3, d: 1, f: 0 }));
+    // W27, W28 (fix wave A, Task 11): the captured Ryan & Deci article has no volume, issue or pages and Crossref lists all three, so it no longer counts as a match.
+    await expect(page.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 4, o: 2, d: 2, f: 0 }));
     // Cohen 1988 is in Crossref as the 2013 edition: its card says how it differs.
     await expect(page.getByTestId("cite-card").nth(1).locator(".rc-line")).toHaveText("⚠ " + T("rc_year") + " 2013");
-    for (const i of [0, 2, 3]) await expect(page.getByTestId("cite-card").nth(i).locator(".rc-line")).toHaveText("✓ " + T("rc_ok"));
+    for (const i of [2, 3]) await expect(page.getByTestId("cite-card").nth(i).locator(".rc-line")).toHaveText("✓ " + T("rc_ok"));
+    await expect(page.getByTestId("cite-card").nth(0).locator(".rc-line")).toContainText(T("rc_missing", { fields: [T("cite_vol_label"), T("cite_issue_label"), T("cite_pages_label")].join(", ").toLowerCase() }));
+    await expect(page.getByTestId("cite-card").nth(0).getByTestId("cite-rc-fill")).toHaveText(T("rc_fill_btn"));
 
     await cursorToEnd(page);
     await page.keyboard.press("Enter");

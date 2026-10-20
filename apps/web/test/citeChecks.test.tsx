@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { citKey, crossCheckHtml, type CitationEntry, type RcCheck } from "@appuscholar/core";
+import { citKey, crossCheckHtml, rcCheckOneV2, type CitationEntry, type RcCheck } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 
@@ -39,7 +39,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { CitePanel } from "../components/tools/cite/CitePanel";
 import { RETRACT_TTL, rcRun, resetCheckBusy, retractionRefresh, type RcDeps, type RetractionDeps } from "../lib/cite/checks";
-import type { RefCheckCache, RetractionCache } from "../lib/blobs/kinds";
+import { parseBlob, type RefCheckCache, type RetractionCache } from "../lib/blobs/kinds";
 import { resetCiteActive } from "../lib/cite/active";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
 
@@ -363,6 +363,146 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     await settle();
     expect(tid("cite-rc-summary")!.textContent).toBe("");
     expect(all("cite-card").map((c) => c.querySelector('[data-cite-slot="cite-rc"]')!.textContent)).toEqual(["", "", ""]);
+  });
+});
+
+describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
+  const TITLE = "Sleep timing and attention in adolescents", DOI = "10.1038/s41598-024-0001-x";
+  const AUTHORS = "Schaefer, Ellen M.; Gonzalez, Carlos B.; Lee, Kim";
+  const WORK = { title: [TITLE], DOI, issued: { "date-parts": [[2019]] }, volume: "9", issue: "1", page: "13317", type: "journal-article", author: [{ family: "Schaefer", given: "Ellen M." }, { family: "Gonzalez", given: "Carlos B." }, { family: "Lee", given: "Kim" }] };
+  const crFetch = (async () => json({ message: WORK })) as unknown as typeof fetch;
+  const AUTHORLESS: CitationEntry = { author: "", year: "2019", title: TITLE, doi: DOI, volume: "12" };
+  /** The Crossref check of the authorless entry, as rcRun stores it. */
+  async function checked(d: CitationEntry = AUTHORLESS) { return { [citKey(d)]: await rcCheckOneV2(crFetch, d) } as RefCheckCache; }
+  const lineOf = () => all("cite-card")[0]!.querySelector('[data-cite-slot="cite-rc"]')!;
+  const stubConfirm = (answer: boolean) => vi.spyOn(window, "confirm").mockReturnValue(answer);
+
+  it("rcRun stores the empty author and the missing fields (an authorless capture is no longer a full match)", async () => {
+    const saved: RefCheckCache[] = [];
+    await rcRun(true, { lib: [AUTHORLESS], cache: {}, fetch: crFetch, t, pace: async () => {}, save: (fn) => { saved.push(fn(null)); }, toast: vi.fn() });
+    const c = saved.at(-1)![citKey(AUTHORLESS)]!;
+    expect(c.s).toBe("diff");
+    expect(c.miss).toEqual(["author", "issue", "pages"]);
+    expect(c.m).toContainEqual({ k: "author", v: "Schaefer" });
+  });
+
+  it("the line names the missing fields and offers Fill from Crossref", async () => {
+    h.blobs.citations = blob([AUTHORLESS]);
+    h.blobs.refcheck_cache = blob(await checked());
+    mount();
+    await settle();
+    expect(lineOf().textContent).toContain("⚠ " + E.rc_author + " Schaefer");
+    expect(tid("cite-rc-missing")!.textContent).toBe(t("rc_missing", { fields: "author, issue, pages" }));
+    expect(tid("cite-rc-fill")!.textContent).toBe("Fill from Crossref");
+  });
+
+  it("Fill from Crossref asks with each field and its value, then fills only the empty fields", async () => {
+    const confirm = stubConfirm(true);
+    h.blobs.citations = blob([AUTHORLESS, SMITH]);
+    h.blobs.refcheck_cache = blob(await checked());
+    mount();
+    await settle();
+    await click(tid("cite-rc-fill")!);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(confirm.mock.calls[0]![0]).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS + "\nIssue: 1\nPages: 13317" }));
+    expect(confirm.mock.calls[0]![0]).toBe("Fill these from Crossref? Only empty fields change.\n\nAuthor: " + AUTHORS + "\nIssue: 1\nPages: 13317");
+    expect(applied(h.blobs.citations!, [AUTHORLESS, SMITH])).toEqual([{ ...AUTHORLESS, author: AUTHORS, issue: "1", pages: "13317" }, SMITH]);
+    expect((applied(h.blobs.citations!, [AUTHORLESS, SMITH]) as CitationEntry[])[0]!.volume).toBe("12");
+    expect(toasts()).toEqual([E.rc_filled]);
+  });
+
+  it("after a fill the line reads that the details match (the cache entry moved to the new key)", async () => {
+    stubConfirm(true);
+    const cache = await checked();
+    h.blobs.citations = blob([AUTHORLESS]);
+    h.blobs.refcheck_cache = blob(cache);
+    mount();
+    await settle();
+    await click(tid("cite-rc-fill")!);
+    const lib = applied(h.blobs.citations!, [AUTHORLESS]) as CitationEntry[];
+    const next = applied(h.blobs.refcheck_cache!, cache) as RefCheckCache;
+    expect(Object.keys(next)).toEqual([citKey(lib[0]!)]);
+    expect(citKey(lib[0]!)).toBe("Schaefer|2019|" + TITLE.toLowerCase());
+    expect(next[citKey(lib[0]!)]).toMatchObject({ s: "ok", m: [], f: cache[citKey(AUTHORLESS)]!.f });
+    // The panel shows it: remount over what was written.
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    h.blobs.citations = blob(lib);
+    h.blobs.refcheck_cache = blob(next);
+    mount();
+    await settle();
+    expect(lineOf().textContent).toBe("✓ " + E.rc_ok);
+    expect(tid("cite-rc-fill")).toBeNull();
+    expect(tid("cite-rc-summary")!.textContent).toBe(t("rc_summary_fmt", { n: 1, o: 1, d: 0, f: 0 }));
+  });
+
+  it("Fill never overwrites a field that has a value: a volume written after the check stays, and a fill of nothing writes nothing", async () => {
+    stubConfirm(true);
+    const cache = await checked();
+    const nowFull: CitationEntry = { ...AUTHORLESS, issue: "7", pages: "1-9" };
+    h.blobs.citations = blob([nowFull]);
+    h.blobs.refcheck_cache = blob(cache);
+    mount();
+    await settle();
+    // The cache is keyed by the same citKey; the entry already has issue and pages, so only the author is offered.
+    await click(tid("cite-rc-fill")!);
+    expect((vi.mocked(window.confirm).mock.calls[0]![0])).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS }));
+    expect(applied(h.blobs.citations!, [nowFull])).toEqual([{ ...nowFull, author: AUTHORS }]);
+    // Nothing left to fill: no question, no write.
+    h.blobs.citations!.set.mockClear(); h.blobs.refcheck_cache!.set.mockClear(); vi.mocked(window.confirm).mockClear();
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    const done: CitationEntry = { ...nowFull, author: "Mine, A." };
+    h.blobs.citations = blob([done]);
+    h.blobs.refcheck_cache = blob({ [citKey(done)]: { ...cache[citKey(AUTHORLESS)]! } });
+    mount();
+    await settle();
+    await click(tid("cite-rc-fill")!);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(h.blobs.citations.set).not.toHaveBeenCalled();
+    expect(h.blobs.refcheck_cache.set).not.toHaveBeenCalled();
+  });
+
+  it("Cancel changes nothing; the pop-out shows no Fill button", async () => {
+    const confirm = stubConfirm(false);
+    h.blobs.citations = blob([AUTHORLESS]);
+    h.blobs.refcheck_cache = blob(await checked());
+    mount();
+    await settle();
+    await click(tid("cite-rc-fill")!);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(h.blobs.citations.set).not.toHaveBeenCalled();
+    expect(h.blobs.refcheck_cache.set).not.toHaveBeenCalled();
+    expect(toasts()).toEqual([]);
+    // The pop-out cannot write the cache: the line still says what is missing, with no button.
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    h.blobs.refcheck_cache = { ...blob(await checked()), readOnly: true } as Blob;
+    mount();
+    await settle();
+    expect(tid("cite-rc-missing")!.textContent).toBe(t("rc_missing", { fields: "author, issue, pages" }));
+    expect(tid("cite-rc-fill")).toBeNull();
+  });
+
+  it("a refcheck_cache written by this build still parses under 6c38396's schema", async () => {
+    // The schema as build 6c38396 had it (apps/web/lib/blobs/kinds.ts before Task 11).
+    const { z } = await import("zod");
+    const str = z.string(), num = z.number();
+    const OldRcCheckSchema = z.looseObject({
+      s: z.enum(["ok", "diff", "nf", "err"]),
+      m: z.array(z.looseObject({ k: z.enum(["title", "year", "author"]), v: str })).optional(),
+      f: z.looseObject({ title: str, year: z.union([num, str]), author: str, doi: str }).optional(),
+      viaTitle: z.literal(true).optional(),
+      t: num
+    });
+    const cache = await checked();
+    const written = JSON.parse(JSON.stringify(cache));
+    expect(parseBlob("refcheck_cache", JSON.stringify(written))).toEqual(written);
+    const old = z.record(str, OldRcCheckSchema).safeParse(written);
+    expect(old.success).toBe(true);
+    // The old build keeps the new keys when it reads and saves again.
+    const back = old.success ? old.data[citKey(AUTHORLESS)]! : null;
+    expect(back).toMatchObject({ s: "diff", miss: ["author", "issue", "pages"], f: { authors: AUTHORS, issue: "1", pages: "13317" } });
   });
 });
 

@@ -2,7 +2,7 @@
 import type { Editor } from "@tiptap/react";
 import type { RcCheck, Usage } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
-import type { CiteChecks as Checks } from "@/lib/cite/checks";
+import { rcMissingFields, type CiteChecks as Checks } from "@/lib/cite/checks";
 import { missingLabel, type CitationUsage } from "@/lib/cite/usage";
 import type { Library } from "@/lib/cite/useLibrary";
 import type { RetractionCache } from "@/lib/blobs/kinds";
@@ -60,8 +60,11 @@ export function RetrWarn({ status }: { status: RetractionCache[string] | null })
   return status && status.r ? <div className="retr-warn" data-testid="cite-retr-warn">⚠ {t("retr_lib_warn")}</div> : null;
 }
 
-/** rcLine 7792-7797: a card's Crossref line for its stored answer. */
-export function RcLine({ c }: { c: RcCheck | undefined }) {
+/**
+ * rcLine 7792-7797: a card's Crossref line for its stored answer. Fix wave A (W27, W28): when the answer lists fields the source leaves empty and Crossref has
+ * (`miss`), a second line names them and, unless the cache cannot be written (the pop-out: `onFill` absent), offers "Fill from Crossref".
+ */
+export function RcLine({ c, onFill }: { c: RcCheck | undefined; onFill?: () => void }) {
   const t = useT();
   if (!c) return null;
   if (c.s === "err") return <div className="desc rc-line">{t("rc_err")}</div>;
@@ -71,6 +74,12 @@ export function RcLine({ c }: { c: RcCheck | undefined }) {
     <div className="desc rc-line rc-diff">
       ⚠ {(c.m || []).map((x) => t("rc_" + x.k) + " " + x.v).join("  ·  ")}
       {c.viaTitle ? <><br /><span className="rc-sub">{t("rc_doi_missing")}{c.f && c.f.doi ? " " + c.f.doi : ""}</span></> : null}
+      {c.miss && c.miss.length ? (
+        <>
+          {(c.m || []).length || c.viaTitle ? <br /> : null}<span className="rc-sub" data-testid="cite-rc-missing">{t("rc_missing", { fields: rcMissingFields(c.miss, t) })}</span>
+          {onFill ? <> <Button variant="ghost" size="sm" data-testid="cite-rc-fill" onClick={onFill}>{t("rc_fill_btn")}</Button></> : null}
+        </>
+      ) : null}
     </div>
   );
 }

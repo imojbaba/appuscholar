@@ -40,8 +40,10 @@ const RetractionCacheSchema = z.record(str, z.looseObject({ r: z.boolean(), t: n
 const RcCheckSchema = z.looseObject({
   s: z.enum(["ok", "diff", "nf", "err"]),
   m: z.array(z.looseObject({ k: z.enum(["title", "year", "author"]), v: str })).optional(),
-  f: z.looseObject({ title: str, year: z.union([num, str]), author: str, doi: str }).optional(),
+  f: z.looseObject({ title: str, year: z.union([num, str]), author: str, doi: str, authors: str.optional(), volume: str.optional(), issue: str.optional(), pages: str.optional() }).optional(),
   viaTitle: z.literal(true).optional(),
+  /** Fix wave A (W27, W28; register D-S2-33): the fields the source leaves empty that Crossref has. Optional keys, so build 6c38396's loose schema still reads what is written here. */
+  miss: z.array(z.enum(["author", "volume", "issue", "pages"])).optional(),
   t: num
 });
 const RefCheckCacheSchema = z.record(str, RcCheckSchema);

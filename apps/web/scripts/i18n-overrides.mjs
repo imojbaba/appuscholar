@@ -173,7 +173,24 @@ export const V2_STRINGS = {
   cite_bookmarklet_redrag: {
     en: "Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.",
     hi: "यह बटन पहले खींचा था? इसे फिर से अपने बुकमार्क बार पर खींचें, ताकि यह PubMed के लेखक और खंड, अंक और पृष्ठ भी पढ़ सके।"
-  }
+  },
+  // The Crossref check flags a source with no author or without its volume, issue or pages, and fills them on consent (fix wave A, Task 11; walk faults W27, W28, register D-S2-33).
+  // DRAFT Hindi: Crossref in Latin letters as in the v1 rc_ strings; लेखक, खंड, अंक and पृष्ठ as in cite_bookmarklet_redrag.
+  rc_missing: {
+    en: "Missing here: {fields}. Crossref has them.",
+    hi: "यहाँ नहीं है: {fields}। Crossref में ये हैं।"
+  },
+  rc_fill_btn: { en: "Fill from Crossref", hi: "Crossref से भरें" },
+  rc_fill_confirm: {
+    en: "Fill these from Crossref? Only empty fields change.\n\n{list}",
+    hi: "इन्हें Crossref से भरें? केवल खाली खाने बदलेंगे।\n\n{list}"
+  },
+  rc_filled: {
+    en: "Filled from Crossref. In-text citations already in your document keep their old wording; insert them again.",
+    hi: "Crossref से भर दिया गया। आपके दस्तावेज़ में पहले से मौजूद इन-टेक्स्ट उद्धरण पुराने रूप में रहेंगे; उन्हें दोबारा डालें।"
+  },
+  // The name of the Author field in the Fill question's list ("Author: Schaefer, Ellen M.; ..."); the other three names are v1's cite_vol_label, cite_issue_label and cite_pages_label.
+  rc_fld_author: { en: "Author", hi: "लेखक" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

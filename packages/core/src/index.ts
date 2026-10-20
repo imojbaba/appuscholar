@@ -42,7 +42,7 @@ export type { OaPaper, PmPaper, RsBrief, SearchResult } from "./fetch/types";
 export { oaUrl, rsFetchOpenAlex, oaSearch, rsOaBrief, oaConnected, retrFetchBatch, oaRetractions, apRefCheck } from "./fetch/openalex";
 export type { ApRefs } from "./fetch/openalex";
 export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmSearchV2, pmidToDoi, pmFullPages } from "./fetch/pubmed";
-export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
+export { rcWords, rcSim, rcCompare, rcCheckOne, rcCheckOneV2, rcFillPatch, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
 export type { CrWork, RcCheck } from "./fetch/crossref";
 // Stage 2: Citation Manager checks (Task 8a)
 export { citMissingNumbers, citCaretEntry } from "./citlib";
