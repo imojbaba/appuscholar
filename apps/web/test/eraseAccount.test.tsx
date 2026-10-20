@@ -148,6 +148,10 @@ describe("Help: export, change passphrase", () => {
       if (path === "/projects") return [{ id: "p1", title: "Thesis", stage: "writing", createdAt: "2026-09-01T00:00:00.000Z" }];
       if (path === "/projects/p1/documents") return [{ id: "d1", projectId: "p1", title: "Ch 1", kind: "draft", createdAt: "x", updatedAt: "y", deletedAt: null, wordCount: 2 }];
       if (path === "/projects/scratch1/documents") return [{ id: "d2", projectId: "scratch1", title: "Notes", kind: "draft", createdAt: "x", updatedAt: "y", deletedAt: null, wordCount: 1 }];
+      if (path === "/projects/p1/blobs") return [{ kind: "idea_intake", keyVersion: 1, updatedAt: "2026-09-08T00:00:00.000Z" }, { kind: "shelf_paper:a b", keyVersion: 1, updatedAt: "2026-09-08T00:00:00.000Z" }];
+      if (path === "/projects/scratch1/blobs") return [];
+      if (path === "/projects/p1/blobs/idea_intake") return { kind: "idea_intake", body: 'ct:{"topic":"Sleep"}', keyVersion: 1, deks: [{ v: 1, wrapped: "w" }], updatedAt: "2026-09-08T00:00:00.000Z", version: 3 };
+      if (path === "/projects/p1/blobs/shelf_paper%3Aa%20b") return { kind: "shelf_paper:a b", body: 'ct:{"id":"a b"}', keyVersion: 1, deks: [{ v: 1, wrapped: "w" }], updatedAt: "2026-09-08T00:00:00.000Z", version: 1 };
       if (path === "/documents/d1") return { id: "d1", title: "Ch 1", bodyHtml: "ct:<p>Hello thesis.</p>", keyVersion: 1, deks: [] };
       if (path === "/documents/d2") return { id: "d2", title: "Notes", bodyHtml: "ct:<p>Scratch note.</p>", keyVersion: 1, deks: [] };
       if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: { "grammar and polish": 2 }, byService: { "Google Gemini": 2 }, total: 2, firstAt: "2026-10-01", lastAt: "2026-10-02", loggingOff: false } };
@@ -167,6 +171,11 @@ describe("Help: export, change passphrase", () => {
     const zip = await JSZip.loadAsync(blob); // jsdom's Blob has no arrayBuffer(); JSZip reads it with FileReader
     expect(await zip.file("Thesis/Ch 1.html")!.async("string")).toContain("Hello thesis.");
     expect(await zip.file(en.export_scratch + "/Notes.html")!.async("string")).toContain("Scratch note.");
+    // Every stage's data, opened with the blob's own id (blob:<projectId>:<kind>) and key.
+    expect(JSON.parse(await zip.file("Thesis/stage-data/idea_intake.json")!.async("string"))).toEqual({ topic: "Sleep" });
+    expect(JSON.parse(await zip.file("Thesis/stage-data/shelf_paper-a b.json")!.async("string"))).toEqual({ id: "a b" });
+    expect(h.v.decryptBody).toHaveBeenCalledWith({ id: "blob:p1:idea_intake", deks: [{ v: 1, wrapped: "w" }], bodyHtml: 'ct:{"topic":"Sleep"}', keyVersion: 1 });
+    expect(h.v.decryptBody).toHaveBeenCalledWith(expect.objectContaining({ id: "blob:p1:shelf_paper:a b" }));
     // One record: each project's words under its title, the account-wide AI-use log once.
     const record = await zip.file("writing-process-record.txt")!.async("string");
     expect(record.match(/WRITING-PROCESS RECORD/g)).toHaveLength(1);
@@ -183,7 +192,7 @@ describe("Help: export, change passphrase", () => {
     h.v.ensureUnlocked.mockImplementation(() => new Promise<boolean>((r) => { release = r; }));
     h.api.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === "/projects") return [];
-      if (path.endsWith("/documents")) return [];
+      if (path.endsWith("/documents") || path.endsWith("/blobs")) return [];
       if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false } };
       if (path === "/me/export-audit" && init?.method === "POST") return undefined;
       throw new ApiError(404, "not-found");
