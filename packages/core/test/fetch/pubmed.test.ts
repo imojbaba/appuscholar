@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { JSDOM } from "jsdom";
 import { xmlAll, xmlParse, xmlText } from "../../src/fetch/xml";
-import { pmFullPages, pmSearch, pmidToDoi, rsFetchPubmed, rsPubmedAbstracts } from "../../src/fetch/pubmed";
-import { rsBuildQuery, rsDedupe } from "../../src/research";
+import { pmFullPages, pmSearch, pmSearchV2, pmidToDoi, rsFetchPubmed, rsPubmedAbstracts } from "../../src/fetch/pubmed";
+import { pmTopicBlock, rsBuildQuery, rsBuildQueryV2, rsDedupe } from "../../src/research";
 import type { RsPaper } from "../../src/research";
 import { expectGolden } from "../golden/harness/compare";
 import { RECORDINGS, fx, mode, replay, v1View } from "./replay";
@@ -130,5 +130,22 @@ describe("the XML reader reads every recorded efetch body as jsdom's DOMParser d
       }));
       expect(got).toEqual(want);
       expect(want.length).toBeGreaterThan(0);
+    });
+});
+
+describe("pmSearchV2 differs from v1's pmSearch only in the tagged topic (W12)", () => {
+  for (const s of pmRuns)
+    it(`${s.name}: the tagged query first, then (when it finds nothing) v1's query once`, async () => {
+      const terms: string[] = [];
+      const f = (async (u: RequestInfo | URL) => { terms.push(decodeURIComponent(String(u).split("term=")[1]!)); return new Response('{"esearchresult":{"idlist":[]}}'); }) as typeof fetch;
+      const o = { q: s.in.topic, terms: s.in.terms, design: s.in.design, retmax: s.in.rank ? 15 : 6 };
+      const out = await pmSearchV2(f, o);
+      expect(out).toEqual({ papers: [] });
+      const v1 = rsBuildQuery(s.in.topic, "pm", s.in.terms, s.in.design);
+      if (pmTopicBlock(s.in.topic) === null) expect(terms).toEqual([v1]); // a typed or long topic: v1's request, asked once
+      else {
+        expect(terms).toEqual([rsBuildQueryV2(s.in.topic, "pm", s.in.terms, s.in.design), v1]);
+        expect(terms[0]).toContain("[tiab]");
+      }
     });
 });

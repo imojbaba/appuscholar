@@ -29,7 +29,7 @@ export type { PlainDoc, Usage } from "./citlib";
 export { AP_SAMPLE, AP_STAGES, AP_HEADS, AP_STOP, AP_NAME, apSquash, apToks, apHeadName, apBuild, apPick, apJson, apCheckQuote, apNumbers, apRefDois, retrNormDoi, retrValidDoi } from "./analyse";
 export type { ApChunk, ApDoc, ApStage, ApNumber } from "./analyse";
 export { pdCsvCell, pdCsv } from "./csv";
-export { RS_DESIGNS, RS_DESIGN, rsReconstructAbstract, rsOaStatus, rsQuickCheck, rsRankParse, rsCleanTerm, rsBuildQuery, rsDedupe, rsFilterPass, rsCsvText, rsAuthorsToCit, rsEntryFromResult, rsCorpusText } from "./research";
+export { RS_DESIGNS, RS_DESIGN, rsReconstructAbstract, rsOaStatus, rsQuickCheck, rsRankParse, rsCleanTerm, rsBuildQuery, pmTopicBlock, rsBuildQueryV2, rsDedupe, rsFilterPass, rsCsvText, rsAuthorsToCit, rsEntryFromResult, rsCorpusText } from "./research";
 export type { RsQuick, RsPaper, RsFilter } from "./research";
 export { buildIdeaPrompt } from "./prompts-idea";
 export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildHelperPrompt, buildDevilPrompt, buildVivaPrompt } from "./prompts-helpers";
@@ -41,7 +41,7 @@ export { pace } from "./fetch/types";
 export type { OaPaper, PmPaper, RsBrief, SearchResult } from "./fetch/types";
 export { oaUrl, rsFetchOpenAlex, oaSearch, rsOaBrief, oaConnected, retrFetchBatch, oaRetractions, apRefCheck } from "./fetch/openalex";
 export type { ApRefs } from "./fetch/openalex";
-export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmidToDoi, pmFullPages } from "./fetch/pubmed";
+export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmSearchV2, pmidToDoi, pmFullPages } from "./fetch/pubmed";
 export { rcWords, rcSim, rcCompare, rcCheckOne, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
 export type { CrWork, RcCheck } from "./fetch/crossref";
 // Stage 2: Citation Manager checks (Task 8a)

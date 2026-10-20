@@ -8,8 +8,9 @@
    - pmidToDoi returns null where citPmidToDoi returns '' (no DOI); an HTTP error still rejects;
    - types, and `as` casts on the JSON read.
    Wave A (walk fault W2, register row D-S2-24): rsFetchPubmed's result also carries `authorList` (every name), `volume`, `issue` and `pages` (PubMed's short range
-   written out by pmFullPages); `authors` is still v1's card line. test/fetch/pubmed.test.ts holds v1View(result) to the golden. */
-import { rsBuildQuery } from "../research";
+   written out by pmFullPages); `authors` is still v1's card line. test/fetch/pubmed.test.ts holds v1View(result) to the golden.
+   Wave A (W12, register row D-S2-27): pmSearchV2 is pmSearch with the topic's own words tagged [tiab] (rsBuildQueryV2); pmSearch is v1's and unchanged. */
+import { pmTopicBlock, rsBuildQuery, rsBuildQueryV2 } from "../research";
 import { settle, withFallback } from "./types";
 import type { PmPaper, SearchResult } from "./types";
 import { xmlAll, xmlParse, xmlText } from "./xml";
@@ -62,6 +63,15 @@ export async function rsFetchPubmed(f: typeof fetch,q: string,per?: number): Pro
 export function pmSearch(f: typeof fetch,o: { q: string; terms?: string[]; design?: string; retmax?: number }): Promise<SearchResult<PmPaper>>{
   const terms=o.terms||[],design=o.design||'any';
   return settle(fb=>withFallback(s=>rsFetchPubmed(f,s,o.retmax||6),t=>rsBuildQuery(o.q,'pm',t,design),terms,fb));
+}
+
+/** pmSearch with rsBuildQueryV2 (W12, D-S2-27): the topic's words tagged [tiab], so PubMed does not widen them. A tagged search that finds no paper (and no error) runs v1's
+ * pmSearch once, so a topic whose words are not all in titles and abstracts still gets v1's answer; a typed query was already v1's and is not asked twice. Never rejects. */
+export async function pmSearchV2(f: typeof fetch,o: { q: string; terms?: string[]; design?: string; retmax?: number }): Promise<SearchResult<PmPaper>>{
+  const terms=o.terms||[],design=o.design||'any';
+  const out=await settle(fb=>withFallback(s=>rsFetchPubmed(f,s,o.retmax||6),t=>rsBuildQueryV2(o.q,'pm',t,design),terms,fb));
+  if(out.papers.length||out.error!==undefined||pmTopicBlock(o.q)===null)return out;
+  return pmSearch(f,o);
 }
 
 /** citPmidToDoi (7920-7929): the DOI PubMed's esummary lists for the PMID, in lower case; null when it lists none. Rejects on an HTTP error. */

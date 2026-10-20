@@ -67,6 +67,11 @@ const fakeFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
   requested.push(url);
   if (crossref && url.startsWith("https://api.crossref.org/")) return crossref(url, init);
   const r = RECS.get(url);
+  // W12: PubMed is asked first for the topic's words tagged [tiab] (pmSearchV2). Where that search was not recorded, PubMed answers that it found nothing, so pmSearchV2
+  // runs v1's search once, which is recorded: these cases hold the panel to v1's papers and status, and the fallback is what gets them.
+  if (!r && url.startsWith("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?") && url.includes("%5Btiab%5D")) {
+    return new Response('{"esearchresult":{"idlist":[]}}', { status: 200, headers: { "content-type": "application/json; charset=UTF-8" } });
+  }
   if (!r) throw new TypeError("Failed to fetch");
   return new Response(r.body, { status: r.status, headers: r.headers["content-type"] ? { "content-type": r.headers["content-type"] } : {} });
 });

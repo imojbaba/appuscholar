@@ -31,6 +31,7 @@ import { apJson, apSquash } from "./analyse";
 import type { CitationEntry } from "./citation";
 import { capNameToCit } from "./citcapture";
 import { pdCsv } from "./csv";
+import { PUBMED_STOPWORDS } from "./data/pubmed-stopwords";
 import { RS_DESIGN as RS_DESIGN_TABLE, RS_DESIGNS as RS_DESIGNS_TABLE } from "./data/research-tables";
 
 /** The quick read of one abstract as rsQuickCheck (8131-8160) returns it: the summary, or summaryDropped when it holds a number the abstract does not; the kind of study and the sample size, each
@@ -126,6 +127,31 @@ export function rsBuildQuery(q: string,kind: "oa" | "pm",terms: string[],design:
   }
   const cl=kind==='oa'?d.oa:d.pm;
   if(cl)core='('+core+') AND '+cl;
+  return core;
+}
+/* Wave A (walk fault W12, register row D-S2-27). PubMed's automatic term mapping widens an untagged topic ("exam anxiety" became ... OR ("test"[All Fields] AND
+   "anxiety"[All Fields]) ..., and with the randomised-trial filter matched 4,406 trials, a stroke rehabilitation trial among them); each word tagged [tiab] is searched as
+   written (exam[tiab] AND anxiety[tiab]: 76 trials). rsBuildQuery is v1's and unchanged. */
+const PM_STOP=new Set(PUBMED_STOPWORDS);
+/** The topic's own words for PubMed, each `word[tiab]`, joined with AND; null when the student wrote a query (a quote, a bracket, a parenthesis, or AND, OR or NOT in capitals),
+ * or the topic has no content word or more than 5. A word is split on white space, its outer punctuation trimmed (a trailing * is kept: PubMed's truncation), and PubMed's
+ * stopwords dropped without regard to case (a stopword tagged [tiab] matches nothing). */
+export function pmTopicBlock(q: string): string | null{
+  const s=String(q||'');
+  if(/["\[\]()]/.test(s)||/\b(AND|OR|NOT)\b/.test(s))return null;
+  const words=s.split(/\s+/).map(w=>w.replace(/^[^\p{L}\p{N}]+/u,'').replace(/[^\p{L}\p{N}*]+$/u,'')).filter(w=>/[\p{L}\p{N}]/u.test(w)&&!PM_STOP.has(w.toLowerCase()));
+  if(!words.length||words.length>5)return null;
+  return words.map(w=>w+'[tiab]').join(' AND ');
+}
+/** rsBuildQuery with PubMed's topic tagged [tiab] (pmTopicBlock): v1's query for OpenAlex and for a topic pmTopicBlock refuses; otherwise the block (with the ticked terms, v1's
+ * `(block) OR "term"[tiab] OR ...`) and v1's kind-of-study step. */
+export function rsBuildQueryV2(q: string,kind: "oa" | "pm",terms: string[],design: string): string{
+  const block=kind==='oa'?null:pmTopicBlock(q);
+  if(block===null)return rsBuildQuery(q,kind,terms,design);
+  const d=RS_DESIGN[design]||{};
+  let core=block;
+  if(terms.length)core='('+block+') OR '+terms.map(t=>'"'+t+'"[tiab]').join(' OR ');
+  if(d.pm)core='('+core+') AND '+d.pm;
   return core;
 }
 /* researchSearch's de-duplication (8312-8314), as v1 wrote it inside researchSearch, between the merge of the two sources and rsResultsOriginal=merged. */

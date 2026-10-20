@@ -9,7 +9,7 @@ import hi from "../messages/hi.json";
 // The two fetchers are core's, wrapped so the test sees what runSearch hands them.
 vi.mock("@appuscholar/core", async (orig) => {
   const m = await orig<typeof import("@appuscholar/core")>();
-  return { ...m, oaSearch: vi.fn(m.oaSearch), pmSearch: vi.fn(m.pmSearch) };
+  return { ...m, oaSearch: vi.fn(m.oaSearch), pmSearchV2: vi.fn(m.pmSearchV2) };
 });
 
 import { pickedTerms, rankPapers, suggestTerms } from "../lib/ai/actions";
@@ -63,8 +63,10 @@ function deps(over: Partial<SearchDeps> = {}) {
   };
   return { d, log };
 }
-const oa = vi.mocked(core.oaSearch), pm = vi.mocked(core.pmSearch);
-beforeEach(() => { requested = []; oa.mockClear(); pm.mockClear(); });
+const oa = vi.mocked(core.oaSearch), pm = vi.mocked(core.pmSearchV2);
+// runSearch hands PubMed's job to pmSearchV2 (W12). The cases below hold the orchestration to v1's recorded requests, which are the untagged ones, so pmSearchV2 stands in with
+// v1's pmSearch (core's own tests hold pmSearchV2 to its recordings); "PubMed reads the topic's own words" at the end runs the real pmSearchV2.
+beforeEach(() => { requested = []; oa.mockClear(); pm.mockReset(); pm.mockImplementation(core.pmSearch); });
 
 describe("researchSearch's refusals (8284-8290)", () => {
   const base: SearchInput = { topic: "exam anxiety", oa: true, pm: true, design: "any", designLabel: "Any", rank: false, terms: [] };
@@ -354,5 +356,18 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
     expect(log.next).toBeNull();
     expect(log.inserted).toEqual([core.citFmt(saved, 0, "apa")]);
     expect(log.toasts).toEqual([E.retr_added_warn]);
+  });
+});
+
+describe("PubMed reads the topic's own words (W12)", () => {
+  it("runSearch asks PubMed with pmSearchV2: the topic's words tagged [tiab], the recorded search, and only papers about anxiety", async () => {
+    const actual = await vi.importActual<typeof import("@appuscholar/core")>("@appuscholar/core");
+    pm.mockImplementation(actual.pmSearchV2);
+    const { d } = deps({ fetch: replay() });
+    const out = await runSearch({ topic: "exam anxiety", oa: false, pm: true, design: "rct", designLabel: "Randomised trial", rank: false, terms: [] }, d);
+    expect(pm).toHaveBeenCalledWith(expect.any(Function), { q: "exam anxiety", terms: [], design: "rct", retmax: 6 });
+    expect(requested.filter((u) => u.includes("esearch")).map((u) => decodeURIComponent(u.split("term=")[1]!))).toEqual(['(exam[tiab] AND anxiety[tiab]) AND "Randomized Controlled Trial"[pt]']);
+    expect(out!.papers).toHaveLength(6);
+    for (const p of out!.papers) expect(p.title + " " + p.abstract).toMatch(/anxi/i);
   });
 });

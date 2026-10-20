@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { rsAuthorListToCit, rsAuthorsToCit, rsEntryFromResult, rsEntryFromResultV2 } from "../src/research";
+import { pmTopicBlock, rsAuthorListToCit, rsAuthorsToCit, rsBuildQuery, rsBuildQueryV2, rsEntryFromResult, rsEntryFromResultV2 } from "../src/research";
 import type { RsPaper } from "../src/research";
-import { RECORDINGS } from "./fetch/replay";
+import { PUBMED_STOPWORDS } from "../src/data/pubmed-stopwords";
+import { pmSearch, pmSearchV2 } from "../src/fetch/pubmed";
+import { RECORDINGS, replay } from "./fetch/replay";
 
 /**
  * A search result into the library, fixed (walk fault W2, register row D-S2-24): v1's rsEntryFromResult reads the card's line, four names and "et al.", so a paper's
@@ -75,5 +77,119 @@ describe("rsEntryFromResultV2", () => {
     expect(rsEntryFromResultV2(v1Paper, "")).toEqual(rsEntryFromResult(v1Paper, ""));
     expect(rsEntryFromResultV2({ ...v1Paper, authorList: [] }, "mla")).toEqual(rsEntryFromResult(v1Paper, "mla"));
     expect(rsEntryFromResultV2({ ...v1Paper, authors: "Unknown authors", authorList: [] }, "apa").author).toBe("");
+  });
+});
+
+/**
+ * The PubMed query, fixed (walk fault W12, register row D-S2-27): v1 sends the topic untagged, so PubMed's automatic term mapping widened "exam anxiety" into
+ * ("test"[All Fields] AND "anxiety"[All Fields]) and the randomised-trial filter matched 4,406 trials (a stroke rehabilitation trial among them); exam[tiab] AND
+ * anxiety[tiab] matches 76. rsBuildQueryV2 is rsBuildQuery with the topic's own words tagged [tiab] for PubMed; a typed query, a long topic and every OpenAlex query
+ * are v1's. v1's rsBuildQuery, pmSearch and their golden tests are unchanged.
+ */
+describe("pmTopicBlock", () => {
+  it("each content word tagged [tiab], joined with AND; stopwords dropped without regard to case; outer punctuation trimmed; a trailing * kept", () => {
+    expect(pmTopicBlock("exam anxiety")).toBe("exam[tiab] AND anxiety[tiab]");
+    expect(pmTopicBlock("sleep and exam anxiety in students")).toBe("sleep[tiab] AND exam[tiab] AND anxiety[tiab] AND students[tiab]");
+    expect(pmTopicBlock("The Effect of Sleep, on Anxiety?")).toBe("Effect[tiab] AND Sleep[tiab] AND Anxiety[tiab]");
+    expect(pmTopicBlock("  student anxi*  ")).toBe("student[tiab] AND anxi*[tiab]");
+  });
+  it("null for a query the student wrote: a quote, a bracket, a parenthesis, or AND, OR, NOT in capitals", () => {
+    for (const q of ['"exam anxiety"', "anxiety[tiab]", "anxiety]", "(exam anxiety)", "exam anxiety)", "exam AND anxiety", "exam OR test", "exam NOT test", "NOT exam"]) expect(pmTopicBlock(q)).toBeNull();
+    expect(pmTopicBlock("android notorious orbit")).not.toBeNull(); // AND, OR, NOT only as whole capitalised words
+    expect(pmTopicBlock("exam and anxiety")).toBe("exam[tiab] AND anxiety[tiab]"); // lower case is a stopword, not an operator
+  });
+  it("null with no content word or with more than five", () => {
+    expect(pmTopicBlock("the of and")).toBeNull();
+    expect(pmTopicBlock("   ")).toBeNull();
+    expect(pmTopicBlock("... ???")).toBeNull();
+    expect(pmTopicBlock("one two three four five")).not.toBeNull();
+    expect(pmTopicBlock("one two three four five six")).toBeNull();
+    expect(pmTopicBlock("does a fixed bedtime routine lower exam anxiety")).toBeNull();
+  });
+  it("the stopword list is PubMed's published list (130 words, lower case, no duplicates)", () => {
+    expect(PUBMED_STOPWORDS).toHaveLength(130);
+    expect(new Set(PUBMED_STOPWORDS).size).toBe(130);
+    for (const w of ["and", "in", "of", "the", "with", "pmid"]) expect(PUBMED_STOPWORDS).toContain(w);
+    for (const w of PUBMED_STOPWORDS) expect(w).toBe(w.toLowerCase());
+  });
+});
+
+describe("rsBuildQueryV2", () => {
+  const T = ["test anxiety", "evaluation anxiety"];
+  it("the PubMed topic is tagged [tiab] so PubMed does not expand it (W12)", () => {
+    expect(rsBuildQueryV2("exam anxiety", "pm", [], "any")).toBe("exam[tiab] AND anxiety[tiab]");
+    expect(rsBuildQueryV2("exam anxiety", "pm", T, "any")).toBe('(exam[tiab] AND anxiety[tiab]) OR "test anxiety"[tiab] OR "evaluation anxiety"[tiab]');
+    expect(rsBuildQueryV2("exam anxiety", "pm", [], "rct")).toBe('(exam[tiab] AND anxiety[tiab]) AND "Randomized Controlled Trial"[pt]');
+    expect(rsBuildQueryV2("exam anxiety", "pm", T, "rct")).toBe('((exam[tiab] AND anxiety[tiab]) OR "test anxiety"[tiab] OR "evaluation anxiety"[tiab]) AND "Randomized Controlled Trial"[pt]');
+    expect(rsBuildQueryV2("sleep and exam anxiety in students", "pm", [], "any")).toBe("sleep[tiab] AND exam[tiab] AND anxiety[tiab] AND students[tiab]");
+  });
+  it("a typed query, a long topic and every OpenAlex query are v1's", () => {
+    const long = "does a fixed bedtime routine lower exam anxiety";
+    for (const d of ["any", "rct", "sr"]) {
+      expect(rsBuildQueryV2('"exam anxiety"[tiab] AND students', "pm", [], d)).toBe(rsBuildQuery('"exam anxiety"[tiab] AND students', "pm", [], d));
+      expect(rsBuildQueryV2(long, "pm", T, d)).toBe(rsBuildQuery(long, "pm", T, d));
+      expect(rsBuildQueryV2("exam anxiety", "oa", T, d)).toBe(rsBuildQuery("exam anxiety", "oa", T, d));
+      expect(rsBuildQueryV2("exam anxiety", "oa", [], d)).toBe(rsBuildQuery("exam anxiety", "oa", [], d));
+    }
+  });
+  it("builds exactly the term of each v2 recording (so the replay below is the live search)", () => {
+    const urls = [...RECORDINGS.keys()].filter((u) => u.includes("esearch.fcgi") && u.includes("exam%5Btiab%5D"));
+    expect(urls).toHaveLength(2);
+    const want = urls.map((u) => decodeURIComponent(u.split("term=")[1]!));
+    expect(want).toContain(rsBuildQueryV2("exam anxiety", "pm", [], "rct"));
+    expect(want).toContain(rsBuildQueryV2("exam anxiety", "pm", T, "any"));
+  });
+});
+
+describe("pmSearchV2", () => {
+  it("the walk's search (exam anxiety, randomised trial) returns only papers about exam or test anxiety", async () => {
+    const r = replay();
+    const out = await pmSearchV2(r.f, { q: "exam anxiety", design: "rct" });
+    expect(r.unknown).toEqual([]);
+    expect(out.error).toBeUndefined();
+    expect(out.papers.length).toBeGreaterThan(0);
+    for (const p of out.papers) expect(p.title + " " + p.abstract).toMatch(/anxi/i);
+    expect(r.requested.filter((u) => u.includes("esearch")).map((u) => decodeURIComponent(u.split("term=")[1]!))).toEqual(['(exam[tiab] AND anxiety[tiab]) AND "Randomized Controlled Trial"[pt]']);
+  });
+  it("with the ticked terms it asks the recorded tagged search", async () => {
+    const r = replay();
+    const out = await pmSearchV2(r.f, { q: "exam anxiety", terms: ["test anxiety", "evaluation anxiety"], design: "any" });
+    expect(r.unknown).toEqual([]);
+    expect(out.papers).toHaveLength(6);
+  });
+  it("a tagged search that finds nothing falls back to v1's query once", async () => {
+    const urls: string[] = [];
+    const f = (async (u: RequestInfo | URL) => {
+      const url = String(u);
+      urls.push(url);
+      const term = decodeURIComponent(url.split("term=")[1] ?? "");
+      if (url.includes("esearch")) return new Response(JSON.stringify({ esearchresult: { idlist: term.includes("[tiab]") ? [] : ["11", "22"] } }));
+      if (url.includes("esummary")) return new Response(JSON.stringify({ result: { uids: ["11", "22"], "11": { title: "A" }, "22": { title: "B" } } }));
+      return new Response("<PubmedArticleSet/>");
+    }) as typeof fetch;
+    const out = await pmSearchV2(f, { q: "exam anxiety", design: "any" });
+    expect(out.papers.map((p) => p.title)).toEqual(["A", "B"]);
+    const searches = urls.filter((u) => u.includes("esearch")).map((u) => decodeURIComponent(u.split("term=")[1]!));
+    expect(searches).toEqual(["exam[tiab] AND anxiety[tiab]", "exam anxiety"]);
+  });
+  it("no fallback after an error, or for a typed query (it was already v1's); a fallback that finds nothing ends the search", async () => {
+    const seen: string[] = [];
+    const down = (async (u: RequestInfo | URL) => { seen.push(String(u)); return new Response("", { status: 500 }); }) as typeof fetch;
+    expect(await pmSearchV2(down, { q: "exam anxiety" })).toEqual({ papers: [], error: "HTTP 500" });
+    expect(seen).toHaveLength(1);
+    const empty = (async (u: RequestInfo | URL) => { seen.push(String(u)); return new Response('{"esearchresult":{"idlist":[]}}'); }) as typeof fetch;
+    seen.length = 0;
+    expect(await pmSearchV2(empty, { q: '"exam anxiety"' })).toEqual({ papers: [] });
+    expect(seen).toHaveLength(1);
+    seen.length = 0;
+    expect(await pmSearchV2(empty, { q: "exam anxiety" })).toEqual({ papers: [] });
+    expect(seen).toHaveLength(2);
+  });
+  it("a typed query is searched exactly as pmSearch searches it", async () => {
+    const a = replay(), b = replay();
+    const o = { q: "exam anxiety students AND teens" };
+    await pmSearchV2(a.f, o).catch(() => null);
+    await pmSearch(b.f, o).catch(() => null);
+    expect(a.requested).toEqual(b.requested);
   });
 });
