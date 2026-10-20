@@ -1,6 +1,6 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
-  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPrompt, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
+  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
   buildShelfSummaryPrompt, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
   shSummaryNoteId, shSummaryText, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
 } from "@appuscholar/core";
@@ -105,8 +105,8 @@ export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" |
 /** Idea & Feasibility's "🔎 Assess feasibility" (v1 ideaAssess 8568-8580): the advisor's read lands in the suggestion pane, insertable with Tab or Accept. */
 export async function assessIdea(d: IdeaDeps): Promise<void> {
   if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return; }
-  // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000).
-  const built = buildIdeaPrompt(d.field, d.intake);
+  // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000); V2 names each area's line by the area (W7).
+  const built = buildIdeaPromptV2(d.field, d.intake);
   const token = d.setThinking("custom", null, IDEA_THINKING);
   d.dockShow("ai");
   try {

@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildIdeaPrompt, fieldLabel } from "@appuscholar/core";
+import { buildIdeaPromptV2, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
 
 type Intake = { topic: string; resources: string; timeframe: string; constraints: string };
@@ -128,7 +128,7 @@ describe("Idea & Feasibility: Assess feasibility", () => {
     h.blob.value = STORED;
     mount();
     await click("idea-assess");
-    const built = buildIdeaPrompt(fieldLabel("  nursing "), STORED);
+    const built = buildIdeaPromptV2(fieldLabel("  nursing "), STORED);
     expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.3, max: 1200 });
     expect(h.sug.setThinking).toHaveBeenCalledWith("custom", null, "💜 Thinking this through…");
     expect(h.sug.set).toHaveBeenCalledWith("Topic clarity and researchability: High. ...", null, 1);

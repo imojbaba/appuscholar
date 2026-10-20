@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { classifyAiUse } from "../src/aiuse";
 import type { AiUseGroup } from "../src/aiuse";
 import { buildWritingPrompt, buildDraftFirstPrompt, buildChatPrompt } from "../src/prompts";
-import { buildIdeaPrompt } from "../src/prompts-idea";
+import { buildIdeaPrompt, buildIdeaPromptV2 } from "../src/prompts-idea";
 import { buildHelperPrompt, buildDevilPrompt, buildVivaPrompt } from "../src/prompts-helpers";
 import { buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt, buildGapFinderPromptV2 } from "../src/prompts-research";
 import { buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "../src/prompts-analyse";
@@ -26,6 +26,7 @@ const lesson = (teacher: "appu" | "raj" | "meera" | "dev" | "tara"): string => b
 export const LABELS: Array<[name: string, build: () => string, k: string, g: AiUseGroup]> = [
   // Fixed by the spec.
   ["buildIdeaPrompt", () => buildIdeaPrompt("psychology", { topic: "sleep and recall in college students" }).prompt, "checking whether my project idea is realistic", "feedback"],
+  ["buildIdeaPromptV2", () => buildIdeaPromptV2("psychology", { topic: "sleep and recall in college students" }).prompt, "checking whether my project idea is realistic", "feedback"],
   ["buildGapFinderPrompt", () => buildGapFinderPrompt("psychology", [paper(1), paper(2)]).prompt, "looking for research gaps in selected abstracts", "feedback"],
   ["buildGapFinderPromptV2", () => buildGapFinderPromptV2("psychology", [paper(1), paper(2)]).prompt, "looking for research gaps in selected abstracts", "feedback"],
   ["buildLitReviewPrompt", () => buildLitReviewPrompt("psychology", [paper(1), paper(2)]).prompt, "drafting a literature review paragraph from selected abstracts", "text"],

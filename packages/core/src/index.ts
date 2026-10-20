@@ -31,7 +31,7 @@ export type { ApChunk, ApDoc, ApStage, ApNumber } from "./analyse";
 export { pdCsvCell, pdCsv } from "./csv";
 export { RS_DESIGNS, RS_DESIGN, rsReconstructAbstract, rsOaStatus, rsQuickCheck, rsRankParse, rsCleanTerm, rsBuildQuery, pmTopicBlock, rsBuildQueryV2, rsDedupe, rsFilterPass, rsCsvText, rsAuthorsToCit, rsEntryFromResult, rsCorpusText } from "./research";
 export type { RsQuick, RsPaper, RsFilter } from "./research";
-export { buildIdeaPrompt } from "./prompts-idea";
+export { buildIdeaPrompt, buildIdeaPromptV2, IDEA_AREA_FORMAT_V1, IDEA_AREA_FORMAT_V2 } from "./prompts-idea";
 export { HELPER_TEMPS, HELPER_MIN_CHARS, VIVA_MIN_WORDS, DEVIL_MIN_WORDS, buildHelperPrompt, buildDevilPrompt, buildVivaPrompt } from "./prompts-helpers";
 export type { HelperKind } from "./prompts-helpers";
 export { QUICK_READ_MIN_CHARS, buildQuickReadPrompt, buildRankPrompt, buildSuggestTermsPrompt, buildLitReviewPrompt, buildGapFinderPrompt, buildGapFinderPromptV2 } from "./prompts-research";

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
-import { buildIdeaPrompt, classifyAiUse, fieldLabel } from "@appuscholar/core";
+import { buildIdeaPromptV2, classifyAiUse, fieldLabel } from "@appuscholar/core";
 import { assessIdea, IDEA_NEED_TOPIC, IDEA_THINKING, type IdeaDeps } from "../lib/ai/actions";
 import { apiMsg } from "../lib/ai/callAI";
 import en from "../messages/en.json";
@@ -35,10 +35,10 @@ describe("assessIdea (v1 ideaAssess 8568-8580)", () => {
     expect(m.setThinking).not.toHaveBeenCalled();
   });
 
-  it("sends buildIdeaPrompt(field, intake) with v1's temp 0.3 and max 1200, the prompt is logged as checking an idea", async () => {
+  it("sends buildIdeaPromptV2(field, intake) with v1's temp 0.3 and max 1200, the prompt is logged as checking an idea", async () => {
     const { d, m } = deps({ field: fieldLabel("  nursing  ") });
     await assessIdea(d);
-    const built = buildIdeaPrompt("nursing", INTAKE);
+    const built = buildIdeaPromptV2("nursing", INTAKE);
     expect(built.temp).toBe(0.3);
     expect(built.max).toBe(1200);
     expect(m.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.3, max: 1200 });
