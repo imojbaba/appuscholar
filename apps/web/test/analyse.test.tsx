@@ -321,6 +321,21 @@ describe("Analyse a paper: the intake (apFromFile, apFromPaste, apFromShelf, apS
     expect(toasts()).toEqual(["Reading slow.pdf…"]);
   });
 
+  it("Use this paper with nothing chosen asks for a choice and does not cancel a paper still being read", async () => {
+    let done: (v: unknown) => void = () => {};
+    h.extract.mockImplementation(() => new Promise((r) => { done = r; }));
+    h.index = SHELF1;
+    await mount();
+    await choose(new File(["%PDF"], "slow.pdf"));
+    // The dropdown is still on "Choose a paper from your Reading shelf".
+    await click(tid("ap-shelf-btn"));
+    expect(toasts()).toEqual(["Reading slow.pdf…", "Choose a paper first"]);
+    await act(async () => { done({ pages: ["A slow PDF about reading\n" + "words ".repeat(200)], total: 1 }); await new Promise((r) => setTimeout(r, 0)); });
+    await settle();
+    expect(h.loadPaper).not.toHaveBeenCalled();
+    expect(tid("ap-head")!.textContent).toContain("A slow PDF about reading");
+  });
+
   it("a shelf paper whose text cannot be read here says so and loads nothing", async () => {
     h.index = [{ id: "sh1", title: "Locked paper", file: "l.pdf", size: 1, added: "", total: 1, kept: 1 }];
     await mount();

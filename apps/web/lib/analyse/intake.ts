@@ -104,6 +104,9 @@ export function shelfOptions(index: ShelfIndex | null, unread: boolean, t: T): {
  * apFromShelf (9923-9927): the paper chosen ("Choose a paper first" when none), loaded as a PDF under its title, else its file name. Its text is the shelf's own blob, read once (`loadPaper`, Task 11):
  * a paper whose text cannot be read on this device (locked and not unlocked, or broken) is reported with the shelf's own words, where v1's records always have their text.
  */
+/** A paper of the shelf's list is chosen: the Use-this-paper button checks it before it takes a ticket, so a click with nothing chosen does not cancel a paper still being read. */
+export const shelfChosen = (index: ShelfIndex | null, id: string): boolean => (index ?? []).some((x) => x.id === id);
+
 export async function fromShelf(ticket: number, id: string, d: Pick<IntakeDeps, "toast" | "t"> & { index: ShelfIndex | null; read(id: string): Promise<{ pages: string[] } | null> }): Promise<boolean> {
   const p = (d.index ?? []).find((x) => x.id === id);
   if (!p) { d.toast(d.t("ap2_choose_a_paper_first")); return false; }

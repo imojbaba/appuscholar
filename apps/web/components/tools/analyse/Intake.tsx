@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
-import { fromFile, fromPaste, fromSample, fromShelf, nextIntake, shelfOptions } from "@/lib/analyse/intake";
+import { fromFile, fromPaste, fromSample, fromShelf, nextIntake, shelfChosen, shelfOptions } from "@/lib/analyse/intake";
 import { setAp, useApState } from "@/lib/analyse/useApDoc";
 import { useShelf } from "@/lib/shelf/useShelf";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,11 @@ export function Intake() {
           <option value="">{opts.empty}</option>
           {opts.items.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
         </select>
-        <Button variant="ghost" size="sm" id="apShelfBtn" data-testid="ap-shelf-btn" onClick={() => { void fromShelf(nextIntake(), pick, { ...d, index: shelf.index, read: shelf.loadPaper }); }}>{t("ap2_shelf_btn")}</Button>
+        <Button variant="ghost" size="sm" id="apShelfBtn" data-testid="ap-shelf-btn" onClick={() => {
+          // Nothing chosen: v1's toast, and no ticket, so a paper still being read is not cancelled.
+          if (!shelfChosen(shelf.index, pick)) { toast(t("ap2_choose_a_paper_first")); return; }
+          void fromShelf(nextIntake(), pick, { ...d, index: shelf.index, read: shelf.loadPaper });
+        }}>{t("ap2_shelf_btn")}</Button>
         <Button variant="ghost" size="sm" id="apSampleBtn" data-testid="ap-sample-btn" onClick={() => fromSample(nextIntake(), d)}>{t("ap2_sample_btn")}</Button>
       </div>
       {shelf.locked && <p className="note ap-note" data-testid="ap-shelf-locked">{t("vault_shelf_locked")}</p>}

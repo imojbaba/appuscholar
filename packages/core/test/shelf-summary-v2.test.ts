@@ -72,11 +72,14 @@ describe("buildShelfSummaryPromptV2 (W18)", () => {
     expect(b.prompt.endsWith("PAPER TEXT:\n[ page 1, Abstract ]\nWe studied 120 students.\n\n[ page 1, Method ]\nA survey in Delhi.\n\n[ page 1, Results ]\nSleep predicted recall.")).toBe(true);
   });
 
-  it("a body of exactly 18,000 characters is sent whole, one character more is picked from", () => {
+  it("a body of exactly 18,000 characters (text, label and blank line) is sent whole, one character more is picked from", () => {
     const body = (n: number): string => "Abstract\n" + "x".repeat(n);
-    const whole = shSummaryPick(apBuild("", [body(18000)], "pdf"));
+    // "[ page 1, Abstract ]\n" and the blank line: 23 characters.
+    const label = "[ page 1, Abstract ]\n".length + 2;
+    const whole = shSummaryPick(apBuild("", [body(18000 - label)], "pdf"));
     expect(whole.partial).toBe(false);
-    expect(whole.text.length).toBeGreaterThan(18000);
+    expect(whole.text.length).toBe(18000 - 2);
+    expect(shSummaryPick(apBuild("", [body(18000 - label + 1)], "pdf")).partial).toBe(true);
     const doc = apBuild("", ["Abstract\n" + filler("A", 20), "Method\n" + filler("M", 220)], "pdf");
     expect(doc.chars).toBeGreaterThan(SHELF_SUMMARY_BUDGET_V2);
     expect(shSummaryPick(doc).partial).toBe(true);
@@ -104,6 +107,15 @@ describe("buildShelfSummaryPromptV2 (W18)", () => {
     const b = buildShelfSummaryPromptV2("psychology", pages);
     expect(b.prompt.length).toBeLessThan(20000);
     expect(b.pick.partial).toBe(true);
+  });
+
+  it("a paper of many tiny labelled passages is picked from, not sent whole: the labels count toward the budget there too", () => {
+    const text = Array.from({ length: 8000 }, () => "Results\nab").join("\n");
+    const doc = apBuild("", [text], "pdf");
+    expect(doc.chunks.filter((c) => !c.ref).reduce((a, c) => a + c.text.length, 0)).toBeLessThan(SHELF_SUMMARY_BUDGET_V2);
+    const b = buildShelfSummaryPromptV2("psychology", [text]);
+    expect(b.pick.partial).toBe(true);
+    expect(b.prompt.length).toBeLessThan(20000);
   });
 
   it("many short passages cannot take the prompt past 20,000 either (the labels count)", () => {

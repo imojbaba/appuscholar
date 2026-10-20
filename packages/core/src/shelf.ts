@@ -226,14 +226,15 @@ function shSplitLong(c: ApChunk): ApChunk[]{
 }
 /**
  * The passages of a paper that the summary reads (walk fault W18). `doc` is apBuild's: about 700 characters a passage, sections from headings, the reference list left out. A body of
- * `budget` characters or less is sent whole. Otherwise passages are taken in this priority, each tier in page order, skipping a passage that would pass the budget: (0) the first
+ * `budget` characters or less, counted as the picking counts it (each passage's text, its label and the blank line), is sent whole. Otherwise passages are taken in this priority, each tier in page order, skipping a passage that would pass the budget: (0) the first
  * passage and any under "Abstract"; (1) any under "Limitations" or whose text has limitation(s), shortcoming(s) or weakness(es); (2) Discussion, General discussion, Conclusion(s);
  * (3) Method(s), Methodology, Participants, Sample, Design, Procedure, Measure(s), Materials, Instrument(s); (4) Results, Findings, Analysis; (5) the rest. They are sent in page
  * order with apPick's labels. What a passage costs is its text and its label (and the blank line), so the text is under `budget` characters in all, and the prompt under 20,000.
  */
 export function shSummaryPick(doc: ApDoc, budget: number = SHELF_SUMMARY_BUDGET_V2): { text: string; partial: boolean; n: number; of: number } {
   let ch=doc.chunks.filter(c=>!c.ref);
-  const total=ch.reduce((a,c)=>a+c.text.length,0);
+  // A passage costs its text, its label and the blank line, here as in the picking branch, so a paper of many tiny passages cannot pass the cap whole.
+  const total=ch.reduce((a,c)=>a+shPassageLabel(c).length+c.text.length+2,0);
   let pick=ch,partial=false;
   if(total>budget){
     partial=true;
