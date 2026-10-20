@@ -102,8 +102,8 @@ export const V2_STRINGS = {
   vault_save_locked: { en: "Unlock your vault to save your changes.", hi: "अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   // Idea & Feasibility while the vault is locked: the saved intake cannot be read, and what is typed waits for the unlock. DRAFT Hindi.
   vault_idea_locked: { en: "Your saved idea is locked. Unlock your vault to read it and save your changes.", hi: "आपका सहेजा हुआ विचार बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
-  // Idea & Feasibility while a save that lost a race to another window left an intake this device cannot open: the typed text stays on screen, unsaved. DRAFT Hindi.
-  vault_idea_broken: { en: "Your saved idea was changed in another window and cannot be opened on this device. What you typed stays here and is not saved over it. Use “Save this idea as a project” to keep it.", hi: "आपका सहेजा हुआ विचार किसी दूसरी विंडो में बदल गया और इस डिवाइस पर नहीं खुल सकता। आपने जो लिखा है वह यहीं रहेगा और उसके ऊपर सहेजा नहीं जाएगा। इसे रखने के लिए “इस विचार को प्रोजेक्ट के रूप में सहेजें” का उपयोग करें।" },
+  // Idea & Feasibility while a save that lost a race to another window left an intake this device cannot open: the typed text stays on screen, unsaved, and the note tells the student to copy it. DRAFT Hindi.
+  vault_idea_broken: { en: "Your saved idea could not be opened, so this window will not save over it. Copy your text somewhere safe before you close or reload this page.", hi: "आपका सहेजा हुआ विचार खुल नहीं सका, इसलिए यह विंडो उसके ऊपर कुछ सहेजेगी नहीं। इस पेज को बंद या रीलोड करने से पहले अपना लिखा हुआ टेक्स्ट कहीं सुरक्षित कॉपी कर लें।" },
   // The Citation Manager's library while the vault is locked (the library cannot be read; + Library asks for the passphrase and saves after the unlock),
   // and a stored library that does not open on this device (shown, and confirmed before the first save replaces it: ruling R16). DRAFT Hindi.
   vault_cite_locked: { en: "Your saved library is locked. Unlock your vault to read it and save your sources.", hi: "आपकी सहेजी हुई लाइब्रेरी बंद है। इसे पढ़ने और अपने स्रोत सहेजने के लिए अपनी तिजोरी खोलें।" },
