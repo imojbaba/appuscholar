@@ -25,7 +25,7 @@ export function IdeaPanel() {
   const suggestion = useSuggestion();
   const callAI = useCallAI();
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
-  const { value, loading, locked, set } = useProjectBlob("idea_intake", projectId);
+  const { value, loading, locked, broken, set } = useProjectBlob("idea_intake", projectId);
   const intake = value ?? EMPTY;
   // Until the stored intake is known there is nothing to show or to edit (and no project id at all before /me answers).
   const waiting = loading || projectId === null;
@@ -45,6 +45,7 @@ export function IdeaPanel() {
       <h3>{plain(t("tab_idea"))}</h3>
       <p className="desc">{t("idea_panel_desc")}</p>
       {locked && <p className="note" role="status" data-testid="idea-locked">{t("vault_idea_locked")}</p>}
+      {broken && value !== null && <p className="note" role="status" data-testid="idea-broken">{t("vault_idea_broken")}</p>}
       {opening ? <PanelLoading /> : (
         <>
           <div className="field">

@@ -1032,6 +1032,7 @@
   "vault_forget_q": "Forget the vault on this computer?",
   "vault_forgot": "Forgot it? Use your recovery sheet",
   "vault_forgotten": "The vault is no longer remembered on this computer.",
+  "vault_idea_broken": "Your saved idea was changed in another window and cannot be opened on this device. What you typed stays here and is not saved over it. Use “Save this idea as a project” to keep it.",
   "vault_idea_locked": "Your saved idea is locked. Unlock your vault to read it and save your changes.",
   "vault_migrate_fail": "Some documents are not yet in your vault. Reconnect, or open the vault again, to finish.",
   "vault_migrated": "All your documents are now locked in your vault ✓",

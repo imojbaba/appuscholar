@@ -17,7 +17,8 @@ export const BLOB_SAVE_DEBOUNCE_MS = 800;
  * `locked`: the vault is locked and the student has not opened it. While the read is what is locked, `value` is null (never a default),
  * or what the panel set since, held; a held value is sent once the vault opens. `broken`: the stored blob does not open or is not of its
  * kind's shape, and the panel has set nothing over it (the panel says so; it never crashes). `error`: the last read or save failed; what
- * was set is kept and goes with the next set, flush or unlock.
+ * was set is kept and goes with the next set, flush or unlock. While a value is held over a blob that did not open at a save's re-read (a 409), `value` is
+ * that held value (the panel shows the student's own text) and `broken` is true.
  */
 export type ProjectBlobState<T> = { value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean };
 /** A new value, or an update of the current one (`prev` is null while there is no blob yet). */
@@ -54,6 +55,11 @@ type ClientDeps<T> = {
   vault: () => BlobVault;
   /** set() is a no-op that holds nothing and flush() resolves false (the pop-out's guard). */
   readOnly?: boolean;
+  /**
+   * No panel asks (R16) before it sets over a blob that does not open: idea_intake and rs_prefs. A value held over an unreadable blob then stays held, takes
+   * further sets, and is never saved over the blob unasked. False or absent: the panel asks, and its next set is the go-ahead.
+   */
+  unguarded?: boolean;
   /** Called after each save the server accepted (the pop-out sync's announce). */
   onSaved?: () => void;
   /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). */
@@ -102,8 +108,9 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   let heldByLock = false;
   let broken = false;
   /**
-   * A save's re-read after a conflict found a blob that does not open: this window's value is held in `pending`, `value` is null so the panel
-   * shows broken (and useLibrary asks first, R16), and nothing is sent until the panel sets over it; that set goes on from the held value.
+   * A save's re-read after a conflict found a blob that does not open: this window's value is held in `pending` and shown as `value` with `broken`
+   * (a guarded panel asks first, R16), and nothing is sent until the panel sets over it; that set goes on from the held value. Kinds with no
+   * guard (`unguarded`) keep the value held for good: later sets land on it, none is sent.
    */
   let brokenHeld = false;
   let error = false;
@@ -119,10 +126,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   let saving = false;
   const holds = () => pending !== null || ops.length > 0 || saving;
   const snapshot = (): ProjectBlobState<T> => ({
-    value: known ? value : applyOps(ops, null),
+    value: known ? (brokenHeld && pending ? pending.value : value) : applyOps(ops, null),
     loading: !attempted,
     locked: (!known && lockedRead) || heldByLock,
-    broken: known && broken && value === null,
+    broken: known && broken && (value === null || brokenHeld),
     error
   });
   const emit = () => {
@@ -354,6 +361,14 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     set(next: BlobUpdate<T>) {
       if (o.readOnly) return;
       const op = toOp(next);
+      if (known && brokenHeld && o.unguarded && pending) {
+        // No panel asked the student (R16), so this edit is no go-ahead: it lands on the held value, which stays held and shown.
+        pending = { value: "value" in op ? op.value : op.update(pending.value) };
+        sinceBase.push(op);
+        emit();
+        clearTimer();
+        return;
+      }
       if (known) {
         // After a re-read found a broken blob, this set is the panel's go-ahead (R16): it goes on from the value this window held.
         const base = brokenHeld && pending ? pending.value : value;
@@ -431,6 +446,8 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     id,
     // The pop-out's guard, here so every client (the hook's, the shelf's papers, a detached index write) has it.
     readOnly: (opts.readOnly ?? false) || !blobWritable(kind),
+    // Idea and the Research panel's rank toggle have no R16 ask; every other kind's panel asks before it sets over a blob that does not open.
+    unguarded: kind === "idea_intake" || kind === "rs_prefs",
     // The other windows read v1's two synced keys again once they are saved here (v1's storage event, 7614).
     onSaved: syncedKind(kind) ? () => announceBlob(id) : undefined,
     parse: (json) => parseBlob(kind, json),

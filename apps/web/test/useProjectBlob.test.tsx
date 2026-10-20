@@ -920,8 +920,8 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(ok).toBe(false);
     expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"']);
     expect(blobOf("p1", "citations").body).toBe("{not json");
-    // The panel is told, as after a first read of a broken blob: useLibrary asks before its next write.
-    expect(s.b).toMatchObject({ value: null, broken: true });
+    // The panel is told (broken), and still shows the student's own held value: useLibrary asks before its next write.
+    expect(s.b).toMatchObject({ value: [A, Y], broken: true });
     expect(shouldWarnOnUnloadBlobs()).toBe(true);
     // Neither a flush nor the debounce sends it on its own.
     await act(async () => { ok = await s.b.flush(); });
@@ -939,6 +939,48 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
     expect(s.b).toMatchObject({ value: [A, Y, Z], broken: false, error: false });
     expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  it("while a value is held over an unreadable blob, value is the held value (broken stays reported); a kind with an R16 guard saves it only after the next set", async () => {
+    server.blobs = [{ projectId: "p1", kind: "ap_cols", body: JSON.stringify(["a"]), keyVersion: 0, deks: [] }];
+    const s = await mount("ap_cols", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ ...blobOf("p1", "ap_cols"), body: "{not json", version: 2 }];
+    act(() => { s.b.set((p: string[] | null) => [...(p ?? []), "b"]); });
+    await act(async () => { await s.b.flush(); });
+    expect(s.b).toMatchObject({ value: ["a", "b"], broken: true });
+    // A guarded panel asks the student, then sets: the set goes on from the held value and the blob is replaced.
+    act(() => { s.b.set((p: string[] | null) => [...(p ?? []), "c"]); });
+    expect(s.b).toMatchObject({ value: ["a", "b", "c"], broken: false });
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "ap_cols").body)).toEqual(["a", "b", "c"]);
+  });
+
+  it("a kind with no R16 guard (idea_intake): the held value is shown, the next edit lands on it and is NOT saved over the unreadable blob", async () => {
+    server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(INTAKE), keyVersion: 0, deks: [] }];
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [{ ...blobOf("p1", "idea_intake"), body: "{not json", version: 2 }];
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, timeframe: "one year" })); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(s.b).toMatchObject({ value: NEXT, broken: true });
+    // The next keystroke goes on from the held value, so no other field is lost, and nothing is sent.
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, constraints: "evenings only" })); });
+    expect(s.b).toMatchObject({ value: { ...NEXT, constraints: "evenings only" }, broken: true });
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(false);
+    expect(putsTo("p1", "idea_intake").map((c) => c.ifMatch)).toEqual(['"1"']);
+    expect(blobOf("p1", "idea_intake").body).toBe("{not json");
+    expect(shouldWarnOnUnloadBlobs()).toBe(true);
+    // Gone with the panel: the drain has nobody to ask either.
+    s.unmount();
+    await settle(50);
+    await act(async () => { await heldBlobs.drain(); });
+    expect(putsTo("p1", "idea_intake")).toHaveLength(1);
+    expect(blobOf("p1", "idea_intake").body).toBe("{not json");
   });
 
   it("a value held over a broken blob is not sent by the held-blobs drain once the panel goes away (no panel to ask, R16)", async () => {
