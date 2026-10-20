@@ -59,6 +59,8 @@ export { rsParseTerms, rsSortResults, rsFoldIndex } from "./research";
 // Stage 2: Reading shelf (Task 11)
 export { appuStem, SH_STOP, shTokens, shCount, shSnippet, shSnippetParts, htmlMarksToParts, shRank, shBestSentence, shRankPages, shFindPassages, SH_MAX_PAGES, SH_MIN_CHARS, shPageText, shChars, shTitleGuess, shPaperId, shNoteId, shSummaryNoteId, shMarkedParts, shQuoteFind, shMineOk, shStripEmails, shSummaryText, SHELF_SUMMARY_MAX_CHARS, SHELF_SUMMARY_BUDGET_V2, SHELF_SUMMARY_TIER0_CAP_V2, shSummaryPick, buildShelfSummaryPrompt, buildShelfSummaryPromptV2, SHELF_DEFAULT_COLS, shColsOf, shColsAdd, shColsDel, shMatrixCsv, shBackupBundle, shBackupFileName, shRestoreParse } from "./shelf";
 export type { SnippetPart, ShHit, ShSearchHit, ShPassage, ShTextItem, ShNote, ShRecord } from "./shelf";
+// Fix wave A (W15, register row D-S2-28): a new shelf paper takes its title from its DOI or the library
+export { SHELF_TITLE_TIMEOUT_MS, shPaperDoi, shTitleOnPage, resolveShelfTitle } from "./shelf-title";
 // Stage 2: Analyse a paper, the page's rules and formats (Task 12)
 export { apFileKind, apFileStem, apDocxText, apTitleOf, apLoadRefusal, apShelfLabel, apPreview, apNumP } from "./analyse-page";
 // Stage 2: Analyse a paper, the walk-through's reply, the paper card and the cards side by side (Task 13)

@@ -48,7 +48,8 @@ const RcCheckSchema = z.looseObject({
 });
 const RefCheckCacheSchema = z.record(str, RcCheckSchema);
 /** The Reading shelf's list of papers; each paper's text is its own `shelf_paper:<id>` blob. `added` is v1's ISO date string. */
-const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num }));
+/** Fix wave A (W15, register row D-S2-28): `doi` is the DOI printed on a new paper's first page, kept optional so an entry stored before it (or by build 6c38396) still parses. */
+const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num, doi: str.optional() }));
 /** A highlight or note on a shelf paper (v1 11681: id, page, quote, note, at). */
 const HighlightSchema = z.looseObject({ id: str, page: num, quote: str, note: str, at: str });
 const ShelfPaperSchema = z.looseObject({ pages: z.array(str), notes: z.array(HighlightSchema), cells: z.record(str, str) });

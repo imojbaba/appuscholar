@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { fieldLabel, SHELF_DEFAULT_COLS, shColsOf } from "@appuscholar/core";
+import { useEffect, useRef, useState } from "react";
+import { crLookupDoi, fieldLabel, resolveShelfTitle, SHELF_DEFAULT_COLS, SHELF_TITLE_TIMEOUT_MS, shColsOf } from "@appuscholar/core";
+import { useLibrary } from "@/lib/cite/useLibrary";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { shelfSummarise } from "@/lib/ai/actions";
@@ -54,7 +55,15 @@ function ShelfBody() {
   const { index, items } = store;
   const defaults = SHELF_DEFAULT_COLS;
   const cols = shColsOf(store.cols.value, defaults);
-  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), setStatus, toast, now: () => new Date() };
+  // W15: a new paper's title comes from the DOI on its first page (the library, then Crossref: the DOI only, 4 s at most), v1's first line as the fallback. The library is read as it is when the PDF has been read.
+  const { lib } = useLibrary({ passive: true });
+  const libRef = useRef(lib);
+  useEffect(() => { libRef.current = lib; }, [lib]);
+  const resolveTitle: ShelfOps["resolveTitle"] = (pages, stem) => resolveShelfTitle(pages, stem, {
+    lib: libRef.current,
+    lookupDoi: (doi) => crLookupDoi((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SHELF_TITLE_TIMEOUT_MS) }), doi)
+  });
+  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, setStatus, toast, now: () => new Date() };
   const known = !index.loading && !index.locked;
   const anyLocked = index.locked || store.cols.locked || [...store.papers.values()].some((s) => s.locked);
   const anyBroken = !!index.broken || !!store.cols.broken || [...store.papers.values()].some((s) => s.broken);
