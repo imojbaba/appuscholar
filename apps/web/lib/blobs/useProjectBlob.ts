@@ -63,6 +63,13 @@ type ClientDeps<T> = {
 /** PUTs one save makes while another window keeps saving first; after the last conflict the value is held. */
 export const BLOB_CONFLICT_ATTEMPTS = 3;
 const isVersionConflict = (e: unknown): boolean => e instanceof ApiError && e.status === 409 && e.code === "version-conflict";
+/** Deep equality of two JSON values (key order aside). */
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null || Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  return ka.length === kb.length && ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && sameJson((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+}
 
 const toOp = <T,>(u: BlobUpdate<T>): HeldOp<T> => (typeof u === "function" ? { update: u as (prev: T | null) => T } : { value: u });
 
@@ -179,11 +186,28 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /** Keeps a value that could not be sent; a newer one set meanwhile wins. */
   const hold = (v: T) => { if (!pending) pending = { value: v }; };
 
+  /** The last PUT failed with no HTTP answer (offline, a dropped connection): the server may have stored it. */
+  let outcomeUnknown = false;
+  const put = async (body: BlobPut): Promise<BlobWire> => {
+    try { return await o.put(body, version); } catch (e) { if (!(e instanceof ApiError)) outcomeUnknown = true; throw e; }
+  };
+
+  /**
+   * A save whose outcome is unknown carried the first `carried` sets of `sinceBase`: they become one update that leaves a value equal to the one
+   * sent as it is (that save was stored; replaying an addition would add it twice) and replays them onto any other. The client's re-read after
+   * a 409 and the held-blobs drain both replay through it.
+   */
+  function markUnsure(sent: string, carried: number) {
+    const sentValue: unknown = JSON.parse(sent);
+    const carriedOps = sinceBase.slice(0, carried);
+    sinceBase = [{ update: (prev: T | null) => (sameJson(prev, sentValue) ? prev : applyOps(carriedOps, prev)) as T }, ...sinceBase.slice(carried)];
+  }
+
   /** Seals and sends `json` on the current version: the answer, or null when the vault stays locked. A version-conflict is thrown. */
   async function sealAndPut(json: string): Promise<BlobWire | null> {
     let body = await seal(json);
     if (!body) return null;
-    try { return await o.put(body, version); } catch (e) {
+    try { return await put(body); } catch (e) {
       if (!isStaleKeys(e)) throw e;
       // Re-read the blob's keys (and the vault: another tab may have set one up), seal again, and try once more.
       const fresh = await o.get();
@@ -191,7 +215,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       await o.vault().known(true);
       body = await seal(json);
       if (!body) return null;
-      return await o.put(body, version);
+      return await put(body);
     }
   }
 
@@ -205,7 +229,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     try {
       for (let conflicts = 0; ; ) {
         let w: BlobWire | null;
-        try { w = await sealAndPut(JSON.stringify(v)); } catch (e) {
+        const json = JSON.stringify(v);
+        outcomeUnknown = false;
+        try { w = await sealAndPut(json); } catch (e) {
+          if (outcomeUnknown) { markUnsure(json, carried); throw e; }
           if (!isVersionConflict(e)) throw e;
           // Another window saved first. After the last attempt the value is held and goes with the next edit (or flush, unlock, mount).
           if (++conflicts >= BLOB_CONFLICT_ATTEMPTS) { hold(v); error = true; o.onConflict?.(); return false; }

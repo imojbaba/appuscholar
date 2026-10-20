@@ -783,6 +783,84 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(shouldWarnOnUnloadBlobs()).toBe(false);
   });
 
+  /** Every blob PUT reaches the store; while `lose` is on, the browser hears a network error instead of the answer. */
+  function loseAnswers() {
+    const st = { lose: false };
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      const r = await fakeApi(path, init);
+      if (st.lose && init?.method === "PUT" && path.includes("/blobs/")) throw new TypeError("Failed to fetch");
+      return r;
+    });
+    return st;
+  }
+
+  it("a save whose response is lost is not replayed twice", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const net = loseAnswers();
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    net.lose = true;
+    act(() => { s.b.set(add(Y)); });
+    let ok: boolean | undefined;
+    await act(async () => { ok = await s.b.flush(); });
+    // Stored, but this tab does not know it.
+    expect(ok).toBe(false);
+    expect(s.b.error).toBe(true);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    expect(blobOf("p1", "citations").version).toBe(2);
+    net.lose = false;
+    const Z = { author: "Ok, Z." };
+    act(() => { s.b.set(add(Z)); });
+    await act(async () => { ok = await s.b.flush(); });
+    expect(ok).toBe(true);
+    // The next save named the old version (409), read the lost save back, and replayed only the later edit.
+    expect(putsTo("p1", "citations").map((c) => c.ifMatch)).toEqual(['"1"', '"1"', '"2"']);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y, Z]);
+    expect(s.b).toMatchObject({ value: [A, Y, Z], error: false });
+    expect(shouldWarnOnUnloadBlobs()).toBe(false);
+  });
+
+  it("a save whose response is lost is not replayed twice by the held-blobs drain", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    const net = loseAnswers();
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    net.lose = true;
+    act(() => { s.b.set(add(Y)); });
+    // The panel goes away; its last save is stored but its answer is lost, so the edit is held.
+    s.unmount();
+    await until(() => heldBlobs.has("blob:p1:citations"));
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    net.lose = false;
+    await act(async () => { await heldBlobs.drain(); });
+    expect(heldBlobs.size).toBe(0);
+    expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+    // A new mount reads it once, too.
+    const t = await mount("citations", "p1");
+    await until(() => !t.b.loading);
+    expect(t.b.value).toEqual([A, Y]);
+  });
+
+  it("a save whose response is lost, then overwritten elsewhere, still replays the edit onto the newer value", async () => {
+    server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(STORED), keyVersion: 0, deks: [] }];
+    const net = loseAnswers();
+    const s = await mount("idea_intake", "p1");
+    await until(() => !s.b.loading);
+    // The lost save never reached the store this time (the network failed before it).
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (net.lose && init?.method === "PUT") throw new TypeError("Failed to fetch");
+      return fakeApi(path, init);
+    });
+    net.lose = true;
+    act(() => { s.b.set((p: IdeaIntake | null) => ({ ...p!, topic: "B" })); });
+    await act(async () => { await s.b.flush(); });
+    elsewhere("p1", "idea_intake", { ...STORED, resources: "R2" });
+    net.lose = false;
+    await act(async () => { await s.b.flush(); });
+    expect(JSON.parse(blobOf("p1", "idea_intake").body)).toEqual({ ...STORED, topic: "B", resources: "R2" });
+    expect(s.b.error).toBe(false);
+  });
+
   it("an api without versions gets no If-Match", async () => {
     server.versionless = true;
     server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
