@@ -29,6 +29,7 @@
    researchLitReview onwards. The page state (rsResults and rsResultsOriginal, 8026), the OpenAlex key helpers (8028-8032) and v1's comments between the ported lines are not copied either. */
 import { apJson, apSquash } from "./analyse";
 import type { CitationEntry } from "./citation";
+import { capNameToCit } from "./citcapture";
 import { pdCsv } from "./csv";
 import { RS_DESIGN as RS_DESIGN_TABLE, RS_DESIGNS as RS_DESIGNS_TABLE } from "./data/research-tables";
 
@@ -193,20 +194,26 @@ export function rsFoldIndex(results: RsPaper[],mode: string): number{
 }
 /* Wave A (walk fault W2, register row D-S2-24): a search result into the library keeps every author and its volume, issue and pages. Siblings of rsAuthorsToCit and
    rsEntryFromResult, which stay v1's; held to their stated differences by test/research-v2.test.ts and test/references-w28.test.ts. */
-/** rsAuthorsToCit's rule for one name (8458-8462): one word as it is; a surname and one to four capitals as "Surname, Initials"; else the last word, a comma, the rest. */
+/** One name of a result's authorList. rsAuthorsToCit's rule (8458-8462), one word as it is, and otherwise the last word, a comma, the rest (OpenAlex's "Ellen M. Schaefer"),
+ * with one change (fix round 1): a last word of one to four capitals is read as initials at any length, not only after a single word, so PubMed's "van der Berg JH" and
+ * "Garcia Lopez M" are "van der Berg, JH" and "Garcia Lopez, M" (v1's rule wrote "JH, van der Berg"). */
 function rsNameToCit(n: string): string{
   const parts=n.split(/\s+/);
   if(parts.length===1)return n;
-  if(parts.length===2&&/^[A-Z]{1,4}$/.test(parts[1]!))return parts[0]+', '+parts[1];
-  return parts[parts.length-1]+', '+parts.slice(0,-1).join(' ');
+  const last=parts[parts.length-1]!;
+  if(/^[A-Z]{1,4}$/.test(last))return parts.slice(0,-1).join(' ')+', '+last;
+  return last+', '+parts.slice(0,-1).join(' ');
 }
-/** Every name of a result's authorList by rsAuthorsToCit's per-name rule, joined "; ". The names come one by one, so a name with a comma is kept whole (as written). */
+/** Every name of a result's authorList by rsNameToCit, joined "; ". The names come one by one, so a name with a comma is kept whole (as written). */
 export function rsAuthorListToCit(names: string[]): string{
   return names.map(n=>String(n||'').trim()).filter(Boolean).map(n=>n.indexOf(',')>=0?n:rsNameToCit(n)).join('; ');
 }
-/** rsEntryFromResult (8465-8470) with the author written from `authorList` when it has a name, and the paper's volume, issue and pages. */
+/** rsEntryFromResult (8465-8470) with the author written from `authorList` when it has a name, and the paper's volume, issue and pages. A PubMed paper's names
+ * ("Surname Initials", or a collective name such as "COVID-19 Study Group") go through capNameToCit, the one-click capture's rule, so the same PubMed article saved
+ * from the search and from its page has the same author (and captureMatch sees the duplicate); any other paper's go through rsAuthorListToCit. */
 export function rsEntryFromResultV2(p: RsPaper,style: string): CitationEntry{
   const e=rsEntryFromResult(p,style);
-  const all=rsAuthorListToCit(p.authorList||[]);
+  const names=(p.authorList||[]).map(n=>String(n||'').trim()).filter(Boolean);
+  const all=p.source==='PubMed'?names.map(capNameToCit).join('; '):rsAuthorListToCit(names);
   return{...e,author:all||e.author,volume:p.volume||'',issue:p.issue||'',pages:p.pages||''};
 }

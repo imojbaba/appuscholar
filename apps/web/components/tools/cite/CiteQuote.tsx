@@ -64,6 +64,8 @@ export function CiteCapture() {
         <a ref={link} href="#" className={buttonVariants({ variant: "gold" })} draggable="true" data-testid="cite-bookmarklet" onClick={(e) => e.preventDefault()}>{t("cite_bookmarklet_btn")}</a>
       </p>
       <p className="desc" data-testid="cite-bookmarklet-note">{t("cite_bookmarklet_note")}</p>
+      {/* Wave A (W1, D-S2-23): a bookmark dragged before keeps v1's capture code until it is dragged again. */}
+      <p className="desc" data-testid="cite-bookmarklet-redrag">{t("cite_bookmarklet_redrag")}</p>
     </details>
   );
 }

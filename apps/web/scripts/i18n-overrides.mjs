@@ -167,6 +167,12 @@ export const V2_STRINGS = {
   cap_filled: {
     en: 'Updated "{title}" in your citation library with what this page lists.',
     hi: 'आपकी उद्धरण लाइब्रेरी में "{title}" को इस पेज पर दी गई जानकारी से अपडेट किया गया।'
+  },
+  // Under the one-click capture link (W1, D-S2-23): a bookmark dragged before keeps v1's code, which misses PubMed's authors, until it is dragged again.
+  // DRAFT Hindi: बुकमार्क बार as in cite_bookmarklet_desc.
+  cite_bookmarklet_redrag: {
+    en: "Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.",
+    hi: "यह बटन पहले खींचा था? इसे फिर से अपने बुकमार्क बार पर खींचें, ताकि यह PubMed के लेखक और खंड, अंक और पृष्ठ भी पढ़ सके।"
   }
 };
 

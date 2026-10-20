@@ -126,6 +126,9 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(tid("cite-bookmarklet-details")!.querySelector("summary")!.textContent).toBe(E.cite_bookmarklet_summary);
     expect(tid("cite-bookmarklet-desc")!.textContent).toBe(E.cite_bookmarklet_desc);
     expect(tid("cite-bookmarklet-note")!.textContent).toBe(E.cite_bookmarklet_note);
+    // Fix wave A (W1): a bookmark dragged before keeps v1's capture code until it is dragged again.
+    expect(tid("cite-bookmarklet-redrag")!.textContent).toBe("Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.");
+    expect(tid("cite-bookmarklet-note")!.nextElementSibling).toBe(tid("cite-bookmarklet-redrag"));
   });
 
   it("the bookmarklet is a draggable link carrying v1's javascript: href for this page, and a click does not follow it", () => {

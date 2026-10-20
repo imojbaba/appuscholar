@@ -256,6 +256,7 @@
   "cite_bookmarklet_btn": "🔖 Capture to Appuscholar",
   "cite_bookmarklet_desc": "Like Zotero's browser button — drag this link to your bookmarks bar once. Then, on any journal article, PubMed or arXiv page, click it to send that page's citation straight into your library here.",
   "cite_bookmarklet_note": "Drag — don't click — the button above onto your bookmarks bar. It only reads standard citation tags already on the page (the same ones Zotero and Mendeley use); it can't read pages that don't publish them, like most news sites.",
+  "cite_bookmarklet_redrag": "Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.",
   "cite_bookmarklet_summary": "🔖 One-click capture from any page",
   "cite_clear_btn": "Clear form",
   "cite_container_label": "Book or proceedings title",
