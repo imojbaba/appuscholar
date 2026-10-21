@@ -13,6 +13,7 @@ import { heldBlobs } from "@/lib/blobs/held";
 import { migrateToVault } from "./migrate";
 import { documentTitlePath, type Titled } from "./titles";
 import { forgetRemembered, hasRemembered, readRemembered, rememberVault } from "./remember";
+import { isPopout } from "@/lib/popout/mode";
 
 /** A document's key, wrapped under the vault key, with the version that revisions name in `keyVersion`. */
 export type WrappedDek = { v: number; wrapped: string };
@@ -154,7 +155,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
    */
   const startMigration = useCallback(() => {
     const rec = record.current;
-    if (!rec || rec.complete || migrated.current || migration.current) return;
+    // A pop-out window never migrates: it writes only its own stage's data, and the main window runs the migration (D-S2-43).
+    if (!rec || rec.complete || migrated.current || migration.current || isPopout()) return;
     migrated.current = true;
     const mine = epoch.current;
     const live = () => { if (epoch.current !== mine) throw changedError(); };
