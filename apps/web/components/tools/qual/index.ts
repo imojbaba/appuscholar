@@ -7,9 +7,9 @@ import type { StageBlobs, ToolFacts } from "@/lib/tools/registry";
 export const built = true;
 export { Panel } from "./Panel";
 
-/** The home's line for the stage: how many codes there are (none until there is one). */
+/** The home's line for the stage: how many codes there are (none until there is one; "1 code" for one). */
 export function facts(b: StageBlobs): ToolFacts {
   const v = b.qual_codes?.value;
   const n = Array.isArray(v) ? v.length : 0;
-  return n > 0 ? { started: true, detail: "qual_facts_codes", vars: { n } } : { started: false };
+  return n > 0 ? { started: true, detail: n === 1 ? "qual_facts_code_one" : "qual_facts_codes", vars: { n } } : { started: false };
 }

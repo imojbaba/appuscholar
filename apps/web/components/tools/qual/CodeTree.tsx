@@ -1,5 +1,5 @@
 "use client";
-import { Fragment } from "react";
+import { Fragment, useEffect, useId, useRef } from "react";
 import { PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import type { QualCode } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
@@ -70,17 +70,33 @@ export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename
               </li>
             )}
             {ed === "delete" && (
-              <li className="py-1" style={{ paddingLeft: indent(depth + 1) }} data-testid="qual-delete-confirm">
-                <p className="m-0 text-[13px]">{confirmFor(c.id)}</p>
-                <div className="mt-1.5 flex gap-2">
-                  <Button type="button" variant="primary" size="sm" data-testid="qual-delete-confirm-yes" onClick={() => onDelete(c.id)}>{t("qual_btn_delete")}</Button>
-                  <Button type="button" variant="ghost" size="sm" data-testid="qual-delete-keep" onClick={() => setEditing(null)}>{t("qual_btn_keep")}</Button>
-                </div>
+              <li className="py-1" style={{ paddingLeft: indent(depth + 1) }} data-testid="qual-delete-confirm-row">
+                <DeleteQuestion text={confirmFor(c.id)} onDelete={() => onDelete(c.id)} onKeep={() => setEditing(null)} />
               </li>
             )}
           </Fragment>
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * v1's delete question, announced as an alert dialog named by its own sentence; focus goes to Keep (the safe answer) when it opens.
+ * The panel returns focus when it closes.
+ */
+function DeleteQuestion({ text, onDelete, onKeep }: { text: string | null; onDelete: () => void; onKeep: () => void }) {
+  const t = useT();
+  const id = useId();
+  const keep = useRef<HTMLButtonElement>(null);
+  useEffect(() => { keep.current?.focus(); }, []);
+  return (
+    <div role="alertdialog" aria-labelledby={id} data-testid="qual-delete-confirm">
+      <p id={id} className="m-0 text-[13px]">{text}</p>
+      <div className="mt-1.5 flex gap-2">
+        <Button type="button" variant="primary" size="sm" data-testid="qual-delete-confirm-yes" onClick={onDelete}>{t("qual_btn_delete")}</Button>
+        <Button ref={keep} type="button" variant="ghost" size="sm" data-testid="qual-delete-keep" onClick={onKeep}>{t("qual_btn_keep")}</Button>
+      </div>
+    </div>
   );
 }

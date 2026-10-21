@@ -10,6 +10,7 @@
   "qual_codes_broken": "Your saved codes cannot be opened on this device. Nothing was changed.",
   "qual_codes_locked": "Your saved codes are locked. Unlock your vault to read them and add codes.",
   "qual_damaged": "This code list is damaged: a code is its own parent, or the parents go round in a loop. It is not shown, and nothing was changed.",
+  "qual_facts_code_one": "1 code",
   "qual_facts_codes": "{n} codes",
   "qual_label_new_sub": "Name for this sub-code:",
   "qual_label_new_top": "Name for this new code:",

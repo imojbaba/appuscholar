@@ -372,6 +372,82 @@ describe("the colours switch (qual_prefs.showcolors)", () => {
   });
 });
 
+describe("focus (keyboard and screen reader use)", () => {
+  const active = () => (document.activeElement as HTMLElement | null)?.getAttribute("data-testid");
+
+  it("the new top-level field returns focus to + New top-level code after Escape, Cancel and a save", async () => {
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-add-top");
+    await key("qual-name-input", "Escape");
+    expect(active()).toBe("qual-add-top");
+    await click("qual-add-top");
+    await click("qual-name-cancel");
+    expect(active()).toBe("qual-add-top");
+    await click("qual-add-top");
+    await type("qual-name-input", "Coping");
+    await key("qual-name-input", "Enter");
+    expect(active()).toBe("qual-add-top");
+    await click("qual-add-top");
+    await type("qual-name-input", "Barriers");
+    await click("qual-name-submit");
+    expect(active()).toBe("qual-add-top");
+  });
+
+  it("the sub-code field returns focus to that row's + after Escape, Cancel and a save", async () => {
+    h.blobs.qual_codes!.value = [C("qa", "Coping", null), C("qb", "Barriers", null)];
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-add-sub-qb");
+    await key("qual-name-input", "Escape");
+    expect(active()).toBe("qual-add-sub-qb");
+    await click("qual-add-sub-qb");
+    await click("qual-name-cancel");
+    expect(active()).toBe("qual-add-sub-qb");
+    await click("qual-add-sub-qb");
+    await type("qual-name-input", "Cost");
+    await key("qual-name-input", "Enter");
+    expect(active()).toBe("qual-add-sub-qb");
+  });
+
+  it("the rename field returns focus to that row's rename button after Escape, Cancel and a save", async () => {
+    h.blobs.qual_codes!.value = [C("qa", "Coping", null)];
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-rename-qa");
+    await key("qual-name-input", "Escape");
+    expect(active()).toBe("qual-rename-qa");
+    await click("qual-rename-qa");
+    await click("qual-name-cancel");
+    expect(active()).toBe("qual-rename-qa");
+    await click("qual-rename-qa");
+    await type("qual-name-input", "Coping well");
+    await click("qual-name-submit");
+    expect(active()).toBe("qual-rename-qa");
+    expect(tid("qual-name-qa")!.textContent).toBe("Coping well");
+  });
+
+  it("the delete question is announced as an alert dialog named by its sentence, and Keep has focus", async () => {
+    h.blobs.qual_codes!.value = TREE;
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-delete-qa");
+    const q = tid("qual-delete-confirm")!;
+    expect(q.getAttribute("role")).toBe("alertdialog");
+    const name = document.getElementById(q.getAttribute("aria-labelledby")!)!;
+    expect(name.textContent).toBe(qualDeleteCascade(TREE, "qa")!.confirm);
+    expect(active()).toBe("qual-delete-keep");
+  });
+
+  it("Keep returns focus to that row's delete button, Delete to + New top-level code", async () => {
+    h.blobs.qual_codes!.value = TREE;
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-delete-qb");
+    await click("qual-delete-keep");
+    expect(active()).toBe("qual-delete-qb");
+    await click("qual-delete-qa");
+    await click("qual-delete-confirm-yes");
+    expect(codes().map((c) => c.id)).toEqual(["qb"]);
+    expect(active()).toBe("qual-add-top");
+  });
+});
+
 describe("facts (the home's line)", () => {
   it("is not started with no codes, and says how many with some", () => {
     expect(facts({})).toEqual({ started: false });
@@ -379,5 +455,8 @@ describe("facts (the home's line)", () => {
     expect(facts({ qual_codes: { value: "junk", updatedAt: "t" } })).toEqual({ started: false });
     expect(facts({ qual_codes: { value: TREE.slice(0, 3), updatedAt: "t" } })).toEqual({ started: true, detail: "qual_facts_codes", vars: { n: 3 } });
     expect(E.qual_facts_codes).toBe("{n} codes");
+    // one code reads "1 code", not "1 codes"
+    expect(facts({ qual_codes: { value: TREE.slice(0, 1), updatedAt: "t" } })).toEqual({ started: true, detail: "qual_facts_code_one", vars: { n: 1 } });
+    expect(E.qual_facts_code_one).toBe("1 code");
   });
 });

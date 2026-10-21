@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { plainText, useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useCodes } from "@/lib/tools/qual/useCodes";
@@ -27,14 +27,26 @@ function Coding({ projectId }: { projectId: string }) {
   const showColors = prefs.value?.showcolors !== false;
   const unreadable = codes.locked || (codes.broken && !replaceOk);
   const open = (e: Editing) => { setStatus(""); setEditing(e); };
+  // Focus goes back to the button that opened a field or question when it closes: the test id is kept here and the element focused once the panel has drawn.
+  const root = useRef<HTMLDivElement>(null);
+  const refocus = useRef<string | null>(null);
+  useEffect(() => {
+    const id = refocus.current;
+    if (!id) return;
+    refocus.current = null;
+    root.current?.querySelector<HTMLElement>(`[data-testid="${id}"]`)?.focus();
+  });
+  const trigger = (e: Editing) => (!e ? null : e.kind === "top" ? "qual-add-top" : e.kind === "sub" ? "qual-add-sub-" + e.id : e.kind === "rename" ? "qual-rename-" + e.id : "qual-delete-" + e.id);
+  /** Closes the open field or question; focus goes to `to`, or to the button that opened it. */
+  const close = (to?: string) => { refocus.current = to ?? trigger(editing); setEditing(null); };
   const add = (name: string, parentId: string | null) => {
     const c = codes.add(name, parentId);
     if (!c) return;
-    setEditing(null);
+    close();
     setStatus(t("qual_status_added", { name: c.name }));
   };
   return (
-    <div className="panel" data-testid="panel-qual">
+    <div className="panel" data-testid="panel-qual" ref={root}>
       <h3>{plainText(t("tab_qual"))}</h3>
       <p className="desc">{t("qual_panel_desc")}</p>
       <label className="mb-2.5 flex cursor-pointer items-center gap-2 text-[13.5px]">
@@ -62,17 +74,17 @@ function Coding({ projectId }: { projectId: string }) {
                 <CodeTree
                   codes={codes.codes}
                   editing={editing}
-                  setEditing={(e) => open(e)}
+                  setEditing={(e) => (e ? open(e) : close())}
                   disabled={unreadable}
                   onAdd={add}
-                  onRename={(id, name) => { if (codes.rename(id, name)) setEditing(null); }}
-                  onDelete={(id) => { if (codes.remove(id)) { setEditing(null); setStatus(t("qual_status_deleted")); } }}
+                  onRename={(id, name) => { if (codes.rename(id, name)) close(); }}
+                  onDelete={(id) => { if (codes.remove(id)) { close("qual-add-top"); setStatus(t("qual_status_deleted")); } }}
                   confirmFor={codes.confirmFor}
                 />
               )}
               <div className="mt-2 flex">
                 {editing?.kind === "top" ? (
-                  <NameField label={t("qual_label_new_top")} saveLabel={t("qual_btn_add")} onSave={(n) => add(n, null)} onCancel={() => setEditing(null)} />
+                  <NameField label={t("qual_label_new_top")} saveLabel={t("qual_btn_add")} onSave={(n) => add(n, null)} onCancel={() => close()} />
                 ) : (
                   <Button type="button" variant="ghost" className="flex-1" disabled={unreadable} data-testid="qual-add-top" onClick={() => open({ kind: "top" })}>{t("qual_add_top_btn")}</Button>
                 )}
