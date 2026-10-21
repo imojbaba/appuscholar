@@ -668,4 +668,35 @@
   .home-stage-open { flex: 1; justify-content: center; }
   .home button, .home-stage-open, .home-more-btn, .home-more-menu button { min-height: 44px; }
   .home-more-btn { min-width: 44px; }
+
+  /* Task 14 (canvas Phone): one row of header (the wordmark, the vault pill, Menu); the home in one column; the document over the place. */
+  .app-hdr { flex-wrap: nowrap; min-height: 60px; padding: 8px 16px; }
+  .app-word { display: inline-flex; align-items: center; min-height: 44px; font-size: 20px; }
+  .app-hdr [data-testid="vault-pill"] { flex: 0 1 auto; min-width: 0; }
+  .home-phone { display: flex; flex-direction: column; gap: 14px; }
+  .home-project { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; font-weight: 600; text-align: left; }
+  .home-qfold { padding: 0 16px; }
+  .home-qfold summary { display: flex; align-items: center; min-height: 48px; cursor: pointer; font-weight: 600; }
+  .home-qfold .home-q-text { margin: 0 0 6px; font-size: 16px; }
+  .home-qfold-facts { margin: 0 0 6px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  .home-qfold .home-link { min-height: 44px; margin: 0 0 6px -10px; }
+  .home-next { flex-direction: column; align-items: stretch; gap: 10px; padding: 18px; }
+  .home-next-text { flex: none; }
+  .home-next-say { font-size: 18px; }
+  .home-next-btn { justify-content: center; min-height: 46px; }
+  .home-stages.compact .home-stages-h { padding: 14px 16px 6px; font-size: 17px; color: var(--ink); }
+  .home-stage-c { display: flex; align-items: center; border-top: 1px solid var(--line); padding-right: 6px; }
+  .home-stage-row { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 6px 10px 16px; border: none; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+  .home-stage-row:hover { background: var(--soft); }
+  .home-stage-text { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+  .home-stage-text .name { font-weight: 700; }
+  .home-stage-text .home-stage-detail { font-size: 13px; color: var(--muted); }
+  .home-stage-row .home-chip { flex: none; font-size: 12px; }
+  .home-export { align-self: stretch; justify-content: center; min-height: 46px; }
+  .frame-doc.full { padding-top: 8px; }
+  .doc-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 8px; padding: 0 4px; border: none; background: none; color: var(--purple-800); font: inherit; font-weight: 600; cursor: pointer; }
+  /* Research's "Kind of study" select takes the line under its label instead of running past the screen. */
+  .rs-line > label { flex: 1 1 100%; min-width: 0; }
+  .rs-line .rs-select { display: block; width: 100%; max-width: 100%; min-height: 44px; margin-top: 4px; }
+  .doc-back:focus-visible, .home-project:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 }

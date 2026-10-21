@@ -348,4 +348,32 @@ describe("the document beside any stage", () => {
     expect(frameDoc().hidden).toBe(false);
     expect(frameDoc().classList.contains("beside")).toBe(false);
   });
+
+  it("on a phone the document opens full screen over the place, and Back to {place} returns to the same place and tab (Task 14)", async () => {
+    const was = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: q === "(max-width: 700px)", media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      plainApi();
+      await mount("p1");
+      await until(() => !!h.editor);
+      const place = () => document.querySelector<HTMLElement>(".frame-place")!;
+      const back = () => document.querySelector<HTMLButtonElement>('[data-testid="doc-back"]');
+      expect(back()).toBeNull();
+      expect(place().hidden).toBe(false);
+      await act(async () => { ws().openDocument(); });
+      expect(frameDoc().hidden).toBe(false);
+      expect(frameDoc().classList.contains("full")).toBe(true);
+      // The place stays mounted, out of sight; no resize handle on a phone.
+      expect(place().hidden).toBe(true);
+      expect(document.querySelector('[data-testid="place-content"]')).not.toBeNull();
+      expect(document.querySelector('[data-testid="doc-resize"]')).toBeNull();
+      expect(back()!.textContent).toBe(E.doc_back!.replace("{place}", E.stage_name_lit!));
+      await act(async () => { back()!.click(); });
+      await until(() => !ws().docOpen);
+      expect(frameDoc().hidden).toBe(true);
+      expect(place().hidden).toBe(false);
+      // The address never changed: the place is there on its tab.
+      expect(h.push).not.toHaveBeenCalled();
+    } finally { window.matchMedia = was; }
+  });
 });

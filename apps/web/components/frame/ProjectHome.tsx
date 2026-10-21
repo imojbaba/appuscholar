@@ -14,9 +14,11 @@ import { stageStates, type StageWork } from "@/lib/frame/stages";
 import { placeHref } from "@/lib/frame/places";
 import { useProjectWork, type ProjectWork } from "@/lib/frame/useProjectWork";
 import type { StageKey } from "@/lib/tools";
+import { PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { useProject, type ProjectValue } from "./ProjectContext";
-import { QuestionCard } from "./QuestionCard";
+import { QuestionCard, QuestionFold } from "./QuestionCard";
+import { Switcher } from "./AppHeader";
 import { StageRows } from "./StageRows";
 import { SuggestedNext } from "./SuggestedNext";
 
@@ -71,6 +73,7 @@ function useHighlightCounts(projectId: string | null, mine: ProjectWork | null):
  * The project's home (canvas Main): the question, a suggested next step, the six stages with their states, and the way to take the work out.
  * Every stage's state comes from one `GET /projects?include=work`; the facts from the project's idea, library, shelf and notes. A failed load says
  * so with Retry (which reads it all again), never an empty card. Not here yet: "Needs your attention" (Task 24) and "Recent work" (nothing records activity).
+ * On a phone (canvas Phone) it is one column: the project button, the question closed, the suggestion, the stages, Export project.
  */
 export function ProjectHome() {
   const [attempt, setAttempt] = useState(0);
@@ -138,7 +141,18 @@ function HomeBody({ pv, facts, states, open, mark }: {
   mark(stage: StageKey, ready: boolean): Promise<void>;
 }) {
   const t = useT();
+  const phone = useMedia(PHONE_QUERY);
   const next = suggestNext(facts);
+  if (phone) return (
+    <div className="home-phone" data-testid="home-phone">
+      <Switcher home />
+      <QuestionFold facts={facts} onEdit={() => open("idea")} />
+      <SuggestedNext next={next} facts={facts} onOpen={() => open(next.to.stage, next.to.tab)} />
+      <StageRows compact states={states} facts={facts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
+      {/* "Needs your attention" comes here with Task 24. */}
+      <button type="button" className="home-btn home-export" onClick={() => pv.openExport()} data-testid="home-export">{t("home_out_btn")}</button>
+    </div>
+  );
   return (
     <div className="home-grid">
       <div className="home-side">

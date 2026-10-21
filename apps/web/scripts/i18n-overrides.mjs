@@ -465,7 +465,12 @@ export const V2_STRINGS = {
   exp_unreadable_doc: { en: "Document: {name}", hi: "दस्तावेज़: {name}" },
   exp_unreadable_paper: { en: "Reading list paper: {name}", hi: "पढ़ने की सूची का पेपर: {name}" },
   exp_unreadable_data: { en: "Saved work: {name}", hi: "सहेजा गया काम: {name}" },
-  exp_kind_shelf: { en: "Reading list", hi: "पढ़ने की सूची" }
+  exp_kind_shelf: { en: "Reading list", hi: "पढ़ने की सूची" },
+  // Task 14: the frame on a phone (canvas Phone). The header's Menu, and the way back from the document opened full screen over a place.
+  hdr_menu: { en: "Menu", hi: "मेन्यू" },
+  // The Menu's language item names the other language in itself: Hindi in the English interface, English in the Hindi one.
+  menu_lang_other: { en: "हिन्दी", hi: "English" },
+  doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

@@ -262,4 +262,40 @@ describe("the project home", () => {
     // No part: the dialog ticks the defaults (exportPartsFor()).
     expect(h.openExport.mock.calls[0]).toEqual([]);
   });
+
+  it("on a phone the home follows the Phone canvas: project, question closed, suggestion, stages, Export (Task 14)", async () => {
+    const was = window.matchMedia;
+    window.matchMedia = ((m: string) => ({ matches: m === "(max-width: 700px)", media: m, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      h.openExport.mockReset();
+      mount();
+      await until(() => !!q("home-phone"));
+      const PARTS = ["home-project-btn", "home-q-fold", "home-next", "home-stages", "home-export"];
+      const order = [...q("home-phone")!.querySelectorAll("[data-testid]")].map((e) => e.getAttribute("data-testid")).filter((id) => PARTS.includes(id!));
+      expect(order).toEqual(PARTS);
+      expect(q("home-question")).toBeNull();
+      expect(q("home-out")).toBeNull();
+      expect(text("home-project-btn")).toBe(project.title);
+      // "Your question", closed; inside, the question and the facts as one line, and Edit.
+      const fold = q("home-q-fold") as HTMLDetailsElement;
+      expect(fold.tagName).toBe("DETAILS");
+      expect(fold.open).toBe(false);
+      expect(fold.querySelector("summary")!.textContent).toBe(en.home_q_h);
+      expect(text("home-q-text")).toBe("Does a fixed bedtime lower exam anxiety?");
+      expect(text("home-q-line")).toBe("About 60 volunteers. One semester. No trackers.");
+      act(() => { q("home-q-edit")!.click(); });
+      expect(h.go).toHaveBeenLastCalledWith("/p/p1/idea");
+      // Each stage row: the name, what it holds and the chip; the row opens the stage, and More stays beside it.
+      const lit = q("home-open-lit")!;
+      expect(lit.textContent).toContain(en.stage_name_lit);
+      expect(lit.querySelector('[data-testid="home-detail-lit"]')).not.toBeNull();
+      expect(lit.querySelector('[data-testid="home-state-lit"]')).not.toBeNull();
+      expect(q("home-more-lit")).not.toBeNull();
+      act(() => { lit.click(); });
+      expect(h.go).toHaveBeenLastCalledWith("/p/p1/lit");
+      expect(text("home-export")).toBe(en.home_out_btn);
+      await act(async () => { q("home-export")!.click(); });
+      expect(h.openExport).toHaveBeenCalledTimes(1);
+    } finally { window.matchMedia = was; }
+  });
 });

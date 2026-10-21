@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
+import { PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { DocumentCard } from "@/components/document/DocumentCard";
+import { useProject } from "./ProjectContext";
 
 /** The document's width beside a place: what the API accepts for `docW` (Task 3), and where it starts. */
 export const DOC_W_MIN = 360;
@@ -16,7 +19,8 @@ export const clampDocW = (w: number): number => Math.min(DOC_W_MAX, Math.max(DOC
  * The place and the document side by side (Task 11, draft §5: "it can also open beside any stage"). `children` is the place. The document card
  * is always mounted (its editor outlives a move to another place, and an insert lands in it); `shown` says whether it can be seen. In Writing
  * (`beside` false) it sits at full width under the place's helpers; elsewhere it is a column on the right, `docW` wide (360 to 900, default 520),
- * with a handle to resize it, and under the place on narrower screens.
+ * with a handle to resize it, and under the place on narrower screens. On a phone (PHONE_QUERY) the document opened beside a place takes the whole
+ * screen, the place kept mounted out of sight, and "Back to {place}" closes it: the address never changed, so the place is there on the same tab.
  */
 export function DocumentBeside({ shown, beside, children }: { shown: boolean; beside: boolean; children: ReactNode }) {
   const t = useT();
@@ -27,14 +31,18 @@ export function DocumentBeside({ shown, beside, children }: { shown: boolean; be
   const w = dragW ?? saved;
   const drag = useRef<{ x: number; w: number } | null>(null);
   const side = beside && shown;
+  const full = useMedia(PHONE_QUERY) && side;
+  const { place, closeDocument } = useProject();
   const docRef = useRef<HTMLDivElement>(null);
 
   // Opened beside a place on a narrow screen, the document comes under the place: it is brought into view.
   const wasShown = useRef(shown);
   useEffect(() => {
-    if (side && !wasShown.current && window.matchMedia?.("(max-width: 1099px)").matches) docRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    // Full screen, the document starts at the top of the page.
+    if (full && !wasShown.current) window.scrollTo?.(0, 0);
+    else if (side && !wasShown.current && window.matchMedia?.("(max-width: 1099px)").matches) docRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     wasShown.current = shown;
-  }, [side, shown]);
+  }, [side, shown, full]);
 
   const store = (next: number) => { if (next !== saved) void update({ docW: next }); };
   const onKey = (e: React.KeyboardEvent) => {
@@ -47,9 +55,14 @@ export function DocumentBeside({ shown, beside, children }: { shown: boolean; be
 
   return (
     <div className={"frame-body" + (side ? " beside" : "")} style={side ? ({ "--doc-w": w + "px" } as CSSProperties) : undefined}>
-      <div className="frame-place">{children}</div>
-      <div ref={docRef} className={"frame-doc" + (beside ? " beside" : "")} hidden={!shown} data-testid="frame-doc">
-        {side && (
+      <div className="frame-place" hidden={full}>{children}</div>
+      <div ref={docRef} className={"frame-doc" + (beside ? " beside" : "") + (full ? " full" : "")} hidden={!shown} data-testid="frame-doc">
+        {full && place && (
+          <button type="button" className="doc-back" data-testid="doc-back" onClick={() => { void closeDocument(); }}>
+            <ArrowLeft size={18} aria-hidden="true" />{t("doc_back", { place: t("stage_name_" + place.stage) })}
+          </button>
+        )}
+        {side && !full && (
           <div
             className="doc-resize" role="separator" aria-orientation="vertical" aria-label={t("doc_width")} aria-valuemin={DOC_W_MIN} aria-valuemax={DOC_W_MAX} aria-valuenow={w}
             tabIndex={0} data-testid="doc-resize" onKeyDown={onKey}
