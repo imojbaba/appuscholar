@@ -41,7 +41,7 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
   }
 
   async function save() {
-    if (busy) return;
+    if (busy || checking) return;
     const title = name.trim();
     if (!title) { toast(t("start_name_first")); return; }
     setBusy(true);
