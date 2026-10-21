@@ -27,8 +27,10 @@ export const WriteFields = {
 /**
  * A project's or document's title. Plain is what every tab sends with the vault off, and what tabs older than wave B send on any account (no
  * titleKeyVersion). Sealed is ciphertext under the entity's dek with that `v`, which must be known once `dek` is added (see checkTitle).
+ * A plain title with the sealed shape is refused: an older tab prefills Rename with the stored, sealed title, and saving it unchanged would
+ * store ciphertext as a plain title (no student types 16 base64url characters, a dot and more).
  */
-export const PlainTitle = z.object({ title: z.string().trim().min(1).max(200), titleKeyVersion: z.literal(0).optional() });
+export const PlainTitle = z.object({ title: z.string().trim().min(1).max(200).refine((s) => !CIPHERTEXT.test(s)), titleKeyVersion: z.literal(0).optional() });
 export const SealedTitle = z.object({ title: z.string().regex(CIPHERTEXT).max(4096), titleKeyVersion: z.number().int().min(1).max(1e6), dek: WrappedDekSchema.optional() });
 /** For a body whose title is optional: no title means no key version either, so a key version never lands without its title. */
 export const NoTitle = z.object({ title: z.undefined().optional(), titleKeyVersion: z.undefined().optional() });

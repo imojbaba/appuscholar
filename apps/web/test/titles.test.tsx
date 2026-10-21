@@ -247,6 +247,20 @@ describe("titles in the vault", () => {
     expect(await sealPlainTitles({ vault: { ...s.v, complete: false }, listProjects: async () => { throw new Error("listed"); }, listDocuments: async () => [], patchProject: async () => {}, patchDocument: async () => {} })).toEqual({ sealed: 0 });
   });
 
+  it("sealPlainTitles skips a plain title that looks like ciphertext, so one an older tab stored as plain is never sealed twice", async () => {
+    const s = await unlocked();
+    const p = (await h.api("/projects", { method: "POST", body: JSON.stringify(await sealTitle(s.v, newProjectKeyId(), [], "Sleep and exam anxiety")) })) as Titled;
+    const d = (await h.api(`/projects/${p.id}/documents`, { method: "POST", body: JSON.stringify(await newDocumentBody(s.v, "Chapter one")) })) as Titled;
+    // Stored before the api refused it: an older tab saved Rename unchanged, its field prefilled with the sealed title.
+    const bad = { project: titledProject(p.id).title, doc: titledDoc(d.id).title };
+    Object.assign(server.projects.find((x) => x.id === p.id)!, { titleKeyVersion: 0 });
+    server.docs.push({ id: "old", projectId: p.id, title: bad.doc, titleKeyVersion: 0, deks: titledDoc(d.id).deks }, { id: "fine", projectId: p.id, title: "Notes", titleKeyVersion: 0, deks: titledDoc(d.id).deks });
+    expect(await pass(s.v)).toEqual({ sealed: 1 });
+    expect(titledProject(p.id)).toMatchObject({ title: bad.project, titleKeyVersion: 0 });
+    expect(titledDoc("old")).toMatchObject({ title: bad.doc, titleKeyVersion: 0 });
+    expect(titledDoc("fine").titleKeyVersion).toBe(1);
+  });
+
   it("a plain title written later by an older tab is sealed on the next pass (Review Focus 2)", async () => {
     const s = await unlocked();
     const p = (await h.api("/projects", { method: "POST", body: JSON.stringify(await sealTitle(s.v, newProjectKeyId(), [], "Sleep and exam anxiety")) })) as Titled;

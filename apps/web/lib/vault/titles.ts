@@ -110,12 +110,19 @@ export type TitleStore = {
 export const documentTitlePath = (id: string, deleted: boolean): string => `/documents/${id}${deleted ? "?includeDeleted=1" : ""}`;
 export type SealPlainDeps = TitleStore & { vault: Pick<VaultValue, "status" | "complete" | "encryptBody"> };
 
+/**
+ * The api's sealed-title shape (routes/docWrite.ts CIPHERTEXT). A "plain" title with it is a sealed title an older tab saved back as plain
+ * (Rename prefilled with the stored title); sealing it again would lock ciphertext inside ciphertext, so the pass leaves it as it is.
+ */
+const LOOKS_SEALED = /^[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]+$/;
+const toSeal = (t: Titled) => t.titleKeyVersion === 0 && !LOOKS_SEALED.test(t.title);
+
 /** Another tab sealed the same entity first (its first dek): that title is left for the next pass, which finds it sealed. */
 const isDekExists = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: unknown }).code === "dek-exists";
 
 /**
  * Seals every plain project and document title (titleKeyVersion 0) in place: titles written before the vault, or later by a tab older than
- * wave B. Runs only while the vault is unlocked and complete; a second run finds nothing to seal.
+ * wave B, but not one that already has the sealed shape. Runs only while the vault is unlocked and complete; a second run finds nothing to seal.
  */
 export async function sealPlainTitles(d: SealPlainDeps): Promise<{ sealed: number }> {
   if (d.vault.status !== "unlocked" || !d.vault.complete) return { sealed: 0 };
@@ -132,12 +139,12 @@ export async function sealTitlesWith(encrypt: VaultValue["encryptBody"], d: Titl
   const ids = projects.map((p) => p.id);
   if (d.scratchId && !ids.includes(d.scratchId)) ids.push(d.scratchId);
   for (const p of projects) {
-    if (p.titleKeyVersion !== 0 || p.id === d.scratchId) continue;
+    if (!toSeal(p) || p.id === d.scratchId) continue;
     await run(async () => d.patchProject(p.id, await sealTitleWith(encrypt, projectKeyId(p.id), p.deks, p.title)));
   }
   for (const id of ids) {
     for (const doc of await d.listDocuments(id)) {
-      if (doc.titleKeyVersion !== 0) continue;
+      if (!toSeal(doc)) continue;
       await run(async () => d.patchDocument(doc.id, await sealTitleWith(encrypt, doc.id, doc.deks, doc.title), !!doc.deletedAt));
     }
   }

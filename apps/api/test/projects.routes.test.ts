@@ -208,10 +208,27 @@ describe("project routes (wave B)", () => {
     const put = await req("PUT", `/documents/${doc.id}`, { bodyHtml: ct("bA.bB"), keyVersion: 1, wordCount: 2, originStats: STATS, title: "Chapter one" });
     expect((await json(put)).document).toMatchObject({ title: "Chapter one", titleKeyVersion: 0 });
     expect(await json(await req("PATCH", `/documents/${doc.id}`, { title: "Chapter two", titleKeyVersion: 0 }))).toMatchObject({ title: "Chapter two", titleKeyVersion: 0 });
-    // A plain title over a sealed one is a rename even when the text were the same.
+  });
+
+  it("a plain title that looks like ciphertext is refused on every route, so an old tab's unchanged Rename never stores a sealed title as plain", async () => {
+    const id = await project({ title: ct("tA.tB"), titleKeyVersion: 1, dek: DEK1 });
+    await req("PUT", "/me/vault", VAULT);
     const sealed = await json<{ id: string }>(await sealedDoc(id));
-    const back = await json(await req("PUT", `/documents/${sealed.id}`, { bodyHtml: ct("bA.bB"), keyVersion: 1, wordCount: 2, originStats: STATS, title: ct("tA.tB") }));
-    expect(back.document).toMatchObject({ title: ct("tA.tB"), titleKeyVersion: 0 });
+    const looks = ct("tA.tB");
+    const refused = [
+      await post("/projects", { title: looks, stage: "lit" }),
+      await post("/projects", { title: looks, titleKeyVersion: 0 }),
+      await req("PATCH", `/projects/${id}`, { title: looks }),
+      await sealedDoc(id, { title: looks }),
+      await req("PUT", `/documents/${sealed.id}`, { bodyHtml: ct("bA.bB"), keyVersion: 1, wordCount: 2, originStats: STATS, title: looks }),
+      await req("PATCH", `/documents/${sealed.id}`, { title: looks }),
+      await req("PATCH", `/documents/${sealed.id}`, { title: "  " + looks + "  ", titleKeyVersion: 0 })
+    ];
+    for (const r of refused) { expect(r.status).toBe(400); expect(await json(r)).toEqual({ error: "invalid" }); }
+    // Nothing was written: the sealed titles stand, and a normal plain title is still accepted.
+    expect(await json(await req("GET", `/documents/${sealed.id}`))).toMatchObject({ title: looks, titleKeyVersion: 1 });
+    expect(await json(await req("PATCH", `/projects/${id}`, { title: "Sleep. Memory" }))).toMatchObject({ title: "Sleep. Memory", titleKeyVersion: 0 });
+    expect(await json(await req("PATCH", `/documents/${sealed.id}`, { title: "Chapter one" }))).toMatchObject({ title: "Chapter one", titleKeyVersion: 0 });
   });
 
   it("writing-record items carry id, titleKeyVersion and deks", async () => {
