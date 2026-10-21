@@ -53,11 +53,12 @@ export function zipName(title: string): string {
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function htmlFile(title: string, body: string): string {
+/** A document as a standalone HTML file (the account export's and the project export's). */
+export function htmlFile(title: string, body: string): string {
   return '<!doctype html>\n<html><head><meta charset="utf-8"><title>' + escHtml(title) + "</title></head><body>\n" + body + "\n</body></html>\n";
 }
 /** A name not yet taken in `used` (case-insensitive, as on Windows and macOS): "Name", then "Name (2)", "Name (3)" … */
-function unique(name: string, used: Set<string>): string {
+export function unique(name: string, used: Set<string>): string {
   let n = name, i = 1;
   while (used.has(n.toLowerCase())) n = `${name} (${++i})`;
   used.add(n.toLowerCase());
