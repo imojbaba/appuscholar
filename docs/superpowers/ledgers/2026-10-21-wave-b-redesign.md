@@ -81,3 +81,21 @@ Next: Tasks 7, 8, 9 and 10 in parallel worktrees, then 11, 12 (UI) and 13, then 
 Task 8: complete. Implemented d7d319f; review CHANGES REQUIRED (Important: at 375 px the buttons squeezed the six bars). The controller fixed it in d45c457: the row's link takes the full width on a phone, and the rs_prefs date test now holds in any time zone. Deviations accepted: Mark complete and Reopen kept; the vault line sits under the heading; the --flag-ink token; NOT_COPY gains the stage ids. Left: no test for Mark complete (minor).
 Task 10: complete. Implemented ce060cc; review APPROVE. The controller fixed the wording in d559161: the helpers sit "above" the document; no tool renders StubPanel. Deviations accepted: Open my document goes to Writing until Task 11; the shelf's own backup and restore stay; the analyse.test expectation filters out the v2 Lesson tab, with the golden untouched (golden 7338 pass). StubPanel is dead code apart from one test, left for later cleanup.
 Merged into wave-b1: t8 and t10. The i18n blocks were unioned and the dictionaries regenerated (en and hi 1240 keys; a second run gives no diff). Merged suite: web 1149 pass, 1 fail. The failure is citeBib's "2,000 entries under 2 s" timing test, which fails only while 3-4 worktrees run at once and passes alone (6/6). Watch it in CI. Typecheck, lint and build clean.
+Task 9: complete. Implemented f0b366d; review APPROVE.
+- Controller fixes a05fa25 and 47240d0: Save waits for a running check, Enter included; D-S2-39 names the new waiting line.
+- Deviations accepted:
+  - Save shows before a check (no AI key needed to start);
+  - checkIdea keeps the prompt, temperature, max tokens and label;
+  - "Write without a project" is gone from first run (scratch stays reachable from the header).
+- For Task 11 after the merge: IdeaPlace's "Put in my document" must use requestInsert and insert_doc_closed, and drop idea_insert_none.
+Merged into wave-b1 (ebe8c1e):
+- StagePlace takes Task 10's version with IdeaPlace;
+- the CSS and i18n blocks are unioned; en and hi have 1260 keys;
+- places.test stubs IdeaPlace, as it stubbed IdeaPanel.
+Merged suite: web 1165 pass (2 skipped); typecheck, lint and build clean.
+Task 7: review CHANGES REQUIRED.
+- Major: the home GETs and decrypts every shelf paper on each visit. Fix: cache by version.
+- Medium: failed loads spin, or show a false "No question yet".
+- Minor: an unparsed read loops "check again".
+- Fix round in progress.
+Tasks 11, 12 (UI) and 13 are building in parallel worktrees from 615a5aa.
