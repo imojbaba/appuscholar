@@ -478,6 +478,12 @@ describe("AI-use statement (Task A4): the page and its copy", () => {
     expect($("not-built")).toBeNull();
   });
 
+  it("drawing the page raises no React warning (the five ticks each carry a key; the e2e run showed one)", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await render();
+    expect(err.mock.calls.map((c) => String(c[0]) + " " + String(c[1] ?? ""))).toEqual([]);
+  });
+
   it("the page's messages are always mounted for screen readers (role=status)", async () => {
     await render();
     for (const id of ["aiu-log-msg", "aiu-refuse", "aiu-action-msg", "aiu-style-note"]) expect($(id)!.getAttribute("role"), id).toBe("status");

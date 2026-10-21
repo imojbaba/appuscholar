@@ -132,7 +132,7 @@ export function AiUse({ projectId }: { projectId: string }) {
   const logOff = settings.aiLogOff === true;
   const field = "flex flex-col gap-1 text-[13.5px] text-ink";
   const tick = (checked: boolean, on: (v: boolean) => void, label: string, testid: string) => (
-    <label className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+    <label key={testid} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
       <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={testid} checked={checked} onChange={(e) => { setRefuse(""); on(e.target.checked); }} />
       {label}
     </label>
