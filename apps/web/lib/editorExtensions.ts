@@ -26,12 +26,14 @@ function dataAttributes(el: HTMLElement): Record<string, string> {
  * `<span class="qual-tag" data-qcode="…" title="…">` (v1 6254), written by useDocAccess (lib/editor/docAccess.ts).
  * Without it ProseMirror drops the span and its attributes, and the next autosave persists the loss.
  * Not inclusive: text typed right after an AI insertion is the student's own, not part of the span.
+ * Priority 1001, above every formatting mark (the default 100, TextStyle 101, Link 1000): the span is the outer element, so a tag over words
+ * that are partly bold or linked stays one span with the formatting inside it, as v1 wrote it (ruling R30). Lower, the span split around them.
  */
 export const ClassSpan = Mark.create({
   name: "classSpan",
   inclusive: false,
   excludes: "",
-  priority: 51,
+  priority: 1001,
   addAttributes() {
     return {
       class: { default: null, parseHTML: (el) => el.getAttribute("class"), renderHTML: (a) => (a.class ? { class: a.class } : {}) },

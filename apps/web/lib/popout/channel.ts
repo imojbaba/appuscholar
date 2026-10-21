@@ -27,7 +27,12 @@ export type DocSnapshotMessage = { type: "doc-snapshot"; projectId: string | nul
 export type DocOp = "insertText" | "insertBlock" | "wrapSelection" | "replaceInDocument" | "allDocuments" | "rewriteDocument";
 export type DocRequestMessage = { type: "doc-request"; id: string; projectId: string; op: DocOp; args: unknown[] };
 export type DocReplyMessage = { type: "doc-reply"; id: string; result: unknown };
-export type SyncMessage = InsertMessage | BlobMessage | DocHelloMessage | DocSnapshotMessage | DocRequestMessage | DocReplyMessage;
+/**
+ * Ruling R28: the writing window has taken the request (its project and arguments checked) and is running it. Running can take as long as the
+ * passphrase prompt stays open, so after the ack the pop-out waits for the reply with no short timeout.
+ */
+export type DocAckMessage = { type: "doc-ack"; id: string };
+export type SyncMessage = InsertMessage | BlobMessage | DocHelloMessage | DocSnapshotMessage | DocRequestMessage | DocAckMessage | DocReplyMessage;
 
 export type SyncChannel = {
   postMessage(m: unknown): void;

@@ -59,6 +59,7 @@ import { ProjectShell } from "../components/frame/ProjectShell";
 import { useProject, type ProjectValue } from "../components/frame/ProjectContext";
 import { DOC_REPLY_WAIT_MS, useDocAccess, type DocAccess } from "../lib/editor/docAccess";
 import { markCursorPlaced } from "../lib/editor/insert";
+import { heldDocs } from "../lib/useAutosave";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 window.scrollTo = (() => {}) as typeof window.scrollTo;
@@ -102,6 +103,8 @@ function plainApi(d1 = "<p>Mine.</p>", d2 = "<p>Other.</p>") {
     if (init?.method === "PUT") { puts.push({ path, body: JSON.parse(init.body!) }); return Promise.resolve({ document: {}, revision: { seq: 2 }, created: true }); }
     if (path === "/documents/D1") return Promise.resolve(plainDoc("D1", d1));
     if (path === "/documents/D2") return Promise.resolve(plainDoc("D2", d2, "2026-10-16T00:00:02Z"));
+    // D3 in the bin: as a store that reaches deleted documents would answer it.
+    if (path === "/documents/D3") return Promise.resolve({ ...plainDoc("D3"), deletedAt: "2026-10-17T00:00:00Z" });
     return Promise.reject(new ApiError(404, "not-found"));
   });
   return puts;
@@ -310,6 +313,84 @@ describe("useDocAccess in the writing window", () => {
   }, 30_000);
 });
 
+describe("where an insert goes (ruling R29)", () => {
+  it("insertBlock goes at the end by default, with a cursor placed mid-document", async () => {
+    plainApi("<p>One two.</p><p>Three.</p>");
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    act(() => { markCursorPlaced(editor()); editor().commands.setTextSelection(5); });
+    expect(await call(() => access().insertBlock("<p>Block.</p>"))).toBe(true);
+    expect(editor().getHTML()).toBe("<p>One two.</p><p>Three.</p><p>Block.</p>");
+    // v1's caret after what went in: a second one follows it.
+    expect(await call(() => access().insertBlock('<span class="stat-tag" data-run="r1">t(9) = 2.3</span>'))).toBe(true);
+    expect(editor().getHTML()).toBe('<p>One two.</p><p>Three.</p><p>Block.</p><p><span class="stat-tag" data-run="r1">t(9) = 2.3</span></p>');
+  });
+
+  it("insertBlock with at cursor goes at the placed cursor (v1 insertHTMLBlockIntoEditor)", async () => {
+    plainApi("<p>One two.</p><p>Three.</p>");
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    // The end of the first paragraph.
+    act(() => { markCursorPlaced(editor()); editor().commands.setTextSelection(9); });
+    expect(await call(() => access().insertBlock("<p>Block.</p>", { at: "cursor" }))).toBe(true);
+    expect(editor().getHTML()).toBe("<p>One two.</p><p>Block.</p><p>Three.</p>");
+  });
+
+  it("insertText with at end goes at the end on a new line whatever the cursor (v1 insertIntoEditor(text,false))", async () => {
+    plainApi("<p>One two.</p><p>Three.</p>");
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    act(() => { markCursorPlaced(editor()); editor().commands.setTextSelection(5); });
+    expect(await call(() => access().insertText("t(9) = 2.3", { at: "end" }))).toBe(true);
+    expect(editor().getHTML()).toBe("<p>One two.</p><p>Three.<br>t(9) = 2.3</p>");
+  });
+});
+
+describe("a tag stays one span (ruling R30)", () => {
+  it("wrapSelection refuses a selection that partly overlaps another tag, as v1's surroundContents does", async () => {
+    plainApi('<p>One <span class="qual-tag" data-qcode="q1">two three</span> four.</p>');
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    const before = editor().getHTML();
+    // "e tw": from before the tag into it; then "ee fo": from inside it out of it.
+    select(3, 7);
+    expect(await call(() => access().wrapSelection("qual-tag", { "data-qcode": "q2" }))).toBe("crosses-paragraph");
+    select(12, 17);
+    expect(await call(() => access().wrapSelection("qual-tag", { "data-qcode": "q2" }))).toBe("crosses-paragraph");
+    expect(editor().getHTML()).toBe(before);
+    // Wholly inside it, and over all of it: nested.
+    select(5, 8);
+    expect(await call(() => access().wrapSelection("qual-tag", { "data-qcode": "q2" }))).toBe("done");
+    select(1, 20);
+    expect(await call(() => access().wrapSelection("stat-tag", { "data-run": "r1" }))).toBe("done");
+    expect(editor().getHTML()).toBe('<p><span class="stat-tag" data-run="r1">One <span class="qual-tag" data-qcode="q1"><span class="qual-tag" data-qcode="q2">two</span> three</span> four.</span></p>');
+  });
+
+  it("wrapSelection over partly bold words writes one span with the bold inside", async () => {
+    plainApi("<p>abc <strong>def</strong> ghi</p>");
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    select(1, 12);
+    expect(await call(() => access().wrapSelection("qual-tag", { "data-qcode": "c1", title: "Coping" }))).toBe("done");
+    expect(editor().getHTML()).toBe('<p><span class="qual-tag" data-qcode="c1" title="Coping">abc <strong>def</strong> ghi</span></p>');
+  });
+
+  it("rewriteDocument refuses a deleted document, and one whose unsaved text this tab holds", async () => {
+    const puts = plainApi();
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    expect(await call(() => access().rewriteDocument("D3", "<p>x</p>"))).toBe(false);
+    heldDocs.put("D2", "<p>Typed, not yet saved.</p>");
+    try {
+      expect(await call(() => access().rewriteDocument("D2", "<p>x</p>"))).toBe(false);
+    } finally { heldDocs.clear(); }
+    expect(puts).toEqual([]);
+    // Nothing held: the same rewrite goes through.
+    expect(await call(() => access().rewriteDocument("D2", "<p>x</p>"))).toBe(true);
+    expect(puts).toEqual([{ path: "/documents/D2", body: { bodyHtml: "<p>x</p>", keyVersion: 0 } }]);
+  });
+});
+
 describe("the editor keeps the tags' data attributes (ruling R11)", () => {
   it("a document holding a stat-tag and a qual-tag round-trips through the editor and the sanitiser", () => {
     const html = '<p>We found <span class="stat-tag" data-run="rk2x9">t(28) = 2.10, p = .04</span> and <span class="qual-tag" data-qcode="c1" title="Coping">I just kept going</span>.</p>';
@@ -319,6 +400,27 @@ describe("the editor keeps the tags' data attributes (ruling R11)", () => {
     const second = new Editor({ extensions: editorExtensions, content: saved });
     expect(second.getHTML()).toBe(html);
     first.destroy(); second.destroy();
+  });
+
+  it("a tag over bold words, and over a link inside bold, stays one span (ruling R30)", () => {
+    const bold = '<p><span class="qual-tag" data-qcode="c1" title="Coping">abc <strong>def</strong> ghi</span></p>';
+    const linked = '<p><span class="qual-tag" data-qcode="c2">see <strong><a href="https://x.org">the link</a></strong> here</span></p>';
+    for (const html of [bold, linked]) {
+      const first = new Editor({ extensions: editorExtensions, content: html });
+      const out = first.getHTML();
+      expect(out.match(/<span/g), html).toHaveLength(1);
+      // The tag is the outer element; the formatting is inside it.
+      expect(out, html).toMatch(/^<p><span class="qual-tag"[^>]*>[^<]*<(strong|a)[ >]/);
+      const saved = sanitizeHtml(out);
+      const second = new Editor({ extensions: editorExtensions, content: saved });
+      expect(sanitizeHtml(second.getHTML()), html).toBe(saved);
+      expect(saved.match(/<span/g), html).toHaveLength(1);
+      first.destroy(); second.destroy();
+    }
+    // Exactly as written for the bold case.
+    const e = new Editor({ extensions: editorExtensions, content: bold });
+    expect(e.getHTML()).toBe(bold);
+    e.destroy();
   });
 });
 
@@ -357,6 +459,35 @@ describe("useDocAccess in a place's own window (ruling R10)", () => {
     await until(() => done !== null);
     expect(done).toBe(true);
     expect(h.api.mock.calls.filter(([, init]) => (init as { method?: string } | undefined)?.method === "PUT")).toEqual([]);
+    expect(toasts()).toEqual([]);
+  });
+
+  it("an insert's position travels with the request", async () => {
+    popout();
+    plainApi();
+    await mount("p1");
+    await until(() => !!h.access);
+    act(() => { void access().insertBlock("<p>B.</p>", { at: "cursor" }); void access().insertText("t", { at: "end" }); });
+    await until(() => requests().length === 2);
+    expect(requests().map((r) => [r.op, r.args])).toEqual([["insertBlock", ["<p>B.</p>", { at: "cursor" }]], ["insertText", ["t", { at: "end" }]]]);
+  });
+
+  it("once the writing window acks, the pop-out waits past 10 seconds for the real answer (ruling R28)", async () => {
+    popout();
+    plainApi();
+    await mount("p1");
+    await until(() => !!h.access);
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    let done: boolean | null = null;
+    act(() => { void access().insertBlock("<p>Block.</p>").then((v) => { done = v; }); });
+    const req = requests()[0]!;
+    // Another request's ack changes nothing; this one's stops the 10 s wait (the writing window may be asking for the passphrase).
+    act(() => { ch.deliver({ type: "doc-ack", id: "another" }); ch.deliver({ type: "doc-ack", id: req.id }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+    expect(done).toBeNull();
+    act(() => { ch.deliver({ type: "doc-reply", id: req.id, result: true }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(done).toBe(true);
     expect(toasts()).toEqual([]);
   });
 
@@ -404,6 +535,9 @@ describe("the writing window answers a pop-out (ruling R10)", () => {
     act(() => { ch.deliver({ type: "doc-request", id: "q1", projectId: "p1", op: "insertBlock", args: ["<p>From the window.</p>"] }); });
     await until(() => sent("doc-reply").length === 1);
     expect(sent("doc-reply")[0]).toEqual({ type: "doc-reply", id: "q1", result: true });
+    // Acked before it ran (R28): the ack comes first.
+    const kinds = ch.sent.map((m) => (m as { type: string; id?: string })).filter((m) => m.id === "q1").map((m) => m.type);
+    expect(kinds).toEqual(["doc-ack", "doc-reply"]);
     expect(editor().getHTML()).toBe("<p>Mine.</p><p>From the window.</p>");
     expect(ws().docOpen).toBe(true);
     act(() => { ch.deliver({ type: "doc-request", id: "q2", projectId: "p1", op: "allDocuments", args: [] }); });
@@ -414,8 +548,12 @@ describe("the writing window answers a pop-out (ruling R10)", () => {
     ] });
     act(() => { ch.deliver({ type: "doc-request", id: "q3", projectId: "p9", op: "insertText", args: ["x"] }); });
     act(() => { ch.deliver({ type: "doc-request", id: "q4", projectId: "p1", op: "insertText", args: [42] }); });
-    await until(() => sent("doc-reply").length === 3);
+    act(() => { ch.deliver({ type: "doc-request", id: "q5", projectId: "p1", op: "insertBlock", args: ["<p>x</p>", { at: "sideways" }] }); });
+    await until(() => sent("doc-reply").length === 4);
     expect(sent("doc-reply")[2]).toEqual({ type: "doc-reply", id: "q4", result: false });
+    expect(sent("doc-reply")[3]).toEqual({ type: "doc-reply", id: "q5", result: false });
+    // Malformed requests are answered at once, never acked; another project's is neither.
+    expect(sent("doc-ack").map((m) => m.id)).toEqual(["q1", "q2"]);
     expect(editor().getHTML()).toBe("<p>Mine.</p><p>From the window.</p>");
   });
 });

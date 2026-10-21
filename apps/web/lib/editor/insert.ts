@@ -91,8 +91,15 @@ export function insertCitation(editor: Editor, fmt: Formatted): void {
  */
 export function insertTextAtCursor(editor: Editor, text: string): void { putText(editor, text, false); }
 
-function putText(editor: Editor, text: string, sup: boolean): void {
-  const atCursor = cursorPlaced(editor);
+/**
+ * v1 insertIntoEditor(text, false) (4195-4201): at the end of the document whatever the cursor is doing (placeCaretAtEnd), on a new line when the
+ * document holds something (`'\n'+text`, a line break here), each newline a line break; the cursor ends after it (4220-4225). The student's own
+ * text: no provenance mark, as insertTextAtCursor.
+ */
+export function insertTextAtEnd(editor: Editor, text: string): void { putText(editor, text, false, true); }
+
+function putText(editor: Editor, text: string, sup: boolean, atEnd = false): void {
+  const atCursor = !atEnd && cursorPlaced(editor);
   const blank = editor.isEmpty;
   editor.chain().focus().command(({ tr, state }) => {
     const { schema } = state;
