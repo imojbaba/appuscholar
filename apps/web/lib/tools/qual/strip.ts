@@ -25,15 +25,22 @@ export function stripCodes(html: string, ids: string[]): string {
  * Takes the tags of the given codes out of every document of the project (what v1's qualUnwrapCodesEverywhere does, 6216-6234, for the open document and the stored ones). Only a
  * document whose html changes is rewritten. `failed` holds the titles of the documents that could not be rewritten (a rewrite answering false or throwing: the document was
  * deleted, or this tab holds unsaved text for it); the others were done, and doing it again is safe, since a document already stripped does not change.
+ *
+ * `expectedIds` are the project's live documents as the shell lists them. allDocuments() answers [] when the documents could not be read at all (the vault is locked, the api
+ * failed, a pop-out with no writing window) and silently leaves out a document that does not open, so a code could be deleted while its tags are still in a document nobody read.
+ * When any expected id is missing from what allDocuments() returned, `unread` is true and NOTHING is rewritten.
  */
-export async function stripFromDocuments(access: Pick<DocAccess, "allDocuments" | "rewriteDocument">, ids: string[]): Promise<{ failed: string[] }> {
+export async function stripFromDocuments(access: Pick<DocAccess, "allDocuments" | "rewriteDocument">, ids: string[], expectedIds: string[] = []): Promise<{ failed: string[]; unread: boolean }> {
+  const docs = await access.allDocuments();
+  const read = new Set(docs.map((d) => d.id));
+  if (expectedIds.some((id) => !read.has(id))) return { failed: [], unread: true };
   const failed: string[] = [];
-  for (const d of await access.allDocuments()) {
+  for (const d of docs) {
     const next = stripCodes(d.html, ids);
     if (next === d.html) continue;
     let ok = false;
     try { ok = await access.rewriteDocument(d.id, next); } catch { ok = false; }
     if (!ok) failed.push(d.title);
   }
-  return { failed };
+  return { failed, unread: false };
 }

@@ -18,7 +18,9 @@ const h = vi.hoisted(() => ({
   blobs: {} as Record<string, Snap>,
   instances: new Set<{ kind: string; apply: (v: unknown) => void }>(),
   sets: [] as Array<{ kind: string; value: unknown }>,
-  access: {} as Record<string, unknown>
+  access: {} as Record<string, unknown>,
+  documents: [] as Array<{ id: string }>,
+  vault: "unlocked" as string
 }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useEffect, useState } = await import("react");
@@ -45,6 +47,9 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
   };
 });
 vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => h.access }));
+// The project's live documents as the shell lists them, and the vault's state (the layer reads only once it is open).
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ documents: h.documents }) }));
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: h.vault }) }));
 
 import { Panel } from "../components/tools/qual/Panel";
 import { DocumentLayer } from "../components/tools/qual/DocumentLayer";
@@ -89,6 +94,8 @@ const wrap = () => h.access.wrapSelection as ReturnType<typeof vi.fn>;
 beforeEach(() => {
   h.blobs = { qual_codes: { value: TREE, loading: false, locked: false }, qual_prefs: { value: null, loading: false, locked: false } };
   h.sets = [];
+  h.documents = [];
+  h.vault = "unlocked";
   h.instances.clear();
   resetLive();
   h.access = {
@@ -284,7 +291,8 @@ describe("DocumentLayer", () => {
 
 const tag = (id: string, text: string) => `<span class="qual-tag" data-qcode="${id}" title="x">${text}</span>`;
 const docs = (...ds: Array<[string, string, string]>) => ds.map(([id, title, html]) => ({ id, title, html, text: "" }));
-const setDocs = (d: ReturnType<typeof docs>) => { (h.access.allDocuments as ReturnType<typeof vi.fn>).mockResolvedValue(d); };
+/** What allDocuments() reads; the shell lists the same documents as the project's. */
+const setDocs = (d: ReturnType<typeof docs>) => { h.documents = d.map((x) => ({ id: x.id })); (h.access.allDocuments as ReturnType<typeof vi.fn>).mockResolvedValue(d); };
 const rewrite = () => h.access.rewriteDocument as ReturnType<typeof vi.fn>;
 
 describe("the passages view", () => {
@@ -372,7 +380,8 @@ describe("deleting a code takes its tags out of the documents first", () => {
     expect((h.blobs.qual_codes!.value as QualCode[]).map((c) => c.id)).toEqual(["qa", "qb", "qc"]);
     expect(h.sets.filter((s) => s.kind === "qual_codes")).toEqual([]);
     expect(status()).toContain("Held draft");
-    expect(status()).toContain("Not deleted");
+    expect(status()).toContain("Not deleted: the code is kept.");
+    expect(status()).not.toContain("Nothing was changed");
     expect(tid("qual-delete-qa")).not.toBeNull();
     // The held text is saved; stripping again finds nothing left in "a" (already rewritten) and rewrites "b".
     setDocs(docs(["a", "One", "<p>coping</p>"], ["b", "Held draft", `<p>${tag("qc", "support")}</p>`]));
@@ -386,6 +395,7 @@ describe("deleting a code takes its tags out of the documents first", () => {
 
   it("while it works the status line says so and the tree is off; Keep removes nothing", async () => {
     let release!: () => void;
+    // A project with no document at all: nothing to strip, so the delete goes ahead once the (empty) read is back.
     (h.access.allDocuments as ReturnType<typeof vi.fn>).mockReturnValue(new Promise((r) => { release = () => r([]); }));
     await render(<Panel tab="coding" projectId="p1" />);
     await click("qual-delete-qb");
@@ -405,5 +415,72 @@ describe("deleting a code takes its tags out of the documents first", () => {
     await click("qual-delete-qb");
     await click("qual-delete-confirm-yes");
     expect(rewrite().mock.calls).toEqual([["a", `<p>${tag("zz", "orphan")} barrier</p>`]]);
+  });
+});
+
+describe("a delete is refused while a document of the project was not read", () => {
+  const UNREAD = "Not deleted. Some documents of this project could not be read (the vault is locked, you are offline, or a document does not open). Try again.";
+  const deleteQa = async () => { await click("qual-delete-qa"); await click("qual-delete-confirm-yes"); };
+
+  it("allDocuments() answering [] for a project that has documents: refused, codes intact, nothing rewritten", async () => {
+    setDocs(docs(["a", "One", `<p>${tag("qa", "x")}</p>`], ["b", "Two", `<p>${tag("qc", "y")}</p>`]));
+    (h.access.allDocuments as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    await render(<Panel tab="coding" projectId="p1" />);
+    await deleteQa();
+    expect(status()).toBe(UNREAD);
+    expect(rewrite()).not.toHaveBeenCalled();
+    expect(h.sets.filter((s) => s.kind === "qual_codes")).toEqual([]);
+    expect((h.blobs.qual_codes!.value as QualCode[]).map((c) => c.id)).toEqual(["qa", "qb", "qc"]);
+    // Nothing offers to delete anyway: the codes are still there to try again.
+    expect(tid("qual-delete-qa")).not.toBeNull();
+    expect(tid("qual-delete-confirm-yes")).toBeNull();
+  });
+
+  it("a document skipped by the read (one id missing): refused before any rewrite, even of the documents that were read", async () => {
+    const all = docs(["a", "One", `<p>${tag("qa", "x")}</p>`], ["b", "Two", `<p>${tag("qa", "y")}</p>`], ["c", "Three", "<p>none</p>"]);
+    setDocs(all);
+    (h.access.allDocuments as ReturnType<typeof vi.fn>).mockResolvedValue(all.filter((d) => d.id !== "c"));
+    await render(<Panel tab="coding" projectId="p1" />);
+    await deleteQa();
+    expect(status()).toBe(UNREAD);
+    expect(rewrite()).not.toHaveBeenCalled();
+    expect((h.blobs.qual_codes!.value as QualCode[]).map((c) => c.id)).toEqual(["qa", "qb", "qc"]);
+  });
+
+  it("a project with no documents: the delete goes ahead", async () => {
+    h.documents = [];
+    await render(<Panel tab="coding" projectId="p1" />);
+    await deleteQa();
+    expect(status()).toBe("Deleted");
+    expect((h.blobs.qual_codes!.value as QualCode[]).map((c) => c.id)).toEqual(["qb"]);
+  });
+});
+
+describe("the DocumentLayer never raises a passphrase prompt", () => {
+  it("on a locked or loading vault it reads no blob and draws nothing; once the vault is open it reads and colours", async () => {
+    const root = await render(<DocumentLayer projectId="p1" />);
+    for (const status of ["locked", "loading"]) {
+      h.vault = status;
+      await act(async () => { root.render(<DocumentLayer projectId="p1" />); });
+      expect(h.instances.size, status).toBe(0);
+      expect(css(), status).toBeNull();
+    }
+    h.vault = "unlocked";
+    await act(async () => { root.render(<DocumentLayer projectId="p1" />); });
+    expect(h.instances.size).toBe(2);
+    expect(css()).toContain('[data-qcode="qa"]');
+  });
+
+  it("reads with the vault off and while it migrates; goes back to nothing, and drops its reads, when it locks again", async () => {
+    const root = await render(<DocumentLayer projectId="p1" />);
+    for (const status of ["off", "migrating"]) {
+      h.vault = status;
+      await act(async () => { root.render(<DocumentLayer projectId="p1" />); });
+      expect(css(), status).not.toBeNull();
+    }
+    h.vault = "locked";
+    await act(async () => { root.render(<DocumentLayer projectId="p1" />); });
+    expect(css()).toBeNull();
+    expect(h.instances.size).toBe(0);
   });
 });

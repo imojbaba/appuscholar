@@ -30,9 +30,6 @@ export function publishColors(projectId: string, shown: boolean): void {
 /** The latest of the panel for a project; the same object until the next publish (useSyncExternalStore). */
 export function liveOf(projectId: string): Live { return byProject.get(projectId) ?? NONE; }
 
-/** The counter now: every publish so far has a number up to it. */
-export const liveNow = (): number => counter;
-
 export function subscribeLive(fn: () => void): () => void {
   subs.add(fn);
   return () => { subs.delete(fn); };

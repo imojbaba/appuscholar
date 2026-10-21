@@ -1,6 +1,7 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
+import { useVault } from "@/lib/vault/useVault";
 import { codeColourCss } from "@/lib/tools/qual/colours";
 import { liveOf, subscribeLive } from "@/lib/tools/qual/liveStore";
 
@@ -14,6 +15,12 @@ import { liveOf, subscribeLive } from "@/lib/tools/qual/liveStore";
  * window does not hear the panel's saves, so the panel also publishes to lib/tools/qual/liveStore; the layer takes the panel's value while it is newer than what its own blob last delivered.
  */
 export function DocumentLayer({ projectId }: { projectId: string }) {
+  const { status } = useVault();
+  // A blob's first read asks for the passphrase on a locked vault; the layer must never raise a prompt of its own, so it reads only once the vault is open (or off).
+  return status === "off" || status === "unlocked" || status === "migrating" ? <Colours projectId={projectId} /> : null;
+}
+
+function Colours({ projectId }: { projectId: string }) {
   const codes = useProjectBlob("qual_codes", projectId);
   const prefs = useProjectBlob("qual_prefs", projectId);
   const live = useSyncExternalStore(subscribeLive, () => liveOf(projectId), () => liveOf(projectId));

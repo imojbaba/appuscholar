@@ -103,14 +103,24 @@ describe("stripFromDocuments", () => {
   it("rewrites only the documents that change and answers no failures", async () => {
     const rewrite = vi.fn(async () => true);
     const r = await stripFromDocuments({ allDocuments: async () => docs, rewriteDocument: rewrite }, ["q1"]);
-    expect(r).toEqual({ failed: [] });
+    expect(r).toEqual({ failed: [], unread: false });
     expect(rewrite.mock.calls).toEqual([["a", "<p>x</p>"], ["c", "<p>z</p>"]]);
   });
 
   it("names the documents that could not be rewritten, and tries the rest", async () => {
     const rewrite = vi.fn(async (id: string) => id !== "a");
     const r = await stripFromDocuments({ allDocuments: async () => docs, rewriteDocument: rewrite }, ["q1"]);
-    expect(r).toEqual({ failed: ["Alpha"] });
+    expect(r).toEqual({ failed: ["Alpha"], unread: false });
+    expect(rewrite).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses, rewriting nothing, when a document the project lists was not read (an empty read, or one skipped)", async () => {
+    const rewrite = vi.fn(async () => true);
+    expect(await stripFromDocuments({ allDocuments: async () => [], rewriteDocument: rewrite }, ["q1"], ["a", "b", "c"])).toEqual({ failed: [], unread: true });
+    expect(await stripFromDocuments({ allDocuments: async () => docs.slice(0, 2), rewriteDocument: rewrite }, ["q1"], ["a", "b", "c"])).toEqual({ failed: [], unread: true });
+    expect(rewrite).not.toHaveBeenCalled();
+    // Every listed document read (extra ones read are fine), or none listed: it goes ahead.
+    expect((await stripFromDocuments({ allDocuments: async () => docs, rewriteDocument: rewrite }, ["q1"], ["a", "b"])).unread).toBe(false);
     expect(rewrite).toHaveBeenCalledTimes(2);
   });
 

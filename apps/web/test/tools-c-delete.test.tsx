@@ -90,6 +90,7 @@ async function until(pred: () => boolean) {
 const editor = () => h.editor as Editor;
 const tid = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
 const status = () => tid("qual-status")?.textContent;
+let corrupt: string | null = null;
 
 const C = (id: string, name: string, parentId: string | null): QualCode => ({ id, name, parentId, color: "#f59e0b" });
 const tag = (id: string, text: string) => `<span class="qual-tag" data-qcode="${id}" title="t">${text}</span>`;
@@ -136,7 +137,7 @@ async function vaultApi() {
       docs[k] = { ...docs[k], bodyHtml: body.bodyHtml };
       return Promise.resolve({ document: { deks }, revision: { seq: 2 }, created: true }); }
     const m = /^\/documents\/([ABCE])$/.exec(path);
-    if (m) return Promise.resolve({ ...docs[m[1] as keyof typeof docs] });
+    if (m) return Promise.resolve({ ...docs[m[1] as keyof typeof docs], ...(m[1] === corrupt ? { bodyHtml: "not-a-sealed-body" } : {}) });
     return Promise.reject(new ApiError(404, "not-found"));
   });
   return { puts, dek };
@@ -159,7 +160,7 @@ async function deleteQa() {
 
 beforeEach(() => {
   h.api.mockReset(); h.toast.mockReset(); h.push.mockReset(); h.ask.mockReset(); h.update.mockReset().mockResolvedValue(undefined);
-  h.path = "/p/s1/collect/coding"; h.editor = null; h.prefs = null;
+  h.path = "/p/s1/collect/coding"; h.editor = null; h.prefs = null; corrupt = null;
   h.codes = [C("qa", "Coping", null), C("qb", "Barriers", null), C("qc", "Social support", "qa")];
   heldDocs.clear();
   setSyncChannel(new FakeChannel());
@@ -202,5 +203,16 @@ describe("deleting a code over the real document access", () => {
     expect(puts.map((p) => p.path)).toEqual(["/documents/C", "/documents/B"]);
     expect(await decryptText(puts[1]!.body.bodyHtml, dek)).toBe(STRIPPED.B);
     expect((h.codes as QualCode[]).map((c) => c.id)).toEqual(["qb"]);
+  }, 30_000);
+
+  it("a sealed document that does not open blocks the delete: nothing is rewritten, the codes stay", async () => {
+    corrupt = "E";
+    const { puts } = await mountPanel();
+    await deleteQa();
+    await until(() => (status() ?? "").startsWith("Not deleted"));
+    expect(status()).toContain("could not be read");
+    expect(puts).toEqual([]);
+    expect(editor().getHTML()).toBe(BODIES.A);
+    expect((h.codes as QualCode[]).map((c) => c.id)).toEqual(["qa", "qb", "qc"]);
   }, 30_000);
 });

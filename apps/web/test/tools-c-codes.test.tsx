@@ -45,6 +45,8 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
 // The panel tags and deletes through the shared document access, which needs the project shell; this file is about the tree.
 vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ wrapSelection: async () => "done", allDocuments: async () => [], rewriteDocument: async () => true }) }));
 
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ documents: [] }) }));
+
 import { Panel } from "../components/tools/qual/Panel";
 import { facts } from "../components/tools/qual";
 import { useCodes } from "../lib/tools/qual/useCodes";

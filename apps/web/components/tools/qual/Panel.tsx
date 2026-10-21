@@ -4,6 +4,7 @@ import { qualDescendantIds } from "@appuscholar/core";
 import { plainText, useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useDocAccess } from "@/lib/editor/docAccess";
+import { useProject } from "@/components/frame/ProjectContext";
 import { publishCodes, publishColors } from "@/lib/tools/qual/liveStore";
 import { stripFromDocuments } from "@/lib/tools/qual/strip";
 import { useCodes } from "@/lib/tools/qual/useCodes";
@@ -29,6 +30,7 @@ function Coding({ projectId }: { projectId: string }) {
   const codes = useCodes(projectId);
   const prefs = useProjectBlob("qual_prefs", projectId);
   const access = useDocAccess();
+  const { documents } = useProject();
   const [editing, setEditing] = useState<Editing>(null);
   const [status, setStatus] = useState("");
   // The code whose passages are shown in place of the tree, and whether a delete is taking the tags out of the documents.
@@ -52,7 +54,8 @@ function Coding({ projectId }: { projectId: string }) {
     const id = refocus.current;
     if (!id) return;
     refocus.current = null;
-    root.current?.querySelector<HTMLElement>(`[data-testid="${id}"]`)?.focus();
+    // Found by comparing the attribute, not through a selector: the id of a code is a stored string.
+    Array.from(root.current?.querySelectorAll<HTMLElement>("[data-testid]") ?? []).find((el) => el.dataset.testid === id)?.focus();
   });
   const trigger = (e: Editing) => (!e ? null : e.kind === "top" ? "qual-add-top" : e.kind === "sub" ? "qual-add-sub-" + e.id : e.kind === "rename" ? "qual-rename-" + e.id : "qual-delete-" + e.id);
   /** Closes the open field or question; focus goes to `to`, or to the button that opened it. */
@@ -70,10 +73,16 @@ function Coding({ projectId }: { projectId: string }) {
     const ids = qualDescendantIds(id, codeList);
     setBusy(true);
     setStatus(t("qual_status_deleting"));
-    const { failed } = await stripFromDocuments(access, ids);
+    // Every live document of the project must have been read: allDocuments() is [] when they could not be, and leaves out one that does not open.
+    const { failed, unread } = await stripFromDocuments(access, ids, documents.map((d) => d.id));
     setBusy(false);
+    if (unread) {
+      close();
+      setStatus(t("qual_status_delete_unread"));
+      return;
+    }
     if (failed.length > 0) {
-      // A document could not be rewritten (deleted, or this tab holds text of it that is not saved): nothing is deleted, and trying again is safe.
+      // A document could not be rewritten (deleted, or this tab holds text of it that is not saved): the code is kept, and trying again is safe.
       close();
       setStatus(t("qual_status_delete_held", { docs: failed.map((n) => "\u201c" + n + "\u201d").join(", ") }));
       return;
