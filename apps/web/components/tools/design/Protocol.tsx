@@ -8,10 +8,9 @@ import { notesOf, useDesign } from "@/lib/tools/design/useDesign";
 import { Button } from "@/components/ui/button";
 import { Notes } from "./Notes";
 
-/** The eight sections, in v1's order (protoLoad 5943-5946): the key is the stored field's, the words are `design_proto_<key>` and `design_proto_<key>_ph`. */
-const FIELDS = ["bg", "obj", "design", "part", "sample", "proc", "risk", "dmp"] as const;
-/** v1's textareas were three rows for the long sections and two for the others (1848-1855). */
-const ROWS: Record<(typeof FIELDS)[number], number> = { bg: 3, obj: 2, design: 2, part: 2, sample: 2, proc: 3, risk: 2, dmp: 2 };
+/** v1's textareas were three rows for the long sections and two for the others (1848-1855); the keys, in v1's order (protoLoad 5943-5946), are the stored fields' (the words are `design_proto_<key>` and `design_proto_<key>_ph`). */
+const ROWS: Record<keyof ProtoFields, number> = { bg: 3, obj: 2, design: 2, part: 2, sample: 2, proc: 3, risk: 2, dmp: 2 };
+const FIELDS = Object.keys(ROWS) as Array<keyof ProtoFields>;
 
 /**
  * The protocol / synopsis builder (v1 protoLoad, protoRead, protoSave, protoGenerate 5942-5977 and the dialog 1845-1860): eight sections in the
