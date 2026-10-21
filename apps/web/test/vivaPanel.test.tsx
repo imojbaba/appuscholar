@@ -27,9 +27,10 @@ const h = vi.hoisted(() => ({
     insertText: vi.fn(), insertBlock: vi.fn(), replaceInDocument: vi.fn(), rewriteDocument: vi.fn(), wrapSelection: vi.fn()
   },
   sug: { set: vi.fn(), setFeedback: vi.fn(), setThinking: vi.fn(), clear: vi.fn(), accept: vi.fn(), copy: vi.fn(), tab: vi.fn(), setEditor: vi.fn(), isCurrent: vi.fn() },
+  requestInsert: vi.fn(),
   confirm: vi.fn()
 }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", currentDoc: { id: "cur" } }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", currentDoc: { id: "cur" }, requestInsert: h.requestInsert }) }));
 vi.mock("@/lib/editor/docAccess", () => ({
   useDocAccess: () => ({ text: () => h.text, selection: () => h.selection, allDocuments: async () => [], ...h.insert })
 }));
@@ -285,6 +286,8 @@ describe("rule 4", () => {
     // No document write of any kind, and nothing handed to the suggestion pane (whose Accept and Tab insert).
     for (const [name, fn] of Object.entries(h.insert)) expect(fn, name).not.toHaveBeenCalled();
     for (const [name, fn] of Object.entries(h.sug)) expect(fn, name).not.toHaveBeenCalled();
+    // The shell's own insert path (ProjectContext.requestInsert) is never used either.
+    expect(h.requestInsert).not.toHaveBeenCalled();
     // No insert, accept or add control in the panel: its buttons are Get a question / Another question and Save my answer, and no input or link offers one.
     expect($$("button").map((b) => b.textContent!.trim())).toEqual([E.viva_another, E.viva_save]);
     expect($$("a, [role='button'], input[type='button'], input[type='submit']")).toEqual([]);

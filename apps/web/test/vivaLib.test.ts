@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { buildVivaPrompt, VIVA_MIN_WORDS } from "@appuscholar/core";
 import { askViva, vivaAppend, vivaEnough, vivaSource, VIVA_LOG_MAX } from "../lib/tools/viva/ask";
 
-/* The viva question's logic (Task E4; v1 vivaAsk 3608-3624, vivaSave 3625-3631): the prompt is core's buildVivaPrompt and nothing else, the words are counted as v1 counts them, the log keeps the last 60. */
+/* The viva question's logic (Task E4; v1 vivaAsk 3608-3624, vivaSave 3625-3635): the prompt is core's buildVivaPrompt and nothing else, the words are counted as v1 counts them, the log keeps the last 60. */
 const WORDS = (n: number) => Array.from({ length: n }, (_, i) => "word" + i).join(" ");
 
 describe("vivaSource (v1 selText().trim())", () => {
@@ -51,7 +51,7 @@ describe("askViva", () => {
   });
 });
 
-describe("vivaAppend (v1 vivaSave 3625-3631)", () => {
+describe("vivaAppend (v1 vivaSave 3625-3635)", () => {
   it("adds {t, aud, q, a} with the trimmed answer after the earlier entries", () => {
     const out = vivaAppend([{ t: 1, aud: "viva", q: "q0", a: "a0" }], { t: 5, aud: "conf", q: "q1", a: "a1" });
     expect(out).toEqual([{ t: 1, aud: "viva", q: "q0", a: "a0" }, { t: 5, aud: "conf", q: "q1", a: "a1" }]);

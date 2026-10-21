@@ -2,7 +2,7 @@ import { buildVivaPrompt, VIVA_MIN_WORDS } from "@appuscholar/core";
 import type { VivaLog } from "@/lib/blobs/kinds/viva";
 
 /*
- * The viva question's logic (v1 vivaAsk 3608-3624, vivaSave 3625-3631), kept off the panel so a test can drive it. The prompt, its temperature (0.6) and its limit (700 tokens) are
+ * The viva question's logic (v1 vivaAsk 3608-3624, vivaSave 3625-3635), kept off the panel so a test can drive it. The prompt, its temperature (0.6) and its limit (700 tokens) are
  * core's buildVivaPrompt, held by a golden: this file adds no prompt of its own. Nothing here touches the document (rule 4): a question is read and answered, never inserted.
  */
 

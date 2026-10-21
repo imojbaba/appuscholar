@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 
 /**
- * Review's Viva tab (v1 dialog 1135-1146, vivaOpen 3600, vivaAsk 3608, vivaSave 3625): who is asking, "Get a question", the AI's one question (gold edge and a label that says it is AI and what
+ * Review's Viva tab (v1 dialog 1133-1143, vivaOpen 3600, vivaAsk 3608, vivaSave 3625): who is asking, "Get a question", the AI's one question (gold edge and a label that says it is AI and what
  * to check), an answer box with no AI help, "Save my answer", and how many answers are saved. The question and the answer are never sent to the document (rule 4): this panel uses no write
  * of useDocAccess and registers nothing with the suggestion pane. The text asked about is the selection, else the whole document (v1 selText); the personal-data scan and the AI-use log
  * are callAI's. The answers are the project's viva_log blob (v1: localStorage appu_viva), the last 60. The body is keyed by project (Panel.tsx).
