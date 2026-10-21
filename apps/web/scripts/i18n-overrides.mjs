@@ -239,7 +239,6 @@ export const V2_STRINGS = {
   place_question_locked: { en: "Your question is locked. Enter your passphrase to see it.", hi: "आपका प्रश्न बंद है। इसे देखने के लिए अपना पासफ़्रेज़ लिखें।" },
   place_not_built: { en: "Not built yet.", hi: "अभी बना नहीं है।" },
   // The project's home, the project list and first run until Tasks 7, 8 and 9 build them.
-  home_places: { en: "Stages", hi: "चरण" },
   reading_open_pdfs: { en: "Open your PDFs", hi: "अपनी PDF खोलें" },
   // The project list and first run until Tasks 8 and 9 build them.
   projects_new: { en: "New project", hi: "नया प्रोजेक्ट" },
