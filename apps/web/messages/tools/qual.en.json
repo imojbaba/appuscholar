@@ -1,1 +1,25 @@
-{}
+{
+  "qual_aria_add_sub": "Add a sub-code to {name}",
+  "qual_aria_delete": "Delete {name}",
+  "qual_aria_rename": "Rename {name}",
+  "qual_btn_add": "Add",
+  "qual_btn_cancel": "Cancel",
+  "qual_btn_delete": "Delete",
+  "qual_btn_keep": "Keep",
+  "qual_btn_save": "Save",
+  "qual_codes_broken": "Your saved codes cannot be opened on this device. Nothing was changed.",
+  "qual_codes_locked": "Your saved codes are locked. Unlock your vault to read them and add codes.",
+  "qual_damaged": "This code list is damaged: a code is its own parent, or the parents go round in a loop. It is not shown, and nothing was changed.",
+  "qual_facts_codes": "{n} codes",
+  "qual_label_new_sub": "Name for this sub-code:",
+  "qual_label_new_top": "Name for this new code:",
+  "qual_label_rename": "Rename this code:",
+  "qual_name_placeholder": "Code name",
+  "qual_replace_broken_btn": "Replace them and start a new list",
+  "qual_status_added": "Code added: {name}",
+  "qual_status_deleted": "Deleted",
+  "qual_tip_add_sub": "Add a sub-code",
+  "qual_tip_delete": "Delete",
+  "qual_tip_rename": "Rename",
+  "qual_tree_label": "Code tree"
+}
