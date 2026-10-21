@@ -167,8 +167,9 @@ describe("Panel (Task A1)", () => {
     expect($('[data-testid="reg-check"]')).not.toBeNull();
   });
 
-  it("a tab not built yet reads Not built yet", async () => {
-    for (const tab of ["aiuse"]) {
+  it("every design tab is built after A4; an id the place does not list still reads Not built yet", async () => {
+    // Each of the eight tabs' own tests checks that the Panel gives it its page (aiuse: toolsAAiUse); the fallback stays for an id that is not a tab.
+    for (const tab of ["nope", "constructor", "__proto__"]) {
       await render(<Panel tab={tab} projectId="p1" />);
       expect($('[data-testid="not-built"]')!.textContent, tab).toContain(E.place_not_built);
       for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
