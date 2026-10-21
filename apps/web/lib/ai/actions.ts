@@ -40,9 +40,11 @@ const NEED_SELECTION: Record<"improve" | "expand", string> = {
   expand: "Select the text you want to expand first"
 };
 
+const errorText = (e: unknown): string => (e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
+
 /** v1 showAIError: the pane stays open on the message and a toast repeats it. */
 function fail(d: Pick<ActionDeps, "clear" | "dockShow" | "toast">, e: unknown): void {
-  const msg = e instanceof Error && e.message ? e.message : "Something went wrong. Try again.";
+  const msg = errorText(e);
   d.clear(msg);
   d.dockShow("ai");
   d.toast(msg);
@@ -90,33 +92,32 @@ export async function runDraftFirst(kind: "tail" | "improve" | "expand", d: Acti
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
 
-/** v1 ideaAssess's three sentences (8572, 8574, 8578): toasts and pane text of v1's script, English in both languages as in v1, like the writing actions' toasts. */
+/** v1 ideaAssess's sentences (8572, 8574): a toast and the pane text of v1's script, English in both languages as in v1, like the writing actions' toasts. */
 export const IDEA_NEED_TOPIC = "Describe your working idea first";
 export const IDEA_THINKING = "💜 Thinking this through…";
-// The "Ready — press Tab in the editor to insert" toast is the keyed `rs2_ready_press_tab_in`, read through `t` (Assess feasibility and the helpers).
 
-/** What Assess feasibility touches: the suggestion pane, the AI, and the four fields as the student typed them. */
-export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast" | "t"> & {
+/** What "Check if it is doable" touches: the AI, a toast, and the four fields as the student typed them. */
+export type IdeaDeps = Pick<ActionDeps, "callAI" | "toast"> & {
   /** fieldLabel(settings.field): v1 fieldName(). */
   field: string;
   intake: { topic: string; resources: string; timeframe: string; constraints: string };
 };
 
-/** Idea & Feasibility's "🔎 Assess feasibility" (v1 ideaAssess 8568-8580): the advisor's read lands in the suggestion pane, insertable with Tab or Accept. */
-export async function assessIdea(d: IdeaDeps): Promise<void> {
-  if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return; }
+/**
+ * "Check if it is doable" (v1 ideaAssess 8568-8580, its prompt and budget unchanged): the advisor's read as the engine wrote it, which first run and the
+ * Idea place show in their read panel and keep with the idea (`idea_intake.read`) instead of the suggestion pane. Null when nothing was read: no idea
+ * yet (v1's toast), or the call failed (its message in a toast).
+ */
+export async function checkIdea(d: IdeaDeps): Promise<string | null> {
+  if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return null; }
   // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000); V2 names each area's line by the area (W7).
   const built = buildIdeaPromptV2(d.field, d.intake);
-  const token = d.setThinking("custom", null, IDEA_THINKING);
-  d.dockShow("ai");
   try {
-    const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
-    if (!d.isCurrent(token)) return;
-    // v1 shows no accuracy check for this answer (setSug with no note, 8577).
-    d.set(reply, null, token);
-    d.dockShow("ai");
-    d.toast(d.t("rs2_ready_press_tab_in"));
-  } catch (e) { if (d.isCurrent(token)) fail(d, e); }
+    return await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+  } catch (e) {
+    d.toast(errorText(e));
+    return null;
+  }
 }
 
 /** v1 psychTool's sentences (8604, 8606, 8609, 8610, 8613): toasts, confirm and pane text of v1's script, English in both languages as in v1. */

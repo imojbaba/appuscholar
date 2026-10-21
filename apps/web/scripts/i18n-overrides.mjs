@@ -312,7 +312,28 @@ export const V2_STRINGS = {
   writing_chat: { en: "Chat", hi: "चैट" },
   writing_helpers: { en: "Research helpers", hi: "शोध सहायक" },
   not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
-  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" }
+  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  // Wave B Task 9 (register D-S2-39): first run and the Idea place (canvas Start). The four fields stay v1's idea_intake keys, so the prompt is unchanged. DRAFT Hindi.
+  idea_h: { en: "What do you want to study?", hi: "आप क्या अध्ययन करना चाहते हैं?" },
+  idea_hint: { en: "Write it roughly, in your own words. We will sharpen it together into a question you can actually answer.", hi: "इसे मोटे तौर पर, अपने शब्दों में लिखें। हम मिलकर इसे ऐसे प्रश्न में बदलेंगे जिसका आप सच में उत्तर दे सकें।" },
+  idea_topic_lbl: { en: "Your idea", hi: "आपका विचार" },
+  idea_sharpen_h: { en: "Three questions to sharpen it", hi: "इसे स्पष्ट करने के लिए तीन प्रश्न" },
+  idea_resources_lbl: { en: "Who would you study, and what can you use?", hi: "आप किसका अध्ययन करेंगे, और आप क्या इस्तेमाल कर सकते हैं?" },
+  idea_timeframe_lbl: { en: "How much time do you have?", hi: "आपके पास कितना समय है?" },
+  idea_constraints_lbl: { en: "What limits you: approvals, rules, anything else?", hi: "आपको क्या सीमित करता है: अनुमतियाँ, नियम, या कुछ और?" },
+  idea_check_btn: { en: "Check if it is doable", hi: "जाँचें कि यह संभव है या नहीं" },
+  idea_checking: { en: "Checking your idea…", hi: "आपके विचार की जाँच हो रही है…" },
+  idea_check_note: { en: "Uses your AI key. Takes about 10 seconds.", hi: "आपकी AI कुंजी का उपयोग करता है। लगभग 10 सेकंड लगते हैं।" },
+  idea_read_label: { en: "AI read of your idea. Check it against your own judgement.", hi: "आपके विचार पर AI की राय। इसे अपने विवेक से जाँचें।" },
+  idea_insert_btn: { en: "Put in my document", hi: "मेरे दस्तावेज़ में डालें" },
+  idea_inserted: { en: "Inserted in your document.", hi: "आपके दस्तावेज़ में डाल दिया गया।" },
+  idea_insert_none: { en: "Your document is not open, so nothing was inserted.", hi: "आपका दस्तावेज़ खुला नहीं है, इसलिए कुछ नहीं डाला गया।" },
+  idea_again_btn: { en: "Check again", hi: "फिर से जाँचें" },
+  idea_save_title: { en: "Project name", hi: "प्रोजेक्ट का नाम" },
+  idea_save_btn: { en: "Save as my project", hi: "मेरे प्रोजेक्ट के रूप में सहेजें" },
+  idea_edit_btn: { en: "Edit the question", hi: "प्रश्न बदलें" },
+  idea_save_after: { en: "After saving, every stage of your project is open. Most people find papers next.", hi: "सहेजने के बाद आपके प्रोजेक्ट का हर चरण खुला है। ज़्यादातर लोग इसके बाद शोध-पत्र खोजते हैं।" },
+  idea_save_unchecked: { en: "You can also save it now and check it later in your project.", hi: "आप इसे अभी सहेजकर बाद में अपने प्रोजेक्ट में भी जाँच सकते हैं।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

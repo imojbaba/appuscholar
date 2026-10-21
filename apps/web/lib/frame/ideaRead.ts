@@ -23,3 +23,11 @@ export function parseIdeaRead(text: string): IdeaRead | null {
   }
   return lines.length < 3 ? null : { lines, verdict };
 }
+
+/** A project name from the idea (first run's title field): its first 60 characters, cut at the last word that fits; one longer word is cut at 60. */
+export function ideaTitle(topic: string, max = 60): string {
+  const s = topic.replace(/\s+/g, " ").trim();
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max + 1).lastIndexOf(" ");
+  return (cut > 0 ? s.slice(0, cut) : s.slice(0, max)).trim();
+}

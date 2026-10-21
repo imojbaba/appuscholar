@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseIdeaRead } from "@/lib/frame/ideaRead";
+import { ideaTitle, parseIdeaRead } from "@/lib/frame/ideaRead";
 import { parseBlob } from "@/lib/blobs/kinds";
 
 const FIVE = [
@@ -64,5 +64,15 @@ describe("idea_intake's read", () => {
   it("an intake without a read still parses; a read of the wrong shape does not", () => {
     expect(parseBlob("idea_intake", JSON.stringify(base))).toEqual(base);
     expect(parseBlob("idea_intake", JSON.stringify({ ...base, read: { text: 3, at: "x" } }))).toBeNull();
+  });
+});
+
+describe("ideaTitle", () => {
+  it("is the topic's first 60 characters, cut at a word, with its spaces tidied", () => {
+    expect(ideaTitle("  sleep habits   and exam stress ")).toBe("sleep habits and exam stress");
+    const long = "Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?";
+    expect(ideaTitle(long)).toBe("Does a fixed bedtime routine for one week lower exam anxiety");
+    expect(ideaTitle(long).length).toBeLessThanOrEqual(60);
+    expect(ideaTitle("x".repeat(80))).toBe("x".repeat(60));
   });
 });

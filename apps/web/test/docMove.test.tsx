@@ -9,6 +9,9 @@ const h = vi.hoisted(() => ({ api: vi.fn(), toast: vi.fn(), ws: null as unknown 
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u-move", scratchProjectId: "s1" }, settings: {} }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
+vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => vi.fn() }));
+vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) }));
+vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/frame/ProjectContext", async (orig) => ({ ...(await orig<typeof import("../components/frame/ProjectContext")>()), useProject: () => h.ws }));
 
 import { ApiError } from "../lib/api";
@@ -36,13 +39,18 @@ async function render(node: React.ReactNode) {
 }
 const click = async (el: Element | null) => { await act(async () => { (el as HTMLElement).click(); }); };
 
+let moved: typeof doc | null = null;
 beforeEach(() => {
+  moved = null;
   h.toast.mockReset();
   h.api.mockReset().mockImplementation((path: string, init?: { method?: string; body?: string }) => {
     if (path === "/me/vault") return Promise.reject(new ApiError(404, "not-found"));
     if (path === "/projects" && init?.method === "POST") return Promise.resolve(project("pNew"));
     if (path === "/projects") return Promise.resolve([project("p1"), project("p2", "complete")]);
-    if (path === "/documents/D1/move") return Promise.resolve({ ...doc, projectId: JSON.parse(init!.body!).projectId });
+    if (path === "/documents/D1/move") { moved = { ...doc, projectId: JSON.parse(init!.body!).projectId }; return Promise.resolve(moved); }
+    // First run keeps the idea with the project it creates, then lists its documents (the moved one).
+    if (path === "/projects/pNew/blobs/idea_intake" && init?.method === "PUT") return Promise.resolve({ kind: "idea_intake", body: JSON.parse(init.body!).body, keyVersion: 0, deks: [], updatedAt: "", version: 1 });
+    if (path === "/projects/pNew/documents" && !init?.method) return Promise.resolve(moved ? [moved] : []);
     return Promise.reject(new ApiError(404, "not-found"));
   });
   h.ws = { project: null, documents: [doc], currentDoc: doc, selectDoc: vi.fn(), reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), flushOpen: vi.fn(async () => true), openProject: vi.fn(async () => true), go: vi.fn(async () => true) };
@@ -73,12 +81,12 @@ describe("Move to project", () => {
     document.body.innerHTML = "";
     await render(<FirstRun moveDocId="D1" />);
     expect(document.body.textContent).toContain(en.start_move_note);
-    const input = document.querySelector('[data-testid="start-name"]') as HTMLInputElement;
+    const input = document.querySelector("#ideaTopic") as HTMLTextAreaElement;
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Sleep");
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(input, "Sleep");
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    await click(document.querySelector('[data-testid="start-create"]'));
+    await click(document.querySelector('[data-testid="idea-save"]'));
     await until(() => (h.ws as { openProject: ReturnType<typeof vi.fn> }).openProject.mock.calls.length > 0);
     expect(moves().map(([p, i]) => [p, JSON.parse((i as { body: string }).body)])).toEqual([["/documents/D1/move", { projectId: "pNew" }]]);
     expect((h.ws as { openProject: ReturnType<typeof vi.fn> }).openProject).toHaveBeenCalledWith("pNew", { docId: "D1" });
