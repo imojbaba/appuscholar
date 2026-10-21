@@ -8,7 +8,8 @@ import en from "../messages/en.json";
 /*
  * The places of wave B Task 10: Literature with its four tabs (each a link, with the kept counts) and its suggested next line, Writing with Chat and
  * Research helpers beside the document, and the stages not built yet. Walk fault W23: nothing that is not built is offered in any place. The tools'
- * panels are stubs, except Analyse a paper (its lectures and lesson are under test) and the shelf shown inline.
+ * panels are stubs, except Analyse a paper (its lectures and lesson are under test) and the shelf shown inline. Task G2: the stage 3 to 6 places and
+ * Writing's My style and Words tabs, from the tool registry, with no tool module built (test/toolRegistry.test.tsx turns one on).
  */
 
 const h = vi.hoisted(() => ({
@@ -50,7 +51,8 @@ import { StagePlace } from "../components/frame/StagePlace";
 import { loadPaper } from "../lib/analyse/intake";
 import { resetAp } from "../lib/analyse/useApDoc";
 import { STAGE_ORDER, type StageKey } from "../lib/tools";
-import { PLACE_TABS } from "../lib/frame/places";
+import { PLACE_TABS, parsePlace } from "../lib/frame/places";
+import { TOOL_TABS } from "../lib/tools/registry";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -147,7 +149,7 @@ describe("Writing and the stages not built (Task 10)", () => {
   it("Design and ethics says Not built yet and offers the document", async () => {
     for (const stage of ["design", "collect", "review"] as const) {
       await mount(stage);
-      expect(tid("not-built")!.textContent).toBe("Not built yet. The tools for this stage come in a later release. You can plan it in your document now.");
+      expect(tid("not-built")!.textContent).toBe("Not built yet. This tool comes in a later release. You can plan it in your document now.");
       const open = tid("not-built-open")!;
       expect(open.textContent).toBe("Open my document");
       await act(async () => { open.click(); });
@@ -187,7 +189,8 @@ describe("Writing and the stages not built (Task 10)", () => {
     const stubs = ["style", "words", "design", "stats", "qual", "close", "slides"];
     const banned = [E.ap2_lib_open_btn!, E.ap2_lesson_on_this_paper!, E.ap2_short_talks_on_reading!, E.backup_btn!, "All lectures", "Lesson on this paper", "arrive in a later phase", "This tool arrives in a later phase"];
     const places: Array<[StageKey, string | null]> = STAGE_ORDER.flatMap((s) => (PLACE_TABS[s].length ? PLACE_TABS[s].map((x) => [s, x] as [StageKey, string]) : [[s, null] as [StageKey, null]]));
-    expect(places).toHaveLength(9);
+    // Idea, Literature's four tabs, Design and ethics' eight, Collection and analysis' six, Writing's three and Review's three.
+    expect(places).toHaveLength(25);
     for (const [stage, tab] of places) {
       await mount(stage, tab);
       for (const d of document.querySelectorAll("details")) act(() => { d.open = true; d.dispatchEvent(new Event("toggle")); });
@@ -203,5 +206,98 @@ describe("Writing and the stages not built (Task 10)", () => {
     await mount("lit", "reading");
     expect(tid("ap-tabs")).not.toBeNull();
     expect(tid("ap-tab-card")).not.toBeNull();
+  });
+});
+
+/** Each stage 3 to 6 place's tabs as the student reads them, in order (v1's own names in plain words). */
+const STAGED_LABELS: Record<"design" | "collect" | "writing" | "review", string[]> = {
+  design: ["Overview", "Pathway", "Protocol", "Ethics and consent", "Registration", "Investigator", "Budget", "AI-use statement"],
+  collect: ["Statistics", "Sample size", "Charts", "Check numbers", "Scales", "Coding"],
+  writing: ["Document", "My style", "Words"],
+  review: ["Closeness", "Viva", "Make PPT"]
+};
+
+describe("the stage 3 to 6 places (Task G2)", () => {
+  it("every stage 3 to 6 tab appears in order with its label", async () => {
+    // The registry's tabs, in the plan's order and ids; Writing's document tab is the frame's, not a tool's (ruling R2).
+    expect(TOOL_TABS.map((x) => x.stage + "/" + x.tab)).toEqual([
+      "design/overview", "design/pathway", "design/protocol", "design/ethics", "design/registration", "design/investigator", "design/budget", "design/aiuse",
+      "collect/data", "collect/power", "collect/charts", "collect/check", "collect/scales", "collect/coding",
+      "writing/style", "writing/words",
+      "review/closeness", "review/viva", "review/slides"
+    ]);
+    for (const x of TOOL_TABS) {
+      expect(x.labelKey).toBe("tab_name_" + x.tab);
+      expect(x.nextKey).toBe(x.stage + "_next_" + x.tab);
+      expect(E[x.nextKey], x.nextKey).toMatch(/^Next: [^—]+\.$/);
+    }
+    for (const [stage, labels] of Object.entries(STAGED_LABELS) as Array<[keyof typeof STAGED_LABELS, string[]]>) {
+      expect(PLACE_TABS[stage].map((x) => E["tab_name_" + x])).toEqual(labels);
+      for (const tab of PLACE_TABS[stage]) {
+        await mount(stage, tab);
+        const links = [...tid("place-tabs")!.querySelectorAll<HTMLAnchorElement>("a")];
+        const where = stage + "/" + tab;
+        expect(links.map((a) => a.textContent), where).toEqual(labels);
+        expect(links.map((a) => a.getAttribute("data-testid")), where).toEqual(PLACE_TABS[stage].map((x) => "place-tab-" + x));
+        expect(links.map((a) => a.getAttribute("href")), where).toEqual(PLACE_TABS[stage].map((x) => `/p/p1/${stage}/${x}`));
+        expect(links.map((a) => a.getAttribute("aria-current")), where).toEqual(PLACE_TABS[stage].map((x) => (x === tab ? "true" : null)));
+        unmountAll();
+      }
+    }
+  });
+
+  it("a tab whose module is not built shows Not built yet with Open my document", async () => {
+    for (const { stage, tab, nextKey } of TOOL_TABS) {
+      await mount(stage, tab);
+      const where = stage + "/" + tab;
+      const body = tid("place-" + stage + "-" + tab)!;
+      expect(body, where).not.toBeNull();
+      expect(body.querySelector('[data-testid="not-built"]')!.textContent, where).toBe(E.place_not_built + " " + E.not_built_tab_body);
+      const open = body.querySelector<HTMLElement>('[data-testid="not-built-open"]');
+      if (stage === "writing") {
+        // Writing shows the document already, under the place: no button that would do nothing.
+        expect(open, where).toBeNull();
+      } else {
+        expect(open!.textContent, where).toBe("Open my document");
+        await act(async () => { open!.click(); });
+      }
+      // The tab's suggested next line comes last, as Literature's does.
+      const next = tid(stage + "-next")!;
+      expect(next.textContent, where).toBe(E[nextKey]);
+      expect(next.getAttribute("aria-label"), where).toBe("Suggested next");
+      expect(body.lastElementChild, where).toBe(next);
+      unmountAll();
+    }
+    expect(h.openDocument).toHaveBeenCalledTimes(TOOL_TABS.filter((x) => x.stage !== "writing").length);
+    // A stage opened without a tab opens on its first.
+    await mount("design");
+    expect(tid("place-design-overview")).not.toBeNull();
+    expect(tid("place-tab-overview")!.getAttribute("aria-current")).toBe("true");
+  });
+
+  it("Writing keeps the document as its first tab and adds My style and Words", async () => {
+    expect(PLACE_TABS.writing).toEqual(["document", "style", "words"]);
+    // /p/<id>/writing opens on the document.
+    expect(parsePlace("writing", undefined)).toEqual({ stage: "writing", tab: "document", rest: [] });
+    expect(parsePlace("writing", ["words"])).toEqual({ stage: "writing", tab: "words", rest: [] });
+    for (const tab of [null, "document"]) {
+      await mount("writing", tab);
+      // The document tab is today's Writing: the helpers aside (the shell shows the document at full width), nothing that is not built.
+      expect(tid("writing-aside")).not.toBeNull();
+      expect(tid("not-built")).toBeNull();
+      expect(tid("writing-next")).toBeNull();
+      expect(tid("place-tab-document")!.getAttribute("aria-current")).toBe("true");
+      unmountAll();
+    }
+    for (const tab of ["style", "words"]) {
+      await mount("writing", tab);
+      expect(tid("writing-aside"), tab).toBeNull();
+      expect(tid("place-writing-" + tab)!.querySelector('[data-testid="not-built"]'), tab).not.toBeNull();
+      expect(tid("place-tab-" + tab)!.getAttribute("aria-current"), tab).toBe("true");
+      // Writing has no Open my document and no window of its own, on every tab.
+      expect(tid("place-open-doc"), tab).toBeNull();
+      expect(tid("place-new-window"), tab).toBeNull();
+      unmountAll();
+    }
   });
 });

@@ -112,11 +112,14 @@ describe("the pop-out's write guard, by stage (v1 POPOUT_WRITABLE 1964; register
     expect(blobWritable("idea_intake")).toBe(true);
   });
 
-  it("a window on the project's home, or of a stage with no kinds, writes nothing; the writing window writes every kind", () => {
-    for (const url of ["/p/p1?window=1", "/p/p1/writing?window=1", "/p/p1/design?window=1"]) {
-      at(url);
-      expect(EVERY.some((k) => blobWritable(k))).toBe(false);
-    }
+  it("a window on the project's home writes nothing; a Writing or Design window writes its own stage's kinds only; the writing window writes every kind", () => {
+    at("/p/p1?window=1");
+    expect(EVERY.some((k) => blobWritable(k))).toBe(false);
+    // Task G3: Writing and Design and ethics have kinds of their own now (their tools'), and nothing else.
+    at("/p/p1/writing?window=1");
+    expect(EVERY.filter((k) => blobWritable(k))).toEqual(["style_profile", "style_samples", "style_meta", "words_bank", "words_prefs"]);
+    at("/p/p1/design?window=1");
+    expect(EVERY.filter((k) => blobWritable(k))).toEqual(["design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget"]);
     at("/p/p1/lit/find");
     expect(EVERY.every((k) => blobWritable(k))).toBe(true);
   });

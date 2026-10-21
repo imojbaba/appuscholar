@@ -9,6 +9,7 @@ import { backupShelf, downloadMatrix, type ShelfItem, type T } from "@/lib/shelf
 import { VaultError } from "@/lib/vault/crypto";
 import { htmlFile, localDay, unique, zipName, type ExportDoc, type ExportDocSummary } from "@/lib/vault/export";
 import { fileTitle, projectKeyId, UNTITLED, type OpenedTitle, type Titled } from "@/lib/vault/titles";
+import type { ExportPartDef } from "@/lib/tools/registry";
 import { APP_VERSION } from "@/lib/version";
 import { buildRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
 import { wordText } from "./word";
@@ -22,6 +23,11 @@ import { wordText } from "./word";
 
 export type ExportPart = "documents" | "question" | "citations" | "search" | "notes" | "compare" | "record" | "aiuse" | "readingBackup";
 export const EXPORT_PARTS: readonly ExportPart[] = ["documents", "question", "citations", "search", "notes", "compare", "record", "aiuse", "readingBackup"];
+/**
+ * A part as the dialog ticks it and openExport(preselect) names it: a built-in part, or a tool module's own part by its id (ExportPartDef.part;
+ * ruling R7). Module parts are listed after the built-in ones (lib/export/moduleParts).
+ */
+export type ExportPartId = ExportPart | string;
 /** Every part but the reading list backup (it carries the PDFs' text, and only moves a reading list to another account). */
 export const DEFAULT_EXPORT_PARTS: ExportPart[] = EXPORT_PARTS.filter((p) => p !== "readingBackup");
 
@@ -44,8 +50,10 @@ export type ProjectExportDeps = {
   /** GET /ai/log?projectId=<id>: this project's AI-use log, as the AI-use statement reads it (rows logged with no project are not in it). */
   aiUseLog(): Promise<AiuEntry[]>;
 };
-/** `progress` hears each ticked part as its files are made (the dialog's line while the zip is built, W31). */
-export type ProjectExportOptions = { style: CitationStyle; now: Date; lastSearch: RsPaper[] | null; progress?(part: ExportPart): void };
+/** What a tool module's export part builds from (ExportPartDef in lib/tools/registry.ts; ruling R7): the project export's reads, and the export's time. */
+export type ExportDeps = ProjectExportDeps & { now: Date };
+/** `progress` hears each ticked part as its files are made, a module's part by its id (the dialog's line while the zip is built, W31). */
+export type ProjectExportOptions = { style: CitationStyle; now: Date; lastSearch: RsPaper[] | null; progress?(part: ExportPartId): void };
 
 /** appuscholar-<title>-YYYY-MM-DD.zip: the opened title as zipName makes it, by the local calendar day. */
 export function projectExportFileName(title: string, now: Date): string {
@@ -57,6 +65,8 @@ const KIND_NAME: Partial<Record<BlobKind, string>> = {
   idea_intake: "exp_part_question", citations: "exp_part_citations", ap_notes: "exp_part_notes", ap_cols: "exp_part_compare", shelf_cols: "exp_part_compare"
 };
 
+/** The list of what did not open: the export's own file, never a module's. */
+const UNREADABLE = "unreadable.txt";
 /** v1's pdDownload: a byte-order mark, then the CSV's text. */
 const BOM = "﻿";
 const csvBlob = (text: string) => new Blob([BOM + text], { type: "text/csv;charset=utf-8" });
@@ -125,9 +135,12 @@ function questionText(i: BlobShape<"idea_intake">, t: T): string {
  * `ai-use-statement.txt`, `reading-list-backup.json`. A part with nothing in it writes no file. Deleted documents are left out. A document or a
  * blob that does not open (VaultError "corrupt"), or a blob that is not of its kind's shape, is left out and named in `unreadable.txt`, as the
  * account export lists it in index.json; the rest still export. Any other failure rejects.
+ * A tool module's part (ExportPartDef, Task G3) comes after the built-in parts: its `build` gets the export's reads and time, and each file it
+ * gives is put at its `path`. A path already in the zip (a built-in part's file, another module's) or `unreadable.txt` is refused: the export
+ * rejects rather than lose a file. What a module's blobs do not open is the module's to say; a build that throws rejects the export.
  */
-export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o: ProjectExportOptions): Promise<Blob> {
-  const on = new Set(parts);
+export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<ExportPart | ExportPartDef>, o: ProjectExportOptions): Promise<Blob> {
+  const on = new Set(parts.filter((p): p is ExportPart => typeof p === "string"));
   const zip = new JSZip();
   const t = d.t;
   const blobs = new Map<string, Promise<unknown>>();
@@ -237,7 +250,15 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
     const file = items.some((x) => x.paper) ? await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {} })) : null;
     if (file) zip.file("reading-list-backup.json", file);
   }
-  if (unreadable.length) zip.file("unreadable.txt", t("exp_unreadable_head") + "\n\n" + unreadable.join("\n") + "\n");
+  for (const m of parts) {
+    if (typeof m === "string") continue;
+    o.progress?.(m.part);
+    for (const f of await m.build({ ...d, now: o.now })) {
+      if (f.path === UNREADABLE || zip.file(f.path) !== null) throw new Error(`Export part "${m.part}" would overwrite ${f.path}.`);
+      zip.file(f.path, f.data);
+    }
+  }
+  if (unreadable.length) zip.file(UNREADABLE, t("exp_unreadable_head") + "\n\n" + unreadable.join("\n") + "\n");
   return zip.generateAsync({ type: "blob", mimeType: "application/zip" });
 }
 
@@ -246,7 +267,7 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
  * it is saved, as the account export does, then saved under the project's opened title. A failed build logs nothing and saves nothing.
  */
 export async function saveProjectExport(
-  d: ProjectExportDeps, parts: ExportPart[], o: ProjectExportOptions, io: { audit(): Promise<void>; download(name: string, file: Blob): void }
+  d: ProjectExportDeps, parts: ReadonlyArray<ExportPart | ExportPartDef>, o: ProjectExportOptions, io: { audit(): Promise<void>; download(name: string, file: Blob): void }
 ): Promise<void> {
   const zipped = await exportProject(d, parts, o);
   const title = fileTitle(await d.openTitle(d.project, projectKeyId(d.project.id)));

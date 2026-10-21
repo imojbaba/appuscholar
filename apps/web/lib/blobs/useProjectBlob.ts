@@ -10,6 +10,13 @@ import { useVault, type VaultValue, type WrappedDek } from "@/lib/vault/useVault
 import { applyOps, compactOps, heldBlobs, type HeldOp } from "./held";
 import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./kinds";
 
+/**
+ * The kinds whose panel never asks (R16) before it sets over a blob that does not open: the idea intake, and the preferences (the Research
+ * panel's rank, and the stage 3 to 6 tools' `*_prefs`, fix round 1 of Task G3), where a toggle should not ask. A value set over an unreadable
+ * one stays held and is never saved over it unasked. Every other kind, each tool's work among them, is guarded.
+ */
+const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs"]);
+
 /** A set() is saved this long after the last one (three in a row are one PUT). */
 export const BLOB_SAVE_DEBOUNCE_MS = 800;
 
@@ -56,7 +63,7 @@ type ClientDeps<T> = {
   /** set() is a no-op that holds nothing and flush() resolves false (the pop-out's guard). */
   readOnly?: boolean;
   /**
-   * No panel asks (R16) before it sets over a blob that does not open: idea_intake and rs_prefs. A value held over an unreadable blob then stays held, takes
+   * No panel asks (R16) before it sets over a blob that does not open: idea_intake and the preference kinds (UNGUARDED). A value held over an unreadable blob then stays held, takes
    * further sets, and is never saved over the blob unasked. False or absent: the panel asks, and its next set is the go-ahead.
    */
   unguarded?: boolean;
@@ -446,8 +453,8 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     id,
     // The pop-out's guard, here so every client (the hook's, the shelf's papers, a detached index write) has it.
     readOnly: (opts.readOnly ?? false) || !blobWritable(kind),
-    // Idea and the Research panel's rank toggle have no R16 ask; every other kind's panel asks before it sets over a blob that does not open.
-    unguarded: kind === "idea_intake" || kind === "rs_prefs",
+    // Idea and the preference kinds have no R16 ask; every other kind's panel asks before it sets over a blob that does not open.
+    unguarded: UNGUARDED.has(kind),
     // The other windows read the blob again once it is saved here (v1's storage event, 7614).
     onSaved: syncedKind(kind) ? () => announceBlob(id) : undefined,
     parse: (json) => parseBlob(kind, json),

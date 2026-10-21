@@ -19,8 +19,8 @@ export const TOOLS_BY_STAGE: Record<StageKey, ToolId[]> = {
   review: ["close", "slides"]
 };
 
-/** Tools with a real panel (chat, and the six stage-2 tools); the others are hidden until built (Task 10). */
-export const BUILT_IN: ToolId[] = ["chat", "idea", "psych", "research", "analyse", "cite"];
+// BUILT_IN (the tools with a real panel) is the tool registry's, lib/tools/registry.ts (Task G2): this module stays a leaf that imports nothing,
+// so a tool's Panel may import it while that tool's module is still loading.
 
 export function isToolId(v: unknown): v is ToolId { return typeof v === "string" && Object.prototype.hasOwnProperty.call(TOOL_TO_STAGE, v); }
 export function isStageKey(v: unknown): v is StageKey { return typeof v === "string" && (STAGE_ORDER as string[]).includes(v); }

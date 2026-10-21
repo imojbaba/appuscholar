@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
-import { tFormat } from "../lib/i18n";
+import { DICTS, mergeToolMessages, tFormat } from "../lib/i18n";
+import { TOOL_MESSAGE_FILES } from "../messages/tools";
 import { PANEL_FIXES, applyPanelFixes, withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 describe("v1 chrome strings", () => {
@@ -126,6 +127,57 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
     for (const [k, v] of Object.entries(manifest)) {
       const [a, b] = v.lines.split("-").map(Number) as [number, number];
       expect(createHash("sha256").update(lines.slice(a - 1, b).join("\n")).digest("hex"), k).toBe(v.sha256);
+    }
+  });
+});
+
+describe("per-tool message files (Task G4, rulings R13 and R14)", () => {
+  const E = en as Record<string, string>;
+  const H = hi as Record<string, string>;
+  const DIR = join(__dirname, "../messages/tools");
+  const TOOLS = ["design", "stats", "qual", "style", "words", "close", "slides", "viva"];
+
+  it("a tool message file merges into t(); a duplicate key throws", () => {
+    const files = {
+      "qual.en.json": { qual_hello: "Tagged as {name}" },
+      "qual.hi.json": { $draft: "DRAFT: Hindi for Dr. Sharma's review, reviewed by: (pending)", qual_hello: "{name} के रूप में टैग किया" },
+      "stats.en.json": { stats_run: "Run a test first" }
+    };
+    const mergedEn = mergeToolMessages(E, "en", files);
+    const mergedHi = mergeToolMessages(H, "hi", files);
+    expect(tFormat(mergedEn, mergedHi, "qual_hello", "en", { name: "Coping" })).toBe("Tagged as Coping");
+    expect(tFormat(mergedEn, mergedHi, "qual_hello", "hi", { name: "Coping" })).toBe("Coping के रूप में टैग किया");
+    // A key Hindi lacks falls back to the tool's English, as any key does; the base dictionaries are still there.
+    expect(tFormat(mergedEn, mergedHi, "stats_run", "hi")).toBe("Run a test first");
+    expect(tFormat(mergedEn, mergedHi, "pop_nowin", "en")).toBe(E.pop_nowin);
+    // `$` keys are markers, never copy.
+    expect("$draft" in mergedHi).toBe(false);
+    // A key the base dictionary has, or another tool file has, throws, naming both.
+    expect(() => mergeToolMessages(E, "en", { "qual.en.json": { pop_nowin: "Mine" } })).toThrow(/qual\.en\.json.*pop_nowin.*en\.json/);
+    expect(() => mergeToolMessages(E, "en", { "qual.en.json": { tool_x: "A" }, "stats.en.json": { tool_x: "B" } })).toThrow(/stats\.en\.json.*tool_x.*qual\.en\.json/);
+    // The base dictionary is never changed by a merge.
+    expect("qual_hello" in E).toBe(false);
+  });
+
+  it("t() reads the base dictionaries merged with every tool file", () => {
+    expect(DICTS.en).toEqual(mergeToolMessages(E, "en", TOOL_MESSAGE_FILES));
+    expect(DICTS.hi).toEqual(mergeToolMessages(H, "hi", TOOL_MESSAGE_FILES));
+  });
+
+  it("every file in messages/tools/ is imported, one English and one Hindi file per tool", () => {
+    const onDisk = readdirSync(DIR).filter((f) => f.endsWith(".json")).sort();
+    expect(Object.keys(TOOL_MESSAGE_FILES).sort()).toEqual(onDisk);
+    expect(onDisk).toEqual(TOOLS.flatMap((t) => [t + ".en.json", t + ".hi.json"]).sort());
+    for (const f of onDisk) expect(TOOL_MESSAGE_FILES[f], f).toEqual(JSON.parse(readFileSync(join(DIR, f), "utf8")));
+  });
+
+  it("each Hindi tool file carries the draft marker and no key its English file lacks", () => {
+    for (const tool of TOOLS) {
+      const e = TOOL_MESSAGE_FILES[tool + ".en.json"]!;
+      const h = TOOL_MESSAGE_FILES[tool + ".hi.json"]!;
+      expect(h.$draft, tool).toMatch(/^DRAFT: Hindi for Dr\. Sharma's review, reviewed by: /);
+      expect(Object.keys(h).filter((k) => !k.startsWith("$") && !(k in e)), tool).toEqual([]);
+      expect(Object.keys(e).filter((k) => k.startsWith("$")), tool).toEqual([]);
     }
   });
 });

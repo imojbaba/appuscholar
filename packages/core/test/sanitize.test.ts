@@ -33,6 +33,14 @@ describe("sanitizeHtml provenance mark", () => {
   });
 });
 
+describe("sanitizeHtml tool tags", () => {
+  it("sanitizer keeps data-run and data-qcode and still strips onclick", () => {
+    // v1's stat-tag (insertIntoEditor 4204) and qual-tag (qualTagSelection 6254), the tags the statistics and coding tools write into a document.
+    const html = '<p><span class="stat-tag" data-run="rk2x9" onclick="steal()">t(28) = 2.10</span> <span class="qual-tag" data-qcode="c1" title="Coping" onmouseover="x()">kept going</span></p>';
+    expect(sanitizeHtml(html)).toBe('<p><span class="stat-tag" data-run="rk2x9">t(28) = 2.10</span> <span class="qual-tag" data-qcode="c1" title="Coping">kept going</span></p>');
+  });
+});
+
 describe("wordCount", () => {
   it("counts words of text content only", () => {
     expect(wordCount("<p>one two</p><p>three</p>")).toBe(3);
