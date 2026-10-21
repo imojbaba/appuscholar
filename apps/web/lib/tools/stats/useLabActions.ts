@@ -1,11 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { rtSetRecord, type ParsedData } from "@appuscholar/core";
+import { rtSetRecord } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
 import { nameFromFile } from "./intake";
-import { applyPd, getData, getLab, parse, patchLab, setName, setText, splitOnSemicolons } from "./lab";
+import { applyPd, getLab, parse, patchLab, setName, setText, splitOnSemicolons, useLab } from "./lab";
 
 /** v1 rtDsName (9378): the name a set is registered under when the box is empty. It is a stored key, not a word the student reads, so it is not translated. */
 export const UNTITLED = "Untitled data";
@@ -44,24 +44,39 @@ export function useLabActions(projectId: string) {
     if (remembered && !getLab(projectId).name) setName(projectId, remembered);
   }, [prefs.loading, prefs.locked, prefs.value, projectId]);
 
-  const register = useCallback((data: ParsedData | null) => {
-    if (!data || pid === null || !mayRegister()) return;
-    const name = getLab(projectId).name.trim() || UNTITLED;
-    setsRef.current.set((prev) => rtSetRecord(data, name, prev ?? {}, Date.now()));
-  }, [pid, projectId, mayRegister]);
+  const lab = useLab(projectId);
+  const { data, registered, name } = lab;
+
+  /**
+   * v1 rtRegister (9380) after every parse: the set's name, hash, time and row count in `stats_sets`. It is done here, whenever the lab holds a table
+   * that has not been recorded, and not by the click that parsed it: a big table is read in slices and may finish after the student left the tab, and a
+   * hook that is gone saves nothing. The next time the tab opens it records the table under the name the lab holds. (rtSetRecord keeps a set that is
+   * already recorded as it was.)
+   */
+  useEffect(() => {
+    if (!data || registered === data || pid === null || !mayRegister()) return;
+    setsRef.current.set((prev) => rtSetRecord(data, getLab(projectId).name.trim() || UNTITLED, prev ?? {}, Date.now()));
+    patchLab(projectId, { registered: data });
+  }, [data, registered, pid, projectId, mayRegister]);
+
+  /** A name that reached the lab while the tab was not open (a file's name seeds an empty box) is remembered when it opens again. */
+  useEffect(() => {
+    if (prefs.loading || prefs.locked || pid === null || !name || prefs.value?.statsname === name) return;
+    if (seeded.current !== projectId) return; // the remembered name is read first
+    prefsRef.current.set((prev) => ({ ...(prev ?? {}), statsname: name.slice(0, 60) }));
+  }, [prefs.loading, prefs.locked, prefs.value, name, pid, projectId]);
 
   const rename = useCallback((value: string) => {
     setName(projectId, value);
     prefsRef.current.set((prev) => ({ ...(prev ?? {}), statsname: value.slice(0, 60) }));
   }, [projectId]);
 
-  const parseNow = useCallback(async () => { register(await parse(projectId)); }, [projectId, register]);
-  const split = useCallback(async () => { register(await splitOnSemicolons(projectId)); }, [projectId, register]);
+  const parseNow = useCallback(async () => { await parse(projectId); }, [projectId]);
+  const split = useCallback(async () => { await splitOnSemicolons(projectId); }, [projectId]);
   const apply = useCallback(async () => {
     const r = await applyPd(projectId);
-    register(getData(projectId));
-    if (r?.keyCsv) downloadBlob(KEY_FILE, new Blob(["﻿" + r.keyCsv], { type: "text/csv;charset=utf-8" }));
-  }, [projectId, register]);
+    if (r?.keyCsv) downloadBlob(KEY_FILE, new Blob(["\uFEFF" + r.keyCsv], { type: "text/csv;charset=utf-8" }));
+  }, [projectId]);
 
   /** v1 statsUpload (9403): the file's text into the paste box, its name into an empty name box, then parse. */
   const upload = useCallback((file: File) => {

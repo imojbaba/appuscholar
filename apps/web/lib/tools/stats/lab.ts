@@ -34,13 +34,15 @@ export type LabState = {
   /** The table is one column and its first line holds a semicolon: the Data tab offers to split it (register row D-S2-61). */
   semicolons: boolean;
   status: LabStatus;
+  /** The table whose fingerprint was last recorded in `stats_sets` while the Data tab was open; a table that is not this one is recorded when the tab is next open (a parse can finish after the student left). */
+  registered: ParsedData | null;
   /** A big table is being read in slices (the page keeps responding; the Data tab says so). */
   busy: boolean;
   /** B2's last result (the run record), kept so a tab switch does not lose it. */
   lastRun?: unknown;
 };
 
-const EMPTY: LabState = { text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, busy: false };
+const EMPTY: LabState = { text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, registered: null, busy: false };
 
 const labs = new Map<string, LabState>();
 const listeners = new Map<string, Set<() => void>>();

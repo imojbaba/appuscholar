@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rtHash, statsParseText } from "@appuscholar/core";
 import en from "../messages/en.json";
 import statsEn from "../messages/tools/stats.en.json";
+import statsHi from "../messages/tools/stats.hi.json";
 
 /*
  * Task B1: the Statistics lab's Data tab (v1 9348-9522, panel 769-779): paste or upload, parse, the columns found, the rows left out, the
@@ -25,13 +26,17 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download, safeFileName: (s: string) => s }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: "p1", docOpen: false, openDocument: h.openDocument }) }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
-  const { useReducer } = await import("react");
+  const { useReducer, useRef, useEffect } = await import("react");
   return {
     useProjectBlob: (kind: string) => {
       const [, force] = useReducer((n: number) => n + 1, 0);
+      // As the real hook: once the component is gone its set() sends nothing.
+      const alive = useRef(true);
+      useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
       return {
         value: h.store[kind] ?? null, loading: false, locked: false, broken: h.broken[kind] ?? false, readOnly: false,
         set: (next: unknown) => {
+          if (!alive.current) return;
           const v = typeof next === "function" ? (next as (p: unknown) => unknown)(h.store[kind] ?? null) : next;
           h.store[kind] = v;
           h.writes.push({ kind, json: JSON.stringify(v) });
@@ -49,6 +54,7 @@ import { getData, getLab, resetLabs } from "../lib/tools/stats/lab";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = { ...(en as Record<string, string>), ...(statsEn as Record<string, string>) };
+const hi = statsHi as Record<string, string>;
 const roots: Root[] = [];
 const tid = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
 const all = (id: string) => [...document.body.querySelectorAll<HTMLElement>(`[data-testid="${id}"]`)];
@@ -453,6 +459,64 @@ describe("no data row is in any blob (ledger R1)", () => {
     expect(ls.mock.calls.map((c) => String(c[1])).join("")).not.toContain("ZXQ-SITE");
     expect(net).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+});
+
+describe("what the Data tab says about where the rows go", () => {
+  it("says the rows are neither sent nor saved, and that the name, row count and fingerprint are saved to the project", () => {
+    for (const lang of [E, hi]) {
+      const line = lang.stats_data_privacy!;
+      expect(line).not.toMatch(/—/);
+      expect(line).not.toMatch(/this tab|इस टैब/i);
+    }
+    expect(E.stats_data_privacy).toMatch(/not sent or saved/);
+    expect(E.stats_data_privacy).toMatch(/name.*row count.*fingerprint/);
+  });
+  it("does not describe results that cannot be inserted yet", () => {
+    expect(E.stats_data_name_help).not.toMatch(/insert|tagged|out of date|flagged/i);
+  });
+});
+
+describe("a parse that finishes after the tab was left is still recorded", () => {
+  const BIG = ["group,score", ...Array.from({ length: 20000 }, (_, i) => `${i % 2 ? "A" : "B"},${i % 50}`)].join("\n");
+  /** Polls the lab without act (nothing is mounted). */
+  async function lands() { const t0 = Date.now(); while (!getData("p1") && Date.now() - t0 < 20000) await new Promise((r) => setTimeout(r, 10)); expect(getData("p1")).not.toBeNull(); }
+
+  it("registers the set when the tab is opened again, under the name the student typed", async () => {
+    const first = await mount();
+    await type("stats-name", "Study late");
+    await type("stats-paste", BIG);
+    act(() => { tid("stats-parse")!.click(); });
+    await unmount(first);
+    await lands();
+    expect(h.store.stats_sets).toBeUndefined(); // nothing was mounted to record it
+    await mount();
+    const sets = h.store.stats_sets as Record<string, { hash: string; n: number }>;
+    expect(Object.keys(sets)).toEqual(["Study late"]);
+    expect(sets["Study late"]!.hash).toBe(rtHash(getData("p1")!));
+    expect(sets["Study late"]!.n).toBe(20000);
+  }, 60000);
+
+  it("remembers a file-seeded name that arrived after the tab was left, and registers under it", async () => {
+    const first = await mount();
+    await upload("late_survey.csv", BIG);
+    await unmount(first);
+    await lands();
+    expect(h.store.stats_prefs).toBeUndefined();
+    await mount();
+    expect((tid("stats-name") as HTMLInputElement).value).toBe("late_survey");
+    expect((h.store.stats_prefs as { statsname: string }).statsname).toBe("late_survey");
+    expect(Object.keys(h.store.stats_sets as object)).toEqual(["late_survey"]);
+  }, 60000);
+
+  it("does not register a table that is already recorded, nor again at each mount", async () => {
+    const first = await mount();
+    await type("stats-paste", SMALL);
+    await click("stats-parse");
+    await unmount(first);
+    const before = h.writes.length;
+    await mount();
+    expect(h.writes.length).toBe(before);
   });
 });
 

@@ -1,8 +1,8 @@
 {
   "stats_data_title": "Your data",
-  "stats_data_privacy": "Paste a table from Excel, SPSS, Google Sheets or a CSV file, with the column names in the first row. Nothing on this tab is sent anywhere. Your rows stay in this tab only: they are not saved to your project and are gone when you reload or close the page.",
+  "stats_data_privacy": "Paste a table from Excel, SPSS, Google Sheets or a CSV file, with the column names in the first row. Your rows are not sent or saved anywhere: they stay in memory and are gone when you reload or close the page. Only the data set's name, its row count and a fingerprint of it are saved to your project.",
   "stats_data_name_label": "Name of this dataset",
-  "stats_data_name_help": "Results you insert are tagged with this name. If you later load changed data under the same name, the tagged results in your document are flagged as out of date.",
+  "stats_data_name_help": "This name is saved with your project, with the row count and a fingerprint of the data, so a later version of the data under the same name can be told apart.",
   "stats_data_name_ph": "e.g. Study 1 survey",
   "stats_data_paste_label": "Your data",
   "stats_data_paste_ph": "group,score\nA,12\nA,15\nB,9\nB,11",
