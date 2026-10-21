@@ -149,7 +149,7 @@ describe("Writing and the stages not built (Task 10)", () => {
   it("Design and ethics says Not built yet and offers the document", async () => {
     for (const stage of ["design", "collect", "review"] as const) {
       await mount(stage);
-      expect(tid("not-built")!.textContent).toBe("Not built yet. The tools for this stage come in a later release. You can plan it in your document now.");
+      expect(tid("not-built")!.textContent).toBe("Not built yet. This tool comes in a later release. You can plan it in your document now.");
       const open = tid("not-built-open")!;
       expect(open.textContent).toBe("Open my document");
       await act(async () => { open.click(); });
@@ -212,7 +212,7 @@ describe("Writing and the stages not built (Task 10)", () => {
 /** Each stage 3 to 6 place's tabs as the student reads them, in order (v1's own names in plain words). */
 const STAGED_LABELS: Record<"design" | "collect" | "writing" | "review", string[]> = {
   design: ["Overview", "Pathway", "Protocol", "Ethics and consent", "Registration", "Investigator", "Budget", "AI-use statement"],
-  collect: ["Data", "Power", "Charts", "Check numbers", "Scales", "Coding"],
+  collect: ["Statistics", "Sample size", "Charts", "Check numbers", "Scales", "Coding"],
   writing: ["Document", "My style", "Words"],
   review: ["Closeness", "Viva", "Make PPT"]
 };
@@ -252,7 +252,7 @@ describe("the stage 3 to 6 places (Task G2)", () => {
       const where = stage + "/" + tab;
       const body = tid("place-" + stage + "-" + tab)!;
       expect(body, where).not.toBeNull();
-      expect(body.querySelector('[data-testid="not-built"]')!.textContent, where).toBe(E.place_not_built + " " + E.not_built_body);
+      expect(body.querySelector('[data-testid="not-built"]')!.textContent, where).toBe(E.place_not_built + " " + E.not_built_tab_body);
       const open = body.querySelector<HTMLElement>('[data-testid="not-built-open"]');
       if (stage === "writing") {
         // Writing shows the document already, under the place: no button that would do nothing.

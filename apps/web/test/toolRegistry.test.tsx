@@ -23,8 +23,8 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: n
 
 import { StagedPlace } from "../components/places/StagedPlace";
 import { StageRows } from "../components/frame/StageRows";
-import { TOOL_TABS, toolModule } from "../lib/tools/registry";
-import { BUILT_IN, STAGE_ORDER, type StageKey } from "../lib/tools";
+import { BUILT_IN, TOOL_TABS, toolModule } from "../lib/tools/registry";
+import { STAGE_ORDER, type StageKey } from "../lib/tools";
 import type { StageState } from "../lib/frame/stages";
 import type { HomeFacts } from "../lib/frame/homeFacts";
 
@@ -81,13 +81,5 @@ describe("the tool registry (Task G2)", () => {
     expect(detail("idea")).toBe(E.detail_idea_none);
     expect(detail("lit")).not.toBe(E.detail_not_built);
     expect(detail("writing")).toBe(E.detail_writing!.replace("{words}", "0"));
-  });
-
-  it("the registry loads before lib/tools without a cycle (a tool module must not need lib/tools while the registry is loading)", async () => {
-    vi.resetModules();
-    const registry = await import("../lib/tools/registry");
-    const tools = await import("../lib/tools");
-    expect(registry.TOOL_TABS).toHaveLength(19);
-    expect(tools.BUILT_IN).toContain("stats");
   });
 });

@@ -42,4 +42,11 @@ describe("places", () => {
     expect(parsePlace("review", ["viva"])).toEqual({ stage: "review", tab: "viva", rest: [] });
     expect(parsePlace("review", ["data"])).toBeNull();
   });
+
+  it("only Literature takes segments after its tab; any other stage's address with one is not found", () => {
+    expect(parsePlace("lit", ["reading", "paper-1"])).toEqual({ stage: "lit", tab: "reading", rest: ["paper-1"] });
+    expect(parsePlace("design", ["overview", "anything"])).toBeNull();
+    expect(parsePlace("writing", ["document", "x"])).toBeNull();
+    expect(parsePlace("review", ["slides", "a", "b"])).toBeNull();
+  });
 });

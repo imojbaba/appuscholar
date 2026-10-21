@@ -22,8 +22,9 @@ import * as viva from "@/components/tools/viva";
  *   export function facts(b: StageBlobs): ToolFacts {}   // optional: the home's line for its stage (Task G3)
  *   export const exportParts: ExportPartDef[] = [];       // optional: its parts of the project export (Task G3)
  * The modules are imported statically below (the bundler sees every one; no path is built at run time), and each is checked against ToolModule.
- * A Panel's imports may lead back here (placeHref, lib/tools): nothing on that cycle reads the registry while it loads (TOOL_TABS is plain data
- * in ./tabs, BUILT_IN is made here), and test/toolRegistry.test.tsx loads the registry first to keep it so.
+ * Load order: this file reads every module's `built` as it loads (BUILT_IN), so no module may reach it while still loading. A Panel may import
+ * the frame (placeHref, lib/tools, lib/frame/places: none of them imports this file), but a tool module imports the registry for types only
+ * (`import type`); its tabs, if it needs them, come from ./tabs. test/toolLoadOrder.test.ts loads such a module first to keep it so.
  */
 
 export { TOOL_TABS, type ToolTab };
@@ -55,7 +56,7 @@ export function toolModule(tool: ToolTab["tool"]): ToolModule {
 }
 
 /**
- * Tools with a real panel (lib/tools re-exports it): chat and the six stage-2 tools, then each stage 3 to 6 tool whose module is built (ruling
+ * Tools with a real panel: chat and the six stage-2 tools, then each stage 3 to 6 tool whose module is built (ruling
  * R5; the viva is not a ToolId and is not listed). The others are hidden until built (Task 10). Made here, after every module has loaded.
  */
 export const BUILT_IN: ToolId[] = [

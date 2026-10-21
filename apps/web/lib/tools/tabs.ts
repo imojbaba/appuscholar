@@ -1,9 +1,8 @@
 import type { StageKey, ToolId } from "@/lib/tools";
 
 /*
- * The registry's tabs as plain data (Task G2), apart from the modules that draw them so that it imports nothing: lib/frame/places reads it while
- * the modules may still be loading (a tool's Panel importing placeHref is a cycle through lib/tools/registry). Read it through the registry,
- * which exports it; only modules on that cycle import it from here.
+ * The registry's tabs as plain data (Task G2), apart from the modules that draw them so that it imports nothing at run time: lib/frame/places
+ * and a tool's own modules read it from here, since they may load while a tool module is still loading. The registry re-exports it.
  */
 
 /** One tab of a place: its stage and id (the address `/p/<id>/<stage>/<tab>`), the module that draws it, and its two strings (frame strings, R3). */

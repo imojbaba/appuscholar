@@ -314,9 +314,11 @@ export const V2_STRINGS = {
   writing_helpers: { en: "Research helpers", hi: "शोध सहायक" },
   not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
   not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  // Task G2: a tab whose tool is not built yet (the stage may have others that are). DRAFT Hindi.
+  not_built_tab_body: { en: "This tool comes in a later release. You can plan it in your document now.", hi: "यह टूल बाद की किसी रिलीज़ में आएगा। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
   // Task G2 (stages 3 to 6, ruling R3): the tool registry's tab names, from v1's own tool names in plain words, and each tab's suggested next line
   // (draft §5). Writing's first tab, the document, is the frame's. DRAFT Hindi: अन्वेषक, पंजीकरण and नियामक मार्ग as in design_btn_*, समानता as in
-  // tab_close, PPT बनाएं as in tab_slides, AI-उपयोग विवरण as in exp_part_aiuse, वाइवा as in viva_h.
+  // tab_close, PPT बनाएं as in tab_slides, AI-उपयोग विवरण as in exp_part_aiuse, वाइवा as in viva_h, सांख्यिकी as in tab_stats.
   tab_name_overview: { en: "Overview", hi: "सारांश" },
   tab_name_pathway: { en: "Pathway", hi: "मार्ग" },
   tab_name_protocol: { en: "Protocol", hi: "प्रोटोकॉल" },
@@ -325,8 +327,8 @@ export const V2_STRINGS = {
   tab_name_investigator: { en: "Investigator", hi: "अन्वेषक" },
   tab_name_budget: { en: "Budget", hi: "बजट" },
   tab_name_aiuse: { en: "AI-use statement", hi: "AI-उपयोग विवरण" },
-  tab_name_data: { en: "Data", hi: "डेटा" },
-  tab_name_power: { en: "Power", hi: "पावर" },
+  tab_name_data: { en: "Statistics", hi: "सांख्यिकी" },
+  tab_name_power: { en: "Sample size", hi: "नमूना आकार" },
   tab_name_charts: { en: "Charts", hi: "चार्ट" },
   tab_name_check: { en: "Check numbers", hi: "संख्याएँ जाँचें" },
   tab_name_scales: { en: "Scales", hi: "स्केल" },
@@ -343,8 +345,8 @@ export const V2_STRINGS = {
   design_next_ethics: { en: "Next: if your study needs registering, check what the registration form asks for.", hi: "आगे: अगर आपके अध्ययन का पंजीकरण होना है, तो देखें कि पंजीकरण फॉर्म क्या पूछता है।" },
   design_next_registration: { en: "Next: check that you meet what the ethics committee expects of an investigator.", hi: "आगे: जाँचें कि नैतिकता समिति एक अन्वेषक से जो अपेक्षा रखती है, उसे आप पूरा करते हैं।" },
   design_next_investigator: { en: "Next: estimate your budget, if a funder or your department asks for one.", hi: "आगे: अगर कोई अनुदानदाता या आपका विभाग माँगे, तो अपने बजट का अनुमान लगाएँ।" },
-  design_next_budget: { en: "Next: build your AI-use statement from your log of AI use.", hi: "आगे: AI के उपयोग के अपने लॉग से अपना AI-उपयोग विवरण बनाएँ।" },
-  design_next_aiuse: { en: "Next: when your plans are ready, collect your data.", hi: "आगे: जब आपकी योजना तैयार हो जाए, तो अपना डेटा एकत्र करें।" },
+  design_next_budget: { en: "Next: when your plans are ready, go to Collection and analysis and collect your data.", hi: "आगे: जब आपकी योजना तैयार हो जाए, तो संग्रह और विश्लेषण में जाकर अपना डेटा एकत्र करें।" },
+  design_next_aiuse: { en: "Next: build this statement last, just before you hand in, from your whole log.", hi: "आगे: यह विवरण सबसे अंत में, जमा करने से ठीक पहले, अपने पूरे लॉग से बनाएँ।" },
   collect_next_data: { en: "Next: run the test that fits your data, then put its result in your document.", hi: "आगे: अपने डेटा के लिए उपयुक्त परीक्षण चलाएँ, फिर उसका परिणाम अपने दस्तावेज़ में डालें।" },
   collect_next_power: { en: "Next: put the sample size sentence in your protocol, and ask your supervisor to confirm the effect size.", hi: "आगे: नमूना आकार का वाक्य अपने प्रोटोकॉल में डालें, और प्रभाव आकार की पुष्टि अपने पर्यवेक्षक से कराएँ।" },
   collect_next_charts: { en: "Next: check your figure against its key, then insert it with its caption.", hi: "आगे: अपने चित्र को उसकी कुंजी से मिलाकर देखें, फिर उसे उसके कैप्शन के साथ डालें।" },

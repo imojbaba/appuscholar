@@ -28,7 +28,8 @@ export function placeHref(id: string, stage: StageKey, tab?: string): string { r
 /**
  * The place an address names: `stage` is the segment after the project, `rest` the segments after it. A stage outside STAGE_ORDER, or a tab
  * outside its PLACE_TABS (any segment at all for a stage without tabs), is null and the page answers not found. A stage with tabs and none given
- * takes its first tab; what follows the tab is `rest` (a later reader names its paper there).
+ * takes its first tab. What follows Literature's tab is `rest` (a later reader names its paper there); any other stage takes nothing after its
+ * tab.
  */
 export function parsePlace(stage: string, rest: string[] | undefined): { stage: StageKey; tab: string | null; rest: string[] } | null {
   if (!isStageKey(stage)) return null;
@@ -36,5 +37,7 @@ export function parsePlace(stage: string, rest: string[] | undefined): { stage: 
   const segs = rest ?? [];
   if (tabs.length === 0) return segs.length === 0 ? { stage, tab: null, rest: [] } : null;
   const tab = segs[0] ?? tabs[0]!;
+  // Only Literature reads what follows its tab (a paper); anything after another stage's tab is not found.
+  if (segs.length > 1 && stage !== "lit") return null;
   return tabs.includes(tab) ? { stage, tab, rest: segs.slice(1) } : null;
 }
