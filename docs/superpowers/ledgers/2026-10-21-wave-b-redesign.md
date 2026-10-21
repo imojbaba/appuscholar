@@ -8,7 +8,7 @@ Tracked in git (not .superpowers/) because the build moved to a cloud session on
 - Stack, do not wait: when a slice's PR is green, tell OJ the Mac is needed for that slice's release + live walk, then start the next slice on a branch cut from the previous slice's branch (wave-b2 from wave-b1, ...). Releases happen in slice order.
 
 ## Needs OJ's Mac (never in the cloud)
-- Neon backup, migrations applied by hand (B1 adds 0006), `scripts/deploy-vercel.sh api|web` from the full clone `appuscholar-deploy-clone`, the version pill check. Production secrets (DATABASE_URL, Vercel token) live only on the Mac; never ask for them in the cloud and never put them in an environment.
+- Neon backup, migrations applied by hand (B1 adds 0006), `scripts/deploy-vercel.sh api|web` from the full clone `appuscholar-deploy-clone` (on the Mac at `"/Users/poojadudani/Documents/Claude cowork/Scholarly/appuscholar-deploy-clone"`, quoted: the path has a space; found by OJ 2026-10-21), the version pill check. Production secrets (DATABASE_URL, Vercel token) live only on the Mac; never ask for them in the cloud and never put them in an environment.
 - Every live walk: OJ's Chrome, OJ types the passphrase and the AI key. Nothing is "done" until it runs on the live URL and OJ has walked it.
 - Release order is always: Neon backup → migration by hand → API → web. Never roll the API back alone after the web ships.
 
