@@ -9,14 +9,14 @@ import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
   runHelper: vi.fn(async (_kind: string, _deps: unknown) => {}), runDevil: vi.fn(async (_deps: unknown) => {}),
-  dockShow: vi.fn(), toast: vi.fn(), callAI: vi.fn(),
+  toast: vi.fn(), callAI: vi.fn(),
   sug: {} as Record<string, unknown>
 }));
 vi.mock("@/lib/ai/actions", async (orig) => ({ ...(await orig<typeof import("../lib/ai/actions")>()), runHelper: h.runHelper, runDevil: h.runDevil }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => h.sug }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "  nursing " } }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ dockShow: h.dockShow }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({}) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { HelpersPanel, resetHelperSession } from "../components/tools/HelpersPanel";
@@ -41,7 +41,7 @@ async function click(testid: string) {
 const lastDeps = (fn: typeof h.runHelper | typeof h.runDevil) => (fn.mock.calls.at(-1) as unknown[]).at(-1) as HelperDeps;
 
 beforeEach(() => {
-  h.runHelper.mockClear(); h.runDevil.mockClear(); h.dockShow.mockReset(); h.toast.mockReset(); h.callAI.mockReset();
+  h.runHelper.mockClear(); h.runDevil.mockClear(); h.toast.mockReset(); h.callAI.mockReset();
   editor = new Editor({ extensions: editorExtensions, content: "<p>First paragraph of the essay.</p><p>Second paragraph here.</p>" });
   h.sug = {
     setThinking: vi.fn(), isCurrent: vi.fn(), set: vi.fn(), setFeedback: vi.fn(), clear: vi.fn(),

@@ -13,7 +13,7 @@ vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
-import { createAutosaver, newDocumentBody, shouldWarnOnUnload, RETRY_DELAYS_MS, useAutosave, type SaveBody } from "../lib/useAutosave";
+import { createAutosaver, heldDocs, newDocumentBody, shouldWarnOnUnload, RETRY_DELAYS_MS, useAutosave, type SaveBody } from "../lib/useAutosave";
 import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../lib/vault/useVault";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -384,6 +384,88 @@ describe("useAutosave", () => {
     expect(puts[0]!.keyVersion).toBe(1);
     expect(String(puts[0]!.bodyHtml)).not.toContain("thesis");
   }, 30_000);
+});
+
+describe("leaving a document with unsaved text (the browser's Back, a project switch)", () => {
+  const SENTENCE = "<p>Typed just before Back.</p>";
+  afterEach(() => { heldDocs.clear(); });
+  /** The hook for d1 with the vault off, unmounted and mounted again at will; PUT fails while `server.down`. */
+  function host() {
+    const server = { down: false, puts: [] as string[] };
+    h.api.mockReset().mockImplementation((path: string, init: RequestInit = {}) => {
+      const method = init.method ?? "GET";
+      if (path === "/me/vault" && method === "GET") return Promise.reject(new ApiError(404, "no-vault"));
+      if (path === "/documents/d1" && method === "PUT") {
+        if (server.down) return Promise.reject(new Error("offline"));
+        server.puts.push(String((JSON.parse(String(init.body)) as { bodyHtml: string }).bodyHtml));
+        return Promise.resolve({ document: { id: "d1", deks: [] }, revision: { seq: server.puts.length + 1 }, created: true });
+      }
+      return Promise.reject(new ApiError(404, "not-found"));
+    });
+    const box: { v: VaultValue | null; save: ReturnType<typeof useAutosave> | null } = { v: null, save: null };
+    const deks: WrappedDek[] = [];
+    function Probe() { box.v = useVault(); box.save = useAutosave("d1", "<p>Saved before.</p>", 1, { deks }); return null; }
+    let root: Root | null = null;
+    return {
+      box, server,
+      mount: async () => {
+        root = createRoot(document.createElement("div"));
+        await act(async () => { root!.render(createElement(VaultProvider, null, createElement(Probe))); });
+        await until(() => box.v!.status === "off");
+      },
+      unmount: async () => { await act(async () => { root!.unmount(); }); root = null; await act(async () => { await new Promise((r) => setTimeout(r, 20)); }); }
+    };
+  }
+  const unloadWarns = () => { const e = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; };
+
+  it("a failed final save on unmount keeps the text in memory, and leaving the page warns", async () => {
+    const x = host();
+    await x.mount();
+    x.server.down = true;
+    await act(async () => { x.box.save!.onChange(SENTENCE); });
+    await x.unmount();
+    expect(x.server.puts).toEqual([]);
+    expect(heldDocs.html("d1")).toBe(SENTENCE);
+    expect(shouldWarnOnUnload("saved")).toBe(true);
+    expect(unloadWarns()).toBe(true);
+  });
+
+  it("reopening the document restores the held text, saves it with retries and says so", async () => {
+    const x = host();
+    await x.mount();
+    x.server.down = true;
+    await act(async () => { x.box.save!.onChange(SENTENCE); });
+    await x.unmount();
+    h.toast.mockReset();
+    // Still offline on reopen: the first try fails, the normal retries carry on.
+    await x.mount();
+    expect(x.box.save!.restored).toBe(SENTENCE);
+    for (let i = 0; i < 60 && x.box.save!.status !== "error"; i++) await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    expect(x.box.save!.status).toBe("error");
+    expect(heldDocs.has("d1")).toBe(false);
+    expect(h.toast).not.toHaveBeenCalled();
+    x.server.down = false;
+    // The first retry comes 2 s after the failure.
+    for (let i = 0; i < 100 && x.box.save!.status !== "saved"; i++) await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    expect(x.server.puts).toEqual([SENTENCE]);
+    expect(h.toast).toHaveBeenCalledWith("Your unsaved changes were kept and saved.");
+    expect(shouldWarnOnUnload("saved")).toBe(false);
+    expect(unloadWarns()).toBe(false);
+    await x.unmount();
+  }, 15_000);
+
+  it("a final save that succeeds leaves nothing held", async () => {
+    const x = host();
+    await x.mount();
+    await act(async () => { x.box.save!.onChange(SENTENCE); });
+    await x.unmount();
+    expect(x.server.puts).toEqual([SENTENCE]);
+    expect(heldDocs.has("d1")).toBe(false);
+    expect(shouldWarnOnUnload("saved")).toBe(false);
+    await x.mount();
+    expect(x.box.save!.restored).toBeNull();
+    await x.unmount();
+  });
 });
 
 describe("newDocumentBody", () => {

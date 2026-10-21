@@ -50,7 +50,12 @@ export const projects = pgTable("projects", {
   status: text("status").notNull().default("active"),
   contentLang: text("content_lang").notNull().default("en"),
   kind: text("kind").notNull().default("research"),
-  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow()
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  /** Stage -> { readyAt }, stamped by the server's clock when the student marks the stage Ready; an absent stage is not Ready. */
+  stageMarks: jsonb("stage_marks").$type<Record<string, { readyAt: string }>>().notNull().default({}),
+  /** Data keys for the sealed title, as on documents: title_key_version 0 is a plaintext title, 1 or more names one of `deks`. */
+  deks: jsonb("deks").$type<{ v: number; wrapped: string }[]>().notNull().default([]),
+  titleKeyVersion: integer("title_key_version").notNull().default(0)
 }, (t) => [index("projects_user_idx").on(t.userId), index("projects_user_kind_idx").on(t.userId, t.kind)]);
 
 export const documents = pgTable("documents", {
@@ -62,7 +67,9 @@ export const documents = pgTable("documents", {
   deletedAt: timestamp("deleted_at", { mode: "date" }),
   deks: jsonb("deks").$type<{ v: number; wrapped: string }[]>().notNull().default([]),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow()
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  /** 0 is a plaintext title; 1 or more is a ciphertext title under the dek with that `v`. */
+  titleKeyVersion: integer("title_key_version").notNull().default(0)
 }, (t) => [index("documents_project_idx").on(t.projectId)]);
 
 export const documentRevisions = pgTable("document_revisions", {

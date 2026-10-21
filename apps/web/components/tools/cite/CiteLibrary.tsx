@@ -11,7 +11,7 @@ import { useCitationUsage } from "@/lib/cite/usage";
 import type { Library } from "@/lib/cite/useLibrary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "../PanelLoading";
 import { CiteChecks, CiteUsed, RcLine, RetrWarn } from "./CiteChecks";
 import { CiteShare } from "./CiteShare";
@@ -21,13 +21,13 @@ import { CiteShare } from "./CiteShare";
  * place (citFmt(d, i+1) in the chosen style), or "No sources yet.". A card: ✕, the surname and year in bold, the formatted reference, then the usage
  * line, the retraction warning and the Crossref line, and "Insert <in-text>". The card the caret chip points at is lit (citMarkActive 7697-7702).
  */
-export function CiteLibrary({ library, deps, insertReady }: { library: Library; deps: () => CiteDeps; insertReady: boolean }) {
+export function CiteLibrary({ library, deps }: { library: Library; deps: () => CiteDeps }) {
   const t = useT();
   const { lib, style } = library;
   // W8: while the saved library is read and opened there is neither a count nor "No sources yet." (a locked vault says so in its own sentence).
   const opening = library.loading && !library.locked;
   const { editor } = useSuggestion();
-  const { selectDoc } = useWorkspace();
+  const { selectDoc, documents } = useProject();
   const usage = useCitationUsage(lib, style);
   const oaKey = useOpenAlexKey();
   const checks = useCiteChecks(library, { oaKey: oaKey ?? undefined });
@@ -56,17 +56,17 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
             <button type="button" className="del" data-testid="cite-del" title={REMOVE_TITLE} aria-label={REMOVE_TITLE} onClick={() => { setCiteActive(-1); library.remove(d); }}>✕</button>
             <b>{citLastName(d.author)}, {d.year || "n.d."}</b><br />
             <span data-testid="cite-ref" dangerouslySetInnerHTML={{ __html: html }} />
-            <div data-cite-slot="cite-used"><CiteUsed used={usage.usage[i] ?? []} onOpen={(id) => { void selectDoc(id); }} /></div>
+            <div data-cite-slot="cite-used"><CiteUsed used={usage.usage[i] ?? []} documents={documents} onOpen={(id) => { void selectDoc(id); }} /></div>
             <div data-cite-slot="cite-retr"><RetrWarn status={checks.retraction.status[i] ?? null} /></div>
             <div data-cite-slot="cite-rc"><RcLine c={checks.rc[citKey(d)]} onFill={checks.rcReadOnly ? undefined : () => checks.fillFromCrossref(d)} /></div>
             <div className="cite-row cite-card-row">
-              <Button variant="ghost" size="sm" data-testid="cite-use" disabled={!insertReady} onClick={() => citeUseLib(i, deps())}>{insertLabel(f)}</Button>
+              <Button variant="ghost" size="sm" data-testid="cite-use" onClick={() => void citeUseLib(i, deps())}>{insertLabel(f)}</Button>
             </div>
           </div>
         ))}
       </div>
       {/* v1 940-946: "Insert reference list", "📖 Load classic psychology sources", "⬆ Export library" / "⬇ Import library", the class-sharing note. */}
-      <CiteShare library={library} insertReady={insertReady} />
+      <CiteShare library={library} />
     </>
   );
 }

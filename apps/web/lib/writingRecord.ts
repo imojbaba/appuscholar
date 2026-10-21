@@ -1,12 +1,27 @@
+import type { OpenedTitle, Titled } from "@/lib/vault/titles";
+import type { WrappedDek } from "@/lib/vault/useVault";
+
 export type OriginStats = { typed: number; ai: number; passages: number; kept: number; edited: number; unknown: number };
-/** The wire shape of GET /projects/:id/writing-record. */
+/** The wire shape of GET /projects/:id/writing-record. A document's `title` is ciphertext when `titleKeyVersion` is 1 or more (see openRecordTitles). */
 export type WritingRecord = {
-  docs: Array<{ id: string; title: string; kind: string; stats: OriginStats }>;
+  docs: Array<{ id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; kind: string; stats: OriginStats }>;
   sources: Array<{ title: string; words: number }>;
   weekly: Array<{ weekStart: string; typed: number; ai: number }>;
   /** `byService` is keyed "Name (model)"; `firstAt` and `lastAt` are YYYY-MM-DD days; `loggingOff` is the account setting. */
   aiLog: { byKind: Record<string, number>; byService: Record<string, number>; total: number; firstAt: string | null; lastAt: string | null; loggingOff: boolean };
 };
+
+/**
+ * The record with its document titles opened in the browser (key version 0 afterwards), for the text and the dialog; a title that is
+ * locked or does not open reads `fallback`.
+ */
+export async function openRecordTitles(rec: WritingRecord, open: (t: Titled, keyId: string) => Promise<OpenedTitle>, fallback: string): Promise<WritingRecord> {
+  const docs = await Promise.all(rec.docs.map(async (d) => {
+    const o = await open(d, d.id);
+    return { ...d, title: o.state === "open" ? o.text : fallback, titleKeyVersion: 0 };
+  }));
+  return { ...rec, docs };
+}
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 /** v1 `aiuDate`: "15 October 2026" from YYYY-MM-DD; anything else is shown as it is. */

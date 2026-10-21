@@ -51,7 +51,7 @@ describe("blob routes", () => {
     const again = await json(await req("PUT", blob("idea_intake"), { body: "{}", keyVersion: 0 }));
     expect(again.body).toBe("{}");
     const list = await json(await req("GET", `/projects/${pid}/blobs`));
-    expect(list).toEqual([{ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt }]);
+    expect(list).toEqual([{ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt, version: 2 }]);
   });
 
   it("answers 404 for another user's project or a missing one, on every blob route", async () => {
@@ -244,6 +244,28 @@ describe("blob routes", () => {
     // A PUT without If-Match (a tab from before wave A) still writes, and still bumps the version.
     expect((await json(await req("PUT", blob("idea_intake"), { body: '{"q":1}', keyVersion: 0 }))).version).toBe(2);
     expect((await req("GET", blob("idea_intake"))).headers.get("etag")).toBe('"2"');
+  });
+
+  it("a blob PUT answers the new version as the ETag; the blob list carries versions", async () => {
+    const first = await req("PUT", blob("citations"), { body: "[1]", keyVersion: 0 });
+    expect(first.headers.get("etag")).toBe('"1"');
+    const second = await putIf("citations", '"1"', { body: "[2]", keyVersion: 0 });
+    expect(second.headers.get("etag")).toBe('"2"');
+    expect(await json(second)).toMatchObject({ version: 2 });
+    await req("PUT", blob("idea_intake"), { body: "{}", keyVersion: 0 });
+    expect((await json(await req("GET", `/projects/${pid}/blobs`))).map((b: { kind: string; version: number }) => [b.kind, b.version])).toEqual([["citations", 2], ["idea_intake", 1]]);
+    // A refused write sets no ETag.
+    expect((await putIf("citations", '"1"', { body: "[x]", keyVersion: 0 })).headers.get("etag")).toBeNull();
+  });
+
+  it("If-Match with an unbalanced quote is 400", async () => {
+    await req("PUT", blob("citations"), { body: "[1]", keyVersion: 0 });
+    for (const h of ['"1', '1"']) {
+      const r = await putIf("citations", h, { body: "[bad]", keyVersion: 0 });
+      expect(r.status, h).toBe(400);
+      expect(await json(r)).toEqual({ error: "invalid" });
+    }
+    expect(await json(await req("GET", blob("citations")))).toMatchObject({ body: "[1]", version: 1 });
   });
 
   it("a malformed If-Match is 400 invalid", async () => {

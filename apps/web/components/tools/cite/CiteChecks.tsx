@@ -6,6 +6,7 @@ import { rcMissingFields, type CiteChecks as Checks } from "@/lib/cite/checks";
 import { missingLabel, type CitationUsage } from "@/lib/cite/usage";
 import type { Library } from "@/lib/cite/useLibrary";
 import type { RetractionCache } from "@/lib/blobs/kinds";
+import { useTitle, type Titled } from "@/lib/vault/titles";
 import { Button } from "@/components/ui/button";
 import { CrossCheckDialog } from "./CrossCheckDialog";
 
@@ -37,7 +38,8 @@ export function CiteChecks({ library, usage, checks, editor }: { library: Librar
 }
 
 /** A card's usage line (7851-7854): "Cited in:" and a link per document (it shows that document) with the count past one, or cite_not_used. */
-export function CiteUsed({ used, onOpen }: { used: Usage[]; onOpen(id: string): void }) {
+/** `documents`: the project's documents, whose titles are shown opened (a usage's own title is the stored one, sealed under a vault). */
+export function CiteUsed({ used, documents, onOpen }: { used: Usage[]; documents: Titled[]; onOpen(id: string): void }) {
   const t = useT();
   if (!used.length) return <div className="desc cite-used cite-not-used">{t("cite_not_used")}</div>;
   return (
@@ -46,7 +48,7 @@ export function CiteUsed({ used, onOpen }: { used: Usage[]; onOpen(id: string): 
       {used.map((x, i) => (
         <span key={x.id}>
           {i > 0 ? ", " : ""}
-          <a href="#" data-testid="cite-used-link" onClick={(e) => { e.preventDefault(); onOpen(x.id); }}>{x.title}</a>
+          <a href="#" data-testid="cite-used-link" onClick={(e) => { e.preventDefault(); onOpen(x.id); }}><UsedTitle doc={documents.find((d) => d.id === x.id) ?? null} /></a>
           {x.n > 1 ? " (" + x.n + "×)" : ""}
         </span>
       ))}
@@ -82,4 +84,8 @@ export function RcLine({ c, onFill }: { c: RcCheck | undefined; onFill?: () => v
       ) : null}
     </div>
   );
+}
+
+function UsedTitle({ doc }: { doc: Titled | null }) {
+  return <>{useTitle(doc, "document").text}</>;
 }

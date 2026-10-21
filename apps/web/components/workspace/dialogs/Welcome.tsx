@@ -4,7 +4,7 @@ import { useT, tHtml } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 /**
  * How long the welcome ignores activations after it opens. It opens in the same frame the terms close, with its primary button where
@@ -17,7 +17,7 @@ export const WELCOME_GUARD_MS = 800;
 export function Welcome() {
   const t = useT();
   const { update } = useSettings();
-  const { dialog, closeDialog, openSettings } = useWorkspace();
+  const { dialog, closeDialog, openSettings } = useProject();
   const open = dialog === "welcome";
   // Disarmed as it opens: no button takes focus, and buttons, clicks outside, Escape and the close cross do nothing until armed.
   const [armed, setArmed] = useState(false);

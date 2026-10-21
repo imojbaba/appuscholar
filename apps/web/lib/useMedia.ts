@@ -5,15 +5,16 @@ import { useSyncExternalStore } from "react";
 export const PHONE_QUERY = "(max-width: 700px)";
 export const MID_QUERY = "(min-width: 701px) and (max-width: 1099px)";
 
-/** Live `matchMedia`. False on the server and during hydration, then the real answer. */
+/** Live `matchMedia`. False on the server and during hydration, then the real answer; false where there is no `matchMedia` (jsdom). */
 export function useMedia(query: string): boolean {
   return useSyncExternalStore(
     (notify) => {
+      if (typeof window.matchMedia !== "function") return () => {};
       const m = window.matchMedia(query);
       m.addEventListener("change", notify);
       return () => m.removeEventListener("change", notify);
     },
-    () => window.matchMedia(query).matches,
+    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
     () => false
   );
 }

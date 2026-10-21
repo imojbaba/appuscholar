@@ -164,6 +164,31 @@ if (!url) {
       expect((await store.putBlob(u.a, p.id, "idea_intake", { body: '{"q":1}', keyVersion: 0, expectedVersion: 0 }))!.version).toBe(1);
     });
 
+    it("listProjectWork runs at most 3 statements for 1 and for 20 projects", async () => {
+      const d = drizzle(new PGlite(), { schema });
+      await migrate(d, { migrationsFolder });
+      const a = "u-" + crypto.randomUUID();
+      await d.insert(users).values({ id: a, email: `${a}@contract.local` });
+      let statements = 0;
+      const counted = drizzle(d.$client, { schema, logger: { logQuery: () => { statements++; } } });
+      const store = new DrizzleStore(d);
+      const seen = new DrizzleStore(counted);
+      for (const n of [1, 20]) {
+        while ((await store.listProjects(a)).length < n) {
+          const p = await store.createProject(a, "P");
+          const doc = (await store.createDocument(a, p.id, "Draft", "draft", { bodyHtml: "", authorKind: "web", authorLabel: a, wordCount: 3, keyVersion: 0 }))!;
+          await store.appendRevision(a, doc.id, { bodyHtml: "<p>a b c d</p>", authorKind: "web", authorLabel: a, wordCount: 4, keyVersion: 0 });
+          await store.putBlob(a, p.id, "idea_intake", { body: "{}", keyVersion: 0 });
+        }
+        statements = 0;
+        const w = await seen.listProjectWork(a);
+        expect(w).toHaveLength(n);
+        expect(w.every((x) => x.draftWords === 4 && x.blobs.length === 1)).toBe(true);
+        expect(statements, `${n} projects`).toBeGreaterThan(0);
+        expect(statements, `${n} projects`).toBeLessThanOrEqual(3);
+      }
+    });
+
     it("tolerates an orphan document without revisions", async () => {
       const { d, store, users: u } = await makeEnv();
       const p = await store.createProject(u.a, "Sleep");

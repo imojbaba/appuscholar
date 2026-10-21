@@ -5,7 +5,7 @@ import type { CitationEntry, CitationStyle, PlainDoc, Usage } from "@appuscholar
 import { apiFetch } from "@/lib/api";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { useVault } from "@/lib/vault/useVault";
-import { useWorkspace, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
+import { useProject, type DocumentWithBody } from "@/components/frame/ProjectContext";
 
 /*
  * "Cited in" (v1 citPlainDocs 7515-7523, citUsage 7549-7555, citMissingNumbers 7810-7817, citRender 7835-7849): which of the student's documents
@@ -75,7 +75,7 @@ export function missingLabel(missing: number[]): string {
 
 /** The usage of the library across the open project's documents, kept current as documents change and as the student types. */
 export function useCitationUsage(lib: CitationEntry[], style: CitationStyle): CitationUsage {
-  const { documents, currentDoc } = useWorkspace();
+  const { documents, currentDoc } = useProject();
   const vault = useVault();
   const { editor } = useSuggestion();
   const vaultRef = useRef(vault);

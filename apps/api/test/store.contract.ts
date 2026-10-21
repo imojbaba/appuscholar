@@ -236,6 +236,25 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect((await s.listAiUse(b)).length).toBe(1);
     });
 
+    it("lists one project's AI-use rows when asked, and the whole log otherwise", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      const p = await s.createProject(a, "Sleep");
+      const q = await s.createProject(a, "Diet");
+      const one = { d: "2026-10-01", p: "gemini", m: "gemini-3.8-flash", k: "continuing my draft", g: "text" } as const;
+      const two = { d: "2026-10-15", p: "groq", m: "openai/gpt-oss-120b", k: "grammar and polish", g: "text" } as const;
+      const three = { d: "2026-10-16", p: "groq", m: "openai/gpt-oss-120b", k: "summarising", g: "text" } as const;
+      await s.appendAiUse(a, p.id, one);
+      await s.appendAiUse(a, q.id, two);
+      await s.appendAiUse(a, null, three);
+      await s.appendAiUse(b, null, one);
+      expect(await s.listAiUse(a, undefined, undefined, p.id)).toEqual([one]);
+      expect(await s.listAiUse(a, undefined, undefined, q.id)).toEqual([two]);
+      expect(await s.listAiUse(a, "2026-10-02", undefined, p.id)).toEqual([]);
+      expect(await s.listAiUse(b, undefined, undefined, p.id)).toEqual([]);
+      expect(await s.listAiUse(a)).toEqual([one, two, three]);
+    });
+
     it("stores origin stats on a revision and returns them in summaries", async () => {
       const p = await s.createProject(a, "T");
       const d = (await s.createDocument(a, p.id, "A", "draft", first))!;
@@ -423,7 +442,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       await s.putBlob(a, p.id, "shelf_paper:abc-1", { body: "[]", keyVersion: 0 });
       const list = (await s.listBlobs(a, p.id))!;
       expect(list.map((x) => x.kind)).toEqual(["idea_intake", "shelf_paper:abc-1"]);
-      expect(list[0]).toEqual({ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt });
+      expect(list[0]).toEqual({ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt, version: again.version });
       // Another project's kinds are its own.
       const q = await s.createProject(a, "Q");
       expect(await s.getBlob(a, q.id, "idea_intake")).toBeNull();
@@ -593,6 +612,135 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.getCredentials(a)).toEqual([]);
       expect((await s.listAudit(a)).map((x) => x.action)).toEqual(["export", "account-erased"]);
       expect(await s.eraseUser(a)).toBe(false);
+    });
+
+    const draft = (words: number) => ({ bodyHtml: "<p>x</p>", authorKind: "web" as const, authorLabel: "t", wordCount: words, keyVersion: 0 });
+
+    it("a new project has no stage marks, no deks and titleKeyVersion 0", async () => {
+      const p = await s.createProject(a, "Sleep");
+      expect(p.stageMarks).toEqual({});
+      expect(p.deks).toEqual([]);
+      expect(p.titleKeyVersion).toBe(0);
+      const listed = (await s.listProjects(a))[0]!;
+      expect([listed.stageMarks, listed.deks, listed.titleKeyVersion]).toEqual([{}, [], 0]);
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", draft(0)))!;
+      expect(d.titleKeyVersion).toBe(0);
+      expect((await s.listDocuments(a, p.id))![0]!.titleKeyVersion).toBe(0);
+    });
+
+    it("markStage stamps readyAt with the time given; false removes it", async () => {
+      const p = await s.createProject(a, "Sleep");
+      expect((await s.markStage(a, p.id, "lit", true, new Date("2026-10-21T10:00:00Z")))!.stageMarks).toEqual({ lit: { readyAt: "2026-10-21T10:00:00.000Z" } });
+      expect((await s.markStage(a, p.id, "idea", true, new Date("2026-10-21T11:00:00Z")))!.stageMarks).toEqual({ lit: { readyAt: "2026-10-21T10:00:00.000Z" }, idea: { readyAt: "2026-10-21T11:00:00.000Z" } });
+      expect((await s.markStage(a, p.id, "lit", false, new Date()))!.stageMarks).toEqual({ idea: { readyAt: "2026-10-21T11:00:00.000Z" } });
+      expect((await s.getProject(a, p.id))!.stageMarks).toEqual({ idea: { readyAt: "2026-10-21T11:00:00.000Z" } });
+      expect(await s.markStage(b, p.id, "lit", true, new Date())).toBeNull();
+    });
+
+    it("a project created with a sealed title keeps its dek and key version", async () => {
+      const p = await s.createProject(a, { title: "tA.tB", titleKeyVersion: 1, dek: { v: 1, wrapped: "i.k" } }, "lit");
+      expect([p.title, p.titleKeyVersion, p.deks, p.stage]).toEqual(["tA.tB", 1, [{ v: 1, wrapped: "i.k" }], "lit"]);
+      expect((await s.getProject(a, p.id))!.deks).toEqual([{ v: 1, wrapped: "i.k" }]);
+      // A later title under a new key adds its dek; the same wrap again is fine, another wrap for a known v is refused.
+      const u = (await s.updateProject(a, p.id, { title: "tC.tD", titleKeyVersion: 2, dek: { v: 2, wrapped: "i.k2" } }))!;
+      expect([u.title, u.titleKeyVersion, u.deks]).toEqual(["tC.tD", 2, [{ v: 1, wrapped: "i.k" }, { v: 2, wrapped: "i.k2" }]]);
+      expect((await s.updateProject(a, p.id, { title: "tE.tF", titleKeyVersion: 1, dek: { v: 1, wrapped: "i.k" } }))!.deks).toHaveLength(2);
+      await expect(s.updateProject(a, p.id, { title: "tG.tH", titleKeyVersion: 1, dek: { v: 1, wrapped: "other" } })).rejects.toBeInstanceOf(DekExistsError);
+      expect((await s.getProject(a, p.id))!.title).toBe("tE.tF");
+    });
+
+    it("a plain title over a sealed one sets titleKeyVersion 0 and keeps the deks", async () => {
+      const p = await s.createProject(a, { title: "tA.tB", titleKeyVersion: 1, dek: { v: 1, wrapped: "i.k" } });
+      const u = (await s.updateProject(a, p.id, { title: "Sleep" }))!;
+      expect([u.title, u.titleKeyVersion, u.deks]).toEqual(["Sleep", 0, [{ v: 1, wrapped: "i.k" }]]);
+      const plain = await s.createProject(a, { title: "Memory", titleKeyVersion: 0 });
+      expect([plain.title, plain.titleKeyVersion, plain.deks]).toEqual(["Memory", 0, []]);
+    });
+
+    it("a sealed document title keeps its key version through a rename", async () => {
+      const p = await s.createProject(a, "P");
+      const d = (await s.createDocument(a, p.id, { title: "tA.tB", titleKeyVersion: 1, dek: { v: 1, wrapped: "i.k" } }, "draft", { ...draft(2), bodyHtml: "aA.bB", keyVersion: 1 }, [{ v: 1, wrapped: "i.k" }]))!;
+      expect([d.title, d.titleKeyVersion, d.deks]).toEqual(["tA.tB", 1, [{ v: 1, wrapped: "i.k" }]]);
+      const r = (await s.renameDocument(a, d.id, { title: "tC.tD", titleKeyVersion: 1 }))!;
+      expect([r.title, r.titleKeyVersion, r.deks]).toEqual(["tC.tD", 1, [{ v: 1, wrapped: "i.k" }]]);
+      const r2 = (await s.renameDocument(a, d.id, { title: "tE.tF", titleKeyVersion: 2, dek: { v: 2, wrapped: "i.k2" } }))!;
+      expect([r2.titleKeyVersion, r2.deks]).toEqual([2, [{ v: 1, wrapped: "i.k" }, { v: 2, wrapped: "i.k2" }]]);
+      await expect(s.renameDocument(a, d.id, { title: "tG.tH", titleKeyVersion: 2, dek: { v: 2, wrapped: "other" } })).rejects.toBeInstanceOf(DekExistsError);
+      const plain = (await s.renameDocument(a, d.id, "Draft"))!;
+      expect([plain.title, plain.titleKeyVersion]).toEqual(["Draft", 0]);
+      expect(plain.deks).toHaveLength(2);
+      expect((await s.getDocument(a, d.id))!.titleKeyVersion).toBe(0);
+      // A title dek that disagrees with the body's deks for the same v is refused, and nothing is created.
+      await expect(s.createDocument(a, p.id, { title: "tA.tB", titleKeyVersion: 1, dek: { v: 1, wrapped: "x" } }, "draft", draft(0), [{ v: 1, wrapped: "y" }])).rejects.toBeInstanceOf(DekExistsError);
+      expect(await s.listDocuments(a, p.id)).toHaveLength(1);
+    });
+
+    it("renameDocument reaches a soft-deleted document only with includeDeleted", async () => {
+      const p = await s.createProject(a, "P");
+      await s.createDocument(a, p.id, "Kept", "draft", first);
+      const d = (await s.createDocument(a, p.id, "Deleted draft", "draft", first, [{ v: 1, wrapped: "i.k" }]))!;
+      expect(await s.softDeleteDocument(a, d.id)).toBe("deleted");
+      expect(await s.renameDocument(a, d.id, { title: "tA.tB", titleKeyVersion: 1 })).toBeNull();
+      expect(await s.renameDocument(b, d.id, { title: "tA.tB", titleKeyVersion: 1 }, { includeDeleted: true })).toBeNull();
+      const r = (await s.renameDocument(a, d.id, { title: "tA.tB", titleKeyVersion: 1 }, { includeDeleted: true }))!;
+      expect([r.title, r.titleKeyVersion]).toEqual(["tA.tB", 1]);
+      // Still deleted: renamed in place, not brought back.
+      expect(await s.getDocument(a, d.id)).toBeNull();
+      expect((await s.getDocument(a, d.id, { includeDeleted: true }))!.title).toBe("tA.tB");
+      expect((await s.restoreDeletedDocument(a, d.id))!.title).toBe("tA.tB");
+    });
+
+    it("listProjectWork lists blob kinds, versions and dates and the draft words, in listProjects' order", async () => {
+      const p = await s.createProject(a, "Sleep");
+      const q = await s.createProject(a, "Memory");
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", draft(10)))!;
+      const last = (await s.appendRevision(a, d.id, draft(423)))!;
+      await s.createDocument(a, p.id, "Source", "source", draft(9000));
+      const gone = (await s.createDocument(a, p.id, "Old", "draft", draft(50)))!;
+      expect(await s.softDeleteDocument(a, gone.id)).toBe("deleted");
+      for (const kind of ["idea_intake", "citations", "refcheck_cache"]) await s.putBlob(a, p.id, kind, { body: "{}", keyVersion: 0 });
+      await s.putBlob(a, p.id, "citations", { body: "[]", keyVersion: 0 });
+      await s.putBlob(a, q.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      await s.createDocument(a, q.id, "Notes", "draft", draft(7));
+      await s.markStage(a, p.id, "idea", true, new Date("2026-10-21T10:00:00Z"));
+
+      const w = await s.listProjectWork(a);
+      expect(w.map((x) => x.id)).toEqual((await s.listProjects(a)).map((x) => x.id));
+      const wp = w.find((x) => x.id === p.id)!;
+      expect(wp.draftWords).toBe(423);
+      expect(wp.blobs.map((b) => b.kind).sort()).toEqual(["citations", "idea_intake", "refcheck_cache"]);
+      expect(wp.blobs.find((b) => b.kind === "citations")!.version).toBe(2);
+      expect(wp.blobs.every((b) => b.updatedAt instanceof Date && !("body" in b))).toBe(true);
+      expect(wp.draftEditedAt).toEqual(last.createdAt);
+      expect(wp.documentCount).toBe(2);
+      expect(wp.stageMarks).toEqual({ idea: { readyAt: "2026-10-21T10:00:00.000Z" } });
+      const wq = w.find((x) => x.id === q.id)!;
+      expect([wq.draftWords, wq.blobs.map((b) => b.kind)]).toEqual([7, ["idea_intake"]]);
+
+      const empty = await s.createProject(a, "Empty");
+      const we = (await s.listProjectWork(a)).find((x) => x.id === empty.id)!;
+      expect([we.blobs, we.draftWords, we.draftEditedAt]).toEqual([[], 0, null]);
+      expect(await s.listProjectWork(b)).toEqual([]);
+    });
+
+    it("a rename or a sealed title does not move the draft's edit time; a new revision does", async () => {
+      const p = await s.createProject(a, "Sleep");
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", draft(10)))!;
+      const first = (await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt;
+      await new Promise((r) => setTimeout(r, 5));
+      await s.renameDocument(a, d.id, "Draft, renamed");
+      expect((await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt).toEqual(first);
+      await new Promise((r) => setTimeout(r, 5));
+      const rev = (await s.appendRevision(a, d.id, draft(20)))!;
+      expect((await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt).toEqual(rev.createdAt);
+    });
+
+    it("the scratch project is not in listProjectWork", async () => {
+      const scratch = await s.getScratchProject(a);
+      await s.putBlob(a, scratch.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      await s.createDocument(a, scratch.id, "Loose", "draft", draft(5));
+      const p = await s.createProject(a, "Sleep");
+      expect((await s.listProjectWork(a)).map((x) => x.id)).toEqual([p.id]);
     });
   });
 }

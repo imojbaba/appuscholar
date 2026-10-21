@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Citations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4c1d95}a:hover{color:#3b0764}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #fbfaf9; color: #2a2438; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<a href="Main.dc.html" style="font-family: 'Source Serif 4', serif; font-size: 22px; font-weight: 600; color: #4c1d95; text-decoration: none">Appuscholar</a>
+<span style="color: #6b6579">Sleep and exam anxiety</span>
+<span style="color: #ddd9e4">/</span>
+<span style="font-weight: 600">Literature</span>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px; background: #ecfdf3; color: #166534; font-size: 13px; font-weight: 600">Locked to you</div>
+</header>
+
+<nav aria-label="Literature" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 0 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<a href="Find.dc.html" style="padding: 14px; color: #2a2438; text-decoration: none">Find</a>
+<a href="Read.dc.html" style="padding: 14px; color: #2a2438; text-decoration: none">Reading list (4)</a>
+<a href="Compare.dc.html" style="padding: 14px; color: #2a2438; text-decoration: none">Compare</a>
+<a href="#" aria-current="page" style="padding: 14px 14px 12px; border-bottom: 3px solid #4c1d95; color: #4c1d95; font-weight: 700; text-decoration: none">Citations (4)</a>
+</nav>
+
+<div style="max-width: 1360px; margin: 0 auto; padding: 28px 32px; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<main style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+<div>
+<h1 style="margin: 0; font-size: 22px">4 sources, 1 cited in your document</h1>
+<p style="margin: 4px 0 0; color: #6b6579; font-size: 14px">Checked today against Crossref and OpenAlex. No retractions found; that does not prove a paper is sound.</p>
+</div>
+<div style="display: flex; gap: 10px; align-items: center; font-size: 14px">
+<label for="style">Style</label>
+<select id="style" style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; padding: 0 10px; font: inherit"><option>APA 7</option></select>
+</div>
+</div>
+
+<sc-for list="{{sources}}" as="s" hint-placeholder-count="4">
+<article style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px">
+<p style="margin: 0; font-family: 'Source Serif 4', serif; font-size: 16px; line-height: 1.5">{{s.ref}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 13px">
+<span style="{{s.statusStyle}}">{{s.status}}</span>
+<span style="color: #6b6579">{{s.cited}}</span>
+</div>
+<sc-if value="{{s.hasFix}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 8px; background: #fef3c7; font-size: 14px">
+<span style="flex: 1 1 320px; color: #5c3305">{{s.problem}}</span>
+<button style="height: 38px; padding: 0 14px; border: none; border-radius: 8px; background: #4c1d95; color: #ffffff; font: inherit; font-weight: 600">{{s.fix}}</button>
+</div>
+</sc-if>
+</article>
+</sc-for>
+</main>
+
+<aside style="flex: 1 1 320px; max-width: 400px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px">In your document</h2>
+<button style="height: 44px; border: none; border-radius: 8px; background: #4c1d95; color: #ffffff; font: inherit; font-weight: 700">Insert reference list</button>
+<p style="margin: 0; font-size: 14px; color: #6b6579">To cite while writing, select text in the document and choose Cite. Your library is the same everywhere.</p>
+</section>
+<section style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 17px">Check again</h2>
+<button style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; background: #ffffff; color: #2a2438; font: inherit">Check for retractions</button>
+<button style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; background: #ffffff; color: #2a2438; font: inherit">Check details against Crossref</button>
+<button style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; background: #ffffff; color: #2a2438; font: inherit">Cross-check citations in my document</button>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = 'color:#166534;font-weight:600';
+    const warn = 'color:#92400e;font-weight:600';
+    return {
+      sources: [
+        { ref: '[Authors missing]. (2011). Omega-3 supplementation lowers inflammation and anxiety in medical students: a randomized controlled trial. Brain, Behavior, and Immunity, 25(8). https://doi.org/10.1016/j.bbi.2011.07.229', status: 'Needs a fix', statusStyle: warn, cited: 'Not cited yet', hasFix: true, problem: 'No authors. Crossref lists Kiecolt-Glaser, Belury, Andridge, Malarkey and 2 more.', fix: 'Use Crossref details' },
+        { ref: 'Cohen, J. (1988). Statistical power analysis for the behavioral sciences. Lawrence Erlbaum Associates. https://doi.org/10.4324/9780203771587', status: 'Year differs from Crossref', statusStyle: warn, cited: 'Not cited yet', hasFix: true, problem: 'Crossref has the 2013 reprint. Keep 1988 if you read the second edition.', fix: 'Keep 1988' },
+        { ref: 'Putwain, D. W. (2008). Examination stress and test anxiety. [Journal], [volume]([issue]), [pages].', status: 'Checked', statusStyle: ok, cited: 'Not cited yet', hasFix: false, problem: '', fix: '' },
+        { ref: 'Schaefer, M., Denke, C., Harke, R., Olk, N., Erkovan, M., & Enge, S. (2019). Open-label placebos reduce test anxiety and improve self-management skills: A randomized-controlled trial. Scientific Reports, 9, 13317. https://doi.org/10.1038/s41598-019-49466-6', status: 'Checked', statusStyle: ok, cited: 'Cited once in My first document', hasFix: false, problem: '', fix: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

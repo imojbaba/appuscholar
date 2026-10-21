@@ -1,0 +1,91 @@
+"use client";
+import Link from "next/link";
+import { useT } from "@/lib/i18n";
+import { useApNotes } from "@/lib/analyse/notes";
+import { useLibrary } from "@/lib/cite/useLibrary";
+import { useShelf } from "@/lib/shelf/useShelf";
+import { PLACE_TABS, placeHref } from "@/lib/frame/places";
+import { ResearchPanel } from "@/components/tools/research/ResearchPanel";
+import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
+import { Across } from "@/components/tools/analyse/Across";
+import { CitePanel } from "@/components/tools/cite/CitePanel";
+import { ShelfDialog, ShelfMatrix } from "@/components/tools/shelf/ShelfDialog";
+import { PlaceHeader } from "@/components/frame/PlaceHeader";
+import { useProject } from "@/components/frame/ProjectContext";
+
+/**
+ * The Literature place (canvas Find): four tabs, each a link, in the order Find, Reading list ({n} kept papers on the shelf), Compare and Citations
+ * ({n} library entries); a count not known yet (read, locked) is left out. Each tab's content is today's tool until B2 and B3 replace it: Find is
+ * Research; Reading list is the shelf inline, then Analyse a paper under "Read a paper"; Compare is the shelf's table and the paper cards side by
+ * side; Citations is the Citation Manager. The tab's suggested next line comes last, drawn here so it stays when the content is replaced.
+ */
+export function LitPlace({ tab }: { tab: string }) {
+  return (
+    <>
+      <PlaceHeader stage="lit" tab={tab} tabs={<LitTabs tab={tab} />} />
+      <div className="place-body" data-testid={"place-lit-" + tab}>
+        <Content tab={tab} />
+        <Next tab={tab} />
+      </div>
+    </>
+  );
+}
+
+function LitTabs({ tab }: { tab: string }) {
+  const t = useT();
+  const { projectId } = useProject();
+  // Read as the panels read them: the shelf's index as Analyse a paper lists it, the library as the caret chip holds it (never asking on its own).
+  const shelf = useShelf();
+  const library = useLibrary({ passive: true });
+  const counts: Record<string, number | null> = {
+    reading: shelf.index ? shelf.index.length : null,
+    citations: library.loading || library.locked ? null : library.lib.length
+  };
+  return (
+    <nav className="place-tabs" role="tablist" aria-label={t("stage_name_lit")} data-testid="place-tabs">
+      {PLACE_TABS.lit.map((x) => {
+        const name = t("tab_name_" + x);
+        const n = counts[x];
+        return (
+          <Link key={x} role="tab" aria-selected={x === tab} aria-current={x === tab || undefined} href={placeHref(projectId ?? "", "lit", x)} data-testid={"place-tab-" + x}>
+            {n === null || n === undefined ? name : t("tab_name_count", { name, n })}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function Content({ tab }: { tab: string }) {
+  if (tab === "reading") return <Reading />;
+  if (tab === "compare") return <Compare />;
+  if (tab === "citations") return <CitePanel />;
+  return <ResearchPanel />;
+}
+
+function Reading() {
+  const t = useT();
+  return (
+    <>
+      <ShelfDialog inline />
+      <h2 className="place-h2" data-testid="read-a-paper">{t("lit_read_a_paper")}</h2>
+      <AnalysePanel />
+    </>
+  );
+}
+
+function Compare() {
+  const { projectId } = useProject();
+  const notes = useApNotes(projectId);
+  return (
+    <>
+      <ShelfMatrix />
+      <Across notes={notes} />
+    </>
+  );
+}
+
+function Next({ tab }: { tab: string }) {
+  const t = useT();
+  return <section className="place-next" aria-label={t("lit_suggested_next")} data-testid="lit-next"><p>{t("lit_next_" + tab)}</p></section>;
+}

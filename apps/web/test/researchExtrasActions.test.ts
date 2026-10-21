@@ -110,7 +110,7 @@ describe("quickReadTicked (rsQuickChecked 8183-8190)", () => {
 });
 
 function genDeps(reply: string | Error = "A paragraph.") {
-  const log = { toasts: [] as string[], ai: [] as Array<{ prompt: string; opts: unknown }>, thinking: [] as unknown[][], set: [] as unknown[][], cleared: [] as unknown[], docks: [] as string[] };
+  const log = { toasts: [] as string[], ai: [] as Array<{ prompt: string; opts: unknown }>, thinking: [] as unknown[][], set: [] as unknown[][], cleared: [] as unknown[] };
   let token = 0;
   const d: GeneratorDeps = {
     field: "psychology", t,
@@ -119,7 +119,6 @@ function genDeps(reply: string | Error = "A paragraph.") {
     isCurrent: (tk) => tk === token,
     set: (...a) => { log.set.push(a); },
     clear: (m) => { log.cleared.push(m); },
-    dockShow: (w) => { log.docks.push(w); },
     toast: (m) => { log.toasts.push(m); }
   };
   return { d, log };
@@ -148,7 +147,6 @@ describe("the literature review and the research gap (researchLitReview / resear
       expect(log.ai).toEqual([{ prompt: built.prompt, opts: { temp: 0.35, max: 1200 } }]);
       expect(log.thinking).toEqual([["custom", null, label(3)]]);
       expect(log.set).toEqual([["Draft.", null, 1]]);
-      expect(log.docks).toEqual(["ai", "ai"]);
       expect(log.toasts).toEqual(["Ready — press Tab in the editor to insert"]);
     });
 

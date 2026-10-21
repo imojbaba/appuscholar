@@ -6,12 +6,15 @@ import type { AuthEnv } from "../auth";
 
 /** What a client sees of a blob. */
 const wire = (b: ProjectBlob) => ({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: b.deks, updatedAt: b.updatedAt, version: b.version });
-/** If-Match carries the version the client read, quoted as GET's ETag or bare. Absent is undefined (a tab from before wave A); malformed is null. */
-const IF_MATCH = /^"?(\d+)"?$/;
+/**
+ * If-Match carries the version the client read, quoted as GET's and PUT's ETag or bare, never half quoted. Absent is undefined (a tab from
+ * before wave A); malformed is null.
+ */
+const IF_MATCH = /^(?:"(\d+)"|(\d+))$/;
 const readIfMatch = (h: string | undefined): number | undefined | null => {
   if (h === undefined) return undefined;
   const m = IF_MATCH.exec(h.trim());
-  const n = m ? Number(m[1]) : NaN;
+  const n = m ? Number(m[1] ?? m[2]) : NaN;
   return Number.isSafeInteger(n) ? n : null;
 };
 
@@ -30,6 +33,7 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
     try { return { data: JSON.parse(raw) }; } catch { return "invalid"; }
   };
 
+  /** Every blob without its body, with its version (what a tab compares before it reads a body again). */
   r.get("/:id/blobs", async (c) => {
     const list = await store.listBlobs(c.get("userId"), c.req.param("id"));
     return list ? c.json(list) : c.json({ error: "not-found" }, 404);
@@ -69,7 +73,9 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
     if (!w.ok) return c.json({ error: w.error }, w.status);
     try {
       const b = await store.putBlob(userId, projectId, kind, { body: w.body, keyVersion: w.keyVersion, dek: w.addDek, expectedVersion });
-      return b ? c.json(wire(b)) : c.json({ error: "not-found" }, 404);
+      if (!b) return c.json({ error: "not-found" }, 404);
+      c.header("ETag", `"${b.version}"`);
+      return c.json(wire(b));
     } catch (e) {
       if (e instanceof VersionConflictError) return c.json({ error: "version-conflict", version: e.current }, 409);
       if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409);

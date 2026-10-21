@@ -8,7 +8,7 @@ import { blobPath, projectBlobClient, useProjectBlob, type BlobVault, type BlobW
 import { useT } from "@/lib/i18n";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { useVault } from "@/lib/vault/useVault";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { toast } from "@/components/ui/toast";
 import { EMPTY_PAPER, type ShelfEntry, type ShelfItem, type ShelfOps } from "./actions";
 
@@ -28,7 +28,7 @@ async function sealNew(vault: BlobVault, id: string, json: string): Promise<{ bo
  */
 export async function putNewPaper(projectId: string, paperId: string, paper: ShelfPaper, vault: BlobVault, t: (k: string) => string): Promise<void> {
   const kind = shelfPaperKind(paperId);
-  // The guard (lib/popout/mode.ts); a shelf paper is writable everywhere (R29), so this only stops a kind the guard refuses.
+  // The guard (lib/popout/mode.ts): a shelf paper is writable in the writing window and in a Literature window (D-S2-43), refused in another stage's.
   if (!blobWritable(kind)) throw new Error(t("sh2_could_not_be_read"));
   const id = blobId(projectId, kind), json = JSON.stringify(paper), path = blobPath(projectId, kind);
   const seal = async () => {
@@ -89,7 +89,7 @@ export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | nul
 
 /** The shelf of the project the workspace has loaded (the scratch project's in scratch space). */
 function useShelfProject(): string | null {
-  return useWorkspace().projectId;
+  return useProject().projectId;
 }
 
 /**
@@ -107,7 +107,7 @@ export function useShelf(): { projectId: string | null; index: ShelfIndex | null
   return { projectId, index: index.value, loading: index.loading, locked: index.locked, broken: !!index.broken, error: !!index.error, loadPaper };
 }
 
-/** New V2 copy (register row D-S2-17; ruling R15: an English constant): a pop-out does not store the matrix's columns (v1 refuses appu_shelf_cols there). */
+/** New V2 copy (register row D-S2-17; ruling R15: an English constant): a pop-out of another stage than Literature does not store the matrix's columns (D-S2-43). */
 export const COLS_POPOUT = "Columns can be changed only in the writing window.";
 
 /** What the dialog holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */

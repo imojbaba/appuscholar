@@ -13,15 +13,18 @@ vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) }));
 vi.mock("@/lib/ai/suggestion", async (orig) => ({ ...(await orig<typeof import("../lib/ai/suggestion")>()), useSuggestion: () => ({ setEditor: () => {}, tab: () => false }) }));
-vi.mock("@/components/workspace/WorkspaceContext", async (orig) => ({ ...(await orig<typeof import("../components/workspace/WorkspaceContext")>()), useWorkspace: () => h.ws }));
-// The real editor needs a layout engine; the stub records which body it was opened with.
-vi.mock("@/components/editor/Editor", () => ({ Editor: ({ initialHtml }: { initialHtml: string }) => { h.editors.push(initialHtml); return <div data-testid="editor-stub">{initialHtml}</div>; } }));
+vi.mock("@/components/frame/ProjectContext", async (orig) => ({ ...(await orig<typeof import("../components/frame/ProjectContext")>()), useProject: () => h.ws }));
+// The real editor needs a layout engine; the stub records which body it was opened with, once per editor (a re-render opens nothing).
+vi.mock("@/components/editor/Editor", async () => {
+  const { useState } = await import("react");
+  return { Editor: ({ initialHtml }: { initialHtml: string }) => { useState(() => h.editors.push(initialHtml)); return <div data-testid="editor-stub">{initialHtml}</div>; } };
+});
 
 import { ApiError } from "../lib/api";
 import { useVault, VaultProvider, type VaultValue } from "../lib/vault/useVault";
-import { readableDoc } from "../components/workspace/Workspace";
+import { readableDoc } from "../components/frame/ProjectShell";
 import { DocumentCard } from "../components/document/DocumentCard";
-import type { DocumentWithBody } from "../components/workspace/WorkspaceContext";
+import type { DocumentWithBody } from "../components/frame/ProjectContext";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -52,11 +55,11 @@ async function mountVault() {
   return box;
 }
 function doc(id: string, over: Partial<DocumentWithBody> = {}): DocumentWithBody {
-  return { id, projectId: "p1", title: "Doc " + id, kind: "draft", currentSeq: 1, wordCount: 0, createdAt: "2026-10-16T00:00:00Z", updatedAt: "2026-10-16T00:00:00Z", bodyHtml: "", keyVersion: 0, deks: [], ...over };
+  return { id, projectId: "p1", title: "Doc " + id, titleKeyVersion: 0, kind: "draft", currentSeq: 1, wordCount: 0, createdAt: "2026-10-16T00:00:00Z", updatedAt: "2026-10-16T00:00:00Z", bodyHtml: "", keyVersion: 0, deks: [], ...over };
 }
 async function renderCard(current: DocumentWithBody, documents: DocumentWithBody[]) {
   const selectDoc = vi.fn(async () => true);
-  h.ws = { project: null, documents, currentDoc: current, selectDoc, reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), flushOpen: vi.fn(async () => true), setWordCount: vi.fn() };
+  h.ws = { project: null, documents, currentDoc: current, selectDoc, reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), registerEditor: vi.fn(), flushOpen: vi.fn(async () => true), setWordCount: vi.fn() };
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);

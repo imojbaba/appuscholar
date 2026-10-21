@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { buildAllRecordText, buildRecordText, type WritingRecord } from "../lib/writingRecord";
+import { buildAllRecordText, buildRecordText, openRecordTitles, type WritingRecord } from "../lib/writingRecord";
+import type { OpenedTitle, Titled } from "../lib/vault/titles";
 
 const stats = (typed: number, ai: number, passages = 0, kept = 0, edited = 0, unknown = 0) => ({ typed, ai, passages, kept, edited, unknown });
 const rec: WritingRecord = {
-  docs: [{ id: "a", title: "Essay", kind: "draft", stats: stats(30, 10, 2, 1, 1) }],
+  docs: [{ id: "a", title: "Essay", titleKeyVersion: 0, deks: [], kind: "draft", stats: stats(30, 10, 2, 1, 1) }],
   sources: [{ title: "Paper", words: 120 }],
   weekly: [{ weekStart: "2026-10-05", typed: 20, ai: 0 }, { weekStart: "2026-10-12", typed: 30, ai: 10 }],
   aiLog: { byKind: { "grammar and polish": 3, "continuing my draft": 1 }, byService: { "Groq (llama-3.3)": 3, "Google Gemini": 1 }, total: 4, firstAt: "2026-10-05", lastAt: "2026-10-16", loggingOff: false }
@@ -49,7 +50,7 @@ describe("buildRecordText", () => {
 
 describe("buildAllRecordText", () => {
   it("writes the header, the AI-use log and the closing sections once, and each project's words under its title", () => {
-    const other: WritingRecord = { ...rec, docs: [{ id: "b", title: "Notes", kind: "draft", stats: stats(5, 0) }], sources: [], weekly: [] };
+    const other: WritingRecord = { ...rec, docs: [{ id: "b", title: "Notes", titleKeyVersion: 0, deks: [], kind: "draft", stats: stats(5, 0) }], sources: [], weekly: [] };
     const text = buildAllRecordText([{ title: "Thesis", rec }, { title: "Scratch", rec: other }], "abc1234", "2026-10-16");
     for (const once of ["WRITING-PROCESS RECORD", "WHAT THIS IS", "AI-USE LOG", "4 requests from", "DECLARED WRITING SAMPLES", "LIMITS"]) expect(text.split(once)).toHaveLength(2);
     expect(text.split("WORDS BY ORIGIN")).toHaveLength(3);
@@ -62,5 +63,29 @@ describe("buildAllRecordText", () => {
   it("is the single record's text, with the project heading, for one project", () => {
     const one = buildAllRecordText([{ title: "Essay", rec }], "abc1234", "2026-10-16");
     expect(one.replace("Essay\n=====\n\n", "")).toBe(buildRecordText(rec, "abc1234", "2026-10-16"));
+  });
+});
+
+describe("openRecordTitles", () => {
+  it("the writing record shows opened document titles", async () => {
+    const dek = { v: 1, wrapped: "w" };
+    const sealed: WritingRecord = { ...rec, docs: [
+      { id: "a", title: "ct:Essay", titleKeyVersion: 1, deks: [dek], kind: "draft", stats: stats(30, 10, 2, 1, 1) },
+      { id: "b", title: "ct:broken", titleKeyVersion: 1, deks: [dek], kind: "draft", stats: stats(5, 0) },
+      { id: "c", title: "Plain", titleKeyVersion: 0, deks: [], kind: "draft", stats: stats(1, 0) }
+    ] };
+    // Opens the way the vault does: a document's title under its own id; "broken" does not open.
+    const seen: string[] = [];
+    const open = async (t: Titled, keyId: string): Promise<OpenedTitle> => {
+      seen.push(keyId);
+      if (t.titleKeyVersion === 0) return { state: "open", text: t.title };
+      return t.title === "ct:broken" ? { state: "unreadable" } : { state: "open", text: t.title.slice(3) };
+    };
+    const text = buildRecordText(await openRecordTitles(sealed, open, "untitled"), "abc1234", "2026-10-16");
+    expect(seen).toEqual(["a", "b", "c"]);
+    expect(text).toContain("- Essay: 40 words");
+    expect(text).toContain("- untitled: 5 words");
+    expect(text).toContain("- Plain: 1 words");
+    expect(text).not.toContain("ct:");
   });
 });

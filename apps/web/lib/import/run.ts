@@ -27,9 +27,10 @@ export async function importFiles(files: File[], origin: "draft" | "source", pro
       const parsed = await parseImportFile(file);
       const kind = parsed.isPdf ? "source" : origin;
       const title = parsed.title.trim().slice(0, 200) || "Untitled";
-      const first = await newDocumentBody(vault);
+      // The title is sealed with the empty first body, under the document's first key.
+      const first = await newDocumentBody(vault, title);
       if (!first) { toast(t("vault_save_locked")); return lastId; }
-      const made = await apiFetch<{ id: string; deks?: WrappedDek[] }>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title, kind, ...first }) });
+      const made = await apiFetch<{ id: string; deks?: WrappedDek[] }>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ kind, ...first }) });
       madeId = made.id;
       // The body goes in its own PUT, as before, so the server's size limit still refuses a file too large to autosave later.
       await apiFetch<unknown>(`/documents/${made.id}`, { method: "PUT", body: JSON.stringify(await sealBody(vault, { id: made.id, deks: made.deks ?? [] }, parsed.html)) });

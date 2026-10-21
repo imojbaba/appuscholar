@@ -14,7 +14,7 @@ import { toast } from "@/components/ui/toast";
  * The form of the Citation Manager (v1 876-912), in v1's order: style (with citStyleNote), type, source language, the fields with the type-specific
  * `cit-only` groups, DOI, the link box (a paste with a DOI or PubMed ID looks it up, 7970-7976), the lookup button, Insert citation / + Library, Clear form.
  */
-export function CiteForm({ library, deps, insertReady }: { library: Library; deps: () => CiteDeps; insertReady: boolean }) {
+export function CiteForm({ library, deps }: { library: Library; deps: () => CiteDeps }) {
   const t = useT();
   const f = useCiteForm();
   // Every input carries v1's id; the key it fills is read from the id (CITE_FIELD_IDS, citReadForm's reads).
@@ -117,7 +117,7 @@ export function CiteForm({ library, deps, insertReady }: { library: Library; dep
       <div className="stack">
         <Button variant="ghost" className="w-full" data-testid="cite-lookup" onClick={lookup}>{t("cite_lookup_btn")}</Button>
         <div className="cite-row">
-          <Button variant="primary" className="flex-1" data-testid="cite-insert" disabled={!insertReady} onClick={() => citeInsert(readForm(getCiteForm(), library.style), deps())}>{t("cite_insert_btn")}</Button>
+          <Button variant="primary" className="flex-1" data-testid="cite-insert" onClick={() => void citeInsert(readForm(getCiteForm(), library.style), deps())}>{t("cite_insert_btn")}</Button>
           <Button variant="ghost" className="flex-1" data-testid="cite-add" disabled={!library.ready} onClick={() => citeAdd(readForm(getCiteForm(), library.style), library.add, toast)}>{t("cite_addlib_btn")}</Button>
         </div>
         <Button variant="ghost" className="w-full" data-testid="cite-clear" onClick={() => { setCiteForm(clearedForm); toast(FORM_CLEARED); }}>{t("cite_clear_btn")}</Button>

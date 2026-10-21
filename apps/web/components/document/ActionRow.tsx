@@ -9,13 +9,13 @@ import { toast } from "@/components/ui/toast";
 import { OriginBadge } from "./OriginBadge";
 import { CaretChip } from "./CaretChip";
 import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 /** The writing actions under the document (mockup 02): Continue / Improve / Extend, Template, AI text, Viva question, Draft first, the caret chip, and the live word count. */
 export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Editor; highlightAi: boolean; onHighlightAi(on: boolean): void }) {
   const t = useT();
   const { settings, update } = useSettings();
-  const { currentDoc, wordCount } = useWorkspace();
+  const { currentDoc, wordCount } = useProject();
   const run = useWritingRun(editor);
   const draftFirst = settings.draftFirst === true;
   // The buttons must not take focus from the document: the selection Improve and Extend work on stays visible.

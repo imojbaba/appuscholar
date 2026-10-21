@@ -31,7 +31,9 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {} }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, showTool: () => {} }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {},
+  // The shell's insert: into the test's editor; with none, the document did not open.
+  requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
@@ -412,12 +414,16 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
     expect((tid("cite-add") as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("with no document open (no editor) Insert citation and the cards' Insert are disabled", () => {
+  it("with no document open Insert citation and the cards' Insert stay enabled (an insert opens it, Task 11); when it does not open, no success is claimed", async () => {
     h.blob.value = [BANDURA];
     mount();
-    expect((tid("cite-insert") as HTMLButtonElement).disabled).toBe(true);
-    expect((tid("cite-use") as HTMLButtonElement).disabled).toBe(true);
+    expect((tid("cite-insert") as HTMLButtonElement).disabled).toBe(false);
+    expect((tid("cite-use") as HTMLButtonElement).disabled).toBe(false);
     expect((tid("cite-add") as HTMLButtonElement).disabled).toBe(false);
+    fill(BANDURA);
+    await click("cite-insert");
+    await click("cite-use");
+    expect(toasts()).toEqual([]);
   });
 });
 

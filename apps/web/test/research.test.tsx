@@ -26,7 +26,7 @@ const h = vi.hoisted(() => ({
   oaKey: null as string | null,
   pending: null as string | null,
   setPending: vi.fn(),
-  showTool: vi.fn()
+  go: vi.fn()
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({
   useProjectBlob: (...a: unknown[]) => { h.blobArgs.push(a); return h.blobs[a[0] as string] ?? { value: null, loading: false, locked: false, set: () => {}, flush: async () => true }; }
@@ -34,8 +34,9 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({
-  useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: h.pending, setPendingSearch: h.setPending, showTool: h.showTool, dockShow: () => {} })
+vi.mock("@/components/frame/ProjectContext", () => ({
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: h.pending, setPendingSearch: h.setPending, go: h.go,
+    requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -572,9 +573,9 @@ describe("Research: + Citation library and Insert citation (8471-8491)", () => {
     expect(saved.author!.split("; ").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("Insert citation is disabled while no document is open", async () => {
+  it("Insert citation stays enabled while no document is open: the insert opens it (Task 11)", async () => {
     await mount();
     await search(run("oa-plain"));
-    expect((cards()[0]!.querySelector('[data-testid="rs-insert"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((cards()[0]!.querySelector('[data-testid="rs-insert"]') as HTMLButtonElement).disabled).toBe(false);
   });
 });

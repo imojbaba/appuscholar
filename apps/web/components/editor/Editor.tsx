@@ -32,7 +32,8 @@ export function Editor({ docId, initialHtml, initialSeq, deks, onSaved, onReady,
   const { lang } = useLang();
   // Created once with the hint of the language on screen; the effect below swaps the hint on a language switch without recreating the editor.
   const [extensions] = useState(() => editorExtensionsWith(t("editor_placeholder")));
-  const { status, currentSeq, onChange, flushNow } = useAutosave(docId, initialHtml, initialSeq, { deks });
+  // `restored`: text this tab held after the document's editor last went away unsaved; the editor opens with it and autosave saves it.
+  const { status, currentSeq, onChange, flushNow, restored } = useAutosave(docId, initialHtml, initialSeq, { deks });
   // The handlers below are created with the editor, so they read the newest callback from here.
   const onFilesRef = useRef(onFiles);
   useEffect(() => { onFilesRef.current = onFiles; }, [onFiles]);
@@ -40,7 +41,7 @@ export function Editor({ docId, initialHtml, initialSeq, deks, onSaved, onReady,
   useEffect(() => { onTabRef.current = onTab; }, [onTab]);
   const editor = useEditor({
     extensions,
-    content: initialHtml,
+    content: restored ?? initialHtml,
     immediatelyRender: false,
     editorProps: {
       // The text box needs a name for a screen reader; the effect below keeps it in the language on screen.

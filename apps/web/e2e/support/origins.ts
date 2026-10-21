@@ -11,3 +11,5 @@ export const API_ORIGIN = `http://localhost:${API_PORT}`;
 export const WEB_ORIGIN = `http://localhost:${WEB_PORT}`;
 /** The workspace's address (the web origin's root), as a test of a page's URL. */
 export const WORKSPACE_URL = new RegExp(`localhost:${WEB_PORT}/$`);
+/** Any page of the app a signed-in student lands on: `/` (which forwards), first run, the project list or a project's home or place. */
+export const APP_URL = new RegExp(`localhost:${WEB_PORT}/(start|projects|p/[^?#]+)?([?#].*)?$`);

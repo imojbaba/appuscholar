@@ -5,11 +5,10 @@ import { useT } from "@/lib/i18n";
 import { fromPending, nextIntake } from "@/lib/analyse/intake";
 import { useApNotes } from "@/lib/analyse/notes";
 import { setAp, useApState, type ApLoaded, type ApMode } from "@/lib/analyse/useApDoc";
-import { AP_LECTURES_LATER, AP_LESSON_LATER } from "@/lib/analyse/later";
 import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { Across } from "./Across";
 import { Ask } from "./Ask";
 import { Card } from "./Card";
@@ -38,23 +37,25 @@ function Head({ d }: { d: ApLoaded }) {
   );
 }
 
-/** The mode tabs (11284): Ask, the walk-through (disabled for an abstract, "(full paper needed)"), the paper card, and the lesson for the practice paper only (apSet('mode', k), 10113). */
+/**
+ * The mode tabs (11284): Ask, the walk-through (disabled for an abstract, "(full paper needed)") and the paper card (apSet('mode', k), 10113). v1's lesson for the practice
+ * paper is not built (Phase 5), so it is not offered (walk fault W23, register D-S2-44).
+ */
 function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
   const t = useT();
-  // The lesson and the lectures are Phase 5 (register D-S2-15).
-  const open = (k: ApMode) => { if (k === "lesson") toast(AP_LESSON_LATER); else setAp({ mode: k }); };
+  const open = (k: ApMode) => setAp({ mode: k });
   const tab = (k: ApMode, l: string) => (d.abstractOnly && k === "walk")
     ? <Button key={k} variant="ghost" size="sm" data-testid={"ap-tab-" + k} disabled title={t("ap2_the_walk_through_needs_title")}>{t("ap2_full_paper_needed", { l })}</Button>
     : <Button key={k} variant={mode === k ? "primary" : "ghost"} size="sm" data-testid={"ap-tab-" + k} onClick={() => open(k)}>{l}</Button>;
   return (
     <div className="ap-row ap-wrap ap-tabs" data-testid="ap-tabs">
-      {tab("ask", t("ap2_ask_questions"))}{tab("walk", t("ap2_walk_me_through_it"))}{tab("card", t("ap2_paper_card_2"))}{d.sample && tab("lesson", t("ap2_lesson_on_this_paper"))}
+      {tab("ask", t("ap2_ask_questions"))}{tab("walk", t("ap2_walk_me_through_it"))}{tab("card", t("ap2_paper_card_2"))}
     </div>
   );
 }
 
 /**
- * Analyse a paper (v1 741-760 and apRender 11272-11334), in v1's order: the heading and its sentence, "📚 All lectures" (Phase 5), the intake, then #apMain for the loaded paper (the head, the
+ * Analyse a paper (v1 741-760 and apRender 11272-11334), in v1's order: the heading and its sentence, the intake (v1's "📚 All lectures" is not built and not offered: W23), then #apMain for the loaded paper (the head, the
  * tabs, the reference check unless it is an abstract, "Reading the paper and writing the answer…" while a request runs, and the tab's content: Ask, the walk-through, the paper card), then
  * "📊 My paper cards side by side". The walk-through, the card and the cards side by side share one store of the project's ap_notes and ap_cols blobs (lib/analyse/notes.ts).
  * The paper lives in this tab's memory (lib/analyse/useApDoc.ts). Research's "📄 Analyse this paper" leaves its abstract in the workspace (pendingAnalyse): it is loaded here abstract-only, then
@@ -63,7 +64,7 @@ function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
 export function AnalysePanel() {
   const t = useT();
   const s = useApState();
-  const { project, pendingAnalyse, setPendingAnalyse } = useWorkspace();
+  const { project, pendingAnalyse, setPendingAnalyse } = useProject();
   const { me } = useSettings();
   const notes = useApNotes(project?.id ?? me?.scratchProjectId ?? null);
   // The kept abstract is loaded once: a second run of the effect for the same value (React's StrictMode, or a language change before the clear lands) does nothing.
@@ -79,10 +80,6 @@ export function AnalysePanel() {
     <div className="panel" data-testid="panel-analyse">
       <h3>{t("ap2_analyse_a_paper")}</h3>
       <p className="desc">{t("ap2_give_appuscholer_a_research")}</p>
-      <div className="ap-row ap-wrap ap-lect">
-        <Button variant="primary" size="sm" id="libOpenBtn" data-testid="ap-lectures" onClick={() => toast(AP_LECTURES_LATER)}>{t("ap2_lib_open_btn")}</Button>
-        <span className="desc ap-lect-desc">{t("ap2_short_talks_on_reading")}</span>
-      </div>
       <Intake />
       <div id="apMain" data-testid="ap-main">
         {d && (

@@ -23,7 +23,8 @@ const h = vi.hoisted(() => ({
   project: null as { id: string; contentLang?: string } | null,
   settings: {} as Record<string, unknown>,
   callAI: vi.fn(),
-  download: vi.fn()
+  download: vi.fn(),
+  openExport: vi.fn()
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({
   useProjectBlob: (...a: unknown[]) => a[0] !== "citations" ? { value: {}, loading: false, locked: false, set: () => {}, flush: async () => true } : h.blob
@@ -31,7 +32,9 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: h.settings }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, showTool: () => {} }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {}, openExport: h.openExport,
+  // The shell's insert: into the test's editor; with none, the document did not open.
+  requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -39,7 +42,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 import { CitePanel } from "../components/tools/cite/CitePanel";
 import { resetCiteForm } from "../lib/cite/form";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
-import { IMPORT_TOO_LARGE, LIBRARY_EXPORTED, readFileText } from "../lib/cite/share";
+import { citeExport, IMPORT_TOO_LARGE, LIBRARY_EXPORTED, readFileText } from "../lib/cite/share";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -91,7 +94,7 @@ const applied = (prev: Lib) => (h.blob.set.mock.calls.at(-1)![0] as (p: Lib | nu
 beforeEach(() => {
   h.blob = { value: [], loading: false, locked: false, set: vi.fn(), flush: vi.fn(async () => true) };
   h.toast.mockReset();
-  h.download.mockReset();
+  h.download.mockReset(); h.openExport.mockReset();
   h.callAI.mockReset();
   h.editor = null;
   h.project = null;
@@ -119,7 +122,8 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(tid("cite-insertquote")!.textContent).toBe(E.cite_insertquote_btn);
     expect(tid("cite-insertbib")!.textContent).toBe(E.cite_insertbib_btn);
     expect(tid("cite-loadclassics")!.textContent).toBe(E.cite_loadclassics_btn);
-    expect(tid("cite-export")!.textContent).toBe(E.cite_export_btn);
+    // Wave B Task 12 (D-S2-42): v1's "⬆ Export library" is now Export, into the project's export place.
+    expect(tid("cite-export")!.textContent).toBe(E.exp_link);
     expect(tid("cite-import")!.textContent).toBe(E.cite_import_btn);
     expect(tid("cite-sharing-note")!.innerHTML).toBe(E.cite_sharing_note);
     expect(($("#citImportFile") as HTMLInputElement).accept).toBe(".json,application/json");
@@ -146,8 +150,8 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(ev.defaultPrevented).toBe(true);
   });
 
-  it("in a pop-out (/popout?tool=cite) the bookmarklet still opens the writing window's address, where the capture is read, not /popout", () => {
-    window.history.replaceState(null, "", "/popout?tool=cite");
+  it("in a place's own window (?window=1) the bookmarklet still opens the writing window's address, where the capture is read", () => {
+    window.history.replaceState(null, "", "/p/p1/lit/citations?window=1");
     try {
       mount();
       expect(tid("cite-bookmarklet")!.getAttribute("href")).toBe(bookmarkletHrefV2("http://localhost:3000/"));
@@ -163,9 +167,9 @@ describe("the panel's order and copy (v1 914-947)", () => {
 });
 
 describe("Insert reference list", () => {
-  it("puts core's block into the open document once and toasts v1's sentence; disabled with no document open", async () => {
+  it("puts core's block into the open document once and toasts v1's sentence; enabled with no document open (an insert opens it, Task 11)", async () => {
     mount();
-    expect((tid("cite-insertbib") as HTMLButtonElement).disabled).toBe(true);
+    expect((tid("cite-insertbib") as HTMLButtonElement).disabled).toBe(false);
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     const e = new Editor({ extensions: editorExtensions, content: "<p>Mine.</p>" });
     editors.push(e);
@@ -180,10 +184,14 @@ describe("Insert reference list", () => {
 });
 
 describe("Export and import (citExport 7991-7998, citImport 7999-8023)", () => {
-  it("export downloads psychology-class-library.json holding exportLibrary(lib), v1's file, and toasts v1's sentence", async () => {
+  it("Export opens the export place with the citations ticked (Task 12); v1's file, exportLibrary(lib), is the zip's citations/library.json", async () => {
     h.blob.value = CITLIB.lib;
     mount();
     await click("cite-export");
+    expect(h.openExport).toHaveBeenCalledWith("citations");
+    expect(h.download).not.toHaveBeenCalled();
+    // v1's own download (citExport), still the library file's builder.
+    citeExport({ lib: CITLIB.lib, download: h.download, toast: h.toast });
     expect(h.download).toHaveBeenCalledTimes(1);
     const [name, blob] = h.download.mock.calls[0]! as [string, globalThis.Blob];
     expect(name).toBe(LIBRARY_FILE_NAME);
@@ -195,9 +203,8 @@ describe("Export and import (citExport 7991-7998, citImport 7999-8023)", () => {
     expect(toasts()).toEqual([CITLIB.export.toast]);
     expect(LIBRARY_EXPORTED).toBe(CITLIB.export.toast);
   });
-  it("an empty library exports nothing and toasts v1's sentence", async () => {
-    mount();
-    await click("cite-export");
+  it("an empty library exports nothing and toasts v1's sentence (citExport)", async () => {
+    citeExport({ lib: [], download: h.download, toast: h.toast });
     expect(h.download).not.toHaveBeenCalled();
     expect(toasts()).toEqual(SHARE.exportEmpty);
   });
@@ -295,7 +302,7 @@ describe("Insert quote", () => {
     expect(h.callAI).not.toHaveBeenCalled();
     expect(e.getText()).toContain("“स्मृति की क्षमता सीमित है।” ");
   });
-  it("a translation that finishes after a document switch inserts nothing, leaves the box and shows no success", async () => {
+  it("a translation whose document then does not open inserts nothing, leaves the box and shows no success", async () => {
     const e = new Editor({ extensions: editorExtensions, content: "<p>Mine.</p>" });
     h.editor = e;
     h.project = { id: "p1", contentLang: "hi" };
@@ -304,13 +311,13 @@ describe("Insert quote", () => {
     mount();
     typeArea("citQuoteText", "The span of absolute judgment is limited.");
     await click("cite-insertquote");
-    e.destroy(); // the document switch: the editor the request was made in is gone
+    e.destroy(); // the document is gone by the time the AI answers, and none opens
     await act(async () => { answer("अनुवाद"); await new Promise((r) => setTimeout(r, 0)); });
     expect(toasts()).toEqual(["🔎 Translating quote…"]);
     expect(($("#citQuoteText") as HTMLTextAreaElement).value).toBe("The span of absolute judgment is limited.");
   });
-  it("disabled with no document open", () => {
+  it("enabled with no document open: the insert opens it (Task 11)", () => {
     mount();
-    expect((tid("cite-insertquote") as HTMLButtonElement).disabled).toBe(true);
+    expect((tid("cite-insertquote") as HTMLButtonElement).disabled).toBe(false);
   });
 });

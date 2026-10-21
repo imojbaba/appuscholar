@@ -33,8 +33,8 @@ function FitChip({ rel }: { rel: NonNullable<RsPaper["rel"]> }) {
  * once read (QuickBox); the meta line (source tag, Retracted badge, open-access badge, authors, year, venue, citations); the abstract
  * with "Show more / less"; the buttons Insert citation, + Citation library, Open source, Free full text, Connected papers, Quick read, Analyse.
  */
-export function ResultCard({ p, i, ticked, open, insertReady, onTick, onToggleAbstract, actions }: {
-  p: RsPaper; i: number; ticked: boolean; open: boolean; insertReady: boolean;
+export function ResultCard({ p, i, ticked, open, onTick, onToggleAbstract, actions }: {
+  p: RsPaper; i: number; ticked: boolean; open: boolean;
   onTick(on: boolean): void; onToggleAbstract(): void; actions: CardActions;
 }) {
   const t = useT();
@@ -62,7 +62,7 @@ export function ResultCard({ p, i, ticked, open, insertReady, onTick, onToggleAb
             </>
           )}
           <div className="row">
-            <Button variant="primary" size="sm" data-testid="rs-insert" disabled={!insertReady} onClick={actions.insert}>{t("rs_insert_cite")}</Button>
+            <Button variant="primary" size="sm" data-testid="rs-insert" onClick={actions.insert}>{t("rs_insert_cite")}</Button>
             <Button variant="ghost" size="sm" data-testid="rs-add" onClick={actions.add}>{t("rs2_citation_library")}</Button>
             {p.url && <Button variant="ghost" size="sm" data-testid="rs-open" onClick={() => { window.open(p.url, "_blank", "noopener"); }}>{t("rs2_open_source")}</Button>}
             {p.oaUrl && <Button variant="ghost" size="sm" data-testid="rs-free" onClick={() => { window.open(p.oaUrl, "_blank", "noopener"); }}>{"📄 " + t("oa_free_btn")}</Button>}

@@ -1,5 +1,5 @@
 import { oaConnected, QUICK_READ_MIN_CHARS, rsCsvText, type RsFilter, type RsPaper } from "@appuscholar/core";
-import type { PendingAnalyse } from "@/components/workspace/WorkspaceContext";
+import type { PendingAnalyse } from "@/components/frame/ProjectContext";
 import { filterActive, type ConnectedBox } from "./useSearch";
 
 /*

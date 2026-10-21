@@ -120,7 +120,7 @@ describe("api routes", () => {
     const rec = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; title: string; kind: string; stats: unknown }[]; sources: { title: string; words: number }[]; weekly: { weekStart: string; typed: number; ai: number }[]; aiLog: unknown };
     expect(rec.docs).toHaveLength(1);
     expect(rec.docs[0]).toMatchObject({ id: d.id, title: "Draft", kind: "draft", stats: { typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 } });
-    expect(rec.sources).toEqual([{ title: "Paper", words: 4 }]);
+    expect(rec.sources).toEqual([{ id: src.id, title: "Paper", titleKeyVersion: 0, deks: [], words: 4 }]);
     expect(rec.weekly).toHaveLength(1);
     expect(rec.weekly[0]).toMatchObject({ typed: 1, ai: 2 });
     expect(rec.weekly[0]?.weekStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -328,6 +328,15 @@ describe("api routes", () => {
     expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { sheetPct: 62 } });
   });
 
+  it("settings accept docBeside and docW from 360 to 900; 359 is 400", async () => {
+    await app.request("/me", { headers: auth });
+    const patch = (body: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify(body) });
+    expect(await (await patch({ docBeside: true, docW: 360 })).json()).toEqual({ docBeside: true, docW: 360 });
+    expect(await (await patch({ docW: 900 })).json()).toEqual({ docBeside: true, docW: 900 });
+    for (const bad of [{ docW: 359 }, { docW: 901 }, { docW: 520.5 }, { docBeside: "yes" }]) expect((await patch(bad)).status, JSON.stringify(bad)).toBe(400);
+    expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { docBeside: true, docW: 900 } });
+  });
+
   it("credentials accept only the blob shape and never return to another user", async () => {
     await app.request("/me", { headers: auth });
     expect((await app.request("/me/credentials/gemini", { method: "PUT", headers: auth, body: JSON.stringify({ encryptedKey: "plain-key" }) })).status).toBe(400);
@@ -465,6 +474,19 @@ describe("ai routes", () => {
     expect((await app.request("/ai/log?from=bad", { headers: auth })).status).toBe(400);
     expect((await app.request("/ai/log", { method: "DELETE", headers: auth })).status).toBe(204);
     expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+  });
+
+  it("serves one project's log with ?projectId and the whole log without it", async () => {
+    const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Sleep" }) })).json() as { id: string };
+    const q = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Diet" }) })).json() as { id: string };
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-14", projectId: p.id });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Continue this writing", day: "2026-10-15", projectId: q.id });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-16" });
+    const mine = await (await app.request(`/ai/log?projectId=${p.id}`, { headers: auth })).json() as Array<{ d: string; k: string }>;
+    expect(mine.map((e) => [e.d, e.k])).toEqual([["2026-10-14", "grammar and polish"]]);
+    expect(await (await app.request(`/ai/log?projectId=${q.id}&from=2026-10-16`, { headers: auth })).json()).toEqual([]);
+    expect(((await (await app.request("/ai/log", { headers: auth })).json()) as unknown[])).toHaveLength(3);
+    expect((await app.request("/ai/log?projectId=", { headers: auth })).status).toBe(400);
   });
 
   it("keeps one student's log out of another's", async () => {

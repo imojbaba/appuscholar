@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AP_SAMPLE, AP_STAGES, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
+import { AP_SAMPLE, AP_STAGES, apAcrossCols, apAcrossCsv, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
 import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
@@ -23,11 +23,12 @@ const h = vi.hoisted(() => ({
   sets: [] as Array<{ kind: string; update: boolean }>,
   listeners: new Set<() => void>(),
   projectId: "p-1" as string | null,
+  openExport: vi.fn(),
 }));
 const EMPTY: BlobState = { value: null };
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const React = await import("react");
-  // The real hook's guard: in a pop-out (/popout) every kind but citations, retraction_cache and the shelf's is read-only (v1 1964).
+  // The real hook's guard: in a place's own window (?window=1) every kind of another stage is read-only (v1 1964, D-S2-43).
   const { blobWritable } = await import("../lib/popout/mode");
   const sub = (l: () => void) => { h.listeners.add(l); return () => { h.listeners.delete(l); }; };
   return {
@@ -51,7 +52,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.projectId ? { id: h.projectId } : null, projectId: h.projectId, pendingAnalyse: null, setPendingAnalyse: () => {} }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.projectId ? { id: h.projectId } : null, projectId: h.projectId, pendingAnalyse: null, setPendingAnalyse: () => {}, openExport: h.openExport }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: [], loading: false, locked: false, broken: false, error: false, loadPaper: async () => null }) }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: h.download }));
 
@@ -60,6 +61,7 @@ import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 import { apWalkShow } from "../lib/analyse/walk";
 import { NOTES_POPOUT, notePut } from "../lib/analyse/notes";
+import { acrossData, downloadCard } from "../lib/analyse/cards";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -162,6 +164,8 @@ function walkView(): View {
     nav: [...nav.querySelectorAll("button")].map((b) => ({ text: b.textContent!, disabled: (b as HTMLButtonElement).disabled })),
   };
 }
+/** v1's view with its download button as this build draws it: Export (Task 12). */
+const asExport = (v: AcrossView): AcrossView => ({ ...v, csvButton: v.csvButton === null ? null : E.exp_link! });
 async function blobText(call: unknown[]): Promise<string> {
   const b = call[1] as Blob;
   expect(b.type).toBe("text/csv;charset=utf-8");
@@ -179,7 +183,7 @@ function colsBlob(raw: string | null): BlobState | undefined {
 
 beforeEach(() => {
   resetAp();
-  h.toast.mockReset(); h.download.mockReset();
+  h.toast.mockReset(); h.download.mockReset(); h.openExport.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
   h.blobs = {}; h.sets = []; h.projectId = "p-1";
   vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -191,7 +195,7 @@ afterEach(() => {
 });
 
 describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", () => {
-  it("the tab opens (no toast any more); the Lesson stays Phase 5", async () => {
+  it("the tab opens (no toast any more); the Lesson is not offered (W23)", async () => {
     await mount();
     await click(tid("ap-sample-btn"));
     await openTab("walk");
@@ -199,8 +203,8 @@ describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", ()
     expect(tid("ap-walk")).not.toBeNull();
     await openTab("card");
     expect(getAp().mode).toBe("card");
-    await click(tid("ap-tab-lesson"));
-    expect(toasts()).toEqual(["Lessons arrive in a later phase."]);
+    expect(tid("ap-tab-lesson")).toBeNull();
+    expect(toasts()).toEqual([]);
     expect(getAp().mode).toBe("card");
   });
 
@@ -350,12 +354,18 @@ describe("Paper card (apRender 11325-11331, apCardText 10124-10135)", () => {
       const ta = $("#apC_" + f) as HTMLTextAreaElement;
       return { label: $(`label[for="apC_${f}"]`)!.textContent, rows: ta.getAttribute("rows"), value: ta.value };
     })).toEqual(c.fields);
-    expect($("#apCardBtn")!.textContent).toBe(c.button);
+    // Wave B Task 12 (D-S2-42): v1's download is now Export, which opens the project's export place with the reading notes ticked (W11).
+    expect(c.button).toBeTruthy();
+    expect($("#apCardBtn")!.textContent).toBe(E.exp_link);
     await click($("#apCardBtn"));
+    expect(h.openExport).toHaveBeenLastCalledWith("notes");
+    expect(h.download).not.toHaveBeenCalled();
+    // The card's own text (apCardDownload) is still v1's.
+    const stored = notes()?.[id];
+    downloadCard(quiet.t, { title: SAMPLE_TITLE, note: { ...stored, card: stored?.card ?? {} } as never, refs: getAp().refs });
     expect(h.download.mock.calls.map((x) => x[0])).toEqual(["paper-card.txt"]);
     const text = await blobText(h.download.mock.calls[0]!);
     expect(text).toBe("﻿" + withPanelFixes(c.text));
-    const stored = notes()?.[id];
     expect(text.slice(1)).toBe(apCardText({
       title: SAMPLE_TITLE, note: stored, refs: getAp().refs, stages: AP_STAGES,
       L: { head: E.ap2_paper_card_head!, myWords: E.ap2_my_words_2!, notWritten: E.ap2_not_written!, reading: E.ap2_reading_3!, refHead: E.ap2_reference_list_check_head!, doisRead: E.ap2_dois_read!, known: E.ap2_known_to_openalex!, flagged: E.ap2_flagged_as_retracted!, none: E.ap2_none_flagged!, warning: E.ap2_a_warning_signal_only!, strengths: E.ap2_strengths_2!, weak: E.ap2_weaknesses_2!, verdict: E.ap2_my_verdict_in_one!, notes: E.ap2_my_notes!, closing: E.ap2_made_with_appuscholer_parts! },
@@ -412,11 +422,13 @@ describe("📊 My paper cards side by side (apAcross* 9936-9985, #apAcrossBox 75
     act(() => { setAp({ acrossAi: a.ai === "1" }); });
     await mount();
     await open();
-    expect(acrossView()).toEqual(a.view);
+    expect(acrossView()).toEqual(asExport(a.view));
     if (!a.view.csvButton) return;
+    // Wave B Task 12 (D-S2-42): v1's download is now Export, which opens the export place with the comparison ticked; the CSV is still v1's.
     await click($("#apAcrossCsv"));
-    expect(h.download.mock.calls.map((x) => x[0])).toEqual(["paper_cards.csv"]);
-    expect(await blobText(h.download.mock.calls[0]!)).toBe("﻿" + a.csv);
+    expect(h.openExport).toHaveBeenLastCalledWith("compare");
+    expect(h.download).not.toHaveBeenCalled();
+    expect(apAcrossCsv(acrossData(quiet.t, a.notes as never, apAcrossCols(cols?.value ?? null), a.ai === "1"))).toBe(a.csv);
   });
 
   it("the AI box is the tab's memory: it shows the readings' columns and is not stored (ruling R28)", async () => {
@@ -425,7 +437,7 @@ describe("📊 My paper cards side by side (apAcross* 9936-9985, #apAcrossBox 75
     await mount();
     await open();
     await click($("#apAcrossAi"));
-    expect(acrossView()).toEqual(a.view);
+    expect(acrossView()).toEqual(asExport(a.view));
     expect(getAp().acrossAi).toBe(true);
     expect(h.sets).toEqual([]);
   });
@@ -578,9 +590,9 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     expect(h.sets).toEqual([]);
     expect(($("#apC_strengths") as HTMLTextAreaElement).value).toBe("Strong");
     expect(tid("ap-notes-broken")).not.toBeNull();
-    // The download is the card as the student sees it.
+    // Export opens the export place (Task 12); a broken store saves nothing, so the zip has what the server holds.
     await click($("#apCardBtn"));
-    expect(await blobText(h.download.mock.calls[0]!)).toContain("STRENGTHS\nStrong\n\n");
+    expect(h.openExport).toHaveBeenLastCalledWith("notes");
     await openTab("walk");
     h.callAI.mockResolvedValue(FX.walks[0]!.reply);
     await click($("#apShowBtn"));
@@ -591,9 +603,9 @@ describe("stored notes not read yet, locked or not openable are never shown as e
   });
 });
 
-describe("in a pop-out, where ap_notes is read-only (v1 1964; register row D-S2-17)", () => {
+describe("in a window of another stage, where ap_notes is read-only (v1 1964; register rows D-S2-17, D-S2-43)", () => {
   it("the walk's box and the card's fields are read-only, a line says notes are saved only in the writing window, and nothing is written", async () => {
-    window.history.replaceState(null, "", "/popout?tool=research");
+    window.history.replaceState(null, "", "/p/p-1/idea?window=1");
     try {
       await mount();
       load("sample@apSample");

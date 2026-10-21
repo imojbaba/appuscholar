@@ -18,7 +18,10 @@ export const SettingsSchema = z.object({
   dockW: z.number().int().min(320).max(760),
   sheetPct: z.number().int().min(40).max(85),
   aiLogOff: z.boolean(),
-  seenWelcome: z.boolean()
+  seenWelcome: z.boolean(),
+  // Whether the document is open beside the non-writing places, and its width there.
+  docBeside: z.boolean(),
+  docW: z.number().int().min(360).max(900)
 }).partial().strict();
 
 const ActiveProject = z.object({ projectId: z.string().min(1).max(100).nullable() }).strict();

@@ -10,7 +10,7 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
 import {
-  addColumn, addFiles, backupShelf, deleteColumn, deleteHighlight, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, setCell, type ShelfOps
+  addColumn, addFiles, backupShelf, deleteColumn, deleteHighlight, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, setCell, type ShelfOps
 } from "@/lib/shelf/actions";
 import { extractPdfPages } from "@/lib/shelf/extract";
 import { useShelfStore } from "@/lib/shelf/useShelf";
@@ -29,9 +29,12 @@ const TABS: ReadonlyArray<readonly [Tab, string]> = [["papers", "sh2_papers"], [
 
 /**
  * 📚 Reading shelf (the dialog 1247-1254, shOpen 11601-11605, shRender 11607-11613): the heading, v1's sentence on PDFs, the four tabs, the tab's body (or the reader) and "Close".
- * Opening it starts on Papers with no status line, as shOpen does; everything is read from the project's blobs when it opens (useShelfStore) and released when it closes.
+ * `inline`: the same body in the page, for the Literature place's Reading list (Task 10). Opening it starts on Papers with no status line, as shOpen does; everything is read from the project's blobs when it opens (useShelfStore) and released when it closes.
  */
-export function ShelfDialog({ open, onOpenChange }: { open: boolean; onOpenChange(open: boolean): void }) {
+export function ShelfDialog(props: { open: boolean; onOpenChange(open: boolean): void } | { inline: true }) {
+  // Inline (the Literature place's Reading list, Task 10): the same body in the page, without the dialog, its title or Close.
+  if ("inline" in props) return <ShelfBody inline />;
+  const { open, onOpenChange } = props;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {open && <ShelfBody />}
@@ -39,7 +42,28 @@ export function ShelfDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   );
 }
 
-function ShelfBody() {
+/**
+ * The shelf's comparison table on its own (the Matrix tab's body), for the Literature place's Compare tab (Task 10) until B2 replaces it:
+ * the same store, columns and cells as the dialog's Matrix tab.
+ */
+export function ShelfMatrix() {
+  const t = useT();
+  const store = useShelfStore();
+  const { index, items } = store;
+  const defaults = SHELF_DEFAULT_COLS;
+  const cols = shColsOf(store.cols.value, defaults);
+  return (
+    <div className="sh-body" data-testid="shelf-matrix">
+      {(index.locked || store.cols.locked) && <p className="sh-small" role="status" data-testid="sh-locked">{t("vault_shelf_locked")}</p>}
+      <Matrix items={items} loading={index.loading && !index.locked} cols={cols}
+        onAddCol={(name) => addColumn(name, defaults, store.setCols)}
+        onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
+        onCell={(id, col, value) => setCell(id, col, value, store.ops)} />
+    </div>
+  );
+}
+
+function ShelfBody({ inline = false }: { inline?: boolean }) {
   const t = useT();
   const store = useShelfStore();
   const { settings } = useSettings();
@@ -76,10 +100,8 @@ function ShelfBody() {
   const run = async (job: () => Promise<void>) => { setBusy(true); try { await job(); } finally { setBusy(false); } };
   const reading = cur ? items.find((x) => x.id === cur && x.paper) : undefined;
 
-  return (
-    <DialogContent data-testid="shelf-dialog" className="sh-dlg sm:max-w-[920px]" showCloseButton={false}>
-      <DialogTitle asChild><h2>{t("sh2_reading_shelf")}</h2></DialogTitle>
-      <DialogDescription className="sh-desc">{t("sh2_intro")}</DialogDescription>
+  const body = (
+    <>
       <div className="sh-row sh-wrap" id="shTabs" role="tablist">
         {TABS.map(([x, k]) => (
           <Button key={x} role="tab" aria-selected={tab === x && !reading} variant={tab === x && !reading ? "primary" : "ghost"} size="sm" data-testid={"sh-tab-" + x} onClick={() => showTab(x)}>{t(k)}</Button>
@@ -113,10 +135,18 @@ function ShelfBody() {
           <Matrix items={items} loading={opening} cols={cols}
             onAddCol={(name) => addColumn(name, defaults, store.setCols)}
             onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
-            onCell={(id, col, value) => setCell(id, col, value, ops)}
-            onCsv={() => downloadMatrix(items, cols, { t, download: downloadBlob })} />
+            onCell={(id, col, value) => setCell(id, col, value, ops)} />
         )}
       </div>
+    </>
+  );
+  // Inline, the place's tab names it: the sentence on PDFs, then the body.
+  if (inline) return <div className="panel sh-inline" data-testid="shelf-inline"><p className="sh-desc">{t("sh2_intro")}</p>{body}</div>;
+  return (
+    <DialogContent data-testid="shelf-dialog" className="sh-dlg sm:max-w-[920px]" showCloseButton={false}>
+      <DialogTitle asChild><h2>{t("sh2_reading_shelf")}</h2></DialogTitle>
+      <DialogDescription className="sh-desc">{t("sh2_intro")}</DialogDescription>
+      {body}
       <div className="sh-row">
         <DialogClose asChild><Button variant="ghost" className="flex-1" data-testid="sh-close">{t("sh2_close")}</Button></DialogClose>
       </div>

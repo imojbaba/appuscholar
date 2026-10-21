@@ -1,10 +1,10 @@
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
-import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
+import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
+import { asTitle, DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 /** A vault record's next updatedAt: now, but always after the last one, so a precondition never matches two versions. */
 const after = (prev: Date): Date => new Date(Math.max(Date.now(), prev.getTime() + 1));
 
-type DocRow = { id: string; projectId: string; title: string; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
+type DocRow = { id: string; projectId: string; title: string; titleKeyVersion: number; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
 
 export class MemoryStore implements Store {
   private projects = new Map<string, Project>();
@@ -25,6 +25,9 @@ export class MemoryStore implements Store {
     const d = this.docs.get(docId);
     return d && this.ownsProject(userId, d.projectId) && (includeDeleted || d.deletedAt === null) ? d : null;
   }
+  private projectCopy(p: Project): Project {
+    return { ...p, stageMarks: { ...p.stageMarks }, deks: p.deks.map(k => ({ v: k.v, wrapped: k.wrapped })) };
+  }
   private blobCopy(b: ProjectBlob): ProjectBlob {
     return { ...b, deks: b.deks.map(k => ({ v: k.v, wrapped: k.wrapped })) };
   }
@@ -41,7 +44,7 @@ export class MemoryStore implements Store {
   }
   private summary(d: DocRow, r: DocumentRevision | null = this.latest(d.id)): DocumentSummary | null {
     if (!r) return null;
-    return { id: d.id, projectId: d.projectId, title: d.title, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: d.createdAt, updatedAt: d.updatedAt, deletedAt: d.deletedAt, deks: d.deks.map(k => ({ ...k })) };
+    return { id: d.id, projectId: d.projectId, title: d.title, titleKeyVersion: d.titleKeyVersion, kind: d.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: d.createdAt, updatedAt: d.updatedAt, deletedAt: d.deletedAt, deks: d.deks.map(k => ({ ...k })) };
   }
 
   async getUser(userId: string): Promise<UserRecord | null> {
@@ -73,17 +76,18 @@ export class MemoryStore implements Store {
     u.ageConfirmed = true;
   }
 
-  async createProject(userId: string, title: string, stage: ProjectStage = "idea"): Promise<Project> {
-    const p: Project = { id: crypto.randomUUID(), userId, title, field: "psychology", stage, status: "active", contentLang: "en", kind: "research", createdAt: new Date() };
+  async createProject(userId: string, title: string | TitleWrite, stage: ProjectStage = "idea"): Promise<Project> {
+    const t = asTitle(title);
+    const p: Project = { id: crypto.randomUUID(), userId, title: t.title, field: "psychology", stage, status: "active", contentLang: "en", kind: "research", createdAt: new Date(), stageMarks: {}, deks: this.withDek([], t.dek), titleKeyVersion: t.titleKeyVersion };
     this.projects.set(p.id, p);
-    return p;
+    return this.projectCopy(p);
   }
   async getScratchProject(userId: string): Promise<Project> {
     const found = [...this.projects.values()].find(p => p.userId === userId && p.kind === "scratch");
-    if (found) return found;
-    const p: Project = { id: crypto.randomUUID(), userId, title: "Scratch space", field: "psychology", stage: "idea", status: "active", contentLang: "en", kind: "scratch", createdAt: new Date() };
+    if (found) return this.projectCopy(found);
+    const p: Project = { id: crypto.randomUUID(), userId, title: "Scratch space", field: "psychology", stage: "idea", status: "active", contentLang: "en", kind: "scratch", createdAt: new Date(), stageMarks: {}, deks: [], titleKeyVersion: 0 };
     this.projects.set(p.id, p);
-    return p;
+    return this.projectCopy(p);
   }
   async listProjects(userId: string): Promise<ProjectSummary[]> {
     const rank = (p: Project) => (p.status === "complete" ? 1 : 0);
@@ -93,18 +97,38 @@ export class MemoryStore implements Store {
       .map(p => {
         const docs = [...this.docs.values()].filter(d => d.projectId === p.id && d.deletedAt === null);
         const last = docs.reduce<Date | null>((acc, d) => (acc === null || d.updatedAt > acc ? d.updatedAt : acc), null);
-        return { ...p, documentCount: docs.length, lastEditedAt: last };
+        return { ...this.projectCopy(p), documentCount: docs.length, lastEditedAt: last };
       })
       .sort((x, y) => rank(x) - rank(y) || recency(y) - recency(x));
+  }
+  async listProjectWork(userId: string): Promise<ProjectWork[]> {
+    return (await this.listProjects(userId)).map(p => {
+      const drafts = [...this.docs.values()].filter(d => d.projectId === p.id && d.deletedAt === null && d.kind !== "source" && this.latest(d.id) !== null);
+      return {
+        ...p,
+        blobs: [...this.blobs.values()].filter(b => b.projectId === p.id).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, updatedAt: b.updatedAt, version: b.version })),
+        draftWords: drafts.reduce((n, d) => n + (this.latest(d.id)?.wordCount ?? 0), 0),
+        draftEditedAt: drafts.reduce<Date | null>((acc, d) => { const at = this.latest(d.id)!.createdAt; return acc === null || at > acc ? at : acc; }, null)
+      };
+    });
   }
   async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
     const p = this.projects.get(id);
     if (!p || p.userId !== userId) return null;
-    if (patch.title !== undefined) p.title = patch.title;
+    p.deks = this.withDek(p.deks, patch.dek);
+    if (patch.title !== undefined) { p.title = patch.title; p.titleKeyVersion = patch.titleKeyVersion ?? 0; }
+    else if (patch.titleKeyVersion !== undefined) p.titleKeyVersion = patch.titleKeyVersion;
     if (patch.stage !== undefined) p.stage = patch.stage;
     if (patch.status !== undefined) p.status = patch.status;
     if (patch.contentLang !== undefined) p.contentLang = patch.contentLang;
-    return p;
+    return this.projectCopy(p);
+  }
+  async markStage(userId: string, id: string, stage: ProjectStage, ready: boolean, now: Date): Promise<Project | null> {
+    const p = this.projects.get(id);
+    if (!p || p.userId !== userId) return null;
+    if (ready) p.stageMarks[stage] = { readyAt: now.toISOString() };
+    else delete p.stageMarks[stage];
+    return this.projectCopy(p);
   }
   async deleteProject(userId: string, id: string): Promise<boolean> {
     const p = this.projects.get(id);
@@ -116,13 +140,14 @@ export class MemoryStore implements Store {
   }
   async getProject(userId: string, id: string): Promise<Project | null> {
     const p = this.projects.get(id);
-    return p && p.userId === userId ? p : null;
+    return p && p.userId === userId ? this.projectCopy(p) : null;
   }
 
-  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks: WrappedDek[] = []): Promise<DocumentWithBody | null> {
+  async createDocument(userId: string, projectId: string, title: string | TitleWrite, kind: string, first: NewRevision, deks: WrappedDek[] = []): Promise<DocumentWithBody | null> {
     if (!this.ownsProject(userId, projectId)) return null;
+    const t = asTitle(title);
     const now = new Date();
-    const d: DocRow = { id: crypto.randomUUID(), projectId, title, kind, createdAt: now, updatedAt: now, deletedAt: null, deks: deks.map(k => ({ v: k.v, wrapped: k.wrapped })) };
+    const d: DocRow = { id: crypto.randomUUID(), projectId, title: t.title, titleKeyVersion: t.titleKeyVersion, kind, createdAt: now, updatedAt: now, deletedAt: null, deks: this.withDek(deks.map(k => ({ v: k.v, wrapped: k.wrapped })), t.dek) };
     this.docs.set(d.id, d);
     const r: DocumentRevision = { id: crypto.randomUUID(), documentId: d.id, seq: 1, ...first, originStats: first.originStats ?? null, createdAt: now };
     this.revs.set(d.id, [r]);
@@ -139,10 +164,12 @@ export class MemoryStore implements Store {
     const sum = this.summary(d, r);
     return r && sum ? { ...sum, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion } : null;
   }
-  async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
-    const d = this.ownedDoc(userId, id);
+  async renameDocument(userId: string, id: string, title: string | TitleWrite, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary | null> {
+    const d = this.ownedDoc(userId, id, opts?.includeDeleted === true);
     if (!d) return null;
-    d.title = title; d.updatedAt = new Date();
+    const t = asTitle(title);
+    d.deks = this.withDek(d.deks, t.dek);
+    d.title = t.title; d.titleKeyVersion = t.titleKeyVersion; d.updatedAt = new Date();
     return this.summary(d);
   }
   async moveDocument(userId: string, documentId: string, projectId: string): Promise<DocumentSummary | null> {
@@ -203,9 +230,9 @@ export class MemoryStore implements Store {
   async appendAiUse(userId: string, projectId: string | null, e: AiUseEntry): Promise<void> {
     this.aiUse.push({ userId, projectId, e: { d: e.d, p: e.p, m: e.m, k: e.k, g: e.g } });
   }
-  async listAiUse(userId: string, from?: string, to?: string): Promise<AiUseEntry[]> {
+  async listAiUse(userId: string, from?: string, to?: string, projectId?: string): Promise<AiUseEntry[]> {
     return this.aiUse
-      .filter(r => r.userId === userId && (from === undefined || r.e.d >= from) && (to === undefined || r.e.d <= to))
+      .filter(r => r.userId === userId && (from === undefined || r.e.d >= from) && (to === undefined || r.e.d <= to) && (projectId === undefined || r.projectId === projectId))
       .map(r => ({ ...r.e }))
       .sort((x, y) => (x.d < y.d ? -1 : x.d > y.d ? 1 : 0));
   }
@@ -286,7 +313,7 @@ export class MemoryStore implements Store {
   }
   async listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null> {
     if (!this.ownsProject(userId, projectId)) return null;
-    return [...this.blobs.values()].filter(b => b.projectId === projectId).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, keyVersion: b.keyVersion, updatedAt: b.updatedAt }));
+    return [...this.blobs.values()].filter(b => b.projectId === projectId).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, keyVersion: b.keyVersion, updatedAt: b.updatedAt, version: b.version }));
   }
   async rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {
     if (!this.ownsProject(userId, projectId)) return null;

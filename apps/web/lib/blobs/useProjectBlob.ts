@@ -5,10 +5,10 @@ import { useT } from "@/lib/i18n";
 import { toast } from "@/components/ui/toast";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { announceBlob, onBlobAnnounced } from "@/lib/popout/channel";
-import { POPOUT_WRITABLE, blobWritable } from "@/lib/popout/mode";
+import { blobWritable } from "@/lib/popout/mode";
 import { useVault, type VaultValue, type WrappedDek } from "@/lib/vault/useVault";
 import { applyOps, compactOps, heldBlobs, type HeldOp } from "./held";
-import { blobId, parseBlob, type BlobKind, type BlobShape } from "./kinds";
+import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./kinds";
 
 /** A set() is saved this long after the last one (three in a row are one PUT). */
 export const BLOB_SAVE_DEBOUNCE_MS = 800;
@@ -33,11 +33,11 @@ export type ProjectBlob<T> = ProjectBlobState<T> & {
   set(next: BlobUpdate<T>): void;
   /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server; false always when read-only. */
   flush(): Promise<boolean>;
-  /** set() sends nothing here: `opts.readOnly`, or the pop-out's guard (a pop-out writes only citations, retraction_cache and the shelf's papers, v1 1964 and R29). */
+  /** set() sends nothing here: `opts.readOnly`, or the pop-out's guard (a pop-out writes only its own stage's kinds, v1 1964 and register row D-S2-43). */
   readOnly: boolean;
 };
 export type ProjectBlobOptions = {
-  /** The value is read but set() is a no-op that holds nothing, and flush() resolves false. A pop-out makes every other kind than citations, retraction_cache and the shelf's papers read-only on its own (blobWritable). */
+  /** The value is read but set() is a no-op that holds nothing, and flush() resolves false. A pop-out makes every kind of another stage read-only on its own (blobWritable). */
   readOnly?: boolean;
 };
 
@@ -134,7 +134,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   });
   const emit = () => {
     if (!active || o.headless) return;
-    heldBlobs.markDirty(self, holds());
+    heldBlobs.markDirty(self, holds(), flush);
     o.onState(snapshot());
   };
   const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };
@@ -448,7 +448,7 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     readOnly: (opts.readOnly ?? false) || !blobWritable(kind),
     // Idea and the Research panel's rank toggle have no R16 ask; every other kind's panel asks before it sets over a blob that does not open.
     unguarded: kind === "idea_intake" || kind === "rs_prefs",
-    // The other windows read v1's two synced keys again once they are saved here (v1's storage event, 7614).
+    // The other windows read the blob again once it is saved here (v1's storage event, 7614).
     onSaved: syncedKind(kind) ? () => announceBlob(id) : undefined,
     parse: (json) => parseBlob(kind, json),
     get: async () => {
@@ -465,10 +465,11 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
 }
 
 /**
- * v1's storage listener reacts to appu_citations and appu_retraction_cache (7615), the two keys a pop-out writes. The shelf's list, which a pop-out
- * also writes (R29), is one blob here where v1 kept one IndexedDB record per paper, so it is re-read the same way and a window does not save an old list over the other's.
+ * v1's storage listener reacts to appu_citations and appu_retraction_cache (7615), the two keys its pop-out writes. A place's window writes every
+ * kind of its stage (register row D-S2-43), so every fixed kind is announced and re-read the same way, and a window does not save an old value over
+ * the other's. A shelf paper is its own client in the shelf's store, which v1 kept in IndexedDB with no listener.
  */
-const syncedKind = (kind: BlobKind): boolean => POPOUT_WRITABLE.includes(kind) || kind === "shelf_index";
+const syncedKind = (kind: BlobKind): boolean => (BLOB_KINDS as readonly string[]).includes(kind);
 
 type Tagged<T> = { key: string; s: ProjectBlobState<T> };
 

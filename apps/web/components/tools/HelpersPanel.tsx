@@ -9,7 +9,6 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 /** v1's five purple buttons, in v1's order (729-736), with their keys. */
 const HELPERS: { kind: HelperKind; label: string }[] = [
@@ -32,7 +31,6 @@ export function resetHelperSession(): void { memory.clear(); }
 /** Research helpers (v1 728-738, psychTool / devilTool 8591-8630): six buttons on the selection, or on the whole document when nothing is selected. */
 export function HelpersPanel() {
   const t = useT();
-  const { dockShow } = useWorkspace();
   const { settings } = useSettings();
   const suggestion = useSuggestion();
   const callAI = useCallAI();
@@ -43,7 +41,7 @@ export function HelpersPanel() {
     selectionText: () => (editor && !editor.isDestroyed ? selectionText(editor) : ""),
     docText: () => (editor && !editor.isDestroyed ? docInnerText(editor.getHTML()) : ""),
     setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, setFeedback: suggestion.setFeedback, clear: suggestion.clear,
-    dockShow, toast, t, field: fieldLabel(settings.field),
+    toast, t, field: fieldLabel(settings.field),
     confirm: (msg) => window.confirm(msg),
     session
   });

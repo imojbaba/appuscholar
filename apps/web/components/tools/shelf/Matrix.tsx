@@ -3,6 +3,7 @@ import { useState } from "react";
 import { SHELF_DEFAULT_COLS } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { ExportLink } from "@/components/export/ExportLink";
 import type { ShelfItem } from "@/lib/shelf/actions";
 import { PanelLoading } from "../PanelLoading";
 
@@ -15,8 +16,8 @@ const DEFAULT_LABEL: Record<string, string> = Object.fromEntries(SHELF_DEFAULT_C
  * A paper whose text is not read yet shows its cells empty and read-only. W8 (register row D-S2-34): while the index is read and opened (`loading`) the table gives way to the loading
  * sign, not "The shelf is empty".
  */
-export function Matrix({ items, loading, cols, onAddCol, onDelCol, onCell, onCsv }: {
-  items: ShelfItem[]; loading: boolean; cols: string[]; onAddCol(name: string): void; onDelCol(i: number): void; onCell(id: string, col: string, value: string): void; onCsv(): void;
+export function Matrix({ items, loading, cols, onAddCol, onDelCol, onCell }: {
+  items: ShelfItem[]; loading: boolean; cols: string[]; onAddCol(name: string): void; onDelCol(i: number): void; onCell(id: string, col: string, value: string): void;
 }) {
   const t = useT();
   const [name, setName] = useState("");
@@ -26,7 +27,8 @@ export function Matrix({ items, loading, cols, onAddCol, onDelCol, onCell, onCsv
       <div className="sh-row sh-wrap">
         <input className="input sh-grow" type="text" id="shCol" data-testid="sh-col" value={name} placeholder={t("sh2_col_placeholder")} aria-label={t("sh2_add_column")} onChange={(e) => setName(e.target.value)} />
         <Button variant="ghost" data-testid="sh-col-add" onClick={() => { onAddCol(name); setName(""); }}>{t("sh2_add_column")}</Button>
-        <Button variant="primary" data-testid="sh-csv" onClick={onCsv}>{t("sh2_download_as_csv")}</Button>
+        {/* The table's CSV is in the project's export place now (Task 12): Export opens it with the comparison ticked. */}
+        <ExportLink part="compare" testId="sh-csv" />
       </div>
       {loading ? <PanelLoading /> : items.length ? (
         <div className="sh-matrix">

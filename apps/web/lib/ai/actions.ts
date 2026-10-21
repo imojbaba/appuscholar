@@ -25,8 +25,8 @@ export type ActionDeps = {
   set(text: string, note: SuggestionNote | null, token: number): void;
   /** Draft first feedback: shown in the pane, never insertable (rule 4). */
   setFeedback(text: string, token: number): void;
+  /** Resets the pane; with a message (an error) the pane shows it. The pane opens with the document beside the place on its own (Task 11): no action asks for it. */
   clear(msg?: string): void;
-  dockShow(which: "tools" | "ai"): void;
   toast(msg: string): void;
   t(key: string): string;
   draftFirst: boolean;
@@ -40,11 +40,12 @@ const NEED_SELECTION: Record<"improve" | "expand", string> = {
   expand: "Select the text you want to expand first"
 };
 
+const errorText = (e: unknown): string => (e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
+
 /** v1 showAIError: the pane stays open on the message and a toast repeats it. */
-function fail(d: Pick<ActionDeps, "clear" | "dockShow" | "toast">, e: unknown): void {
-  const msg = e instanceof Error && e.message ? e.message : "Something went wrong. Try again.";
+function fail(d: Pick<ActionDeps, "clear" | "toast">, e: unknown): void {
+  const msg = errorText(e);
   d.clear(msg);
-  d.dockShow("ai");
   d.toast(msg);
 }
 
@@ -57,13 +58,11 @@ export async function runWritingAction(kind: WritingKind, d: ActionDeps): Promis
   const orig = kind === "continue" ? d.tailText() : d.selectionText();
   const built = buildWritingPrompt(kind, orig, d.stylePrompt);
   const token = d.setThinking(THINKING[kind], range);
-  d.dockShow("ai");
   try {
     const res = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     const c = accCheck(orig, res, kind);
     d.set(res, { msg: c.msg, warn: c.warn }, token);
-    d.dockShow("ai");
     d.toast(kind === "continue" ? "Suggestion ready — press Tab in the editor to accept" : "Ready — press Tab to replace your selection");
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
@@ -80,43 +79,40 @@ export async function runDraftFirst(kind: "tail" | "improve" | "expand", d: Acti
   }
   const built = buildDraftFirstPrompt(kind, passage);
   const token = d.setThinking("reading");
-  d.dockShow("ai");
   try {
     const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     d.setFeedback(d.t("df_label") + "\n\n" + reply, token);
-    d.dockShow("ai");
     d.toast(d.t("df_ready"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
 
-/** v1 ideaAssess's three sentences (8572, 8574, 8578): toasts and pane text of v1's script, English in both languages as in v1, like the writing actions' toasts. */
+/** v1 ideaAssess's sentences (8572, 8574): a toast and the pane text of v1's script, English in both languages as in v1, like the writing actions' toasts. */
 export const IDEA_NEED_TOPIC = "Describe your working idea first";
 export const IDEA_THINKING = "💜 Thinking this through…";
-// The "Ready — press Tab in the editor to insert" toast is the keyed `rs2_ready_press_tab_in`, read through `t` (Assess feasibility and the helpers).
 
-/** What Assess feasibility touches: the suggestion pane, the AI, and the four fields as the student typed them. */
-export type IdeaDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast" | "t"> & {
+/** What "Check if it is doable" touches: the AI, a toast, and the four fields as the student typed them. */
+export type IdeaDeps = Pick<ActionDeps, "callAI" | "toast"> & {
   /** fieldLabel(settings.field): v1 fieldName(). */
   field: string;
   intake: { topic: string; resources: string; timeframe: string; constraints: string };
 };
 
-/** Idea & Feasibility's "🔎 Assess feasibility" (v1 ideaAssess 8568-8580): the advisor's read lands in the suggestion pane, insertable with Tab or Accept. */
-export async function assessIdea(d: IdeaDeps): Promise<void> {
-  if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return; }
+/**
+ * "Check if it is doable" (v1 ideaAssess 8568-8580, its prompt and budget unchanged): the advisor's read as the engine wrote it, which first run and the
+ * Idea place show in their read panel and keep with the idea (`idea_intake.read`) instead of the suggestion pane. Null when nothing was read: no idea
+ * yet (v1's toast), or the call failed (its message in a toast).
+ */
+export async function checkIdea(d: IdeaDeps): Promise<string | null> {
+  if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return null; }
   // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000); V2 names each area's line by the area (W7).
   const built = buildIdeaPromptV2(d.field, d.intake);
-  const token = d.setThinking("custom", null, IDEA_THINKING);
-  d.dockShow("ai");
   try {
-    const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
-    if (!d.isCurrent(token)) return;
-    // v1 shows no accuracy check for this answer (setSug with no note, 8577).
-    d.set(reply, null, token);
-    d.dockShow("ai");
-    d.toast(d.t("rs2_ready_press_tab_in"));
-  } catch (e) { if (d.isCurrent(token)) fail(d, e); }
+    return await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+  } catch (e) {
+    d.toast(errorText(e));
+    return null;
+  }
 }
 
 /** v1 psychTool's sentences (8604, 8606, 8609, 8610, 8613): toasts, confirm and pane text of v1's script, English in both languages as in v1. */
@@ -128,7 +124,7 @@ export const HELPER_THINKING = "💜 Thinking…";
 export const HELPER_CASE_ACK_KEY = "appu_case_ack";
 
 /** What the Research helpers touch: the suggestion pane, the AI, the text (v1 selText: the selection, else the whole document), the field, and the case tool's confirm and session store. */
-export type HelperDeps = Pick<ActionDeps, "callAI" | "hasSelection" | "selectionText" | "setThinking" | "isCurrent" | "set" | "setFeedback" | "clear" | "dockShow" | "toast" | "t"> & {
+export type HelperDeps = Pick<ActionDeps, "callAI" | "hasSelection" | "selectionText" | "setThinking" | "isCurrent" | "set" | "setFeedback" | "clear" | "toast" | "t"> & {
   /** The whole document as v1's getEditorText (3151) read it: docInnerText of the editor's HTML. */
   docText(): string;
   /** fieldLabel(settings.field): v1 fieldName(). */
@@ -154,13 +150,11 @@ export async function runHelper(kind: HelperKind, d: HelperDeps): Promise<void> 
   // The builder adds v1's "\n\nText:\n" and cuts the text to its first 12,000 characters.
   const built = buildHelperPrompt(kind, d.field, txt);
   const token = d.setThinking("custom", null, HELPER_THINKING);
-  d.dockShow("ai");
   try {
     const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     // v1 shows no accuracy check for this answer (setSug with no note, 8612).
     d.set(reply, null, token);
-    d.dockShow("ai");
     d.toast(d.t("rs2_ready_press_tab_in"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
@@ -172,12 +166,10 @@ export async function runDevil(d: DevilDeps): Promise<void> {
   // The builder adds v1's "\n\nPASSAGE:\n" and cuts the passage to its first 6,000 characters.
   const built = buildDevilPrompt(txt);
   const token = d.setThinking("custom", null, d.t("devil_thinking"));
-  d.dockShow("ai");
   try {
     const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     d.setFeedback(d.t("devil_label") + "\n\n" + reply, token);
-    d.dockShow("ai");
     d.toast(d.t("devil_ready"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
@@ -295,7 +287,7 @@ export async function quickReadTicked(ticked: RsPaper[], d: QuickDeps): Promise<
 }
 
 /** What the literature review and the gap finder touch: the suggestion pane, the AI, the field and the copy. */
-export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "dockShow" | "toast"> & {
+export type GeneratorDeps = Pick<ActionDeps, "callAI" | "setThinking" | "isCurrent" | "set" | "clear" | "toast"> & {
   /** fieldLabel(settings.field): v1 fieldName(). */
   field: string;
   t: ResearchAiDeps["t"];
@@ -307,13 +299,11 @@ async function generate(build: (field: string, papers: RsPaper[]) => Built, labe
   // The builder numbers the papers with core's rsCorpusText and appends PLAIN_OUT, as v1 does.
   const built = build(d.field, papers);
   const token = d.setThinking("custom", null, label);
-  d.dockShow("ai");
   try {
     const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     // v1 shows no accuracy check for this answer (setSug with no note, 8538, 8549).
     d.set(reply, null, token);
-    d.dockShow("ai");
     d.toast(d.t("rs2_ready_press_tab_in"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({ dialog: "welcome" as string | null, openSettings: vi.fn(), closeDialog: vi.fn(), update: vi.fn(async () => undefined) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: {}, update: h.update, reload: async () => undefined }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ dialog: h.dialog, closeDialog: h.closeDialog, openSettings: h.openSettings }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ dialog: h.dialog, closeDialog: h.closeDialog, openSettings: h.openSettings }) }));
 
 import { Welcome, WELCOME_GUARD_MS } from "../components/workspace/dialogs/Welcome";
 

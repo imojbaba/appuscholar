@@ -22,8 +22,8 @@ export const blobId = (projectId: string, kind: BlobKind): string => `blob:${pro
 const str = z.string();
 const num = z.number();
 
-/** Idea & Feasibility intake: the four fields of the form. */
-const IdeaIntakeSchema = z.looseObject({ topic: str, resources: str, timeframe: str, constraints: str });
+/** Idea & Feasibility intake: the four fields of the form, and (wave B, Task 9) the AI read of them as it came, with when it was made (ISO). Optional, so an intake stored before it still parses. */
+const IdeaIntakeSchema = z.looseObject({ topic: str, resources: str, timeframe: str, constraints: str, read: z.looseObject({ text: str, at: str }).optional() });
 /** One source as v1 stores it (core's CitationEntry: every known value a string, all optional). */
 const CitationEntrySchema = z.looseObject({
   author: str.optional(), year: str.optional(), title: str.optional(), source: str.optional(), volume: str.optional(), issue: str.optional(),

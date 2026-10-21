@@ -1,4 +1,5 @@
 import { blobId, isBlobKind, type BlobKind } from "../blobs/kinds";
+import { sealTitlesWith, type TitleStore } from "./titles";
 import type { VaultValue, WrappedDek } from "./useVault";
 
 export type MigrateDeps = {
@@ -23,6 +24,8 @@ export type MigrateDeps = {
   getBlob(projectId: string, kind: BlobKind): Promise<{ body: string; keyVersion: number; deks: WrappedDek[] }>;
   /** PUT /projects/:id/blobs/:kind/rewrite: the same blob, its body now ciphertext; a blob's first dek travels in the same request. */
   rewriteBlob(projectId: string, kind: BlobKind, body: { body: string; keyVersion: number; dek?: WrappedDek }): Promise<void>;
+  /** Where the title step reads and writes project and document titles (sealPlainTitles' store). */
+  titles: TitleStore;
 };
 
 /** Listing passes before complete: the run repeats until a pass rewrites nothing, at most this many times. */
@@ -104,7 +107,7 @@ async function migrateBlobs(deps: Deps): Promise<number> {
 }
 
 /**
- * One listing of every document, by id, then of every project's blobs. `report`: the first pass reports progress (documents only); the
+ * One listing of every document, by id, then of every project's blobs, then the plain titles. `report`: the first pass reports progress (documents only); the
  * checking passes after it do not.
  */
 async function migratePass(deps: Deps, report: boolean): Promise<number> {
@@ -114,14 +117,17 @@ async function migratePass(deps: Deps, report: boolean): Promise<number> {
     n += await migrateDocument(deps, doc);
     if (report) deps.onProgress(i + 1, docs.length);
   }
-  return n + (await migrateBlobs(deps));
+  n += await migrateBlobs(deps);
+  // The titles are sealed with the migration's own sealing (encryptBody holds every other write until the migration ends).
+  return n + (await sealTitlesWith(deps.encrypt, deps.titles)).sealed;
 }
 
 /**
  * The one-off move of plaintext revisions (keyVersion 0) into the vault, in place: documents by id, each one's revisions oldest first. A
  * document without a key gets one (once) before its first rewrite; when another tab added one first (409 dek-exists), that key is re-read
  * and used. After the documents of each listing, every plaintext blob of every project (the scratch project's too) is sealed under its
- * own key, which travels with the blob's rewrite; `rewritten` counts revisions and blobs. Passes repeat until one rewrites nothing (at
+ * own key, which travels with the blob's rewrite; then every plain project and document title is sealed (sealTitlesWith); `rewritten`
+ * counts revisions, blobs and titles. Passes repeat until one rewrites nothing (at
  * most MAX_PASSES), so plaintext saved by a stale tab during the run is sealed too.
  * The server refuses completion while plaintext remains (409 plaintext-remains): then one more pass and one retry. Idempotent: a run after
  * an interruption finds only what is still plaintext. Any other failure stops the run before `complete`.

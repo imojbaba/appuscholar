@@ -9,15 +9,15 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { retrCacheSet } from "@/lib/cite/checks";
 import { useLibrary } from "@/lib/cite/useLibrary";
-import { downloadBlob } from "@/lib/export/download";
-import { analysePaper, downloadCsv, filterStat, loadConnected } from "@/lib/research/extras";
+import { analysePaper, filterStat, loadConnected } from "@/lib/research/extras";
 import { addResult, insertResult, type AddDeps } from "@/lib/research/library";
 import { useInsertTarget } from "@/lib/popout/sync";
 import { applyQuick, filterVals, getResearch, setResearch, shownResults, SORT_OPTIONS, useSearch, type SortMode } from "@/lib/research/useSearch";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
+import { placeHref } from "@/lib/frame/places";
 import { ShelfDialog } from "@/components/tools/shelf/ShelfDialog";
+import { ExportLink } from "@/components/export/ExportLink";
 import { Connected } from "./Connected";
 import { External } from "./External";
 import { Filters } from "./Filters";
@@ -44,7 +44,7 @@ function tickedShown(): RsPaper[] {
  */
 export function ResearchPanel() {
   const t = useT();
-  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, showTool, dockShow } = useWorkspace();
+  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go } = useProject();
   const { me, settings } = useSettings();
   const callAI = useCallAI();
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
@@ -54,7 +54,6 @@ export function ResearchPanel() {
   const suggestion = useSuggestion();
   // The open document's editor, or the writing window when this is a pop-out.
   const target = useInsertTarget();
-  const insertReady = target.ready;
   // "📚 Reading shelf (your own PDFs)" opens the shelf (shOpen 11601).
   const [shelfOpen, setShelfOpen] = useState(false);
 
@@ -92,7 +91,7 @@ export function ResearchPanel() {
   });
   const quickDeps = (): QuickDeps => ({ callAI, field, t, toast, apply: applyQuick });
   const genDeps = (): GeneratorDeps => ({
-    callAI, field, t, toast, dockShow, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear
+    callAI, field, t, toast, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear
   });
   const connected = (p: RsPaper) => {
     const gen = ++connectedGen;
@@ -101,10 +100,10 @@ export function ResearchPanel() {
   };
   const actionsFor = (p: RsPaper): CardActions => ({
     add: () => { addResult(p, addDeps()); },
-    insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { target.citation(f); } }); },
+    insert: () => { void insertResult(p, { ...addDeps(), insert: (f: Formatted) => target.citation(f) }); },
     connected: () => connected(p),
     quick: () => { void quickRead(p, quickDeps()); },
-    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool, toast, t }); }
+    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool: () => { void go(placeHref(projectId ?? "", "lit", "reading")); }, toast, t }); }
   });
   // rsToggleActions (8420-8423): the actions block shows while a paper shown is ticked.
   const onTick = (p: RsPaper, on: boolean) => setResearch((st) => {
@@ -118,7 +117,7 @@ export function ResearchPanel() {
     return { open };
   });
   const cards = results.map((p, i) => (
-    <ResultCard key={s.original.indexOf(p)} p={p} i={i} ticked={s.ticked.has(p)} open={s.open.has(p)} insertReady={insertReady}
+    <ResultCard key={s.original.indexOf(p)} p={p} i={i} ticked={s.ticked.has(p)} open={s.open.has(p)}
       onTick={(on) => onTick(p, on)} onToggleAbstract={() => toggleAbstract(p)} actions={actionsFor(p)} />
   ));
 
@@ -152,7 +151,8 @@ export function ResearchPanel() {
         ) : cards}
       </div>
       <div className="row rs-csv-row" id="rsCsvRow">
-        <Button variant="ghost" size="sm" type="button" id="rsCsvBtn" data-testid="rs-csv" onClick={() => downloadCsv(results, { download: downloadBlob, toast, t })}>{t("rs2_csv_btn")}</Button>
+        {/* The list's CSV is in the project's export place now (Task 12): Export opens it with the search lists ticked. */}
+        <ExportLink part="search" id="rsCsvBtn" testId="rs-csv" />
       </div>
       <div id="rsActions" className="rs-actions" data-testid="rs-actions" hidden={!s.actions}>
         <Generators onQuick={() => { void quickReadTicked(tickedShown(), quickDeps()); }} onLitReview={() => { void litReview(tickedShown(), genDeps()); }} onGapFinder={() => { void gapFinder(tickedShown(), genDeps()); }} />

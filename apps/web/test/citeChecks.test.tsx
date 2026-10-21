@@ -23,8 +23,9 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: (kind: string) =>
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: {} }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({
-  useWorkspace: () => ({ project: h.project, documents: h.documents, currentDoc: h.currentDoc, selectDoc: h.selectDoc, showTool: vi.fn() })
+vi.mock("@/components/frame/ProjectContext", () => ({
+  useProject: () => ({ project: h.project, documents: h.documents, currentDoc: h.currentDoc, selectDoc: h.selectDoc, go: vi.fn(),
+    requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "unlocked", decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml.replace(/^sealed:/, "") }) }));
 vi.mock("@/lib/api", () => ({

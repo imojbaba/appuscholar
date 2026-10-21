@@ -21,7 +21,6 @@ function deps(over: Partial<ActionDeps> & { selection?: string } = {}) {
     set: vi.fn<ActionDeps["set"]>(() => void log.push("set")),
     setFeedback: vi.fn(() => void log.push("feedback")),
     clear: vi.fn(() => void log.push("clear")),
-    dockShow: vi.fn(),
     toast: vi.fn(),
     t,
     draftFirst: false,
@@ -54,7 +53,6 @@ describe("runWritingAction", () => {
     expect(m.set).toHaveBeenCalledWith("Reply with 25% more.", { msg: accCheck(TAIL, "Reply with 25% more.", "continue").msg, warn: true }, 1);
     expect(m.set.mock.calls[0]![1]!.msg).toContain("25%");
     expect(m.toast).toHaveBeenCalledWith("Suggestion ready — press Tab in the editor to accept");
-    expect(m.dockShow).toHaveBeenCalledWith("ai");
   });
   it("Improve works on the selection, remembers that it replaces, and toasts the replace sentence", async () => {
     const { d, m } = deps({ selection: "Around 40 students took part." });
@@ -83,7 +81,6 @@ describe("runWritingAction", () => {
     expect(m.clear).toHaveBeenCalledWith(apiMsg("network"));
     expect(m.toast).toHaveBeenCalledWith(apiMsg("network"));
     expect(m.set).not.toHaveBeenCalled();
-    expect(m.dockShow).toHaveBeenCalledWith("ai");
   });
   it("with Draft first on, Continue delegates to the supervisor", async () => {
     const { d, m } = deps({ draftFirst: true });

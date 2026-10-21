@@ -13,7 +13,7 @@ v1 kept everything in the browser, so nothing left the device. v2 keeps everythi
 - A forgotten passphrase is recoverable once, by a code the student kept, and the UI says plainly what is lost otherwise.
 
 ## Non-goals
-- Hiding titles, project names, stages, status, dates and word counts from the server: lists and the stage model need them. **Ruling**: metadata stays plaintext; titles count as metadata.
+- Hiding stages, status, dates and word counts from the server: lists and the stage model need them. **Ruling**: metadata stays plaintext. Titles are locked: OJ, 2026-10-20, decision D3 (project and document titles are sealed in the browser under the entity's own key; lists open after unlock; register D-S2-40).
 - Hiding the text of an AI request from the provider the student chose: the passage must reach the provider in clear. The gateway never stores it (already true). The privacy notice says this.
 - Protecting against a compromised browser or a student who shares their passphrase.
 
@@ -32,7 +32,8 @@ v1 kept everything in the browser, so nothing left the device. v2 keeps everythi
 | Writing record and origin stats (word counts by origin) | plaintext | plaintext (counts, not text) |
 | AI-use log | plaintext (provider, model, kind, group, day; never text) | unchanged |
 | Locked AI keys | ciphertext under the passphrase | moved under the vault key hierarchy below, one passphrase for everything |
-| Titles, project names, stage, status, settings | plaintext | plaintext |
+| Titles and project names | plaintext | ciphertext (Titles are locked: OJ, 2026-10-20, decision D3) |
+| Stage, status, settings | plaintext | plaintext |
 
 ## Key hierarchy (**Ruling**, standard envelope encryption)
 - **Vault key (VK)**: one random 256-bit AES key per user, generated in the browser the first time the student sets a passphrase. Never leaves the browser in clear.
@@ -76,7 +77,7 @@ v1 kept everything in the browser, so nothing left the device. v2 keeps everythi
 - Remember on this computer and forget on sign-out, per user, as the keys do today.
 
 ## Open for OJ (changes what gets built)
-1. Titles plaintext (ruling above) or encrypted with lists shown only after unlock.
+1. Titles plaintext (ruling above) or encrypted with lists shown only after unlock. Titles are locked: OJ, 2026-10-20, decision D3.
 2. Vault optional with a "Vault off" pill (ruling) or mandatory at first sign-in.
 3. Revision retention (ruling: 30 days full, then daily, then weekly).
 4. Region: Singapore or Mumbai; independent of the vault but decided before the pilot.

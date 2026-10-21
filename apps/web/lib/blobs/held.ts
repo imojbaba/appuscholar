@@ -16,8 +16,8 @@ type Entry = { ops: HeldOp[]; send: HeldSender };
 const entries = new Map<string, Entry>();
 /** A blob's last save from a panel that is gone, or a drain, while it runs: a panel mounting for that blob waits for it. */
 const busy = new Map<string, Promise<unknown>>();
-/** Mounted clients holding a value not yet on the server. */
-const dirty = new Set<object>();
+/** Mounted clients holding a value not yet on the server, each with its flush (sends it now). */
+const dirty = new Map<object, () => Promise<unknown>>();
 
 /** Everything before the last plain value is replaced by it. */
 export function compactOps<T>(ops: HeldOp<T>[]): HeldOp<T>[] {
@@ -81,9 +81,17 @@ export const heldBlobs = {
   async idle(id: string) {
     for (let p = busy.get(id); p; p = busy.get(id)) await p;
   },
-  /** A mounted client holds (true) or no longer holds (false) a value not yet on the server. */
-  markDirty(client: object, on: boolean) {
-    if (on) { dirty.add(client); listen(); } else dirty.delete(client);
+  /** A mounted client holds (true) or no longer holds (false) a value not yet on the server; `flush` sends it now (saveAll). */
+  markDirty(client: object, on: boolean, flush: () => Promise<unknown> = async () => {}) {
+    if (on) { dirty.set(client, flush); listen(); } else dirty.delete(client);
+  },
+  /**
+   * Sends what can go now (the project export, before it reads the server): everything held is drained, every mounted client's unsent value
+   * is flushed, and every last save still running is waited for. What still cannot go stays as it was (shouldWarnOnUnloadBlobs says so).
+   */
+  async saveAll(): Promise<void> {
+    await Promise.allSettled([heldBlobs.drain(), ...[...dirty.values()].map((f) => f())]);
+    await Promise.allSettled([...busy.values()]);
   },
   /** Tries to send everything held. What still cannot go is kept, ahead of anything held for the same blob meanwhile. */
   async drain(): Promise<void> {

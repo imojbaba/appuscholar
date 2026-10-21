@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { encryptText, generateDek, generateKeypair, generateVaultKey, sealVaultCheck, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 
 /**
- * The workspace's shared citation library (CiteLibraryProvider, fix round 1 of Task 8a): it waits for the project the workspace loads (never the
+ * The project's shared citation library (CiteLibraryProvider, fix round 1 of Task 8a): it waits for the project the shell loads (never the
  * scratch project's blob while the active project is loading), and it never asks for the passphrase on its own: the document's unlock comes
  * first, a cancelled one is not asked again, and after an unlock the library is read without another prompt.
  */
@@ -18,27 +18,20 @@ vi.mock("@/lib/settings", () => ({
 }));
 vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
-vi.mock("@/lib/useMedia", () => ({ PHONE_QUERY: "p", MID_QUERY: "m", useMedia: () => false }));
-vi.mock("@/components/workspace/Header", () => ({ Header: h.stub, ChromeDialogs: h.stub }));
-vi.mock("@/components/workspace/Subbar", () => ({ Subbar: h.stub }));
-vi.mock("@/components/workspace/ProjectBar", () => ({ ProjectBar: h.stub }));
-vi.mock("@/components/workspace/Sidebar", () => ({ Sidebar: h.stub }));
-vi.mock("@/components/workspace/SidebarDrawer", () => ({ SidebarDrawer: h.stub }));
-vi.mock("@/components/workspace/Dock", () => ({ Dock: h.stub }));
-vi.mock("@/components/workspace/dialogs/SaveAsProject", () => ({ SaveAsProject: h.stub }));
-vi.mock("@/components/workspace/dialogs/Projects", () => ({ Projects: h.stub }));
-vi.mock("@/components/workspace/dialogs/StageIntro", () => ({ StageIntro: h.stub }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p2/writing" }));
+vi.mock("@/components/frame/AppHeader", () => ({ AppHeader: h.stub }));
+vi.mock("@/components/workspace/ChromeDialogs", () => ({ ChromeDialogs: h.stub }));
 vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: h.stub }));
 vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: h.stub }));
 vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 // The document card stands in for the caret chip: it reads the workspace's library passively, as the chip does.
 vi.mock("@/components/document/DocumentCard", async () => {
-  const { useWorkspace } = await import("../components/workspace/WorkspaceContext");
+  const { useProject } = await import("../components/frame/ProjectContext");
   const { useLibrary } = await import("../lib/cite/useLibrary");
   return {
     DocumentCard: () => {
-      const ws = useWorkspace();
+      const ws = useProject();
       const { lib } = useLibrary({ passive: true });
       h.libs.push(lib);
       const d = ws.currentDoc;
@@ -49,7 +42,7 @@ vi.mock("@/components/document/DocumentCard", async () => {
 
 import { ApiError } from "../lib/api";
 import { VaultProvider } from "../lib/vault/useVault";
-import { Workspace } from "../components/workspace/Workspace";
+import { ProjectShell } from "../components/frame/ProjectShell";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const PASS = "right passphrase";
@@ -69,7 +62,7 @@ async function mount() {
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);
-  await act(async () => { root.render(<VaultProvider><Workspace /></VaultProvider>); });
+  await act(async () => { root.render(<VaultProvider><ProjectShell projectId="p2" /></VaultProvider>); });
   return () => host.querySelector('[data-testid="shown"]')?.textContent;
 }
 

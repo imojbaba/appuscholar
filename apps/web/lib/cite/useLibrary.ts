@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useVault } from "@/lib/vault/useVault";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import type { AddResult } from "./actions";
 import { fillEmptyIn } from "./fillEmpty";
 
@@ -72,7 +72,7 @@ export type Library = {
 type SharedLibrary = { library: Library; demand(): () => void };
 const Shared = createContext<SharedLibrary | null>(null);
 export function CiteLibraryProvider({ children }: { children: ReactNode }) {
-  const { projectId } = useWorkspace();
+  const { projectId } = useProject();
   const { status } = useVault();
   const [demands, setDemands] = useState(0);
   const open = status === "off" || status === "unlocked" || status === "migrating";
@@ -88,7 +88,7 @@ export function CiteLibraryProvider({ children }: { children: ReactNode }) {
  */
 export function useLibrary(opts: { passive?: boolean } = {}): Library {
   const shared = useContext(Shared);
-  const { project } = useWorkspace();
+  const { project } = useProject();
   const { me } = useSettings();
   // Inside the provider the hook's own blob is never opened (no project id).
   const own = useOwnLibrary(shared !== null ? null : project?.id ?? me?.scratchProjectId ?? null);

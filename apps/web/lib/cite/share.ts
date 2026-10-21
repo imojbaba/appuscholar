@@ -18,10 +18,13 @@ export const importedToast = (added: number): string => added + " sources merged
 /** 7987: `added+' classic psychology sources added ✓'`. */
 export const startersToast = (added: number): string => added + " classic psychology sources added ✓";
 
-/** citInsertBib: nothing for an empty library; otherwise core's block in one insertion, then the numbered or author-date toast. */
-export function citeInsertBib(d: { lib: CitationEntry[]; style: CitationStyle; insert(html: string): void; toast(msg: string): void; t(key: string): string }): void {
+/**
+ * citInsertBib: nothing for an empty library; otherwise core's block in one insertion, then the numbered or author-date toast. The insert goes
+ * through the shell's requestInsert (Task 11): when the document did not open, nothing went in and no success is claimed.
+ */
+export async function citeInsertBib(d: { lib: CitationEntry[]; style: CitationStyle; insert(html: string): Promise<boolean>; toast(msg: string): void; t(key: string): string }): Promise<void> {
   if (!d.lib.length) { d.toast(LIBRARY_EMPTY); return; }
-  d.insert(bibliographyHtml(d.lib, d.style));
+  if (!(await d.insert(bibliographyHtml(d.lib, d.style)))) return;
   d.toast(citIsNumbered(d.style) ? d.t("cite_bib_fmt_num") : d.t("cite_bib_fmt"));
 }
 
