@@ -447,6 +447,8 @@ No engine exists for closeness or PPT. Port with goldens first.
 3. **"New code" inline instead of a native prompt** (Task C1). Recommended, because a native dialog freezes automated walks (17 October finding).
 4. **Release grouping** R2 (A, C, E) and R3 (B, D). Alternative: release each group as it turns green, which means five walks.
 
+**OJ's answers (2026-10-21):** "Approved: the order, the session split and your four recommendations (SVG quick chart, inline New code, releases R2 = A, C, E and R3 = B, D). Start the groundwork session now."
+
 ## Deferred (unchanged from wave B)
 
 - The MCP door, PRISMA and levels (Phase 7), and lectures.
