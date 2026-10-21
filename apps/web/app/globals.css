@@ -240,7 +240,6 @@
 .chat-input::placeholder { color: var(--muted); }
 .chat-input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
-/* Two columns, 701 to 1099px (DESIGN-SYSTEM.md section 6): the sidebar (the icon rail until the student chooses) beside the document, with the dock tabs and the dock stacked under it. The page scrolls. */
 /* The frame (wave B Task 6, canvas Main and Find): the header, a place's header with its tabs and the question strip, and the place's body. The
    Writing place shows the document at full width; the AI pane sits beside it once asked for, under the place's content elsewhere. */
 .app-hdr { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); min-height: 64px; padding: 10px var(--s7); background: var(--card); border-bottom: 1px solid var(--line); }

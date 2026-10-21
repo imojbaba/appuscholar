@@ -250,6 +250,17 @@ export const V2_STRINGS = {
   start_create: { en: "Create project", hi: "प्रोजेक्ट बनाएं" },
   start_scratch: { en: "Write without a project", hi: "बिना प्रोजेक्ट के लिखें" },
   start_fail: { en: "Could not create the project. Try again.", hi: "प्रोजेक्ट नहीं बन सका। फिर कोशिश करें।" },
+  // The list's delete button names its project for a screen reader (the old dialog's aria-label). DRAFT Hindi.
+  project_delete_label: { en: "Delete {name}", hi: "{name} हटाएं" },
+  // Move to project in the document bar: Save as research project's move, restored (register D-S2-38). DRAFT Hindi.
+  doc_move_btn: { en: "Move to project", hi: "प्रोजेक्ट में ले जाएं" },
+  doc_move_h: { en: "Move this document to a project", hi: "इस दस्तावेज़ को किसी प्रोजेक्ट में ले जाएं" },
+  doc_move_desc: { en: "Nothing you wrote changes. The document is filed under the project you choose, and that project opens.", hi: "आपका लिखा कुछ नहीं बदलता। दस्तावेज़ आपके चुने प्रोजेक्ट में रखा जाता है, और वह प्रोजेक्ट खुलता है।" },
+  doc_move_none: { en: "You have no other open projects.", hi: "आपके पास कोई और खुला प्रोजेक्ट नहीं है।" },
+  doc_move_new: { en: "New project", hi: "नया प्रोजेक्ट" },
+  doc_move_unsaved: { en: "Your latest changes are not saved yet. Try again in a moment.", hi: "आपके नए बदलाव अभी सहेजे नहीं गए हैं। थोड़ी देर में फिर कोशिश करें।" },
+  doc_move_fail: { en: "Could not move the document. Try again.", hi: "दस्तावेज़ नहीं ले जाया जा सका। फिर कोशिश करें।" },
+  start_move_note: { en: "Your open document moves into the new project.", hi: "आपका खुला दस्तावेज़ नए प्रोजेक्ट में चला जाएगा।" },
   // Switching project while a stage's value waits for the passphrase (wave A residual, held-blobs registry).
   blob_switch_held: {
     en: "Some changes are waiting for your passphrase. They are kept and saved once you unlock.",

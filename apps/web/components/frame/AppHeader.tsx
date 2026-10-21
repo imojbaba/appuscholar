@@ -25,7 +25,7 @@ const ITEM = "min-h-[40px]";
 export function AppHeader() {
   const t = useT();
   const { lang, setLang } = useLang();
-  const { openHelp, openSettings } = useProject();
+  const { openHelp, openSettings, go } = useProject();
   // v1 toasts the new language in that language; the switch is a settings update plus a context change, nothing remounts.
   const switchLang = () => {
     const next = lang === "en" ? "hi" : "en";
@@ -34,7 +34,12 @@ export function AppHeader() {
   };
   return (
     <header className="app-hdr" data-testid="app-header">
-      <Link href="/projects" className="app-word" data-testid="wordmark">Appuscholar</Link>
+      {/* Through go, so leaving a project stores the open document first; a modified click still opens a new tab. */}
+      <Link href="/projects" className="app-word" data-testid="wordmark" onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        void go("/projects");
+      }}>Appuscholar</Link>
       <Switcher />
       <span className="app-hdr-gap" aria-hidden="true" />
       <VaultPill />
@@ -85,7 +90,7 @@ function Switcher() {
         {list?.filter((p) => p.status !== "complete").map((p) => <ProjectItem key={p.id} project={p} current={p.id === projectId} onOpen={() => open(p.id)} />)}
         <DropdownMenuItem className={ITEM} data-testid="switcher-scratch" onSelect={() => open(null)}>{t("scratch_name")}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className={ITEM} data-testid="switcher-all" onSelect={() => go("/projects")}>{t("switcher_all")}</DropdownMenuItem>
+        <DropdownMenuItem className={ITEM} data-testid="switcher-all" onSelect={() => { void go("/projects"); }}>{t("switcher_all")}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

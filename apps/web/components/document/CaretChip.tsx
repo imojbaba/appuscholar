@@ -53,7 +53,7 @@ export function CaretChip({ editor }: { editor: Editor }) {
     const i = chip.index;
     if (i < 0) return;
     setCiteActive(i, true);
-    go(placeHref(projectId ?? "", "lit", "citations"));
+    void go(placeHref(projectId ?? "", "lit", "citations"));
   };
   return (
     <Button type="button" variant="ghost" size="sm" className="cit-caret-chip" data-testid="cit-caret-chip" onMouseDown={(e) => e.preventDefault()} onClick={jump}>

@@ -64,7 +64,7 @@ export function ProjectList() {
             <span className="acts">
               <Button variant="primary" size="sm" disabled={busy} data-testid="project-open" onClick={() => { void run(async () => { await openProject(p.id); }); }}>{t("project_open_btn")}</Button>
               <Button variant="ghost" size="sm" disabled={busy} data-testid="project-complete" onClick={() => { void toggle(p); }}>{t(p.status === "complete" ? "project_reopen_btn" : "project_complete_btn")}</Button>
-              <Button variant="ghost" size="sm" disabled={busy} data-testid="project-delete" onClick={() => setConfirm(p)}>{t("sh2_delete")}</Button>
+              <DeleteButton project={p} disabled={busy} onClick={() => setConfirm(p)} />
             </span>
           </li>
         ))}
@@ -87,6 +87,13 @@ export function ProjectList() {
       </AlertDialog>
     </section>
   );
+}
+
+/** "Delete", named for a screen reader by the project's opened title. */
+function DeleteButton({ project, disabled, onClick }: { project: Project; disabled: boolean; onClick(): void }) {
+  const t = useT();
+  const name = useTitle(project, "project").text;
+  return <Button variant="ghost" size="sm" disabled={disabled} aria-label={t("project_delete_label", { name })} data-testid="project-delete" onClick={onClick}>{t("sh2_delete")}</Button>;
 }
 
 function Name({ project }: { project: Project }) {

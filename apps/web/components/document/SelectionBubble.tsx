@@ -45,9 +45,9 @@ export function SelectionBubble({ editor }: { editor: Editor }) {
     hide();
     if (!text) return;
     setPendingSearch(text.slice(0, 200));
-    go(placeHref(projectId ?? "", "lit", "find"));
+    void go(placeHref(projectId ?? "", "lit", "find"));
   };
-  const cite = () => { hide(); collapseSelectionToEnd(editor); go(placeHref(projectId ?? "", "lit", "citations")); toast(t("sel_cite_toast")); };
+  const cite = () => { hide(); collapseSelectionToEnd(editor); void go(placeHref(projectId ?? "", "lit", "citations")); toast(t("sel_cite_toast")); };
   const improve = () => { void run("improve"); hide(); };
 
   return (

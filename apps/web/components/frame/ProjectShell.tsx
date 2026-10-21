@@ -81,6 +81,12 @@ function placeOf(path: string | null): Place | null {
 let nextDoc: { projectId: string; docId: string } | null = null;
 
 /**
+ * The mounted shell's restore. An Undo toast outlives the shell that showed it (a switch mounts a new one), so every shell's
+ * restoreDocument goes through the shell mounted now, which knows the project open now and can open another.
+ */
+let liveRestore: ((id: string, docProjectId: string) => Promise<boolean>) | null = null;
+
+/**
  * The frame around every page but the pop-out: the header, the dialogs, the first-use terms and the welcome tour, and, within a project
  * (`projectId` from the address, the scratch project's id in scratch space), the project, its documents, the open document and its editor.
  * They stay mounted while the student moves between the project's places; the Writing place shows the document at full width, the others keep
@@ -137,6 +143,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   // Set while the "Switch anyway?" question is open; answering it resolves the switch that asked.
   const [switchAsk, setSwitchAsk] = useState<{ doc: DocumentWithBody | null; answer: (yes: boolean) => void } | null>(null);
   const [live, setLive] = useState<{ docId: string; words: number } | null>(null);
+  // Set by openProject before its PATCH: this shell is on its way out and must not write its own project back as the active one.
+  const switching = useRef(false);
   // One load per project even when React runs the effect twice in development, so the first document is never created twice.
   const loading = useRef<{ key: string; p: Promise<Loaded> } | null>(null);
 
@@ -195,7 +203,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
 
   // The project at this address is the active one (null for the scratch space), so `/` and a new tab come back to it.
   useEffect(() => {
-    if (!ready || missing || !projectId || !me) return;
+    if (!ready || missing || !projectId || !me || switching.current) return;
     const want = projectId === me.scratchProjectId ? null : projectId;
     if (activeProjectId === want) return;
     apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: want }) }).then(() => reload(), () => undefined);
@@ -261,7 +269,23 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     setProject(list.find((x) => x.id === pid) ?? null);
   }, [scratchProjectId]);
 
-  const go = useCallback((href: string) => { router.push(href); }, [router]);
+  /** Leaving the project (the editor unmounts): its text is stored first, or the student chose to leave anyway; a held stage value is announced. */
+  const confirmExit = useCallback(async (): Promise<boolean> => {
+    if (!(await confirmLeave())) return false;
+    // A stage's value that has not reached the server (the vault is locked, or another window won the save) stays held for this tab and goes once
+    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual).
+    if (shouldWarnOnUnloadBlobs()) toast(t("blob_switch_held"));
+    return true;
+  }, [confirmLeave, t]);
+
+  const go = useCallback(async (href: string): Promise<boolean> => {
+    const here = urlProjectId ? `/p/${urlProjectId}` : null;
+    const path = href.split(/[?#]/)[0]!;
+    // Within the project the editor stays mounted; out of it, it asks as a switch does.
+    if (here && path !== here && !path.startsWith(here + "/") && !(await confirmExit())) return false;
+    router.push(href);
+    return true;
+  }, [urlProjectId, confirmExit, router]);
 
   const openProject = useCallback(async (id: string | null, opts: { docId?: string } = {}): Promise<boolean> => {
     const target = id ?? scratchProjectId;
@@ -270,29 +294,34 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       await reloadProject(); await reloadDocs();
       return opts.docId ? selectDoc(opts.docId) : true;
     }
-    if (!(await confirmLeave())) return false;
-    // A stage's value that has not reached the server (the vault is locked, or another window won the save) stays held for this tab and goes once
-    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual).
-    if (shouldWarnOnUnloadBlobs()) toast(t("blob_switch_held"));
-    await apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: id }) });
-    if (opts.docId) nextDoc = { projectId: target, docId: opts.docId };
-    await reload();
+    if (!(await confirmExit())) return false;
+    switching.current = true;
+    try {
+      await apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: id }) });
+      if (opts.docId) nextDoc = { projectId: target, docId: opts.docId };
+      await reload();
+    } catch (e) { switching.current = false; throw e; }
     // The scratch space has no home: it opens where its documents are (decision 4).
     router.push(id ? homeHref(id) : placeHref(target, "writing"));
     return true;
-  }, [scratchProjectId, reloadProject, reloadDocs, selectDoc, confirmLeave, reload, router, t]);
+  }, [scratchProjectId, reloadProject, reloadDocs, selectDoc, confirmExit, reload, router]);
 
   // restoreDocument must stay valid for ten seconds in a toast, so it reads the newest openProject (which knows the project open now).
   const openProjectRef = useRef(openProject);
   useEffect(() => { openProjectRef.current = openProject; }, [openProject]);
 
   /** Brings a deleted document back and shows it, in whichever project is open now (Undo can come ten seconds after the delete). */
-  const restoreDocument = useCallback(async (id: string, docProjectId: string): Promise<boolean> => {
+  const restoreHere = useCallback(async (id: string, docProjectId: string): Promise<boolean> => {
     await apiFetch<DocumentSummary>(`/documents/${id}/restore-deleted`, { method: "POST" });
     if (projectIdRef.current === docProjectId) { await reloadDocs(); return selectDoc(id); }
     // The student has moved to another project since: open the one the document belongs to (null = scratch space).
     return openProjectRef.current(docProjectId === scratchProjectId ? null : docProjectId, { docId: id });
   }, [reloadDocs, selectDoc, scratchProjectId]);
+  useEffect(() => {
+    liveRestore = restoreHere;
+    return () => { if (liveRestore === restoreHere) liveRestore = null; };
+  }, [restoreHere]);
+  const restoreDocument = useCallback((id: string, docProjectId: string) => (liveRestore ?? restoreHere)(id, docProjectId), [restoreHere]);
 
   /** Imports the files as new documents, then shows the last one. One batch at a time. */
   const doImport = useCallback(async (files: File[], origin: "draft" | "source") => {

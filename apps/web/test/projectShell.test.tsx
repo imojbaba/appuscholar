@@ -7,7 +7,7 @@ import { encryptText, generateDek, generateKeypair, generateVaultKey, sealVaultC
 import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
-  api: vi.fn(), ask: vi.fn(), toast: vi.fn(), push: vi.fn(), path: "/p/p1", ws: null as unknown, stub: () => null,
+  api: vi.fn(), ask: vi.fn(), toast: vi.fn(), push: vi.fn(), reload: vi.fn(), path: "/p/p1", ws: null as unknown, stub: () => null, header: false,
   me: { id: "u-ws", activeProjectId: "p1" as string | null, scratchProjectId: "s1", termsAcceptedAt: "2999-01-01T00:00:00Z" }
 }));
 vi.mock("next/navigation", () => ({
@@ -17,12 +17,17 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({
-  useSettings: () => ({ me: h.me, settings: { seenWelcome: true }, update: async () => undefined, reload: async () => undefined })
+  useSettings: () => ({ me: h.me, settings: { seenWelcome: true }, update: async () => undefined, reload: h.reload })
 }));
 vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 // The frame's chrome and the panels are not under test: every one is a stub, the document card shows which document is open and how.
-vi.mock("@/components/frame/AppHeader", () => ({ AppHeader: h.stub }));
+// The real header only where a test asks for it (`h.header`): the wordmark's way out of the project.
+vi.mock("@/components/frame/AppHeader", async (orig) => {
+  const real = await orig<typeof import("../components/frame/AppHeader")>();
+  return { AppHeader: () => (h.header ? <real.AppHeader /> : null) };
+});
+vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) }));
 vi.mock("@/components/workspace/ChromeDialogs", () => ({ ChromeDialogs: h.stub }));
 vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: h.stub }));
 vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: h.stub }));
@@ -78,6 +83,7 @@ function plainApi() {
     if (list) return Promise.resolve([plainDoc("D" + list[1], list[1]!)]);
     const one = /^\/documents\/D(p1|p2)$/.exec(path);
     if (one) return Promise.resolve(plainDoc("D" + one[1], one[1]!));
+    if (path === "/documents/X/restore-deleted" && init?.method === "POST") return Promise.resolve(plainDoc("X", "p1"));
     return Promise.reject(new ApiError(404, "not-found"));
   });
 }
@@ -93,8 +99,8 @@ const ws = () => h.ws as ProjectValue;
 const patches = () => h.api.mock.calls.filter(([p, i]) => p === "/me/active-project" && (i as { method?: string } | undefined)?.method === "PATCH");
 
 beforeEach(() => {
-  h.api.mockReset(); h.toast.mockReset(); h.push.mockReset(); h.ask.mockReset();
-  h.path = "/p/p1"; h.ws = null; h.me = { ...h.me, activeProjectId: "p1" };
+  h.api.mockReset(); h.toast.mockReset(); h.push.mockReset(); h.ask.mockReset(); h.reload.mockReset().mockResolvedValue(undefined);
+  h.path = "/p/p1"; h.ws = null; h.header = false; h.me = { ...h.me, activeProjectId: "p1" };
 });
 
 describe("ProjectShell", () => {
@@ -157,6 +163,67 @@ describe("ProjectShell", () => {
     expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held);
     expect(heldBlobs.has("p1:idea_intake")).toBe(true);
     expect(h.push).toHaveBeenCalledWith("/p/p2");
+  });
+
+  it("the wordmark with an unsaved document asks Switch anyway?; Stay keeps the address", async () => {
+    plainApi();
+    h.header = true;
+    const host = await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    act(() => { ws().registerFlush(async () => false); });
+    await act(async () => { (host.querySelector('[data-testid="wordmark"]') as HTMLAnchorElement).click(); });
+    await until(() => !!document.querySelector('[data-testid="switch-dialog"]'));
+    await act(async () => { (document.querySelector('[data-testid="switch-stay"]') as HTMLButtonElement).click(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(h.push).not.toHaveBeenCalled();
+
+    // Switch anyway leaves for the list; a held stage value is announced as on a switch.
+    heldBlobs.put("p1:idea_intake", [{ value: { topic: "Sleep" } }], async (ops) => ops);
+    await act(async () => { (host.querySelector('[data-testid="wordmark"]') as HTMLAnchorElement).click(); });
+    await until(() => !!document.querySelector('[data-testid="switch-anyway"]'));
+    await act(async () => { (document.querySelector('[data-testid="switch-anyway"]') as HTMLButtonElement).click(); });
+    await until(() => h.push.mock.calls.length > 0);
+    expect(h.push).toHaveBeenCalledWith("/projects");
+    expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held);
+  });
+
+  it("a move within the project asks nothing", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    act(() => { ws().registerFlush(async () => false); });
+    await act(async () => { await ws().go("/p/p1/lit/find"); });
+    expect(document.querySelector('[data-testid="switch-dialog"]')).toBeNull();
+    expect(h.push).toHaveBeenCalledWith("/p/p1/lit/find");
+  });
+
+  it("a switch writes the active project once: the old shell does not write its own back", async () => {
+    plainApi();
+    h.reload.mockImplementation(async () => { h.me = { ...h.me, activeProjectId: "p2" }; });
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    await act(async () => { await ws().openProject("p2"); });
+    // A render of the old shell after the reload (before the new address mounts its own).
+    act(() => { ws().dockShow("ai"); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(patches().map(([, i]) => JSON.parse((i as { body: string }).body))).toEqual([{ projectId: "p2" }]);
+  });
+
+  it("Undo after a switch restores through the shell mounted now, which opens the document's project", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    // The toast's Undo holds the first shell's restoreDocument; that shell then goes away with the switch.
+    const undo = ws().restoreDocument;
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    h.path = "/p/p2"; h.me = { ...h.me, activeProjectId: "p2" };
+    await mount("p2");
+    await until(() => ws()?.currentDoc?.id === "Dp2");
+    let shown!: boolean;
+    await act(async () => { shown = await undo("X", "p1"); });
+    expect(shown).toBe(true);
+    expect(h.push).toHaveBeenCalledWith("/p/p1");
+    expect(patches().map(([, i]) => JSON.parse((i as { body: string }).body))).toEqual([{ projectId: "p1" }]);
   });
 
   it("the scratch space opens at its writing place, recorded as no active project", async () => {

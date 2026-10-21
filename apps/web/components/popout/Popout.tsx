@@ -87,7 +87,7 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
   }, [activeProjectId]);
 
   const value: ProjectValue = {
-    place: null, go: (href) => { const tool = toolOf(href); if (tool) setActiveTool(tool); }, openProject: async () => false,
+    place: null, go: async (href) => { const tool = toolOf(href); if (tool) setActiveTool(tool); return true; }, openProject: async () => false,
     pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dockShow: noop, aiWaiting: false, setAiWaiting: noop,
     project, projectId, documents, currentDoc: null,
     // No document is shown in a pop-out (v1's docSwitch there loads the hidden editor and saves nothing).

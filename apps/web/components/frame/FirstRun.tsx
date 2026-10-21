@@ -11,8 +11,9 @@ import { useProject, type Project } from "./ProjectContext";
 /**
  * First run, for now: name a project and open it, or write without one (the scratch space). Task 9 makes it the rough idea, its feasibility
  * read and "Save as my project". With a vault the name is sealed (Task 5), so the vault opens first; a cancelled unlock creates nothing.
+ * `moveDocId` (from the document bar's Move to project, `/start?move=<id>`): that document moves into the project created here, which opens on it.
  */
-export function FirstRun() {
+export function FirstRun({ moveDocId }: { moveDocId?: string }) {
   const t = useT();
   const vault = useVault();
   const { openProject } = useProject();
@@ -33,7 +34,9 @@ export function FirstRun() {
         id = (await apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify(await sealTitle(vault, newProjectKeyId(), [], title)) })).id;
         setMade(id);
       }
-      await openProject(id);
+      // A move is idempotent, so a retry after a failed open moves again harmlessly.
+      if (moveDocId) await apiFetch(`/documents/${moveDocId}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) });
+      await openProject(id, moveDocId ? { docId: moveDocId } : {});
     } catch {
       toast(t("start_fail"));
     } finally { setBusy(false); }
@@ -42,6 +45,7 @@ export function FirstRun() {
   return (
     <section className="start-interim" data-testid="first-run">
       <h1>{t("start_h")}</h1>
+      {moveDocId && <p className="place-note" data-testid="start-move-note">{t("start_move_note")}</p>}
       <div className="field">
         <label htmlFor="startName">{t("start_name_label")}</label>
         <input className="input" id="startName" value={name} maxLength={200} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void create(); }} data-testid="start-name" />

@@ -22,8 +22,12 @@ export type PendingAnalyse = { title: string; pages: string[]; src: "abstract" }
 export type ProjectValue = {
   /** The place the address names (`/p/<id>/<stage>/<tab>`), or null on the project's home and outside a project. */
   place: Place | null;
-  /** Goes to an address of the app (a place, the home, the list); the project, its documents and the open editor stay mounted within a project. */
-  go(href: string): void;
+  /**
+   * Goes to an address of the app (a place, the home, the list); the project, its documents and the open editor stay mounted within a project.
+   * An address outside the project stores the open document's text first, as a switch does (a failed save asks "Switch anyway?"; false means
+   * the student stayed).
+   */
+  go(href: string): Promise<boolean>;
   /**
    * Opens a project (null = the scratch space): the open document's text is stored first (a failed save asks "Switch anyway?"; false means
    * the student stayed), the project is recorded as active (PATCH /me/active-project), then its home opens (the scratch space's writing place).

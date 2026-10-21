@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { tHtml, useT } from "@/lib/i18n";
 import { keyStore } from "@/lib/ai/keys";
@@ -27,6 +27,11 @@ import { EraseAccount } from "./EraseAccount";
 const FAQ = ["lost", "hindi", "key"];
 // The app never sends mail (rule 12): the button opens the student's own mail app.
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+/**
+ * Set before the first await, so a second click while the unlock ask is open does not start a second export. One for the page: Help and
+ * the account menu each run useAccount, and an export started from one must not start again from the other.
+ */
+const exportBusy = { current: false };
 
 /**
  * The account's actions, shared by Help and the header's account menu: export all my work, change the passphrase, sign out (asking whether to
@@ -65,8 +70,6 @@ export function useAccount() {
    * Every project's documents (the scratch space's too), decrypted here and zipped with the writing-process record. Only ciphertext
    * comes from the server and nothing decrypted goes back; the export is logged (POST /me/export-audit) once the zip is built, before it is saved.
    */
-  /** Set before the first await, so a second click while the unlock ask is open does not start a second export. */
-  const exportBusy = useRef(false);
   const exportWork = async () => {
     if (exportBusy.current) return;
     exportBusy.current = true;
@@ -167,7 +170,6 @@ export function Help() {
           <Button variant="ghost" data-testid="help-terms" onClick={openTerms}>{t("terms_reopen_btn")}</Button>
           <Button variant="ghost" data-testid="help-import-v1" onClick={openImportV1}>Import a v1 backup</Button>
         </div>
-        <p className="m-0 text-xs text-muted-foreground" data-testid="help-version">Appuscholar v2 ({APP_VERSION})</p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm">
           <span data-testid="signed-in-as">Signed in as {email}</span>
           <Button variant="ghost" size="sm" data-testid="sign-out" onClick={() => { void startSignOut(); }}>{t("acct_sign_out")}</Button>

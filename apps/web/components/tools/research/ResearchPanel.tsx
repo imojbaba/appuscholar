@@ -105,7 +105,7 @@ export function ResearchPanel() {
     insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { target.citation(f); } }); },
     connected: () => connected(p),
     quick: () => { void quickRead(p, quickDeps()); },
-    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool: () => go(placeHref(projectId ?? "", "lit", "reading")), toast, t }); }
+    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool: () => { void go(placeHref(projectId ?? "", "lit", "reading")); }, toast, t }); }
   });
   // rsToggleActions (8420-8423): the actions block shows while a paper shown is ticked.
   const onTick = (p: RsPaper, on: boolean) => setResearch((st) => {
