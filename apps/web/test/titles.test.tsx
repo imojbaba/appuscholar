@@ -15,7 +15,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 import { ApiError } from "../lib/api";
 import { newDocumentBody } from "../lib/useAutosave";
 import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../lib/vault/useVault";
-import { newProjectKeyId, openTitle, projectKeyId, sealPlainTitles, sealTitle, useTitle, type Titled } from "../lib/vault/titles";
+import { documentTitlePath, newProjectKeyId, openTitle, projectKeyId, sealPlainTitles, sealTitle, useTitle, type Titled } from "../lib/vault/titles";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -64,8 +64,14 @@ function fakeApi(path: string, init: RequestInit = {}): Promise<unknown> {
       server.docs.push(d);
       return Promise.resolve(copy(d));
     }
-    m = /^\/documents\/([^/]+)$/.exec(path);
-    if (m && method === "PATCH") { const d = server.docs.find((x) => x.id === m![1])!; applyTitle(d, body as { title: string }); return Promise.resolve(copy(d)); }
+    m = /^\/documents\/([^/?]+)(\?includeDeleted=1)?$/.exec(path);
+    if (m && method === "PATCH") {
+      // A soft-deleted document is reached only with includeDeleted=1 and a sealed title (routes/documents.ts).
+      const d = server.docs.find((x) => x.id === m![1] && (!x.deletedAt || (!!m![2] && ((body.titleKeyVersion as number | undefined) ?? 0) > 0)));
+      if (!d) return Promise.reject(new ApiError(404, "not-found"));
+      applyTitle(d, body as { title: string });
+      return Promise.resolve(copy(d));
+    }
   } catch (e) { return Promise.reject(e); }
   return Promise.reject(new ApiError(404, "not-found"));
 }
@@ -105,7 +111,7 @@ const pass = (vault: VaultValue) => sealPlainTitles({
   listProjects: () => h.api("/projects") as Promise<Titled[]>,
   listDocuments: (id) => h.api(`/projects/${id}/documents?includeDeleted=1`) as Promise<Titled[]>,
   patchProject: async (id, body) => { await h.api(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
-  patchDocument: async (id, body) => { await h.api(`/documents/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
+  patchDocument: async (id, body, deleted) => { await h.api(documentTitlePath(id, deleted), { method: "PATCH", body: JSON.stringify(body) }); },
   scratchId: "scratch"
 });
 
@@ -218,18 +224,20 @@ describe("titles in the vault", () => {
       const body = (await newDocumentBody(s.v))!;
       server.docs.push({ id: "d-" + projectId, projectId, title, titleKeyVersion: 0, deks: [body.dek!] });
     }
-    // A soft-deleted document is listed (includeDeleted=1) but left alone: PATCH cannot reach it until it is brought back.
+    // A soft-deleted document is listed (includeDeleted=1) and sealed too, through PATCH ?includeDeleted=1: nothing purges deleted documents.
     server.docs.push({ id: "d-gone", projectId: "pa", title: "Deleted draft", titleKeyVersion: 0, deks: server.docs[0]!.deks, deletedAt: "2026-10-20T10:00:00.000Z" });
     server.bodies = [];
-    expect(await pass(s.v)).toEqual({ sealed: 3 });
-    expect(server.docs.find((d) => d.id === "d-gone")).toMatchObject({ title: "Deleted draft", titleKeyVersion: 0 });
+    expect(await pass(s.v)).toEqual({ sealed: 4 });
+    expect(server.docs.find((d) => d.id === "d-gone")).toMatchObject({ titleKeyVersion: 1, deletedAt: "2026-10-20T10:00:00.000Z" });
+    expect(await openTitle(s.v, titledDoc("d-gone"), "d-gone")).toEqual({ state: "open", text: "Deleted draft" });
+    expect(h.api).toHaveBeenCalledWith("/documents/d-gone?includeDeleted=1", expect.objectContaining({ method: "PATCH" }));
     expect(server.projects.find((p) => p.id === "scratch")).toMatchObject({ title: "Scratch space", titleKeyVersion: 0 });
     expect(await openTitle(s.v, titledProject("pa"), projectKeyId("pa"))).toEqual({ state: "open", text: "Sleep and exam anxiety" });
     expect(await openTitle(s.v, titledDoc("d-pa"), "d-pa")).toEqual({ state: "open", text: "Chapter one" });
     expect(await openTitle(s.v, titledDoc("d-scratch"), "d-scratch")).toEqual({ state: "open", text: "Loose notes" });
     // A document's title is sealed under its own dek: none is added.
     expect(titledDoc("d-pa").deks).toHaveLength(1);
-    expect(server.bodies.join("\n")).not.toMatch(/Sleep and exam anxiety|Chapter one|Loose notes/);
+    expect(server.bodies.join("\n")).not.toMatch(/Sleep and exam anxiety|Chapter one|Loose notes|Deleted draft/);
     const patches = () => h.api.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === "PATCH").length;
     const before = patches();
     expect(await pass(s.v)).toEqual({ sealed: 0 });

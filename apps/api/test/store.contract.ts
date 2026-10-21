@@ -656,6 +656,21 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.listDocuments(a, p.id)).toHaveLength(1);
     });
 
+    it("renameDocument reaches a soft-deleted document only with includeDeleted", async () => {
+      const p = await s.createProject(a, "P");
+      await s.createDocument(a, p.id, "Kept", "draft", first);
+      const d = (await s.createDocument(a, p.id, "Deleted draft", "draft", first, [{ v: 1, wrapped: "i.k" }]))!;
+      expect(await s.softDeleteDocument(a, d.id)).toBe("deleted");
+      expect(await s.renameDocument(a, d.id, { title: "tA.tB", titleKeyVersion: 1 })).toBeNull();
+      expect(await s.renameDocument(b, d.id, { title: "tA.tB", titleKeyVersion: 1 }, { includeDeleted: true })).toBeNull();
+      const r = (await s.renameDocument(a, d.id, { title: "tA.tB", titleKeyVersion: 1 }, { includeDeleted: true }))!;
+      expect([r.title, r.titleKeyVersion]).toEqual(["tA.tB", 1]);
+      // Still deleted: renamed in place, not brought back.
+      expect(await s.getDocument(a, d.id)).toBeNull();
+      expect((await s.getDocument(a, d.id, { includeDeleted: true }))!.title).toBe("tA.tB");
+      expect((await s.restoreDeletedDocument(a, d.id))!.title).toBe("tA.tB");
+    });
+
     it("listProjectWork lists blob kinds, versions and dates and the draft words, in listProjects' order", async () => {
       const p = await s.createProject(a, "Sleep");
       const q = await s.createProject(a, "Memory");

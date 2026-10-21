@@ -65,7 +65,7 @@ function fakeServer(docs: Doc[], blobs: Blob[] = [], projects: string[] = []) {
       listProjects: vi.fn(async (): Promise<Titled[]> => []),
       listDocuments: vi.fn(async (_id: string): Promise<Titled[]> => []),
       patchProject: vi.fn(async (_id: string, _body: object) => {}),
-      patchDocument: vi.fn(async (_id: string, _body: object) => {})
+      patchDocument: vi.fn(async (_id: string, _body: object, _deleted: boolean) => {})
     }
   };
   return { deps, calls };
@@ -253,14 +253,14 @@ describe("migrateToVault", () => {
       listProjects: vi.fn(async () => titles.projects.map((p) => ({ ...p }))),
       listDocuments: vi.fn(async (id: string) => (id === "p1" ? titles.docs.map((d) => ({ ...d })) : [])),
       patchProject: vi.fn(async (id: string, body: object) => { calls.push(`title ${id}`); Object.assign(titles.projects.find((p) => p.id === id)!, body); }),
-      patchDocument: vi.fn(async (id: string, body: object) => { calls.push(`title ${id}`); Object.assign(titles.docs.find((d) => d.id === id)!, body); })
+      patchDocument: vi.fn(async (id: string, body: object, _deleted: boolean) => { calls.push(`title ${id}`); Object.assign(titles.docs.find((d) => d.id === id)!, body); })
     };
     const out = await migrateToVault(deps);
     expect(out).toEqual({ rewritten: 5 });
     expect(calls).toEqual(["rewrite a:1", "dek b", "rewrite b:1", "rewrite b:2", "title p1", "title a", "complete"]);
     // The project's first key travels with its title; the document's title is under its own key.
     expect(deps.titles.patchProject).toHaveBeenCalledWith("p1", { title: "k1:Thesis", titleKeyVersion: 1, dek: { v: 1, wrapped: "w-project:p1" } });
-    expect(deps.titles.patchDocument).toHaveBeenCalledWith("a", { title: "k1:Chapter", titleKeyVersion: 1 });
+    expect(deps.titles.patchDocument).toHaveBeenCalledWith("a", { title: "k1:Chapter", titleKeyVersion: 1 }, false);
   });
 
   describe("project blobs", () => {

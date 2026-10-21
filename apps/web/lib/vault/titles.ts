@@ -98,16 +98,16 @@ export function useTitle(t: Titled | null, kind: "project" | "document"): { stat
 export type TitleStore = {
   /** GET /projects: the scratch project is not in it. */
   listProjects(): Promise<Titled[]>;
-  /**
-   * GET /projects/:id/documents?includeDeleted=1. A soft-deleted document is skipped: PATCH /documents/:id cannot reach it, so its title
-   * stays as it is until it is brought back, and the next pass seals it then.
-   */
+  /** GET /projects/:id/documents?includeDeleted=1: a soft-deleted document's title is sealed too (nothing purges deleted documents). */
   listDocuments(projectId: string): Promise<Array<Titled & { deletedAt?: string | null }>>;
   patchProject(id: string, body: object): Promise<void>;
-  patchDocument(id: string, body: object): Promise<void>;
+  /** PATCH documentTitlePath(id, deleted). */
+  patchDocument(id: string, body: object, deleted: boolean): Promise<void>;
   /** The scratch project, whose documents are sealed too (its own title is the constant "Scratch space" and stays as it is). */
   scratchId?: string | null;
 };
+/** Where a title pass PATCHes a document: a soft-deleted one is reached with includeDeleted=1, which the api allows only for a sealed title. */
+export const documentTitlePath = (id: string, deleted: boolean): string => `/documents/${id}${deleted ? "?includeDeleted=1" : ""}`;
 export type SealPlainDeps = TitleStore & { vault: Pick<VaultValue, "status" | "complete" | "encryptBody"> };
 
 /** Another tab sealed the same entity first (its first dek): that title is left for the next pass, which finds it sealed. */
@@ -137,8 +137,8 @@ export async function sealTitlesWith(encrypt: VaultValue["encryptBody"], d: Titl
   }
   for (const id of ids) {
     for (const doc of await d.listDocuments(id)) {
-      if (doc.titleKeyVersion !== 0 || doc.deletedAt) continue;
-      await run(async () => d.patchDocument(doc.id, await sealTitleWith(encrypt, doc.id, doc.deks, doc.title)));
+      if (doc.titleKeyVersion !== 0) continue;
+      await run(async () => d.patchDocument(doc.id, await sealTitleWith(encrypt, doc.id, doc.deks, doc.title), !!doc.deletedAt));
     }
   }
   return { sealed };

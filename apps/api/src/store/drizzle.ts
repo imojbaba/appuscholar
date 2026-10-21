@@ -199,8 +199,8 @@ export class DrizzleStore implements Store {
       currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, deks: doc.deks, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion
     };
   }
-  async renameDocument(userId: string, id: string, title: string | TitleWrite): Promise<DocumentSummary | null> {
-    const doc = await this.ownedDoc(userId, id);
+  async renameDocument(userId: string, id: string, title: string | TitleWrite, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary | null> {
+    const doc = await this.ownedDoc(userId, id, opts?.includeDeleted === true);
     if (!doc) return null;
     const t = asTitle(title);
     const dek = this.dekSql(t.dek, documents.deks);

@@ -113,8 +113,8 @@ export interface Store {
   listDocuments(userId: string, projectId: string, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary[] | null>;
   /** `includeDeleted` also returns a soft-deleted document (the vault migration must reach those). */
   getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null>;
-  /** DekExistsError (and nothing written) as updateProject. */
-  renameDocument(userId: string, id: string, title: string | TitleWrite): Promise<DocumentSummary | null>;
+  /** DekExistsError (and nothing written) as updateProject. `includeDeleted` also renames a soft-deleted document (its title is sealed too). */
+  renameDocument(userId: string, id: string, title: string | TitleWrite, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary | null>;
 
   appendRevision(userId: string, documentId: string, rev: NewRevision): Promise<DocumentRevision | null>;
   /** `includeDeleted` also reaches a soft-deleted document's revisions (the vault migration rewrites those too). */

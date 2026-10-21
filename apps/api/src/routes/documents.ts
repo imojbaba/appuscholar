@@ -92,7 +92,10 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     return rev ? c.json(rev) : c.json({ error: "not-found" }, 404);
   });
 
-  /** Rename and/or mark as source. Never touches the body and never creates a revision, so it cannot race the editor's autosave. */
+  /**
+   * Rename and/or mark as source. Never touches the body and never creates a revision, so it cannot race the editor's autosave.
+   * `?includeDeleted=1` also reaches a soft-deleted document, only for a sealed title: the title pass seals those too.
+   */
   r.patch("/:id", async (c) => {
     let parsed: unknown; try { parsed = await c.req.json(); } catch { return c.json({ error: "invalid" }, 400); }
     const body = Patch.safeParse(parsed);
@@ -101,14 +104,15 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const title = titleOf(body.data);
     let d = null;
     if (title) {
+      const includeDeleted = title.titleKeyVersion > 0 && c.req.query("includeDeleted") === "1";
       if (title.titleKeyVersion > 0) {
-        const current = await store.getDocument(userId, id);
+        const current = await store.getDocument(userId, id, { includeDeleted });
         if (!current) return c.json({ error: "not-found" }, 404);
         const check = checkTitle(current.deks, title, "dek" in body.data ? body.data.dek : undefined);
         if (!check.ok) return c.json({ error: check.error }, check.status);
         title.dek = check.addDek;
       }
-      try { d = await store.renameDocument(userId, id, title); } catch (e) { if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409); throw e; }
+      try { d = await store.renameDocument(userId, id, title, { includeDeleted }); } catch (e) { if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409); throw e; }
     }
     if (body.data.kind !== undefined && (title === undefined || d)) d = await store.setDocumentKind(userId, id, body.data.kind);
     return d ? c.json(d) : c.json({ error: "not-found" }, 404);

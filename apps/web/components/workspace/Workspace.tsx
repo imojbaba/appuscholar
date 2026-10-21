@@ -11,7 +11,7 @@ import { allPdf, importFiles } from "@/lib/import/run";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
-import { sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
+import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -91,7 +91,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
       listProjects: () => apiFetch<Titled[]>("/projects"),
       listDocuments: (id) => apiFetch<Titled[]>(`/projects/${id}/documents?includeDeleted=1`),
       patchProject: async (id, body) => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
-      patchDocument: async (id, body) => { await apiFetch(`/documents/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
+      patchDocument: async (id, body, deleted) => { await apiFetch(documentTitlePath(id, deleted), { method: "PATCH", body: JSON.stringify(body) }); },
       scratchId: scratchForTitles
     }).catch(() => { /* offline or locked meanwhile: the next unlock tries again */ });
   }, [titlesSealable, scratchForTitles]);

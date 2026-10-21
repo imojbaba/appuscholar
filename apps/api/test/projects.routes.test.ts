@@ -147,6 +147,30 @@ describe("project routes (wave B)", () => {
     expect(await json(await req("PATCH", `/documents/${d.id}`, { title: ct("tC.tD"), titleKeyVersion: 2, dek: DEK2 }))).toMatchObject({ titleKeyVersion: 2, deks: [DEK1, DEK2] });
   });
 
+  it("PATCH ?includeDeleted=1 seals a soft-deleted document's title, and nothing else", async () => {
+    const id = await project();
+    await sealedDoc(id);
+    const d = await json<{ id: string }>(await post(`/projects/${id}/documents`, { title: "Deleted draft", bodyHtml: ct("bA.bB"), keyVersion: 1, wordCount: 2, originStats: STATS, dek: DEK1 }));
+    expect((await req("DELETE", `/documents/${d.id}`)).status).toBe(204);
+    // Without the flag a deleted document answers as before.
+    expect((await req("PATCH", `/documents/${d.id}`, { title: ct("tA.tB"), titleKeyVersion: 1 })).status).toBe(404);
+    // A plain title with the flag is refused as before: only a sealed title reaches a deleted document.
+    expect((await req("PATCH", `/documents/${d.id}?includeDeleted=1`, { title: "Renamed" })).status).toBe(404);
+    expect((await req("PATCH", `/documents/${d.id}?includeDeleted=1`, { title: "Renamed", titleKeyVersion: 0 })).status).toBe(404);
+    // The key rules hold for it too, and another user cannot reach it.
+    expect((await req("PATCH", `/documents/${d.id}?includeDeleted=1`, { title: ct("tA.tB"), titleKeyVersion: 2 })).status).toBe(400);
+    expect((await as("u2", "PATCH", `/documents/${d.id}?includeDeleted=1`, { title: ct("tA.tB"), titleKeyVersion: 1 })).status).toBe(404);
+    const r = await req("PATCH", `/documents/${d.id}?includeDeleted=1`, { title: ct("tA.tB"), titleKeyVersion: 1 });
+    expect(r.status).toBe(200);
+    expect(await json(r)).toMatchObject({ id: d.id, title: ct("tA.tB"), titleKeyVersion: 1 });
+    // Renamed, still deleted.
+    expect((await req("GET", `/documents/${d.id}`)).status).toBe(404);
+    expect(await json(await req("GET", `/projects/${id}/documents?includeDeleted=1`))).toEqual(expect.arrayContaining([expect.objectContaining({ id: d.id, title: ct("tA.tB"), titleKeyVersion: 1 })]));
+    // On a live document the flag changes nothing.
+    const live = await json<{ id: string }>(await sealedDoc(id));
+    expect(await json(await req("PATCH", `/documents/${live.id}?includeDeleted=1`, { title: "Plain" }))).toMatchObject({ title: "Plain", titleKeyVersion: 0 });
+  });
+
   it("a PUT that changes only the title's key version renames the document", async () => {
     const id = await project();
     const d = await json<{ id: string }>(await sealedDoc(id));

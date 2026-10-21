@@ -12,7 +12,7 @@ import { toast } from "@/components/ui/toast";
 import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault } from "@/lib/vault/useVault";
-import { sealTitle, useTitle } from "@/lib/vault/titles";
+import { openTitle, sealTitle, useTitle } from "@/lib/vault/titles";
 import { useWorkspace, type DocumentSummary, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
 
 const UNDO_MS = 10_000;
@@ -65,6 +65,16 @@ export function DocBar() {
       toast("Renamed ✓");
     } catch { toast("Could not rename. Try again."); }
     finally { setBusy(false); }
+  }
+
+  /** The rename button: a locked title asks for the passphrase first and opens with its name; a cancelled ask opens nothing. */
+  async function askRename() {
+    if (!currentDoc) return;
+    if (currentTitle.state !== "locked") { setName(currentTitle.state === "open" ? currentTitle.text : ""); setDialog("rename"); return; }
+    if (!(await vault.ensureUnlocked())) return;
+    const o = await openTitle(vault, currentDoc, currentDoc.id);
+    setName(o.state === "open" ? o.text : "");
+    setDialog("rename");
   }
 
   /** The delete button: v1 refuses to delete the only document before asking anything. */
@@ -120,7 +130,7 @@ export function DocBar() {
       </select>
       {isSource && <Badge variant="chip" title={t("org_badge_title")} data-testid="doc-source-badge">{t("org_badge_src")}</Badge>}
       <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName("Untitled " + (documents.length + 1)); setDialog("new"); }}>{t("doc_new_btn")}</Button>
-      <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { setName(currentTitle.state === "open" ? currentTitle.text : ""); setDialog("rename"); }}>✎</button>
+      <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { void askRename(); }}>✎</button>
       <button type="button" className="icon del" aria-label={t("doc_delete_title")} title={t("doc_delete_title")} data-testid="doc-delete" disabled={!currentDoc} onClick={askDelete}>🗑</button>
       <Button variant="ghost" size="sm" title={t("doc_import_title")} data-testid="doc-import" onClick={() => fileRef.current?.click()}>{t("doc_import_btn")}</Button>
       <input ref={fileRef} type="file" accept={IMPORT_ACCEPT} multiple hidden data-testid="doc-import-input" aria-label="Choose files to import"
