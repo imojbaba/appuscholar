@@ -260,7 +260,7 @@ Each call opens the document beside when it is closed, as Insert reference list 
 - [ ] **Step 2:** Write `docs/walkthroughs/tools-g.md`. Five rows, mirroring the spec.
 - [ ] **Step 3:** Open a PR into `phase-3a-vault` and get three green checks.
 - [ ] **Step 4:** OJ merges and deploys: API (the allow-list), then web. No Neon backup is needed (no schema change), but one is cheap and recommended.
-- [ ] **Step 5:** Walk `tools-g.md` live. When it passes, start sessions A to E from the merged `phase-3a-vault`.
+- [ ] **Step 5:** Start sessions A to E from the merged `phase-3a-vault` as soon as the PR merges. Release G and walk `tools-g.md` live at the same time (OJ, 2026-10-21).
 
 ---
 
@@ -448,6 +448,8 @@ No engine exists for closeness or PPT. Port with goldens first.
 4. **Release grouping** R2 (A, C, E) and R3 (B, D). Alternative: release each group as it turns green, which means five walks.
 
 **OJ's answers (2026-10-21):** "Approved: the order, the session split and your four recommendations (SVG quick chart, inline New code, releases R2 = A, C, E and R3 = B, D). Start the groundwork session now."
+
+**OJ's change to the order (2026-10-21, relayed by the parent session):** "Yes: start sessions A to E as soon as the groundwork PR is merged; release and walk G alongside." G's interfaces (`lib/tools/registry.ts`, `ToolModule`, `TOOL_TABS` ids and order, the blob kind names, `ExportPartDef`, `useDocAccess`) are therefore final when G's PR merges.
 
 ## Deferred (unchanged from wave B)
 
