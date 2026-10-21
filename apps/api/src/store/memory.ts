@@ -103,7 +103,7 @@ export class MemoryStore implements Store {
   }
   async listProjectWork(userId: string): Promise<ProjectWork[]> {
     return (await this.listProjects(userId)).map(p => {
-      const drafts = [...this.docs.values()].filter(d => d.projectId === p.id && d.deletedAt === null && d.kind !== "source");
+      const drafts = [...this.docs.values()].filter(d => d.projectId === p.id && d.deletedAt === null && d.kind !== "source" && this.latest(d.id) !== null);
       return {
         ...p,
         blobs: [...this.blobs.values()].filter(b => b.projectId === p.id).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, updatedAt: b.updatedAt, version: b.version })),
