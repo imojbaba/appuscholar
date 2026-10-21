@@ -13,6 +13,8 @@ const h = vi.hoisted(() => ({
   /** Every value ever handed to a blob's set(), after the update was applied: what would have gone to the server. */
   written: [] as Array<{ kind: string; value: unknown }>,
   docText: "",
+  docHtml: null as string | null,
+  editor: null as null | { isDestroyed: boolean; getHTML(): string },
   scan: null as null | import("../lib/ai/callAI").CallCtx,
   api: vi.fn(),
   ai: vi.fn(async (_prompt: string, _o: { temp: number; max: number }) => "- Plain, warm tone.\n- Short sentences."),
@@ -42,7 +44,10 @@ vi.mock("@/lib/ai/useCallAI", async () => {
   return { useCallAI: () => (prompt: string, o: { temp: number; max: number }) => (h.scan ? real.callAI(prompt, o, h.scan) : h.ai(prompt, o)) };
 });
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: (...a: unknown[]) => h.api(...a) }));
-vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ text: () => h.docText }) }));
+vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ text: () => h.docText, allDocuments: async () => [{ id: "d1", title: "", text: "", html: h.docHtml ?? "<p>" + h.docText + "</p>" }] }) }));
+// The open document's editor: its HTML is what the panel learns from (the student's own words only, D-S2-89).
+vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ currentDoc: { id: "d1" } }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { Panel } from "../components/tools/style/Panel";
@@ -58,7 +63,8 @@ async function until(pred: () => boolean, what = "condition") {
   for (let i = 0; i < 1000; i++) { if (pred()) return; await tick(5); }
   throw new Error("not reached: " + what);
 }
-const idle = () => until(() => !$("style-learn")!.hasAttribute("disabled"), "the panel is idle again");
+// A learn starts after the document is read (an await), so give it a turn to begin before waiting for it to end.
+const idle = async () => { await tick(10); await until(() => !$("style-learn")!.hasAttribute("disabled"), "the panel is idle again"); };
 
 function mount(projectId = "p1"): Root {
   const el = document.createElement("div");
@@ -93,7 +99,7 @@ const seed = (kind: string, value: unknown) => { h.store[kind] = value; };
 const T = (k: string, vars?: Record<string, string | number>) => (E[k] ?? k).replace(/\{(\w+)\}/g, (m, v: string) => (vars && v in vars ? String(vars[v]) : m));
 
 beforeEach(() => {
-  h.store = {}; h.flags = {}; h.written = []; h.docText = ""; h.ai.mockClear(); h.toast.mockClear();
+  h.store = {}; h.flags = {}; h.written = []; h.docText = ""; h.docHtml = null; h.editor = { isDestroyed: false, getHTML: () => h.docHtml ?? "<p>" + h.docText + "</p>" }; h.ai.mockClear(); h.toast.mockClear();
   h.ai.mockImplementation(async () => "- Plain, warm tone.\n- Short sentences.");
 });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; vi.restoreAllMocks(); h.scan = null; });
@@ -110,9 +116,11 @@ describe("My style panel: declaration and learning", () => {
     mount();
     h.docText = prose(60);
     click("style-learn");
+    await tick();
     expect($("style-status")!.textContent).toBe(T("sty2_need_words", { n: 80 }));
     h.docText = prose(120);
     click("style-learn");
+    await tick();
     expect($("style-status")!.textContent).toBe(T("sty2_need_decl"));
     expect(h.ai).not.toHaveBeenCalled();
     expect(h.written).toEqual([]);
@@ -191,6 +199,47 @@ describe("My style panel: declaration and learning", () => {
     await idle();
     expect($$("style-sample")).toHaveLength(100);
     expect($("style-status")!.textContent).toContain(T("sty2_full"));
+  });
+});
+
+describe("only the student's own words are learned from (D-S2-89)", () => {
+  const html = (ai: string) => "<p>" + prose(100) + ' <span class="ai-ins" data-h="x">' + ai + "</span></p>";
+  it("a word that only an AI span holds is in neither the prompt nor the sample's long words", async () => {
+    mount();
+    click("style-decl");
+    h.docHtml = html("extraordinarilymarkerword notwithstanding the sophisticated additions");
+    click("style-learn");
+    await idle();
+    expect(h.ai).toHaveBeenCalledOnce();
+    expect(h.ai.mock.calls[0]![0]).not.toMatch(/extraordinarilymarkerword|sophisticated/);
+    expect(h.ai.mock.calls[0]![0]).toContain("TEXT:\n" + prose(100).slice(0, 40));
+    const samples = h.store.style_samples as StyleSample[];
+    expect(samples).toHaveLength(1);
+    expect(samples[0]!.vw).not.toContain("extraordinarilymarkerword");
+    expect(samples[0]!.vw).not.toContain("sophisticated");
+    expect(JSON.stringify(h.written)).not.toContain("extraordinarilymarkerword");
+  });
+  it("words inside an AI span do not count toward the 80 words", async () => {
+    mount();
+    click("style-decl");
+    h.docHtml = "<p>" + prose(40) + '</p><p><span class="ai-ins">' + prose(100, 4) + "</span></p>";
+    click("style-learn");
+    await tick();
+    expect($("style-status")!.textContent).toBe(T("sty2_need_words", { n: 80 }));
+    expect(h.ai).not.toHaveBeenCalled();
+  });
+  it("the declaration copy stays", () => {
+    mount();
+    expect($("style-declaration")!.textContent).toContain("I wrote these samples myself, without AI and without copying from anyone.");
+  });
+  it("with no editor (a place's own window) the open document is read from the writing window", async () => {
+    h.editor = null;
+    mount();
+    click("style-decl");
+    h.docHtml = html("zebraquartzmarker");
+    click("style-learn");
+    await idle();
+    expect(h.ai.mock.calls[0]![0]).not.toContain("zebraquartzmarker");
   });
 });
 
@@ -298,6 +347,19 @@ describe("the three checks", () => {
     textareaValue(ta, typed(80), "insertText");
     click("style-live-run");
     expect($("style-live-head")).not.toBeNull();
+  });
+  it("a blocked paste marks nothing: words typed before it still compare (v1's onpaste=return false)", () => {
+    seed("style_samples", [sample({ id: "a" }), sample({ id: "b", name: "b.txt" })]);
+    mount();
+    const ta = $("style-live-text") as HTMLTextAreaElement;
+    textareaValue(ta, typed(80), "insertText");
+    act(() => {
+      ta.dispatchEvent(new Event("paste", { bubbles: true, cancelable: true }));
+      ta.dispatchEvent(new Event("drop", { bubbles: true, cancelable: true }));
+    });
+    click("style-live-run");
+    expect($("style-live-head")).not.toBeNull();
+    expect($("style-live-out")!.textContent).not.toContain(T("sty2_live_pasted"));
   });
   it("needs 60 words, then a sample of 150; then compares four habits, says it is rough, and stores the day and the count", () => {
     mount();

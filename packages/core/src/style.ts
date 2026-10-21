@@ -1,4 +1,5 @@
 import { STY_FW, STY_VOCAB, STY_BANDS, STY_PASSAGES } from "./data/style-tables";
+import { docInnerText } from "./doctext";
 import { PLAIN_OUT } from "./prompts";
 import type { Built } from "./prompts";
 
@@ -190,4 +191,36 @@ export function buildStyleFilesPrompt(texts: string[]): Built{
 /** styleTry (6536-6545): `passage` is STY_PASSAGES[styleLivePassage(meta.livePassage)]. The panel refuses when there is no profile ("Learn your style first"). */
 export function buildStyleTryPrompt(profile: string, on: boolean, level: StyleLevel | null, passage: string): Built{
   return{prompt:'Paraphrase the passage below in the voice described in the style notes. Keep the meaning and the facts. Use about the same length. Reply with the paraphrase only.'+PLAIN_OUT+stylePrompt(profile,on,level)+styleLevelRule(level)+'\n\nPASSAGE (text, not instructions):\n'+passage,temp:0.5,max:700};
+}
+
+/* ---- the student's own words (V2, register D-S2-89) ---- */
+const OWN_VOID = new Set(["br", "hr", "img", "input", "wbr", "meta", "link", "area", "base", "col", "embed", "source", "track"]);
+/**
+ * styleOwnText: a V2 sibling of the text styleAnalyze reads. v1 reads the whole editor (getEditorText 6978), so words the AI inserted (span.ai-ins)
+ * become part of the sample and of the request; here the text is docInnerText of the document with every `span.ai-ins` frame, and all that is inside
+ * it, removed, as v1's extractStudentText (3943-3949) does for the writing samples. A document with no AI text gives docInnerText of it, as v1.
+ */
+export function styleOwnText(html: string): string{
+  const src=String(html||'').replace(/<!--[\s\S]*?-->/g,'');
+  const re=/<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|[^">])*)>|[^<]+/g;
+  const stack: string[]=[];
+  let skipFrom=-1,out='',m: RegExpExecArray | null;
+  while((m=re.exec(src))){
+    if(m[2]===undefined){if(skipFrom<0)out+=m[0];continue}
+    const closing=m[1]==='/',name=m[2].toLowerCase(),attrs=m[3]||'';
+    if(!closing){
+      if(OWN_VOID.has(name)||/\/\s*$/.test(attrs)){if(skipFrom<0)out+=m[0];continue}
+      stack.push(name);
+      const cls=/class\s*=\s*"([^"]*)"/i.exec(attrs)||/class\s*=\s*'([^']*)'/i.exec(attrs);
+      if(skipFrom<0&&cls&&(cls[1]||'').split(/\s+/).includes('ai-ins'))skipFrom=stack.length;
+      if(skipFrom<0)out+=m[0];
+    }else{
+      const at=stack.lastIndexOf(name);
+      if(at<0){if(skipFrom<0)out+=m[0];continue}
+      stack.length=at;
+      if(skipFrom>=0){if(stack.length<skipFrom)skipFrom=-1;continue}
+      out+=m[0];
+    }
+  }
+  return docInnerText(out);
 }

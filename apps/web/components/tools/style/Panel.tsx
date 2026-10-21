@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { FolderOpen, Sparkle, Warning } from "@phosphor-icons/react";
-import { STYLE_PROFILE_MAX, STYLE_MIN_WORDS, styleOutliers } from "@appuscholar/core";
+import { STYLE_PROFILE_MAX, STYLE_MIN_WORDS, styleOutliers, styleOwnText } from "@appuscholar/core";
 import { plainText, useT } from "@/lib/i18n";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { useDocAccess } from "@/lib/editor/docAccess";
+import { useSuggestion } from "@/lib/ai/suggestion";
+import { useProject } from "@/components/frame/ProjectContext";
 import { STYLE_MAX_FILES, STYLE_MAX_FILE_BYTES, STYLE_MAX_PDF_PAGES } from "@/lib/tools/style/limits";
 import { learnFromDocument, learnFromFiles, precheckDocument, precheckFiles, type LearnEnv, type LearnOutcome, type LearnProgress } from "@/lib/tools/style/learn";
 import { readStyleFile } from "@/lib/tools/style/read";
@@ -27,6 +29,8 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   const data = useStyleData(projectId || null);
   const callAI = useCallAI();
   const docs = useDocAccess();
+  const { editor } = useSuggestion();
+  const { currentDoc } = useProject();
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -81,8 +85,18 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
     tick: () => new Promise<void>((r) => setTimeout(r, 0))
   });
 
-  function learnDocument(): void {
-    const text = docs.text();
+  /**
+   * The open document's HTML: the editor's own, else (a place's own window has no editor) the open document as the writing window sends it.
+   * Only the student's own words are learned from (D-S2-89), so the HTML is read, not the text.
+   */
+  async function openHtml(): Promise<string> {
+    if (editor && !editor.isDestroyed) return editor.getHTML();
+    const all = await docs.allDocuments();
+    return all.find((d) => d.id === currentDoc?.id)?.html ?? "";
+  }
+  async function learnDocument(): Promise<void> {
+    const text = styleOwnText(await openHtml());
+    if (!alive.current) return;
     const refused = precheckDocument(text, declared);
     if (refused) { say(refused, false); return; }
     data.guard(["profile", "samples"], () => {
@@ -173,7 +187,7 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
       </div>
 
       <div className="stack">
-        <Button variant="primary" className="w-full" data-testid="style-learn" disabled={!writable} onClick={learnDocument}>
+        <Button variant="primary" className="w-full" data-testid="style-learn" disabled={!writable} onClick={() => void learnDocument()}>
           <Sparkle aria-hidden weight="bold" />{plainText(t("style_learn_btn"))}
         </Button>
         <Button variant="ghost" className="w-full" data-testid="style-learn-files" disabled={!writable} onClick={() => fileInput.current?.click()}>

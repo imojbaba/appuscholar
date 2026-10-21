@@ -64,8 +64,8 @@ function LiveCheck({ data, writable }: Props) {
         onClick={() => data.guard(["meta"], () => data.patchMeta({ livePassage: styleLiveNext(data.meta.livePassage) }))}>{t("sty2_live_another")}</Button>
       <label className="sr-only" htmlFor="styLiveText">{t("sty2_live_label")}</label>
       <textarea id="styLiveText" className="input mt-1.5" rows={5} value={text} placeholder={t("sty2_live_ph")} data-testid="style-live-text"
-        onPaste={(e) => { e.preventDefault(); setPasted(true); }}
-        onDrop={(e) => { e.preventDefault(); setPasted(true); }}
+        onPaste={(e) => e.preventDefault()}
+        onDrop={(e) => e.preventDefault()}
         onInput={(e) => { if (isPasteInput((e.nativeEvent as InputEvent).inputType)) setPasted(true); }}
         onChange={(e) => { setText(e.target.value); if (e.target.value === "") setPasted(false); }} />
       <div className="ap-row"><Button variant="primary" data-testid="style-live-run" disabled={!writable} onClick={run}>{t("sty2_live_btn")}</Button></div>
