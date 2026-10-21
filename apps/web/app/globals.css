@@ -673,6 +673,8 @@
   .app-hdr { flex-wrap: nowrap; min-height: 60px; padding: 8px 16px; }
   .app-word { display: inline-flex; align-items: center; min-height: 44px; font-size: 20px; }
   .app-hdr [data-testid="vault-pill"] { flex: 0 1 auto; min-width: 0; }
+  /* The desktop header's items (AppHeader): hidden here, so a full load at phone width never paints them before Menu replaces them. */
+  .app-hdr .app-desk { display: none; }
   .home-phone { display: flex; flex-direction: column; gap: 14px; }
   .home-project { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; font-weight: 600; text-align: left; }
   .home-qfold { padding: 0 16px; }

@@ -145,6 +145,8 @@ test("the document opens full screen and Back returns to the same tab", async ({
   await expect(page.getByTestId("place-lit-compare")).toBeHidden();
   const back = page.getByTestId("doc-back");
   await expect(back).toHaveText("Back to Literature");
+  // "Open my document" is out of sight now: focus is on Back.
+  await expect(back).toBeFocused();
   const box = (await doc.boundingBox())!;
   expect(box.width).toBeGreaterThanOrEqual(PHONE.width - 1);
   expect((await back.boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -156,6 +158,8 @@ test("the document opens full screen and Back returns to the same tab", async ({
   await expect(page).toHaveURL(/\/lit\/compare$/);
   await expect(page.getByTestId("place-lit-compare")).toBeVisible();
   await expect(page.getByTestId("place-tab-compare")).toHaveAttribute("aria-current", "true");
+  // Back has gone with the document: focus returns to "Open my document".
+  await expect(page.getByTestId("place-open-doc")).toBeFocused();
 });
 
 test("first run and the project list fit the width", async ({ page }) => {

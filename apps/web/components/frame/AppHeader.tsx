@@ -22,7 +22,8 @@ const ITEM = "min-h-[40px]";
 /**
  * The app's header (canvas Main): the wordmark (the project list), the project switcher, the vault pill, the AI pill, the language, Help and
  * the account menu. The version pill moved into Help. Every title shown is the opened one (useTitle): "Locked title" while the vault is locked.
- * On a phone (canvas Phone, PHONE_QUERY) it is the wordmark, the vault pill and Menu, which holds the rest (PhoneMenu).
+ * On a phone (canvas Phone, PHONE_QUERY) it is the wordmark, the vault pill and Menu, which holds the rest (PhoneMenu). The desktop-only items
+ * carry `app-desk`, which globals.css hides at phone width: the server's render and the first paint, before useMedia knows, show no desktop header.
  */
 export function AppHeader() {
   const t = useT();
@@ -51,10 +52,10 @@ export function AppHeader() {
       {phone ? <PhoneMenu account={account} lang={lang} switchLang={switchLang} /> : (
         <>
           <AiPill onOpen={() => openSettings()} />
-          <button type="button" className="app-hbtn" aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
+          <button type="button" className="app-hbtn app-desk" aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
             {lang === "en" ? "हि" : "EN"}
           </button>
-          <button type="button" className="app-hbtn" data-testid="help-btn" onClick={openHelp}>
+          <button type="button" className="app-hbtn app-desk" data-testid="help-btn" onClick={openHelp}>
             <Question size={18} aria-hidden="true" /><span className="app-hbtn-lbl">{t("hdr_help")}</span>
           </button>
           <AccountMenu account={account} />
@@ -109,7 +110,7 @@ function AiPill({ onOpen }: { onOpen(): void }) {
   const { hasKey } = useKeys();
   const current: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   return (
-    <button type="button" className="app-ai-pill" data-testid="ai-pill" onClick={onOpen}>
+    <button type="button" className="app-ai-pill app-desk" data-testid="ai-pill" onClick={onOpen}>
       {hasKey(current) ? t("ai_pill_key", { provider: PROVIDERS[current].short }) : t("ai_pill_nokey")}
     </button>
   );
@@ -140,7 +141,7 @@ export function Switcher({ home = false }: { home?: boolean }) {
   return (
     <DropdownMenu modal={false} onOpenChange={(o) => { if (o) load(); }}>
       <DropdownMenuTrigger asChild>
-        <button type="button" className={home ? "home-project" : "app-switch"} aria-label={t("switcher_label") + ": " + label} data-testid={home ? "home-project-btn" : "project-switcher"}>
+        <button type="button" className={home ? "home-project" : "app-switch app-desk"} aria-label={t("switcher_label") + ": " + label} data-testid={home ? "home-project-btn" : "project-switcher"}>
           <span className="truncate">{label}</span><CaretDown size={14} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
@@ -169,7 +170,7 @@ function AccountMenu({ account }: { account: Account }) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="app-hbtn app-acct" aria-label={t("hdr_account")} data-testid="account-menu-btn"><UserCircle size={22} aria-hidden="true" /></button>
+        <button type="button" className="app-hbtn app-acct app-desk" aria-label={t("hdr_account")} data-testid="account-menu-btn"><UserCircle size={22} aria-hidden="true" /></button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" data-testid="account-menu">
         <AccountItems account={account} ai />
