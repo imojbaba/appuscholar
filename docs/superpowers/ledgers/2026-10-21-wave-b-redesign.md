@@ -177,3 +177,39 @@ CI on a92095c and 7578c06: checks and golden-exact green, e2e red. The proxy blo
 MILESTONE: PR #12 at bf75855 is green on all three checks (checks, e2e, golden-exact). B1 (tasks 1-15 and Task 16 step 1) is built and reviewed. Next: OJ's go-ahead to merge PR #12, then on the Mac: the Neon backup, migration 0006 by hand, the API, the web, the Help version check and the live walk of docs/walkthroughs/wave-b1.md. Not done until that walk passes.
 OJ, 2026-10-21: approved the merge ("if everything is right that should be ok"). PR #12 merged into phase-3a-vault as 8b227af (head 11fa7c7, all three checks green). Release from 8b227af. The prod DATABASE_URL comes from Vercel (vercel env pull on the Mac) or the Neon console; it is never pasted into the cloud.
 Release, 2026-10-21 (OJ's Mac): backup = Neon branch backup-before-b1 (parent main, made before the migration; pg_dump is not installed on the Mac). Migration 0006 applied with drizzle-kit migrate ("migrations applied successfully"). The Neon SQL editor shows projects.stage_marks, deks and title_key_version, and documents.title_key_version. The DATABASE_URL came from vercel env pull into ~/appuscholar-release.env and was removed afterwards. Next: API, then web.
+
+## HAND-OVER 2026-10-21 (cloud session → local Mac session for the B1 release check and live walk)
+
+Where we are (each item labelled):
+- B1 is built: Tasks 1-15 plus Task 16 step 1, each with an implementer, a task review and a fix round, then a whole-slice review and one fix wave. VERIFIED (this ledger).
+- PR #12 (wave-b1 → phase-3a-vault) is MERGED as 8b227af, from head 11fa7c7. All three checks were green (checks, e2e, golden-exact). VERIFIED.
+- Backup: Neon branch `backup-before-b1` (parent main, made before the migration). VERIFIED by OJ's screenshot.
+- Migration 0006 is applied to prod: "migrations applied successfully". The Neon SQL editor shows projects.stage_marks, deks and title_key_version, and documents.title_key_version. VERIFIED by OJ's output and screenshot.
+- The secret file ~/appuscholar-release.env should be removed (step 4). UNKNOWN: OJ did not paste "cleared". Check that it is gone.
+- The API deploy and the web deploy were run by OJ ("done"). UNKNOWN: no output seen. The cloud session cannot reach the live site.
+
+Next, in order (local session on OJ's Mac):
+1. Confirm the release:
+   - `ls ~/appuscholar-release.env` must say no such file;
+   - `curl -s https://appuscholar-api.vercel.app/health` answers;
+   - in Chrome, Help on https://appuscholar-web.vercel.app reads "Version 8b227af".
+   If the web is not on 8b227af, from the deploy clone: `git fetch origin && git checkout --detach origin/phase-3a-vault && scripts/deploy-vercel.sh web`. The API goes first if it is not deployed. Never roll the API back alone, and never roll the web back past B1 once titles are sealed.
+2. Live walk of docs/walkthroughs/wave-b1.md (16 rows; the controller corrected rows 2, 5, 7, 8 and 14 to match what was built). OJ types the passphrase and the AI key. Mark each row VERIFIED or FAILED in the sheet's Result column. A FAILED row is fixed (a branch from phase-3a-vault, a PR, three green checks, deployed) and re-walked. B1 is not done until the walk passes.
+3. Task 16 step 8: the walk result, the re-scores (row 16) and the rows awaiting Dr. Sharma go into docs/walkthroughs/notes/ (a new file, 2026-10-21-wave-b1-walk.md).
+4. The update deck for Dr. Sharma: https://claude.ai/artifact/Bevdgw3vQ4AdWb82mujgt5 (24 slides, private).
+   - Replace the plan and state slides with the B1 facts: B1 live; slide 21 "4 of 16 tasks" → B1 done; versions slide gains 8b227af.
+   - Add 2-3 slides of REAL screenshots of B1 from the live walk (home, Literature, phone).
+   - No mock-ups. No hours claimed.
+   - Then OJ shares it from the deck's Share menu, with the live link, to Dr. Sharma. OJ decided on 2026-10-21 that B1 and the deck go together tonight.
+5. Then slice B2 (Tasks 17-26) on branch wave-b2, cut from phase-3a-vault at 8b227af. Pre-flight scan first, as for B1.
+
+Immutable facts:
+- The deploy clone on the Mac: "/Users/poojadudani/Documents/Claude cowork/Scholarly/appuscholar-deploy-clone" (quoted; the path has a space). Deploy with scripts/deploy-vercel.sh api|web from a detached checkout of origin/phase-3a-vault. Help shows "Version <sha7>"; the header pill is gone.
+- Prod DATABASE_URL: `(cd apps/api && vercel env pull ~/appuscholar-release.env --environment=production --yes)` then `set -a; source ~/appuscholar-release.env; set +a`. Delete the file afterwards. Never paste the URL into a chat. pg_dump is not installed on the Mac; backups are Neon branches.
+- Release order: Neon backup → migration by hand → API → web. Never roll back the API alone after the web ships. Never roll the web back past B1 once titles are sealed.
+- Live URLs: web https://appuscholar-web.vercel.app; API https://appuscholar-api.vercel.app. Neon project appuscholar-db (royal-term-33588030), branch main.
+- v1 for goldens and i18n: github.com/srssg74-crypto/appuscholer at c8c53735726040c028bd30b6f12ea72c1adf5c0f (index.html sha256 e3ad7404…).
+- Register ids: wave B rows D-S2-38 to D-S2-44 are used by B1; the next free is D-S2-45. Walk faults W1-W31 are never ids.
+- i18n: new keys go in V2_STRINGS (apps/web/scripts/i18n-overrides.mjs) with DRAFT Hindi; regenerate with `node apps/web/scripts/extract-v1-i18n.mjs ../appuscholer/index.html`; v1 key values change only in Tasks 35-36.
+- Known flaky: citeBib's "2,000 entries under 2 s" unit test fails only under heavy load.
+- Reporting to OJ: brief plain points, labelled VERIFIED / SUPPORTED / BELIEVED / UNKNOWN, at milestones only. Never call a slice done before its live walk.
