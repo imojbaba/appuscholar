@@ -112,7 +112,7 @@ export function Dictionary({ data, callAI, field }: Props) {
           )}
           {ai?.kind === "unsure" && <div className="ap-warn" data-testid="dict-ai-unsure">{t("wd2_ai_unsure")}</div>}
           {ai?.kind === "error" && <div className="ap-warn" data-testid="dict-ai-error">{ai.message}</div>}
-          <div className="ap-row mt-1">
+          <div className="ap-row ap-wrap mt-1">
             {(ai === null || ai.kind === "error") && (
               <Button variant="ghost" size="sm" data-testid="dict-ai-btn" disabled={asking} onClick={() => void hindi()}>
                 <Sparkle aria-hidden />{asking ? t("wd2_ai_working") : t("wd2_ai_btn")}
