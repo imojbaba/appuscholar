@@ -1,18 +1,20 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { ArrowSquareOut } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useTitle } from "@/lib/vault/titles";
 import { PLACE_TABS, homeHref, placeHref } from "@/lib/frame/places";
 import type { StageKey } from "@/lib/tools";
+import { openPlaceWindow, usePopout } from "@/lib/popout/sync";
 import { useProject } from "./ProjectContext";
 
 /**
  * The top of a place (canvas Find): "{project title} / {stage name}", the title linking home; the place's tabs, each a link; and the question as
- * a strip, closed by default, that opens to the topic with Edit (to the Idea place). "Open my document" (Task 11), "Open in a new window"
- * (Task 13) and the feasibility verdict (the stored read, Task 9) join it later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
+ * a strip, closed by default, that opens to the topic with Edit (to the Idea place); "Open in a new window" (NewWindow). "Open my document" (Task 11)
+ * and the feasibility verdict (the stored read, Task 9) join it later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
  */
 export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: string | null; tabs?: ReactNode }) {
   const t = useT();
@@ -36,8 +38,24 @@ export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: s
           ))}
         </nav>
       ))}
+      <NewWindow stage={stage} href={placeHref(id, stage, tab ?? undefined)} />
       {stage !== "idea" && <QuestionStrip />}
     </div>
+  );
+}
+
+/**
+ * "Open in a new window" (register row D-S2-43): this place, with `?window=1`, in a window of its own. Not in that window itself, and not in
+ * Writing, whose document a pop-out never shows.
+ */
+function NewWindow({ stage, href }: { stage: StageKey; href: string }) {
+  const t = useT();
+  const popout = usePopout();
+  if (popout || stage === "writing") return null;
+  return (
+    <button type="button" className="place-win" data-testid="place-new-window" onClick={() => openPlaceWindow(href, stage, t)}>
+      <ArrowSquareOut size={16} aria-hidden="true" />{t("place_new_window")}
+    </button>
   );
 }
 

@@ -312,7 +312,10 @@ export const V2_STRINGS = {
   writing_chat: { en: "Chat", hi: "चैट" },
   writing_helpers: { en: "Research helpers", hi: "शोध सहायक" },
   not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
-  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" }
+  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  // Wave B Task 13 (register D-S2-43): any place in its own window, and that window's Close. DRAFT Hindi.
+  place_new_window: { en: "Open in a new window", hi: "नई विंडो में खोलें" },
+  window_close: { en: "Close this window", hi: "यह विंडो बंद करें" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

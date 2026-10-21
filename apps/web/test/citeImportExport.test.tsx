@@ -146,8 +146,8 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(ev.defaultPrevented).toBe(true);
   });
 
-  it("in a pop-out (/popout?tool=cite) the bookmarklet still opens the writing window's address, where the capture is read, not /popout", () => {
-    window.history.replaceState(null, "", "/popout?tool=cite");
+  it("in a place's own window (?window=1) the bookmarklet still opens the writing window's address, where the capture is read", () => {
+    window.history.replaceState(null, "", "/p/p1/lit/citations?window=1");
     try {
       mount();
       expect(tid("cite-bookmarklet")!.getAttribute("href")).toBe(bookmarkletHrefV2("http://localhost:3000/"));

@@ -27,7 +27,7 @@ const h = vi.hoisted(() => ({
 const EMPTY: BlobState = { value: null };
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const React = await import("react");
-  // The real hook's guard: in a pop-out (/popout) every kind but citations, retraction_cache and the shelf's is read-only (v1 1964).
+  // The real hook's guard: in a place's own window (?window=1) every kind of another stage is read-only (v1 1964, D-S2-43).
   const { blobWritable } = await import("../lib/popout/mode");
   const sub = (l: () => void) => { h.listeners.add(l); return () => { h.listeners.delete(l); }; };
   return {
@@ -591,9 +591,9 @@ describe("stored notes not read yet, locked or not openable are never shown as e
   });
 });
 
-describe("in a pop-out, where ap_notes is read-only (v1 1964; register row D-S2-17)", () => {
+describe("in a window of another stage, where ap_notes is read-only (v1 1964; register rows D-S2-17, D-S2-43)", () => {
   it("the walk's box and the card's fields are read-only, a line says notes are saved only in the writing window, and nothing is written", async () => {
-    window.history.replaceState(null, "", "/popout?tool=research");
+    window.history.replaceState(null, "", "/p/p-1/idea?window=1");
     try {
       await mount();
       load("sample@apSample");

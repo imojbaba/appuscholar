@@ -11,12 +11,17 @@ import { FakeChannel } from "./support/fakeChannel";
 const h = vi.hoisted(() => ({
   toast: vi.fn(),
   api: vi.fn(),
+  push: vi.fn(),
+  replace: vi.fn(),
+  path: "/",
   editor: null as unknown,
-  me: { id: "u1", activeProjectId: null as string | null, scratchProjectId: "scratch" },
+  ws: null as unknown,
+  me: { id: "u1", activeProjectId: null as string | null, scratchProjectId: "scratch", termsAcceptedAt: "2999-01-01T00:00:00Z" },
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: h.push, replace: h.replace }), usePathname: () => h.path }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
-vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {}, update: vi.fn(), reload: vi.fn() }) }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: { seenWelcome: true }, update: vi.fn(), reload: vi.fn() }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 // The suggestion provider is real in the pop-out (its editor stays null); the probes read the editor this test gives.
 vi.mock("@/lib/ai/suggestion", () => ({
@@ -24,23 +29,25 @@ vi.mock("@/lib/ai/suggestion", () => ({
   useSuggestion: () => ({ editor: h.editor })
 }));
 vi.mock("@/lib/cite/useLibrary", async (orig) => ({ ...(await orig<typeof import("../lib/cite/useLibrary")>()), CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
+vi.mock("@/lib/cite/capture", () => ({ CaptureHash: () => null }));
 vi.mock("@/components/workspace/ChromeDialogs", () => ({ ChromeDialogs: () => <div data-testid="chrome-dialogs" /> }));
-// The two pop-out panels and Analyse a paper, as stubs that show what the pop-out's workspace gives them.
-vi.mock("@/components/tools/cite/CitePanel", async () => {
-  const { useProject } = await import("@/components/frame/ProjectContext");
-  return { CitePanel: () => { const ws = useProject(); return <div className="panel" data-testid="panel-cite">{ws.projectId}|{ws.documents.map((d) => d.id).join(",")}</div>; } };
-});
-vi.mock("@/components/tools/research/ResearchPanel", async () => {
-  const { useProject } = await import("@/components/frame/ProjectContext");
-  return { ResearchPanel: () => { const ws = useProject(); return <div className="panel" data-testid="panel-research">{ws.projectId}<button type="button" data-testid="go-analyse" onClick={() => ws.go("/p/x/lit/reading")} /></div>; } };
-});
-vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div className="panel" data-testid="panel-analyse" /> }));
+vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: () => null }));
+vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: () => null }));
+vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog: () => null }));
+vi.mock("@/components/workspace/VaultPill", () => ({ VaultPill: () => <span data-testid="vault-pill" /> }));
+vi.mock("@/components/frame/AppHeader", () => ({ AppHeader: () => <header data-testid="app-header"><span data-testid="switcher" /><span data-testid="account-menu" /></header> }));
+vi.mock("@/components/tools/AiPane", () => ({ AiPane: () => <div data-testid="ai-pane" /> }));
+// The document card, as a stub that says it is there (a pop-out must never mount it).
+vi.mock("@/components/document/DocumentCard", () => ({ DocumentCard: () => <div data-testid="doc-card" /> }));
 
-import { Popout } from "../components/popout/Popout";
+import { ProjectShell } from "../components/frame/ProjectShell";
+import { PlaceHeader } from "../components/frame/PlaceHeader";
+import { ProjectProvider, useProject, type ProjectValue } from "../components/frame/ProjectContext";
+import OldPopoutPage from "../app/(app)/popout/page";
 import { CiteShare } from "../components/tools/cite/CiteShare";
 import { citeUseLib, CITATION_INSERTED } from "../lib/cite/actions";
 import type { Library } from "../lib/cite/useLibrary";
-import { openPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
+import { blobWritable, isPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
 import { markCursorPlaced } from "../lib/editor/insert";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -66,16 +73,21 @@ async function until(pred: () => boolean) {
   throw new Error("condition not reached");
 }
 const toasts = () => h.toast.mock.calls.map((c) => c[0]);
-const popoutAt = (tool: string) => window.history.replaceState(null, "", "/popout?tool=" + tool);
+/** The address of a place's own window (and the path the router reports). */
+const at = (url: string) => { window.history.replaceState(null, "", url); h.path = url.split("?")[0]!; };
+const popoutAt = (url = "/p/p1/lit/citations?window=1") => at(url);
 
 beforeEach(() => {
   h.toast.mockReset();
   h.api.mockReset();
+  h.push.mockReset();
+  h.replace.mockReset();
   h.editor = null;
-  h.me = { id: "u1", activeProjectId: null, scratchProjectId: "scratch" };
+  h.ws = null;
+  h.me = { id: "u1", activeProjectId: null, scratchProjectId: "scratch", termsAcceptedAt: "2999-01-01T00:00:00Z" };
   ch = new FakeChannel();
   setSyncChannel(ch);
-  window.history.replaceState(null, "", "/");
+  at("/");
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -83,76 +95,143 @@ afterEach(() => {
   document.body.innerHTML = "";
   setSyncChannel(undefined);
   vi.restoreAllMocks();
-  window.history.replaceState(null, "", "/");
+  at("/");
 });
 
-describe("openPopout (v1 popOutTool; its button returns with Task 13)", () => {
-  it.each(["cite", "research"] as const)("%s opens its pop-out window", (tool) => {
-    const open = vi.spyOn(window, "open").mockReturnValue({ focus: () => {} } as unknown as Window);
-    openPopout(tool, t);
-    expect(open).toHaveBeenCalledWith("/popout?tool=" + tool, "appu_pop_" + tool, "popup=yes,width=540,height=820");
-    expect(toasts()).toEqual([]);
-  });
-  it("a blocked window says so", () => {
-    vi.spyOn(window, "open").mockReturnValue(null);
-    openPopout("cite", t);
-    expect(toasts()).toEqual([E.pop_blocked]);
-  });
-  it.each(["idea", "chat", "analyse"] as const)("%s keeps v1's notice", (tool) => {
-    const open = vi.spyOn(window, "open");
-    openPopout(tool, t);
-    expect(open).not.toHaveBeenCalled();
-    expect(toasts()).toEqual([E.pop_unsupported]);
-  });
-});
-
-describe("the pop-out page renders the tool alone", () => {
-  const api = (projects: Array<{ id: string }> = []) => h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+describe("a place in its own window (register row D-S2-43)", () => {
+  const P1 = { id: "p1", title: "Sleep and memory", titleKeyVersion: 0, deks: [], field: "", stage: "idea", status: "active", contentLang: "en", kind: "research", stageMarks: {} };
+  const DOCS = [
+    { id: "d2", projectId: "p1", title: "B", titleKeyVersion: 0, deks: [], kind: "own", currentSeq: 1, wordCount: 0, createdAt: "2026-10-02", updatedAt: "2026-10-02" },
+    { id: "d1", projectId: "p1", title: "A", titleKeyVersion: 0, deks: [], kind: "own", currentSeq: 1, wordCount: 0, createdAt: "2026-10-01", updatedAt: "2026-10-03" }
+  ];
+  const api = (docs: unknown[] = DOCS) => h.api.mockImplementation(async (path: string, init?: RequestInit) => {
     if (init?.method && init.method !== "GET") throw new Error("the pop-out wrote " + path);
-    if (path === "/projects") return projects.map((p) => ({ title: "P", field: "", stage: "idea", status: "active", contentLang: "en", kind: "research", ...p }));
-    if (/^\/projects\/[^/]+\/documents$/.test(path)) return [
-      { id: "d2", projectId: "x", title: "B", kind: "own", currentSeq: 1, wordCount: 0, createdAt: "2026-10-02", updatedAt: "2026-10-02" },
-      { id: "d1", projectId: "x", title: "A", kind: "own", currentSeq: 1, wordCount: 0, createdAt: "2026-10-01", updatedAt: "2026-10-03" }
-    ];
+    if (path === "/projects") return [P1];
+    if (path === "/projects/p1/documents") return docs;
     throw new Error("unexpected " + path);
   });
+  function Child() { h.ws = useProject(); return <div data-testid="place-content" />; }
+  const shell = () => <ProjectShell projectId="p1"><Child /></ProjectShell>;
+  async function mountShell() {
+    render(shell());
+    await until(() => !!tid("place-content"));
+  }
+  const ws = () => h.ws as ProjectValue;
 
-  it("cite: the Citation Manager in its panel, on the scratch project, with no sidebar, dock, document or editor; no document is created", async () => {
-    popoutAt("cite");
-    api();
-    render(<Popout tool="cite" />);
-    await until(() => !!tid("panel-cite"));
-    expect(tid("panel-cite")!.textContent).toBe("scratch|d1,d2");
-    expect(tid("popout")!.querySelectorAll(".panel")).toHaveLength(1);
-    for (const sel of [".ws", ".dock", ".dock-tabs", ".ProseMirror", "[data-testid=pop-out]", "[data-testid=doc-card]", "nav"]) expect(document.body.querySelector(sel)).toBeNull();
+  it("a pop-out never shows the document", async () => {
+    for (const url of ["/p/p1/lit/citations?window=1", "/p/p1/writing?window=1"]) {
+      popoutAt(url);
+      api();
+      await mountShell();
+      expect(tid("doc-card")).toBeNull();
+      expect(tid("frame-doc")).toBeNull();
+      expect(tid("ai-pane")).toBeNull();
+      // Its documents are listed (Cited in) but none is opened: no body is read, and an empty project gets no first document from here.
+      expect(ws().documents.map((d) => d.id)).toEqual(["d1", "d2"]);
+      expect(ws().currentDoc).toBeNull();
+      let shown: boolean | undefined;
+      await act(async () => { shown = await ws().selectDoc("d1"); });
+      expect(shown).toBe(false);
+      expect(h.api.mock.calls.map(([p]) => p)).not.toContain("/documents/d1");
+      expect(h.api.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
+      act(() => { for (const r of roots.splice(0)) r.unmount(); });
+      document.body.innerHTML = "";
+      h.api.mockReset();
+    }
+    popoutAt("/p/p1/lit/find?window=1");
+    api([]);
+    await mountShell();
+    expect(ws().documents).toEqual([]);
     expect(h.api.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
   });
 
-  it("research: the Research panel, on the student's active project", async () => {
-    popoutAt("research");
-    h.me = { ...h.me, activeProjectId: "p1" };
-    api([{ id: "p0" }, { id: "p1" }]);
-    render(<Popout tool="research" />);
-    await until(() => !!tid("panel-research"));
-    expect(tid("panel-research")!.textContent).toBe("p1");
-    expect(tid("panel-cite")).toBeNull();
-  });
-
-  it("going to the reading list from inside the pop-out switches the pop-out's tool to Analyse a paper (v1 showTool there, rsAnalyse 8417)", async () => {
-    popoutAt("research");
+  it("the window shows the place under a slim header: the project and the place, and Close; no project switcher or account menu", async () => {
+    popoutAt("/p/p1/lit/citations?window=1");
     api();
-    render(<Popout tool="research" />);
-    await until(() => !!tid("go-analyse"));
-    act(() => { tid("go-analyse")!.click(); });
-    expect(tid("panel-analyse")).not.toBeNull();
-    expect(tid("panel-research")).toBeNull();
+    await mountShell();
+    expect(tid("app-header")).toBeNull();
+    expect(tid("switcher")).toBeNull();
+    expect(tid("account-menu")).toBeNull();
+    expect(tid("window-where")!.textContent).toBe("Sleep and memory / " + E.stage_name_lit);
+    expect(tid("vault-pill")).not.toBeNull();
+    const close = vi.spyOn(window, "close").mockImplementation(() => {});
+    act(() => { tid("window-close")!.click(); });
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(tid("window-close")!.textContent).toBe(E.window_close);
   });
 
-  it.each([undefined, "", "chat", "photo", "CITE"])("tool=%s says pop_unsupported and loads nothing", (tool) => {
-    popoutAt(String(tool ?? ""));
-    render(<Popout tool={tool} />);
-    expect(tid("popout-unsupported")!.textContent).toBe(E.pop_unsupported);
-    expect(tid("panel-cite")).toBeNull();
+  it("a move inside the window stays in the window: go keeps ?window=1, and an address that lost it gets it back", async () => {
+    popoutAt("/p/p1/lit/citations?window=1");
+    api();
+    await mountShell();
+    await act(async () => { await ws().go("/p/p1/lit/reading"); });
+    expect(h.push).toHaveBeenLastCalledWith("/p/p1/lit/reading?window=1");
+    // A tab's link moved the window without the query: it is still a pop-out, and its address gets ?window=1 back.
+    at("/p/p1/lit/find");
+    expect(isPopout()).toBe(true);
+    expect(blobWritable("idea_intake")).toBe(false);
+    act(() => { roots[0]!.render(shell()); });
+    await until(() => window.location.search === "?window=1");
+    expect(window.location.pathname).toBe("/p/p1/lit/find");
+  });
+
+  it("the writing window is not a pop-out: the header, the document and the receiver are there", async () => {
+    at("/p/p1/lit/find");
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/projects") return [P1];
+      if (path === "/projects/p1/documents") return DOCS;
+      if (path === "/documents/d2") return { ...DOCS[0], keyVersion: 0, bodyHtml: "<p>x</p>" };
+      if (path === "/me/active-project" && init?.method === "PATCH") return undefined;
+      throw new Error("unexpected " + path);
+    });
+    await mountShell();
+    await until(() => !!tid("doc-card"));
+    expect(tid("app-header")).not.toBeNull();
+    expect(tid("window-where")).toBeNull();
+    expect(ch.listening).toBe(1);
+  });
+
+  it("Open in a new window opens the place with ?window=1; a pop-out and the Writing place have none", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue({ focus: () => {} } as unknown as Window);
+    const value = { project: P1, projectId: "p1" } as unknown as ProjectValue;
+    const header = (stage: "lit" | "idea" | "writing", tab: string | null) => render(<ProjectProvider value={value}><PlaceHeader stage={stage} tab={tab} /></ProjectProvider>);
+    at("/p/p1/lit/compare");
+    header("lit", "compare");
+    expect(tid("place-new-window")!.textContent).toBe(E.place_new_window);
+    act(() => { tid("place-new-window")!.click(); });
+    expect(open).toHaveBeenCalledWith("/p/p1/lit/compare?window=1", "appu_pop_lit", "popup=yes,width=540,height=820");
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    header("idea", null);
+    act(() => { tid("place-new-window")!.click(); });
+    expect(open).toHaveBeenLastCalledWith("/p/p1/idea?window=1", "appu_pop_idea", "popup=yes,width=540,height=820");
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    header("writing", null);
+    expect(tid("place-new-window")).toBeNull();
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    popoutAt("/p/p1/lit/compare?window=1");
+    header("lit", "compare");
+    expect(tid("place-header")).not.toBeNull();
+    expect(tid("place-new-window")).toBeNull();
+  });
+
+  it("old pop-out links land on the matching tab in a new-window place", async () => {
+    h.me = { ...h.me, activeProjectId: "p1" };
+    at("/popout?tool=cite");
+    render(<OldPopoutPage />);
+    await until(() => h.replace.mock.calls.length > 0);
+    expect(h.replace).toHaveBeenLastCalledWith("/p/p1/lit/citations?window=1");
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    // No active project: the scratch space's.
+    h.me = { ...h.me, activeProjectId: null };
+    at("/popout?tool=research");
+    render(<OldPopoutPage />);
+    await until(() => h.replace.mock.calls.length > 1);
+    expect(h.replace).toHaveBeenLastCalledWith("/p/scratch/lit/find?window=1");
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    at("/popout?tool=chat");
+    render(<OldPopoutPage />);
+    await until(() => h.replace.mock.calls.length > 2);
+    expect(h.replace).toHaveBeenLastCalledWith("/projects");
     expect(h.api).not.toHaveBeenCalled();
   });
 });
@@ -162,7 +241,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   function Probe() { box.t = useInsertTarget(); return null; }
 
   it("in the pop-out every insert is ready (no editor here) and goes over appu_sync, with pop_sent", () => {
-    popoutAt("cite");
+    popoutAt();
     render(<Probe />);
     expect(box.t!.ready).toBe(true);
     expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).toBe(true);
@@ -173,7 +252,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   });
 
   it("AMA in the pop-out sends the number as [n] text, not a superscript (v1 7501: f.sup&&!POPOUT)", () => {
-    popoutAt("cite");
+    popoutAt();
     render(<Probe />);
     const f = citFmt(MILLER, 3, "ama");
     expect(f.sup).toBe(true);
@@ -182,7 +261,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   });
 
   it("a library card's Insert: pop_sent, then citUseLib's own toast over it, as v1 shows them one after the other", () => {
-    popoutAt("cite");
+    popoutAt();
     render(<Probe />);
     citeUseLib(0, { lib: [BANDURA], style: "apa", toast: h.toast, t, insert: (f) => { box.t!.citation(f); } });
     expect(ch.sent).toEqual([{ type: "insert", text: " (Bandura, 1977)" }]);
@@ -190,7 +269,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   });
 
   it("a post that fails says pop_nowin", () => {
-    popoutAt("cite");
+    popoutAt();
     ch.throwOnPost = true;
     render(<Probe />);
     box.t!.citation(citFmt(BANDURA, 0, "apa"));
@@ -198,7 +277,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   });
 
   it("Insert reference list is enabled in the pop-out and sends the list as one HTML block", () => {
-    popoutAt("cite");
+    popoutAt();
     const lib = { lib: [BANDURA], style: "apa", ready: true, update: () => true } as unknown as Library;
     render(<CiteShare library={lib} insertReady={true} />);
     const btn = tid("cite-insertbib") as HTMLButtonElement;
@@ -269,7 +348,7 @@ describe("the writing window's receiver (v1 popChan.onmessage 7604-7611)", () =>
     render(<Receiver editor={null} />);
     act(() => { ch.deliver({ type: "insert", text: "x" }); });
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
-    popoutAt("cite");
+    popoutAt();
     render(<Receiver editor={ed} />);
     act(() => { ch.deliver({ type: "insert", text: "x" }); });
     expect(ed.getHTML()).toBe("<p>Body.</p>");
