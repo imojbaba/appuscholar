@@ -124,40 +124,36 @@ afterEach(() => {
 });
 
 describe("Analyse a paper: the panel (v1 741-760)", () => {
-  it("in v1's order: the heading and its sentence, All lectures and its sentence, the upload field, the paste box, the four buttons, the box about the paper; nothing in #apMain yet", async () => {
+  it("in v1's order: the heading and its sentence, the upload field, the paste box, the four buttons, the box about the paper; nothing in #apMain yet (All lectures is not built: W23)", async () => {
     await mount();
     expect($("h3")!.textContent).toBe("📄 Analyse a paper");
     expect($(".panel > .desc")!.textContent).toBe(E.ap2_give_appuscholer_a_research);
-    expect(tid("ap-lectures")!.textContent).toBe("📚 All lectures");
-    expect($(".ap-lect-desc")!.textContent).toBe("Short talks on reading papers, statistics, scales, study design, writing and ethics. No paper needed.");
+    expect(tid("ap-lectures")).toBeNull();
+    expect($(".ap-lect-desc")).toBeNull();
     expect($('label[for="apFile"]')!.textContent).toBe("Upload a PDF, a Word file (.docx) or a text file");
     expect(($("#apFile") as HTMLInputElement).accept).toBe(".pdf,.docx,.txt");
     expect($('label[for="apPaste"]')!.textContent).toBe("Or paste the text of the paper");
     expect(($("#apPaste") as HTMLTextAreaElement).placeholder).toBe("Paste the paper here");
-    expect([...$(".ap-row.ap-wrap:not(.ap-lect)")!.querySelectorAll("button")].map((b) => b.textContent)).toEqual(["Use pasted text", "Use this paper", "Try a practice paper"]);
+    expect([...$(".ap-row.ap-wrap")!.querySelectorAll("button")].map((b) => b.textContent)).toEqual(["Use pasted text", "Use this paper", "Try a practice paper"]);
     expect($("#apShelf")!.getAttribute("aria-label")).toBe("Paper from your Reading shelf");
     expect(tid("ap-consent")!.textContent).toBe("I am allowed to read this paper, and it is not a manuscript sent to me for confidential peer review. I understand that its text goes to my AI provider through my own key.");
     expect(($("#apOK") as HTMLInputElement).checked).toBe(false);
     expect(tid("ap-main")!.textContent).toBe("");
-    const order = ["ap-lectures", "ap-file", "ap-paste", "ap-paste-btn", "ap-shelf", "ap-shelf-btn", "ap-sample-btn", "ap-consent", "ap-main"].map(tid);
+    const order = ["ap-file", "ap-paste", "ap-paste-btn", "ap-shelf", "ap-shelf-btn", "ap-sample-btn", "ap-consent", "ap-main"].map(tid);
     for (let i = 1; i < order.length; i++) expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("📚 All lectures and the Lesson tab (the practice paper only) are Phase 5; the walk-through and the paper card open (Task 13)", async () => {
+  it("the Lesson tab is not offered, not even for the practice paper (W23); the walk-through and the paper card open (Task 13)", async () => {
     await mount();
-    await click(tid("ap-lectures"));
     await click(tid("ap-sample-btn"));
-    expect(tid("ap-tab-lesson")!.textContent).toBe("🎓 Lesson on this paper");
-    await click(tid("ap-tab-lesson"));
-    expect(getAp().mode).toBe("ask");
+    expect(tid("ap-tabs")).not.toBeNull();
+    expect(tid("ap-tab-lesson")).toBeNull();
+    expect([...tid("ap-tabs")!.querySelectorAll("button")].map((b) => b.dataset.testid)).toEqual(["ap-tab-ask", "ap-tab-walk", "ap-tab-card"]);
     await click(tid("ap-tab-walk"));
     expect(getAp().mode).toBe("walk");
     await click(tid("ap-tab-card"));
     expect(getAp().mode).toBe("card");
-    expect(toasts()).toEqual(["Lectures arrive in a later phase.", "Lessons arrive in a later phase."]);
-    load("pasted-headings");
-    await settle();
-    expect(tid("ap-tab-lesson")).toBeNull();
+    expect(toasts()).toEqual([]);
   });
 
   it("the stub no longer stands in for Analyse a paper: no abstract line (Task 10's placeholder is gone)", async () => {
@@ -354,7 +350,8 @@ describe("Analyse a paper: what apRender draws for the loaded paper (11278-11285
     await mount();
     expect(tid("ap-head")!.textContent).toBe(withPanelFixes(c.text));
     expect(tid("ap-preview")!.textContent).toBe(c.pre);
-    expect([...tid("ap-tabs")!.querySelectorAll("button")].map((b) => ({ text: b.textContent, disabled: b.disabled, title: b.getAttribute("title") }))).toEqual(c.tabs);
+    // v1's tabs less the lesson (the practice paper's), which is not built and not offered (W23, register D-S2-44).
+    expect([...tid("ap-tabs")!.querySelectorAll("button")].map((b) => ({ text: b.textContent, disabled: b.disabled, title: b.getAttribute("title") }))).toEqual(c.tabs.filter((x) => x.text !== E.ap2_lesson_on_this_paper));
     expect(!!tid("ap-ref-btn")).toBe(c.refBtn);
   });
 

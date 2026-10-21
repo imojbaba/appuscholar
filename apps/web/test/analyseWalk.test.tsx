@@ -191,7 +191,7 @@ afterEach(() => {
 });
 
 describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", () => {
-  it("the tab opens (no toast any more); the Lesson stays Phase 5", async () => {
+  it("the tab opens (no toast any more); the Lesson is not offered (W23)", async () => {
     await mount();
     await click(tid("ap-sample-btn"));
     await openTab("walk");
@@ -199,8 +199,8 @@ describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", ()
     expect(tid("ap-walk")).not.toBeNull();
     await openTab("card");
     expect(getAp().mode).toBe("card");
-    await click(tid("ap-tab-lesson"));
-    expect(toasts()).toEqual(["Lessons arrive in a later phase."]);
+    expect(tid("ap-tab-lesson")).toBeNull();
+    expect(toasts()).toEqual([]);
     expect(getAp().mode).toBe("card");
   });
 

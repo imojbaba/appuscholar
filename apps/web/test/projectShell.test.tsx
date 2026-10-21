@@ -32,7 +32,9 @@ vi.mock("@/components/workspace/ChromeDialogs", () => ({ ChromeDialogs: h.stub }
 vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: h.stub }));
 vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: h.stub }));
 vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog: h.stub }));
-vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children }));
+vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children, useLibrary: () => ({ lib: [], loading: false, locked: false }) }));
+// Literature's tab counts (Task 10).
+vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ index: null }) }));
 vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/tools/AiPane", () => ({ AiPane: () => <div data-testid="ai-pane" /> }));
