@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { JSDOM } from "jsdom";
 import type { CitationEntry } from "../src/citation";
 import {
-  bookmarkletHref, bookmarkletHrefV2, bookmarkletSource, bookmarkletSourceV2, capNameToCit, captureMatch, captureRecord, captureRecordV2, decodeCapture,
+  bookmarkletHref, bookmarkletHrefV2, bookmarkletSource, bookmarkletSourceV2, capNameToCit, captureMatch, captureRecord, captureRecordV2, captureYearV2, decodeCapture,
 } from "../src/citcapture";
 import type { CaptureData } from "../src/citcapture";
 import { readFixture } from "./golden/harness/fixture";
@@ -21,7 +21,7 @@ const V1_AUTHOR_PART = String.raw`var as=Array.prototype.slice.call(document.que
 const V2_AUTHOR_PART = V1_AUTHOR_PART + String.raw`if(!as)as=(m('citation_authors')||'').split(/;\s*/).map(function(x){return x.trim()}).filter(function(x){return x}).join('; ');`;
 // v1's `d` part (13628) and the part that replaces it: the same six fields, then the volume, the issue and the pages (first page, or first-last when a different last page is given).
 const V1_D_PART = String.raw`var d={title:m('citation_title')||document.title,author:as,year:(m('citation_publication_date')||m('citation_date')||m('citation_year')||'').slice(0,4),source:m('citation_journal_title')||m('citation_conference_title')||'',doi:m('citation_doi')||'',url:location.href};`;
-const V2_D_PART = String.raw`var fp=m('citation_firstpage')||'',lp=m('citation_lastpage')||'';var d={title:m('citation_title')||document.title,author:as,year:(m('citation_publication_date')||m('citation_date')||m('citation_year')||'').slice(0,4),source:m('citation_journal_title')||m('citation_conference_title')||'',doi:m('citation_doi')||'',url:location.href,volume:m('citation_volume')||'',issue:m('citation_issue')||'',pages:fp&&lp&&lp!==fp?fp+'-'+lp:fp};`;
+const V2_D_PART = String.raw`var fp=m('citation_firstpage')||'',lp=m('citation_lastpage')||'';var d={title:m('citation_title')||document.title,author:as,year:(function(){var v=[m('citation_publication_date'),m('citation_date'),m('citation_year')];for(var i=0;i<v.length;i++){var r=/\b(1[5-9]|20)\d{2}\b/.exec(v[i]||'');if(r)return r[0]}return ''})(),source:m('citation_journal_title')||m('citation_conference_title')||'',doi:m('citation_doi')||'',url:location.href,volume:m('citation_volume')||'',issue:m('citation_issue')||'',pages:fp&&lp&&lp!==fp?fp+'-'+lp:fp};`;
 
 /** Runs a bookmarklet source on a jsdom page with these meta tags, as the golden harness runs v1's (test/golden/citshare/capture.ts); the hash's text it opened the app with. */
 function runOn(source: string, meta: Array<[string, string]>, url = "https://pubmed.ncbi.nlm.nih.gov/41234567/"): { raw: string | null; alerts: string[] } {
@@ -66,6 +66,18 @@ describe("bookmarkletSourceV2 (W1)", () => {
     const v1 = decodeCapture(enc(runOn(bookmarkletSource(U), PUBMED).raw!))!;
     expect(v1.author).toBe("");
     expect(v1).not.toHaveProperty("volume");
+  });
+
+  it("W30: the year is the first 4-digit year of citation_publication_date, citation_date or citation_year, whatever the date format", () => {
+    const yearOf = (meta: Array<[string, string]>) => decodeCapture(enc(runOn(bookmarkletSourceV2(U), [["citation_title", "T"], ...meta]).raw!))!.year;
+    expect(yearOf([["citation_date", "09/16/2019"]])).toBe("2019");
+    expect(yearOf([["citation_publication_date", "2011 Nov"]])).toBe("2011");
+    expect(yearOf([["citation_year", "2014"]])).toBe("2014");
+    expect(yearOf([])).toBe("");
+    // The first of the three tags that yields a year wins; a tag without one is passed over; a number that is not a year is not taken.
+    expect(yearOf([["citation_publication_date", "Nov"], ["citation_date", "09/16/2019"], ["citation_year", "2014"]])).toBe("2019");
+    expect(yearOf([["citation_publication_date", "2011 Nov"], ["citation_date", "09/16/2019"]])).toBe("2011");
+    expect(yearOf([["citation_date", "09/16/99"], ["citation_year", "2014"]])).toBe("2014");
   });
 
   it("a page with both citation_author and citation_authors is read once (Review Focus 1)", () => {
@@ -138,6 +150,17 @@ describe("capNameToCit and captureRecordV2", () => {
       const v1Payload = decodeCapture(raw(c.hash))!;
       expect(captureRecordV2(v1Payload), c.id).toEqual(captureRecord(v1Payload));
     }
+  });
+});
+
+describe("captureRecordV2 and a bookmark dragged before W30", () => {
+  const old: CaptureData = { title: "T", author: "Lee K", year: "09/1", source: "", doi: "", url: "https://pubmed.ncbi.nlm.nih.gov/1/" };
+  it("a year that is not 4 digits is stored as empty, a 4-digit year is kept", () => {
+    expect(captureRecordV2({ ...old, year: "09/1" }).year).toBe("");
+    expect(captureRecordV2({ ...old, year: "" }).year).toBe("");
+    expect(captureRecordV2({ ...old, year: "2019" }).year).toBe("2019");
+    expect(captureYearV2("20")).toBe("");
+    expect(captureYearV2("2019")).toBe("2019");
   });
 });
 

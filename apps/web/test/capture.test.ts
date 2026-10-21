@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { captureRecord, captureRecordV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
+import { captureConfirmText, captureRecord, captureRecordV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
 
 /*
  * The one-click capture's page side (v1 citCheckCaptureHash 13637-13655, called at boot 13676-13677): the address, the confirm, the save and the toasts. The bookmarklet's
@@ -208,6 +208,14 @@ describe("<CaptureHash/>: the load-time check", () => {
     mount();
     expect(toasts()).toEqual([ALREADY_IN_LIBRARY]);
     expect(h.library.update).not.toHaveBeenCalled();
+  });
+  it("W30: a bookmark dragged before the fix sends year \"09/1\"; the question shows no year and the entry stores none", () => {
+    window.history.replaceState(null, "", "/" + hashOf({ ...PM, year: "09/1" }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mount();
+    expect(confirm.mock.calls.map((x) => x[0])).toEqual([captureConfirmText({ ...PM, year: "" })]);
+    expect(String(confirm.mock.calls[0]![0])).not.toContain("09/1");
+    expect(stored.at(-1)).toMatchObject({ title: PM.title, year: "" });
   });
   for (const b of FX.bad) {
     it(`a bad hash (${b.id}) does what v1 did`, () => {

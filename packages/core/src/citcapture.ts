@@ -55,6 +55,9 @@ export function captureConfirmText(d: CaptureData): string {
   return 'Add this to your citation library?\n\n"' + d.title + '"\n' + (d.author || "(no author found)") + (d.year ? " (" + d.year + ")" : "");
 }
 
+/** W30: a bookmark dragged before the fix still sends the first four characters of the date ("09/1" for "09/16/2019"); a year that is not four digits is dropped, so the reference shows "n.d." and the Crossref check can surface the year. */
+export function captureYearV2(year: string | undefined): string { return year && /^\d{4}$/.test(year) ? year : ""; }
+
 /** 13649: the entry v1 saves, a journal article in APA, the page's link only when there is no DOI. */
 export function captureRecord(d: CaptureData): CitationEntry {
   return { author: d.author || "", year: d.year || "", title: d.title, source: d.source || "", volume: "", issue: "", pages: "", doi: d.doi || "", url: d.doi ? "" : (d.url || ""), type: "Journal article", style: "apa" };
@@ -72,8 +75,12 @@ const V1_D_PART = "var d={title:m('citation_title')||document.title,author:as,ye
 /** The author part that replaces it: v1's, then, when the page has no `citation_author` (PubMed writes one `citation_authors` tag, "Schaefer EM; Gonzalez CB; …"),
  * that tag split on ";" with each name trimmed and empty ones dropped. A page with both tags is read once: `citation_author` wins. */
 const V2_AUTHOR_PART = V1_AUTHOR_PART + "if(!as)as=(m('citation_authors')||'').split(/;\\s*/).map(function(x){return x.trim()}).filter(function(x){return x}).join('; ');";
-/** The `d` part that replaces it: v1's six fields, then the volume, the issue and the pages (the first page, or first-last when a different last page is given). */
-const V2_D_PART = "var fp=m('citation_firstpage')||'',lp=m('citation_lastpage')||'';" + V1_D_PART.replace("url:location.href};", "url:location.href,volume:m('citation_volume')||'',issue:m('citation_issue')||'',pages:fp&&lp&&lp!==fp?fp+'-'+lp:fp};");
+/** v1's year expression: the first four characters of the first date tag, so "09/16/2019" gave "09/1" (walk fault W30). */
+const V1_YEAR_EXPR = "(m('citation_publication_date')||m('citation_date')||m('citation_year')||'').slice(0,4)";
+/** Its replacement (ES5, inside the bookmarklet): the first 4-digit year (1500-2099) found in citation_publication_date, then citation_date, then citation_year; "" when none has one. */
+const V2_YEAR_EXPR = "(function(){var v=[m('citation_publication_date'),m('citation_date'),m('citation_year')];for(var i=0;i<v.length;i++){var r=/\\b(1[5-9]|20)\\d{2}\\b/.exec(v[i]||'');if(r)return r[0]}return ''})()";
+/** The `d` part that replaces it: v1's six fields with the year read as above (W30), then the volume, the issue and the pages (the first page, or first-last when a different last page is given). */
+const V2_D_PART = "var fp=m('citation_firstpage')||'',lp=m('citation_lastpage')||'';" + V1_D_PART.replace(V1_YEAR_EXPR, () => V2_YEAR_EXPR).replace("url:location.href};", "url:location.href,volume:m('citation_volume')||'',issue:m('citation_issue')||'',pages:fp&&lp&&lp!==fp?fp+'-'+lp:fp};");
 
 /** bookmarkletSource with two parts replaced: the authors (V2_AUTHOR_PART) and the payload (V2_D_PART). Everything else, the alert and the opened address included, is v1's. */
 export function bookmarkletSourceV2(appUrl: string): string {
@@ -96,7 +103,7 @@ export function capNameToCit(n: string): string {
 
 /** captureRecord (13649) with each author name through capNameToCit and the page's volume, issue and pages. For a v1 payload it is captureRecord's entry. */
 export function captureRecordV2(d: CaptureData): CitationEntry {
-  const rec = captureRecord(d);
+  const rec = captureRecord({ ...d, year: captureYearV2(d.year) });
   return { ...rec, author: (rec.author || "").split(/;\s*/).map(capNameToCit).join("; "), volume: d.volume || "", issue: d.issue || "", pages: d.pages || "" };
 }
 
