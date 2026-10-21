@@ -56,8 +56,15 @@ Plus these exceptions:
 - D: `apps/web/proxy.ts` and `test/proxy.test.ts`, for one host.
 - B and D: rows in `aiuse-labels.test.ts` and rules in `packages/core/src/aiuse.ts`.
 - E: the toolbar's Viva button in `components/document/ActionRow.tsx`.
+- Append-only, each session adding its own (a later PR rebases, as `aiuse-labels.test.ts` is handled):
+  - `packages/core/src/index.ts`: each session's own exports.
+  - `packages/core/test/golden/harness/engines.ts`: the `ENGINES` list; B, D and E append their capturers.
+  - `apps/web/lib/ai/actions.ts`: D only, as Task D2 says.
+  - `docs/superpowers/specs/parity-deviations.md`: rows in the session's own id block; B may also update rows D-W2-8 and F27, as Task B5 says.
 
 Anything else is a groundwork change: stop and report it.
+
+A tool draws over the open document only through its module's `DocumentLayer`.
 
 ## Global Constraints
 
