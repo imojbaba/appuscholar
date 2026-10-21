@@ -201,7 +201,60 @@ export const V2_STRINGS = {
   // A sealed project or document title while the vault is locked, and one that does not open under this vault (wave B Task 5, register D-S2-40). DRAFT Hindi.
   title_locked: { en: "Locked title", hi: "बंद शीर्षक" },
   title_unreadable: { en: "This title cannot be opened", hi: "यह शीर्षक खोला नहीं जा सकता" },
-  titles_unlock: { en: "Type your passphrase to see the names of your projects and documents.", hi: "अपने प्रोजेक्ट और दस्तावेज़ों के नाम देखने के लिए अपना पासफ़्रेज़ लिखें।" }
+  titles_unlock: { en: "Type your passphrase to see the names of your projects and documents.", hi: "अपने प्रोजेक्ट और दस्तावेज़ों के नाम देखने के लिए अपना पासफ़्रेज़ लिखें।" },
+  // Wave B Task 6 (register D-S2-38): the routes, the header and the place header. Stage names are plain, with no number or emoji; Literature's tabs.
+  // DRAFT Hindi throughout.
+  stage_name_idea: { en: "Idea", hi: "विचार" },
+  stage_name_lit: { en: "Literature", hi: "साहित्य" },
+  stage_name_design: { en: "Design and ethics", hi: "डिज़ाइन और नैतिकता" },
+  stage_name_collect: { en: "Collection and analysis", hi: "संग्रह और विश्लेषण" },
+  stage_name_writing: { en: "Writing", hi: "लेखन" },
+  stage_name_review: { en: "Review", hi: "समीक्षा" },
+  tab_name_find: { en: "Find", hi: "खोजें" },
+  tab_name_reading: { en: "Reading list", hi: "पढ़ने की सूची" },
+  tab_name_compare: { en: "Compare", hi: "तुलना करें" },
+  tab_name_citations: { en: "Citations", hi: "उद्धरण" },
+  // The header (canvas Main): the vault pill while unlocked, the AI pill, Help and the account menu.
+  vault_pill_yours: { en: "Locked to you", hi: "आपके लिए बंद" },
+  ai_pill_key: { en: "AI: {provider}, your key", hi: "AI: {provider}, आपकी कुंजी" },
+  ai_pill_nokey: { en: "AI: add your key", hi: "AI: अपनी कुंजी जोड़ें" },
+  hdr_help: { en: "Help", hi: "मदद" },
+  hdr_account: { en: "Account", hi: "खाता" },
+  acct_export: { en: "Export all my work", hi: "मेरा सारा काम निर्यात करें" },
+  acct_ai: { en: "AI provider and key", hi: "AI प्रदाता और कुंजी" },
+  acct_change_pass: { en: "Change passphrase", hi: "पासफ़्रेज़ बदलें" },
+  acct_sign_out: { en: "Sign out", hi: "साइन आउट करें" },
+  acct_erase: { en: "Delete my account", hi: "मेरा खाता हटाएं" },
+  // The project switcher and the scratch space's name (as the project list names it, Task 8).
+  switcher_label: { en: "Switch project", hi: "प्रोजेक्ट बदलें" },
+  switcher_all: { en: "All projects", hi: "सभी प्रोजेक्ट" },
+  switch_fail: { en: "Could not open that project. Try again.", hi: "वह प्रोजेक्ट नहीं खुल सका। फिर कोशिश करें।" },
+  scratch_name: { en: "Documents not in a project", hi: "जो दस्तावेज़ किसी प्रोजेक्ट में नहीं हैं" },
+  project_not_found: { en: "This project was not found.", hi: "यह प्रोजेक्ट नहीं मिला।" },
+  // The place header: where you are, and the question strip (draft §5).
+  place_crumbs: { en: "Where you are", hi: "आप कहाँ हैं" },
+  place_question: { en: "Your question", hi: "आपका प्रश्न" },
+  place_question_edit: { en: "Edit", hi: "बदलें" },
+  place_question_none: { en: "No question yet.", hi: "अभी कोई प्रश्न नहीं।" },
+  place_question_locked: { en: "Your question is locked. Enter your passphrase to see it.", hi: "आपका प्रश्न बंद है। इसे देखने के लिए अपना पासफ़्रेज़ लिखें।" },
+  place_not_built: { en: "Not built yet.", hi: "अभी बना नहीं है।" },
+  reading_open_pdfs: { en: "Open your PDFs", hi: "अपनी PDF खोलें" },
+  // The project's home, the project list and first run until Tasks 7, 8 and 9 build them.
+  home_places: { en: "Stages", hi: "चरण" },
+  projects_new: { en: "New project", hi: "नया प्रोजेक्ट" },
+  projects_none: { en: "No projects yet.", hi: "अभी कोई प्रोजेक्ट नहीं।" },
+  projects_finished: { en: "Finished", hi: "पूरा हुआ" },
+  start_h: { en: "Start a project", hi: "प्रोजेक्ट शुरू करें" },
+  start_name_label: { en: "What is your project called?", hi: "आपके प्रोजेक्ट का नाम क्या है?" },
+  start_name_first: { en: "Give your project a name first.", hi: "पहले अपने प्रोजेक्ट को नाम दें।" },
+  start_create: { en: "Create project", hi: "प्रोजेक्ट बनाएं" },
+  start_scratch: { en: "Write without a project", hi: "बिना प्रोजेक्ट के लिखें" },
+  start_fail: { en: "Could not create the project. Try again.", hi: "प्रोजेक्ट नहीं बन सका। फिर कोशिश करें।" },
+  // Switching project while a stage's value waits for the passphrase (wave A residual, held-blobs registry).
+  blob_switch_held: {
+    en: "Some changes are waiting for your passphrase. They are kept and saved once you unlock.",
+    hi: "कुछ बदलाव आपके पासफ़्रेज़ की प्रतीक्षा कर रहे हैं। वे रखे गए हैं और अनलॉक करते ही सहेजे जाएंगे।"
+  }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

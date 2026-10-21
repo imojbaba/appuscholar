@@ -11,7 +11,7 @@ import { useCitationUsage } from "@/lib/cite/usage";
 import type { Library } from "@/lib/cite/useLibrary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "../PanelLoading";
 import { CiteChecks, CiteUsed, RcLine, RetrWarn } from "./CiteChecks";
 import { CiteShare } from "./CiteShare";
@@ -27,7 +27,7 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
   // W8: while the saved library is read and opened there is neither a count nor "No sources yet." (a locked vault says so in its own sentence).
   const opening = library.loading && !library.locked;
   const { editor } = useSuggestion();
-  const { selectDoc, documents } = useWorkspace();
+  const { selectDoc, documents } = useProject();
   const usage = useCitationUsage(lib, style);
   const oaKey = useOpenAlexKey();
   const checks = useCiteChecks(library, { oaKey: oaKey ?? undefined });

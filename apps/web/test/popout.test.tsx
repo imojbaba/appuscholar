@@ -13,7 +13,6 @@ const h = vi.hoisted(() => ({
   api: vi.fn(),
   editor: null as unknown,
   me: { id: "u1", activeProjectId: null as string | null, scratchProjectId: "scratch" },
-  ws: { activeTool: "cite", dock: "tools", dockShow: () => {}, aiWaiting: false, projectId: "p1", documents: [] } as Record<string, unknown>
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
@@ -25,32 +24,23 @@ vi.mock("@/lib/ai/suggestion", () => ({
   useSuggestion: () => ({ editor: h.editor })
 }));
 vi.mock("@/lib/cite/useLibrary", async (orig) => ({ ...(await orig<typeof import("../lib/cite/useLibrary")>()), CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
-vi.mock("@/components/workspace/Header", () => ({ ChromeDialogs: () => <div data-testid="chrome-dialogs" /> }));
-// The Dock's other panels (the Dock test's stubs).
-vi.mock("@/components/workspace/StageGuide", () => ({ StageGuide: () => null }));
-vi.mock("@/components/tools/AiPane", () => ({ AiPane: () => null }));
-vi.mock("@/components/tools/IdeaPanel", () => ({ IdeaPanel: () => null }));
-vi.mock("@/components/tools/HelpersPanel", () => ({ HelpersPanel: () => null }));
-vi.mock("@/components/tools/ChatPanel", () => ({ ChatPanel: () => null, useChatLog: () => ({}) }));
-vi.mock("@/components/tools/StubPanel", () => ({ StubPanel: () => null }));
+vi.mock("@/components/workspace/ChromeDialogs", () => ({ ChromeDialogs: () => <div data-testid="chrome-dialogs" /> }));
 // The two pop-out panels and Analyse a paper, as stubs that show what the pop-out's workspace gives them.
 vi.mock("@/components/tools/cite/CitePanel", async () => {
-  const { useWorkspace } = await import("@/components/workspace/WorkspaceContext");
-  return { CitePanel: () => { const ws = useWorkspace(); return <div className="panel" data-testid="panel-cite">{ws.projectId}|{ws.documents.map((d) => d.id).join(",")}</div>; } };
+  const { useProject } = await import("@/components/frame/ProjectContext");
+  return { CitePanel: () => { const ws = useProject(); return <div className="panel" data-testid="panel-cite">{ws.projectId}|{ws.documents.map((d) => d.id).join(",")}</div>; } };
 });
 vi.mock("@/components/tools/research/ResearchPanel", async () => {
-  const { useWorkspace } = await import("@/components/workspace/WorkspaceContext");
-  return { ResearchPanel: () => { const ws = useWorkspace(); return <div className="panel" data-testid="panel-research">{ws.projectId}<button type="button" data-testid="go-analyse" onClick={() => ws.showTool("analyse")} /></div>; } };
+  const { useProject } = await import("@/components/frame/ProjectContext");
+  return { ResearchPanel: () => { const ws = useProject(); return <div className="panel" data-testid="panel-research">{ws.projectId}<button type="button" data-testid="go-analyse" onClick={() => ws.go("/p/x/lit/reading")} /></div>; } };
 });
 vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div className="panel" data-testid="panel-analyse" /> }));
 
-import { Dock } from "../components/workspace/Dock";
-import { WorkspaceProvider, type WorkspaceValue } from "../components/workspace/WorkspaceContext";
 import { Popout } from "../components/popout/Popout";
 import { CiteShare } from "../components/tools/cite/CiteShare";
 import { citeUseLib, CITATION_INSERTED } from "../lib/cite/actions";
 import type { Library } from "../lib/cite/useLibrary";
-import { setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
+import { openPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
 import { markCursorPlaced } from "../lib/editor/insert";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -96,28 +86,21 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-describe("the Dock's ⧉ Pop out (v1 popOutTool)", () => {
-  const dock = (activeTool: string) => {
-    h.ws = { ...h.ws, activeTool };
-    render(<WorkspaceProvider value={h.ws as unknown as WorkspaceValue}><Dock /></WorkspaceProvider>);
-  };
-  it.each(["cite", "research"])("%s opens its pop-out window", (tool) => {
+describe("openPopout (v1 popOutTool; its button returns with Task 13)", () => {
+  it.each(["cite", "research"] as const)("%s opens its pop-out window", (tool) => {
     const open = vi.spyOn(window, "open").mockReturnValue({ focus: () => {} } as unknown as Window);
-    dock(tool);
-    act(() => { tid("pop-out")!.click(); });
+    openPopout(tool, t);
     expect(open).toHaveBeenCalledWith("/popout?tool=" + tool, "appu_pop_" + tool, "popup=yes,width=540,height=820");
     expect(toasts()).toEqual([]);
   });
   it("a blocked window says so", () => {
     vi.spyOn(window, "open").mockReturnValue(null);
-    dock("cite");
-    act(() => { tid("pop-out")!.click(); });
+    openPopout("cite", t);
     expect(toasts()).toEqual([E.pop_blocked]);
   });
-  it.each(["idea", "chat", "analyse"])("%s keeps v1's notice", (tool) => {
+  it.each(["idea", "chat", "analyse"] as const)("%s keeps v1's notice", (tool) => {
     const open = vi.spyOn(window, "open");
-    dock(tool);
-    act(() => { tid("pop-out")!.click(); });
+    openPopout(tool, t);
     expect(open).not.toHaveBeenCalled();
     expect(toasts()).toEqual([E.pop_unsupported]);
   });
@@ -155,7 +138,7 @@ describe("the pop-out page renders the tool alone", () => {
     expect(tid("panel-cite")).toBeNull();
   });
 
-  it("showTool from inside the pop-out switches the pop-out's tool (v1 showTool there, rsAnalyse 8417)", async () => {
+  it("going to the reading list from inside the pop-out switches the pop-out's tool to Analyse a paper (v1 showTool there, rsAnalyse 8417)", async () => {
     popoutAt("research");
     api();
     render(<Popout tool="research" />);

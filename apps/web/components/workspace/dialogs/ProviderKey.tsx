@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { openVaultSetup } from "./VaultSetup";
 
 /** v1 FIELD_LIST (index.html:2499). */
@@ -34,7 +34,7 @@ const MODE_HINT: Record<KeyMode, string> = {
 };
 
 export function ProviderKey() {
-  const { dialog, closeDialog } = useWorkspace();
+  const { dialog, closeDialog } = useProject();
   return (
     <Dialog open={dialog === "settings"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" data-testid="provider-dialog">
@@ -50,7 +50,7 @@ const TONE: Record<NonNullable<Out>["tone"], string> = { run: "text-muted-foregr
 function Form() {
   const t = useT();
   const { settings, update } = useSettings();
-  const { project, reloadProject, closeDialog, openTerms, settingsProvider } = useWorkspace();
+  const { project, reloadProject, closeDialog, openTerms, settingsProvider } = useProject();
   const keys = useKeys();
   const vault = useVault();
   const active: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";

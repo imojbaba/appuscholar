@@ -7,7 +7,8 @@ import { caretEntry } from "@/lib/cite/caret";
 import { citePanelShown, getCiteActive, setCiteActive } from "@/lib/cite/active";
 import { useLibrary } from "@/lib/cite/useLibrary";
 import { Button } from "@/components/ui/button";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
+import { placeHref } from "@/lib/frame/places";
 
 /** v1 citCaretSchedule 7713: the chip is worked out this long after the caret stops. */
 export const CARET_CHIP_DELAY_MS = 120;
@@ -21,7 +22,7 @@ export const CARET_CHIP_DELAY_MS = 120;
 export function CaretChip({ editor }: { editor: Editor }) {
   const t = useT();
   const { lib } = useLibrary({ passive: true });
-  const { showTool } = useWorkspace();
+  const { go, projectId } = useProject();
   /** citCaretIdx and the chip's text, as v1 sets them at each update. */
   const [chip, setChip] = useState<{ index: number; c: string }>({ index: -1, c: "" });
   const libRef = useRef(lib);
@@ -52,7 +53,7 @@ export function CaretChip({ editor }: { editor: Editor }) {
     const i = chip.index;
     if (i < 0) return;
     setCiteActive(i, true);
-    showTool("cite");
+    go(placeHref(projectId ?? "", "lit", "citations"));
   };
   return (
     <Button type="button" variant="ghost" size="sm" className="cit-caret-chip" data-testid="cit-caret-chip" onMouseDown={(e) => e.preventDefault()} onClick={jump}>

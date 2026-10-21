@@ -9,7 +9,7 @@ import { getCiteForm, setCiteForm, useCiteForm } from "@/lib/cite/form";
 import { citeInsertQuote } from "@/lib/cite/quote";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 /**
  * The quote box (v1 914-919): "Quote from this source (optional)", its description and "Insert quote" (citInsertQuote 7888-7908). An English source
@@ -19,7 +19,7 @@ export function CiteQuote({ insertReady }: { insertReady: boolean }) {
   const t = useT();
   const f = useCiteForm();
   const target = useInsertTarget();
-  const { project } = useWorkspace();
+  const { project } = useProject();
   const { settings } = useSettings();
   const callAI = useCallAI();
   const insert = () => {

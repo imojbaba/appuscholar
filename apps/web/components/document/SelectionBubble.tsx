@@ -7,14 +7,15 @@ import { useWritingRun } from "@/lib/ai/useWritingRun";
 import { collapseSelectionToEnd } from "@/lib/editor/insert";
 import { selBubbleVisible } from "@/lib/editor/selectionBubble";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
+import { placeHref } from "@/lib/frame/places";
 
 const KEY = "selBubble";
 
 /** The v1 selection bubble (mockup 01): Find papers, Cite and Improve above 8 to 800 characters of selected text. Hidden while typing, scrolling or after an action. */
 export function SelectionBubble({ editor }: { editor: Editor }) {
   const t = useT();
-  const { showTool, setPendingSearch } = useWorkspace();
+  const { go, projectId, setPendingSearch } = useProject();
   const run = useWritingRun(editor);
 
   const hide = useCallback(() => { if (!editor.isDestroyed && document.querySelector(".sel-bubble")) editor.view.dispatch(editor.state.tr.setMeta(KEY, "hide")); }, [editor]);
@@ -44,9 +45,9 @@ export function SelectionBubble({ editor }: { editor: Editor }) {
     hide();
     if (!text) return;
     setPendingSearch(text.slice(0, 200));
-    showTool("research");
+    go(placeHref(projectId ?? "", "lit", "find"));
   };
-  const cite = () => { hide(); collapseSelectionToEnd(editor); showTool("cite"); toast(t("sel_cite_toast")); };
+  const cite = () => { hide(); collapseSelectionToEnd(editor); go(placeHref(projectId ?? "", "lit", "citations")); toast(t("sel_cite_toast")); };
   const improve = () => { void run("improve"); hide(); };
 
   return (

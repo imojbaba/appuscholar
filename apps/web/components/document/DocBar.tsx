@@ -13,7 +13,7 @@ import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault } from "@/lib/vault/useVault";
 import { sealTitle, useTitle } from "@/lib/vault/titles";
-import { useWorkspace, type DocumentSummary, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
+import { useProject, type DocumentSummary, type DocumentWithBody } from "@/components/frame/ProjectContext";
 
 const UNDO_MS = 10_000;
 
@@ -22,7 +22,7 @@ export function DocBar() {
   const t = useT();
   const { me } = useSettings();
   const vault = useVault();
-  const { project, documents, currentDoc, selectDoc, reloadDocs, startImport, restoreDocument, patchDoc, registerFlush, flushOpen } = useWorkspace();
+  const { project, documents, currentDoc, selectDoc, reloadDocs, startImport, restoreDocument, patchDoc, registerFlush, flushOpen } = useProject();
   const [dialog, setDialog] = useState<"new" | "rename" | "delete" | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);

@@ -51,7 +51,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.projectId ? { id: h.projectId } : null, projectId: h.projectId, pendingAnalyse: null, setPendingAnalyse: () => {} }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.projectId ? { id: h.projectId } : null, projectId: h.projectId, pendingAnalyse: null, setPendingAnalyse: () => {} }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: [], loading: false, locked: false, broken: false, error: false, loadPaper: async () => null }) }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: h.download }));
 

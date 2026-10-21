@@ -10,7 +10,7 @@ import en from "../messages/en.json";
 type Lib = CitationEntry[];
 const h = vi.hoisted(() => ({
   lib: [] as unknown[],
-  showTool: vi.fn(),
+  go: vi.fn(),
   editor: null as unknown
 }));
 const idle = () => ({ value: null, loading: false, locked: false, set: vi.fn(), flush: vi.fn(async () => true) });
@@ -21,8 +21,8 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: {} }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({
-  useWorkspace: () => ({ project: null, documents: [], currentDoc: null, selectDoc: vi.fn(), showTool: h.showTool })
+vi.mock("@/components/frame/ProjectContext", () => ({
+  useProject: () => ({ project: null, documents: [], currentDoc: null, selectDoc: vi.fn(), go: h.go, projectId: "p1" })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/lib/api", () => ({ apiFetch: async () => { throw new Error("no documents here"); } }));
@@ -66,7 +66,7 @@ async function caretAt(e: Editor, word: string, k = 1) {
 
 beforeEach(() => {
   h.lib = [LEE, SMITH] as Lib;
-  h.showTool.mockReset();
+  h.go.mockReset();
   resetCiteActive();
   resetCheckBusy();
   vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Failed to fetch"); }));
@@ -109,7 +109,7 @@ describe("the caret chip (v1 618, 7668-7727)", () => {
     mount(<CaretChip editor={e} />);
     await caretAt(e, "(Smith", 3);
     await act(async () => { tid("cit-caret-chip")!.click(); });
-    expect(h.showTool).toHaveBeenCalledWith("cite");
+    expect(h.go).toHaveBeenCalledWith("/p/p1/lit/citations");
     expect(getCiteActive()).toMatchObject({ index: 1, jump: true });
     // The manager then opens with that card lit.
     mount(<CitePanel />);

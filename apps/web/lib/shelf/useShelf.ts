@@ -8,7 +8,7 @@ import { blobPath, projectBlobClient, useProjectBlob, type BlobVault, type BlobW
 import { useT } from "@/lib/i18n";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { useVault } from "@/lib/vault/useVault";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { toast } from "@/components/ui/toast";
 import { EMPTY_PAPER, type ShelfEntry, type ShelfItem, type ShelfOps } from "./actions";
 
@@ -89,7 +89,7 @@ export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | nul
 
 /** The shelf of the project the workspace has loaded (the scratch project's in scratch space). */
 function useShelfProject(): string | null {
-  return useWorkspace().projectId;
+  return useProject().projectId;
 }
 
 /**

@@ -16,7 +16,7 @@ vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api
 vi.mock("@/lib/vault/useVault", () => ({
   useVault: () => ({ status: "off", known: async () => "off", ensureUnlocked: async () => true, encryptBody: async (_d: unknown, s: string) => ({ bodyHtml: s, keyVersion: 0 }), decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml })
 }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p1" }, projectId: "p1" }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 // The guard as shipped, with kinds a test makes refused on top (a client the guard makes read-only).
 vi.mock("@/lib/popout/mode", async (orig) => {

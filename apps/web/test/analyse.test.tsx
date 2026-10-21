@@ -37,7 +37,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: h.projectId, index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: h.apLoading, locked: false, set: () => {}, flush: async () => true }) }));

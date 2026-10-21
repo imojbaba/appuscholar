@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { WORKSPACE_URL } from "./origins";
+import { APP_URL } from "./origins";
 
 /** A fresh @e2e.local address (the e2e provider signs anyone in under that domain); `prefix` tells the specs' accounts apart. */
 export function e2eEmail(prefix: string): string {
@@ -17,13 +17,13 @@ export type SignInOptions = {
   ready?: string[];
 };
 
-/** Signs in through the e2e form (`e2e-email` / `e2e-submit`) and waits for the workspace at /. Returns the address used. */
+/** Signs in through the e2e form (`e2e-email` / `e2e-submit`) and waits for the app (`/` forwards to first run, the list or a project). Returns the address used. */
 export async function signIn(page: Page, opts: SignInOptions = {}): Promise<string> {
   const email = opts.email ?? e2eEmail(opts.prefix ?? "u");
   await page.goto("/signin");
   await page.getByTestId("e2e-email").fill(email);
   await page.getByTestId("e2e-submit").click();
-  await expect(page).toHaveURL(WORKSPACE_URL);
+  await expect(page).toHaveURL(APP_URL);
   if (opts.newAccount) {
     // A new account meets the terms gate, then the welcome tour.
     await page.getByTestId("terms-age").check();

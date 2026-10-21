@@ -11,7 +11,7 @@ import { runDevil } from "../lib/ai/actions";
 import en from "../messages/en.json";
 
 const ws = vi.hoisted(() => ({ dockShow: vi.fn(), setAiWaiting: vi.fn() }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ws }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ws }));
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
 
 import { SuggestionProvider, useSuggestion, type SuggestionValue } from "../lib/ai/suggestion";

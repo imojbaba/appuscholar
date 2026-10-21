@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { useT } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { findInDoc, nextMatchIndex, replaceRanges, revealMatch, showMatches } from "@/lib/editor/findInEditor";
@@ -10,6 +11,7 @@ const btn = "fmt";
 
 /** The Find and replace bar under the format bar: Find, Replace, Next, Replace, Replace all, "i of n" and a case box. */
 export function FindReplace({ editor, seed, onClose }: { editor: Editor; seed: string; onClose(): void }) {
+  const t = useT();
   const [query, setQuery] = useState(seed);
   const [repl, setRepl] = useState("");
   const [caseSensitive, setCase] = useState(false);
@@ -58,7 +60,7 @@ export function FindReplace({ editor, seed, onClose }: { editor: Editor; seed: s
   return (
     <div className="fmtbar findbar" role="search" aria-label="Find and replace" data-testid="find-bar"
       onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } }}>
-      <Input ref={findRef} className="findbar-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find" aria-label="Find" data-testid="find-input"
+      <Input ref={findRef} className="findbar-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("tab_name_find")} aria-label={t("tab_name_find")} data-testid="find-input"
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); go(e.shiftKey ? current - 1 : current + 1); } }} />
       <Input className="findbar-input" value={repl} onChange={(e) => setRepl(e.target.value)} placeholder="Replace with" aria-label="Replace with" data-testid="replace-input" />
       <button type="button" className={btn} aria-label="Next match" data-testid="find-next" disabled={!matches.length} onClick={() => go(current + 1)}>Next</button>

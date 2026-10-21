@@ -11,7 +11,7 @@ vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => vi.fn() }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ setThinking: vi.fn(), isCurrent: vi.fn(), set: vi.fn(), clear: vi.fn() }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: { id: "p1" }, openSaveAs: h.toast, dockShow: vi.fn() }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, dockShow: vi.fn() }) }));
 
 import { ApiError } from "../lib/api";
 import { VaultProvider } from "../lib/vault/useVault";

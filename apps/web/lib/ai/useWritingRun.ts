@@ -6,7 +6,7 @@ import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { hasSelection, selectionRange, selectionText, tailText } from "@/lib/editor/insert";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { runWritingAction, type ActionDeps } from "./actions";
 import { useSuggestion } from "./suggestion";
 import { useCallAI } from "./useCallAI";
@@ -15,7 +15,7 @@ import { useCallAI } from "./useCallAI";
 export function useWritingRun(editor: Editor): (kind: WritingKind) => Promise<void> {
   const t = useT();
   const { settings } = useSettings();
-  const { dockShow } = useWorkspace();
+  const { dockShow } = useProject();
   const suggestion = useSuggestion();
   const callAI = useCallAI();
   const draftFirst = settings.draftFirst === true;

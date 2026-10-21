@@ -93,7 +93,7 @@ describe("VaultPill", () => {
     h.v.status = "unlocked";
     await render();
     pill = $("vault-pill")!;
-    expect(pill.textContent).toBe(en.vault_pill_on);
+    expect(pill.textContent).toBe(en.vault_pill_yours);
     expect(pill.className).toContain("bg-ok-bg"); // green
     await openMenu();
     expect($("vault-menu-change")!.textContent).toBe(en.vault_change_h2);
@@ -144,7 +144,7 @@ describe("VaultPill", () => {
     h.v.complete = true;
     h.v.migrating = null;
     await render();
-    expect($("vault-pill")!.textContent).toBe(en.vault_pill_on);
+    expect($("vault-pill")!.textContent).toBe(en.vault_pill_yours);
   });
 
   it("Forget on this computer is offered only when this computer remembers the vault", async () => {

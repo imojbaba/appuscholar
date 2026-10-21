@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { Editor } from "@/components/editor/Editor";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { DocBar } from "./DocBar";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { ActionRow } from "./ActionRow";
@@ -29,7 +29,7 @@ export function DocumentCard() {
   const t = useT();
   const { settings } = useSettings();
   const { hasKey } = useKeys();
-  const { currentDoc, registerFlush, setWordCount, startImport } = useWorkspace();
+  const { currentDoc, registerFlush, setWordCount, startImport } = useProject();
   // Red from the first failed save until a save succeeds: retries ("saving") and typing offline ("dirty") do not turn it green.
   const [failed, setFailed] = useState(false);
   // The vault is locked and the student has not opened it: the text waits in the editor (vault_save_locked).

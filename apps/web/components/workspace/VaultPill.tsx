@@ -12,7 +12,7 @@ import { openVaultSetup } from "./dialogs/VaultSetup";
 
 /* DESIGN-SYSTEM.md: amber flags what needs attention, green is good, purple is structure (work under way), grey is neutral.
    Borders, not shadows. 34px target on desktop; the phone rule in globals.css makes every header button 44px. */
-const PILL = "inline-flex min-h-[34px] max-w-full items-center rounded-full border border-transparent px-3 text-xs leading-4 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+const PILL = "inline-flex min-h-[34px] max-w-full items-center rounded-full border border-transparent px-3 text-xs leading-4 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-800";
 const TONE = {
   off: "bg-flag-bg text-flag-ink hover:border-flag-ink/40",
   locked: "bg-chip text-muted-foreground hover:border-line-strong",
@@ -72,7 +72,7 @@ export function VaultPill({ className }: { className?: string }) {
       {/* Not modal, so the change dialog it opens takes focus cleanly. */}
       <DropdownMenu modal={false} onOpenChange={(o) => { if (o) readRemembered(); }}>
         <DropdownMenuTrigger asChild>
-          <button type="button" className={cn(PILL, TONE.unlocked, className)} data-testid="vault-pill" data-status={status}><span className="truncate">{t("vault_pill_on")}</span></button>
+          <button type="button" className={cn(PILL, TONE.unlocked, className)} data-testid="vault-pill" data-status={status}><span className="truncate">{t("vault_pill_yours")}</span></button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" data-testid="vault-menu">
           <DropdownMenuItem className="min-h-[34px]" data-testid="vault-menu-change" onSelect={() => setChanging(true)}>{t("vault_change_h2")}</DropdownMenuItem>

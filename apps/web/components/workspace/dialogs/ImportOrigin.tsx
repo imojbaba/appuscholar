@@ -2,12 +2,12 @@
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 /** v1 `impAsk`: "Whose writing is this?", asked once for the whole batch of files being imported. */
 export function ImportOrigin() {
   const t = useT();
-  const { dialog, importNames, runImport, closeDialog } = useWorkspace();
+  const { dialog, importNames, runImport, closeDialog } = useProject();
   return (
     <Dialog open={dialog === "importOrigin"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
       <DialogContent className="max-w-md" data-testid="import-origin">

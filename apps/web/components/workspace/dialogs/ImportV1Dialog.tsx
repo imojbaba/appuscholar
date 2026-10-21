@@ -3,11 +3,11 @@ import { useState } from "react";
 import { ImportV1 } from "@/components/import/ImportV1";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 /** The v1 backup import (formerly the /import page). Documents land in a new project, which opens when the import is stored. */
 export function ImportV1Dialog() {
-  const { dialog, closeDialog, setActiveProject } = useWorkspace();
+  const { dialog, closeDialog, openProject } = useProject();
   const [busy, setBusy] = useState(false);
   const open = dialog === "importV1";
   return (
@@ -23,7 +23,7 @@ export function ImportV1Dialog() {
             onBusyChange={setBusy}
             onDone={(projectId) => {
               closeDialog();
-              void setActiveProject(projectId, { skipJump: true }).catch(() => toast("Imported. Open it from Research Projects."));
+              void openProject(projectId).catch(() => toast("Imported. Open it from All projects."));
             }}
           />
         )}
