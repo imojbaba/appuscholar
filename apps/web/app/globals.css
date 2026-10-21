@@ -619,7 +619,6 @@
 .home-q-read { font-weight: 400; white-space: pre-line; overflow-wrap: anywhere; }
 .home-out { padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: 10px; }
 .home-out p { margin: 0; font-size: 14px; }
-.home-out .home-out-soon { color: var(--muted); font-size: 13px; }
 .home-locked { padding: var(--s6); display: flex; flex-direction: column; gap: var(--s3); max-width: 640px; }
 .home-locked p { margin: 0; }
 .home-next { background: var(--purple-800); color: #fff; border-radius: var(--r-card); padding: var(--s6) 28px; display: flex; flex-wrap: wrap; gap: var(--s5); align-items: center; }

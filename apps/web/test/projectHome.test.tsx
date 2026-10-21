@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
-  api: vi.fn(), toast: vi.fn(), go: vi.fn(async () => true),
+  api: vi.fn(), toast: vi.fn(), go: vi.fn(async () => true), openExport: vi.fn(),
   vault: null as unknown,
   me: { id: "u1", activeProjectId: "p1", scratchProjectId: "s1" }
 }));
@@ -16,7 +16,7 @@ vi.mock("@/lib/vault/useVault", async (orig) => ({ ...(await orig<typeof import(
 vi.mock("@/lib/vault/titles", () => ({ useTitle: (t: { title: string } | null) => ({ state: "open", text: t?.title ?? "" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0, deks: [], field: "Psychology", stage: "idea", status: "active", contentLang: "en", kind: "research" };
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport }) }));
 
 import { ProjectHome, highlightCache } from "../components/frame/ProjectHome";
 import { heldBlobs } from "../lib/blobs/held";
@@ -248,10 +248,18 @@ describe("the project home", () => {
     await until(() => text("home-next-say") === fill(en.next_read, { n: 2 }));
   });
 
-  it("Export project waits for the export place: disabled, and says where the account export is", async () => {
+  it("Export project opens the project's export place with the default parts", async () => {
+    h.openExport.mockReset();
     mount();
     await until(() => !!q("home-export"));
-    expect((q("home-export") as HTMLButtonElement).disabled).toBe(true);
-    expect(q("home-export")!.title).toBe(en.home_out_soon);
+    const btn = q("home-export") as HTMLButtonElement;
+    expect(btn.disabled).toBe(false);
+    expect(btn.title).toBe("");
+    expect(btn.textContent).toBe(en.home_out_btn);
+    expect(q("home-out")!.textContent).not.toContain("Not built yet");
+    await act(async () => { btn.click(); });
+    expect(h.openExport).toHaveBeenCalledTimes(1);
+    // No part: the dialog ticks the defaults (exportPartsFor()).
+    expect(h.openExport.mock.calls[0]).toEqual([]);
   });
 });

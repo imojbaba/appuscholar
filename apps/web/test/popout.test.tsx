@@ -17,12 +17,14 @@ const h = vi.hoisted(() => ({
   editor: null as unknown,
   ws: null as unknown,
   me: { id: "u1", activeProjectId: null as string | null, scratchProjectId: "scratch", termsAcceptedAt: "2999-01-01T00:00:00Z" },
+  download: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: h.push, replace: h.replace }), usePathname: () => h.path }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: { seenWelcome: true }, update: vi.fn(), reload: vi.fn() }) }));
-vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", known: async () => "off", ensureUnlocked: async () => true, decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml }) }));
+vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: h.download }));
 // The suggestion provider is real in the pop-out (its editor stays null); the probes read the editor this test gives.
 vi.mock("@/lib/ai/suggestion", () => ({
   SuggestionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -46,6 +48,10 @@ import { ProjectProvider, useProject, type ProjectValue } from "../components/fr
 import OldPopoutPage from "../app/(app)/popout/page";
 import { CiteShare } from "../components/tools/cite/CiteShare";
 import { NotBuilt } from "../components/places/NotBuilt";
+import { ExportLink } from "../components/export/ExportLink";
+import { EXPORT_PARTS } from "../lib/export/projectExport";
+import { heldBlobs } from "../lib/blobs/held";
+import { ApiError } from "../lib/api";
 import { citeUseLib, CITATION_INSERTED } from "../lib/cite/actions";
 import type { Library } from "../lib/cite/useLibrary";
 import { blobWritable, isPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
@@ -87,6 +93,7 @@ beforeEach(() => {
   h.api.mockReset();
   h.push.mockReset();
   h.replace.mockReset();
+  h.download.mockReset();
   h.editor = null;
   h.ws = null;
   h.me = { id: "u1", activeProjectId: null, scratchProjectId: "scratch", termsAcceptedAt: "2999-01-01T00:00:00Z" };
@@ -211,6 +218,40 @@ describe("a place in its own window (register row D-S2-43)", () => {
     act(() => { tid("window-close")!.click(); });
     expect(close).toHaveBeenCalledTimes(1);
     expect(tid("window-close")!.textContent).toBe(E.window_close);
+  });
+
+  it("a tool's Export link in a pop-out opens the export place there, over the window's project, and the export only reads", async () => {
+    popoutAt("/p/p1/lit/citations?window=1");
+    const LIB = [{ author: "Bandura, Albert", year: "1977", title: "Self-efficacy", source: "Psychological Review", type: "Journal article" }];
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      // The download's one audit row is the only call that is not a read.
+      if (path === "/me/export-audit" && init?.method === "POST") return undefined;
+      if (init?.method && init.method !== "GET") throw new Error("the pop-out wrote " + path);
+      if (path === "/projects") return [P1];
+      if (path === "/projects/p1/documents") return DOCS;
+      if (path === "/projects/p1/blobs/citations") return { kind: "citations", body: JSON.stringify(LIB), keyVersion: 0, deks: [], updatedAt: "2026-10-21T00:00:00Z", version: 1 };
+      if (path.startsWith("/projects/p1/blobs/")) throw new ApiError(404, "not-found");
+      throw new Error("unexpected " + path);
+    });
+    // A value held from a panel that went away: the writing window would send it before the zip; a pop-out leaves it alone.
+    const sent = vi.fn(async () => []);
+    heldBlobs.put("held-elsewhere", [{ value: 1 }], sent);
+    render(<ProjectShell projectId="p1"><ExportLink part="citations" testId="cite-export" /></ProjectShell>);
+    await until(() => !!tid("cite-export"));
+    await act(async () => { tid("cite-export")!.click(); });
+    await until(() => !!tid("export-dialog"));
+    expect(EXPORT_PARTS.filter((p) => (tid("exp-part-" + p) as HTMLInputElement | null)?.checked)).toEqual(["citations"]);
+    expect(document.querySelector("#exp-h")!.textContent).toBe("Export: Sleep and memory");
+    await act(async () => { tid("exp-download")!.click(); });
+    await until(() => h.download.mock.calls.length === 1);
+    expect(h.download.mock.calls[0]![0]).toMatch(/^appuscholar-Sleep and memory-\d{4}-\d{2}-\d{2}\.zip$/);
+    expect(sent).not.toHaveBeenCalled();
+    const writes = h.api.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method && (init as RequestInit).method !== "GET").map(([p]) => p);
+    expect(writes).toEqual(["/me/export-audit"]);
+    // What is still held is not in the zip, and the dialog says so.
+    await until(() => !!tid("exp-unsaved"));
+    expect(tid("exp-unsaved")!.textContent).toBe(E.exp_unsaved);
+    heldBlobs.clear();
   });
 
   it("a move inside the window stays in the window: go keeps ?window=1, and an address that lost it gets it back", async () => {

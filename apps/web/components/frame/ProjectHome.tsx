@@ -139,8 +139,6 @@ function HomeBody({ pv, facts, states, open, mark }: {
 }) {
   const t = useT();
   const next = suggestNext(facts);
-  // The export place arrives with Task 12 (`openExport` on the project's value); until then the button says where the account export is.
-  const openExport = (pv as ProjectValue & { openExport?: () => void }).openExport;
   return (
     <div className="home-grid">
       <div className="home-side">
@@ -148,9 +146,8 @@ function HomeBody({ pv, facts, states, open, mark }: {
         <section className="home-card home-out" data-testid="home-out">
           <h2>{t("home_out_h")}</h2>
           <p>{t("home_out_desc")}</p>
-          <button type="button" className="home-btn" disabled={!openExport} title={openExport ? undefined : t("home_out_soon")}
-            onClick={() => openExport?.()} data-testid="home-export">{t("home_out_btn")}</button>
-          {!openExport && <p className="home-out-soon">{t("home_out_soon")}</p>}
+          {/* The project's export place (Task 12), with the default parts ticked. */}
+          <button type="button" className="home-btn" onClick={() => pv.openExport()} data-testid="home-export">{t("home_out_btn")}</button>
         </section>
       </div>
       <div className="home-main">

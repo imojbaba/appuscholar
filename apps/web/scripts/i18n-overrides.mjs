@@ -387,7 +387,6 @@ export const V2_STRINGS = {
   home_out_h: { en: "Take your work out", hi: "अपना काम बाहर ले जाएँ" },
   home_out_desc: { en: "One place for every file: the document, references, your search list, reading notes and paper cards.", hi: "हर फ़ाइल के लिए एक जगह: दस्तावेज़, संदर्भ, आपकी खोज सूची, पढ़ने के नोट्स और पेपर कार्ड।" },
   home_out_btn: { en: "Export project", hi: "प्रोजेक्ट निर्यात करें" },
-  home_out_soon: { en: "Not built yet. For now, use Export all my work in the account menu.", hi: "अभी बना नहीं है। फ़िलहाल खाता मेनू में मेरा सारा काम निर्यात करें का उपयोग करें।" },
   home_locked: { en: "This project is locked. Enter your passphrase to open it.", hi: "यह प्रोजेक्ट बंद है। इसे खोलने के लिए अपना पासफ़्रेज़ लिखें।" },
   home_unlock: { en: "Unlock", hi: "अनलॉक करें" },
   home_load_fail: { en: "Could not load this project. Check your connection and try again.", hi: "यह प्रोजेक्ट लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },

@@ -11,6 +11,7 @@ import { CITE_STYLE_OPTIONS } from "@/lib/cite/form";
 import { useLibrary } from "@/lib/cite/useLibrary";
 import { downloadBlob } from "@/lib/export/download";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, saveProjectExport, type ExportPart, type ProjectExportDeps } from "@/lib/export/projectExport";
+import { isPopout } from "@/lib/popout/mode";
 import { shownNow } from "@/lib/research/useSearch";
 import { useVault } from "@/lib/vault/useVault";
 import type { ExportDoc, ExportDocSummary } from "@/lib/vault/export";
@@ -35,6 +36,7 @@ const FORMAT: Record<ExportPart, string> = {
  * The export place of one project (wave B Task 12, register D-S2-42; canvas Export): what to include as ticks, the reference style, then
  * Download zip. `parts` opens it with those ticked (null: closed). While the zip is built the line under the parts names the part being made and
  * the button is disabled (W31); the zip is built from what the server holds, opened here (lib/export/projectExport), logged once per download.
+ * In a place's own window it opens there too, over that window's project, and only reads.
  */
 export function ExportDialog({ parts, onClose }: { parts: ExportPart[] | null; onClose(): void }) {
   return (
@@ -77,9 +79,12 @@ function ExportBody({ initial, onClose }: { initial: ExportPart[]; onClose(): vo
     setBuilding("");
     try {
       if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) { setProblem(t("exp_locked")); return; }
-      // The open document's latest words, and every panel's unsent or held blob value, are stored first, so the zip has them.
-      await flushOpen();
-      await heldBlobs.saveAll();
+      // The open document's latest words, and every panel's unsent or held blob value, are stored first, so the zip has them. A place's own
+      // window only reads (D-S2-43): it stores nothing first, and the line under the parts says when something unsent is not in the zip.
+      if (!isPopout()) {
+        await flushOpen();
+        await heldBlobs.saveAll();
+      }
       const left = shouldWarnOnUnloadBlobs();
       const pid = projectId;
       const deps: ProjectExportDeps = {
