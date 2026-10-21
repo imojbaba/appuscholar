@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   written: [] as Array<{ kind: string; value: unknown }>,
   docText: "",
   docHtml: null as string | null,
+  docs: null as null | Array<{ id: string; title: string; text: string; html: string }>,
   editor: null as null | { isDestroyed: boolean; getHTML(): string },
   scan: null as null | import("../lib/ai/callAI").CallCtx,
   api: vi.fn(),
@@ -44,10 +45,10 @@ vi.mock("@/lib/ai/useCallAI", async () => {
   return { useCallAI: () => (prompt: string, o: { temp: number; max: number }) => (h.scan ? real.callAI(prompt, o, h.scan) : h.ai(prompt, o)) };
 });
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: (...a: unknown[]) => h.api(...a) }));
-vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ text: () => h.docText, allDocuments: async () => [{ id: "d1", title: "", text: "", html: h.docHtml ?? "<p>" + h.docText + "</p>" }] }) }));
+// In a place's own window text() is the writing window's mirror and allDocuments() lists the project's documents; the project context has no current document there.
+vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ text: () => h.docText, allDocuments: async () => h.docs ?? [{ id: "d1", title: "", text: h.docText, html: h.docHtml ?? "<p>" + h.docText + "</p>" }] }) }));
 // The open document's editor: its HTML is what the panel learns from (the student's own words only, D-S2-89).
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ currentDoc: { id: "d1" } }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { Panel } from "../components/tools/style/Panel";
@@ -99,7 +100,7 @@ const seed = (kind: string, value: unknown) => { h.store[kind] = value; };
 const T = (k: string, vars?: Record<string, string | number>) => (E[k] ?? k).replace(/\{(\w+)\}/g, (m, v: string) => (vars && v in vars ? String(vars[v]) : m));
 
 beforeEach(() => {
-  h.store = {}; h.flags = {}; h.written = []; h.docText = ""; h.docHtml = null; h.editor = { isDestroyed: false, getHTML: () => h.docHtml ?? "<p>" + h.docText + "</p>" }; h.ai.mockClear(); h.toast.mockClear();
+  h.store = {}; h.flags = {}; h.written = []; h.docText = ""; h.docHtml = null; h.docs = null; h.editor = { isDestroyed: false, getHTML: () => h.docHtml ?? "<p>" + h.docText + "</p>" }; h.ai.mockClear(); h.toast.mockClear();
   h.ai.mockImplementation(async () => "- Plain, warm tone.\n- Short sentences.");
 });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; vi.restoreAllMocks(); h.scan = null; });
@@ -232,14 +233,39 @@ describe("only the student's own words are learned from (D-S2-89)", () => {
     mount();
     expect($("style-declaration")!.textContent).toContain("I wrote these samples myself, without AI and without copying from anyone.");
   });
-  it("with no editor (a place's own window) the open document is read from the writing window", async () => {
+  it("with no editor and no current document (a place's own window) the writing window's open document is found by the mirror's text, the AI span still left out", async () => {
     h.editor = null;
     mount();
     click("style-decl");
-    h.docHtml = html("zebraquartzmarker");
+    // The mirror holds the text the writing window sees (AI span included); the other document is the project's first.
+    h.docText = prose(100) + " zebraquartzmarker";
+    h.docs = [
+      { id: "d1", title: "", text: "Another document of this project.", html: "<p>Another document of this project.</p>" },
+      { id: "d2", title: "", text: h.docText, html: html("zebraquartzmarker") }
+    ];
     click("style-learn");
     await idle();
+    expect(h.ai).toHaveBeenCalledOnce();
+    expect(h.ai.mock.calls[0]![0]).toContain("TEXT:\n" + prose(100).slice(0, 40));
     expect(h.ai.mock.calls[0]![0]).not.toContain("zebraquartzmarker");
+    expect(h.ai.mock.calls[0]![0]).not.toContain("Another document");
+    expect(h.store.style_samples as StyleSample[]).toHaveLength(1);
+  });
+  it("with no editor and a mirror that matches nothing, the first document is used and the 80-word minimum still applies", async () => {
+    h.editor = null;
+    mount();
+    click("style-decl");
+    h.docText = "";
+    h.docs = [{ id: "d1", title: "", text: "x", html: "<p>" + prose(100) + "</p>" }];
+    click("style-learn");
+    await idle();
+    expect(h.ai).toHaveBeenCalledOnce();
+    h.ai.mockClear();
+    h.docs = [{ id: "d1", title: "", text: "x", html: "<p>" + prose(40) + "</p>" }];
+    click("style-learn");
+    await tick(20);
+    expect($("style-status")!.textContent).toBe(T("sty2_need_words", { n: 80 }));
+    expect(h.ai).not.toHaveBeenCalled();
   });
 });
 

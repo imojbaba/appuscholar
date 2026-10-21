@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { STYLE_MIN_WORDS, STYLE_SAMPLES_MAX, styleFeatures, stylePrompt, type StyleSample } from "@appuscholar/core";
 import { STYLE_DOC_MIN_WORDS, STYLE_MAX_FILES, STYLE_MAX_FILE_BYTES, STYLE_MAX_PDF_PAGES } from "../lib/tools/style/limits";
 import { readStyleFile } from "../lib/tools/style/read";
-import { addSampleTo, learnFromDocument, learnFromFiles, type LearnEnv, type LearnOutcome } from "../lib/tools/style/learn";
+import { addSampleTo, learnFromDocument, learnFromFiles, pickOpenDocument, type LearnEnv, type LearnOutcome } from "../lib/tools/style/learn";
 import { isPasteInput, runLiveCheck } from "../lib/tools/style/checks";
 import { clearCurrentStyle, currentStylePrompt, currentStyleVocabNote, setCurrentStyle } from "../lib/tools/style/current";
 import JSZip from "jszip";
@@ -308,5 +308,15 @@ describe("the module-level style getter (ruling R3)", () => {
     expect(currentStyleVocabNote("a plain text", "an extraordinarily sophisticated phrase")).toBe("");
     clearCurrentStyle("p1");
     expect(currentStyleVocabNote("a", "extraordinarily")).toBe("");
+  });
+});
+
+describe("pickOpenDocument (a place's own window)", () => {
+  const docs = [{ id: "a", text: "first" }, { id: "b", text: "second" }];
+  it("picks the entry whose text is the mirror's, else the first, else nothing", () => {
+    expect(pickOpenDocument(docs, "second")?.id).toBe("b");
+    expect(pickOpenDocument(docs, "not there")?.id).toBe("a");
+    expect(pickOpenDocument(docs, "")?.id).toBe("a");
+    expect(pickOpenDocument([], "second")).toBeUndefined();
   });
 });

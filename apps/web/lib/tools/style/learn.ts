@@ -126,3 +126,12 @@ export async function learnFromFiles(files: File[], env: LearnEnv): Promise<Lear
     return env.alive() ? { kind: "error", message: errorText(e) } : { kind: "stopped" };
   }
 }
+
+/**
+ * The document the writing window has open, among a project's documents (docAccess allDocuments), for a place's own window, which has no editor and
+ * whose project context has no current document. The window's mirror of the open document's text (docAccess text()) says which one: the entry whose
+ * text is the same. When none is (the mirror is a moment behind, or empty), the first entry, the project's oldest document, which is the writing document.
+ */
+export function pickOpenDocument<D extends { text: string }>(all: D[], mirrorText: string): D | undefined {
+  return all.find((d) => d.text === mirrorText) ?? all[0];
+}

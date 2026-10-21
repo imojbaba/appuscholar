@@ -6,9 +6,8 @@ import { plainText, useT } from "@/lib/i18n";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { useDocAccess } from "@/lib/editor/docAccess";
 import { useSuggestion } from "@/lib/ai/suggestion";
-import { useProject } from "@/components/frame/ProjectContext";
 import { STYLE_MAX_FILES, STYLE_MAX_FILE_BYTES, STYLE_MAX_PDF_PAGES } from "@/lib/tools/style/limits";
-import { learnFromDocument, learnFromFiles, precheckDocument, precheckFiles, type LearnEnv, type LearnOutcome, type LearnProgress } from "@/lib/tools/style/learn";
+import { learnFromDocument, learnFromFiles, pickOpenDocument, precheckDocument, precheckFiles, type LearnEnv, type LearnOutcome, type LearnProgress } from "@/lib/tools/style/learn";
 import { readStyleFile } from "@/lib/tools/style/read";
 import { useStyleData } from "@/lib/tools/style/useStyleData";
 import { PanelLoading } from "@/components/tools/PanelLoading";
@@ -30,7 +29,6 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   const callAI = useCallAI();
   const docs = useDocAccess();
   const { editor } = useSuggestion();
-  const { currentDoc } = useProject();
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -86,13 +84,12 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   });
 
   /**
-   * The open document's HTML: the editor's own, else (a place's own window has no editor) the open document as the writing window sends it.
+   * The open document's HTML: the editor's own, else (a place's own window has no editor and no current document) the writing window's open document, found in allDocuments().
    * Only the student's own words are learned from (D-S2-89), so the HTML is read, not the text.
    */
   async function openHtml(): Promise<string> {
     if (editor && !editor.isDestroyed) return editor.getHTML();
-    const all = await docs.allDocuments();
-    return all.find((d) => d.id === currentDoc?.id)?.html ?? "";
+    return pickOpenDocument(await docs.allDocuments(), docs.text())?.html ?? "";
   }
   async function learnDocument(): Promise<void> {
     const text = styleOwnText(await openHtml());
