@@ -10,6 +10,15 @@ import type { WritingRecord } from "../lib/writingRecord";
 import { exportPartList } from "../lib/export/moduleParts";
 import type { ExportPartDef } from "../lib/tools/registry";
 
+// Every tool module this file does not set up itself is pinned to its unbuilt stub, so a tool session's real export parts never appear here (session C, 2026-10-22).
+vi.mock("@/components/tools/stats", () => ({ built: false }));
+vi.mock("@/components/tools/qual", () => ({ built: false }));
+vi.mock("@/components/tools/style", () => ({ built: false }));
+vi.mock("@/components/tools/words", () => ({ built: false }));
+vi.mock("@/components/tools/close", () => ({ built: false }));
+vi.mock("@/components/tools/slides", () => ({ built: false }));
+vi.mock("@/components/tools/viva", () => ({ built: false }));
+
 /*
  * Task G3 (ruling R7): one tool module mocked as built, declaring one export part, as a session's module does. Its build reads the project's
  * blobs through the export's deps and hands back its files.
