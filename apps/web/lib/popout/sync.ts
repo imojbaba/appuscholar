@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import type { Editor } from "@tiptap/core";
 import { sanitizeHtml, type Formatted } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
-import { useSuggestion } from "@/lib/ai/suggestion";
+import { useProject, type ProjectValue } from "@/components/frame/ProjectContext";
 import { CITATION_INSERTED } from "@/lib/cite/actions";
 import { insertCitation, insertHtmlBlock, insertTextAtCursor } from "@/lib/editor/insert";
 import type { StageKey } from "@/lib/tools";
@@ -44,58 +44,59 @@ export function postInsert(m: InsertMessage, t: (key: string) => string): void {
 
 /** Where a panel's inserts go: the open document's editor in the writing window, the writing window itself from a pop-out. */
 export type InsertTarget = {
-  /** Something can receive an insert: an open document here, always in a pop-out (v1 never disables these buttons there). */
+  /** Something can receive an insert: always, now that an insert opens a closed document (Task 11), and in a pop-out (v1 never disables these buttons there). */
   ready: boolean;
-  /** citPutIntext's insert (7500-7502): false when nothing went in (no document open). */
-  citation(f: Formatted): boolean;
+  /** citPutIntext's insert (7500-7502): false when nothing went in (the document did not open). */
+  citation(f: Formatted): Promise<boolean>;
   /** citInsertAtCursor (7481): text the student wrote, escaped by the receiver. */
-  text(s: string): boolean;
+  text(s: string): Promise<boolean>;
   /** insertHTMLBlockIntoEditor (4228): markup the app built (the reference list, a translated quote). */
-  block(html: string): boolean;
+  block(html: string): Promise<boolean>;
 };
 
 /**
- * The panels' inserts. In the writing window they go into the open document (insertCitation, insertTextAtCursor, insertHtmlBlock); a document that
- * closed meanwhile (its editor destroyed) receives nothing. In a pop-out they are posted to the writing window: the in-text citation as text, AMA's
- * number as `[n]` text (v1 7501: `f.sup&&!POPOUT`), a quote as text, and the reference list and a translated quote as markup (v1 inserts those
- * into the pop-out's own hidden editor, where they are lost; register row D-S2-17).
+ * The panels' inserts. In the writing window they go into the open document through the shell's requestInsert (insertCitation,
+ * insertTextAtCursor, insertHtmlBlock): a closed document opens beside the place first, a locked one asks for the passphrase once, and when it
+ * does not open nothing goes in, the student is told, and the answer is false. In a pop-out they are posted to the writing window: the in-text
+ * citation as text, AMA's number as `[n]` text (v1 7501: `f.sup&&!POPOUT`), a quote as text, and the reference list and a translated quote as
+ * markup (v1 inserts those into the pop-out's own hidden editor, where they are lost; register row D-S2-17).
  */
 export function useInsertTarget(): InsertTarget {
   const t = useT();
-  const { editor } = useSuggestion();
+  const { requestInsert } = useProject();
   if (isPopout()) {
-    const send = (m: InsertMessage) => { postInsert(m, t); return true; };
+    const send = (m: InsertMessage) => { postInsert(m, t); return Promise.resolve(true); };
     return { ready: true, citation: (f) => send({ type: "insert", text: " " + f.intext }), text: (s) => send({ type: "insert", text: s }), block: (html) => send({ type: "insert", html }) };
   }
-  const live = (): Editor | null => (editor && !editor.isDestroyed ? editor : null);
-  const into = (fn: (e: Editor) => void) => { const e = live(); if (!e) return false; fn(e); return true; };
   return {
-    ready: live() !== null,
-    citation: (f) => into((e) => insertCitation(e, f)),
-    text: (s) => into((e) => insertTextAtCursor(e, s)),
-    block: (html) => into((e) => insertHtmlBlock(e, html))
+    ready: true,
+    citation: (f) => requestInsert((e) => insertCitation(e, f)),
+    text: (s) => requestInsert((e) => insertTextAtCursor(e, s)),
+    block: (html) => requestInsert((e) => insertHtmlBlock(e, html))
   };
 }
 
 /**
- * The writing window's receiver (v1 7604-7611, mounted once by the workspace): `{type:'insert',text}` goes in at the cursor by v1's
+ * The writing window's receiver (v1 7604-7611, mounted once by the project shell): `{type:'insert',text}` goes in at the cursor by v1's
  * insertIntoEditor rule (`hasSelection()||!!savedRange`: at the placed cursor, else at the end on a new line; insertTextAtCursor), markup by
- * insertHTMLBlockIntoEditor's (insertHtmlBlock, sanitised first), then "Citation inserted ✓" (v1 7609, a literal). A pop-out does not receive.
+ * insertHTMLBlockIntoEditor's (insertHtmlBlock, sanitised first), then "Citation inserted ✓" (v1 7609, a literal). Both go through the shell's
+ * requestInsert (Task 11), so a document closed in this window opens to take them; when it does not open, requestInsert says so and there is
+ * no "inserted". A pop-out does not receive.
  */
-export function useSyncReceiver(editor: Editor | null): void {
-  const ref = useRef(editor);
-  useEffect(() => { ref.current = editor; }, [editor]);
+export function useSyncReceiver(requestInsert: ProjectValue["requestInsert"]): void {
+  const ref = useRef(requestInsert);
+  useEffect(() => { ref.current = requestInsert; }, [requestInsert]);
   useEffect(() => {
     if (isPopout()) return;
     return onSyncMessage((data) => {
       const m = (data ?? {}) as { type?: unknown; text?: unknown; html?: unknown };
       if (m.type !== "insert") return;
-      const e = ref.current;
-      if (!e || e.isDestroyed) return;
-      if (typeof m.text === "string") insertTextAtCursor(e, m.text);
-      else if (typeof m.html === "string") insertHtmlBlock(e, sanitizeHtml(m.html));
+      const { text, html } = m;
+      let run: (e: Editor) => void;
+      if (typeof text === "string") run = (e) => insertTextAtCursor(e, text);
+      else if (typeof html === "string") run = (e) => insertHtmlBlock(e, sanitizeHtml(html));
       else return;
-      toast(CITATION_INSERTED);
+      void ref.current(run).then((ok) => { if (ok) toast(CITATION_INSERTED); });
     });
   }, []);
 }

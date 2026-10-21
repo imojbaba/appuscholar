@@ -24,7 +24,6 @@ function deps(over: Partial<HelperDeps> & { store?: Map<string, string> } = {}) 
     set: vi.fn<HelperDeps["set"]>(() => void log.push("set")),
     setFeedback: vi.fn<HelperDeps["setFeedback"]>(() => void log.push("feedback")),
     clear: vi.fn(() => void log.push("clear")),
-    dockShow: vi.fn((w: string) => void log.push("dock:" + w)),
     toast: vi.fn((m: string) => void log.push("toast:" + m)),
     t: vi.fn((k: string) => E[k] ?? k),
     confirm: vi.fn(() => { log.push("confirm"); return true; }),
@@ -110,7 +109,7 @@ describe("runHelper (v1 psychTool 8600-8615)", () => {
     expect(m.setThinking).toHaveBeenCalledWith("custom", null, "\u{1F49C} Thinking…");
     expect(m.set).toHaveBeenCalledWith("Aim: ...", null, 7);
     expect(m.setFeedback).not.toHaveBeenCalled();
-    expect(log).toEqual(["thinking:custom:\u{1F49C} Thinking…", "dock:ai", "call", "set", "dock:ai", "toast:Ready — press Tab in the editor to insert"]);
+    expect(log).toEqual(["thinking:custom:\u{1F49C} Thinking…", "call", "set", "toast:Ready — press Tab in the editor to insert"]);
   });
 
   it("the case tool asks v1's APA 4.07 confirm once per session; the yes is kept under appu_case_ack", async () => {
@@ -162,7 +161,6 @@ describe("runHelper (v1 psychTool 8600-8615)", () => {
     const bad = deps({ callAI: vi.fn(async () => { throw new Error(apiMsg("network")); }) });
     await runHelper("paper", bad.d);
     expect(bad.m.clear).toHaveBeenCalledWith(apiMsg("network"));
-    expect(bad.m.dockShow).toHaveBeenLastCalledWith("ai");
     expect(bad.m.toast).toHaveBeenCalledWith(apiMsg("network"));
     expect(bad.m.set).not.toHaveBeenCalled();
     const stale = deps({ isCurrent: vi.fn(() => false) });
@@ -207,7 +205,7 @@ describe("runDevil (v1 devilTool 8619-8630)", () => {
     expect(m.setThinking).toHaveBeenCalledWith("custom", null, E.devil_thinking);
     expect(m.setFeedback).toHaveBeenCalledWith(E.devil_label + "\n\n1. ...", 7);
     expect(m.set).not.toHaveBeenCalled();
-    expect(log).toEqual([`thinking:custom:${E.devil_thinking}`, "dock:ai", "call", "feedback", "dock:ai", "toast:" + E.devil_ready]);
+    expect(log).toEqual([`thinking:custom:${E.devil_thinking}`, "call", "feedback", "toast:" + E.devil_ready]);
   });
 
   it("a failure goes through the shared error path; a superseded request is dropped", async () => {

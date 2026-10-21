@@ -1,10 +1,11 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { Editor } from "@tiptap/core";
 import { usePathname, useRouter } from "next/navigation";
 import { sanitizeHtml, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/lib/settings";
-import { plainText, useT } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { toast } from "@/components/ui/toast";
 import { isImportable } from "@/lib/import/parse";
@@ -15,10 +16,8 @@ import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib
 import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
 import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places";
 import { listOrSeed } from "@/lib/frame/firstDocument";
-import { DocumentCard } from "@/components/document/DocumentCard";
-import { AiPane } from "@/components/tools/AiPane";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { SuggestionProvider, useSuggestion } from "@/lib/ai/suggestion";
+import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { useSyncReceiver } from "@/lib/popout/sync";
 import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
@@ -30,9 +29,12 @@ import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
+import { DocumentBeside } from "./DocumentBeside";
 import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
 
 const BUSY = "Another import is still running. Wait for it to finish.";
+/** How long an insert waits for the document's editor once it has asked for it (after the unlock, when one was asked). */
+export const INSERT_WAIT_MS = 10_000;
 
 type Loaded = { project: Project | null; projectId: string; documents: DocumentSummary[]; doc: DocumentWithBody | null } | { missing: true };
 
@@ -53,6 +55,9 @@ export async function readableDoc(vault: Pick<VaultValue, "ensureUnlocked" | "de
     throw e;
   }
 }
+
+/** The editor as an insert may use it: null once it is destroyed (the document closed or switched meanwhile). */
+function liveOf(e: Editor | null): Editor | null { return e && !e.isDestroyed ? e : null; }
 
 /** Creation order, as v1 listed documents (the API answers most recently updated first). */
 export function byCreated(list: DocumentSummary[]): DocumentSummary[] {
@@ -79,19 +84,20 @@ let liveRestore: ((id: string, docProjectId: string) => Promise<boolean>) | null
 /**
  * The frame around every page but the pop-out: the header, the dialogs, the first-use terms and the welcome tour, and, within a project
  * (`projectId` from the address, the scratch project's id in scratch space), the project, its documents, the open document and its editor.
- * They stay mounted while the student moves between the project's places; the Writing place shows the document at full width, the others keep
- * it mounted out of sight, so an insert still lands in it (Task 11 puts it beside every place). Outside a project (`projectId` null: first run,
- * the list) nothing is loaded. Moved here from components/workspace/Workspace.tsx (Task 6, impact map D1a).
+ * They stay mounted while the student moves between the project's places; the Writing place shows the document at full width, the others show it
+ * beside the place once it is opened (Task 11, DocumentBeside), and keep it mounted out of sight while it is closed, so an insert still lands in
+ * it. Outside a project (`projectId` null: first run, the list) nothing is loaded. Moved here from components/workspace/Workspace.tsx (Task 6,
+ * impact map D1a).
  *
  * A place in its own window (`?window=1`, register row D-S2-43) gets the same shell without the document: a slim header, the place, its documents
- * listed but never opened or created, no document or AI pane, no title sealing and no active-project write; its inserts go to the writing window
+ * listed but never opened or created, no document beside it, no title sealing and no active-project write; its inserts go to the writing window
  * (lib/popout/sync.ts), and a move inside the window keeps `?window=1`.
  */
 export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, children }: { projectId: string | null; openImportV1?: boolean; children?: React.ReactNode }) {
   const t = useT();
   const router = useRouter();
   const pathname = usePathname();
-  const { me, settings, reload } = useSettings();
+  const { me, settings, reload, update } = useSettings();
   const vault = useVault();
   // Loads and creations outlive a render; they read the newest vault from here.
   const vaultRef = useRef(vault);
@@ -131,15 +137,13 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [projectId, setProjectId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);
-  const [aiShown, setAiShown] = useState(false);
   const [dialog, setDialog] = useState<ProjectValue["dialog"]>(null);
   const [settingsProvider, setSettingsProvider] = useState<ProviderId | null>(null);
   const [importWaiting, setImportWaiting] = useState<File[]>([]);
   const importing = useRef(false);
-  const [aiWaiting, setAiWaiting] = useState(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
-  useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
+  useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; readyRef.current = ready; }, [projectId, currentDoc, ready]);
   const docToken = useRef(0);
   /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */
   const selecting = useRef(false);
@@ -147,8 +151,20 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   // The latest project and open document, for callbacks that outlive a render (the Undo of a deletion, ten seconds later).
   const projectIdRef = useRef<string | null>(null);
   const currentDocRef = useRef<DocumentWithBody | null>(null);
+  const readyRef = useRef(ready);
   // Set while the "Switch anyway?" question is open; answering it resolves the switch that asked.
   const [switchAsk, setSwitchAsk] = useState<{ doc: DocumentWithBody | null; answer: (yes: boolean) => void } | null>(null);
+  // The same for "Close anyway?", when the document beside a place is closed after a failed save.
+  const [closeAsk, setCloseAsk] = useState<{ doc: DocumentWithBody | null; answer: (yes: boolean) => void } | null>(null);
+  // The document beside the place (Task 11): the stored setting until the student opens or closes it in this tab.
+  const [docOpenHere, setDocOpenHere] = useState<boolean | null>(null);
+  const docOpen = docOpenHere ?? settings.docBeside === true;
+  const docOpenRef = useRef(docOpen);
+  const updateRef = useRef(update);
+  useEffect(() => { docOpenRef.current = docOpen; updateRef.current = update; }, [docOpen, update]);
+  // The open document's editor, and the inserts waiting for one to register.
+  const editorRef = useRef<Editor | null>(null);
+  const editorWaiters = useRef(new Set<(e: Editor | null) => void>());
   const [live, setLive] = useState<{ docId: string; words: number } | null>(null);
   // Set by openProject before its PATCH: this shell is on its way out and must not write its own project back as the active one.
   const switching = useRef(false);
@@ -366,14 +382,67 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     await doImport(files, origin);
   }, [importWaiting, doImport]);
 
-  // Ruling R6: "ai" shows the AI pane beside the document (the actions and the suggestion provider still call it); "tools" has no dock to show.
-  const dockShow = useCallback((which: "tools" | "ai") => { if (which === "ai") { setAiShown(true); setAiWaiting(false); } }, []);
-
   const place = inProject ? placeOf(pathname) : null;
   const writing = place?.stage === "writing";
+  const writingRef = useRef(writing);
+  useEffect(() => { writingRef.current = writing; }, [writing]);
+
+  /** Opens or closes the document beside the place, and remembers it (docBeside). The Writing place always shows it and changes nothing. */
+  const setBeside = useCallback((open: boolean) => {
+    if (writingRef.current || docOpenRef.current === open) return;
+    docOpenRef.current = open;
+    setDocOpenHere(open);
+    void updateRef.current({ docBeside: open });
+  }, []);
+  const openDocument = useCallback(() => setBeside(true), [setBeside]);
+  const closeDocument = useCallback(async (): Promise<boolean> => {
+    if (!(await flushOpen())) {
+      const yes = await new Promise<boolean>((resolve) => {
+        setCloseAsk((prev) => { prev?.answer(false); return { doc: currentDocRef.current, answer: resolve }; });
+      });
+      if (!yes) return false;
+    }
+    setBeside(false);
+    return true;
+  }, [flushOpen, setBeside]);
+
+  const registerEditor = useCallback((e: Editor | null) => {
+    editorRef.current = e;
+    if (e) for (const w of [...editorWaiters.current]) w(e);
+  }, []);
+  // A document that does not open (its key missing, the text damaged) never gets an editor: an insert waiting for it stops now.
+  useEffect(() => {
+    if (currentDoc?.unreadable === "broken") for (const w of [...editorWaiters.current]) w(null);
+  }, [currentDoc]);
+  /** The open document's editor once it registers, or null after INSERT_WAIT_MS (or when the document turns out not to open). */
+  const waitForEditor = useCallback(() => new Promise<Editor | null>((resolve) => {
+    const now = liveOf(editorRef.current);
+    if (now) { resolve(now); return; }
+    const done = (e: Editor | null) => { clearTimeout(timer); editorWaiters.current.delete(done); resolve(e); };
+    const timer = setTimeout(() => done(null), INSERT_WAIT_MS);
+    editorWaiters.current.add(done);
+  }), []);
+
+  const requestInsert = useCallback(async (run: (editor: Editor) => void): Promise<boolean> => {
+    openDocument();
+    let ed = liveOf(editorRef.current);
+    if (!ed) {
+      const doc = currentDocRef.current;
+      // Loaded with no document (its creation was cancelled), or one that cannot open: there is nothing to wait for.
+      const none = (readyRef.current && !doc && !selecting.current) || doc?.unreadable === "broken";
+      // A locked document asks for the passphrase once; the vault opening re-reads it, and its editor registers.
+      if (!none && (doc?.unreadable !== "locked" || (await vaultRef.current.ensureUnlocked()))) ed = await waitForEditor();
+    }
+    if (!ed) { toast(t("insert_doc_closed")); return false; }
+    run(ed);
+    return true;
+  }, [openDocument, waitForEditor, t]);
+
+  // v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor, opening it first when it is closed here.
+  useSyncReceiver(requestInsert);
 
   const value: ProjectValue = {
-    place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dockShow, aiWaiting, setAiWaiting,
+    place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, docOpen, openDocument, closeDocument, requestInsert, registerEditor,
     project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); }
@@ -386,8 +455,6 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         <CiteLibraryProvider>
         {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
         {inProject && <CaptureHash />}
-        {/* v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor. */}
-        <SyncReceiver />
         {popout ? <WindowHeader /> : <AppHeader />}
         <ChromeDialogs />
         <ImportOrigin />
@@ -400,8 +467,20 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
               <AlertDialogDescription><UnsavedIn doc={switchAsk?.doc ?? null} /></AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel data-testid="switch-stay">Stay</AlertDialogCancel>
+              <AlertDialogCancel data-testid="switch-stay">{t("ask_stay")}</AlertDialogCancel>
               <AlertDialogAction data-testid="switch-anyway" onClick={() => { switchAsk?.answer(true); setSwitchAsk(null); }}>Switch anyway</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog open={!!closeAsk} onOpenChange={(o) => { if (!o && closeAsk) { closeAsk.answer(false); setCloseAsk(null); } }}>
+          <AlertDialogContent data-testid="close-dialog">
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("doc_close_title")}</AlertDialogTitle>
+              <AlertDialogDescription><NotSavedIn doc={closeAsk?.doc ?? null} /></AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="close-stay">{t("ask_stay")}</AlertDialogCancel>
+              <AlertDialogAction data-testid="close-anyway" onClick={() => { closeAsk?.answer(true); setCloseAsk(null); }}>{t("doc_close_anyway")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -416,14 +495,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
           </main>
         ) : (
           <main className={"frame" + (popout ? " in-window" : "")} data-testid="frame">
-            {children}
-            {inProject && !popout && (
-              <div className={"frame-work" + (writing ? " writing" : "") + (aiShown ? " with-ai" : "")}>
-                {/* Mounted in every place, so the editor (and an insert into it) outlives a move to another place; shown at full width in Writing. */}
-                <div className="frame-doc" hidden={!writing} data-testid="frame-doc"><DocumentCard /></div>
-                {aiShown && <aside className="frame-ai" aria-label={plainText(t("dock_ai_tab"))}><AiPane /></aside>}
-              </div>
-            )}
+            {/* The document is mounted in every place, so the editor (and an insert into it) outlives a move to another place: at full width in
+                Writing, beside the place once opened elsewhere (not on the home), out of sight while closed. A place's own window has none. */}
+            {inProject && !popout ? <DocumentBeside shown={writing || (place !== null && docOpen)} beside={!writing}>{children}</DocumentBeside> : children}
           </main>
         )}
         </CiteLibraryProvider>
@@ -432,15 +506,15 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   );
 }
 
-/** The writing window's end of the pop-out channel, on the open document's editor (lib/popout/sync.ts). */
-function SyncReceiver() {
-  const { editor } = useSuggestion();
-  useSyncReceiver(editor);
-  return null;
-}
-
 /** The switch question names the open document by its opened title. */
 function UnsavedIn({ doc }: { doc: DocumentWithBody | null }) {
   const title = useTitle(doc, "document");
   return <>{`Unsaved changes in "${doc ? title.text : "this document"}" may be lost.`}</>;
+}
+
+/** The close question names the document by its opened title. */
+function NotSavedIn({ doc }: { doc: DocumentWithBody | null }) {
+  const t = useT();
+  const title = useTitle(doc, "document");
+  return <>{t("doc_close_ask", { title: doc ? title.text : t("doc_close_this") })}</>;
 }

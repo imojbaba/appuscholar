@@ -38,28 +38,34 @@ function counted(e: Editor) {
 }
 
 describe("citeInsertBib (v1 citInsertBib 7871-7881)", () => {
-  it("hands the editor core's block, the one citlib's golden holds to v1's, for every style", () => {
+  it("hands the editor core's block, the one citlib's golden holds to v1's, for every style", async () => {
     for (const b of CITLIB.bib) {
       const insert = vi.fn();
-      citeInsertBib({ lib: CITLIB.lib, style: b.style, insert, toast: () => {}, t });
+      await citeInsertBib({ lib: CITLIB.lib, style: b.style, insert, toast: () => {}, t });
       expect(insert).toHaveBeenCalledTimes(1);
       expect(insert.mock.calls[0]![0]).toBe(b.html);
       expect(bibliographyHtml(CITLIB.lib, b.style)).toBe(b.html);
     }
   });
 
-  it("toasts v1's sentence for numbered and author-date styles", () => {
+  it("toasts v1's sentence for numbered and author-date styles", async () => {
     expect(new Set(SHARE.bib.map((b) => b.toast)).size).toBe(2);
     for (const b of SHARE.bib) {
       const toast = vi.fn();
-      citeInsertBib({ lib: SHARE.bibLib, style: b.style, insert: () => {}, toast, t });
+      await citeInsertBib({ lib: SHARE.bibLib, style: b.style, insert: async () => true, toast, t });
       expect(toast.mock.calls.map((c) => c[0])).toEqual([b.toast]);
     }
   });
 
-  it("an empty library inserts nothing and toasts v1's sentence", () => {
+  it("when the document did not open (the insert answers false) no success is claimed (Task 11)", async () => {
+    const toast = vi.fn();
+    await citeInsertBib({ lib: SHARE.bibLib, style: "apa", insert: async () => false, toast, t });
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it("an empty library inserts nothing and toasts v1's sentence", async () => {
     const insert = vi.fn(), toast = vi.fn();
-    citeInsertBib({ lib: [], style: "apa", insert, toast, t });
+    await citeInsertBib({ lib: [], style: "apa", insert, toast, t });
     expect(insert).not.toHaveBeenCalled();
     expect(toast.mock.calls.map((c) => c[0])).toEqual(SHARE.bibEmpty);
     expect(LIBRARY_EMPTY).toBe(SHARE.bibEmpty[0]);
@@ -67,9 +73,9 @@ describe("citeInsertBib (v1 citInsertBib 7871-7881)", () => {
 });
 
 describe("the reference list in the editor", () => {
-  it("goes after everything written when the student has not placed the cursor, with the centred heading and hanging-indent items kept", () => {
+  it("goes after everything written when the student has not placed the cursor, with the centred heading and hanging-indent items kept", async () => {
     const e = make("<p>First</p><p>Last</p>");
-    citeInsertBib({ lib: SHARE.bibLib, style: "apa", insert: (html) => insertHtmlBlock(e, html), toast: () => {}, t });
+    await citeInsertBib({ lib: SHARE.bibLib, style: "apa", insert: async (html) => { insertHtmlBlock(e, html); return true; }, toast: () => {}, t });
     const doc = new DOMParser().parseFromString(e.getHTML(), "text/html").body;
     const ps = Array.from(doc.children);
     expect(ps[0]!.textContent).toBe("First");
@@ -93,17 +99,17 @@ describe("the reference list in the editor", () => {
     expect(items.some((x) => x.querySelector("em"))).toBe(true);
   });
 
-  it("goes at the cursor when the student has placed one (v1's savedRange, 4230)", () => {
+  it("goes at the cursor when the student has placed one (v1's savedRange, 4230)", async () => {
     const e = make("<p>First</p><p>Last</p>");
     focusIn(e);
     e.commands.setTextSelection(e.state.doc.child(0).nodeSize);
-    citeInsertBib({ lib: SHARE.bibLib, style: "apa", insert: (html) => insertHtmlBlock(e, html), toast: () => {}, t });
+    await citeInsertBib({ lib: SHARE.bibLib, style: "apa", insert: async (html) => { insertHtmlBlock(e, html); return true; }, toast: () => {}, t });
     const html = e.getHTML();
     expect(html.indexOf("References")).toBeGreaterThan(html.indexOf("First"));
     expect(html.indexOf("References")).toBeLessThan(html.indexOf("Last"));
   });
 
-  it("a 2,000-entry library is ONE editor insertion and takes under 2 s (Review Focus 4)", () => {
+  it("a 2,000-entry library is ONE editor insertion and takes under 2 s (Review Focus 4)", async () => {
     const lib: CitationEntry[] = Array.from({ length: 2000 }, (_, i) => ({
       type: "Journal article", author: `Author${String(i).padStart(4, "0")}, Ann B.; Second, Carl`, year: String(1950 + (i % 70)),
       title: `A study of memory number ${i}`, source: "Journal of Studies", volume: String(i % 90), issue: "2", pages: "1-20", doi: `10.5555/js.${i}`
@@ -112,7 +118,7 @@ describe("the reference list in the editor", () => {
     const n = counted(e);
     const toast = vi.fn();
     const t0 = performance.now();
-    citeInsertBib({ lib, style: "apa", insert: (html) => insertHtmlBlock(e, html), toast, t });
+    await citeInsertBib({ lib, style: "apa", insert: async (html) => { insertHtmlBlock(e, html); return true; }, toast, t });
     const ms = performance.now() - t0;
     expect(n.insertContentAt).toBe(1);
     expect(n.docChanges).toBe(1);

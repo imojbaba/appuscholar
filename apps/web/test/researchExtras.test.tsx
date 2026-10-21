@@ -21,7 +21,6 @@ const h = vi.hoisted(() => ({
   callAI: vi.fn(async (..._a: unknown[]) => ""),
   oaKey: null as string | null,
   go: vi.fn(),
-  dockShow: vi.fn(),
   setPendingAnalyse: vi.fn(),
   setThinking: vi.fn((..._a: unknown[]) => 7),
   set: vi.fn(),
@@ -35,7 +34,7 @@ vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import(".
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null, setThinking: h.setThinking, isCurrent: (tk: number) => tk === 7, set: h.set, clear: h.clear }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, go: h.go, dockShow: h.dockShow })
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, go: h.go, requestInsert: async () => false })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -111,7 +110,7 @@ const actionsShown = () => !(tid("rs-actions") as HTMLElement).hidden;
 let open: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   h.blobs = { citations: blob([]), retraction_cache: blob({}), rs_prefs: blob(null) };
-  for (const f of [h.toast, h.go, h.dockShow, h.setPendingAnalyse, h.set, h.clear, h.download]) f.mockReset();
+  for (const f of [h.toast, h.go, h.setPendingAnalyse, h.set, h.clear, h.download]) f.mockReset();
   h.setThinking.mockReset().mockReturnValue(7);
   h.callAI.mockReset().mockResolvedValue("");
   h.oaKey = null;
@@ -263,7 +262,6 @@ describe("Research part 2: the literature review and the research gap (8530-8551
     expect(h.callAI).toHaveBeenCalledWith(buildLitReviewPrompt("psychology", [ps[1]!, ps[3]!]).prompt, { temp: 0.35, max: 1200 });
     expect(h.setThinking).toHaveBeenCalledWith("custom", null, "💜 Reading 2 abstracts and drafting…");
     expect(h.set).toHaveBeenCalledWith("A grounded paragraph.", null, 7);
-    expect(h.dockShow).toHaveBeenCalledWith("ai");
     expect(toasts().at(-1)).toBe("Ready — press Tab in the editor to insert");
   });
 

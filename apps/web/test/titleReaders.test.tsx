@@ -70,7 +70,7 @@ async function sealedDoc(id: string, keyVersion = 1): Promise<DocumentWithBody> 
 async function renderCard(current: DocumentWithBody) {
   // A second, plain document: delete asks nothing for the only one.
   const other = { ...current, id: "d-notes", title: "Notes", titleKeyVersion: 0, deks: [] };
-  h.ws = { project: null, documents: [current, other], currentDoc: current, selectDoc: vi.fn(async () => true), reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), flushOpen: vi.fn(async () => true), setWordCount: vi.fn() };
+  h.ws = { project: null, documents: [current, other], currentDoc: current, selectDoc: vi.fn(async () => true), reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), registerEditor: vi.fn(), flushOpen: vi.fn(async () => true), setWordCount: vi.fn() };
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);

@@ -241,7 +241,7 @@
 .chat-input:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
 /* The frame (wave B Task 6, canvas Main and Find): the header, a place's header with its tabs and the question strip, and the place's body. The
-   Writing place shows the document at full width; the AI pane sits beside it once asked for, under the place's content elsewhere. */
+   Writing place shows the document at full width; the other places show it beside them once it is opened (Task 11, below). */
 .app-hdr { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); min-height: 64px; padding: 10px var(--s7); background: var(--card); border-bottom: 1px solid var(--line); }
 .app-word { font-family: var(--font-display), Georgia, serif; font-size: 22px; font-weight: 600; color: var(--purple-800); text-decoration: none; }
 .app-switch { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 340px; height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font-weight: 600; }
@@ -291,11 +291,22 @@
 .writing-fold > summary:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .writing-fold > .panel { border-top: 1px solid var(--line); }
 .place-notbuilt .place-note { margin-bottom: var(--s4); max-width: 70ch; }
-.frame-work { max-width: 1360px; margin: 0 auto; padding: var(--s6) var(--s7) 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
-.frame-work:not(.writing):not(.with-ai) { display: none; }
-.frame-work.writing.with-ai { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; }
+/* Task 11: the document beside any place. Writing shows it at full width under its helpers; elsewhere, once opened, it is a column on the right
+   (`--doc-w`, 360 to 900px) that stays in view while the place scrolls, with a handle on its left edge. The AI pane (DocAside) sits beside the
+   text at full width and under it in the column. Up to 1099px the document goes under the place. */
+.place-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--s3); }
+.place-top .place-open-doc { gap: 6px; }
+.frame-body.beside { display: grid; grid-template-columns: minmax(0, 1fr) var(--doc-w, 520px); align-items: start; }
+.frame-place { min-width: 0; }
+.frame-doc { max-width: 1360px; margin: 0 auto; padding: var(--s6) var(--s7) 0; }
+.frame-doc.beside { position: sticky; top: 64px; max-width: none; margin: 0; max-height: calc(100vh - 64px); overflow-y: auto; padding: var(--s6) var(--s7) var(--s4) var(--s4); }
 .frame-doc .doc { min-height: 560px; }
-.frame-ai { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.doc-resize { position: absolute; top: var(--s6); bottom: var(--s4); left: 2px; width: 10px; border-radius: 5px; cursor: col-resize; touch-action: none; }
+.doc-resize:hover { background: var(--purple-100); }
+.doc-resize:focus-visible { background: var(--purple-100); outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.doc-with-aside { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s4); align-items: start; }
+.doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); }
+.doc-aside { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
 .home-interim, .start-interim { max-width: 860px; margin: 0 auto; padding: var(--s7); }
 .home-interim h1, .start-interim h1 { margin: 0 0 var(--s4); font-size: 26px; line-height: 1.25; }
 .home-interim ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
@@ -361,9 +372,12 @@
 .idea-read-raw { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
 .ai-read .field { margin: 0; }
 
-/* Up to 1099px the AI pane goes under the document. */
+/* Up to 1099px the AI pane goes under the document, and the document under the place. */
 @media (max-width: 1099px) {
-  .frame-work.writing.with-ai { grid-template-columns: minmax(0, 1fr); }
+  .doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr); }
+  .frame-body.beside { display: block; }
+  .frame-doc.beside { position: static; max-height: none; overflow: visible; padding: var(--s6) var(--s7) 0; }
+  .doc-resize { display: none; }
 }
 
 /* Phone, up to 700px: 16px gutters, nothing wider than the screen, controls grow to 44px. */
@@ -377,7 +391,7 @@
   .place-hdr { padding: 0 16px; }
   .place-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .place-tabs a { flex: none; }
-  .place-body, .frame-work { padding: 16px 16px 0; }
+  .place-body, .frame-doc, .frame-doc.beside { padding: 16px 16px 0; }
   .plist { padding: 16px; }
   .plist-row { padding: 12px 16px; }
   .plist-open { flex-basis: 100%; }
@@ -406,7 +420,7 @@
   .toast { top: 12px; bottom: auto; }
 
   /* Every button in the chrome is a 44px target. Chat's inline Insert link stays a text link. */
-  .app-hdr button, .place-body button:not(.bub-insert), .frame-work button:not(.bub-insert), .doc .select, .place-body .select,
+  .app-hdr button, .place-hdr button, .place-body button:not(.bub-insert), .frame-doc button:not(.bub-insert), .doc .select, .place-body .select,
   [role="dialog"] button, [role="alertdialog"] button, [role="menuitem"], .toast button { min-height: 44px; }
   /* Dialogs render outside the frame: their close X gets a 44px hit area by padding, the icon stays 16px. */
   [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }

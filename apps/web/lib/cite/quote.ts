@@ -33,10 +33,10 @@ export type QuoteDeps = {
   /** The project's content language, else the default in Settings (getContentLang 2472; the language useCallAI sends). */
   contentLang: "en" | "hi";
   callAI(prompt: string, opts: { temp: number; max: number; noLang: boolean }): Promise<string>;
-  /** insertHTMLBlockIntoEditor (insertHtmlBlock); false when the document the request was made in is no longer open (nothing was inserted). */
-  insertBlock(html: string): boolean;
-  /** citInsertAtCursor (insertTextAtCursor); false when no document is open. */
-  insertAtCursor(text: string): boolean;
+  /** insertHTMLBlockIntoEditor (insertHtmlBlock), through the shell's requestInsert; false when the document did not open (nothing was inserted, and the student was told). */
+  insertBlock(html: string): Promise<boolean>;
+  /** citInsertAtCursor (insertTextAtCursor), the same way; false when the document did not open. */
+  insertAtCursor(text: string): Promise<boolean>;
   clearQuote(): void;
   toast(msg: string): void;
 };
@@ -50,13 +50,13 @@ export async function citeInsertQuote(d: QuoteDeps): Promise<void> {
     d.toast(TRANSLATING_QUOTE);
     try {
       const translated = await d.callAI(quotePrompt(txt), { ...QUOTE_OPTS });
-      // v1 has one editor; here the student may have switched document while the AI answered. Nothing went in, so the box keeps the quote and no success is claimed.
-      if (!d.insertBlock(translatedQuoteHtml(txt, translated))) return;
+      // The document may have been closed, or locked, while the AI answered: the insert opens it. When it does not open nothing went in, so the box keeps the quote and no success is claimed.
+      if (!(await d.insertBlock(translatedQuoteHtml(txt, translated)))) return;
       d.clearQuote();
       d.toast(QUOTE_TRANSLATED);
     } catch (e) { d.toast(e instanceof Error && e.message ? e.message : SOMETHING_WRONG); }
   } else {
-    if (!d.insertAtCursor("“" + txt + "” ")) return;
+    if (!(await d.insertAtCursor("“" + txt + "” "))) return;
     d.clearQuote();
     d.toast(QUOTE_INSERTED);
   }

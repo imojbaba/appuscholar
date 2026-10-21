@@ -279,12 +279,12 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
   const oaPaper = { source: "OpenAlex", title: "Growth mindset and grades", authors: "Carol S. Dweck, David Yeager, et al.", year: "2019", venue: "Nature", doi: "10.1038/S41586-019-1466-Y", url: "https://doi.org/10.1038/s41586-019-1466-y", retracted: false, citationCount: 3 };
   function make(lib: core.CitationEntry[] = [], updateOk = true) {
     const log = { toasts: [] as string[], seeds: [] as Array<[string, boolean]>, next: null as core.CitationEntry[] | null, inserted: [] as core.Formatted[] };
-    const d: AddDeps & { insert(f: core.Formatted): void } = {
+    const d: AddDeps & { insert(f: core.Formatted): Promise<boolean> } = {
       lib, style: "apa", t, known: true, whenRead: async () => true, fetch: offline, fillEmpty: noFill,
       update: (fn) => { if (!updateOk) return false; log.next = fn(lib); return true; },
       seedRetraction: (doi, flag) => { log.seeds.push([doi, flag]); },
       toast: (m) => { log.toasts.push(m); },
-      insert: (f) => { log.inserted.push(f); }
+      insert: async (f) => { log.inserted.push(f); return true; }
     };
     return { d, log };
   }
@@ -341,21 +341,28 @@ describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 
     expect(log.toasts).toHaveLength(1);
     expect(log.seeds).toBe(1);
   });
-  it("Insert citation saves quietly, then inserts with the library's number and toasts rs_inserted", () => {
+  it("Insert citation saves quietly, then inserts with the library's number and toasts rs_inserted", async () => {
     const { d, log } = make([{ author: "A, B", title: "Other", year: "2000" }]);
     d.style = "vancouver";
-    insertResult(oaPaper, d);
+    await insertResult(oaPaper, d);
     expect(log.next).toHaveLength(2);
     expect(log.inserted).toEqual([core.citFmt(core.rsEntryFromResult(oaPaper, "vancouver"), 2, "vancouver")]);
     expect(log.toasts).toEqual([E.rs_inserted]);
   });
-  it("Insert citation of a saved title inserts the saved entry, adds nothing", () => {
+  it("Insert citation of a saved title inserts the saved entry, adds nothing", async () => {
     const saved = { author: "Dweck, C.", title: "Growth mindset and grades", year: "2019" };
     const { d, log } = make([saved]);
-    insertResult({ ...oaPaper, retracted: true }, d);
+    await insertResult({ ...oaPaper, retracted: true }, d);
     expect(log.next).toBeNull();
     expect(log.inserted).toEqual([core.citFmt(saved, 0, "apa")]);
     expect(log.toasts).toEqual([E.retr_added_warn]);
+  });
+  it("Insert citation whose document did not open still saves the paper and claims no insert (Task 11)", async () => {
+    const { d, log } = make();
+    d.insert = async () => false;
+    await insertResult(oaPaper, d);
+    expect(log.next).toEqual([core.rsEntryFromResult(oaPaper, "apa")]);
+    expect(log.toasts).toEqual([]);
   });
 });
 

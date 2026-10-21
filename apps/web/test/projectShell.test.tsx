@@ -37,7 +37,6 @@ vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { 
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ index: null }) }));
 vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
-vi.mock("@/components/tools/AiPane", () => ({ AiPane: () => <div data-testid="ai-pane" /> }));
 vi.mock("@/components/tools/research/ResearchPanel", () => ({ ResearchPanel: () => <div data-testid="panel-research" /> }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
@@ -206,7 +205,7 @@ describe("ProjectShell", () => {
     await until(() => ws()?.currentDoc?.id === "Dp1");
     await act(async () => { await ws().openProject("p2"); });
     // A render of the old shell after the reload (before the new address mounts its own).
-    act(() => { ws().dockShow("ai"); });
+    act(() => { ws().openDocument(); });
     await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
     expect(patches().map(([, i]) => JSON.parse((i as { body: string }).body))).toEqual([{ projectId: "p2" }]);
   });
@@ -235,16 +234,6 @@ describe("ProjectShell", () => {
     await act(async () => { await ws().openProject(null); });
     expect(patches().map(([, i]) => JSON.parse((i as { body: string }).body))).toEqual([{ projectId: null }]);
     expect(h.push).toHaveBeenCalledWith("/p/s1/writing");
-  });
-
-  it("dockShow('ai') shows the AI pane; 'tools' does nothing", async () => {
-    plainApi();
-    const host = await mount("p1");
-    await until(() => ws()?.currentDoc?.id === "Dp1");
-    act(() => { ws().dockShow("tools"); });
-    expect(host.querySelector('[data-testid="ai-pane"]')).toBeNull();
-    act(() => { ws().dockShow("ai"); });
-    expect(host.querySelector('[data-testid="ai-pane"]')).not.toBeNull();
   });
 });
 

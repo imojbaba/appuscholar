@@ -13,6 +13,8 @@ import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
   go: vi.fn(async (_href: string) => true),
+  openDocument: vi.fn(),
+  docOpen: false,
   toast: vi.fn(),
   shelfIndex: null as null | Array<{ id: string }>,
   lib: [] as unknown[],
@@ -23,7 +25,8 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "s1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/vault/titles", () => ({ useTitle: () => ({ state: "open", text: "Sleep and exam anxiety" }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0 }, projectId: "p1", go: h.go, pendingAnalyse: null, setPendingAnalyse: () => {}, dockShow: () => {} })
+  useProject: () => ({ project: { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0 }, projectId: "p1", go: h.go, pendingAnalyse: null, setPendingAnalyse: () => {},
+    docOpen: h.docOpen, openDocument: h.openDocument, requestInsert: async () => false })
 }));
 vi.mock("@/lib/shelf/useShelf", () => ({
   useShelf: () => ({ projectId: "p1", index: h.shelfIndex, loading: false, locked: false, broken: false, error: false, loadPaper: async () => null }),
@@ -65,7 +68,7 @@ function unmountAll() { act(() => { for (const r of roots.splice(0)) r.unmount()
 
 beforeEach(() => {
   resetAp();
-  h.go.mockClear(); h.toast.mockReset();
+  h.go.mockClear(); h.toast.mockReset(); h.openDocument.mockClear(); h.docOpen = false;
   h.shelfIndex = [{ id: "a" }, { id: "b" }];
   h.lib = [{}, {}, {}];
   h.libLoading = false;
@@ -148,11 +151,28 @@ describe("Writing and the stages not built (Task 10)", () => {
       const open = tid("not-built-open")!;
       expect(open.textContent).toBe("Open my document");
       await act(async () => { open.click(); });
-      // Until Task 11's openDocument, the document is the Writing place.
-      expect(h.go).toHaveBeenLastCalledWith("/p/p1/writing");
+      // The document opens beside this place (Task 11): the place stays.
       unmountAll();
     }
-    expect(h.go).toHaveBeenCalledTimes(3);
+    expect(h.openDocument).toHaveBeenCalledTimes(3);
+    expect(h.go).not.toHaveBeenCalled();
+  });
+
+  it("every place but Writing offers Open my document in its header while the document is closed (Task 11)", async () => {
+    for (const stage of ["idea", "lit", "design", "collect", "review"] as const) {
+      await mount(stage);
+      const open = tid("place-open-doc")!;
+      expect(open.textContent).toBe(E.place_open_doc);
+      await act(async () => { open.click(); });
+      unmountAll();
+    }
+    expect(h.openDocument).toHaveBeenCalledTimes(5);
+    await mount("writing");
+    expect(tid("place-open-doc")).toBeNull();
+    unmountAll();
+    h.docOpen = true;
+    await mount("design");
+    expect(tid("place-open-doc")).toBeNull();
   });
 
   it("no lecture, lesson, backup or stub tool is rendered in any place (W23)", async () => {

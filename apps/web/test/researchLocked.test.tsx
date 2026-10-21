@@ -20,7 +20,7 @@ vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u-rs", scrat
 vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p2" }, projectId: "p2", pendingSearch: null, setPendingSearch: () => {}, go: () => {}, dockShow: () => {} })
+  useProject: () => ({ project: { id: "p2" }, projectId: "p2", pendingSearch: null, setPendingSearch: () => {}, go: () => {}, requestInsert: async () => false })
 }));
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));

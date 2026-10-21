@@ -395,7 +395,17 @@ export const V2_STRINGS = {
   home_retry: { en: "Retry", hi: "फिर कोशिश करें" },
   // Wave B Task 13 (register D-S2-43): any place in its own window, and that window's Close. DRAFT Hindi.
   place_new_window: { en: "Open in a new window", hi: "नई विंडो में खोलें" },
-  window_close: { en: "Close this window", hi: "यह विंडो बंद करें" }
+  window_close: { en: "Close this window", hi: "यह विंडो बंद करें" },
+  // Wave B Task 11 (register D-S2-41): the document beside any place, its Close and its width, and an insert whose document did not open. DRAFT Hindi.
+  place_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  doc_close: { en: "Close", hi: "बंद करें" },
+  doc_width: { en: "Document width", hi: "दस्तावेज़ की चौड़ाई" },
+  doc_close_title: { en: "Close anyway?", hi: "फिर भी बंद करें?" },
+  doc_close_ask: { en: "Your last changes to {title} are not saved yet.", hi: "{title} में आपके पिछले बदलाव अभी सहेजे नहीं गए हैं।" },
+  doc_close_this: { en: "this document", hi: "इस दस्तावेज़" },
+  ask_stay: { en: "Stay", hi: "रुकें" },
+  doc_close_anyway: { en: "Close anyway", hi: "फिर भी बंद करें" },
+  insert_doc_closed: { en: "Your document did not open, so nothing was inserted.", hi: "आपका दस्तावेज़ नहीं खुला, इसलिए कुछ भी नहीं डाला गया।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

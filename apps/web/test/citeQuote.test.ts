@@ -29,8 +29,8 @@ async function run(q: Q) {
   await citeInsertQuote({
     quote: q.quote, srcLang: q.srcLang, contentLang: q.contentLang,
     callAI: async (prompt, opts) => { calls.push({ prompt, opts: { ...opts } }); if (q.error !== undefined) throw v2Error(q.error); return q.reply ?? ""; },
-    insertBlock: (html) => { block.push(html); return true; },
-    insertAtCursor: (text) => { atCursor.push(text); return true; },
+    insertBlock: async (html) => { block.push(html); return true; },
+    insertAtCursor: async (text) => { atCursor.push(text); return true; },
     clearQuote: () => { after = ""; },
     toast: (m) => { toasts.push(m); }
   });
@@ -59,11 +59,11 @@ describe("citeInsertQuote equals v1's citInsertQuote", () => {
   it("the AI-use log files the call as v1 does (5419): translating a quotation into Hindi", () => {
     expect(classifyAiUse(quotePrompt("x"))).toEqual({ k: "translating a quotation into Hindi", g: "text" });
   });
-  it("a translation that comes back after the document was closed inserts nothing, keeps the quote in the box and claims no success", async () => {
+  it("a translation whose document then does not open inserts nothing, keeps the quote in the box and claims no success", async () => {
     const toasts: string[] = [], clear = vi.fn();
     await citeInsertQuote({
       quote: "The span of absolute judgment is limited.", srcLang: "en", contentLang: "hi", callAI: async () => "अनुवाद",
-      insertBlock: () => false, insertAtCursor: () => true, clearQuote: clear, toast: (m) => { toasts.push(m); }
+      insertBlock: async () => false, insertAtCursor: async () => true, clearQuote: clear, toast: (m) => { toasts.push(m); }
     });
     expect(toasts).toEqual(["🔎 Translating quote…"]);
     expect(clear).not.toHaveBeenCalled();

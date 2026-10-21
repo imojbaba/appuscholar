@@ -35,7 +35,8 @@ vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import(".
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: h.pending, setPendingSearch: h.setPending, go: h.go, dockShow: () => {} })
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: h.pending, setPendingSearch: h.setPending, go: h.go,
+    requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -572,9 +573,9 @@ describe("Research: + Citation library and Insert citation (8471-8491)", () => {
     expect(saved.author!.split("; ").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("Insert citation is disabled while no document is open", async () => {
+  it("Insert citation stays enabled while no document is open: the insert opens it (Task 11)", async () => {
     await mount();
     await search(run("oa-plain"));
-    expect((cards()[0]!.querySelector('[data-testid="rs-insert"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((cards()[0]!.querySelector('[data-testid="rs-insert"]') as HTMLButtonElement).disabled).toBe(false);
   });
 });

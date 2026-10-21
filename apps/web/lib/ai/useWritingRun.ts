@@ -6,7 +6,6 @@ import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { hasSelection, selectionRange, selectionText, tailText } from "@/lib/editor/insert";
 import { toast } from "@/components/ui/toast";
-import { useProject } from "@/components/frame/ProjectContext";
 import { runWritingAction, type ActionDeps } from "./actions";
 import { useSuggestion } from "./suggestion";
 import { useCallAI } from "./useCallAI";
@@ -15,7 +14,6 @@ import { useCallAI } from "./useCallAI";
 export function useWritingRun(editor: Editor): (kind: WritingKind) => Promise<void> {
   const t = useT();
   const { settings } = useSettings();
-  const { dockShow } = useProject();
   const suggestion = useSuggestion();
   const callAI = useCallAI();
   const draftFirst = settings.draftFirst === true;
@@ -23,8 +21,8 @@ export function useWritingRun(editor: Editor): (kind: WritingKind) => Promise<vo
     const deps: ActionDeps = {
       callAI, hasSelection: () => hasSelection(editor), selectionText: () => selectionText(editor), selectionRange: () => selectionRange(editor), tailText: () => tailText(editor),
       setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, setFeedback: suggestion.setFeedback, clear: suggestion.clear,
-      dockShow, toast, t, draftFirst
+      toast, t, draftFirst
     };
     return runWritingAction(kind, deps);
-  }, [callAI, editor, suggestion.setThinking, suggestion.isCurrent, suggestion.set, suggestion.setFeedback, suggestion.clear, dockShow, t, draftFirst]);
+  }, [callAI, editor, suggestion.setThinking, suggestion.isCurrent, suggestion.set, suggestion.setFeedback, suggestion.clear, t, draftFirst]);
 }

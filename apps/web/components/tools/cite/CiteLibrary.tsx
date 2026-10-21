@@ -60,7 +60,7 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
             <div data-cite-slot="cite-retr"><RetrWarn status={checks.retraction.status[i] ?? null} /></div>
             <div data-cite-slot="cite-rc"><RcLine c={checks.rc[citKey(d)]} onFill={checks.rcReadOnly ? undefined : () => checks.fillFromCrossref(d)} /></div>
             <div className="cite-row cite-card-row">
-              <Button variant="ghost" size="sm" data-testid="cite-use" disabled={!insertReady} onClick={() => citeUseLib(i, deps())}>{insertLabel(f)}</Button>
+              <Button variant="ghost" size="sm" data-testid="cite-use" disabled={!insertReady} onClick={() => void citeUseLib(i, deps())}>{insertLabel(f)}</Button>
             </div>
           </div>
         ))}
