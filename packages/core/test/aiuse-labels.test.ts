@@ -9,6 +9,7 @@ import { buildAskPrompt, buildWalkPrompt, buildLessonAskPrompt } from "../src/pr
 import { buildShelfSummaryPrompt, buildShelfSummaryPromptV2 } from "../src/shelf";
 import { apBuild, AP_STAGES } from "../src/analyse";
 import { buildStyleAnalyzePrompt, buildStyleFilesPrompt, buildStyleTryPrompt, STY_PASSAGES } from "../src/style";
+import { buildGrammarPrompt, buildDictPrompt } from "../src/words";
 import type { RsPaper } from "../src/research";
 
 /**
@@ -66,7 +67,12 @@ export const LABELS: Array<[name: string, build: () => string, k: string, g: AiU
   ["buildStyleAnalyzePrompt", () => buildStyleAnalyzePrompt("some text").prompt, "describing my writing style", "explain"],
   ["buildStyleFilesPrompt", () => buildStyleFilesPrompt(["some text", "more text"]).prompt, "describing my writing style", "explain"],
   ["buildStyleTryPrompt on", () => buildStyleTryPrompt("- Warm tone.", true, null, STY_PASSAGES[0]).prompt, "trying my style on a practice passage", "explain"],
-  ["buildStyleTryPrompt off", () => buildStyleTryPrompt("- Warm tone.", false, null, STY_PASSAGES[1]).prompt, "trying my style on a practice passage", "explain"]
+  ["buildStyleTryPrompt off", () => buildStyleTryPrompt("- Warm tone.", false, null, STY_PASSAGES[1]).prompt, "trying my style on a practice passage", "explain"],
+  // Words and grammar (session D, Task D3): both openings match rules that were already there ("You are a careful English grammar and usage checker", "bilingual English and Hindi dictionary helper"), so no rule was added.
+  ["buildGrammarPrompt uk", () => buildGrammarPrompt("psychology", "uk", "Some text to check.").prompt, "checking grammar and wording", "text"],
+  ["buildGrammarPrompt us", () => buildGrammarPrompt("education", "us", "Some text to check.").prompt, "checking grammar and wording", "text"],
+  ["buildGrammarPrompt off", () => buildGrammarPrompt("psychology", "off", "Some text to check.").prompt, "checking grammar and wording", "text"],
+  ["buildDictPrompt", () => buildDictPrompt("psychology", "study").prompt, "looking up a word", "explain"]
 ];
 
 describe("the AI-use label of every prompt builder", () => {

@@ -123,3 +123,9 @@ export {
   styleProfileSave, styleVoiceOffNote, stylePrompt, styleSampleCorpus, buildStyleAnalyzePrompt, buildStyleFilesPrompt, buildStyleTryPrompt,
 } from "./style";
 export type { StyleFeatures, StyleSample, StyleLevel, StyleBandKey, StyleLiveRow, StyleLiveResult } from "./style";
+export {
+  GR_NOUNS, GR_UK_US, GR_IZE, GR_RULES, GRAM_LOCAL_MIN_CHARS, GRAM_AI_MIN_CHARS, GRAM_AI_MAX_CHARS, GRAM_CHUNK_CHARS, GRAM_CHUNK_BREAK_AFTER, GRAM_LOCAL_MAX_CHARS, BANK_MAX, BANK_MEANING_MAX, BANK_CSV_NAME,
+  BANK_CSV_HEADERS, DICT_CACHE_MAX, DICT_API, dictUrl, dictNorm, dictCachePut, dictParse, buildDictPrompt, dictAiClean, bankAdd, bankRemove, bankCsv, gramSpellStd, gramSpellSet, gramSpellRules,
+  gramQuoteRanges, gramLocal, gramNorm, gramVerifyAI, gramStatAdd, gramTop, gramChunks, buildGrammarPrompt, gramAiMerge,
+} from "./words";
+export type { SpellStd, GramKind, GramHit, GramAiItem, GramAiPlaced, GramItem, GramRule, GramStats, BankEntry, DictDef, DictMeaning, DictEntry, DictNotFound, DictAi } from "./words";
