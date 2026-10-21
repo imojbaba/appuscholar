@@ -58,3 +58,10 @@ Task 5: complete. Review CHANGES REQUIRED: (1, Important) soft-deleted documents
 - Rename unlocks first.
 - D-S2-40 reworded.
 Counts: api 255, web 1085 (2 skipped), typecheck and lint clean. The controller checked the API guard (a plain title, or no flag, still gets 404 on a deleted document). Deviations accepted: the vault migration test fakes gained the `deleted` argument; DocumentCard's test uses a plain body so a download can be checked while the title is locked.
+Task 6: implemented d61e364 in worktree wt6 (branch wave-b1-t6, pushed as a backup); wave-b1 merged into it as 9c798f2 (ProjectShell uses documentTitlePath; titleReaders.test follows ProjectContext). Counts: web 1085 (2 skipped), api 255, typecheck, lint and build clean; platform.spec passes locally. Review CHANGES REQUIRED:
+- (1) Leaving a project through the header skipped the unsaved-changes question, so a failed save could lose text.
+- (2) Moving a document into a project was lost with SaveAsProject, and no wave B task restores it.
+- Minors: a double active-project write; Undo after a switch; an aria-label; a stale comment; the version shown twice; useAccount mounted twice.
+R16 (controller, 2026-10-21): restore "Move to project" in DocBar. It is an existing feature (v1's "Save as research project"), not a new product decision. Noted in D-S2-38.
+For Task 16: scripts/deploy-vercel.sh:49 still says "Expect the header pill", but the version now lives in Help. Change the message.
+Fix round in progress.
