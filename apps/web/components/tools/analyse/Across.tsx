@@ -1,17 +1,18 @@
 "use client";
 import { AP_COLS } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
-import { acrossData, colLabel, downloadAcross } from "@/lib/analyse/cards";
+import { acrossData, colLabel } from "@/lib/analyse/cards";
 import type { ApNotesStore } from "@/lib/analyse/notes";
 import { getAp, setAp, useApState } from "@/lib/analyse/useApDoc";
 import { Button } from "@/components/ui/button";
+import { ExportLink } from "@/components/export/ExportLink";
 import { PanelLoading } from "../PanelLoading";
 import { NotesState } from "./Walk";
 
 /**
  * apAcrossRender (9965-9976): the column boxes (AP_COLS, ticked for the stored columns; a toggle stores the new list, apAcrossColToggle) and "Also show the AI readings…" (the tab's memory,
- * ruling R28); then "No paper card yet…", or the table (core's apAcrossData: one row per paper with a title and any card or stage text) with "×" on each row, "⬇ Download as CSV"
- * (paper_cards.csv, core's apAcrossCsv) and v1's note. "×" asks v1's question (apAcrossDel 9978-9984) and deletes the paper's note; for the paper loaded now, its replies and words of
+ * ruling R28); then "No paper card yet…", or the table (core's apAcrossData: one row per paper with a title and any card or stage text) with "×" on each row, Export (v1's "⬇ Download as CSV";
+ * paper_cards.csv is now in the project's export place, Task 12) and v1's note. "×" asks v1's question (apAcrossDel 9978-9984) and deletes the paper's note; for the paper loaded now, its replies and words of
  * this visit go too, and the card fields typed for it in this tab. While the stored notes are being read the loading sign is drawn (W8); while they are not known for another reason only the locked line is drawn; a broken store
  * shows its line in place of "No paper card yet…".
  */
@@ -61,7 +62,8 @@ function AcrossBody({ notes }: { notes: ApNotesStore }) {
         </table>
       </div>
       <div className="ap-row ap-gap">
-        <Button variant="gold" size="sm" id="apAcrossCsv" onClick={() => downloadAcross(d)}>{t("ap2_across_csv")}</Button>
+        {/* The cards' CSV is in the project's export place now (Task 12): Export opens it with the comparison ticked. */}
+        <ExportLink part="compare" id="apAcrossCsv" />
       </div>
       <p className="ap-small">{t("ap2_cells_are_your_words")}</p>
     </>

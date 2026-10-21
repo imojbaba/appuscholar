@@ -27,6 +27,8 @@ import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
 import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
 import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
+import { ExportDialog, exportPartsFor } from "@/components/export/ExportDialog";
+import type { ExportPart } from "@/lib/export/projectExport";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
@@ -143,6 +145,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const importing = useRef(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
+  // The export place's ticks while it is open (null: closed).
+  const [exportParts, setExportParts] = useState<ExportPart[] | null>(null);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; readyRef.current = ready; }, [projectId, currentDoc, ready]);
   const docToken = useRef(0);
   /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */
@@ -466,7 +470,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, docOpen, openDocument, closeDocument, requestInsert, registerEditor,
     project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); }
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
+    openExport: (preselect) => setExportParts(exportPartsFor(preselect))
   };
 
   return (
@@ -481,6 +486,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         <ImportOrigin />
         <MyWriting />
         <ImportV1Dialog />
+        {/* The export place opens over any place of the project (only once a project is loaded: it exports that project). */}
+        {projectId && <ExportDialog parts={exportParts} onClose={() => setExportParts(null)} />}
         <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
           <AlertDialogContent data-testid="switch-dialog">
             <AlertDialogHeader>

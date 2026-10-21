@@ -175,6 +175,10 @@ export function setResearch(next: Partial<ResearchState> | ((s: ResearchState) =
   for (const l of listeners) l();
 }
 export const getResearch = (): ResearchState => state;
+/** The papers Research shows now (its sort and filters applied), as its own CSV download wrote them; null when this tab ran no search. The export's last-search.csv. */
+export function shownNow(): RsPaper[] | null {
+  return state.original.length ? shownResults(state.original, state.sort, state.filter).list : null;
+}
 /**
  * The filter boxes changed or were cleared: rsApplySort(true) (8354-8374), so the list is drawn again and the actions block follows the papers
  * shown and ticked (rsToggleActions). A ticked paper that a filter hides stays ticked.

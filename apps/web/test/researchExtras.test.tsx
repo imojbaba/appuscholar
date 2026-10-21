@@ -22,6 +22,7 @@ const h = vi.hoisted(() => ({
   oaKey: null as string | null,
   go: vi.fn(),
   setPendingAnalyse: vi.fn(),
+  openExport: vi.fn(),
   setThinking: vi.fn((..._a: unknown[]) => 7),
   set: vi.fn(),
   clear: vi.fn(),
@@ -34,7 +35,7 @@ vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import(".
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null, setThinking: h.setThinking, isCurrent: (tk: number) => tk === 7, set: h.set, clear: h.clear }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, go: h.go, requestInsert: async () => false })
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, go: h.go, requestInsert: async () => false, openExport: h.openExport })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -42,7 +43,8 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: h.download }));
 
 import { ResearchPanel } from "../components/tools/research/ResearchPanel";
-import { getResearch, resetResearch, setResearch } from "../lib/research/useSearch";
+import { getResearch, resetResearch, setResearch, shownNow } from "../lib/research/useSearch";
+import { downloadCsv } from "../lib/research/extras";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -110,7 +112,7 @@ const actionsShown = () => !(tid("rs-actions") as HTMLElement).hidden;
 let open: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   h.blobs = { citations: blob([]), retraction_cache: blob({}), rs_prefs: blob(null) };
-  for (const f of [h.toast, h.go, h.setPendingAnalyse, h.set, h.clear, h.download]) f.mockReset();
+  for (const f of [h.toast, h.go, h.setPendingAnalyse, h.set, h.clear, h.download, h.openExport]) f.mockReset();
   h.setThinking.mockReset().mockReturnValue(7);
   h.callAI.mockReset().mockResolvedValue("");
   h.oaKey = null;
@@ -135,7 +137,8 @@ describe("Research part 2: the layout (v1 976-1030)", () => {
     const els = order.map((id) => tid(id));
     for (let i = 1; i < els.length; i++) expect(els[i - 1]!.compareDocumentPosition(els[i]!) & Node.DOCUMENT_POSITION_FOLLOWING, order[i]).toBeTruthy();
     expect(tid("rs-filters")!.querySelector("summary")!.textContent).toBe("Filter these results");
-    expect(tid("rs-csv")!.textContent).toBe("⬇ Download this list (.csv)");
+    // Wave B Task 12 (D-S2-42): v1's "⬇ Download this list (.csv)" is now Export.
+    expect(tid("rs-csv")!.textContent).toBe(E.exp_link);
     const acts = [...tid("rs-actions")!.querySelectorAll("button")].map((b) => b.textContent);
     expect(acts).toEqual(["⚡ Quick read the papers I ticked (up to 10)", E.research_litreview_btn, E.research_gapfinder_btn]);
     expect(tid("rs-actions")!.querySelector("p")!.textContent).toBe(E.research_grounded_note);
@@ -340,22 +343,21 @@ describe("Research part 2: the filters (8331-8375)", () => {
   });
 });
 
-describe("Research part 2: the CSV (rsCsvDownload 8196)", () => {
-  it("rsCsvText of the papers shown, as search-results.csv; nothing shown toasts", async () => {
+describe("Research part 2: the CSV (rsCsvDownload 8196), now in the export place (Task 12)", () => {
+  it("Export opens the export place with the search lists ticked, and its last search is the papers shown, as the CSV wrote them", async () => {
     const ps = fresh();
     await mount(ps);
     type("rsSort", "citations");
     type("rsFYear", "2019");
     await click(tid("rs-csv"));
-    expect(h.download).toHaveBeenCalledTimes(1);
-    const [name, file] = h.download.mock.calls[0]! as [string, Blob];
-    expect(name).toBe("search-results.csv");
+    expect(h.openExport).toHaveBeenCalledWith("search");
+    expect(h.download).not.toHaveBeenCalled();
     const shown = titles().map((tt) => ps.find((p) => p.title === tt)!);
-    const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(await bytes(file));
-    expect(text).toBe("﻿" + rsCsvText(shown));
-    type("rsFYear", "2100");
-    await click(tid("rs-csv"));
-    expect(toasts()).toEqual(["Nothing to download yet"]);
+    expect(shownNow()).toEqual(shown);
+    // v1's file, as search/last-search.csv holds it.
+    const file = await new Promise<{ name: string; file: Blob }>((done) => downloadCsv(shownNow()!, { download: (name, f) => done({ name, file: f }), toast: () => {}, t: (k) => k }));
+    expect(file.name).toBe("search-results.csv");
+    expect(new TextDecoder("utf-8", { ignoreBOM: true }).decode(await bytes(file.file))).toBe("﻿" + rsCsvText(shown));
   });
 });
 

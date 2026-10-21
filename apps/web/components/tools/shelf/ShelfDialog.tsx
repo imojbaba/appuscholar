@@ -10,7 +10,7 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
 import {
-  addColumn, addFiles, backupShelf, deleteColumn, deleteHighlight, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, setCell, type ShelfOps
+  addColumn, addFiles, backupShelf, deleteColumn, deleteHighlight, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, setCell, type ShelfOps
 } from "@/lib/shelf/actions";
 import { extractPdfPages } from "@/lib/shelf/extract";
 import { useShelfStore } from "@/lib/shelf/useShelf";
@@ -58,8 +58,7 @@ export function ShelfMatrix() {
       <Matrix items={items} loading={index.loading && !index.locked} cols={cols}
         onAddCol={(name) => addColumn(name, defaults, store.setCols)}
         onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
-        onCell={(id, col, value) => setCell(id, col, value, store.ops)}
-        onCsv={() => downloadMatrix(items, cols, { t, download: downloadBlob })} />
+        onCell={(id, col, value) => setCell(id, col, value, store.ops)} />
     </div>
   );
 }
@@ -136,8 +135,7 @@ function ShelfBody({ inline = false }: { inline?: boolean }) {
           <Matrix items={items} loading={opening} cols={cols}
             onAddCol={(name) => addColumn(name, defaults, store.setCols)}
             onDelCol={(i) => deleteColumn(i, defaults, store.setCols)}
-            onCell={(id, col, value) => setCell(id, col, value, ops)}
-            onCsv={() => downloadMatrix(items, cols, { t, download: downloadBlob })} />
+            onCell={(id, col, value) => setCell(id, col, value, ops)} />
         )}
       </div>
     </>

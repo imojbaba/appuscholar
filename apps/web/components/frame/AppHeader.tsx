@@ -105,10 +105,10 @@ function ProjectItem({ project, current, onOpen }: { project: Project; current: 
   );
 }
 
-/** The account menu: Export all my work, AI provider and key, Change passphrase (once a vault exists), Sign out, Delete my account. */
+/** The account menu: Export this project (inside a project: its export place, Task 12), Export all my work, AI provider and key, Change passphrase (once a vault exists), Sign out, Delete my account. */
 function AccountMenu() {
   const t = useT();
-  const { openSettings } = useProject();
+  const { openSettings, openExport, projectId } = useProject();
   const { exportWork, exporting, startSignOut, hasVault, openChange, openErase, dialogs } = useAccount();
   return (
     <>
@@ -117,6 +117,7 @@ function AccountMenu() {
           <button type="button" className="app-hbtn app-acct" aria-label={t("hdr_account")} data-testid="account-menu-btn"><UserCircle size={22} aria-hidden="true" /></button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" data-testid="account-menu">
+          {projectId && <DropdownMenuItem className={ITEM} data-testid="acct-export-project" onSelect={() => openExport()}>{t("acct_export_project")}</DropdownMenuItem>}
           <DropdownMenuItem className={ITEM} disabled={exporting} data-testid="acct-export" onSelect={() => { void exportWork(); }}>{t("acct_export")}</DropdownMenuItem>
           <DropdownMenuItem className={ITEM} data-testid="acct-ai" onSelect={() => openSettings()}>{t("acct_ai")}</DropdownMenuItem>
           {hasVault && <DropdownMenuItem className={ITEM} data-testid="acct-change-pass" onSelect={openChange}>{t("acct_change_pass")}</DropdownMenuItem>}

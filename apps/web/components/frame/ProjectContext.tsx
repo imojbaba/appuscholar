@@ -2,6 +2,7 @@
 import { createContext, useContext } from "react";
 import type { Editor } from "@tiptap/core";
 import type { ProviderId } from "@appuscholar/core";
+import type { ExportPart } from "@/lib/export/projectExport";
 import type { Place } from "@/lib/frame/places";
 import type { WrappedDek } from "@/lib/vault/useVault";
 import type { InsertMessage } from "@/lib/popout/channel";
@@ -110,6 +111,11 @@ export type ProjectValue = {
   /** The provider the AI Provider / Key dialog opened on, or null for the current one. */
   settingsProvider: ProviderId | null;
   closeDialog(): void;
+  /**
+   * Opens the project's export place (wave B Task 12): with `preselect`, only that part is ticked (a tool's Export link, W11); without it, every
+   * part but the reading list backup (the home's Export project, the account menu).
+   */
+  openExport(preselect?: ExportPart): void;
 };
 
 const Ctx = createContext<ProjectValue | null>(null);

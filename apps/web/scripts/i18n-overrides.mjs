@@ -404,7 +404,69 @@ export const V2_STRINGS = {
   doc_close_this: { en: "this document", hi: "इस दस्तावेज़" },
   ask_stay: { en: "Stay", hi: "रुकें" },
   doc_close_anyway: { en: "Close anyway", hi: "फिर भी बंद करें" },
-  insert_doc_closed: { en: "Your document did not open, so nothing was inserted.", hi: "आपका दस्तावेज़ नहीं खुला, इसलिए कुछ भी नहीं डाला गया।" }
+  insert_doc_closed: { en: "Your document did not open, so nothing was inserted.", hi: "आपका दस्तावेज़ नहीं खुला, इसलिए कुछ भी नहीं डाला गया।" },
+  // Wave B Task 12 (register D-S2-42): one export place per project (canvas Export), the tools' Export links, and the labels inside the
+  // project's zip. DRAFT Hindi.
+  exp_title: { en: "Export: {title}", hi: "निर्यात: {title}" },
+  exp_sub: {
+    en: "Unlocked in your browser and saved to your computer. The files are readable, so keep them somewhere safe.",
+    hi: "आपके ब्राउज़र में खोला गया और आपके कंप्यूटर पर सहेजा गया। फ़ाइलें पढ़ी जा सकती हैं, इसलिए उन्हें सुरक्षित जगह रखें।"
+  },
+  exp_close: { en: "Close", hi: "बंद करें" },
+  exp_include: { en: "What to include", hi: "क्या शामिल करें" },
+  exp_part_documents: { en: "Documents", hi: "दस्तावेज़" },
+  exp_detail_documents: { en: "{name}, and every other document in this project", hi: "{name}, और इस प्रोजेक्ट का हर दूसरा दस्तावेज़" },
+  exp_detail_documents_none: { en: "Every document in this project", hi: "इस प्रोजेक्ट का हर दस्तावेज़" },
+  exp_format_documents: { en: "Word and HTML", hi: "Word और HTML" },
+  exp_part_question: { en: "Your question and feasibility read", hi: "आपका प्रश्न और व्यवहार्यता की समीक्षा" },
+  exp_detail_question: { en: "The project card and the last AI read", hi: "प्रोजेक्ट कार्ड और AI की पिछली समीक्षा" },
+  exp_part_citations: { en: "Citations", hi: "उद्धरण" },
+  exp_detail_citations: { en: "{n} sources, with the reference list in your chosen style", hi: "{n} स्रोत, आपकी चुनी शैली में संदर्भ सूची के साथ" },
+  exp_detail_citations_unknown: { en: "Your sources, with the reference list in your chosen style", hi: "आपके स्रोत, आपकी चुनी शैली में संदर्भ सूची के साथ" },
+  exp_format_citations: { en: "Library file and reference list (text)", hi: "लाइब्रेरी फ़ाइल और संदर्भ सूची (टेक्स्ट)" },
+  exp_part_search: { en: "Search lists", hi: "खोज सूचियाँ" },
+  exp_detail_search: { en: "Papers you searched and kept, with quick reads", hi: "जो पेपर आपने खोजे और रखे, त्वरित समीक्षा के साथ" },
+  exp_part_notes: { en: "Reading notes", hi: "पढ़ने के नोट्स" },
+  exp_detail_notes: { en: "Highlights, your own summaries and AI summaries, marked as such", hi: "हाइलाइट, आपके अपने सारांश और AI के सारांश, अलग से चिह्नित" },
+  exp_part_compare: { en: "Comparison table and paper cards", hi: "तुलना तालिका और पेपर कार्ड" },
+  exp_detail_compare: { en: "Your words, paper by paper", hi: "आपके शब्द, हर पेपर के लिए" },
+  exp_part_record: { en: "Writing record", hi: "लेखन रिकॉर्ड" },
+  exp_detail_record: { en: "What you typed and what came from AI, per version", hi: "आपने क्या टाइप किया और AI से क्या आया, हर संस्करण में" },
+  exp_part_aiuse: { en: "AI-use statement", hi: "AI-उपयोग विवरण" },
+  exp_detail_aiuse: { en: "Which AI helped, for what, on which days; never your text", hi: "किस AI ने मदद की, किस काम में, किन दिनों; आपका टेक्स्ट कभी नहीं" },
+  exp_part_readingBackup: { en: "Reading list backup", hi: "पढ़ने की सूची का बैकअप" },
+  exp_detail_readingBackup: {
+    en: "The text of your PDFs and your highlights, to move your reading list to another account",
+    hi: "आपकी PDF का टेक्स्ट और आपके हाइलाइट, अपनी पढ़ने की सूची को किसी दूसरे खाते में ले जाने के लिए"
+  },
+  exp_format_text: { en: "Text", hi: "टेक्स्ट" },
+  exp_format_csv: { en: "CSV", hi: "CSV" },
+  exp_format_json: { en: "JSON", hi: "JSON" },
+  exp_one_zip: { en: "One zip file.", hi: "एक zip फ़ाइल।" },
+  exp_cancel: { en: "Cancel", hi: "रद्द करें" },
+  exp_download: { en: "Download zip", hi: "zip डाउनलोड करें" },
+  exp_all_note: {
+    en: "To take every project at once, or to leave Appuscholar, use Account, Export all my work.",
+    hi: "सभी प्रोजेक्ट एक साथ ले जाने, या Appuscholar छोड़ने के लिए, खाता में जाकर मेरा सारा काम निर्यात करें चुनें।"
+  },
+  exp_building: { en: "Building your zip: {part}. Keep this page open.", hi: "आपकी zip बन रही है: {part}। यह पेज खुला रखें।" },
+  exp_locked: { en: "Unlock with your passphrase to export this project.", hi: "इस प्रोजेक्ट को निर्यात करने के लिए अपने पासफ़्रेज़ से खोलें।" },
+  exp_unsaved: {
+    en: "Some changes could not be saved yet, so they are not in this zip.",
+    hi: "कुछ बदलाव अभी सहेजे नहीं जा सके, इसलिए वे इस zip में नहीं हैं।"
+  },
+  exp_link: { en: "Export", hi: "निर्यात करें" },
+  acct_export_project: { en: "Export this project", hi: "यह प्रोजेक्ट निर्यात करें" },
+  // Inside the zip: the reading notes' and the question's labels, and the list of what did not open.
+  exp_highlights: { en: "Highlights", hi: "हाइलाइट" },
+  exp_page: { en: "p. {page}", hi: "पृ. {page}" },
+  exp_reflection: { en: "MY REFLECTION", hi: "मेरा चिंतन" },
+  exp_ai_read: { en: "AI read:", hi: "AI की समीक्षा:" },
+  exp_unreadable_head: { en: "These could not be opened, so they are not in this zip:", hi: "ये खोले नहीं जा सके, इसलिए इस zip में नहीं हैं:" },
+  exp_unreadable_doc: { en: "Document: {name}", hi: "दस्तावेज़: {name}" },
+  exp_unreadable_paper: { en: "Reading list paper: {name}", hi: "पढ़ने की सूची का पेपर: {name}" },
+  exp_unreadable_data: { en: "Saved work: {name}", hi: "सहेजा गया काम: {name}" },
+  exp_kind_shelf: { en: "Reading list", hi: "पढ़ने की सूची" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

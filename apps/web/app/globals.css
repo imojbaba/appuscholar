@@ -372,6 +372,28 @@
 .idea-read-raw { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
 .ai-read .field { margin: 0; }
 
+/* The export place (wave B Task 12, canvas Export): the parts as ticks, the style, Download zip and the line that shows what is being built. */
+.exp-dlg { display: flex; flex-direction: column; gap: 18px; padding: 28px 32px; border-radius: var(--r-dialog); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.exp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.exp-h { margin: 0; font-size: 22px; line-height: 1.3; overflow-wrap: anywhere; }
+.exp-sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.exp-x { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); }
+.exp-parts { border: 1px solid var(--line); border-radius: var(--r-card); padding: 8px 18px 14px; margin: 0; min-width: 0; }
+.exp-parts legend { padding: 0 6px; font-weight: 600; }
+.exp-part { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.exp-part:last-child { border-bottom: none; }
+.exp-part input { width: 18px; height: 18px; accent-color: var(--purple-800); }
+.exp-muted { font-size: 13px; color: var(--muted); }
+.exp-style { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.exp-style label { font-weight: 600; font-size: 14px; }
+.exp-style select { min-height: 40px; }
+.exp-foot { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.exp-btns { display: flex; gap: 10px; }
+.exp-btn { height: 44px; padding: 0 18px; }
+.exp-line { margin: 0; font-size: 14px; }
+.exp-problem { color: var(--danger-ink); }
+.exp-all { margin: 0; }
+
 /* Up to 1099px the AI pane goes under the document, and the document under the place. */
 @media (max-width: 1099px) {
   .doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr); }
@@ -415,6 +437,14 @@
   .actions { padding: 10px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
   .actions > * { flex: none; }
   .panel { padding: 14px 12px; }
+  .exp-dlg { padding: 20px 16px; gap: 14px; }
+  .exp-x { width: 44px; height: 44px; }
+  .exp-parts { padding: 4px 12px 8px; }
+  .exp-part { grid-template-columns: 24px minmax(0, 1fr); min-height: 44px; }
+  .exp-part > :last-child { grid-column: 2; }
+  .exp-btns { width: 100%; }
+  .exp-btns > * { flex: 1; }
+  .exp-style select { min-height: 44px; flex: 1 1 100%; }
 
   /* Toasts go to the top, clear of the phone's bottom bar. */
   .toast { top: 12px; bottom: auto; }

@@ -23,7 +23,8 @@ const h = vi.hoisted(() => ({
   project: null as { id: string; contentLang?: string } | null,
   settings: {} as Record<string, unknown>,
   callAI: vi.fn(),
-  download: vi.fn()
+  download: vi.fn(),
+  openExport: vi.fn()
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({
   useProjectBlob: (...a: unknown[]) => a[0] !== "citations" ? { value: {}, loading: false, locked: false, set: () => {}, flush: async () => true } : h.blob
@@ -31,7 +32,7 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: h.settings }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {},
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {}, openExport: h.openExport,
   // The shell's insert: into the test's editor; with none, the document did not open.
   requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
@@ -41,7 +42,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 import { CitePanel } from "../components/tools/cite/CitePanel";
 import { resetCiteForm } from "../lib/cite/form";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
-import { IMPORT_TOO_LARGE, LIBRARY_EXPORTED, readFileText } from "../lib/cite/share";
+import { citeExport, IMPORT_TOO_LARGE, LIBRARY_EXPORTED, readFileText } from "../lib/cite/share";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -93,7 +94,7 @@ const applied = (prev: Lib) => (h.blob.set.mock.calls.at(-1)![0] as (p: Lib | nu
 beforeEach(() => {
   h.blob = { value: [], loading: false, locked: false, set: vi.fn(), flush: vi.fn(async () => true) };
   h.toast.mockReset();
-  h.download.mockReset();
+  h.download.mockReset(); h.openExport.mockReset();
   h.callAI.mockReset();
   h.editor = null;
   h.project = null;
@@ -121,7 +122,8 @@ describe("the panel's order and copy (v1 914-947)", () => {
     expect(tid("cite-insertquote")!.textContent).toBe(E.cite_insertquote_btn);
     expect(tid("cite-insertbib")!.textContent).toBe(E.cite_insertbib_btn);
     expect(tid("cite-loadclassics")!.textContent).toBe(E.cite_loadclassics_btn);
-    expect(tid("cite-export")!.textContent).toBe(E.cite_export_btn);
+    // Wave B Task 12 (D-S2-42): v1's "⬆ Export library" is now Export, into the project's export place.
+    expect(tid("cite-export")!.textContent).toBe(E.exp_link);
     expect(tid("cite-import")!.textContent).toBe(E.cite_import_btn);
     expect(tid("cite-sharing-note")!.innerHTML).toBe(E.cite_sharing_note);
     expect(($("#citImportFile") as HTMLInputElement).accept).toBe(".json,application/json");
@@ -182,10 +184,14 @@ describe("Insert reference list", () => {
 });
 
 describe("Export and import (citExport 7991-7998, citImport 7999-8023)", () => {
-  it("export downloads psychology-class-library.json holding exportLibrary(lib), v1's file, and toasts v1's sentence", async () => {
+  it("Export opens the export place with the citations ticked (Task 12); v1's file, exportLibrary(lib), is the zip's citations/library.json", async () => {
     h.blob.value = CITLIB.lib;
     mount();
     await click("cite-export");
+    expect(h.openExport).toHaveBeenCalledWith("citations");
+    expect(h.download).not.toHaveBeenCalled();
+    // v1's own download (citExport), still the library file's builder.
+    citeExport({ lib: CITLIB.lib, download: h.download, toast: h.toast });
     expect(h.download).toHaveBeenCalledTimes(1);
     const [name, blob] = h.download.mock.calls[0]! as [string, globalThis.Blob];
     expect(name).toBe(LIBRARY_FILE_NAME);
@@ -197,9 +203,8 @@ describe("Export and import (citExport 7991-7998, citImport 7999-8023)", () => {
     expect(toasts()).toEqual([CITLIB.export.toast]);
     expect(LIBRARY_EXPORTED).toBe(CITLIB.export.toast);
   });
-  it("an empty library exports nothing and toasts v1's sentence", async () => {
-    mount();
-    await click("cite-export");
+  it("an empty library exports nothing and toasts v1's sentence (citExport)", async () => {
+    citeExport({ lib: [], download: h.download, toast: h.toast });
     expect(h.download).not.toHaveBeenCalled();
     expect(toasts()).toEqual(SHARE.exportEmpty);
   });

@@ -158,6 +158,22 @@ describe("exportAll", () => {
     await expect(exportAll(d)).rejects.toThrow("vault-locked");
   });
 
+  it("the account export lists a blob that is not JSON as unreadable, and rejects on other errors", async () => {
+    const d = deps();
+    const ok = d.decryptBlob.getMockImplementation() as (p: string, w: { kind: string; body: string }) => Promise<string>;
+    d.decryptBlob.mockImplementation(async (p: string, w: { kind: string; body: string }) => (w.kind === "rs_prefs" ? "{ not json" : ok(p, w)));
+    const zip = await JSZip.loadAsync(await (await exportAll(d)).arrayBuffer());
+    const index = JSON.parse(await zip.file("index.json")!.async("string")) as { projects: { stageData: { kind: string; unreadable?: boolean }[] }[] };
+    expect(index.projects[1]!.stageData).toEqual([{ kind: "rs_prefs", updatedAt: at, unreadable: true }]);
+    // Only JSON.parse's SyntaxError means "not JSON": one from anywhere else (the api's answer that is not JSON, the vault) rejects.
+    const e1 = deps();
+    e1.getBlob.mockRejectedValue(new SyntaxError("Unexpected token < in JSON"));
+    await expect(exportAll(e1)).rejects.toThrow(SyntaxError);
+    const e2 = deps();
+    e2.decryptBlob.mockRejectedValue(new SyntaxError("bad key data"));
+    await expect(exportAll(e2)).rejects.toThrow("bad key data");
+  });
+
   it("index.json lists each project's stage data with its file and date", async () => {
     const zip = await JSZip.loadAsync(await (await exportAll(deps())).arrayBuffer());
     const index = JSON.parse(await zip.file("index.json")!.async("string")) as { projects: { stageData: unknown[] }[] };
