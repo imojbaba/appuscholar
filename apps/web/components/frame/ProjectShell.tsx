@@ -34,6 +34,9 @@ import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
 import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
 
+/** Whether this tab has run the title-sealing pass since its last unlock (module scope: it outlives a project switch). */
+let sealPassRan = false;
+
 const BUSY = "Another import is still running. Wait for it to finish.";
 /** How long an insert waits for the document's editor once it has asked for it (after the unlock, when one was asked). */
 export const INSERT_WAIT_MS = 10_000;
@@ -108,7 +111,10 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const titlesSealable = vault.status === "unlocked" && vault.complete && !isPopout();
   const scratchForTitles = me?.scratchProjectId ?? null;
   useEffect(() => {
-    if (!titlesSealable) return;
+    // Once per unlock in this tab, not on every page: a lock lets the next unlock run it again.
+    if (!titlesSealable) { sealPassRan = false; return; }
+    if (sealPassRan) return;
+    sealPassRan = true;
     void sealPlainTitles({
       vault: vaultRef.current,
       listProjects: () => apiFetch<Titled[]>("/projects"),
@@ -116,7 +122,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       patchProject: async (id, body) => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
       patchDocument: async (id, body, deleted) => { await apiFetch(documentTitlePath(id, deleted), { method: "PATCH", body: JSON.stringify(body) }); },
       scratchId: scratchForTitles
-    }).catch(() => { /* offline or locked meanwhile: the next unlock tries again */ });
+    }).catch(() => { sealPassRan = false; /* offline or locked meanwhile: the next mount or unlock tries again */ });
   }, [titlesSealable, scratchForTitles]);
   const inProject = urlProjectId !== null;
   const popout = usePopout();

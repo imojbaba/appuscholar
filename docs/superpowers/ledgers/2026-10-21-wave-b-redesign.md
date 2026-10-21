@@ -164,3 +164,12 @@ Task 15: implemented 06629bb:
 App fix: a project saved with only a name no longer stores an empty idea_intake, which had made Idea read "In progress" (test added; D-S2-39).
 Deviations: per-tool CSVs are checked through the export zip; the list allows 1-2 include=work requests in `next dev` (StrictMode); every frame mount with the vault open re-runs the seal pass (a small cost, noted).
 Merged (2fcd1b1): web 1217 pass (2 skipped); typecheck and lint clean. Pushed so PR #12 runs all three checks on the complete slice. Task 15 review running in parallel.
+Task 15: complete. Review CHANGES REQUIRED, on the walk sheet only. The controller fixed:
+- row 2 per R15: the AI's "Area" lines show with no name;
+- row 7: the query excludes the scratch project, whose title stays plain by design;
+- row 5: the first project's Literature reads Not started until row 10;
+- row 8: reload the Writing place;
+- row 14: Menu and the focus moves.
+Finding 8 fixed: the title-sealing pass runs once per unlock per tab (a module flag, reset on lock or failure), not on every frame mount.
+Accepted: "Put in my document" is tested from Idea (the only place it exists in B1) and Literature by Insert reference list; 1-2 include=work requests under next dev; the per-tool CSVs through the zip.
+Coverage removed by design: the Tab paste of the idea read; the pop-out "only Citations and Research" toast.
