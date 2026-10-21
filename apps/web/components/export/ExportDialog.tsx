@@ -4,6 +4,7 @@ import { X } from "@phosphor-icons/react";
 import type { AiuEntry, CitationStyle } from "@appuscholar/core";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { heldBlobs, shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
 import { blobId, type BlobKind } from "@/lib/blobs/kinds";
 import { blobPath, type BlobWire } from "@/lib/blobs/useProjectBlob";
 import { CITE_STYLE_OPTIONS } from "@/lib/cite/form";
@@ -53,6 +54,8 @@ function ExportBody({ initial, onClose }: { initial: ExportPart[]; onClose(): vo
   // The part being built, "" before the first; null while idle.
   const [building, setBuilding] = useState<ExportPart | "" | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  // Some edits could not be saved before the zip was built (offline, a locked vault, a conflict): the zip does not have them.
+  const [unsaved, setUnsaved] = useState(false);
   const busy = useRef(false);
   const title = useTitle(project, "project");
   const firstDoc = currentDoc ?? documents[0] ?? null;
@@ -70,11 +73,14 @@ function ExportBody({ initial, onClose }: { initial: ExportPart[]; onClose(): vo
     if (busy.current || !projectId) return;
     busy.current = true;
     setProblem(null);
+    setUnsaved(false);
     setBuilding("");
     try {
       if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) { setProblem(t("exp_locked")); return; }
-      // The open document's latest words are stored first, so the zip has them.
+      // The open document's latest words, and every panel's unsent or held blob value, are stored first, so the zip has them.
       await flushOpen();
+      await heldBlobs.saveAll();
+      const left = shouldWarnOnUnloadBlobs();
       const pid = projectId;
       const deps: ProjectExportDeps = {
         project: project ?? { id: pid, title: t("scratch_name"), titleKeyVersion: 0, deks: [] },
@@ -89,14 +95,16 @@ function ExportBody({ initial, onClose }: { initial: ExportPart[]; onClose(): vo
           return vault.decryptBody({ id: blobId(pid, kind), deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion });
         },
         writingRecord: () => apiFetch<WritingRecord>(`/projects/${pid}/writing-record`),
-        aiUseLog: () => apiFetch<AiuEntry[]>("/ai/log")
+        aiUseLog: () => apiFetch<AiuEntry[]>(`/ai/log?projectId=${encodeURIComponent(pid)}`)
       };
       const ticked = EXPORT_PARTS.filter((p) => on.has(p));
       await saveProjectExport(deps, ticked, { style, now: new Date(), lastSearch: shownNow(), progress: setBuilding }, {
         audit: () => apiFetch<void>("/me/export-audit", { method: "POST" }),
         download: downloadBlob
       });
-      onClose();
+      // The zip is saved; the dialog stays open to say what it is missing.
+      if (left) setUnsaved(true);
+      else onClose();
     } catch {
       setProblem(t("export_fail"));
     } finally {
@@ -145,6 +153,7 @@ function ExportBody({ initial, onClose }: { initial: ExportPart[]; onClose(): vo
       </div>
       {working && <p className="exp-line" role="status" data-testid="exp-progress">{t("exp_building", { part: t("exp_part_" + (building || (EXPORT_PARTS.find((p) => on.has(p)) ?? "documents"))) })}</p>}
       {problem && <p className="exp-line exp-problem" role="alert" data-testid="exp-error">{problem}</p>}
+      {unsaved && <p className="exp-line exp-problem" role="status" data-testid="exp-unsaved">{t("exp_unsaved")}</p>}
       <p className="exp-muted exp-all">{t("exp_all_note")}</p>
     </DialogContent>
   );

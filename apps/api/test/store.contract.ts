@@ -236,6 +236,25 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect((await s.listAiUse(b)).length).toBe(1);
     });
 
+    it("lists one project's AI-use rows when asked, and the whole log otherwise", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      const p = await s.createProject(a, "Sleep");
+      const q = await s.createProject(a, "Diet");
+      const one = { d: "2026-10-01", p: "gemini", m: "gemini-3.8-flash", k: "continuing my draft", g: "text" } as const;
+      const two = { d: "2026-10-15", p: "groq", m: "openai/gpt-oss-120b", k: "grammar and polish", g: "text" } as const;
+      const three = { d: "2026-10-16", p: "groq", m: "openai/gpt-oss-120b", k: "summarising", g: "text" } as const;
+      await s.appendAiUse(a, p.id, one);
+      await s.appendAiUse(a, q.id, two);
+      await s.appendAiUse(a, null, three);
+      await s.appendAiUse(b, null, one);
+      expect(await s.listAiUse(a, undefined, undefined, p.id)).toEqual([one]);
+      expect(await s.listAiUse(a, undefined, undefined, q.id)).toEqual([two]);
+      expect(await s.listAiUse(a, "2026-10-02", undefined, p.id)).toEqual([]);
+      expect(await s.listAiUse(b, undefined, undefined, p.id)).toEqual([]);
+      expect(await s.listAiUse(a)).toEqual([one, two, three]);
+    });
+
     it("stores origin stats on a revision and returns them in summaries", async () => {
       const p = await s.createProject(a, "T");
       const d = (await s.createDocument(a, p.id, "A", "draft", first))!;

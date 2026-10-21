@@ -41,7 +41,7 @@ export type ProjectExportDeps = {
   readBlob(kind: BlobKind): Promise<string | null>;
   /** GET /projects/:id/writing-record. */
   writingRecord(): Promise<WritingRecord>;
-  /** GET /ai/log: the account's AI-use log, as the AI-use statement reads it. */
+  /** GET /ai/log?projectId=<id>: this project's AI-use log, as the AI-use statement reads it (rows logged with no project are not in it). */
   aiUseLog(): Promise<AiuEntry[]>;
 };
 /** `progress` hears each ticked part as its files are made (the dialog's line while the zip is built, W31). */
@@ -195,11 +195,15 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
   if (step("notes")) {
     const items = await shelf();
     const notes = await apNotes();
+    // One file per paper, by its id: two papers with the same title stay two files. A shelf paper and an Analyse note have no shared id yet
+    // (B2), so a note joins a shelf paper's file only when that title names exactly one of each; any other note is a file of its own.
     const papers = new Map<string, Paper>();
-    for (const x of items) if (x.paper?.notes.length) papers.set(x.title, { title: x.title, highlights: x.paper.notes });
-    for (const n of Object.values(notes)) {
-      const title = n.title || UNTITLED;
-      papers.set(title, { ...(papers.get(title) ?? { title, highlights: [] }), note: n });
+    for (const x of items) if (x.paper?.notes.length) papers.set("shelf:" + x.id, { title: x.title, highlights: x.paper.notes });
+    const entries = Object.entries(notes).map(([id, n]) => ({ id, n, title: n.title || UNTITLED }));
+    for (const { id, n, title } of entries) {
+      const shelfPapers = [...papers.entries()].filter(([k, p]) => k.startsWith("shelf:") && p.title === title);
+      if (shelfPapers.length === 1 && entries.filter((e) => e.title === title).length === 1) shelfPapers[0]![1].note = n;
+      else papers.set("ap:" + id, { title, highlights: [], note: n });
     }
     const used = new Set<string>();
     for (const p of papers.values()) zip.file(`notes/${unique(zipName(p.title), used)}.txt`, notesText(p, t));

@@ -476,6 +476,19 @@ describe("ai routes", () => {
     expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
   });
 
+  it("serves one project's log with ?projectId and the whole log without it", async () => {
+    const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Sleep" }) })).json() as { id: string };
+    const q = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Diet" }) })).json() as { id: string };
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-14", projectId: p.id });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Continue this writing", day: "2026-10-15", projectId: q.id });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-16" });
+    const mine = await (await app.request(`/ai/log?projectId=${p.id}`, { headers: auth })).json() as Array<{ d: string; k: string }>;
+    expect(mine.map((e) => [e.d, e.k])).toEqual([["2026-10-14", "grammar and polish"]]);
+    expect(await (await app.request(`/ai/log?projectId=${q.id}&from=2026-10-16`, { headers: auth })).json()).toEqual([]);
+    expect(((await (await app.request("/ai/log", { headers: auth })).json()) as unknown[])).toHaveLength(3);
+    expect((await app.request("/ai/log?projectId=", { headers: auth })).status).toBe(400);
+  });
+
   it("keeps one student's log out of another's", async () => {
     await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-15" });
     const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };

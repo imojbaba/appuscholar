@@ -359,6 +359,10 @@ export const V2_STRINGS = {
   },
   exp_building: { en: "Building your zip: {part}. Keep this page open.", hi: "आपकी zip बन रही है: {part}। यह पेज खुला रखें।" },
   exp_locked: { en: "Unlock with your passphrase to export this project.", hi: "इस प्रोजेक्ट को निर्यात करने के लिए अपने पासफ़्रेज़ से खोलें।" },
+  exp_unsaved: {
+    en: "Some changes could not be saved yet, so they are not in this zip.",
+    hi: "कुछ बदलाव अभी सहेजे नहीं जा सके, इसलिए वे इस zip में नहीं हैं।"
+  },
   exp_link: { en: "Export", hi: "निर्यात करें" },
   acct_export_project: { en: "Export this project", hi: "यह प्रोजेक्ट निर्यात करें" },
   // Inside the zip: the reading notes' and the question's labels, and the list of what did not open.

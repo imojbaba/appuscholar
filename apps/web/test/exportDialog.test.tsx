@@ -20,6 +20,8 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/popout/sync", () => ({ useInsertTarget: () => ({ ready: false, block: () => {}, citation: () => {} }) }));
 
 import { ApiError } from "../lib/api";
+import { heldBlobs } from "../lib/blobs/held";
+import { useProjectBlob } from "../lib/blobs/useProjectBlob";
 import { VaultProvider } from "../lib/vault/useVault";
 import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectContext";
 import { ExportDialog, exportPartsFor } from "../components/export/ExportDialog";
@@ -48,10 +50,22 @@ const LIB = [
 const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0, deks: [], field: "", stage: "idea", status: "active", contentLang: "en", kind: "research" };
 const doc = { id: "D1", projectId: "p1", title: "My first document", titleKeyVersion: 0, deks: [], kind: "draft", currentSeq: 1, wordCount: 2, createdAt: "2026-10-21T00:00:00Z", updatedAt: "2026-10-21T00:00:00Z" };
 const RECORD = { docs: [], sources: [], weekly: [], aiLog: { byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false } };
+/** The account's AI-use log: one row of this project, one of another, one saved with no project. */
+const LOG_ROWS = [
+  { projectId: "p1", e: { d: "2026-10-02", p: "anthropic", m: "claude", k: "Idea check", g: "feedback" } },
+  { projectId: "p2", e: { d: "2026-10-03", p: "groq", m: "gpt-oss", k: "Search terms", g: "feedback" } },
+  { projectId: null, e: { d: "2026-10-04", p: "gemini", m: "flash", k: "Title ideas", g: "feedback" } }
+];
+const aiLog = (path: string) => {
+  const pid = new URL(path, "http://x").searchParams.get("projectId");
+  return LOG_ROWS.filter((r) => pid === null || r.projectId === pid).map((r) => r.e);
+};
+const unzipped = async (b: Blob) => JSZip.loadAsync(await new Promise<ArrayBuffer>((done) => { const r = new FileReader(); r.onload = () => done(r.result as ArrayBuffer); r.readAsArrayBuffer(b); }));
 const audits = () => h.api.mock.calls.filter(([p, init]) => p === "/me/export-audit" && (init as { method?: string } | undefined)?.method === "POST");
 
 beforeEach(() => {
   h.download.mockReset(); h.toast.mockReset(); h.hold = null;
+  heldBlobs.clear();
   h.api.mockReset().mockImplementation(async (path: string) => {
     if (path === "/me/vault") throw new ApiError(404, "not-found");
     if (path === "/projects/p1/documents") return [doc];
@@ -59,7 +73,7 @@ beforeEach(() => {
     if (path === "/projects/p1/blobs/citations") return { kind: "citations", body: JSON.stringify(LIB), keyVersion: 0, deks: [], updatedAt: "2026-10-21T00:00:00Z" };
     if (path.startsWith("/projects/p1/blobs/")) throw new ApiError(404, "not-found");
     if (path === "/projects/p1/writing-record") { if (h.hold) await h.hold; return RECORD; }
-    if (path === "/ai/log") return [];
+    if (path.startsWith("/ai/log")) return aiLog(path);
     if (path === "/me/export-audit") return undefined;
     throw new ApiError(404, "not-found");
   });
@@ -85,6 +99,15 @@ async function render(node?: React.ReactNode, openExport?: (p?: ExportPart) => v
   const root = createRoot(host);
   roots.push(root);
   await act(async () => { root.render(<VaultProvider><Harness openExport={openExport}>{node}</Harness></VaultProvider>); });
+}
+/** A panel with the question's blob mounted; `box.set` is its set(). */
+type IdeaBox = { set?: (v: { topic: string; resources: string; timeframe: string; constraints: string }) => void };
+function ideaPanel(box: IdeaBox) {
+  return function Idea() {
+    const b = useProjectBlob("idea_intake", "p1");
+    box.set = b.set;
+    return <span data-testid="idea-loaded">{b.loading ? "" : "yes"}</span>;
+  };
 }
 const library = { lib: LIB, style: "apa", ready: true, update: () => true } as unknown as Library;
 
@@ -195,5 +218,61 @@ describe("ExportDialog", () => {
     expect(h.download).not.toHaveBeenCalled();
     expect(audits()).toHaveLength(0);
     expect((tid("exp-download") as HTMLButtonElement).disabled).toBe(false);
+  });
+  it("the AI-use statement holds only this project's rows (GET /ai/log?projectId)", async () => {
+    await render();
+    await click(tid("open-all"));
+    await click(tid("exp-download"));
+    await until(() => h.download.mock.calls.length === 1);
+    expect(h.api.mock.calls.map(([p]) => p as string).filter((p) => p.startsWith("/ai/log"))).toEqual(["/ai/log?projectId=p1"]);
+    const statement = await (await unzipped(h.download.mock.calls[0]![1] as Blob)).file("ai-use-statement.txt")!.async("string");
+    expect(statement).toContain("Idea check");
+    expect(statement).not.toMatch(/Search terms|Title ideas/);
+  });
+
+  it("an unsent edit and a held value are saved before the zip is built, and the zip has them", async () => {
+    const stored: Record<string, string> = {};
+    const base = h.api.getMockImplementation()!;
+    h.api.mockImplementation(async (path: string, init?: { method?: string; body?: string }) => {
+      const kind = path.startsWith("/projects/p1/blobs/") ? decodeURIComponent(path.slice("/projects/p1/blobs/".length)) : null;
+      if (kind && init?.method === "PUT") { stored[kind] = (JSON.parse(init.body!) as { body: string }).body; return { kind, body: stored[kind], keyVersion: 0, deks: [], updatedAt: "2026-10-21T00:00:00Z", version: 1 }; }
+      if (kind && kind in stored) return { kind, body: stored[kind], keyVersion: 0, deks: [], updatedAt: "2026-10-21T00:00:00Z", version: 1 };
+      return base(path, init);
+    });
+    const box: IdeaBox = {};
+    const sent = vi.fn(async () => []);
+    heldBlobs.put("held-elsewhere", [{ value: 1 }], sent);
+    const Idea = ideaPanel(box);
+    await render(<Idea />);
+    await until(() => tid("idea-loaded")!.textContent === "yes");
+    // Typed just now: still inside the save's debounce when Download zip is pressed.
+    act(() => { box.set!({ topic: "Naps before exams", resources: "", timeframe: "", constraints: "" }); });
+    await click(tid("open-all"));
+    await click(tid("exp-download"));
+    await until(() => h.download.mock.calls.length === 1);
+    expect(sent).toHaveBeenCalledTimes(1);
+    const q = await (await unzipped(h.download.mock.calls[0]![1] as Blob)).file("question.txt")!.async("string");
+    expect(q).toContain("Naps before exams");
+    expect(tid("exp-unsaved")).toBeNull();
+    await until(() => tid("export-dialog") === null);
+  });
+
+  it("changes that still cannot be saved: the zip is saved and the dialog says they are not in it", async () => {
+    const base = h.api.getMockImplementation()!;
+    h.api.mockImplementation(async (path: string, init?: { method?: string }) => {
+      if (init?.method === "PUT") throw new Error("offline");
+      return base(path, init);
+    });
+    const box: IdeaBox = {};
+    const Idea = ideaPanel(box);
+    await render(<Idea />);
+    await until(() => tid("idea-loaded")!.textContent === "yes");
+    act(() => { box.set!({ topic: "Naps before exams", resources: "", timeframe: "", constraints: "" }); });
+    await click(tid("open-all"));
+    await click(tid("exp-download"));
+    await until(() => h.download.mock.calls.length === 1);
+    await until(() => !!tid("exp-unsaved"));
+    expect(tid("exp-unsaved")!.textContent).toBe(E.exp_unsaved);
+    expect(tid("export-dialog")).not.toBeNull();
   });
 });

@@ -230,9 +230,9 @@ export class MemoryStore implements Store {
   async appendAiUse(userId: string, projectId: string | null, e: AiUseEntry): Promise<void> {
     this.aiUse.push({ userId, projectId, e: { d: e.d, p: e.p, m: e.m, k: e.k, g: e.g } });
   }
-  async listAiUse(userId: string, from?: string, to?: string): Promise<AiUseEntry[]> {
+  async listAiUse(userId: string, from?: string, to?: string, projectId?: string): Promise<AiUseEntry[]> {
     return this.aiUse
-      .filter(r => r.userId === userId && (from === undefined || r.e.d >= from) && (to === undefined || r.e.d <= to))
+      .filter(r => r.userId === userId && (from === undefined || r.e.d >= from) && (to === undefined || r.e.d <= to) && (projectId === undefined || r.projectId === projectId))
       .map(r => ({ ...r.e }))
       .sort((x, y) => (x.d < y.d ? -1 : x.d > y.d ? 1 : 0));
   }

@@ -146,6 +146,22 @@ describe("exportProject", () => {
     expect(n.split("\n").filter((l) => l.includes("cross-sectional"))).toEqual(["AI: A cross-sectional survey; causation is not shown."]);
   });
 
+  it("reading notes are one file per paper id: two papers with the same title stay apart", async () => {
+    const index = [...SHELF_INDEX, { ...SHELF_INDEX[0]!, id: "s2", file: "b.pdf" }];
+    const second = { ...SHELF_PAPER, notes: [{ id: "n2", page: 5, quote: "A second paper's line", note: "", at: "2026-10-02T10:00:00.000Z" }] };
+    const notes = { ...AP_NOTES, a2: { title: "Sleep and exam anxiety", stages: { design: { mine: "Another paper's design." } }, card: {} } };
+    const blobs: Record<string, unknown> = { ...BLOBS, shelf_index: index, "shelf_paper:s2": second, ap_notes: notes };
+    const z = await unzip(await exportProject(deps({ readBlob: async (k) => (k in blobs ? JSON.stringify(blobs[k]) : null) }), ["notes"], opts()));
+    const all = files(z);
+    expect(all).toHaveLength(4);
+    const got = await Promise.all(all.map((n) => text(z, n)));
+    // A title that names two shelf papers and two notes: no guess which goes with which, so each is a file of its own.
+    for (const line of ["Sleep fell by an hour", "A second paper's line", "A survey of two classes.", "Another paper's design."]) {
+      expect(got.filter((g) => g.includes(line))).toHaveLength(1);
+    }
+    expect(got.filter((g) => g.includes("Sleep fell by an hour") && g.includes("A survey of two classes."))).toHaveLength(0);
+  });
+
   it("with no search this session the search list is the kept papers", async () => {
     const z = await unzip(await exportProject(deps(), ["search"], opts({ lastSearch: null })));
     expect(files(z)).toEqual(["search/kept-papers.csv"]);

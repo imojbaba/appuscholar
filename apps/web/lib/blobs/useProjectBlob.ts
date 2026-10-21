@@ -134,7 +134,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   });
   const emit = () => {
     if (!active || o.headless) return;
-    heldBlobs.markDirty(self, holds());
+    heldBlobs.markDirty(self, holds(), flush);
     o.onState(snapshot());
   };
   const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };

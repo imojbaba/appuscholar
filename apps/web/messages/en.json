@@ -419,6 +419,7 @@
   "exp_unreadable_doc": "Document: {name}",
   "exp_unreadable_head": "These could not be opened, so they are not in this zip:",
   "exp_unreadable_paper": "Reading list paper: {name}",
+  "exp_unsaved": "Some changes could not be saved yet, so they are not in this zip.",
   "export_done": "Export ready ✓",
   "export_fail": "Could not make the export. Check your connection and try again.",
   "export_scratch": "Scratch space",

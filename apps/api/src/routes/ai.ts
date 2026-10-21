@@ -24,6 +24,8 @@ const CompleteBody = z.object({
 }).strict();
 const TestBody = z.object({ provider: Provider, apiKey: ApiKey }).strict();
 const Range = z.object({ from: Day.optional(), to: Day.optional() });
+/** GET /ai/log: the range, and optionally one project (the project export's AI-use statement); without it, the whole account's log. */
+const LogQuery = Range.extend({ projectId: z.string().min(1).max(100).optional() });
 
 const STATUS: Record<AiErrorCode, 400 | 401 | 404 | 429 | 502> = {
   "personal-data": 400, blocked: 400, truncated: 400, empty: 400, "no-key": 400,
@@ -97,9 +99,9 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
   });
 
   r.get("/log", async (c) => {
-    const q = Range.safeParse(c.req.query());
+    const q = LogQuery.safeParse(c.req.query());
     if (!q.success) return c.json({ error: "invalid" }, 400);
-    return c.json(await store.listAiUse(c.get("userId"), q.data.from, q.data.to));
+    return c.json(await store.listAiUse(c.get("userId"), q.data.from, q.data.to, q.data.projectId));
   });
 
   r.get("/log/summary", async (c) => {
