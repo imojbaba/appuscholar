@@ -10,11 +10,14 @@ const FILES: Record<DesignFile, { stem: string; ext: string; type: string; zip: 
   budget: { stem: "trial-budget", ext: "md", type: "text/markdown", zip: "design/trial-budget.md" }
 };
 
-/** The download's name: v1's `<stem>-YYYY-MM-DD.<ext>`, by the local calendar day (v1 cut the day from UTC time, which can be the day before late in the evening in India). */
+/** The download's name: v1's `<stem>-YYYY-MM-DD.<ext>`, by the local calendar day (v1 cut the day from UTC time, which in India is the day before from midnight until 05:30). */
 export function datedName(file: DesignFile, now: Date): string {
   const f = FILES[file];
   return `${f.stem}-${localDay(now)}.${f.ext}`;
 }
+
+/** What of the three could not be opened, named in the project export (the root unreadable.txt is the export's own, so this part keeps its own under design/). */
+export const UNREADABLE_PATH = "design/unreadable.txt";
 
 /** The file's path in the project export (the same bodies, no date in the name: the zip's own name carries it). */
 export function zipPath(file: DesignFile): string {

@@ -160,6 +160,24 @@ describe("Registration: CTRI readiness (Task A3)", () => {
     }
   });
 
+  it("the file's date is the local day, not the UTC day (01:30 on the 22nd in India is the 21st in UTC)", async () => {
+    const was = process.env.TZ;
+    process.env.TZ = "Asia/Kolkata";
+    try {
+      const at = new Date("2026-10-21T20:00:00Z");
+      expect(at.toISOString().slice(0, 10)).toBe("2026-10-21");
+      const el = document.createElement("div");
+      document.body.appendChild(el);
+      const root = createRoot(el);
+      roots.push(root);
+      await act(async () => { root.render(<Registration projectId="p1" now={() => at} />); });
+      await click("ctri-export");
+      expect(h.downloads[0]!.name).toBe("ctri-readiness-2026-10-22.md");
+    } finally {
+      if (was === undefined) delete process.env.TZ; else process.env.TZ = was;
+    }
+  });
+
   it("with nothing stored the report is the all-unticked one, as v1's", async () => {
     await render("ctri");
     await click("ctri-export");

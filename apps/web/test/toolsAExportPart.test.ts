@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { budgetMarkdown, ctriMarkdown, piCvText } from "@appuscholar/core";
 import { exportProject, EXPORT_PARTS, type ExportDeps, type ProjectExportDeps } from "../lib/export/projectExport";
 import { exportPartList } from "../lib/export/moduleParts";
@@ -10,6 +10,8 @@ import designEn from "../messages/tools/design.en.json";
 import designHi from "../messages/tools/design.hi.json";
 import en from "../messages/en.json";
 import { exportParts } from "../components/tools/design";
+import { datedName } from "../lib/tools/design/files";
+import { localDay } from "../lib/vault/export";
 
 /*
  * Task A3: the three files of Design and ethics also join the project export (Task G3's ExportPartDef). One part, `design`, builds
@@ -29,7 +31,7 @@ const BLOBS_FULL: Record<string, unknown> = {
   design_pi: { checklist: { 1: true }, cv: "Dr A. Rao\nPhD, Psychology", done: true },
   design_budget: { rows: BUDGET.stored, done: true }
 };
-const t = (k: string) => k;
+const t = (k: string, v?: Record<string, string | number>) => (v ? k + JSON.stringify(v) : k);
 
 function deps(blobs: Record<string, unknown>, over: Partial<ExportDeps> = {}): ExportDeps {
   return {
@@ -89,13 +91,26 @@ describe("the design export part (Task A3)", () => {
     expect((await part().build(deps({ design_ctri: { checklist: { 0: false }, done: false } }))).map((f) => f.path)).toEqual(["design/ctri-readiness.md"]);
   });
 
-  it("a blob that does not open is left out and the rest still export; a locked vault rejects", async () => {
+  it("a blob that does not open, or is not of its shape, is left out and named in design/unreadable.txt; the rest still export; a locked vault rejects", async () => {
     const corrupt = new VaultError("corrupt");
     const files = await part().build(deps(BLOBS_FULL, { readBlob: async (k) => { if (k === "design_pi") throw corrupt; return JSON.stringify(BLOBS_FULL[k]); } }));
-    expect(files.map((f) => f.path)).toEqual(["design/ctri-readiness.md", "design/trial-budget.md"]);
-    // A blob that is not of its kind's shape is left out as well.
-    expect((await part().build(deps(BLOBS_FULL, { readBlob: async (k) => (k === "design_budget" ? "[1,2]" : JSON.stringify(BLOBS_FULL[k])) }))).map((f) => f.path)).toEqual(["design/ctri-readiness.md", "design/pi-cv.txt"]);
+    expect(files.map((f) => f.path)).toEqual(["design/ctri-readiness.md", "design/trial-budget.md", "design/unreadable.txt"]);
+    // The words are the export's own (exp_unreadable_head and exp_unreadable_data), naming the piece by its row label.
+    expect(files.at(-1)!.data).toBe('exp_unreadable_head\n\nexp_unreadable_data{"name":"design_row_pi"}\n');
+    // A blob that is not of its kind's shape is named as well, with the others in the order the files are made.
+    const wrong = await part().build(deps(BLOBS_FULL, { readBlob: async (k) => (k === "design_budget" || k === "design_ctri" ? "[1,2]" : JSON.stringify(BLOBS_FULL[k])) }));
+    expect(wrong.map((f) => f.path)).toEqual(["design/pi-cv.txt", "design/unreadable.txt"]);
+    expect(wrong.at(-1)!.data).toBe('exp_unreadable_head\n\nexp_unreadable_data{"name":"design_row_ctri"}\nexp_unreadable_data{"name":"design_row_budget"}\n');
+    // Nothing lost, no file; a blob the project never had is not "lost".
+    expect((await part().build(deps(BLOBS_FULL))).map((f) => f.path)).not.toContain("design/unreadable.txt");
+    expect(await part().build(deps({}))).toEqual([]);
     await expect(part().build(deps(BLOBS_FULL, { readBlob: async () => { throw new Error("vault-locked"); } }))).rejects.toThrow("vault-locked");
+  });
+
+  it("the export's own unreadable.txt is not touched: a module's lost blob joins the zip as design/unreadable.txt beside it", async () => {
+    const base = deps({ ...BLOBS_FULL, design_ctri: undefined }, { readBlob: async (k) => (k === "design_ctri" ? "not json" : k in BLOBS_FULL ? JSON.stringify(BLOBS_FULL[k]) : null) }) as ProjectExportDeps;
+    const zip = await JSZip.loadAsync(await exportProject(base, [part()], { style: "apa", now: NOW, lastSearch: null }));
+    expect(Object.keys(zip.files).filter((n) => !zip.files[n]!.dir).sort()).toEqual(["design/pi-cv.txt", "design/trial-budget.md", "design/unreadable.txt"]);
   });
 
   it("the zip holds the three files under design/ when the part is ticked, and nothing of it when it is not", async () => {
@@ -107,5 +122,21 @@ describe("the design export part (Task A3)", () => {
     expect(progress.mock.calls.map((c) => c[0])).toEqual(["design"]);
     const none = await JSZip.loadAsync(await exportProject(base, [], { style: "apa", now: NOW, lastSearch: null }));
     expect(Object.keys(none.files).filter((n) => !none.files[n]!.dir)).toEqual([]);
+  });
+});
+
+describe("the download's date is the local day (Task A3 fix round 1)", () => {
+  const was = process.env.TZ;
+  beforeEach(() => { process.env.TZ = "Asia/Kolkata"; });
+  afterEach(() => { if (was === undefined) delete process.env.TZ; else process.env.TZ = was; });
+
+  it("20:00 UTC on 21 October is 01:30 on the 22nd in India: the name carries the 22nd, which a UTC date would not", () => {
+    const at = new Date("2026-10-21T20:00:00Z");
+    expect(at.toISOString().slice(0, 10)).toBe("2026-10-21");
+    expect(localDay(at)).toBe("2026-10-22");
+    expect(datedName("ctri", at)).toBe("ctri-readiness-2026-10-22.md");
+    expect(datedName("pi", at)).toBe("pi-cv-2026-10-22.txt");
+    expect(datedName("budget", at)).toBe("trial-budget-2026-10-22.md");
+    expect(datedName("budget", at)).not.toContain(at.toISOString().slice(0, 10));
   });
 });

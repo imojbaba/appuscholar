@@ -111,5 +111,6 @@
   "design_budget_add": "Add line item",
   "design_budget_export": "Export budget",
   "design_exp_label": "Design and ethics readiness files",
-  "design_exp_detail": "Your CTRI readiness report, your PI CV text and your trial budget, whichever you have filled in"
+  "design_exp_detail": "Your CTRI readiness report, your PI CV text and your trial budget, whichever you have filled in",
+  "design_budget_amount_ph": "₹"
 }
