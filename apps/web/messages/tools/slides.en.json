@@ -1,1 +1,12 @@
-{}
+{
+  "slides_head": "Make a PPT from this document",
+  "slides_desc": "Uses your Heading 1, 2 and 3 styles as slide breaks. The text under each heading becomes bullet points. A picture goes on the slide it sits under, and only the first picture on a slide is used. Add headings in the formatting bar if you have not yet.",
+  "slides_download": "Download as PowerPoint (.pptx)",
+  "slides_preparing": "Preparing the file…",
+  "slides_empty": "Write something in your document first, then come back here.",
+  "slides_no_headings": "No Heading 1, 2 or 3 found. The whole document is one slide, titled with the document's name. Add headings in the formatting bar for a proper slide-by-slide breakdown.",
+  "slides_card_num": "Slide {n}",
+  "slides_untitled": "Untitled slide",
+  "slides_picture_alt": "A picture on slide {n}",
+  "slides_failed": "The file could not be made. Try again."
+}

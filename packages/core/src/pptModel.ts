@@ -20,6 +20,8 @@
    A document with no headings and only paragraphs is one slide with a null title, not one titled with the document's name (v1's fallback to the whole text, with the document's title,
    is reached only when no slide came out of the nodes: text outside any element, or a paragraph whose only content is a picture with no src). */
 
+import { docInnerText } from "./doctext";
+
 export const PPT_MAX_BULLETS=10;
 export const PPT_PREVIEW_BULLETS=8;
 export const PPT_BULLET_CHARS=300;
@@ -109,4 +111,52 @@ export function pptxDeckSpec(slides: PptSlide[]): PptxDeck{
       return{title,bullets,image};
     }),
   };
+}
+
+/**
+ * docToSlideModelV2: the sibling the Make PPT tab uses (register D-S2-99); docToSlideModel above and its golden stay as v1 wrote them. It differs in two things:
+ * - the text of each element is `docInnerText` of its HTML (register F26: v1's `textOf` 4959 reads innerText), so a `<br>` in a paragraph and a list item inside another read with a
+ *   line break, as in the browser, where docToSlideModel reads textContent ("linebreak"); the whole-text fallback reads the document's `docInnerText` (v1's `getEditorText`);
+ * - a document in which no slide has a title (a document without a Heading 1, 2 or 3) gives its first slide the document's title ('Untitled' when blank), where v1 left it null.
+ *   `hasHeadings` says whether a heading gave any slide its title, before that is done and before the whole-text fallback titles its slide, so the tab can show the "no headings" note
+ *   (v1's `slides.some(s=>s.title)`, which the fallback's own title would have made true).
+ * The slide order, the table bullet, the picture rules and the whole-text fallback's rule (one slide titled with the document's title, the first 10 non-empty lines) are v1's.
+ */
+export function docToSlideModelV2(html: string,docTitle?: string | null): { slides: PptSlide[]; hasHeadings: boolean }{
+  const editor=parseRoot(html);
+  const title=(docTitle||'').trim()||'Untitled';
+  const nodes=Array.from(editor.children);
+  const slides: PptSlide[]=[];
+  let cur: PptSlide | null=null;
+  function pushCur(){if(cur&&(cur.title||cur.bullets.length||cur.images.length))slides.push(cur)}
+  function textOf(n: Element){return docInnerText(n.outerHTML).trim()}
+  nodes.forEach(n=>{
+    const tag=n.tagName;
+    if(tag==='H1'||tag==='H2'||tag==='H3'){
+      pushCur();cur={title:textOf(n),bullets:[],images:[]};
+      return;
+    }
+    if(!cur)cur={title:null,bullets:[],images:[]};
+    const slide: PptSlide=cur;
+    if(tag==='UL'||tag==='OL'){
+      Array.from(n.children).forEach(li=>{const t=textOf(li);if(t)slide.bullets.push(t)});
+    }else if(tag==='TABLE'){
+      const rows=Array.from((n as HTMLTableElement).rows).map(r=>Array.from(r.cells).map(c=>textOf(c)).join(' | '));
+      if(rows.length)slide.bullets.push('Table: '+rows.join(' — '));
+    }else{
+      n.querySelectorAll('img').forEach(img=>{if(img.src)slide.images.push(img.src)});
+      const t=textOf(n);
+      if(t&&!n.querySelector('img'))slide.bullets.push(t);
+    }
+  });
+  pushCur();
+  const hasHeadings=slides.some(s=>s.title);
+  if(!slides.length){
+    const whole=docInnerText(html).trim();
+    if(whole){
+      const parts=whole.split(/\n+/).map(s=>s.trim()).filter(Boolean).slice(0,10);
+      slides.push({title,bullets:parts,images:[]});
+    }
+  }else if(!hasHeadings)slides[0]!.title=title;
+  return{slides,hasHeadings};
 }
