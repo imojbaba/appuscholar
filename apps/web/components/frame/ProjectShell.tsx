@@ -22,6 +22,7 @@ import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sy
 import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import { DocAccessHost } from "@/lib/editor/docAccess";
+import { documentLayers } from "@/lib/tools/registry";
 import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
@@ -490,6 +491,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         {inProject && <CaptureHash />}
         {/* The tools' document access in a place's own window is answered here: snapshots of the open document and its requests (lib/editor/docAccess). */}
         {inProject && !popout && <DocAccessHost />}
+        {/* What a built tool draws over the open document (ToolModule.DocumentLayer, ruling R33): once per module, in the writing window only, whatever place is open. */}
+        {inProject && !popout && documentLayers().map(({ tool, Layer }) => <Layer key={tool} projectId={urlProjectId} />)}
         {popout ? <WindowHeader /> : <AppHeader />}
         <ChromeDialogs />
         <ImportOrigin />

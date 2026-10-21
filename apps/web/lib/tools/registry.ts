@@ -19,6 +19,7 @@ import * as viva from "@/components/tools/viva";
  * A module is `components/tools/<tool>/index.ts` and holds its ToolModule as named exports:
  *   export const built = true;                            // false until the session ships: each of its tabs reads "Not built yet"
  *   export { Panel } from "./Panel";                      // drawn for each of the module's tabs, told which one
+ *   export { DocumentLayer } from "./DocumentLayer";      // optional: what the tool draws over the open document (ToolModule.DocumentLayer)
  *   export function facts(b: StageBlobs): ToolFacts {}   // optional: the home's line for its stage (Task G3)
  *   export const exportParts: ExportPartDef[] = [];       // optional: its parts of the project export (Task G3)
  * The modules are imported statically below (the bundler sees every one; no path is built at run time), and each is checked against ToolModule.
@@ -50,7 +51,20 @@ export type ExportPartDef = {
 /** A tool's module, as `components/tools/<tool>/index.ts` exports it (see the header). */
 export type ToolModule = {
   built: boolean;
-  Panel?: (p: { tab: string; projectId: string }) => React.JSX.Element;
+  /**
+   * Drawn for each of the module's tabs, told which one. A component (a function, `memo`, `lazy`, a class), so it may hold state and use hooks;
+   * StagedPlace renders it as `<Panel tab projectId/>`.
+   */
+  Panel?: React.ComponentType<{ tab: string; projectId: string }>;
+  /**
+   * Something the tool draws over the open document in the writing window. For example Coding's colours: a `<style>` scoped to
+   * `.editor .ProseMirror` and keyed on `data-qcode`, built from the project's `qual_codes` and `qual_prefs` (v1 painted them inline at
+   * index.html 6255 and toggled `qual-hide` at 13674; v2 never stores a colour, 2026-10-19 ruling R4). A tool never reaches into the editor
+   * from elsewhere, so this is the one way it paints the document.
+   * Mounted by the project shell once for each built module that declares one, in the writing window only, whatever place or tab is open;
+   * never in a pop-out (which has no document). Rendering null is fine; unmounted with the shell. Told the project it draws for.
+   */
+  DocumentLayer?: React.ComponentType<{ projectId: string }>;
   facts?: (b: StageBlobs) => ToolFacts;
   exportParts?: ExportPartDef[];
 };
@@ -58,6 +72,22 @@ export type ToolModule = {
 const MODULES: Partial<Record<ToolTab["tool"], ToolModule>> = { design, stats, qual, style, words, close, slides, viva };
 /** What a tool with no tab here has (the Idea and Literature tools and Chat, which are drawn by their own places, not by the registry). */
 const NO_MODULE: ToolModule = { built: false };
+
+/**
+ * The DocumentLayer of each built module that declares one, in the registry's tab order, each module once (ruling R33). Read at render, so a
+ * module turned on later is picked up; the project shell mounts them in the writing window.
+ */
+export function documentLayers(): Array<{ tool: ToolTab["tool"]; Layer: React.ComponentType<{ projectId: string }> }> {
+  const seen = new Set<ToolTab["tool"]>();
+  const out: ReturnType<typeof documentLayers> = [];
+  for (const { tool } of TOOL_TABS) {
+    if (seen.has(tool)) continue;
+    seen.add(tool);
+    const m = toolModule(tool);
+    if (m.built && m.DocumentLayer) out.push({ tool, Layer: m.DocumentLayer });
+  }
+  return out;
+}
 
 /** The module that draws a tool's tabs. */
 export function toolModule(tool: ToolTab["tool"]): ToolModule {

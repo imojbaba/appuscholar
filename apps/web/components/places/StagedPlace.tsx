@@ -16,11 +16,12 @@ export function StagedPlace({ stage, tab }: { stage: StageKey; tab: string | nul
   const { projectId } = useProject();
   const here = TOOL_TABS.find((x) => x.stage === stage && x.tab === tab) ?? TOOL_TABS.find((x) => x.stage === stage)!;
   const mod = toolModule(here.tool);
+  const Panel = mod.built ? mod.Panel : undefined;
   return (
     <>
       <PlaceHeader stage={stage} tab={here.tab} />
       <div className="place-body" data-testid={"place-" + stage + "-" + here.tab}>
-        {mod.built && mod.Panel ? <mod.Panel tab={here.tab} projectId={projectId ?? ""} /> : <NotBuilt docShown={stage === "writing"} />}
+        {Panel ? <Panel tab={here.tab} projectId={projectId ?? ""} /> : <NotBuilt docShown={stage === "writing"} />}
         <section className="place-next" aria-label={t("lit_suggested_next")} data-testid={stage + "-next"}><p>{t(here.nextKey)}</p></section>
       </div>
     </>

@@ -57,7 +57,7 @@ import { setSyncChannel } from "../lib/popout/sync";
 import { VaultProvider } from "../lib/vault/useVault";
 import { ProjectShell } from "../components/frame/ProjectShell";
 import { useProject, type ProjectValue } from "../components/frame/ProjectContext";
-import { DOC_REPLY_WAIT_MS, useDocAccess, type DocAccess } from "../lib/editor/docAccess";
+import { DOC_REPLY_WAIT_MS, SNAPSHOT_DEBOUNCE_MS, useDocAccess, type DocAccess } from "../lib/editor/docAccess";
 import { markCursorPlaced } from "../lib/editor/insert";
 import { heldDocs } from "../lib/useAutosave";
 
@@ -526,6 +526,24 @@ describe("the writing window answers a pop-out (ruling R10)", () => {
     act(() => { editor().commands.setTextSelection({ from: 5, to: 8 }); });
     await until(() => sent("doc-snapshot").at(-1)?.selection === "two");
     expect(sent("doc-snapshot").at(-1)).toEqual({ type: "doc-snapshot", projectId: "p1", docId: "D1", text: "One two.", selection: "two" });
+  });
+
+  it("posts no snapshot until a pop-out has said hello, then one at once and one after each change (M1)", async () => {
+    plainApi("<p>One two.</p>");
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    // Nothing is listening: loading, and editing the document, build and post no snapshot.
+    act(() => { editor().commands.setTextSelection({ from: 5, to: 8 }); });
+    await act(async () => { await new Promise((r) => setTimeout(r, SNAPSHOT_DEBOUNCE_MS + 100)); });
+    expect(sent("doc-snapshot")).toEqual([]);
+    // A hello from another project's pop-out is not this window's to answer.
+    act(() => { ch.deliver({ type: "doc-hello", projectId: "p9" }); });
+    expect(sent("doc-snapshot")).toEqual([]);
+    act(() => { ch.deliver({ type: "doc-hello", projectId: "p1" }); });
+    expect(sent("doc-snapshot")).toHaveLength(1);
+    act(() => { editor().commands.setTextSelection({ from: 1, to: 4 }); });
+    await until(() => sent("doc-snapshot").at(-1)?.selection === "One");
+    expect(sent("doc-snapshot")).toHaveLength(2);
   });
 
   it("runs a pop-out's request on the open document and replies with the answer; another project's request is not its to answer", async () => {

@@ -9,10 +9,17 @@ import en from "../messages/en.json";
  * mocking its index, as a tool session turns it on by setting `built` and exporting a Panel; every other module is the stub G2 ships.
  */
 
-vi.mock("@/components/tools/stats", () => ({
-  built: true,
-  Panel: ({ tab, projectId }: { tab: string; projectId: string }) => <div data-testid="panel-stats">{tab + " in " + projectId}</div>
-}));
+// A Panel is a component (ruling R33): this one is a memo with state, not a plain function.
+vi.mock("@/components/tools/stats", async () => {
+  const { memo, useState } = await import("react");
+  return {
+    built: true,
+    Panel: memo(function StatsPanel({ tab, projectId }: { tab: string; projectId: string }) {
+      const [where] = useState(() => tab + " in " + projectId);
+      return <div data-testid="panel-stats">{where}</div>;
+    })
+  };
+});
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1" }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "s1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/vault/titles", () => ({ useTitle: () => ({ state: "open", text: "Sleep and exam anxiety" }) }));

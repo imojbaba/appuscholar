@@ -22,7 +22,7 @@ export type BlobMessage = { type: "blob"; id: string };
  * read a mirror. Every other call is a request the writing window runs on the open document and replies to by id: a pop-out never writes a
  * document itself (register row D-S2-43).
  */
-export type DocHelloMessage = { type: "doc-hello" };
+export type DocHelloMessage = { type: "doc-hello"; projectId?: string };
 export type DocSnapshotMessage = { type: "doc-snapshot"; projectId: string | null; docId: string | null; text: string; selection: string };
 export type DocOp = "insertText" | "insertBlock" | "wrapSelection" | "replaceInDocument" | "allDocuments" | "rewriteDocument";
 export type DocRequestMessage = { type: "doc-request"; id: string; projectId: string; op: DocOp; args: unknown[] };

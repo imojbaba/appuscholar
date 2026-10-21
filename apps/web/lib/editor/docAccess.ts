@@ -318,7 +318,7 @@ export function useDocAccess(): DocAccess {
       if (!s || s.type !== "doc-snapshot" || s.projectId !== projectId || typeof s.text !== "string" || typeof s.selection !== "string") return;
       mirror = { projectId, docId: typeof s.docId === "string" ? s.docId : null, text: s.text, selection: s.selection };
     });
-    try { syncChannel()?.postMessage({ type: "doc-hello" } satisfies DocHelloMessage); } catch { /* a closed channel: text() stays "" until a snapshot comes */ }
+    try { syncChannel()?.postMessage({ type: "doc-hello", projectId } satisfies DocHelloMessage); } catch { /* a closed channel: text() stays "" until a snapshot comes */ }
     return off;
   }, [popout, projectId]);
   // eslint-disable-next-line react-hooks/refs -- the ref is read only inside the calls, which run after a render, never during one
@@ -349,9 +349,9 @@ const FALLBACK: Record<DocOp, unknown> = { insertText: false, insertBlock: false
 
 /**
  * The writing window's side of ruling R10, mounted once by the project shell: a snapshot of the open document (its project, id, text and
- * selection) when a pop-out says hello, when the editor changes (another document opens) and SNAPSHOT_DEBOUNCE_MS after each change to its text
- * or selection; and each pop-out request of this project, its arguments checked, acked at once (ruling R28), run here through useDocAccess and
- * then answered by id. A pop-out does not answer.
+ * selection) when a pop-out of this project says hello, and after that when the editor changes (another document opens) and
+ * SNAPSHOT_DEBOUNCE_MS after each change to its text or selection; with no hello heard, no snapshot is built (ruling R33, M1); and each pop-out
+ * request of this project, its arguments checked, acked at once (ruling R28), run here through useDocAccess and then answered by id. A pop-out does not answer.
  */
 export function useDocAccessHost(): void {
   const access = useDocAccess();
@@ -363,19 +363,29 @@ export function useDocAccessHost(): void {
     const { access: a, projectId: p, docId } = ref.current;
     try { syncChannel()?.postMessage({ type: "doc-snapshot", projectId: p, docId, text: a.text(), selection: a.selection() } satisfies DocSnapshotMessage); } catch { /* no pop-out hears it */ }
   }, []);
+  // M1: nothing is built or posted until a pop-out of this project has said hello (a snapshot walks the whole document); `heard` is set by the
+  // first hello and stays set for the shell's life, since a pop-out that closes cannot say so.
+  const heard = useRef(false);
   useEffect(() => {
     if (isPopout()) return;
-    post();
     if (!editor) return;
+    if (heard.current) post();
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const changed = () => { clearTimeout(timer); timer = setTimeout(post, SNAPSHOT_DEBOUNCE_MS); };
+    const changed = () => { if (!heard.current) return; clearTimeout(timer); timer = setTimeout(post, SNAPSHOT_DEBOUNCE_MS); };
     editor.on("transaction", changed);
     return () => { editor.off("transaction", changed); clearTimeout(timer); };
   }, [editor, post]);
   useEffect(() => {
     if (isPopout()) return;
     return onSyncMessage((m) => {
-      if ((m as { type?: unknown } | null)?.type === "doc-hello") { post(); return; }
+      if ((m as { type?: unknown } | null)?.type === "doc-hello") {
+        // A pop-out of another project is not this window's to answer (a hello without a project, from an older pop-out, is answered).
+        const of = (m as Partial<DocHelloMessage>).projectId;
+        if (of !== undefined && of !== ref.current.projectId) return;
+        heard.current = true;
+        post();
+        return;
+      }
       const r = m as Partial<DocRequestMessage> | null;
       if (!r || r.type !== "doc-request" || typeof r.id !== "string" || !OPS.includes(r.op as DocOp)) return;
       // A pop-out of another project is not this window's to answer.
