@@ -24,7 +24,8 @@ import * as viva from "@/components/tools/viva";
  * The modules are imported statically below (the bundler sees every one; no path is built at run time), and each is checked against ToolModule.
  * Load order: this file reads every module's `built` as it loads (BUILT_IN), so no module may reach it while still loading. A Panel may import
  * the frame (placeHref, lib/tools, lib/frame/places: none of them imports this file), but a tool module imports the registry for types only
- * (`import type`); its tabs, if it needs them, come from ./tabs. test/toolLoadOrder.test.ts loads such a module first to keep it so.
+ * (`import type`). test/toolLoadOrder.test.ts loads such a module first, and fails on a tool file that imports this one for more than types.
+ * Tool modules read TOOL_TABS from `@/lib/tools/tabs`, never from here.
  */
 
 export { TOOL_TABS, type ToolTab };
