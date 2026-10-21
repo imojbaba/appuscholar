@@ -35,6 +35,7 @@ import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { captureConfirmText } from "@appuscholar/core";
 // The English constants (ruling R15) are imported from their modules where the module is plain TypeScript, so the spec cannot drift from them.
 import { CITATION_INSERTED } from "../lib/cite/actions";
+import { stageBuilt } from "./support/builtTools";
 
 // ---- Copy: every sentence asserted is read from the dictionary, so it is byte-equal to what the panel shows ------------------------------------------
 
@@ -1076,6 +1077,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await toHome(page);
     // Literature has work now, after an Idea that was marked ready and edited.
     await expectStates(page, { idea: "reopened", lit: "in-progress", writing: "in-progress" });
+    // Once session A ships Design and ethics, its own spec (tools-a) covers the place; this step then has nothing to check.
+    if (stageBuilt("design")) return;
     await expect(page.getByTestId("home-detail-design")).toHaveText(T("detail_not_built"));
     await toPlace(page, "design");
     await expect(page.getByTestId("not-built")).toHaveText(T("place_not_built") + " " + T("not_built_tab_body"));
