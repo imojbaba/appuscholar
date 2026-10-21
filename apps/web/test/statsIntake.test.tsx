@@ -19,6 +19,9 @@ const h = vi.hoisted(() => ({
   store: {} as Record<string, unknown>,
   writes: [] as Array<{ kind: string; json: string }>,
   broken: {} as Record<string, boolean>,
+  /** A kind whose stored value is not known yet (the read is under way) or sits behind the locked vault. */
+  loading: {} as Record<string, boolean>,
+  locked: {} as Record<string, boolean>,
   confirm: vi.fn(() => true),
   openDocument: vi.fn()
 }));
@@ -34,7 +37,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       const alive = useRef(true);
       useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
       return {
-        value: h.store[kind] ?? null, loading: false, locked: false, broken: h.broken[kind] ?? false, readOnly: false,
+        value: h.store[kind] ?? null, loading: h.loading[kind] ?? false, locked: h.locked[kind] ?? false, broken: h.broken[kind] ?? false, readOnly: false,
         set: (next: unknown) => {
           if (!alive.current) return;
           const v = typeof next === "function" ? (next as (p: unknown) => unknown)(h.store[kind] ?? null) : next;
@@ -50,7 +53,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
 
 import { Panel } from "../components/tools/stats/Panel";
 import * as stats from "../components/tools/stats";
-import { getData, getLab, resetLabs } from "../lib/tools/stats/lab";
+import { getData, getLab, resetLabs, setName } from "../lib/tools/stats/lab";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = { ...(en as Record<string, string>), ...(statsEn as Record<string, string>) };
@@ -106,7 +109,7 @@ const PEOPLE = ["name,phone,site,score", ...Array.from({ length: 6 }, (_, i) => 
 
 beforeEach(() => {
   resetLabs();
-  h.store = {}; h.writes = []; h.broken = {};
+  h.store = {}; h.writes = []; h.broken = {}; h.loading = {}; h.locked = {};
   h.toast.mockClear(); h.download.mockClear(); h.openDocument.mockClear();
   h.confirm.mockReset(); h.confirm.mockReturnValue(true);
   vi.spyOn(window, "confirm").mockImplementation(h.confirm);
@@ -517,6 +520,56 @@ describe("a parse that finishes after the tab was left is still recorded", () =>
     const before = h.writes.length;
     await mount();
     expect(h.writes.length).toBe(before);
+  });
+});
+
+describe("nothing is saved before the stored lists are known (R16)", () => {
+  it("records the set only once stats_sets has been read, and then in the same open tab", async () => {
+    h.loading.stats_sets = true;
+    await mount();
+    await type("stats-paste", SMALL);
+    await click("stats-parse");
+    expect(getData("p1")).not.toBeNull();
+    expect(wrote("stats_sets")).toEqual([]);
+    h.loading.stats_sets = false;
+    await type("stats-name", "Study 1"); // any change draws the tab again
+    expect(Object.keys(h.store.stats_sets as object)).toEqual(["Study 1"]);
+  });
+
+  it("does not ask 'Save anyway?' nor save over a list that cannot be opened while it is still being read", async () => {
+    h.loading.stats_sets = true;
+    h.broken.stats_sets = true;
+    h.confirm.mockReturnValue(false);
+    await mount();
+    await type("stats-paste", SMALL);
+    await click("stats-parse");
+    expect(h.confirm).not.toHaveBeenCalled();
+    expect(wrote("stats_sets")).toEqual([]);
+    h.loading.stats_sets = false; // known now: broken, and the student says no
+    await type("stats-name", "Study 1");
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    expect(wrote("stats_sets")).toEqual([]);
+  });
+
+  it("waits for a locked vault instead of queueing a save that would raise the passphrase prompt", async () => {
+    h.locked.stats_sets = true;
+    await mount();
+    await type("stats-paste", SMALL);
+    await click("stats-parse");
+    expect(wrote("stats_sets")).toEqual([]);
+    h.locked.stats_sets = false;
+    await type("stats-name", "Study 1");
+    expect(Object.keys(h.store.stats_sets as object)).toEqual(["Study 1"]);
+  });
+
+  it("remembers a name the lab already holds only once stats_prefs has been read", async () => {
+    setName("p1", "From a file");
+    h.loading.stats_prefs = true;
+    await mount();
+    expect(wrote("stats_prefs")).toEqual([]);
+    h.loading.stats_prefs = false;
+    await type("stats-paste", SMALL); // draws the tab again
+    expect((h.store.stats_prefs as { statsname: string }).statsname).toBe("From a file");
   });
 });
 

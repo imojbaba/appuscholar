@@ -46,6 +46,7 @@ export function useLabActions(projectId: string) {
 
   const lab = useLab(projectId);
   const { data, registered, name } = lab;
+  const { loading: setsLoading, locked: setsLocked } = sets;
 
   /**
    * v1 rtRegister (9380) after every parse: the set's name, hash, time and row count in `stats_sets`. It is done here, whenever the lab holds a table
@@ -54,10 +55,12 @@ export function useLabActions(projectId: string) {
    * already recorded as it was.)
    */
   useEffect(() => {
-    if (!data || registered === data || pid === null || !mayRegister()) return;
+    // Not before the stored list is known: the hook would queue the update and replay it onto whatever the read finds, a list that does not open
+    // included (R16 asks first, and mayRegister cannot know it is broken yet), and a locked vault would raise the passphrase prompt at mount.
+    if (!data || registered === data || pid === null || setsLoading || setsLocked || !mayRegister()) return;
     setsRef.current.set((prev) => rtSetRecord(data, getLab(projectId).name.trim() || UNTITLED, prev ?? {}, Date.now()));
     patchLab(projectId, { registered: data });
-  }, [data, registered, pid, projectId, mayRegister]);
+  }, [data, registered, pid, projectId, mayRegister, setsLoading, setsLocked]);
 
   /** A name that reached the lab while the tab was not open (a file's name seeds an empty box) is remembered when it opens again. */
   useEffect(() => {
