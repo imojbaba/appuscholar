@@ -14,7 +14,7 @@ export class MemoryStore implements Store {
   private credentials = new Map<string, Credential & { userId: string }>();
   private vaults = new Map<string, VaultRecord>();
   private audit: { userId: string; action: AuditAction; target: string | null; at: Date }[] = [];
-  private aiUse: { userId: string; projectId: string | null; e: AiUseEntry }[] = [];
+  private aiUse: { userId: string; projectId: string | null; e: AiUseEntry; at: Date }[] = [];
   /** Keyed by projectId + "\n" + kind (a kind never holds a newline). */
   private blobs = new Map<string, ProjectBlob>();
 
@@ -228,13 +228,18 @@ export class MemoryStore implements Store {
   }
 
   async appendAiUse(userId: string, projectId: string | null, e: AiUseEntry): Promise<void> {
-    this.aiUse.push({ userId, projectId, e: { d: e.d, p: e.p, m: e.m, k: e.k, g: e.g } });
+    this.aiUse.push({ userId, projectId, e: { d: e.d, p: e.p, m: e.m, k: e.k, g: e.g }, at: new Date() });
   }
   async listAiUse(userId: string, from?: string, to?: string, projectId?: string): Promise<AiUseEntry[]> {
     return this.aiUse
       .filter(r => r.userId === userId && (from === undefined || r.e.d >= from) && (to === undefined || r.e.d <= to) && (projectId === undefined || r.projectId === projectId))
       .map(r => ({ ...r.e }))
       .sort((x, y) => (x.d < y.d ? -1 : x.d > y.d ? 1 : 0));
+  }
+  async claimAiUse(userId: string, projectId: string, since: Date): Promise<number> {
+    const rows = this.aiUse.filter(r => r.userId === userId && r.projectId === null && r.at >= since);
+    for (const r of rows) r.projectId = projectId;
+    return rows.length;
   }
   async eraseAiUse(userId: string): Promise<void> {
     this.aiUse = this.aiUse.filter(r => r.userId !== userId);

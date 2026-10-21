@@ -15,6 +15,8 @@ const PatchFields = z.object({
 });
 const Patch = z.union([PatchFields.extend(PlainTitle.shape), PatchFields.extend(SealedTitle.shape), PatchFields.extend(NoTitle.shape)])
   .refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
+/** How long ago, by the client's own stopwatch, its first check began: the server turns it into a time on its own clock. A day at most. */
+const ClaimAiUse = z.object({ secondsAgo: z.number().min(0).max(24 * 3600) });
 const DocFields = z.object({ kind: z.string().trim().min(1).max(40).default("draft") });
 /**
  * A document can also be created with its first body, in the same shape as PUT /documents/:id (ciphertext needs its dek here, since the document
@@ -80,6 +82,17 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
   };
   r.post("/:id/stages/:stage/ready", mark(true));
   r.delete("/:id/stages/:stage/ready", mark(false));
+  /**
+   * First run checks the idea before its project exists, so that AI use is logged with no project and the project's AI-use statement would
+   * leave it out. Saving the project claims the user's rows with no project since the first check began.
+   */
+  r.post("/:id/ai-use/claim", async (c) => {
+    const body = ClaimAiUse.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "invalid" }, 400);
+    const userId = c.get("userId"), id = c.req.param("id");
+    if (!(await store.getProject(userId, id))) return c.json({ error: "not-found" }, 404);
+    return c.json({ claimed: await store.claimAiUse(userId, id, new Date(Date.now() - body.data.secondsAgo * 1000)) });
+  });
   r.delete("/:id", async (c) => {
     const ok = await store.deleteProject(c.get("userId"), c.req.param("id"));
     return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);

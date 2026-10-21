@@ -89,7 +89,7 @@ beforeEach(() => {
 describe("the project home", () => {
   it("the home reads every project's states from one request", async () => {
     mount();
-    await until(() => text("home-detail-lit").includes("2 highlights"));
+    await until(() => text("home-detail-lit").includes("Highlights: 2"));
     const urls = h.api.mock.calls.map(([u]) => u as string);
     expect(urls.filter((u) => /\/projects\?include=work$/.test(u))).toHaveLength(1);
     expect(urls.filter((u) => /\/projects\/[^/]+\/blobs$/.test(u))).toHaveLength(0);
@@ -182,7 +182,7 @@ describe("the project home", () => {
     act(() => { r.render(<ProjectHome />); });
     await until(() => text("home-q-text") === "Does a fixed bedtime lower exam anxiety?");
     expect(q("home-locked")).toBeNull();
-    await until(() => text("home-detail-lit").includes("2 highlights"));
+    await until(() => text("home-detail-lit").includes("Highlights: 2"));
   });
 
   it("highlight counts are read once per paper version: a repeat visit reads none, a changed version re-reads only that paper", async () => {
@@ -190,13 +190,13 @@ describe("the project home", () => {
     server.blobs["shelf_paper:sp2"] = { value: { pages: ["p"], notes: [{ id: "m1", page: 1, quote: "q", note: "", at: "x" }], cells: {} }, updatedAt: "2026-10-07T00:00:00Z", version: 4 };
     const paperReads = () => h.api.mock.calls.map(([u]) => u as string).filter((u) => u.includes("/blobs/shelf_paper"));
     let r = mount();
-    await until(() => text("home-detail-lit").includes("3 highlights"));
+    await until(() => text("home-detail-lit").includes("Highlights: 3"));
     expect(paperReads().sort()).toEqual(["/projects/p1/blobs/shelf_paper%3Asp1", "/projects/p1/blobs/shelf_paper%3Asp2"]);
 
     act(() => { r.unmount(); });
     h.api.mockClear();
     r = mount();
-    await until(() => text("home-detail-lit").includes("3 highlights"));
+    await until(() => text("home-detail-lit").includes("Highlights: 3"));
     await act(async () => { await new Promise((res) => setTimeout(res, 50)); });
     expect(h.api.mock.calls.map(([u]) => u as string)).toContain("/projects?include=work");
     expect(paperReads()).toEqual([]);
@@ -207,7 +207,7 @@ describe("the project home", () => {
     act(() => { r.unmount(); });
     h.api.mockClear();
     mount();
-    await until(() => text("home-detail-lit").includes("5 highlights"));
+    await until(() => text("home-detail-lit").includes("Highlights: 5"));
     expect(paperReads()).toEqual(["/projects/p1/blobs/shelf_paper%3Asp2"]);
     expect(highlightCache.has("p1:sp2:4")).toBe(false);
     expect(highlightCache.get("p1:sp2:5")).toBe(3);

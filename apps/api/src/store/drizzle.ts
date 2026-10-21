@@ -279,7 +279,8 @@ export class DrizzleStore implements Store {
   }
 
   async appendAiUse(userId: string, projectId: string | null, e: AiUseEntry): Promise<void> {
-    await this.d.insert(aiUseLog).values({ userId, projectId, day: e.d, provider: e.p, model: e.m, kind: e.k, grp: e.g });
+    // Stamped here, as claimAiUse's `since` is: the column's now() default is the database's clock in its own time zone.
+    await this.d.insert(aiUseLog).values({ userId, projectId, day: e.d, provider: e.p, model: e.m, kind: e.k, grp: e.g, createdAt: new Date() });
   }
   async listAiUse(userId: string, from?: string, to?: string, projectId?: string): Promise<AiUseEntry[]> {
     const rows = await this.d.select().from(aiUseLog)
@@ -287,6 +288,11 @@ export class DrizzleStore implements Store {
         projectId === undefined ? undefined : eq(aiUseLog.projectId, projectId)))
       .orderBy(asc(aiUseLog.day), asc(aiUseLog.createdAt));
     return rows.map(r => ({ d: r.day, p: r.provider, m: r.model, k: r.kind, g: r.grp as AiUseEntry["g"] }));
+  }
+  async claimAiUse(userId: string, projectId: string, since: Date): Promise<number> {
+    const rows = await this.d.update(aiUseLog).set({ projectId })
+      .where(and(eq(aiUseLog.userId, userId), isNull(aiUseLog.projectId), gte(aiUseLog.createdAt, since))).returning({ id: aiUseLog.id });
+    return rows.length;
   }
   async eraseAiUse(userId: string): Promise<void> {
     await this.d.delete(aiUseLog).where(eq(aiUseLog.userId, userId));

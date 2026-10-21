@@ -155,7 +155,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
     await expect(page.getByTestId("provider-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Locked to you");
+    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
 
     // The AI pill names the provider; it opens the key dialog.
     await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");

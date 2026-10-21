@@ -24,9 +24,11 @@ export function CiteForm({ library, deps }: { library: Library; deps: () => Cite
   };
   const lookup = () => {
     const cur = getCiteForm();
+    // A DOI or PubMed ID in the link box is the newest ask: the DOI box may still hold the last fill's, which v1's order would look up again.
+    const asked = citExtractDoi(cur.url) || citExtractPmid(cur.url);
     void citeLookup({
       fetch: (input, init) => fetch(input, init),
-      form: { doi: cur.doi, url: cur.url, title: cur.title },
+      form: asked ? { doi: "", url: cur.url, title: "" } : { doi: cur.doi, url: cur.url, title: cur.title },
       fill: (entry) => setCiteForm((p) => filledForm(p, entry)),
       toast, t
     });

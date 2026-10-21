@@ -67,6 +67,7 @@ function fakeApi(path: string, init: RequestInit = {}) {
   }
   if (path === "/projects/pNew/documents" && method === "GET") return Promise.resolve(docs.pNew ?? []);
   if (path === "/projects/pNew/documents" && method === "POST") { const made = doc("Dfirst", "pNew"); docs.pNew = [made]; return Promise.resolve(made); }
+  if (path === "/projects/pNew/ai-use/claim" && method === "POST") return Promise.resolve({ claimed: 1 });
   if (path === "/documents/D1/move") { docs.pNew = [doc("D1", body.projectId)]; return Promise.resolve(docs.pNew[0]); }
   return Promise.reject(new ApiError(404, "not-found"));
 }
@@ -157,6 +158,29 @@ describe("First run", () => {
     const order = calls.map((c) => c.method + " " + c.path);
     expect(order.indexOf("POST /projects")).toBeLessThan(order.indexOf("PUT /projects/pNew/blobs/idea_intake"));
     expect(order.indexOf("PUT /projects/pNew/blobs/idea_intake")).toBeLessThan(order.indexOf("POST /projects/pNew/documents"));
+  });
+
+  it("after a check, saving claims the check's AI-use rows for the new project, so its AI-use statement counts them", async () => {
+    await render();
+    await type("ideaTopic", TOPIC);
+    await click("idea-check");
+    await click("idea-save");
+    await until(() => h.openProject.mock.calls.length > 0);
+    const [claim] = sent("POST", "/projects/pNew/ai-use/claim");
+    // How long ago the first check began, by this tab's own clock, with a minute's margin for the request's way to the server.
+    const ago = (claim!.body as { secondsAgo: number }).secondsAgo;
+    expect(ago).toBeGreaterThanOrEqual(60);
+    expect(ago).toBeLessThan(120);
+    const order = calls.map((c) => c.method + " " + c.path);
+    expect(order.indexOf("POST /projects")).toBeLessThan(order.indexOf("POST /projects/pNew/ai-use/claim"));
+  });
+
+  it("a save with no check claims nothing", async () => {
+    await render();
+    await type("ideaTopic", "Sleep and exam stress");
+    await click("idea-save");
+    await until(() => h.openProject.mock.calls.length > 0);
+    expect(sent("POST", "/projects/pNew/ai-use/claim")).toHaveLength(0);
   });
 
   it("with ?move= the document moves into the new project, which opens on it, and no other document is made", async () => {

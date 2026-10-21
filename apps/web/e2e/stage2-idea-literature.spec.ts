@@ -459,6 +459,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("idea-save-title")).toHaveValue(IDEA.topic.slice(0, IDEA.topic.slice(0, 61).lastIndexOf(" ")));
     await page.getByTestId("idea-save-title").fill(PROJECT);
     const created = page.waitForRequest((r) => r.method() === "POST" && r.url() === API_ORIGIN + "/projects");
+    // The check ran before the project existed, so the save claims its AI-use rows for it (B1 walk row 12). Here the AI is answered in the browser
+    // and the api logs nothing, so the statement itself is checked by the api and first-run tests and on the live walk, not in this journey.
+    const claimed = page.waitForRequest((r) => r.method() === "POST" && /\/projects\/[0-9a-f-]+\/ai-use\/claim$/.test(r.url()));
     const sent = await sealedSave(page, "idea_intake", [IDEA.topic, "bedtime", IDEA.resources, "Proceed with"], () => page.getByTestId("idea-save").click());
     expect(sent.body).not.toContain(IDEA.resources);
     const post = (await created).postDataJSON() as { title: string; titleKeyVersion: number };
@@ -466,6 +469,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     expect(post.title).toMatch(CIPHERTEXT);
     expect(post.title).not.toContain(PROJECT);
     projectId = /\/projects\/([0-9a-f-]+)\/blobs\//.exec(puts.all.find((p) => p.kind === "idea_intake")!.url)![1]!;
+    const claim = await claimed;
+    expect(claim.url()).toBe(`${API_ORIGIN}/projects/${projectId}/ai-use/claim`);
+    expect((claim.postDataJSON() as { secondsAgo: number }).secondsAgo).toBeGreaterThanOrEqual(60);
 
     // The home: the question card, a suggested next step, the six stages; Idea in progress, the rest not started.
     await expect(page).toHaveURL(new RegExp(`/p/${projectId}$`));
@@ -477,7 +483,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("home-next-btn")).toHaveText(T("next_btn_find"));
     for (const s of STAGES) await expect(page.getByTestId("home-stage-" + s)).toContainText(T("stage_name_" + s));
     await expectStates(page, { idea: "in-progress" });
-    await expect(page.getByTestId("home-detail-idea")).toHaveText(T("detail_idea", { verdict: VERDICT }));
+    // The row ends with the line's own full stop, never a second one after the verdict's (B1 walk, Observation D).
+    await expect(page.getByTestId("home-detail-idea")).toHaveText(T("detail_idea", { verdict: VERDICT.replace(/\.$/, "") }));
     await expect(page.getByTestId("home-detail-writing")).toHaveText(T("detail_writing", { words: 0 }));
     // Its first document was made, empty, and is not shown on the home.
     await expect(page.getByTestId("frame-doc")).toBeHidden();
