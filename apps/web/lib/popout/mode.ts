@@ -1,30 +1,69 @@
+import { useSyncExternalStore } from "react";
 import type { BlobKind } from "@/lib/blobs/kinds";
+import { stageOfKind } from "@/lib/frame/stages";
+import { isStageKey, type StageKey } from "@/lib/tools";
 
 /*
  * v1 1959-1964: "Pop-out window: the same page opened as a second browser window showing one tool. It shares this site's saved data with the
  * writing window, so it may only WRITE the two keys that belong to the tools it shows. Everything else, above all the open document, stays
- * read-only here, so the pop-out can never overwrite what is being written in the main window." v1 reads the window's role from `#popout=<tool>`;
- * here the pop-out is the page /popout (register row D-S2-17).
+ * read-only here, so the pop-out can never overwrite what is being written in the main window." v1 reads the window's role from `#popout=<tool>`.
+ * Wave B (register row D-S2-43, amending D-S2-17): any place opens in its own window, its address with `?window=1`, and that window writes only
+ * its own stage's kinds and never the document.
  */
 
-/** The pop-out's page: /popout?tool=cite or /popout?tool=research. */
-export const POPOUT_PATH = "/popout";
+/** The query a place's own window carries: `/p/<id>/<stage>/<tab>?window=1`. */
+export const WINDOW_PARAM = "window";
 
-/** v1 POPOUT (1963): this window is a pop-out. False on the server, where nothing is written. */
+/** Set while a pop-out's shell is mounted, so a move inside the window (a tab's link) stays a pop-out before its address gets `?window=1` back. */
+let held = false;
+/** The project shell of a pop-out holds the window's role while it is mounted (lib/popout/sync.ts keeps the address). */
+export function holdPopout(on: boolean): void { held = on; }
+
+/** v1 POPOUT (1963): this window is a pop-out, its address carrying `?window=1`. False on the server, where nothing is written. */
 export function isPopout(): boolean {
-  return typeof window !== "undefined" && window.location.pathname === POPOUT_PATH;
+  if (typeof window === "undefined") return false;
+  return held || new URLSearchParams(window.location.search).get(WINDOW_PARAM) === "1";
 }
 
-/** v1 POPOUT_WRITABLE (1964), `['appu_citations','appu_retraction_cache']`: the blob kinds of the two tools a pop-out shows. */
-export const POPOUT_WRITABLE: readonly BlobKind[] = ["citations", "retraction_cache"];
+/** The stage of the place a pop-out shows, from its path (`/p/<id>/<stage>…`); null outside a pop-out, on the project's home and outside a project. */
+export function popoutStage(): StageKey | null {
+  if (!isPopout()) return null;
+  const s = /^\/p\/[^/]+\/([^/]+)/.exec(window.location.pathname)?.[1];
+  return s && isStageKey(s) ? s : null;
+}
+
+/** isPopout for a render: false on the server and while hydrating, so the server's markup and the first client render agree. */
+export function usePopout(): boolean {
+  return useSyncExternalStore(noSubscribe, isPopout, serverFalse);
+}
+const noSubscribe = () => () => {};
+const serverFalse = () => false;
+
+/** `href` with `?window=1`, the hash kept last. */
+export function windowHref(href: string): string {
+  const [rest, hash] = href.split("#", 2) as [string, string | undefined];
+  const [path, query] = rest.split("?", 2) as [string, string | undefined];
+  const q = new URLSearchParams(query);
+  q.set(WINDOW_PARAM, "1");
+  return path + "?" + q.toString() + (hash !== undefined ? "#" + hash : "");
+}
 
 /**
- * v1's Reading shelf keeps its papers (the list, each paper's text, highlights and cells) in IndexedDB `appu_shelf` (11520), which LS's guard never
- * sees, so a v1 pop-out stores them (ruling R29); only its columns, `appu_shelf_cols` (11697), are a localStorage key and refused there.
+ * v1 LS.set/LS.rm's guard (1967, 1969), by stage: the writing window writes every kind; a pop-out writes the kinds of the stage it shows
+ * (stageOfKind), so a Literature window writes the library, the caches (refcheck_cache too), the shelf and the notes, an Idea window the intake only,
+ * and a window on the project's home or of a kind no stage owns writes nothing.
  */
-export const isShelfStoreKind = (kind: BlobKind): boolean => kind === "shelf_index" || kind.startsWith("shelf_paper:");
-
-/** v1 LS.set/LS.rm's guard (1967, 1969): in a pop-out, every kind but the two tools' own and the shelf's papers is read-only. */
 export function blobWritable(kind: BlobKind): boolean {
-  return !isPopout() || POPOUT_WRITABLE.includes(kind) || isShelfStoreKind(kind);
+  if (!isPopout()) return true;
+  const own = popoutStage();
+  return own !== null && stageOfKind(kind)?.stage === own;
+}
+
+/**
+ * Where an old pop-out link (`/popout?tool=cite`, `?tool=research`, v1's `#popout=<tool>`) goes now: the matching Literature tab of the active
+ * project (the scratch space's when none is active), in its own window; any other tool to the project list.
+ */
+export function oldPopoutTarget(tool: string | null, projectId: string): string {
+  const tab = tool === "cite" ? "citations" : tool === "research" ? "find" : null;
+  return tab ? windowHref(`/p/${projectId}/lit/${tab}`) : "/projects";
 }

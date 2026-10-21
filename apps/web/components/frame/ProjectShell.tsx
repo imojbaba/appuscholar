@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { sanitizeHtml, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
@@ -20,6 +20,7 @@ import { AiPane } from "@/components/tools/AiPane";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider, useSuggestion } from "@/lib/ai/suggestion";
 import { useSyncReceiver } from "@/lib/popout/sync";
+import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +29,7 @@ import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
 import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
 import { AppHeader } from "./AppHeader";
+import { WindowHeader } from "./WindowHeader";
 import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
 
 const BUSY = "Another import is still running. Wait for it to finish.";
@@ -80,6 +82,10 @@ let liveRestore: ((id: string, docProjectId: string) => Promise<boolean>) | null
  * They stay mounted while the student moves between the project's places; the Writing place shows the document at full width, the others keep
  * it mounted out of sight, so an insert still lands in it (Task 11 puts it beside every place). Outside a project (`projectId` null: first run,
  * the list) nothing is loaded. Moved here from components/workspace/Workspace.tsx (Task 6, impact map D1a).
+ *
+ * A place in its own window (`?window=1`, register row D-S2-43) gets the same shell without the document: a slim header, the place, its documents
+ * listed but never opened or created, no document or AI pane, no title sealing and no active-project write; its inserts go to the writing window
+ * (lib/popout/sync.ts), and a move inside the window keeps `?window=1`.
  */
 export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, children }: { projectId: string | null; openImportV1?: boolean; children?: React.ReactNode }) {
   const t = useT();
@@ -91,7 +97,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
   // After each unlock of a complete vault, titles still in plaintext (from before the vault, or renamed since by an older tab) are sealed.
-  const titlesSealable = vault.status === "unlocked" && vault.complete;
+  const titlesSealable = vault.status === "unlocked" && vault.complete && !isPopout();
   const scratchForTitles = me?.scratchProjectId ?? null;
   useEffect(() => {
     if (!titlesSealable) return;
@@ -105,6 +111,19 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     }).catch(() => { /* offline or locked meanwhile: the next unlock tries again */ });
   }, [titlesSealable, scratchForTitles]);
   const inProject = urlProjectId !== null;
+  const popout = usePopout();
+  // The window's role is held while this shell is mounted, so a tab's link (which drops the query) never makes it a writing window, and the
+  // address gets `?window=1` back after each move.
+  useLayoutEffect(() => {
+    if (!popout) return;
+    holdPopout(true);
+    return () => holdPopout(false);
+  }, [popout]);
+  useEffect(() => {
+    if (!popout || new URLSearchParams(window.location.search).get(WINDOW_PARAM) === "1") return;
+    const { pathname: p, search, hash } = window.location;
+    window.history.replaceState(null, "", windowHref(p + search + hash));
+  }, [popout, pathname]);
   const [ready, setReady] = useState(!inProject);
   const [error, setError] = useState(false);
   const [missing, setMissing] = useState(false);
@@ -169,7 +188,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
           const docs = await listOrSeed(urlProjectId, vaultRef.current);
           const want = nextDoc?.projectId === urlProjectId ? nextDoc.docId : null;
           nextDoc = null;
-          const pick = docs.find((d) => d.id === want) ?? docs[0];
+          // A pop-out opens no document.
+          const pick = isPopout() ? undefined : docs.find((d) => d.id === want) ?? docs[0];
           // Decrypted before the editor mounts.
           const doc = pick ? await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${pick.id}`)) : null;
           return { project: proj, projectId: urlProjectId, documents: docs, doc };
@@ -191,7 +211,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
 
   // The project at this address is the active one (null for the scratch space), so `/` and a new tab come back to it.
   useEffect(() => {
-    if (!ready || missing || !projectId || !me || switching.current) return;
+    if (!ready || missing || !projectId || !me || switching.current || isPopout()) return;
     const want = projectId === me.scratchProjectId ? null : projectId;
     if (activeProjectId === want) return;
     apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: want }) }).then(() => reload(), () => undefined);
@@ -217,6 +237,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
 
   /** Shows another document. False when the student stayed on the open one (its save failed and they chose Stay). */
   const selectDoc = useCallback(async (id: string): Promise<boolean> => {
+    // A pop-out shows no document (v1's docSwitch there loads the hidden editor and saves nothing).
+    if (isPopout()) return false;
     if (currentDocRef.current?.id === id) return true;
     if (!(await confirmLeave())) return false;
     const mine = ++docToken.current;
@@ -269,9 +291,11 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const go = useCallback(async (href: string): Promise<boolean> => {
     const here = urlProjectId ? `/p/${urlProjectId}` : null;
     const path = href.split(/[?#]/)[0]!;
+    const within = !!here && (path === here || path.startsWith(here + "/"));
     // Within the project the editor stays mounted; out of it, it asks as a switch does.
-    if (here && path !== here && !path.startsWith(here + "/") && !(await confirmExit())) return false;
-    router.push(href);
+    if (here && !within && !(await confirmExit())) return false;
+    // A move inside a place's own window stays in that window.
+    router.push(within && isPopout() ? windowHref(href) : href);
     return true;
   }, [urlProjectId, confirmExit, router]);
 
@@ -364,7 +388,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         {inProject && <CaptureHash />}
         {/* v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor. */}
         <SyncReceiver />
-        <AppHeader />
+        {popout ? <WindowHeader /> : <AppHeader />}
         <ChromeDialogs />
         <ImportOrigin />
         <MyWriting />
@@ -391,9 +415,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
             <p role="alert" className="frame-note" data-testid="project-missing">{t("project_not_found")} <a href="/projects">{t("switcher_all")}</a></p>
           </main>
         ) : (
-          <main className="frame" data-testid="frame">
+          <main className={"frame" + (popout ? " in-window" : "")} data-testid="frame">
             {children}
-            {inProject && (
+            {inProject && !popout && (
               <div className={"frame-work" + (writing ? " writing" : "") + (aiShown ? " with-ai" : "")}>
                 {/* Mounted in every place, so the editor (and an insert into it) outlives a move to another place; shown at full width in Writing. */}
                 <div className="frame-doc" hidden={!writing} data-testid="frame-doc"><DocumentCard /></div>

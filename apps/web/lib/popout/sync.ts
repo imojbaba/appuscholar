@@ -6,32 +6,29 @@ import { useT } from "@/lib/i18n";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { CITATION_INSERTED } from "@/lib/cite/actions";
 import { insertCitation, insertHtmlBlock, insertTextAtCursor } from "@/lib/editor/insert";
-import { canPopOut, type ToolId } from "@/lib/tools";
+import type { StageKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
 import { onSyncMessage, syncChannel, type InsertMessage } from "./channel";
-import { POPOUT_PATH, isPopout } from "./mode";
+import { isPopout, windowHref } from "./mode";
 
-export { POPOUT_WRITABLE, blobWritable, isPopout } from "./mode";
+export { blobWritable, isPopout, popoutStage, usePopout, windowHref } from "./mode";
 export { setSyncChannel, type InsertMessage } from "./channel";
 
 /*
- * Pop-out windows for the Citation Manager and Research (v1 1959-1966, 7601-7622, citInsertAtCursor 7481-7487, citPutIntext 7501, the boot 13690-13696):
- * the Dock's "⧉ Pop out" opens the tool in its own window; there every insert goes over the `appu_sync` channel to the writing window, which puts it at
- * its cursor. Register row D-S2-17.
+ * A place in its own window (v1 1959-1966, 7601-7622, citInsertAtCursor 7481-7487, citPutIntext 7501, the boot 13690-13696): "Open in a new window"
+ * opens the place's address with `?window=1`; there every insert goes over the `appu_sync` channel to the writing window, which puts it in the
+ * open document. Register rows D-S2-17 and D-S2-43.
  */
 
-export type PopoutTool = "cite" | "research";
-export const isPopoutTool = (s: unknown): s is PopoutTool => s === "cite" || s === "research";
 /** v1 7619: `'popup=yes,width=540,height=820'`. */
 export const POPOUT_FEATURES = "popup=yes,width=540,height=820";
 
 /**
- * v1 popOutTool (7617-7622): only Citations and Research open in their own window (pop_unsupported for the others); the window is named after the tool,
- * so a second click brings the same window back; a blocked window says pop_blocked; the window is focused.
+ * v1 popOutTool (7617-7622), for any place: the window is named after the stage, so a second click brings the same window back; a blocked window
+ * says pop_blocked; the window is focused.
  */
-export function openPopout(tool: ToolId | string, t: (key: string) => string): void {
-  if (!canPopOut(tool as ToolId)) { toast(t("pop_unsupported")); return; }
-  const w = window.open(POPOUT_PATH + "?tool=" + tool, "appu_pop_" + tool, POPOUT_FEATURES);
+export function openPlaceWindow(href: string, stage: StageKey, t: (key: string) => string): void {
+  const w = window.open(windowHref(href), "appu_pop_" + stage, POPOUT_FEATURES);
   if (!w) { toast(t("pop_blocked")); return; }
   try { w.focus(); } catch { /* v1 ignores it too */ }
 }

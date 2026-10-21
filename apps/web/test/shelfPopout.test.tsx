@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
 
 /*
- * The Reading shelf in a pop-out (ruling R29): v1's shelf papers are IndexedDB records, outside the pop-out's localStorage guard, so a pop-out stores
- * the list and every paper's text, highlights and cells; only the columns (appu_shelf_cols) are refused, and the student is told. A write the guard
- * refuses never reports success.
+ * The Reading shelf in a place's own window (ruling R29, register row D-S2-43): a Literature window stores the list, every paper's text, highlights
+ * and cells, and now the columns too (v1's pop-out refused appu_shelf_cols); a window of another stage refuses the columns, and the student is told.
+ * A write the guard refuses never reports success.
  */
 
 type SBlob = { projectId: string; kind: string; body: string; keyVersion: number };
@@ -81,21 +81,32 @@ beforeEach(() => {
   h.toast.mockReset();
   h.refuse.clear();
   heldBlobs.clear();
-  window.history.replaceState(null, "", "/popout?tool=research");
+  window.history.replaceState(null, "", "/p/p1/lit/reading?window=1");
 });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); window.history.replaceState(null, "", "/"); });
 
-describe("the Reading shelf in a pop-out (R29)", () => {
-  it("stores a highlight, a cell and a rename as v1's IndexedDB shelf did; the columns are refused and the student is told", async () => {
+describe("the Reading shelf in a place's own window (R29, D-S2-43)", () => {
+  it("a Literature window stores a highlight, a cell, a rename and the columns", async () => {
     await mount();
     await until(() => box.s!.papers.get("a")?.value != null);
     expect(box.s!.index.readOnly).toBe(false);
-    expect(box.s!.cols.readOnly).toBe(true);
+    expect(box.s!.cols.readOnly).toBe(false);
     act(() => { expect(saveHighlight("a", 1, "Sleep helps memory", "", hlOps())).toBe(true); });
     expect(toasts()).toEqual([E.sh2_highlight_saved]);
     act(() => { expect(box.s!.ops.updateIndex((prev) => (prev ?? []).map((e) => ({ ...e, title: "Renamed" })))).toBe(true); });
-    await until(() => puts.some((p) => p.kind === "shelf_paper:a") && puts.some((p) => p.kind === "shelf_index"));
+    let ok: boolean | undefined;
+    act(() => { ok = box.s!.setCols(() => ["Sample", "Age"]); });
+    expect(ok).toBe(true);
+    await until(() => puts.some((p) => p.kind === "shelf_paper:a") && puts.some((p) => p.kind === "shelf_index") && puts.some((p) => p.kind === "shelf_cols"));
     expect((JSON.parse(puts.find((p) => p.kind === "shelf_paper:a")!.body) as typeof PAPER).notes).toHaveLength(1);
+    expect(toasts()).not.toContain(COLS_POPOUT);
+  });
+
+  it("a window of another stage refuses the columns and says so", async () => {
+    window.history.replaceState(null, "", "/p/p1/idea?window=1");
+    await mount();
+    await until(() => !box.s!.cols.loading);
+    expect(box.s!.cols.readOnly).toBe(true);
     let ok: boolean | undefined;
     act(() => { ok = box.s!.setCols(() => ["Sample", "Age"]); });
     expect(ok).toBe(false);

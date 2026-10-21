@@ -27,4 +27,3 @@ export function isStageKey(v: unknown): v is StageKey { return typeof v === "str
 
 export function toolLabelKey(id: ToolId): string { return "tab_" + id; }
 export function toolTitleKey(id: ToolId): string { return "tab_" + id + "_title"; }
-export function canPopOut(id: ToolId): boolean { return id === "cite" || id === "research"; }

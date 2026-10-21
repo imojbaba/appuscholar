@@ -1067,14 +1067,15 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
   });
 });
 
-describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABLE 1964, the storage listener 7614-7616)", () => {
+describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABLE 1964, the storage listener 7614-7616; register row D-S2-43)", () => {
   let ch: FakeChannel;
   beforeEach(() => { ch = new FakeChannel(); setSyncChannel(ch); });
   afterEach(() => { setSyncChannel(undefined); window.history.replaceState(null, "", "/"); });
-  const popout = () => window.history.replaceState(null, "", "/popout?tool=cite");
+  const litWindow = () => window.history.replaceState(null, "", "/p/p1/lit/citations?window=1");
+  const ideaWindow = () => window.history.replaceState(null, "", "/p/p1/idea?window=1");
 
-  it("in the pop-out a kind other than citations and retraction_cache is read, and set is a no-op that holds nothing; flush resolves false", async () => {
-    popout();
+  it("in a Literature window idea_intake is read, and set is a no-op that holds nothing; flush resolves false", async () => {
+    litWindow();
     server.blobs = [{ projectId: "p1", kind: "idea_intake", body: JSON.stringify(INTAKE), keyVersion: 0, deks: [] }];
     const s = await mount("idea_intake", "p1");
     await until(() => !s.b.loading);
@@ -1092,36 +1093,31 @@ describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABL
     expect(heldBlobs.take(blobId("p1", "idea_intake"))).toBeFalsy();
   });
 
-  it.each(["refcheck_cache", "rs_prefs", "ap_notes", "shelf_cols", "ap_cols"] as const)("in the pop-out %s sends nothing", async (kind) => {
-    popout();
+  it.each(["citations", "refcheck_cache", "rs_prefs", "ap_notes", "shelf_cols", "ap_cols"] as const)("in an Idea window %s sends nothing", async (kind) => {
+    ideaWindow();
     const s = await mount(kind, "p1");
     await until(() => !s.b.loading);
+    expect(s.b.readOnly).toBe(true);
     act(() => { s.b.set((prev: unknown) => (Array.isArray(prev) || prev === null ? ["x"] : { ...(prev as object), x: 1 }) as never); });
     await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
     expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
   });
 
-  it("in the pop-out citations and retraction_cache write as anywhere", async () => {
-    popout();
+  it("in a Literature window every Literature kind writes as anywhere: the library, both caches, the shelf's list, a paper and its columns", async () => {
+    litWindow();
     const c = await mount("citations", "p1");
     const r = await mount("retraction_cache", "p1");
-    await until(() => !c.b.loading && !r.b.loading);
-    expect(c.b.readOnly).toBe(false);
-    act(() => { c.b.set([{ author: "Ng, A.", title: "T" }]); r.b.set({ "10.1/x": { r: false, t: 1 } }); });
-    await until(() => putsTo("p1", "citations").length === 1 && putsTo("p1", "retraction_cache").length === 1);
-  });
-
-  it("in the pop-out the shelf's list and a paper write (R29: v1's IndexedDB shelf); its columns do not", async () => {
-    popout();
+    const k = await mount("refcheck_cache", "p1");
     const i = await mount("shelf_index", "p1");
     const p = await mount(shelfPaperKind("x"), "p1");
-    const c = await mount("shelf_cols", "p1");
-    await until(() => !i.b.loading && !p.b.loading && !c.b.loading);
-    expect([i.b.readOnly, p.b.readOnly, c.b.readOnly]).toEqual([false, false, true]);
-    act(() => { i.b.set([]); p.b.set({ pages: ["t"], notes: [], cells: {} }); c.b.set(["Age"]); });
-    await until(() => putsTo("p1", "shelf_index").length === 1 && putsTo("p1", shelfPaperKind("x")).length === 1);
-    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
-    expect(putsTo("p1", "shelf_cols")).toHaveLength(0);
+    const cols = await mount("shelf_cols", "p1");
+    await until(() => [c, r, k, i, p, cols].every((m) => !m.b.loading));
+    expect([c, r, k, i, p, cols].map((m) => m.b.readOnly)).toEqual([false, false, false, false, false, false]);
+    act(() => {
+      c.b.set([{ author: "Ng, A.", title: "T" }]); r.b.set({ "10.1/x": { r: false, t: 1 } }); k.b.set({ "ng|2020|t": { s: "nf", t: 1 } });
+      i.b.set([]); p.b.set({ pages: ["t"], notes: [], cells: {} }); cols.b.set(["Age"]);
+    });
+    await until(() => (["citations", "retraction_cache", "refcheck_cache", "shelf_index", shelfPaperKind("x"), "shelf_cols"] as const).every((x) => putsTo("p1", x).length === 1));
   });
 
   it("the writing window writes every kind", async () => {
@@ -1132,14 +1128,16 @@ describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABL
     await until(() => putsTo("p1", "idea_intake").length === 1);
   });
 
-  it("a saved library or retraction cache is announced on appu_sync; other kinds are not", async () => {
+  it("a saved blob of any kind is announced on appu_sync, as a place's window may write any kind of its stage; a shelf paper is not", async () => {
     const c = await mount("citations", "p1");
     const p = await mount("rs_prefs", "p1");
-    await until(() => !c.b.loading && !p.b.loading);
-    act(() => { c.b.set([{ author: "Ng, A.", title: "T" }]); p.b.set({ rank: true }); });
-    await until(() => putsTo("p1", "citations").length === 1 && putsTo("p1", "rs_prefs").length === 1);
+    const x = await mount(shelfPaperKind("x"), "p1");
+    await until(() => !c.b.loading && !p.b.loading && !x.b.loading);
+    act(() => { c.b.set([{ author: "Ng, A.", title: "T" }]); p.b.set({ rank: true }); x.b.set({ pages: ["t"], notes: [], cells: {} }); });
+    await until(() => putsTo("p1", "citations").length === 1 && putsTo("p1", "rs_prefs").length === 1 && putsTo("p1", shelfPaperKind("x")).length === 1);
     await settle();
-    expect(ch.sent).toEqual([{ type: "blob", id: blobId("p1", "citations") }]);
+    expect(ch.sent).toEqual(expect.arrayContaining([{ type: "blob", id: blobId("p1", "citations") }, { type: "blob", id: blobId("p1", "rs_prefs") }]));
+    expect(ch.sent).toHaveLength(2);
   });
 
   it("an announced library is read again, so the other window's addition shows here", async () => {

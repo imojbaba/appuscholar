@@ -264,6 +264,12 @@
 .place-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
 .place-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-bottom: 3px solid transparent; color: var(--ink); text-decoration: none; }
 .place-tabs a[aria-current] { border-bottom-color: var(--purple-800); color: var(--purple-800); font-weight: 700; }
+/* "Open in a new window" under the crumbs, and the slim header of a place in its own window (register row D-S2-43). */
+.place-win { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; background: none; border: 0; color: var(--purple-800); font: inherit; font-size: 14px; cursor: pointer; }
+.place-win:hover { text-decoration: underline; }
+.place-win:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.win-hdr { min-height: 52px; }
+.win-where { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 .place-q { padding: 8px 0 12px; font-size: 14px; }
 .place-q summary { display: inline-flex; align-items: center; min-height: 32px; cursor: pointer; color: var(--purple-800); font-weight: 600; }
 .place-q-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s3); padding-top: 4px; }
@@ -463,11 +469,9 @@
 .panel #rsResults { margin-top: 8px; }
 .rs-csv-row { margin-top: 6px; }
 .rs-actions { margin-top: 12px; }
-/* The pop-out window (v1 80-83): the tool alone, at its natural height, 10px from the edge; Research's ticked-papers actions (#rsActions), which answer in
-   the AI pane, are hidden there as v1 hides them. */
-.popout { display: block; height: auto; padding: 10px; }
-.popout > .panel { overflow: visible; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
-.popout #rsActions { display: none !important; }
+/* A place in its own window (v1 80-83, register row D-S2-43): Research's ticked-papers actions (#rsActions), which answer in the AI pane, are hidden
+   there as v1 hides them; that window has no AI pane. */
+.frame.in-window #rsActions { display: none !important; }
 .panel .desc.rs-grounded { margin-top: 6px; }
 .panel details.rs-more-box { margin-top: 10px; }
 .panel details.rs-more-box > summary { cursor: pointer; font-weight: 700; color: var(--purple-800); font-size: 13.5px; }

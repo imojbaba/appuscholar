@@ -22,7 +22,7 @@ export function notePut(prev: ApNotes | null, doc: { id: string; title: string }
   return all;
 }
 
-/** New V2 copy (register row D-S2-17; ruling R15: an English constant, modelled on the shelf's COLS_POPOUT): a pop-out does not store ap_notes (v1 refuses appu_ap_notes there, 1964). */
+/** New V2 copy (register row D-S2-17; ruling R15: an English constant, modelled on the shelf's COLS_POPOUT): a pop-out of another stage than Literature does not store ap_notes (v1 refuses appu_ap_notes in its pop-out, 1964; D-S2-43). */
 export const NOTES_POPOUT = "Notes can be saved only in the writing window.";
 
 export type ApNotesStore = {

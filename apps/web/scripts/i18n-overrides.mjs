@@ -392,7 +392,10 @@ export const V2_STRINGS = {
   home_locked: { en: "This project is locked. Enter your passphrase to open it.", hi: "यह प्रोजेक्ट बंद है। इसे खोलने के लिए अपना पासफ़्रेज़ लिखें।" },
   home_unlock: { en: "Unlock", hi: "अनलॉक करें" },
   home_load_fail: { en: "Could not load this project. Check your connection and try again.", hi: "यह प्रोजेक्ट लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
-  home_retry: { en: "Retry", hi: "फिर कोशिश करें" }
+  home_retry: { en: "Retry", hi: "फिर कोशिश करें" },
+  // Wave B Task 13 (register D-S2-43): any place in its own window, and that window's Close. DRAFT Hindi.
+  place_new_window: { en: "Open in a new window", hi: "नई विंडो में खोलें" },
+  window_close: { en: "Close this window", hi: "यह विंडो बंद करें" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */
