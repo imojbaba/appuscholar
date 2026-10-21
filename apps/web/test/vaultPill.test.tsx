@@ -94,6 +94,8 @@ describe("VaultPill", () => {
     await render();
     pill = $("vault-pill")!;
     expect(pill.textContent).toBe(en.vault_pill_yours);
+    // The open vault says so: "Locked to you" read as locked to the B1 walk's student.
+    expect(pill.textContent).toMatch(/unlocked/i);
     expect(pill.className).toContain("bg-ok-bg"); // green
     await openMenu();
     expect($("vault-menu-change")!.textContent).toBe(en.vault_change_h2);

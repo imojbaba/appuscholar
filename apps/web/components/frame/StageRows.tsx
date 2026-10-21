@@ -29,7 +29,8 @@ export function StageRows({ states, facts, onOpen, onMark, compact = false }: {
     if (!BUILT.has(s)) return t("detail_not_built");
     if (s === "idea") {
       if (facts.question.trim() === "") return t("detail_idea_none");
-      if (facts.verdict !== null) return t("detail_idea", { verdict: facts.verdict });
+      // The line ends with its own full stop; a verdict that already ends with one would read "..".
+      if (facts.verdict !== null) return t("detail_idea", { verdict: facts.verdict.replace(/[.!?।]+\s*$/, "") });
       return facts.checked ? t("detail_idea_checked") : t("detail_idea_unread");
     }
     if (s === "lit") return t("detail_lit", { kept: facts.kept, read: facts.read, highlights: facts.highlights, cards: facts.cards });

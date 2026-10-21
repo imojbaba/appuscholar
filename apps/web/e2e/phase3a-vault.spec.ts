@@ -156,7 +156,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Locked to you");
+    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
     // The titles are sealed after the unlock: the project's and its document's, on the server as ciphertext with a key version; the app shows the name.
     const sealed = async () => {
       const list = (await (await page.request.get(`${API}/projects`, { headers: bearer })).json()) as Array<{ id: string; title: string; titleKeyVersion: number }>;
@@ -207,7 +207,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     expect(sent.keyVersion).toBe(1);
     expect(sent.bodyHtml).not.toContain("Deadlines");
     await expect(stale.getByTestId("save-status")).toHaveText("Auto-save on");
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Locked to you");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault unlocked");
     await expectAllSentences(stale);
     await stale.close();
   });
@@ -223,7 +223,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-pill").click();
     await unlockWith(page, PASS_1);
     await expectAllSentences(page);
-    await expect(page.getByTestId("vault-pill")).toHaveText("Locked to you");
+    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
     await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
   });
 
@@ -266,7 +266,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
       await expect(p2.getByTestId("project-switcher")).toContainText(PROJECT);
       await p2.getByTestId("home-open-writing").click();
       await expectAllSentences(p2);
-      await expect(p2.getByTestId("vault-pill")).toHaveText("Locked to you");
+      await expect(p2.getByTestId("vault-pill")).toHaveText("Vault unlocked");
     } finally {
       await other.close();
     }

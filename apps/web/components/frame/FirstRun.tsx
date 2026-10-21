@@ -13,6 +13,9 @@ import { toast } from "@/components/ui/toast";
 import { EMPTY_INTAKE, IdeaForm, IdeaReadPanel, useIdeaCheck, type IdeaFields, type IdeaReadValue } from "@/components/places/IdeaPlace";
 import { useProject, type Project } from "./ProjectContext";
 
+/** Seconds added to the first check's age, for the claim's way to the server (the server dates it on its own clock). */
+const CLAIM_MARGIN_S = 60;
+
 /**
  * First run (canvas Start): the rough idea and three questions to sharpen it (v1's four idea_intake fields), "Check if it is doable" (the Idea place's
  * check), and "Save as my project": the project is created with its name sealed (Task 5, under a new project's key id; a cancelled unlock creates
@@ -34,8 +37,11 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
   // Set once the project exists, so a retry after a later step failed never creates a second one.
   const [made, setMade] = useState<string | null>(null);
   const topicRef = useRef<HTMLTextAreaElement>(null);
+  // When the first check began: its AI use is logged with no project (there is none yet), and the save claims it for the new one.
+  const firstCheckAt = useRef<number | null>(null);
 
   async function run() {
+    firstCheckAt.current ??= Date.now();
     const r = await check(intake);
     if (r) setRead(r);
   }
@@ -51,6 +57,11 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
         if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) { toast(t("vault_save_locked")); return; }
         id = (await apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify(await sealTitle(vault, newProjectKeyId(), [], title)) })).id;
         setMade(id);
+      }
+      // Without this the project's AI-use statement would say no AI was used. Claiming again on a retry finds nothing left, harmlessly.
+      if (firstCheckAt.current !== null) {
+        const secondsAgo = Math.min(Math.ceil((Date.now() - firstCheckAt.current) / 1000) + CLAIM_MARGIN_S, 24 * 3600);
+        await apiFetch(`/projects/${id}/ai-use/claim`, { method: "POST", body: JSON.stringify({ secondsAgo }) });
       }
       // The idea goes in as the project's idea_intake, sealed under the blob's own key like any later save of the Idea place. A project saved with
       // a name and nothing of an idea stores none: an empty intake would count as Idea work, and its stage would read In progress (lib/frame/stages).

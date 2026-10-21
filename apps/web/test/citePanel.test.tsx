@@ -212,6 +212,20 @@ describe("Citation Manager: lookup (citLookup 7931-7961, paste 7970-7976)", () =
     expect(toasts()).toEqual([E.cite_lookup_busy, E.cite_lookup_ok]);
   });
 
+  it("a second DOI in the link box is looked up, not the DOI the last fill left in the form (B1 walk, Observation I)", async () => {
+    mount();
+    type("citURL", "10.1037/0003-066X.55.1.68");
+    await click("cite-lookup");
+    await settle();
+    expect(field("citDOI").value).toBe(crToEntry(work(DOI_JOURNAL)).doi);
+    type("citURL", "https://doi.org/10.1093/oso/9780199974467.003.0001");
+    await click("cite-lookup");
+    await settle();
+    expect(requested).toEqual([DOI_JOURNAL, DOI_CHAPTER]);
+    expect(field("citTitle").value).toBe(crToEntry(work(DOI_CHAPTER)).title);
+    expect(field("citDOI").value).toBe(crToEntry(work(DOI_CHAPTER)).doi);
+  });
+
   it("a book chapter sets the type and fills the container, which its group then shows", async () => {
     mount();
     type("citURL", "https://doi.org/10.1093/oso/9780199974467.003.0001");

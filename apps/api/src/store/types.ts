@@ -144,6 +144,8 @@ export interface Store {
   appendAiUse(userId: string, projectId: string | null, e: AiUseEntry): Promise<void>;
   /** ISO dates YYYY-MM-DD, inclusive. With `projectId`, only the rows saved with that project id (rows saved with none are left out). */
   listAiUse(userId: string, from?: string, to?: string, projectId?: string): Promise<AiUseEntry[]>;
+  /** Gives the user's rows saved with no project since `since` to `projectId` (first run's idea check runs before its project exists); answers how many. */
+  claimAiUse(userId: string, projectId: string, since: Date): Promise<number>;
   eraseAiUse(userId: string): Promise<void>;
 
   getVault(userId: string): Promise<VaultRecord | null>;

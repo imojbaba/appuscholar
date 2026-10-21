@@ -34,6 +34,25 @@ describe("project routes (wave B)", () => {
   const sealedDoc = async (pid: string, title: unknown = { title: ct("tA.tB"), titleKeyVersion: 1 }) =>
     req("POST", `/projects/${pid}/documents`, { ...(title as object), bodyHtml: ct("bA.bB"), keyVersion: 1, wordCount: 2, originStats: STATS, dek: DEK1 });
 
+  it("ai-use/claim attaches the first run's idea check, logged before the project existed, to the new project", async () => {
+    const check = { d: "2026-10-21", p: "openai", m: "gpt-4o-mini", k: "checking whether my project idea is realistic", g: "feedback" } as const;
+    await store.appendAiUse("u1", null, check);
+    const id = await project();
+    // The client says how long ago its first check began, so a device clock that is off never decides which rows are claimed.
+    const r = await post(`/projects/${id}/ai-use/claim`, { secondsAgo: 5 });
+    expect(r.status).toBe(200);
+    expect(await json(r)).toEqual({ claimed: 1 });
+    expect(await store.listAiUse("u1", undefined, undefined, id)).toEqual([check]);
+  });
+
+  it("ai-use/claim refuses another user's project, a bad body and more than a day back", async () => {
+    const id = await project();
+    expect((await as("u2", "POST", `/projects/${id}/ai-use/claim`, { secondsAgo: 5 })).status).toBe(404);
+    expect((await post(`/projects/${id}/ai-use/claim`, { secondsAgo: "five" })).status).toBe(400);
+    expect((await post(`/projects/${id}/ai-use/claim`, { secondsAgo: -1 })).status).toBe(400);
+    expect((await post(`/projects/${id}/ai-use/claim`, { secondsAgo: 25 * 3600 })).status).toBe(400);
+  });
+
   it("include=work answers each project's blobs and draft words", async () => {
     const id = await project();
     const d = await json<{ id: string }>(await post(`/projects/${id}/documents`, { title: "Draft" }));

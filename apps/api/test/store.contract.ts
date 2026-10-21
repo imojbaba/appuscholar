@@ -255,6 +255,32 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(await s.listAiUse(a)).toEqual([one, two, three]);
     });
 
+    it("claims a user's rows logged with no project since a time for one project, and nothing else", async () => {
+      await s.ensureUser(a, em(a));
+      await s.ensureUser(b, em(b));
+      const p = await s.createProject(a, "Sleep");
+      const q = await s.createProject(a, "Diet");
+      const old = { d: "2026-10-20", p: "groq", m: "m", k: "checking whether my project idea is realistic", g: "feedback" } as const;
+      const check = { d: "2026-10-21", p: "openai", m: "gpt-4o-mini", k: "checking whether my project idea is realistic", g: "feedback" } as const;
+      const other = { d: "2026-10-21", p: "groq", m: "m", k: "summarising", g: "text" } as const;
+      await s.appendAiUse(a, null, old);
+      await new Promise((r) => setTimeout(r, 20));
+      const since = new Date();
+      await new Promise((r) => setTimeout(r, 20));
+      await s.appendAiUse(a, null, check);
+      await s.appendAiUse(a, null, check);
+      await s.appendAiUse(a, q.id, other);
+      await s.appendAiUse(b, null, check);
+      expect(await s.claimAiUse(a, p.id, since)).toBe(2);
+      expect(await s.listAiUse(a, undefined, undefined, p.id)).toEqual([check, check]);
+      expect(await s.listAiUse(a, undefined, undefined, q.id)).toEqual([other]);
+      expect(await s.listAiUse(a)).toEqual([old, check, check, other]);
+      // A second claim finds nothing left; another user's rows are never touched.
+      expect(await s.claimAiUse(a, q.id, since)).toBe(0);
+      expect(await s.listAiUse(b)).toEqual([check]);
+      expect(await s.listAiUse(b, undefined, undefined, p.id)).toEqual([]);
+    });
+
     it("stores origin stats on a revision and returns them in summaries", async () => {
       const p = await s.createProject(a, "T");
       const d = (await s.createDocument(a, p.id, "A", "draft", first))!;
