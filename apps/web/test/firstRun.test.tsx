@@ -183,6 +183,17 @@ describe("First run", () => {
     expect(h.callAI).not.toHaveBeenCalled();
   });
 
+  it("a project saved with a name and no idea stores no idea_intake, so its Idea stage stays not started", async () => {
+    await render();
+    await type("ideaSaveTitle", "Second project");
+    await click("idea-save");
+    await until(() => h.openProject.mock.calls.length > 0);
+    expect(sent("POST", "/projects")).toHaveLength(1);
+    expect(calls.filter((c) => c.path === "/projects/pNew/blobs/idea_intake")).toEqual([]);
+    expect(sent("POST", "/projects/pNew/documents")).toHaveLength(1);
+    expect(h.openProject).toHaveBeenCalledWith("pNew", {});
+  });
+
   it("with no AI key the button opens the key dialog and sends nothing", async () => {
     h.hasKey = false;
     await render();

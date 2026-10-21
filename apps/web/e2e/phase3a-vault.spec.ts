@@ -6,6 +6,9 @@
  *   pnpm --filter @appuscholar/web exec playwright test e2e/phase3a-vault.spec.ts
  *
  * No AI provider is involved: the vault is set up from its header pill, not from the key dialog.
+ * Wave B1 (Task 5, register D-S2-40): titles are locked too. The project is saved from first run with the vault off, so its title (and its first
+ * document's) goes to the server in plaintext; the vault's setup seals both, and a locked vault shows "Locked title" in the header and the
+ * project list (whose six stage bars still show), never ciphertext, until the passphrase brings the names back.
  */
 import { test, expect, type Page, type Request, type Response } from "@playwright/test";
 import { readFileSync } from "node:fs";
@@ -24,6 +27,11 @@ const SENTENCE_1 = "Procrastination delays important work.";
 const SENTENCE_2 = "Students often start essays late.";
 /** Typed in a second tab that still believes there is no vault. */
 const SENTENCE_3 = "Deadlines feel far away.";
+const PROJECT = "Procrastination study";
+const TOPIC = "Why do first-year students start their essays late?";
+/** A sealed title or body (lib/vault's AES-GCM output: a 16-character IV, a dot, the ciphertext, base64url). */
+const CIPHERTEXT = /^[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]+$/;
+const LOCKED_TITLE = "Locked title";
 
 const WRONG = "Wrong passphrase — nothing was unlocked. Try again.";
 const UNLOCK_HINT = "Type the passphrase that protects your documents.";
@@ -62,9 +70,22 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
   let firstCode = "";
   let docId = "";
 
-  await test.step("1. sign in with a new account, accept the terms, skip the welcome tour", async () => {
-    await signIn(page, { prefix: "v", newAccount: true, ready: ["doc-select"] });
+  let projectId = "";
+  await test.step("1. sign in with a new account, accept the terms, skip the welcome tour; first run saves the project (its title in plaintext: the vault is off); Writing opens its document", async () => {
+    await signIn(page, { prefix: "v", newAccount: true, ready: ["first-run"] });
     await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+    await page.locator("#ideaTopic").fill(TOPIC);
+    await page.getByTestId("idea-save-title").fill(PROJECT);
+    const created = page.waitForResponse((r) => r.request().method() === "POST" && r.url() === API + "/projects" && r.ok());
+    await page.getByTestId("idea-save").click();
+    const body = (await created).request().postDataJSON() as { title: string; titleKeyVersion?: number };
+    expect(body.title).toBe(PROJECT);
+    expect(body.titleKeyVersion ?? 0).toBe(0);
+    await expect(page.getByTestId("project-home")).toBeVisible();
+    projectId = /\/p\/([0-9a-f-]+)$/.exec(page.url())![1]!;
+    await page.getByTestId("home-open-writing").click();
+    await expect(page.getByTestId("doc-select")).toBeVisible();
+    await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
   });
 
   await test.step("2a. write two sentences: 9 words, saved in plaintext while the vault is off", async () => {
@@ -87,7 +108,10 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
   // A second tab of the same browser, opened before the vault exists: it keeps believing the vault is off (moment 4's held save).
   const stale = await page.context().newPage();
   await test.step("2b. a second tab opens the same document and is left open", async () => {
+    // `/` opens the active project's home; its Writing row opens the document.
     await stale.goto(APP);
+    await expect(stale.getByTestId("project-home")).toBeVisible();
+    await stale.getByTestId("home-open-writing").click();
     await expect(stale.locator(".ProseMirror")).toContainText(SENTENCE_2);
     await expect(stale.getByTestId("vault-pill")).toHaveText("Vault off");
   });
@@ -132,7 +156,16 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault on");
+    await expect(page.getByTestId("vault-pill")).toHaveText("Locked to you");
+    // The titles are sealed after the unlock: the project's and its document's, on the server as ciphertext with a key version; the app shows the name.
+    const sealed = async () => {
+      const list = (await (await page.request.get(`${API}/projects`, { headers: bearer })).json()) as Array<{ id: string; title: string; titleKeyVersion: number }>;
+      const docs = (await (await page.request.get(`${API}/projects/${projectId}/documents?includeDeleted=1`, { headers: bearer })).json()) as Array<{ title: string; titleKeyVersion: number }>;
+      return [list.find((x) => x.id === projectId)!, ...docs].every((x) => x.titleKeyVersion >= 1 && CIPHERTEXT.test(x.title) && !x.title.includes(PROJECT));
+    };
+    await expect.poll(sealed, { timeout: 20_000 }).toBe(true);
+    await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
+    await expect(page.getByTestId("place-home")).toHaveText(PROJECT);
   });
 
   await test.step("4a. in the second tab, typing asks for the passphrase; Cancel holds the text: Unlock your vault to save your changes", async () => {
@@ -174,21 +207,48 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     expect(sent.keyVersion).toBe(1);
     expect(sent.bodyHtml).not.toContain("Deadlines");
     await expect(stale.getByTestId("save-status")).toHaveText("Auto-save on");
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault on");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("Locked to you");
     await expectAllSentences(stale);
     await stale.close();
   });
 
-  await test.step("4c. the first tab, reloaded: the document asks as it opens; Cancel leaves it locked (never empty); the pill opens it", async () => {
+  await test.step("4c. the first tab, reloaded: the document asks as it opens; Cancel leaves it locked (never empty) and every title reads Locked title; the pill opens it", async () => {
     await page.bringToFront();
     await reloadLocked(page);
     await page.getByTestId("pass-cancel").click();
     await expect(page.getByTestId("doc-unreadable")).toHaveText(DOC_LOCKED);
     await expect(page.locator(".ProseMirror")).toHaveCount(0);
+    await expect(page.getByTestId("project-switcher")).toContainText(LOCKED_TITLE);
+    await expect(page.getByTestId("place-home")).toHaveText(LOCKED_TITLE);
     await page.getByTestId("vault-pill").click();
     await unlockWith(page, PASS_1);
     await expectAllSentences(page);
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault on");
+    await expect(page.getByTestId("vault-pill")).toHaveText("Locked to you");
+    await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
+  });
+
+  await test.step("4d. the project list with the vault locked: Locked title, the six stage bars, no ciphertext; Unlock brings the name back", async () => {
+    await page.goto(WEB_ORIGIN + "/projects");
+    await expect(page.getByTestId("vault-pill")).toHaveText("Vault locked");
+    // The list needs nothing opened to show the states, so nothing asks; its line offers the unlock.
+    await expect(page.getByTestId("list-vault-line")).toHaveText("Titles are locked. Enter your passphrase to see them.");
+    const row = page.getByTestId("project-row");
+    await expect(row).toHaveCount(1);
+    await expect(row.getByTestId("project-row-title")).toHaveText(LOCKED_TITLE);
+    await expect(row.getByTestId("stage-bar")).toHaveCount(6);
+    // Idea has the first run's topic; Writing has the three sentences.
+    expect(await row.getByTestId("stage-bar").evaluateAll((els) => els.map((e) => e.getAttribute("data-state")))).toEqual(["in-progress", "not-started", "not-started", "not-started", "in-progress", "not-started"]);
+    const text = await page.getByTestId("project-list").innerText();
+    expect(text).not.toMatch(/[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{8,}/);
+    expect(text).not.toContain(PROJECT);
+    await page.getByTestId("list-unlock").click();
+    await unlockWith(page, PASS_1);
+    await expect(row.getByTestId("project-row-title")).toHaveText(PROJECT);
+    await expect(page.getByTestId("list-vault-line")).toHaveText("Unlocked. Titles are locked to you.");
+    // Back to the document through the row and the home.
+    await row.getByTestId("project-open").click();
+    await page.getByTestId("home-open-writing").click();
+    await expectAllSentences(page);
   });
 
   await test.step("5. a new browser context with the same sign-in: the document asks for the passphrase and opens with it", async () => {
@@ -200,9 +260,13 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
       await p2.goto(APP);
       await expect(p2.getByTestId("vault-pill")).toHaveText("Vault locked");
       await expect(p2.locator(".ProseMirror")).toHaveCount(0);
+      // `/` opens the active project's home, which loads the document: the passphrase is asked there.
       await unlockWith(p2, PASS_1);
+      await expect(p2.getByTestId("project-home")).toBeVisible();
+      await expect(p2.getByTestId("project-switcher")).toContainText(PROJECT);
+      await p2.getByTestId("home-open-writing").click();
       await expectAllSentences(p2);
-      await expect(p2.getByTestId("vault-pill")).toHaveText("Vault on");
+      await expect(p2.getByTestId("vault-pill")).toHaveText("Locked to you");
     } finally {
       await other.close();
     }
@@ -330,7 +394,11 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
  * next sign-in is issued a new id (the account-erased tombstone, Task 3 ruling, answers 401 only to the old id's token).
  */
 test("vault journey, 9b: after Delete my account the same address signs in to a fresh account", async ({ page }) => {
-  const email = await signIn(page, { prefix: "x", newAccount: true, ready: ["doc-select"] });
+  const email = await signIn(page, { prefix: "x", newAccount: true, ready: ["first-run"] });
+  // Writing without a project: the scratch space, from the project list.
+  await page.goto("/projects");
+  await page.getByTestId("scratch-space").click();
+  await expect(page.getByTestId("doc-select")).toBeVisible();
   await page.locator(".ProseMirror").click();
   const saved = page.waitForResponse((r) => isDocPut(r) && r.ok());
   await page.locator(".ProseMirror").pressSequentially(SENTENCE_1);
@@ -348,6 +416,11 @@ test("vault journey, 9b: after Delete my account the same address signs in to a 
   await page.getByTestId("terms-continue").click();
   await page.getByTestId("welcome-later").click();
   await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+  // No project: first run; the scratch space holds an empty first document.
+  await expect(page.getByTestId("first-run")).toBeVisible();
+  await page.goto("/projects");
+  await expect(page.getByTestId("projects-empty")).toBeVisible();
+  await page.getByTestId("scratch-space").click();
   await expect(page.getByTestId("word-count")).toHaveText("0 words");
   await expect(page.locator(".ProseMirror")).not.toContainText("Procrastination");
 });
