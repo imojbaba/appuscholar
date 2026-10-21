@@ -158,3 +158,9 @@ Task 14: complete. Implemented 72178c9; review CHANGES REQUIRED: (1) focus was l
 Deviations accepted: the More menu stays on a phone; the language item is in Menu; useMedia returns false without matchMedia.
 Merged (ab7fc66): D-S2-38 keeps the fix wave's wording plus Task 14's phone sentence; en and hi 1385 keys. Merged suite: web 1216 pass (2 skipped); typecheck, lint and build clean.
 Local e2e needs a config pointing Playwright 1.64 at /opt/pw-browsers/chromium-1194; CI installs its own browser.
+Task 15: implemented 06629bb:
+- stage2-idea-literature, phase2-walkthrough and phase3a-vault rewritten for the frame; locally 1/1, 2/2, 2/2, and platform 2/2;
+- docs/walkthroughs/wave-b1.md (16 rows), with stage-2.md rows 1 and 12 updated.
+App fix: a project saved with only a name no longer stores an empty idea_intake, which had made Idea read "In progress" (test added; D-S2-39).
+Deviations: per-tool CSVs are checked through the export zip; the list allows 1-2 include=work requests in `next dev` (StrictMode); every frame mount with the vault open re-runs the seal pass (a small cost, noted).
+Merged (2fcd1b1): web 1217 pass (2 skipped); typecheck and lint clean. Pushed so PR #12 runs all three checks on the complete slice. Task 15 review running in parallel.
