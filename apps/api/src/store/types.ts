@@ -11,16 +11,28 @@ export type AiUseEntry = { d: string; p: string; m: string; k: string; g: "text"
 export type OriginStats = { typed: number; ai: number; passages: number; kept: number; edited: number; unknown: number };
 
 export type ProjectKind = "research" | "scratch";
-export type Project = { id: string; userId: string; title: string; field: string; stage: string; status: string; contentLang: string; kind: ProjectKind; createdAt: Date };
 export const PROJECT_STAGES = ["idea", "lit", "design", "collect", "writing", "review"] as const;
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
+/** The stages the student marked Ready, each stamped by the server's clock. */
+export type StageMarks = Partial<Record<ProjectStage, { readyAt: string }>>;
+/** `deks` and `titleKeyVersion` seal the title as a document's revisions are sealed: 0 is a plaintext title. */
+export type Project = { id: string; userId: string; title: string; field: string; stage: string; status: string; contentLang: string; kind: ProjectKind; createdAt: Date; stageMarks: StageMarks; deks: WrappedDek[]; titleKeyVersion: number };
 export const PROJECT_STATUSES = ["active", "complete"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type ProjectSummary = Project & { documentCount: number; lastEditedAt: Date | null };
-export type ProjectPatch = { title?: string; stage?: ProjectStage; status?: ProjectStatus; contentLang?: "en" | "hi" };
+/** A title without `titleKeyVersion` is plaintext (0). `dek` is added to the project's deks as TitleWrite's is. */
+export type ProjectPatch = { title?: string; titleKeyVersion?: number; dek?: WrappedDek; stage?: ProjectStage; status?: ProjectStatus; contentLang?: "en" | "hi" };
 /** A per-document data key wrapped under the user's vault key; `v` matches the revisions' `keyVersion`. */
 export type WrappedDek = { v: number; wrapped: string };
-export type DocumentSummary = { id: string; projectId: string; title: string; kind: string; currentSeq: number; wordCount: number; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
+export type DocumentSummary = { id: string; projectId: string; title: string; titleKeyVersion: number; kind: string; currentSeq: number; wordCount: number; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
+/**
+ * A project's or document's title: titleKeyVersion 0 is plaintext, 1 or more is ciphertext under the entity's dek with that `v`. `dek` is
+ * added to the entity's deks when its `v` is new; the same wrap again is a no-op, another wrap for a known `v` is DekExistsError. A plain
+ * string is a plaintext title. Either way the entity's deks are kept.
+ */
+export type TitleWrite = { title: string; titleKeyVersion: number; dek?: WrappedDek };
+/** A plain string as the plaintext TitleWrite it stands for. */
+export const asTitle = (t: string | TitleWrite): TitleWrite => (typeof t === "string" ? { title: t, titleKeyVersion: 0 } : t);
 export type DocumentRevision = { id: string; documentId: string; seq: number; bodyHtml: string; authorKind: AuthorKind; authorLabel: string; wordCount: number; originStats: OriginStats | null; keyVersion: number; createdAt: Date };
 export type RevisionSummary = Omit<DocumentRevision, "bodyHtml">;
 /** keyVersion 0 means bodyHtml is plaintext HTML; 1 or more means it is a ciphertext blob the server cannot read. */
@@ -32,6 +44,8 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion:
  */
 export type ProjectBlob = { id: string; projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: Date; version: number };
 export type BlobSummary = { kind: string; keyVersion: number; updatedAt: Date };
+/** A project in the list with what it holds: every blob without its body, and the words and newest edit of its live non-source documents. */
+export type ProjectWork = ProjectSummary & { blobs: Array<{ kind: string; updatedAt: Date; version: number }>; draftWords: number; draftEditedAt: Date | null };
 /**
  * `dek` is added to the blob's deks when its `v` is new; the same wrap again is a no-op, another wrap for a known `v` is DekExistsError.
  * `expectedVersion` is the version the writer read (putBlob only): absent, the write is an upsert as before wave A; 0, it creates the blob or
@@ -76,20 +90,30 @@ export class VersionConflictError extends Error {
 }
 
 export interface Store {
-  createProject(userId: string, title: string, stage?: ProjectStage): Promise<Project>;
+  /** DekExistsError cannot happen here: a new project has no deks. */
+  createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage): Promise<Project>;
   /** Excludes the scratch project. */
   listProjects(userId: string): Promise<ProjectSummary[]>;
+  /** listProjects' projects, in its order, with their work (see ProjectWork). At most 3 SQL statements for any number of projects. */
+  listProjectWork(userId: string): Promise<ProjectWork[]>;
+  /** Throws DekExistsError (and writes nothing) when `patch.dek` is another wrap for a `v` the project has. */
   updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null>;
+  /** Ready sets stageMarks[stage] to { readyAt: now }; false deletes it. Null if the project is not the user's. */
+  markStage(userId: string, id: string, stage: ProjectStage, ready: boolean, now: Date): Promise<Project | null>;
   deleteProject(userId: string, id: string): Promise<boolean>;
   getProject(userId: string, id: string): Promise<Project | null>;
 
-  /** `deks` are attached in the same step, so a ciphertext first revision is never stored without its key. */
-  createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks?: WrappedDek[]): Promise<DocumentWithBody | null>;
+  /**
+   * `deks` are attached in the same step, so a ciphertext first revision is never stored without its key; a sealed title's dek joins them
+   * (DekExistsError, and nothing created, when it disagrees with one of them).
+   */
+  createDocument(userId: string, projectId: string, title: string | TitleWrite, kind: string, first: NewRevision, deks?: WrappedDek[]): Promise<DocumentWithBody | null>;
   /** Excludes soft-deleted documents, as does every document lookup except restoreDeletedDocument, unless `includeDeleted` (the vault migration). */
   listDocuments(userId: string, projectId: string, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary[] | null>;
   /** `includeDeleted` also returns a soft-deleted document (the vault migration must reach those). */
   getDocument(userId: string, id: string, opts?: { includeDeleted?: boolean }): Promise<DocumentWithBody | null>;
-  renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null>;
+  /** DekExistsError (and nothing written) as updateProject. */
+  renameDocument(userId: string, id: string, title: string | TitleWrite): Promise<DocumentSummary | null>;
 
   appendRevision(userId: string, documentId: string, rev: NewRevision): Promise<DocumentRevision | null>;
   /** `includeDeleted` also reaches a soft-deleted document's revisions (the vault migration rewrites those too). */

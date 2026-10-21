@@ -1,7 +1,7 @@
-import { and, asc, count, desc, eq, gte, isNull, lte, max, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lte, max, ne, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, projectBlobs, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectPatch, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
-import { DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
+import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, StageMarks, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
+import { asTitle, DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 const APPEND_RETRIES = 2;
 
@@ -38,13 +38,13 @@ export class DrizzleStore implements Store {
    * For one statement on the stored row: `ok` holds unless the row has another wrap for `dek.v` (the write is then refused), and `deks` is the
    * row's deks with `dek` appended when its `v` is new. Both read the row being written, so a concurrent add of the same `v` cannot slip in.
    */
-  private dekSql(dek?: WrappedDek): { ok: SQL | undefined; deks: SQL | undefined } {
+  private dekSql(dek?: WrappedDek, col: AnyColumn = projectBlobs.deks): { ok: SQL | undefined; deks: SQL | undefined } {
     if (!dek) return { ok: undefined, deks: undefined };
-    const has = (cond: SQL) => sql`exists (select 1 from jsonb_array_elements(${projectBlobs.deks}) e where (e->>'v')::int = ${dek.v} and ${cond})`;
+    const has = (cond: SQL) => sql`exists (select 1 from jsonb_array_elements(${col}) e where (e->>'v')::int = ${dek.v} and ${cond})`;
     const entry = JSON.stringify([{ v: dek.v, wrapped: dek.wrapped }]);
     return {
       ok: sql`not ${has(sql`e->>'wrapped' <> ${dek.wrapped}`)}`,
-      deks: sql`case when ${has(sql`true`)} then ${projectBlobs.deks} else ${projectBlobs.deks} || ${entry}::jsonb end`
+      deks: sql`case when ${has(sql`true`)} then ${col} else ${col} || ${entry}::jsonb end`
     };
   }
   /** The (project, kind) row; callers check the project is the user's first. */
@@ -55,7 +55,7 @@ export class DrizzleStore implements Store {
     return { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, checkWrapped: v.checkWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: v.complete, updatedAt: v.updatedAt };
   }
   private toProject(p: typeof projects.$inferSelect): Project {
-    return { ...p, kind: p.kind as ProjectKind };
+    return { ...p, kind: p.kind as ProjectKind, stageMarks: p.stageMarks as StageMarks };
   }
   private toUser(u: typeof users.$inferSelect): UserRecord {
     return { id: u.id, email: u.email, locale: u.locale, settings: u.settings as Settings, activeProjectId: u.activeProjectId, termsAcceptedAt: u.termsAcceptedAt, ageConfirmed: u.ageConfirmed };
@@ -63,7 +63,7 @@ export class DrizzleStore implements Store {
   private async summary(doc: typeof documents.$inferSelect): Promise<DocumentSummary | null> {
     const r = await this.latest(doc.id);
     if (!r) return null;
-    return { id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, deks: doc.deks };
+    return { id: doc.id, projectId: doc.projectId, title: doc.title, titleKeyVersion: doc.titleKeyVersion, kind: doc.kind, currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, deks: doc.deks };
   }
 
   async getUser(userId: string): Promise<UserRecord | null> {
@@ -91,8 +91,10 @@ export class DrizzleStore implements Store {
     await this.d.update(users).set({ termsAcceptedAt: at, ageConfirmed: true }).where(eq(users.id, userId));
   }
 
-  async createProject(userId: string, title: string, stage?: ProjectStage): Promise<Project> {
-    const [p] = await this.d.insert(projects).values(stage ? { userId, title, stage } : { userId, title }).returning();
+  async createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage): Promise<Project> {
+    const t = asTitle(title);
+    const sealed = { userId, title: t.title, titleKeyVersion: t.titleKeyVersion, deks: t.dek ? [{ v: t.dek.v, wrapped: t.dek.wrapped }] : [] };
+    const [p] = await this.d.insert(projects).values(stage ? { ...sealed, stage } : sealed).returning();
     return this.toProject(p!);
   }
   async getScratchProject(userId: string): Promise<Project> {
@@ -112,15 +114,46 @@ export class DrizzleStore implements Store {
       .orderBy(sql`case when ${projects.status} = 'complete' then 1 else 0 end`, desc(sql`coalesce(max(${documents.updatedAt}), ${projects.createdAt})`));
     return rows.map(r => ({ ...this.toProject(r.project), documentCount: Number(r.documentCount), lastEditedAt: r.lastEditedAt ?? null }));
   }
+  async listProjectWork(userId: string): Promise<ProjectWork[]> {
+    // Three statements whatever the number of projects: the list, every blob of the user's projects, and the drafts' sums per project.
+    const list = await this.listProjects(userId);
+    if (list.length === 0) return [];
+    const ids = list.map(p => p.id);
+    const blobs = await this.d.select({ projectId: projectBlobs.projectId, kind: projectBlobs.kind, updatedAt: projectBlobs.updatedAt, version: projectBlobs.version })
+      .from(projectBlobs).where(inArray(projectBlobs.projectId, ids));
+    // A document's current word count is its newest revision's, as in summary().
+    const drafts = await this.d.select({ projectId: documents.projectId, words: sql<string>`coalesce(sum(${documentRevisions.wordCount}), 0)`, editedAt: max(documents.updatedAt) })
+      .from(documents)
+      .innerJoin(documentRevisions, and(eq(documentRevisions.documentId, documents.id), sql`${documentRevisions.seq} = (select max(r.seq) from ${documentRevisions} r where r.document_id = ${documents.id})`))
+      .where(and(inArray(documents.projectId, ids), isNull(documents.deletedAt), ne(documents.kind, "source")))
+      .groupBy(documents.projectId);
+    const byProject = new Map(drafts.map(r => [r.projectId, r]));
+    return list.map(p => ({
+      ...p,
+      blobs: blobs.filter(b => b.projectId === p.id).sort(byKind).map(b => ({ kind: b.kind, updatedAt: b.updatedAt, version: b.version })),
+      draftWords: Number(byProject.get(p.id)?.words ?? 0),
+      draftEditedAt: byProject.get(p.id)?.editedAt ?? null
+    }));
+  }
   async updateProject(userId: string, id: string, patch: ProjectPatch): Promise<Project | null> {
     if (!(await this.getProject(userId, id))) return null;
-    const set: Partial<typeof projects.$inferInsert> = {};
-    if (patch.title !== undefined) set.title = patch.title;
+    const set: { [K in keyof typeof projects.$inferInsert]?: (typeof projects.$inferInsert)[K] | SQL } = {};
+    const dek = this.dekSql(patch.dek, projects.deks);
+    if (dek.deks) set.deks = dek.deks;
+    if (patch.title !== undefined) { set.title = patch.title; set.titleKeyVersion = patch.titleKeyVersion ?? 0; }
+    else if (patch.titleKeyVersion !== undefined) set.titleKeyVersion = patch.titleKeyVersion;
     if (patch.stage !== undefined) set.stage = patch.stage;
     if (patch.status !== undefined) set.status = patch.status;
     if (patch.contentLang !== undefined) set.contentLang = patch.contentLang;
     if (Object.keys(set).length === 0) return this.getProject(userId, id);
-    const [row] = await this.d.update(projects).set(set).where(eq(projects.id, id)).returning();
+    // The dek rule is checked on the row being written, in the same statement; the project was found above, so no row means it refused.
+    const [row] = await this.d.update(projects).set(set).where(and(eq(projects.id, id), dek.ok)).returning();
+    if (!row && patch.dek) throw new DekExistsError(patch.dek.v);
+    return row ? this.toProject(row) : null;
+  }
+  async markStage(userId: string, id: string, stage: ProjectStage, ready: boolean, now: Date): Promise<Project | null> {
+    const marks = ready ? sql`${projects.stageMarks} || ${JSON.stringify({ [stage]: { readyAt: now.toISOString() } })}::jsonb` : sql`${projects.stageMarks} - ${stage}::text`;
+    const [row] = await this.d.update(projects).set({ stageMarks: marks }).where(and(eq(projects.id, id), eq(projects.userId, userId))).returning();
     return row ? this.toProject(row) : null;
   }
   async deleteProject(userId: string, id: string): Promise<boolean> {
@@ -133,9 +166,16 @@ export class DrizzleStore implements Store {
     return rows[0] ? this.toProject(rows[0]) : null;
   }
 
-  async createDocument(userId: string, projectId: string, title: string, kind: string, first: NewRevision, deks: WrappedDek[] = []): Promise<DocumentWithBody | null> {
+  async createDocument(userId: string, projectId: string, title: string | TitleWrite, kind: string, first: NewRevision, deks: WrappedDek[] = []): Promise<DocumentWithBody | null> {
     if (!(await this.getProject(userId, projectId))) return null;
-    const [doc] = await this.d.insert(documents).values({ projectId, title, kind, deks: deks.map(k => ({ v: k.v, wrapped: k.wrapped })) }).returning();
+    const t = asTitle(title);
+    const all = deks.map(k => ({ v: k.v, wrapped: k.wrapped }));
+    if (t.dek) {
+      const known = all.find(k => k.v === t.dek!.v);
+      if (known && known.wrapped !== t.dek.wrapped) throw new DekExistsError(t.dek.v);
+      if (!known) all.push({ v: t.dek.v, wrapped: t.dek.wrapped });
+    }
+    const [doc] = await this.d.insert(documents).values({ projectId, title: t.title, titleKeyVersion: t.titleKeyVersion, kind, deks: all }).returning();
     const [rev] = await this.d.insert(documentRevisions).values({ documentId: doc!.id, seq: 1, ...first }).returning();
     await this.d.update(documents).set({ currentRevisionId: rev!.id }).where(eq(documents.id, doc!.id));
     return { ...(await this.summary(doc!))!, bodyHtml: rev!.bodyHtml, keyVersion: rev!.keyVersion };
@@ -154,15 +194,22 @@ export class DrizzleStore implements Store {
     const r = rows[0];
     if (!r) return null;
     return {
-      id: doc.id, projectId: doc.projectId, title: doc.title, kind: doc.kind,
+      id: doc.id, projectId: doc.projectId, title: doc.title, titleKeyVersion: doc.titleKeyVersion, kind: doc.kind,
       currentSeq: r.seq, wordCount: r.wordCount, createdAt: doc.createdAt, updatedAt: doc.updatedAt, deletedAt: doc.deletedAt, deks: doc.deks, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion
     };
   }
-  async renameDocument(userId: string, id: string, title: string): Promise<DocumentSummary | null> {
+  async renameDocument(userId: string, id: string, title: string | TitleWrite): Promise<DocumentSummary | null> {
     const doc = await this.ownedDoc(userId, id);
     if (!doc) return null;
-    const [updated] = await this.d.update(documents).set({ title, updatedAt: new Date() }).where(eq(documents.id, id)).returning();
-    return this.summary(updated!);
+    const t = asTitle(title);
+    const dek = this.dekSql(t.dek, documents.deks);
+    const [updated] = await this.d.update(documents).set({ title: t.title, titleKeyVersion: t.titleKeyVersion, updatedAt: new Date(), ...(dek.deks ? { deks: dek.deks } : {}) }).where(and(eq(documents.id, id), dek.ok)).returning();
+    if (!updated) {
+      // Found above, so no row means the dek rule refused (or the document went meanwhile).
+      if (t.dek) throw new DekExistsError(t.dek.v);
+      return null;
+    }
+    return this.summary(updated);
   }
   async moveDocument(userId: string, documentId: string, projectId: string): Promise<DocumentSummary | null> {
     if (!(await this.ownedDoc(userId, documentId)) || !(await this.getProject(userId, projectId))) return null;
