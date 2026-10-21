@@ -7,7 +7,7 @@ import { docToSlideModel, docToSlideModelV2 } from "../../src/pptModel";
  * capture for the two things that differ, and each test states the difference from V1 (register D-S2-99):
  *  1. element text goes through docInnerText (register F26: v1's `textOf` 4959 reads innerText), so a <br> and a list item inside another read with a line break, as in the browser;
  *  2. a document with no title on any slide gives its first slide the document's title ('Untitled' when blank); V1 left it null. `hasHeadings` says whether a Heading 1, 2 or 3 gave
- *     a slide its title, before that is done, so the tab can still show the "no headings" note.
+ *     a slide its title (v1's `slides.some(s=>s.title)`, read before that titling and after the whole-text fallback, as in v1), so the tab can still show the "no headings" note.
  */
 let saved: unknown;
 beforeAll(() => {
@@ -50,11 +50,11 @@ describe("docToSlideModelV2: a document without headings is one slide titled wit
     expect(docToSlideModelV2("", "T")).toEqual({ slides: [], hasHeadings: false });
     expect(docToSlideModelV2("<p> </p>", "T")).toEqual({ slides: [], hasHeadings: false });
   });
-  it("the whole-document fallback keeps V1's rule (text outside any element: one slide, the title, up to 10 lines) and still says no headings", () => {
+  it("the whole-document fallback keeps V1's rule (text outside any element: one slide, the title, up to 10 lines), and hasHeadings is true there as in V1, whose fallback slide carries the title", () => {
     const r = docToSlideModelV2("line one\nline two\n\nline three", "Bare text");
     expect(r.slides).toEqual([{ title: "Bare text", bullets: ["line one", "line two", "line three"], images: [] }]);
     expect(r.slides).toEqual(docToSlideModel("line one\nline two\n\nline three", "Bare text"));
-    expect(r.hasHeadings).toBe(false);
+    expect(r.hasHeadings).toBe(true);
     expect(docToSlideModelV2("a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl", "T").slides[0]!.bullets).toHaveLength(10);
   });
 });

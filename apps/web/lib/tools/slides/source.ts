@@ -1,22 +1,20 @@
 import type { PptSlide } from "@appuscholar/core";
 import type { ProjectDocument } from "@/lib/editor/docAccess";
 
-/** The open document as the Slides tab reads it: its HTML, and its title (null when it has none, or when only its text could be read). */
-export type SlideSource = { html: string; title: string | null };
-
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** The open document as the Slides tab reads it: its HTML and its title. */
+export type SlideSource = { html: string; title: string };
 
 /**
  * Finds the open document among the project's documents. In the writing window the open document's id is known. A pop-out does not know it (currentId null), so the document whose
- * text is the open text is taken. When no document can be found (the list could not be read, or no document is open) the open text, if any, is read as paragraphs, a line each.
+ * text is the open text is taken. Returns "none" when there is no open text and no open document (nothing to read: the empty-document sentence), and null when the open document is not in the
+ * list (the list could not be read, or the document is not in it): the caller says so and builds no model, since a model made from the text alone would have lost every heading.
  * v1 read the attached editor and `docsGet()` for the title (4954, 5026); the editor's HTML is allDocuments' `html` for the open document.
  */
-export function pickSource(docs: ProjectDocument[], currentId: string | null, openText: string): SlideSource {
+export function pickSource(docs: ProjectDocument[], currentId: string | null, openText: string): SlideSource | "none" | null {
   const open = openText.trim();
-  const found = currentId !== null ? docs.find((d) => d.id === currentId) : open ? docs.find((d) => d.text.trim() === open) : undefined;
-  if (found) return { html: found.html, title: found.title };
-  const lines = openText.split(/\n+/).map((l) => l.trim()).filter(Boolean);
-  return { html: lines.map((l) => "<p>" + escapeHtml(l) + "</p>").join(""), title: null };
+  if (currentId === null && !open) return "none";
+  const found = currentId !== null ? docs.find((d) => d.id === currentId) : docs.find((d) => d.text.trim() === open);
+  return found ? { html: found.html, title: found.title } : null;
 }
 
 /** What the preview draws as a picture: only what is safe as an `<img>` source: an image data: URL, https: or blob:. */

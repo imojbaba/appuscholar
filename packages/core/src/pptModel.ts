@@ -118,8 +118,8 @@ export function pptxDeckSpec(slides: PptSlide[]): PptxDeck{
  * - the text of each element is `docInnerText` of its HTML (register F26: v1's `textOf` 4959 reads innerText), so a `<br>` in a paragraph and a list item inside another read with a
  *   line break, as in the browser, where docToSlideModel reads textContent ("linebreak"); the whole-text fallback reads the document's `docInnerText` (v1's `getEditorText`);
  * - a document in which no slide has a title (a document without a Heading 1, 2 or 3) gives its first slide the document's title ('Untitled' when blank), where v1 left it null.
- *   `hasHeadings` says whether a heading gave any slide its title, before that is done and before the whole-text fallback titles its slide, so the tab can show the "no headings" note
- *   (v1's `slides.some(s=>s.title)`, which the fallback's own title would have made true).
+ *   `hasHeadings` is v1's `slides.some(s=>s.title)` (the one that picks the "no headings" note), read before that titling, so the tab can still show the note; as in v1 it is true when the
+ *   whole-text fallback made the only slide, since the fallback titles its slide itself.
  * The slide order, the table bullet, the picture rules and the whole-text fallback's rule (one slide titled with the document's title, the first 10 non-empty lines) are v1's.
  */
 export function docToSlideModelV2(html: string,docTitle?: string | null): { slides: PptSlide[]; hasHeadings: boolean }{
@@ -150,13 +150,15 @@ export function docToSlideModelV2(html: string,docTitle?: string | null): { slid
     }
   });
   pushCur();
-  const hasHeadings=slides.some(s=>s.title);
   if(!slides.length){
     const whole=docInnerText(html).trim();
     if(whole){
       const parts=whole.split(/\n+/).map(s=>s.trim()).filter(Boolean).slice(0,10);
       slides.push({title,bullets:parts,images:[]});
     }
-  }else if(!hasHeadings)slides[0]!.title=title;
+  }
+  // v1's `slides.some(s=>s.title)`, read after the whole-text fallback has titled its slide (so that slide shows no note, as in v1) and before the first slide is titled below.
+  const hasHeadings=slides.some(s=>s.title);
+  if(slides.length&&!hasHeadings)slides[0]!.title=title;
   return{slides,hasHeadings};
 }

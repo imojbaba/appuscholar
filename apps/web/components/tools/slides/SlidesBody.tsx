@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 
 /** What a press of Generate built: the slides, whether a heading made them, and the document's title (for the file's name). v1's `_pptxSlideModel`, kept in memory only. */
 type Built = { slides: PptSlide[]; hasHeadings: boolean; title: string | null };
+/** What the preview area shows: a model, or "unreadable" when the open document could not be read (no model is built then). */
+type Shown = Built | "unreadable";
 
 /**
  * Review's Slides tab (v1 panel 1041-1050, pptxBuildPreview 4988-5008, pptxDownload 5009-5030): Heading 1, 2 and 3 start a slide, the text under it becomes bullets, a picture goes on the
@@ -22,19 +24,27 @@ export default function SlidesBody() {
   const t = useT();
   const access = useDocAccess();
   const { currentDoc } = useProject();
-  const [built, setBuilt] = useState<Built | null>(null);
+  const [shown, setShown] = useState<Shown | null>(null);
+  const [reading, setReading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const built = shown !== null && shown !== "unreadable" ? shown : null;
   const [note, setNote] = useState<string | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   async function generate() {
+    if (reading) return;
     setNote(null);
+    setReading(true);
     const text = access.text();
-    const docs = await access.allDocuments().catch(() => []);
+    let docs: Awaited<ReturnType<typeof access.allDocuments>> | null = null;
+    try { docs = await access.allDocuments(); } catch { docs = null; }
     if (!alive.current) return;
-    const src = pickSource(docs, currentDoc?.id ?? null, text);
-    setBuilt({ ...docToSlideModelV2(src.html, src.title), title: src.title });
+    setReading(false);
+    const src = docs === null ? null : pickSource(docs, currentDoc?.id ?? null, text);
+    if (src === null) { setShown("unreadable"); return; }
+    if (src === "none") { setShown({ slides: [], hasHeadings: false, title: null }); return; }
+    setShown({ ...docToSlideModelV2(src.html, src.title), title: src.title });
   }
 
   async function download() {
@@ -56,10 +66,12 @@ export default function SlidesBody() {
       <h3>{t("slides_head")}</h3>
       <p className="desc">{t("slides_desc")}</p>
       <div className="ap-row">
-        <Button variant="primary" size="sm" data-testid="slides-generate" onClick={() => void generate()}>
+        <Button variant="primary" size="sm" data-testid="slides-generate" disabled={reading} aria-busy={reading} onClick={() => void generate()}>
           <Presentation aria-hidden="true" />{t("slides_generate_btn")}
         </Button>
       </div>
+      {reading && <p className="note" role="status" data-testid="slides-status">{t("slides_reading")}</p>}
+      {shown === "unreadable" && <p className="ap-warn" role="status" data-testid="slides-unreadable">{t("slides_read_failed")}</p>}
       {built && (
         <div className="mt-3" data-testid="slides-preview">
           {built.slides.length === 0 ? <p className="desc">{t("slides_empty")}</p> : (

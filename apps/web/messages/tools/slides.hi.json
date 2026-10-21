@@ -9,5 +9,7 @@
   "slides_card_num": "स्लाइड {n}",
   "slides_untitled": "बिना शीर्षक की स्लाइड",
   "slides_picture_alt": "स्लाइड {n} पर एक चित्र",
+  "slides_reading": "आपका दस्तावेज़ पढ़ा जा रहा है…",
+  "slides_read_failed": "आपका दस्तावेज़ पढ़ा नहीं जा सका। फिर से कोशिश करें।",
   "slides_failed": "फ़ाइल नहीं बन सकी। फिर से कोशिश करें।"
 }

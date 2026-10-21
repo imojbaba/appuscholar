@@ -18,11 +18,13 @@ const h = vi.hoisted(() => ({
   text: "" as string,
   currentId: "cur" as string | null,
   download: vi.fn(),
-  failAll: false
+  failAll: false,
+  hold: null as null | Promise<void>,
+  reads: 0
 }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: "p1", currentDoc: h.currentId ? { id: h.currentId } : null }) }));
 vi.mock("@/lib/editor/docAccess", () => ({
-  useDocAccess: () => ({ text: () => h.text, selection: () => "", allDocuments: async () => { if (h.failAll) throw new Error("nope"); return h.docs; } })
+  useDocAccess: () => ({ text: () => h.text, selection: () => "", allDocuments: async () => { h.reads++; if (h.hold) await h.hold; if (h.failAll) throw new Error("nope"); return h.docs; } })
 }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: (name: string, blob: Blob) => h.download(name, blob) }));
 
@@ -51,7 +53,7 @@ const blobBytes = (b: Blob) => new Promise<ArrayBuffer>((res) => { const r = new
 const setDoc = (title: string, html: string) => { h.docs = [{ id: "cur", title, text: "", html }]; };
 
 beforeAll(async () => { await import("../components/tools/slides/SlidesBody"); await import("pptxgenjs"); }, 300_000);
-beforeEach(() => { h.docs = []; h.text = ""; h.currentId = "cur"; h.download.mockReset(); h.failAll = false; });
+beforeEach(() => { h.docs = []; h.text = ""; h.currentId = "cur"; h.download.mockReset(); h.failAll = false; h.hold = null; h.reads = 0; });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
   document.body.innerHTML = "";
@@ -146,12 +148,59 @@ describe("Slides: the preview", () => {
     await mount(); await generate();
     expect($$('[data-testid="slides-card"] h4').map((x) => x.textContent)).toEqual(["Mine"]);
   });
-  it("when the project's documents cannot be read it still reads the open text as one slide", async () => {
+  it("when the project's documents cannot be read it says so, builds no model from the text and offers no download", async () => {
     h.failAll = true; h.text = "line one\nline two";
+    await mount(); await click(tid("slides-generate"));
+    await until(() => !!tid("slides-unreadable"));
+    expect(tid("slides-unreadable")!.textContent).toBe("Could not read your document. Try again.");
+    expect($$('[data-testid="slides-card"]')).toHaveLength(0);
+    expect(tid("slides-download")).toBeNull();
+    expect(tid("slides-no-headings")).toBeNull();
+  });
+  it("the same when the open document is not among the documents read, and a good press after it clears the line", async () => {
+    h.docs = [{ id: "other", title: "Other", text: "x", html: "<h1>Other</h1>" }]; h.text = "my words";
+    await mount(); await click(tid("slides-generate"));
+    await until(() => !!tid("slides-unreadable"));
+    expect(tid("slides-download")).toBeNull();
+    setDoc("T", "<h1>One</h1><p>a</p>");
+    await click(tid("slides-generate"));
+    await until(() => !!tid("slides-preview"));
+    expect(tid("slides-unreadable")).toBeNull();
+    expect($$('[data-testid="slides-card"]')).toHaveLength(1);
+  });
+  it("a pop-out that cannot match the open text to a document says it could not read it", async () => {
+    h.currentId = null; h.text = "words nobody holds";
+    h.docs = [{ id: "a", title: "A", text: "different", html: "<h1>A</h1>" }];
+    await mount(); await click(tid("slides-generate"));
+    await until(() => !!tid("slides-unreadable"));
+  });
+  it("a failed read after a good preview removes the old preview and its download (no stale deck)", async () => {
+    setDoc("T", "<h1>One</h1><p>a</p>");
     await mount(); await generate();
-    const cards = $$('[data-testid="slides-card"]');
-    expect(cards).toHaveLength(1);
-    expect([...cards[0]!.querySelectorAll("li")].map((l) => l.textContent)).toEqual(["line one", "line two"]);
+    expect(tid("slides-download")).not.toBeNull();
+    h.failAll = true;
+    await click(tid("slides-generate"));
+    await until(() => !!tid("slides-unreadable"));
+    expect(tid("slides-download")).toBeNull();
+    expect(tid("slides-preview")).toBeNull();
+  });
+  it("disables Generate and says it is reading while the documents are read, ignores a second press, then enables it again", async () => {
+    setDoc("T", "<h1>One</h1><p>a</p>");
+    let release!: () => void;
+    h.hold = new Promise<void>((r) => { release = r; });
+    await mount();
+    await act(async () => { tid("slides-generate")!.click(); });
+    const btn = tid("slides-generate") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    expect(tid("slides-status")!.textContent).toBe("Reading your document…");
+    await act(async () => { btn.click(); });
+    expect(h.reads).toBe(1);
+    expect(tid("slides-preview")).toBeNull();
+    await act(async () => { release(); await Promise.resolve(); });
+    await until(() => !!tid("slides-preview"));
+    expect((tid("slides-generate") as HTMLButtonElement).disabled).toBe(false);
+    expect(tid("slides-status")).toBeNull();
+    expect(h.reads).toBe(1);
   });
 });
 
