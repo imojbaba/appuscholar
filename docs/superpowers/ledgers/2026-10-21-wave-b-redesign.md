@@ -150,3 +150,11 @@ Fix wave done:
 - 98aaf1d: a ciphertext-looking plain title is refused on all 7 request shapes, and sealPlainTitles never seals one twice.
 - f408c87: unsaved text survives Back, held in memory only and restored on reopen; Export warns on a failed document save; copy through t(); the register brought up to date.
 Counts: api 259, web 1210 (2 skipped); typecheck, lint and build clean.
+Task 14: complete. Implemented 72178c9; review CHANGES REQUIRED: (1) focus was lost on the phone's full-screen document; (2) e2e wasn't re-run after the last change. Fix round 6684274:
+- focus moves to Back on open and returns on close;
+- desktop header items are hidden by CSS at 700 px or less, so a phone never flashes the desktop header;
+- scrollTo stubbed in the test;
+- e2e frame-responsive 4/4 and platform 2/2 on the final commit (local pglite, ports 5441/8941/3141).
+Deviations accepted: the More menu stays on a phone; the language item is in Menu; useMedia returns false without matchMedia.
+Merged (ab7fc66): D-S2-38 keeps the fix wave's wording plus Task 14's phone sentence; en and hi 1385 keys. Merged suite: web 1216 pass (2 skipped); typecheck, lint and build clean.
+Local e2e needs a config pointing Playwright 1.64 at /opt/pw-browsers/chromium-1194; CI installs its own browser.
