@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useEffect, useId, useRef } from "react";
-import { PencilSimple, Plus, Trash } from "@phosphor-icons/react";
+import { Eye, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import type { QualCode } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -31,9 +31,11 @@ function rows(codes: QualCode[]): Row[] {
 /**
  * The code tree (v1 #qualTree): a row for each code with its colour, its name and three buttons, "+" (add a sub-code), rename and delete, indented 18px for each level of depth.
  * The sub-code field opens under the row, the rename field replaces the name, and the delete question (v1's confirm, in v1's words) opens under the row with Delete and Keep.
- * A button for viewing the passages comes with the passages (a later task). `codes` must be a list that can be walked (the panel checks that first).
+ * Tapping a code's name or its colour tags the selected passage of the document with it (v1 qualTagSelection, 6245-6263; `onTag`): both are buttons, and a press does not
+ * take the selection from the editor (mousedown is cancelled, as the shelf's save button does). The eye button opens the code's passages (`onPassages`).
+ * `codes` must be a list that can be walked (the panel checks that first).
  */
-export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename, onDelete, confirmFor }: {
+export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename, onDelete, onTag, onPassages, confirmFor }: {
   codes: QualCode[];
   editing: Editing;
   setEditing: (e: Editing) => void;
@@ -41,6 +43,8 @@ export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename
   onAdd: (name: string, parentId: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
+  onTag: (id: string) => void;
+  onPassages: (id: string) => void;
   confirmFor: (id: string) => string | null;
 }) {
   const t = useT();
@@ -52,13 +56,32 @@ export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename
         return (
           <Fragment key={c.id}>
             <li className="flex items-center gap-1.5 py-1" style={{ paddingLeft: indent(depth) }} data-testid={"qual-code-" + c.id}>
-              <span className="size-3.5 shrink-0 rounded-full border border-black/10" style={{ background: c.color }} aria-hidden="true" data-testid={"qual-swatch-" + c.id} />
+              <button
+                type="button"
+                className="relative size-3.5 shrink-0 cursor-pointer rounded-full border border-black/10 outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default"
+                style={{ background: c.color }}
+                disabled={disabled}
+                data-testid={"qual-swatch-" + c.id}
+                title={t("qual_tip_tag")}
+                aria-label={t("qual_aria_tag", { name: c.name })}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onTag(c.id)}
+              />
               {ed === "rename" ? (
                 <NameField label={t("qual_label_rename")} initial={c.name} saveLabel={t("qual_btn_save")} onSave={(n) => onRename(c.id, n)} onCancel={() => setEditing(null)} />
               ) : (
                 <>
-                  <span className="min-w-0 flex-1 break-words text-[13.5px]" data-testid={"qual-name-" + c.id}>{c.name}</span>
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 cursor-pointer break-words rounded-sm bg-transparent p-0 text-left text-[13.5px] outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:no-underline"
+                    disabled={disabled}
+                    data-testid={"qual-name-" + c.id}
+                    title={t("qual_tip_tag")}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onTag(c.id)}
+                  >{c.name}</button>
                   <Button type="button" variant="ghost" size="icon-xs" disabled={disabled} data-testid={"qual-add-sub-" + c.id} title={t("qual_tip_add_sub")} aria-label={t("qual_aria_add_sub", { name: c.name })} onClick={() => setEditing({ kind: "sub", id: c.id })}><Plus aria-hidden="true" /></Button>
+                  <Button type="button" variant="ghost" size="icon-xs" data-testid={"qual-passages-" + c.id} title={t("qual_tip_passages")} aria-label={t("qual_aria_passages", { name: c.name })} onClick={() => onPassages(c.id)}><Eye aria-hidden="true" /></Button>
                   <Button type="button" variant="ghost" size="icon-xs" disabled={disabled} data-testid={"qual-rename-" + c.id} title={t("qual_tip_rename")} aria-label={t("qual_aria_rename", { name: c.name })} onClick={() => setEditing({ kind: "rename", id: c.id })}><PencilSimple aria-hidden="true" /></Button>
                   <Button type="button" variant="ghost" size="icon-xs" disabled={disabled} data-testid={"qual-delete-" + c.id} title={t("qual_tip_delete")} aria-label={t("qual_aria_delete", { name: c.name })} onClick={() => setEditing({ kind: "delete", id: c.id })}><Trash aria-hidden="true" /></Button>
                 </>
