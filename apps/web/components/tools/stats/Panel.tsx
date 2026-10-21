@@ -4,10 +4,11 @@ import { useLabActions } from "@/lib/tools/stats/useLabActions";
 import { useRunActions } from "@/lib/tools/stats/useRunActions";
 import { NotBuilt } from "@/components/places/NotBuilt";
 import { DataIntake } from "./DataIntake";
+import { Guide } from "./Guide";
 import { PdBox } from "./PdBox";
 import { RunTest } from "./RunTest";
 
-/** The Data tab (v1 statsDlg: step 1 "Your data", 1529-1550, then step 2 "Choose and run a test", 1553-1604): the intake, the personal-data box, then the test and its result. */
+/** The Data tab (v1 statsDlg: step 1 "Your data", 1529-1550, then step 2 "Choose and run a test", 1553-1604): the intake, the personal-data box, then the guide to choosing a test (Task B3), the test and its result. */
 function DataTab({ projectId }: { projectId: string }) {
   const t = useT();
   const actions = useLabActions(projectId);
@@ -18,6 +19,7 @@ function DataTab({ projectId }: { projectId: string }) {
       <p className="desc">{t("stats_data_privacy")}</p>
       <DataIntake projectId={projectId} actions={actions} />
       <PdBox projectId={projectId} actions={actions} />
+      <Guide projectId={projectId} />
       <RunTest projectId={projectId} run={run} />
     </div>
   );
