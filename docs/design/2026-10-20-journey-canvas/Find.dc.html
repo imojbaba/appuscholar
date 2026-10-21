@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Find papers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4c1d95}a:hover{color:#3b0764}
+</style>
+</helmet>
+<div style="min-height: 1180px; background: #fbfaf9; color: #2a2438; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<a href="Main.dc.html" style="font-family: 'Source Serif 4', serif; font-size: 22px; font-weight: 600; color: #4c1d95; text-decoration: none">Appuscholar</a>
+<span style="color: #6b6579">Sleep and exam anxiety</span>
+<span style="color: #ddd9e4">/</span>
+<span style="font-weight: 600">Literature</span>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px; background: #ecfdf3; color: #166534; font-size: 13px; font-weight: 600">Locked to you</div>
+</header>
+
+<nav aria-label="Literature" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 0 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<a href="#" aria-current="page" style="padding: 14px 14px 12px; border-bottom: 3px solid #4c1d95; color: #4c1d95; font-weight: 700; text-decoration: none">Find</a>
+<a href="Read.dc.html" style="padding: 14px; color: #2a2438; text-decoration: none">Reading list (4)</a>
+<a href="#" style="padding: 14px; color: #2a2438; text-decoration: none">Compare</a>
+<a href="#" style="padding: 14px; color: #2a2438; text-decoration: none">Citations (4)</a>
+</nav>
+
+<div style="max-width: 1360px; margin: 0 auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+
+<section style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px">
+<label for="q" style="font-weight: 600">Searching for papers on</label>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<input id="q" value="exam anxiety" style="flex: 1 1 420px; height: 46px; padding: 0 14px; border: 1px solid #ddd9e4; border-radius: 8px; font: inherit; font-size: 17px">
+<button style="height: 46px; padding: 0 22px; border: none; border-radius: 8px; background: #4c1d95; color: #ffffff; font: inherit; font-weight: 700">Search</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px">
+<span style="color: #6b6579">Also searching, suggested by AI from your question:</span>
+<sc-for list="{{terms}}" as="t" hint-placeholder-count="5">
+<button style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #c9932e; border-radius: 999px; background: #fdf4e3; color: #5c3f0d; font: inherit; font-size: 14px">{{t}}
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</sc-for>
+</div>
+<details style="font-size: 14px">
+<summary style="cursor: pointer; color: #4c1d95; font-weight: 600">Already have a paper? Paste a link, DOI or PubMed number</summary>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px">
+<input aria-label="Link, DOI or PubMed number" value="10.1038/s41598-019-49466-6" style="flex: 1 1 360px; height: 44px; padding: 0 14px; border: 1px solid #ddd9e4; border-radius: 8px; font: inherit">
+<button style="height: 44px; padding: 0 16px; border: 1px solid #4c1d95; border-radius: 8px; background: #ffffff; color: #4c1d95; font: inherit; font-weight: 600">Look it up and keep</button>
+</div>
+</details>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<aside aria-label="Narrow the results" style="flex: 1 1 220px; max-width: 260px; background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; font-size: 14px">
+<h2 style="margin: 0; font-size: 15px">Narrow the results</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="kind" style="font-weight: 600">Kind of study</label>
+<select id="kind" style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; padding: 0 10px; font: inherit"><option>Randomised trial</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="from" style="font-weight: 600">Published from</label>
+<input id="from" placeholder="Any year" style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; padding: 0 10px; font: inherit">
+</div>
+<label style="display: flex; gap: 8px; align-items: center"><input type="checkbox" checked> Free full text only</label>
+<label style="display: flex; gap: 8px; align-items: center"><input type="checkbox" checked> Hide retracted papers</label>
+<label style="display: flex; gap: 8px; align-items: center"><input type="checkbox"> Rank by fit to my question (AI)</label>
+<div style="border-top: 1px solid #ece8f2; padding-top: 12px; color: #6b6579">Sources: OpenAlex and PubMed. Not finding it? <a href="#">Search Google Scholar</a></div>
+</aside>
+
+<main style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+<p style="margin: 0; font-weight: 600">14 papers. Showing 4 that match your filters.</p>
+<div style="display: flex; gap: 10px; align-items: center; font-size: 14px">
+<label for="sort">Sort</label>
+<select id="sort" style="height: 36px; border: 1px solid #ddd9e4; border-radius: 8px; padding: 0 8px; font: inherit"><option>Most cited</option></select>
+</div>
+</div>
+
+<sc-for list="{{papers}}" as="p" hint-placeholder-count="4">
+<article style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 17px; line-height: 1.35">{{p.title}}</h3>
+<div style="font-size: 14px; color: #6b6579">{{p.meta}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px">
+<sc-for list="{{p.badges}}" as="b" hint-placeholder-count="2"><span style="padding: 2px 8px; border-radius: 6px; background: #f4f3f6; color: #2a2438">{{b}}</span></sc-for>
+</div>
+<p style="margin: 2px 0 0; font-size: 14px; padding-left: 10px; border-left: 2px solid #c9932e; color: #2a2438">{{p.why}}</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 150px">
+<button style="{{p.keepStyle}}">{{p.keepLabel}}</button>
+<button aria-label="More actions for this paper" style="height: 40px; border: 1px solid #ddd9e4; border-radius: 8px; background: #ffffff; color: #2a2438; font: inherit">More</button>
+</div>
+</article>
+</sc-for>
+</main>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const keep = 'height:44px;border:none;border-radius:8px;background:#4c1d95;color:#ffffff;font:inherit;font-weight:700';
+    const kept = 'height:44px;border:1px solid #166534;border-radius:8px;background:#ecfdf3;color:#166534;font:inherit;font-weight:700';
+    return {
+      terms: ['test anxiety', 'examination stress', 'evaluation apprehension', 'exam nerves', 'academic performance anxiety'],
+      papers: [
+        { title: 'Open-label placebos reduce test anxiety and improve self-management skills: a randomized-controlled trial', meta: 'Schaefer, Denke, Harke, Olk and 3 more. 2019. Scientific Reports. Cited 44 times.', badges: ['Free PDF', 'Randomised trial', '58 students'], why: 'Why it fits (AI): a short, low-cost intervention against exam anxiety in students, tested against a control group.', keepLabel: 'Kept', keepStyle: kept },
+        { title: 'Attentional bias modification in reducing test anxiety vulnerability: a randomized controlled trial', meta: 'Cai, Pan, Chai, Cui and others. 2018. BMC Psychiatry. Cited 100 times.', badges: ['Free PDF', 'Randomised trial'], why: 'Why it fits (AI): tests a brief training against test anxiety; useful contrast to a sleep routine.', keepLabel: 'Keep', keepStyle: keep },
+        { title: 'Reducing test anxiety and related symptoms using a biofeedback respiratory practice device: a randomized control trial', meta: '[Authors]. [Year]. [Journal]. Cited [n] times.', badges: ['Free PDF', 'Randomised trial'], why: 'Why it fits (AI): another one-week style intervention with an exam-time outcome.', keepLabel: 'Keep', keepStyle: keep },
+        { title: 'The four Ws of test anxiety', meta: 'Symes and Putwain. 2020. Psychologica. Cited 27 times.', badges: ['Free PDF', 'Review'], why: 'Why it fits (AI): a short overview to frame your introduction.', keepLabel: 'Keep', keepStyle: keep }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

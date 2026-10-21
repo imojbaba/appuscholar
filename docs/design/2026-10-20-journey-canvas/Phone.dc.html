@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project home on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4c1d95}a:hover{color:#3b0764}
+</style>
+</helmet>
+<div style="width: 390px; height: 1500px; box-sizing: border-box; background: #fbfaf9; color: #2a2438; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5; display: flex; flex-direction: column">
+
+<header style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<div style="font-family: 'Source Serif 4', serif; font-size: 20px; font-weight: 600; color: #4c1d95">Appuscholar</div>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; align-items: center; height: 30px; padding: 0 10px; border-radius: 999px; background: #ecfdf3; color: #166534; font-size: 12px; font-weight: 600">Locked to you</div>
+<button aria-label="Menu" style="width: 44px; height: 44px; border: 1px solid #ddd9e4; border-radius: 8px; background: #ffffff; color: #2a2438">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</header>
+
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<button style="display: flex; justify-content: space-between; align-items: center; height: 48px; padding: 0 14px; border: 1px solid #ddd9e4; border-radius: 8px; background: #ffffff; color: #2a2438; font: inherit; font-weight: 600">Sleep and exam anxiety
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+
+<details style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 14px 16px">
+<summary style="cursor: pointer; font-weight: 600">Your question</summary>
+<p style="margin: 10px 0 0; font-weight: 600; line-height: 1.35">Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?</p>
+<p style="margin: 6px 0 0; font-size: 14px; color: #6b6579">About 60 first-years. One semester. Ethics committee meets monthly.</p>
+</details>
+
+<section style="background: #4c1d95; color: #ffffff; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 13px; color: #ddd6fe; font-weight: 600">Suggested next</div>
+<p style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">Read two more of your kept papers, then look for the gap.</p>
+<a href="Read.dc.html" style="display: flex; justify-content: center; align-items: center; height: 46px; border-radius: 8px; background: #ffffff; color: #4c1d95; font-weight: 700; text-decoration: none">Open reading list</a>
+</section>
+
+<section aria-labelledby="ph-st" style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px">
+<h2 id="ph-st" style="margin: 0; padding: 14px 16px 6px; font-size: 17px">Where this project stands</h2>
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="6">
+<a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 16px; border-top: 1px solid #ece8f2; color: #2a2438; text-decoration: none">
+<div style="flex: 1 1 0; min-width: 0">
+<div style="font-weight: 700">{{s.name}}</div>
+<div style="font-size: 13px; color: #6b6579">{{s.detail}}</div>
+</div>
+<span style="{{s.chip}}">{{s.state}}</span>
+</a>
+</sc-for>
+</section>
+
+<section style="background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 14px 16px">
+<h2 style="margin: 0 0 8px; font-size: 16px">Needs your attention</h2>
+<p style="margin: 0; font-size: 14px; color: #92400e">One kept source has no authors. Crossref has them.</p>
+</section>
+
+<button style="height: 46px; border: 1px solid #4c1d95; border-radius: 8px; background: #ffffff; color: #4c1d95; font: inherit; font-weight: 600">Export project</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const c = (bg, fg) => 'flex:none;padding:4px 10px;border-radius:999px;background:' + bg + ';color:' + fg + ';font-size:12px;font-weight:600';
+    return {
+      stages: [
+        { name: 'Idea', detail: 'Question set', state: 'Ready', chip: c('#dcfce7', '#166534') },
+        { name: 'Literature', detail: '4 kept, 1 read', state: 'In progress', chip: c('#ede9fe', '#4c1d95') },
+        { name: 'Design and ethics', detail: 'Ethics date noted', state: 'Started early', chip: c('#fef3c7', '#92400e') },
+        { name: 'Collection and analysis', detail: 'Nothing yet', state: 'Not started', chip: c('#f4f3f6', '#6b6579') },
+        { name: 'Writing', detail: '423 words', state: 'In progress', chip: c('#ede9fe', '#4c1d95') },
+        { name: 'Review', detail: 'Nothing yet', state: 'Not started', chip: c('#f4f3f6', '#6b6579') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

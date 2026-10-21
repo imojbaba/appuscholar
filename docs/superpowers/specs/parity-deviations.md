@@ -2,7 +2,7 @@
 
 One row per deliberate difference from v1: the flag id, what differs, why, who approved it and the test that pins the new behaviour. Nothing deviates without a row (spec `2026-10-17-parity-port-design.md`, §5.6). The two rules: "numbers never deviate without OJ; copy never deviates without Dr. Sharma".
 
-- **Ids.** An audit flag keeps its `F` number from §4 of `PORT-AUDIT.md`, in `appuscholar-blueprint/` (a sibling folder outside this repo): `F5`. A letter suffix (`F23a`) marks a sub-finding of an audit flag that the plan introduces. A new row is `D-W<wave>-<n>`, with `n` counting up within the wave. Faults found on a live walk are named by the walk (`W1` to `W29` for the 2026-10-20 stage 2 walk, `appuscholar-blueprint/notes/2026-10-20-stage2-live-walk.md`) and are never ids; a fix for one takes the next `D-S2-<n>`.
+- **Ids.** An audit flag keeps its `F` number from §4 of `PORT-AUDIT.md`, in `appuscholar-blueprint/` (a sibling folder outside this repo): `F5`. A letter suffix (`F23a`) marks a sub-finding of an audit flag that the plan introduces. A new row is `D-W<wave>-<n>`, with `n` counting up within the wave. Faults found on a live walk are named by the walk (`W1` to `W29` for the 2026-10-20 stage 2 walk, `appuscholar-blueprint/notes/2026-10-20-stage2-live-walk.md`) and are never ids; a fix for one takes the next `D-S2-<n>`. Wave B rows start at D-S2-38 (plan `2026-10-21-wave-b-redesign.md`); D-S2-37 is the W30 capture-year patch.
 - **Statuses.**
     - `proposed`: awaits OJ for numbers, Dr. Sharma for copy.
     - `approved`: accepted; the approver and date are in the row.
