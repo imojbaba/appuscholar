@@ -9,12 +9,12 @@ import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { toast } from "@/components/ui/toast";
 import { isImportable } from "@/lib/import/parse";
 import { allPdf, importFiles } from "@/lib/import/run";
-import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
 import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
 import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places";
+import { listOrSeed } from "@/lib/frame/firstDocument";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AiPane } from "@/components/tools/AiPane";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -33,18 +33,6 @@ import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type Pend
 const BUSY = "Another import is still running. Wait for it to finish.";
 
 type Loaded = { project: Project | null; projectId: string; documents: DocumentSummary[]; doc: DocumentWithBody | null } | { missing: true };
-
-async function listOrSeed(projectId: string, vault: VaultValue): Promise<DocumentSummary[]> {
-  const list = await apiFetch<DocumentSummary[]>(`/projects/${projectId}/documents`);
-  if (list.length) return list;
-  // A project always has a document to write in (v1 always had one); with a vault its empty body is encrypted from the start.
-  // Its title is sealed with it, under the same first key.
-  const body = await newDocumentBody(vault, "My first document");
-  // The unlock was cancelled: no document yet, and New in the document bar can make one later.
-  if (!body) return [];
-  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(body) });
-  return [made];
-}
 
 /**
  * The document as the editor may open it: plaintext (keyVersion 0) as it is (the server sanitised it); ciphertext decrypted once the vault

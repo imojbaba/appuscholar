@@ -290,6 +290,33 @@
 .list-rows li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--card); }
 .list-rows .name { flex: 1 1 200px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .list-rows .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+/* First run and the Idea place (canvas Start): the form, and the AI read beside it (under it on a narrow screen). */
+.idea-place { display: flex; flex-wrap: wrap; gap: var(--s7); align-items: flex-start; }
+.idea-place.start { max-width: 1240px; margin: 0 auto; padding: var(--s7); }
+.idea-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.idea-aside { flex: 1 1 320px; min-width: 0; max-width: 440px; display: flex; flex-direction: column; gap: var(--s4); }
+.idea-form { display: flex; flex-direction: column; gap: var(--s5); }
+.idea-h { margin: 0; font-size: 30px; line-height: 1.2; }
+.idea-hint { margin: 8px 0 0; color: var(--muted); max-width: 60ch; }
+.idea-topic .input { font-size: 17px; }
+.idea-sharpen, .idea-save-plain { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s6); }
+.idea-sharpen h2, .idea-sharpen h3 { margin: 0 0 var(--s4); font-size: 18px; }
+.idea-check, .ai-read-acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+.idea-check button, .ai-read-acts button { min-height: 44px; }
+.idea-note { margin: 0; font-size: 13px; color: var(--muted); }
+.idea-save-plain .idea-note { margin-bottom: var(--s3); }
+/* AI output: always a gold edge and a label that says what it is and what to check. */
+.ai-read { background: var(--card); border: 1px solid var(--gold); border-radius: var(--r-card); padding: var(--s6); display: flex; flex-direction: column; gap: 14px; }
+.ai-read-label { margin: 0; font-size: 13px; font-weight: 600; color: #7a5412; }
+.idea-read-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14px; }
+.idea-read-lines li { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 12px; overflow-wrap: anywhere; }
+.idea-rating { font-weight: 700; }
+.idea-rating.high { color: var(--ok-ink); }
+.idea-rating.medium { color: var(--flag-ink); }
+.idea-rating.low { color: var(--danger-ink); }
+.idea-read-verdict { margin: 0; border-top: 1px solid var(--line); padding-top: 12px; font-weight: 600; }
+.idea-read-raw { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.ai-read .field { margin: 0; }
 
 /* Up to 1099px the AI pane goes under the document. */
 @media (max-width: 1099px) {
@@ -309,6 +336,11 @@
   .place-tabs a { flex: none; }
   .place-body, .frame-work { padding: 16px 16px 0; }
   .home-interim, .start-interim, .list-interim, .frame-note { padding: 16px; }
+  .idea-place { gap: var(--s5); }
+  .idea-place.start { padding: 16px; }
+  .idea-main, .idea-aside { flex-basis: 100%; max-width: none; }
+  .idea-h { font-size: 26px; }
+  .idea-sharpen, .idea-save-plain, .ai-read { padding: 16px; }
   .doc { min-height: 460px; overflow: visible; }
   .doc > .editor { overflow: visible; }
   .card-head { padding: 10px 12px; }

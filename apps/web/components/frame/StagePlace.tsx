@@ -4,7 +4,7 @@ import { useT } from "@/lib/i18n";
 import { useApNotes } from "@/lib/analyse/notes";
 import type { StageKey } from "@/lib/tools";
 import { Button } from "@/components/ui/button";
-import { IdeaPanel } from "@/components/tools/IdeaPanel";
+import { IdeaPlace } from "@/components/places/IdeaPlace";
 import { ResearchPanel } from "@/components/tools/research/ResearchPanel";
 import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
 import { Across } from "@/components/tools/analyse/Across";
@@ -30,7 +30,7 @@ export function StagePlace({ stage, tab }: { stage: StageKey; tab: string | null
 
 function Content({ stage, tab }: { stage: StageKey; tab: string | null }) {
   const t = useT();
-  if (stage === "idea") return <IdeaPanel />;
+  if (stage === "idea") return <IdeaPlace />;
   if (stage === "lit") {
     if (tab === "reading") return <Reading />;
     if (tab === "compare") return <Compare />;
