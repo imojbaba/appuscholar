@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from "react";
-import { PD_DEFAULT, pdTransform, type ParsedData, type PdChoice, type PdFound } from "@appuscholar/core";
+import { PD_DEFAULT, pdTransform, type GenVerdict, type ParsedData, type PdChoice, type PdFound, type StatsForm, type StatsOk, type StatsTestKey } from "@appuscholar/core";
+import type { ChartSpec } from "./resultChart";
 import { looksSemicolon, NO_SKIPPED, parseSliced, scanSliced, semicolonsToTabs, skippedLines, type SliceOpts, type Skipped } from "./intake";
 
 /*
  * The Statistics lab's memory (ledger ruling R1): the pasted text, the dataset name, the parsed table, the personal-data scan and the student's
  * choices, in a module-level store keyed by project. A tab's Panel mounts again on every tab switch (StagedPlace), so what the student pasted
  * cannot live in a component; and the participants' rows are never written to a blob (v1 kept them in `window._statsData` only), so a reload
- * loses them, as v1's did. Later tabs read the table with getData(projectId) and add their own fields to LabState (`lastRun` is B2's).
+ * loses them, as v1's did. Later tabs read the table with getData(projectId) and add their own fields to LabState (`test`, `form`, `gate` and `lastRun` are B2's).
  * Nothing here touches storage, the network or the page; the components do the registering (`stats_sets`) and the downloads.
  */
 
@@ -15,6 +16,20 @@ export type LabStatus = { kind: "none" } | { kind: "empty" } | { kind: "parsed" 
 /** What "Apply" in the personal-data box did (v1 `_pdMsg`, 9498-9504): the sentence is drawn from these numbers. */
 export type PdResult = { unchanged: true } | { removed: number; coded: number; keyed: boolean };
 export type PdScanResult = { found: PdFound[]; freeText: string[] };
+
+/** What the test form holds for the table it was made for (Task B2): the picked columns by field id, and the ticked columns of each multi field, in column order. */
+export type FormState = { test: StatsTestKey; data: ParsedData; values: Record<string, string>; ticked: Record<string, number[]> };
+/** What pressing "Run test" came to (v1 statsRunNow): a refusal to say inline, a result with an undefined number (nothing to insert), or a result. `html` is sanitized; `chart` is the spec the picture is drawn from, or null. */
+export type Outcome =
+  | { kind: "toast"; text: string }
+  | { kind: "undefined"; html: string }
+  | { kind: "ok"; res: StatsOk; html: string; chart: ChartSpec | null };
+/** The plain-language explanation of the shown result: not asked, under way, here, or failed (the sentence to show). It is never part of the sentence that is inserted. */
+export type ExplainState = { status: "idle" } | { status: "busy" } | { status: "done"; text: string } | { status: "failed"; message: string };
+/** The last run: the table it ran on, the form it ran with, and what it came to. */
+export type LastRun = { data: ParsedData; test: StatsTestKey; form: StatsForm; outcome: Outcome; explain: ExplainState };
+/** Practice mode's gate (v1 genGateShow, 12580): open or not, the design chosen, the verdict shown and whether the last change was a switch. */
+export type GateState = { open: boolean; design: string; verdict: GenVerdict | null; switched: boolean };
 
 export type LabState = {
   /** The paste box. */
@@ -38,11 +53,22 @@ export type LabState = {
   registered: ParsedData | null;
   /** A big table is being read in slices (the page keeps responding; the Data tab says so). */
   busy: boolean;
-  /** B2's last result (the run record), kept so a tab switch does not lose it. */
-  lastRun?: unknown;
+  /** The data set's name when `registered` was recorded: the name a run is recorded under (v1 `_statsDsName`). */
+  regName: string;
+  /** The test chosen in the Data tab (v1 #statsTest; the first option is the default). */
+  test: StatsTestKey;
+  /** The test form's fields; null until the student touches one (the defaults are then those of lib/tools/stats/form.ts). */
+  form: FormState | null;
+  gate: GateState;
+  /** B2's last result, kept so a tab switch does not lose it. */
+  lastRun: LastRun | null;
 };
 
-const EMPTY: LabState = { text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, registered: null, busy: false };
+export const NO_GATE: GateState = { open: false, design: "", verdict: null, switched: false };
+const EMPTY: LabState = {
+  text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, registered: null, busy: false,
+  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null
+};
 
 const labs = new Map<string, LabState>();
 const listeners = new Map<string, Set<() => void>>();
@@ -88,7 +114,7 @@ const nextTicket = (projectId: string): number => { const n = (tickets.get(proje
 /** Empties the paste box, the table and what was said about it; the dataset name stays. A parse still reading is dropped. */
 export function clearLab(projectId: string): void {
   nextTicket(projectId);
-  patchLab(projectId, { text: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, busy: false });
+  patchLab(projectId, { text: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, busy: false, form: null, gate: NO_GATE, lastRun: null });
 }
 
 /**
@@ -112,7 +138,9 @@ export async function parse(projectId: string, opts: SliceOpts = {}): Promise<Pa
   const choices: Record<number, PdChoice> = {};
   for (const f of scan?.found ?? []) choices[f.index] = PD_DEFAULT[f.kind];
   patchLab(projectId, {
-    data, scan, choices, skipped: skippedLines(text, data), pdResult: null, semicolons: looksSemicolon(text, data), status: { kind: "parsed" }, busy: false
+    data, scan, choices, skipped: skippedLines(text, data), pdResult: null, semicolons: looksSemicolon(text, data), status: { kind: "parsed" }, busy: false,
+    // A new table: the form was made for the old one, and a result of the old one is no longer of this data.
+    form: null, gate: NO_GATE, lastRun: null
   });
   return data;
 }

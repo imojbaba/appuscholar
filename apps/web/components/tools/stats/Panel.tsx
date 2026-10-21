@@ -1,20 +1,24 @@
 "use client";
 import { useT } from "@/lib/i18n";
 import { useLabActions } from "@/lib/tools/stats/useLabActions";
+import { useRunActions } from "@/lib/tools/stats/useRunActions";
 import { NotBuilt } from "@/components/places/NotBuilt";
 import { DataIntake } from "./DataIntake";
 import { PdBox } from "./PdBox";
+import { RunTest } from "./RunTest";
 
-/** The Data tab (v1 statsDlg step 1 "Your data", 1529-1550): the intake, then the personal-data box. */
+/** The Data tab (v1 statsDlg: step 1 "Your data", 1529-1550, then step 2 "Choose and run a test", 1553-1604): the intake, the personal-data box, then the test and its result. */
 function DataTab({ projectId }: { projectId: string }) {
   const t = useT();
   const actions = useLabActions(projectId);
+  const run = useRunActions(projectId, actions);
   return (
     <div className="panel" data-testid="stats-lab">
       <h3>{t("stats_data_title")}</h3>
       <p className="desc">{t("stats_data_privacy")}</p>
       <DataIntake projectId={projectId} actions={actions} />
       <PdBox projectId={projectId} actions={actions} />
+      <RunTest projectId={projectId} run={run} />
     </div>
   );
 }

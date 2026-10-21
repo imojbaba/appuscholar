@@ -58,8 +58,10 @@ export function useLabActions(projectId: string) {
     // Not before the stored list is known: the hook would queue the update and replay it onto whatever the read finds, a list that does not open
     // included (R16 asks first, and mayRegister cannot know it is broken yet), and a locked vault would raise the passphrase prompt at mount.
     if (!data || registered === data || pid === null || setsLoading || setsLocked || !mayRegister()) return;
-    setsRef.current.set((prev) => rtSetRecord(data, getLab(projectId).name.trim() || UNTITLED, prev ?? {}, Date.now()));
-    patchLab(projectId, { registered: data });
+    const ds = getLab(projectId).name.trim() || UNTITLED;
+    setsRef.current.set((prev) => rtSetRecord(data, ds, prev ?? {}, Date.now()));
+    // The name is kept with the marker: a run is recorded under the name its table was registered under (v1 `_statsDsName`, set by rtRegister).
+    patchLab(projectId, { registered: data, regName: ds });
   }, [data, registered, pid, projectId, mayRegister, setsLoading, setsLocked]);
 
   /** A name that reached the lab while the tab was not open (a file's name seeds an empty box) is remembered when it opens again. */
@@ -93,6 +95,6 @@ export function useLabActions(projectId: string) {
     reader.readAsText(file);
   }, [projectId, rename, parseNow]);
 
-  return { rename, parseNow, split, apply, upload };
+  return { rename, parseNow, split, apply, upload, prefs };
 }
 export type LabActions = ReturnType<typeof useLabActions>;

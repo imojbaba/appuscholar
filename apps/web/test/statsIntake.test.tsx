@@ -28,6 +28,10 @@ const h = vi.hoisted(() => ({
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download, safeFileName: (s: string) => s }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: "p1", docOpen: false, openDocument: h.openDocument }) }));
+// Task B2 added the Run test area under the intake: it reads the document access, the AI call and the settings, which this file does not exercise.
+vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ insertBlock: async () => true }) }));
+vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => async () => "" }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useReducer, useRef, useEffect } = await import("react");
   return {
