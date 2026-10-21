@@ -2,12 +2,16 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
 import { DekExistsError, type Store } from "../store/types";
-import { CIPHERTEXT, WriteFields, WrappedDekSchema, resolveWrite } from "./docWrite";
+import { CIPHERTEXT, NoTitle, PlainTitle, SealedTitle, WriteFields, WrappedDekSchema, checkTitle, resolveWrite, titleOf } from "./docWrite";
 import type { AuthEnv } from "../auth";
 
-const Put = z.object({ ...WriteFields, title: z.string().trim().min(1).max(200).optional() });
+/** A PUT may carry the title too; a sealed one shares the body's `dek` (one deks list per document). */
+const PutFields = z.object(WriteFields);
+const Put = z.union([PutFields.extend(PlainTitle.shape), PutFields.extend(SealedTitle.shape), PutFields.extend(NoTitle.shape)]);
 const Rewrite = z.object({ bodyHtml: z.string().regex(CIPHERTEXT), keyVersion: z.number().int().min(1).max(1e6) }).strict();
-const Patch = z.object({ title: z.string().trim().min(1).max(200).optional(), kind: z.enum(["draft", "source"]).optional() }).strict().refine((b) => b.title !== undefined || b.kind !== undefined);
+const PatchFields = z.object({ kind: z.enum(["draft", "source"]).optional() });
+const Patch = z.union([PatchFields.extend(PlainTitle.shape).strict(), PatchFields.extend(SealedTitle.shape).strict(), PatchFields.extend(NoTitle.shape).strict()])
+  .refine((b) => b.title !== undefined || b.kind !== undefined);
 const ZERO_STATS = { typed: 0, ai: 0, passages: 0, kept: 0, edited: 0, unknown: 0 };
 const Move = z.object({ projectId: z.string().min(1) }).strict();
 
@@ -30,10 +34,17 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     if (!current) return c.json({ error: "not-found" }, 404);
     const w = await resolveWrite(store, userId, current.deks, body.data);
     if (!w.ok) return c.json({ error: w.error }, w.status);
-    if (body.data.title && body.data.title !== current.title) await store.renameDocument(userId, current.id, body.data.title);
+    // A sealed title's key is one of the document's deks once the body's dek is added.
+    const title = titleOf(body.data);
+    if (title) {
+      const check = checkTitle(w.addDek ? [...current.deks, w.addDek] : current.deks, title);
+      if (!check.ok) return c.json({ error: check.error }, check.status);
+    }
     if (w.addDek) {
       try { await store.addDek(userId, current.id, w.addDek); } catch (e) { if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409); throw e; }
     }
+    // The text and its key version together: the same ciphertext re-sealed under another `v`, or a plain title over a sealed one, is a rename.
+    if (title && (title.title !== current.title || title.titleKeyVersion !== current.titleKeyVersion)) await store.renameDocument(userId, current.id, title);
     if (w.bodyHtml === current.bodyHtml && w.keyVersion === current.keyVersion) {
       const rev = await store.getRevision(userId, current.id, current.currentSeq);
       return c.json({ document: await store.getDocument(userId, current.id), revision: rev, created: false });
@@ -87,9 +98,19 @@ export function documentRoutes(store: Store, maxBodyBytes: number) {
     const body = Patch.safeParse(parsed);
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const userId = c.get("userId"), id = c.req.param("id");
+    const title = titleOf(body.data);
     let d = null;
-    if (body.data.title !== undefined) d = await store.renameDocument(userId, id, body.data.title);
-    if (body.data.kind !== undefined && (body.data.title === undefined || d)) d = await store.setDocumentKind(userId, id, body.data.kind);
+    if (title) {
+      if (title.titleKeyVersion > 0) {
+        const current = await store.getDocument(userId, id);
+        if (!current) return c.json({ error: "not-found" }, 404);
+        const check = checkTitle(current.deks, title, "dek" in body.data ? body.data.dek : undefined);
+        if (!check.ok) return c.json({ error: check.error }, check.status);
+        title.dek = check.addDek;
+      }
+      try { d = await store.renameDocument(userId, id, title); } catch (e) { if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409); throw e; }
+    }
+    if (body.data.kind !== undefined && (title === undefined || d)) d = await store.setDocumentKind(userId, id, body.data.kind);
     return d ? c.json(d) : c.json({ error: "not-found" }, 404);
   });
 

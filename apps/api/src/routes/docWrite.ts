@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { originCount, sanitizeHtml, wordCount } from "@appuscholar/core";
-import type { OriginStats, WrappedDek, Store } from "../store/types";
+import type { OriginStats, TitleWrite, WrappedDek, Store } from "../store/types";
 
 const Count = z.number().int().min(0).max(1e9);
 export const OriginStatsSchema = z.object({ typed: Count, ai: Count, passages: Count, kept: Count, edited: Count, unknown: Count }).strict();
@@ -23,6 +23,28 @@ export const WriteFields = {
   originStats: OriginStatsSchema.optional(),
   dek: WrappedDekSchema.optional()
 };
+
+/**
+ * A project's or document's title. Plain is what every tab sends with the vault off, and what tabs older than wave B send on any account (no
+ * titleKeyVersion). Sealed is ciphertext under the entity's dek with that `v`, which must be known once `dek` is added (see checkTitle).
+ */
+export const PlainTitle = z.object({ title: z.string().trim().min(1).max(200), titleKeyVersion: z.literal(0).optional() });
+export const SealedTitle = z.object({ title: z.string().regex(CIPHERTEXT).max(4096), titleKeyVersion: z.number().int().min(1).max(1e6), dek: WrappedDekSchema.optional() });
+/** For a body whose title is optional: no title means no key version either, so a key version never lands without its title. */
+export const NoTitle = z.object({ title: z.undefined().optional(), titleKeyVersion: z.undefined().optional() });
+
+/** The title a parsed body carries, as the store takes it (without its dek: the caller checks and adds that). */
+export const titleOf = (b: { title?: string; titleKeyVersion?: number }): TitleWrite | undefined =>
+  b.title === undefined ? undefined : { title: b.title, titleKeyVersion: b.titleKeyVersion ?? 0 };
+
+/**
+ * The rules for a sealed title, as checkSealed's for a body: its `v` must be one of `deks` or arrive as `dek`. A plain title always passes
+ * (it is accepted from every account). `addDek` is the dek to store with it.
+ */
+export function checkTitle(deks: WrappedDek[], t: TitleWrite, dek?: WrappedDek): SealedCheck {
+  if (t.titleKeyVersion === 0) return { ok: true };
+  return checkSealed(deks, t.title, t.titleKeyVersion, dek);
+}
 
 export type WriteBody = { bodyHtml: string; keyVersion: number; wordCount?: number; originStats?: OriginStats; dek?: WrappedDek };
 export type ResolvedWrite =

@@ -1,42 +1,85 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
-import { WriteFields, resolveWrite } from "./docWrite";
-import { PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type Store } from "../store/types";
+import { NoTitle, PlainTitle, SealedTitle, WriteFields, checkTitle, resolveWrite, titleOf } from "./docWrite";
+import { DekExistsError, PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type ProjectStage, type Store, type WrappedDek } from "../store/types";
 import { foldWeekly, summariseAiLog, type DatedStats } from "./writingRecord";
 import type { AuthEnv } from "../auth";
 
-const Create = z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(PROJECT_STAGES).optional() });
-const Patch = z.object({
-  title: z.string().trim().min(1).max(200).optional(),
+const Stage = z.object({ stage: z.enum(PROJECT_STAGES).optional() });
+const Create = z.union([Stage.extend(PlainTitle.shape), Stage.extend(SealedTitle.shape)]);
+const PatchFields = z.object({
   stage: z.enum(PROJECT_STAGES).optional(),
   status: z.enum(PROJECT_STATUSES).optional(),
   contentLang: z.enum(["en", "hi"]).optional()
-}).refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
-const CreateDoc = z.object({ title: z.string().trim().min(1).max(200), kind: z.string().trim().min(1).max(40).default("draft") });
-/** A document can also be created with its first body, in the same shape as PUT /documents/:id (ciphertext needs its dek here, since the document has none yet). */
-const CreateDocBody = CreateDoc.extend({
+});
+const Patch = z.union([PatchFields.extend(PlainTitle.shape), PatchFields.extend(SealedTitle.shape), PatchFields.extend(NoTitle.shape)])
+  .refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
+const DocFields = z.object({ kind: z.string().trim().min(1).max(40).default("draft") });
+/**
+ * A document can also be created with its first body, in the same shape as PUT /documents/:id (ciphertext needs its dek here, since the document
+ * has none yet). A sealed title shares that dek: the document's deks are one list, for its title and its revisions.
+ */
+const CreateDocFields = DocFields.extend({
   ...WriteFields,
   bodyHtml: WriteFields.bodyHtml.default(""),
   // The only author a client may name is an import (a v1 backup); anything else is refused, never taken for "web". The label counts only with it.
   authorKind: z.literal("import").optional(),
   authorLabel: z.string().trim().min(1).max(100).optional()
 });
+const CreateDocBody = z.union([CreateDocFields.extend(PlainTitle.shape), CreateDocFields.extend(SealedTitle.shape)]);
+const dekOf = (b: object): WrappedDek | undefined => ("dek" in b ? (b.dek as WrappedDek | undefined) : undefined);
 
 export function projectRoutes(store: Store, maxBodyBytes: number) {
   const r = new Hono<AuthEnv>();
-  r.get("/", async (c) => c.json(await store.listProjects(c.get("userId"))));
+  /** `?include=work` adds each project's blobs (no bodies) and draft words, for the stage states; without it the list is as before wave B. */
+  r.get("/", async (c) => {
+    const userId = c.get("userId");
+    return c.json(c.req.query("include") === "work" ? await store.listProjectWork(userId) : await store.listProjects(userId));
+  });
+  /** A sealed title must bring its dek: a new project has none. */
   r.post("/", async (c) => {
     const body = Create.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    return c.json(await store.createProject(c.get("userId"), body.data.title, body.data.stage), 201);
+    const title = titleOf(body.data)!;
+    const check = checkTitle([], title, dekOf(body.data));
+    if (!check.ok) return c.json({ error: check.error }, check.status);
+    return c.json(await store.createProject(c.get("userId"), { ...title, dek: check.addDek }, body.data.stage), 201);
   });
   r.patch("/:id", async (c) => {
     const body = Patch.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
-    const p = await store.updateProject(c.get("userId"), c.req.param("id"), body.data);
-    return p ? c.json(p) : c.json({ error: "not-found" }, 404);
+    const userId = c.get("userId"), id = c.req.param("id");
+    const { stage, status, contentLang } = body.data;
+    const title = titleOf(body.data);
+    let dek: WrappedDek | undefined;
+    if (title && title.titleKeyVersion > 0) {
+      const current = await store.getProject(userId, id);
+      if (!current) return c.json({ error: "not-found" }, 404);
+      const check = checkTitle(current.deks, title, dekOf(body.data));
+      if (!check.ok) return c.json({ error: check.error }, check.status);
+      dek = check.addDek;
+    }
+    try {
+      const p = await store.updateProject(userId, id, { stage, status, contentLang, ...title, ...(dek ? { dek } : {}) });
+      return p ? c.json(p) : c.json({ error: "not-found" }, 404);
+    } catch (e) {
+      if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409);
+      throw e;
+    }
   });
+  /**
+   * Marks a stage Ready (POST) or not (DELETE), stamped with the server's clock: a device clock hours off never decides Ready or Reopened.
+   * The request has no body; one that is sent is ignored.
+   */
+  const mark = (ready: boolean) => async (c: Context<AuthEnv>) => {
+    const stage = c.req.param("stage")!;
+    if (!(PROJECT_STAGES as readonly string[]).includes(stage)) return c.json({ error: "invalid" }, 400);
+    const p = await store.markStage(c.get("userId"), c.req.param("id")!, stage as ProjectStage, ready, new Date());
+    return p ? c.json(p) : c.json({ error: "not-found" }, 404);
+  };
+  r.post("/:id/stages/:stage/ready", mark(true));
+  r.delete("/:id/stages/:stage/ready", mark(false));
   r.delete("/:id", async (c) => {
     const ok = await store.deleteProject(c.get("userId"), c.req.param("id"));
     return ok ? c.body(null, 204) : c.json({ error: "not-found" }, 404);
@@ -55,7 +98,11 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
     const userId = c.get("userId");
     const w = await resolveWrite(store, userId, [], body.data);
     if (!w.ok) return c.json({ error: w.error }, w.status);
-    const d = await store.createDocument(userId, c.req.param("id"), body.data.title, body.data.kind, { bodyHtml: w.bodyHtml, ...(body.data.authorKind === "import" ? { authorKind: "import" as const, authorLabel: body.data.authorLabel ?? "v1 backup" } : { authorKind: "web" as const, authorLabel: c.get("email") }), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats }, w.addDek ? [w.addDek] : []);
+    // The body's dek is the only one a new document can have, so a sealed title must be under it.
+    const title = titleOf(body.data)!;
+    const check = checkTitle(w.addDek ? [w.addDek] : [], title);
+    if (!check.ok) return c.json({ error: check.error }, check.status);
+    const d = await store.createDocument(userId, c.req.param("id"), title, body.data.kind, { bodyHtml: w.bodyHtml, ...(body.data.authorKind === "import" ? { authorKind: "import" as const, authorLabel: body.data.authorLabel ?? "v1 backup" } : { authorKind: "web" as const, authorLabel: c.get("email") }), wordCount: w.wordCount, keyVersion: w.keyVersion, originStats: w.originStats }, w.addDek ? [w.addDek] : []);
     return d ? c.json(d, 201) : c.json({ error: "not-found" }, 404);
   });
   /**
@@ -67,7 +114,7 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
     const list = await store.listDocuments(userId, c.req.param("id"));
     if (!list) return c.json({ error: "not-found" }, 404);
     const own = list.filter((d) => d.kind !== "source").sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    const docs: { id: string; title: string; kind: string; stats: OriginStats }[] = [];
+    const docs: { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; kind: string; stats: OriginStats }[] = [];
     const perDoc: DatedStats[][] = [];
     for (const d of own) {
       const revs = (await store.listRevisions(userId, d.id)) ?? [];
@@ -77,9 +124,9 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
       for (const r of revs) dated.push({ at: r.createdAt.getTime(), stats: await stats(r) });
       perDoc.push(dated);
       const newest = revs[0];
-      docs.push({ id: d.id, title: d.title, kind: d.kind, stats: newest ? await stats(newest) : originCount("") });
+      docs.push({ id: d.id, title: d.title, titleKeyVersion: d.titleKeyVersion, deks: d.deks, kind: d.kind, stats: newest ? await stats(newest) : originCount("") });
     }
-    const sources = list.filter((d) => d.kind === "source").map((d) => ({ title: d.title, words: d.wordCount }));
+    const sources = list.filter((d) => d.kind === "source").map((d) => ({ id: d.id, title: d.title, titleKeyVersion: d.titleKeyVersion, deks: d.deks, words: d.wordCount }));
     const weekly = foldWeekly(perDoc, Date.now());
     const user = await store.getUser(userId);
     return c.json({ docs, sources, weekly, aiLog: summariseAiLog(await store.listAiUse(userId), user?.settings.aiLogOff === true) });

@@ -423,7 +423,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       await s.putBlob(a, p.id, "shelf_paper:abc-1", { body: "[]", keyVersion: 0 });
       const list = (await s.listBlobs(a, p.id))!;
       expect(list.map((x) => x.kind)).toEqual(["idea_intake", "shelf_paper:abc-1"]);
-      expect(list[0]).toEqual({ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt });
+      expect(list[0]).toEqual({ kind: "idea_intake", keyVersion: 0, updatedAt: again.updatedAt, version: again.version });
       // Another project's kinds are its own.
       const q = await s.createProject(a, "Q");
       expect(await s.getBlob(a, q.id, "idea_intake")).toBeNull();

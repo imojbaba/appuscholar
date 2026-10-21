@@ -4,6 +4,7 @@ export type Settings = {
   lang?: "en" | "hi"; provider?: string; draftFirst?: boolean; aiFallback?: boolean; field?: string;
   contentLang?: "en" | "hi"; orcid?: string; toolTab?: string; sidebarCollapsed?: boolean;
   stageGroupsCollapsed?: string[]; fmtMore?: boolean; dockW?: number; sheetPct?: number; aiLogOff?: boolean; seenWelcome?: boolean;
+  docBeside?: boolean; docW?: number;
 };
 export type UserRecord = { id: string; email: string; locale: string; settings: Settings; activeProjectId: string | null; termsAcceptedAt: Date | null; ageConfirmed: boolean };
 export type Credential = { provider: string; encryptedKey: string; updatedAt: Date };
@@ -43,7 +44,7 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion:
  * 1 or more is ciphertext under the dek with that `v`, which the server stores and never opens.
  */
 export type ProjectBlob = { id: string; projectId: string; kind: string; body: string; keyVersion: number; deks: WrappedDek[]; updatedAt: Date; version: number };
-export type BlobSummary = { kind: string; keyVersion: number; updatedAt: Date };
+export type BlobSummary = { kind: string; keyVersion: number; updatedAt: Date; version: number };
 /** A project in the list with what it holds: every blob without its body, and the words and newest edit of its live non-source documents. */
 export type ProjectWork = ProjectSummary & { blobs: Array<{ kind: string; updatedAt: Date; version: number }>; draftWords: number; draftEditedAt: Date | null };
 /**

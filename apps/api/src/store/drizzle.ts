@@ -402,7 +402,7 @@ export class DrizzleStore implements Store {
   }
   async listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null> {
     if (!(await this.getProject(userId, projectId))) return null;
-    const rows = await this.d.select({ kind: projectBlobs.kind, keyVersion: projectBlobs.keyVersion, updatedAt: projectBlobs.updatedAt }).from(projectBlobs).where(eq(projectBlobs.projectId, projectId));
+    const rows = await this.d.select({ kind: projectBlobs.kind, keyVersion: projectBlobs.keyVersion, updatedAt: projectBlobs.updatedAt, version: projectBlobs.version }).from(projectBlobs).where(eq(projectBlobs.projectId, projectId));
     return rows.sort(byKind);
   }
   async rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {

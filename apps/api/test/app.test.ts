@@ -120,7 +120,7 @@ describe("api routes", () => {
     const rec = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; title: string; kind: string; stats: unknown }[]; sources: { title: string; words: number }[]; weekly: { weekStart: string; typed: number; ai: number }[]; aiLog: unknown };
     expect(rec.docs).toHaveLength(1);
     expect(rec.docs[0]).toMatchObject({ id: d.id, title: "Draft", kind: "draft", stats: { typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 } });
-    expect(rec.sources).toEqual([{ title: "Paper", words: 4 }]);
+    expect(rec.sources).toEqual([{ id: src.id, title: "Paper", titleKeyVersion: 0, deks: [], words: 4 }]);
     expect(rec.weekly).toHaveLength(1);
     expect(rec.weekly[0]).toMatchObject({ typed: 1, ai: 2 });
     expect(rec.weekly[0]?.weekStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -326,6 +326,15 @@ describe("api routes", () => {
     expect(await (await patch(62)).json()).toEqual({ sheetPct: 62 });
     for (const bad of [39, 86, 50.5, "50"]) expect((await patch(bad)).status, String(bad)).toBe(400);
     expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { sheetPct: 62 } });
+  });
+
+  it("settings accept docBeside and docW from 360 to 900; 359 is 400", async () => {
+    await app.request("/me", { headers: auth });
+    const patch = (body: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify(body) });
+    expect(await (await patch({ docBeside: true, docW: 360 })).json()).toEqual({ docBeside: true, docW: 360 });
+    expect(await (await patch({ docW: 900 })).json()).toEqual({ docBeside: true, docW: 900 });
+    for (const bad of [{ docW: 359 }, { docW: 901 }, { docW: 520.5 }, { docBeside: "yes" }]) expect((await patch(bad)).status, JSON.stringify(bad)).toBe(400);
+    expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { docBeside: true, docW: 900 } });
   });
 
   it("credentials accept only the blob shape and never return to another user", async () => {

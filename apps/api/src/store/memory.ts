@@ -313,7 +313,7 @@ export class MemoryStore implements Store {
   }
   async listBlobs(userId: string, projectId: string): Promise<BlobSummary[] | null> {
     if (!this.ownsProject(userId, projectId)) return null;
-    return [...this.blobs.values()].filter(b => b.projectId === projectId).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, keyVersion: b.keyVersion, updatedAt: b.updatedAt }));
+    return [...this.blobs.values()].filter(b => b.projectId === projectId).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, keyVersion: b.keyVersion, updatedAt: b.updatedAt, version: b.version }));
   }
   async rewriteBlob(userId: string, projectId: string, kind: string, w: BlobWrite): Promise<ProjectBlob | null> {
     if (!this.ownsProject(userId, projectId)) return null;
