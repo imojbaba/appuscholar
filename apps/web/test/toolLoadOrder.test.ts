@@ -62,7 +62,7 @@ describe("the tool registry's load order (Task G2)", () => {
     const registry = await import("@/lib/tools/registry");
     expect(registry.toolModule("qual").Panel).toBe(probe.Panel);
     expect([...registry.BUILT_IN].sort()).toEqual(["analyse", "chat", "cite", "idea", "psych", "research"]);
-  });
+  }, 30_000); // a cold import of every tool module can pass 5 s on a loaded machine (session A)
 
   it("no tool's own file imports the registry for more than types (it reads TOOL_TABS from @/lib/tools/tabs)", () => {
     // The check itself: a value import, a re-export and a dynamic import are caught, by alias or relative path; a type import is not.
