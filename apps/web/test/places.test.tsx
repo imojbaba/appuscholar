@@ -129,7 +129,7 @@ describe("Literature (Task 10)", () => {
 });
 
 describe("Writing and the stages not built (Task 10)", () => {
-  it("Writing has Chat and Research helpers beside the document", async () => {
+  it("Writing has Chat and Research helpers above the document", async () => {
     await mount("writing");
     const aside = tid("writing-aside")!;
     expect(aside.tagName).toBe("ASIDE");

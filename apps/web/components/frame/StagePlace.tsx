@@ -8,7 +8,7 @@ import { PlaceHeader } from "./PlaceHeader";
 
 /**
  * A place's content. Idea: the Idea panel (ruling R4, until Task 9 builds its place). Literature draws its own header, for its counted tabs
- * (Task 10). Writing: the document at full width (the shell shows it) with Chat and Research helpers beside it. Design, collection and review
+ * (Task 10). Writing: the document at full width (the shell shows it) with Chat and Research helpers above it. Design, collection and review
  * are not built yet and say so.
  */
 export function StagePlace({ stage, tab }: { stage: StageKey; tab: string | null }) {
