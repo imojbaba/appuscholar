@@ -45,10 +45,11 @@ import { PlaceHeader } from "../components/frame/PlaceHeader";
 import { ProjectProvider, useProject, type ProjectValue } from "../components/frame/ProjectContext";
 import OldPopoutPage from "../app/(app)/popout/page";
 import { CiteShare } from "../components/tools/cite/CiteShare";
+import { NotBuilt } from "../components/places/NotBuilt";
 import { citeUseLib, CITATION_INSERTED } from "../lib/cite/actions";
 import type { Library } from "../lib/cite/useLibrary";
 import { blobWritable, isPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
-import { markCursorPlaced } from "../lib/editor/insert";
+import { markCursorPlaced, putAiInDocument } from "../lib/editor/insert";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -149,6 +150,54 @@ describe("a place in its own window (register row D-S2-43)", () => {
     expect(h.api.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
   });
 
+  it("a pop-out never shows Open my document, and opening the document there changes nothing", async () => {
+    const openDocument = vi.fn();
+    const value = { project: P1, projectId: "p1", docOpen: false, openDocument } as unknown as ProjectValue;
+    const both = () => render(<ProjectProvider value={value}><PlaceHeader stage="lit" tab="compare" /><NotBuilt /></ProjectProvider>);
+    // The writing window offers it, in the place's header and on a stage not built yet.
+    at("/p/p1/lit/compare");
+    both();
+    expect(tid("place-open-doc")).not.toBeNull();
+    expect(tid("not-built-open")).not.toBeNull();
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    popoutAt("/p/p1/lit/compare?window=1");
+    both();
+    expect(tid("place-header")).not.toBeNull();
+    expect(tid("not-built")).not.toBeNull();
+    expect(tid("place-open-doc")).toBeNull();
+    expect(tid("not-built-open")).toBeNull();
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    // The shell's own openDocument does nothing there: no document beside the place, and no docBeside stored.
+    api();
+    await mountShell();
+    act(() => { ws().openDocument(); });
+    expect(ws().docOpen).toBe(false);
+    expect(tid("frame-doc")).toBeNull();
+    expect(h.api.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
+  });
+
+  it("an insert from a pop-out goes over the channel to the writing window, at once, never into an editor here", async () => {
+    popoutAt("/p/p1/idea?window=1");
+    api();
+    await mountShell();
+    const run = vi.fn();
+    let ok!: boolean;
+    await act(async () => { ok = await ws().requestInsert(run, { type: "insert", text: " (Bandura, 1977)" }); });
+    expect(ok).toBe(true);
+    expect(run).not.toHaveBeenCalled();
+    // "Put in my document" (putAiInDocument) the same way: the AI text as it is, for the writing window to mark.
+    await act(async () => { ok = await putAiInDocument(ws().requestInsert, "A read of the idea."); });
+    expect(ok).toBe(true);
+    expect(ch.sent).toEqual([{ type: "insert", text: " (Bandura, 1977)" }, { type: "insert", ai: "A read of the idea." }]);
+    expect(toasts()).toEqual([E.pop_sent, E.pop_sent]);
+    // Nothing to send: nothing goes in, and the student is told.
+    await act(async () => { ok = await ws().requestInsert(run); });
+    expect(ok).toBe(false);
+    expect(ch.sent).toHaveLength(2);
+    expect(toasts()).toEqual([E.pop_sent, E.pop_sent, E.insert_doc_closed]);
+    expect(ws().docOpen).toBe(false);
+  });
+
   it("the window shows the place under a slim header: the project and the place, and Close; no project switcher or account menu", async () => {
     popoutAt("/p/p1/lit/citations?window=1");
     api();
@@ -245,10 +294,9 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   function Inner() { box.t = useInsertTarget(); return null; }
   const Probe = () => inShell(<Inner />);
 
-  it("in the pop-out every insert is ready (no editor here) and goes over appu_sync, with pop_sent", async () => {
+  it("in the pop-out every insert goes over appu_sync (no editor here), with pop_sent", async () => {
     popoutAt();
     render(<Probe />);
-    expect(box.t!.ready).toBe(true);
     await expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).resolves.toBe(true);
     await expect(box.t!.text("“A quote.” ")).resolves.toBe(true);
     await expect(box.t!.block("<p>References</p>")).resolves.toBe(true);
@@ -284,7 +332,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   it("Insert reference list is enabled in the pop-out and sends the list as one HTML block", async () => {
     popoutAt();
     const lib = { lib: [BANDURA], style: "apa", ready: true, update: () => true } as unknown as Library;
-    render(inShell(<CiteShare library={lib} insertReady={true} />));
+    render(inShell(<CiteShare library={lib} />));
     const btn = tid("cite-insertbib") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
     act(() => { btn.click(); });
@@ -298,8 +346,6 @@ describe("inserts: the pop-out sends them to the writing window", () => {
 
   it("in the writing window the inserts go through the shell's requestInsert into the editor: nothing is posted, and false when the document did not open", async () => {
     render(<Probe />);
-    // Always ready: an insert opens a closed document (Task 11).
-    expect(box.t!.ready).toBe(true);
     await expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).resolves.toBe(false);
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Learning is social.</p>" });
     editors.push(ed);
@@ -336,6 +382,16 @@ describe("the writing window's receiver (v1 popChan.onmessage 7604-7611)", () =>
     act(() => { ch.deliver({ type: "insert", text: " [3]" }); });
     await settle();
     expect(ed.getHTML()).toBe("<p>Learning is social.<br> [3]</p>");
+  });
+
+  it("AI text from a pop-out's Put in my document goes in at the end, marked as AI text", async () => {
+    const ed = new Editor({ extensions: editorExtensions, content: "<p>Body.</p>" });
+    editors.push(ed);
+    render(<Receiver editor={ed} />);
+    act(() => { ch.deliver({ type: "insert", ai: "A <read>." }); });
+    await settle();
+    expect(ed.getHTML()).toMatch(/^<p>Body\.<\/p><p><span class="ai-ins" data-h="[^"]+">A &lt;read&gt;\.<\/span><\/p>$/);
+    expect(toasts()).toEqual([E.idea_inserted]);
   });
 
   it("an HTML block (the reference list) goes in as markup", async () => {

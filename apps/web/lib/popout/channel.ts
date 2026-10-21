@@ -6,8 +6,11 @@
 /** v1's channel name. */
 export const SYNC_CHANNEL = "appu_sync";
 
-/** v1's insert (7483: `{type:'insert',text}`), and, new here, the markup the reference list and a translated quote insert (register row D-S2-17). */
-export type InsertMessage = { type: "insert"; text: string } | { type: "insert"; html: string };
+/**
+ * v1's insert (7483: `{type:'insert',text}`), and, new here, the markup the reference list and a translated quote insert (register row D-S2-17),
+ * and AI text put in the document from a place's own window ("Put in my document", putAiInDocument), which goes in marked as AI text.
+ */
+export type InsertMessage = { type: "insert"; text: string } | { type: "insert"; html: string } | { type: "insert"; ai: string };
 /**
  * v1's storage listener (7614-7616) re-renders the Citation Manager when `appu_citations` or `appu_retraction_cache` changes in another window.
  * Blobs live on the server, so a window that saved one of those two says so here, and the other windows read it again.

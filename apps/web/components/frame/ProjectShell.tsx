@@ -18,7 +18,7 @@ import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places"
 import { listOrSeed } from "@/lib/frame/firstDocument";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider } from "@/lib/ai/suggestion";
-import { useSyncReceiver } from "@/lib/popout/sync";
+import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sync";
 import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import { CaptureHash } from "@/lib/cite/capture";
@@ -385,11 +385,15 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const place = inProject ? placeOf(pathname) : null;
   const writing = place?.stage === "writing";
   const writingRef = useRef(writing);
-  useEffect(() => { writingRef.current = writing; }, [writing]);
+  const placeRef = useRef(place);
+  useEffect(() => { writingRef.current = writing; placeRef.current = place; }, [writing, place]);
 
-  /** Opens or closes the document beside the place, and remembers it (docBeside). The Writing place always shows it and changes nothing. */
+  /**
+   * Opens or closes the document beside the place, and remembers it (docBeside). The Writing place always shows it and changes nothing; a place's
+   * own window has no document and changes nothing either.
+   */
   const setBeside = useCallback((open: boolean) => {
-    if (writingRef.current || docOpenRef.current === open) return;
+    if (writingRef.current || docOpenRef.current === open || isPopout()) return;
     docOpenRef.current = open;
     setDocOpenHere(open);
     void updateRef.current({ docBeside: open });
@@ -423,8 +427,22 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     editorWaiters.current.add(done);
   }), []);
 
-  const requestInsert = useCallback(async (run: (editor: Editor) => void): Promise<boolean> => {
+  /**
+   * Puts something into the open document. A closed document opens beside the place first, a locked one asks for the passphrase once, and the
+   * editor is waited for (INSERT_WAIT_MS); when the document does not open, or another document is open by then, nothing goes in, the student is
+   * told, and the answer is false. The project's home shows no document, so nothing goes in there either. In a place's own window the insert is
+   * posted to the writing window as `message` (postInsert), never waiting for an editor here; without a message it has nothing to send.
+   */
+  const requestInsert = useCallback(async (run: (editor: Editor) => void, message?: InsertMessage): Promise<boolean> => {
+    if (isPopout()) {
+      if (!message) { toast(t("insert_doc_closed")); return false; }
+      postInsert(message, t);
+      return true;
+    }
+    if (!placeRef.current) { toast(t("insert_doc_closed")); return false; }
     openDocument();
+    // The document the insert was asked for: one switched to while it waited (A locked, then B chosen) does not take it.
+    const askedFor = currentDocRef.current?.id ?? null;
     let ed = liveOf(editorRef.current);
     if (!ed) {
       const doc = currentDocRef.current;
@@ -433,7 +451,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       // A locked document asks for the passphrase once; the vault opening re-reads it, and its editor registers.
       if (!none && (doc?.unreadable !== "locked" || (await vaultRef.current.ensureUnlocked()))) ed = await waitForEditor();
     }
-    if (!ed) { toast(t("insert_doc_closed")); return false; }
+    if (!ed || (askedFor !== null && currentDocRef.current?.id !== askedFor)) { toast(t("insert_doc_closed")); return false; }
     run(ed);
     return true;
   }, [openDocument, waitForEditor, t]);

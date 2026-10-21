@@ -12,7 +12,7 @@ import { toast } from "@/components/ui/toast";
  * The library's last buttons, in v1's order (940-946): "Insert reference list" (citInsertBib), "📖 Load classic psychology sources" (psychLoadStarters),
  * "⬆ Export library" / "⬇ Import library" (citExport, citImport, with the hidden file input), and the class-sharing note.
  */
-export function CiteShare({ library, insertReady }: { library: Library; insertReady: boolean }) {
+export function CiteShare({ library }: { library: Library }) {
   const t = useT();
   const target = useInsertTarget();
   const file = useRef<HTMLInputElement>(null);
@@ -24,7 +24,7 @@ export function CiteShare({ library, insertReady }: { library: Library; insertRe
   };
   return (
     <div className="stack cite-share">
-      <Button variant="gold" className="w-full" data-testid="cite-insertbib" disabled={!insertReady} onClick={insertBib}>{t("cite_insertbib_btn")}</Button>
+      <Button variant="gold" className="w-full" data-testid="cite-insertbib" onClick={insertBib}>{t("cite_insertbib_btn")}</Button>
       <Button variant="ghost" className="w-full" data-testid="cite-loadclassics" disabled={!library.ready} onClick={() => citeLoadClassics({ lib, update, toast })}>{t("cite_loadclassics_btn")}</Button>
       <div className="cite-row">
         <Button variant="ghost" className="flex-1" data-testid="cite-export" onClick={() => citeExport({ lib, download: downloadBlob, toast })}>{t("cite_export_btn")}</Button>

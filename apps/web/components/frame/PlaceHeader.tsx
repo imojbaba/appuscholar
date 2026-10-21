@@ -15,13 +15,14 @@ import { useProject } from "./ProjectContext";
 /**
  * The top of a place (canvas Find): "{project title} / {stage name}", the title linking home; the place's tabs, each a link; and the question as
  * a strip, closed by default, that opens to the topic with Edit (to the Idea place); "Open in a new window" (NewWindow); and "Open my document"
- * (Task 11) while the document is not beside the place (Writing always shows it). The feasibility verdict (the stored read, Task 9) joins it
+ * (Task 11) while the document is not beside the place (Writing always shows it; a place's own window never has one). The feasibility verdict (the stored read, Task 9) joins it
  * later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
  */
 export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: string | null; tabs?: ReactNode }) {
   const t = useT();
   const { me } = useSettings();
   const { project, projectId, docOpen, openDocument } = useProject();
+  const popout = usePopout();
   const title = useTitle(project, "project");
   const id = projectId ?? "";
   const name = project ? title.text : projectId === me?.scratchProjectId ? t("scratch_name") : "";
@@ -34,7 +35,8 @@ export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: s
           <span aria-hidden="true">/</span>
           <span className="here" aria-current={tabs.length ? undefined : true} data-testid="place-name">{t("stage_name_" + stage)}</span>
         </nav>
-        {stage !== "writing" && !docOpen && (
+        {/* A place's own window has no document to open. */}
+        {stage !== "writing" && !docOpen && !popout && (
           <Button variant="ghost" size="sm" className="place-open-doc" data-testid="place-open-doc" onClick={openDocument}><FileText aria-hidden="true" />{t("place_open_doc")}</Button>
         )}
       </div>

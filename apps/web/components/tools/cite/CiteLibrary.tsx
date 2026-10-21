@@ -21,7 +21,7 @@ import { CiteShare } from "./CiteShare";
  * place (citFmt(d, i+1) in the chosen style), or "No sources yet.". A card: ✕, the surname and year in bold, the formatted reference, then the usage
  * line, the retraction warning and the Crossref line, and "Insert <in-text>". The card the caret chip points at is lit (citMarkActive 7697-7702).
  */
-export function CiteLibrary({ library, deps, insertReady }: { library: Library; deps: () => CiteDeps; insertReady: boolean }) {
+export function CiteLibrary({ library, deps }: { library: Library; deps: () => CiteDeps }) {
   const t = useT();
   const { lib, style } = library;
   // W8: while the saved library is read and opened there is neither a count nor "No sources yet." (a locked vault says so in its own sentence).
@@ -60,13 +60,13 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
             <div data-cite-slot="cite-retr"><RetrWarn status={checks.retraction.status[i] ?? null} /></div>
             <div data-cite-slot="cite-rc"><RcLine c={checks.rc[citKey(d)]} onFill={checks.rcReadOnly ? undefined : () => checks.fillFromCrossref(d)} /></div>
             <div className="cite-row cite-card-row">
-              <Button variant="ghost" size="sm" data-testid="cite-use" disabled={!insertReady} onClick={() => void citeUseLib(i, deps())}>{insertLabel(f)}</Button>
+              <Button variant="ghost" size="sm" data-testid="cite-use" onClick={() => void citeUseLib(i, deps())}>{insertLabel(f)}</Button>
             </div>
           </div>
         ))}
       </div>
       {/* v1 940-946: "Insert reference list", "📖 Load classic psychology sources", "⬆ Export library" / "⬇ Import library", the class-sharing note. */}
-      <CiteShare library={library} insertReady={insertReady} />
+      <CiteShare library={library} />
     </>
   );
 }

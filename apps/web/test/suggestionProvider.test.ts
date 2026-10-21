@@ -149,20 +149,21 @@ describe("SuggestionProvider", () => {
     ed.destroy();
   });
 
-  it("a request, its answer, its feedback and an error open the document beside the place; Dismiss and Accept leave it as it is (Task 11)", () => {
+  it("an answer, its feedback and an error open the document beside the place; a request alone, Dismiss and Accept leave it as it is (Task 11)", () => {
     const ed = make("<p>mine</p>");
     act(() => api.setEditor(ed));
     expect(ws.openDocument).not.toHaveBeenCalled();
     let token = 0;
     act(() => { token = api.setThinking("thinking", null); });
-    expect(ws.openDocument).toHaveBeenCalledTimes(1);
+    expect(ws.openDocument).not.toHaveBeenCalled();
     act(() => api.set("more", null, token));
-    expect(ws.openDocument).toHaveBeenCalledTimes(2);
+    expect(ws.openDocument).toHaveBeenCalledTimes(1);
     act(() => { token = api.setThinking("reading"); });
+    expect(ws.openDocument).toHaveBeenCalledTimes(1);
     act(() => api.setFeedback("questions", token));
-    expect(ws.openDocument).toHaveBeenCalledTimes(4);
+    expect(ws.openDocument).toHaveBeenCalledTimes(2);
     act(() => api.clear("Network error"));
-    expect(ws.openDocument).toHaveBeenCalledTimes(5);
+    expect(ws.openDocument).toHaveBeenCalledTimes(3);
     act(() => api.clear());
     act(() => { token = api.setThinking("thinking", null); });
     act(() => api.set("more", null, token));

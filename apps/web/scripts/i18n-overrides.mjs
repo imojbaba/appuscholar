@@ -328,7 +328,6 @@ export const V2_STRINGS = {
   idea_read_label: { en: "AI read of your idea. Check it against your own judgement.", hi: "आपके विचार पर AI की राय। इसे अपने विवेक से जाँचें।" },
   idea_insert_btn: { en: "Put in my document", hi: "मेरे दस्तावेज़ में डालें" },
   idea_inserted: { en: "Inserted in your document.", hi: "आपके दस्तावेज़ में डाल दिया गया।" },
-  idea_insert_none: { en: "Your document is not open, so nothing was inserted.", hi: "आपका दस्तावेज़ खुला नहीं है, इसलिए कुछ नहीं डाला गया।" },
   idea_again_btn: { en: "Check again", hi: "फिर से जाँचें" },
   idea_save_title: { en: "Project name", hi: "प्रोजेक्ट का नाम" },
   idea_save_btn: { en: "Save as my project", hi: "मेरे प्रोजेक्ट के रूप में सहेजें" },

@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/core";
 import type { ProviderId } from "@appuscholar/core";
 import type { Place } from "@/lib/frame/places";
 import type { WrappedDek } from "@/lib/vault/useVault";
+import type { InsertMessage } from "@/lib/popout/channel";
 
 /**
  * Wire shapes of the API (dates arrive as ISO strings). `title` is ciphertext when `titleKeyVersion` is 1 or more: it is shown through
@@ -46,7 +47,7 @@ export type ProjectValue = {
    * the editor stays mounted out of sight, so nothing typed is lost and an insert still has somewhere to go.
    */
   docOpen: boolean;
-  /** Opens the document beside the place the student is in; the place stays as it is. */
+  /** Opens the document beside the place the student is in; the place stays as it is. Does nothing in a place's own window (no document there). */
   openDocument(): void;
   /**
    * Closes the document beside the place: its text is stored first (flushOpen); when that save fails the student is asked "Close anyway?".
@@ -57,9 +58,10 @@ export type ProjectValue = {
    * Puts something in the open document: `run` gets its editor once. The document opens beside the place first when it is closed. With no editor
    * yet (the document is locked, or still loading), the passphrase is asked once if the document is locked, then the editor is waited for, at
    * most 10 seconds after the unlock. A cancelled unlock, a document that does not open, or the wait running out inserts nothing, says so
-   * (`insert_doc_closed`) and answers false.
+   * (`insert_doc_closed`) and answers false; so does another document opened meanwhile, and the project's home (no document is shown there).
+   * In a place's own window `message` is posted to the writing window (postInsert) instead, at once; with no message nothing goes in.
    */
-  requestInsert(run: (editor: Editor) => void): Promise<boolean>;
+  requestInsert(run: (editor: Editor) => void, message?: InsertMessage): Promise<boolean>;
   /** The open document's editor registers itself here (null on unmount), for requestInsert. */
   registerEditor(editor: Editor | null): void;
   project: Project | null;

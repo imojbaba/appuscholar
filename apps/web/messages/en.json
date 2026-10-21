@@ -460,7 +460,6 @@
   "idea_h": "What do you want to study?",
   "idea_hint": "Write it roughly, in your own words. We will sharpen it together into a question you can actually answer.",
   "idea_insert_btn": "Put in my document",
-  "idea_insert_none": "Your document is not open, so nothing was inserted.",
   "idea_inserted": "Inserted in your document.",
   "idea_panel_desc": "Before you commit to a topic, talk it through here. Describe what you want to study and what you actually have available — the advisor below judges whether it's realistic, not just whether it's interesting.",
   "idea_panel_note": "This gives an honest outside read on your idea, not approval — the AI can be wrong, and a real supervisor's judgment still matters most. Once the plan feels solid, head to the Research tab next to find a research gap and ground it in real literature.",

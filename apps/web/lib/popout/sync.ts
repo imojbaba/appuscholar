@@ -5,7 +5,7 @@ import { sanitizeHtml, type Formatted } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useProject, type ProjectValue } from "@/components/frame/ProjectContext";
 import { CITATION_INSERTED } from "@/lib/cite/actions";
-import { insertCitation, insertHtmlBlock, insertTextAtCursor } from "@/lib/editor/insert";
+import { insertAiText, insertCitation, insertHtmlBlock, insertTextAtCursor } from "@/lib/editor/insert";
 import type { StageKey } from "@/lib/tools";
 import { toast } from "@/components/ui/toast";
 import { onSyncMessage, syncChannel, type InsertMessage } from "./channel";
@@ -44,8 +44,6 @@ export function postInsert(m: InsertMessage, t: (key: string) => string): void {
 
 /** Where a panel's inserts go: the open document's editor in the writing window, the writing window itself from a pop-out. */
 export type InsertTarget = {
-  /** Something can receive an insert: always, now that an insert opens a closed document (Task 11), and in a pop-out (v1 never disables these buttons there). */
-  ready: boolean;
   /** citPutIntext's insert (7500-7502): false when nothing went in (the document did not open). */
   citation(f: Formatted): Promise<boolean>;
   /** citInsertAtCursor (7481): text the student wrote, escaped by the receiver. */
@@ -66,10 +64,9 @@ export function useInsertTarget(): InsertTarget {
   const { requestInsert } = useProject();
   if (isPopout()) {
     const send = (m: InsertMessage) => { postInsert(m, t); return Promise.resolve(true); };
-    return { ready: true, citation: (f) => send({ type: "insert", text: " " + f.intext }), text: (s) => send({ type: "insert", text: s }), block: (html) => send({ type: "insert", html }) };
+    return { citation: (f) => send({ type: "insert", text: " " + f.intext }), text: (s) => send({ type: "insert", text: s }), block: (html) => send({ type: "insert", html }) };
   }
   return {
-    ready: true,
     citation: (f) => requestInsert((e) => insertCitation(e, f)),
     text: (s) => requestInsert((e) => insertTextAtCursor(e, s)),
     block: (html) => requestInsert((e) => insertHtmlBlock(e, html))
@@ -79,24 +76,29 @@ export function useInsertTarget(): InsertTarget {
 /**
  * The writing window's receiver (v1 7604-7611, mounted once by the project shell): `{type:'insert',text}` goes in at the cursor by v1's
  * insertIntoEditor rule (`hasSelection()||!!savedRange`: at the placed cursor, else at the end on a new line; insertTextAtCursor), markup by
- * insertHTMLBlockIntoEditor's (insertHtmlBlock, sanitised first), then "Citation inserted ✓" (v1 7609, a literal). Both go through the shell's
- * requestInsert (Task 11), so a document closed in this window opens to take them; when it does not open, requestInsert says so and there is
- * no "inserted". A pop-out does not receive.
+ * insertHTMLBlockIntoEditor's (insertHtmlBlock, sanitised first), then "Citation inserted ✓" (v1 7609, a literal); AI text as putAiInDocument
+ * puts it, then idea_inserted. All go through the shell's requestInsert (Task 11), so a document closed in this window opens to take them; when
+ * it does not open, requestInsert says so and there is no "inserted". A pop-out does not receive.
  */
 export function useSyncReceiver(requestInsert: ProjectValue["requestInsert"]): void {
-  const ref = useRef(requestInsert);
-  useEffect(() => { ref.current = requestInsert; }, [requestInsert]);
+  const t = useT();
+  const ref = useRef({ requestInsert, t });
+  useEffect(() => { ref.current = { requestInsert, t }; }, [requestInsert, t]);
   useEffect(() => {
     if (isPopout()) return;
     return onSyncMessage((data) => {
-      const m = (data ?? {}) as { type?: unknown; text?: unknown; html?: unknown };
+      const m = (data ?? {}) as { type?: unknown; text?: unknown; html?: unknown; ai?: unknown };
       if (m.type !== "insert") return;
-      const { text, html } = m;
+      const { text, html, ai } = m;
       let run: (e: Editor) => void;
+      let done = CITATION_INSERTED;
       if (typeof text === "string") run = (e) => insertTextAtCursor(e, text);
       else if (typeof html === "string") run = (e) => insertHtmlBlock(e, sanitizeHtml(html));
+      // AI text, as putAiInDocument puts it in this window: at the end, marked as AI text (insertAiText escapes it).
+      // It is not a citation, so it says what "Put in my document" says in this window.
+      else if (typeof ai === "string") { run = (e) => insertAiText(e, ai, false); done = ref.current.t("idea_inserted"); }
       else return;
-      void ref.current(run).then((ok) => { if (ok) toast(CITATION_INSERTED); });
+      void ref.current.requestInsert(run).then((ok) => { if (ok) toast(done); });
     });
   }, []);
 }

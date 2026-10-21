@@ -89,18 +89,23 @@ function plainApi() {
   });
 }
 
-/** A complete vault and one sealed document in the scratch space; `reread` answers the document's second and later reads (the one after an unlock). */
-async function vaultApi(reread?: () => Promise<unknown>) {
+/**
+ * A complete vault and one sealed document in the scratch space; `reread` answers the document's second and later reads (the one after an unlock).
+ * With `withB`, a second, plaintext document B sits beside it.
+ */
+async function vaultApi(reread?: () => Promise<unknown>, withB = false) {
   const vk = await generateVaultKey();
   const kp = await generateKeypair();
   const record = { passWrapped: await wrapWithPassphrase(vk, PASS), recoveryWrapped: await wrapWithRecovery(vk, "AAAAA-BBBBB-CCCCC-DDDDD"), checkWrapped: await sealVaultCheck(vk), publicKey: kp.publicKeyB64, privateKeyWrapped: await wrapPrivateKey(kp.privateKey, vk), complete: true, updatedAt: new Date().toISOString() };
   const dek = await generateDek();
   const doc = { id: "A", projectId: "s1", title: "A", titleKeyVersion: 0, kind: "draft", currentSeq: 1, wordCount: 1, createdAt: "2026-10-16T00:00:01Z", updatedAt: "2026-10-16T00:00:00Z", keyVersion: 1, deks: [{ v: 1, wrapped: await wrapKey(dek, vk) }], bodyHtml: await encryptText("<p>Mine.</p>", dek) };
+  const b = { ...plainDoc("B"), projectId: "s1", createdAt: "2026-10-16T00:00:02Z" };
   let reads = 0;
   h.api.mockImplementation((path: string) => {
     if (path === "/me/vault") return Promise.resolve({ ...record });
     if (path === "/projects") return Promise.resolve([]);
-    if (path === "/projects/s1/documents") return Promise.resolve([doc]);
+    if (path === "/projects/s1/documents") return Promise.resolve(withB ? [doc, b] : [doc]);
+    if (path === "/documents/B" && withB) return Promise.resolve({ ...b });
     if (path === "/documents/A") return ++reads > 1 && reread ? reread() : Promise.resolve({ ...doc });
     return Promise.reject(new ApiError(404, "not-found"));
   });
@@ -218,6 +223,46 @@ describe("the document beside any stage", () => {
     expect(toasts()).toEqual([E.insert_doc_closed]);
   }, 40_000);
 
+  it("an insert waiting for locked document A never lands in document B, opened meanwhile", async () => {
+    h.path = "/p/s1/lit/compare";
+    h.me = { ...h.me, activeProjectId: null };
+    await vaultApi(undefined, true);
+    h.ask.mockResolvedValueOnce(null);
+    await mount("s1");
+    await until(() => shown() === "A:locked");
+    // The passphrase prompt for the insert stays open while the student opens B.
+    let typed!: (p: string | null) => void;
+    h.ask.mockImplementationOnce(() => new Promise<string | null>((r) => { typed = r; }));
+    const run = vi.fn();
+    let done: boolean | null = null;
+    act(() => { void ws().requestInsert(run).then((v) => { done = v; }); });
+    await until(() => h.ask.mock.calls.length === 2);
+    await act(async () => { await ws().selectDoc("B"); });
+    await until(() => shown() === "B:open" && !!h.editor);
+    await act(async () => { typed(PASS); });
+    await until(() => done !== null);
+    expect(done).toBe(false);
+    expect(run).not.toHaveBeenCalled();
+    expect(editor().getHTML()).toBe("<p>Mine.</p>");
+    expect(toasts()).toEqual([E.insert_doc_closed]);
+  }, 30_000);
+
+  it("on the project's home, which shows no document, an insert puts nothing in and says so", async () => {
+    plainApi();
+    h.path = "/p/p1";
+    await mount("p1");
+    await until(() => !!h.editor);
+    const run = vi.fn();
+    let ok!: boolean;
+    await act(async () => { ok = await ws().requestInsert(run); });
+    expect(ok).toBe(false);
+    expect(run).not.toHaveBeenCalled();
+    expect(editor().getHTML()).toBe("<p>Mine.</p>");
+    expect(toasts()).toEqual([E.insert_doc_closed]);
+    expect(ws().docOpen).toBe(false);
+    expect(h.update).not.toHaveBeenCalledWith({ docBeside: true });
+  });
+
   it("closing the document saves first; a failed save asks Close anyway?", async () => {
     plainApi();
     h.settings = { seenWelcome: true, docBeside: true };
@@ -281,6 +326,8 @@ describe("the document beside any stage", () => {
     expect(ws().docOpen).toBe(false);
     let token = 0;
     act(() => { token = sug().setThinking("custom", null, "Thinking this through"); });
+    // A request alone does not open it: the answer (or an error) does.
+    expect(ws().docOpen).toBe(false);
     act(() => { sug().set("The read.", null, token); });
     expect(sug().sug).toBe("The read.");
     // The suggestion shows in the AI pane beside the document, which opens beside the place: nothing navigates.

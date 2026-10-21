@@ -41,9 +41,9 @@ export type SuggestionValue = {
 const Ctx = createContext<SuggestionValue | null>(null);
 
 /**
- * The suggestion pane's state (the AI pane in DocAside, beside the document). A request, its answer, its feedback or its error opens the
- * document beside the place the student is in (openDocument), so the pane can be seen; the place itself never changes (Task 11, which removed
- * the dock and its dockShow).
+ * The suggestion pane's state (the AI pane in DocAside, beside the document). An answer, its feedback or its error opens the document beside
+ * the place the student is in (openDocument), so the pane can be seen; a request alone does not (a cancelled or superseded one would open it
+ * for nothing). The place itself never changes (Task 11, which removed the dock and its dockShow).
  */
 export function SuggestionProvider({ children }: { children: React.ReactNode }) {
   const t = useT();
@@ -75,9 +75,8 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   const setThinking = useCallback((s: SuggestionStatus, range: SelectionRange | null = null, label?: string) => {
     live.current.sug = null; live.current.range = range;
     setSug(null); setText(null); setNote(null); setStatus(s); setStatusLabel(label ?? null); setSelectionAtRequest(range !== null);
-    openDocument();
     return ++live.current.token;
-  }, [openDocument]);
+  }, []);
   const clear = useCallback((msg?: string) => {
     live.current.sug = null; live.current.range = null;
     live.current.token++; // an answer still on its way is no longer wanted

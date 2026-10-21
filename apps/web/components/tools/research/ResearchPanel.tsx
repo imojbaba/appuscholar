@@ -55,7 +55,6 @@ export function ResearchPanel() {
   const suggestion = useSuggestion();
   // The open document's editor, or the writing window when this is a pop-out.
   const target = useInsertTarget();
-  const insertReady = target.ready;
   // "📚 Reading shelf (your own PDFs)" opens the shelf (shOpen 11601).
   const [shelfOpen, setShelfOpen] = useState(false);
 
@@ -119,7 +118,7 @@ export function ResearchPanel() {
     return { open };
   });
   const cards = results.map((p, i) => (
-    <ResultCard key={s.original.indexOf(p)} p={p} i={i} ticked={s.ticked.has(p)} open={s.open.has(p)} insertReady={insertReady}
+    <ResultCard key={s.original.indexOf(p)} p={p} i={i} ticked={s.ticked.has(p)} open={s.open.has(p)}
       onTick={(on) => onTick(p, on)} onToggleAbstract={() => toggleAbstract(p)} actions={actionsFor(p)} />
   ));
 

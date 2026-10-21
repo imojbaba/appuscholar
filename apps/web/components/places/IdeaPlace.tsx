@@ -7,8 +7,7 @@ import { checkIdea } from "@/lib/ai/actions";
 import { isProvider } from "@/lib/ai/keys";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { useKeys } from "@/lib/ai/useKeys";
-import { useSuggestion } from "@/lib/ai/suggestion";
-import { insertAiText } from "@/lib/editor/insert";
+import { putAiInDocument } from "@/lib/editor/insert";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import type { IdeaIntake } from "@/lib/blobs/kinds";
 import { parseIdeaRead } from "@/lib/frame/ideaRead";
@@ -133,8 +132,7 @@ export function IdeaReadPanel({ read, children }: { read: IdeaReadValue; childre
  */
 export function IdeaPlace() {
   const t = useT();
-  const { projectId } = useProject();
-  const { editor } = useSuggestion();
+  const { projectId, requestInsert } = useProject();
   const { busy, check } = useIdeaCheck();
   const { value, loading, locked, broken, set } = useProjectBlob("idea_intake", projectId);
   const intake = value ?? EMPTY_INTAKE;
@@ -148,12 +146,10 @@ export function IdeaPlace() {
     const read = await check(intake);
     if (read) set((prev) => ({ ...(prev ?? intake), read }));
   };
-  const insert = () => {
+  const insert = async () => {
     if (!value?.read) return;
-    // Task 11's requestInsert opens a closed document first; until then the editor mounted beside every place takes it.
-    if (!editor || editor.isDestroyed) { toast(t("idea_insert_none")); return; }
-    insertAiText(editor, value.read.text, false, null);
-    toast(t("idea_inserted"));
+    // A closed document opens beside the place first (a locked one asks once); when it does not open, requestInsert has said why.
+    if (await putAiInDocument(requestInsert, value.read.text)) toast(t("idea_inserted"));
   };
   return (
     <div className="idea-place" data-testid="panel-idea">
@@ -166,7 +162,7 @@ export function IdeaPlace() {
         <aside className="idea-aside">
           <IdeaReadPanel read={value.read}>
             <div className="ai-read-acts">
-              <Button variant="primary" data-testid="idea-insert" onClick={insert}>{t("idea_insert_btn")}</Button>
+              <Button variant="primary" data-testid="idea-insert" onClick={() => void insert()}>{t("idea_insert_btn")}</Button>
               <Button variant="ghost" data-testid="idea-again" disabled={busy} onClick={() => void run()}>{t("idea_again_btn")}</Button>
             </div>
           </IdeaReadPanel>

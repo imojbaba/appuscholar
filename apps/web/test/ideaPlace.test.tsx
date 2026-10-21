@@ -17,7 +17,7 @@ const h = vi.hoisted(() => ({
   openSettings: vi.fn(), toast: vi.fn(), api: vi.fn(), ask: vi.fn(),
   callAI: vi.fn(),
   hasKey: true,
-  insert: vi.fn(),
+  put: vi.fn(), requestInsert: vi.fn(),
   sug: {} as Record<string, unknown>
 }));
 vi.mock("@/lib/blobs/useProjectBlob", async (orig) => {
@@ -29,9 +29,9 @@ vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => h.hasKey }) }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => h.sug }));
-vi.mock("@/lib/editor/insert", () => ({ insertAiText: h.insert }));
+vi.mock("@/lib/editor/insert", () => ({ putAiInDocument: h.put }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "  nursing " } }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: h.projectId, openSettings: h.openSettings }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: h.projectId, openSettings: h.openSettings, requestInsert: h.requestInsert }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
@@ -89,7 +89,7 @@ beforeEach(() => {
   h.blobArgs = [];
   h.projectId = "p-9";
   h.hasKey = true;
-  h.openSettings.mockReset(); h.toast.mockReset(); h.insert.mockReset(); h.api.mockReset(); h.ask.mockReset();
+  h.openSettings.mockReset(); h.toast.mockReset(); h.put.mockReset().mockResolvedValue(true); h.requestInsert.mockReset(); h.api.mockReset(); h.ask.mockReset();
   h.callAI.mockReset().mockResolvedValue(FIVE);
   h.sug = { editor: { isDestroyed: false }, text: null, note: null, status: "idle", statusLabel: null, accept: vi.fn(), copy: vi.fn(), clear: vi.fn() };
   heldBlobs.clear();
@@ -243,21 +243,22 @@ describe("The Idea place: checking the idea", () => {
     expect($('[data-testid="idea-read-raw"]')!.textContent).toBe(text);
   });
 
-  it("Put in my document inserts the read as AI text at the end of the document", async () => {
+  it("Put in my document puts the read in through the shell's requestInsert (putAiInDocument) and says Inserted once it went in", async () => {
     h.blob.value = { ...STORED, read: { text: FIVE, at: AT } };
     mount();
     await click("idea-insert");
-    expect(h.insert).toHaveBeenCalledWith(h.sug.editor, FIVE, false, null);
+    expect(h.put).toHaveBeenCalledTimes(1);
+    expect(h.put).toHaveBeenCalledWith(h.requestInsert, FIVE);
     expect(h.toast).toHaveBeenCalledWith(E.idea_inserted);
   });
 
-  it("Put in my document with no document open inserts nothing and says so", async () => {
-    h.sug.editor = null;
+  it("Put in my document when the document did not open claims nothing (requestInsert has said why)", async () => {
+    h.put.mockResolvedValue(false);
     h.blob.value = { ...STORED, read: { text: FIVE, at: AT } };
     mount();
     await click("idea-insert");
-    expect(h.insert).not.toHaveBeenCalled();
-    expect(h.toast).toHaveBeenCalledWith(E.idea_insert_none);
+    expect(h.put).toHaveBeenCalledWith(h.requestInsert, FIVE);
+    expect(h.toast).not.toHaveBeenCalledWith(E.idea_inserted);
   });
 
   it("Check again reads the idea again and keeps the new read", async () => {

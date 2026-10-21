@@ -47,9 +47,10 @@ export function insertAiText(editor: Editor, text: string, replaceSelection: boo
  * "Put in my document" for AI text from any place (an idea's read, a comparison, a helper's answer): through the project shell's requestInsert,
  * so a closed document opens beside the place first and a locked one asks for the passphrase once; it goes in as insertAiText puts an accepted
  * Continue suggestion (at the end, marked as AI text). False when the document did not open: nothing went in, and requestInsert has said so.
+ * In a place's own window the text is posted to the writing window, which puts it in the same way.
  */
-export function putAiInDocument(requestInsert: (run: (editor: Editor) => void) => Promise<boolean>, text: string): Promise<boolean> {
-  return requestInsert((editor) => insertAiText(editor, text, false));
+export function putAiInDocument(requestInsert: (run: (editor: Editor) => void, message?: { type: "insert"; ai: string }) => Promise<boolean>, text: string): Promise<boolean> {
+  return requestInsert((editor) => insertAiText(editor, text, false), { type: "insert", ai: text });
 }
 
 /** The selection with its position and text, or null when collapsed. */

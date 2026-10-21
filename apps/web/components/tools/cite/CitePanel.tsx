@@ -19,7 +19,6 @@ export function CitePanel() {
   const library = useLibrary();
   // The open document's editor, or the writing window when this is a pop-out.
   const target = useInsertTarget();
-  const insertReady = target.ready;
   const deps = (): CiteDeps => ({
     lib: library.lib, style: library.style, toast, t,
     insert: (f: Formatted) => target.citation(f)
@@ -30,10 +29,10 @@ export function CitePanel() {
       <p className="desc">{t("cite_panel_desc")}</p>
       {library.locked && <p className="note cite-state" role="status" data-testid="cite-locked">{t("vault_cite_locked")}</p>}
       {library.broken && <p className="note cite-state" role="status" data-testid="cite-broken">{t("vault_cite_broken")}</p>}
-      <CiteForm library={library} deps={deps} insertReady={insertReady} />
-      <CiteQuote insertReady={insertReady} />
+      <CiteForm library={library} deps={deps} />
+      <CiteQuote />
       <CiteCapture />
-      <CiteLibrary library={library} deps={deps} insertReady={insertReady} />
+      <CiteLibrary library={library} deps={deps} />
     </div>
   );
 }
