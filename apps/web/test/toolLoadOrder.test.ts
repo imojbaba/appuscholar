@@ -41,6 +41,14 @@ function registryValueImports(file: string, src: string): string[] {
 }
 
 vi.mock("@/components/tools/qual", () => vi.importActual("./fixtures/probe-tool/index"));
+// The other tool modules are pinned to their unbuilt stub, so a tool session turning its own module on never changes BUILT_IN here (session B, 2026-10-21).
+vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/stats", () => ({ built: false }));
+vi.mock("@/components/tools/style", () => ({ built: false }));
+vi.mock("@/components/tools/words", () => ({ built: false }));
+vi.mock("@/components/tools/close", () => ({ built: false }));
+vi.mock("@/components/tools/slides", () => ({ built: false }));
+vi.mock("@/components/tools/viva", () => ({ built: false }));
 
 describe("the tool registry's load order (Task G2)", () => {
   it("a tool's index.ts loads first, its Panel importing placeHref and lib/tools, and the registry still reads every module", async () => {
