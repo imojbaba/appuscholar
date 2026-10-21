@@ -3,7 +3,27 @@ on:
   pull_request:
   push:
     branches: [main, "phase-*"]
+# A newer push to the same pull request cancels the run for the older commit: only the latest result counts, and private-repo minutes are billed.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  # Which parts a pull request touches, so the macOS golden job (billed at about ten times the Linux rate) runs only when it can matter.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.f.outputs.core }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: f
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "core=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -qE '^(packages/core/|\.github/workflows/|pnpm-lock\.yaml|package\.json)'; then
+            echo "core=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "core=false" >> "$GITHUB_OUTPUT"
+          fi
   checks:
     runs-on: ubuntu-latest
     env:
@@ -48,6 +68,10 @@ jobs:
     # The golden comparer is exact (Object.is) only on the platform that captured the fixtures, Node 26 on darwin arm64 (register row D-W1-16); the checks job above runs on
     # Node 22 linux x64 and so compares computed probabilities within 1e-12. This job runs the same golden suite on a GitHub-hosted Apple Silicon runner with Node 26, where the
     # mode is exact, and GOLDEN_EXPECT_MODE makes compare.test.ts fail if it is not, so a runner image or fixture platform change does not quietly fall back to the tolerance.
+    # On a pull request only when the engines, the workflow or the dependencies change (every push to main and phase-* still runs it). A screen-only change cannot
+    # change v1's answers; the checks job runs the same golden suite on Linux within 1e-12 on every run.
+    needs: changes
+    if: needs.changes.outputs.core == 'true'
     runs-on: macos-15
     env:
       GOLDEN_EXPECT_MODE: exact
