@@ -1,5 +1,6 @@
 import type { CitationEntry } from "@appuscholar/core";
 import type { ApNote, ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
+import type { StageBlobs, ToolFacts, ToolModule } from "@/lib/tools/registry";
 import { parseIdeaRead } from "./ideaRead";
 
 /**
@@ -44,4 +45,21 @@ export function homeFacts(
     cards: notes.filter(carded).length,
     draftWords
   };
+}
+
+/**
+ * A stage row's tool facts (Task G3, ruling R6): what each of the stage's modules that is built and declares facts says of the stage's
+ * blobs, in the order given (the registry's). The modules come in as arguments, so this file never reads the registry while it loads.
+ * A module whose facts throw drops its own line only (fix round 1): the home and the other modules' lines still show, and the error is logged.
+ */
+export function toolFacts(mods: readonly ToolModule[], b: StageBlobs): ToolFacts[] {
+  return mods.flatMap((m) => {
+    if (!m.built || !m.facts) return [];
+    try {
+      return [m.facts(b)];
+    } catch (e) {
+      console.error("A tool module's home facts failed; its line is left out.", e);
+      return [];
+    }
+  });
 }

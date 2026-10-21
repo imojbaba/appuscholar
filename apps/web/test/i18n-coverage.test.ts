@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
+import { DICTS } from "../lib/i18n";
 
 const ROOT = join(__dirname, "..");
 const DIRS = ["components", "lib"];
@@ -42,9 +43,12 @@ const STAGE2_DIRS = [
  */
 const NOT_COPY = new Set(["erase_confirm_word", "state_sum_idea", "state_sum_writing", "state_sum_review"]);
 
-/** Values worth guarding: 3+ characters with at least one letter or digit (so "✨", "…", "—" are skipped). */
+/**
+ * Values worth guarding: 3+ characters with at least one letter or digit (so "✨", "…", "—" are skipped). Read from the dictionary t() reads,
+ * so a tool's own copy (messages/tools/<tool>.en.json, Task G4) is guarded as v1's is.
+ */
 const values = new Set(
-  Object.entries(en as Record<string, string>)
+  Object.entries(DICTS.en)
     .filter(([k]) => !NOT_COPY.has(k))
     .map(([, v]) => v.trim())
     .filter(v => v.length >= 3 && /[\p{L}\p{N}]/u.test(v)),

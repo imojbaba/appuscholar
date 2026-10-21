@@ -21,6 +21,8 @@ import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sync";
 import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
+import { DocAccessHost } from "@/lib/editor/docAccess";
+import { documentLayers } from "@/lib/tools/registry";
 import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
@@ -28,7 +30,7 @@ import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
 import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
 import { ExportDialog, exportPartsFor } from "@/components/export/ExportDialog";
-import type { ExportPart } from "@/lib/export/projectExport";
+import type { ExportPartId } from "@/lib/export/projectExport";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
@@ -152,7 +154,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   // The export place's ticks while it is open (null: closed).
-  const [exportParts, setExportParts] = useState<ExportPart[] | null>(null);
+  const [exportParts, setExportParts] = useState<ExportPartId[] | null>(null);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; readyRef.current = ready; }, [projectId, currentDoc, ready]);
   const docToken = useRef(0);
   /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */
@@ -487,6 +489,10 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         <CiteLibraryProvider>
         {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
         {inProject && <CaptureHash />}
+        {/* The tools' document access in a place's own window is answered here: snapshots of the open document and its requests (lib/editor/docAccess). */}
+        {inProject && !popout && <DocAccessHost />}
+        {/* What a built tool draws over the open document (ToolModule.DocumentLayer, ruling R33): once per module, in the writing window only, whatever place is open. */}
+        {inProject && !popout && documentLayers().map(({ tool, Layer }) => <Layer key={tool} projectId={urlProjectId} />)}
         {popout ? <WindowHeader /> : <AppHeader />}
         <ChromeDialogs />
         <ImportOrigin />

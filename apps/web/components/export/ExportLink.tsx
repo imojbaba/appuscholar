@@ -1,15 +1,15 @@
 "use client";
 import { Export } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
-import type { ExportPart } from "@/lib/export/projectExport";
+import type { ExportPartId } from "@/lib/export/projectExport";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/components/frame/ProjectContext";
 
 /**
  * A tool's "Export" (wave B Task 12, register D-S2-42): it takes the place of the tool's own download and opens the project's export place with
- * only `part` ticked (W11). The id and test id stay the old button's.
+ * only `part` ticked (W11), a built-in part or a tool module's own (Task G3). The id and test id stay the old button's.
  */
-export function ExportLink({ part, id, testId, className }: { part: ExportPart; id?: string; testId?: string; className?: string }) {
+export function ExportLink({ part, id, testId, className }: { part: ExportPartId; id?: string; testId?: string; className?: string }) {
   const t = useT();
   const { openExport } = useProject();
   return (

@@ -1078,7 +1078,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expectStates(page, { idea: "reopened", lit: "in-progress", writing: "in-progress" });
     await expect(page.getByTestId("home-detail-design")).toHaveText(T("detail_not_built"));
     await toPlace(page, "design");
-    await expect(page.getByTestId("not-built")).toHaveText(T("place_not_built") + " " + T("not_built_body"));
+    await expect(page.getByTestId("not-built")).toHaveText(T("place_not_built") + " " + T("not_built_tab_body"));
     // The document is still open beside the place, so the place offers no Open my document until it is closed.
     await expect(page.getByTestId("not-built-open")).toHaveCount(0);
     await page.getByTestId("doc-close").click();
