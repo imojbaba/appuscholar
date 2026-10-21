@@ -38,6 +38,7 @@ vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => 
 
 import { Popout } from "../components/popout/Popout";
 import { CiteShare } from "../components/tools/cite/CiteShare";
+import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectContext";
 import { citeUseLib, CITATION_INSERTED } from "../lib/cite/actions";
 import type { Library } from "../lib/cite/useLibrary";
 import { openPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
@@ -200,7 +201,8 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   it("Insert reference list is enabled in the pop-out and sends the list as one HTML block", () => {
     popoutAt("cite");
     const lib = { lib: [BANDURA], style: "apa", ready: true, update: () => true } as unknown as Library;
-    render(<CiteShare library={lib} insertReady={true} />);
+    // The library's Export link (Task 12) opens the export place of the window it is in.
+    render(<ProjectProvider value={{ openExport: () => {} } as unknown as ProjectValue}><CiteShare library={lib} insertReady={true} /></ProjectProvider>);
     const btn = tid("cite-insertbib") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
     act(() => { btn.click(); });

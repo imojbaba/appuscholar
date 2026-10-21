@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act } from "react";
+import JSZip from "jszip";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildShelfSummaryPromptV2, fieldLabel, shTitleGuess, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
@@ -41,7 +42,8 @@ const h = vi.hoisted(() => ({
   download: vi.fn(),
   callAI: vi.fn(async (..._a: unknown[]) => "OK"),
   extract: vi.fn(),
-  editor: null as unknown
+  editor: null as unknown,
+  openExport: vi.fn()
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 // The vault is off: bodies are plaintext JSON (keyVersion 0); a body stored with a key version does not open here (it is "broken").
@@ -51,7 +53,7 @@ const vault = {
   decryptBody: async (d: { bodyHtml: string; keyVersion: number }) => { if (d.keyVersion > 0) throw new Error("corrupt"); return d.bodyHtml; }
 };
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => vault }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1" }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", openExport: h.openExport }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch" }, settings: { field: "education" } }) }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
@@ -69,6 +71,7 @@ import {
 } from "../lib/shelf/actions";
 import { PdfReaderUnavailable, type PdfDoc } from "../lib/shelf/extract";
 import { ShelfDialog } from "../components/tools/shelf/ShelfDialog";
+import { exportProject } from "../lib/export/projectExport";
 import { useShelf, writeIndexDetached } from "../lib/shelf/useShelf";
 import { blobId } from "../lib/blobs/kinds";
 import type { BlobVault } from "../lib/blobs/useProjectBlob";
@@ -630,7 +633,7 @@ describe("the Reading shelf dialog", () => {
     expect(prompt).toContain("Contact: [author email removed]");
   });
 
-  it("the matrix shows the default columns, stores added and removed columns in shelf_cols and cells on the paper, and downloads reading_matrix.csv", async () => {
+  it("the matrix shows the default columns, stores added and removed columns in shelf_cols and cells on the paper; Export opens the export place, whose table is reading_matrix.csv", async () => {
     seedCorpus();
     await mount();
     await until(() => tids("sh-read").length === 4 && !(tids("sh-read")[3] as HTMLButtonElement).disabled, "the papers read");
@@ -647,11 +650,23 @@ describe("the Reading shelf dialog", () => {
     expect(stored<string[]>("shelf_cols")).toEqual(["Method", "Key finding", "Sample size"]);
     await blurWith(tids("sh-cell")[0]!, "survey");
     await until(() => stored<ShelfPaper>("shelf_paper:pa")?.cells.Method === "survey", "the cell's save");
+    // Wave B Task 12 (D-S2-42): v1's "Download as CSV" is now Export, with the comparison ticked; the zip's compare/table.csv is v1's file, from what is stored.
     await click(tid("sh-csv"));
-    const [name, blob] = h.download.mock.calls[0] as [string, Blob];
-    expect(name).toBe("reading_matrix.csv");
-    expect((await blobText(blob)).split("\n")[0]).toBe("﻿Paper,Method,Key finding,Sample size");
-    expect((await blobText(blob)).split("\n")[1]).toBe("Sleep and memory in adolescents,survey,,");
+    expect(h.openExport).toHaveBeenCalledWith("compare");
+    expect(h.download).not.toHaveBeenCalled();
+    // jsdom's Blob has no arrayBuffer(), which the export reads a tool's file with in the browser: one through FileReader, for this test.
+    const readBytes = (b: Blob) => new Promise<ArrayBuffer>((done) => { const r = new FileReader(); r.onload = () => done(r.result as ArrayBuffer); r.readAsArrayBuffer(b); });
+    const had = Blob.prototype.arrayBuffer;
+    Blob.prototype.arrayBuffer = function (this: Blob) { return readBytes(this); };
+    const zip = await exportProject({
+      project: { id: "p1", title: "P", titleKeyVersion: 0, deks: [] }, t: (k) => tFormat(en, en, k, "en"),
+      listDocuments: async () => [], getDocument: async () => { throw new Error("none"); }, decrypt: async () => "", openTitle: async () => ({ state: "unreadable" }),
+      readBlob: async (kind) => { const v = stored<unknown>(kind); return v === null ? null : JSON.stringify(v); },
+      writingRecord: async () => { throw new Error("none"); }, aiUseLog: async () => []
+    }, ["compare"], { style: "apa", now: new Date(), lastSearch: null }).finally(() => { Blob.prototype.arrayBuffer = had; });
+    const table = new TextDecoder("utf-8", { ignoreBOM: true }).decode(await (await JSZip.loadAsync(await readBytes(zip))).file("compare/table.csv")!.async("uint8array"));
+    expect(table.split("\n")[0]).toBe("﻿Paper,Method,Key finding,Sample size");
+    expect(table.split("\n")[1]).toBe("Sleep and memory in adolescents,survey,,");
   });
 
   it("backs up the shelf and restores a backup: a file that is not one says so; one that is adds its papers", async () => {

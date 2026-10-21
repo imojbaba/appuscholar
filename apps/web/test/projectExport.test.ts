@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { aiuBuild, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shMatrixCsv, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
 import { acrossData } from "../lib/analyse/cards";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, exportProject, keptPapers, projectExportFileName, saveProjectExport, type ExportPart, type ProjectExportDeps } from "../lib/export/projectExport";
+import { VaultError } from "../lib/vault/crypto";
 import { localDay } from "../lib/vault/export";
 import { projectKeyId, type OpenedTitle, type Titled } from "../lib/vault/titles";
 import type { WritingRecord } from "../lib/writingRecord";
@@ -90,7 +91,7 @@ describe("exportProject", () => {
     const q = await text(z, "question.txt");
     expect(q).toContain("idea_topic_label\nSleep and exam anxiety");
     expect(q).toContain("idea_constraints_label\nNone");
-    expect(q).toContain("AI read:\nFeasible: High. A narrow sample.");
+    expect(q).toContain("exp_ai_read\nFeasible: High. A narrow sample.");
     const statement = aiuBuild({ list: LOG, keep: { "Idea check": 1 }, other: "", fmt: "course", ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS });
     expect(await text(z, "ai-use-statement.txt")).toBe("text" in statement ? statement.text : "");
     expect(await text(z, "writing-record.txt")).toContain("WRITING-PROCESS RECORD");
@@ -133,11 +134,14 @@ describe("exportProject", () => {
     const z = await unzip(await exportProject(deps(), ["notes"], opts()));
     const n = await text(z, "notes/Sleep and exam anxiety.txt");
     // The highlight with its page and the student's note on it; the student's own words; the AI's reading, marked.
-    expect(n).toContain("p. 2: \"Sleep fell by an hour\"");
+    expect(n).toContain("exp_highlights\n");
+    expect(n).toContain('exp_page{"page":2}: "Sleep fell by an hour"');
     expect(n).toContain("Check the sample");
     expect(n).toContain("ap2_my_words_2 A survey of two classes.");
     expect(n).toContain("AI: A cross-sectional survey; causation is not shown.");
     expect(n).toContain("ap2_strengths_2\nLarge sample");
+    // Every label is the copy's (t), but the AI's mark, which the plan fixes as "AI:".
+    expect(n).not.toMatch(/Highlights|p\. 2|REFLECTION/);
     // The AI's reading never appears without its mark.
     expect(n.split("\n").filter((l) => l.includes("cross-sectional"))).toEqual(["AI: A cross-sectional survey; causation is not shown."]);
   });
@@ -149,6 +153,41 @@ describe("exportProject", () => {
     expect(csv).toBe("﻿" + rsCsvText(keptPapers(LIB)));
     expect(csv).toContain("Why we sleep");
     expect(csv).toContain("10.1/abc");
+  });
+
+  it("a document or a blob that does not open is listed in unreadable.txt, and the rest still export", async () => {
+    const d = deps({
+      decrypt: async (doc) => { if (doc.id === "s1") throw new VaultError("corrupt"); return `<p>The text of ${doc.id}.</p>`; },
+      readBlob: async (kind) => {
+        if (kind === "ap_notes") throw new VaultError("corrupt");
+        if (kind === "shelf_paper:s1") return "not json {";
+        if (kind === "idea_intake") return JSON.stringify({ topic: 5 });
+        return kind in BLOBS ? JSON.stringify(BLOBS[kind]) : null;
+      }
+    });
+    const z = await unzip(await exportProject(d, [...EXPORT_PARTS], opts()));
+    expect(files(z)).toContain("documents/Draft.html");
+    expect(files(z)).not.toContain("documents/sources/Source paper.html");
+    expect(files(z)).not.toContain("question.txt");
+    expect(files(z)).toContain("citations/library.json");
+    expect(await text(z, "unreadable.txt")).toBe([
+      "exp_unreadable_head", "",
+      'exp_unreadable_doc{"name":"Source paper"}',
+      'exp_unreadable_data{"name":"exp_part_question"}',
+      'exp_unreadable_paper{"name":"Sleep and exam anxiety"}',
+      'exp_unreadable_data{"name":"exp_part_notes"}',
+      ""
+    ].join("\n"));
+    // Everything opens: no such file.
+    expect(files(await unzip(await exportProject(deps(), [...EXPORT_PARTS], opts())))).not.toContain("unreadable.txt");
+    // A locked vault is not unreadable: the export rejects.
+    await expect(exportProject(deps({ readBlob: async () => { throw new Error("vault-locked"); } }), ["question"], opts())).rejects.toThrow("vault-locked");
+  });
+
+  it("reports each ticked part as it is built", async () => {
+    const progress = vi.fn();
+    await exportProject(deps(), ["documents", "citations", "aiuse"], opts({ progress }));
+    expect(progress.mock.calls.map((c) => c[0])).toEqual(["documents", "citations", "aiuse"]);
   });
 
   it("a deleted document is left out and never fetched", async () => {

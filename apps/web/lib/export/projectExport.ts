@@ -44,12 +44,18 @@ export type ProjectExportDeps = {
   /** GET /ai/log: the account's AI-use log, as the AI-use statement reads it. */
   aiUseLog(): Promise<AiuEntry[]>;
 };
-export type ProjectExportOptions = { style: CitationStyle; now: Date; lastSearch: RsPaper[] | null };
+/** `progress` hears each ticked part as its files are made (the dialog's line while the zip is built, W31). */
+export type ProjectExportOptions = { style: CitationStyle; now: Date; lastSearch: RsPaper[] | null; progress?(part: ExportPart): void };
 
 /** appuscholar-<title>-YYYY-MM-DD.zip: the opened title as zipName makes it, by the local calendar day. */
 export function projectExportFileName(title: string, now: Date): string {
   return `appuscholar-${zipName(title)}-${localDay(now)}.zip`;
 }
+
+/** What a stage blob that does not open is called in unreadable.txt: the part it belongs to (the reading list's own index otherwise). */
+const KIND_NAME: Partial<Record<BlobKind, string>> = {
+  idea_intake: "exp_part_question", citations: "exp_part_citations", ap_notes: "exp_part_notes", ap_cols: "exp_part_compare", shelf_cols: "exp_part_compare"
+};
 
 /** v1's pdDownload: a byte-order mark, then the CSV's text. */
 const BOM = "﻿";
@@ -74,13 +80,16 @@ async function caught(run: (download: (name: string, file: Blob) => void) => voi
 }
 
 type Paper = { title: string; highlights: Highlight[]; note?: ApNoteLike };
-/** One paper's reading notes: its highlights with their page and the student's note on each, the student's own words by stage, the AI's text marked "AI:", the card. */
+/**
+ * One paper's reading notes: its highlights with their page and the student's note on each, the student's own words by stage, the AI's text marked
+ * "AI:" (the plan's mark, in every language), the card. Every other label is the copy's.
+ */
 function notesText(p: Paper, t: T): string {
   const L = cardLabels(t);
   let s = p.title + "\n" + "=".repeat(p.title.length) + "\n\n";
   if (p.highlights.length) {
-    s += "Highlights\n";
-    for (const h of p.highlights) s += "p. " + h.page + ": \"" + h.quote + "\"\n" + (h.note ? "  " + h.note + "\n" : "");
+    s += t("exp_highlights") + "\n";
+    for (const h of p.highlights) s += t("exp_page", { page: h.page }) + ": \"" + h.quote + "\"\n" + (h.note ? "  " + h.note + "\n" : "");
     s += "\n";
   }
   const stages = p.note?.stages ?? {};
@@ -95,17 +104,17 @@ function notesText(p: Paper, t: T): string {
     s += "\n";
   }
   const card = p.note?.card ?? {};
-  const fields: Array<[string, string]> = [["strengths", L.strengths], ["weak", L.weak], ["verdict", L.verdict], ["notes", L.notes], ["reflection", "REFLECTION"]];
+  const fields: Array<[string, string]> = [["strengths", L.strengths], ["weak", L.weak], ["verdict", L.verdict], ["notes", L.notes], ["reflection", t("exp_reflection")]];
   for (const [k, label] of fields) if (typeof card[k] === "string" && card[k]) s += label + "\n" + card[k] + "\n\n";
   return s;
 }
 
-/** The question's four fields under the Idea panel's labels, then the stored read after "AI read:". */
+/** The question's four fields under the Idea panel's labels, then the stored read after "AI read:" (exp_ai_read). */
 function questionText(i: BlobShape<"idea_intake">, t: T): string {
   const f: Array<[string, string]> = [["idea_topic_label", i.topic], ["idea_resources_label", i.resources], ["idea_timeframe_label", i.timeframe], ["idea_constraints_label", i.constraints]];
   let s = f.map(([k, v]) => t(k) + "\n" + v + "\n").join("\n");
   const read = (i as { read?: { text?: unknown } }).read?.text;
-  if (typeof read === "string" && read) s += "\nAI read:\n" + read + "\n";
+  if (typeof read === "string" && read) s += "\n" + t("exp_ai_read") + "\n" + read + "\n";
   return s;
 }
 
@@ -113,32 +122,41 @@ function questionText(i: BlobShape<"idea_intake">, t: T): string {
  * The ticked parts of one project as one zip, at these paths: `documents/<title>.doc` and `.html` (sources under `documents/sources/`),
  * `question.txt`, `citations/library.json` and `citations/references.txt`, `search/kept-papers.csv` (and `search/last-search.csv` when this
  * session ran a search), `notes/<paper title>.txt`, `compare/table.csv` and `compare/paper-cards.csv`, `writing-record.txt`,
- * `ai-use-statement.txt`, `reading-list-backup.json`. A part with nothing in it writes no file. Deleted documents are left out; a document
- * or a blob that does not open (VaultError "corrupt") is left out, as one that is not of its kind's shape is. Any other failure rejects.
+ * `ai-use-statement.txt`, `reading-list-backup.json`. A part with nothing in it writes no file. Deleted documents are left out. A document or a
+ * blob that does not open (VaultError "corrupt"), or a blob that is not of its kind's shape, is left out and named in `unreadable.txt`, as the
+ * account export lists it in index.json; the rest still export. Any other failure rejects.
  */
 export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o: ProjectExportOptions): Promise<Blob> {
   const on = new Set(parts);
   const zip = new JSZip();
   const t = d.t;
   const blobs = new Map<string, Promise<unknown>>();
-  // Each blob read once, whichever parts need it; one that does not open or is not of its kind's shape reads as none.
-  const blob = <K extends BlobKind>(kind: K): Promise<BlobShape<K> | null> => {
+  // What did not open, in the order it was met, each named once: unreadable.txt.
+  const unreadable: string[] = [];
+  const lost = (line: string) => { if (!unreadable.includes(line)) unreadable.push(line); };
+  // Each blob read once, whichever parts need it; one that does not open or is not of its kind's shape reads as none, and is named.
+  const blob = <K extends BlobKind>(kind: K, name?: string): Promise<BlobShape<K> | null> => {
     if (!blobs.has(kind)) {
-      blobs.set(kind, d.readBlob(kind).then((s) => (s === null ? null : parseBlob(kind, s)), (e) => {
-        if (e instanceof VaultError && e.code === "corrupt") return null;
+      const bad = () => { lost(name !== undefined ? t("exp_unreadable_paper", { name }) : t("exp_unreadable_data", { name: t(KIND_NAME[kind] ?? "exp_kind_shelf") })); return null; };
+      blobs.set(kind, d.readBlob(kind).then((s) => (s === null ? null : (parseBlob(kind, s) ?? bad())), (e) => {
+        if (e instanceof VaultError && e.code === "corrupt") return bad();
         throw e;
       }));
     }
     return blobs.get(kind) as Promise<BlobShape<K> | null>;
   };
-  // The shelf's papers in its order, each with its text, highlights and cells once read (null when its blob is missing).
-  const shelf = async (): Promise<ShelfItem[]> => {
+  // The shelf's papers in its order, each with its text, highlights and cells once read (null when its blob is missing or does not open); read once.
+  let shelfRead: Promise<ShelfItem[]> | null = null;
+  const shelf = (): Promise<ShelfItem[]> => (shelfRead ??= (async () => {
     const items: ShelfItem[] = [];
-    for (const e of (await blob("shelf_index")) ?? []) items.push({ ...e, paper: await blob(shelfPaperKind(e.id)) });
+    for (const e of (await blob("shelf_index")) ?? []) items.push({ ...e, paper: await blob(shelfPaperKind(e.id), e.title || UNTITLED) });
     return items;
-  };
+  })());
+  const library = async () => (await blob("citations")) ?? [];
+  const apNotes = async () => (await blob("ap_notes")) ?? {};
+  const step = (part: ExportPart) => { if (on.has(part)) o.progress?.(part); return on.has(part); };
 
-  if (on.has("documents")) {
+  if (step("documents")) {
     const names = new Map<string, Set<string>>();
     for (const s of await d.listDocuments()) {
       if (s.deletedAt) continue;
@@ -147,7 +165,7 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
       try {
         html = await d.decrypt(await d.getDocument(s.id));
       } catch (e) {
-        if (e instanceof VaultError && e.code === "corrupt") continue;
+        if (e instanceof VaultError && e.code === "corrupt") { lost(t("exp_unreadable_doc", { name: title })); continue; }
         throw e;
       }
       const dir = s.kind === "source" ? "documents/sources" : "documents";
@@ -158,22 +176,25 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
       zip.file(base + ".doc", wordText(title, html));
     }
   }
-  if (on.has("question")) {
+  if (step("question")) {
     const i = await blob("idea_intake");
     if (i) zip.file("question.txt", questionText(i, t));
   }
-  const lib = on.has("citations") || on.has("search") ? ((await blob("citations")) ?? []) : [];
-  if (on.has("citations") && lib.length) {
-    zip.file("citations/library.json", exportLibrary(lib));
-    zip.file("citations/references.txt", referencesText(lib, o.style));
+  if (step("citations")) {
+    const lib = await library();
+    if (lib.length) {
+      zip.file("citations/library.json", exportLibrary(lib));
+      zip.file("citations/references.txt", referencesText(lib, o.style));
+    }
   }
-  if (on.has("search")) {
+  if (step("search")) {
+    const lib = await library();
     if (lib.length) zip.file("search/kept-papers.csv", csvBlob(rsCsvText(keptPapers(lib))));
     if (o.lastSearch?.length) zip.file("search/last-search.csv", csvBlob(rsCsvText(o.lastSearch)));
   }
-  const items = on.has("notes") || on.has("compare") || on.has("readingBackup") ? await shelf() : [];
-  const notes = on.has("notes") || on.has("compare") ? ((await blob("ap_notes")) ?? {}) : {};
-  if (on.has("notes")) {
+  if (step("notes")) {
+    const items = await shelf();
+    const notes = await apNotes();
     const papers = new Map<string, Paper>();
     for (const x of items) if (x.paper?.notes.length) papers.set(x.title, { title: x.title, highlights: x.paper.notes });
     for (const n of Object.values(notes)) {
@@ -183,7 +204,9 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
     const used = new Set<string>();
     for (const p of papers.values()) zip.file(`notes/${unique(zipName(p.title), used)}.txt`, notesText(p, t));
   }
-  if (on.has("compare")) {
+  if (step("compare")) {
+    const items = await shelf();
+    const notes = await apNotes();
     if (items.length) {
       const cols = shColsOf(await blob("shelf_cols"), SHELF_DEFAULT_COLS);
       const file = await caught((download) => downloadMatrix(items, cols, { t, download }));
@@ -192,11 +215,11 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
     const cards = acrossData(t, notes, apAcrossCols(await blob("ap_cols")), false);
     if (cards.body.length) zip.file("compare/paper-cards.csv", csvBlob(apAcrossCsv(cards)));
   }
-  if (on.has("record")) {
+  if (step("record")) {
     const rec = await openRecordTitles(await d.writingRecord(), d.openTitle, UNTITLED);
     zip.file("writing-record.txt", buildRecordText(rec, APP_VERSION, localDay(o.now)));
   }
-  if (on.has("aiuse")) {
+  if (step("aiuse")) {
     // The statement as the AI-use panel opens it: every logged kind ticked, no other tools, no ticks, the course format.
     const list = await d.aiUseLog();
     const built = aiuBuild({
@@ -205,10 +228,12 @@ export async function exportProject(d: ProjectExportDeps, parts: ExportPart[], o
     });
     zip.file("ai-use-statement.txt", "text" in built ? built.text : built.refuse);
   }
-  if (on.has("readingBackup") && items.some((x) => x.paper)) {
-    const file = await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {} }));
+  if (step("readingBackup")) {
+    const items = await shelf();
+    const file = items.some((x) => x.paper) ? await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {} })) : null;
     if (file) zip.file("reading-list-backup.json", file);
   }
+  if (unreadable.length) zip.file("unreadable.txt", t("exp_unreadable_head") + "\n\n" + unreadable.join("\n") + "\n");
   return zip.generateAsync({ type: "blob", mimeType: "application/zip" });
 }
 

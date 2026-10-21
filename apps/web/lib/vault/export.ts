@@ -65,6 +65,17 @@ export function unique(name: string, used: Set<string>): string {
   return n;
 }
 
+const NOT_JSON = Symbol("not-json");
+/** The text as pretty-printed JSON, or NOT_JSON when JSON.parse throws its SyntaxError (any other error is thrown on). */
+function parseJson(text: string): string | typeof NOT_JSON {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2) + "\n";
+  } catch (e) {
+    if (e instanceof SyntaxError) return NOT_JSON;
+    throw e;
+  }
+}
+
 /** A stage-data file name from a kind: ":" becomes "-" (shelf_paper:<id> → shelf_paper-<id>), and path separators go. */
 const stageFile = (kind: string) => kind.replace(/:/g, "-").replace(/[\\/]/g, "_");
 
@@ -109,14 +120,17 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
     const files = new Set<string>();
     const blobs = await deps.listBlobs(p.id);
     for (const b of blobs) {
-      let json: string;
+      let text: string;
       try {
-        json = JSON.stringify(JSON.parse(await deps.decryptBlob(p.id, await deps.getBlob(p.id, b.kind))), null, 2) + "\n";
+        text = await deps.decryptBlob(p.id, await deps.getBlob(p.id, b.kind));
       } catch (e) {
-        // A blob that does not open (VaultError "corrupt") or is not JSON is listed as unreadable; the rest still export.
-        if ((e instanceof VaultError && e.code === "corrupt") || e instanceof SyntaxError) { stageData.push({ kind: b.kind, updatedAt: b.updatedAt, unreadable: true }); continue; }
+        // A blob that does not open (VaultError "corrupt") is listed as unreadable; the rest still export.
+        if (e instanceof VaultError && e.code === "corrupt") { stageData.push({ kind: b.kind, updatedAt: b.updatedAt, unreadable: true }); continue; }
         throw e;
       }
+      // Only the parse's SyntaxError means the blob is not JSON (one from the api or the vault rejects, as any other failure does).
+      const json = parseJson(text);
+      if (json === NOT_JSON) { stageData.push({ kind: b.kind, updatedAt: b.updatedAt, unreadable: true }); continue; }
       const file = `${folder}/stage-data/${unique(stageFile(b.kind), files)}.json`;
       zip.file(file, json);
       stageData.push({ kind: b.kind, file, updatedAt: b.updatedAt });

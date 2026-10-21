@@ -13,6 +13,8 @@ import { CitePanel } from "@/components/tools/cite/CitePanel";
 import { ResearchPanel } from "@/components/tools/research/ResearchPanel";
 import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
+import { ExportDialog, exportPartsFor } from "@/components/export/ExportDialog";
+import type { ExportPart } from "@/lib/export/projectExport";
 import { byCreated } from "@/components/frame/ProjectShell";
 import { ProjectProvider, type DocumentSummary, type PendingAnalyse, type Project, type ProjectValue } from "@/components/frame/ProjectContext";
 
@@ -55,6 +57,7 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   const [dialog, setDialog] = useState<ProjectValue["dialog"]>(null);
   const [settingsProvider, setSettingsProvider] = useState<ProviderId | null>(null);
+  const [exportParts, setExportParts] = useState<ExportPart[] | null>(null);
 
   const userId = me?.id;
   const activeProjectId = me?.activeProjectId ?? null;
@@ -95,7 +98,9 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
     wordCount: null, setWordCount: noop, reloadProject,
     dialog, startImport: noop, importNames: [], runImport: async () => {},
     openHelp: () => setDialog("help"), openImportV1: noop, openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: noop,
-    openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => setDialog(null)
+    openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => setDialog(null),
+    // A tool's Export link opens the export place here too, over the pop-out's project.
+    openExport: (preselect) => setExportParts(exportPartsFor(preselect))
   };
 
   const panel = activeTool === "cite" ? <CitePanel /> : activeTool === "research" ? <ResearchPanel /> : activeTool === "analyse" ? <AnalysePanel /> : <p className="desc">{t("pop_unsupported")}</p>;
@@ -104,6 +109,7 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
       <SuggestionProvider>
         <CiteLibraryProvider>
           <ChromeDialogs />
+          {ready && <ExportDialog parts={exportParts} onClose={() => setExportParts(null)} />}
           {ready ? (
             <main className="popout" data-testid="popout">{panel}</main>
           ) : error ? (

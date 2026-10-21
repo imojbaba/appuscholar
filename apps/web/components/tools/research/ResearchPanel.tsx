@@ -9,16 +9,15 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { retrCacheSet } from "@/lib/cite/checks";
 import { useLibrary } from "@/lib/cite/useLibrary";
-import { downloadBlob } from "@/lib/export/download";
-import { analysePaper, downloadCsv, filterStat, loadConnected } from "@/lib/research/extras";
+import { analysePaper, filterStat, loadConnected } from "@/lib/research/extras";
 import { addResult, insertResult, type AddDeps } from "@/lib/research/library";
 import { useInsertTarget } from "@/lib/popout/sync";
 import { applyQuick, filterVals, getResearch, setResearch, shownResults, SORT_OPTIONS, useSearch, type SortMode } from "@/lib/research/useSearch";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { placeHref } from "@/lib/frame/places";
 import { ShelfDialog } from "@/components/tools/shelf/ShelfDialog";
+import { ExportLink } from "@/components/export/ExportLink";
 import { Connected } from "./Connected";
 import { External } from "./External";
 import { Filters } from "./Filters";
@@ -153,7 +152,8 @@ export function ResearchPanel() {
         ) : cards}
       </div>
       <div className="row rs-csv-row" id="rsCsvRow">
-        <Button variant="ghost" size="sm" type="button" id="rsCsvBtn" data-testid="rs-csv" onClick={() => downloadCsv(results, { download: downloadBlob, toast, t })}>{t("rs2_csv_btn")}</Button>
+        {/* The list's CSV is in the project's export place now (Task 12): Export opens it with the search lists ticked. */}
+        <ExportLink part="search" id="rsCsvBtn" testId="rs-csv" />
       </div>
       <div id="rsActions" className="rs-actions" data-testid="rs-actions" hidden={!s.actions}>
         <Generators onQuick={() => { void quickReadTicked(tickedShown(), quickDeps()); }} onLitReview={() => { void litReview(tickedShown(), genDeps()); }} onGapFinder={() => { void gapFinder(tickedShown(), genDeps()); }} />
