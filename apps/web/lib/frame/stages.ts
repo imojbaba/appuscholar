@@ -50,7 +50,7 @@ export function stageStates(w: StageWork): Record<StageKey, StageState> {
     last[s.stage] = Math.max(last[s.stage] ?? t, t);
   }
   const draftAt = w.draftEditedAt === null ? null : instant(w.draftEditedAt);
-  if (w.draftWords > 0 && draftAt !== null) last.writing = draftAt;
+  if (w.draftWords > 0 && draftAt !== null) last.writing = Math.max(last.writing ?? draftAt, draftAt);
 
   const out = {} as Record<StageKey, StageState>;
   for (const s of STAGE_ORDER) {
