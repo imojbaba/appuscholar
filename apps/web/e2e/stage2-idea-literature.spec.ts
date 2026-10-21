@@ -1201,6 +1201,10 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     expect(question).toContain(VERDICT);
     const library = await zip.file("citations/library.json")!.async("string");
     for (const title of [CAPTURED.title, MANUAL.title, MU.title, DORDI.title, GUIDELINES.title, PUBMED.title]) expect(library).toContain(title);
+    // First run's check ran before the project existed; saving claimed it, so the statement names it (B1 walk row 12 said "I did not use AI tools").
+    const statement = await zip.file("ai-use-statement.txt")!.async("string");
+    expect(statement).not.toContain("I did not use AI tools");
+    expect(statement).toContain("checking whether my project idea is realistic");
     quiet();
   });
 
