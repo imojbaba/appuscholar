@@ -65,3 +65,16 @@ Task 6: implemented d61e364 in worktree wt6 (branch wave-b1-t6, pushed as a back
 R16 (controller, 2026-10-21): restore "Move to project" in DocBar. It is an existing feature (v1's "Save as research project"), not a new product decision. Noted in D-S2-38.
 For Task 16: scripts/deploy-vercel.sh:49 still says "Expect the header pill", but the version now lives in Help. Change the message.
 Fix round in progress.
+Task 6: complete. Fix round b79c9eb (web 1091): leaving a project asks about unsaved work, through `go`; "Move to project" restored in DocBar (R16), with "New project" going to /start?move=<docId>; one active-project write per switch; Undo after a switch goes through the mounted shell; aria-label restored; one version pill; one export guard. The controller accepted it on its tests.
+Merged into wave-b1 in order: wave-b1-t6, wave-b1-t7a (09efb35, logic for tasks 7-9), wave-b1-t12a (cd09d2e, the export library). After the merge one export test failed: its sample idea read had no `at`, which the merged schema requires. The test data was fixed. Merged wave-b1: web 1137 pass (2 skipped), api 255, typecheck, lint and build clean, and i18n regenerates with no diff.
+Logic for 7-9 (09efb35):
+- `homeFacts(b, draftWords, field, highlightCounts)`: highlights live in the shelf_paper blobs.
+- `parseIdeaRead` gives `area: null` for a literal "Area" label (R15).
+- The state_sum_* keys are for the UI task to add.
+Library for 12 (cd09d2e), to judge in Task 12's review:
+- "kept papers" = the citation library until Task 17;
+- the AI-use statement covers the whole account;
+- some labels inside the export files are plain English;
+- an empty part writes no file;
+- an unreadable blob is skipped.
+Next: Tasks 7, 8, 9 and 10 in parallel worktrees, then 11, 12 (UI) and 13, then 14 and 15.
