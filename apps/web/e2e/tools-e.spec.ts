@@ -69,7 +69,9 @@ const SLIDE_PARA = "Students who sleep well remember more of what they read.";
 const SLIDE_LIST = ["Keep a fixed bedtime", "Avoid screens late at night"];
 const SLIDES_DOC = `<h1>${SLIDE_TITLE}</h1><p>${SLIDE_PARA}</p><ul>${SLIDE_LIST.map((x) => `<li><p>${x}</p></li>`).join("")}</ul>` +
   `<table><tbody><tr><th><p>Group</p></th><th><p>Score</p></th></tr><tr><td><p>Routine</p></td><td><p>72</p></td></tr></tbody></table><p><img src="${PNG}"></p>`;
-const NO_HEADINGS_DOC = "<p>This document has only paragraphs, with no heading at all.</p><p>It says a little more in a second paragraph.</p>";
+/** No heading, an image and a table (Review focus 5's document). */
+const NO_HEADINGS_DOC = `<p>This document has only paragraphs, a table and a picture, with no heading at all.</p>` +
+  `<table><tbody><tr><th><p>Week</p></th><th><p>Hours</p></th></tr><tr><td><p>One</p></td><td><p>7</p></td></tr></tbody></table><p><img src="${PNG}"></p><p>It says a little more in a last paragraph.</p>`;
 
 /** The viva passage (selected, 36 words), a short sentence (12 words) and a last paragraph that must not reach the prompt. */
 const VIVA_P1 = "We chose a sample of one hundred and twenty first year students because the college could not release more volunteers during term, and we balanced the two groups by age, course and gender before any routine began.";
@@ -342,16 +344,22 @@ test("3. Slides: headings, a paragraph, a list, a table and a picture make a dec
   await toWriting();
   await saved(() => setDocument(NO_HEADINGS_DOC));
   await expect(page.locator(".ProseMirror h1")).toHaveCount(0);
+  await expect(page.locator(".ProseMirror table")).toHaveCount(1);
+  await expect(page.locator(`.ProseMirror img[src^="data:image/png"]`)).toHaveCount(1);
   await toReview("slides");
   await page.getByTestId("slides-generate").click();
   await expect(page.getByTestId("slides-card")).toHaveCount(1);
   await expect(page.getByTestId("slides-card").first().locator("h4")).toHaveText(DOC_TITLE);
   await expect(page.getByTestId("slides-no-headings")).toHaveText(T("slides_no_headings"));
+  await expect(page.getByTestId("slides-card").first().locator("li", { hasText: "Table: Week | Hours" })).toHaveCount(1);
+  await expect(page.getByTestId("slides-card").first().locator("img")).toHaveCount(1);
   const [dl2] = await Promise.all([page.waitForEvent("download"), page.getByTestId("slides-download").click()]);
   const zip2 = await JSZip.loadAsync(readFileSync((await dl2.path())!));
   expect(zip2.file("ppt/presentation.xml")).not.toBeNull();
   const xml2 = await zip2.file("ppt/slides/slide1.xml")!.async("string");
   expect(xml2).toContain(DOC_TITLE);
+  expect(xml2).toContain("Table: Week | Hours");
+  expect(Object.keys(zip2.files).filter((f) => /^ppt\/media\/.+\.png$/.test(f)).length, "the picture is on the no-heading deck").toBeGreaterThanOrEqual(1);
   expect(net.unexpected).toEqual([]);
 });
 
