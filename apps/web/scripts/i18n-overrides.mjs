@@ -312,7 +312,17 @@ export const V2_STRINGS = {
   writing_chat: { en: "Chat", hi: "चैट" },
   writing_helpers: { en: "Research helpers", hi: "शोध सहायक" },
   not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
-  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" }
+  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  // Wave B Task 11 (register D-S2-41): the document beside any place, its Close and its width, and an insert whose document did not open. DRAFT Hindi.
+  place_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  doc_close: { en: "Close", hi: "बंद करें" },
+  doc_width: { en: "Document width", hi: "दस्तावेज़ की चौड़ाई" },
+  doc_close_title: { en: "Close anyway?", hi: "फिर भी बंद करें?" },
+  doc_close_ask: { en: "Your last changes to {title} are not saved yet.", hi: "{title} में आपके पिछले बदलाव अभी सहेजे नहीं गए हैं।" },
+  doc_close_this: { en: "this document", hi: "इस दस्तावेज़" },
+  ask_stay: { en: "Stay", hi: "रुकें" },
+  doc_close_anyway: { en: "Close anyway", hi: "फिर भी बंद करें" },
+  insert_doc_closed: { en: "Your document did not open, so nothing was inserted.", hi: "आपका दस्तावेज़ नहीं खुला, इसलिए कुछ भी नहीं डाला गया।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

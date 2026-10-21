@@ -88,7 +88,9 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
 
   const value: ProjectValue = {
     place: null, go: async (href) => { const tool = toolOf(href); if (tool) setActiveTool(tool); return true; }, openProject: async () => false,
-    pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dockShow: noop, aiWaiting: false, setAiWaiting: noop,
+    pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse,
+    // No document here: the pop-out's inserts are posted to the writing window (useInsertTarget), which opens its own document for them.
+    docOpen: false, openDocument: noop, closeDocument: async () => true, requestInsert: async () => false, registerEditor: noop,
     project, projectId, documents, currentDoc: null,
     // No document is shown in a pop-out (v1's docSwitch there loads the hidden editor and saves nothing).
     selectDoc: async () => false, restoreDocument: async () => false, reloadDocs, patchDoc: noop, registerFlush: noop, flushOpen: async () => true,

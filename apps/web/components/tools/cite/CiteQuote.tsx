@@ -26,8 +26,7 @@ export function CiteQuote({ insertReady }: { insertReady: boolean }) {
     const cur = getCiteForm();
     void citeInsertQuote({
       quote: cur.quote, srcLang: cur.lang, contentLang: contentLangOf(project, settings), callAI,
-      // The target of the click's render: the editor of the document the request was made in (if the student has switched document by the time the AI
-      // answers, it is destroyed and nothing goes in), or the writing window from a pop-out.
+      // The open document, opened first when it is closed (and asked for once when it is locked), or the writing window from a pop-out.
       insertBlock: (html) => target.block(html),
       insertAtCursor: (text) => target.text(text),
       clearQuote: () => setCiteForm((p) => ({ ...p, quote: "" })),

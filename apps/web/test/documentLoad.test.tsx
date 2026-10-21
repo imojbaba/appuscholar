@@ -59,7 +59,7 @@ function doc(id: string, over: Partial<DocumentWithBody> = {}): DocumentWithBody
 }
 async function renderCard(current: DocumentWithBody, documents: DocumentWithBody[]) {
   const selectDoc = vi.fn(async () => true);
-  h.ws = { project: null, documents, currentDoc: current, selectDoc, reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), flushOpen: vi.fn(async () => true), setWordCount: vi.fn() };
+  h.ws = { project: null, documents, currentDoc: current, selectDoc, reloadDocs: vi.fn(), startImport: vi.fn(), restoreDocument: vi.fn(), patchDoc: vi.fn(), registerFlush: vi.fn(), registerEditor: vi.fn(), flushOpen: vi.fn(async () => true), setWordCount: vi.fn() };
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);

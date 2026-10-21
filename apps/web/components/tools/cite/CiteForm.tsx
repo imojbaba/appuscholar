@@ -117,7 +117,7 @@ export function CiteForm({ library, deps, insertReady }: { library: Library; dep
       <div className="stack">
         <Button variant="ghost" className="w-full" data-testid="cite-lookup" onClick={lookup}>{t("cite_lookup_btn")}</Button>
         <div className="cite-row">
-          <Button variant="primary" className="flex-1" data-testid="cite-insert" disabled={!insertReady} onClick={() => citeInsert(readForm(getCiteForm(), library.style), deps())}>{t("cite_insert_btn")}</Button>
+          <Button variant="primary" className="flex-1" data-testid="cite-insert" disabled={!insertReady} onClick={() => void citeInsert(readForm(getCiteForm(), library.style), deps())}>{t("cite_insert_btn")}</Button>
           <Button variant="ghost" className="flex-1" data-testid="cite-add" disabled={!library.ready} onClick={() => citeAdd(readForm(getCiteForm(), library.style), library.add, toast)}>{t("cite_addlib_btn")}</Button>
         </div>
         <Button variant="ghost" className="w-full" data-testid="cite-clear" onClick={() => { setCiteForm(clearedForm); toast(FORM_CLEARED); }}>{t("cite_clear_btn")}</Button>

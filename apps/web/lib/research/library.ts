@@ -68,12 +68,17 @@ export function addResult(p: RsPaper, d: AddDeps, quiet = false): { entry: Citat
   return { entry, lib: [...d.lib, entry] };
 }
 
-/** rsInsertCitation: saved if new (quietly), then the in-text citation at the cursor (numbered styles take its number in the library), and v1's toast. */
-export function insertResult(p: RsPaper, d: AddDeps & { insert(f: Formatted): void }): void {
+/**
+ * rsInsertCitation: saved if new (quietly), then the in-text citation at the cursor (numbered styles take its number in the library), and v1's
+ * toast. The insert goes through the shell's requestInsert (Task 11), which opens a closed document first; when the document did not open the
+ * paper is still saved, nothing went in, and no "inserted" is claimed (requestInsert has said why).
+ */
+export async function insertResult(p: RsPaper, d: AddDeps & { insert(f: Formatted): Promise<boolean> }): Promise<void> {
   const r = addResult(p, d, true);
   if (!r) return;
-  putIntext(r.entry, r.lib, d.style, d.insert);
-  d.toast(p.retracted ? d.t("retr_added_warn") : d.t("rs_inserted"));
+  let inserted: Promise<boolean> = Promise.resolve(false);
+  putIntext(r.entry, r.lib, d.style, (f) => { inserted = d.insert(f); });
+  if (await inserted) d.toast(p.retracted ? d.t("retr_added_warn") : d.t("rs_inserted"));
 }
 
 /** What the manual add touches: the library (as for addResult), the toasts and the copy, and `clear`, which empties the five boxes. */

@@ -17,7 +17,7 @@ export function CiteShare({ library, insertReady }: { library: Library; insertRe
   const target = useInsertTarget();
   const file = useRef<HTMLInputElement>(null);
   const { lib, style, update } = library;
-  const insertBib = () => citeInsertBib({ lib, style, toast, t, insert: (html) => { target.block(html); } });
+  const insertBib = () => void citeInsertBib({ lib, style, toast, t, insert: (html) => target.block(html) });
   const onFile = async (input: HTMLInputElement) => {
     const f = input.files?.[0];
     try { await citeImport(f, { lib, update, toast, t }); } finally { input.value = ""; }

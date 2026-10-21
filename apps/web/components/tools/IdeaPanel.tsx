@@ -21,7 +21,7 @@ const EMPTY: IdeaIntake = { topic: "", resources: "", timeframe: "", constraints
  */
 export function IdeaPanel() {
   const t = useT();
-  const { project, dockShow } = useProject();
+  const { project } = useProject();
   const { me, settings } = useSettings();
   const suggestion = useSuggestion();
   const callAI = useCallAI();
@@ -39,7 +39,7 @@ export function IdeaPanel() {
   };
   const assess = () => assessIdea({
     callAI, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear,
-    dockShow, toast, t, field: fieldLabel(settings.field), intake
+    toast, t, field: fieldLabel(settings.field), intake
   });
   return (
     <div className="panel" data-testid="panel-idea">

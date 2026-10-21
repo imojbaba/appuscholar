@@ -1,34 +1,41 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { FileText } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useTitle } from "@/lib/vault/titles";
 import { PLACE_TABS, homeHref, placeHref } from "@/lib/frame/places";
+import { Button } from "@/components/ui/button";
 import type { StageKey } from "@/lib/tools";
 import { useProject } from "./ProjectContext";
 
 /**
  * The top of a place (canvas Find): "{project title} / {stage name}", the title linking home; the place's tabs, each a link; and the question as
- * a strip, closed by default, that opens to the topic with Edit (to the Idea place). "Open my document" (Task 11), "Open in a new window"
- * (Task 13) and the feasibility verdict (the stored read, Task 9) join it later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
+ * a strip, closed by default, that opens to the topic with Edit (to the Idea place); and "Open my document" (Task 11) while the document is not
+ * beside the place (Writing always shows it). "Open in a new window" (Task 13) and the feasibility verdict (the stored read, Task 9) join it later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
  */
 export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: string | null; tabs?: ReactNode }) {
   const t = useT();
   const { me } = useSettings();
-  const { project, projectId } = useProject();
+  const { project, projectId, docOpen, openDocument } = useProject();
   const title = useTitle(project, "project");
   const id = projectId ?? "";
   const name = project ? title.text : projectId === me?.scratchProjectId ? t("scratch_name") : "";
   const tabs = PLACE_TABS[stage];
   return (
     <div className="place-hdr" data-testid="place-header">
-      <nav className="place-crumbs" aria-label={t("place_crumbs")}>
-        <Link href={homeHref(id)} data-testid="place-home">{name}</Link>
-        <span aria-hidden="true">/</span>
-        <span className="here" aria-current={tabs.length ? undefined : true} data-testid="place-name">{t("stage_name_" + stage)}</span>
-      </nav>
+      <div className="place-top">
+        <nav className="place-crumbs" aria-label={t("place_crumbs")}>
+          <Link href={homeHref(id)} data-testid="place-home">{name}</Link>
+          <span aria-hidden="true">/</span>
+          <span className="here" aria-current={tabs.length ? undefined : true} data-testid="place-name">{t("stage_name_" + stage)}</span>
+        </nav>
+        {stage !== "writing" && !docOpen && (
+          <Button variant="ghost" size="sm" className="place-open-doc" data-testid="place-open-doc" onClick={openDocument}><FileText aria-hidden="true" />{t("place_open_doc")}</Button>
+        )}
+      </div>
       {own ?? (tabs.length > 0 && (
         <nav className="place-tabs" aria-label={t("stage_name_" + stage)} data-testid="place-tabs">
           {tabs.map((x) => (

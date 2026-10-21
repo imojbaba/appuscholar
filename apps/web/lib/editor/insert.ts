@@ -43,6 +43,15 @@ export function insertAiText(editor: Editor, text: string, replaceSelection: boo
   else editor.chain().focus().insertContentAt(editor.state.doc.content.size, `<p>${html}</p>`).focus("end").run();
 }
 
+/**
+ * "Put in my document" for AI text from any place (an idea's read, a comparison, a helper's answer): through the project shell's requestInsert,
+ * so a closed document opens beside the place first and a locked one asks for the passphrase once; it goes in as insertAiText puts an accepted
+ * Continue suggestion (at the end, marked as AI text). False when the document did not open: nothing went in, and requestInsert has said so.
+ */
+export function putAiInDocument(requestInsert: (run: (editor: Editor) => void) => Promise<boolean>, text: string): Promise<boolean> {
+  return requestInsert((editor) => insertAiText(editor, text, false));
+}
+
 /** The selection with its position and text, or null when collapsed. */
 export function selectionRange(editor: Editor): SelectionRange | null {
   const { from, to, empty } = editor.state.selection;

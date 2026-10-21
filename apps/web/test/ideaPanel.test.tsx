@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
   blob: null as unknown as Blob,
   blobArgs: [] as unknown[],
   project: null as { id: string } | null,
-  dockShow: vi.fn(), toast: vi.fn(),
+  toast: vi.fn(),
   callAI: vi.fn(),
   sug: {} as Record<string, unknown>
 }));
@@ -19,7 +19,7 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: (...a: unknown[])
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => h.sug }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "  nursing " } }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, dockShow: h.dockShow }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { IdeaPanel } from "../components/tools/IdeaPanel";
@@ -57,7 +57,7 @@ beforeEach(() => {
   h.blob = { value: null, loading: false, locked: false, set: vi.fn(), flush: vi.fn(async () => true) };
   h.blobArgs = [];
   h.project = null;
-  h.dockShow.mockReset(); h.toast.mockReset();
+  h.toast.mockReset();
   h.callAI.mockReset().mockResolvedValue("Topic clarity and researchability: High. ...");
   let token = 0;
   h.sug = {
@@ -154,7 +154,6 @@ describe("Idea & Feasibility: Assess feasibility", () => {
     expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: 0.3, max: 1200 });
     expect(h.sug.setThinking).toHaveBeenCalledWith("custom", null, "💜 Thinking this through…");
     expect(h.sug.set).toHaveBeenCalledWith("Topic clarity and researchability: High. ...", null, 1);
-    expect(h.dockShow).toHaveBeenCalledWith("ai");
     expect(h.toast).toHaveBeenCalledWith("Ready — press Tab in the editor to insert");
   });
 

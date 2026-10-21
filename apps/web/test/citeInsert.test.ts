@@ -132,37 +132,43 @@ describe("putIntext / citInsert / citUseLib (v1 7494-7506, 7867)", () => {
     expect(putIntext(entry("roy-chapter"), lib, "apa", (f) => got.push(f))).toBe(false);
     expect(got[0]).toEqual(golden("roy-chapter", "apa", 0));
   });
-  it("Insert citation of an unsaved source in a numbered style inserts anyway and toasts cite_num_unsaved", () => {
+  it("Insert citation of an unsaved source in a numbered style inserts anyway and toasts cite_num_unsaved", async () => {
     const e = make("<p>Text.</p>");
     after(e, "Text.");
     const toast = vi.fn();
-    citeInsert(entry("roy-chapter"), { lib, style: "ama", insert: (f) => insertCitation(e, f), toast, t: (k) => E[k]! });
+    await citeInsert(entry("roy-chapter"), { lib, style: "ama", insert: async (f) => { insertCitation(e, f); return true; }, toast, t: (k) => E[k]! });
     expect(e.getHTML()).toBe("<p>Text.<sup>3</sup></p>");
     expect(toast).toHaveBeenCalledWith(E.cite_num_unsaved);
   });
-  it("Insert citation of a saved source toasts v1's 'Citation inserted ✓'", () => {
+  it("Insert citation of a saved source toasts v1's 'Citation inserted ✓'", async () => {
     const e = make("<p>Text.</p>");
     after(e, "Text.");
     const toast = vi.fn();
-    citeInsert(entry("miller-3-authors"), { lib, style: "vancouver", insert: (f) => insertCitation(e, f), toast, t: (k) => E[k]! });
+    await citeInsert(entry("miller-3-authors"), { lib, style: "vancouver", insert: async (f) => { insertCitation(e, f); return true; }, toast, t: (k) => E[k]! });
     expect(e.getHTML()).toBe("<p>Text. [2]</p>");
     expect(toast).toHaveBeenCalledWith(CITATION_INSERTED);
     expect(CITATION_INSERTED).toBe("Citation inserted ✓");
   });
-  it("Insert citation without author or title toasts v1's sentence and inserts nothing", () => {
+  it("Insert citation without author or title toasts v1's sentence and inserts nothing", async () => {
     const insert = vi.fn(), toast = vi.fn();
-    citeInsert({ ...entry("roy-chapter"), author: "" }, { lib, style: "apa", insert, toast, t: (k) => E[k]! });
-    citeInsert({ ...entry("roy-chapter"), title: "" }, { lib, style: "apa", insert, toast, t: (k) => E[k]! });
+    await citeInsert({ ...entry("roy-chapter"), author: "" }, { lib, style: "apa", insert, toast, t: (k) => E[k]! });
+    await citeInsert({ ...entry("roy-chapter"), title: "" }, { lib, style: "apa", insert, toast, t: (k) => E[k]! });
     expect(insert).not.toHaveBeenCalled();
     expect(toast.mock.calls).toEqual([["Add author and title first"], ["Add author and title first"]]);
   });
-  it("a library card's Insert uses the card's source and always toasts 'Citation inserted ✓'", () => {
+  it("Insert citation and a card's Insert claim nothing when the document did not open (Task 11: the insert answers false)", async () => {
+    const toast = vi.fn();
+    await citeInsert(entry("miller-3-authors"), { lib, style: "vancouver", insert: async () => false, toast, t: (k) => E[k]! });
+    await citeUseLib(0, { lib, style: "vancouver", insert: async () => false, toast, t: (k) => E[k]! });
+    expect(toast).not.toHaveBeenCalled();
+  });
+  it("a library card's Insert uses the card's source and always toasts 'Citation inserted ✓'", async () => {
     const got: Formatted[] = [];
     const toast = vi.fn();
-    citeUseLib(1, { lib, style: "vancouver", insert: (f) => got.push(f), toast, t: (k) => E[k]! });
+    await citeUseLib(1, { lib, style: "vancouver", insert: async (f) => { got.push(f); return true; }, toast, t: (k) => E[k]! });
     expect(got[0]!.intext).toBe("[2]");
     expect(toast).toHaveBeenCalledWith("Citation inserted ✓");
-    citeUseLib(9, { lib, style: "vancouver", insert: (f) => got.push(f), toast, t: (k) => E[k]! });
+    await citeUseLib(9, { lib, style: "vancouver", insert: async (f) => { got.push(f); return true; }, toast, t: (k) => E[k]! });
     expect(got).toHaveLength(1);
   });
 });

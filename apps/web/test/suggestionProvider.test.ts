@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/toast";
 import { runDevil } from "../lib/ai/actions";
 import en from "../messages/en.json";
 
-const ws = vi.hoisted(() => ({ dockShow: vi.fn(), setAiWaiting: vi.fn() }));
+const ws = vi.hoisted(() => ({ openDocument: vi.fn() }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ws }));
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
 
@@ -24,6 +24,7 @@ const api = new Proxy({} as SuggestionValue, { get: (_t, k) => (seen.value as un
 function Probe() { const v = useSuggestion(); useEffect(() => { seen.value = v; }); return null; }
 let root: Root, host: HTMLElement;
 beforeEach(() => {
+  ws.openDocument.mockReset();
   host = document.createElement("div");
   root = createRoot(host);
   act(() => root.render(createElement(SuggestionProvider, null, createElement(Probe))));
@@ -135,7 +136,7 @@ describe("SuggestionProvider", () => {
       await runDevil({
         callAI: async () => "1. A weakness.", hasSelection: () => false, selectionText: () => "", docText: () => passage,
         setThinking: api.setThinking, isCurrent: api.isCurrent, set: api.set, setFeedback: api.setFeedback, clear: api.clear,
-        dockShow: ws.dockShow, toast: vi.fn(), t: (k: string) => (en as Record<string, string>)[k] ?? k
+        toast: vi.fn(), t: (k: string) => (en as Record<string, string>)[k] ?? k
       });
     });
     expect(api.text).toBe((en as Record<string, string>).devil_label + "\n\n1. A weakness.");
@@ -145,6 +146,30 @@ describe("SuggestionProvider", () => {
     expect(toast).toHaveBeenCalledWith("No suggestion to accept yet");
     expect(api.tab()).toBe(false);
     expect(ed.getHTML()).toBe("<p>mine</p>");
+    ed.destroy();
+  });
+
+  it("a request, its answer, its feedback and an error open the document beside the place; Dismiss and Accept leave it as it is (Task 11)", () => {
+    const ed = make("<p>mine</p>");
+    act(() => api.setEditor(ed));
+    expect(ws.openDocument).not.toHaveBeenCalled();
+    let token = 0;
+    act(() => { token = api.setThinking("thinking", null); });
+    expect(ws.openDocument).toHaveBeenCalledTimes(1);
+    act(() => api.set("more", null, token));
+    expect(ws.openDocument).toHaveBeenCalledTimes(2);
+    act(() => { token = api.setThinking("reading"); });
+    act(() => api.setFeedback("questions", token));
+    expect(ws.openDocument).toHaveBeenCalledTimes(4);
+    act(() => api.clear("Network error"));
+    expect(ws.openDocument).toHaveBeenCalledTimes(5);
+    act(() => api.clear());
+    act(() => { token = api.setThinking("thinking", null); });
+    act(() => api.set("more", null, token));
+    ws.openDocument.mockClear();
+    act(() => api.accept());
+    act(() => api.clear());
+    expect(ws.openDocument).not.toHaveBeenCalled();
     ed.destroy();
   });
 });

@@ -31,7 +31,9 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: h.settings }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {} }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {},
+  // The shell's insert: into the test's editor; with none, the document did not open.
+  requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -163,9 +165,9 @@ describe("the panel's order and copy (v1 914-947)", () => {
 });
 
 describe("Insert reference list", () => {
-  it("puts core's block into the open document once and toasts v1's sentence; disabled with no document open", async () => {
+  it("puts core's block into the open document once and toasts v1's sentence; enabled with no document open (an insert opens it, Task 11)", async () => {
     mount();
-    expect((tid("cite-insertbib") as HTMLButtonElement).disabled).toBe(true);
+    expect((tid("cite-insertbib") as HTMLButtonElement).disabled).toBe(false);
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     const e = new Editor({ extensions: editorExtensions, content: "<p>Mine.</p>" });
     editors.push(e);
@@ -295,7 +297,7 @@ describe("Insert quote", () => {
     expect(h.callAI).not.toHaveBeenCalled();
     expect(e.getText()).toContain("“स्मृति की क्षमता सीमित है।” ");
   });
-  it("a translation that finishes after a document switch inserts nothing, leaves the box and shows no success", async () => {
+  it("a translation whose document then does not open inserts nothing, leaves the box and shows no success", async () => {
     const e = new Editor({ extensions: editorExtensions, content: "<p>Mine.</p>" });
     h.editor = e;
     h.project = { id: "p1", contentLang: "hi" };
@@ -304,13 +306,13 @@ describe("Insert quote", () => {
     mount();
     typeArea("citQuoteText", "The span of absolute judgment is limited.");
     await click("cite-insertquote");
-    e.destroy(); // the document switch: the editor the request was made in is gone
+    e.destroy(); // the document is gone by the time the AI answers, and none opens
     await act(async () => { answer("अनुवाद"); await new Promise((r) => setTimeout(r, 0)); });
     expect(toasts()).toEqual(["🔎 Translating quote…"]);
     expect(($("#citQuoteText") as HTMLTextAreaElement).value).toBe("The span of absolute judgment is limited.");
   });
-  it("disabled with no document open", () => {
+  it("enabled with no document open: the insert opens it (Task 11)", () => {
     mount();
-    expect((tid("cite-insertquote") as HTMLButtonElement).disabled).toBe(true);
+    expect((tid("cite-insertquote") as HTMLButtonElement).disabled).toBe(false);
   });
 });

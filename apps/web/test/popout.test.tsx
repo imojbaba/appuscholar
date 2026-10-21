@@ -41,6 +41,7 @@ import { CiteShare } from "../components/tools/cite/CiteShare";
 import { citeUseLib, CITATION_INSERTED } from "../lib/cite/actions";
 import type { Library } from "../lib/cite/useLibrary";
 import { openPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
+import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectContext";
 import { markCursorPlaced } from "../lib/editor/insert";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -66,6 +67,10 @@ async function until(pred: () => boolean) {
   throw new Error("condition not reached");
 }
 const toasts = () => h.toast.mock.calls.map((c) => c[0]);
+/** The shell's requestInsert as these tests need it: the editor the test gives, run at once; false with none (the document did not open). */
+const direct = (editor: Editor | null): ProjectValue["requestInsert"] => async (run) => { if (!editor || editor.isDestroyed) return false; run(editor); return true; };
+/** A panel inside the project shell, whose requestInsert puts inserts into h.editor. */
+const inShell = (node: React.ReactNode) => <ProjectProvider value={{ requestInsert: (run: (e: Editor) => void) => direct(h.editor as Editor | null)(run) } as unknown as ProjectValue}>{node}</ProjectProvider>;
 const popoutAt = (tool: string) => window.history.replaceState(null, "", "/popout?tool=" + tool);
 
 beforeEach(() => {
@@ -159,15 +164,16 @@ describe("the pop-out page renders the tool alone", () => {
 
 describe("inserts: the pop-out sends them to the writing window", () => {
   const box: { t: InsertTarget | null } = { t: null };
-  function Probe() { box.t = useInsertTarget(); return null; }
+  function Inner() { box.t = useInsertTarget(); return null; }
+  const Probe = () => inShell(<Inner />);
 
-  it("in the pop-out every insert is ready (no editor here) and goes over appu_sync, with pop_sent", () => {
+  it("in the pop-out every insert is ready (no editor here) and goes over appu_sync, with pop_sent", async () => {
     popoutAt("cite");
     render(<Probe />);
     expect(box.t!.ready).toBe(true);
-    expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).toBe(true);
-    expect(box.t!.text("“A quote.” ")).toBe(true);
-    expect(box.t!.block("<p>References</p>")).toBe(true);
+    await expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).resolves.toBe(true);
+    await expect(box.t!.text("“A quote.” ")).resolves.toBe(true);
+    await expect(box.t!.block("<p>References</p>")).resolves.toBe(true);
     expect(ch.sent).toEqual([{ type: "insert", text: " (Bandura, 1977)" }, { type: "insert", text: "“A quote.” " }, { type: "insert", html: "<p>References</p>" }]);
     expect(toasts()).toEqual([E.pop_sent, E.pop_sent, E.pop_sent]);
   });
@@ -177,14 +183,14 @@ describe("inserts: the pop-out sends them to the writing window", () => {
     render(<Probe />);
     const f = citFmt(MILLER, 3, "ama");
     expect(f.sup).toBe(true);
-    box.t!.citation(f);
+    void box.t!.citation(f);
     expect(ch.sent).toEqual([{ type: "insert", text: " [3]" }]);
   });
 
-  it("a library card's Insert: pop_sent, then citUseLib's own toast over it, as v1 shows them one after the other", () => {
+  it("a library card's Insert: pop_sent, then citUseLib's own toast over it, as v1 shows them one after the other", async () => {
     popoutAt("cite");
     render(<Probe />);
-    citeUseLib(0, { lib: [BANDURA], style: "apa", toast: h.toast, t, insert: (f) => { box.t!.citation(f); } });
+    await citeUseLib(0, { lib: [BANDURA], style: "apa", toast: h.toast, t, insert: (f) => box.t!.citation(f) });
     expect(ch.sent).toEqual([{ type: "insert", text: " (Bandura, 1977)" }]);
     expect(toasts()).toEqual([E.pop_sent, CITATION_INSERTED]);
   });
@@ -193,17 +199,18 @@ describe("inserts: the pop-out sends them to the writing window", () => {
     popoutAt("cite");
     ch.throwOnPost = true;
     render(<Probe />);
-    box.t!.citation(citFmt(BANDURA, 0, "apa"));
+    void box.t!.citation(citFmt(BANDURA, 0, "apa"));
     expect(toasts()).toEqual([E.pop_nowin]);
   });
 
-  it("Insert reference list is enabled in the pop-out and sends the list as one HTML block", () => {
+  it("Insert reference list is enabled in the pop-out and sends the list as one HTML block", async () => {
     popoutAt("cite");
     const lib = { lib: [BANDURA], style: "apa", ready: true, update: () => true } as unknown as Library;
-    render(<CiteShare library={lib} insertReady={true} />);
+    render(inShell(<CiteShare library={lib} insertReady={true} />));
     const btn = tid("cite-insertbib") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
     act(() => { btn.click(); });
+    await until(() => toasts().length === 2);
     expect(ch.sent).toHaveLength(1);
     const m = ch.sent[0] as { type: string; html: string };
     expect(m.type).toBe("insert");
@@ -211,16 +218,16 @@ describe("inserts: the pop-out sends them to the writing window", () => {
     expect(toasts()).toEqual([E.pop_sent, E.cite_bib_fmt]);
   });
 
-  it("in the writing window the target is the editor: nothing is posted, and nothing is ready without a document", () => {
+  it("in the writing window the inserts go through the shell's requestInsert into the editor: nothing is posted, and false when the document did not open", async () => {
     render(<Probe />);
-    expect(box.t!.ready).toBe(false);
-    expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).toBe(false);
+    // Always ready: an insert opens a closed document (Task 11).
+    expect(box.t!.ready).toBe(true);
+    await expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).resolves.toBe(false);
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Learning is social.</p>" });
     editors.push(ed);
     h.editor = ed;
     render(<Probe />);
-    expect(box.t!.ready).toBe(true);
-    box.t!.citation(citFmt(BANDURA, 0, "apa"));
+    await expect(box.t!.citation(citFmt(BANDURA, 0, "apa"))).resolves.toBe(true);
     expect(ed.getText()).toContain("(Bandura, 1977)");
     expect(ch.sent).toEqual([]);
     expect(toasts()).toEqual([]);
@@ -228,38 +235,43 @@ describe("inserts: the pop-out sends them to the writing window", () => {
 });
 
 describe("the writing window's receiver (v1 popChan.onmessage 7604-7611)", () => {
-  function Receiver({ editor }: { editor: Editor | null }) { useSyncReceiver(editor); return null; }
+  function Receiver({ editor }: { editor: Editor | null }) { useSyncReceiver(direct(editor)); return null; }
+  /** The receiver's insert answers after a microtask: the toast follows it. */
+  const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 
-  it("inserts a citation at the cursor and says Citation inserted ✓", () => {
+  it("inserts a citation at the cursor and says Citation inserted ✓", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Learning is social.</p>" });
     editors.push(ed);
     markCursorPlaced(ed);
     ed.commands.setTextSelection(1 + "Learning is social".length);
     render(<Receiver editor={ed} />);
     act(() => { ch.deliver({ type: "insert", text: " (Bandura, 1977)" }); });
+    await settle();
     expect(ed.getHTML()).toBe("<p>Learning is social (Bandura, 1977).</p>");
     expect(toasts()).toEqual(["Citation inserted ✓"]);
   });
 
-  it("with no cursor placed the text goes at the end on a new line (insertIntoEditor's placeCaretAtEnd)", () => {
+  it("with no cursor placed the text goes at the end on a new line (insertIntoEditor's placeCaretAtEnd)", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Learning is social.</p>" });
     editors.push(ed);
     render(<Receiver editor={ed} />);
     act(() => { ch.deliver({ type: "insert", text: " [3]" }); });
+    await settle();
     expect(ed.getHTML()).toBe("<p>Learning is social.<br> [3]</p>");
   });
 
-  it("an HTML block (the reference list) goes in as markup", () => {
+  it("an HTML block (the reference list) goes in as markup", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Body.</p>" });
     editors.push(ed);
     render(<Receiver editor={ed} />);
     act(() => { ch.deliver({ type: "insert", html: '<p><b>References</b></p><p>Bandura, A. (1977). <i>Social learning theory</i>.</p>' }); });
+    await settle();
     expect(ed.getHTML()).toContain("<strong>References</strong>");
     expect(ed.getHTML()).toContain("<em>Social learning theory</em>");
     expect(toasts()).toEqual(["Citation inserted ✓"]);
   });
 
-  it("ignores anything else, a missing editor, and messages while it is itself a pop-out", () => {
+  it("ignores anything else, a missing editor, and messages while it is itself a pop-out", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Body.</p>" });
     editors.push(ed);
     render(<Receiver editor={ed} />);
@@ -272,6 +284,7 @@ describe("the writing window's receiver (v1 popChan.onmessage 7604-7611)", () =>
     popoutAt("cite");
     render(<Receiver editor={ed} />);
     act(() => { ch.deliver({ type: "insert", text: "x" }); });
+    await settle();
     expect(ed.getHTML()).toBe("<p>Body.</p>");
     expect(toasts()).toEqual([]);
   });

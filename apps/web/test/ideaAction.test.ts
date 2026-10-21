@@ -15,7 +15,6 @@ function deps(over: Partial<IdeaDeps> = {}) {
     isCurrent: vi.fn(() => true),
     set: vi.fn<IdeaDeps["set"]>(() => void log.push("set")),
     clear: vi.fn(() => void log.push("clear")),
-    dockShow: vi.fn((w: string) => void log.push("dock:" + w)),
     toast: vi.fn((m: string) => void log.push("toast:" + m)),
     t: vi.fn((k: string) => (en as Record<string, string>)[k] ?? k),
     field: fieldLabel("psychology"),
@@ -66,14 +65,13 @@ describe("assessIdea (v1 ideaAssess 8568-8580)", () => {
     expect(m.setThinking).toHaveBeenCalledWith("custom", null, "💜 Thinking this through…");
     expect(m.set).toHaveBeenCalledWith("Topic clarity: High. ...", null, 7);
     expect(m.t).toHaveBeenCalledWith("rs2_ready_press_tab_in");
-    expect(log).toEqual(["thinking:custom:💜 Thinking this through…", "dock:ai", "call", "set", "dock:ai", "toast:Ready — press Tab in the editor to insert"]);
+    expect(log).toEqual(["thinking:custom:💜 Thinking this through…", "call", "set", "toast:Ready — press Tab in the editor to insert"]);
   });
 
-  it("a failure goes through the writing actions' error path (pane message, AI tab, toast)", async () => {
+  it("a failure goes through the writing actions' error path (pane message, toast)", async () => {
     const { d, m } = deps({ callAI: vi.fn(async () => { throw new Error(apiMsg("network")); }) });
     await assessIdea(d);
     expect(m.clear).toHaveBeenCalledWith(apiMsg("network"));
-    expect(m.dockShow).toHaveBeenLastCalledWith("ai");
     expect(m.toast).toHaveBeenCalledWith(apiMsg("network"));
     expect(m.set).not.toHaveBeenCalled();
   });

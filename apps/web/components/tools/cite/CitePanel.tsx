@@ -22,7 +22,7 @@ export function CitePanel() {
   const insertReady = target.ready;
   const deps = (): CiteDeps => ({
     lib: library.lib, style: library.style, toast, t,
-    insert: (f: Formatted) => { target.citation(f); }
+    insert: (f: Formatted) => target.citation(f)
   });
   return (
     <div className="panel" data-testid="panel-cite">

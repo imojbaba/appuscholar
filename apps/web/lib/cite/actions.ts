@@ -19,8 +19,11 @@ export const REMOVE_TITLE = "Remove";
 export type CiteDeps = {
   lib: CitationEntry[];
   style: CitationStyle;
-  /** Puts the formatted citation at the cursor (insertCitation on the open document's editor). */
-  insert(f: Formatted): void;
+  /**
+   * Puts the formatted citation at the cursor (insertCitation on the open document's editor, through the shell's requestInsert, which opens a
+   * closed document first). False when nothing went in: the document did not open, and requestInsert has said so.
+   */
+  insert(f: Formatted): Promise<boolean>;
   toast(msg: string): void;
   t(key: string): string;
 };
@@ -33,19 +36,25 @@ export function putIntext(d: CitationEntry, lib: CitationEntry[], style: Citatio
   return warn;
 }
 
-/** citInsert 7505-7506: needs author and title; inserts, then warns when the number is a guess. */
-export function citeInsert(d: CitationEntry, deps: CiteDeps): void {
+/** putIntext through an insert that answers later: the number warning, and whether the citation went in. */
+async function putIntextAsync(d: CitationEntry, deps: CiteDeps): Promise<{ warn: boolean; inserted: boolean }> {
+  let inserted: Promise<boolean> = Promise.resolve(false);
+  const warn = putIntext(d, deps.lib, deps.style, (f) => { inserted = deps.insert(f); });
+  return { warn, inserted: await inserted };
+}
+
+/** citInsert 7505-7506: needs author and title; inserts, then warns when the number is a guess. Nothing is claimed when the document did not open. */
+export async function citeInsert(d: CitationEntry, deps: CiteDeps): Promise<void> {
   if (!d.author || !d.title) { deps.toast(ADD_AUTHOR_TITLE); return; }
-  const warn = putIntext(d, deps.lib, deps.style, deps.insert);
-  deps.toast(warn ? deps.t("cite_num_unsaved") : CITATION_INSERTED);
+  const r = await putIntextAsync(d, deps);
+  if (r.inserted) deps.toast(r.warn ? deps.t("cite_num_unsaved") : CITATION_INSERTED);
 }
 
 /** citUseLib 7867: a library card's Insert. */
-export function citeUseLib(i: number, deps: CiteDeps): void {
+export async function citeUseLib(i: number, deps: CiteDeps): Promise<void> {
   const d = deps.lib[i];
   if (!d) return;
-  putIntext(d, deps.lib, deps.style, deps.insert);
-  deps.toast(CITATION_INSERTED);
+  if ((await putIntextAsync(d, deps)).inserted) deps.toast(CITATION_INSERTED);
 }
 
 /** What useLibrary's add answers: saved, missing author or title, no project yet, or a broken library the student chose to keep. */

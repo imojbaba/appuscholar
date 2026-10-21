@@ -45,7 +45,7 @@ function tickedShown(): RsPaper[] {
  */
 export function ResearchPanel() {
   const t = useT();
-  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go, dockShow } = useProject();
+  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go } = useProject();
   const { me, settings } = useSettings();
   const callAI = useCallAI();
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
@@ -93,7 +93,7 @@ export function ResearchPanel() {
   });
   const quickDeps = (): QuickDeps => ({ callAI, field, t, toast, apply: applyQuick });
   const genDeps = (): GeneratorDeps => ({
-    callAI, field, t, toast, dockShow, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear
+    callAI, field, t, toast, setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, clear: suggestion.clear
   });
   const connected = (p: RsPaper) => {
     const gen = ++connectedGen;
@@ -102,7 +102,7 @@ export function ResearchPanel() {
   };
   const actionsFor = (p: RsPaper): CardActions => ({
     add: () => { addResult(p, addDeps()); },
-    insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { target.citation(f); } }); },
+    insert: () => { void insertResult(p, { ...addDeps(), insert: (f: Formatted) => target.citation(f) }); },
     connected: () => connected(p),
     quick: () => { void quickRead(p, quickDeps()); },
     analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool: () => { void go(placeHref(projectId ?? "", "lit", "reading")); }, toast, t }); }

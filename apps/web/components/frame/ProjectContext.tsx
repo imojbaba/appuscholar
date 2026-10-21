@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext } from "react";
+import type { Editor } from "@tiptap/core";
 import type { ProviderId } from "@appuscholar/core";
 import type { Place } from "@/lib/frame/places";
 import type { WrappedDek } from "@/lib/vault/useVault";
@@ -40,11 +41,27 @@ export type ProjectValue = {
   /** The paper Research's "📄 Analyse this paper" kept for Analyse a paper (v1 rsAnalyse 8407-8419), or null; Task 12's intake loads it abstract-only. */
   pendingAnalyse: PendingAnalyse | null;
   setPendingAnalyse(v: PendingAnalyse | null): void;
-  /** "ai" shows the AI pane beside the document; "tools" does nothing (the dock is gone; Task 11 removes this). */
-  dockShow(which: "tools" | "ai"): void;
-  aiWaiting: boolean;
-  /** Raised by the suggestion provider while a result waits; showing the AI pane lowers it. */
-  setAiWaiting(on: boolean): void;
+  /**
+   * The document is open beside the place (every place but Writing, which always shows it). Remembered in the settings (`docBeside`). Closed,
+   * the editor stays mounted out of sight, so nothing typed is lost and an insert still has somewhere to go.
+   */
+  docOpen: boolean;
+  /** Opens the document beside the place the student is in; the place stays as it is. */
+  openDocument(): void;
+  /**
+   * Closes the document beside the place: its text is stored first (flushOpen); when that save fails the student is asked "Close anyway?".
+   * False means they chose Stay.
+   */
+  closeDocument(): Promise<boolean>;
+  /**
+   * Puts something in the open document: `run` gets its editor once. The document opens beside the place first when it is closed. With no editor
+   * yet (the document is locked, or still loading), the passphrase is asked once if the document is locked, then the editor is waited for, at
+   * most 10 seconds after the unlock. A cancelled unlock, a document that does not open, or the wait running out inserts nothing, says so
+   * (`insert_doc_closed`) and answers false.
+   */
+  requestInsert(run: (editor: Editor) => void): Promise<boolean>;
+  /** The open document's editor registers itself here (null on unmount), for requestInsert. */
+  registerEditor(editor: Editor | null): void;
   project: Project | null;
   /**
    * The project the shell has loaded: the open project's id, the scratch project's in scratch space; null outside a project (first run, the
