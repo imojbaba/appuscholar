@@ -529,8 +529,10 @@ test("Writing's My style and Words tabs, end to end", async ({ page, context }) 
     await page.getByTestId("dict-in").fill("big");
     await page.getByTestId("dict-go").click();
     await expect(page.getByTestId("dict-word")).toHaveText("big");
+    // The document is set to the two-slip text first, so the grammar cards (with Apply and Ignore) are on the screen too.
+    await writeDocument(page, RULES_TEXT);
     await page.getByTestId("gram-rules").click();
-    await expect(page.getByTestId("gram-out")).toBeVisible();
+    await expect(page.getByTestId("gram-card")).toHaveCount(2);
     expect(await noSidewaysScroll(page)).toEqual([]);
     // The tab bar scrolls inside itself; the last tab (Words) is within the screen.
     const bar = page.getByTestId("place-tabs");
