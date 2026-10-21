@@ -59,10 +59,10 @@ export const V2_STRINGS = {
   vault_pill_on: { en: "Vault on", hi: "तिजोरी चालू है" },
   vault_pill_migrating: { en: "Vault: securing your documents…", hi: "तिजोरी: आपके दस्तावेज़ सुरक्षित किए जा रहे हैं…" },
   vault_setup_h2: { en: "Protect your work with a passphrase", hi: "अपने काम को पासफ़्रेज़ से सुरक्षित करें" },
-  // The titles sentence (Ruling, final review): what the vault does not hide. DRAFT — its Hindi is pending review with the rest.
+  // Titles are locked too (OJ, 2026-10-20, decision D3; wave B Task 5, register D-S2-40). DRAFT — its Hindi is pending review with the rest.
   vault_setup_intro: {
-    en: "Your documents are saved under your account, locked so that only this passphrase opens them. Nobody at Appuscholar can read them. Titles and project names stay readable so your lists work. If you lose the passphrase and the recovery sheet, the documents cannot be recovered.",
-    hi: "आपके दस्तावेज़ आपके खाते के अंतर्गत सहेजे जाते हैं और इस तरह बंद रहते हैं कि केवल यही पासफ़्रेज़ उन्हें खोलता है। Appuscholar में कोई भी उन्हें नहीं पढ़ सकता। शीर्षक और प्रोजेक्ट के नाम पढ़े जा सकते हैं, ताकि आपकी सूचियाँ काम करें। अगर आप पासफ़्रेज़ और रिकवरी शीट दोनों खो देते हैं, तो दस्तावेज़ वापस नहीं पाए जा सकते।"
+    en: "Your documents, their titles and your project names are saved under your account, locked so that only this passphrase opens them. Nobody at Appuscholar can read them. If you lose the passphrase and the recovery sheet, they cannot be recovered.",
+    hi: "आपके दस्तावेज़, उनके शीर्षक और आपके प्रोजेक्ट के नाम आपके खाते के अंतर्गत सहेजे जाते हैं और इस तरह बंद रहते हैं कि केवल यही पासफ़्रेज़ उन्हें खोलता है। Appuscholar में कोई भी उन्हें नहीं पढ़ सकता। अगर आप पासफ़्रेज़ और रिकवरी शीट दोनों खो देते हैं, तो वे वापस नहीं पाए जा सकते।"
   },
   vault_setup_btn: { en: "Set passphrase", hi: "पासफ़्रेज़ तय करें" },
   vault_setup_later: { en: "Not now", hi: "अभी नहीं" },
@@ -197,7 +197,11 @@ export const V2_STRINGS = {
   // DRAFT Hindi: के बारे में.
   ap_about: { en: "About: {title}", hi: "इसके बारे में: {title}" },
   // A stage panel's loading sign while its encrypted saved work is read and opened (fix wave A, Task 18; walk fault W8, register D-S2-34). DRAFT Hindi.
-  blob_loading: { en: "Opening your saved work…", hi: "आपका सहेजा हुआ काम खुल रहा है…" }
+  blob_loading: { en: "Opening your saved work…", hi: "आपका सहेजा हुआ काम खुल रहा है…" },
+  // A sealed project or document title while the vault is locked, and one that does not open under this vault (wave B Task 5, register D-S2-40). DRAFT Hindi.
+  title_locked: { en: "Locked title", hi: "बंद शीर्षक" },
+  title_unreadable: { en: "This title cannot be opened", hi: "यह शीर्षक खोला नहीं जा सकता" },
+  titles_unlock: { en: "Type your passphrase to see the names of your projects and documents.", hi: "अपने प्रोजेक्ट और दस्तावेज़ों के नाम देखने के लिए अपना पासफ़्रेज़ लिखें।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

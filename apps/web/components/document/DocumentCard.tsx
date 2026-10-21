@@ -10,6 +10,7 @@ import { AUTOSAVE_OFF_BADGE, AUTOSAVE_STOPPED_TOAST, WORD_DOWNLOADED_TOAST, LATE
 import { downloadBlob } from "@/lib/export/download";
 import { wordDocument } from "@/lib/export/word";
 import { latexDocument } from "@/lib/export/latex";
+import { fileTitle, useTitle } from "@/lib/vault/titles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
@@ -36,6 +37,8 @@ export function DocumentCard() {
   // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
   const warned = useRef(false);
   const docId = currentDoc?.id;
+  // The downloads are named after the opened title ("untitled" while it is locked or does not open), never its ciphertext.
+  const fileName = fileTitle(useTitle(currentDoc, "document"));
   // The format bar works on the open document's editor instance; null while no document is open or the editor is still being created.
   const [editor, setEditorLocal] = useState<TipTapEditor | null>(null);
   const { setEditor: registerEditor, tab } = useSuggestion();
@@ -54,13 +57,13 @@ export function DocumentCard() {
   // Both exports take what the student sees (the live editor HTML, unsaved typing included), not the last saved body.
   const exportWord = () => {
     if (!editor || !currentDoc) return;
-    const { filename, blob } = wordDocument(currentDoc.title, editor.getHTML());
+    const { filename, blob } = wordDocument(fileName, editor.getHTML());
     downloadBlob(filename, blob);
     toast(WORD_DOWNLOADED_TOAST);
   };
   const exportLatex = () => {
     if (!editor || !currentDoc) return;
-    const { filename, blob } = latexDocument(currentDoc.title, editor.getHTML(), settings.orcid);
+    const { filename, blob } = latexDocument(fileName, editor.getHTML(), settings.orcid);
     downloadBlob(filename, blob);
     toast(LATEX_EXPORTED_TOAST);
   };

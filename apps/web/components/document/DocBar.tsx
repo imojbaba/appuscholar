@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/toast";
 import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault } from "@/lib/vault/useVault";
+import { sealTitle, useTitle } from "@/lib/vault/titles";
 import { useWorkspace, type DocumentSummary, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
 
 const UNDO_MS = 10_000;
@@ -27,6 +28,7 @@ export function DocBar() {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const isSource = currentDoc?.kind === "source";
+  const currentTitle = useTitle(currentDoc, "document");
   const projectId = project?.id ?? me?.scratchProjectId;
 
   const close = () => { if (!busy) setDialog(null); };
@@ -36,10 +38,11 @@ export function DocBar() {
     setBusy(true);
     try {
       // With a vault the new document's empty body is encrypted from the start (the vault is opened first).
-      const body = await newDocumentBody(vault);
+      // Its title is sealed with it, under the same first key.
+      const body = await newDocumentBody(vault, name.trim() || "Untitled");
       // The unlock was cancelled: nothing is created and the name dialog stays open.
       if (!body) return;
-      const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: name.trim() || "Untitled", ...body }) });
+      const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(body) });
       await reloadDocs();
       const shown = await selectDoc(made.id);
       setDialog(null);
@@ -53,8 +56,11 @@ export function DocBar() {
     if (busy || !currentDoc) return;
     setBusy(true);
     try {
-      const d = await apiFetch<DocumentSummary>(`/documents/${currentDoc.id}`, { method: "PATCH", body: JSON.stringify({ title: name.trim() || "Untitled" }) });
-      patchDoc(d.id, { title: d.title });
+      // Sealed under the document's own key; a locked vault asks for the passphrase first, and a cancelled ask renames nothing.
+      if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
+      const title = await sealTitle(vault, currentDoc.id, currentDoc.deks, name.trim() || "Untitled");
+      const d = await apiFetch<DocumentSummary>(`/documents/${currentDoc.id}`, { method: "PATCH", body: JSON.stringify(title) });
+      patchDoc(d.id, { title: d.title, titleKeyVersion: d.titleKeyVersion });
       setDialog(null);
       toast("Renamed ✓");
     } catch { toast("Could not rename. Try again."); }
@@ -110,11 +116,11 @@ export function DocBar() {
     <div className="docbar">
       <label className="lbl" htmlFor="doc-select">{t("doc_label")}</label>
       <select id="doc-select" className="select grow" data-testid="doc-select" value={currentDoc?.id ?? ""} onChange={(e) => { void selectDoc(e.target.value); }}>
-        {documents.map((d) => <option key={d.id} value={d.id}>{d.kind === "source" ? "📄 " : ""}{d.title}</option>)}
+        {documents.map((d) => <DocOption key={d.id} doc={d} />)}
       </select>
       {isSource && <Badge variant="chip" title={t("org_badge_title")} data-testid="doc-source-badge">{t("org_badge_src")}</Badge>}
       <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName("Untitled " + (documents.length + 1)); setDialog("new"); }}>{t("doc_new_btn")}</Button>
-      <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { setName(currentDoc?.title ?? ""); setDialog("rename"); }}>✎</button>
+      <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { setName(currentTitle.state === "open" ? currentTitle.text : ""); setDialog("rename"); }}>✎</button>
       <button type="button" className="icon del" aria-label={t("doc_delete_title")} title={t("doc_delete_title")} data-testid="doc-delete" disabled={!currentDoc} onClick={askDelete}>🗑</button>
       <Button variant="ghost" size="sm" title={t("doc_import_title")} data-testid="doc-import" onClick={() => fileRef.current?.click()}>{t("doc_import_btn")}</Button>
       <input ref={fileRef} type="file" accept={IMPORT_ACCEPT} multiple hidden data-testid="doc-import-input" aria-label="Choose files to import"
@@ -137,7 +143,7 @@ export function DocBar() {
       <AlertDialog open={dialog === "delete"} onOpenChange={(o) => { if (!o) close(); }}>
         <AlertDialogContent data-testid="doc-delete-dialog">
           <AlertDialogHeader>
-            <AlertDialogTitle>{`Delete "${plain(currentDoc?.title ?? "this document")}" permanently?`}</AlertDialogTitle>
+            <AlertDialogTitle>{`Delete "${currentDoc ? plain(currentTitle.text) : "this document"}" permanently?`}</AlertDialogTitle>
             <AlertDialogDescription>A copy can be brought back for ten seconds after you delete it.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -148,4 +154,10 @@ export function DocBar() {
       </AlertDialog>
     </div>
   );
+}
+
+/** One document in the list, under its opened title ("Locked title" while the vault is locked). */
+function DocOption({ doc }: { doc: DocumentSummary }) {
+  const title = useTitle(doc, "document");
+  return <option value={doc.id}>{doc.kind === "source" ? "📄 " : ""}{title.text}</option>;
 }

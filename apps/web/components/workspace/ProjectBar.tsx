@@ -5,19 +5,22 @@ import { plural } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { useTitle } from "@/lib/vault/titles";
 import { useWorkspace } from "./WorkspaceContext";
 
 /** v1 project bar: the active project (or the scratch-space label), its stage, and the project actions. Opening a project is guided, not locked. */
 export function ProjectBar() {
   const t = useT();
   const { project, currentDoc, wordCount, openSaveAs, openProjects } = useWorkspace();
+  const projectTitle = useTitle(project, "project");
+  const docTitle = useTitle(currentDoc, "document");
   // Phase 5 brings the real backup; until then the button explains where the work already is.
   const openBackup = () => toast("Backup arrives in a later phase. Your work is already saved on the server with every revision.");
   return (
     <div className="projbar" role="region" aria-label="Project" data-testid="project-bar">
       {project ? (
         <div className="label" data-testid="project-bar-label">
-          <span>{project.title}</span>
+          <span>{projectTitle.text}</span>
           {isStageKey(project.stage) && <Badge variant="stage">{t("stage_" + project.stage)}</Badge>}
           {project.status === "complete" && <Badge variant="ok" data-testid="project-complete-badge">{t("project_complete_badge")}</Badge>}
         </div>
@@ -32,7 +35,7 @@ export function ProjectBar() {
         <Button variant="ghost" size="md" title={t("backup_btn_title")} data-testid="backup-btn" onClick={openBackup}>{t("backup_btn")}</Button>
       </div>
       {/* The editor's live count; the saved revision's until the editor has reported. */}
-      {currentDoc && <span className="status" data-testid="project-bar-status">{currentDoc.title} · {plural(wordCount ?? currentDoc.wordCount, "word", "words")}</span>}
+      {currentDoc && <span className="status" data-testid="project-bar-status">{docTitle.text} · {plural(wordCount ?? currentDoc.wordCount, "word", "words")}</span>}
     </div>
   );
 }

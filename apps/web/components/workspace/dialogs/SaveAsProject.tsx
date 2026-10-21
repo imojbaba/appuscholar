@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
+import { useVault } from "@/lib/vault/useVault";
+import { newProjectKeyId, sealTitle, useTitle } from "@/lib/vault/titles";
 import { runCreateFlow, type SaveAsProgress } from "@/lib/saveAsFlow";
 import { STAGE_ORDER, TOOL_TO_STAGE, isStageKey, type StageKey } from "@/lib/tools";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ export function SaveAsProject() {
 function Form() {
   const t = useT();
   const { me } = useSettings();
+  const vault = useVault();
   const { saveAsInit, activeTool, currentDoc, project, setActiveProject, openStageIntro, closeDialog } = useWorkspace();
   const [mode, setMode] = useState(saveAsInit.mode);
   const [name, setName] = useState(saveAsInit.name);
@@ -36,6 +39,7 @@ function Form() {
   const [open, setOpen] = useState<Summary[] | null>(null);
   const [existingId, setExistingId] = useState("");
   const [busy, setBusy] = useState(false);
+  const targetTitle = useTitle(open?.find((p) => p.id === existingId) ?? null, "project");
 
   useEffect(() => {
     let live = true;
@@ -57,10 +61,16 @@ function Form() {
       const title = name.trim();
       if (!title) { toast(t("toast_name_first")); return; }
       setBusy(true);
+      // With a vault the project's name is sealed here, so the vault must be open first; a cancelled ask creates nothing.
+      if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) { toast(t("vault_save_locked")); setBusy(false); return; }
       try {
         const moveDoc = currentDoc && inScratch ? currentDoc : null;
         const made = await runCreateFlow(progress.current, {
-          create: () => apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify({ title, stage }) }),
+          // Sealed under a placeholder key id (the project has no id yet); its dek travels with the create. The flow keeps the name as typed.
+          create: async () => {
+            const p = await apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify({ ...(await sealTitle(vault, newProjectKeyId(), [], title)), stage }) });
+            return { id: p.id, title };
+          },
           move: moveDoc ? (id) => apiFetch(`/documents/${moveDoc.id}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) }) : null,
           activate: async (id) => { await setActiveProject(id, { skipJump: true, docId: moveDoc?.id }); }
         });
@@ -78,7 +88,7 @@ function Form() {
       try {
         if (currentDoc && currentDoc.projectId !== target.id) await apiFetch(`/documents/${currentDoc.id}/move`, { method: "POST", body: JSON.stringify({ projectId: target.id }) });
         await setActiveProject(target.id, { skipJump: true, docId: currentDoc?.id });
-        toast(t("toast_moved_into") + target.title);
+        toast(t("toast_moved_into") + targetTitle.text);
         closeDialog();
       } catch { toast("Could not move the document. Try again."); setBusy(false); }
     }
@@ -113,7 +123,7 @@ function Form() {
           <label htmlFor="sapExisting">{t("sap_existing_label")}</label>
           <select className="input" id="sapExisting" value={existingId} onChange={(e) => setExistingId(e.target.value)} data-testid="sap-existing">
             {open && open.length === 0 && <option value="">{t("sap_no_open_projects")}</option>}
-            {open?.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            {open?.map((p) => <ProjectOption key={p.id} project={p} />)}
           </select>
         </div>
       )}
@@ -123,4 +133,8 @@ function Form() {
       </DialogFooter>
     </>
   );
+}
+
+function ProjectOption({ project }: { project: Summary }) {
+  return <option value={project.id}>{useTitle(project, "project").text}</option>;
 }

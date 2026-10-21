@@ -4,6 +4,7 @@ import { originCount, sanitizeHtml, wordCount, type OriginStats } from "@appusch
 import { apiFetch } from "./api";
 import { isStaleKeys, isVaultLocked } from "./vault/errors";
 import { useVault, type VaultValue, type WrappedDek } from "./vault/useVault";
+import { sealTitle, type TitleFields } from "./vault/titles";
 
 /** "locked": the vault is locked and the student has not opened it, so the text is held in the editor and nothing is sent. */
 export type SaveStatus = "saved" | "saving" | "error" | "dirty" | "locked";
@@ -167,13 +168,19 @@ export async function sealBody(vault: SealVault, doc: { id: string; deks: Wrappe
 /**
  * The body fields of POST /projects/:id/documents for a new, empty document: `{ keyVersion: 0 }` with the vault off (the old request plus
  * keyVersion 0); with a vault, the vault is opened first and the empty body is encrypted under the document's first key. Null when the
- * student cancelled the unlock: nothing is to be created.
+ * student cancelled the unlock: nothing is to be created. With `title`, the title fields come too: sealed under the same first key (a
+ * document's title and body share its deks), or as typed with the vault off.
  */
-export async function newDocumentBody(vault: SealVault & Pick<VaultValue, "ensureUnlocked">): Promise<{ keyVersion: number } & Partial<SaveBody> | null> {
-  if ((await vault.known()) === "off") return { keyVersion: 0 };
+export async function newDocumentBody(vault: SealVault & Pick<VaultValue, "ensureUnlocked">, title?: string): Promise<{ keyVersion: number } & Partial<SaveBody> & Partial<TitleFields> | null> {
+  if ((await vault.known()) === "off") return { keyVersion: 0, ...(title !== undefined ? { title, titleKeyVersion: 0 } : {}) };
   if (!(await vault.ensureUnlocked())) return null;
   // The document has no id yet: its first key is made under a placeholder and travels with the create request.
-  return sealBody(vault, { id: "new:" + crypto.randomUUID(), deks: [] }, "");
+  const id = "new:" + crypto.randomUUID();
+  const body = await sealBody(vault, { id, deks: [] }, "");
+  if (title === undefined) return body;
+  // The body's dek is the document's only one: the title is sealed under it, and the dek travels once (with the body).
+  const sealed = await sealTitle(vault, id, body.dek ? [body.dek] : [], title);
+  return { ...body, title: sealed.title, titleKeyVersion: sealed.titleKeyVersion };
 }
 
 /**

@@ -859,21 +859,21 @@ describe("useVault", () => {
       expect(h.toast).toHaveBeenCalledTimes(1);
       expect(h.toast).toHaveBeenCalledWith(en.vault_migrate_fail);
       expect(server.calls.some((c) => c.path === "/me/vault/complete")).toBe(false);
-      // Listings of every project: a failed run here lists once (its first rewrite fails); a finished run four times, its pass and the
-      // checking pass each listing the projects for the documents and again for the blobs.
+      // Listings of every project: a failed run here lists once (its first rewrite fails); a finished run six times, its pass and the
+      // checking pass each listing the projects for the documents, again for the blobs and again for the titles.
       const listings = () => server.calls.filter((c) => c.path === "/projects" && c.method === "GET").length;
       expect(listings()).toBe(1);
       // The browser comes back online: a second run, without a prompt, finishes the job.
       offline = false;
       await act(async () => { window.dispatchEvent(new Event("online")); });
       await until(() => s.v.complete);
-      expect(listings()).toBe(5);
+      expect(listings()).toBe(7);
       expect(h.ask).not.toHaveBeenCalled();
       expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrated);
       expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 1))).toBe(true);
       // Complete now: another online event starts nothing.
       await act(async () => { window.dispatchEvent(new Event("online")); await new Promise((r) => setTimeout(r, 20)); });
-      expect(listings()).toBe(5);
+      expect(listings()).toBe(7);
     }, 30_000);
 
     it("resumeMigration (the pill) runs an unfinished migration again, unlocking first when the vault is locked", async () => {
@@ -885,8 +885,8 @@ describe("useVault", () => {
       await until(() => s.v.status === "locked");
       await act(async () => { await s.v.unlock("right", false); });
       await until(() => s.v.status === "unlocked" && h.toast.mock.calls.length === 1);
-      // Listings of every project: a failed run here lists once (its first rewrite fails); a finished run four times (two passes, each
-      // listing the projects for the documents and again for the blobs).
+      // Listings of every project: a failed run here lists once (its first rewrite fails); a finished run six times (two passes, each
+      // listing the projects for the documents, again for the blobs and again for the titles).
       const listings = () => server.calls.filter((c) => c.path === "/projects" && c.method === "GET").length;
       // Still offline: the pill's retry runs and fails again, and says so again.
       await act(async () => { await s.v.resumeMigration(); });
@@ -899,12 +899,12 @@ describe("useVault", () => {
       await act(async () => { await s.v.resumeMigration(); });
       expect(h.ask).toHaveBeenCalledTimes(1);
       await until(() => s.v.complete && s.v.status === "unlocked");
-      expect(listings()).toBe(6);
+      expect(listings()).toBe(8);
       expect(h.toast).toHaveBeenLastCalledWith(en.vault_migrated);
       expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 1))).toBe(true);
       // Complete: nothing more to do.
       await act(async () => { await s.v.resumeMigration(); });
-      expect(listings()).toBe(6);
+      expect(listings()).toBe(8);
     }, 30_000);
   });
 });

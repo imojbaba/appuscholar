@@ -27,7 +27,7 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
   // W8: while the saved library is read and opened there is neither a count nor "No sources yet." (a locked vault says so in its own sentence).
   const opening = library.loading && !library.locked;
   const { editor } = useSuggestion();
-  const { selectDoc } = useWorkspace();
+  const { selectDoc, documents } = useWorkspace();
   const usage = useCitationUsage(lib, style);
   const oaKey = useOpenAlexKey();
   const checks = useCiteChecks(library, { oaKey: oaKey ?? undefined });
@@ -56,7 +56,7 @@ export function CiteLibrary({ library, deps, insertReady }: { library: Library; 
             <button type="button" className="del" data-testid="cite-del" title={REMOVE_TITLE} aria-label={REMOVE_TITLE} onClick={() => { setCiteActive(-1); library.remove(d); }}>✕</button>
             <b>{citLastName(d.author)}, {d.year || "n.d."}</b><br />
             <span data-testid="cite-ref" dangerouslySetInnerHTML={{ __html: html }} />
-            <div data-cite-slot="cite-used"><CiteUsed used={usage.usage[i] ?? []} onOpen={(id) => { void selectDoc(id); }} /></div>
+            <div data-cite-slot="cite-used"><CiteUsed used={usage.usage[i] ?? []} documents={documents} onOpen={(id) => { void selectDoc(id); }} /></div>
             <div data-cite-slot="cite-retr"><RetrWarn status={checks.retraction.status[i] ?? null} /></div>
             <div data-cite-slot="cite-rc"><RcLine c={checks.rc[citKey(d)]} onFill={checks.rcReadOnly ? undefined : () => checks.fillFromCrossref(d)} /></div>
             <div className="cite-row cite-card-row">

@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
+import { projectKeyId, titleText, useTitle } from "@/lib/vault/titles";
+import { useVault } from "@/lib/vault/useVault";
 import { useWorkspace, type Project } from "../WorkspaceContext";
 
 type Summary = Project & { documentCount: number; lastEditedAt: string | null };
@@ -30,6 +32,8 @@ function List() {
   const [list, setList] = useState<Summary[] | null>(null);
   const [confirm, setConfirm] = useState<Summary | null>(null);
   const [busy, setBusy] = useState(false);
+  const vault = useVault();
+  const confirmTitle = useTitle(confirm, "project");
 
   const load = useCallback(async () => { setList(await apiFetch<Summary[]>("/projects")); }, []);
   useEffect(() => {
@@ -49,7 +53,7 @@ function List() {
     await apiFetch(`/projects/${p.id}`, { method: "PATCH", body: JSON.stringify({ status: complete ? "complete" : "active" }) });
     if (project?.id === p.id) await reloadProject();
     await load();
-    toast(p.title + t(complete ? "toast_marked_complete" : "toast_reopened"));
+    toast((await titleText(vault, p, projectKeyId(p.id), t("title_locked"))) + t(complete ? "toast_marked_complete" : "toast_reopened"));
   });
   const remove = (p: Summary) => run(async () => {
     // Leave the project first so the workspace is never pointing at a project that no longer exists.
@@ -72,7 +76,7 @@ function List() {
           <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line p-3" data-testid="project-row">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium" data-testid="project-row-title">{p.title}</span>
+                <span className="font-medium" data-testid="project-row-title"><ProjectName project={p} /></span>
                 {isStageKey(p.stage) && <Badge variant="stage">{t("stage_" + p.stage)}</Badge>}
                 {p.status === "complete" && <Badge variant="ok">{t("project_complete_badge")}</Badge>}
                 {project?.id === p.id && <Badge variant="chip">{t("project_currently_open")}</Badge>}
@@ -82,7 +86,7 @@ function List() {
             <div className="flex flex-wrap gap-1.5">
               <Button variant="primary" size="sm" disabled={busy} data-testid="project-open" onClick={() => { void open(p); }}>{t("project_open_btn")}</Button>
               <Button variant="ghost" size="sm" disabled={busy} data-testid="project-complete" onClick={() => { void toggle(p); }}>{t(p.status === "complete" ? "project_reopen_btn" : "project_complete_btn")}</Button>
-              <Button variant="ghost" size="sm" disabled={busy} aria-label={`Delete ${p.title}`} data-testid="project-delete" onClick={() => setConfirm(p)}>{t("sh2_delete")}</Button>
+              <DeleteButton project={p} disabled={busy} onClick={() => setConfirm(p)} label={t("sh2_delete")} />
             </div>
           </li>
         ))}
@@ -93,7 +97,7 @@ function List() {
       <AlertDialog open={!!confirm} onOpenChange={(o) => { if (!o) setConfirm(null); }}>
         <AlertDialogContent data-testid="project-delete-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete &quot;{confirm?.title}&quot; and its documents permanently?</AlertDialogTitle>
+            <AlertDialogTitle>Delete &quot;{confirmTitle.text}&quot; and its documents permanently?</AlertDialogTitle>
             <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -104,4 +108,13 @@ function List() {
       </AlertDialog>
     </>
   );
+}
+
+function ProjectName({ project }: { project: Summary }) {
+  return <>{useTitle(project, "project").text}</>;
+}
+
+function DeleteButton({ project, disabled, onClick, label }: { project: Summary; disabled: boolean; onClick(): void; label: string }) {
+  const name = useTitle(project, "project").text;
+  return <Button variant="ghost" size="sm" disabled={disabled} aria-label={`Delete ${name}`} data-testid="project-delete" onClick={onClick}>{label}</Button>;
 }

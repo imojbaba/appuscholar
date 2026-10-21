@@ -11,6 +11,7 @@ import { allPdf, importFiles } from "@/lib/import/run";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
+import { sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
 import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
 import { DocumentCard } from "@/components/document/DocumentCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -42,10 +43,11 @@ async function listOrSeed(projectId: string, vault: VaultValue): Promise<Documen
   const list = await apiFetch<DocumentSummary[]>(`/projects/${projectId}/documents`);
   if (list.length) return list;
   // A project always has a document to write in (v1 always had one); with a vault its empty body is encrypted from the start.
-  const body = await newDocumentBody(vault);
+  // Its title is sealed with it, under the same first key.
+  const body = await newDocumentBody(vault, "My first document");
   // The unlock was cancelled: no document yet, and New in the document bar can make one later.
   if (!body) return [];
-  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify({ title: "My first document", ...body }) });
+  const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(body) });
   return [made];
 }
 
@@ -79,6 +81,20 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   // Loads and creations outlive a render; they read the newest vault from here.
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
+  // After each unlock of a complete vault, titles still in plaintext (from before the vault, or renamed since by an older tab) are sealed.
+  const titlesSealable = vault.status === "unlocked" && vault.complete;
+  const scratchForTitles = me?.scratchProjectId ?? null;
+  useEffect(() => {
+    if (!titlesSealable) return;
+    void sealPlainTitles({
+      vault: vaultRef.current,
+      listProjects: () => apiFetch<Titled[]>("/projects"),
+      listDocuments: (id) => apiFetch<Titled[]>(`/projects/${id}/documents?includeDeleted=1`),
+      patchProject: async (id, body) => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
+      patchDocument: async (id, body) => { await apiFetch(`/documents/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
+      scratchId: scratchForTitles
+    }).catch(() => { /* offline or locked meanwhile: the next unlock tries again */ });
+  }, [titlesSealable, scratchForTitles]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
@@ -107,7 +123,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const projectIdRef = useRef<string | null>(null);
   const currentDocRef = useRef<DocumentWithBody | null>(null);
   // Set while the "Switch anyway?" question is open; answering it resolves the switch that asked.
-  const [switchAsk, setSwitchAsk] = useState<{ title: string; answer: (yes: boolean) => void } | null>(null);
+  const [switchAsk, setSwitchAsk] = useState<{ doc: DocumentWithBody | null; answer: (yes: boolean) => void } | null>(null);
   const [live, setLive] = useState<{ docId: string; words: number } | null>(null);
   // A document to show after the next project switch (the one that was just moved into the project).
   const pendingDoc = useRef<string | null>(null);
@@ -194,9 +210,9 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
 
   const registerFlush = useCallback((fn: (() => Promise<boolean>) | null) => { flushRef.current = fn; }, []);
   const setWordCount = useCallback((docId: string, words: number) => setLive((l) => (l && l.docId === docId && l.words === words ? l : { docId, words })), []);
-  const patchDoc = useCallback((id: string, patch: Partial<Pick<DocumentSummary, "title" | "kind">>) => {
+  const patchDoc = useCallback((id: string, patch: Partial<Pick<DocumentSummary, "title" | "titleKeyVersion" | "kind">>) => {
     setDocuments((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-    // Only title and kind change here, never the body: a new body would restart the editor's autosave.
+    // Only title and kind change here, never the body or the keys: either would restart the editor's autosave.
     setCurrentDoc((d) => (d && d.id === id ? { ...d, ...patch } : d));
   }, []);
 
@@ -206,7 +222,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const confirmLeave = useCallback(async (): Promise<boolean> => {
     if (await flushOpen()) return true;
     return new Promise<boolean>((resolve) => {
-      setSwitchAsk((prev) => { prev?.answer(false); return { title: currentDocRef.current?.title ?? "this document", answer: resolve }; });
+      setSwitchAsk((prev) => { prev?.answer(false); return { doc: currentDocRef.current, answer: resolve }; });
     });
   }, [flushOpen]);
 
@@ -348,7 +364,7 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
           <AlertDialogContent data-testid="switch-dialog">
             <AlertDialogHeader>
               <AlertDialogTitle>Switch anyway?</AlertDialogTitle>
-              <AlertDialogDescription>{`Unsaved changes in "${switchAsk?.title ?? ""}" may be lost.`}</AlertDialogDescription>
+              <AlertDialogDescription><UnsavedIn doc={switchAsk?.doc ?? null} /></AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel data-testid="switch-stay">Stay</AlertDialogCancel>
@@ -380,4 +396,10 @@ function SyncReceiver() {
   const { editor } = useSuggestion();
   useSyncReceiver(editor);
   return null;
+}
+
+/** The switch question names the open document by its opened title. */
+function UnsavedIn({ doc }: { doc: DocumentWithBody | null }) {
+  const title = useTitle(doc, "document");
+  return <>{`Unsaved changes in "${doc ? title.text : "this document"}" may be lost.`}</>;
 }

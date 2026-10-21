@@ -4,9 +4,12 @@ import type { ProviderId } from "@appuscholar/core";
 import type { StageKey, ToolId } from "@/lib/tools";
 import type { WrappedDek } from "@/lib/vault/useVault";
 
-/** Wire shapes of the API (dates arrive as ISO strings). */
-export type Project = { id: string; title: string; field: string; stage: string; status: string; contentLang: string; kind: string };
-export type DocumentSummary = { id: string; projectId: string; title: string; kind: string; currentSeq: number; wordCount: number; createdAt: string; updatedAt: string };
+/**
+ * Wire shapes of the API (dates arrive as ISO strings). `title` is ciphertext when `titleKeyVersion` is 1 or more: it is shown through
+ * useTitle (lib/vault/titles), never as it is.
+ */
+export type Project = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; field: string; stage: string; status: string; contentLang: string; kind: string };
+export type DocumentSummary = { id: string; projectId: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; kind: string; currentSeq: number; wordCount: number; createdAt: string; updatedAt: string };
 /**
  * `bodyHtml` is the text the editor opens with: decrypted on load when `keyVersion` is 1 or more. `unreadable` is set when it could not be:
  * "locked" (the unlock was cancelled) or "broken" (its key is missing or the ciphertext does not open); the body is then empty and no editor opens.
@@ -54,7 +57,7 @@ export type WorkspaceValue = {
   restoreDocument(id: string, projectId: string): Promise<boolean>;
   reloadDocs(): Promise<void>;
   /** Applies a rename or a source/own change to the list and to the open document without touching its body. */
-  patchDoc(id: string, patch: Partial<Pick<DocumentSummary, "title" | "kind">>): void;
+  patchDoc(id: string, patch: Partial<Pick<DocumentSummary, "title" | "titleKeyVersion" | "kind">>): void;
   /** The open editor registers how to store its text now (null on unmount); selecting or deleting a document calls it first. */
   registerFlush(fn: (() => Promise<boolean>) | null): void;
   /** Stores the open document's pending text now: true when nothing is left unsaved. */

@@ -2,18 +2,19 @@ import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { VaultError } from "../lib/vault/crypto";
 import { exportAll, exportFileName, zipName, type ExportDeps } from "../lib/vault/export";
+import { projectKeyId, type OpenedTitle, type Titled } from "../lib/vault/titles";
 import hi from "../messages/hi.json";
 
-type Doc = { id: string; projectId: string; title: string; kind: string; createdAt: string; updatedAt: string; deletedAt: string | null; wordCount: number };
+type Doc = { id: string; projectId: string; title: string; titleKeyVersion: number; deks: { v: number; wrapped: string }[]; kind: string; createdAt: string; updatedAt: string; deletedAt: string | null; wordCount: number };
 const P = [
-  { id: "p1", title: "P1", stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
-  { id: "p2", title: "P2", stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
+  { id: "p1", title: "P1", titleKeyVersion: 0, deks: [], stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
+  { id: "p2", title: "P2", titleKeyVersion: 0, deks: [], stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
 ];
 const D: Doc[] = [
-  { id: "d1", projectId: "p1", title: "D1", kind: "draft", createdAt: "2026-09-03T10:00:00.000Z", updatedAt: "2026-09-04T10:00:00.000Z", deletedAt: null, wordCount: 5 },
-  { id: "d2", projectId: "p1", title: "D2", kind: "draft", createdAt: "2026-09-03T10:00:00.000Z", updatedAt: "2026-09-05T10:00:00.000Z", deletedAt: null, wordCount: 3 },
-  { id: "s1", projectId: "p2", title: "S", kind: "source", createdAt: "2026-09-06T10:00:00.000Z", updatedAt: "2026-09-06T10:00:00.000Z", deletedAt: null, wordCount: 4 },
-  { id: "gone", projectId: "p2", title: "Gone", kind: "draft", createdAt: "2026-09-06T10:00:00.000Z", updatedAt: "2026-09-06T10:00:00.000Z", deletedAt: "2026-09-07T10:00:00.000Z", wordCount: 1 }
+  { id: "d1", projectId: "p1", title: "D1", titleKeyVersion: 0, deks: [], kind: "draft", createdAt: "2026-09-03T10:00:00.000Z", updatedAt: "2026-09-04T10:00:00.000Z", deletedAt: null, wordCount: 5 },
+  { id: "d2", projectId: "p1", title: "D2", titleKeyVersion: 0, deks: [], kind: "draft", createdAt: "2026-09-03T10:00:00.000Z", updatedAt: "2026-09-05T10:00:00.000Z", deletedAt: null, wordCount: 3 },
+  { id: "s1", projectId: "p2", title: "S", titleKeyVersion: 0, deks: [], kind: "source", createdAt: "2026-09-06T10:00:00.000Z", updatedAt: "2026-09-06T10:00:00.000Z", deletedAt: null, wordCount: 4 },
+  { id: "gone", projectId: "p2", title: "Gone", titleKeyVersion: 0, deks: [], kind: "draft", createdAt: "2026-09-06T10:00:00.000Z", updatedAt: "2026-09-06T10:00:00.000Z", deletedAt: "2026-09-07T10:00:00.000Z", wordCount: 1 }
 ];
 const SECRET: Record<string, string> = { d1: "<p>The first sentence of D1.</p>", d2: "<p>Second draft.</p>", s1: "<p>A source paper.</p>", gone: "<p>Deleted.</p>" };
 
@@ -30,6 +31,14 @@ const BLOBS: Record<string, { kind: string; updatedAt: string; text: string }[]>
   p2: [{ kind: "rs_prefs", updatedAt: at, text: JSON.stringify({ sort: "year" }) }]
 };
 
+/** Opens a title the way the vault does: "ct:<text>" under the key id it was sealed for (`for` names it), anything else does not open. */
+const sealedFor = new Map<string, string>();
+async function fakeOpenTitle(t: Titled, keyId: string): Promise<OpenedTitle> {
+  if (t.titleKeyVersion === 0) return { state: "open", text: t.title };
+  if (t.title === "locked") return { state: "locked" };
+  return t.title.startsWith("ct:") && sealedFor.get(t.title) === keyId ? { state: "open", text: t.title.slice(3) } : { state: "unreadable" };
+}
+
 function deps(): ExportDeps & { decrypt: ReturnType<typeof vi.fn>; getDocument: ReturnType<typeof vi.fn>; listBlobs: ReturnType<typeof vi.fn>; getBlob: ReturnType<typeof vi.fn>; decryptBlob: ReturnType<typeof vi.fn> } {
   return {
     listProjects: async () => P,
@@ -37,6 +46,7 @@ function deps(): ExportDeps & { decrypt: ReturnType<typeof vi.fn>; getDocument: 
     // The server holds ciphertext only; decrypt turns it back into the student's text in the browser.
     getDocument: vi.fn(async (id: string) => ({ ...D.find((d) => d.id === id)!, bodyHtml: "ct:" + id, keyVersion: 1, deks: [{ v: 1, wrapped: "w" }] })),
     decrypt: vi.fn(async (doc: { id: string; bodyHtml: string }) => { expect(doc.bodyHtml).toBe("ct:" + doc.id); return SECRET[doc.id]!; }),
+    openTitle: vi.fn(fakeOpenTitle),
     writingRecordText: async () => "WRITING-PROCESS RECORD (test)",
     listBlobs: vi.fn(async (projectId: string) => (BLOBS[projectId] ?? []).map((b) => ({ kind: b.kind, keyVersion: 1, updatedAt: b.updatedAt }))),
     getBlob: vi.fn(async (projectId: string, kind: string) => {
@@ -156,7 +166,7 @@ describe("exportAll", () => {
 
   it("two documents with the same title, or a title with unsafe characters, still get their own file", async () => {
     const d = deps();
-    d.listProjects = async () => [{ id: "p1", title: "My/Thesis: one", stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" }];
+    d.listProjects = async () => [{ id: "p1", title: "My/Thesis: one", titleKeyVersion: 0, deks: [], stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" }];
     d.listDocuments = async () => [{ ...D[0]!, title: "Chapter" }, { ...D[1]!, title: "Chapter" }];
     const zip = await JSZip.loadAsync(await (await exportAll(d)).arrayBuffer());
     const names = Object.keys(zip.files).filter((n) => !zip.files[n]!.dir && !n.includes("/stage-data/")).sort();
@@ -179,8 +189,8 @@ describe("exportAll", () => {
   it("Hindi and accented titles keep their letters in the zip; only path and reserved characters go", async () => {
     const d = deps();
     d.listProjects = async () => [
-      { id: "p1", title: "मेरा शोध", stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
-      { id: "p2", title: "Café: notes/2026", stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
+      { id: "p1", title: "मेरा शोध", titleKeyVersion: 0, deks: [], stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
+      { id: "p2", title: "Café: notes/2026", titleKeyVersion: 0, deks: [], stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
     ];
     d.listDocuments = async (id: string) => id === "p1"
       ? [{ ...D[0]!, title: "पहला अध्याय" }, { ...D[2]!, projectId: "p1", title: "स्रोत पत्र" }]
@@ -194,6 +204,29 @@ describe("exportAll", () => {
       "मेरा शोध/पहला अध्याय.doc", "मेरा शोध/पहला अध्याय.html"
     ]);
     expect(await zip.file("मेरा शोध/पहला अध्याय.html")!.async("string")).toContain("The first sentence of D1.");
+  });
+
+  it("the export's folder names and the Word and LaTeX file names come from the opened titles", async () => {
+    const d = deps();
+    sealedFor.set("ct:Sleep and exam anxiety", projectKeyId("p1")).set("ct:Chapter one", "d1").set("ct:Opened elsewhere", "someone-else");
+    d.listProjects = async () => [
+      { ...P[0]!, title: "ct:Sleep and exam anxiety", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }] },
+      { ...P[1]!, title: "ct:Opened elsewhere", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }] }
+    ];
+    d.listDocuments = async (id: string) => id === "p1"
+      ? [{ ...D[0]!, title: "ct:Chapter one", titleKeyVersion: 1 }, { ...D[1]!, title: "locked", titleKeyVersion: 1 }]
+      : [{ ...D[2]!, title: "ct:Chapter one", titleKeyVersion: 1 }];
+    const zip = await JSZip.loadAsync(await (await exportAll(d)).arrayBuffer());
+    const names = Object.keys(zip.files).filter((n) => !zip.files[n]!.dir && !n.includes("/stage-data/")).sort();
+    // A project's title opens under projectKeyId, a document's under its own id; one that does not open is "untitled".
+    expect(names).toEqual([
+      "Sleep and exam anxiety/Chapter one.doc", "Sleep and exam anxiety/Chapter one.html", "Sleep and exam anxiety/untitled.doc", "Sleep and exam anxiety/untitled.html",
+      "index.json", "untitled/sources/untitled.doc", "untitled/sources/untitled.html", "writing-process-record.txt"
+    ]);
+    expect(await zip.file("Sleep and exam anxiety/Chapter one.html")!.async("string")).toContain("<title>Chapter one</title>");
+    const index = await zip.file("index.json")!.async("string");
+    expect(JSON.parse(index).projects.map((p: { title: string }) => p.title)).toEqual(["Sleep and exam anxiety", "untitled"]);
+    expect(index).not.toContain("ct:");
   });
 
   it("zipName keeps letters, marks and digits in any script, and falls back when nothing is left", () => {

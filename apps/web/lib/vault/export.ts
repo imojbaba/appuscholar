@@ -3,9 +3,11 @@ import { wordText } from "@/lib/export/word";
 import { VaultError } from "./crypto";
 import type { WrappedDek } from "./useVault";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
+import { fileTitle, projectKeyId, type OpenedTitle, type Titled } from "./titles";
 
-export type ExportProject = { id: string; title: string; stage: string; createdAt: string };
-export type ExportDocSummary = { id: string; title: string; kind: string; createdAt: string; updatedAt: string; deletedAt?: string | null; wordCount?: number };
+/** `title` is ciphertext when `titleKeyVersion` is 1 or more; the export names folders and files after the opened title. */
+export type ExportProject = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; stage: string; createdAt: string };
+export type ExportDocSummary = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; kind: string; createdAt: string; updatedAt: string; deletedAt?: string | null; wordCount?: number };
 export type ExportDoc = { id: string; bodyHtml: string; keyVersion: number; deks: WrappedDek[] };
 
 /** What the export reads. Every call is the browser's: the documents arrive as ciphertext and `decrypt` opens them here, so nothing decrypted is ever sent. */
@@ -14,6 +16,8 @@ export type ExportDeps = {
   listDocuments(projectId: string): Promise<ExportDocSummary[]>;
   getDocument(id: string): Promise<ExportDoc>;
   decrypt(doc: ExportDoc): Promise<string>;
+  /** openTitle (lib/vault/titles) under the vault: a project's key id is projectKeyId(id), a document's its own id. */
+  openTitle(t: Titled, keyId: string): Promise<OpenedTitle>;
   writingRecordText(): Promise<string>;
   /** The kinds of stage data a project holds (GET /projects/:id/blobs), whatever this build knows of them. */
   listBlobs(projectId: string): Promise<Array<{ kind: string; keyVersion: number; updatedAt: string }>>;
@@ -71,12 +75,15 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
   const folders = new Set<string>();
   const projects = [];
   for (const p of await deps.listProjects()) {
-    const folder = unique(zipName(p.title), folders);
+    // Opened here, as the bodies are; a title that does not open names its folder or file "untitled".
+    const projectTitle = fileTitle(await deps.openTitle(p, projectKeyId(p.id)));
+    const folder = unique(zipName(projectTitle), folders);
     const names = new Map<string, Set<string>>();
     const documents = [];
     for (const d of await deps.listDocuments(p.id)) {
       if (d.deletedAt) continue;
-      const meta = { title: d.title, kind: d.kind, createdAt: d.createdAt, updatedAt: d.updatedAt, wordCount: d.wordCount ?? 0 };
+      const title = fileTitle(await deps.openTitle(d, d.id));
+      const meta = { title, kind: d.kind, createdAt: d.createdAt, updatedAt: d.updatedAt, wordCount: d.wordCount ?? 0 };
       let html: string;
       try {
         html = await deps.decrypt(await deps.getDocument(d.id));
@@ -88,9 +95,9 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
       const dir = d.kind === "source" ? `${folder}/sources` : folder;
       const used = names.get(dir) ?? new Set<string>();
       names.set(dir, used);
-      const base = `${dir}/${unique(zipName(d.title), used)}`;
-      zip.file(base + ".html", htmlFile(d.title, html));
-      zip.file(base + ".doc", wordText(d.title, html));
+      const base = `${dir}/${unique(zipName(title), used)}`;
+      zip.file(base + ".html", htmlFile(title, html));
+      zip.file(base + ".doc", wordText(title, html));
       documents.push({ ...meta, html: base + ".html", doc: base + ".doc" });
     }
     const stageData: StageData[] = [];
@@ -108,7 +115,7 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
       zip.file(file, json);
       stageData.push({ kind: b.kind, file, updatedAt: b.updatedAt });
     }
-    projects.push({ title: p.title, stage: p.stage, createdAt: p.createdAt, folder, documents, stageData });
+    projects.push({ title: projectTitle, stage: p.stage, createdAt: p.createdAt, folder, documents, stageData });
   }
   zip.file("writing-process-record.txt", await deps.writingRecordText());
   zip.file("index.json", JSON.stringify({ exportedAt: new Date().toISOString(), projects }, null, 2) + "\n");

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { importV1Backup, type V1DocumentBody, type V1ImportDeps } from "../lib/import/v1";
 import { ImportError } from "../lib/import/parse";
 import type { VaultValue, WrappedDek } from "../lib/vault/useVault";
+import type { TitleFields } from "../lib/vault/titles";
 
 const DEK: WrappedDek = { v: 1, wrapped: "wrapped-dek" };
 const backup = (n = 2, extra: Record<string, unknown> = {}) => ({
@@ -12,10 +13,11 @@ const backup = (n = 2, extra: Record<string, unknown> = {}) => ({
 });
 
 function deps(over: Partial<V1ImportDeps> = {}) {
-  const created: { projectId: string; title: string; body: V1DocumentBody; kind: "draft" | "source" }[] = [];
+  // `title` is the title as sent (ciphertext under a vault); `sent` is the whole title fields.
+  const created: { projectId: string; title: string; sent: TitleFields; body: V1DocumentBody; kind: "draft" | "source" }[] = [];
   const base = {
-    createProject: vi.fn(async (_title: string) => ({ id: "p-new" })),
-    createDocument: vi.fn(async (projectId: string, title: string, body: V1DocumentBody, kind: "draft" | "source") => { created.push({ projectId, title, body, kind }); }),
+    createProject: vi.fn(async (_title: TitleFields) => ({ id: "p-new" })),
+    createDocument: vi.fn(async (projectId: string, title: TitleFields, body: V1DocumentBody, kind: "draft" | "source") => { created.push({ projectId, title: title.title, sent: title, body, kind }); }),
     encrypt: null as VaultValue["encryptBody"] | null,
     yieldToUi: vi.fn(async () => {})
   };
@@ -46,7 +48,7 @@ describe("importV1Backup", () => {
     b.documents[0]!.bodyHtml = '<p>ok</p><img src="x" onerror="fetch(1)"><script>alert(1)</script>';
     b.documents[1]!.title = "   ";
     expect(await importV1Backup(b, {}, d)).toEqual({ projectId: "p-new", imported: 2 });
-    expect(d.createProject).toHaveBeenCalledExactlyOnceWith("Sleep and memory (imported from v1)");
+    expect(d.createProject).toHaveBeenCalledExactlyOnceWith({ title: "Sleep and memory (imported from v1)", titleKeyVersion: 0 });
     expect(created.map((c) => c.projectId)).toEqual(["p-new", "p-new"]);
     expect(created.map((c) => c.title)).toEqual(["Doc 1", "Untitled"]);
     expect(created[0]!.body).toEqual({ bodyHtml: "<p>ok</p><img>", keyVersion: 0 });
@@ -83,22 +85,40 @@ describe("importV1Backup", () => {
 
   it("takes the new project's title from the target when given, else the backup, else a plain default", async () => {
     let r = deps(); await importV1Backup(backup(1), { projectTitle: "Mine" }, r.d);
-    expect(r.d.createProject).toHaveBeenCalledWith("Mine");
+    expect(r.d.createProject).toHaveBeenCalledWith({ title: "Mine", titleKeyVersion: 0 });
     r = deps(); await importV1Backup({ documents: backup(1).documents }, {}, r.d);
-    expect(r.d.createProject).toHaveBeenCalledWith("Imported from v1");
+    expect(r.d.createProject).toHaveBeenCalledWith({ title: "Imported from v1", titleKeyVersion: 0 });
   });
 
   it("with a vault, sends only ciphertext with the counts and the document's first key, sealed under a placeholder id", async () => {
     const encrypt = vi.fn(seal);
     const { d, created } = deps({ encrypt });
     await importV1Backup(backup(2), {}, d);
-    expect(encrypt).toHaveBeenCalledTimes(2);
-    expect(encrypt.mock.calls[0]![0]).toMatchObject({ deks: [] });
-    expect(encrypt.mock.calls[0]![0].id).toMatch(/^new:/);
-    expect(encrypt.mock.calls[0]![0].id).not.toBe(encrypt.mock.calls[1]![0].id);
+    // The bodies (the titles are sealed too: see "a v1 backup import ... sends sealed titles").
+    const bodies = encrypt.mock.calls.filter((c) => c[1].startsWith("<p>"));
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]![0]).toMatchObject({ deks: [] });
+    expect(bodies[0]![0].id).toMatch(/^new:/);
+    expect(bodies[0]![0].id).not.toBe(bodies[1]![0].id);
     expect(created[0]!.body).toMatchObject({ keyVersion: 1, dek: DEK, wordCount: 3, bodyHtml: "sealed:" + "<p>secret words 1</p>".length });
     expect(created[0]!.body.originStats).toMatchObject({ typed: 3 });
     expect(JSON.stringify(created)).not.toContain("secret");
+  });
+
+  it("a v1 backup import and an imported PDF send sealed titles: the project's with its own dek, each document's under its body's dek", async () => {
+    const encrypt = vi.fn(seal);
+    const { d, created } = deps({ encrypt });
+    await importV1Backup(backup(2), {}, d);
+    // The project's title: under a placeholder project key id, with the dek it made (the project has none yet).
+    const projectCall = encrypt.mock.calls.find((c) => c[0].id.startsWith("project:new:"))!;
+    expect(projectCall[1]).toBe("Sleep and memory (imported from v1)");
+    expect(d.createProject).toHaveBeenCalledExactlyOnceWith({ title: "sealed:" + "Sleep and memory (imported from v1)".length, titleKeyVersion: 1, dek: DEK });
+    // Each document's title: under the same placeholder as its body, with the body's dek (one dek, sent once, with the body).
+    const titleCall = encrypt.mock.calls.find((c) => c[1] === "Doc 1")!;
+    const bodyCall = encrypt.mock.calls.find((c) => c[1] === "<p>secret words 1</p>")!;
+    expect(titleCall[0]).toEqual({ id: bodyCall[0].id, deks: [DEK] });
+    expect(created[0]!.sent).toEqual({ title: "sealed:5", titleKeyVersion: 1 });
+    expect(JSON.stringify([created, d.createProject.mock.calls])).not.toMatch(/Doc 1|Sleep and memory/);
   });
 
   it("lets nothing through in plaintext when the vault refuses: a locked vault stops the import", async () => {
@@ -122,7 +142,7 @@ describe("importV1Backup", () => {
   it("reports progress, and a failing document stops the import after the ones already stored", async () => {
     const progress: [number, number, string][] = [];
     const { d } = deps({ onProgress: (p) => { progress.push([p.imported, p.total, p.projectId]); } });
-    d.createDocument.mockImplementation(async (_p, title) => { if (title === "Doc 3") throw new Error("boom"); });
+    d.createDocument.mockImplementation(async (_p, title) => { if (title.title === "Doc 3") throw new Error("boom"); });
     await expect(importV1Backup(backup(5), {}, d)).rejects.toThrow("boom");
     expect(progress).toEqual([[0, 5, "p-new"], [1, 5, "p-new"], [2, 5, "p-new"]]);
     expect(d.createDocument).toHaveBeenCalledTimes(3);

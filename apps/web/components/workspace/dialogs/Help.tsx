@@ -12,7 +12,8 @@ import { exportAll, exportFileName, localDay, type ExportDoc, type ExportDocSumm
 import { blobId, type BlobKind } from "@/lib/blobs/kinds";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
-import { buildAllRecordText, type WritingRecord } from "@/lib/writingRecord";
+import { buildAllRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
+import { openTitle, projectKeyId, titleText, UNTITLED } from "@/lib/vault/titles";
 import { APP_VERSION } from "@/lib/version";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -70,20 +71,25 @@ export function Help() {
       if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
       const projects = await apiFetch<ExportProject[]>("/projects");
       const scratch = me?.scratchProjectId;
-      if (scratch && !projects.some((p) => p.id === scratch)) projects.push({ id: scratch, title: t("export_scratch"), stage: "", createdAt: "" });
+      if (scratch && !projects.some((p) => p.id === scratch)) projects.push({ id: scratch, title: t("export_scratch"), titleKeyVersion: 0, deks: [], stage: "", createdAt: "" });
       const day = localDay();
       const blob = await exportAll({
         listProjects: async () => projects,
         listDocuments: (id) => apiFetch<ExportDocSummary[]>(`/projects/${id}/documents`),
         getDocument: (id) => apiFetch<ExportDoc>(`/documents/${id}`),
         decrypt: (doc) => vault.decryptBody(doc),
+        openTitle: (title, keyId) => openTitle(vault, title, keyId),
         // Every stage's data: ciphertext from the api, opened here under the blob's own key.
         listBlobs: (id) => apiFetch<Array<{ kind: string; keyVersion: number; updatedAt: string }>>(`/projects/${id}/blobs`),
         getBlob: (id, kind) => apiFetch<BlobWire>(`/projects/${id}/blobs/${encodeURIComponent(kind)}`),
         decryptBlob: (id, w) => vault.decryptBody({ id: blobId(id, w.kind as BlobKind), deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion }),
         // The record MyWriting downloads: each project's words under its title, the AI-use log (the whole account's) once.
         writingRecordText: async () => {
-          const parts = await Promise.all(projects.map(async (p) => ({ title: p.title, rec: await apiFetch<WritingRecord>(`/projects/${p.id}/writing-record`) })));
+          // Titles opened here, as in the zip's folders.
+          const parts = await Promise.all(projects.map(async (p) => ({
+            title: await titleText(vault, p, projectKeyId(p.id), UNTITLED),
+            rec: await openRecordTitles(await apiFetch<WritingRecord>(`/projects/${p.id}/writing-record`), (x, k) => openTitle(vault, x, k), UNTITLED)
+          })));
           return buildAllRecordText(parts, APP_VERSION, day);
         }
       });
