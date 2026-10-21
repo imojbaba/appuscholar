@@ -73,7 +73,7 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
         <input className="input" id="ideaSaveTitle" data-testid="idea-save-title" value={name} maxLength={200} onChange={(e) => setOwnName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void save(); }} />
       </div>
       <div className="ai-read-acts">
-        <Button variant="primary" disabled={busy} data-testid="idea-save" onClick={() => { void save(); }}>{t("idea_save_btn")}</Button>
+        <Button variant="primary" disabled={busy || checking} data-testid="idea-save" onClick={() => { void save(); }}>{t("idea_save_btn")}</Button>
         {read && <Button variant="ghost" data-testid="idea-edit" onClick={() => topicRef.current?.focus()}>{t("idea_edit_btn")}</Button>}
       </div>
     </>
