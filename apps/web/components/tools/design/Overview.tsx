@@ -40,7 +40,7 @@ export function Overview({ projectId }: { projectId: string }) {
     <div className="panel" data-testid="panel-design-overview">
       <h3>{t("tab_name_overview")}</h3>
       <p className="desc" data-testid="design-desc">{t("design_panel_desc")}</p>
-      <Notes loading={s.loading} locked={s.locked} broken={s.broken} error={s.error} />
+      <Notes loading={s.loading} locked={s.locked} broken={s.broken} readFailed={s.readFailed} saveFailed={s.saveFailed} />
       <p className="desc" style={{ marginBottom: 6 }}><b data-testid="design-count">{t("design_home_ready", { done: dash.done, total: dash.total })}</b></p>
       <ul className="m-0 flex list-none flex-col gap-0.5 p-0" aria-label={t("design_rows_label")} data-testid="design-rows">
         {dash.items.map((i) => link(i.key, TAB_OF[i.key], i.done))}

@@ -14,6 +14,7 @@
   "design_broken": "Part of your saved Design and ethics work cannot be opened on this device. Nothing was changed.",
   "design_broken_confirm": "This part of your saved Design and ethics work cannot be opened on this device. Saving now replaces it. Save anyway?",
   "design_error": "Your last save did not go through. What you entered is kept here and is sent with your next change.",
+  "design_read_failed": "Your saved Design and ethics work could not be read just now. Nothing was changed. Reload the page to try again.",
   "design_reg_intro": "Answer four questions and get a starting list of which approvals usually apply in India. This is a checklist to walk in with, not a ruling. Your institution's Ethics Committee has the final word.",
   "design_reg_type": "Type of study",
   "design_reg_type_observational": "Observational: no intervention, just measuring or surveying",

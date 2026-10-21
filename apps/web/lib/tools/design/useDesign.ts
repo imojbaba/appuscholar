@@ -29,6 +29,18 @@ export type Design<K extends DesignKey> = Omit<ProjectBlob<DesignValue<K>>, "set
 /** A blob whose stored value is not known yet (the same rule the paper cards use). */
 export const unread = (b: { value: unknown; loading: boolean; locked: boolean; error?: boolean }): boolean => b.loading || ((b.locked || !!b.error) && b.value === null);
 
+/**
+ * What the notes (components/tools/design/Notes.tsx) show for one blob. The hook's `error` is "the last read or save failed": with no value read it
+ * is a failed read (`readFailed`), with a value it is a failed save (`saveFailed`, the value is kept and goes with the next change).
+ */
+export type NoteState = { loading: boolean; locked: boolean; broken: boolean; readFailed: boolean; saveFailed: boolean };
+export function notesOf(b: { value: unknown; loading: boolean; locked: boolean; broken?: boolean; error?: boolean }): NoteState {
+  return {
+    loading: b.loading && !b.locked, locked: b.locked && b.value === null, broken: !!b.broken,
+    readFailed: !!b.error && b.value === null && !b.locked, saveFailed: !!b.error && b.value !== null
+  };
+}
+
 /** A design blob's `done` flag, as designDashboard reads it (truthy). */
 export const isDone = (value: unknown): boolean => !!(value as { done?: unknown } | null | undefined)?.done;
 
@@ -54,7 +66,7 @@ export function useDesign<K extends DesignKey>(key: K, projectId: string): Desig
 }
 
 /** What the six blobs say together: each one's done flag, and whether any is still opening, locked or unreadable (the Overview's notes). */
-export type DesignStatus = { done: Partial<Record<DesignKey, boolean>>; loading: boolean; locked: boolean; broken: boolean; error: boolean };
+export type DesignStatus = NoteState & { done: Partial<Record<DesignKey, boolean>> };
 
 /** Reads the six blobs once, for useDesignStatus and useDesignDone. */
 function useSix(projectId: string): DesignStatus {
@@ -66,12 +78,11 @@ function useSix(projectId: string): DesignStatus {
   const all = Object.values(b);
   const done: Partial<Record<DesignKey, boolean>> = {};
   for (const k of Object.keys(b) as DesignKey[]) done[k] = isDone(b[k].value);
+  const n = all.map(notesOf);
   return {
     done,
-    loading: all.some((x) => x.loading && !x.locked),
-    locked: all.some((x) => x.locked && x.value === null),
-    broken: all.some((x) => !!x.broken),
-    error: all.some((x) => !!x.error && x.value === null)
+    loading: n.some((x) => x.loading), locked: n.some((x) => x.locked), broken: n.some((x) => x.broken),
+    readFailed: n.some((x) => x.readFailed), saveFailed: n.some((x) => x.saveFailed)
   };
 }
 

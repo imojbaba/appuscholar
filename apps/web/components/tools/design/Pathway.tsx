@@ -4,7 +4,7 @@ import { Ruler } from "@phosphor-icons/react";
 import { REG_WARN, regPathway, type RegState } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { regSaved } from "@/lib/tools/design/regSave";
-import { useDesign } from "@/lib/tools/design/useDesign";
+import { notesOf, useDesign } from "@/lib/tools/design/useDesign";
 import { Button } from "@/components/ui/button";
 import { Notes } from "./Notes";
 
@@ -40,7 +40,7 @@ export function Pathway({ projectId }: { projectId: string }) {
     <div className="panel" data-testid="panel-design-pathway">
       <h3>{t("tab_name_pathway")}</h3>
       <p className="desc">{t("design_reg_intro")}</p>
-      <Notes loading={reg.loading && !reg.locked} locked={reg.locked && reg.value === null} broken={!!reg.broken} error={reg.error && reg.value === null} />
+      <Notes {...notesOf(reg)} />
       <div className="stack" style={{ maxWidth: "62ch" }}>
         <label className="flex flex-col gap-1 text-[13.5px] text-ink">
           {t("design_reg_type")}

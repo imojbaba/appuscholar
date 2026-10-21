@@ -20,7 +20,8 @@ const h = vi.hoisted(() => ({
   version: 0,
   loading: false,
   locked: false,
-  broken: false
+  broken: false,
+  error: false
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1/design/overview" }));
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
@@ -34,7 +35,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       useSyncExternalStore((cb) => { h.listeners.add(cb); return () => { h.listeners.delete(cb); }; }, () => h.version);
       return {
         value: h.store.has(kind) ? h.store.get(kind) : null,
-        loading: h.loading, locked: h.locked, broken: h.broken, readOnly: false,
+        loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, readOnly: false,
         set: () => {}, flush: async () => true
       };
     }
@@ -65,7 +66,7 @@ async function render(node: React.ReactNode): Promise<Root> {
 }
 const done = (...keys: Array<(typeof KEYS)[number]>) => { for (const k of keys) h.store.set("design_" + k, { done: true }); };
 
-beforeEach(() => { h.store.clear(); h.version = 0; h.loading = false; h.locked = false; h.broken = false; });
+beforeEach(() => { h.store.clear(); h.version = 0; h.loading = false; h.locked = false; h.broken = false; h.error = false; });
 afterEach(async () => {
   for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
   document.body.innerHTML = "";
@@ -140,6 +141,19 @@ describe("Overview (Task A1)", () => {
     h.broken = false; h.loading = true;
     await render(<Overview projectId="p1" />);
     expect($('[data-testid="design-loading"]')!.textContent).toBe(E.blob_loading);
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    // The hook's `error`: with nothing read it is a failed read; with a value held it is a failed save.
+    h.loading = false; h.error = true; h.store.clear();
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-read-failed"]')!.textContent).toBe(E.design_read_failed);
+    expect($('[data-testid="design-error"]')).toBeNull();
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    done(...KEYS); // every blob holds a value
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-error"]')!.textContent).toBe(E.design_error);
+    expect($('[data-testid="design-read-failed"]')).toBeNull();
   });
 });
 

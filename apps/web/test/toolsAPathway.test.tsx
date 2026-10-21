@@ -21,6 +21,7 @@ const h = vi.hoisted(() => ({
   loading: false,
   locked: false,
   broken: false,
+  error: false,
   sets: [] as Array<{ kind: string; value: unknown }>,
   confirm: vi.fn(() => true)
 }));
@@ -36,7 +37,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       useSyncExternalStore((cb) => { h.listeners.add(cb); return () => { h.listeners.delete(cb); }; }, () => h.version);
       return {
         value: h.store.has(kind) ? h.store.get(kind) : null,
-        loading: h.loading, locked: h.locked, broken: h.broken, readOnly: false,
+        loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, readOnly: false,
         set: (next: unknown) => {
           const prev = h.store.has(kind) ? h.store.get(kind) : null;
           const value = typeof next === "function" ? (next as (p: unknown) => unknown)(prev) : next;
@@ -94,7 +95,7 @@ const lines = () => $$('[data-testid="reg-lines"] li').map((x) => x.textContent)
 
 beforeEach(() => {
   h.store.clear(); h.sets.length = 0; h.version = 0;
-  h.loading = false; h.locked = false; h.broken = false;
+  h.loading = false; h.locked = false; h.broken = false; h.error = false;
   h.confirm.mockReturnValue(true);
   window.confirm = h.confirm;
   vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
@@ -232,6 +233,20 @@ describe("Pathway (Task A1)", () => {
     await check();
     expect(h.sets).toHaveLength(1);
     expect($('[data-testid="reg-result"]')).not.toBeNull();
+  });
+
+  it("a failed read says so in words and does not claim a save failed; a failed save with the value kept says its own sentence", async () => {
+    h.error = true; // the hook's `error`: the last read or save failed; no value read yet means the read failed
+    await render();
+    expect($('[data-testid="design-read-failed"]')!.textContent).toBe(E.design_read_failed);
+    expect($('[data-testid="design-error"]')).toBeNull();
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    h.store.set("design_reg", { type: "drug", pop: "adults", bio: false, multi: false, done: true, savedAt: 1 }); // a value is held: the save failed
+    await render();
+    expect($('[data-testid="design-error"]')!.textContent).toBe(E.design_error);
+    expect($('[data-testid="design-read-failed"]')).toBeNull();
+    expect(E.design_read_failed).not.toMatch(/\u2014/);
   });
 
   it("no emoji and no toast: the page's own strings carry no pictograph, and a check shows its result in place", async () => {
