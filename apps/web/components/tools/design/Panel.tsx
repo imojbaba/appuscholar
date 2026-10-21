@@ -1,10 +1,13 @@
 "use client";
 import type { ComponentType } from "react";
 import { NotBuilt } from "@/components/places/NotBuilt";
+import { Budget } from "./Budget";
 import { Ethics } from "./Ethics";
+import { Investigator } from "./Investigator";
 import { Overview } from "./Overview";
 import { Pathway } from "./Pathway";
 import { Protocol } from "./Protocol";
+import { Registration } from "./Registration";
 
 type Page = ComponentType<{ projectId: string }>;
 
@@ -13,7 +16,10 @@ const PAGES: Record<string, Page> = {
   overview: Overview,
   pathway: Pathway,
   protocol: Protocol,
-  ethics: Ethics
+  ethics: Ethics,
+  registration: Registration,
+  investigator: Investigator,
+  budget: Budget
 };
 
 /** The Design and ethics place's tab (StagedPlace draws it for each of the module's eight tabs). */

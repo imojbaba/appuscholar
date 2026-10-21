@@ -168,7 +168,7 @@ describe("Panel (Task A1)", () => {
   });
 
   it("a tab not built yet reads Not built yet", async () => {
-    for (const tab of ["registration", "investigator", "budget", "aiuse"]) {
+    for (const tab of ["aiuse"]) {
       await render(<Panel tab={tab} projectId="p1" />);
       expect($('[data-testid="not-built"]')!.textContent, tab).toContain(E.place_not_built);
       for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
