@@ -115,6 +115,20 @@ describe("the runner", () => {
     expect(await run.run(c.studentText, c.sources, c.k, c.minRun)).toEqual(c.result);
     run.dispose();
   });
+  it("falls back to the main thread when the worker's reply cannot be read (messageerror)", async () => {
+    class DeafWorker {
+      onmessage: ((e: { data: unknown }) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onmessageerror: ((e: unknown) => void) | null = null;
+      postMessage() { queueMicrotask(() => this.onmessageerror?.(new Error("unclonable"))); }
+      terminate() {}
+    }
+    vi.stubGlobal("Worker", DeafWorker);
+    const c = job();
+    const run = createRunner();
+    expect(await run.run(c.studentText, c.sources, c.k, c.minRun)).toEqual(c.result);
+    run.dispose();
+  });
   it("falls back when a Worker cannot be made", async () => {
     vi.stubGlobal("Worker", class { constructor() { throw new Error("no worker"); } });
     const c = job();

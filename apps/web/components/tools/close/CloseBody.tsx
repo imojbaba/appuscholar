@@ -18,7 +18,7 @@ import { Sources } from "./Sources";
 type Note = { key: string; vars?: Record<string, number> };
 
 /**
- * Review's Closeness tab (v1 panel 795-815, closeInit 6901, clRun 6937-6948): the open document against papers on the Reading shelf, the student's other documents and a pasted passage.
+ * Review's Closeness tab (v1 panel 794-806, closeInit 6901, clRun 6937-6947): the open document against papers on the Reading shelf, the student's other documents and a pasted passage.
  * Nothing is sent anywhere and no AI is used. The comparison runs in a Web Worker (lib/tools/close/runner.ts) so a long document never freezes typing: the button is disabled and says
  * "Checking…" meanwhile, and a result that arrives after the panel went away or the project changed is dropped. The two settings are the project's close_prefs (v1: localStorage).
  * The body is keyed by project (Panel.tsx), so another project starts clean.
@@ -62,7 +62,7 @@ export default function CloseBody({ projectId }: { projectId: string }) {
     if (busy) return;
     const text = access.text();
     setNote(null);
-    // clRun's first guard (6938): about 30 words.
+    // clRun's first guard (6939): about 30 words.
     if (!clEnoughWords(text)) { setNote({ key: "close_need_words" }); return; }
     const mine = ++token.current;
     setBusy(true);

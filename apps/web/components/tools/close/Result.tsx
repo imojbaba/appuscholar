@@ -11,7 +11,7 @@ export type Checked = { r: ClResult; text: string; unreadable: number };
 const col = (i: number) => CL_COLS[i % CL_COLS.length]!;
 
 /**
- * clRender (6891-6925) in the frame's words: the result box, the limits, the text with its matches marked, the totals by source, each matching passage, and the download. The student's
+ * clRender (6949-6966) in the frame's words: the result box, the limits, the text with its matches marked, the totals by source, each matching passage, and the download. The student's
  * words are drawn as React text, never as markup. A result of nothing shows v1's sentence and no download (v1 returned before both).
  */
 export function Result({ c, onDownload }: { c: Checked; onDownload(): void }) {

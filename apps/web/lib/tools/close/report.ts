@@ -10,13 +10,13 @@ export function closeReport(r: ClResult, now: Date): string {
   return clReportText(r, now.toISOString());
 }
 
-/** v1's highlight colours (CL_COLS 6900), one for each source in turn. A colour is never the only sign: every passage carries its [source.n] tag. */
+/** v1's highlight colours (CL_COLS 6948), one for each source in turn. A colour is never the only sign: every passage carries its [source.n] tag. */
 export const CL_COLS = ["rgba(220,38,38,.20)", "rgba(37,99,235,.20)", "rgba(5,150,105,.22)", "rgba(217,119,6,.25)", "rgba(124,58,237,.22)"] as const;
 
 /** A stretch of the student's text: plain, or one run's words with the run's source and its tag as v1 wrote it ("[1.2]": the source's number, then the run's). */
 export type Piece = { text: string; run?: { src: number; tag: string } };
 
-/** clRender's loop (6906-6910): the text cut at each run, in order. The pieces put end to end are the text, unchanged; the caller draws them as text, never as markup. */
+/** clRender's loop (6955-6960): the text cut at each run, in order. The pieces put end to end are the text, unchanged; the caller draws them as text, never as markup. */
 export function markedPieces(text: string, runs: ClRun[]): Piece[] {
   const out: Piece[] = [];
   let pos = 0;

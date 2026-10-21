@@ -3,7 +3,7 @@ import type { ShelfIndex, ShelfPaper } from "@/lib/blobs/kinds";
 import type { ProjectDocument } from "@/lib/editor/docAccess";
 
 /*
- * The Closeness tab's sources (v1 closeInit 6901-6916 and clGather 6919-6936). The listing is closeInit's: papers on the Reading shelf, and the student's other documents with a body over
+ * The Closeness tab's sources (v1 closeInit 6901-6914 and clGather 6919-6936). The listing is closeInit's: papers on the Reading shelf, and the student's other documents with a body over
  * 200 characters, never the open one. A shelf paper's text is its own blob, read when the check runs (not when the tab opens), so a long shelf costs nothing until it is used.
  */
 

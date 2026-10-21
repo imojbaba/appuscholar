@@ -4,7 +4,7 @@ import type { ShelfIndex } from "@/lib/blobs/kinds";
 import { useT } from "@/lib/i18n";
 
 /**
- * closeInit's list (6901-6916): the Reading shelf's papers, then "Your other documents", each with a box, ticked unless the student unticked it ("off" holds the unticked values: a
+ * closeInit's list (6901-6914): the Reading shelf's papers, then "Your other documents", each with a box, ticked unless the student unticked it ("off" holds the unticked values: a
  * paper added later arrives ticked, as v1's `had[...] === false` read it). A shelf not read yet says so, never "empty".
  */
 export function Sources({ index, notRead, locked, broken, docs, off, onToggle }: {

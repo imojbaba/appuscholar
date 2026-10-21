@@ -41,6 +41,8 @@ export function createRunner(): CloseRunner {
         if (e.data.result) p.resolve(e.data.result); else p.reject(new Error(e.data.error ?? "failed"));
       };
       w.onerror = () => fallBack();
+      // A reply the page cannot read (structured clone failed) is the same loss as an error: the run goes on the main thread.
+      w.onmessageerror = () => fallBack();
       worker = w;
       return w;
     } catch { broken = true; return null; }
