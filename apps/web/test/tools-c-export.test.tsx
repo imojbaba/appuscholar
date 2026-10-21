@@ -138,6 +138,13 @@ describe("the Export button", () => {
     expect(md).toBe(qualBuildMarkdown(TREE, (id) => findPassages(DOCS, id)));
   });
 
+  it("names the file by the local day just after midnight (not the UTC day)", async () => {
+    vi.setSystemTime(new Date(2026, 0, 1, 0, 30));
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-export");
+    expect((h.download.mock.calls[0] as [string, Blob])[0]).toBe("appuscholar-coded-passages-2026-01-01.md");
+  });
+
   it("caps the heading level at ###### for deep sub-codes", async () => {
     const deep = [C("a", "L0", null), C("b", "L1", "a"), C("c", "L2", "b"), C("d", "L3", "c"), C("e", "L4", "d"), C("f", "L5", "e")];
     h.blobs.qual_codes = { value: deep, loading: false, locked: false };
@@ -217,7 +224,8 @@ async function fakeOpenTitle(t: Titled): Promise<OpenedTitle> { return { state: 
 function deps(over: Partial<ProjectExportDeps> = {}): ProjectExportDeps {
   return {
     project: { id: "p1", title: "Study", titleKeyVersion: 0, deks: [] },
-    t: (k) => k,
+    // The copy, with its {variables}: the unreadable lines are read as the student reads them.
+    t: (k, v) => (E[k] ?? k).replace(/\{(\w+)\}/g, (_m, n: string) => String(v?.[n] ?? "")),
     listDocuments: async () => [...LIST].reverse(),
     getDocument: async (id) => ({ id, bodyHtml: "", keyVersion: 1, deks: [] }),
     decrypt: async (doc) => {
@@ -231,6 +239,8 @@ function deps(over: Partial<ProjectExportDeps> = {}): ProjectExportDeps {
     ...over
   };
 }
+/** The documents that all open. */
+const GOOD = { listDocuments: async () => [LIST[0]!, LIST[1]!] };
 const qualPart = (): ExportPartDef => {
   const p = exportPartList().find((x): x is ExportPartDef => typeof x !== "string" && x.part === "qual");
   if (!p) throw new Error("no qual part");
@@ -252,34 +262,55 @@ describe("the module's export part", () => {
 
   it("builds one file, qual/appuscholar-coded-passages-DATE.md, with the same Markdown (documents in creation order, deleted and unreadable ones left out)", async () => {
     const files = await build();
-    expect(files.map((f) => f.path)).toEqual([`qual/${NAME}`]);
+    expect(files.map((f) => f.path)).toEqual([`qual/${NAME}`, "qual/unreadable.txt"]);
     expect(files[0]!.data).toBe(EXPECTED);
   });
 
   it("gives the day by the local calendar of d.now", async () => {
     const late = new Date(2026, 11, 31, 23, 59);
-    const files = await qualPart().build({ ...deps(), now: late });
+    const files = await qualPart().build({ ...deps(GOOD), now: late });
     expect(files.map((f) => f.path)).toEqual(["qual/appuscholar-coded-passages-2026-12-31.md"]);
   });
 
-  it("builds nothing when there are no codes, none stored, a list that does not open, or a damaged list; and never throws", async () => {
+  it("builds nothing, and says nothing, when there are no codes: none stored, or an empty list", async () => {
     expect(await build({ readBlob: async () => null })).toEqual([]);
     expect(await build({ readBlob: async () => "[]" })).toEqual([]);
-    expect(await build({ readBlob: async () => "not json {" })).toEqual([]);
-    expect(await build({ readBlob: async () => JSON.stringify({ not: "a list" }) })).toEqual([]);
-    expect(await build({ readBlob: async () => { throw new VaultError("corrupt"); } })).toEqual([]);
-    // A list whose parents loop is never handed to the engine (it has no cycle guard).
-    expect(await build({ readBlob: async () => JSON.stringify([C("a", "A", "b"), C("b", "B", "a")]) })).toEqual([]);
-    expect(await build({ readBlob: async () => JSON.stringify([C("a", "Self", "a")]) })).toEqual([]);
   });
 
-  it("skips a document that does not open and still builds from the others; an empty title reads as Untitled", async () => {
+  it("a code list that cannot be used gives only qual/unreadable.txt, naming it (no Markdown), and never throws or reaches the engine", async () => {
+    const lostLines = ["These could not be opened, so they are not in this zip:", "", "Saved work: Coded passages", ""].join("\n");
+    const cases: Array<[string, () => Promise<string | null>]> = [
+      ["does not open", async () => { throw new VaultError("corrupt"); }],
+      ["not json", async () => "not json {"],
+      ["not a list", async () => JSON.stringify({ not: "a list" })],
+      ["parents loop", async () => JSON.stringify([C("a", "A", "b"), C("b", "B", "a")])],
+      ["self-parent", async () => JSON.stringify([C("a", "Self", "a")])]
+    ];
+    for (const [why, readBlob] of cases) {
+      const files = await build({ readBlob });
+      expect(files.map((f) => f.path), why).toEqual(["qual/unreadable.txt"]);
+      expect(files[0]!.data, why).toBe(lostLines);
+    }
+  });
+
+  it("skips a document that does not open, names it in qual/unreadable.txt, and builds from the others; an empty title reads as Untitled", async () => {
     const files = await build({ listDocuments: async () => [{ ...LIST[0]!, title: "" }, LIST[1]!, LIST[2]!] });
-    expect(files).toHaveLength(1);
+    expect(files.map((f) => f.path)).toEqual([`qual/${NAME}`, "qual/unreadable.txt"]);
     const md = files[0]!.data as string;
     expect(md).toContain('- **Untitled:** "anxious and tired"');
     expect(md).toContain('- **Interview two:** "walking"');
     expect(md).not.toContain("Locked");
+    expect(files[1]!.data).toBe("These could not be opened, so they are not in this zip:\n\nDocument: Locked\n");
+  });
+
+  it("the clean case writes no unreadable file", async () => {
+    const files = await build({ listDocuments: async () => [LIST[0]!, LIST[1]!] });
+    expect(files.map((f) => f.path)).toEqual([`qual/${NAME}`]);
+  });
+
+  it("the day is the local one just after midnight (not the UTC day)", async () => {
+    const early = new Date(2026, 0, 1, 0, 30);
+    expect((await qualPart().build({ ...deps(GOOD), now: early })).map((f) => f.path)).toEqual(["qual/appuscholar-coded-passages-2026-01-01.md"]);
   });
 
   it("a failure other than 'does not open' still rejects (the export fails rather than writing a file with passages missing)", async () => {
@@ -292,8 +323,8 @@ describe("R4: no code colour in any export", () => {
     const blob = await exportProject(deps(), ["documents", qualPart()], { style: "apa", now: NOW, lastSearch: null });
     const z = await JSZip.loadAsync(await blobBuffer(blob));
     const names = Object.keys(z.files).filter((n) => !z.files[n]!.dir).sort();
-    // unreadable.txt is the export's own list of the document that does not open ("bad").
-    expect(names).toEqual([`qual/${NAME}`, "unreadable.txt", "documents/Interview one.doc", "documents/Interview one.html", "documents/Interview two.doc", "documents/Interview two.html"].sort());
+    // unreadable.txt is the export's own list of the document that does not open ("bad"); the part names it again in qual/unreadable.txt.
+    expect(names).toEqual([`qual/${NAME}`, "qual/unreadable.txt", "unreadable.txt", "documents/Interview one.doc", "documents/Interview one.html", "documents/Interview two.doc", "documents/Interview two.html"].sort());
     for (const n of names) {
       const s = await z.file(n)!.async("string");
       expect(s, n).not.toMatch(/style\s*=/i);
