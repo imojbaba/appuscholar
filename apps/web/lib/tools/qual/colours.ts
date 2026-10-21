@@ -7,6 +7,11 @@
 const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 const CODE_ID = /^[A-Za-z0-9_-]+$/;
 
+/** The colour as a stored value gives it when it is #rrggbb, else undefined (no background): for a swatch's inline style, where the same untrusted string would otherwise go in unchecked. */
+export function codeColourOf(color: unknown): string | undefined {
+  return typeof color === "string" && HEX_COLOUR.test(color) ? color : undefined;
+}
+
 /** The stylesheet text for the codes: one rule for each usable code, one per line; "" when there is none (or the value is not a list). */
 export function codeColourCss(codes: unknown): string {
   if (!Array.isArray(codes)) return "";

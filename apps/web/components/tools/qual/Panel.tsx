@@ -147,6 +147,7 @@ function Coding({ projectId }: { projectId: string }) {
                   editing={editing}
                   setEditing={(e) => (e ? open(e) : close())}
                   disabled={unreadable || busy}
+                  busy={busy}
                   onAdd={add}
                   onRename={(id, name) => { if (codes.rename(id, name)) close(); }}
                   onDelete={(id) => void remove(id)}

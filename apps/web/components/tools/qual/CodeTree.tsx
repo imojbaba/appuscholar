@@ -4,6 +4,7 @@ import { Eye, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import type { QualCode } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { codeColourOf } from "@/lib/tools/qual/colours";
 import { NameField } from "./NameField";
 
 /** Which inline field or question is open (only one at a time): the new top-level code (the panel draws that one), a sub-code under a row, a rename of a row, a delete question for a row. */
@@ -35,11 +36,13 @@ function rows(codes: QualCode[]): Row[] {
  * take the selection from the editor (mousedown is cancelled, as the shelf's save button does). The eye button opens the code's passages (`onPassages`).
  * `codes` must be a list that can be walked (the panel checks that first).
  */
-export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename, onDelete, onTag, onPassages, confirmFor }: {
+export function CodeTree({ codes, editing, setEditing, disabled, busy = false, onAdd, onRename, onDelete, onTag, onPassages, confirmFor }: {
   codes: QualCode[];
   editing: Editing;
   setEditing: (e: Editing) => void;
   disabled: boolean;
+  /** The tags are being taken out of the documents: the delete question's buttons are off until it is done. */
+  busy?: boolean;
   onAdd: (name: string, parentId: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
@@ -59,7 +62,7 @@ export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename
               <button
                 type="button"
                 className="relative size-3.5 shrink-0 cursor-pointer rounded-full border border-black/10 outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default"
-                style={{ background: c.color }}
+                style={{ background: codeColourOf(c.color) }}
                 disabled={disabled}
                 data-testid={"qual-swatch-" + c.id}
                 title={t("qual_tip_tag")}
@@ -94,7 +97,7 @@ export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename
             )}
             {ed === "delete" && (
               <li className="py-1" style={{ paddingLeft: indent(depth + 1) }} data-testid="qual-delete-confirm-row">
-                <DeleteQuestion text={confirmFor(c.id)} onDelete={() => onDelete(c.id)} onKeep={() => setEditing(null)} />
+                <DeleteQuestion text={confirmFor(c.id)} busy={busy} onDelete={() => onDelete(c.id)} onKeep={() => setEditing(null)} />
               </li>
             )}
           </Fragment>
@@ -108,17 +111,20 @@ export function CodeTree({ codes, editing, setEditing, disabled, onAdd, onRename
  * v1's delete question, announced as an alert dialog named by its own sentence; focus goes to Keep (the safe answer) when it opens.
  * The panel returns focus when it closes.
  */
-function DeleteQuestion({ text, onDelete, onKeep }: { text: string | null; onDelete: () => void; onKeep: () => void }) {
+function DeleteQuestion({ text, busy, onDelete, onKeep }: { text: string | null; busy: boolean; onDelete: () => void; onKeep: () => void }) {
   const t = useT();
   const id = useId();
   const keep = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => { keep.current?.focus(); }, []);
+  // While the delete is under way both answers are off (Keep would only close the question, and the delete would still finish): focus stays in the question, on the box itself.
+  useEffect(() => { if (busy) box.current?.focus(); }, [busy]);
   return (
-    <div role="alertdialog" aria-labelledby={id} data-testid="qual-delete-confirm">
+    <div ref={box} tabIndex={-1} role="alertdialog" aria-labelledby={id} aria-busy={busy} className="outline-none" data-testid="qual-delete-confirm">
       <p id={id} className="m-0 text-[13px]">{text}</p>
       <div className="mt-1.5 flex gap-2">
-        <Button type="button" variant="primary" size="sm" data-testid="qual-delete-confirm-yes" onClick={onDelete}>{t("qual_btn_delete")}</Button>
-        <Button ref={keep} type="button" variant="ghost" size="sm" data-testid="qual-delete-keep" onClick={onKeep}>{t("qual_btn_keep")}</Button>
+        <Button type="button" variant="primary" size="sm" disabled={busy} data-testid="qual-delete-confirm-yes" onClick={onDelete}>{t("qual_btn_delete")}</Button>
+        <Button ref={keep} type="button" variant="ghost" size="sm" disabled={busy} data-testid="qual-delete-keep" onClick={onKeep}>{t("qual_btn_keep")}</Button>
       </div>
     </div>
   );

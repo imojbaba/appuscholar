@@ -252,7 +252,7 @@ describe("the code tree", () => {
     expect(tid("qual-delete-confirm")!.textContent).toContain("Delete \"Barriers\"? The passage text itself stays");
   });
 
-  it("Delete removes the code and its sub-codes, says so, and hands the removed ids to the seam", async () => {
+  it("Delete removes the code and its sub-codes, says so, and says so", async () => {
     h.blobs.qual_codes!.value = TREE;
     await render(<Panel tab="coding" projectId="p1" />);
     await click("qual-delete-qa");
@@ -262,20 +262,28 @@ describe("the code tree", () => {
     expect(tid("qual-status")!.textContent).toBe(E.qual_status_deleted);
   });
 
-  it("useCodes.remove returns the removed ids and calls onDeleted with them (C2 strips the spans there)", async () => {
+  it("useCodes.remove returns the removed ids", async () => {
     h.blobs.qual_codes!.value = TREE;
-    const onDeleted = vi.fn();
     let api: ReturnType<typeof useCodes> | null = null;
-    function Harness() { const a = useCodes("p1", { onDeleted }); useEffect(() => { api = a; }); return null; }
+    function Harness() { const a = useCodes("p1"); useEffect(() => { api = a; }); return null; }
     await render(<Harness />);
     let removed: string[] | null = null;
     await act(async () => { removed = api!.remove("qc"); });
     expect(removed).toEqual(["qc", "qd"]);
-    expect(onDeleted).toHaveBeenCalledWith(["qc", "qd"]);
     expect(codes().map((c) => c.id)).toEqual(["qa", "qb"]);
     await act(async () => { removed = api!.remove("nope"); });
     expect(removed).toBeNull();
-    expect(onDeleted).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the swatch colour", () => {
+  it("is drawn only for #rrggbb; a hostile stored value (url(x), a declaration list) leaves the swatch with no background", async () => {
+    h.blobs.qual_codes!.value = [C("qa", "Good", null, "#10b981"), C("qb", "Url", null, "url(x)"), C("qc", "Decl", null, "red;}body{display:none"), C("qd", "Short", null, "#fff")];
+    await render(<Panel tab="coding" projectId="p1" />);
+    const bg = (id: string) => tid("qual-swatch-" + id)!.style.background;
+    expect(bg("qa")).not.toBe("");
+    for (const id of ["qb", "qc", "qd"]) expect(bg(id), id).toBe("");
+    expect(tid("qual-swatch-qb")!.getAttribute("style") ?? "").not.toContain("url");
   });
 });
 

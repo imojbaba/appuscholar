@@ -409,6 +409,25 @@ describe("deleting a code takes its tags out of the documents first", () => {
     expect((h.blobs.qual_codes!.value as QualCode[]).map((c) => c.id)).toEqual(["qa", "qc"]);
   });
 
+  it("while the tags are being taken out, the question's Delete and Keep are off and focus stays in the question; the delete still finishes", async () => {
+    let release!: () => void;
+    (h.access.allDocuments as ReturnType<typeof vi.fn>).mockReturnValue(new Promise((r) => { release = () => r([]); }));
+    await render(<Panel tab="coding" projectId="p1" />);
+    await click("qual-delete-qb");
+    expect((tid("qual-delete-keep") as HTMLButtonElement).disabled).toBe(false);
+    await click("qual-delete-confirm-yes");
+    expect((tid("qual-delete-confirm-yes") as HTMLButtonElement).disabled).toBe(true);
+    expect((tid("qual-delete-keep") as HTMLButtonElement).disabled).toBe(true);
+    expect(tid("qual-delete-confirm")!.contains(document.activeElement)).toBe(true);
+    // A press on Keep does nothing now: the question stays and the delete is not cut short.
+    await click("qual-delete-keep");
+    expect(tid("qual-delete-confirm")).not.toBeNull();
+    await act(async () => { release(); });
+    expect(status()).toBe("Deleted");
+    expect((h.blobs.qual_codes!.value as QualCode[]).map((c) => c.id)).toEqual(["qa", "qc"]);
+    expect(tid("qual-delete-confirm")).toBeNull();
+  });
+
   it("an orphan tag (its code already gone) is left alone and crashes nothing", async () => {
     setDocs(docs(["a", "One", `<p>${tag("zz", "orphan")} ${tag("qb", "barrier")}</p>`]));
     await render(<Panel tab="coding" projectId="p1" />);
