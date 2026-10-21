@@ -131,3 +131,22 @@ Task 12: complete. Library cd09d2e, UI 7252e0d; review CHANGES REQUIRED, fixed i
 Integrated (merge 75063ae, integration f1c014d): Export works in a pop-out (it only reads) and from the home (home_out_soon removed); accountMenuExport test added.
 Merged suite: web 1205 pass (2 skipped), api 258; typecheck, lint and build clean; en and hi 1373 keys.
 Tasks 1-13 complete. Next: Tasks 14 and 15 in parallel worktrees, each with its own e2e ports.
+Whole-slice review of B1 (tasks 1-13 at f80992c): no Critical. Counts: web 1204 (citeBib timing under load), api 258, golden 7338, typecheck clean.
+Important:
+- (1) An old tab could store ciphertext as a plain title, which sealPlainTitles then seals twice.
+- (2) The browser's Back button leaves a project without the unsaved question, so text can be lost.
+Near-Important:
+- (3) Export ignored a failed document save.
+Minors: the NotBuilt dead button; hard-coded English moved from v1 code; register drift.
+Noted, not fixed: a web shipped before the API would seal titles against the old API. The release order (migration, then API, then web) prevents it.
+Moved or removed versus 8dea9f4 (for the walk notes):
+- the stage choice on create;
+- the one-card .txt download with its reference-check line;
+- one-click downloads now go through Export;
+- the provider switch is in the key dialog;
+- Research helpers are now in Writing.
+One fix wave dispatched on wave-b1.
+Fix wave done:
+- 98aaf1d: a ciphertext-looking plain title is refused on all 7 request shapes, and sealPlainTitles never seals one twice.
+- f408c87: unsaved text survives Back, held in memory only and restored on reopen; Export warns on a failed document save; copy through t(); the register brought up to date.
+Counts: api 259, web 1210 (2 skipped); typecheck, lint and build clean.
