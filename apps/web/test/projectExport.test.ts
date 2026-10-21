@@ -15,7 +15,7 @@ const LIB: CitationEntry[] = [
   { author: "Walker, Matthew", year: "2017", title: "Why we sleep", source: "Scribner", type: "Book" },
   { author: "Alvarez, Ana", year: "2020", title: "Sleep and exam anxiety", source: "Journal of Sleep", volume: "4", issue: "2", pages: "10-20", doi: "10.1/abc", type: "Journal article" }
 ];
-const INTAKE = { topic: "Sleep and exam anxiety", resources: "Two classes", timeframe: "Six weeks", constraints: "None", read: { text: "Feasible: High. A narrow sample." } };
+const INTAKE = { topic: "Sleep and exam anxiety", resources: "Two classes", timeframe: "Six weeks", constraints: "None", read: { text: "Feasible: High. A narrow sample.", at: "2026-10-21T10:00:00.000Z" } };
 const SHELF_INDEX = [{ id: "s1", title: "Sleep and exam anxiety", file: "a.pdf", size: 10, added: "2026-10-01T10:00:00.000Z", total: 3, kept: 3 }];
 const SHELF_PAPER = { pages: ["one", "two", "three"], notes: [{ id: "n1", page: 2, quote: "Sleep fell by an hour", note: "Check the sample", at: "2026-10-02T10:00:00.000Z" }], cells: { Sample: "120 students" } };
 const AP_NOTES = {
