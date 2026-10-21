@@ -30,8 +30,11 @@ import * as viva from "@/components/tools/viva";
 
 export { TOOL_TABS, type ToolTab };
 
-/** What the home knows of a stage from one module: a line for its row (none until there is something to say), and whether work has started. */
-export type ToolFacts = { detail?: string; started: boolean };
+/**
+ * What the home knows of a stage from one module: a line for its row (none until there is something to say), and whether work has started.
+ * `detail` is a message key, shown through t() with `vars` (Task G3: facts() has no t, and every string goes through it).
+ */
+export type ToolFacts = { detail?: string; vars?: Record<string, string | number>; started: boolean };
 /** The stage's decrypted blobs, as ProjectHome reads them: each kind's opened value and when it was written. */
 export type StageBlobs = Partial<Record<BlobKind, { value: unknown; updatedAt: string }>>;
 /** One part of the project export a module adds (Task G3 lists it in the export dialog and puts its files in the zip). */

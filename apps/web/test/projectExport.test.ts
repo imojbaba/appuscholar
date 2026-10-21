@@ -7,6 +7,24 @@ import { VaultError } from "../lib/vault/crypto";
 import { localDay } from "../lib/vault/export";
 import { projectKeyId, type OpenedTitle, type Titled } from "../lib/vault/titles";
 import type { WritingRecord } from "../lib/writingRecord";
+import { exportPartList } from "../lib/export/moduleParts";
+import type { ExportPartDef } from "../lib/tools/registry";
+
+/*
+ * Task G3 (ruling R7): one tool module mocked as built, declaring one export part, as a session's module does. Its build reads the project's
+ * blobs through the export's deps and hands back its files.
+ */
+const mod = vi.hoisted(() => ({
+  part: {
+    part: "designPack", labelKey: "exp_part_design_pack", detailKey: "exp_detail_design_pack", formatKey: "exp_format_text", ticked: true,
+    build: async (d: { readBlob(kind: string): Promise<string | null>; now: Date }) => [
+      { path: "design/pathway.txt", data: "Pathway: " + (await d.readBlob("design_reg")) },
+      { path: "design/budget.csv", data: new Blob(["label,amount\nTravel,2500\n"], { type: "text/csv" }) },
+      { path: "design/made.txt", data: d.now.toISOString() }
+    ]
+  }
+}));
+vi.mock("@/components/tools/design", () => ({ built: true, exportParts: [mod.part] }));
 
 /** The copy as keys: the cards CSV and the labels come out as their keys, so the test reads what the export asked t() for. */
 const t = (k: string, v?: Record<string, string | number>) => (v ? k + JSON.stringify(v) : k);
@@ -26,7 +44,7 @@ const AP_NOTES = {
     card: { strengths: "Large sample", verdict: "Useful, with care" }
   }
 };
-const BLOBS: Record<string, unknown> = { idea_intake: INTAKE, citations: LIB, shelf_index: SHELF_INDEX, "shelf_paper:s1": SHELF_PAPER, ap_notes: AP_NOTES, ap_cols: ["design", "verdict"], shelf_cols: [] };
+const BLOBS: Record<string, unknown> = { design_reg: { type: "observational", done: true }, idea_intake: INTAKE, citations: LIB, shelf_index: SHELF_INDEX, "shelf_paper:s1": SHELF_PAPER, ap_notes: AP_NOTES, ap_cols: ["design", "verdict"], shelf_cols: [] };
 const LOG: AiuEntry[] = [{ d: "2026-10-02", p: "anthropic", m: "claude", k: "Idea check", g: "feedback" }];
 const RECORD: WritingRecord = {
   docs: [{ id: "d1", title: "Draft", titleKeyVersion: 0, deks: [], kind: "draft", stats: { typed: 10, ai: 0, passages: 0, kept: 0, edited: 0, unknown: 0 } }],
@@ -198,6 +216,25 @@ describe("exportProject", () => {
     expect(files(await unzip(await exportProject(deps(), [...EXPORT_PARTS], opts())))).not.toContain("unreadable.txt");
     // A locked vault is not unreadable: the export rejects.
     await expect(exportProject(deps({ readBlob: async () => { throw new Error("vault-locked"); } }), ["question"], opts())).rejects.toThrow("vault-locked");
+  });
+
+  it("the export dialog lists a part a module declares, and the zip holds its files", async () => {
+    // The dialog's list: the built-in parts in their order, then each built module's parts.
+    const list = exportPartList();
+    expect(list.slice(0, EXPORT_PARTS.length)).toEqual(EXPORT_PARTS);
+    expect(list.slice(EXPORT_PARTS.length)).toEqual([mod.part]);
+    const def = list.at(-1) as ExportPartDef;
+    expect([def.part, def.labelKey, def.detailKey, def.formatKey, def.ticked]).toEqual(["designPack", "exp_part_design_pack", "exp_detail_design_pack", "exp_format_text", true]);
+    // Ticked with a built-in part: its files are in the zip at their paths, and the progress line hears it after the built-in parts.
+    const progress = vi.fn();
+    const z = await unzip(await exportProject(deps(), ["question", def], opts({ progress })));
+    expect(files(z)).toEqual(["design/budget.csv", "design/made.txt", "design/pathway.txt", "question.txt"]);
+    expect(await text(z, "design/pathway.txt")).toBe('Pathway: {"type":"observational","done":true}');
+    expect(await text(z, "design/budget.csv")).toBe("label,amount\nTravel,2500\n");
+    expect(await text(z, "design/made.txt")).toBe(NOW.toISOString());
+    expect(progress.mock.calls.map((c) => c[0])).toEqual(["question", "designPack"]);
+    // Not ticked: nothing of it.
+    expect(files(await unzip(await exportProject(deps(), ["question"], opts())))).toEqual(["question.txt"]);
   });
 
   it("reports each ticked part as it is built", async () => {

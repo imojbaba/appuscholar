@@ -28,7 +28,7 @@ import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
 import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
 import { ExportDialog, exportPartsFor } from "@/components/export/ExportDialog";
-import type { ExportPart } from "@/lib/export/projectExport";
+import type { ExportPartId } from "@/lib/export/projectExport";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
@@ -152,7 +152,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   // The export place's ticks while it is open (null: closed).
-  const [exportParts, setExportParts] = useState<ExportPart[] | null>(null);
+  const [exportParts, setExportParts] = useState<ExportPartId[] | null>(null);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; readyRef.current = ready; }, [projectId, currentDoc, ready]);
   const docToken = useRef(0);
   /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */

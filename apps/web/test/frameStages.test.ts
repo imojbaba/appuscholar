@@ -11,6 +11,21 @@ describe("the kind-to-stage map", () => {
     expect(stageOfKind("shelf_paper:p1")).toEqual({ stage: "lit", work: true });
   });
 
+  it("every new kind maps to its stage in KIND_STAGE", () => {
+    // Task G3: one kind per v1 key group of the stage 3 to 6 tools; the *_prefs kinds are not work.
+    const want = {
+      design_reg: ["design", true], design_proto: ["design", true], design_ec: ["design", true], design_ctri: ["design", true], design_pi: ["design", true], design_budget: ["design", true],
+      stats_sets: ["collect", true], stats_runs: ["collect", true], stats_prefs: ["collect", false], qual_codes: ["collect", true], qual_prefs: ["collect", false],
+      style_profile: ["writing", true], style_samples: ["writing", true], style_meta: ["writing", true], words_bank: ["writing", true], words_prefs: ["writing", false],
+      close_prefs: ["review", false], viva_log: ["review", true]
+    } as const;
+    for (const [k, [stage, w]] of Object.entries(want)) {
+      expect(BLOB_KINDS, k).toContain(k);
+      expect(stageOfKind(k), k).toEqual({ stage, work: w });
+    }
+    expect(BLOB_KINDS.slice(9)).toEqual(Object.keys(want));
+  });
+
   it("idea_intake is Idea work; citations, shelf_index and ap_notes are Literature work; caches and preferences are Literature, not work", () => {
     expect(stageOfKind("idea_intake")).toEqual({ stage: "idea", work: true });
     for (const k of ["citations", "shelf_index", "ap_notes"]) expect(stageOfKind(k)).toEqual({ stage: "lit", work: true });
@@ -32,6 +47,18 @@ describe("stageStates", () => {
 
   it("caches are not work: a project with only refcheck_cache has Literature not started", () => {
     expect(stageStates(work({ blobs: [{ kind: "refcheck_cache", updatedAt: at }, { kind: "rs_prefs", updatedAt: at }] })).lit).toBe("not-started");
+  });
+
+  it("saving design_reg turns Design and ethics In progress; a prefs kind does not", () => {
+    const before = [{ kind: "idea_intake", updatedAt: at }, { kind: "citations", updatedAt: at }];
+    expect(stageStates(work({ blobs: before })).design).toBe("not-started");
+    expect(stageStates(work({ blobs: [...before, { kind: "design_reg", updatedAt: at }] })).design).toBe("in-progress");
+    // Preferences are not work: the stage they belong to stays as it was.
+    const prefs = stageStates(work({ blobs: [...before, ...["stats_prefs", "qual_prefs", "words_prefs", "close_prefs"].map((kind) => ({ kind, updatedAt: at }))] }));
+    expect([prefs.collect, prefs.writing, prefs.review]).toEqual(["not-started", "not-started", "not-started"]);
+    // A tool's work counts for its own stage: the viva log for Review, the word bank for Writing.
+    const s = stageStates(work({ blobs: [...before, { kind: "viva_log", updatedAt: at }, { kind: "words_bank", updatedAt: at }] }));
+    expect([s.review, s.writing]).toEqual(["started-early", "in-progress"]);
   });
 
   it("Literature with work while Idea has none is started early", () => {

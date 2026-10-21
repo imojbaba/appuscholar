@@ -1,5 +1,6 @@
 import type { CitationEntry } from "@appuscholar/core";
 import type { ApNote, ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
+import type { StageBlobs, ToolFacts, ToolModule } from "@/lib/tools/registry";
 import { parseIdeaRead } from "./ideaRead";
 
 /**
@@ -44,4 +45,12 @@ export function homeFacts(
     cards: notes.filter(carded).length,
     draftWords
   };
+}
+
+/**
+ * A stage 3 to 6 row's facts (Task G3, ruling R6): what each of the stage's modules that is built and declares facts says of the stage's
+ * blobs, in the order given (the registry's). The modules come in as arguments, so this file never reads the registry while it loads.
+ */
+export function toolFacts(mods: readonly ToolModule[], b: StageBlobs): ToolFacts[] {
+  return mods.flatMap((m) => (m.built && m.facts ? [m.facts(b)] : []));
 }

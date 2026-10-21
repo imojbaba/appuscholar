@@ -1,19 +1,20 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
-import { projectBlobClient, useProjectBlob } from "@/lib/blobs/useProjectBlob";
-import { shelfPaperKind } from "@/lib/blobs/kinds";
+import { projectBlobClient, useProjectBlob, type ProjectBlobState } from "@/lib/blobs/useProjectBlob";
+import { shelfPaperKind, type FixedBlobKind } from "@/lib/blobs/kinds";
 import { useVault } from "@/lib/vault/useVault";
 import { useTitle } from "@/lib/vault/titles";
-import { homeFacts } from "@/lib/frame/homeFacts";
+import { homeFacts, toolFacts } from "@/lib/frame/homeFacts";
 import { suggestNext } from "@/lib/frame/suggest";
-import { stageStates, type StageWork } from "@/lib/frame/stages";
+import { stageKinds, stageStates, type StageWork } from "@/lib/frame/stages";
 import { placeHref } from "@/lib/frame/places";
 import { useProjectWork, type ProjectWork } from "@/lib/frame/useProjectWork";
-import type { StageKey } from "@/lib/tools";
+import { STAGE_ORDER, type StageKey } from "@/lib/tools";
+import { TOOL_TABS, toolModule, type StageBlobs, type ToolFacts, type ToolModule } from "@/lib/tools/registry";
 import { PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { useProject, type ProjectValue } from "./ProjectContext";
@@ -69,6 +70,50 @@ function useHighlightCounts(projectId: string | null, mine: ProjectWork | null):
   return counts;
 }
 
+/** The modules whose facts give a stage's row (ruling R6): the stage's tools that are built and declare facts, in the registry's order. Read while drawing. */
+const factModules = (stage: StageKey): ToolModule[] =>
+  [...new Set(TOOL_TABS.filter((x) => x.stage === stage).map((x) => x.tool))].map(toolModule).filter((m) => m.built && !!m.facts);
+
+/**
+ * One stage's tool facts (Task G3, ruling R6), mounted only for a stage one of whose modules is built and declares facts, so a release with no
+ * such module reads nothing more. It reads (read-only, the panels' own client) the stage's kinds the `?include=work` entry lists, again when one's
+ * version moves or the vault opens, and hands the modules' facts up once every read has answered; a blob that does not open is left out.
+ */
+function StageFactsReader({ stage, projectId, mine, onFacts }: { stage: StageKey; projectId: string; mine: ProjectWork | null; onFacts(stage: StageKey, f: ToolFacts[]): void }) {
+  const vault = useVault();
+  const vaultRef = useRef(vault);
+  useEffect(() => { vaultRef.current = vault; }, [vault]);
+  const onFactsRef = useRef(onFacts);
+  useEffect(() => { onFactsRef.current = onFacts; }, [onFacts]);
+  const open = vault.status === "unlocked" || vault.status === "migrating";
+  const present = useMemo(() => {
+    const kinds: readonly string[] = stageKinds(stage);
+    return (mine?.blobs ?? []).filter((b) => kinds.includes(b.kind));
+  }, [mine, stage]);
+  const key = present.map((b) => `${b.kind}:${b.version}:${b.updatedAt}`).join("\n");
+  // Before the work answers nothing is known of the stage's blobs, so nothing is read.
+  const have = mine !== null;
+  useEffect(() => {
+    if (!have) return;
+    const states = new Map<string, ProjectBlobState<unknown>>();
+    const report = () => {
+      if (present.some((b) => states.get(b.kind)?.loading !== false)) return;
+      const b: StageBlobs = {};
+      for (const x of present) { const v = states.get(x.kind)!.value; if (v !== null) b[x.kind as FixedBlobKind] = { value: v, updatedAt: x.updatedAt }; }
+      onFactsRef.current(stage, toolFacts(factModules(stage), b));
+    };
+    const clients = present.map((x) => {
+      const c = projectBlobClient(x.kind as FixedBlobKind, projectId, () => vaultRef.current, (s) => { states.set(x.kind, s as ProjectBlobState<unknown>); report(); }, { readOnly: true });
+      void c.start();
+      return c;
+    });
+    report();
+    return () => { for (const c of clients) c.dispose(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for `present`; `open` reads a blob that was locked again once the vault opens
+  }, [projectId, stage, key, have, open]);
+  return null;
+}
+
 /**
  * The project's home (canvas Main): the question, a suggested next step, the six stages with their states, and the way to take the work out.
  * Every stage's state comes from one `GET /projects?include=work`; the facts from the project's idea, library, shelf and notes. A failed load says
@@ -94,6 +139,8 @@ function HomeLoad({ retry }: { retry(): void }) {
   const notes = useProjectBlob("ap_notes", projectId);
   const mine = work?.find((w) => w.id === projectId) ?? null;
   const highlights = useHighlightCounts(projectId, mine);
+  const [stageFacts, setStageFacts] = useState<Partial<Record<StageKey, ToolFacts[]>>>({});
+  const onFacts = useCallback((stage: StageKey, f: ToolFacts[]) => setStageFacts((p) => ({ ...p, [stage]: f })), []);
   if (!projectId) return null;
 
   const facts = homeFacts({ idea: idea.value, citations: citations.value, shelfIndex: shelf.value, apNotes: notes.value }, mine?.draftWords ?? 0, project?.field ?? "", highlights);
@@ -114,6 +161,7 @@ function HomeLoad({ retry }: { retry(): void }) {
   return (
     <section className="home" data-testid="project-home">
       <h1 className="sr-only" data-testid="home-title">{name}</h1>
+      {STAGE_ORDER.filter((s) => factModules(s).length > 0).map((s) => <StageFactsReader key={s} stage={s} projectId={projectId} mine={mine} onFacts={onFacts} />)}
       {locked ? (
         <div className="home-card home-locked" data-testid="home-locked">
           <p>{t("home_locked")}</p>
@@ -127,15 +175,16 @@ function HomeLoad({ retry }: { retry(): void }) {
       ) : loading ? (
         <PanelLoading testId="home-loading" />
       ) : (
-        <HomeBody pv={pv} facts={facts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} />
+        <HomeBody pv={pv} facts={facts} toolFacts={stageFacts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} />
       )}
     </section>
   );
 }
 
-function HomeBody({ pv, facts, states, open, mark }: {
+function HomeBody({ pv, facts, toolFacts: stageFacts, states, open, mark }: {
   pv: ProjectValue;
   facts: ReturnType<typeof homeFacts>;
+  toolFacts: Partial<Record<StageKey, ToolFacts[]>>;
   states: ReturnType<typeof stageStates>;
   open(stage: StageKey, tab?: string): void;
   mark(stage: StageKey, ready: boolean): Promise<void>;
@@ -148,7 +197,7 @@ function HomeBody({ pv, facts, states, open, mark }: {
       <Switcher home />
       <QuestionFold facts={facts} onEdit={() => open("idea")} />
       <SuggestedNext next={next} facts={facts} onOpen={() => open(next.to.stage, next.to.tab)} />
-      <StageRows compact states={states} facts={facts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
+      <StageRows compact states={states} facts={facts} toolFacts={stageFacts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
       {/* "Needs your attention" comes here with Task 24. */}
       <button type="button" className="home-btn home-export" onClick={() => pv.openExport()} data-testid="home-export">{t("home_out_btn")}</button>
     </div>
@@ -166,7 +215,7 @@ function HomeBody({ pv, facts, states, open, mark }: {
       </div>
       <div className="home-main">
         <SuggestedNext next={next} facts={facts} onOpen={() => open(next.to.stage, next.to.tab)} />
-        <StageRows states={states} facts={facts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
+        <StageRows states={states} facts={facts} toolFacts={stageFacts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
       </div>
     </div>
   );

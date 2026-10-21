@@ -17,8 +17,32 @@ export const KIND_STAGE: Record<FixedBlobKind, { stage: StageKey; work: boolean 
   refcheck_cache: { stage: "lit", work: false },
   rs_prefs: { stage: "lit", work: false },
   ap_cols: { stage: "lit", work: false },
-  shelf_cols: { stage: "lit", work: false }
+  shelf_cols: { stage: "lit", work: false },
+  // The stage 3 to 6 tools (Task G3): each tool's kinds belong to the stage of its place; its preferences are not work.
+  design_reg: { stage: "design", work: true },
+  design_proto: { stage: "design", work: true },
+  design_ec: { stage: "design", work: true },
+  design_ctri: { stage: "design", work: true },
+  design_pi: { stage: "design", work: true },
+  design_budget: { stage: "design", work: true },
+  stats_sets: { stage: "collect", work: true },
+  stats_runs: { stage: "collect", work: true },
+  stats_prefs: { stage: "collect", work: false },
+  qual_codes: { stage: "collect", work: true },
+  qual_prefs: { stage: "collect", work: false },
+  style_profile: { stage: "writing", work: true },
+  style_samples: { stage: "writing", work: true },
+  style_meta: { stage: "writing", work: true },
+  words_bank: { stage: "writing", work: true },
+  words_prefs: { stage: "writing", work: false },
+  close_prefs: { stage: "review", work: false },
+  viva_log: { stage: "review", work: true }
 };
+
+/** The kinds of one stage, work or not, in KIND_STAGE's order: what the home reads for a built tool module's facts (ruling R6). */
+export function stageKinds(stage: StageKey): FixedBlobKind[] {
+  return (Object.keys(KIND_STAGE) as FixedBlobKind[]).filter((k) => KIND_STAGE[k].stage === stage);
+}
 
 /** A kind's stage: `shelf_paper:*` is Literature work; a kind this build does not know (from a newer build) is null and ignored. */
 export function stageOfKind(kind: string): { stage: StageKey; work: boolean } | null {

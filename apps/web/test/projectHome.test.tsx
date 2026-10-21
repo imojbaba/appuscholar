@@ -7,7 +7,8 @@ import en from "../messages/en.json";
 const h = vi.hoisted(() => ({
   api: vi.fn(), toast: vi.fn(), go: vi.fn(async () => true), openExport: vi.fn(),
   vault: null as unknown,
-  me: { id: "u1", activeProjectId: "p1", scratchProjectId: "s1" }
+  me: { id: "u1", activeProjectId: "p1", scratchProjectId: "s1" },
+  designBuilt: false, designFacts: undefined as unknown
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {}, update: async () => undefined, reload: async () => undefined }) }));
@@ -15,6 +16,8 @@ vi.mock("@/lib/vault/useVault", async (orig) => ({ ...(await orig<typeof import(
 // The title is plain here (titles.test pins sealed ones).
 vi.mock("@/lib/vault/titles", () => ({ useTitle: (t: { title: string } | null) => ({ state: "open", text: t?.title ?? "" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
+// Task G3: the Design module, built or not per test, with the facts it declares (getters: the home reads it while drawing).
+vi.mock("@/components/tools/design", () => ({ get built() { return h.designBuilt; }, get facts() { return h.designFacts; } }));
 const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0, deks: [], field: "Psychology", stage: "idea", status: "active", contentLang: "en", kind: "research" };
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport }) }));
 
@@ -51,6 +54,7 @@ const work = () => [{
 }];
 beforeEach(() => {
   h.vault = vaultOff;
+  h.designBuilt = false; h.designFacts = undefined;
   h.go.mockClear();
   h.toast.mockClear();
   server = {
@@ -160,6 +164,41 @@ describe("the project home", () => {
       expect(text("home-open-" + s)).toBe(en.home_act_open);
     }
     expect(document.body.textContent).not.toMatch(/Needs your attention|Recent work/);
+  });
+
+  it("a built module's facts give its stage's line, from the stage's blobs; no stage whose module is not built reads anything (ruling R6)", async () => {
+    server.blobs.design_reg = { value: { type: "drug", done: true }, updatedAt: "2026-10-12T00:00:00Z", version: 3 };
+    server.blobs.stats_sets = { value: { "Untitled data": { hash: "h", ts: 1, n: 40 } }, updatedAt: "2026-10-12T00:00:00Z" };
+    const facts = vi.fn((b: Record<string, { value: unknown; updatedAt: string }>) => ({
+      started: true, detail: "detail_writing", vars: { words: (b.design_reg?.value as { type: string }).type + " " + b.design_reg?.updatedAt }
+    }));
+    h.designFacts = facts;
+    // Not built: Design and ethics says so, and none of its blobs is read.
+    const first = mount();
+    await until(() => text("home-detail-lit").includes("Highlights: 2"));
+    expect(text("home-detail-design")).toBe(en.detail_not_built);
+    expect(h.api.mock.calls.map(([u]) => u as string).filter((u) => /blobs\/(design|stats)_/.test(u))).toEqual([]);
+    act(() => { first.unmount(); });
+    // Built: its row reads the line its facts give from the stage's blobs (only the kinds the project has); Collection's blobs are not read.
+    h.designBuilt = true;
+    h.api.mockClear();
+    mount();
+    await until(() => text("home-detail-design") !== "" && text("home-detail-design") !== en.detail_not_built);
+    expect(text("home-detail-design")).toBe(fill(en.detail_writing, { words: "drug 2026-10-12T00:00:00Z" }));
+    expect(facts).toHaveBeenLastCalledWith({ design_reg: { value: { type: "drug", done: true }, updatedAt: "2026-10-12T00:00:00Z" } });
+    expect(h.api.mock.calls.map(([u]) => u as string).filter((u) => /blobs\/(design|stats)_/.test(u))).toEqual(["/projects/p1/blobs/design_reg"]);
+    // The state still comes from the project's work: Design has work while Idea and Literature have theirs.
+    expect(text("home-state-design")).toBe(en.state_in_progress);
+    expect(text("home-detail-collect")).toBe(en.detail_not_built);
+  });
+
+  it("a built stage whose module gives no line shows none", async () => {
+    h.designBuilt = true;
+    h.designFacts = () => ({ started: false });
+    mount();
+    await until(() => text("home-detail-lit").includes("Highlights: 2"));
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    expect(text("home-detail-design")).toBe("");
   });
 
   it("a locked vault shows the unlock sentence, never empty cards; the home opens after the passphrase", async () => {

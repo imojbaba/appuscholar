@@ -18,6 +18,7 @@ import { BLOB_SAVE_DEBOUNCE_MS, useProjectBlob, type ProjectBlob } from "../lib/
 import { heldBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
 import { BLOB_KINDS, blobId, isBlobKind, parseBlob, shelfPaperKind, type BlobKind, type IdeaIntake } from "../lib/blobs/kinds";
 import { setSyncChannel } from "../lib/popout/channel";
+import { blobWritable } from "../lib/popout/mode";
 import { FakeChannel } from "./support/fakeChannel";
 import en from "../messages/en.json";
 
@@ -139,7 +140,11 @@ afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); 
 
 describe("blob kinds", () => {
   it("mirrors the api's kinds, and blob ids never look like a document id", () => {
-    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols"]);
+    expect(BLOB_KINDS).toEqual([
+      "idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols",
+      "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
+      "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log"
+    ]);
     expect(isBlobKind("citations")).toBe(true);
     expect(isBlobKind(shelfPaperKind("p1a2_b-3"))).toBe(true);
     expect(isBlobKind("shelf_paper:")).toBe(false);
@@ -187,6 +192,39 @@ describe("blob kinds", () => {
     expect(parseBlob("rs_prefs", JSON.stringify({ rank: 1 }))).toBeNull();
     // Unknown fields are kept, never stripped by a read.
     expect(parseBlob("rs_prefs", JSON.stringify({ rank: false, later: "x" }))).toEqual({ rank: false, later: "x" });
+  });
+});
+
+describe("the stage 3 to 6 tools' kinds (Task G3, ruling R8)", () => {
+  /** Each kind, a value in v1's shape (the v1 lines are in lib/blobs/kinds/<tool>.ts), and one that is not of it. */
+  const CASES: Array<[BlobKind, unknown, unknown]> = [
+    ["design_reg", { type: "interventional", pop: "minors", bio: false, multi: true, done: true, savedAt: 1729500000000 }, { bio: "no" }],
+    ["design_proto", { bg: "Why", obj: "", design: "RCT", part: "", sample: "", proc: "", risk: "", dmp: "", done: true }, { bg: 1 }],
+    ["design_ec", { checklist: { 0: true, 3: false }, title: "T", pi: "Dr X", status: "applied", apprNo: "", apprDate: "2026-10-01", consentMode: "written", minors: "no", done: true }, { checklist: { 0: "yes" } }],
+    ["design_ctri", { checklist: { 2: true }, done: true }, { done: "true" }],
+    ["design_pi", { checklist: {}, cv: "My CV", done: true }, { cv: ["x"] }],
+    ["design_budget", { rows: [{ label: "Travel", amount: "2500" }, { label: "", amount: "" }], done: true }, { rows: [{ label: "Travel" }] }],
+    ["stats_sets", { "Untitled data": { hash: "811c9dc5-1505-0", ts: 1729500000000, n: 40 } }, { x: { hash: "h", ts: 1 } }],
+    ["stats_runs", { rlx1abcd: { test: "ttest_ind", label: "Independent t-test", ds: "Untitled data", hash: "h", fields: { dv: "Score" }, multi: {}, extra: { tails: "2" }, sentence: "t(38) = 2.10, p = .04", ts: 1 } }, [{ test: "x" }]],
+    ["stats_prefs", { statsname: "Wave 1", gen_first: true }, { gen_first: "1" }],
+    ["qual_codes", [{ id: "c1", name: "Coping", parentId: null, color: "#f59e0b" }, { id: "c2", name: "Sleep", parentId: "c1", color: "#10b981" }], [{ id: "c1", name: "Coping" }]],
+    ["qual_prefs", { showcolors: false }, { showcolors: "0" }],
+    ["style_profile", { profile: "Short sentences.", on: true }, { profile: "x" }],
+    ["style_samples", [{ id: "s1", name: "Essay", date: "2026-10-01", n: 320, sc: 14, sm: 22.9, ssd: 6.1, wl: 4.812, ls: 0.4211, fw: [0.05], pu: [48.1], vw: ["particularly"] }], [{ id: "s1", name: "Essay" }]],
+    ["style_meta", { decl: "2026-10-01", livePassage: 2, live: { date: "2026-10-02", matched: 3, total: 4 }, fb: "ok", vocab_level: { score: 7, k: "advanced", date: "2026-10-02" } }, { fb: "maybe" }],
+    ["words_bank", [{ w: "salient", pos: "adjective", m: "most noticeable", h: "", d: "2026-10-01" }], [{ w: "salient" }]],
+    ["words_prefs", { gram_stats: { discuss_about: 3 }, spell: "uk" }, { spell: "british" }],
+    ["close_prefs", { k: 6, min: 8 }, { k: "6" }],
+    ["viva_log", [{ t: 1729500000000, aud: "viva", q: "Why this sample?", a: "Because…" }], [{ t: 1, aud: "viva", q: "Q" }]]
+  ];
+
+  it("parseBlob reads each new kind in v1's shape, keeps unknown fields, and refuses another shape", () => {
+    for (const [kind, ok, bad] of CASES) {
+      expect(parseBlob(kind, JSON.stringify(ok)), kind).toEqual(ok);
+      expect(parseBlob(kind, JSON.stringify(bad)), kind).toBeNull();
+    }
+    expect(parseBlob("design_reg", JSON.stringify({ type: "drug", later: 1 }))).toEqual({ type: "drug", later: 1 });
+    expect(parseBlob("design_reg", JSON.stringify({}))).toEqual({});
   });
 });
 
@@ -1118,6 +1156,24 @@ describe("the pop-out's write guard and the two windows' sync (v1 POPOUT_WRITABL
       i.b.set([]); p.b.set({ pages: ["t"], notes: [], cells: {} }); cols.b.set(["Age"]);
     });
     await until(() => (["citations", "retraction_cache", "refcheck_cache", "shelf_index", shelfPaperKind("x"), "shelf_cols"] as const).every((x) => putsTo("p1", x).length === 1));
+  });
+
+  it("a pop-out of Review cannot write a collect kind", async () => {
+    window.history.replaceState(null, "", "/p/p1/review/closeness?window=1");
+    const sets = await mount("stats_sets", "p1");
+    const codes = await mount("qual_codes", "p1");
+    const close = await mount("close_prefs", "p1");
+    const viva = await mount("viva_log", "p1");
+    await until(() => [sets, codes, close, viva].every((m) => !m.b.loading));
+    expect([sets, codes, close, viva].map((m) => m.b.readOnly)).toEqual([true, true, false, false]);
+    expect([blobWritable("stats_sets"), blobWritable("stats_prefs"), blobWritable("design_reg"), blobWritable("close_prefs"), blobWritable("viva_log")]).toEqual([false, false, false, true, true]);
+    act(() => {
+      sets.b.set({ x: { hash: "h", ts: 1, n: 2 } }); codes.b.set([{ id: "c1", name: "Coping", parentId: null, color: "#f59e0b" }]);
+      close.b.set({ k: 8, min: 10 }); viva.b.set([{ t: 1, aud: "viva", q: "Q", a: "A" }]);
+    });
+    await until(() => putsTo("p1", "close_prefs").length === 1 && putsTo("p1", "viva_log").length === 1);
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect([putsTo("p1", "stats_sets"), putsTo("p1", "qual_codes")]).toEqual([[], []]);
   });
 
   it("the writing window writes every kind", async () => {

@@ -12,12 +12,14 @@ import en from "../messages/en.json";
  * Every tool's own download is now an Export link that opens the dialog with only its part ticked (W11).
  */
 
-const h = vi.hoisted(() => ({ api: vi.fn(), download: vi.fn(), toast: vi.fn(), hold: null as null | Promise<void> }));
+const h = vi.hoisted(() => ({ api: vi.fn(), download: vi.fn(), toast: vi.fn(), hold: null as null | Promise<void>, designBuilt: false, designParts: [] as unknown[] }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: h.download }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u-exp", scratchProjectId: "s1" }, settings: {} }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/popout/sync", () => ({ useInsertTarget: () => ({ ready: false, block: () => {}, citation: () => {} }) }));
+// Task G3: the Design module, built or not per test, with the export parts it declares (getters: the registry reads it when the dialog opens).
+vi.mock("@/components/tools/design", () => ({ get built() { return h.designBuilt; }, get exportParts() { return h.designParts; } }));
 
 import { ApiError } from "../lib/api";
 import { heldBlobs } from "../lib/blobs/held";
@@ -27,7 +29,7 @@ import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectC
 import { ExportDialog, exportPartsFor } from "../components/export/ExportDialog";
 import { CiteShare } from "../components/tools/cite/CiteShare";
 import { Matrix } from "../components/tools/shelf/Matrix";
-import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, type ExportPart } from "../lib/export/projectExport";
+import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, type ExportPartId } from "../lib/export/projectExport";
 import type { Library } from "../lib/cite/useLibrary";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -64,7 +66,7 @@ const unzipped = async (b: Blob) => JSZip.loadAsync(await new Promise<ArrayBuffe
 const audits = () => h.api.mock.calls.filter(([p, init]) => p === "/me/export-audit" && (init as { method?: string } | undefined)?.method === "POST");
 
 beforeEach(() => {
-  h.download.mockReset(); h.toast.mockReset(); h.hold = null;
+  h.download.mockReset(); h.toast.mockReset(); h.hold = null; h.designBuilt = false; h.designParts = [];
   heldBlobs.clear();
   h.api.mockReset().mockImplementation(async (path: string) => {
     if (path === "/me/vault") throw new ApiError(404, "not-found");
@@ -80,11 +82,11 @@ beforeEach(() => {
 });
 
 /** The shell's part of the export place: openExport opens the dialog, with only the preselected part ticked when one is given. */
-function Harness({ children, openExport, flushOpen = async () => true }: { children?: React.ReactNode; openExport?: (p?: ExportPart) => void; flushOpen?: () => Promise<boolean> }) {
-  const [parts, setParts] = useState<ExportPart[] | null>(null);
+function Harness({ children, openExport, flushOpen = async () => true }: { children?: React.ReactNode; openExport?: (p?: ExportPartId) => void; flushOpen?: () => Promise<boolean> }) {
+  const [parts, setParts] = useState<ExportPartId[] | null>(null);
   const value = {
     project, projectId: "p1", documents: [doc], currentDoc: null, flushOpen,
-    openExport: (p?: ExportPart) => { openExport?.(p); setParts(exportPartsFor(p)); }
+    openExport: (p?: ExportPartId) => { openExport?.(p); setParts(exportPartsFor(p)); }
   } as unknown as ProjectValue;
   return (
     <ProjectProvider value={value}>
@@ -94,7 +96,7 @@ function Harness({ children, openExport, flushOpen = async () => true }: { child
     </ProjectProvider>
   );
 }
-async function render(node?: React.ReactNode, openExport?: (p?: ExportPart) => void, flushOpen?: () => Promise<boolean>) {
+async function render(node?: React.ReactNode, openExport?: (p?: ExportPartId) => void, flushOpen?: () => Promise<boolean>) {
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);
@@ -136,6 +138,33 @@ describe("ExportDialog", () => {
     expect(text).not.toContain("RIS");
     expect(ticked()).toEqual(DEFAULT_EXPORT_PARTS);
     expect(text).not.toMatch(/[—]/);
+  });
+
+  it("a built module's export part shows its label, detail and format after the built-in parts, and its files reach the zip", async () => {
+    const build = vi.fn(async (d: { now: Date }) => [{ path: "design/budget.csv", data: "label,amount\nTravel," + d.now.getFullYear() + "\n" }]);
+    h.designParts = [{ part: "designBudget", labelKey: "tab_name_budget", detailKey: "exp_detail_record", formatKey: "exp_format_csv", ticked: true, build }];
+    // Not built: the part is not offered.
+    await render();
+    await click(tid("open-all"));
+    expect(tid("exp-part-designBudget")).toBeNull();
+    await click(tid("exp-cancel"));
+    h.designBuilt = true;
+    await click(tid("open-all"));
+    const box = tid("exp-part-designBudget") as HTMLInputElement;
+    expect(box.checked).toBe(true);
+    const row = box.closest("label")!.textContent!;
+    for (const k of ["tab_name_budget", "exp_detail_record", "exp_format_csv"]) expect(row).toContain(E[k]);
+    const boxes = [...document.body.querySelectorAll<HTMLInputElement>('[data-testid^="exp-part-"]')].map((b) => b.dataset.testid);
+    expect(boxes).toEqual([...EXPORT_PARTS, "designBudget"].map((p) => "exp-part-" + p));
+    expect(exportPartsFor()).toEqual([...DEFAULT_EXPORT_PARTS, "designBudget"]);
+    // Only it ticked: the zip holds its file.
+    for (const p of DEFAULT_EXPORT_PARTS) await click(tid("exp-part-" + p));
+    await click(tid("exp-download"));
+    await until(() => h.download.mock.calls.length === 1);
+    const z = await unzipped(h.download.mock.calls[0]![1] as Blob);
+    expect(Object.keys(z.files)).toEqual(["design/", "design/budget.csv"]);
+    expect(await z.file("design/budget.csv")!.async("string")).toBe("label,amount\nTravel," + new Date().getFullYear() + "\n");
+    expect(build).toHaveBeenCalledTimes(1);
   });
 
   it("a per-tool Export link opens the dialog with only its part ticked (W11)", async () => {
