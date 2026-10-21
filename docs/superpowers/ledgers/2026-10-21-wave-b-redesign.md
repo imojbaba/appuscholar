@@ -175,3 +175,15 @@ Accepted: "Put in my document" is tested from Idea (the only place it exists in 
 Coverage removed by design: the Tab paste of the idea read; the pop-out "only Citations and Research" toast.
 CI on a92095c and 7578c06: checks and golden-exact green, e2e red. The proxy blocks the CI logs, so the full e2e was run locally (pglite, CI=1). 10/11 passed. stage2-idea-literature step 12 expected "Open my document" while the document was open, but the fix wave (f408c87) hides it then. Both branches were merged in 2fcd1b1; the app is right and the test step was stale. The step now checks the button is absent while the document is open, then present after Close. stage2 passes locally (1/1, 1.7 min). Pushed for CI.
 MILESTONE: PR #12 at bf75855 is green on all three checks (checks, e2e, golden-exact). B1 (tasks 1-15 and Task 16 step 1) is built and reviewed. Next: OJ's go-ahead to merge PR #12, then on the Mac: the Neon backup, migration 0006 by hand, the API, the web, the Help version check and the live walk of docs/walkthroughs/wave-b1.md. Not done until that walk passes.
+
+## B1 DONE (2026-10-21, local Mac session)
+- Release confirmed: Help "Version 8b227af", API stages route 200 on production, `~/appuscholar-release.env` gone. VERIFIED.
+- Live walk of docs/walkthroughs/wave-b1.md: rows 1-11 and 13-15 VERIFIED; row 12 FAILED (the export's AI-use statement said no AI was used, because first run's check is logged with no project). Row 16 scored: H1 2, H4 2, H5 3, H6 2, H8 2. Notes: docs/walkthroughs/notes/2026-10-21-wave-b1-walk.md (faults W32 to W44).
+- Fix wave PR #13 (merged as 825b2a3):
+  - `POST /projects/:id/ai-use/claim {secondsAgo}`; first run claims its check's rows when the project is saved.
+  - Citation Fill prefers a DOI or PubMed ID in the link box.
+  - Copy: "Vault unlocked", one full stop on the Idea row, "Papers kept: n".
+  - Three green checks. OJ deployed the API, then the web.
+  - Re-walk: row 12 VERIFIED, and W41 to W44 VERIFIED live.
+- Dr. Sharma deck updated (version 8): B1 status, versions 8b227af and 825b2a3, three screenshot slides from the live site.
+- Next: slice B2 (Tasks 17-26) on branch wave-b2, cut from phase-3a-vault at 825b2a3 or later. Open faults W32 to W39 are listed in the walk notes.
