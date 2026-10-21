@@ -19,6 +19,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { stageBuilt, tabBuilt } from "./support/builtTools";
 
 // ---- Copy: every sentence asserted is read from the dictionary ---------------------------------------------------------------------------------------
 
@@ -39,7 +40,7 @@ const PLACES: Array<{ stage: StageId; tabs: string[] }> = [
   { stage: "review", tabs: ["closeness", "viva", "slides"] }
 ];
 /** The stages whose home row still says it is not built (Writing's is built: the document). */
-const HOME_NOT_BUILT: StageId[] = ["design", "collect", "review"];
+const HOME_NOT_BUILT: StageId[] = (["design", "collect", "review"] as StageId[]).filter((s) => !stageBuilt(s));
 const PHONE = { width: 375, height: 812 };
 
 test.describe.configure({ timeout: 180_000 });
@@ -90,6 +91,10 @@ test("the stage 3 to 6 places, their tabs, and Not built yet", async ({ page }) 
       await expect(page.getByTestId("place-tab-" + tab)).toHaveAttribute("aria-current", "true");
       const body = page.getByTestId(`place-${stage}-${tab}`);
       await expect(body, tab).toBeVisible();
+      // A tab whose tool session has shipped draws its tool instead; it is checked by that session's own spec.
+      if (tabBuilt(stage, tab)) {
+        await expect(body.getByTestId("not-built"), tab).toHaveCount(0);
+      } else {
       await expect(body.getByTestId("not-built"), tab).toHaveText(`${T("place_not_built")} ${T("not_built_tab_body")}`);
       if (stage === "writing") {
         // The document is shown under Writing's place, so there is nothing to open.
@@ -97,6 +102,7 @@ test("the stage 3 to 6 places, their tabs, and Not built yet", async ({ page }) 
         await expect(page.getByTestId("frame-doc")).toBeVisible();
       } else {
         await expect(body.getByTestId("not-built-open"), tab).toHaveText(T("not_built_open_doc"));
+      }
       }
       const next = body.getByTestId(stage + "-next");
       await expect(next, tab).toHaveText(T(`${stage}_next_${tab}`));
