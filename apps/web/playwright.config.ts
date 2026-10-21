@@ -10,8 +10,9 @@ export default defineConfig({
   // The GitHub runner compiles each Next route on first hit; the sign-in redirect alone can take more than Playwright's 5 s expect default.
   expect: { timeout: 20_000 },
   use: { baseURL: WEB_ORIGIN, trace: "retain-on-failure" },
+  // A reused server was built without this GITHUB_SHA, so CI and any pill check start fresh servers.
   webServer: [
-    { command: "pnpm --filter @appuscholar/api dev", port: API_PORT, reuseExistingServer: true, env: { PORT: String(API_PORT), API_JWT_SECRET: process.env.API_JWT_SECRET ?? "e2e-secret-e2e-secret-e2e-secret-12", ...DB_ENV, WEB_ORIGIN } },
-    { command: `pnpm --filter @appuscholar/web dev -p ${WEB_PORT}`, port: WEB_PORT, reuseExistingServer: true, env: { E2E_AUTH: "1", AUTH_TRUST_HOST: "true", API_JWT_SECRET: process.env.API_JWT_SECRET ?? "e2e-secret-e2e-secret-e2e-secret-12", AUTH_SECRET: process.env.AUTH_SECRET ?? "e2e-auth-secret-e2e-auth-secret-1234", NEXT_PUBLIC_API_URL: API_ORIGIN, ...DB_ENV } }
+    { command: "pnpm --filter @appuscholar/api dev", port: API_PORT, reuseExistingServer: !process.env.CI && !process.env.GITHUB_SHA, env: { PORT: String(API_PORT), API_JWT_SECRET: process.env.API_JWT_SECRET ?? "e2e-secret-e2e-secret-e2e-secret-12", ...DB_ENV, WEB_ORIGIN } },
+    { command: `pnpm --filter @appuscholar/web dev -p ${WEB_PORT}`, port: WEB_PORT, reuseExistingServer: !process.env.CI && !process.env.GITHUB_SHA, env: { E2E_AUTH: "1", AUTH_TRUST_HOST: "true", API_JWT_SECRET: process.env.API_JWT_SECRET ?? "e2e-secret-e2e-secret-e2e-secret-12", AUTH_SECRET: process.env.AUTH_SECRET ?? "e2e-auth-secret-e2e-auth-secret-1234", NEXT_PUBLIC_API_URL: API_ORIGIN, ...DB_ENV } }
   ]
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy one app to Vercel production with the commit passed in, so the header pill reads the build (W9).
+# Deploy one app to Vercel production with the commit passed in, so Help's version reads the build (W9).
 # Usage: scripts/deploy-vercel.sh api|web   (DRY_RUN=1 prints the vercel command instead of running it)
 set -euo pipefail
 
@@ -24,8 +24,12 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   exit 3
 fi
 
-# 4: the pill's commit must exist on the remote, read fresh (a stale origin/* ref would say otherwise).
-git fetch -q origin
+# 4: the deployed commit must exist on the remote, read fresh (a stale origin/* ref would say otherwise).
+# 6: an unreachable origin is its own failure, not set -e's bare exit.
+if ! git fetch -q origin; then
+  echo "cannot reach origin: check the network and the remote, then retry" >&2
+  exit 6
+fi
 if [ -z "$(git branch -r --contains HEAD)" ]; then
   echo "HEAD is not on any remote branch: push first" >&2
   exit 4
@@ -46,4 +50,4 @@ if [ "${DRY_RUN:-}" = "1" ]; then
 else
   "${cmd[@]}"
 fi
-echo "Expect the header pill: Version ${sha:0:7}"
+echo "Expect Help to show: Version ${sha:0:7}"
