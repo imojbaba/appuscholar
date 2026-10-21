@@ -12,7 +12,7 @@ import { allPdf, importFiles } from "@/lib/import/run";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
-import { sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
+import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
 import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
 import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places";
 import { DocumentCard } from "@/components/document/DocumentCard";
@@ -106,8 +106,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       listProjects: () => apiFetch<Titled[]>("/projects"),
       listDocuments: (id) => apiFetch<Titled[]>(`/projects/${id}/documents?includeDeleted=1`),
       patchProject: async (id, body) => { await apiFetch(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
-      // A deleted document's title is sealed too (Task 5's fix round; documentTitlePath in lib/vault/titles once merged).
-      patchDocument: async (id: string, body: object, deleted?: boolean) => { await apiFetch(deleted ? `/documents/${id}?includeDeleted=1` : `/documents/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
+      patchDocument: async (id, body, deleted) => { await apiFetch(documentTitlePath(id, deleted), { method: "PATCH", body: JSON.stringify(body) }); },
       scratchId: scratchForTitles
     }).catch(() => { /* offline or locked meanwhile: the next unlock tries again */ });
   }, [titlesSealable, scratchForTitles]);

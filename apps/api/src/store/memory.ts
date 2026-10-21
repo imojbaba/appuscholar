@@ -164,8 +164,8 @@ export class MemoryStore implements Store {
     const sum = this.summary(d, r);
     return r && sum ? { ...sum, bodyHtml: r.bodyHtml, keyVersion: r.keyVersion } : null;
   }
-  async renameDocument(userId: string, id: string, title: string | TitleWrite): Promise<DocumentSummary | null> {
-    const d = this.ownedDoc(userId, id);
+  async renameDocument(userId: string, id: string, title: string | TitleWrite, opts?: { includeDeleted?: boolean }): Promise<DocumentSummary | null> {
+    const d = this.ownedDoc(userId, id, opts?.includeDeleted === true);
     if (!d) return null;
     const t = asTitle(title);
     d.deks = this.withDek(d.deks, t.dek);
