@@ -119,3 +119,15 @@ Task 16 step 1: ce2b91b, merged.
 - deploy-vercel.sh exits 6 "cannot reach origin" and ends "Expect Help to show: Version <sha7>";
 - deployScript tests don't depend on order (6/6).
 Merged suite: web 1170 pass, 1 fail (citeBib timing under a load average of about 15; passes alone). Typecheck, lint and build clean.
+Task 11: complete. Implemented e2b741c; review APPROVE with 4 minors. Integrated into wave-b1 (merge d1c229d, integration 82ea2ee):
+- in a pop-out, "Open my document" and DocumentBeside are hidden, and requestInsert posts to the main window (a new AI-text message type);
+- IdeaPlace uses putAiInDocument;
+- the minors are fixed: no insert into a switched document; setThinking doesn't open the document; insertReady removed.
+- The integrator had a home insert refused, which the controller changed (13511f3) to the plan's intent: an insert from the home goes to Writing and lands there. D-S2-41 updated.
+Task 12: complete. Library cd09d2e, UI 7252e0d; review CHANGES REQUIRED, fixed in 50aa4b7:
+- (Important) a project's AI-use statement listed every project's AI use; /ai/log takes ?projectId and the project zip uses it (rows with no project are left out, per D-S2-42);
+- unsent edits are saved before the zip (heldBlobs.saveAll), with a warning line if any remain;
+- notes are joined by id, or by a unique title match.
+Integrated (merge 75063ae, integration f1c014d): Export works in a pop-out (it only reads) and from the home (home_out_soon removed); accountMenuExport test added.
+Merged suite: web 1205 pass (2 skipped), api 258; typecheck, lint and build clean; en and hi 1373 keys.
+Tasks 1-13 complete. Next: Tasks 14 and 15 in parallel worktrees, each with its own e2e ports.
