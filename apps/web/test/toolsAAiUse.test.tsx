@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PROVIDERS, aiuBuild, aiuInRange, type AiuEntry } from "@appuscholar/core";
+import { PROVIDERS, aiuBuildV2, aiuInRange, classifyAiUse, buildIdeaPromptV2, type AiuEntry } from "@appuscholar/core";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
 import designEn from "../messages/tools/design.en.json";
@@ -10,7 +10,7 @@ import designHi from "../messages/tools/design.hi.json";
 
 /*
  * Task A4, the AI-use statement tab (v1 aiuOpen, aiuRender, aiuBuild, aiuCopy, aiuInsert, aiuDownload 5411-5568 and the dialog 1888-1910). The text is
- * core's aiuBuild: the panel passes it the log, the ticks and the style and adds nothing, so each expected statement is core's own output for the same
+ * core's aiuBuildV2 (aiuBuild with the two where-the-log-is-kept sentences made true, D-S2-58): the panel passes it the log, the ticks and the style and adds nothing, so each expected statement is core's own output for the same
  * input. The log is a fake GET /ai/log; the style blobs are an in-memory store (absent unless a test puts them there).
  */
 
@@ -66,7 +66,8 @@ import { Panel } from "../components/tools/design/Panel";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const E = { ...(en as Record<string, string>), ...(designEn as Record<string, string>) };
-const FIRST_RUN = "checking whether my project idea is realistic";
+// The kind first run's idea check is logged under: core's label for the very prompt first run sends (so this breaks if the label or the prompt changes).
+const FIRST_RUN = classifyAiUse(buildIdeaPromptV2("psychology", { topic: "Sleep and memory in students" }).prompt)!.k;
 const e = (d: string, k: string, g: string, p = "groq", m = "openai/gpt-oss-120b"): AiuEntry => ({ d, p, m, k, g });
 const LOG: AiuEntry[] = [
   e("2026-10-01", "grammar and polish", "text"),
@@ -140,7 +141,7 @@ describe("AI-use statement (Task A4): the log", () => {
     expect(rows()).toEqual(["grammar and polish", "summarising a paper"]);
     expect(text("aiu-count")).toBe("Requests logged for this project: 4. In the dates below: 3.");
     await click("aiu-build");
-    expect(out()).toBe((aiuBuild({ list, keep: ALL(list), other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string }).text);
+    expect(out()).toBe((aiuBuildV2({ list, keep: ALL(list), other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string }).text);
     // A cleared date is no limit (v1: an empty box).
     await set("aiu-to", "");
     await set("aiu-from", "2026-10-06");
@@ -196,7 +197,7 @@ describe("AI-use statement (Task A4): the log", () => {
     expect(text("aiu-count")).toBe(E.design_aiu_empty);
     expect(rows()).toEqual([]);
     await click("aiu-build");
-    const built = aiuBuild({ list: [], keep: {}, other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
+    const built = aiuBuildV2({ list: [], keep: {}, other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
     expect(out()).toBe(built.text);
     expect(out()).toContain("[Check this against your own records.");
   });
@@ -265,6 +266,7 @@ describe("AI-use statement (Task A4): the statement", () => {
     // First run's check is logged with k "checking whether my project idea is realistic" (group feedback) and claimed for the project when it is saved.
     h.log = [e("2026-10-21", FIRST_RUN, "feedback")];
     await render();
+    expect(FIRST_RUN).toBe("checking whether my project idea is realistic");
     expect(rows()).toEqual([FIRST_RUN]);
     expect(($("aiu-row-0") as HTMLInputElement).checked).toBe(true);
     expect($("aiu-row-0")!.closest("label")!.textContent).toBe("Checking whether my project idea is realistic (1)");
@@ -275,7 +277,7 @@ describe("AI-use statement (Task A4): the statement", () => {
     expect(out()).not.toContain("I did not use AI tools");
   });
 
-  it("the statement for course, thesis and journal equals aiuBuild's output for the same input (the panel adds nothing)", async () => {
+  it("the statement for course, thesis and journal equals aiuBuildV2's output for the same input (the panel adds nothing)", async () => {
     await render();
     await click("aiu-cite");
     await click("aiu-facts");
@@ -283,7 +285,7 @@ describe("AI-use statement (Task A4): the statement", () => {
     for (const fmt of ["course", "thesis", "journal"] as const) {
       await set("aiu-fmt", fmt);
       await click("aiu-build");
-      const want = aiuBuild({ list: LOG, keep: ALL(LOG), other: "Grammarly for spelling. ", fmt, ticks: { ...TICKS_DEFAULT, cite: true, facts: true }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
+      const want = aiuBuildV2({ list: LOG, keep: ALL(LOG), other: "Grammarly for spelling. ", fmt, ticks: { ...TICKS_DEFAULT, cite: true, facts: true }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
       expect(out(), fmt).toBe(want.text);
     }
     expect(out()).toMatch(/^Declaration of AI use\n\n/);
@@ -297,7 +299,7 @@ describe("AI-use statement (Task A4): the statement", () => {
     await click("aiu-build");
     const list = LOG;
     const keep = { "grammar and polish": 1, "feedback on my draft": 1 } as Record<string, 1>;
-    const want = aiuBuild({ list, keep, other: "", fmt: "course", ticks: { own: false, reword: true, cite: true, facts: true, noData: true }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
+    const want = aiuBuildV2({ list, keep, other: "", fmt: "course", ticks: { own: false, reword: true, cite: true, facts: true, noData: true }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
     expect(out()).toBe(want.text);
     expect(out()).not.toContain("summarising a paper");
   });
@@ -324,7 +326,7 @@ describe("AI-use statement (Task A4): the statement", () => {
     h.store.set("style_samples", [{ id: "a" }, { id: "b" }]);
     await render();
     await click("aiu-build");
-    const want = aiuBuild({ list: LOG, keep: ALL(LOG), other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: true, decl: "2026-10-03", samples: 2 }, providers: PROVIDERS }) as { text: string };
+    const want = aiuBuildV2({ list: LOG, keep: ALL(LOG), other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: true, decl: "2026-10-03", samples: 2 }, providers: PROVIDERS }) as { text: string };
     expect(out()).toBe(want.text);
     expect(out()).toContain("A profile of my own writing style, built from 2 samples that I declared as my own work on 3 October 2026, was used to match the wording of AI suggestions.");
   });
@@ -374,6 +376,36 @@ describe("AI-use statement (Task A4): the statement", () => {
     await click("aiu-build");
     expect(text("aiu-refuse")).toContain("The log shows 4 requests");
     expect(out()).toBe("My own words.");
+  });
+});
+
+describe("AI-use statement (Task A4): where the log is kept (D-S2-58)", () => {
+  it("the empty-log statement and the thesis statement say the log is in the account and per project, never 'in this browser'", async () => {
+    h.log = [];
+    await render();
+    await click("aiu-build");
+    expect(out()).toContain("The log only knows about Appuscholar, and only about this project.");
+    expect(out()).not.toContain("in this browser");
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    h.log = LOG;
+    await render();
+    await set("aiu-fmt", "thesis");
+    await click("aiu-build");
+    expect(out()).toContain("The log is kept in my Appuscholar account and I can show it to my supervisor on request.");
+    expect(out()).not.toContain("kept in my browser");
+  });
+
+  it("the tab says the statement covers this project's log only, whatever state the log is in", async () => {
+    await render();
+    expect(text("aiu-scope")).toBe(E.design_aiu_scope);
+    expect(E.design_aiu_scope).toContain("this project's log only");
+    expect(E.design_aiu_scope).toContain("no project open");
+    for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
+    document.body.innerHTML = "";
+    h.logFails = 1;
+    await render();
+    expect(text("aiu-scope")).toBe(E.design_aiu_scope);
   });
 });
 

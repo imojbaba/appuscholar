@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardText, DownloadSimple, FilePlus } from "@phosphor-icons/react";
-import { PROVIDERS, aiuBuild, aiuInRange, type AiuEntry, type AiuStyle, type AiuTicks } from "@appuscholar/core";
+import { PROVIDERS, aiuBuildV2, aiuInRange, type AiuEntry, type AiuStyle, type AiuTicks } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -33,7 +33,7 @@ const isEntry = (x: unknown): x is AiuEntry => {
  * The AI-use statement (v1 aiuOpen, aiuRender, aiuToggle, aiuBuild, aiuCopy, aiuInsert, aiuDownload 5411-5568 and the dialog 1888-1910), as a tab.
  * It reads this project's AI log (GET /ai/log?projectId=, entries {d,p,m,k,g}; what first run's idea check logged before the project existed is claimed
  * into it when first run saves). The dates, the row for each kind of help in range (all ticked, as v1), the other tools, the five truth ticks and the
- * format go to core's aiuBuild with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
+ * format go to core's aiuBuildV2 (aiuBuild with the two sentences that said where the log is kept made true, D-S2-58) with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
  * returns, or its refusal, is shown as it is. The panel never offers a "no AI" statement of its own: with rows in range and nothing ticked and no other
  * tools, core refuses (rule 3). "Keep the log" is the existing setting `aiLogOff`, inverted. The statement is an editable box with Copy, Insert (plain
  * text, at the end of the open document) and Download.
@@ -103,7 +103,7 @@ export function AiUse({ projectId }: { projectId: string }) {
     setMsg("");
     const keep: Record<string, 1> = {};
     for (const [k] of kinds) if (!off.has(k)) keep[k] = 1;
-    const r = aiuBuild({ list, keep, other, fmt, ticks, style, providers: PROVIDERS });
+    const r = aiuBuildV2({ list, keep, other, fmt, ticks, style, providers: PROVIDERS });
     if ("refuse" in r) { setRefuse(r.refuse); return; }
     setRefuse("");
     setOut(r.text);
@@ -149,6 +149,7 @@ export function AiUse({ projectId }: { projectId: string }) {
             {t("design_aiu_keep")}
           </label>
           <p className="desc" style={{ margin: 0 }}>{t("design_aiu_keep_desc")}</p>
+          <p className="desc" style={{ margin: 0 }} data-testid="aiu-scope">{t("design_aiu_scope")}</p>
           <div role="status" data-testid="aiu-log-msg" className={log.state === "ready" ? "" : "text-[13px] leading-[18px] text-ink"}>
             {log.state === "loading" && t("design_aiu_loading")}
             {log.state === "error" && (id === null ? t("design_aiu_no_project") : t("design_aiu_read_failed"))}

@@ -152,5 +152,6 @@
   "design_aiu_copy_failed": "Could not copy. Select the text and copy it yourself.",
   "design_aiu_style_wait": "Your writing-style record cannot be read yet, so Appuscholar cannot tell whether it belongs in the statement. Unlock your vault or reload the page, then build.",
   "design_aiu_style_broken": "Your writing-style record cannot be opened on this device, so the statement leaves out the sentence about it.",
-  "design_aiu_foot": "The log covers Appuscholar only. If you used AI elsewhere, or had the log off, add it in the box above. Your institution or the journal decides what you must disclose. AI cannot be listed as an author."
+  "design_aiu_foot": "The log covers Appuscholar only. If you used AI elsewhere, or had the log off, add it in the box above. Your institution or the journal decides what you must disclose. AI cannot be listed as an author.",
+  "design_aiu_scope": "This statement covers this project's log only. AI you used with no project open is not in it. Add anything else under \"AI tools you used outside Appuscholar\" below."
 }
