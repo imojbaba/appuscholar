@@ -165,6 +165,7 @@ const textOf = (c: TextCase): string | null => (c.pad ? c.pad.char.repeat(c.pad.
 const VERIFY_TEXTS: Array<{ id: string; text: string }> = [
   { id: "t1", text: 'Dr Rao studied a sample of 120 students (Smith, 2019) and said "the results were clear" after we discussed about the results.\nThe  results were clear to all who read them, and the 45% rise was kept.' },
   { id: "t3", text: "abc def and abc again." },
+  { id: "t4", text: "In the end the sample grew and the team went home." },
   { id: "t2", text: "A short text with   extra   spaces and a line\nbreak inside it. We discussed about the findings." },
 ];
 
@@ -222,6 +223,17 @@ const VERIFY_EDITS: Array<{ id: string; textId: string; edits: unknown }> = [
   { id: "null-edits", textId: "t1", edits: null },
   { id: "object-edits", textId: "t1", edits: { original: "discussed about", fix: "discussed" } },
   { id: "string-edits", textId: "t1", edits: "discussed about" },
+  // a fix that only ADDS a number, a citation or a quotation (nothing is missing from it): v1 6735 drops it through d.added
+  {
+    id: "fix-only-adds",
+    textId: "t4",
+    edits: [
+      { original: "the sample grew", fix: "the sample grew by 5" },
+      { original: "the sample grew", fix: "the sample grew (Smith, 2019)" },
+      { original: "the sample grew", fix: 'the sample grew "quite a lot" overall' },
+      { original: "the sample grew", fix: "the sample then grew" },
+    ],
+  },
 ];
 
 /* ---- gramRunAI flows ---- */

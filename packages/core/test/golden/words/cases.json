@@ -7183,6 +7183,43 @@
     "ok": [],
     "dropped": 0
    }
+  },
+  {
+   "id": "fix-only-adds",
+   "text": "In the end the sample grew and the team went home.",
+   "edits": [
+    {
+     "original": "the sample grew",
+     "fix": "the sample grew by 5"
+    },
+    {
+     "original": "the sample grew",
+     "fix": "the sample grew (Smith, 2019)"
+    },
+    {
+     "original": "the sample grew",
+     "fix": "the sample grew \"quite a lot\" overall"
+    },
+    {
+     "original": "the sample grew",
+     "fix": "the sample then grew"
+    }
+   ],
+   "out": {
+    "ok": [
+     {
+      "src": "ai",
+      "id": "ai",
+      "kind": "error",
+      "rule": "Grammar",
+      "why": "",
+      "ex": null,
+      "original": "the sample grew",
+      "fix": "the sample then grew"
+     }
+    ],
+    "dropped": 3
+   }
   }
  ],
  "flowTexts": {
