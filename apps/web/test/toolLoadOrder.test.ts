@@ -41,6 +41,14 @@ function registryValueImports(file: string, src: string): string[] {
 }
 
 vi.mock("@/components/tools/qual", () => vi.importActual("./fixtures/probe-tool/index"));
+// The other tool modules are pinned to their unbuilt stub, so a tool session turning its own module on never changes BUILT_IN here (session B, 2026-10-21).
+vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/stats", () => ({ built: false }));
+vi.mock("@/components/tools/style", () => ({ built: false }));
+vi.mock("@/components/tools/words", () => ({ built: false }));
+vi.mock("@/components/tools/close", () => ({ built: false }));
+vi.mock("@/components/tools/slides", () => ({ built: false }));
+vi.mock("@/components/tools/viva", () => ({ built: false }));
 
 describe("the tool registry's load order (Task G2)", () => {
   it("a tool's index.ts loads first, its Panel importing placeHref and lib/tools, and the registry still reads every module", async () => {
@@ -54,7 +62,7 @@ describe("the tool registry's load order (Task G2)", () => {
     const registry = await import("@/lib/tools/registry");
     expect(registry.toolModule("qual").Panel).toBe(probe.Panel);
     expect([...registry.BUILT_IN].sort()).toEqual(["analyse", "chat", "cite", "idea", "psych", "research"]);
-  });
+  }, 30_000); // a cold import of every tool module can pass 5 s on a loaded machine (session A)
 
   it("no tool's own file imports the registry for more than types (it reads TOOL_TABS from @/lib/tools/tabs)", () => {
     // The check itself: a value import, a re-export and a dynamic import are caught, by alias or relative path; a type import is not.
