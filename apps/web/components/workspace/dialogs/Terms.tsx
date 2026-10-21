@@ -7,7 +7,7 @@ import { TERMS_DATE, TERMS_SINCE, TERMS_VERSION, needsTerms } from "@/lib/terms"
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 /**
  * First-use terms with the 18+ gate (v1 `termsOpen`/`termsAccept`/`termsUnder`), and the same text read-only from the AI Provider / Key dialog.
@@ -16,7 +16,7 @@ import { useWorkspace } from "../WorkspaceContext";
  */
 export function Terms() {
   const { me } = useSettings();
-  const { dialog, closeDialog } = useWorkspace();
+  const { dialog, closeDialog } = useProject();
   const gate = needsTerms(me, TERMS_SINCE);
   const open = gate || dialog === "terms";
   return (
@@ -30,7 +30,7 @@ export function Terms() {
 function TermsContent({ gate }: { gate: boolean }) {
   const t = useT();
   const { reload } = useSettings();
-  const { closeDialog } = useWorkspace();
+  const { closeDialog } = useProject();
   const [age, setAge] = useState(false);
   const [agree, setAgree] = useState(false);
   const [need, setNeed] = useState(false);

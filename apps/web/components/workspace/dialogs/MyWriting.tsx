@@ -12,7 +12,7 @@ import { useVault } from "@/lib/vault/useVault";
 import { openTitle, UNTITLED, useTitle } from "@/lib/vault/titles";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWorkspace } from "../WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 
 const pct = (part: number, whole: number) => (whole ? Math.round((100 * part) / whole) : 0);
 const localDay = () => { const d = new Date(), z = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; };
@@ -21,7 +21,7 @@ const localDay = () => { const d = new Date(), z = (n: number) => String(n).padS
 export function MyWriting() {
   const t = useT();
   const { me } = useSettings();
-  const { dialog, closeDialog, project, currentDoc } = useWorkspace();
+  const { dialog, closeDialog, project, currentDoc } = useProject();
   const docId = currentDoc?.id;
   const { editor } = useSuggestion();
   const vault = useVault();

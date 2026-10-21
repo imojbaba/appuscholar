@@ -13,7 +13,7 @@ vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) }));
 vi.mock("@/lib/ai/suggestion", async (orig) => ({ ...(await orig<typeof import("../lib/ai/suggestion")>()), useSuggestion: () => ({ setEditor: () => {}, tab: () => false }) }));
-vi.mock("@/components/workspace/WorkspaceContext", async (orig) => ({ ...(await orig<typeof import("../components/workspace/WorkspaceContext")>()), useWorkspace: () => h.ws }));
+vi.mock("@/components/frame/ProjectContext", async (orig) => ({ ...(await orig<typeof import("../components/frame/ProjectContext")>()), useProject: () => h.ws }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: (name: string) => { h.downloads.push(name); } }));
 // The real editor needs a layout engine: the stub hands the card an editor that only answers its HTML, so the downloads are enabled.
 vi.mock("@/components/editor/Editor", async () => {
@@ -33,7 +33,7 @@ vi.mock("../components/document/ActionRow", () => ({ ActionRow: () => null }));
 import { ApiError } from "../lib/api";
 import { useVault, VaultProvider, type VaultValue } from "../lib/vault/useVault";
 import { DocumentCard } from "../components/document/DocumentCard";
-import type { DocumentWithBody } from "../components/workspace/WorkspaceContext";
+import type { DocumentWithBody } from "../components/frame/ProjectContext";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

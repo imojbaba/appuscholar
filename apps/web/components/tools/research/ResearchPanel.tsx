@@ -16,7 +16,8 @@ import { useInsertTarget } from "@/lib/popout/sync";
 import { applyQuick, filterVals, getResearch, setResearch, shownResults, SORT_OPTIONS, useSearch, type SortMode } from "@/lib/research/useSearch";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
+import { placeHref } from "@/lib/frame/places";
 import { ShelfDialog } from "@/components/tools/shelf/ShelfDialog";
 import { Connected } from "./Connected";
 import { External } from "./External";
@@ -44,7 +45,7 @@ function tickedShown(): RsPaper[] {
  */
 export function ResearchPanel() {
   const t = useT();
-  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, showTool, dockShow } = useWorkspace();
+  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go, dockShow } = useProject();
   const { me, settings } = useSettings();
   const callAI = useCallAI();
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
@@ -104,7 +105,7 @@ export function ResearchPanel() {
     insert: () => { insertResult(p, { ...addDeps(), insert: (f: Formatted) => { target.citation(f); } }); },
     connected: () => connected(p),
     quick: () => { void quickRead(p, quickDeps()); },
-    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool, toast, t }); }
+    analyse: () => { analysePaper(p, { keep: setPendingAnalyse, showTool: () => { void go(placeHref(projectId ?? "", "lit", "reading")); }, toast, t }); }
   });
   // rsToggleActions (8420-8423): the actions block shows while a paper shown is ticked.
   const onTick = (p: RsPaper, on: boolean) => setResearch((st) => {

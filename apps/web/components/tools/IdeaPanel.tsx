@@ -9,18 +9,19 @@ import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import type { IdeaIntake } from "@/lib/blobs/kinds";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "./PanelLoading";
 
 const EMPTY: IdeaIntake = { topic: "", resources: "", timeframe: "", constraints: "" };
 
 /**
  * Idea & Feasibility (v1 708-724, ideaLoad / ideaSave / ideaAssess / ideaSaveAsProject 8559-8590). The four fields are the open project's
- * idea_intake blob (the scratch project's in scratch space), saved as typed; Assess hands them to assessIdea; Save opens Save-as-project.
+ * idea_intake blob (the scratch project's in scratch space), saved as typed; Assess hands them to assessIdea. Save-as-project went with its dialog
+ * (Task 6): a project is started from first run; Task 9 saves the idea into it.
  */
 export function IdeaPanel() {
   const t = useT();
-  const { project, openSaveAs, dockShow } = useWorkspace();
+  const { project, dockShow } = useProject();
   const { me, settings } = useSettings();
   const suggestion = useSuggestion();
   const callAI = useCallAI();
@@ -68,7 +69,6 @@ export function IdeaPanel() {
       )}
       <div className="stack">
         <Button variant="primary" className="w-full" data-testid="idea-assess" disabled={waiting} onClick={() => void assess()}>{t("idea_assess_btn")}</Button>
-        <Button variant="ghost" className="w-full" data-testid="idea-save-project" onClick={() => openSaveAs("new", intake.topic.trim().slice(0, 80))}>{t("idea_saveproject_btn")}</Button>
       </div>
       <p className="note">{t("idea_panel_note")}</p>
     </div>

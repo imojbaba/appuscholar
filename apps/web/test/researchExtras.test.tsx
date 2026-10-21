@@ -20,7 +20,7 @@ const h = vi.hoisted(() => ({
   toast: vi.fn(),
   callAI: vi.fn(async (..._a: unknown[]) => ""),
   oaKey: null as string | null,
-  showTool: vi.fn(),
+  go: vi.fn(),
   dockShow: vi.fn(),
   setPendingAnalyse: vi.fn(),
   setThinking: vi.fn((..._a: unknown[]) => 7),
@@ -34,8 +34,8 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null, setThinking: h.setThinking, isCurrent: (tk: number) => tk === 7, set: h.set, clear: h.clear }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({
-  useWorkspace: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, showTool: h.showTool, dockShow: h.dockShow })
+vi.mock("@/components/frame/ProjectContext", () => ({
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, go: h.go, dockShow: h.dockShow })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -111,7 +111,7 @@ const actionsShown = () => !(tid("rs-actions") as HTMLElement).hidden;
 let open: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   h.blobs = { citations: blob([]), retraction_cache: blob({}), rs_prefs: blob(null) };
-  for (const f of [h.toast, h.showTool, h.dockShow, h.setPendingAnalyse, h.set, h.clear, h.download]) f.mockReset();
+  for (const f of [h.toast, h.go, h.dockShow, h.setPendingAnalyse, h.set, h.clear, h.download]) f.mockReset();
   h.setThinking.mockReset().mockReturnValue(7);
   h.callAI.mockReset().mockResolvedValue("");
   h.oaKey = null;
@@ -479,7 +479,7 @@ describe("Research part 2: Analyse this paper (rsAnalyse 8407-8419)", () => {
     await mount(ps);
     await click(cardOf(p.title).querySelector('[data-testid="rs-analyse"]'));
     expect(h.setPendingAnalyse).toHaveBeenCalledWith({ title: p.title, pages: [p.title + "\n" + p.authors + " (" + p.year + ")" + ". " + p.venue + "\nAbstract\n" + p.abstract!.trim()], src: "abstract" });
-    expect(h.showTool).toHaveBeenCalledWith("analyse");
+    expect(h.go).toHaveBeenCalledWith("/p/p-1/lit/reading");
     expect(toasts()).toEqual(["Abstract loaded. This is a shallow read; load the full paper for a real analysis."]);
   });
 
@@ -490,6 +490,6 @@ describe("Research part 2: Analyse this paper (rsAnalyse 8407-8419)", () => {
     await click(cardOf(ps[0]!.title).querySelector('[data-testid="rs-analyse"]'));
     expect(toasts()).toEqual([E.rs2_no_abstract_came_with_2]);
     expect(h.setPendingAnalyse).not.toHaveBeenCalled();
-    expect(h.showTool).not.toHaveBeenCalled();
+    expect(h.go).not.toHaveBeenCalled();
   });
 });

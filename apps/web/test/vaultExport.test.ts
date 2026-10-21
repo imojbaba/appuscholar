@@ -7,8 +7,8 @@ import hi from "../messages/hi.json";
 
 type Doc = { id: string; projectId: string; title: string; titleKeyVersion: number; deks: { v: number; wrapped: string }[]; kind: string; createdAt: string; updatedAt: string; deletedAt: string | null; wordCount: number };
 const P = [
-  { id: "p1", title: "P1", titleKeyVersion: 0, deks: [], stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
-  { id: "p2", title: "P2", titleKeyVersion: 0, deks: [], stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
+  { id: "p1", title: "P1", titleKeyVersion: 0, deks: [], stageMarks: {}, draftWords: 8, draftEditedAt: "2026-09-05T10:00:00.000Z", createdAt: "2026-09-01T10:00:00.000Z" },
+  { id: "p2", title: "P2", titleKeyVersion: 0, deks: [], stageMarks: { idea: { readyAt: "2026-09-01T00:00:00.000Z" } }, draftWords: 0, draftEditedAt: null, createdAt: "2026-09-02T10:00:00.000Z" }
 ];
 const D: Doc[] = [
   { id: "d1", projectId: "p1", title: "D1", titleKeyVersion: 0, deks: [], kind: "draft", createdAt: "2026-09-03T10:00:00.000Z", updatedAt: "2026-09-04T10:00:00.000Z", deletedAt: null, wordCount: 5 },
@@ -80,9 +80,11 @@ describe("exportAll", () => {
     expect(d.getDocument).not.toHaveBeenCalledWith("gone");
     expect(names.some((n) => n.includes("Gone"))).toBe(false);
     const index = JSON.parse(await zip.file("index.json")!.async("string")) as {
-      projects: { title: string; stage: string; createdAt: string; documents: { title: string; kind: string; createdAt: string; updatedAt: string; html: string; doc: string }[] }[];
+      format: number;
+      projects: { title: string; createdAt: string; documents: { title: string; kind: string; createdAt: string; updatedAt: string; html: string; doc: string }[] }[];
     };
-    expect(index.projects.map((p) => [p.title, p.stage, p.createdAt])).toEqual([["P1", "writing", P[0]!.createdAt], ["P2", "reading", P[1]!.createdAt]]);
+    expect(index.format).toBe(2);
+    expect(index.projects.map((p) => [p.title, p.createdAt])).toEqual([["P1", P[0]!.createdAt], ["P2", P[1]!.createdAt]]);
     expect(index.projects[0]!.documents.map((x) => x.title)).toEqual(["D1", "D2"]);
     expect(index.projects[1]!.documents).toEqual([
       { title: "S", kind: "source", createdAt: D[2]!.createdAt, updatedAt: D[2]!.updatedAt, wordCount: 4, html: "P2/sources/S.html", doc: "P2/sources/S.doc" }
@@ -164,9 +166,19 @@ describe("exportAll", () => {
     expect(index.projects[0]!.stageData).toHaveLength(6);
   });
 
+  it("the export's index.json carries format 2 and derived stages, no stage", async () => {
+    const zip = await JSZip.loadAsync(await (await exportAll(deps())).arrayBuffer());
+    const index = JSON.parse(await zip.file("index.json")!.async("string")) as { format: number; projects: Record<string, unknown>[] };
+    expect(index.format).toBe(2);
+    for (const p of index.projects) expect(p).not.toHaveProperty("stage");
+    // P1: an idea and Literature work (the caches are not work) and a draft with words; P2: Idea marked Ready, nothing else but a preference.
+    expect(index.projects[0]!.stages).toEqual({ idea: "in-progress", lit: "in-progress", design: "not-started", collect: "not-started", writing: "in-progress", review: "not-started" });
+    expect(index.projects[1]!.stages).toEqual({ idea: "ready", lit: "not-started", design: "not-started", collect: "not-started", writing: "not-started", review: "not-started" });
+  });
+
   it("two documents with the same title, or a title with unsafe characters, still get their own file", async () => {
     const d = deps();
-    d.listProjects = async () => [{ id: "p1", title: "My/Thesis: one", titleKeyVersion: 0, deks: [], stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" }];
+    d.listProjects = async () => [{ id: "p1", title: "My/Thesis: one", titleKeyVersion: 0, deks: [], stageMarks: {}, draftWords: 8, draftEditedAt: "2026-09-05T10:00:00.000Z", createdAt: "2026-09-01T10:00:00.000Z" }];
     d.listDocuments = async () => [{ ...D[0]!, title: "Chapter" }, { ...D[1]!, title: "Chapter" }];
     const zip = await JSZip.loadAsync(await (await exportAll(d)).arrayBuffer());
     const names = Object.keys(zip.files).filter((n) => !zip.files[n]!.dir && !n.includes("/stage-data/")).sort();
@@ -189,8 +201,8 @@ describe("exportAll", () => {
   it("Hindi and accented titles keep their letters in the zip; only path and reserved characters go", async () => {
     const d = deps();
     d.listProjects = async () => [
-      { id: "p1", title: "मेरा शोध", titleKeyVersion: 0, deks: [], stage: "writing", createdAt: "2026-09-01T10:00:00.000Z" },
-      { id: "p2", title: "Café: notes/2026", titleKeyVersion: 0, deks: [], stage: "reading", createdAt: "2026-09-02T10:00:00.000Z" }
+      { id: "p1", title: "मेरा शोध", titleKeyVersion: 0, deks: [], stageMarks: {}, draftWords: 8, draftEditedAt: "2026-09-05T10:00:00.000Z", createdAt: "2026-09-01T10:00:00.000Z" },
+      { id: "p2", title: "Café: notes/2026", titleKeyVersion: 0, deks: [], stageMarks: { idea: { readyAt: "2026-09-01T00:00:00.000Z" } }, draftWords: 0, draftEditedAt: null, createdAt: "2026-09-02T10:00:00.000Z" }
     ];
     d.listDocuments = async (id: string) => id === "p1"
       ? [{ ...D[0]!, title: "पहला अध्याय" }, { ...D[2]!, projectId: "p1", title: "स्रोत पत्र" }]

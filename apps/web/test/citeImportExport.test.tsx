@@ -31,7 +31,7 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: h.settings }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, showTool: () => {} }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {} }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));

@@ -3,10 +3,14 @@ import { wordText } from "@/lib/export/word";
 import { VaultError } from "./crypto";
 import type { WrappedDek } from "./useVault";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
+import { stageStates, type StageWork } from "@/lib/frame/stages";
 import { fileTitle, projectKeyId, type OpenedTitle, type Titled } from "./titles";
 
-/** `title` is ciphertext when `titleKeyVersion` is 1 or more; the export names folders and files after the opened title. */
-export type ExportProject = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; stage: string; createdAt: string };
+/**
+ * `title` is ciphertext when `titleKeyVersion` is 1 or more; the export names folders and files after the opened title. The Ready marks and the
+ * draft's words and edit time are `GET /projects?include=work`'s; with the blobs listed here they give the stages' states.
+ */
+export type ExportProject = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; createdAt: string } & Pick<StageWork, "stageMarks" | "draftWords" | "draftEditedAt">;
 export type ExportDocSummary = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; kind: string; createdAt: string; updatedAt: string; deletedAt?: string | null; wordCount?: number };
 export type ExportDoc = { id: string; bodyHtml: string; keyVersion: number; deks: WrappedDek[] };
 
@@ -65,7 +69,7 @@ const stageFile = (kind: string) => kind.replace(/:/g, "-").replace(/[\\/]/g, "_
 
 /**
  * Every project's live documents, decrypted in the browser, as one zip: `<project>/<document>.html` and `.doc` (source papers under
- * `<project>/sources/`), the writing-process record, and index.json listing titles, stages and dates. Deleted documents are left out;
+ * `<project>/sources/`), the writing-process record, and index.json (`format: 2`) listing titles, each stage's state and dates. Deleted documents are left out;
  * one that will not decrypt (VaultError "corrupt") is listed in index.json as unreadable, without files. Any other failure rejects.
  * Each project's stage data (every blob kind the api lists, the scratch space's too) is decrypted here and written, one at a time, as
  * `<project>/stage-data/<kind>.json` (pretty-printed JSON); one that does not open or is not JSON is listed as unreadable in `stageData`.
@@ -102,7 +106,8 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
     }
     const stageData: StageData[] = [];
     const files = new Set<string>();
-    for (const b of await deps.listBlobs(p.id)) {
+    const blobs = await deps.listBlobs(p.id);
+    for (const b of blobs) {
       let json: string;
       try {
         json = JSON.stringify(JSON.parse(await deps.decryptBlob(p.id, await deps.getBlob(p.id, b.kind))), null, 2) + "\n";
@@ -115,9 +120,11 @@ export async function exportAll(deps: ExportDeps): Promise<Blob> {
       zip.file(file, json);
       stageData.push({ kind: b.kind, file, updatedAt: b.updatedAt });
     }
-    projects.push({ title: projectTitle, stage: p.stage, createdAt: p.createdAt, folder, documents, stageData });
+    // The states the home and the list show, from the same work; the stored stage is not exported (format 2).
+    const stages = stageStates({ blobs, stageMarks: p.stageMarks, draftWords: p.draftWords, draftEditedAt: p.draftEditedAt });
+    projects.push({ title: projectTitle, stages, createdAt: p.createdAt, folder, documents, stageData });
   }
   zip.file("writing-process-record.txt", await deps.writingRecordText());
-  zip.file("index.json", JSON.stringify({ exportedAt: new Date().toISOString(), projects }, null, 2) + "\n");
+  zip.file("index.json", JSON.stringify({ format: 2, exportedAt: new Date().toISOString(), projects }, null, 2) + "\n");
   return zip.generateAsync({ type: "blob", mimeType: "application/zip" });
 }

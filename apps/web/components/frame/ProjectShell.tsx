@@ -1,9 +1,10 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { sanitizeHtml, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
-import { useSettings, type Settings } from "@/lib/settings";
-import { useT } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
+import { plainText, useT } from "@/lib/i18n";
 import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { toast } from "@/components/ui/toast";
 import { isImportable } from "@/lib/import/parse";
@@ -12,32 +13,26 @@ import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
-import { STAGE_FIRST_TOOL, TOOL_TO_STAGE, isStageKey, isToolId, type StageKey, type ToolId } from "@/lib/tools";
+import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
+import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places";
 import { DocumentCard } from "@/components/document/DocumentCard";
+import { AiPane } from "@/components/tools/AiPane";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider, useSuggestion } from "@/lib/ai/suggestion";
 import { useSyncReceiver } from "@/lib/popout/sync";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dock } from "./Dock";
-import { ProjectBar } from "./ProjectBar";
-import { SaveAsProject } from "./dialogs/SaveAsProject";
-import { Projects } from "./dialogs/Projects";
-import { StageIntro } from "./dialogs/StageIntro";
-import { ImportOrigin } from "./dialogs/ImportOrigin";
-import { MyWriting } from "./dialogs/MyWriting";
-import { ImportV1Dialog } from "./dialogs/ImportV1Dialog";
-import { ChromeDialogs, Header } from "./Header";
-import { Sidebar } from "./Sidebar";
-import { SidebarDrawer } from "./SidebarDrawer";
-import { MID_QUERY, PHONE_QUERY, useMedia } from "@/lib/useMedia";
-import { Subbar } from "./Subbar";
-import { WorkspaceProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type WorkspaceValue } from "./WorkspaceContext";
+import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
+import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
+import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
+import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
+import { AppHeader } from "./AppHeader";
+import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
 
 const BUSY = "Another import is still running. Wait for it to finish.";
 
-type Loaded = { project: Project | null; projectId: string; documents: DocumentSummary[]; doc: DocumentWithBody | null };
+type Loaded = { project: Project | null; projectId: string; documents: DocumentSummary[]; doc: DocumentWithBody | null } | { missing: true };
 
 async function listOrSeed(projectId: string, vault: VaultValue): Promise<DocumentSummary[]> {
   const list = await apiFetch<DocumentSummary[]>(`/projects/${projectId}/documents`);
@@ -74,9 +69,35 @@ export function byCreated(list: DocumentSummary[]): DocumentSummary[] {
   return [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) {
+/** The place an address names, from the path: `/p/<id>/<stage>/<tab>…`; null on the home and outside a project. */
+function placeOf(path: string | null): Place | null {
+  const m = /^\/p\/[^/]+\/([^/]+)(?:\/(.*))?$/.exec(path ?? "");
+  if (!m) return null;
+  const found = parsePlace(m[1]!, m[2] ? m[2].split("/").filter(Boolean) : undefined);
+  return found ? { stage: found.stage, tab: found.tab } : null;
+}
+
+/** A document to show once the project opened next has loaded (the one just restored there): the shell of that project is a new mount. */
+let nextDoc: { projectId: string; docId: string } | null = null;
+
+/**
+ * The mounted shell's restore. An Undo toast outlives the shell that showed it (a switch mounts a new one), so every shell's
+ * restoreDocument goes through the shell mounted now, which knows the project open now and can open another.
+ */
+let liveRestore: ((id: string, docProjectId: string) => Promise<boolean>) | null = null;
+
+/**
+ * The frame around every page but the pop-out: the header, the dialogs, the first-use terms and the welcome tour, and, within a project
+ * (`projectId` from the address, the scratch project's id in scratch space), the project, its documents, the open document and its editor.
+ * They stay mounted while the student moves between the project's places; the Writing place shows the document at full width, the others keep
+ * it mounted out of sight, so an insert still lands in it (Task 11 puts it beside every place). Outside a project (`projectId` null: first run,
+ * the list) nothing is loaded. Moved here from components/workspace/Workspace.tsx (Task 6, impact map D1a).
+ */
+export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, children }: { projectId: string | null; openImportV1?: boolean; children?: React.ReactNode }) {
   const t = useT();
-  const { me, settings, update, reload } = useSettings();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { me, settings, reload } = useSettings();
   const vault = useVault();
   // Loads and creations outlive a render; they read the newest vault from here.
   const vaultRef = useRef(vault);
@@ -95,25 +116,22 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
       scratchId: scratchForTitles
     }).catch(() => { /* offline or locked meanwhile: the next unlock tries again */ });
   }, [titlesSealable, scratchForTitles]);
-  const [ready, setReady] = useState(false);
+  const inProject = urlProjectId !== null;
+  const [ready, setReady] = useState(!inProject);
   const [error, setError] = useState(false);
+  const [missing, setMissing] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);
-  const [activeTool, setActiveTool] = useState<ToolId>("idea");
-  const [dock, setDock] = useState<"tools" | "ai">("tools");
-  const [dialog, setDialog] = useState<WorkspaceValue["dialog"]>(null);
+  const [aiShown, setAiShown] = useState(false);
+  const [dialog, setDialog] = useState<ProjectValue["dialog"]>(null);
   const [settingsProvider, setSettingsProvider] = useState<ProviderId | null>(null);
-  const [saveAsInit, setSaveAsInit] = useState<WorkspaceValue["saveAsInit"]>({ mode: "new", name: "", guessStage: false });
   const [importWaiting, setImportWaiting] = useState<File[]>([]);
   const importing = useRef(false);
-  const [introStage, setIntroStage] = useState<StageKey>("idea");
   const [aiWaiting, setAiWaiting] = useState(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
-  const settingsRef = useRef(settings);
-  useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; }, [projectId, currentDoc]);
   const docToken = useRef(0);
   /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */
@@ -125,10 +143,8 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   // Set while the "Switch anyway?" question is open; answering it resolves the switch that asked.
   const [switchAsk, setSwitchAsk] = useState<{ doc: DocumentWithBody | null; answer: (yes: boolean) => void } | null>(null);
   const [live, setLive] = useState<{ docId: string; words: number } | null>(null);
-  // A document to show after the next project switch (the one that was just moved into the project).
-  const pendingDoc = useRef<string | null>(null);
-  // The remembered tool (or the project's stage tool) applies to the first load only; later switches keep the tool the student has open.
-  const toolInit = useRef(false);
+  // Set by openProject before its PATCH: this shell is on its way out and must not write its own project back as the active one.
+  const switching = useRef(false);
   // One load per project even when React runs the effect twice in development, so the first document is never created twice.
   const loading = useRef<{ key: string; p: Promise<Loaded> } | null>(null);
 
@@ -137,76 +153,61 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   const [welcomeChecked, setWelcomeChecked] = useState(false);
   if (me && !gated && !welcomeChecked) {
     setWelcomeChecked(true);
-    // /import lands here with ?import=1: the backup import wins over the tour (Help replays the tour).
-    if (openImportV1) {
-      setDialog("importV1");
-      // Strip ?import=1 so a reload or a copied link does not reopen the dialog (synchronous, once: guarded by welcomeChecked).
-      if (typeof window !== "undefined") window.history.replaceState(null, "", "/");
-    } else if (!settings.seenWelcome) setDialog("welcome");
+    // /projects?import=1 (the old /import link): the backup import wins over the tour (Help replays the tour).
+    if (openImportV1) setDialog("importV1");
+    else if (!settings.seenWelcome) setDialog("welcome");
   }
+  // Strip ?import=1 once the dialog is open, so a reload or a copied link does not reopen it (after the render: the router listens to history).
+  useEffect(() => {
+    if (openImportV1 && welcomeChecked && window.location.search) window.history.replaceState(null, "", window.location.pathname);
+  }, [openImportV1, welcomeChecked]);
 
   const userId = me?.id;
   const activeProjectId = me?.activeProjectId ?? null;
   const scratchProjectId = me?.scratchProjectId;
 
   useEffect(() => {
-    if (!userId || !scratchProjectId) return;
-    const key = `${userId}:${activeProjectId}:${scratchProjectId}`;
+    if (!userId || !scratchProjectId || !urlProjectId) return;
+    const key = `${userId}:${urlProjectId}`;
     if (loading.current?.key !== key) {
       loading.current = {
         key,
         p: (async (): Promise<Loaded> => {
           let proj: Project | null = null;
-          if (activeProjectId) proj = (await apiFetch<Project[]>("/projects")).find((x) => x.id === activeProjectId) ?? null;
-          const pid = proj ? proj.id : scratchProjectId;
-          const docs = await listOrSeed(pid, vaultRef.current);
-          const first = docs[0];
-          const want = pendingDoc.current; pendingDoc.current = null;
-          const pick = docs.find((d) => d.id === want) ?? first;
+          if (urlProjectId !== scratchProjectId) {
+            proj = (await apiFetch<Project[]>("/projects")).find((x) => x.id === urlProjectId) ?? null;
+            if (!proj) return { missing: true };
+          }
+          const docs = await listOrSeed(urlProjectId, vaultRef.current);
+          const want = nextDoc?.projectId === urlProjectId ? nextDoc.docId : null;
+          nextDoc = null;
+          const pick = docs.find((d) => d.id === want) ?? docs[0];
           // Decrypted before the editor mounts.
           const doc = pick ? await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${pick.id}`)) : null;
-          return { project: proj, projectId: pid, documents: docs, doc };
+          return { project: proj, projectId: urlProjectId, documents: docs, doc };
         })()
       };
     }
-    let live = true;
+    let alive = true;
     loading.current.p.then((r) => {
-      if (!live) return;
+      if (!alive) return;
+      if ("missing" in r) { setMissing(true); setReady(true); return; }
       setProject(r.project);
       setProjectId(r.projectId);
-      // An abstract Research kept for Analyse a paper belongs to the project it was found in (ruling R7).
-      if (r.projectId !== projectIdRef.current) setPendingAnalyse(null);
       setDocuments(byCreated(r.documents));
       setCurrentDoc(r.doc);
-      if (!toolInit.current) {
-        toolInit.current = true;
-        const remembered = settingsRef.current.toolTab;
-        setActiveTool(isToolId(remembered) ? remembered : r.project && isStageKey(r.project.stage) ? STAGE_FIRST_TOOL[r.project.stage] : "idea");
-      }
       setReady(true);
-    }, () => { if (live) setError(true); });
-    return () => { live = false; };
-  }, [userId, activeProjectId, scratchProjectId]);
+    }, () => { if (alive) setError(true); });
+    return () => { alive = false; };
+  }, [userId, urlProjectId, scratchProjectId]);
 
-  const collapsed = useMemo(() => (settings.stageGroupsCollapsed ?? []).filter(isStageKey) as StageKey[], [settings.stageGroupsCollapsed]);
-  // Between 701 and 1099px the sidebar is the icon rail until the student chooses otherwise (their stored choice always wins).
-  const phone = useMedia(PHONE_QUERY);
-  const mid = useMedia(MID_QUERY);
-  const sidebarCollapsed = settings.sidebarCollapsed ?? mid;
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  // Growing past the phone width leaves no drawer to show.
-  if (!phone && drawerOpen) setDrawerOpen(false);
-
-  const showTool = useCallback((id: ToolId) => {
-    setActiveTool(id);
-    setDock("tools");
-    const patch: Settings = { toolTab: id };
-    // Opening a tool whose group was collapsed expands that one group (v1 showTool).
-    const stage = TOOL_TO_STAGE[id];
-    const open = (settingsRef.current.stageGroupsCollapsed ?? []);
-    if (open.includes(stage)) patch.stageGroupsCollapsed = open.filter((s) => s !== stage);
-    void update(patch);
-  }, [update]);
+  // The project at this address is the active one (null for the scratch space), so `/` and a new tab come back to it.
+  useEffect(() => {
+    if (!ready || missing || !projectId || !me || switching.current) return;
+    const want = projectId === me.scratchProjectId ? null : projectId;
+    if (activeProjectId === want) return;
+    apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: want }) }).then(() => reload(), () => undefined);
+  }, [ready, missing, projectId, me, activeProjectId, reload]);
 
   const registerFlush = useCallback((fn: (() => Promise<boolean>) | null) => { flushRef.current = fn; }, []);
   const setWordCount = useCallback((docId: string, words: number) => setLive((l) => (l && l.docId === docId && l.words === words ? l : { docId, words })), []);
@@ -262,37 +263,65 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
   }, [selectDoc]);
 
   const reloadProject = useCallback(async () => {
-    if (!activeProjectId) return;
+    const pid = projectIdRef.current;
+    if (!pid || pid === scratchProjectId) return;
     const list = await apiFetch<Project[]>("/projects");
-    setProject(list.find((x) => x.id === activeProjectId) ?? null);
-  }, [activeProjectId]);
+    setProject(list.find((x) => x.id === pid) ?? null);
+  }, [scratchProjectId]);
 
-  const setActiveProject = useCallback(async (id: string | null, opts: { skipJump?: boolean; docId?: string } = {}): Promise<boolean> => {
-    let jump: ToolId | null = null;
-    if (id && !opts.skipJump) {
-      const p = (await apiFetch<Project[]>("/projects")).find((x) => x.id === id);
-      // Guided, not locked: a finished project opens without steering the student anywhere.
-      if (p && p.status !== "complete" && isStageKey(p.stage)) jump = STAGE_FIRST_TOOL[p.stage];
+  /** Leaving the project (the editor unmounts): its text is stored first, or the student chose to leave anyway; a held stage value is announced. */
+  const confirmExit = useCallback(async (): Promise<boolean> => {
+    if (!(await confirmLeave())) return false;
+    // A stage's value that has not reached the server (the vault is locked, or another window won the save) stays held for this tab and goes once
+    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual).
+    if (shouldWarnOnUnloadBlobs()) toast(t("blob_switch_held"));
+    return true;
+  }, [confirmLeave, t]);
+
+  const go = useCallback(async (href: string): Promise<boolean> => {
+    const here = urlProjectId ? `/p/${urlProjectId}` : null;
+    const path = href.split(/[?#]/)[0]!;
+    // Within the project the editor stays mounted; out of it, it asks as a switch does.
+    if (here && path !== here && !path.startsWith(here + "/") && !(await confirmExit())) return false;
+    router.push(href);
+    return true;
+  }, [urlProjectId, confirmExit, router]);
+
+  const openProject = useCallback(async (id: string | null, opts: { docId?: string } = {}): Promise<boolean> => {
+    const target = id ?? scratchProjectId;
+    if (!target) return false;
+    if (target === projectIdRef.current) {
+      await reloadProject(); await reloadDocs();
+      return opts.docId ? selectDoc(opts.docId) : true;
     }
-    await apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: id }) });
-    pendingDoc.current = opts.docId ?? null;
-    let shown = true;
-    if (id === activeProjectId) { await reloadProject(); await reloadDocs(); if (opts.docId) shown = await selectDoc(opts.docId); } else await reload();
-    if (jump) showTool(jump);
-    return shown;
-  }, [activeProjectId, reload, reloadProject, reloadDocs, selectDoc, showTool]);
+    if (!(await confirmExit())) return false;
+    switching.current = true;
+    try {
+      await apiFetch<void>("/me/active-project", { method: "PATCH", body: JSON.stringify({ projectId: id }) });
+      if (opts.docId) nextDoc = { projectId: target, docId: opts.docId };
+      await reload();
+    } catch (e) { switching.current = false; throw e; }
+    // The scratch space has no home: it opens where its documents are (decision 4).
+    router.push(id ? homeHref(id) : placeHref(target, "writing"));
+    return true;
+  }, [scratchProjectId, reloadProject, reloadDocs, selectDoc, confirmExit, reload, router]);
 
-  // restoreDocument must stay valid for ten seconds in a toast, so it reads the newest setActiveProject (which knows the project open now).
-  const setActiveProjectRef = useRef(setActiveProject);
-  useEffect(() => { setActiveProjectRef.current = setActiveProject; }, [setActiveProject]);
+  // restoreDocument must stay valid for ten seconds in a toast, so it reads the newest openProject (which knows the project open now).
+  const openProjectRef = useRef(openProject);
+  useEffect(() => { openProjectRef.current = openProject; }, [openProject]);
 
   /** Brings a deleted document back and shows it, in whichever project is open now (Undo can come ten seconds after the delete). */
-  const restoreDocument = useCallback(async (id: string, docProjectId: string): Promise<boolean> => {
+  const restoreHere = useCallback(async (id: string, docProjectId: string): Promise<boolean> => {
     await apiFetch<DocumentSummary>(`/documents/${id}/restore-deleted`, { method: "POST" });
     if (projectIdRef.current === docProjectId) { await reloadDocs(); return selectDoc(id); }
     // The student has moved to another project since: open the one the document belongs to (null = scratch space).
-    return setActiveProjectRef.current(docProjectId === scratchProjectId ? null : docProjectId, { skipJump: true, docId: id });
+    return openProjectRef.current(docProjectId === scratchProjectId ? null : docProjectId, { docId: id });
   }, [reloadDocs, selectDoc, scratchProjectId]);
+  useEffect(() => {
+    liveRestore = restoreHere;
+    return () => { if (liveRestore === restoreHere) liveRestore = null; };
+  }, [restoreHere]);
+  const restoreDocument = useCallback((id: string, docProjectId: string) => (liveRestore ?? restoreHere)(id, docProjectId), [restoreHere]);
 
   /** Imports the files as new documents, then shows the last one. One batch at a time. */
   const doImport = useCallback(async (files: File[], origin: "draft" | "source") => {
@@ -325,38 +354,30 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
     await doImport(files, origin);
   }, [importWaiting, doImport]);
 
-  const dockShow = useCallback((which: "tools" | "ai") => { setDock(which); if (which === "ai") setAiWaiting(false); }, []);
+  // Ruling R6: "ai" shows the AI pane beside the document (the actions and the suggestion provider still call it); "tools" has no dock to show.
+  const dockShow = useCallback((which: "tools" | "ai") => { if (which === "ai") { setAiShown(true); setAiWaiting(false); } }, []);
 
-  const currentStage: StageKey | null = project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null;
+  const place = inProject ? placeOf(pathname) : null;
+  const writing = place?.stage === "writing";
 
-  const value: WorkspaceValue = {
-    activeTool, showTool, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dock, dockShow, aiWaiting, setAiWaiting, sidebarCollapsed, phone, drawerOpen, setDrawerOpen, stageGroupsCollapsed: collapsed,
-    currentStage, project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
-    wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, setActiveProject, reloadProject,
-    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
-    openSaveAs: (mode, prefillName = "", opts) => { setSaveAsInit({ mode, name: prefillName, guessStage: opts?.guessStage ?? false }); setDialog("saveAs"); },
-    saveAsInit, openProjects: () => setDialog("projects"),
-    openStageIntro: (stage) => { setIntroStage(stage); setDialog("stageIntro"); }, introStage
+  const value: ProjectValue = {
+    place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dockShow, aiWaiting, setAiWaiting,
+    project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
+    wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, reloadProject,
+    dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); }
   };
 
-  const dockW = settings.dockW ?? 440;
-  const sheetPct = settings.sheetPct ?? 46;
   return (
-    <WorkspaceProvider value={value}>
+    <ProjectProvider value={value}>
       <SuggestionProvider>
         {/* One citation library for the Citation Manager and the caret chip under the document. */}
         <CiteLibraryProvider>
-        {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash. */}
-        <CaptureHash />
+        {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
+        {inProject && <CaptureHash />}
         {/* v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor. */}
         <SyncReceiver />
-        <Header />
+        <AppHeader />
         <ChromeDialogs />
-        <Subbar />
-        <ProjectBar />
-        <SaveAsProject />
-        <Projects />
-        <StageIntro />
         <ImportOrigin />
         <MyWriting />
         <ImportV1Dialog />
@@ -372,22 +393,30 @@ export function Workspace({ openImportV1 = false }: { openImportV1?: boolean }) 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        {phone && <SidebarDrawer />}
-        {ready ? (
-          <main className={"ws" + (sidebarCollapsed ? " rail" : "")} style={{ "--dock-w": dockW + "px", "--sheet-pct": sheetPct } as React.CSSProperties}>
-            {/* One copy of the tool list at a time: the drawer replaces the sidebar on a phone. */}
-            {!phone && <Sidebar />}
-            <DocumentCard />
-            <Dock />
-          </main>
-        ) : error ? (
+        {error ? (
           <p role="alert" className="p-6 text-sm text-destructive" data-testid="error-msg">Could not load your workspace.</p>
-        ) : (
+        ) : !ready || !me ? (
+          // Outside a project too, the page waits for /me: opening the scratch space needs its id.
           <div className="grid gap-4 p-6" aria-busy="true"><Skeleton className="h-6 w-60" /><Skeleton className="h-96" /></div>
+        ) : missing ? (
+          <main className="frame">
+            <p role="alert" className="frame-note" data-testid="project-missing">{t("project_not_found")} <a href="/projects">{t("switcher_all")}</a></p>
+          </main>
+        ) : (
+          <main className="frame" data-testid="frame">
+            {children}
+            {inProject && (
+              <div className={"frame-work" + (writing ? " writing" : "") + (aiShown ? " with-ai" : "")}>
+                {/* Mounted in every place, so the editor (and an insert into it) outlives a move to another place; shown at full width in Writing. */}
+                <div className="frame-doc" hidden={!writing} data-testid="frame-doc"><DocumentCard /></div>
+                {aiShown && <aside className="frame-ai" aria-label={plainText(t("dock_ai_tab"))}><AiPane /></aside>}
+              </div>
+            )}
+          </main>
         )}
         </CiteLibraryProvider>
       </SuggestionProvider>
-    </WorkspaceProvider>
+    </ProjectProvider>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext } from "react";
 import type { ProviderId } from "@appuscholar/core";
-import type { StageKey, ToolId } from "@/lib/tools";
+import type { Place } from "@/lib/frame/places";
 import type { WrappedDek } from "@/lib/vault/useVault";
 
 /**
@@ -19,34 +19,36 @@ export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion:
 /** v1's apLoad(title, [head+ab], 'abstract', false) (8412): the title, the pages (one: the head and the abstract) and the source kind, for apBuild(title, pages, "abstract"). */
 export type PendingAnalyse = { title: string; pages: string[]; src: "abstract" };
 
-export type WorkspaceValue = {
-  activeTool: ToolId;
-  showTool(id: ToolId): void;
+export type ProjectValue = {
+  /** The place the address names (`/p/<id>/<stage>/<tab>`), or null on the project's home and outside a project. */
+  place: Place | null;
+  /**
+   * Goes to an address of the app (a place, the home, the list); the project, its documents and the open editor stay mounted within a project.
+   * An address outside the project stores the open document's text first, as a switch does (a failed save asks "Switch anyway?"; false means
+   * the student stayed).
+   */
+  go(href: string): Promise<boolean>;
+  /**
+   * Opens a project (null = the scratch space): the open document's text is stored first (a failed save asks "Switch anyway?"; false means
+   * the student stayed), the project is recorded as active (PATCH /me/active-project), then its home opens (the scratch space's writing place).
+   * `docId` is shown once it has loaded. Opening the project already open re-reads it and its documents.
+   */
+  openProject(id: string | null, opts?: { docId?: string }): Promise<boolean>;
   /** The text the selection bubble's Find papers kept for the Research tool (up to 200 characters), or null. */
   pendingSearch: string | null;
   setPendingSearch(text: string | null): void;
   /** The paper Research's "📄 Analyse this paper" kept for Analyse a paper (v1 rsAnalyse 8407-8419), or null; Task 12's intake loads it abstract-only. */
   pendingAnalyse: PendingAnalyse | null;
   setPendingAnalyse(v: PendingAnalyse | null): void;
-  dock: "tools" | "ai";
+  /** "ai" shows the AI pane beside the document; "tools" does nothing (the dock is gone; Task 11 removes this). */
   dockShow(which: "tools" | "ai"): void;
   aiWaiting: boolean;
-  /** Raised by the suggestion provider while a result waits; showing the AI tab lowers it. */
+  /** Raised by the suggestion provider while a result waits; showing the AI pane lowers it. */
   setAiWaiting(on: boolean): void;
-  /** The icon rail: the student's choice, or (until they make one) the default of the two-column layout between 701 and 1099px. */
-  sidebarCollapsed: boolean;
-  /** At most 700px wide: the sidebar lives in a drawer and the dock is the bottom sheet. */
-  phone: boolean;
-  /** The tool drawer of the phone layout (opened from the header's menu button). */
-  drawerOpen: boolean;
-  setDrawerOpen(open: boolean): void;
-  stageGroupsCollapsed: StageKey[];
-  /** The active project's stage, or null in scratch space or once the project is complete. */
-  currentStage: StageKey | null;
   project: Project | null;
   /**
-   * The project the workspace has loaded: the open project's id, the scratch project's in scratch space; null until the first load has
-   * answered (while `project` is still null for a student whose active project is loading). Stage blobs shared across the workspace key on it.
+   * The project the shell has loaded: the open project's id, the scratch project's in scratch space; null outside a project (first run, the
+   * list) and until the first load has answered. Stage blobs shared across the project key on it.
    */
   projectId: string | null;
   documents: DocumentSummary[];
@@ -65,12 +67,10 @@ export type WorkspaceValue = {
   /** The editor's live word count for the open document, or null until the editor has reported it. */
   wordCount: number | null;
   setWordCount(docId: string, words: number): void;
-  /** Switch the active project (null = scratch space). Opening a project jumps to its stage's first tool unless it is complete or `skipJump`; `docId` is shown after the switch. */
-  setActiveProject(id: string | null, opts?: { skipJump?: boolean; docId?: string }): Promise<boolean>;
-  /** Re-reads the active project (stage, status) after a change made elsewhere. */
+  /** Re-reads the open project (status, language) after a change made elsewhere. */
   reloadProject(): Promise<void>;
-  /** The one dialog open now: Help, Terms (read-only), Welcome, AI Provider / Key, and the project dialogs. */
-  dialog: "help" | "terms" | "welcome" | "settings" | "saveAs" | "projects" | "stageIntro" | "importOrigin" | "myWriting" | "importV1" | null;
+  /** The one dialog open now: Help, Terms (read-only), Welcome, AI Provider / Key, and the import dialogs. */
+  dialog: "help" | "terms" | "welcome" | "settings" | "importOrigin" | "myWriting" | "importV1" | null;
   /** Imports files as new documents (the Import button, a drop on the editor, a pasted file). Asks "Whose writing is this?" once unless every file is a PDF. */
   startImport(files: File[]): void;
   /** The names of the files waiting for the answer to "Whose writing is this?". */
@@ -78,7 +78,7 @@ export type WorkspaceValue = {
   /** The answer to the question: imports the waiting files, then shows the last one. */
   runImport(origin: "draft" | "source"): Promise<void>;
   openHelp(): void;
-  /** The v1 backup import dialog (from Help, or /import). */
+  /** The v1 backup import dialog (from Help, or /projects?import=1). */
   openImportV1(): void;
   /** The Terms read-only (from Help and the AI Provider / Key dialog). The first-use gate is not a dialog state: it applies whenever the account has not accepted the current terms. */
   openTerms(): void;
@@ -91,20 +91,12 @@ export type WorkspaceValue = {
   /** The provider the AI Provider / Key dialog opened on, or null for the current one. */
   settingsProvider: ProviderId | null;
   closeDialog(): void;
-  /** Save as research project. `prefillName` pre-fills the name field (the Idea panel passes the first 80 characters of the idea). */
-    openSaveAs(mode: "new" | "existing", prefillName?: string, opts?: { guessStage?: boolean }): void;
-  /** `guessStage`: the project bar's button defaults the stage to the open tool's stage and shows v1's hint; every other entry point defaults to idea. */
-  saveAsInit: { mode: "new" | "existing"; name: string; guessStage: boolean };
-  openProjects(): void;
-  /** The six-stage intro, shown after a new project is created; `introStage` is the new project's stage. */
-  openStageIntro(stage: StageKey): void;
-  introStage: StageKey;
 };
 
-const Ctx = createContext<WorkspaceValue | null>(null);
-export const WorkspaceProvider = Ctx.Provider;
-export function useWorkspace(): WorkspaceValue {
+const Ctx = createContext<ProjectValue | null>(null);
+export const ProjectProvider = Ctx.Provider;
+export function useProject(): ProjectValue {
   const v = useContext(Ctx);
-  if (!v) throw new Error("useWorkspace must be used inside <Workspace>");
+  if (!v) throw new Error("useProject must be used inside <ProjectShell>");
   return v;
 }

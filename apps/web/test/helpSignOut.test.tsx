@@ -8,7 +8,7 @@ const h = vi.hoisted(() => ({
   remembered: vi.fn(), signOut: vi.fn(async () => {}), lock: vi.fn(), forget: vi.fn(async () => {}),
   ws: { dialog: "help", closeDialog: vi.fn(), openWelcome: vi.fn(), openTerms: vi.fn(), openImportV1: vi.fn() }
 }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => h.ws }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => h.ws }));
 vi.mock("@/lib/session", () => ({ useSession: () => ({ email: "asha@example.edu", signOutAction: h.signOut }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ lock: h.lock, forgetThisComputer: h.forget }) }));

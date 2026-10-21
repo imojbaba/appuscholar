@@ -10,7 +10,7 @@ const h = vi.hoisted(() => ({
   api: vi.fn(), toast: vi.fn(), remembered: vi.fn(), signOut: vi.fn(async () => {}), download: vi.fn(), v: null as unknown as FakeVault, order: [] as string[],
   ws: { dialog: "help", closeDialog: vi.fn(), openWelcome: vi.fn(), openTerms: vi.fn(), openImportV1: vi.fn() }
 }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => h.ws }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => h.ws }));
 vi.mock("@/lib/session", () => ({ useSession: () => ({ email: "asha@example.edu", signOutAction: h.signOut }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch1" } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => h.v }));
@@ -145,7 +145,7 @@ describe("Help: account erasure", () => {
 describe("Help: export, change passphrase", () => {
   it("export builds the zip in the browser, records the export, then downloads it", async () => {
     h.api.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === "/projects") return [{ id: "p1", title: "Thesis", stage: "writing", createdAt: "2026-09-01T00:00:00.000Z" }];
+      if (path === "/projects?include=work") return [{ id: "p1", title: "Thesis", titleKeyVersion: 0, deks: [], stageMarks: {}, draftWords: 0, draftEditedAt: null, createdAt: "2026-09-01T00:00:00.000Z" }];
       if (path === "/projects/p1/documents") return [{ id: "d1", projectId: "p1", title: "Ch 1", kind: "draft", createdAt: "x", updatedAt: "y", deletedAt: null, wordCount: 2 }];
       if (path === "/projects/scratch1/documents") return [{ id: "d2", projectId: "scratch1", title: "Notes", kind: "draft", createdAt: "x", updatedAt: "y", deletedAt: null, wordCount: 1 }];
       if (path === "/projects/p1/blobs") return [{ kind: "idea_intake", keyVersion: 1, updatedAt: "2026-09-08T00:00:00.000Z" }, { kind: "shelf_paper:a b", keyVersion: 1, updatedAt: "2026-09-08T00:00:00.000Z" }];
@@ -191,7 +191,7 @@ describe("Help: export, change passphrase", () => {
     let release!: (ok: boolean) => void;
     h.v.ensureUnlocked.mockImplementation(() => new Promise<boolean>((r) => { release = r; }));
     h.api.mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === "/projects") return [];
+      if (path === "/projects?include=work") return [];
       if (path.endsWith("/documents") || path.endsWith("/blobs")) return [];
       if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false } };
       if (path === "/me/export-audit" && init?.method === "POST") return undefined;

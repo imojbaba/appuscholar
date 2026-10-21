@@ -14,7 +14,7 @@ vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, setti
 vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/components/workspace/dialogs/VaultSetup", () => ({ openVaultSetup: h.openSetup }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => h.ws }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => h.ws }));
 
 import { ApiError } from "../lib/api";
 import { keyStore, lockKey } from "../lib/ai/keys";

@@ -16,7 +16,7 @@ vi.mock("@/lib/ai/actions", async (orig) => ({ ...(await orig<typeof import("../
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => h.sug }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "  nursing " } }) }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ({ dockShow: h.dockShow }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ dockShow: h.dockShow }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { HelpersPanel, resetHelperSession } from "../components/tools/HelpersPanel";

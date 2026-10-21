@@ -9,7 +9,7 @@ import { AP_LECTURES_LATER, AP_LESSON_LATER } from "@/lib/analyse/later";
 import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import { Across } from "./Across";
 import { Ask } from "./Ask";
 import { Card } from "./Card";
@@ -63,7 +63,7 @@ function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
 export function AnalysePanel() {
   const t = useT();
   const s = useApState();
-  const { project, pendingAnalyse, setPendingAnalyse } = useWorkspace();
+  const { project, pendingAnalyse, setPendingAnalyse } = useProject();
   const { me } = useSettings();
   const notes = useApNotes(project?.id ?? me?.scratchProjectId ?? null);
   // The kept abstract is loaded once: a second run of the effect for the same value (React's StrictMode, or a language change before the clear lands) does nothing.

@@ -4,7 +4,7 @@ import type { Editor } from "@tiptap/react";
 import { useT } from "@/lib/i18n";
 import { insertAiText, mapRange, type SelectionRange } from "@/lib/editor/insert";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useProject } from "@/components/frame/ProjectContext";
 import type { SuggestionNote, SuggestionStatus } from "./actions";
 
 export type { SuggestionNote, SuggestionStatus };
@@ -42,7 +42,7 @@ const Ctx = createContext<SuggestionValue | null>(null);
 
 export function SuggestionProvider({ children }: { children: React.ReactNode }) {
   const t = useT();
-  const { dockShow, setAiWaiting } = useWorkspace();
+  const { dockShow, setAiWaiting } = useProject();
   const [sug, setSug] = useState<string | null>(null);
   const [text, setText] = useState<string | null>(null);
   const [note, setNote] = useState<SuggestionNote | null>(null);

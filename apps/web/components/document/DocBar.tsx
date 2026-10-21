@@ -5,7 +5,7 @@ import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
@@ -13,17 +13,19 @@ import { IMPORT_ACCEPT } from "@/lib/import/parse";
 import { newDocumentBody } from "@/lib/useAutosave";
 import { useVault } from "@/lib/vault/useVault";
 import { openTitle, sealTitle, useTitle } from "@/lib/vault/titles";
-import { useWorkspace, type DocumentSummary, type DocumentWithBody } from "@/components/workspace/WorkspaceContext";
+import { useProject, type DocumentSummary, type DocumentWithBody, type Project } from "@/components/frame/ProjectContext";
 
 const UNDO_MS = 10_000;
 
-/** The document row of the card: choose, create, rename, delete (with ten seconds to undo), import and mark as source. */
+/** The document row of the card: choose, create, rename, delete (with ten seconds to undo), import, mark as source and move to a project. */
 export function DocBar() {
   const t = useT();
   const { me } = useSettings();
   const vault = useVault();
-  const { project, documents, currentDoc, selectDoc, reloadDocs, startImport, restoreDocument, patchDoc, registerFlush, flushOpen } = useWorkspace();
-  const [dialog, setDialog] = useState<"new" | "rename" | "delete" | null>(null);
+  const { project, documents, currentDoc, selectDoc, reloadDocs, startImport, restoreDocument, patchDoc, registerFlush, flushOpen, openProject, go } = useProject();
+  const [dialog, setDialog] = useState<"new" | "rename" | "delete" | "move" | null>(null);
+  // The open projects the document can move into (read when Move to project opens); null while they are read.
+  const [targets, setTargets] = useState<Project[] | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -112,6 +114,33 @@ export function DocBar() {
     } catch { toast("Could not bring the document back."); }
   }
 
+  /** Move to project: the open projects other than this one, and New project. */
+  function askMove() {
+    if (!currentDoc) return;
+    setTargets(null);
+    setDialog("move");
+    const from = currentDoc.projectId;
+    apiFetch<Project[]>("/projects").then((list) => setTargets(list.filter((p) => p.status !== "complete" && p.id !== from)), () => setTargets([]));
+  }
+
+  /**
+   * v1 saveAsProject's move (Save as research project, now Move to project): nothing the student wrote changes, the document is filed under the
+   * project and that project opens on it. Its title stays sealed under the document's own key, so a move touches no key.
+   */
+  async function move(target: string) {
+    if (busy || !currentDoc) return;
+    const moving = currentDoc;
+    setBusy(true);
+    try {
+      // Stored first, so the switch that follows never asks about a document that has already left this project.
+      if (!(await flushOpen())) { toast(t("doc_move_unsaved")); return; }
+      await apiFetch(`/documents/${moving.id}/move`, { method: "POST", body: JSON.stringify({ projectId: target }) });
+      setDialog(null);
+      await openProject(target, { docId: moving.id });
+    } catch { toast(t("doc_move_fail")); }
+    finally { setBusy(false); }
+  }
+
   async function toggleOrigin() {
     if (!currentDoc) return;
     const kind = isSource ? "draft" : "source";
@@ -136,6 +165,7 @@ export function DocBar() {
       <input ref={fileRef} type="file" accept={IMPORT_ACCEPT} multiple hidden data-testid="doc-import-input" aria-label="Choose files to import"
         onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ""; if (files.length) startImport(files); }} />
       <Button variant="ghost" size="sm" title={t(isSource ? "org_btn_title_src" : "org_btn_title_own")} data-testid="doc-origin" disabled={!currentDoc} onClick={() => { void toggleOrigin(); }}>{t(isSource ? "org_btn_src" : "org_btn_own")}</Button>
+      <Button variant="ghost" size="sm" data-testid="doc-move" disabled={!currentDoc} onClick={askMove}>{t("doc_move_btn")}</Button>
 
       <Dialog open={dialog === "new" || dialog === "rename"} onOpenChange={(o) => { if (!o) close(); }}>
         <DialogContent className="max-w-sm" data-testid="doc-name-dialog">
@@ -147,6 +177,24 @@ export function DocBar() {
               <Button type="submit" variant="primary" size="md" disabled={busy} data-testid="doc-name-ok">OK</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialog === "move"} onOpenChange={(o) => { if (!o) close(); }}>
+        <DialogContent className="max-w-sm" data-testid="doc-move-dialog">
+          <DialogHeader>
+            <DialogTitle>{t("doc_move_h")}</DialogTitle>
+            <DialogDescription>{t("doc_move_desc")}</DialogDescription>
+          </DialogHeader>
+          <div className="my-2 grid gap-1.5">
+            {targets?.map((p) => <MoveTarget key={p.id} project={p} disabled={busy} onPick={() => { void move(p.id); }} />)}
+            {targets && targets.length === 0 && <p className="m-0 text-sm text-muted-foreground" data-testid="doc-move-none">{t("doc_move_none")}</p>}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" size="md" onClick={close}>{t("sap_cancel_btn")}</Button>
+            {/* First run creates the project and moves the document into it (FirstRun's moveDocId). */}
+            <Button type="button" variant="primary" size="md" disabled={busy || !currentDoc} data-testid="doc-move-new" onClick={() => { if (currentDoc) { setDialog(null); void go(`/start?move=${encodeURIComponent(currentDoc.id)}`); } }}>{t("doc_move_new")}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -164,6 +212,12 @@ export function DocBar() {
       </AlertDialog>
     </div>
   );
+}
+
+/** A project the document can move into, under its opened title (never its ciphertext). */
+function MoveTarget({ project, disabled, onPick }: { project: Project; disabled: boolean; onPick(): void }) {
+  const title = useTitle(project, "project");
+  return <Button type="button" variant="ghost" size="md" className="justify-start" disabled={disabled} data-testid="doc-move-project" onClick={onPick}><span className="truncate">{title.text}</span></Button>;
 }
 
 /** One document in the list, under its opened title ("Locked title" while the vault is locked). */

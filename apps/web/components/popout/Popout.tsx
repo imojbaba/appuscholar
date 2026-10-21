@@ -7,14 +7,14 @@ import { useSettings } from "@/lib/settings";
 import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import { isPopoutTool, type PopoutTool } from "@/lib/popout/sync";
-import { isStageKey, type ToolId } from "@/lib/tools";
+import type { ToolId } from "@/lib/tools";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CitePanel } from "@/components/tools/cite/CitePanel";
 import { ResearchPanel } from "@/components/tools/research/ResearchPanel";
 import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
-import { ChromeDialogs } from "@/components/workspace/Header";
-import { byCreated } from "@/components/workspace/Workspace";
-import { WorkspaceProvider, type DocumentSummary, type PendingAnalyse, type Project, type WorkspaceValue } from "@/components/workspace/WorkspaceContext";
+import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
+import { byCreated } from "@/components/frame/ProjectShell";
+import { ProjectProvider, type DocumentSummary, type PendingAnalyse, type Project, type ProjectValue } from "@/components/frame/ProjectContext";
 
 /**
  * The pop-out window (v1 boot 13692-13696: `body.popout`, `showTool(POPOUT)`): one tool alone, the Citation Manager or Research, with no sidebar, dock,
@@ -29,11 +29,18 @@ export function Popout({ tool }: { tool: string | undefined }) {
 
 const noop = () => {};
 
+/** The tool a Literature place's address names here: Find is Research, Reading list is Analyse a paper, Citations the Citation Manager. */
+function toolOf(href: string): ToolId | null {
+  const tab = /\/lit\/([^/?#]+)/.exec(href)?.[1];
+  return tab === "find" ? "research" : tab === "reading" ? "analyse" : tab === "citations" ? "cite" : null;
+}
+
 /**
  * The workspace the panels read, made small: the student's active project (the scratch project in scratch space) and its documents list (for the
  * Citation Manager's "Cited in"), never a document created or opened, no editor. The panels' workspace actions do what v1's do in a pop-out:
- * showTool switches the tool this window shows (v1 showTool there; Research's "📄 Analyse this paper" opens Analyse a paper here), the dock and
- * the document list have nothing to act on, and the dialogs (the AI key, the vault's passphrase) open here.
+ * `go` to a Literature place switches the tool this window shows (v1 showTool there; Research's "📄 Analyse this paper" opens Analyse a paper
+ * here), the AI pane and the document list have nothing to act on, and the dialogs (the AI key, the vault's passphrase) open here. It shows no
+ * stage (Task 13 rebuilds it as a pop-out of any place).
  */
 function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
   const t = useT();
@@ -46,7 +53,7 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
   const [activeTool, setActiveTool] = useState<ToolId>(tool);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
-  const [dialog, setDialog] = useState<WorkspaceValue["dialog"]>(null);
+  const [dialog, setDialog] = useState<ProjectValue["dialog"]>(null);
   const [settingsProvider, setSettingsProvider] = useState<ProviderId | null>(null);
 
   const userId = me?.id;
@@ -79,23 +86,21 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
     if (activeProjectId) setProject((await apiFetch<Project[]>("/projects")).find((x) => x.id === activeProjectId) ?? null);
   }, [activeProjectId]);
 
-  const value: WorkspaceValue = {
-    activeTool, showTool: setActiveTool, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse,
-    dock: "tools", dockShow: noop, aiWaiting: false, setAiWaiting: noop, sidebarCollapsed: false, phone: false, drawerOpen: false, setDrawerOpen: noop, stageGroupsCollapsed: [],
-    currentStage: project && project.status !== "complete" && isStageKey(project.stage) ? project.stage : null,
+  const value: ProjectValue = {
+    place: null, go: async (href) => { const tool = toolOf(href); if (tool) setActiveTool(tool); return true; }, openProject: async () => false,
+    pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, dockShow: noop, aiWaiting: false, setAiWaiting: noop,
     project, projectId, documents, currentDoc: null,
     // No document is shown in a pop-out (v1's docSwitch there loads the hidden editor and saves nothing).
     selectDoc: async () => false, restoreDocument: async () => false, reloadDocs, patchDoc: noop, registerFlush: noop, flushOpen: async () => true,
-    wordCount: null, setWordCount: noop, setActiveProject: async () => false, reloadProject,
+    wordCount: null, setWordCount: noop, reloadProject,
     dialog, startImport: noop, importNames: [], runImport: async () => {},
     openHelp: () => setDialog("help"), openImportV1: noop, openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: noop,
-    openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => setDialog(null),
-    openSaveAs: noop, saveAsInit: { mode: "new", name: "", guessStage: false }, openProjects: noop, openStageIntro: noop, introStage: "idea"
+    openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => setDialog(null)
   };
 
   const panel = activeTool === "cite" ? <CitePanel /> : activeTool === "research" ? <ResearchPanel /> : activeTool === "analyse" ? <AnalysePanel /> : <p className="desc">{t("pop_unsupported")}</p>;
   return (
-    <WorkspaceProvider value={value}>
+    <ProjectProvider value={value}>
       <SuggestionProvider>
         <CiteLibraryProvider>
           <ChromeDialogs />
@@ -108,6 +113,6 @@ function PopoutWorkspace({ tool }: { tool: PopoutTool }) {
           )}
         </CiteLibraryProvider>
       </SuggestionProvider>
-    </WorkspaceProvider>
+    </ProjectProvider>
   );
 }
