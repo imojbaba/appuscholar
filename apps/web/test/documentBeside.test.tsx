@@ -247,20 +247,18 @@ describe("the document beside any stage", () => {
     expect(toasts()).toEqual([E.insert_doc_closed]);
   }, 30_000);
 
-  it("on the project's home, which shows no document, an insert puts nothing in and says so", async () => {
+  it("on the project's home, which shows no document, an insert takes the student to Writing and goes in there", async () => {
     plainApi();
     h.path = "/p/p1";
     await mount("p1");
     await until(() => !!h.editor);
-    const run = vi.fn();
+    const run = vi.fn((e: Editor) => { e.commands.insertContent("<p>Ref.</p>"); });
     let ok!: boolean;
     await act(async () => { ok = await ws().requestInsert(run); });
-    expect(ok).toBe(false);
-    expect(run).not.toHaveBeenCalled();
-    expect(editor().getHTML()).toBe("<p>Mine.</p>");
-    expect(toasts()).toEqual([E.insert_doc_closed]);
-    expect(ws().docOpen).toBe(false);
-    expect(h.update).not.toHaveBeenCalledWith({ docBeside: true });
+    expect(h.push).toHaveBeenCalledWith("/p/p1/writing");
+    expect(ok).toBe(true);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(toasts()).toEqual([]);
   });
 
   it("closing the document saves first; a failed save asks Close anyway?", async () => {

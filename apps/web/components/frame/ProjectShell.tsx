@@ -430,7 +430,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   /**
    * Puts something into the open document. A closed document opens beside the place first, a locked one asks for the passphrase once, and the
    * editor is waited for (INSERT_WAIT_MS); when the document does not open, or another document is open by then, nothing goes in, the student is
-   * told, and the answer is false. The project's home shows no document, so nothing goes in there either. In a place's own window the insert is
+   * told, and the answer is false. From the project's home, which shows no document, the insert goes to Writing first. In a place's own window the insert is
    * posted to the writing window as `message` (postInsert), never waiting for an editor here; without a message it has nothing to send.
    */
   const requestInsert = useCallback(async (run: (editor: Editor) => void, message?: InsertMessage): Promise<boolean> => {
@@ -439,8 +439,11 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       postInsert(message, t);
       return true;
     }
-    if (!placeRef.current) { toast(t("insert_doc_closed")); return false; }
-    openDocument();
+    // The project's home shows no document: the insert takes the student to Writing, where the document is, and goes in there.
+    if (!placeRef.current) {
+      const pid = projectIdRef.current;
+      if (!pid || !(await go(placeHref(pid, "writing")))) { toast(t("insert_doc_closed")); return false; }
+    } else openDocument();
     // The document the insert was asked for: one switched to while it waited (A locked, then B chosen) does not take it.
     const askedFor = currentDocRef.current?.id ?? null;
     let ed = liveOf(editorRef.current);
@@ -454,7 +457,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     if (!ed || (askedFor !== null && currentDocRef.current?.id !== askedFor)) { toast(t("insert_doc_closed")); return false; }
     run(ed);
     return true;
-  }, [openDocument, waitForEditor, t]);
+  }, [openDocument, waitForEditor, go, t]);
 
   // v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor, opening it first when it is closed here.
   useSyncReceiver(requestInsert);
