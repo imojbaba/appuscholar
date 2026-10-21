@@ -1021,6 +1021,24 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(blobOf("p1", "idea_intake").body).toBe("{not json");
   });
 
+  it("a preference kind (close_prefs) has no R16 ask, as rs_prefs; a tool's work kind (design_reg) keeps it (fix round 1)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "close_prefs", body: JSON.stringify({ k: 6 }), keyVersion: 0, deks: [] }, { projectId: "p1", kind: "design_reg", body: JSON.stringify({ type: "drug" }), keyVersion: 0, deks: [] }];
+    const p = await mount("close_prefs", "p1");
+    const w = await mount("design_reg", "p1");
+    await until(() => !p.b.loading && !w.b.loading);
+    server.blobs = server.blobs.map((b) => ({ ...b, body: "{not json", version: 2 }));
+    act(() => { p.b.set({ k: 8 }); w.b.set({ type: "device" }); });
+    await act(async () => { await p.b.flush(); await w.b.flush(); });
+    expect([p.b.broken, w.b.broken]).toEqual([true, true]);
+    // The next set: the guarded kind takes it as the panel's go-ahead and saves; the preference stays held, never saved over the blob unasked.
+    act(() => { p.b.set({ k: 5 }); w.b.set({ type: "observational" }); });
+    await act(async () => { await p.b.flush(); await w.b.flush(); });
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(JSON.parse(blobOf("p1", "design_reg").body)).toEqual({ type: "observational" });
+    expect(blobOf("p1", "close_prefs").body).toBe("{not json");
+    expect(putsTo("p1", "close_prefs")).toHaveLength(1);
+  });
+
   it("a value held over a broken blob is not sent by the held-blobs drain once the panel goes away (no panel to ask, R16)", async () => {
     server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
     const s = await mount("citations", "p1");

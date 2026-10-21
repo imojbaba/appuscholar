@@ -3,6 +3,7 @@ import { z } from "zod";
 /*
  * Viva practice (v1's viva dialog, session E). The student's answers are their own: the app keeps them and never reads or grades them, and
  * nothing here is ever inserted into a document (rule 4). Loose: a field a later version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): viva_log is guarded, the panel asking before it sets over a blob that does not open.
  */
 
 /** v1 appu_viva (vivaSave 3625-3631; v1 keeps the last 60): when (ms), who asked ("viva" or "conf", 1136), the question and the student's answer. */

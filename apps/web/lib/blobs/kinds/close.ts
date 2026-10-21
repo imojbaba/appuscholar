@@ -3,6 +3,7 @@ import { z } from "zod";
 /*
  * The closeness check (v1 `close`, session E). Its sources and results are never stored; only its two settings are. Loose: a field a later
  * version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): close_prefs is not guarded (a setting never asks before it sets over a blob that does not open).
  */
 
 /**

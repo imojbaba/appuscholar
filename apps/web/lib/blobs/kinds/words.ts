@@ -3,6 +3,8 @@ import { z } from "zod";
 /*
  * Words and grammar (v1 `words`, session D). The dictionary cache stays in memory (Global Constraints), never here. Objects are loose: a field
  * a later version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): words_bank is guarded (the panel asks before it sets over a blob that does not open);
+ * words_prefs is not (a setting never asks).
  */
 
 const str = z.string();

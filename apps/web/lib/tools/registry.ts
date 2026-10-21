@@ -32,12 +32,17 @@ export { TOOL_TABS, type ToolTab };
 
 /**
  * What the home knows of a stage from one module: a line for its row (none until there is something to say), and whether work has started.
- * `detail` is a message key, shown through t() with `vars` (Task G3: facts() has no t, and every string goes through it).
+ * `detail` is a message key, shown through t() with `vars` (Task G3: facts() has no t, and every string goes through it). A stage 3 to 6 row
+ * shows its modules' lines; Writing's row shows the draft's words first, then its modules' lines after " · ". A facts() that throws loses its line only.
  */
 export type ToolFacts = { detail?: string; vars?: Record<string, string | number>; started: boolean };
 /** The stage's decrypted blobs, as ProjectHome reads them: each kind's opened value and when it was written. */
 export type StageBlobs = Partial<Record<BlobKind, { value: unknown; updatedAt: string }>>;
-/** One part of the project export a module adds (Task G3 lists it in the export dialog and puts its files in the zip). */
+/**
+ * One part of the project export a module adds (Task G3 lists it in the export dialog and puts its files in the zip). Its files go under
+ * `<tool>/` (a path already in the zip, or `unreadable.txt`, is refused and the export fails); `part` is unique across modules and is never a
+ * built-in part's id (lib/export/moduleParts refuses it).
+ */
 export type ExportPartDef = {
   part: string; labelKey: string; detailKey: string; formatKey: string; ticked: boolean;
   build(d: ExportDeps): Promise<Array<{ path: string; data: string | Blob }>>;

@@ -3,6 +3,7 @@ import { z } from "zod";
 /*
  * My writing style (v1 `style`, session D): the profile, the samples' features (never their text, v1 6368-6374) and the declaration and checks.
  * Objects are loose: a field a later version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): all three kinds are guarded, the panel asking before it sets over a blob that does not open.
  */
 
 const str = z.string();

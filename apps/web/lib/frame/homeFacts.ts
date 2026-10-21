@@ -48,9 +48,18 @@ export function homeFacts(
 }
 
 /**
- * A stage 3 to 6 row's facts (Task G3, ruling R6): what each of the stage's modules that is built and declares facts says of the stage's
+ * A stage row's tool facts (Task G3, ruling R6): what each of the stage's modules that is built and declares facts says of the stage's
  * blobs, in the order given (the registry's). The modules come in as arguments, so this file never reads the registry while it loads.
+ * A module whose facts throw drops its own line only (fix round 1): the home and the other modules' lines still show, and the error is logged.
  */
 export function toolFacts(mods: readonly ToolModule[], b: StageBlobs): ToolFacts[] {
-  return mods.flatMap((m) => (m.built && m.facts ? [m.facts(b)] : []));
+  return mods.flatMap((m) => {
+    if (!m.built || !m.facts) return [];
+    try {
+      return [m.facts(b)];
+    } catch (e) {
+      console.error("A tool module's home facts failed; its line is left out.", e);
+      return [];
+    }
+  });
 }

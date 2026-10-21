@@ -4,6 +4,7 @@ import { z } from "zod";
  * Design and ethics (v1 `design`, session A): one blob per v1 sub-tool key, `appu_design_<key>` for reg, proto, ec, ctri, pi and budget
  * (designGet/designSet 5873-5874), each the object v1 stores, with its `done` flag. Every field is optional, as v1's designGet answers {} for a
  * key never saved and each sub-tool writes its fields as the student fills them. Objects are loose: a field a later version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): every design kind is guarded, its panel asking before it sets over a blob that does not open.
  */
 
 const str = z.string();

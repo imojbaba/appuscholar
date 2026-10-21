@@ -14,17 +14,19 @@ import type { ExportPartDef } from "../lib/tools/registry";
  * Task G3 (ruling R7): one tool module mocked as built, declaring one export part, as a session's module does. Its build reads the project's
  * blobs through the export's deps and hands back its files.
  */
-const mod = vi.hoisted(() => ({
-  part: {
+const mod = vi.hoisted(() => {
+  const part = {
     part: "designPack", labelKey: "exp_part_design_pack", detailKey: "exp_detail_design_pack", formatKey: "exp_format_text", ticked: true,
     build: async (d: { readBlob(kind: string): Promise<string | null>; now: Date }) => [
       { path: "design/pathway.txt", data: "Pathway: " + (await d.readBlob("design_reg")) },
       { path: "design/budget.csv", data: new Blob(["label,amount\nTravel,2500\n"], { type: "text/csv" }) },
       { path: "design/made.txt", data: d.now.toISOString() }
     ]
-  }
-}));
-vi.mock("@/components/tools/design", () => ({ built: true, exportParts: [mod.part] }));
+  };
+  // The module's list, changed in place by the collision test (and put back after it).
+  return { part, parts: [part] as unknown[] };
+});
+vi.mock("@/components/tools/design", () => ({ built: true, exportParts: mod.parts }));
 
 /** The copy as keys: the cards CSV and the labels come out as their keys, so the test reads what the export asked t() for. */
 const t = (k: string, v?: Record<string, string | number>) => (v ? k + JSON.stringify(v) : k);
@@ -235,6 +237,28 @@ describe("exportProject", () => {
     expect(progress.mock.calls.map((c) => c[0])).toEqual(["question", "designPack"]);
     // Not ticked: nothing of it.
     expect(files(await unzip(await exportProject(deps(), ["question"], opts())))).toEqual(["question.txt"]);
+  });
+
+  it("a module part cannot overwrite a file: a path already in the zip, unreadable.txt or another module's path is refused, and a part id must be its own (fix round 1)", async () => {
+    const part = (id: string, path: string): ExportPartDef => ({ ...mod.part, part: id, build: async () => [{ path, data: "x" }] });
+    // A built-in part's file, and the export's own unreadable.txt.
+    await expect(exportProject(deps(), ["question", part("designA", "question.txt")], opts())).rejects.toThrow(/question\.txt/);
+    await expect(exportProject(deps(), ["documents", part("designA", "documents/Draft.html")], opts())).rejects.toThrow(/documents\/Draft\.html/);
+    await expect(exportProject(deps(), [part("designA", "unreadable.txt")], opts())).rejects.toThrow(/unreadable\.txt/);
+    // Two modules' parts with the same path: the second is refused.
+    await expect(exportProject(deps(), [part("designA", "design/a.txt"), part("statsA", "design/a.txt")], opts())).rejects.toThrow(/design\/a\.txt/);
+    // Paths of their own are fine.
+    expect(files(await unzip(await exportProject(deps(), ["question", part("designA", "design/a.txt"), part("statsA", "stats/a.txt")], opts())))).toEqual(["design/a.txt", "question.txt", "stats/a.txt"]);
+    // A part id is a built-in part's or another module part's: the list refuses it.
+    try {
+      mod.parts.splice(0, mod.parts.length, mod.part, { ...mod.part, part: "question" });
+      expect(() => exportPartList()).toThrow(/question/);
+      mod.parts.splice(0, mod.parts.length, mod.part, { ...mod.part });
+      expect(() => exportPartList()).toThrow(/designPack/);
+    } finally {
+      mod.parts.splice(0, mod.parts.length, mod.part);
+    }
+    expect(exportPartList().at(-1)).toBe(mod.part);
   });
 
   it("reports each ticked part as it is built", async () => {

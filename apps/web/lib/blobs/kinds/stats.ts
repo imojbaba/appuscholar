@@ -3,6 +3,8 @@ import { z } from "zod";
 /*
  * Statistics and charts (v1 `stats`, session B). The data rows themselves are never stored (ruling R1): only the data sets' fingerprints, the
  * inserted results' run records and two preferences. Objects are loose: a field a later version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): stats_sets and stats_runs are guarded (the panel asks before it sets over a blob that does
+ * not open); stats_prefs is not (a toggle never asks).
  */
 
 const str = z.string();

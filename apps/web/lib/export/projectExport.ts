@@ -65,6 +65,8 @@ const KIND_NAME: Partial<Record<BlobKind, string>> = {
   idea_intake: "exp_part_question", citations: "exp_part_citations", ap_notes: "exp_part_notes", ap_cols: "exp_part_compare", shelf_cols: "exp_part_compare"
 };
 
+/** The list of what did not open: the export's own file, never a module's. */
+const UNREADABLE = "unreadable.txt";
 /** v1's pdDownload: a byte-order mark, then the CSV's text. */
 const BOM = "﻿";
 const csvBlob = (text: string) => new Blob([BOM + text], { type: "text/csv;charset=utf-8" });
@@ -134,7 +136,8 @@ function questionText(i: BlobShape<"idea_intake">, t: T): string {
  * blob that does not open (VaultError "corrupt"), or a blob that is not of its kind's shape, is left out and named in `unreadable.txt`, as the
  * account export lists it in index.json; the rest still export. Any other failure rejects.
  * A tool module's part (ExportPartDef, Task G3) comes after the built-in parts: its `build` gets the export's reads and time, and each file it
- * gives is put at its `path`. What a module's blobs do not open is the module's to say; a build that throws rejects the export.
+ * gives is put at its `path`. A path already in the zip (a built-in part's file, another module's) or `unreadable.txt` is refused: the export
+ * rejects rather than lose a file. What a module's blobs do not open is the module's to say; a build that throws rejects the export.
  */
 export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<ExportPart | ExportPartDef>, o: ProjectExportOptions): Promise<Blob> {
   const on = new Set(parts.filter((p): p is ExportPart => typeof p === "string"));
@@ -250,9 +253,12 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
   for (const m of parts) {
     if (typeof m === "string") continue;
     o.progress?.(m.part);
-    for (const f of await m.build({ ...d, now: o.now })) zip.file(f.path, f.data);
+    for (const f of await m.build({ ...d, now: o.now })) {
+      if (f.path === UNREADABLE || zip.file(f.path) !== null) throw new Error(`Export part "${m.part}" would overwrite ${f.path}.`);
+      zip.file(f.path, f.data);
+    }
   }
-  if (unreadable.length) zip.file("unreadable.txt", t("exp_unreadable_head") + "\n\n" + unreadable.join("\n") + "\n");
+  if (unreadable.length) zip.file(UNREADABLE, t("exp_unreadable_head") + "\n\n" + unreadable.join("\n") + "\n");
   return zip.generateAsync({ type: "blob", mimeType: "application/zip" });
 }
 

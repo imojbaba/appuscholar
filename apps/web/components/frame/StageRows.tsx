@@ -40,10 +40,13 @@ export function StageRows({ states, facts, toolFacts = {}, onOpen, onMark, compa
       return facts.checked ? t("detail_idea_checked") : t("detail_idea_unread");
     }
     if (s === "lit") return t("detail_lit", { kept: facts.kept, read: facts.read, highlights: facts.highlights, cards: facts.cards });
-    if (s === "writing") return t("detail_writing", { words: facts.draftWords });
-    // A built stage 3 to 6 place: its modules' lines, in the registry's order (Task G3). None (no module says anything yet, or the read is not
-    // back) shows nothing: the row says nothing it does not know.
-    return (toolFacts[s] ?? []).flatMap((f) => (f.detail ? [t(f.detail, f.vars)] : [])).join(" ");
+    // The modules' lines, in the registry's order (Task G3). None (no module says anything yet, or the read is not back) adds nothing: the row
+    // says nothing it does not know.
+    const lines = (toolFacts[s] ?? []).flatMap((f) => (f.detail ? [t(f.detail, f.vars)] : [])).join(" ");
+    // Writing: the draft's words first, then its tools' lines (My style, Words) after " · ".
+    if (s === "writing") return [t("detail_writing", { words: facts.draftWords }), lines].filter(Boolean).join(" · ");
+    // A built stage 3 to 6 place: its modules' lines only.
+    return lines;
   };
   const chip = (s: StageKey) => <span className={"home-chip " + CHIP[states[s]]} data-testid={"home-state-" + s}>{t("state_" + states[s].replace("-", "_"))}</span>;
   if (compact) return (

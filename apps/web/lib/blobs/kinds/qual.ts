@@ -3,6 +3,8 @@ import { z } from "zod";
 /*
  * Qualitative coding (v1 `qual`, session B). The tagged passages live in the documents (`span.qual-tag[data-qcode]`), never here (v1 6181-6184).
  * Objects are loose: a field a later version adds is kept.
+ * R16 guard (lib/blobs/useProjectBlob UNGUARDED): qual_codes is guarded (the panel asks before it sets over a blob that does not open);
+ * qual_prefs is not (a toggle never asks).
  */
 
 const str = z.string();

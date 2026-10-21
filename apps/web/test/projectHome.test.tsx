@@ -192,6 +192,21 @@ describe("the project home", () => {
     expect(text("home-detail-collect")).toBe(en.detail_not_built);
   });
 
+  it("a module whose facts throw drops its own line; the home and the other rows still show (fix round 1)", async () => {
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      h.designBuilt = true;
+      h.designFacts = () => { throw new Error("facts broke"); };
+      server.blobs.design_reg = { value: { type: "drug" }, updatedAt: "2026-10-12T00:00:00Z" };
+      mount();
+      await until(() => text("home-detail-lit").includes("Highlights: 2") && h.api.mock.calls.some(([u]) => u === "/projects/p1/blobs/design_reg"));
+      await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+      expect(text("home-detail-design")).toBe("");
+      expect(text("home-state-design")).toBe(en.state_in_progress);
+      expect(quiet).toHaveBeenCalledWith(expect.stringContaining("facts"), expect.any(Error));
+    } finally { quiet.mockRestore(); }
+  });
+
   it("a built stage whose module gives no line shows none", async () => {
     h.designBuilt = true;
     h.designFacts = () => ({ started: false });
