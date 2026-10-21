@@ -41,7 +41,8 @@ export function Protocol({ projectId }: { projectId: string }) {
     const o = read();
     const doc = protocolMarkdown(o);
     if (doc === null) { setMsg(DESIGN_TOASTS.protoEmpty); return; }
-    store(o);
+    // A save that was refused (still opening, locked, or a blob that does not open and the student said No) stops the generator: the notes above say why.
+    if (!store(o)) return;
     if (!(await insert(doc))) setMsg(t("design_insert_failed"));
   };
   return (

@@ -60,7 +60,8 @@ export function Ethics({ projectId }: { projectId: string }) {
   const statement = async () => {
     clear();
     const f = read();
-    store(f);
+    // A save that was refused (still opening, locked, or a blob that does not open and the student said No) stops the generator: the notes above say why.
+    if (!store(f)) return;
     const r = ethicsStatement(f);
     if ("error" in r) { setStMsg(r.error); return; }
     if (await insert(r.heading + "\n" + r.text)) setRemind(true);
@@ -69,7 +70,8 @@ export function Ethics({ projectId }: { projectId: string }) {
   const consent = async () => {
     clear();
     const f = read();
-    store(f);
+    // A save that was refused (still opening, locked, or a blob that does not open and the student said No) stops the generator: the notes above say why.
+    if (!store(f)) return;
     const r = consentMarkdown(f);
     if (typeof r !== "string") { setCoMsg(r.error); return; }
     if (!(await insert(r))) setCoMsg(t("design_insert_failed"));

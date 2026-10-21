@@ -222,6 +222,27 @@ describe("Protocol (Task A2)", () => {
     expect(h.toast.mock.calls.map((x) => x[0])).toEqual([E.design_inserted]);
   });
 
+  it("Generate stops when its save is refused: nothing is inserted, no Inserted toast, nothing stored", async () => {
+    // Locked with nothing read, then a blob that does not open and the student says No.
+    h.locked = true;
+    await render();
+    await fill({ bg: "x" });
+    await click("proto-generate");
+    expect(h.inserts).toHaveLength(0);
+    expect(h.toast).not.toHaveBeenCalled();
+    expect(h.sets).toHaveLength(0);
+    await act(async () => { roots.splice(0).forEach((r) => r.unmount()); });
+    document.body.innerHTML = "";
+    h.locked = false; h.broken = true; h.confirm.mockReturnValue(false);
+    await render();
+    await fill({ bg: "x" });
+    await click("proto-generate");
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    expect(h.inserts).toHaveLength(0);
+    expect(h.toast).not.toHaveBeenCalled();
+    expect(h.sets).toHaveLength(0);
+  });
+
   it("persists and reloads: a new mount shows the saved texts", async () => {
     const all = GOLDEN.proto.find((c) => c.id === "all-fields")!;
     const root = await render();

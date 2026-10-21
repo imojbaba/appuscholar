@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EC_DOCS, ecMinorsNote } from "@appuscholar/core";
 import en from "../messages/en.json";
 import designEn from "../messages/tools/design.en.json";
+import designHi from "../messages/tools/design.hi.json";
 
 /*
  * Task A2, Ethics and consent (v1 ecRender, ecMinorsNote, ecToggle, ecSave, ecStatement, ecGenerateConsent 5979-6070 and the dialog 1862-1887). The
@@ -286,6 +287,31 @@ describe("Ethics and consent (Task A2)", () => {
       expect(h.store.get("design_ec"), c.id).toEqual(c.saved);
       await act(async () => { root.unmount(); });
       document.body.innerHTML = "";
+    }
+  });
+
+  it("a generator stops when its save is refused: nothing is inserted, no Inserted toast, nothing stored (locked, and broken answered No)", async () => {
+    for (const mode of ["locked", "broken"] as const) {
+      for (const button of ["ec-statement", "consent-generate"]) {
+        h.sets.length = 0; h.inserts.length = 0; h.toast.mockClear(); h.confirm.mockReset(); h.confirm.mockReturnValue(false);
+        h.locked = mode === "locked"; h.broken = mode === "broken";
+        const root = await render();
+        await fill({ status: "approved", title: "T", pi: "P" });
+        await click(button);
+        expect(h.inserts, mode + button).toHaveLength(0);
+        expect(h.toast, mode + button).not.toHaveBeenCalled();
+        expect(h.sets, mode + button).toHaveLength(0);
+        expect($(T("ec-statement-reminder")), mode + button).toBeNull();
+        await act(async () => { root.unmount(); });
+        document.body.innerHTML = "";
+      }
+    }
+  });
+
+  it("the Hindi file has no word for exemption (rule 9): no value with छूट or exempt", () => {
+    for (const [k, v] of Object.entries(designHi as Record<string, string>)) {
+      expect(v, k).not.toContain("छूट");
+      expect(v, k).not.toMatch(/exempt/i);
     }
   });
 
