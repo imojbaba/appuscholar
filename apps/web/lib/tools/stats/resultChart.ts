@@ -109,7 +109,7 @@ function build(d: ParsedData, test: StatsTestKey, form: StatsForm, values: Recor
     }
     case "spearman": {
       const i1 = num(v("v1")), i2 = num(v("v2")), p = pairsOf(d, i1, i2);
-      return { kind: "scatter", title: w("stats_chart_scatter", { x: nameAt(i1), y: nameAt(i2) }), xLabel: nameAt(i1), yLabel: nameAt(i2), points: p.map((q) => ({ x: q[0], y: q[1] })), fit: null };
+      return { kind: "scatter", title: w("stats_chart_scatter_and", { x: nameAt(i1), y: nameAt(i2) }), xLabel: nameAt(i1), yLabel: nameAt(i2), points: p.map((q) => ({ x: q[0], y: q[1] })), fit: null };
     }
     case "mannwhitney": {
       const dvI = num(v("dv")), ivI = num(v("iv")), g = statsGroupBy(ctx, dvI, ivI), keys = Object.keys(g).slice(0, 2);

@@ -105,5 +105,9 @@
   "stats_chart_path_b": "b",
   "stats_chart_path_cp": "c′ (direct)",
   "stats_chart_path_c": "c (total)",
-  "stats_chart_path_ab": "a × b (indirect)"
+  "stats_chart_path_ab": "a × b (indirect)",
+  "stats_res_copy": "Copy",
+  "stats_res_copied": "Copied.",
+  "stats_res_copy_failed": "Could not copy. Select the text instead.",
+  "stats_chart_scatter_and": "{x} and {y}"
 }

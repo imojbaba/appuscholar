@@ -75,6 +75,12 @@ describe("which tests draw what", () => {
     expect(specOf(csv, "mannwhitney", { dv: "1", iv: "0" }).spec).toMatchObject({ kind: "bars", labels: ["A", "B"], values: [smedian(A), smedian(B)] });
   });
 
+  it("Spearman's title joins the two names with 'and', as v1 does (13201)", () => {
+    const { spec } = specOf("a,b\n1,2\n2,1\n3,4\n4,3\n5,6\n6,5", "spearman", { v1: "0", v2: "1" });
+    expect(spec).toMatchObject({ kind: "scatter", title: "a and b", fit: null });
+    expect(specOf("a,b\n1,2\n2,1\n3,4\n4,3\n5,6\n6,5", "pearson", { v1: "0", v2: "1" }).spec).toMatchObject({ title: "a vs b" });
+  });
+
   it("a histogram counts every value once, in 5 to 10 bins by the square root of n", () => {
     const vals = Array.from({ length: 50 }, (_, i) => (i * 7) % 23);
     const { spec } = specOf("x\n" + vals.join("\n"), "desc", { dv: "0" });

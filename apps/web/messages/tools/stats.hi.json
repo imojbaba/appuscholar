@@ -106,5 +106,9 @@
   "stats_chart_path_b": "b",
   "stats_chart_path_cp": "c′ (सीधा)",
   "stats_chart_path_c": "c (कुल)",
-  "stats_chart_path_ab": "a × b (अप्रत्यक्ष)"
+  "stats_chart_path_ab": "a × b (अप्रत्यक्ष)",
+  "stats_res_copy": "कॉपी करें",
+  "stats_res_copied": "कॉपी हो गया।",
+  "stats_res_copy_failed": "कॉपी नहीं हो सका। वाक्य को चुनकर कॉपी कीजिए।",
+  "stats_chart_scatter_and": "{x} और {y}"
 }

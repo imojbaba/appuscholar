@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { PD_DEFAULT, pdTransform, type GenVerdict, type ParsedData, type PdChoice, type PdFound, type StatsForm, type StatsOk, type StatsTestKey } from "@appuscholar/core";
+import type { StatsRuns } from "@/lib/blobs/kinds/stats";
 import type { ChartSpec } from "./resultChart";
 import { looksSemicolon, NO_SKIPPED, parseSliced, scanSliced, semicolonsToTabs, skippedLines, type SliceOpts, type Skipped } from "./intake";
 
@@ -25,7 +26,9 @@ export type Outcome =
   | { kind: "undefined"; html: string }
   | { kind: "ok"; res: StatsOk; html: string; chart: ChartSpec | null };
 /** The plain-language explanation of the shown result: not asked, under way, here, or failed (the sentence to show). It is never part of the sentence that is inserted. */
-export type ExplainState = { status: "idle" } | { status: "busy" } | { status: "done"; text: string } | { status: "failed"; message: string };
+export type ExplainState = { status: "idle" } | { status: "busy" } | { status: "done"; text: string } | { status: "failed"; message: string } | { status: "cancelled"; message: string };
+/** A run record waiting to be saved, with the id its sentence carries in the document. */
+export type PendingRun = { id: string; rec: StatsRuns[string] };
 /** The last run: the table it ran on, the form it ran with, and what it came to. */
 export type LastRun = { data: ParsedData; test: StatsTestKey; form: StatsForm; outcome: Outcome; explain: ExplainState };
 /** Practice mode's gate (v1 genGateShow, 12580): open or not, the design chosen, the verdict shown and whether the last change was a switch. */
@@ -62,12 +65,14 @@ export type LabState = {
   gate: GateState;
   /** B2's last result, kept so a tab switch does not lose it. */
   lastRun: LastRun | null;
+  /** Run records of sentences already in the document, waiting for `stats_runs` to be known, unlocked and not broken (R16); the Data tab writes them from an effect. */
+  pendingRuns: PendingRun[];
 };
 
 export const NO_GATE: GateState = { open: false, design: "", verdict: null, switched: false };
 const EMPTY: LabState = {
   text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, registered: null, busy: false,
-  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null
+  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null, pendingRuns: []
 };
 
 const labs = new Map<string, LabState>();

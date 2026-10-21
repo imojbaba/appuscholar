@@ -27,7 +27,9 @@ const h = vi.hoisted(() => ({
   insert: vi.fn(async (_html: string, _o?: unknown) => true),
   api: vi.fn(),
   askPd: vi.fn(async (_sc: unknown) => "send" as "send" | "mask" | "cancel"),
-  calls: [] as string[]
+  calls: [] as string[],
+  /** Re-draws every blob hook of the mounted tab (a read that finished, a vault that opened). */
+  forces: new Set<() => void>()
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: vi.fn(), safeFileName: (s: string) => s }));
@@ -48,13 +50,15 @@ vi.mock("@/lib/ai/useCallAI", async () => {
     })
   };
 });
+// The Run area's own personal-data question (names written in the request), answered by the test like callAI's.
+vi.mock("@/lib/ai/pdDialog", () => ({ askPd: async (sc: unknown) => { h.calls.push("askPd"); return h.askPd(sc); } }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useReducer, useRef, useEffect } = await import("react");
   return {
     useProjectBlob: (kind: string) => {
       const [, force] = useReducer((n: number) => n + 1, 0);
       const alive = useRef(true);
-      useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+      useEffect(() => { alive.current = true; h.forces.add(force); return () => { alive.current = false; h.forces.delete(force); }; }, [force]);
       return {
         value: h.store[kind] ?? null, loading: h.loading[kind] ?? false, locked: h.locked[kind] ?? false, broken: h.broken[kind] ?? false, readOnly: false,
         set: (next: unknown) => {
@@ -110,6 +114,8 @@ async function click(testId: string) {
   if (!el) throw new Error("no element " + testId);
   await act(async () => { el.click(); });
 }
+/** The blobs' state changed outside the tab (a read finished, the vault opened): every hook of the tab draws again. */
+async function rerender() { await act(async () => { for (const f of [...h.forces]) f(); }); }
 async function settle(ms = 0) { await act(async () => { await new Promise((r) => setTimeout(r, ms)); }); }
 /** Pastes a table and parses it. */
 async function load(csv: string, name = "") {
@@ -372,20 +378,6 @@ describe("Insert into document", () => {
     first.destroy(); second.destroy();
   });
 
-  it("a table that is not registered is inserted without a tag and leaves no run record", async () => {
-    h.loading.stats_sets = true; // the saved list of data sets is not known yet, so nothing is registered
-    await mount();
-    await load(TWO, "Study 1");
-    await pick("stats-test", "ttestInd");
-    await click("stats-run-btn");
-    await click("stats-insert");
-    const html = h.insert.mock.calls[0]![0] as string;
-    expect(html).toBe("<p>" + text("stats-sentence").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</p>");
-    expect(html).not.toContain("data-run");
-    expect(h.store.stats_runs).toBeUndefined();
-    expect(h.toast).toHaveBeenCalledWith(E.stats_res_inserted);
-  });
-
   it("a document that did not take the sentence leaves no record and no toast", async () => {
     h.insert.mockResolvedValue(false);
     await mount();
@@ -397,18 +389,65 @@ describe("Insert into document", () => {
     expect(h.toast).not.toHaveBeenCalled();
   });
 
-  it("a locked vault does not drop the record: it is handed to the blob hook, which holds it until the vault opens", async () => {
-    h.locked.stats_runs = true;
+  it("the whole vault locked: Insert tags the sentence at once, writes nothing, and after the unlock one record exists and the set is registered", async () => {
+    h.locked.stats_sets = true; h.locked.stats_runs = true;
     await mount();
     await load(TWO, "Study 1");
     await pick("stats-test", "ttestInd");
     await click("stats-run-btn");
     await click("stats-insert");
-    const id = /data-run="([^"]+)"/.exec(h.insert.mock.calls[0]![0] as string)![1]!;
-    expect(Object.keys(h.store.stats_runs as object)).toEqual([id]);
+    const html = h.insert.mock.calls[0]![0] as string;
+    const id = /^<p><span class="stat-tag" data-run="(r[0-9a-z]+)">/.exec(html)![1]!; // tagged although nothing could be registered
+    expect(h.writes.filter((w) => w.kind === "stats_runs" || w.kind === "stats_sets")).toEqual([]);
+    expect(h.toast).toHaveBeenCalledWith(E.stats_res_inserted);
+    expect(getLab("p1").pendingRuns.map((p) => p.id)).toEqual([id]); // held, not dropped
+    // the student opens the vault
+    delete h.locked.stats_sets; delete h.locked.stats_runs;
+    await rerender();
+    const runs = h.store.stats_runs as Record<string, { ds: string; sentence: string }>;
+    expect(Object.keys(runs)).toEqual([id]);
+    expect(runs[id]).toMatchObject({ ds: "Study 1", sentence: text("stats-sentence") });
+    expect(Object.keys(h.store.stats_sets as object)).toEqual(["Study 1"]);
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toHaveLength(1);
+    expect(getLab("p1").pendingRuns).toEqual([]);
   });
 
-  it("a saved list of runs that does not open: asks once; 'no' inserts the sentence untagged and saves nothing, 'yes' saves", async () => {
+  it("only stats_runs still loading: the sentence is tagged, nothing is written before the list is known, then one record", async () => {
+    h.loading.stats_runs = true;
+    await mount();
+    await load(TWO);
+    await pick("stats-test", "ttestInd");
+    await click("stats-run-btn");
+    await click("stats-insert");
+    const id = /data-run="([^"]+)"/.exec(h.insert.mock.calls[0]![0] as string)![1]!;
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toEqual([]);
+    delete h.loading.stats_runs;
+    await rerender();
+    const runs = h.store.stats_runs as Record<string, { ds: string }>;
+    expect(Object.keys(runs)).toEqual([id]);
+    expect(runs[id]!.ds).toBe("Untitled data"); // no name was typed, so the name v1 gives (rtDsName)
+  });
+
+  it("stats_runs loading and broken: Insert writes nothing and replaces nothing; once known it asks once, and 'yes' saves the one record", async () => {
+    h.loading.stats_runs = true; h.broken.stats_runs = true;
+    await mount();
+    await load(TWO, "Study 1");
+    await pick("stats-test", "ttestInd");
+    await click("stats-run-btn");
+    await click("stats-insert");
+    await click("stats-insert");
+    expect(h.confirm).not.toHaveBeenCalled();
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toEqual([]);
+    delete h.loading.stats_runs;
+    await rerender();
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    expect(h.confirm).toHaveBeenCalledWith(E.stats_res_runs_confirm);
+    expect(Object.keys(h.store.stats_runs as object)).toHaveLength(2); // both inserts, one confirm
+    await click("stats-insert");
+    expect(h.confirm).toHaveBeenCalledTimes(1); // once for this visit
+  });
+
+  it("a saved list of runs that does not open, and the student says no: the sentences stay tagged, nothing is saved over the list, and it is not asked again", async () => {
     h.broken.stats_runs = true;
     h.confirm.mockReturnValue(false);
     await mount();
@@ -417,25 +456,12 @@ describe("Insert into document", () => {
     await click("stats-run-btn");
     await click("stats-insert");
     expect(h.confirm).toHaveBeenCalledTimes(1);
-    expect(h.confirm).toHaveBeenCalledWith(E.stats_res_runs_confirm);
-    expect(h.insert.mock.calls[0]![0]).not.toContain("data-run");
-    expect(h.store.stats_runs).toBeUndefined();
-    h.confirm.mockReturnValue(true);
-    await click("stats-insert");
-    expect(h.confirm).toHaveBeenCalledTimes(1); // once for this visit
-    expect(h.insert.mock.calls[1]![0]).not.toContain("data-run");
-  });
-
-  it("a saved list of runs that does not open, and the student says yes: the run is saved", async () => {
-    h.broken.stats_runs = true;
-    await mount();
-    await load(TWO, "Study 1");
-    await pick("stats-test", "ttestInd");
-    await click("stats-run-btn");
+    expect(h.insert.mock.calls[0]![0]).toContain("data-run");
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toEqual([]);
     await click("stats-insert");
     expect(h.confirm).toHaveBeenCalledTimes(1);
-    expect(h.insert.mock.calls[0]![0]).toContain("data-run");
-    expect(Object.keys(h.store.stats_runs as object)).toHaveLength(1);
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toEqual([]);
+    expect(getLab("p1").pendingRuns).toEqual([]);
   });
 
   it("stats_runs keeps the newest 300", async () => {
@@ -494,7 +520,9 @@ describe("Explain in plain language", () => {
     await act(async () => { answer("cancel"); });
     await settle();
     expect(h.api).not.toHaveBeenCalled();
-    expect(text("stats-explain-failed")).toBe("Cancelled. Nothing was sent to the AI provider.");
+    expect(text("stats-explain-cancelled")).toBe("Cancelled. Nothing was sent to the AI provider.");
+    expect(tid("stats-explain-failed")).toBeNull(); // a quiet line, not the red banner
+    expect(document.body.querySelector('[role="alert"]')).toBeNull();
     expect(tid("stats-explain-out")).toBeNull();
 
     // 3. ask again and mask: one request, with the address masked and no cell of the table in it
@@ -557,6 +585,99 @@ describe("Explain in plain language", () => {
     expect(h.api).toHaveBeenCalledTimes(1);
     expect(tid("stats-explain-failed")).not.toBeNull();
     expect(tid("stats-explain-out")).toBeNull();
+  });
+});
+
+describe("Explain: a participant's name in the request (rule 2, Review Focus 2)", () => {
+  // The column "name" is flagged by core's pdScan (three names, each twice); the names are the groups, so they are in the tables and nowhere else is a name.
+  const NAMED = "name,score\nPriya Nair,7\nPriya Nair,8\nAmit Rao,5\nAmit Rao,6\nSara Khan,9\nSara Khan,10";
+  async function readyNamed() {
+    await mount();
+    await load(NAMED, "Study 1");
+    expect(getLab("p1").scan!.found.map((f) => f.name)).toEqual(["name"]); // the lab's scan flags the column
+    await pick("stats-test", "anova1");
+    await pick("stats-field-dv", "1");
+    await pick("stats-field-iv", "0");
+    await click("stats-run-btn");
+    expect(text("stats-results-html")).toContain("Priya Nair");
+  }
+  const bodyOf = () => JSON.parse((h.api.mock.calls[0]![1] as { body: string }).body) as { prompt: string };
+
+  it("the dialog shows before any request; cancel sends nothing", async () => {
+    let answer!: (v: "mask" | "send" | "cancel") => void;
+    h.askPd.mockImplementation(() => new Promise((res) => { answer = res; }));
+    await readyNamed();
+    await click("stats-explain");
+    await settle();
+    expect(h.calls).toEqual(["askPd"]);
+    expect(h.api).not.toHaveBeenCalled();
+    expect(h.askPd.mock.calls[0]![0]).toMatchObject({ counts: { name: 3 }, total: 3 });
+    await act(async () => { answer("cancel"); });
+    await settle();
+    expect(h.api).not.toHaveBeenCalled();
+    expect(h.calls).toEqual(["askPd"]);
+    expect(text("stats-explain-cancelled")).toBe("Cancelled. Nothing was sent to the AI provider.");
+    expect(document.body.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("mask: the request has no name, carries the same code for the same name in the tables, and the answer comes back", async () => {
+    h.askPd.mockResolvedValue("mask");
+    h.api.mockResolvedValue({ text: "[name 1] scored lower.", model: "m" });
+    await readyNamed();
+    await click("stats-explain");
+    await settle();
+    expect(h.calls).toEqual(["askPd", "api"]);
+    const { prompt } = bodyOf();
+    for (const n of ["Priya", "Nair", "Amit", "Rao", "Sara", "Khan"]) expect(prompt).not.toContain(n);
+    for (const c of ["[name 1]", "[name 2]", "[name 3]"]) expect(prompt).toContain(c);
+    const n = (c: string) => prompt.split(c).length - 1;
+    expect(n("[name 1]")).toBeGreaterThan(0);
+    expect(n("[name 2]")).toBe(n("[name 1]")); // the same name is the same code wherever it stands, so each group is counted alike
+    expect(text("stats-explain-out")).toContain("scored lower");
+    // the sentence on screen and the table are the student's own, unmasked
+    expect(text("stats-results-html")).toContain("Priya Nair");
+  });
+
+  it("send as it is: one request with the names in it", async () => {
+    h.askPd.mockResolvedValue("send");
+    h.api.mockResolvedValue({ text: "ok", model: "m" });
+    await readyNamed();
+    await click("stats-explain");
+    await settle();
+    expect(h.api).toHaveBeenCalledTimes(1);
+    expect(h.askPd).toHaveBeenCalledTimes(1);
+    expect(bodyOf().prompt).toContain("Priya Nair");
+  });
+
+  it("no flagged column, no extra question: a plain result goes straight to callAI's own check", async () => {
+    h.api.mockResolvedValue({ text: "ok", model: "m" });
+    await mount();
+    await load(TWO, "Study 1");
+    await pick("stats-test", "ttestInd");
+    await click("stats-run-btn");
+    await click("stats-explain");
+    await settle();
+    expect(h.askPd).not.toHaveBeenCalled();
+    expect(h.api).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Copy", () => {
+  it("copies the sentence and says so in a quiet line, not a toast; says if it could not", async () => {
+    const write = vi.fn(async (_t: string) => undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: write } });
+    await mount();
+    await load(TWO);
+    await pick("stats-test", "ttestInd");
+    await click("stats-run-btn");
+    await click("stats-copy");
+    expect(write).toHaveBeenCalledWith(text("stats-sentence"));
+    expect(text("stats-copy-status")).toBe(E.stats_res_copied);
+    expect(h.toast).not.toHaveBeenCalled();
+    write.mockRejectedValueOnce(new Error("denied"));
+    await click("stats-copy");
+    expect(text("stats-copy-status")).toBe(E.stats_res_copy_failed);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
   });
 });
 
