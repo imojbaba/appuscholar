@@ -36,8 +36,11 @@ const STAGE2_DIRS = [
   "lib/cite", "lib/research", "lib/shelf", "lib/analyse", "lib/popout", "lib/blobs", "lib/ai",
 ];
 
-/** Keys whose value is a typed confirmation token, not copy: "DELETE" is also the HTTP method the API client sends. */
-const NOT_COPY = new Set(["erase_confirm_word"]);
+/**
+ * Keys whose value is also a data token, not copy: "DELETE" (a typed confirmation) is also the HTTP method the API client sends; the stage
+ * names of the project list's spoken summary ("idea", "writing", "review") are also the stage ids (StageKey).
+ */
+const NOT_COPY = new Set(["erase_confirm_word", "state_sum_idea", "state_sum_writing", "state_sum_review"]);
 
 /** Values worth guarding: 3+ characters with at least one letter or digit (so "✨", "…", "—" are skipped). */
 const values = new Set(

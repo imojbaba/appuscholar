@@ -280,16 +280,38 @@
 .frame-work.writing.with-ai { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; }
 .frame-doc .doc { min-height: 560px; }
 .frame-ai { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
-.home-interim, .start-interim, .list-interim { max-width: 860px; margin: 0 auto; padding: var(--s7); }
-.home-interim h1, .start-interim h1, .list-interim h1 { margin: 0 0 var(--s4); font-size: 26px; line-height: 1.25; }
+.home-interim, .start-interim { max-width: 860px; margin: 0 auto; padding: var(--s7); }
+.home-interim h1, .start-interim h1 { margin: 0 0 var(--s4); font-size: 26px; line-height: 1.25; }
 .home-interim ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
 .home-interim li a { display: flex; align-items: center; min-height: 48px; padding: 0 var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--card); color: var(--purple-800); font-weight: 600; text-decoration: none; }
 .home-interim li a:hover { background: var(--soft); }
-.list-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s3); }
-.list-rows { margin: var(--s4) 0 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
-.list-rows li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--card); }
-.list-rows .name { flex: 1 1 200px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
-.list-rows .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Task 8: all projects, six states each (canvas Projects). Started early and reopened share the amber; it is flag-ink, the token that keeps 3:1 on white. */
+.plist { max-width: 1240px; margin: 0 auto; padding: var(--s7); display: flex; flex-direction: column; gap: var(--s5); }
+.plist-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3); }
+.plist-head h1 { margin: 0; font-size: 26px; line-height: 1.25; }
+.plist-vault-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); }
+.plist-vault { margin: 0; align-self: flex-start; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--chip); color: var(--muted); }
+.plist-vault[data-state="on"] { background: var(--ok-bg); color: var(--ok-ink); }
+.plist-vault[data-state="off"] { background: var(--flag-bg); color: var(--flag-ink); }
+.plist-rows { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--s3); }
+.plist-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s4); padding: 18px 22px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.plist-row:hover { border-color: var(--line-strong); }
+.plist-open { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4) var(--s6); min-height: 44px; color: var(--ink); text-decoration: none; }
+.plist-open:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 4px; border-radius: 4px; }
+.plist-text { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; }
+.plist-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); font-weight: 700; font-size: 17px; overflow-wrap: anywhere; }
+.plist-meta { font-size: 13px; color: var(--muted); }
+.plist-bars { flex: 1 1 520px; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.plist-stage { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.plist-stage .plist-stage-name { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plist-bar { display: block; height: 8px; border-radius: 4px; background: var(--line-strong); }
+.plist-bar[data-state="ready"] { background: var(--ok-ink); }
+.plist-bar[data-state="in-progress"] { background: var(--purple-800); }
+.plist-bar[data-state="started-early"], .plist-bar[data-state="reopened"] { background: var(--flag-ink); }
+.plist-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.plist-legend { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: var(--s4); font-size: 13px; color: var(--muted); }
+.plist-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.plist-legend .plist-bar { width: 22px; height: 6px; border-radius: 3px; }
 
 /* Up to 1099px the AI pane goes under the document. */
 @media (max-width: 1099px) {
@@ -308,7 +330,12 @@
   .place-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .place-tabs a { flex: none; }
   .place-body, .frame-work { padding: 16px 16px 0; }
-  .home-interim, .start-interim, .list-interim, .frame-note { padding: 16px; }
+  .home-interim, .start-interim, .frame-note { padding: 16px; }
+  .plist { padding: 16px; }
+  .plist-row { padding: 12px 16px; }
+  .plist-bars { flex-basis: 100%; gap: 4px; }
+  .plist-stage .plist-stage-name { font-size: 11px; }
+  .plist button, .plist-head a { min-height: 44px; }
   .doc { min-height: 460px; overflow: visible; }
   .doc > .editor { overflow: visible; }
   .card-head { padding: 10px 12px; }

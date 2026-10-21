@@ -265,7 +265,41 @@ export const V2_STRINGS = {
   blob_switch_held: {
     en: "Some changes are waiting for your passphrase. They are kept and saved once you unlock.",
     hi: "कुछ बदलाव आपके पासफ़्रेज़ की प्रतीक्षा कर रहे हैं। वे रखे गए हैं और अनलॉक करते ही सहेजे जाएंगे।"
-  }
+  },
+  // Task 8: all projects, six states each (canvas Projects). DRAFT Hindi.
+  list_title: { en: "Your projects", hi: "आपके प्रोजेक्ट" },
+  list_meta: { en: "{field}. Edited {date}.", hi: "{field}। {date} बदला गया।" },
+  list_meta_nofield: { en: "Edited {date}.", hi: "{date} बदला गया।" },
+  list_today: { en: "today", hi: "आज" },
+  list_yesterday: { en: "yesterday", hi: "कल" },
+  list_stage_idea: { en: "Idea", hi: "विचार" },
+  list_stage_lit: { en: "Literature", hi: "साहित्य" },
+  list_stage_design: { en: "Design", hi: "डिज़ाइन" },
+  list_stage_collect: { en: "Analysis", hi: "विश्लेषण" },
+  list_stage_writing: { en: "Writing", hi: "लेखन" },
+  list_stage_review: { en: "Review", hi: "समीक्षा" },
+  list_legend: { en: "What the bars show", hi: "पट्टियाँ क्या दिखाती हैं" },
+  list_legend_ready: { en: "Ready", hi: "तैयार" },
+  list_legend_progress: { en: "In progress", hi: "चल रहा है" },
+  list_legend_early: { en: "Started early or reopened", hi: "जल्दी शुरू हुआ या फिर से खुला" },
+  list_legend_none: { en: "Not started", hi: "शुरू नहीं हुआ" },
+  list_vault_on: { en: "Unlocked. Titles are locked to you.", hi: "खुला है। शीर्षक केवल आपके लिए बंद हैं।" },
+  list_vault_locked: { en: "Titles are locked. Enter your passphrase to see them.", hi: "शीर्षक बंद हैं। उन्हें देखने के लिए अपना पासफ़्रेज़ लिखें।" },
+  list_vault_off: { en: "Vault off. Titles are readable on the server.", hi: "तिजोरी बंद है। शीर्षक सर्वर पर पढ़े जा सकते हैं।" },
+  list_unlock: { en: "Unlock", hi: "खोलें" },
+  // A row's spoken summary (lib/frame/stateSummary): "Idea ready; literature and writing in progress; design started early".
+  state_sum_idea: { en: "idea", hi: "विचार" },
+  state_sum_lit: { en: "literature", hi: "साहित्य" },
+  state_sum_design: { en: "design", hi: "डिज़ाइन" },
+  state_sum_collect: { en: "analysis", hi: "विश्लेषण" },
+  state_sum_writing: { en: "writing", hi: "लेखन" },
+  state_sum_review: { en: "review", hi: "समीक्षा" },
+  state_sum_and: { en: "{a} and {b}", hi: "{a} और {b}" },
+  state_sum_ready: { en: "{stages} ready", hi: "{stages} तैयार" },
+  state_sum_in_progress: { en: "{stages} in progress", hi: "{stages} चल रहा है" },
+  state_sum_started_early: { en: "{stages} started early", hi: "{stages} जल्दी शुरू हुआ" },
+  state_sum_reopened: { en: "{stages} reopened", hi: "{stages} फिर से खुला" },
+  state_sum_none: { en: "Nothing started yet", hi: "अभी कुछ शुरू नहीं हुआ" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */
