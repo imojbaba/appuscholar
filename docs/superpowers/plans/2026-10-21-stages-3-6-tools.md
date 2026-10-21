@@ -55,7 +55,7 @@ Then five sessions (A to E) build the tools in parallel. Each touches only its o
 Plus these exceptions:
 - D: `apps/web/proxy.ts` and `test/proxy.test.ts`, for one host.
 - B and D: rows in `aiuse-labels.test.ts` and rules in `packages/core/src/aiuse.ts`.
-- E: the toolbar's Viva button in `components/editor/ActionRow.tsx`.
+- E: the toolbar's Viva button in `components/document/ActionRow.tsx`.
 
 Anything else is a groundwork change: stop and report it.
 
@@ -425,7 +425,7 @@ No engine exists for closeness or PPT. Port with goldens first.
     - Review Focus 5;
     - "slide models of 10 golden documents match v1".
 - **Task E4, Viva.**
-  - The Review tab and the toolbar's Viva button (`ActionRow.tsx` stops toasting "arrives in a later phase" and opens Review › Viva).
+  - The Review tab and the toolbar's Viva button (`components/document/ActionRow.tsx` stops toasting "arrives in a later phase" and opens Review › Viva).
   - "Who is asking?"; "Get a question" / "Another question" (v1 prompt at 3612, temperature 0.6, 700 tokens; at least 25 words selected); answer; "Save my answer" (`viva_log`, last 60).
   - Never insertable (rule 4). An AI-use rule and label row are added.
   - Test: "a viva question cannot be inserted into the document".
