@@ -15,12 +15,14 @@ const ACTION: Record<StageState, string> = { ready: "home_act_reopen", "in-progr
 /**
  * "Where this project stands" (canvas Main): each stage's name, its tools, what it holds, its state as a chip (the word always shown) and the way
  * in (Continue, Open or Reopen), with a More menu that marks the stage ready or takes the mark back (no confirm: it is undone the same way).
+ * `compact` is the phone's (canvas Phone): each row the name, what it holds and the chip, the whole row opening the stage, with the More menu beside it.
  */
-export function StageRows({ states, facts, onOpen, onMark }: {
+export function StageRows({ states, facts, onOpen, onMark, compact = false }: {
   states: Record<StageKey, StageState>;
   facts: HomeFacts;
   onOpen(stage: StageKey): void;
   onMark(stage: StageKey, ready: boolean): void;
+  compact?: boolean;
 }) {
   const t = useT();
   const detail = (s: StageKey): string => {
@@ -33,6 +35,26 @@ export function StageRows({ states, facts, onOpen, onMark }: {
     if (s === "lit") return t("detail_lit", { kept: facts.kept, read: facts.read, highlights: facts.highlights, cards: facts.cards });
     return t("detail_writing", { words: facts.draftWords });
   };
+  const chip = (s: StageKey) => <span className={"home-chip " + CHIP[states[s]]} data-testid={"home-state-" + s}>{t("state_" + states[s].replace("-", "_"))}</span>;
+  if (compact) return (
+    <section className="home-card home-stages compact" aria-labelledby="home-stages-h" data-testid="home-stages">
+      <h2 id="home-stages-h" className="home-stages-h">{t("home_stages_h")}</h2>
+      <ul>
+        {STAGE_ORDER.map((s) => (
+          <li key={s} className="home-stage-c" data-testid={"home-stage-" + s}>
+            <button type="button" className="home-stage-row" onClick={() => onOpen(s)} data-testid={"home-open-" + s}>
+              <span className="home-stage-text">
+                <span className="name">{t("stage_name_" + s)}</span>
+                <span className="home-stage-detail" data-testid={"home-detail-" + s}>{detail(s)}</span>
+              </span>
+              {chip(s)}
+            </button>
+            <MoreMenu stage={s} ready={states[s] === "ready"} onMark={onMark} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
   return (
     <section className="home-card home-stages" aria-labelledby="home-stages-h" data-testid="home-stages">
       <div className="home-stages-head">
@@ -47,7 +69,7 @@ export function StageRows({ states, facts, onOpen, onMark }: {
               <div className="tools">{t("home_tools_" + s)}</div>
             </div>
             <div className="home-stage-detail" data-testid={"home-detail-" + s}>{detail(s)}</div>
-            <div><span className={"home-chip " + CHIP[states[s]]} data-testid={"home-state-" + s}>{t("state_" + states[s].replace("-", "_"))}</span></div>
+            <div>{chip(s)}</div>
             <div className="home-stage-acts">
               <button type="button" className="home-stage-open" onClick={() => onOpen(s)} data-testid={"home-open-" + s}>{t(ACTION[states[s]])}</button>
               <MoreMenu stage={s} ready={states[s] === "ready"} onMark={onMark} />

@@ -25,3 +25,21 @@ export function QuestionCard({ facts, onEdit }: { facts: HomeFacts; onEdit(): vo
     </section>
   );
 }
+
+/**
+ * The question on a phone (canvas Phone): "Your question" closed by default; open, the question, the people, time and limits as one line, and
+ * Edit (to the Idea place).
+ */
+export function QuestionFold({ facts, onEdit }: { facts: HomeFacts; onEdit(): void }) {
+  const t = useT();
+  // "About 60 first-years. One semester." Each fact a sentence, its own stop kept.
+  const line = [facts.people, facts.time, facts.limits].map((v) => v.trim()).filter(Boolean).map((v) => (/[.!?।]$/.test(v) ? v : v + ".")).join(" ");
+  return (
+    <details className="home-card home-qfold" data-testid="home-q-fold">
+      <summary>{t("home_q_h")}</summary>
+      <p className="home-q-text" data-testid="home-q-text">{facts.question.trim() || t("place_question_none")}</p>
+      {line && <p className="home-qfold-facts" data-testid="home-q-line">{line}</p>}
+      <button type="button" className="home-link" onClick={onEdit} data-testid="home-q-edit">{t("home_q_edit")}</button>
+    </details>
+  );
+}

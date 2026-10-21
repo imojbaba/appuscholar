@@ -1,7 +1,7 @@
 /**
  * Platform e2e: sign in, land on first run, write in the scratch space, reload, import a v1 backup.
  *
- * Run it with the recipe in phase2-responsive.spec.ts's header (pglite Postgres for the web server, API on its in-memory store):
+ * Run it with the recipe in the header of e2e/support/pglite-postgres.mjs:
  *   pnpm --filter @appuscholar/web exec playwright test e2e/platform.spec.ts
  */
 import { test, expect } from "@playwright/test";

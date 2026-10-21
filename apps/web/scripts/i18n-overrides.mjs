@@ -476,7 +476,12 @@ export const V2_STRINGS = {
   frame_load_fail: { en: "Could not load your workspace.", hi: "आपका कार्यक्षेत्र लोड नहीं हो सका।" },
   list_action_fail: { en: "That did not work. Try again.", hi: "यह नहीं हो पाया। फिर कोशिश करें।" },
   list_delete_title: { en: "Delete \"{title}\" and its documents permanently?", hi: "\"{title}\" और उसके दस्तावेज़ हमेशा के लिए मिटाएँ?" },
-  list_delete_desc: { en: "This cannot be undone.", hi: "इसे वापस नहीं किया जा सकता।" }
+  list_delete_desc: { en: "This cannot be undone.", hi: "इसे वापस नहीं किया जा सकता।" },
+  // Task 14: the frame on a phone (canvas Phone). The header's Menu, and the way back from the document opened full screen over a place.
+  hdr_menu: { en: "Menu", hi: "मेन्यू" },
+  // The Menu's language item names the other language in itself: Hindi in the English interface, English in the Hindi one.
+  menu_lang_other: { en: "हिन्दी", hi: "English" },
+  doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

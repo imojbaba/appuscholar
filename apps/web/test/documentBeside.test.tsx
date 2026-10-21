@@ -59,6 +59,8 @@ import { ProjectShell } from "../components/frame/ProjectShell";
 import type { ProjectValue } from "../components/frame/ProjectContext";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom has no scrolling: the full-screen document's scroll to the top is a no-op here, not a "Not implemented" log.
+window.scrollTo = (() => {}) as typeof window.scrollTo;
 const E = en as Record<string, string>;
 const PASS = "right passphrase";
 const roots: Root[] = [];
@@ -111,11 +113,11 @@ async function vaultApi(reread?: () => Promise<unknown>, withB = false) {
   });
 }
 
-async function mount(projectId: string) {
+async function mount(projectId: string, place: React.ReactNode = <div data-testid="place-content" />) {
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);
-  await act(async () => { root.render(<VaultProvider><ProjectShell projectId={projectId}><div data-testid="place-content" /></ProjectShell></VaultProvider>); });
+  await act(async () => { root.render(<VaultProvider><ProjectShell projectId={projectId}>{place}</ProjectShell></VaultProvider>); });
   return host;
 }
 
@@ -347,5 +349,77 @@ describe("the document beside any stage", () => {
     expect(ws().docOpen).toBe(false);
     expect(frameDoc().hidden).toBe(false);
     expect(frameDoc().classList.contains("beside")).toBe(false);
+  });
+
+  it("on a phone the document opens full screen over the place, and Back to {place} returns to the same place and tab (Task 14)", async () => {
+    const was = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: q === "(max-width: 700px)", media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      plainApi();
+      await mount("p1");
+      await until(() => !!h.editor);
+      const place = () => document.querySelector<HTMLElement>(".frame-place")!;
+      const back = () => document.querySelector<HTMLButtonElement>('[data-testid="doc-back"]');
+      expect(back()).toBeNull();
+      expect(place().hidden).toBe(false);
+      await act(async () => { ws().openDocument(); });
+      expect(frameDoc().hidden).toBe(false);
+      expect(frameDoc().classList.contains("full")).toBe(true);
+      // The place stays mounted, out of sight; no resize handle on a phone.
+      expect(place().hidden).toBe(true);
+      expect(document.querySelector('[data-testid="place-content"]')).not.toBeNull();
+      expect(document.querySelector('[data-testid="doc-resize"]')).toBeNull();
+      expect(back()!.textContent).toBe(E.doc_back!.replace("{place}", E.stage_name_lit!));
+      await act(async () => { back()!.click(); });
+      await until(() => !ws().docOpen);
+      expect(frameDoc().hidden).toBe(true);
+      expect(place().hidden).toBe(false);
+      // The address never changed: the place is there on its tab.
+      expect(h.push).not.toHaveBeenCalled();
+    } finally { window.matchMedia = was; }
+  });
+
+  it("on a phone focus goes to Back when the document opens, and back to Open my document (or the place's first control) when it closes (Task 14)", async () => {
+    const was = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: q === "(max-width: 700px)", media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    const back = () => document.querySelector<HTMLButtonElement>('[data-testid="doc-back"]')!;
+    const active = () => (document.activeElement as HTMLElement | null)?.dataset.testid;
+    try {
+      plainApi();
+      await mount("p1", <div><a href="#x" data-testid="place-first">Tab</a><button type="button" data-testid="place-open-doc">Open</button></div>);
+      await until(() => !!h.editor);
+      const open = document.querySelector<HTMLButtonElement>('[data-testid="place-open-doc"]')!;
+      open.focus();
+      await act(async () => { ws().openDocument(); });
+      expect(active()).toBe("doc-back");
+      await act(async () => { back().click(); });
+      await until(() => !ws().docOpen);
+      expect(active()).toBe("place-open-doc");
+
+      // A failed save and Stay: the document stays open, and focus stays where it was.
+      await act(async () => { ws().openDocument(); });
+      expect(active()).toBe("doc-back");
+      act(() => { ws().registerFlush(async () => false); });
+      await act(async () => { back().click(); });
+      await until(() => !!document.querySelector('[data-testid="close-stay"]'));
+      await act(async () => { (document.querySelector('[data-testid="close-stay"]') as HTMLButtonElement).click(); });
+      expect(ws().docOpen).toBe(true);
+      expect(active()).not.toBe("place-open-doc");
+    } finally { window.matchMedia = was; }
+  });
+
+  it("on a phone without Open my document, closing the document focuses the place's first control (Task 14)", async () => {
+    const was = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: q === "(max-width: 700px)", media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      plainApi();
+      await mount("p1", <div><p>Text</p><button type="button" disabled>Off</button><a href="#x" data-testid="place-first">Tab</a></div>);
+      await until(() => !!h.editor);
+      await act(async () => { ws().openDocument(); });
+      expect((document.activeElement as HTMLElement).dataset.testid).toBe("doc-back");
+      await act(async () => { document.querySelector<HTMLButtonElement>('[data-testid="doc-back"]')!.click(); });
+      await until(() => !ws().docOpen);
+      expect((document.activeElement as HTMLElement).dataset.testid).toBe("place-first");
+    } finally { window.matchMedia = was; }
   });
 });
