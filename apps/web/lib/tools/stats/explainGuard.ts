@@ -14,6 +14,7 @@ export type Flagged = { kind: PdKind; value: string };
 /** The words the dialog counts each kind of column by ("Found: 2 names."). */
 const KIND_WORD: Record<PdKind, string> = { name: "name", phone: "phone number", email: "email address", roll: "roll number", dob: "birth date", address: "address", govid: "ID number" };
 
+const NUMBER = /^[-+]?[\d.,\s]+$/;
 const isWord = (c: string | undefined): boolean => c !== undefined && /[\p{L}\p{N}]/u.test(c);
 /** Whether `value` stands in `text` as its own word or words (not inside another word). */
 function appearsIn(text: string, value: string): boolean {
@@ -31,7 +32,8 @@ export function flaggedInText(data: ParsedData, scan: PdScanResult | null, texts
   for (const f of scan.found) {
     for (const row of data.rows) {
       const v = (row[f.index] ?? "").trim();
-      if (!v || seen.has(v) || scanText(v).total > 0) continue; // an e-mail, phone or ID value is callAI's own dialog's business
+      // A number is never a name: the figures in the tables come from code, and a roll number column (1 to 12) would match inside "M = 6.00". One character is no name either.
+      if (v.length < 2 || NUMBER.test(v) || seen.has(v) || scanText(v).total > 0) continue; // an e-mail, phone or ID value is callAI's own dialog's business
       seen.add(v);
       if (texts.some((t) => appearsIn(t, v))) out.push({ kind: f.kind, value: v });
     }
@@ -55,9 +57,13 @@ export function codesFor(found: Flagged[]): Map<string, string> {
   for (const f of found) { per[f.kind] = (per[f.kind] ?? 0) + 1; m.set(f.value, `[${KIND_WORD[f.kind]} ${per[f.kind]}]`); }
   return m;
 }
-/** Replaces each flagged value, where it stands as its own word, by its code. */
+/**
+ * Replaces each flagged value, where it stands as its own word, by its code. One pass with one alternation, longest value first: a code that was just written is never
+ * searched again, so a value such as "name" cannot match inside "[name 1]" and no code holds another.
+ */
 export function maskLabels(text: string, found: Flagged[], codes: Map<string, string>): string {
-  let out = text;
-  for (const f of found) out = out.replace(new RegExp("(?<![\\p{L}\\p{N}])" + escapeRe(f.value) + "(?![\\p{L}\\p{N}])", "gu"), () => codes.get(f.value)!);
-  return out;
+  if (!found.length) return text;
+  const values = [...new Set(found.map((f) => f.value))].sort((a, b) => b.length - a.length);
+  const re = new RegExp("(?<![\\p{L}\\p{N}])(?:" + values.map(escapeRe).join("|") + ")(?![\\p{L}\\p{N}])", "gu");
+  return text.replace(re, (m) => codes.get(m) ?? m);
 }

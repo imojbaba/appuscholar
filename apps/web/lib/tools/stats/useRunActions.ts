@@ -63,26 +63,27 @@ export function useRunActions(projectId: string, labActions: LabActions) {
     if (!lr || lr.outcome.kind !== "ok") return;
     const sentence = lr.outcome.res.apa;
     const now = Date.now();
-    const ds = lab.registered === lr.data ? lab.regName : lab.name.trim() || UNTITLED;
+    const registered = lab.registered === lr.data;
+    const ds = registered ? lab.regName : lab.lockedName ?? (lab.name.trim() || UNTITLED);
     const rec = runRecord(lr.data, lr.test, lr.form, ds, sentence, now);
     const id = rec ? newRunId(now) : null;
     const ok = await live.current.access.insertBlock(sentenceHtml(sentence, id));
     if (!ok) return;
-    if (id && rec) patchLab(projectId, { pendingRuns: [...getLab(projectId).pendingRuns, { id, rec }] });
+    if (id && rec) patchLab(projectId, { pendingRuns: [...getLab(projectId).pendingRuns, { id, rec }], ...(registered ? {} : { lockedName: ds }) });
     toast(live.current.t("stats_res_inserted"));
   }, [projectId]);
 
   const { pendingRuns } = useLab(projectId);
-  const { loading: runsLoading, locked: runsLocked, broken: runsBroken } = runs;
+  const { loading: runsLoading, locked: runsLocked, broken: runsBroken, error: runsError } = runs;
   useEffect(() => {
-    // Not before the stored list is known (the hook would queue the update and replay it onto whatever the read finds, a list that does not open included), and not
+    // Not before the stored list is known (a failed read says loading:false, locked:false, broken:false, error:true, value:null, and the hook would queue the update and replay it onto whatever the read finds, a list that does not open included), and not
     // while the vault is locked (that would raise the passphrase prompt from a mount).
-    if (!pendingRuns.length || pid === null || runsLoading || runsLocked) return;
+    if (!pendingRuns.length || pid === null || runsLoading || runsLocked || runsError) return;
     const batch = pendingRuns;
     patchLab(projectId, { pendingRuns: getLab(projectId).pendingRuns.filter((p) => !batch.includes(p)) });
     if (runsBroken && !mayRecord()) return; // the student kept the list that cannot be opened: the sentences stay tagged, with no record
     live.current.runs.set((prev) => batch.reduce<StatsRuns>((acc, p) => addRun(acc, p.id, p.rec), prev ?? {}));
-  }, [pendingRuns, pid, projectId, runsLoading, runsLocked, runsBroken, mayRecord]);
+  }, [pendingRuns, pid, projectId, runsLoading, runsLocked, runsBroken, runsError, mayRecord]);
 
   /**
    * v1 statsExplain (12027-12036), after the personal-data scan. Two steps: this file asks first about the values of flagged columns that are written in the request (a

@@ -24,9 +24,12 @@ const TABLE_CSS = `
 export function Results({ projectId, run }: { projectId: string; run: RunActions }) {
   const t = useT();
   const lr = useLab(projectId).lastRun;
-  const [copied, setCopied] = useState<"" | "ok" | "failed">("");
+  // the news of a copy belongs to the result it was made for
+  const [copy, setCopy] = useState<{ of: unknown; v: "ok" | "failed" } | null>(null);
   if (!lr) return null;
   const o = lr.outcome;
+  const copied = copy && copy.of === o ? copy.v : "";
+  const setCopied = (v: "ok" | "failed") => setCopy({ of: o, v });
   if (o.kind === "toast") return <p className="ap-banner" role="alert" data-testid="stats-run-message" style={{ marginTop: 12 }}>{o.text}</p>;
   if (o.kind === "undefined") {
     return (

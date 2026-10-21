@@ -23,6 +23,8 @@ const h = vi.hoisted(() => ({
   broken: {} as Record<string, boolean>,
   loading: {} as Record<string, boolean>,
   locked: {} as Record<string, boolean>,
+  /** A read that failed: the hook then says loading:false, locked:false, broken:false, error:true, value:null. */
+  error: {} as Record<string, boolean>,
   confirm: vi.fn(() => true),
   insert: vi.fn(async (_html: string, _o?: unknown) => true),
   api: vi.fn(),
@@ -60,7 +62,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       const alive = useRef(true);
       useEffect(() => { alive.current = true; h.forces.add(force); return () => { alive.current = false; h.forces.delete(force); }; }, [force]);
       return {
-        value: h.store[kind] ?? null, loading: h.loading[kind] ?? false, locked: h.locked[kind] ?? false, broken: h.broken[kind] ?? false, readOnly: false,
+        value: h.store[kind] ?? null, loading: h.loading[kind] ?? false, locked: h.locked[kind] ?? false, broken: h.broken[kind] ?? false, error: h.error[kind] ?? false, readOnly: false,
         set: (next: unknown) => {
           if (!alive.current) return;
           const v = typeof next === "function" ? (next as (p: unknown) => unknown)(h.store[kind] ?? null) : next;
@@ -147,7 +149,7 @@ beforeEach(() => {
   resetLabs();
   resetPdMemo();
   for (const k of Object.keys(h.store)) delete h.store[k];
-  for (const o of [h.broken, h.loading, h.locked]) for (const k of Object.keys(o)) delete o[k];
+  for (const o of [h.broken, h.loading, h.locked, h.error]) for (const k of Object.keys(o)) delete o[k];
   h.writes.length = 0; h.calls.length = 0;
   h.toast.mockClear(); h.insert.mockReset(); h.insert.mockResolvedValue(true);
   h.confirm.mockReset(); h.confirm.mockReturnValue(true);
@@ -464,6 +466,49 @@ describe("Insert into document", () => {
     expect(getLab("p1").pendingRuns).toEqual([]);
   });
 
+  it("a failed read of stats_runs (error, not loading) holds the record: nothing is written until the retry succeeds, then once", async () => {
+    h.error.stats_runs = true;
+    await mount();
+    await load(TWO, "Study 1");
+    await pick("stats-test", "ttestInd");
+    await click("stats-run-btn");
+    await click("stats-insert");
+    expect(h.insert.mock.calls[0]![0]).toContain("data-run");
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toEqual([]);
+    expect(getLab("p1").pendingRuns).toHaveLength(1);
+    delete h.error.stats_runs;
+    await rerender();
+    expect(h.writes.filter((w) => w.kind === "stats_runs")).toHaveLength(1);
+    expect(Object.keys(h.store.stats_runs as object)).toHaveLength(1);
+    expect(getLab("p1").pendingRuns).toEqual([]);
+  });
+
+  it("a failed read of stats_sets holds the registration too, and it happens once the read works", async () => {
+    h.error.stats_sets = true;
+    await mount();
+    await load(TWO, "Study 1");
+    expect(h.writes.filter((w) => w.kind === "stats_sets")).toEqual([]);
+    delete h.error.stats_sets;
+    await rerender();
+    expect(Object.keys(h.store.stats_sets as object)).toEqual(["Study 1"]);
+  });
+
+  it("a rename while the vault is locked cannot make the tag read 'no set': the set is registered under the name the record carries", async () => {
+    h.locked.stats_sets = true; h.locked.stats_runs = true;
+    await mount();
+    await load(TWO, "Study 1");
+    await pick("stats-test", "ttestInd");
+    await click("stats-run-btn");
+    await click("stats-insert");
+    await type("stats-name", "Renamed later");
+    delete h.locked.stats_sets; delete h.locked.stats_runs;
+    await rerender();
+    const sets = h.store.stats_sets as Record<string, unknown>;
+    const runs = h.store.stats_runs as Record<string, { ds: string }>;
+    expect(Object.values(runs).map((r) => r.ds)).toEqual(["Study 1"]);
+    expect(Object.keys(sets)).toEqual(["Study 1"]); // the run's data set exists under the run's name
+  });
+
   it("stats_runs keeps the newest 300", async () => {
     const mk = (ts: number) => ({ test: "desc", label: "x", ds: "d", hash: "h", fields: {}, multi: {}, extra: {}, sentence: "s", ts });
     const full: Record<string, ReturnType<typeof mk>> = {};
@@ -649,6 +694,26 @@ describe("Explain: a participant's name in the request (rule 2, Review Focus 2)"
     expect(bodyOf().prompt).toContain("Priya Nair");
   });
 
+  it("a numeric 'student id' column raises no question and the statistics reach the request unchanged", async () => {
+    h.api.mockResolvedValue({ text: "ok", model: "m" });
+    const rows = Array.from({ length: 12 }, (_, i) => `${i + 1},${i < 6 ? "A" : "B"},${6 + (i % 4) + (i < 6 ? 0 : 2)}`);
+    await mount();
+    await load("student id,group,score\n" + rows.join("\n"), "Study 1");
+    expect(getLab("p1").scan!.found.map((f) => f.name)).toEqual(["student id"]);
+    await pick("stats-test", "ttestInd");
+    await pick("stats-field-dv", "2");
+    await pick("stats-field-iv", "1");
+    await click("stats-run-btn");
+    const sentence = text("stats-sentence");
+    await click("stats-explain");
+    await settle();
+    expect(h.askPd).not.toHaveBeenCalled();
+    expect(h.api).toHaveBeenCalledTimes(1);
+    const { prompt } = bodyOf();
+    expect(prompt).not.toMatch(/\[roll number/);
+    expect(prompt).toContain("APA sentence: " + sentence);
+  });
+
   it("no flagged column, no extra question: a plain result goes straight to callAI's own check", async () => {
     h.api.mockResolvedValue({ text: "ok", model: "m" });
     await mount();
@@ -673,6 +738,9 @@ describe("Copy", () => {
     await click("stats-copy");
     expect(write).toHaveBeenCalledWith(text("stats-sentence"));
     expect(text("stats-copy-status")).toBe(E.stats_res_copied);
+    await click("stats-run-btn"); // a new run: the old "Copied." is not about it
+    expect(tid("stats-copy-status")).toBeNull();
+    await click("stats-copy");
     expect(h.toast).not.toHaveBeenCalled();
     write.mockRejectedValueOnce(new Error("denied"));
     await click("stats-copy");

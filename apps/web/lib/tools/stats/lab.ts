@@ -65,6 +65,8 @@ export type LabState = {
   gate: GateState;
   /** B2's last result, kept so a tab switch does not lose it. */
   lastRun: LastRun | null;
+  /** The name a sentence was tagged under before its table could be registered (a locked vault, a list being read): the set is registered under that name, whatever the box says by then. */
+  lockedName: string | null;
   /** Run records of sentences already in the document, waiting for `stats_runs` to be known, unlocked and not broken (R16); the Data tab writes them from an effect. */
   pendingRuns: PendingRun[];
 };
@@ -72,7 +74,7 @@ export type LabState = {
 export const NO_GATE: GateState = { open: false, design: "", verdict: null, switched: false };
 const EMPTY: LabState = {
   text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, registered: null, busy: false,
-  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null, pendingRuns: []
+  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null, pendingRuns: [], lockedName: null
 };
 
 const labs = new Map<string, LabState>();
@@ -119,7 +121,7 @@ const nextTicket = (projectId: string): number => { const n = (tickets.get(proje
 /** Empties the paste box, the table and what was said about it; the dataset name stays. A parse still reading is dropped. */
 export function clearLab(projectId: string): void {
   nextTicket(projectId);
-  patchLab(projectId, { text: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, busy: false, form: null, gate: NO_GATE, lastRun: null });
+  patchLab(projectId, { text: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, busy: false, form: null, gate: NO_GATE, lastRun: null, lockedName: null });
 }
 
 /**
@@ -145,7 +147,7 @@ export async function parse(projectId: string, opts: SliceOpts = {}): Promise<Pa
   patchLab(projectId, {
     data, scan, choices, skipped: skippedLines(text, data), pdResult: null, semicolons: looksSemicolon(text, data), status: { kind: "parsed" }, busy: false,
     // A new table: the form was made for the old one, and a result of the old one is no longer of this data.
-    form: null, gate: NO_GATE, lastRun: null
+    form: null, gate: NO_GATE, lastRun: null, lockedName: null
   });
   return data;
 }
