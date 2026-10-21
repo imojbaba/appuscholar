@@ -5,6 +5,8 @@ import { apiFetch } from "./api";
 import { isStaleKeys, isVaultLocked } from "./vault/errors";
 import { useVault, type VaultValue, type WrappedDek } from "./vault/useVault";
 import { sealTitle, type TitleFields } from "./vault/titles";
+import { toast } from "@/components/ui/toast";
+import { useT } from "./i18n";
 
 /** "locked": the vault is locked and the student has not opened it, so the text is held in the editor and nothing is sent. */
 export type SaveStatus = "saved" | "saving" | "error" | "dirty" | "locked";
@@ -18,9 +20,49 @@ export type SaveBody = { bodyHtml: string; keyVersion: number; wordCount?: numbe
 /** Backoff after a failed save: 2s, 4s, 8s, 16s, then every 30s until a save succeeds or the editor unmounts. */
 export const RETRY_DELAYS_MS = [2000, 4000, 8000, 16000, 30000];
 
-/** Leaving the page would lose work unless everything typed has been stored. */
+/**
+ * Document text that could not be saved before its editor went away (the browser's Back out of a project, a project switch), kept for this tab
+ * by document id until that document opens again: its editor then shows the text and saves it with the normal retries. Memory only, as the
+ * held blob values (lib/blobs/held.ts): the text is plaintext and never written to storage; while anything is held, leaving the page asks.
+ */
+const heldText = new Map<string, string>();
+/** Last saves of editors that went away, still in flight: leaving the page meanwhile asks too. */
+const lastSaves = new Set<Promise<unknown>>();
+let listening = false;
+function listen() {
+  if (listening || typeof window === "undefined") return;
+  listening = true;
+  window.addEventListener("beforeunload", (e) => { if (heldDocs.size > 0) e.preventDefault(); });
+}
+export const heldDocs = {
+  /** Held texts plus last saves still running. */
+  get size() { return heldText.size + lastSaves.size; },
+  has: (docId: string) => heldText.has(docId),
+  html: (docId: string): string | undefined => heldText.get(docId),
+  /** Keeps the text for a document, replacing what was held for it. */
+  put(docId: string, html: string) { heldText.set(docId, html); listen(); },
+  /** A document's text reached the server from a mounted editor: what was held for it is older. */
+  drop(docId: string) { heldText.delete(docId); },
+  /** Removes and answers the text held for a document (its editor mounting adopts it). */
+  take(docId: string): string | null {
+    const html = heldText.get(docId);
+    if (html === undefined) return null;
+    heldText.delete(docId);
+    return html;
+  },
+  /** Counts `p` as a last save in flight until it settles. */
+  track(p: Promise<unknown>) {
+    lastSaves.add(p);
+    listen();
+    void p.finally(() => { lastSaves.delete(p); });
+  },
+  /** Tests only. */
+  clear() { heldText.clear(); lastSaves.clear(); }
+};
+
+/** Leaving the page would lose work unless everything typed has been stored, here and in any document held after its editor went away. */
 export function shouldWarnOnUnload(status: SaveStatus): boolean {
-  return status !== "saved";
+  return status !== "saved" || heldDocs.size > 0;
 }
 
 const plaintext = async (html: string): Promise<SaveBody> => ({ bodyHtml: html, keyVersion: 0 });
@@ -48,6 +90,8 @@ export function createAutosaver(o: {
   let active = true;
   let status: SaveStatus = "saved";
   let inflight: Promise<boolean> | null = null;
+  /** The text of the save in flight, until it settles. */
+  let sending: string | null = null;
   /** The student cancelled the unlock: the text is held and no prompt comes back until the vault opens (resume). */
   let declined = false;
   const set = (s: SaveStatus, seq?: number) => { status = s; o.onStatus?.(s, seq); };
@@ -119,7 +163,8 @@ export function createAutosaver(o: {
     if (html === null || html === lastSaved) { set("saved"); return true; }
     const run = attempt(html);
     inflight = run;
-    try { return await run; } finally { if (inflight === run) inflight = null; }
+    sending = html;
+    try { return await run; } finally { if (inflight === run) { inflight = null; sending = null; } }
   }
   return {
     onChange(html: string) {
@@ -146,7 +191,9 @@ export function createAutosaver(o: {
       active = on;
       if (!on && retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
     },
-    getStatus: () => status
+    getStatus: () => status,
+    /** The newest text not yet on the server (typed, held after a failure, or in flight), or null when everything is saved. */
+    unsaved: (): string | null => pending ?? sending
   };
 }
 
@@ -194,8 +241,15 @@ export function useAutosave(docId: string, initialHtml: string, initialSeq: numb
   useEffect(() => { vaultRef.current = vault; }, [vault]);
   const encryptRef = useRef(opts.encrypt);
   useEffect(() => { encryptRef.current = opts.encrypt; }, [opts.encrypt]);
+  const t = useT();
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
   const [status, setStatus] = useState<SaveStatus>("saved");
   const [currentSeq, setSeq] = useState(initialSeq);
+  // Text held after this document's editor last went away unsaved: the editor opens with it, and the mount below saves it.
+  const [restored] = useState(() => heldDocs.html(docId) ?? null);
+  /** Set while restored text is being saved: its first successful save says so. */
+  const announce = useRef(false);
   const initialDeks = opts.deks;
   const saver = useMemo(() => {
     // This document's keys as the server has them: updated by every save and by the re-read after a 409.
@@ -217,19 +271,34 @@ export function useAutosave(docId: string, initialHtml: string, initialSeq: numb
         if (r.document?.deks) doc.deks = r.document.deks;
         return { seq: r.revision.seq, created: r.created };
       },
-      onStatus: (s, seq) => { setStatus(s); if (seq) setSeq(seq); }
+      onStatus: (s, seq) => {
+        setStatus(s);
+        if (seq) setSeq(seq);
+        if (s !== "saved" || !seq) return;
+        heldDocs.drop(docId);
+        if (announce.current) { announce.current = false; toast(tRef.current("doc_held_saved")); }
+      }
     });
   }, [docId, initialHtml, initialDeks]);
   const open = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => { if (open) saver.resume(); }, [open, saver]);
   useEffect(() => {
     saver.setActive(true);
-    return () => { saver.setActive(false); void saver.flushNow(); };
-  }, [saver]);
+    const held = heldDocs.take(docId);
+    // Saved as typed text is: after the debounce, with the normal retries.
+    if (held !== null) { announce.current = true; saver.onChange(held); }
+    return () => {
+      saver.setActive(false);
+      // One last try with no retries. Text it could not save is held in memory, and saved when this document opens again in this tab.
+      const left = saver.unsaved();
+      const last = saver.flushNow().then((ok) => { const html = saver.unsaved() ?? left; if (!ok && html !== null) heldDocs.put(docId, html); });
+      if (left !== null) heldDocs.track(last);
+    };
+  }, [saver, docId]);
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (shouldWarnOnUnload(saver.getStatus())) { e.preventDefault(); } };
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
   }, [saver]);
-  return { status, currentSeq, onChange: saver.onChange, flushNow: saver.flushNow };
+  return { status, currentSeq, onChange: saver.onChange, flushNow: saver.flushNow, restored };
 }

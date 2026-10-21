@@ -80,10 +80,10 @@ beforeEach(() => {
 });
 
 /** The shell's part of the export place: openExport opens the dialog, with only the preselected part ticked when one is given. */
-function Harness({ children, openExport }: { children?: React.ReactNode; openExport?: (p?: ExportPart) => void }) {
+function Harness({ children, openExport, flushOpen = async () => true }: { children?: React.ReactNode; openExport?: (p?: ExportPart) => void; flushOpen?: () => Promise<boolean> }) {
   const [parts, setParts] = useState<ExportPart[] | null>(null);
   const value = {
-    project, projectId: "p1", documents: [doc], currentDoc: null, flushOpen: async () => true,
+    project, projectId: "p1", documents: [doc], currentDoc: null, flushOpen,
     openExport: (p?: ExportPart) => { openExport?.(p); setParts(exportPartsFor(p)); }
   } as unknown as ProjectValue;
   return (
@@ -94,11 +94,11 @@ function Harness({ children, openExport }: { children?: React.ReactNode; openExp
     </ProjectProvider>
   );
 }
-async function render(node?: React.ReactNode, openExport?: (p?: ExportPart) => void) {
+async function render(node?: React.ReactNode, openExport?: (p?: ExportPart) => void, flushOpen?: () => Promise<boolean>) {
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);
-  await act(async () => { root.render(<VaultProvider><Harness openExport={openExport}>{node}</Harness></VaultProvider>); });
+  await act(async () => { root.render(<VaultProvider><Harness openExport={openExport} flushOpen={flushOpen}>{node}</Harness></VaultProvider>); });
 }
 /** A panel with the question's blob mounted; `box.set` is its set(). */
 type IdeaBox = { set?: (v: { topic: string; resources: string; timeframe: string; constraints: string }) => void };
@@ -271,6 +271,18 @@ describe("ExportDialog", () => {
     await click(tid("open-all"));
     await click(tid("exp-download"));
     await until(() => h.download.mock.calls.length === 1);
+    await until(() => !!tid("exp-unsaved"));
+    expect(tid("exp-unsaved")!.textContent).toBe(E.exp_unsaved);
+    expect(tid("export-dialog")).not.toBeNull();
+  });
+
+  it("the open document's save fails: the zip is saved and the dialog says its last changes are not in it", async () => {
+    const flushOpen = vi.fn(async () => false);
+    await render(undefined, undefined, flushOpen);
+    await click(tid("open-all"));
+    await click(tid("exp-download"));
+    await until(() => h.download.mock.calls.length === 1);
+    expect(flushOpen).toHaveBeenCalledTimes(1);
     await until(() => !!tid("exp-unsaved"));
     expect(tid("exp-unsaved")!.textContent).toBe(E.exp_unsaved);
     expect(tid("export-dialog")).not.toBeNull();

@@ -156,6 +156,11 @@ describe("Writing and the stages not built (Task 10)", () => {
     }
     expect(h.openDocument).toHaveBeenCalledTimes(3);
     expect(h.go).not.toHaveBeenCalled();
+    // Once the document is open beside the place, the line stays and the button goes.
+    h.docOpen = true;
+    await mount("design");
+    expect(tid("not-built")).not.toBeNull();
+    expect(tid("not-built-open")).toBeNull();
   });
 
   it("every place but Writing offers Open my document in its header while the document is closed (Task 11)", async () => {

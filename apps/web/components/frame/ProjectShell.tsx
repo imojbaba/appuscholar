@@ -491,12 +491,12 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         <AlertDialog open={!!switchAsk} onOpenChange={(o) => { if (!o && switchAsk) { switchAsk.answer(false); setSwitchAsk(null); } }}>
           <AlertDialogContent data-testid="switch-dialog">
             <AlertDialogHeader>
-              <AlertDialogTitle>Switch anyway?</AlertDialogTitle>
+              <AlertDialogTitle>{t("switch_title")}</AlertDialogTitle>
               <AlertDialogDescription><UnsavedIn doc={switchAsk?.doc ?? null} /></AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel data-testid="switch-stay">{t("ask_stay")}</AlertDialogCancel>
-              <AlertDialogAction data-testid="switch-anyway" onClick={() => { switchAsk?.answer(true); setSwitchAsk(null); }}>Switch anyway</AlertDialogAction>
+              <AlertDialogAction data-testid="switch-anyway" onClick={() => { switchAsk?.answer(true); setSwitchAsk(null); }}>{t("switch_anyway")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -513,7 +513,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
           </AlertDialogContent>
         </AlertDialog>
         {error ? (
-          <p role="alert" className="p-6 text-sm text-destructive" data-testid="error-msg">Could not load your workspace.</p>
+          <p role="alert" className="p-6 text-sm text-destructive" data-testid="error-msg">{t("frame_load_fail")}</p>
         ) : !ready || !me ? (
           // Outside a project too, the page waits for /me: opening the scratch space needs its id.
           <div className="grid gap-4 p-6" aria-busy="true"><Skeleton className="h-6 w-60" /><Skeleton className="h-96" /></div>
@@ -536,8 +536,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
 
 /** The switch question names the open document by its opened title. */
 function UnsavedIn({ doc }: { doc: DocumentWithBody | null }) {
+  const t = useT();
   const title = useTitle(doc, "document");
-  return <>{`Unsaved changes in "${doc ? title.text : "this document"}" may be lost.`}</>;
+  return <>{t("switch_unsaved", { title: doc ? title.text : t("switch_this_doc") })}</>;
 }
 
 /** The close question names the document by its opened title. */

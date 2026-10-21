@@ -465,7 +465,18 @@ export const V2_STRINGS = {
   exp_unreadable_doc: { en: "Document: {name}", hi: "दस्तावेज़: {name}" },
   exp_unreadable_paper: { en: "Reading list paper: {name}", hi: "पढ़ने की सूची का पेपर: {name}" },
   exp_unreadable_data: { en: "Saved work: {name}", hi: "सहेजा गया काम: {name}" },
-  exp_kind_shelf: { en: "Reading list", hi: "पढ़ने की सूची" }
+  exp_kind_shelf: { en: "Reading list", hi: "पढ़ने की सूची" },
+  // B1 fix wave: text kept in this tab after its editor went away unsaved (the browser's Back), saved when the document opens again; and the
+  // frame's last hard-coded English (the switch question, the workspace load failure, the project list's delete). DRAFT Hindi.
+  doc_held_saved: { en: "Your unsaved changes were kept and saved.", hi: "आपके न सहेजे गए बदलाव रखे गए और सहेज दिए गए।" },
+  switch_title: { en: "Switch anyway?", hi: "फिर भी बदलें?" },
+  switch_unsaved: { en: "Unsaved changes in \"{title}\" may be lost.", hi: "\"{title}\" में न सहेजे गए बदलाव खो सकते हैं।" },
+  switch_this_doc: { en: "this document", hi: "इस दस्तावेज़" },
+  switch_anyway: { en: "Switch anyway", hi: "फिर भी बदलें" },
+  frame_load_fail: { en: "Could not load your workspace.", hi: "आपका कार्यक्षेत्र लोड नहीं हो सका।" },
+  list_action_fail: { en: "That did not work. Try again.", hi: "यह नहीं हो पाया। फिर कोशिश करें।" },
+  list_delete_title: { en: "Delete \"{title}\" and its documents permanently?", hi: "\"{title}\" और उसके दस्तावेज़ हमेशा के लिए मिटाएँ?" },
+  list_delete_desc: { en: "This cannot be undone.", hi: "इसे वापस नहीं किया जा सकता।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

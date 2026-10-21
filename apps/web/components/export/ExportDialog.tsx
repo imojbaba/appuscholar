@@ -81,11 +81,13 @@ function ExportBody({ initial, onClose }: { initial: ExportPart[]; onClose(): vo
       if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) { setProblem(t("exp_locked")); return; }
       // The open document's latest words, and every panel's unsent or held blob value, are stored first, so the zip has them. A place's own
       // window only reads (D-S2-43): it stores nothing first, and the line under the parts says when something unsent is not in the zip.
+      let docSaved = true;
       if (!isPopout()) {
-        await flushOpen();
+        docSaved = await flushOpen();
         await heldBlobs.saveAll();
       }
-      const left = shouldWarnOnUnloadBlobs();
+      // The open document's last words that did not save are missing from the zip as much as a held blob value.
+      const left = !docSaved || shouldWarnOnUnloadBlobs();
       const pid = projectId;
       const deps: ProjectExportDeps = {
         project: project ?? { id: pid, title: t("scratch_name"), titleKeyVersion: 0, deks: [] },

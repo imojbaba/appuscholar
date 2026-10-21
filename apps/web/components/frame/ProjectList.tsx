@@ -52,7 +52,7 @@ export function ProjectList() {
   async function run(fn: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
-    try { await fn(); } catch { toast("That did not work. Try again."); } finally { setBusy(false); }
+    try { await fn(); } catch { toast(t("list_action_fail")); } finally { setBusy(false); }
   }
   const toggle = (p: ProjectWork) => run(async () => {
     const complete = p.status !== "complete";
@@ -112,8 +112,8 @@ export function ProjectList() {
       <AlertDialog open={!!confirm} onOpenChange={(o) => { if (!o) setConfirm(null); }}>
         <AlertDialogContent data-testid="project-delete-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete &quot;{confirmTitle.text}&quot; and its documents permanently?</AlertDialogTitle>
-            <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{t("list_delete_title", { title: confirmTitle.text })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("list_delete_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>{t("sap_cancel_btn")}</AlertDialogCancel>
