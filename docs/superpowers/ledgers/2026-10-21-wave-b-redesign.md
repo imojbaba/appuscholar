@@ -99,3 +99,13 @@ Task 7: review CHANGES REQUIRED.
 - Minor: an unparsed read loops "check again".
 - Fix round in progress.
 Tasks 11, 12 (UI) and 13 are building in parallel worktrees from 615a5aa.
+Task 7: complete. Fix round 6f3528a, accepted on its tests (36 home tests; web 1150):
+- highlight counts cached by projectId:paperId:version, so a repeat visit makes zero paper reads;
+- load errors show Retry;
+- an unparsed read counts as checked (`checked`, `readText`, `detail_idea_checked`);
+- the Reopened test runs with the device clock 7 hours behind.
+Merged into wave-b1 (29c8963):
+- D-S2-38 takes Task 7's added sentence;
+- the i18n blocks are unioned and `home_places` dropped again; en and hi have 1317 keys.
+Merged suite: web 1177 pass, 1 fail. The failure is citeBib's 2-second timing test again (passes alone; three builds were running). Typecheck, lint and build clean.
+Tasks 1-10 complete. Next: Tasks 11, 12 and 13 (building), then 14 and 15.
