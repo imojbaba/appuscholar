@@ -10,19 +10,19 @@ const none = { idea: null, citations: null, shelfIndex: null, apNotes: null };
 
 describe("homeFacts", () => {
   it("nothing stored gives empty facts, the field and the draft words", () => {
-    expect(homeFacts(none, 0, "Education")).toEqual({ question: "", people: "", time: "", limits: "", field: "Education", verdict: null, kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 });
+    expect(homeFacts(none, 0, "Education")).toEqual({ question: "", people: "", time: "", limits: "", field: "Education", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 });
     expect(homeFacts(none, 120, "").draftWords).toBe(120);
   });
 
   it("the question card's facts are the intake's four fields, and the verdict comes from its read", () => {
     const f = homeFacts({ ...none, idea }, 0, "Education");
-    expect(f).toMatchObject({ question: idea.topic, people: idea.resources, time: idea.timeframe, limits: idea.constraints, field: "Education", verdict: "Proceed with these modifications." });
+    expect(f).toMatchObject({ question: idea.topic, people: idea.resources, time: idea.timeframe, limits: idea.constraints, field: "Education", verdict: "Proceed with these modifications.", checked: true, readText: READ });
   });
 
-  it("no read, or a read that does not parse, is no verdict", () => {
+  it("no read is not checked; a stored read that does not parse is checked, with no verdict and its text as it came", () => {
     const { read: _r, ...noRead } = idea;
-    expect(homeFacts({ ...none, idea: noRead }, 0, "").verdict).toBeNull();
-    expect(homeFacts({ ...none, idea: { ...idea, read: { text: "Looks fine.", at: "x" } } }, 0, "").verdict).toBeNull();
+    expect(homeFacts({ ...none, idea: noRead }, 0, "")).toMatchObject({ verdict: null, checked: false, readText: "" });
+    expect(homeFacts({ ...none, idea: { ...idea, read: { text: "Looks fine.", at: "x" } } }, 0, "")).toMatchObject({ verdict: null, checked: true, readText: "Looks fine." });
   });
 
   it("kept is the library's length", () => {
