@@ -238,7 +238,6 @@ export const V2_STRINGS = {
   place_question_none: { en: "No question yet.", hi: "अभी कोई प्रश्न नहीं।" },
   place_question_locked: { en: "Your question is locked. Enter your passphrase to see it.", hi: "आपका प्रश्न बंद है। इसे देखने के लिए अपना पासफ़्रेज़ लिखें।" },
   place_not_built: { en: "Not built yet.", hi: "अभी बना नहीं है।" },
-  reading_open_pdfs: { en: "Open your PDFs", hi: "अपनी PDF खोलें" },
   // The project's home, the project list and first run until Tasks 7, 8 and 9 build them.
   home_places: { en: "Stages", hi: "चरण" },
   projects_new: { en: "New project", hi: "नया प्रोजेक्ट" },
@@ -299,7 +298,21 @@ export const V2_STRINGS = {
   state_sum_in_progress: { en: "{stages} in progress", hi: "{stages} चल रहा है" },
   state_sum_started_early: { en: "{stages} started early", hi: "{stages} जल्दी शुरू हुआ" },
   state_sum_reopened: { en: "{stages} reopened", hi: "{stages} फिर से खुला" },
-  state_sum_none: { en: "Nothing started yet", hi: "अभी कुछ शुरू नहीं हुआ" }
+  state_sum_none: { en: "Nothing started yet", hi: "अभी कुछ शुरू नहीं हुआ" },
+  // Wave B Task 10 (register D-S2-44): the Literature place's counted tabs and suggested next lines, Writing's helpers beside the document, and a
+  // stage not built yet. DRAFT Hindi.
+  tab_name_count: { en: "{name} ({n})", hi: "{name} ({n})" },
+  lit_suggested_next: { en: "Suggested next", hi: "आगे का सुझाव" },
+  lit_next_find: { en: "Next: open your reading list and read a paper you kept.", hi: "आगे: अपनी पढ़ने की सूची खोलें और रखा हुआ कोई पेपर पढ़ें।" },
+  lit_next_reading: { en: "Next: compare the papers you have read.", hi: "आगे: जो पेपर आपने पढ़े हैं उनकी तुलना करें।" },
+  lit_next_compare: { en: "Next: find the gap your papers leave open, then write.", hi: "आगे: वह कमी खोजें जो आपके पेपर खुली छोड़ते हैं, फिर लिखें।" },
+  lit_next_citations: { en: "Next: put your reference list in your document.", hi: "आगे: अपनी संदर्भ सूची अपने दस्तावेज़ में डालें।" },
+  lit_read_a_paper: { en: "Read a paper", hi: "कोई पेपर पढ़ें" },
+  writing_aside: { en: "Chat and research helpers", hi: "चैट और शोध सहायक" },
+  writing_chat: { en: "Chat", hi: "चैट" },
+  writing_helpers: { en: "Research helpers", hi: "शोध सहायक" },
+  not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
+  not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

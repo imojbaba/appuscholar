@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -12,9 +12,9 @@ import { useProject } from "./ProjectContext";
 /**
  * The top of a place (canvas Find): "{project title} / {stage name}", the title linking home; the place's tabs, each a link; and the question as
  * a strip, closed by default, that opens to the topic with Edit (to the Idea place). "Open my document" (Task 11), "Open in a new window"
- * (Task 13) and the feasibility verdict (the stored read, Task 9) join it later.
+ * (Task 13) and the feasibility verdict (the stored read, Task 9) join it later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
  */
-export function PlaceHeader({ stage, tab }: { stage: StageKey; tab: string | null }) {
+export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: string | null; tabs?: ReactNode }) {
   const t = useT();
   const { me } = useSettings();
   const { project, projectId } = useProject();
@@ -29,13 +29,13 @@ export function PlaceHeader({ stage, tab }: { stage: StageKey; tab: string | nul
         <span aria-hidden="true">/</span>
         <span className="here" aria-current={tabs.length ? undefined : true} data-testid="place-name">{t("stage_name_" + stage)}</span>
       </nav>
-      {tabs.length > 0 && (
+      {own ?? (tabs.length > 0 && (
         <nav className="place-tabs" aria-label={t("stage_name_" + stage)} data-testid="place-tabs">
           {tabs.map((x) => (
             <Link key={x} href={placeHref(id, stage, x)} aria-current={x === tab || undefined} data-testid={"place-tab-" + x}>{t("tab_name_" + x)}</Link>
           ))}
         </nav>
-      )}
+      ))}
       {stage !== "idea" && <QuestionStrip />}
     </div>
   );

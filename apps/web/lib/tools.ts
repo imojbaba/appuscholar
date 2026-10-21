@@ -19,7 +19,7 @@ export const TOOLS_BY_STAGE: Record<StageKey, ToolId[]> = {
   review: ["close", "slides"]
 };
 
-/** Tools with a real panel (chat, and the six stage-2 tools); every other tool renders StubPanel. */
+/** Tools with a real panel (chat, and the six stage-2 tools); the others are hidden until built (Task 10). */
 export const BUILT_IN: ToolId[] = ["chat", "idea", "psych", "research", "analyse", "cite"];
 
 export function isToolId(v: unknown): v is ToolId { return typeof v === "string" && Object.prototype.hasOwnProperty.call(TOOL_TO_STAGE, v); }

@@ -275,6 +275,16 @@
 .place-row { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
 .place-note, .frame-note { margin: 0; color: var(--muted); font-size: 15px; }
 .frame-note { padding: var(--s6) var(--s7); }
+/* Task 10: a heading inside a place's body, Literature's suggested next line, Writing's aside of helpers above the document, a stage not built. */
+.place-h2 { margin: var(--s6) 0 var(--s3); font-size: 18px; line-height: 1.3; }
+.place-next { margin-top: var(--s5); padding: var(--s3) var(--s4); border-left: 3px solid var(--purple-800); background: var(--card); border-radius: var(--r-card); }
+.place-next p { margin: 0; font-size: 15px; font-weight: 600; color: var(--purple-800); }
+.writing-aside { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: var(--s3); align-items: start; }
+.writing-fold { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.writing-fold > summary { display: flex; align-items: center; min-height: 44px; padding: 0 var(--s4); cursor: pointer; color: var(--purple-800); font-weight: 600; }
+.writing-fold > summary:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.writing-fold > .panel { border-top: 1px solid var(--line); }
+.place-notbuilt .place-note { margin-bottom: var(--s4); max-width: 70ch; }
 .frame-work { max-width: 1360px; margin: 0 auto; padding: var(--s6) var(--s7) 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
 .frame-work:not(.writing):not(.with-ai) { display: none; }
 .frame-work.writing.with-ai { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); align-items: start; }
@@ -436,6 +446,9 @@
 .sh-dlg { max-height: 90vh; overflow-y: auto; }
 .sh-dlg .sh-desc { font-size: 13px; color: var(--muted); margin: 0; }
 .sh-body { max-height: 64vh; overflow: auto; padding-right: 4px; }
+/* The shelf inline in the Literature place's Reading list (Task 10): the page scrolls, not the body. */
+.sh-inline .sh-desc { font-size: 13px; color: var(--muted); margin: 0 0 var(--s2); }
+.sh-inline .sh-body { max-height: none; overflow: visible; padding-right: 0; }
 .sh-row { display: flex; gap: 6px; margin-top: 6px; }
 .sh-row.sh-wrap { flex-wrap: wrap; }
 .sh-row.sh-center { align-items: center; }
@@ -466,7 +479,6 @@
 /* Analyse a paper (v1 743: .ap-box, .ap-q, .ap-bad, .ap-warn, .ap-ok, .ap-banner), in the design system's tokens. */
 .ap-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }
 .ap-row.ap-wrap { flex-wrap: wrap; }
-.panel .desc.ap-lect-desc { margin: 0; }
 .ap-shelf { flex: 1; min-width: 180px; width: auto; }
 .ap-consent { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; margin: 8px 0; }
 .ap-consent input { margin-top: 3px; accent-color: var(--purple-600); }
