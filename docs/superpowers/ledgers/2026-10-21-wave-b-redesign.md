@@ -109,3 +109,13 @@ Merged into wave-b1 (29c8963):
 - the i18n blocks are unioned and `home_places` dropped again; en and hi have 1317 keys.
 Merged suite: web 1177 pass, 1 fail. The failure is citeBib's 2-second timing test again (passes alone; three builds were running). Typecheck, lint and build clean.
 Tasks 1-10 complete. Next: Tasks 11, 12 and 13 (building), then 14 and 15.
+Task 13: complete. Implemented d762f53; review APPROVE.
+- Controller fixes 5d6c78f: a pop-out never starts the vault migration; canPopOut removed.
+- Deviations accepted: the window keeps its pop-out status in the shell; every fixed blob kind is broadcast (no loops; versions and 409 respected); the Literature window stores shelf columns; no new-window button in Writing.
+Merged into wave-b1 (42bf29c): listOrSeed lives in lib/frame/firstDocument.ts since Task 9, so Task 13's guard ("a pop-out never creates a document") moved there.
+For the Task 11 merge: hide "Open my document" and DocumentBeside when usePopout() is true; otherwise requestInsert waits for an editor that never mounts in a pop-out.
+Task 16 step 1: ce2b91b, merged.
+- Playwright's reuseExistingServer is off in CI;
+- deploy-vercel.sh exits 6 "cannot reach origin" and ends "Expect Help to show: Version <sha7>";
+- deployScript tests don't depend on order (6/6).
+Merged suite: web 1170 pass, 1 fail (citeBib timing under a load average of about 15; passes alone). Typecheck, lint and build clean.
