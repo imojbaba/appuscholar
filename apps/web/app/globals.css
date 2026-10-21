@@ -333,6 +333,7 @@
   .home-interim, .start-interim, .frame-note { padding: 16px; }
   .plist { padding: 16px; }
   .plist-row { padding: 12px 16px; }
+  .plist-open { flex-basis: 100%; }
   .plist-bars { flex-basis: 100%; gap: 4px; }
   .plist-stage .plist-stage-name { font-size: 11px; }
   .plist button, .plist-head a { min-height: 44px; }

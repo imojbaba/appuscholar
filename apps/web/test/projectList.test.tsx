@@ -99,7 +99,7 @@ describe("ProjectList", () => {
   it("each row's bars and spoken summary follow stageStates", async () => {
     const a = project("a", {
       stageMarks: { idea: { readyAt: "2026-10-10T00:00:00.000Z" } },
-      blobs: [{ kind: "idea_intake", updatedAt: "2026-10-09T00:00:00.000Z", version: 2 }, { kind: "citations", updatedAt: "2026-10-11T00:00:00.000Z", version: 1 }, { kind: "rs_prefs", updatedAt: "2026-10-12T20:00:00.000Z", version: 1 }],
+      blobs: [{ kind: "idea_intake", updatedAt: "2026-10-09T00:00:00.000Z", version: 2 }, { kind: "citations", updatedAt: "2026-10-11T00:00:00.000Z", version: 1 }, { kind: "rs_prefs", updatedAt: "2026-10-14T20:00:00.000Z", version: 1 }],
       draftWords: 120, draftEditedAt: "2026-10-12T12:00:00.000Z"
     });
     const b = project("b", { blobs: [{ kind: "shelf_paper:x1", updatedAt: "2026-10-02T00:00:00.000Z", version: 1 }] });
