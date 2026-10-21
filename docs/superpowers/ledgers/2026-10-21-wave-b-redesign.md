@@ -213,3 +213,8 @@ Immutable facts:
 - i18n: new keys go in V2_STRINGS (apps/web/scripts/i18n-overrides.mjs) with DRAFT Hindi; regenerate with `node apps/web/scripts/extract-v1-i18n.mjs ../appuscholer/index.html`; v1 key values change only in Tasks 35-36.
 - Known flaky: citeBib's "2,000 entries under 2 s" unit test fails only under heavy load.
 - Reporting to OJ: brief plain points, labelled VERIFIED / SUPPORTED / BELIEVED / UNKNOWN, at milestones only. Never call a slice done before its live walk.
+Rule change (OJ, 2026-10-21): for a THROWAWAY walk account only, OJ may give the vault passphrase to the local Mac session, so it can type it into Chrome during the walk. Conditions:
+- the passphrase is used nowhere else;
+- it is never pasted into the cloud session or committed;
+- the account is deleted ("Delete my account") after Dr. Sharma's review and before production.
+Unchanged: OJ does the Google sign-in, and OJ pastes the AI key into the app's key dialog himself. The key never goes into a chat.
