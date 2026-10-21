@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { DownloadSimple } from "@phosphor-icons/react";
 import { qualDescendantIds } from "@appuscholar/core";
 import { plainText, useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useDocAccess } from "@/lib/editor/docAccess";
 import { useProject } from "@/components/frame/ProjectContext";
+import { downloadBlob } from "@/lib/export/download";
+import { qualExportName, qualMarkdown } from "@/lib/tools/qual/exportPart";
 import { publishCodes, publishColors } from "@/lib/tools/qual/liveStore";
 import { stripFromDocuments } from "@/lib/tools/qual/strip";
 import { useCodes } from "@/lib/tools/qual/useCodes";
@@ -21,6 +24,8 @@ import { Passages } from "./Passages";
  * Tapping a code tags the selected passage of the open document (v1 qualTagSelection; wrapSelection of the shared document access). The eye button replaces the tree with the code's
  * passages (an inline view, D-S2-83). Delete takes the code's tags (and its sub-codes') out of every document of the project first, and only when all of them could be updated does it
  * remove the codes (D-S2-81). The panel also tells lib/tools/qual/liveStore what the codes and the toggle are, for the DocumentLayer in this window.
+ * "Export all coded passages (Markdown)" (v1 qualExportMarkdown) downloads core's qualBuildMarkdown over the passages found in the documents read now (D-S2-84); with no codes it says so inline
+ * and downloads nothing, and, like the delete, it refuses when a document of the project could not be read, since the file would silently lack its passages.
  * The codes (kind qual_codes) are guarded (R16): while the stored list is being read there is the loading sign (W8), while the vault is locked or the list does not open
  * there is a line saying so and nothing can be added, and for a list that does not open the student must choose to replace it before they can. A list whose parents loop
  * is not drawn at all (core's tree walkers would overflow the stack on it).
@@ -89,6 +94,20 @@ function Coding({ projectId }: { projectId: string }) {
     }
     if (codes.remove(id)) { close("qual-add-top"); setStatus(t("qual_status_deleted")); }
   };
+  /** v1 qualExportMarkdown: every code with its passages, as one Markdown file. Reads the documents; changes nothing. */
+  const exportMd = async () => {
+    if (busy || unreadable || codes.damaged) return;
+    if (codeList.length === 0) { setStatus(t("qual_export_none")); return; }
+    setBusy(true);
+    setStatus("");
+    let docs: Awaited<ReturnType<typeof access.allDocuments>> = [];
+    try { docs = await access.allDocuments(); } catch { docs = []; }
+    setBusy(false);
+    // allDocuments() is [] when they could not be read and leaves out one that does not open: a file made from fewer would silently lack passages.
+    const read = new Set(docs.map((d) => d.id));
+    if (documents.some((d) => !read.has(d.id))) { setStatus(t("qual_status_export_unread")); return; }
+    downloadBlob(qualExportName(new Date()), new Blob([qualMarkdown(codeList, docs)], { type: "text/markdown;charset=utf-8" }));
+  };
   const add = (name: string, parentId: string | null) => {
     const c = codes.add(name, parentId);
     if (!c) return;
@@ -142,6 +161,11 @@ function Coding({ projectId }: { projectId: string }) {
                 ) : (
                   <Button type="button" variant="ghost" className="flex-1" disabled={unreadable || busy} data-testid="qual-add-top" onClick={() => open({ kind: "top" })}>{t("qual_add_top_btn")}</Button>
                 )}
+              </div>
+              <div className="mt-2 flex">
+                <Button type="button" variant="ghost" className="flex-1" disabled={unreadable || busy} data-testid="qual-export" onClick={() => void exportMd()}>
+                  <DownloadSimple aria-hidden="true" />{plainText(t("qual_export_btn"))}
+                </Button>
               </div>
               {codes.codes.length === 0 && !unreadable && <p className="desc mt-2" data-testid="qual-empty">{t("qual_empty_note")}</p>}
             </>
