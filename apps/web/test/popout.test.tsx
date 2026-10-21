@@ -57,6 +57,16 @@ import type { Library } from "../lib/cite/useLibrary";
 import { blobWritable, isPopout, setSyncChannel, useInsertTarget, useSyncReceiver, type InsertTarget } from "../lib/popout/sync";
 import { markCursorPlaced, putAiInDocument } from "../lib/editor/insert";
 
+// Every tool module is pinned to its unbuilt stub (no Panel, no DocumentLayer), so a tool session's real module never adds its own reads or listeners here (session C, 2026-10-21).
+vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/stats", () => ({ built: false }));
+vi.mock("@/components/tools/qual", () => ({ built: false }));
+vi.mock("@/components/tools/style", () => ({ built: false }));
+vi.mock("@/components/tools/words", () => ({ built: false }));
+vi.mock("@/components/tools/close", () => ({ built: false }));
+vi.mock("@/components/tools/slides", () => ({ built: false }));
+vi.mock("@/components/tools/viva", () => ({ built: false }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const E = en as Record<string, string>;
