@@ -477,7 +477,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("home-next-btn")).toHaveText(T("next_btn_find"));
     for (const s of STAGES) await expect(page.getByTestId("home-stage-" + s)).toContainText(T("stage_name_" + s));
     await expectStates(page, { idea: "in-progress" });
-    await expect(page.getByTestId("home-detail-idea")).toHaveText(T("detail_idea", { verdict: VERDICT }));
+    // The row ends with the line's own full stop, never a second one after the verdict's (B1 walk, Observation D).
+    await expect(page.getByTestId("home-detail-idea")).toHaveText(T("detail_idea", { verdict: VERDICT.replace(/\.$/, "") }));
     await expect(page.getByTestId("home-detail-writing")).toHaveText(T("detail_writing", { words: 0 }));
     // Its first document was made, empty, and is not shown on the home.
     await expect(page.getByTestId("frame-doc")).toBeHidden();
