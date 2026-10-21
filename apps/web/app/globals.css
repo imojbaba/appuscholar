@@ -491,6 +491,7 @@
 .home-q-facts dt { color: var(--muted); }
 .home-q-facts dd { margin: 0; overflow-wrap: anywhere; }
 .home-q-verdict { border-top: 1px solid var(--line); padding-top: 14px; font-size: 14px; font-weight: 600; }
+.home-q-read { font-weight: 400; white-space: pre-line; overflow-wrap: anywhere; }
 .home-out { padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: 10px; }
 .home-out p { margin: 0; font-size: 14px; }
 .home-out .home-out-soon { color: var(--muted); font-size: 13px; }

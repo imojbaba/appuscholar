@@ -2,7 +2,7 @@
 import { useT } from "@/lib/i18n";
 import type { HomeFacts } from "@/lib/frame/homeFacts";
 
-/** The home's question card (canvas Main): "Your question" with Edit (to the Idea place), the four facts and the feasibility verdict. */
+/** The home's question card (canvas Main): "Your question" with Edit (to the Idea place), the four facts and the feasibility verdict (the read as it came when it has none). */
 export function QuestionCard({ facts, onEdit }: { facts: HomeFacts; onEdit(): void }) {
   const t = useT();
   const fact = (v: string) => v.trim() || t("home_q_unset");
@@ -19,8 +19,8 @@ export function QuestionCard({ facts, onEdit }: { facts: HomeFacts; onEdit(): vo
         <dt>{t("home_q_limits")}</dt><dd>{fact(facts.limits)}</dd>
         <dt>{t("home_q_field")}</dt><dd>{fact(facts.field)}</dd>
       </dl>
-      <div className="home-q-verdict" data-testid="home-q-verdict">
-        {facts.verdict === null ? t("home_verdict_none") : t("home_verdict", { verdict: facts.verdict })}
+      <div className={facts.verdict === null && facts.checked ? "home-q-verdict home-q-read" : "home-q-verdict"} data-testid="home-q-verdict">
+        {facts.verdict !== null ? t("home_verdict", { verdict: facts.verdict }) : facts.checked ? facts.readText : t("home_verdict_none")}
       </div>
     </section>
   );

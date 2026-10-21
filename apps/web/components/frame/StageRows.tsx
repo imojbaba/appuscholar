@@ -27,7 +27,8 @@ export function StageRows({ states, facts, onOpen, onMark }: {
     if (!BUILT.has(s)) return t("detail_not_built");
     if (s === "idea") {
       if (facts.question.trim() === "") return t("detail_idea_none");
-      return facts.verdict === null ? t("detail_idea_unread") : t("detail_idea", { verdict: facts.verdict });
+      if (facts.verdict !== null) return t("detail_idea", { verdict: facts.verdict });
+      return facts.checked ? t("detail_idea_checked") : t("detail_idea_unread");
     }
     if (s === "lit") return t("detail_lit", { kept: facts.kept, read: facts.read, highlights: facts.highlights, cards: facts.cards });
     return t("detail_writing", { words: facts.draftWords });

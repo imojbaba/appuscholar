@@ -239,8 +239,7 @@ export const V2_STRINGS = {
   place_question_locked: { en: "Your question is locked. Enter your passphrase to see it.", hi: "आपका प्रश्न बंद है। इसे देखने के लिए अपना पासफ़्रेज़ लिखें।" },
   place_not_built: { en: "Not built yet.", hi: "अभी बना नहीं है।" },
   reading_open_pdfs: { en: "Open your PDFs", hi: "अपनी PDF खोलें" },
-  // The project's home, the project list and first run until Tasks 7, 8 and 9 build them.
-  home_places: { en: "Stages", hi: "चरण" },
+  // The project list and first run until Tasks 8 and 9 build them.
   projects_new: { en: "New project", hi: "नया प्रोजेक्ट" },
   projects_none: { en: "No projects yet.", hi: "अभी कोई प्रोजेक्ट नहीं।" },
   projects_finished: { en: "Finished", hi: "पूरा हुआ" },
@@ -299,6 +298,7 @@ export const V2_STRINGS = {
   home_tools_review: { en: "Closeness check, viva, slides", hi: "समानता जाँच, मौखिकी, स्लाइड" },
   detail_idea: { en: "Question set. Feasibility read: {verdict}.", hi: "प्रश्न तय। संभाव्यता का आकलन: {verdict}।" },
   detail_idea_unread: { en: "Question set. Feasibility not checked yet.", hi: "प्रश्न तय। संभाव्यता अभी जाँची नहीं गई।" },
+  detail_idea_checked: { en: "Question set. Feasibility checked.", hi: "प्रश्न तय। संभाव्यता जाँची गई।" },
   detail_idea_none: { en: "No question yet.", hi: "अभी कोई प्रश्न नहीं।" },
   detail_lit: { en: "{kept} papers kept, {read} read, {highlights} highlights, {cards} paper cards", hi: "{kept} शोध-पत्र रखे, {read} पढ़े, {highlights} हाइलाइट, {cards} पेपर कार्ड" },
   detail_writing: { en: "Draft of {words} words", hi: "{words} शब्दों का मसौदा" },
@@ -320,7 +320,9 @@ export const V2_STRINGS = {
   home_out_btn: { en: "Export project", hi: "प्रोजेक्ट निर्यात करें" },
   home_out_soon: { en: "Not built yet. For now, use Export all my work in the account menu.", hi: "अभी बना नहीं है। फ़िलहाल खाता मेनू में मेरा सारा काम निर्यात करें का उपयोग करें।" },
   home_locked: { en: "This project is locked. Enter your passphrase to open it.", hi: "यह प्रोजेक्ट बंद है। इसे खोलने के लिए अपना पासफ़्रेज़ लिखें।" },
-  home_unlock: { en: "Unlock", hi: "अनलॉक करें" }
+  home_unlock: { en: "Unlock", hi: "अनलॉक करें" },
+  home_load_fail: { en: "Could not load this project. Check your connection and try again.", hi: "यह प्रोजेक्ट लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
+  home_retry: { en: "Retry", hi: "फिर कोशिश करें" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */
