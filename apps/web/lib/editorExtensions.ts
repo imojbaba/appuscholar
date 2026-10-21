@@ -21,7 +21,9 @@ function dataAttributes(el: HTMLElement): Record<string, string> {
 
 /**
  * Keeps v1's semantic spans (`<span class="ai-ins" data-h="…">`, `<span class="img-wrap">`, `<span class="translated-quote" title="…">`, …) intact.
- * `title` is kept for the translated quote, whose title holds the original (citInsertQuote 7898: a hover shows it).
+ * `title` is kept for the translated quote, whose title holds the original (citInsertQuote 7898: a hover shows it). Every `data-*` attribute is
+ * kept, so the tools' tags survive a load and a save too (ruling R11): `<span class="stat-tag" data-run="…">` (v1 4204) and
+ * `<span class="qual-tag" data-qcode="…" title="…">` (v1 6254), written by useDocAccess (lib/editor/docAccess.ts).
  * Without it ProseMirror drops the span and its attributes, and the next autosave persists the loss.
  * Not inclusive: text typed right after an AI insertion is the student's own, not part of the span.
  */

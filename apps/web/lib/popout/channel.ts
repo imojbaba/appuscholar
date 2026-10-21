@@ -16,7 +16,18 @@ export type InsertMessage = { type: "insert"; text: string } | { type: "insert";
  * Blobs live on the server, so a window that saved one of those two says so here, and the other windows read it again.
  */
 export type BlobMessage = { type: "blob"; id: string };
-export type SyncMessage = InsertMessage | BlobMessage;
+/**
+ * The document access of a place's own window (Task G4, ruling R10; lib/editor/docAccess.ts). A pop-out says hello when its tools mount; the
+ * writing window answers with a snapshot of the open document, and sends one again after each change, so a pop-out's text() and selection()
+ * read a mirror. Every other call is a request the writing window runs on the open document and replies to by id: a pop-out never writes a
+ * document itself (register row D-S2-43).
+ */
+export type DocHelloMessage = { type: "doc-hello" };
+export type DocSnapshotMessage = { type: "doc-snapshot"; projectId: string | null; docId: string | null; text: string; selection: string };
+export type DocOp = "insertText" | "insertBlock" | "wrapSelection" | "replaceInDocument" | "allDocuments" | "rewriteDocument";
+export type DocRequestMessage = { type: "doc-request"; id: string; projectId: string; op: DocOp; args: unknown[] };
+export type DocReplyMessage = { type: "doc-reply"; id: string; result: unknown };
+export type SyncMessage = InsertMessage | BlobMessage | DocHelloMessage | DocSnapshotMessage | DocRequestMessage | DocReplyMessage;
 
 export type SyncChannel = {
   postMessage(m: unknown): void;

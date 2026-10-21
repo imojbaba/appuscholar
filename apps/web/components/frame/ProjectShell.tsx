@@ -21,6 +21,7 @@ import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sync";
 import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
+import { DocAccessHost } from "@/lib/editor/docAccess";
 import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
@@ -487,6 +488,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         <CiteLibraryProvider>
         {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
         {inProject && <CaptureHash />}
+        {/* The tools' document access in a place's own window is answered here: snapshots of the open document and its requests (lib/editor/docAccess). */}
+        {inProject && !popout && <DocAccessHost />}
         {popout ? <WindowHeader /> : <AppHeader />}
         <ChromeDialogs />
         <ImportOrigin />

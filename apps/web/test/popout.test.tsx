@@ -282,7 +282,8 @@ describe("a place in its own window (register row D-S2-43)", () => {
     await until(() => !!tid("doc-card"));
     expect(tid("app-header")).not.toBeNull();
     expect(tid("window-where")).toBeNull();
-    expect(ch.listening).toBe(1);
+    // The insert receiver, and the tools' document access answering a pop-out (Task G4, lib/editor/docAccess).
+    expect(ch.listening).toBe(2);
   });
 
   it("Open in a new window opens the place with ?window=1; a pop-out and the Writing place have none", async () => {
