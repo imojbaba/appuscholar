@@ -1,6 +1,6 @@
 "use client";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
-import { captureConfirmText, captureMatch, captureRecordV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
+import { captureConfirmText, captureMatch, captureRecordV2, captureYearV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/lib/i18n";
 import { useLibrary } from "./useLibrary";
@@ -15,6 +15,7 @@ import { useLibrary } from "./useLibrary";
  * Fix wave A (walk fault W1, register row D-S2-23): the bookmarklet is bookmarkletSourceV2 (PubMed's `citation_authors`, the volume, the issue and the pages), the entry
  * is captureRecordV2 (PubMed's "Surname Initials" as "Surname, Initials"), and a capture whose title is in the library without an author fills that entry's empty
  * fields (captureMatch's `fill`, useLibrary().fillEmpty) in place of adding a second one, with the V2 toast `cap_filled`.
+ * Walk fault W30 (register row D-S2-37): a year that is not four digits (an old bookmark's "09/1") is dropped from the question and the entry (captureYearV2).
  */
 
 export const CAPTURE_PREFIX = "#capture=";
@@ -78,7 +79,8 @@ export function CaptureHash() {
     const d = decodeCapture(raw);
     if (!d) { toast(CAPTURE_UNREADABLE); return; }
     if (!d.title) return;
-    if (!window.confirm(captureConfirmText(d))) return;
+    // W30: a bookmark dragged before the fix sends a 4-character slice of the date ("09/1"); the question shows no year then, as the entry stores none.
+    if (!window.confirm(captureConfirmText({ ...d, year: captureYearV2(d.year) }))) return;
     // The address is outside React and read once, on mount; the entry exists only once the student has said yes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRec(captureRecordV2(d));
