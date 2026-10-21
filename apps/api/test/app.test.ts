@@ -384,6 +384,16 @@ describe("ai routes", () => {
     await acceptTerms(auth);
   });
 
+  it("first run's idea check, logged with no project, is in the project's log once its save claims it (B1 walk row 12)", async () => {
+    const check = await post("/ai/complete", { provider: "groq", apiKey: "gsk_x", prompt: "You are an experienced research-methods advisor. Please judge whether a project idea is realistic.", day: "2026-10-21" });
+    expect(check.status).toBe(200);
+    const created = await (await post("/projects", { title: "Sleep" })).json() as { id: string };
+    const projectLog = async () => (await app.request(`/ai/log?projectId=${created.id}`, { headers: auth })).json();
+    expect(await projectLog()).toEqual([]);
+    expect(await (await post(`/projects/${created.id}/ai-use/claim`, { secondsAgo: 70 })).json()).toEqual({ claimed: 1 });
+    expect(await projectLog()).toEqual([{ d: "2026-10-21", p: "groq", m: "openai/gpt-oss-120b", k: "checking whether my project idea is realistic", g: "feedback" }]);
+  });
+
   it("POST /ai/complete refuses unmasked personal data unless pdAccepted, logs provider, model and kind only", async () => {
     await app.request("/me", { headers: auth });
     const body = { provider: "groq", apiKey: "gsk_x", prompt: "Continue this writing in the same register, about 120 words. ... mail asha@uni.ac.in", day: "2026-10-15" };
