@@ -5,9 +5,13 @@ import { useT } from "@/lib/i18n";
 import type { HomeFacts } from "@/lib/frame/homeFacts";
 import type { StageState } from "@/lib/frame/stages";
 import { STAGE_ORDER, type StageKey } from "@/lib/tools";
+import { TOOL_TABS, toolModule } from "@/lib/tools/registry";
 
-/** The stages that have a place of their own in this build; the others say "Not built yet" in words. */
-const BUILT: ReadonlySet<StageKey> = new Set<StageKey>(["idea", "lit", "writing"]);
+/**
+ * Whether a stage has a place of its own in this build: Idea, Literature and Writing, and each stage 3 to 6 place one of whose tool modules is
+ * built (the registry, ruling R5). The others say "Not built yet" in words. Asked while drawing, never while the modules load.
+ */
+const built = (s: StageKey): boolean => s === "idea" || s === "lit" || s === "writing" || TOOL_TABS.some((x) => x.stage === s && toolModule(x.tool).built);
 /** The chip's colours (canvas Main's four): ready green, in progress and reopened purple, started early amber, not started grey. */
 const CHIP: Record<StageState, string> = { ready: "ready", "in-progress": "active", reopened: "active", "started-early": "early", "not-started": "none" };
 const ACTION: Record<StageState, string> = { ready: "home_act_reopen", "in-progress": "home_act_continue", "started-early": "home_act_continue", reopened: "home_act_continue", "not-started": "home_act_open" };
@@ -26,7 +30,7 @@ export function StageRows({ states, facts, onOpen, onMark, compact = false }: {
 }) {
   const t = useT();
   const detail = (s: StageKey): string => {
-    if (!BUILT.has(s)) return t("detail_not_built");
+    if (!built(s)) return t("detail_not_built");
     if (s === "idea") {
       if (facts.question.trim() === "") return t("detail_idea_none");
       // The line ends with its own full stop; a verdict that already ends with one would read "..".
@@ -34,7 +38,9 @@ export function StageRows({ states, facts, onOpen, onMark, compact = false }: {
       return facts.checked ? t("detail_idea_checked") : t("detail_idea_unread");
     }
     if (s === "lit") return t("detail_lit", { kept: facts.kept, read: facts.read, highlights: facts.highlights, cards: facts.cards });
-    return t("detail_writing", { words: facts.draftWords });
+    if (s === "writing") return t("detail_writing", { words: facts.draftWords });
+    // A built stage 3 to 6 place: its modules' facts give the line (Task G3); until then it says nothing it does not know.
+    return "";
   };
   const chip = (s: StageKey) => <span className={"home-chip " + CHIP[states[s]]} data-testid={"home-state-" + s}>{t("state_" + states[s].replace("-", "_"))}</span>;
   if (compact) return (

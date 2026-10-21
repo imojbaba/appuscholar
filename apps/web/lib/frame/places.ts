@@ -1,10 +1,23 @@
 import { isStageKey, type StageKey } from "@/lib/tools";
+// The tabs from ./tabs, not the registry: a tool's Panel may import placeHref while the registry is still loading.
+import { TOOL_TABS } from "@/lib/tools/tabs";
+
+/** A stage's tool tabs in the registry's order. */
+const toolTabs = (stage: StageKey): string[] => TOOL_TABS.filter((x) => x.stage === stage).map((x) => x.tab);
 
 /**
- * The places of a project (draft §5): each stage is a place at `/p/<id>/<stage>`, and a stage with tabs has one address per tab. Literature's
- * four tabs are the only ones; the first is where the place opens.
+ * The places of a project (draft §5): each stage is a place at `/p/<id>/<stage>`, and a stage with tabs has one address per tab; the first is
+ * where the place opens. Literature has its four; the stage 3 to 6 places have the registry's tabs (Task G2), and Writing opens on the document,
+ * the frame's own tab, before its tool tabs (ruling R2). Idea has none.
  */
-export const PLACE_TABS: Record<StageKey, readonly string[]> = { idea: [], lit: ["find", "reading", "compare", "citations"], design: [], collect: [], writing: [], review: [] };
+export const PLACE_TABS: Record<StageKey, readonly string[]> = {
+  idea: [],
+  lit: ["find", "reading", "compare", "citations"],
+  design: toolTabs("design"),
+  collect: toolTabs("collect"),
+  writing: ["document", ...toolTabs("writing")],
+  review: toolTabs("review")
+};
 
 /** A place as the shell knows it: the stage, and its tab (null for a stage without tabs). */
 export type Place = { stage: StageKey; tab: string | null };

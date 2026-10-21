@@ -3,8 +3,15 @@ import { PLACE_TABS, homeHref, parsePlace, placeHref } from "@/lib/frame/places"
 import { STAGE_ORDER } from "@/lib/tools";
 
 describe("places", () => {
-  it("only Literature has tabs: Find, Reading list, Compare, Citations", () => {
-    expect(PLACE_TABS).toEqual({ idea: [], lit: ["find", "reading", "compare", "citations"], design: [], collect: [], writing: [], review: [] });
+  it("Literature has Find, Reading list, Compare, Citations; the stage 3 to 6 places and Writing have the registry's tabs; Idea has none", () => {
+    expect(PLACE_TABS).toEqual({
+      idea: [],
+      lit: ["find", "reading", "compare", "citations"],
+      design: ["overview", "pathway", "protocol", "ethics", "registration", "investigator", "budget", "aiuse"],
+      collect: ["data", "power", "charts", "check", "scales", "coding"],
+      writing: ["document", "style", "words"],
+      review: ["closeness", "viva", "slides"]
+    });
     expect(Object.keys(PLACE_TABS)).toEqual(STAGE_ORDER);
   });
 
@@ -25,7 +32,14 @@ describe("places", () => {
   });
 
   it("a stage with no tabs takes none", () => {
-    expect(parsePlace("writing", undefined)).toEqual({ stage: "writing", tab: null, rest: [] });
+    expect(parsePlace("idea", undefined)).toEqual({ stage: "idea", tab: null, rest: [] });
     expect(parsePlace("idea", ["find"])).toBeNull();
+  });
+
+  it("a stage 3 to 6 place opens on its first tab and refuses a tab of another stage", () => {
+    expect(parsePlace("design", undefined)).toEqual({ stage: "design", tab: "overview", rest: [] });
+    expect(parsePlace("writing", undefined)).toEqual({ stage: "writing", tab: "document", rest: [] });
+    expect(parsePlace("review", ["viva"])).toEqual({ stage: "review", tab: "viva", rest: [] });
+    expect(parsePlace("review", ["data"])).toBeNull();
   });
 });

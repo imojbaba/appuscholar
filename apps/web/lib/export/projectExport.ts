@@ -44,6 +44,8 @@ export type ProjectExportDeps = {
   /** GET /ai/log?projectId=<id>: this project's AI-use log, as the AI-use statement reads it (rows logged with no project are not in it). */
   aiUseLog(): Promise<AiuEntry[]>;
 };
+/** What a tool module's export part builds from (ExportPartDef in lib/tools/registry.ts; ruling R7): the project export's reads, and the export's time. */
+export type ExportDeps = ProjectExportDeps & { now: Date };
 /** `progress` hears each ticked part as its files are made (the dialog's line while the zip is built, W31). */
 export type ProjectExportOptions = { style: CitationStyle; now: Date; lastSearch: RsPaper[] | null; progress?(part: ExportPart): void };
 
