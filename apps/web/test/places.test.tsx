@@ -54,6 +54,17 @@ import { STAGE_ORDER, type StageKey } from "../lib/tools";
 import { PLACE_TABS, parsePlace } from "../lib/frame/places";
 import { TOOL_TABS } from "../lib/tools/registry";
 
+// Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
+// what this file sees (session C, 2026-10-21).
+vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/stats", () => ({ built: false }));
+vi.mock("@/components/tools/qual", () => ({ built: false }));
+vi.mock("@/components/tools/style", () => ({ built: false }));
+vi.mock("@/components/tools/words", () => ({ built: false }));
+vi.mock("@/components/tools/close", () => ({ built: false }));
+vi.mock("@/components/tools/slides", () => ({ built: false }));
+vi.mock("@/components/tools/viva", () => ({ built: false }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
 const roots: Root[] = [];
