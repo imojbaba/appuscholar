@@ -30,9 +30,10 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type Locator, type Page, type Response } from "@playwright/test";
-import { QUAL_PALETTE } from "@appuscholar/core";
+import { QUAL_PALETTE, qualDeleteCascade } from "@appuscholar/core";
 import { signIn } from "./support/signin";
 import { toolBuilt } from "./support/builtTools";
+import { API_ORIGIN } from "./support/origins";
 
 // ---- Copy: every sentence asserted is read from the dictionaries (en.json and the Coding tab's own file) ---------------------------------------------
 
@@ -60,7 +61,6 @@ const PARA_3 = "Priya felt nervous about the viva and slept badly all week.";
 const PHRASE_3 = "felt nervous about the viva";
 const PASS = "correct horse";
 const PHONE = { width: 375, height: 812 };
-const UNLOCK_HINT = "Type the passphrase that protects your documents.";
 
 /** The palette's colour as the browser reports a background at alpha 0x55: rgb exact, alpha 85/255 (Chrome rounds it to three places). */
 function expectColour(css: string, hex: string, alpha: number) {
@@ -70,6 +70,7 @@ function expectColour(css: string, hex: string, alpha: number) {
   expect(Math.abs(Number(m[4] ?? 1) - alpha), css).toBeLessThan(0.003);
 }
 const ALPHA_55 = 0x55 / 255;
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
 /** The local calendar day, as the app names its files. */
 function today(): string {
   const d = new Date();
@@ -97,6 +98,18 @@ async function newProject(page: Page): Promise<string> {
 const panel = (page: Page) => page.getByTestId("panel-qual");
 const status = (page: Page) => page.getByTestId("qual-status");
 const editor = (page: Page) => page.getByTestId("frame-doc").locator(".ProseMirror");
+/** Waits until the first tag of the code is drawn in the palette colour at alpha 0x55 (not transparent: the layer may still be reading its sealed blobs). */
+async function expectTagColour(page: Page, id: string, hex: string) {
+  await expect(async () => {
+    const bg = await tagBackground(page, id);
+    expect(bg, "a tag of the code is in the document").not.toBeNull();
+    expect(bg).not.toBe(TRANSPARENT);
+    expectColour(bg!, hex, ALPHA_55);
+  }).toPass({ timeout: 20_000 });
+}
+/** The save of the qual_prefs blob (the colours choice), to be registered before the click that causes it. */
+const prefsSaved = (page: Page) => page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/qual_prefs$/.test(r.url()) && r.ok());
+
 /** The paragraphs that hold words (the editor may keep an empty one at the end). */
 const paras = (page: Page) => editor(page).locator("p").filter({ hasText: /\S/ });
 const isDocPut = (r: Response) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url());
@@ -111,12 +124,6 @@ async function codeId(page: Page, name: string): Promise<string> {
   return id;
 }
 
-/** Opens the Coding tab from the project's home through the place, as a student does. */
-async function openCoding(page: Page, projectId: string) {
-  await page.goto(`/p/${projectId}/collect/coding`);
-  await expect(panel(page)).toBeVisible();
-}
-
 /** Opens the document beside the place when it is closed. */
 async function ensureDoc(page: Page) {
   if (await page.getByTestId("place-open-doc").isVisible()) await page.getByTestId("place-open-doc").click();
@@ -127,11 +134,11 @@ async function ensureDoc(page: Page) {
 /** Answers the vault's unlock ask with the passphrase. */
 async function unlock(page: Page) {
   await expect(page.getByTestId("pass-dialog")).toBeVisible();
-  await expect(page.getByTestId("pass-message")).toHaveText(UNLOCK_HINT);
+  await expect(page.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint"));
   await page.getByTestId("pass-input").fill(PASS);
   await page.getByTestId("pass-ok").click();
   await expect(page.getByTestId("pass-dialog")).toBeHidden();
-  await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+  await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
 }
 
 /** Selects the text of one phrase (or from the start of `from` to the end of `to`) in the open document, with the editor focused, as a drag would. */
@@ -218,6 +225,9 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     void d.dismiss();
   });
   expect(toolBuilt("qual"), "the Coding module is built").toBe(true);
+  // The api's bearer token, as the app sends it, to read what the server holds.
+  let bearer = "";
+  page.on("request", (r) => { if (r.url().startsWith(API_ORIGIN)) void r.allHeaders().then((h) => { if (h.authorization) bearer = h.authorization; }); });
 
   const projectId = await newProject(page);
 
@@ -304,7 +314,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     const body = await tag(page, anxiety);
     await expect(status(page)).toHaveText(T("qual_status_tagged", { name: "Anxiety" }));
     expect(await tagTexts(page, anxiety)).toEqual([PHRASE_ANXIETY]);
-    expectColour((await tagBackground(page, anxiety))!, QUAL_PALETTE[0]!, ALPHA_55);
+    await expectTagColour(page, anxiety, QUAL_PALETTE[0]!);
     const spans = body.match(/<span\b[^>]*qual-tag[^>]*>/g) ?? [];
     expect(spans).toHaveLength(1);
     expect(spans[0]).toMatch(/class="qual-tag"/);
@@ -320,7 +330,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await tag(page, sleep);
     await expect(status(page)).toHaveText(T("qual_status_tagged", { name: "Sleep" }));
     expect(await tagTexts(page, sleep)).toEqual([PHRASE_SLEEP]);
-    expectColour((await tagBackground(page, sleep))!, QUAL_PALETTE[2]!, ALPHA_55);
+    await expectTagColour(page, sleep, QUAL_PALETTE[2]!);
     // The words themselves are unchanged.
     await expect(paras(page)).toHaveText([PARA_1, PARA_2]);
   });
@@ -330,27 +340,27 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await expect(page.getByTestId("qual-show-colors")).toBeChecked();
     await expect(page.getByText(T("qual_show_colors_label"))).toBeVisible();
     await page.getByTestId("qual-show-colors").uncheck();
-    await expect.poll(() => tagBackground(page, anxiety)).toBe("rgba(0, 0, 0, 0)");
-    await expect.poll(() => tagBackground(page, sleep)).toBe("rgba(0, 0, 0, 0)");
+    await expect.poll(() => tagBackground(page, anxiety)).toBe(TRANSPARENT);
+    await expect.poll(() => tagBackground(page, sleep)).toBe(TRANSPARENT);
     expect(await tagTexts(page, anxiety)).toEqual([PHRASE_ANXIETY]);
     await page.getByTestId("qual-show-colors").check();
-    await expect.poll(async () => (await tagBackground(page, anxiety)) !== "rgba(0, 0, 0, 0)").toBe(true);
-    expectColour((await tagBackground(page, anxiety))!, QUAL_PALETTE[0]!, ALPHA_55);
+    await expectTagColour(page, anxiety, QUAL_PALETTE[0]!);
 
     // Off again, then a reload: it stays off (the preference is stored with the project); then on again.
+    const off = prefsSaved(page);
     await page.getByTestId("qual-show-colors").uncheck();
-    await expect.poll(() => tagBackground(page, anxiety)).toBe("rgba(0, 0, 0, 0)");
-    await page.waitForTimeout(1500); // the preference is saved a moment after the click
+    await expect.poll(() => tagBackground(page, anxiety)).toBe(TRANSPARENT);
+    await off;
     await page.reload();
     await expect(panel(page)).toBeVisible();
     await ensureDoc(page);
     await expect(page.getByTestId("qual-show-colors")).not.toBeChecked();
     await expect.poll(() => tagTexts(page, anxiety)).toEqual([PHRASE_ANXIETY]);
-    expect(await tagBackground(page, anxiety)).toBe("rgba(0, 0, 0, 0)");
+    expect(await tagBackground(page, anxiety)).toBe(TRANSPARENT);
+    const on = prefsSaved(page);
     await page.getByTestId("qual-show-colors").check();
-    await expect.poll(async () => (await tagBackground(page, anxiety)) !== "rgba(0, 0, 0, 0)").toBe(true);
-    expectColour((await tagBackground(page, anxiety))!, QUAL_PALETTE[0]!, ALPHA_55);
-    await page.waitForTimeout(1500);
+    await expectTagColour(page, anxiety, QUAL_PALETTE[0]!);
+    await on;
   });
 
   // 5. Passages.
@@ -379,9 +389,8 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     const check = async () => {
       await expect.poll(() => tagTexts(page, anxiety)).toEqual([PHRASE_ANXIETY]);
       await expect.poll(() => tagTexts(page, sleep)).toEqual([PHRASE_SLEEP]);
-      await expect.poll(async () => (await tagBackground(page, anxiety)) ?? "").toMatch(/^rgba\(/);
-      expectColour((await tagBackground(page, anxiety))!, QUAL_PALETTE[0]!, ALPHA_55);
-      expectColour((await tagBackground(page, sleep))!, QUAL_PALETTE[2]!, ALPHA_55);
+      await expectTagColour(page, anxiety, QUAL_PALETTE[0]!);
+      await expectTagColour(page, sleep, QUAL_PALETTE[2]!);
       await expect(paras(page)).toHaveText([PARA_1, PARA_2]);
       await page.getByTestId("qual-passages-" + anxiety).click();
       await expect(page.getByTestId("qual-passage")).toHaveText(`${title1}“${PHRASE_ANXIETY}”`);
@@ -394,36 +403,46 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await check();
 
     // The vault: setup from the header pill (as phase3a-vault.spec.ts does), the recovery sheet, Done.
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_off"));
     await page.getByTestId("vault-pill").click();
     await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
     await page.getByTestId("vault-setup-submit").click();
-    await expect(page.getByTestId("pass-message")).toContainText("only this passphrase opens them");
+    await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("pass-message")).toHaveText("Type it again");
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
     await page.getByTestId("pass-input").fill(PASS);
     await page.getByTestId("pass-ok").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
     await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
     // The migration also seals the codes: wait until it has finished and the page is quiet.
     await expect(page.getByTestId("qual-tree")).toBeVisible();
-    await page.waitForTimeout(3000);
+    // Sealed on the server: the codes (and the project's documents' titles) are ciphertext with a key version, not the names typed.
+    await expect.poll(async () => {
+      const headers = { authorization: bearer };
+      const blob = await page.request.get(`${API_ORIGIN}/projects/${projectId}/blobs/qual_codes`, { headers });
+      if (!blob.ok()) return "codes " + blob.status();
+      const w = (await blob.json()) as { body: string; keyVersion: number };
+      if (!(w.keyVersion >= 1) || String(w.body).includes("Anxiety")) return "codes not sealed yet";
+      const docs = (await (await page.request.get(`${API_ORIGIN}/projects/${projectId}/documents`, { headers })).json()) as Array<{ title: string; titleKeyVersion: number }>;
+      return docs.every((d) => d.titleKeyVersion >= 1) ? "sealed" : "documents not sealed yet";
+    }, { timeout: 30_000 }).toBe("sealed");
 
     // Reload: locked. The codes are locked too until the passphrase is typed.
     await page.reload();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault locked");
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_locked"));
     await expect(page.getByTestId("pass-dialog")).toBeVisible();
     // Left locked, the tab says so and nothing can be added; the passphrase from the pill brings the codes back.
-    // The open document and the codes each ask once; "Cancel" answers each ask in turn.
-    for (let asks = 0; asks < 4 && await page.getByTestId("pass-dialog").isVisible(); asks++) {
-      await page.getByTestId("pass-cancel").click();
-      await page.waitForTimeout(500);
-    }
-    await expect(page.getByTestId("pass-dialog")).toBeHidden();
+    // The open document and the codes each ask (the second may come a moment after the first): Cancel answers each in turn until the tab shows it is locked.
+    const ask = page.getByTestId("pass-dialog");
+    await expect(async () => {
+      if (await ask.isVisible()) await page.getByTestId("pass-cancel").click();
+      await expect(page.getByTestId("qual-locked")).toBeVisible({ timeout: 1000 });
+      await expect(ask).toBeHidden({ timeout: 1000 });
+    }).toPass({ timeout: 20_000 });
     await expect(panel(page)).toBeVisible();
     await expect(page.getByTestId("qual-locked")).toHaveText(T("qual_codes_locked"));
     await expect(page.getByTestId("qual-add-top")).toBeDisabled();
@@ -446,15 +465,16 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await expect(paras(page)).toHaveText([PARA_3]);
     await saved;
     await select(page, PHRASE_3);
+    const tagSaved = page.waitForResponse((r) => isDocPut(r) && r.ok());
     await page.getByTestId("qual-name-" + anxiety).click();
     await expect(status(page)).toHaveText(T("qual_status_tagged", { name: "Anxiety" }));
-    expectColour((await tagBackground(page, anxiety))!, QUAL_PALETTE[0]!, ALPHA_55);
+    await expectTagColour(page, anxiety, QUAL_PALETTE[0]!);
     await page.getByTestId("qual-passages-" + anxiety).click();
     await expect(page.getByTestId("qual-passage")).toHaveText([`${title1}“${PHRASE_ANXIETY}”`, `${DOC_2}“${PHRASE_3}”`]);
     await page.getByTestId("qual-passages-back").click();
     await expect(page.getByTestId("qual-tree")).toBeVisible();
-    // The tag is in the saved document: switching away and back keeps it.
-    await page.waitForTimeout(2500);
+    // The tag is saved with the document.
+    await tagSaved;
   });
 
   // 8. Export.
@@ -495,7 +515,9 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     expect(inZip).toEqual([`qual/appuscholar-coded-passages-${today()}.md`]);
     expect(await zip.file(inZip[0]!)!.async("string")).toBe(expected);
     // The documents in the zip carry no code colour (R4).
-    for (const name of Object.keys(zip.files).filter((n) => /\.(html|txt|md)$/.test(n) && !n.startsWith("qual/"))) {
+    const scanned = Object.keys(zip.files).filter((n) => /\.(html|doc|txt|md)$/.test(n) && !n.startsWith("qual/"));
+    expect(scanned.length, "some document files were scanned: " + Object.keys(zip.files).join(", ")).toBeGreaterThan(0);
+    for (const name of scanned) {
       const text = (await zip.file(name)!.async("string")).toLowerCase();
       for (const hex of QUAL_PALETTE) expect(text, name).not.toContain(hex.toLowerCase());
     }
@@ -511,7 +533,11 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await expect(page.getByTestId("qual-tree")).toBeVisible();
 
     await page.getByTestId("qual-delete-" + anxiety).click();
-    await expect(page.getByTestId("qual-delete-confirm")).toContainText('Delete "Anxiety" and its 1 sub-code(s)? The passage text itself stays in your document — only the tag is removed.');
+    await expect(page.getByTestId("qual-delete-confirm")).toContainText(qualDeleteCascade([
+      { id: anxiety, name: "Anxiety", parentId: null, color: QUAL_PALETTE[0]! },
+      { id: nerves, name: "Exam nerves", parentId: anxiety, color: QUAL_PALETTE[1]! }
+    ], anxiety)!.confirm);
+    await expect(page.getByTestId("qual-delete-confirm")).toContainText("and its 1 sub-code(s)");
     await expect(page.getByTestId("qual-delete-keep")).toBeFocused();
     await page.getByTestId("qual-delete-keep").click();
     await expect(page.getByTestId("qual-delete-confirm")).toHaveCount(0);
@@ -520,6 +546,8 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     expect(await tagTexts(page, anxiety)).toEqual([PHRASE_3]);
 
     await page.getByTestId("qual-delete-" + anxiety).click();
+    const openSaved = page.waitForResponse((r) => isDocPut(r) && r.ok());
+    const codesSaved = page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/qual_codes$/.test(r.url()) && r.ok());
     await page.getByTestId("qual-delete-confirm-yes").click();
     await expect(status(page)).toHaveText(T("qual_status_deleted"));
     await expect(page.getByTestId("qual-code-" + anxiety)).toHaveCount(0);
@@ -537,9 +565,12 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     expect(await tagTexts(page, anxiety)).toEqual([]);
     await expect(editor(page).locator("span.qual-tag")).toHaveCount(1);
     expect(await tagTexts(page, sleep)).toEqual([PHRASE_SLEEP]);
-    expectColour((await tagBackground(page, sleep))!, QUAL_PALETTE[2]!, ALPHA_55);
+    await expectTagColour(page, sleep, QUAL_PALETTE[2]!);
     await expect(editor(page).locator("h1")).toHaveText(HEADING);
-    await page.waitForTimeout(2500);
+    // The open document (its tag was taken out in the editor) is saved before the reload.
+    await openSaved;
+    // The shorter code list is saved too (a blob save follows the click by a moment; a reload before it would bring the code back).
+    await codesSaved;
 
     // Stored: reload (locked), unlock, and look again.
     await page.reload();
