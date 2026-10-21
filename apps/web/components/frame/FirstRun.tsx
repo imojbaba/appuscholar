@@ -52,11 +52,14 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
         id = (await apiFetch<Project>("/projects", { method: "POST", body: JSON.stringify(await sealTitle(vault, newProjectKeyId(), [], title)) })).id;
         setMade(id);
       }
-      // The idea goes in as the project's idea_intake, sealed under the blob's own key like any later save of the Idea place.
+      // The idea goes in as the project's idea_intake, sealed under the blob's own key like any later save of the Idea place. A project saved with
+      // a name and nothing of an idea stores none: an empty intake would count as Idea work, and its stage would read In progress (lib/frame/stages).
       const value: IdeaIntake = read ? { ...intake, read } : intake;
-      const c = projectBlobClient("idea_intake", id, () => vault, () => {}, { headless: true });
-      c.set(value);
-      try { if (!(await c.flush())) throw new Error("idea-not-saved"); } finally { c.dispose(); }
+      if (read || Object.values(intake).some((v) => v.trim())) {
+        const c = projectBlobClient("idea_intake", id, () => vault, () => {}, { headless: true });
+        c.set(value);
+        try { if (!(await c.flush())) throw new Error("idea-not-saved"); } finally { c.dispose(); }
+      }
       // A move is idempotent, so a retry moves again harmlessly; the moved document is then the project's first, and none is made.
       if (moveDocId) await apiFetch(`/documents/${moveDocId}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) });
       await listOrSeed(id, vault);

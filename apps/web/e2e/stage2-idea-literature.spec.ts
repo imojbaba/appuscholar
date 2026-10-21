@@ -19,7 +19,11 @@
  * same page captured again), then, after the blob check, the export of all work and two windows saving different idea boxes. The two stand-ins
  * the 11b needs that no recording holds are marked where they are made (PUBMED_PAGE, and the OpenAlex retraction answer for GUIDELINES's DOI).
  * The vault is set up in step 1 (the key's "Protect with a passphrase"), so every stage blob the journey stores goes to the api sealed; after the
- * journey the api is asked for each one (the server never sees the text: blindness).
+ * journey the api is asked for each one (the server never sees the text: blindness), and for the project's and its documents' titles.
+ * Wave B1 (docs/walkthroughs/wave-b1.md is its sheet for a human): the journey moves through the frame. First run takes the idea and its check and
+ * saves the project; the project's home shows the six stages (Mark ready on Idea, then an edit, reads Reopened); each step opens its place (Idea,
+ * Literature's four tabs, Writing) by the home's rows and the place's tabs; the project list makes one `include=work` request; the reference list
+ * goes in with the document closed; a Literature window runs the Crossref check; the project's export place gives the zip.
  */
 import path from "node:path";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -30,7 +34,6 @@ import { recordToasts } from "./support/toasts";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { captureConfirmText } from "@appuscholar/core";
 // The English constants (ruling R15) are imported from their modules where the module is plain TypeScript, so the spec cannot drift from them.
-import { IDEA_THINKING } from "../lib/ai/actions";
 import { CITATION_INSERTED } from "../lib/cite/actions";
 
 // ---- Copy: every sentence asserted is read from the dictionary, so it is byte-equal to what the panel shows ------------------------------------------
@@ -90,6 +93,10 @@ const MATRIX_CELL = "40 students, one college";
 const WALK_MINE = "Earlier studies only watched sleep and anxiety together; this one tried to change sleep on purpose.";
 const CARD_STRENGTH = "Random allocation by coin toss and a waiting group.";
 const CARD_VERDICT = "A neat small trial that needs repeating with more students.";
+/** Step 2's edit of the Idea place after it was marked ready. */
+const TIME_EDIT = "One semester, from August";
+/** The read's verdict as the Idea place and the home show it (parseIdeaRead: the "Verdict:" line without its label). */
+const VERDICT = "Proceed with these modifications: book the ethics committee date now and plan the recruitment before the exam weeks.";
 const OWN_DRAFT = "Most studies of exam anxiety only observe students, so they cannot show that poor sleep causes worry. A short bedtime routine is cheap, and testing it with random groups would show whether changing sleep lowers anxiety before exams.";
 
 // ---- The AI provider, as the gateway answers it ---------------------------------------------------------------------------------------------------
@@ -303,6 +310,58 @@ async function unlock(page: Page) {
 }
 const card = (page: Page, title: string) => page.getByTestId("rs-card").filter({ has: page.locator("h4", { hasText: title }) });
 
+// ---- The frame: the project's home, its places and Literature's tabs, each reached as a student reaches it (client-side moves: the vault stays open) ----
+
+const STAGES = ["idea", "lit", "design", "collect", "writing", "review"] as const;
+type Stage = (typeof STAGES)[number];
+const STATE_WORD = { ready: "state_ready", "in-progress": "state_in_progress", reopened: "state_reopened", "started-early": "state_started_early", "not-started": "state_not_started" } as const;
+/** The home's six chips read these states. */
+async function expectStates(page: Page, want: Partial<Record<Stage, keyof typeof STATE_WORD>>) {
+  for (const s of STAGES) await expect(page.getByTestId("home-state-" + s)).toHaveText(T(STATE_WORD[want[s] ?? "not-started"]));
+}
+/** The project's home, by the place header's project name. */
+async function toHome(page: Page) {
+  await page.getByTestId("place-home").click();
+  await expect(page.getByTestId("project-home")).toBeVisible();
+  await expect(page.getByTestId("home-stages")).toBeVisible();
+}
+/** A stage's place, by its row on the home (Open, Continue or Reopen). */
+async function toPlace(page: Page, stage: Stage) {
+  // On the home (its address is the project's own), it is waited for; from a place, the header's project name leads there.
+  if (/^\/p\/[^/]+$/.test(new URL(page.url()).pathname)) await expect(page.getByTestId("home-stages")).toBeVisible();
+  else await toHome(page);
+  await page.getByTestId("home-open-" + stage).click();
+  await expect(page.getByTestId("place-header")).toBeVisible();
+  await expect(page.getByTestId("place-name")).toHaveText(T("stage_name_" + stage));
+}
+/** One of Literature's four tabs, by its link, from anywhere in the project. */
+async function litTab(page: Page, tab: "find" | "reading" | "compare" | "citations") {
+  if (!(await page.getByTestId("place-tab-" + tab).isVisible())) await toPlace(page, "lit");
+  await page.getByTestId("place-tab-" + tab).click();
+  await expect(page.getByTestId("place-lit-" + tab)).toBeVisible();
+  await expect(page.getByTestId("lit-next")).toHaveText(T("lit_next_" + tab));
+}
+/** A tool's Export link (Task 12): the project's export place opens with only that part ticked; Download zip saves it. Returns the zip. */
+async function exportFrom(page: Page, link: ReturnType<Page["getByTestId"]>, part: string): Promise<JSZip> {
+  await expect(link).toHaveText(T("exp_link"));
+  await link.click();
+  const dlg = page.getByTestId("export-dialog");
+  await expect(dlg).toBeVisible();
+  for (const p of ["documents", "question", "citations", "search", "notes", "compare", "record", "aiuse", "readingBackup"]) {
+    if (p === part) await expect(page.getByTestId("exp-part-" + p)).toBeChecked();
+    else await expect(page.getByTestId("exp-part-" + p)).not.toBeChecked();
+  }
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("exp-download").click()]);
+  await expect(dlg).toBeHidden();
+  return JSZip.loadAsync(readFileSync(await download.path()));
+}
+/** Opens the document beside the place ("Open my document"), unless it is open already. */
+async function openDoc(page: Page) {
+  if (await page.getByTestId("place-open-doc").isVisible()) await page.getByTestId("place-open-doc").click();
+  await expect(page.getByTestId("frame-doc")).toBeVisible();
+  await expect(page.locator(".ProseMirror")).toBeVisible();
+}
+
 // A stuck step fails in seconds with its own message instead of eating the whole test timeout.
 test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
@@ -332,8 +391,10 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
   /** The Citation Manager's bookmark as the student drags it (step 4), clicked again on the stand-in PubMed page in 11b. */
   let bookmarkletSrc = "";
 
-  await test.step("1. create the project: sign in, a Groq key protected by the vault's passphrase, New Research Project, the stage intro, Start with Idea & Feasibility", async () => {
+  await test.step("1. create the project: sign in, a Groq key protected by the vault's passphrase; first run: the idea, Check if it is doable, Save as my project; the home's six stages", async () => {
     await signIn(page, { prefix: "s2" });
+    // A student with no project starts at first run.
+    await expect(page).toHaveURL(/\/start$/);
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
@@ -356,61 +417,124 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect.poll(toasts).toEqual(expect.arrayContaining(["Groq connected ✓ and encrypted 🔒", T("vault_migrated")]));
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
-    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_on"));
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
+    await expect(page.getByTestId("ai-pill")).toHaveText(T("ai_pill_key", { provider: "Groq" }));
 
+    // The version lives in Help.
+    await page.getByTestId("help-btn").click();
     await expect(page.getByTestId("app-version")).toHaveText(/^Version \S+$/);
     if (process.env.GITHUB_SHA) await expect(page.getByTestId("app-version")).toHaveText("Version " + process.env.GITHUB_SHA.slice(0, 7));
-    await page.getByTestId("new-project").click();
-    await expect(page.getByTestId("sap-dialog")).toBeVisible();
-    await page.getByTestId("sap-name").fill(PROJECT);
-    await expect(page.getByTestId("sap-stage")).toHaveValue("idea");
-    await page.getByTestId("sap-save").click();
-    await expect(page.getByTestId("stage-intro")).toBeVisible();
-    await expect(page.getByTestId("stage-intro")).toContainText(T("stageintro_h2"));
-    for (const s of ["idea", "lit", "design", "collect", "writing", "review"]) await expect(page.getByTestId("intro-stage-" + s)).toContainText(T("stage_" + s));
-    await expect(page.getByTestId("stage-intro-start")).toHaveText(T("stageintro_start_fmt", { stage: T("stage_idea") }));
-    await page.getByTestId("stage-intro-start").click();
-    await expect(page.getByTestId("stage-intro")).toBeHidden();
-    await expect(page.getByTestId("panel-idea")).toBeVisible();
-    await expect(page.getByTestId("stage-counter")).toHaveText(T("stage_guide_fmt", { n: 1, total: 6 }) + " · " + T("stage_idea"));
-    await expect(page.getByTestId("project-bar-label")).toContainText(PROJECT);
-    // An empty document is open in the editor.
-    await expect(page.getByTestId("word-count")).toHaveText("0 words");
-    quiet();
-  });
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("help-dialog")).toBeHidden();
 
-  await test.step("2. test the idea: the four boxes are kept sealed in the vault; Assess feasibility gives the five Low/Medium/High lines and the verdict; Tab pastes them", async () => {
-    const sent = await sealedSave(page, "idea_intake", [IDEA.topic, "bedtime"], async () => {
-      await page.locator("#ideaTopic").fill(IDEA.topic);
-      await page.locator("#ideaRes").fill(IDEA.resources);
-      await page.locator("#ideaTime").fill(IDEA.timeframe);
-      await page.locator("#ideaCons").fill(IDEA.constraints);
-    });
-    projectId = /\/projects\/([0-9a-f-]+)\/blobs\//.exec(puts.all.find((p) => p.kind === "idea_intake")!.url)![1]!;
+    // First run: the rough idea and the three questions that sharpen it.
+    await expect(page.getByTestId("first-run")).toBeVisible();
+    await expect(page.getByTestId("first-run").locator("h1")).toHaveText(T("idea_h"));
+    await page.locator("#ideaTopic").fill(IDEA.topic);
+    await page.locator("#ideaRes").fill(IDEA.resources);
+    await page.locator("#ideaTime").fill(IDEA.timeframe);
+    await page.locator("#ideaCons").fill(IDEA.constraints);
+    // Saving needs no check: the button is there before it.
+    await expect(page.getByTestId("idea-save")).toHaveText(T("idea_save_btn"));
+    await expect(page.getByTestId("idea-check")).toHaveText(T("idea_check_btn"));
+    await page.getByTestId("idea-check").click();
+    await expect(page.getByTestId("idea-check")).toHaveText(T("idea_checking"));
+    // The read: five rated lines, each starting with its area, then the verdict, gold-edged and labelled as AI.
+    const read = page.getByTestId("idea-read");
+    await expect(read).toBeVisible();
+    await expect(read.locator(".ai-read-label")).toHaveText(T("idea_read_label"));
+    await expect(read.getByTestId("idea-read-line")).toHaveCount(5);
+    await expect(read.getByTestId("idea-read-area")).toHaveText(["Topic clarity and researchability", "Access to participants or data", "Time", "Resources and equipment", "Ethical complexity"]);
+    await expect(read.getByTestId("idea-read-rating")).toHaveText(["High", "Medium", "Medium", "High", "Low"]);
+    await expect(read.getByTestId("idea-read-verdict")).toHaveText(VERDICT);
+    expect(await read.evaluate((el) => {
+      const probe = document.body.appendChild(Object.assign(document.createElement("span"), { style: "color: var(--gold)" }));
+      const gold = getComputedStyle(probe).color;
+      probe.remove();
+      return getComputedStyle(el).borderLeftColor === gold;
+    })).toBe(true);
+    expect(net.prompts.filter((p) => p.startsWith("You are an experienced research-methods advisor"))).toHaveLength(1);
+
+    // Save as my project: the name follows the idea until the student types one; the project's title goes to the api sealed, the idea as its idea_intake, sealed.
+    await expect(page.getByTestId("idea-save-title")).toHaveValue(IDEA.topic.slice(0, IDEA.topic.slice(0, 61).lastIndexOf(" ")));
+    await page.getByTestId("idea-save-title").fill(PROJECT);
+    const created = page.waitForRequest((r) => r.method() === "POST" && r.url() === API_ORIGIN + "/projects");
+    const sent = await sealedSave(page, "idea_intake", [IDEA.topic, "bedtime", IDEA.resources, "Proceed with"], () => page.getByTestId("idea-save").click());
     expect(sent.body).not.toContain(IDEA.resources);
-    const toasts = await recordToasts(page);
-    await expect(page.getByTestId("idea-assess")).toHaveText(T("idea_assess_btn"));
-    await page.getByTestId("idea-assess").click();
-    await expect(page.getByTestId("ai-status")).toHaveText(IDEA_THINKING);
-    await expect(page.getByTestId("ai-out")).toHaveText(IDEA_REPLY);
-    for (const area of ["Topic clarity and researchability: High.", "Access to participants or data: Medium.", "Time: Medium.", "Resources and equipment: High.", "Ethical complexity: Low.", "Verdict: Proceed with these modifications"]) {
-      await expect(page.getByTestId("ai-out")).toContainText(area);
-    }
-    await expect.poll(toasts).toContain(T("rs2_ready_press_tab_in"));
-    await page.locator(".ProseMirror").focus();
-    await page.keyboard.press("Tab");
-    await expect(page.locator(".ProseMirror span.ai-ins").first()).toContainText("Verdict: Proceed with these modifications");
-    // The intake is there again when the panel comes back (it is the project's, not the tab's).
-    await page.getByTestId("dock-tab-tools").click();
-    await expect(page.locator("#ideaTopic")).toHaveValue(IDEA.topic);
+    const post = (await created).postDataJSON() as { title: string; titleKeyVersion: number };
+    expect(post.titleKeyVersion).toBeGreaterThanOrEqual(1);
+    expect(post.title).toMatch(CIPHERTEXT);
+    expect(post.title).not.toContain(PROJECT);
+    projectId = /\/projects\/([0-9a-f-]+)\/blobs\//.exec(puts.all.find((p) => p.kind === "idea_intake")!.url)![1]!;
+
+    // The home: the question card, a suggested next step, the six stages; Idea in progress, the rest not started.
+    await expect(page).toHaveURL(new RegExp(`/p/${projectId}$`));
+    await expect(page.getByTestId("project-home")).toBeVisible();
+    await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
+    await expect(page.getByTestId("home-q-text")).toHaveText(IDEA.topic);
+    await expect(page.getByTestId("home-q-verdict")).toHaveText(T("home_verdict", { verdict: VERDICT }));
+    await expect(page.getByTestId("home-next-say")).toHaveText(T("next_find"));
+    await expect(page.getByTestId("home-next-btn")).toHaveText(T("next_btn_find"));
+    for (const s of STAGES) await expect(page.getByTestId("home-stage-" + s)).toContainText(T("stage_name_" + s));
+    await expectStates(page, { idea: "in-progress" });
+    await expect(page.getByTestId("home-detail-idea")).toHaveText(T("detail_idea", { verdict: VERDICT }));
+    await expect(page.getByTestId("home-detail-writing")).toHaveText(T("detail_writing", { words: 0 }));
+    // Its first document was made, empty, and is not shown on the home.
+    await expect(page.getByTestId("frame-doc")).toBeHidden();
     quiet();
   });
 
-  await test.step("3. search a first pass: Research, the topic, Suggest related terms, Kind of study, OpenAlex and PubMed, Find relevant papers; sort; nothing stored", async () => {
+  await test.step("2. mark Idea ready, then edit it: Reopened; Put in my document with the document closed opens it beside the place and inserts the read once", async () => {
+    await page.getByTestId("home-more-idea").click();
+    const marked = page.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith(`/projects/${projectId}/stages/idea/ready`) && r.ok());
+    await page.getByTestId("home-mark-idea").click();
+    await marked;
+    await expectStates(page, { idea: "ready" });
+    await expect(page.getByTestId("home-open-idea")).toHaveText(T("home_act_reopen"));
+
+    await toPlace(page, "idea");
+    await expect(page.getByTestId("panel-idea")).toBeVisible();
+    // The intake is there again (it is the project's, sealed in the vault), with its read.
+    await expect(page.locator("#ideaTopic")).toHaveValue(IDEA.topic);
+    await expect(page.locator("#ideaCons")).toHaveValue(IDEA.constraints);
+    await expect(page.getByTestId("idea-read-verdict")).toHaveText(VERDICT);
+    // The document is closed; Put in my document opens it beside the place and puts the read in once, as AI text.
+    await expect(page.getByTestId("frame-doc")).toBeHidden();
+    await expect(page.getByTestId("place-open-doc")).toBeVisible();
+    const toasts = await recordToasts(page);
+    // The document's autosave carries the read (sealed: the vault is on).
+    const docSaved = page.waitForResponse((r) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url()) && r.ok(), { timeout: 30_000 });
+    await page.getByTestId("idea-insert").click();
+    await expect.poll(toasts).toContain(T("idea_inserted"));
+    const doc = (await docSaved).request().postDataJSON() as { bodyHtml: string; keyVersion: number };
+    expect(doc.keyVersion).toBeGreaterThanOrEqual(1);
+    expect(doc.bodyHtml).not.toContain("Verdict");
+    await expect(page.getByTestId("frame-doc")).toBeVisible();
+    await expect(page.locator(".ProseMirror span.ai-ins").filter({ hasText: "Verdict: Proceed with these modifications" })).toHaveCount(1);
+
+    // An edit after the mark reopens the stage.
+    await sealedSave(page, "idea_intake", [TIME_EDIT], () => page.locator("#ideaTime").fill(TIME_EDIT));
+    await toHome(page);
+    // Writing has words now (the read went in), so it is in progress too.
+    await expectStates(page, { idea: "reopened", writing: "in-progress" });
+    await expect(page.getByTestId("home-open-idea")).toHaveText(T("home_act_continue"));
+    quiet();
+  });
+
+  await test.step("3. search a first pass: Literature, Find: the topic, Suggest related terms, Kind of study, OpenAlex and PubMed, Find relevant papers; sort; nothing stored", async () => {
     const before = puts.all.length;
-    await page.getByTestId("tool-research").click();
+    // The suggested next step opens Find.
+    await page.getByTestId("home-next-btn").click();
+    await expect(page).toHaveURL(new RegExp(`/p/${projectId}/lit/find$`));
+    await expect(page.getByTestId("place-name")).toHaveText(T("stage_name_lit"));
+    await expect(page.getByTestId("place-tab-find")).toHaveAttribute("aria-current", "true");
+    await expect(page.getByTestId("place-tabs").getByRole("tab")).toHaveText([T("tab_name_find"), T("tab_name_reading"), T("tab_name_compare"), T("tab_name_count", { name: T("tab_name_citations"), n: 0 })]);
     await expect(page.getByTestId("panel-research")).toBeVisible();
-    await expect(page.getByTestId("stage-counter")).toHaveText(T("stage_guide_fmt", { n: 2, total: 6 }) + " · " + T("stage_lit"));
+    await expect(page.getByTestId("lit-next")).toHaveText(T("lit_next_find"));
+    // The question strip, closed by default, opens to the topic.
+    await page.getByTestId("question-strip").locator("summary").click();
+    await expect(page.getByTestId("question-topic")).toHaveText(IDEA.topic);
+    await page.getByTestId("question-strip").locator("summary").click();
     await page.getByTestId("rs-topic").fill(SEARCH_TOPIC);
     await expect(page.getByTestId("rs-terms-btn")).toHaveText(T("rs2_terms_btn"));
     await page.getByTestId("rs-terms-btn").click();
@@ -450,7 +574,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await tab.close();
 
     // The Citation Manager's bookmark, as the student drags it to the bookmarks bar.
-    await page.getByTestId("tool-cite").click();
+    await litTab(page, "citations");
     await expect(page.getByTestId("panel-cite")).toBeVisible();
     await expect(page.getByTestId("cite-count")).toHaveText("0");
     await page.getByTestId("cite-bookmarklet-details").locator("summary").click();
@@ -460,8 +584,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     expect(href.startsWith("javascript:")).toBe(true);
     const bookmarklet = decodeURIComponent(href.slice("javascript:".length));
     bookmarkletSrc = bookmarklet;
-    // Back to Research before the capture, so the window it opens shows Research too.
-    await page.getByTestId("tool-research").click();
+    // Back to Find, where the search waits.
+    await litTab(page, "find");
+    await expect(page.getByTestId("rs-card")).toHaveCount(10);
 
     // On the publisher's page the bookmark is clicked: it opens the app in a new tab with the citation in the address's hash (nothing goes to a server).
     const journal = await context.newPage();
@@ -471,8 +596,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     const cap = await opened;
     const asked: string[] = [];
     cap.on("dialog", (d) => { asked.push(d.message()); void d.accept(); });
-    // The new tab opens the document first, so the vault asks for the passphrase there; then the capture is filed in the library, sealed.
+    // The new tab opens the active project's home, and its document, so the vault asks for the passphrase there; then the capture is filed in the library, sealed.
     await sealedSave(cap, "citations", [CAPTURED.title, "Ryan"], () => unlock(cap));
+    await expect(cap).toHaveURL(new RegExp(`/p/${projectId}$`));
     await expect.poll(() => cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain('Captured "' + CAPTURED.title + '" into your citation library ✓'); // capturedToast, lib/cite/capture.ts:20 (a "use client" module, not imported here)
     expect(asked).toEqual([captureConfirmText({ title: CAPTURED.title, author: CAPTURED.authors.join("; "), year: CAPTURED.year, source: CAPTURED.journal, doi: CAPTURED.doi, url: "" })]);
     // The hash is taken off the address.
@@ -550,8 +676,10 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
-  await test.step("6. collect: Insert citation and + Citation library for the two keepers; the list as CSV; the Citation Manager holds four sources, sealed", async () => {
+  await test.step("6. collect: Open my document beside Find; Insert citation and + Citation library for the two keepers; the list as CSV; Citations holds four sources, sealed", async () => {
     const toasts = await recordToasts(page);
+    await openDoc(page);
+    await expect(page.getByTestId("panel-research")).toBeVisible();
     await cursorToEnd(page);
     await page.keyboard.press("Enter");
     await page.keyboard.type("Students often report anxiety before exams ");
@@ -562,10 +690,14 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.locator(".ProseMirror")).toContainText(MU.intext);
     await sealedSave(page, "retraction_cache", ["10.3389"], () => card(page, DORDI.title).getByTestId("rs-add").click());
     await expect.poll(toasts).toContain(T("rs2_added_to_citation_library_2"));
-    const [csv] = await Promise.all([page.waitForEvent("download"), page.getByTestId("rs-csv").click()]);
-    expect(csv.suggestedFilename()).toBe("search-results.csv");
+    // The list's CSV is in the export place now: Export ticks the search lists.
+    const searchZip = await exportFrom(page, page.getByTestId("rs-csv"), "search");
+    expect(Object.keys(searchZip.files).filter((n) => !n.endsWith("/")).sort()).toEqual(["search/kept-papers.csv", "search/last-search.csv"]);
+    expect(await searchZip.file("search/last-search.csv")!.async("string")).toContain(DORDI.title);
+    expect(await searchZip.file("search/kept-papers.csv")!.async("string")).toContain(MU.title);
 
-    await page.getByTestId("tool-cite").click();
+    await litTab(page, "citations");
+    await expect(page.getByTestId("place-tab-citations")).toHaveText(T("tab_name_count", { name: T("tab_name_citations"), n: 4 }));
     await expect(page.getByTestId("cite-count")).toHaveText("4");
     await expect(page.getByTestId("cite-card")).toHaveCount(4);
     // Library order: the capture, the manual add, then the two from the search.
@@ -583,12 +715,10 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
-  await test.step("7. build the shelf: add PDFs (a scanned one is refused), read, highlight a passage, two lines of my own, then Summarise with AI; the Matrix and its CSV; sealed", async () => {
-    await page.getByTestId("tool-research").click();
-    await page.getByTestId("rs-shelf").click();
-    const shelf = page.getByTestId("shelf-dialog");
+  await test.step("7. build the reading list: Reading list, add PDFs (a scanned one is refused), read, highlight a passage, two lines of my own, then Summarise with AI; Compare's table and its CSV; sealed", async () => {
+    await litTab(page, "reading");
+    const shelf = page.getByTestId("shelf-inline");
     await expect(shelf).toBeVisible();
-    await expect(shelf.locator("h2")).toHaveText(T("sh2_reading_shelf"));
     await expect(shelf).toContainText(T("sh2_intro"));
     await expect(page.getByTestId("sh-empty")).toHaveText(T("sh2_the_shelf_is_empty"));
     const index = sealedSave(page, "shelf_index", [SHELF_TITLE, "shelf-paper.pdf"], async () => {
@@ -622,25 +752,24 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await sealedSave(page, /\/blobs\/shelf_paper%3A[A-Za-z0-9_-]+$/, ["morning daylight", T("sh2_my_own_summary_before")], () => page.getByTestId("sh-ai").click());
     await expect(page.getByTestId("sh-ai-out")).toHaveText(SHELF_SUMMARY_REPLY + "\n\n" + T("sh2_compare_this_with_your"), { useInnerText: false });
 
-    // The Matrix: the cells are mine.
-    await page.getByTestId("sh-tab-matrix").click();
-    await expect(page.getByTestId("sh-body")).toContainText(T("sh2_one_row_per_paper"));
+    // Compare's table: the cells are mine.
+    await litTab(page, "compare");
+    await expect(page.getByTestId("shelf-matrix")).toContainText(T("sh2_one_row_per_paper"));
     await expect(page.getByTestId("sh-col-head")).toHaveText([T("sh2_sample") + " ×", T("sh2_method") + " ×", T("sh2_key_finding") + " ×"]);
     const cell = page.getByTestId("sh-matrix-row").first().getByTestId("sh-cell").first();
     await cell.fill(MATRIX_CELL);
     await sealedSave(page, /\/blobs\/shelf_paper%3A[A-Za-z0-9_-]+$/, [MATRIX_CELL], () => cell.blur());
-    const [mx] = await Promise.all([page.waitForEvent("download"), page.getByTestId("sh-csv").click()]);
-    expect(mx.suggestedFilename()).toBe("reading_matrix.csv");
-    expect(readFileSync(await mx.path(), "utf8")).toContain(MATRIX_CELL);
-    await page.getByTestId("sh-tab-papers").click();
+    const mx = await exportFrom(page, page.getByTestId("sh-csv"), "compare");
+    expect(await mx.file("compare/table.csv")!.async("string")).toContain(MATRIX_CELL);
+    await litTab(page, "reading");
+    await expect(page.getByTestId("place-tab-reading")).toHaveText(T("tab_name_count", { name: T("tab_name_reading"), n: 1 }));
     await expect(page.getByTestId("sh-paper-meta")).toHaveText("shelf-paper.pdf " + T("sh2_pages_highlights", { pagesCount: 2, notesCount: 2 }));
-    await page.getByTestId("sh-close").click();
-    await expect(shelf).toBeHidden();
     quiet();
   });
 
   await test.step("8. read properly: Analyse a paper from the shelf, then the practice paper; the consent box; Ask, the numbers, the reference list; Walk me through it: try first, reveal, check yourself; sealed", async () => {
-    await page.getByTestId("tool-analyse").click();
+    // Reading list: under the papers, "Read a paper" is Analyse a paper.
+    await expect(page.getByTestId("read-a-paper")).toHaveText(T("lit_read_a_paper"));
     await expect(page.getByTestId("panel-analyse")).toBeVisible();
     // The shelf's paper, read from the vault.
     await page.getByTestId("ap-shelf").selectOption({ index: 1 });
@@ -652,6 +781,9 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("ap-head")).toContainText("Sleep and exam anxiety in first-year students: a fictional teaching paper");
     await expect(page.getByTestId("ap-head")).toContainText(T("ap2_this_is_a_fictional"));
     await expect(page.getByTestId("ap-consent")).toHaveText(T("ap2_consent"));
+    // W23 (register D-S2-44): no lecture and no lesson is offered; the modes are Ask, the walk-through and the paper card.
+    await expect(page.getByTestId("ap-tabs").getByRole("button")).toHaveText([T("ap2_ask_questions"), T("ap2_walk_me_through_it"), T("ap2_paper_card_2")]);
+    for (const k of ["ap2_lib_open_btn", "ap2_lesson_on_this_paper"]) await expect(page.getByTestId("place-lit-reading")).not.toContainText(T(k));
     await page.locator("#apOK").check();
 
     // 💬 Ask questions.
@@ -713,9 +845,10 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
-  await test.step("9. compare: My paper cards side by side, choose a column (stored, sealed), download the CSV", async () => {
-    await page.getByTestId("ap-across").locator("summary").click();
+  await test.step("9. compare: Compare, My paper cards side by side, choose a column (stored, sealed), download the CSV", async () => {
+    await litTab(page, "compare");
     const across = page.getByTestId("ap-across");
+    if (!(await across.evaluate((d) => (d as HTMLDetailsElement).open))) await across.locator("summary").click();
     await expect(across).toContainText(T("ap2_cells_are_your_words"));
     await expect(across.locator("tbody tr")).toHaveCount(1);
     await expect(across.locator("tbody tr").first()).toContainText("Sleep and exam anxiety in first-year students");
@@ -727,14 +860,13 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     if (on) await sealedSave(page, "ap_cols", [], () => box.check());
     await expect(box).toBeChecked();
     await expect(across.locator("tbody tr").first()).toContainText(CARD_STRENGTH);
-    const [dl] = await Promise.all([page.waitForEvent("download"), page.locator("#apAcrossCsv").click()]);
-    expect(dl.suggestedFilename()).toBe("paper_cards.csv");
-    expect(readFileSync(await dl.path(), "utf8")).toContain(CARD_STRENGTH);
+    const dl = await exportFrom(page, page.locator("#apAcrossCsv"), "compare");
+    expect(await dl.file("compare/paper-cards.csv")!.async("string")).toContain(CARD_STRENGTH);
     quiet();
   });
 
-  await test.step("10. synthesise: with two papers ticked, Draft literature review paragraph (Tab inserts it as AI text) and Find a research gap; then the helpers on my own draft", async () => {
-    await page.getByTestId("tool-research").click();
+  await test.step("10. synthesise: Find, with two papers ticked, Draft literature review paragraph (Tab inserts it as AI text) and Find a research gap; then Writing's helpers on my own draft", async () => {
+    await litTab(page, "find");
     await expect(page.getByTestId("rs-card")).toHaveCount(10);
     await expect(card(page, MU.title).locator("input[type=checkbox]")).toBeChecked();
     await expect(card(page, DORDI.title).locator("input[type=checkbox]")).toBeChecked();
@@ -753,7 +885,6 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await page.keyboard.press("Tab");
     await expect(page.locator(".ProseMirror span.ai-ins").filter({ hasText: LITREVIEW_REPLY.slice(0, 60) })).toHaveCount(1);
 
-    await page.getByTestId("dock-tab-tools").click();
     await page.getByTestId("rs-gapfinder").click();
     await expect(page.getByTestId("ai-status")).toHaveText(T("rs2_looking_for_what_these"));
     await expect(page.getByTestId("ai-out")).toHaveText(GAP_REPLY);
@@ -765,14 +896,16 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await cursorToEnd(page);
     await page.keyboard.press("Enter");
     await page.keyboard.type(OWN_DRAFT);
-    await page.getByTestId("dock-tab-tools").click();
-    await page.getByTestId("tool-psych").click();
+    // The helpers live in Writing, above the document at full width.
+    await toPlace(page, "writing");
+    await expect(page.getByTestId("frame-doc")).toBeVisible();
+    await expect(page.locator(".ProseMirror")).toContainText(OWN_DRAFT);
+    await page.getByTestId("writing-aside").locator("summary", { hasText: TEXT("writing_helpers") }).click();
     await expect(page.getByTestId("helper-litrev")).toHaveText(T("psych_btn_litrev"));
     await selectBlockWith(page, OWN_DRAFT.slice(0, 40));
     await page.getByTestId("helper-litrev").click();
     await expect(page.getByTestId("ai-out")).toContainText(HELPER_LITREV_REPLY);
     expect(net.prompts[net.prompts.length - 1]).toContain(OWN_DRAFT);
-    await page.getByTestId("dock-tab-tools").click();
     await expect(page.getByTestId("helper-devil")).toHaveText(T("devil_btn"));
     await selectBlockWith(page, OWN_DRAFT.slice(0, 40));
     await page.getByTestId("helper-devil").click();
@@ -781,9 +914,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
-  await test.step("11. check the citations: Check for retractions and Check that sources exist (Crossref) over the recorded APIs, both sealed; Insert reference list; one citation from the popped-out Citation Manager", async () => {
-    await page.getByTestId("dock-tab-tools").click();
-    await page.getByTestId("tool-cite").click();
+  await test.step("11. check the citations: Check for retractions, sealed; Insert reference list with the document closed; Citations in a window of its own checks the sources against Crossref (sealed), and its insert goes to this window's cursor", async () => {
+    await litTab(page, "citations");
     await expect(page.getByTestId("cite-count")).toHaveText("4");
     const toasts = await recordToasts(page);
     await expect(page.getByTestId("cite-retract-btn")).toHaveText(T("cite_retract_btn"));
@@ -792,45 +924,63 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect(page.getByTestId("cite-retr-summary")).toHaveText(T("retr_summary_fmt", { c: 4, r: 0, n: 0 }));
     await expect(page.getByTestId("cite-retr-warn")).toHaveCount(0);
 
-    await expect(page.getByTestId("cite-rc-btn")).toHaveText(T("rc_btn"));
-    await sealedSave(page, "refcheck_cache", ["Ryan|2000", "Cohen"], () => page.getByTestId("cite-rc-btn").click());
-    await expect.poll(toasts).toEqual(expect.arrayContaining([T("rc_busy"), T("rc_done")]));
-    // W27, W28 (fix wave A, Task 11): the captured Ryan & Deci article has no volume, issue or pages and Crossref lists all three, so it no longer counts as a match.
-    await expect(page.getByTestId("cite-rc-summary")).toHaveText(T("rc_summary_fmt", { n: 4, o: 2, d: 2, f: 0 }));
-    // Cohen 1988 is in Crossref as the 2013 edition: its card says how it differs.
-    await expect(page.getByTestId("cite-card").nth(1).locator(".rc-line")).toHaveText("⚠ " + T("rc_year") + " 2013");
-    for (const i of [2, 3]) await expect(page.getByTestId("cite-card").nth(i).locator(".rc-line")).toHaveText("✓ " + T("rc_ok"));
-    await expect(page.getByTestId("cite-card").nth(0).locator(".rc-line")).toContainText(T("rc_missing", { fields: [T("cite_vol_label"), T("cite_issue_label"), T("cite_pages_label")].join(", ").toLowerCase() }));
-    await expect(page.getByTestId("cite-card").nth(0).getByTestId("cite-rc-fill")).toHaveText(T("rc_fill_btn"));
-
+    // Insert reference list with the document closed: it opens beside Citations and the list goes in once, at the cursor left at the end.
+    const editor = page.locator(".ProseMirror");
+    await openDoc(page);
     await cursorToEnd(page);
     await page.keyboard.press("Enter");
+    await page.getByTestId("doc-close").click();
+    await expect(page.getByTestId("frame-doc")).toBeHidden();
+    await expect(page.getByTestId("place-open-doc")).toBeVisible();
     await expect(page.getByTestId("cite-insertbib")).toHaveText(T("cite_insertbib_btn"));
     await page.getByTestId("cite-insertbib").click();
     await expect.poll(toasts).toContain(T("cite_bib_fmt"));
-    const editor = page.locator(".ProseMirror");
+    await expect(page.getByTestId("frame-doc")).toBeVisible();
     await expect(editor).toContainText("Ryan, R. M., & Deci, E. L. (2000).");
-    await expect(editor).toContainText("Cohen, J. (1988).");
     await expect(editor).toContainText("(2022). " + MU.title);
     await expect(editor).toContainText("(2011). " + DORDI.title);
+    const times = async (needle: string) => (await editor.innerText()).split(needle).length - 1;
+    expect(await times("Cohen, J. (1988).")).toBe(1);
+    expect(await times("Ryan, R. M., & Deci, E. L. (2000).")).toBe(1);
 
-    // ⧉ Pop out: the Citation Manager in its own window (it opens the vault there); its inserts go to this writing window's cursor.
+    // Open in a new window: Citations in its own window (it opens the vault there, and shows no document); the Crossref check runs there.
     await cursorToEnd(page);
     await page.keyboard.press("Enter");
     await page.keyboard.type("As self-determination theory puts it");
-    await expect(page.getByTestId("pop-out")).toHaveText(T("pop_btn"));
+    await expect(page.getByTestId("place-new-window")).toHaveText(T("place_new_window"));
     const opened = page.waitForEvent("popup");
-    await page.getByTestId("pop-out").click();
+    await page.getByTestId("place-new-window").click();
     const pop = await opened;
-    expect(new URL(pop.url()).pathname + new URL(pop.url()).search).toBe("/popout?tool=cite");
+    expect(new URL(pop.url()).pathname + new URL(pop.url()).search).toBe(`/p/${projectId}/lit/citations?window=1`);
     await unlock(pop);
+    await expect(pop.getByTestId("window-where")).toHaveText(PROJECT + " / " + T("stage_name_lit"));
     await expect(pop.getByTestId("panel-cite")).toBeVisible();
     await expect(pop.getByTestId("cite-count")).toHaveText("4");
+    await expect(pop.getByTestId("frame-doc")).toHaveCount(0);
+    await expect(pop.getByTestId("place-open-doc")).toHaveCount(0);
+    await expect(pop.getByTestId("cite-rc-btn")).toHaveText(T("rc_btn"));
+    const popToasts = () => pop.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? []);
+    await sealedSave(pop, "refcheck_cache", ["Ryan|2000", "Cohen"], () => pop.getByTestId("cite-rc-btn").click());
+    await expect.poll(popToasts).toEqual(expect.arrayContaining([T("rc_busy"), T("rc_done")]));
+    // W27, W28 (fix wave A, Task 11): the captured Ryan & Deci article has no volume, issue or pages and Crossref lists all three, so it no longer counts as a match.
+    const summary = T("rc_summary_fmt", { n: 4, o: 2, d: 2, f: 0 });
+    await expect(pop.getByTestId("cite-rc-summary")).toHaveText(summary);
+    // The main window's Citations shows the window's result: the same summary and a line on each card.
+    for (const w of [pop, page]) {
+      await expect(w.getByTestId("cite-rc-summary")).toHaveText(summary);
+      // Cohen 1988 is in Crossref as the 2013 edition: its card says how it differs.
+      await expect(w.getByTestId("cite-card").nth(1).locator(".rc-line")).toHaveText("⚠ " + T("rc_year") + " 2013");
+      for (const i of [2, 3]) await expect(w.getByTestId("cite-card").nth(i).locator(".rc-line")).toHaveText("✓ " + T("rc_ok"));
+      await expect(w.getByTestId("cite-card").nth(0).locator(".rc-line")).toContainText(T("rc_missing", { fields: [T("cite_vol_label"), T("cite_issue_label"), T("cite_pages_label")].join(", ").toLowerCase() }));
+      await expect(w.getByTestId("cite-card").nth(0).getByTestId("cite-rc-fill")).toHaveText(T("rc_fill_btn"));
+    }
+
+    // The window's insert goes to this window's cursor.
     const use = pop.getByTestId("cite-card").nth(0).getByTestId("cite-use");
     await expect(use).toHaveText("Insert (Ryan & Deci, 2000)");
     await use.click();
-    // The pop-out says pop_sent and, at once, the Citation Manager's own toast after it (as v1 does): the student reads the second one.
-    await expect.poll(() => pop.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain(CITATION_INSERTED);
+    // The window says pop_sent and, at once, the Citation Manager's own toast after it (as v1 does): the student reads the second one.
+    await expect.poll(popToasts).toEqual(expect.arrayContaining([T("pop_sent"), CITATION_INSERTED]));
     await expect.poll(toasts).toContain(CITATION_INSERTED);
     await expect(editor).toContainText("As self-determination theory puts it (Ryan & Deci, 2000)");
     await pop.close();
@@ -854,7 +1004,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     expect(askedWin).toEqual([captureConfirmText(payload)]);
     expect(askedWin[0]).toContain("(no author found)");
 
-    await win.getByTestId("tool-cite").click();
+    await expect(win).toHaveURL(new RegExp(`/p/${projectId}$`));
+    await litTab(win, "citations");
     await expect(win.getByTestId("panel-cite")).toBeVisible();
     await expect(win.getByTestId("cite-count")).toHaveText("5");
     const toasts = await recordToasts(win);
@@ -895,7 +1046,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await expect.poll(() => first.cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain('Captured "' + PUBMED.title + '" into your citation library ✓');
     expect(first.asked).toEqual([pubmedConfirm]);
     for (const a of PUBMED.authors) expect(first.asked[0]).toContain(a);
-    await first.cap.getByTestId("tool-cite").click();
+    await litTab(first.cap, "citations");
     await expect(first.cap.getByTestId("cite-count")).toHaveText("6");
     const ref = first.cap.getByTestId("cite-card").nth(5).getByTestId("cite-ref");
     await expect(ref).toContainText("Schaefer, E. M., Gonzalez, C. B., Park, J. H., Okafor, N. A., Lindqvist, P. S., & Moreau, A. T. (" + PUBMED.year + ").");
@@ -907,24 +1058,63 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await unlock(again.cap);
     await expect.poll(() => again.cap.evaluate(() => (window as unknown as { __allToasts?: string[] }).__allToasts ?? [])).toContain(T("rs2_already_in_your_library"));
     expect(again.asked).toEqual([pubmedConfirm]);
-    await again.cap.getByTestId("tool-cite").click();
+    await litTab(again.cap, "citations");
     await expect(again.cap.getByTestId("cite-count")).toHaveText("6");
     await again.cap.close();
     await pubmed.close();
     quiet();
   });
 
-  await test.step("12. move on: the stage guide's Next: Design & Ethics → leads to stage 3", async () => {
-    await page.getByTestId("tool-research").click();
-    const next = page.getByTestId("stage-next");
-    await expect(next).toHaveText(T("stage_guide_next") + " " + T("stage_design") + " →");
-    await next.click();
-    await expect(page.getByTestId("stage-counter")).toHaveText(T("stage_guide_fmt", { n: 3, total: 6 }) + " · " + T("stage_design"));
-    await expect(page.getByTestId("dock-tab-tools")).toHaveText(T("tab_design").replace(/&amp;/g, "&"));
+  await test.step("12. move on: the home's Design and ethics row opens a place that says Not built yet, with Open my document", async () => {
+    await toHome(page);
+    // Literature has work now, after an Idea that was marked ready and edited.
+    await expectStates(page, { idea: "reopened", lit: "in-progress", writing: "in-progress" });
+    await expect(page.getByTestId("home-detail-design")).toHaveText(T("detail_not_built"));
+    await toPlace(page, "design");
+    await expect(page.getByTestId("not-built")).toHaveText(T("place_not_built") + " " + T("not_built_body"));
+    await expect(page.getByTestId("not-built-open")).toHaveText(T("not_built_open_doc"));
+    await page.getByTestId("doc-close").click();
+    await expect(page.getByTestId("frame-doc")).toBeHidden();
+    await page.getByTestId("not-built-open").click();
+    await expect(page.getByTestId("frame-doc")).toBeVisible();
+    await expect(page.locator(".ProseMirror")).toContainText("As self-determination theory puts it (Ryan & Deci, 2000)");
     quiet();
   });
 
-  await test.step("after the journey, the server holds only ciphertext: every stage blob of the project, read back through the api", async () => {
+  await test.step("12b. All projects: one include=work request reads every row; this project's six bars and their spoken summary, the scratch space last; the row opens the home", async () => {
+    // Every read of a project the list makes: the one `include=work` list, never a request per project (its documents, blobs or stages).
+    const reads: string[] = [];
+    const onRequest = (r: Request) => {
+      if (r.url().startsWith(API_ORIGIN + "/projects") && r.method() === "GET") reads.push(r.url().slice(API_ORIGIN.length));
+    };
+    page.on("request", onRequest);
+    await page.getByTestId("wordmark").click();
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByTestId("project-list")).toBeVisible();
+    const row = page.getByTestId("project-row");
+    await expect(row).toHaveCount(1);
+    await expect(row.getByTestId("project-row-title")).toHaveText(PROJECT);
+    await expect(row.getByTestId("stage-bar")).toHaveCount(6);
+    const spoken = T("state_sum_in_progress", { stages: T("state_sum_and", { a: T("state_sum_lit"), b: T("state_sum_writing") }) }) + "; " + T("state_sum_reopened", { stages: T("state_sum_idea") });
+    await expect(row.getByTestId("stage-bars")).toHaveAttribute("aria-label", spoken.charAt(0).toUpperCase() + spoken.slice(1));
+    expect(await row.getByTestId("stage-bar").evaluateAll((els) => els.map((e) => e.getAttribute("data-state")))).toEqual(["reopened", "in-progress", "not-started", "not-started", "in-progress", "not-started"]);
+    await expect(page.getByTestId("list-vault-line")).toHaveText(T("list_vault_on"));
+    await expect(page.locator(".plist-rows > li").last()).toHaveAttribute("data-testid", "scratch-row");
+    page.off("request", onRequest);
+    // The rows come from `include=work` alone: no blob, document or stage of any project is read for them. `next dev` runs a mounting effect twice
+    // (React's strict mode), so that one request may go twice there. The other reads are the title pass each unlocked frame makes as it mounts
+    // (ProjectShell's sealPlainTitles: the plain list and each project's documents), not the list's.
+    const work = reads.filter((u) => u === "/projects?include=work");
+    expect(work.length).toBeGreaterThanOrEqual(1);
+    expect(work.length).toBeLessThanOrEqual(2);
+    for (const u of reads.filter((x) => x !== "/projects?include=work")) expect(u).toMatch(/^\/projects(\/[0-9a-f-]+\/documents\?includeDeleted=1)?$/);
+    await row.getByTestId("project-open").click();
+    await expect(page).toHaveURL(new RegExp(`/p/${projectId}$`));
+    await expect(page.getByTestId("project-home")).toBeVisible();
+    quiet();
+  });
+
+  await test.step("after the journey, the server holds only ciphertext: every stage blob of the project, its title and its documents' titles, read back through the api", async () => {
     expect(bearer).not.toBe("");
     expect(projectId).not.toBe("");
     const headers = { authorization: bearer };
@@ -933,7 +1123,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     for (const k of ["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols"]) expect(kinds).toContain(k);
     expect(kinds.filter((k) => k.startsWith("shelf_paper:"))).toHaveLength(1);
     const plain = [IDEA.topic, "bedtime routine", CAPTURED.title, MANUAL.title, MU.title, DORDI.title, "Ryan", "Cohen", SHELF_TITLE, HIGHLIGHT, HIGHLIGHT_NOTE, MATRIX_CELL,
-      "Morning light", WALK_MINE, WALK_QUOTE, CARD_STRENGTH, CARD_VERDICT, "10.1037", "10.4324", "10.3389"];
+      "Morning light", WALK_MINE, WALK_QUOTE, CARD_STRENGTH, CARD_VERDICT, "10.1037", "10.4324", "10.3389", TIME_EDIT, VERDICT.slice(0, 30), PROJECT];
     for (const k of kinds) {
       const res = await page.request.get(`${API_ORIGIN}/projects/${projectId}/blobs/${encodeURIComponent(k)}`, { headers });
       expect(res.status(), k).toBe(200);
@@ -941,6 +1131,19 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
       expect(b.keyVersion, k).toBeGreaterThanOrEqual(1);
       expect(b.body, k).toMatch(CIPHERTEXT);
       for (const p of plain) expect(b.body, k + " holds " + p).not.toContain(p);
+    }
+    // projects.title and documents.title (wave B1, Task 5): sealed under the vault, never the name in plaintext.
+    const projects = (await (await page.request.get(`${API_ORIGIN}/projects`, { headers })).json()) as Array<{ id: string; title: string; titleKeyVersion: number }>;
+    const mine = projects.find((x) => x.id === projectId)!;
+    expect(mine.titleKeyVersion).toBeGreaterThanOrEqual(1);
+    expect(mine.title).toMatch(CIPHERTEXT);
+    for (const x of projects) for (const p of [PROJECT, "Sleep", IDEA.topic.slice(0, 20)]) expect(x.title, "a project title holds " + p).not.toContain(p);
+    const docs = (await (await page.request.get(`${API_ORIGIN}/projects/${projectId}/documents?includeDeleted=1`, { headers })).json()) as Array<{ title: string; titleKeyVersion: number }>;
+    expect(docs.length).toBeGreaterThanOrEqual(1);
+    for (const d of docs) {
+      expect(d.titleKeyVersion).toBeGreaterThanOrEqual(1);
+      expect(d.title).toMatch(CIPHERTEXT);
+      for (const p of [PROJECT, "Untitled", "Sleep"]) expect(d.title, "a document title holds " + p).not.toContain(p);
     }
     // And every request outside localhost was one the recordings answer.
     quiet();
@@ -976,14 +1179,38 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
+  await test.step("13b. the project's export place: Export project on the home, Download zip; the zip holds question.txt and citations/library.json, readable", async () => {
+    await expect(page.getByTestId("home-out")).toContainText(T("home_out_h"));
+    await page.getByTestId("home-export").click();
+    const dlg = page.getByTestId("export-dialog");
+    await expect(dlg).toBeVisible();
+    await expect(dlg.locator("#exp-h")).toHaveText(T("exp_title", { title: PROJECT }));
+    for (const part of ["documents", "question", "citations", "search", "notes", "compare", "record", "aiuse"]) await expect(page.getByTestId("exp-part-" + part)).toBeChecked();
+    await expect(page.getByTestId("exp-part-readingBackup")).not.toBeChecked();
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("exp-download").click()]);
+    expect(download.suggestedFilename()).toMatch(new RegExp(`^appuscholar-${PROJECT}-\\d{4}-\\d{2}-\\d{2}\\.zip$`));
+    await expect(dlg).toBeHidden();
+    const zip = await JSZip.loadAsync(readFileSync(await download.path()));
+    const names = Object.keys(zip.files);
+    expect(names).toEqual(expect.arrayContaining(["question.txt", "citations/library.json", "citations/references.txt"]));
+    const question = await zip.file("question.txt")!.async("string");
+    expect(question).toContain(IDEA.topic);
+    expect(question).toContain(VERDICT);
+    const library = await zip.file("citations/library.json")!.async("string");
+    for (const title of [CAPTURED.title, MANUAL.title, MU.title, DORDI.title, GUIDELINES.title, PUBMED.title]) expect(library).toContain(title);
+    quiet();
+  });
+
   await test.step("14. two windows on one project: each saves a different idea box, and a reload shows both", async () => {
     const TIME_2 = "Two semesters, so the ethics approval fits before the exams";
     const CONS_2 = "No sleep-tracking devices; no budget for incentives; the ethics committee meets once a month.";
     const open = async (): Promise<Page> => {
       const w = await context.newPage();
+      // `/` opens the active project's home; its document asks for the passphrase.
       await w.goto("/");
       await unlock(w);
-      await w.getByTestId("tool-idea").click();
+      await expect(w).toHaveURL(new RegExp(`/p/${projectId}$`));
+      await toPlace(w, "idea");
       await expect(w.locator("#ideaTopic")).toHaveValue(IDEA.topic);
       return w;
     };
@@ -997,7 +1224,7 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await b.close();
     await a.reload();
     await unlock(a);
-    await a.getByTestId("tool-idea").click();
+    await expect(a).toHaveURL(new RegExp(`/p/${projectId}/idea$`));
     await expect(a.locator("#ideaTime")).toHaveValue(TIME_2);
     await expect(a.locator("#ideaCons")).toHaveValue(CONS_2);
     await expect(a.locator("#ideaTopic")).toHaveValue(IDEA.topic);
