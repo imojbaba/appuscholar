@@ -108,7 +108,7 @@ export class MemoryStore implements Store {
         ...p,
         blobs: [...this.blobs.values()].filter(b => b.projectId === p.id).sort((x, y) => (x.kind < y.kind ? -1 : x.kind > y.kind ? 1 : 0)).map(b => ({ kind: b.kind, updatedAt: b.updatedAt, version: b.version })),
         draftWords: drafts.reduce((n, d) => n + (this.latest(d.id)?.wordCount ?? 0), 0),
-        draftEditedAt: drafts.reduce<Date | null>((acc, d) => (acc === null || d.updatedAt > acc ? d.updatedAt : acc), null)
+        draftEditedAt: drafts.reduce<Date | null>((acc, d) => { const at = this.latest(d.id)!.createdAt; return acc === null || at > acc ? at : acc; }, null)
       };
     });
   }

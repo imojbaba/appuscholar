@@ -660,7 +660,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const p = await s.createProject(a, "Sleep");
       const q = await s.createProject(a, "Memory");
       const d = (await s.createDocument(a, p.id, "Draft", "draft", draft(10)))!;
-      await s.appendRevision(a, d.id, draft(423));
+      const last = (await s.appendRevision(a, d.id, draft(423)))!;
       await s.createDocument(a, p.id, "Source", "source", draft(9000));
       const gone = (await s.createDocument(a, p.id, "Old", "draft", draft(50)))!;
       expect(await s.softDeleteDocument(a, gone.id)).toBe("deleted");
@@ -677,7 +677,7 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect(wp.blobs.map((b) => b.kind).sort()).toEqual(["citations", "idea_intake", "refcheck_cache"]);
       expect(wp.blobs.find((b) => b.kind === "citations")!.version).toBe(2);
       expect(wp.blobs.every((b) => b.updatedAt instanceof Date && !("body" in b))).toBe(true);
-      expect(wp.draftEditedAt).toEqual((await s.getDocument(a, d.id))!.updatedAt);
+      expect(wp.draftEditedAt).toEqual(last.createdAt);
       expect(wp.documentCount).toBe(2);
       expect(wp.stageMarks).toEqual({ idea: { readyAt: "2026-10-21T10:00:00.000Z" } });
       const wq = w.find((x) => x.id === q.id)!;
@@ -687,6 +687,18 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       const we = (await s.listProjectWork(a)).find((x) => x.id === empty.id)!;
       expect([we.blobs, we.draftWords, we.draftEditedAt]).toEqual([[], 0, null]);
       expect(await s.listProjectWork(b)).toEqual([]);
+    });
+
+    it("a rename or a sealed title does not move the draft's edit time; a new revision does", async () => {
+      const p = await s.createProject(a, "Sleep");
+      const d = (await s.createDocument(a, p.id, "Draft", "draft", draft(10)))!;
+      const first = (await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt;
+      await new Promise((r) => setTimeout(r, 5));
+      await s.renameDocument(a, d.id, "Draft, renamed");
+      expect((await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt).toEqual(first);
+      await new Promise((r) => setTimeout(r, 5));
+      const rev = (await s.appendRevision(a, d.id, draft(20)))!;
+      expect((await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt).toEqual(rev.createdAt);
     });
 
     it("the scratch project is not in listProjectWork", async () => {

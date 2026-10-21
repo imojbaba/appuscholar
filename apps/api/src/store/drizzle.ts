@@ -121,8 +121,9 @@ export class DrizzleStore implements Store {
     const ids = list.map(p => p.id);
     const blobs = await this.d.select({ projectId: projectBlobs.projectId, kind: projectBlobs.kind, updatedAt: projectBlobs.updatedAt, version: projectBlobs.version })
       .from(projectBlobs).where(inArray(projectBlobs.projectId, ids));
-    // A document's current word count is its newest revision's, as in summary().
-    const drafts = await this.d.select({ projectId: documents.projectId, words: sql<string>`coalesce(sum(${documentRevisions.wordCount}), 0)`, editedAt: max(documents.updatedAt) })
+    // A document's current word count is its newest revision's, as in summary(). Its edit time is that revision's too: a rename or a
+    // title sealed after unlock moves documents.updatedAt but is not writing, and must not reopen a Writing stage marked ready.
+    const drafts = await this.d.select({ projectId: documents.projectId, words: sql<string>`coalesce(sum(${documentRevisions.wordCount}), 0)`, editedAt: max(documentRevisions.createdAt) })
       .from(documents)
       .innerJoin(documentRevisions, and(eq(documentRevisions.documentId, documents.id), sql`${documentRevisions.seq} = (select max(r.seq) from ${documentRevisions} r where r.document_id = ${documents.id})`))
       .where(and(inArray(documents.projectId, ids), isNull(documents.deletedAt), ne(documents.kind, "source")))
