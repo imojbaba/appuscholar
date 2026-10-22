@@ -8,7 +8,7 @@ import { useDocAccess } from "@/lib/editor/docAccess";
 import { downloadBlob } from "@/lib/export/download";
 import { useLab } from "@/lib/tools/stats/lab";
 import {
-  figureHtml, recallStudio, rememberStudio, settleColumns, studioColumns, studioData, studioDefaults, studioView, vzTrFor, type ErrKind, type StudioForm
+  figureHtml, rememberStudio, settleColumns, studioColumns, studioData, studioDefaults, startStudio, studioView, vzTrFor, type ErrKind, type StudioForm
 } from "@/lib/tools/stats/chartStudio";
 import { dataUrlToBlob, PNG_URL, svgToPng } from "@/lib/tools/stats/png";
 import { toast } from "@/components/ui/toast";
@@ -36,7 +36,7 @@ export function ChartStudio({ projectId }: { projectId: string }) {
   const lab = useLab(projectId);
   const access = useDocAccess();
   const prefs = useProjectBlob("stats_prefs", projectId || null);
-  const [form, setFormState] = useState<StudioForm>(() => recallStudio(projectId));
+  const [form, setFormState] = useState<StudioForm>(() => startStudio(projectId, lab.data));
   const [note, setNote] = useState<"no_lab" | "img_fail" | null>(null);
   const [busy, setBusy] = useState(false);
   // a change is built on the latest form (an update function), so one made while the PNG is being made (an await in Insert) is built on, not undone

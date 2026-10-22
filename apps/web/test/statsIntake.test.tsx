@@ -367,6 +367,10 @@ describe("the personal-data box (v1 pdRender 9487, pdApply 9488)", () => {
     expect(line).toBe(E.stats_pd_none);
     expect(line).not.toMatch(/safe|anonymous|no personal data|nothing personal/i);
     expect(line).toMatch(/names/);
+    // exactly what pdScan does (core pdscan.ts): every kind by its heading, and the values only for email, phone, government ID and date of birth
+    expect(line).toContain("Checked the column headings for names, phone numbers, email addresses, roll or enrolment numbers, dates of birth, addresses and government ID numbers");
+    expect(line).toContain("and the values in each column for email addresses, phone numbers, government ID numbers and dates of birth.");
+    expect(line).not.toMatch(/headings and the values for/);
     expect(tid("pd-found")).toBeNull();
     expect(text("pd-scope")).toContain(E.stats_pd_scope);
   });

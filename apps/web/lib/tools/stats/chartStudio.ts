@@ -53,6 +53,14 @@ const studioMemory = new Map<string, StudioForm>();
 const quickMemory = new Map<string, QuickForm>();
 /** What was typed in Chart Studio and in the quick chart for a project, kept while the app is open: a tab switch mounts the tab again. */
 export const recallStudio = (projectId: string): StudioForm => studioMemory.get(projectId) ?? defaultStudioForm();
+/**
+ * Where Chart Studio starts when the tab opens (v1 vzOpen 3697): the Data tab's table when it holds one and the paste box is empty, else what the student last had.
+ * An explicit choice of the paste box is not kept across a visit with an empty box, as in v1.
+ */
+export function startStudio(projectId: string, lab: ParsedData | null): StudioForm {
+  const f = recallStudio(projectId);
+  return lab && f.text === "" && f.source === "paste" ? { ...f, source: "lab" } : f;
+}
 export const rememberStudio = (projectId: string, f: StudioForm): void => { studioMemory.set(projectId, f); };
 export const recallQuick = (projectId: string): QuickForm => quickMemory.get(projectId) ?? defaultQuickForm();
 export const rememberQuick = (projectId: string, f: QuickForm): void => { quickMemory.set(projectId, f); };

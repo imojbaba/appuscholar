@@ -387,6 +387,32 @@ describe("Chart Studio: the controls", () => {
 
 describe("Chart Studio: the data from the Data tab", () => {
   const LAB: ParsedData = statsParseText("group,score\nA,12\nA,15\nB,9\nB,11\nB,10")!;
+  it("opens on the Data tab's table when there is one and the paste box is empty (v1 vzOpen); the explicit button still works", async () => {
+    patchLab("p1", { data: LAB });
+    await mount();
+    expect(text("chart-source")).toBe(fill(E.stats_ch_from_lab!, { n: 5 }));
+    expect(tid("chart-controls")).not.toBeNull();
+    expect(tid("chart-img")).not.toBeNull();
+    // back to the paste box and on to the table again with the button
+    await click("chart-use-paste");
+    expect(tid("chart-source")).toBeNull();
+    await click("chart-use-lab");
+    expect(text("chart-source")).toBe(fill(E.stats_ch_from_lab!, { n: 5 }));
+  });
+  it("stays on the paste box when text was already typed there, and when the Data tab holds no table", async () => {
+    const root = await mount();
+    await type("chart-paste", ANOVA);
+    await unmount(root);
+    patchLab("p1", { data: LAB });
+    const second = await mount();
+    expect(tid("chart-source")).toBeNull();
+    expect((tid("chart-paste") as HTMLTextAreaElement).value).toBe(ANOVA);
+    await unmount(second);
+    resetCharts(); patchLab("p1", { data: null });
+    await mount();
+    expect(tid("chart-source")).toBeNull();
+    expect(tid("chart-controls")).toBeNull();
+  });
   it("without a parsed table the button says so and nothing is drawn", async () => {
     await mount();
     await click("chart-use-lab");

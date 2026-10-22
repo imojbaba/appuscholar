@@ -62,7 +62,7 @@
   "stats_pd_pseudo": "A code is pseudonymisation, not anonymisation. While the key file exists, the data still counts as personal data. Keep the key file away from the data, for example on a different drive, and share only the coded data. If you lose the key file, nobody can recover the names.",
   "stats_pd_scope": "This check reads column headings and the shape of the values. It cannot see a name typed inside an open answer. Read those yourself before they go anywhere.",
   "stats_pd_long": "Columns with long text: {cols}.",
-  "stats_pd_none": "Checked the column headings and the values for names, phone numbers, email addresses, roll or enrolment numbers, dates of birth, addresses and government ID numbers. No column was flagged.",
+  "stats_pd_none": "Checked the column headings for names, phone numbers, email addresses, roll or enrolment numbers, dates of birth, addresses and government ID numbers, and the values in each column for email addresses, phone numbers, government ID numbers and dates of birth. No column was flagged.",
   "stats_pd_unchanged": "Nothing changed. You chose to keep every flagged column.",
   "stats_pd_done": "Done.",
   "stats_pd_removed": "Columns removed: {n}.",
