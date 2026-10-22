@@ -63,7 +63,7 @@ import { getData, getLab, resetLabs, setName } from "../lib/tools/stats/lab";
 const E = { ...(en as Record<string, string>), ...(statsEn as Record<string, string>) };
 /** The Statistics tabs and the ones that are built; each later task adds its id to BUILT_TABS and nothing else here. */
 const ALL_TABS = ["data", "power", "charts", "check", "scales"];
-const BUILT_TABS = ["data", "power", "charts", "check"];
+const BUILT_TABS = ["data", "power", "charts", "check", "scales"];
 const hi = statsHi as Record<string, string>;
 const roots: Root[] = [];
 const tid = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
