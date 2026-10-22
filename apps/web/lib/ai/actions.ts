@@ -4,6 +4,7 @@ import {
   buildShelfSummaryPromptV2, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
   shSummaryNoteId, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
 } from "@appuscholar/core";
+import { currentStylePrompt, currentStyleVocabNote } from "@/lib/tools/style/current";
 
 /** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
 export type SuggestionStatus = "idle" | "thinking" | "polishing" | "expanding" | "reading" | "custom";
@@ -30,7 +31,7 @@ export type ActionDeps = {
   toast(msg: string): void;
   t(key: string): string;
   draftFirst: boolean;
-  /** The optional My Writing Style block appended to the prompt. */
+  /** The optional My Writing Style block appended to the prompt. Absent, Continue, Improve and Extend read the open project's (lib/tools/style/current.ts, ledger ruling R3). */
   stylePrompt?: string;
 };
 
@@ -56,13 +57,15 @@ export async function runWritingAction(kind: WritingKind, d: ActionDeps): Promis
   // Captured now: whatever the student selects while the AI is thinking is not what the answer is for (v1 savedRange).
   const range = kind === "continue" ? null : d.selectionRange();
   const orig = kind === "continue" ? d.tailText() : d.selectionText();
-  const built = buildWritingPrompt(kind, orig, d.stylePrompt);
+  const built = buildWritingPrompt(kind, orig, d.stylePrompt ?? currentStylePrompt());
   const token = d.setThinking(THINKING[kind], range);
   try {
     const res = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
     const c = accCheck(orig, res, kind);
-    d.set(res, { msg: c.msg, warn: c.warn }, token);
+    // v1 sugNoteFull (6478-6481): with My style on, the accuracy note also names longer words that are not in the student's own writing.
+    const vocab = currentStyleVocabNote(orig, res);
+    d.set(res, { msg: c.msg + (vocab ? " " + vocab : ""), warn: c.warn || !!vocab }, token);
     d.toast(kind === "continue" ? "Suggestion ready — press Tab in the editor to accept" : "Ready — press Tab to replace your selection");
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }

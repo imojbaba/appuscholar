@@ -1,0 +1,2973 @@
+{
+ "engine": "pptmodel",
+ "captured": "2026-10-21",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "headings-h1-h2-h3",
+   "html": "<h1>Attention in lectures</h1><p>Intro line.</p><h2>Method</h2><p>We asked 40 students.</p><p>They took notes.</p><h3>Sample</h3><p>Ages 18 to 25.</p>",
+   "title": "Thesis one",
+   "slides": [
+    {
+     "title": "Attention in lectures",
+     "bullets": [
+      "Intro line."
+     ],
+     "images": []
+    },
+    {
+     "title": "Method",
+     "bullets": [
+      "We asked 40 students.",
+      "They took notes."
+     ],
+     "images": []
+    },
+    {
+     "title": "Sample",
+     "bullets": [
+      "Ages 18 to 25."
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1,
+     2,
+     1
+    ],
+    "imagesShown": [
+     0,
+     0,
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Attention in lectures",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Intro line.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Method",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "We asked 40 students.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "They took notes.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Sample",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Ages 18 to 25.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Thesis one.pptx"
+  },
+  {
+   "id": "leading-content-null-title",
+   "html": "<p>A lead paragraph before any heading.</p><p>And another.</p><h1>First heading</h1><p>Under it.</p>",
+   "title": "Thesis one",
+   "slides": [
+    {
+     "title": null,
+     "bullets": [
+      "A lead paragraph before any heading.",
+      "And another."
+     ],
+     "images": []
+    },
+    {
+     "title": "First heading",
+     "bullets": [
+      "Under it."
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     2,
+     1
+    ],
+    "imagesShown": [
+     0,
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "A lead paragraph before any heading.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "And another.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 5.1,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "First heading",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Under it.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Thesis one.pptx"
+  },
+  {
+   "id": "headings-only",
+   "html": "<h1>One</h1><h2>Two</h2><h3>Three</h3>",
+   "title": "Titles",
+   "slides": [
+    {
+     "title": "One",
+     "bullets": [],
+     "images": []
+    },
+    {
+     "title": "Two",
+     "bullets": [],
+     "images": []
+    },
+    {
+     "title": "Three",
+     "bullets": [],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     0,
+     0,
+     0
+    ],
+    "imagesShown": [
+     0,
+     0,
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "One",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Two",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Three",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    }
+   ],
+   "fileName": "Titles.pptx"
+  },
+  {
+   "id": "empty-headings",
+   "html": "<h1></h1><p>after an empty heading</p><h2>   </h2><h3> real </h3>",
+   "title": "Titles",
+   "slides": [
+    {
+     "title": "",
+     "bullets": [
+      "after an empty heading"
+     ],
+     "images": []
+    },
+    {
+     "title": "real",
+     "bullets": [],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1,
+     0
+    ],
+    "imagesShown": [
+     0,
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "after an empty heading",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 5.1,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "real",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    }
+   ],
+   "fileName": "Titles.pptx"
+  },
+  {
+   "id": "heading-h4-is-a-bullet",
+   "html": "<h1>Top</h1><h4>Fourth level</h4><h5>Fifth</h5><p>Body</p>",
+   "title": "T",
+   "slides": [
+    {
+     "title": "Top",
+     "bullets": [
+      "Fourth level",
+      "Fifth",
+      "Body"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     3
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Top",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Fourth level",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Fifth",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Body",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "T.pptx"
+  },
+  {
+   "id": "lists",
+   "html": "<h1>Lists</h1><ul><li>one</li><li> two </li><li></li><li>three <b>bold</b></li></ul><ol><li>first</li><li>second</li></ol><ul><li>outer<ul><li>inner</li></ul></li></ul>",
+   "title": "Lists",
+   "slides": [
+    {
+     "title": "Lists",
+     "bullets": [
+      "one",
+      "two",
+      "three bold",
+      "first",
+      "second",
+      "outerinner"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     6
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Lists",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "one",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "two",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "three bold",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "first",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "second",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "outerinner",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Lists.pptx"
+  },
+  {
+   "id": "ordered-list-only",
+   "html": "<ol><li>a</li><li>b</li><li></li></ol>",
+   "title": "Ordered",
+   "slides": [
+    {
+     "title": null,
+     "bullets": [
+      "a",
+      "b"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": false,
+   "preview": {
+    "warned": true,
+    "empty": false,
+    "bulletsShown": [
+     2
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "a",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "b",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 5.1,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Ordered.pptx"
+  },
+  {
+   "id": "empty-list",
+   "html": "<h1>Empty</h1><ul></ul><ol><li></li></ol>",
+   "title": "Empty",
+   "slides": [
+    {
+     "title": "Empty",
+     "bullets": [],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     0
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Empty",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    }
+   ],
+   "fileName": "Empty.pptx"
+  },
+  {
+   "id": "table",
+   "html": "<h2>Data</h2><table><thead><tr><th>Group</th><th>Mean</th></tr></thead><tbody><tr><td>A</td><td>4.2</td></tr><tr><td>B</td><td>5.1</td></tr></tbody></table><p>After the table.</p>",
+   "title": "Tables",
+   "slides": [
+    {
+     "title": "Data",
+     "bullets": [
+      "Table: Group | Mean — A | 4.2 — B | 5.1",
+      "After the table."
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     2
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Data",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Table: Group | Mean — A | 4.2 — B | 5.1",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "After the table.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Tables.pptx"
+  },
+  {
+   "id": "table-edge",
+   "html": "<h2>Edge</h2><table></table><table><tr><td></td><td>x</td></tr></table><table><tr><td>solo</td></tr></table>",
+   "title": "Tables",
+   "slides": [
+    {
+     "title": "Edge",
+     "bullets": [
+      "Table:  | x",
+      "Table: solo"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     2
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Edge",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Table:  | x",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Table: solo",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Tables.pptx"
+  },
+  {
+   "id": "images",
+   "html": "<h1>Pictures</h1><p><img src=\"data:image/png;base64,iVBORw0KGgo=\"></p><p>Words and a picture <img src=\"data:image/gif;base64,R0lGODlhAQABAAAAACw=\"> together.</p><p>Plain bullet.</p><p><img src=\"data:image/png;base64,iVBORw0KGgo=\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAAAACw=\"></p>",
+   "title": "Pictures",
+   "slides": [
+    {
+     "title": "Pictures",
+     "bullets": [
+      "Plain bullet."
+     ],
+     "images": [
+      "data:image/png;base64,iVBORw0KGgo=",
+      "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+      "data:image/png;base64,iVBORw0KGgo=",
+      "data:image/gif;base64,R0lGODlhAQABAAAAACw="
+     ]
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1
+    ],
+    "imagesShown": [
+     4
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Pictures",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Plain bullet.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addImage",
+     "args": [
+      {
+       "data": "data:image/png;base64,iVBORw0KGgo=",
+       "x": 5.3,
+       "y": 1.3,
+       "w": 4,
+       "h": 3
+      }
+     ]
+    }
+   ],
+   "fileName": "Pictures.pptx"
+  },
+  {
+   "id": "image-no-src",
+   "html": "<h1>Odd</h1><p><img>words beside a picture with no src</p><p><img alt=\"none\">another</p><p><img src=\"data:image/png;base64,iVBORw0KGgo=\"></p>",
+   "title": "Odd",
+   "slides": [
+    {
+     "title": "Odd",
+     "bullets": [],
+     "images": [
+      "data:image/png;base64,iVBORw0KGgo="
+     ]
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     0
+    ],
+    "imagesShown": [
+     1
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Odd",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addImage",
+     "args": [
+      {
+       "data": "data:image/png;base64,iVBORw0KGgo=",
+       "x": 5.3,
+       "y": 1.3,
+       "w": 4,
+       "h": 3
+      }
+     ]
+    }
+   ],
+   "fileName": "Odd.pptx"
+  },
+  {
+   "id": "figure-and-nested-images",
+   "html": "<h1>Figures</h1><figure><img src=\"data:image/png;base64,iVBORw0KGgo=\"><figcaption>A caption</figcaption></figure><div><p>in a div</p><img src=\"data:image/gif;base64,R0lGODlhAQABAAAAACw=\"></div>",
+   "title": "Figures",
+   "slides": [
+    {
+     "title": "Figures",
+     "bullets": [],
+     "images": [
+      "data:image/png;base64,iVBORw0KGgo=",
+      "data:image/gif;base64,R0lGODlhAQABAAAAACw="
+     ]
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     0
+    ],
+    "imagesShown": [
+     2
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Figures",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addImage",
+     "args": [
+      {
+       "data": "data:image/png;base64,iVBORw0KGgo=",
+       "x": 5.3,
+       "y": 1.3,
+       "w": 4,
+       "h": 3
+      }
+     ]
+    }
+   ],
+   "fileName": "Figures.pptx"
+  },
+  {
+   "id": "images-without-heading",
+   "html": "<p><img src=\"data:image/png;base64,iVBORw0KGgo=\"></p>",
+   "title": "Only a picture",
+   "slides": [
+    {
+     "title": null,
+     "bullets": [],
+     "images": [
+      "data:image/png;base64,iVBORw0KGgo="
+     ]
+    }
+   ],
+   "hasHeadings": false,
+   "preview": {
+    "warned": true,
+    "empty": false,
+    "bulletsShown": [
+     0
+    ],
+    "imagesShown": [
+     1
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addImage",
+     "args": [
+      {
+       "data": "data:image/png;base64,iVBORw0KGgo=",
+       "x": 5.3,
+       "y": 1.3,
+       "w": 4,
+       "h": 3
+      }
+     ]
+    }
+   ],
+   "fileName": "Only a picture.pptx"
+  },
+  {
+   "id": "more-than-10-bullets",
+   "html": "<h1>Many</h1><p>Bullet number 1</p><p>Bullet number 2</p><p>Bullet number 3</p><p>Bullet number 4</p><p>Bullet number 5</p><p>Bullet number 6</p><p>Bullet number 7</p><p>Bullet number 8</p><p>Bullet number 9</p><p>Bullet number 10</p><p>Bullet number 11</p><p>Bullet number 12</p><p>Bullet number 13</p><p>Bullet number 14</p><p>LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL</p>",
+   "title": "Many",
+   "slides": [
+    {
+     "title": "Many",
+     "bullets": [
+      "Bullet number 1",
+      "Bullet number 2",
+      "Bullet number 3",
+      "Bullet number 4",
+      "Bullet number 5",
+      "Bullet number 6",
+      "Bullet number 7",
+      "Bullet number 8",
+      "Bullet number 9",
+      "Bullet number 10",
+      "Bullet number 11",
+      "Bullet number 12",
+      "Bullet number 13",
+      "Bullet number 14",
+      "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     8
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Many",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Bullet number 1",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 2",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 3",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 4",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 5",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 6",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 7",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 8",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 9",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Bullet number 10",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Many.pptx"
+  },
+  {
+   "id": "no-headings",
+   "html": "<p>First paragraph of a document.</p><p>Second paragraph.</p><ul><li>a list item</li></ul>",
+   "title": "My draft",
+   "slides": [
+    {
+     "title": null,
+     "bullets": [
+      "First paragraph of a document.",
+      "Second paragraph.",
+      "a list item"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": false,
+   "preview": {
+    "warned": true,
+    "empty": false,
+    "bulletsShown": [
+     3
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "First paragraph of a document.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Second paragraph.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "a list item",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 5.1,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "My draft.pptx"
+  },
+  {
+   "id": "no-headings-no-title",
+   "html": "<p>Only paragraphs here.</p>",
+   "title": null,
+   "slides": [
+    {
+     "title": null,
+     "bullets": [
+      "Only paragraphs here."
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": false,
+   "preview": {
+    "warned": true,
+    "empty": false,
+    "bulletsShown": [
+     1
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Only paragraphs here.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 5.1,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "id": "bare-text-fallback",
+   "html": "line one\nline two\n\nline three",
+   "title": "Bare text",
+   "slides": [
+    {
+     "title": "Bare text",
+     "bullets": [
+      "line one",
+      "line two",
+      "line three"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     3
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Bare text",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "line one",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "line two",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "line three",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Bare text.pptx"
+  },
+  {
+   "id": "bare-text-fallback-untitled",
+   "html": "line one\nline two",
+   "title": null,
+   "slides": [
+    {
+     "title": "Untitled",
+     "bullets": [
+      "line one",
+      "line two"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     2
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Untitled",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "line one",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "line two",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "id": "bare-text-fallback-empty-title",
+   "html": "just words",
+   "title": "",
+   "slides": [
+    {
+     "title": "Untitled",
+     "bullets": [
+      "just words"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Untitled",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "just words",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "id": "bare-text-12-lines",
+   "html": "row 1\nrow 2\nrow 3\nrow 4\nrow 5\nrow 6\nrow 7\nrow 8\nrow 9\nrow 10\nrow 11\nrow 12\n",
+   "title": "Rows",
+   "slides": [
+    {
+     "title": "Rows",
+     "bullets": [
+      "row 1",
+      "row 2",
+      "row 3",
+      "row 4",
+      "row 5",
+      "row 6",
+      "row 7",
+      "row 8",
+      "row 9",
+      "row 10"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     8
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Rows",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "row 1",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 2",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 3",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 4",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 5",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 6",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 7",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 8",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 9",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "row 10",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Rows.pptx"
+  },
+  {
+   "id": "empty-picture-and-text-fallback",
+   "html": "<p><img><span>text kept only by the fallback</span></p>",
+   "title": "Fall",
+   "slides": [
+    {
+     "title": "Fall",
+     "bullets": [
+      "text kept only by the fallback"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Fall",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "text kept only by the fallback",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Fall.pptx"
+  },
+  {
+   "id": "empty-doc",
+   "html": "",
+   "title": "Empty",
+   "slides": [],
+   "hasHeadings": false,
+   "preview": {
+    "warned": false,
+    "empty": true,
+    "bulletsShown": [],
+    "imagesShown": [],
+    "downloadRow": "none"
+   },
+   "deck": [],
+   "fileName": ""
+  },
+  {
+   "id": "empty-paragraphs",
+   "html": "<p></p><p> </p><p><br></p>",
+   "title": "Blank",
+   "slides": [],
+   "hasHeadings": false,
+   "preview": {
+    "warned": false,
+    "empty": true,
+    "bulletsShown": [],
+    "imagesShown": [],
+    "downloadRow": "none"
+   },
+   "deck": [],
+   "fileName": ""
+  },
+  {
+   "id": "whitespace-only-text",
+   "html": "   \n  ",
+   "title": "Blank",
+   "slides": [],
+   "hasHeadings": false,
+   "preview": {
+    "warned": false,
+    "empty": true,
+    "bulletsShown": [],
+    "imagesShown": [],
+    "downloadRow": "none"
+   },
+   "deck": [],
+   "fileName": ""
+  },
+  {
+   "id": "devanagari",
+   "html": "<h1>एकाग्रता और स्मृति</h1><p>छात्रों की एकाग्रता घटती है।</p><h2>विधि</h2><ul><li>पहला बिंदु</li><li>दूसरा बिंदु</li></ul><table><tr><td>समूह</td><td>औसत</td></tr></table>",
+   "title": "शोध प्रबंध",
+   "slides": [
+    {
+     "title": "एकाग्रता और स्मृति",
+     "bullets": [
+      "छात्रों की एकाग्रता घटती है।"
+     ],
+     "images": []
+    },
+    {
+     "title": "विधि",
+     "bullets": [
+      "पहला बिंदु",
+      "दूसरा बिंदु",
+      "Table: समूह | औसत"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1,
+     3
+    ],
+    "imagesShown": [
+     0,
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "एकाग्रता और स्मृति",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "छात्रों की एकाग्रता घटती है।",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "विधि",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "पहला बिंदु",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "दूसरा बिंदु",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "Table: समूह | औसत",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "id": "inline-and-entities",
+   "html": "<h1>A &amp; B &lt;c&gt;</h1><p>Plain <b>bold</b> <i>it</i> a&nbsp;b &quot;q&quot; &#39;s&#39;</p><p>line<br>break</p>",
+   "title": "Inline",
+   "slides": [
+    {
+     "title": "A & B <c>",
+     "bullets": [
+      "Plain bold it a b \"q\" 's'",
+      "linebreak"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     2
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "A & B <c>",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "Plain bold it a b \"q\" 's'",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "linebreak",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Inline.pptx"
+  },
+  {
+   "id": "blocks",
+   "html": "<h1>Blocks</h1><blockquote>A quotation.</blockquote><pre>code  line</pre><div>a plain div</div><hr><p>after</p>",
+   "title": "Blocks",
+   "slides": [
+    {
+     "title": "Blocks",
+     "bullets": [
+      "A quotation.",
+      "code  line",
+      "a plain div",
+      "after"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     4
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Blocks",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "A quotation.",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "code  line",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "a plain div",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "after",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Blocks.pptx"
+  },
+  {
+   "id": "v1-divs",
+   "html": "<div>first line</div><div>second line</div><div><br></div><div>fourth</div>",
+   "title": "Divs",
+   "slides": [
+    {
+     "title": null,
+     "bullets": [
+      "first line",
+      "second line",
+      "fourth"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": false,
+   "preview": {
+    "warned": true,
+    "empty": false,
+    "bulletsShown": [
+     3
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "first line",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "second line",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       },
+       {
+        "text": "fourth",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 5.1,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Divs.pptx"
+  },
+  {
+   "id": "consecutive-headings-and-trim",
+   "html": "<h1>  Spaced  </h1><h1>Next</h1><p>  padded  </p><h2>Last</h2>",
+   "title": "Trim",
+   "slides": [
+    {
+     "title": "Spaced",
+     "bullets": [],
+     "images": []
+    },
+    {
+     "title": "Next",
+     "bullets": [
+      "padded"
+     ],
+     "images": []
+    },
+    {
+     "title": "Last",
+     "bullets": [],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     0,
+     1,
+     0
+    ],
+    "imagesShown": [
+     0,
+     0,
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Spaced",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Next",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "padded",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Last",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    }
+   ],
+   "fileName": "Trim.pptx"
+  },
+  {
+   "id": "spans-and-marks",
+   "html": "<h1>Marks</h1><p><span class=\"stat-tag\" data-run=\"x\">t(38) = 2.15</span> and <span class=\"qual-tag\" data-qcode=\"q1\">a coded passage</span></p>",
+   "title": "Marks",
+   "slides": [
+    {
+     "title": "Marks",
+     "bullets": [
+      "t(38) = 2.15 and a coded passage"
+     ],
+     "images": []
+    }
+   ],
+   "hasHeadings": true,
+   "preview": {
+    "warned": false,
+    "empty": false,
+    "bulletsShown": [
+     1
+    ],
+    "imagesShown": [
+     0
+    ],
+    "downloadRow": "flex"
+   },
+   "deck": [
+    {
+     "op": "defineSlideMaster",
+     "args": [
+      {
+       "title": "APPU",
+       "background": {
+        "color": "FFFFFF"
+       }
+      }
+     ]
+    },
+    {
+     "op": "addSlide",
+     "args": []
+    },
+    {
+     "op": "addText",
+     "args": [
+      "Marks",
+      {
+       "x": 0.5,
+       "y": 0.4,
+       "w": 9,
+       "h": 1,
+       "fontSize": 28,
+       "bold": true,
+       "color": "5B21B6",
+       "fontFace": "Georgia"
+      }
+     ]
+    },
+    {
+     "op": "addText",
+     "args": [
+      [
+       {
+        "text": "t(38) = 2.15 and a coded passage",
+        "options": {
+         "bullet": true,
+         "breakLine": true
+        }
+       }
+      ],
+      {
+       "x": 0.5,
+       "y": 1.5,
+       "w": 9,
+       "h": 4,
+       "fontSize": 16,
+       "color": "1E1B2E",
+       "fontFace": "Georgia",
+       "valign": "top"
+      }
+     ]
+    }
+   ],
+   "fileName": "Marks.pptx"
+  }
+ ],
+ "fileNames": [
+  {
+   "title": "My thesis: ch. 1!",
+   "fileName": "My thesis ch 1.pptx"
+  },
+  {
+   "title": "",
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "title": "Hindi शीर्षक",
+   "fileName": "Hindi.pptx"
+  },
+  {
+   "title": "  spaced  name ",
+   "fileName": "spaced  name.pptx"
+  },
+  {
+   "title": null,
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "title": "***",
+   "fileName": "appuscholar-slides.pptx"
+  },
+  {
+   "title": "a_b-c d.e",
+   "fileName": "a_b-c de.pptx"
+  },
+  {
+   "title": "Report (final) v2",
+   "fileName": "Report final v2.pptx"
+  },
+  {
+   "title": "xxxxxxxxxx",
+   "fileName": "xxxxxxxxxx.pptx"
+  }
+ ],
+ "constants": {
+  "fallbackParts": 10,
+  "previewBullets": 8,
+  "fileBullets": 10,
+  "previewChars": 200,
+  "fileChars": 300
+ }
+}
