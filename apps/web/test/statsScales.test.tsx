@@ -177,8 +177,9 @@ describe("Copy the questionnaire text and Download the item list (v1 slCopy 1144
       const want = slCodebookCsv(x);
       expect(name).toBe(x.id + "_items.csv");
       expect(name).toBe(want.name);
-      const body = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsText(blob); });
-      expect(body.replace(/^﻿/, "")).toBe(want.csv);
+      const bytes = new Uint8Array(await new Promise<ArrayBuffer>((res) => { const r = new FileReader(); r.onload = () => res(r.result as ArrayBuffer); r.readAsArrayBuffer(blob); }));
+      expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+      expect(new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes)).toBe("\uFEFF" + want.csv);
       expect(blob.type).toContain("text/csv");
       // the codebook names the columns the scorer looks for
       expect(want.csv.split("\n")[1]!.startsWith(slVarNames(x)[0]!)).toBe(true);
@@ -286,6 +287,13 @@ describe("Score this scale in my data (v1 slScoreOpen 11470, slScoreRun 11487)",
     expect([...sel(0).options].map((o) => o.textContent)).toContain(hostile);
   });
 
+  it("names a blank header Col<n> in the column lists, as v1 does", async () => {
+    await giveData("RSES_01,,RSES_03\n1,2,3\n2,3,1\n3,1,2");
+    await mount();
+    await openScoring("RSES");
+    expect([...sel(0).options].map((o) => o.textContent)).toEqual([E.stats_sc_choose, "RSES_01", "Col2", "RSES_03"]);
+  });
+
   it("refuses an item with no column, and one column used twice, with core's sentences and changes nothing", async () => {
     await giveData("SWLS_01,SWLS_02,SWLS_03,SWLS_04,SWLS_05\n1,2,3,4,5\n4,4,4,4,4\n7,7,7,7,7");
     await mount();
@@ -387,11 +395,7 @@ describe("24 scoring cases match v1 (golden scales/cases.json, 'score')", () => 
       const data = getData("p1");
       await mount();
       await openScoring(c.scale);
-      if (!data || !data.rows.length) {
-        // no row at all: there is nothing to map or score, as v1's 'No row could be scored' guard (an empty matrix)
-        expect(c.mat).toHaveLength(0);
-        return;
-      }
+      expect(data, "a header-only paste still gives a table with no rows").not.toBeNull();
       await choose("scale-coding", String(c.coding));
       await click("scale-run");
       await until(() => !!tid("scale-out"));

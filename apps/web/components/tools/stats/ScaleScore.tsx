@@ -45,8 +45,8 @@ export function ScaleScore({ projectId, scale: x }: { projectId: string; scale: 
 
   const run = async () => {
     setWorking(true);
-    const o = await scoreInLab(projectId, x, idx, coding);
-    setWorking(false);
+    let o: ScaleOutcome;
+    try { o = await scoreInLab(projectId, x, idx, coding); } finally { setWorking(false); }
     if (o.kind === "nodata") return;
     setSaid({ scaleId: x.id, outcome: o });
     // The new columns are added at the end, so the student's choices still point at the same columns of the table that was parsed again.
@@ -67,7 +67,7 @@ export function ScaleScore({ projectId, scale: x }: { projectId: string; scale: 
           <select className="input" style={{ width: "auto", minWidth: 140 }} data-testid={"scale-map-" + i} value={String(idx[i])}
             onChange={(e) => set({ idx: idx.map((v, k) => (k === i ? parseInt(e.target.value, 10) : v)) })}>
             <option value="-1">{t("stats_sc_choose")}</option>
-            {data.headers.map((hd, k) => <option key={k} value={k}>{hd}</option>)}
+            {data.headers.map((hd, k) => <option key={k} value={k}>{hd || `Col${k + 1}`}</option>)}
           </select>
         </label>
       ))}

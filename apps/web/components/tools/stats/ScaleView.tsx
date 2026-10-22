@@ -24,7 +24,7 @@ export function ScaleView({ scale: x, scoring, onScore }: { scale: Scale; scorin
   };
   const doCsv = () => {
     const f = slCodebookCsv(x);
-    downloadBlob(f.name, new Blob(["﻿" + f.csv], { type: "text/csv;charset=utf-8" }));
+    downloadBlob(f.name, new Blob(["\uFEFF" + f.csv], { type: "text/csv;charset=utf-8" }));
   };
   return (
     <div className="ap-box" data-testid="scale-view" style={{ marginTop: 10 }}>
