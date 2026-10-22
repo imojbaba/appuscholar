@@ -1,0 +1,3513 @@
+{
+ "engine": "closeness",
+ "captured": "2026-10-21",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "exact-copy",
+   "studentText": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 28,
+    "total": 28,
+    "covered": 28,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 27,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 0,
+      "ce": 170
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (28 of 28) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "copy-in-own-words",
+   "studentText": "My own opening is that Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. which I find convincing, though I also read Paper A with doubts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 45,
+    "total": 45,
+    "covered": 28,
+    "pct": 62.2,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 5,
+      "to": 32,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 23,
+      "ce": 193
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 62.2% of counted words (28 of 45) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "chunks-k5-min8",
+   "studentText": "neralolo kakakone kakaragi kakapeka kakafemi changed0 kanefeza kakadine kanedigi kadirafe kakazasu kanesuka changed1 kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo changed2 kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope changed3 kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka changed4 kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura changed5 kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi changed6 kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife changed7 kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi changed8 kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo changed9",
+   "sources": [
+    {
+     "name": "Generated paper",
+     "kind": "Reading shelf",
+     "text": "neralolo kakakone kakaragi kakapeka kakafemi kakafeza kakafeho kakafesu kanefeza kakadine kanedigi kadirafe kakazasu kanesuka kakavalo diraloto kamivane kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo kanemidi kakalomi kanetoko kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope kakamimi kanehoho kakagimi kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka kakabufe kakakova kakaraza kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura kakanesu kakanefe kakaneho kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi kakamika kakahoka kakamipe kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife kakadilo kakadiho kakadibu kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi kanegira kakanene kakanemi kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo kanebura kadihoza kafedika kakahosu kakamilo kakahoto kakamine kanehone kakagine kanevako kanekafe kanekolo kakazara kakasuva kakazaka kanesumi kadivako vabubusu kakadigi kanedimi kadiragi kadigira kadikolo kanehobu kakagiko"
+    }
+   ],
+   "k": 5,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 118,
+    "total": 118,
+    "covered": 90,
+    "pct": 76.3,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 21,
+      "to": 28,
+      "words": 8,
+      "mine": "kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope",
+      "theirs": "kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope",
+      "page": 0,
+      "cs": 189,
+      "ce": 260
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 30,
+      "to": 38,
+      "words": 9,
+      "mine": "kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka",
+      "theirs": "kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka",
+      "page": 0,
+      "cs": 270,
+      "ce": 350
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 40,
+      "to": 49,
+      "words": 10,
+      "mine": "kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura",
+      "theirs": "kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura",
+      "page": 0,
+      "cs": 360,
+      "ce": 449
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 51,
+      "to": 62,
+      "words": 12,
+      "mine": "kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi",
+      "theirs": "kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi",
+      "page": 0,
+      "cs": 459,
+      "ce": 566
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 64,
+      "to": 78,
+      "words": 15,
+      "mine": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "theirs": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "page": 0,
+      "cs": 576,
+      "ce": 710
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 80,
+      "to": 95,
+      "words": 16,
+      "mine": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "theirs": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "page": 0,
+      "cs": 720,
+      "ce": 863
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 97,
+      "to": 116,
+      "words": 20,
+      "mine": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "theirs": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "page": 0,
+      "cs": 873,
+      "ce": 1052
+     }
+    ],
+    "per": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf",
+      "words": 90,
+      "runs": 7
+     }
+    ],
+    "k": 5,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Generated paper (Reading shelf)\nSettings: word groups of 5, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 76.3% of counted words (90 of 118) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 8 words, source: Generated paper\nYours: kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope\nSource: kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope\n\n[1.2] 9 words, source: Generated paper\nYours: kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka\nSource: kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka\n\n[1.3] 10 words, source: Generated paper\nYours: kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura\nSource: kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura\n\n[1.4] 12 words, source: Generated paper\nYours: kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi\nSource: kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi\n\n[1.5] 15 words, source: Generated paper\nYours: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\nSource: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\n\n[1.6] 16 words, source: Generated paper\nYours: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\nSource: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\n\n[1.7] 20 words, source: Generated paper\nYours: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\nSource: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\n\n"
+  },
+  {
+   "id": "chunks-k6-min10",
+   "studentText": "neralolo kakakone kakaragi kakapeka kakafemi changed0 kanefeza kakadine kanedigi kadirafe kakazasu kanesuka changed1 kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo changed2 kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope changed3 kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka changed4 kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura changed5 kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi changed6 kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife changed7 kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi changed8 kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo changed9",
+   "sources": [
+    {
+     "name": "Generated paper",
+     "kind": "Reading shelf",
+     "text": "neralolo kakakone kakaragi kakapeka kakafemi kakafeza kakafeho kakafesu kanefeza kakadine kanedigi kadirafe kakazasu kanesuka kakavalo diraloto kamivane kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo kanemidi kakalomi kanetoko kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope kakamimi kanehoho kakagimi kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka kakabufe kakakova kakaraza kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura kakanesu kakanefe kakaneho kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi kakamika kakahoka kakamipe kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife kakadilo kakadiho kakadibu kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi kanegira kakanene kakanemi kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo kanebura kadihoza kafedika kakahosu kakamilo kakahoto kakamine kanehone kakagine kanevako kanekafe kanekolo kakazara kakasuva kakazaka kanesumi kadivako vabubusu kakadigi kanedimi kadiragi kadigira kadikolo kanehobu kakagiko"
+    }
+   ],
+   "k": 6,
+   "minRun": 10,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 118,
+    "total": 118,
+    "covered": 73,
+    "pct": 61.9,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 40,
+      "to": 49,
+      "words": 10,
+      "mine": "kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura",
+      "theirs": "kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura",
+      "page": 0,
+      "cs": 360,
+      "ce": 449
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 51,
+      "to": 62,
+      "words": 12,
+      "mine": "kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi",
+      "theirs": "kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi",
+      "page": 0,
+      "cs": 459,
+      "ce": 566
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 64,
+      "to": 78,
+      "words": 15,
+      "mine": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "theirs": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "page": 0,
+      "cs": 576,
+      "ce": 710
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 80,
+      "to": 95,
+      "words": 16,
+      "mine": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "theirs": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "page": 0,
+      "cs": 720,
+      "ce": 863
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 97,
+      "to": 116,
+      "words": 20,
+      "mine": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "theirs": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "page": 0,
+      "cs": 873,
+      "ce": 1052
+     }
+    ],
+    "per": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf",
+      "words": 73,
+      "runs": 5
+     }
+    ],
+    "k": 6,
+    "minRun": 10,
+    "sources": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Generated paper (Reading shelf)\nSettings: word groups of 6, passages of 10 words or more. Quoted text and the reference list left out.\nResult: 61.9% of counted words (73 of 118) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 10 words, source: Generated paper\nYours: kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura\nSource: kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura\n\n[1.2] 12 words, source: Generated paper\nYours: kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi\nSource: kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi\n\n[1.3] 15 words, source: Generated paper\nYours: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\nSource: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\n\n[1.4] 16 words, source: Generated paper\nYours: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\nSource: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\n\n[1.5] 20 words, source: Generated paper\nYours: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\nSource: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\n\n"
+  },
+  {
+   "id": "chunks-k8-min15",
+   "studentText": "neralolo kakakone kakaragi kakapeka kakafemi changed0 kanefeza kakadine kanedigi kadirafe kakazasu kanesuka changed1 kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo changed2 kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope changed3 kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka changed4 kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura changed5 kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi changed6 kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife changed7 kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi changed8 kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo changed9",
+   "sources": [
+    {
+     "name": "Generated paper",
+     "kind": "Reading shelf",
+     "text": "neralolo kakakone kakaragi kakapeka kakafemi kakafeza kakafeho kakafesu kanefeza kakadine kanedigi kadirafe kakazasu kanesuka kakavalo diraloto kamivane kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo kanemidi kakalomi kanetoko kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope kakamimi kanehoho kakagimi kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka kakabufe kakakova kakaraza kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura kakanesu kakanefe kakaneho kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi kakamika kakahoka kakamipe kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife kakadilo kakadiho kakadibu kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi kanegira kakanene kakanemi kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo kanebura kadihoza kafedika kakahosu kakamilo kakahoto kakamine kanehone kakagine kanevako kanekafe kanekolo kakazara kakasuva kakazaka kanesumi kadivako vabubusu kakadigi kanedimi kadiragi kadigira kadikolo kanehobu kakagiko"
+    }
+   ],
+   "k": 8,
+   "minRun": 15,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 118,
+    "total": 118,
+    "covered": 51,
+    "pct": 43.2,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 64,
+      "to": 78,
+      "words": 15,
+      "mine": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "theirs": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "page": 0,
+      "cs": 576,
+      "ce": 710
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 80,
+      "to": 95,
+      "words": 16,
+      "mine": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "theirs": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "page": 0,
+      "cs": 720,
+      "ce": 863
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 97,
+      "to": 116,
+      "words": 20,
+      "mine": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "theirs": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "page": 0,
+      "cs": 873,
+      "ce": 1052
+     }
+    ],
+    "per": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf",
+      "words": 51,
+      "runs": 3
+     }
+    ],
+    "k": 8,
+    "minRun": 15,
+    "sources": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Generated paper (Reading shelf)\nSettings: word groups of 8, passages of 15 words or more. Quoted text and the reference list left out.\nResult: 43.2% of counted words (51 of 118) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 15 words, source: Generated paper\nYours: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\nSource: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\n\n[1.2] 16 words, source: Generated paper\nYours: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\nSource: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\n\n[1.3] 20 words, source: Generated paper\nYours: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\nSource: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\n\n"
+  },
+  {
+   "id": "chunks-k8-min8",
+   "studentText": "neralolo kakakone kakaragi kakapeka kakafemi changed0 kanefeza kakadine kanedigi kadirafe kakazasu kanesuka changed1 kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo changed2 kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope changed3 kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka changed4 kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura changed5 kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi changed6 kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife changed7 kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi changed8 kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo changed9",
+   "sources": [
+    {
+     "name": "Generated paper",
+     "kind": "Reading shelf",
+     "text": "neralolo kakakone kakaragi kakapeka kakafemi kakafeza kakafeho kakafesu kanefeza kakadine kanedigi kadirafe kakazasu kanesuka kakavalo diraloto kamivane kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo kanemidi kakalomi kanetoko kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope kakamimi kanehoho kakagimi kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka kakabufe kakakova kakaraza kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura kakanesu kakanefe kakaneho kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi kakamika kakahoka kakamipe kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife kakadilo kakadiho kakadibu kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi kanegira kakanene kakanemi kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo kanebura kadihoza kafedika kakahosu kakamilo kakahoto kakamine kanehone kakagine kanevako kanekafe kanekolo kakazara kakasuva kakazaka kanesumi kadivako vabubusu kakadigi kanedimi kadiragi kadigira kadikolo kanehobu kakagiko"
+    }
+   ],
+   "k": 8,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 118,
+    "total": 118,
+    "covered": 90,
+    "pct": 76.3,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 21,
+      "to": 28,
+      "words": 8,
+      "mine": "kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope",
+      "theirs": "kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope",
+      "page": 0,
+      "cs": 189,
+      "ce": 260
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 30,
+      "to": 38,
+      "words": 9,
+      "mine": "kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka",
+      "theirs": "kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka",
+      "page": 0,
+      "cs": 270,
+      "ce": 350
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 40,
+      "to": 49,
+      "words": 10,
+      "mine": "kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura",
+      "theirs": "kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura",
+      "page": 0,
+      "cs": 360,
+      "ce": 449
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 51,
+      "to": 62,
+      "words": 12,
+      "mine": "kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi",
+      "theirs": "kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi",
+      "page": 0,
+      "cs": 459,
+      "ce": 566
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 64,
+      "to": 78,
+      "words": 15,
+      "mine": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "theirs": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "page": 0,
+      "cs": 576,
+      "ce": 710
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 80,
+      "to": 95,
+      "words": 16,
+      "mine": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "theirs": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "page": 0,
+      "cs": 720,
+      "ce": 863
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 97,
+      "to": 116,
+      "words": 20,
+      "mine": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "theirs": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "page": 0,
+      "cs": 873,
+      "ce": 1052
+     }
+    ],
+    "per": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf",
+      "words": 90,
+      "runs": 7
+     }
+    ],
+    "k": 8,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Generated paper (Reading shelf)\nSettings: word groups of 8, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 76.3% of counted words (90 of 118) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 8 words, source: Generated paper\nYours: kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope\nSource: kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope\n\n[1.2] 9 words, source: Generated paper\nYours: kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka\nSource: kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka\n\n[1.3] 10 words, source: Generated paper\nYours: kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura\nSource: kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura\n\n[1.4] 12 words, source: Generated paper\nYours: kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi\nSource: kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi\n\n[1.5] 15 words, source: Generated paper\nYours: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\nSource: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\n\n[1.6] 16 words, source: Generated paper\nYours: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\nSource: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\n\n[1.7] 20 words, source: Generated paper\nYours: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\nSource: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\n\n"
+  },
+  {
+   "id": "chunks-k5-min15",
+   "studentText": "neralolo kakakone kakaragi kakapeka kakafemi changed0 kanefeza kakadine kanedigi kadirafe kakazasu kanesuka changed1 kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo changed2 kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope changed3 kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka changed4 kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura changed5 kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi changed6 kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife changed7 kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi changed8 kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo changed9",
+   "sources": [
+    {
+     "name": "Generated paper",
+     "kind": "Reading shelf",
+     "text": "neralolo kakakone kakaragi kakapeka kakafemi kakafeza kakafeho kakafesu kanefeza kakadine kanedigi kadirafe kakazasu kanesuka kakavalo diraloto kamivane kakarato kakapene kakabusu kakakobu kaneradi kakamiva kakaholo kanemidi kakalomi kanetoko kakadisu kanedipe diperaza kakahova kakamife kakahofe kakamira kakahope kakamimi kanehoho kakagimi kanevalo kakakabu kakakami kakakagi kakakafe kakakako kakakasu kakakato kanekaka kakabufe kakakova kakaraza kakapegi kakabubu kakakofe kakaralo kakapedi kakabuho kakakoko kakarafe kanepera kadisura kakanesu kakanefe kakaneho kakaneka kakaneza kanenene kadimiva kakakava kakakadi kadibufe kakasugi varazane kadifegi kakamito kakahogi kakamika kakahoka kakamipe kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife kakadilo kakadiho kakadibu kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi kanegira kakanene kakanemi kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo kanebura kadihoza kafedika kakahosu kakamilo kakahoto kakamine kanehone kakagine kanevako kanekafe kanekolo kakazara kakasuva kakazaka kanesumi kadivako vabubusu kakadigi kanedimi kadiragi kadigira kadikolo kanehobu kakagiko"
+    }
+   ],
+   "k": 5,
+   "minRun": 15,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 118,
+    "total": 118,
+    "covered": 51,
+    "pct": 43.2,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 64,
+      "to": 78,
+      "words": 15,
+      "mine": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "theirs": "kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife",
+      "page": 0,
+      "cs": 576,
+      "ce": 710
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 80,
+      "to": 95,
+      "words": 16,
+      "mine": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "theirs": "kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi",
+      "page": 0,
+      "cs": 720,
+      "ce": 863
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 97,
+      "to": 116,
+      "words": 20,
+      "mine": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "theirs": "kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo",
+      "page": 0,
+      "cs": 873,
+      "ce": 1052
+     }
+    ],
+    "per": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf",
+      "words": 51,
+      "runs": 3
+     }
+    ],
+    "k": 5,
+    "minRun": 15,
+    "sources": [
+     {
+      "name": "Generated paper",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Generated paper (Reading shelf)\nSettings: word groups of 5, passages of 15 words or more. Quoted text and the reference list left out.\nResult: 43.2% of counted words (51 of 118) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 15 words, source: Generated paper\nYours: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\nSource: kakahobu kakamisu kakahoza kakamigi kanemife kakalosu kakatora kakagika kanevabu kanekabu varapedi kaditomi kaferape kakadiko kakadife\n\n[1.2] 16 words, source: Generated paper\nYours: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\nSource: kakadidi kakadito kakapera kakabuva kakakomi kakarara kakapeza kakabudi kakakolo kaneraho kanemimi kadilone kanediho kanebuho kakaloto kakatomi\n\n[1.3] 20 words, source: Generated paper\nYours: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\nSource: kakanedi kaneneho kanepegi kakasulo kakazafe kakasuza kanezato kakatova kakagiza kakavato kakalogi kakatoza kanegiko kanenefe kadikora kafevara diraradi kakakoto kakarasu kakapelo\n\n"
+  },
+  {
+   "id": "stopwords-rejected",
+   "studentText": "I wrote that and then there was also the case that it could be so for all of them and nothing more.",
+   "sources": [
+    {
+     "name": "Stop words",
+     "kind": "pasted",
+     "text": "They wrote that and then there was also the case that it could be so for all of them in their note."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 22,
+    "total": 22,
+    "covered": 0,
+    "pct": 0,
+    "runs": [],
+    "per": [
+     {
+      "name": "Stop words",
+      "kind": "pasted",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Stop words",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Stop words (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 0% of counted words (0 of 22) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n"
+  },
+  {
+   "id": "content-boundary",
+   "studentText": "First, the results of this study show that it was not so zzq. Then the results of this study show that it was large and so on.",
+   "sources": [
+    {
+     "name": "Boundary",
+     "kind": "pasted",
+     "text": "Then, the results of this study show that it was not so yyq the results of this study show that it was large xxq."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 27,
+    "total": 27,
+    "covered": 11,
+    "pct": 40.7,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 13,
+      "to": 23,
+      "words": 11,
+      "mine": "Then the results of this study show that it was large",
+      "theirs": "Then, the results of this study show that it was not",
+      "page": 0,
+      "cs": 62,
+      "ce": 115
+     }
+    ],
+    "per": [
+     {
+      "name": "Boundary",
+      "kind": "pasted",
+      "words": 11,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Boundary",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Boundary (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 40.7% of counted words (11 of 27) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 11 words, source: Boundary\nYours: Then the results of this study show that it was large\nSource: Then, the results of this study show that it was not\n\n"
+  },
+  {
+   "id": "run-exact-minrun",
+   "studentText": "Reading aloud slows the pace of silent thought and so raises recall qq1 Reading aloud slows the pace of silent thought qq2",
+   "sources": [
+    {
+     "name": "Exact",
+     "kind": "pasted",
+     "text": "Intro words. Reading aloud slows the pace of silent thought and so raises recall tail. Reading aloud slows the pace of silent thought end."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 22,
+    "total": 22,
+    "covered": 20,
+    "pct": 90.9,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 11,
+      "words": 12,
+      "mine": "Reading aloud slows the pace of silent thought and so raises recall",
+      "theirs": "Reading aloud slows the pace of silent thought and so raises recall",
+      "page": 0,
+      "cs": 0,
+      "ce": 67
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 13,
+      "to": 20,
+      "words": 8,
+      "mine": "Reading aloud slows the pace of silent thought",
+      "theirs": "Reading aloud slows the pace of silent thought",
+      "page": 0,
+      "cs": 72,
+      "ce": 118
+     }
+    ],
+    "per": [
+     {
+      "name": "Exact",
+      "kind": "pasted",
+      "words": 20,
+      "runs": 2
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Exact",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Exact (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 90.9% of counted words (20 of 22) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 12 words, source: Exact\nYours: Reading aloud slows the pace of silent thought and so raises recall\nSource: Reading aloud slows the pace of silent thought and so raises recall\n\n[1.2] 8 words, source: Exact\nYours: Reading aloud slows the pace of silent thought\nSource: Reading aloud slows the pace of silent thought\n\n"
+  },
+  {
+   "id": "quotes-straight",
+   "studentText": "As the authors say, \" Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. \" and then I carry on. I also wrote Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 39,
+    "total": 67,
+    "covered": 27,
+    "pct": 69.2,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 40,
+      "to": 66,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 230,
+      "ce": 388
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 69.2% of counted words (27 of 39) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "quotes-curly",
+   "studentText": "As the authors say, “ Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. ” and then I carry on. I also wrote Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 39,
+    "total": 67,
+    "covered": 27,
+    "pct": 69.2,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 40,
+      "to": 66,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 230,
+      "ce": 388
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 69.2% of counted words (27 of 39) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "quotes-edges",
+   "studentText": "An unclosed quote \" Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. \nThen a straight quote over a line break \"start of\n Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. end\" and a curly quote over a line break “start of\n Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. end” done.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    },
+    {
+     "name": "Paper B",
+     "kind": "Reading shelf",
+     "text": "The studies were carried out in universities in several countries between 2005 and 2020. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. This review looks at how people learn from lectures and what teachers can change. Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 78,
+    "total": 104,
+    "covered": 55,
+    "pct": 70.5,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 3,
+      "to": 30,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 20,
+      "ce": 190
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 41,
+      "to": 67,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 244,
+      "ce": 402
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 55,
+      "runs": 2
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf); [2] Paper B (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 70.5% of counted words (55 of 78) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n[1.2] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "quote-over-3000",
+   "studentText": "\" x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x  Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. \" outside: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 1656,
+    "total": 1656,
+    "covered": 55,
+    "pct": 3.3,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 1600,
+      "to": 1627,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 3203,
+      "ce": 3373
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 1629,
+      "to": 1655,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 3386,
+      "ce": 3544
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 55,
+      "runs": 2
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 3.3% of counted words (55 of 1656) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n[1.2] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "refs-references",
+   "studentText": "My text. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. \nReferences\n Smith, J. (2019). Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better. Journal of Learning, 4(2), 11-19.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 29,
+    "total": 62,
+    "covered": 27,
+    "pct": 93.1,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 2,
+      "to": 28,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 9,
+      "ce": 167
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 93.1% of counted words (27 of 29) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "refs-bibliography",
+   "studentText": "My text. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. \nBibliography \n Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 29,
+    "total": 58,
+    "covered": 27,
+    "pct": 93.1,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 2,
+      "to": 28,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 9,
+      "ce": 167
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 93.1% of counted words (27 of 29) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "refs-works-cited",
+   "studentText": "My text. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. \n\tWORKS CITED\t\n Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 29,
+    "total": 59,
+    "covered": 27,
+    "pct": 93.1,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 2,
+      "to": 28,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 9,
+      "ce": 167
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 93.1% of counted words (27 of 29) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "refs-reference-list",
+   "studentText": "My text. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. \nReference list\n Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 29,
+    "total": 59,
+    "covered": 27,
+    "pct": 93.1,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 2,
+      "to": 28,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 9,
+      "ce": 167
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 93.1% of counted words (27 of 29) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "refs-last-heading-wins",
+   "studentText": "Intro.\nReferences\n Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. \nmore of my own text and Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. \nBibliography\n Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    },
+    {
+     "name": "Paper B",
+     "kind": "Reading shelf",
+     "text": "The studies were carried out in universities in several countries between 2005 and 2020. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. This review looks at how people learn from lectures and what teachers can change. Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 63,
+    "total": 87,
+    "covered": 55,
+    "pct": 87.3,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 2,
+      "to": 29,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 19,
+      "ce": 189
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 36,
+      "to": 62,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 216,
+      "ce": 374
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 55,
+      "runs": 2
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf); [2] Paper B (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 87.3% of counted words (55 of 63) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n[1.2] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "refs-heading-at-start",
+   "studentText": "References\n Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 29,
+    "total": 29,
+    "covered": 28,
+    "pct": 96.6,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 1,
+      "to": 28,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 12,
+      "ce": 182
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 96.6% of counted words (28 of 29) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "homoglyph-cyrillic",
+   "studentText": "Attеntion in lеctures tеnds to drift aftеr about tеn minutеs, and studеnts who takе nоtеs by hаnd rеcall thе main idеas bеttеr than studеnts who typе vеrbatim transcripts.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 28,
+    "total": 28,
+    "covered": 28,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 27,
+      "words": 28,
+      "mine": "Attеntion in lеctures tеnds to drift aftеr about tеn minutеs, and studеnts who takе nоtеs by hаnd rеcall thе main idеas bеttеr than studеnts who typе vеrbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 0,
+      "ce": 170
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (28 of 28) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attеntion in lеctures tеnds to drift aftеr about tеn minutеs, and studеnts who takе nоtеs by hаnd rеcall thе main idеas bеttеr than studеnts who typе vеrbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "homoglyph-greek",
+   "studentText": "Spaced practiceοο distributes study sessions οver several days rather than compressing them into one long evening, and it reliably imρroves long term retention.",
+   "sources": [
+    {
+     "name": "Greek",
+     "kind": "pasted",
+     "text": "Spaced practiceoo distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 23,
+    "total": 23,
+    "covered": 23,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 22,
+      "words": 23,
+      "mine": "Spaced practiceοο distributes study sessions οver several days rather than compressing them into one long evening, and it reliably imρroves long term retention",
+      "theirs": "Spaced practiceoo distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "page": 0,
+      "cs": 0,
+      "ce": 159
+     }
+    ],
+    "per": [
+     {
+      "name": "Greek",
+      "kind": "pasted",
+      "words": 23,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Greek",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Greek (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (23 of 23) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 23 words, source: Greek\nYours: Spaced practiceοο distributes study sessions οver several days rather than compressing them into one long evening, and it reliably imρroves long term retention\nSource: Spaced practiceoo distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\n\n"
+  },
+  {
+   "id": "pure-cyrillic-not-mapped",
+   "studentText": "работа память внимание учёба знание память работа внимание учёба знание память работа",
+   "sources": [
+    {
+     "name": "Cyrillic",
+     "kind": "pasted",
+     "text": "работа память внимание учёба знание память работа внимание учёба знание память работа"
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 12,
+    "total": 12,
+    "covered": 12,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 11,
+      "words": 12,
+      "mine": "работа память внимание учёба знание память работа внимание учёба знание память работа",
+      "theirs": "работа память внимание учёба знание память работа внимание учёба знание память работа",
+      "page": 0,
+      "cs": 0,
+      "ce": 85
+     }
+    ],
+    "per": [
+     {
+      "name": "Cyrillic",
+      "kind": "pasted",
+      "words": 12,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Cyrillic",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Cyrillic (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (12 of 12) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 12 words, source: Cyrillic\nYours: работа память внимание учёба знание память работа внимание учёба знание память работа\nSource: работа память внимание учёба знание память работа внимание учёба знание память работа\n\n"
+  },
+  {
+   "id": "invisible-chars",
+   "studentText": "Attention in lec­tures tends to dr​ift af‌ter about ten min﻿utes, and students who take notes by hand recall the main ideas better.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 22,
+    "total": 22,
+    "covered": 22,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 21,
+      "words": 22,
+      "mine": "Attention in lec­tures tends to dr​ift af‌ter about ten min﻿utes, and students who take notes by hand recall the main ideas better",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better",
+      "page": 0,
+      "cs": 0,
+      "ce": 130
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 22,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (22 of 22) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 22 words, source: Paper A\nYours: Attention in lec­tures tends to dr​ift af‌ter about ten min﻿utes, and students who take notes by hand recall the main ideas better\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better\n\n"
+  },
+  {
+   "id": "hyphen-wrap",
+   "studentText": "The effect of psycho-\nlogical load on recall of the main ideas was large and it reliably improves.",
+   "sources": [
+    {
+     "name": "PDF text",
+     "kind": "Reading shelf",
+     "text": "The effect of psychological load on recall of the main ideas was large and it reliably improves. Next page‐\nwords."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 17,
+    "total": 17,
+    "covered": 17,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 16,
+      "words": 17,
+      "mine": "The effect of psycho-\nlogical load on recall of the main ideas was large and it reliably improves",
+      "theirs": "The effect of psychological load on recall of the main ideas was large and it reliably improves",
+      "page": 0,
+      "cs": 0,
+      "ce": 97
+     }
+    ],
+    "per": [
+     {
+      "name": "PDF text",
+      "kind": "Reading shelf",
+      "words": 17,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "PDF text",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] PDF text (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (17 of 17) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 17 words, source: PDF text\nYours: The effect of psycho-\nlogical load on recall of the main ideas was large and it reliably improves\nSource: The effect of psychological load on recall of the main ideas was large and it reliably improves\n\n"
+  },
+  {
+   "id": "hyphen-wrap-student",
+   "studentText": "Next page‐\nwords were copied here, and the effect of psychological‐\n load on recall of the main ideas was large and it reliably improves.",
+   "sources": [
+    {
+     "name": "PDF text",
+     "kind": "Reading shelf",
+     "text": "The effect of psychological load on recall of the main ideas was large and it reliably improves. Next pagewords."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 22,
+    "total": 22,
+    "covered": 12,
+    "pct": 54.5,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 10,
+      "to": 21,
+      "words": 12,
+      "mine": "on recall of the main ideas was large and it reliably improves",
+      "theirs": "on recall of the main ideas was large and it reliably improves",
+      "page": 0,
+      "cs": 74,
+      "ce": 136
+     }
+    ],
+    "per": [
+     {
+      "name": "PDF text",
+      "kind": "Reading shelf",
+      "words": 12,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "PDF text",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] PDF text (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 54.5% of counted words (12 of 22) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 12 words, source: PDF text\nYours: on recall of the main ideas was large and it reliably improves\nSource: on recall of the main ideas was large and it reliably improves\n\n"
+  },
+  {
+   "id": "apostrophes",
+   "studentText": "The children’s attention doesn’t last because they can’t hold the teacher’s main points once it’s been ten minutes of talk.",
+   "sources": [
+    {
+     "name": "Apostrophes",
+     "kind": "pasted",
+     "text": "The children's attention doesn't last because they can't hold the teacher's main points once it's been ten minutes of talk."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 20,
+    "total": 20,
+    "covered": 20,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 19,
+      "words": 20,
+      "mine": "The children’s attention doesn’t last because they can’t hold the teacher’s main points once it’s been ten minutes of talk",
+      "theirs": "The children's attention doesn't last because they can't hold the teacher's main points once it's been ten minutes of talk",
+      "page": 0,
+      "cs": 0,
+      "ce": 122
+     }
+    ],
+    "per": [
+     {
+      "name": "Apostrophes",
+      "kind": "pasted",
+      "words": 20,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Apostrophes",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Apostrophes (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (20 of 20) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 20 words, source: Apostrophes\nYours: The children’s attention doesn’t last because they can’t hold the teacher’s main points once it’s been ten minutes of talk\nSource: The children's attention doesn't last because they can't hold the teacher's main points once it's been ten minutes of talk\n\n"
+  },
+  {
+   "id": "devanagari",
+   "studentText": "छात्रों की एकाग्रता व्याख्यान के लगभग दस मिनट बाद घटने लगती है और हाथ से नोट्स लिखने वाले छात्र बेहतर याद रखते हैं।",
+   "sources": [
+    {
+     "name": "हिंदी लेख",
+     "kind": "Reading shelf",
+     "text": "प्रस्तावना। छात्रों की एकाग्रता व्याख्यान के लगभग दस मिनट बाद घटने लगती है और हाथ से नोट्स लिखने वाले छात्र बेहतर याद रखते हैं। उपसंहार।"
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 23,
+    "total": 23,
+    "covered": 23,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 22,
+      "words": 23,
+      "mine": "छात्रों की एकाग्रता व्याख्यान के लगभग दस मिनट बाद घटने लगती है और हाथ से नोट्स लिखने वाले छात्र बेहतर याद रखते हैं",
+      "theirs": "छात्रों की एकाग्रता व्याख्यान के लगभग दस मिनट बाद घटने लगती है और हाथ से नोट्स लिखने वाले छात्र बेहतर याद रखते हैं",
+      "page": 0,
+      "cs": 0,
+      "ce": 114
+     }
+    ],
+    "per": [
+     {
+      "name": "हिंदी लेख",
+      "kind": "Reading shelf",
+      "words": 23,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "हिंदी लेख",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] हिंदी लेख (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (23 of 23) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 23 words, source: हिंदी लेख\nYours: छात्रों की एकाग्रता व्याख्यान के लगभग दस मिनट बाद घटने लगती है और हाथ से नोट्स लिखने वाले छात्र बेहतर याद रखते हैं\nSource: छात्रों की एकाग्रता व्याख्यान के लगभग दस मिनट बाद घटने लगती है और हाथ से नोट्स लिखने वाले छात्र बेहतर याद रखते हैं\n\n"
+  },
+  {
+   "id": "also-cap-3",
+   "studentText": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "S1",
+     "kind": "Reading shelf",
+     "text": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    },
+    {
+     "name": "S2",
+     "kind": "Reading shelf",
+     "text": "x. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    },
+    {
+     "name": "S3",
+     "kind": "your document",
+     "text": "y. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    },
+    {
+     "name": "S4",
+     "kind": "your document",
+     "text": "z. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    },
+    {
+     "name": "S5",
+     "kind": "pasted",
+     "text": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 28,
+    "total": 28,
+    "covered": 28,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [
+       1,
+       2
+      ],
+      "from": 0,
+      "to": 27,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 0,
+      "ce": 170
+     }
+    ],
+    "per": [
+     {
+      "name": "S1",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     },
+     {
+      "name": "S2",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     },
+     {
+      "name": "S3",
+      "kind": "your document",
+      "words": 0,
+      "runs": 0
+     },
+     {
+      "name": "S4",
+      "kind": "your document",
+      "words": 0,
+      "runs": 0
+     },
+     {
+      "name": "S5",
+      "kind": "pasted",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "S1",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "S2",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "S3",
+      "kind": "your document"
+     },
+     {
+      "name": "S4",
+      "kind": "your document"
+     },
+     {
+      "name": "S5",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] S1 (Reading shelf); [2] S2 (Reading shelf); [3] S3 (your document); [4] S4 (your document); [5] S5 (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (28 of 28) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: S1; also in S2; S3\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "also-two-sources",
+   "studentText": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. and Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention.",
+   "sources": [
+    {
+     "name": "Essay C",
+     "kind": "your document",
+     "text": "None of the findings here is final, and each rests on samples that are small. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention."
+    },
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    },
+    {
+     "name": "Paper B",
+     "kind": "Reading shelf",
+     "text": "The studies were carried out in universities in several countries between 2005 and 2020. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. This review looks at how people learn from lectures and what teachers can change. Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 51,
+    "total": 51,
+    "covered": 50,
+    "pct": 98,
+    "runs": [
+     {
+      "src": 0,
+      "also": [
+       1
+      ],
+      "from": 0,
+      "to": 26,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 0,
+      "ce": 158
+     },
+     {
+      "src": 0,
+      "also": [
+       2
+      ],
+      "from": 28,
+      "to": 50,
+      "words": 23,
+      "mine": "Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "theirs": "Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "page": 0,
+      "cs": 164,
+      "ce": 321
+     }
+    ],
+    "per": [
+     {
+      "name": "Essay C",
+      "kind": "your document",
+      "words": 50,
+      "runs": 2
+     },
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Essay C",
+      "kind": "your document"
+     },
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Essay C (your document); [2] Paper A (Reading shelf); [3] Paper B (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 98% of counted words (50 of 51) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Essay C; also in Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n[1.2] 23 words, source: Essay C; also in Paper B\nYours: Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\nSource: Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\n\n"
+  },
+  {
+   "id": "pagestarts",
+   "studentText": "I would say that Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention.",
+   "sources": [
+    {
+     "name": "Paged paper",
+     "kind": "Reading shelf",
+     "text": "Page one is an abstract that says little.\nPage two covers method and the sample used.\nPage three says that Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. and goes on.\n",
+     "pageStarts": [
+      0,
+      42,
+      86
+     ]
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 27,
+    "total": 27,
+    "covered": 24,
+    "pct": 88.9,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 3,
+      "to": 26,
+      "words": 24,
+      "mine": "that Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "theirs": "that Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "page": 3,
+      "cs": 12,
+      "ce": 174
+     }
+    ],
+    "per": [
+     {
+      "name": "Paged paper",
+      "kind": "Reading shelf",
+      "words": 24,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paged paper",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paged paper (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 88.9% of counted words (24 of 27) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 24 words, source: Paged paper, page 3\nYours: that Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\nSource: that Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\n\n"
+  },
+  {
+   "id": "pagestarts-two-runs",
+   "studentText": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. gap word zzzz Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Two pages",
+     "kind": "Reading shelf",
+     "text": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. tail one.\nWorking memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. tail two.\n",
+     "pageStarts": [
+      0,
+      182
+     ]
+    },
+    {
+     "name": "No pages",
+     "kind": "pasted",
+     "text": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 58,
+    "total": 58,
+    "covered": 55,
+    "pct": 94.8,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 26,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 2,
+      "cs": 0,
+      "ce": 158
+     },
+     {
+      "src": 0,
+      "also": [
+       1
+      ],
+      "from": 30,
+      "to": 57,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 1,
+      "cs": 174,
+      "ce": 344
+     }
+    ],
+    "per": [
+     {
+      "name": "Two pages",
+      "kind": "Reading shelf",
+      "words": 55,
+      "runs": 2
+     },
+     {
+      "name": "No pages",
+      "kind": "pasted",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Two pages",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "No pages",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Two pages (Reading shelf); [2] No pages (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 94.8% of counted words (55 of 58) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Two pages, page 2\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n[1.2] 28 words, source: Two pages, page 1; also in No pages\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "empty-student",
+   "studentText": "",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 0,
+    "total": 0,
+    "covered": 0,
+    "pct": 0,
+    "runs": [],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 0% of counted words (0 of 0) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n"
+  },
+  {
+   "id": "whitespace-student",
+   "studentText": " \n\t  ",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 0,
+    "total": 0,
+    "covered": 0,
+    "pct": 0,
+    "runs": [],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 0% of counted words (0 of 0) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n"
+  },
+  {
+   "id": "no-sources",
+   "studentText": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 28,
+    "total": 28,
+    "covered": 0,
+    "pct": 0,
+    "runs": [],
+    "per": [],
+    "k": 6,
+    "minRun": 8,
+    "sources": []
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: \nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 0% of counted words (0 of 28) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n"
+  },
+  {
+   "id": "student-shorter-than-k",
+   "studentText": "Attention in lectures",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 3,
+    "total": 3,
+    "covered": 0,
+    "pct": 0,
+    "runs": [],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 0% of counted words (0 of 3) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n"
+  },
+  {
+   "id": "source-empty-text",
+   "studentText": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts.",
+   "sources": [
+    {
+     "name": "Empty",
+     "kind": "pasted",
+     "text": ""
+    },
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 28,
+    "total": 28,
+    "covered": 28,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 1,
+      "also": [],
+      "from": 0,
+      "to": 27,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 0,
+      "ce": 170
+     }
+    ],
+    "per": [
+     {
+      "name": "Empty",
+      "kind": "pasted",
+      "words": 0,
+      "runs": 0
+     },
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Empty",
+      "kind": "pasted"
+     },
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Empty (pasted); [2] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (28 of 28) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[2.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n"
+  },
+  {
+   "id": "run-boundary-changes-source",
+   "studentText": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know.",
+   "sources": [
+    {
+     "name": "Only P1",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts."
+    },
+    {
+     "name": "Only P2",
+     "kind": "Reading shelf",
+     "text": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 55,
+    "total": 55,
+    "covered": 55,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 27,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 0,
+      "ce": 170
+     },
+     {
+      "src": 1,
+      "also": [],
+      "from": 28,
+      "to": 54,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 172,
+      "ce": 330
+     }
+    ],
+    "per": [
+     {
+      "name": "Only P1",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     },
+     {
+      "name": "Only P2",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Only P1",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "Only P2",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Only P1 (Reading shelf); [2] Only P2 (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (55 of 55) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Only P1\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n[2.2] 27 words, source: Only P2\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "copied-twice",
+   "studentText": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. A short bridge of my own words here. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 62,
+    "total": 62,
+    "covered": 54,
+    "pct": 87.1,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 26,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 0,
+      "ce": 158
+     },
+     {
+      "src": 0,
+      "also": [],
+      "from": 35,
+      "to": 61,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 197,
+      "ce": 355
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 54,
+      "runs": 2
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 87.1% of counted words (54 of 62) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n[1.2] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  },
+  {
+   "id": "three-sources",
+   "studentText": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. Bridge one with my words. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. Bridge two with my words. Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    },
+    {
+     "name": "Paper B",
+     "kind": "Reading shelf",
+     "text": "The studies were carried out in universities in several countries between 2005 and 2020. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention. This review looks at how people learn from lectures and what teachers can change. Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could."
+    },
+    {
+     "name": "Essay C",
+     "kind": "your document",
+     "text": "None of the findings here is final, and each rests on samples that are small. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 83,
+    "total": 83,
+    "covered": 73,
+    "pct": 88,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 27,
+      "words": 28,
+      "mine": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts",
+      "page": 0,
+      "cs": 0,
+      "ce": 170
+     },
+     {
+      "src": 1,
+      "also": [
+       2
+      ],
+      "from": 33,
+      "to": 55,
+      "words": 23,
+      "mine": "Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "theirs": "Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention",
+      "page": 0,
+      "cs": 198,
+      "ce": 355
+     },
+     {
+      "src": 1,
+      "also": [],
+      "from": 61,
+      "to": 82,
+      "words": 22,
+      "mine": "Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could",
+      "theirs": "Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could",
+      "page": 0,
+      "cs": 383,
+      "ce": 530
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 28,
+      "runs": 1
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf",
+      "words": 45,
+      "runs": 2
+     },
+     {
+      "name": "Essay C",
+      "kind": "your document",
+      "words": 0,
+      "runs": 0
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "Paper B",
+      "kind": "Reading shelf"
+     },
+     {
+      "name": "Essay C",
+      "kind": "your document"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Paper A (Reading shelf); [2] Paper B (Reading shelf); [3] Essay C (your document)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 88% of counted words (73 of 83) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 28 words, source: Paper A\nYours: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts\n\n[2.2] 23 words, source: Paper B; also in Essay C\nYours: Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\nSource: Spaced practice distributes study sessions over several days rather than compressing them into one long evening, and it reliably improves long term retention\n\n[2.3] 22 words, source: Paper B\nYours: Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could\nSource: Retrieval practice strengthens memory because the effort of recalling an answer consolidates the trace more than rereading the same page ever could\n\n"
+  },
+  {
+   "id": "case-punctuation-numbers",
+   "studentText": "ATTENTION IN LECTURES -- tends to drift; after about ten minutes: and students who take notes by hand recall the main ideas better. In 2005, 3 studies found 40 per cent more.",
+   "sources": [
+    {
+     "name": "Numbers",
+     "kind": "pasted",
+     "text": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. In 2005, 3 studies found 40 per cent more."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 31,
+    "total": 31,
+    "covered": 31,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 30,
+      "words": 31,
+      "mine": "ATTENTION IN LECTURES -- tends to drift; after about ten minutes: and students who take notes by hand recall the main ideas better. In 2005, 3 studies found 40 per cent more",
+      "theirs": "Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. In 2005, 3",
+      "page": 0,
+      "cs": 0,
+      "ce": 173
+     }
+    ],
+    "per": [
+     {
+      "name": "Numbers",
+      "kind": "pasted",
+      "words": 31,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Numbers",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Numbers (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (31 of 31) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 31 words, source: Numbers\nYours: ATTENTION IN LECTURES -- tends to drift; after about ten minutes: and students who take notes by hand recall the main ideas better. In 2005, 3 studies found 40 per cent more\nSource: Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. In 2005, 3\n\n"
+  },
+  {
+   "id": "nfkc-ligatures",
+   "studentText": "The ﬁnal ﬂow of attention in lectures tends to drift after about ten minutes and ＳＴＵＤＥＮＴＳ who take notes by hand.",
+   "sources": [
+    {
+     "name": "Ligatures",
+     "kind": "pasted",
+     "text": "The final flow of attention in lectures tends to drift after about ten minutes and students who take notes by hand."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2026-03-05T09:30:00.000Z",
+   "result": {
+    "counted": 21,
+    "total": 21,
+    "covered": 21,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 20,
+      "words": 21,
+      "mine": "The ﬁnal ﬂow of attention in lectures tends to drift after about ten minutes and ＳＴＵＤＥＮＴＳ who take notes by hand",
+      "theirs": "The final flow of attention in lectures tends to drift after about ten minutes and students who take notes by hand",
+      "page": 0,
+      "cs": 0,
+      "ce": 112
+     }
+    ],
+    "per": [
+     {
+      "name": "Ligatures",
+      "kind": "pasted",
+      "words": 21,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Ligatures",
+      "kind": "pasted"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2026-03-05\nSources compared: [1] Ligatures (pasted)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (21 of 21) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 21 words, source: Ligatures\nYours: The ﬁnal ﬂow of attention in lectures tends to drift after about ten minutes and ＳＴＵＤＥＮＴＳ who take notes by hand\nSource: The final flow of attention in lectures tends to drift after about ten minutes and students who take notes by hand\n\n"
+  },
+  {
+   "id": "second-date",
+   "studentText": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know.",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "This review looks at how people learn from lectures and what teachers can change. Attention in lectures tends to drift after about ten minutes, and students who take notes by hand recall the main ideas better than students who type verbatim transcripts. The studies were carried out in universities in several countries between 2005 and 2020. Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know. None of the findings here is final, and each rests on samples that are small."
+    }
+   ],
+   "k": 6,
+   "minRun": 8,
+   "date": "2024-12-31T23:59:59.000Z",
+   "result": {
+    "counted": 27,
+    "total": 27,
+    "covered": 27,
+    "pct": 100,
+    "runs": [
+     {
+      "src": 0,
+      "also": [],
+      "from": 0,
+      "to": 26,
+      "words": 27,
+      "mine": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "theirs": "Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know",
+      "page": 0,
+      "cs": 0,
+      "ce": 158
+     }
+    ],
+    "per": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf",
+      "words": 27,
+      "runs": 1
+     }
+    ],
+    "k": 6,
+    "minRun": 8,
+    "sources": [
+     {
+      "name": "Paper A",
+      "kind": "Reading shelf"
+     }
+    ]
+   },
+   "report": "CLOSENESS CHECK (made with Appuscholar)\nDate: 2024-12-31\nSources compared: [1] Paper A (Reading shelf)\nSettings: word groups of 6, passages of 8 words or more. Quoted text and the reference list left out.\nResult: 100% of counted words (27 of 27) sit in matching passages.\n\nLIMITS: Only the listed sources were compared. The web, books, other journals and other students' work were not checked, and ideas rewritten in new words cannot be seen. This is not a plagiarism verdict and does not meet any institution's similarity-report requirement.\n\n[1.1] 27 words, source: Paper A\nYours: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\nSource: Working memory holds only a handful of items at once, so instruction that overloads it leaves learners unable to connect new facts with what they already know\n\n"
+  }
+ ],
+ "sanitisers": [
+  {
+   "stored": null,
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "5",
+   "k": 5,
+   "min": 8
+  },
+  {
+   "stored": "6",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "8",
+   "k": 8,
+   "min": 8
+  },
+  {
+   "stored": "10",
+   "k": 6,
+   "min": 10
+  },
+  {
+   "stored": "15",
+   "k": 6,
+   "min": 15
+  },
+  {
+   "stored": "7",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "abc",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "8.9",
+   "k": 8,
+   "min": 8
+  },
+  {
+   "stored": " 5",
+   "k": 5,
+   "min": 8
+  },
+  {
+   "stored": "5px",
+   "k": 5,
+   "min": 8
+  },
+  {
+   "stored": "0x8",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "-8",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "6e0",
+   "k": 6,
+   "min": 8
+  },
+  {
+   "stored": "08",
+   "k": 8,
+   "min": 8
+  }
+ ],
+ "gather": [
+  {
+   "id": "nothing-ticked",
+   "shelf": [
+    {
+     "id": "a",
+     "title": "Paper A",
+     "file": "a.pdf",
+     "pages": [
+      "page one text",
+      "page two\nwith a break",
+      "",
+      "page four"
+     ]
+    },
+    {
+     "id": "b",
+     "title": "",
+     "file": "b-file.pdf",
+     "pages": [
+      null,
+      "second page only"
+     ]
+    },
+    {
+     "id": "c",
+     "title": "",
+     "file": "",
+     "pages": []
+    },
+    {
+     "id": "d",
+     "title": "No pages field"
+    },
+    {
+     "id": "e",
+     "title": "Hindi paper",
+     "pages": [
+      "पहला पृष्ठ",
+      "दूसरा पृष्ठ"
+     ]
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Draft one",
+     "body": "<p>First paragraph.</p><p>Second paragraph &amp; more.</p>"
+    },
+    {
+     "id": "d2",
+     "title": "",
+     "body": "<p>Hello <b>bold</b> and <i>italic</i><br>after break</p><ul><li>one</li><li>two</li></ul>"
+    },
+    {
+     "id": "d3",
+     "title": "Entities",
+     "body": "<p>Caf&#233; &lt;b&gt; &#39;quote&#39; &nbsp;gap &quot;q&quot;</p>"
+    },
+    {
+     "id": "d4",
+     "title": "No body"
+    },
+    {
+     "id": "d5",
+     "title": "Hindi doc",
+     "body": "<p>नमस्ते दुनिया</p>"
+    }
+   ],
+   "ticked": [],
+   "pasted": "",
+   "sources": []
+  },
+  {
+   "id": "shelf-all",
+   "shelf": [
+    {
+     "id": "a",
+     "title": "Paper A",
+     "file": "a.pdf",
+     "pages": [
+      "page one text",
+      "page two\nwith a break",
+      "",
+      "page four"
+     ]
+    },
+    {
+     "id": "b",
+     "title": "",
+     "file": "b-file.pdf",
+     "pages": [
+      null,
+      "second page only"
+     ]
+    },
+    {
+     "id": "c",
+     "title": "",
+     "file": "",
+     "pages": []
+    },
+    {
+     "id": "d",
+     "title": "No pages field"
+    },
+    {
+     "id": "e",
+     "title": "Hindi paper",
+     "pages": [
+      "पहला पृष्ठ",
+      "दूसरा पृष्ठ"
+     ]
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Draft one",
+     "body": "<p>First paragraph.</p><p>Second paragraph &amp; more.</p>"
+    },
+    {
+     "id": "d2",
+     "title": "",
+     "body": "<p>Hello <b>bold</b> and <i>italic</i><br>after break</p><ul><li>one</li><li>two</li></ul>"
+    },
+    {
+     "id": "d3",
+     "title": "Entities",
+     "body": "<p>Caf&#233; &lt;b&gt; &#39;quote&#39; &nbsp;gap &quot;q&quot;</p>"
+    },
+    {
+     "id": "d4",
+     "title": "No body"
+    },
+    {
+     "id": "d5",
+     "title": "Hindi doc",
+     "body": "<p>नमस्ते दुनिया</p>"
+    }
+   ],
+   "ticked": [
+    "s:a",
+    "s:b",
+    "s:c",
+    "s:d",
+    "s:e"
+   ],
+   "pasted": "",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "page one text\npage two\nwith a break\n\npage four\n",
+     "pageStarts": [
+      0,
+      14,
+      36,
+      37
+     ]
+    },
+    {
+     "name": "b-file.pdf",
+     "kind": "Reading shelf",
+     "text": "\nsecond page only\n",
+     "pageStarts": [
+      0,
+      1
+     ]
+    },
+    {
+     "name": "Paper",
+     "kind": "Reading shelf",
+     "text": "",
+     "pageStarts": []
+    },
+    {
+     "name": "No pages field",
+     "kind": "Reading shelf",
+     "text": "",
+     "pageStarts": []
+    },
+    {
+     "name": "Hindi paper",
+     "kind": "Reading shelf",
+     "text": "पहला पृष्ठ\nदूसरा पृष्ठ\n",
+     "pageStarts": [
+      0,
+      11
+     ]
+    }
+   ]
+  },
+  {
+   "id": "docs-all",
+   "shelf": [
+    {
+     "id": "a",
+     "title": "Paper A",
+     "file": "a.pdf",
+     "pages": [
+      "page one text",
+      "page two\nwith a break",
+      "",
+      "page four"
+     ]
+    },
+    {
+     "id": "b",
+     "title": "",
+     "file": "b-file.pdf",
+     "pages": [
+      null,
+      "second page only"
+     ]
+    },
+    {
+     "id": "c",
+     "title": "",
+     "file": "",
+     "pages": []
+    },
+    {
+     "id": "d",
+     "title": "No pages field"
+    },
+    {
+     "id": "e",
+     "title": "Hindi paper",
+     "pages": [
+      "पहला पृष्ठ",
+      "दूसरा पृष्ठ"
+     ]
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Draft one",
+     "body": "<p>First paragraph.</p><p>Second paragraph &amp; more.</p>"
+    },
+    {
+     "id": "d2",
+     "title": "",
+     "body": "<p>Hello <b>bold</b> and <i>italic</i><br>after break</p><ul><li>one</li><li>two</li></ul>"
+    },
+    {
+     "id": "d3",
+     "title": "Entities",
+     "body": "<p>Caf&#233; &lt;b&gt; &#39;quote&#39; &nbsp;gap &quot;q&quot;</p>"
+    },
+    {
+     "id": "d4",
+     "title": "No body"
+    },
+    {
+     "id": "d5",
+     "title": "Hindi doc",
+     "body": "<p>नमस्ते दुनिया</p>"
+    }
+   ],
+   "ticked": [
+    "d:d1",
+    "d:d2",
+    "d:d3",
+    "d:d4",
+    "d:d5"
+   ],
+   "pasted": "",
+   "sources": [
+    {
+     "name": "Draft one",
+     "kind": "your document",
+     "text": "First paragraph.Second paragraph & more."
+    },
+    {
+     "name": "Untitled document",
+     "kind": "your document",
+     "text": "Hello bold and italicafter breakonetwo"
+    },
+    {
+     "name": "Entities",
+     "kind": "your document",
+     "text": "Café <b> 'quote'  gap \"q\""
+    },
+    {
+     "name": "No body",
+     "kind": "your document",
+     "text": ""
+    },
+    {
+     "name": "Hindi doc",
+     "kind": "your document",
+     "text": "नमस्ते दुनिया"
+    }
+   ]
+  },
+  {
+   "id": "mixed-and-pasted",
+   "shelf": [
+    {
+     "id": "a",
+     "title": "Paper A",
+     "file": "a.pdf",
+     "pages": [
+      "page one text",
+      "page two\nwith a break",
+      "",
+      "page four"
+     ]
+    },
+    {
+     "id": "b",
+     "title": "",
+     "file": "b-file.pdf",
+     "pages": [
+      null,
+      "second page only"
+     ]
+    },
+    {
+     "id": "c",
+     "title": "",
+     "file": "",
+     "pages": []
+    },
+    {
+     "id": "d",
+     "title": "No pages field"
+    },
+    {
+     "id": "e",
+     "title": "Hindi paper",
+     "pages": [
+      "पहला पृष्ठ",
+      "दूसरा पृष्ठ"
+     ]
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Draft one",
+     "body": "<p>First paragraph.</p><p>Second paragraph &amp; more.</p>"
+    },
+    {
+     "id": "d2",
+     "title": "",
+     "body": "<p>Hello <b>bold</b> and <i>italic</i><br>after break</p><ul><li>one</li><li>two</li></ul>"
+    },
+    {
+     "id": "d3",
+     "title": "Entities",
+     "body": "<p>Caf&#233; &lt;b&gt; &#39;quote&#39; &nbsp;gap &quot;q&quot;</p>"
+    },
+    {
+     "id": "d4",
+     "title": "No body"
+    },
+    {
+     "id": "d5",
+     "title": "Hindi doc",
+     "body": "<p>नमस्ते दुनिया</p>"
+    }
+   ],
+   "ticked": [
+    "d:d1",
+    "s:a",
+    "d:d5",
+    "s:e"
+   ],
+   "pasted": "  A pasted passage\nover two lines.  ",
+   "sources": [
+    {
+     "name": "Draft one",
+     "kind": "your document",
+     "text": "First paragraph.Second paragraph & more."
+    },
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "page one text\npage two\nwith a break\n\npage four\n",
+     "pageStarts": [
+      0,
+      14,
+      36,
+      37
+     ]
+    },
+    {
+     "name": "Hindi doc",
+     "kind": "your document",
+     "text": "नमस्ते दुनिया"
+    },
+    {
+     "name": "Hindi paper",
+     "kind": "Reading shelf",
+     "text": "पहला पृष्ठ\nदूसरा पृष्ठ\n",
+     "pageStarts": [
+      0,
+      11
+     ]
+    },
+    {
+     "name": "Pasted passage",
+     "kind": "pasted",
+     "text": "A pasted passage\nover two lines."
+    }
+   ]
+  },
+  {
+   "id": "pasted-only",
+   "shelf": [],
+   "docs": [],
+   "ticked": [],
+   "pasted": "Only the pasted words",
+   "sources": [
+    {
+     "name": "Pasted passage",
+     "kind": "pasted",
+     "text": "Only the pasted words"
+    }
+   ]
+  },
+  {
+   "id": "pasted-whitespace",
+   "shelf": [
+    {
+     "id": "a",
+     "title": "Paper A",
+     "file": "a.pdf",
+     "pages": [
+      "page one text",
+      "page two\nwith a break",
+      "",
+      "page four"
+     ]
+    },
+    {
+     "id": "b",
+     "title": "",
+     "file": "b-file.pdf",
+     "pages": [
+      null,
+      "second page only"
+     ]
+    },
+    {
+     "id": "c",
+     "title": "",
+     "file": "",
+     "pages": []
+    },
+    {
+     "id": "d",
+     "title": "No pages field"
+    },
+    {
+     "id": "e",
+     "title": "Hindi paper",
+     "pages": [
+      "पहला पृष्ठ",
+      "दूसरा पृष्ठ"
+     ]
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Draft one",
+     "body": "<p>First paragraph.</p><p>Second paragraph &amp; more.</p>"
+    },
+    {
+     "id": "d2",
+     "title": "",
+     "body": "<p>Hello <b>bold</b> and <i>italic</i><br>after break</p><ul><li>one</li><li>two</li></ul>"
+    },
+    {
+     "id": "d3",
+     "title": "Entities",
+     "body": "<p>Caf&#233; &lt;b&gt; &#39;quote&#39; &nbsp;gap &quot;q&quot;</p>"
+    },
+    {
+     "id": "d4",
+     "title": "No body"
+    },
+    {
+     "id": "d5",
+     "title": "Hindi doc",
+     "body": "<p>नमस्ते दुनिया</p>"
+    }
+   ],
+   "ticked": [
+    "s:a"
+   ],
+   "pasted": " \n\t ",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "page one text\npage two\nwith a break\n\npage four\n",
+     "pageStarts": [
+      0,
+      14,
+      36,
+      37
+     ]
+    }
+   ]
+  },
+  {
+   "id": "unknown-ids",
+   "shelf": [
+    {
+     "id": "a",
+     "title": "Paper A",
+     "file": "a.pdf",
+     "pages": [
+      "page one text",
+      "page two\nwith a break",
+      "",
+      "page four"
+     ]
+    },
+    {
+     "id": "b",
+     "title": "",
+     "file": "b-file.pdf",
+     "pages": [
+      null,
+      "second page only"
+     ]
+    },
+    {
+     "id": "c",
+     "title": "",
+     "file": "",
+     "pages": []
+    },
+    {
+     "id": "d",
+     "title": "No pages field"
+    },
+    {
+     "id": "e",
+     "title": "Hindi paper",
+     "pages": [
+      "पहला पृष्ठ",
+      "दूसरा पृष्ठ"
+     ]
+    }
+   ],
+   "docs": [
+    {
+     "id": "d1",
+     "title": "Draft one",
+     "body": "<p>First paragraph.</p><p>Second paragraph &amp; more.</p>"
+    },
+    {
+     "id": "d2",
+     "title": "",
+     "body": "<p>Hello <b>bold</b> and <i>italic</i><br>after break</p><ul><li>one</li><li>two</li></ul>"
+    },
+    {
+     "id": "d3",
+     "title": "Entities",
+     "body": "<p>Caf&#233; &lt;b&gt; &#39;quote&#39; &nbsp;gap &quot;q&quot;</p>"
+    },
+    {
+     "id": "d4",
+     "title": "No body"
+    },
+    {
+     "id": "d5",
+     "title": "Hindi doc",
+     "body": "<p>नमस्ते दुनिया</p>"
+    }
+   ],
+   "ticked": [
+    "s:zz",
+    "d:zz",
+    "x:1",
+    "s:a"
+   ],
+   "pasted": "",
+   "sources": [
+    {
+     "name": "Paper A",
+     "kind": "Reading shelf",
+     "text": "page one text\npage two\nwith a break\n\npage four\n",
+     "pageStarts": [
+      0,
+      14,
+      36,
+      37
+     ]
+    }
+   ]
+  }
+ ],
+ "others": [
+  {
+   "id": "mixed",
+   "docs": [
+    {
+     "id": "x1",
+     "title": "Long one",
+     "body": "<p>word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word </p>"
+    },
+    {
+     "id": "x2",
+     "title": "Short",
+     "body": "<p>too short</p>"
+    },
+    {
+     "id": "x3",
+     "title": "Current",
+     "body": "<p>word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word </p>"
+    },
+    {
+     "id": "x4",
+     "title": "No body"
+    },
+    {
+     "id": "x5",
+     "body": "<p>w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w </p>"
+    }
+   ],
+   "current": "x3",
+   "ids": [
+    "x1",
+    "x5"
+   ]
+  },
+  {
+   "id": "body-exactly-200",
+   "docs": [
+    {
+     "id": "y1",
+     "body": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+     "id": "y2",
+     "body": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+   ],
+   "current": "",
+   "ids": [
+    "y2"
+   ]
+  },
+  {
+   "id": "none-stored",
+   "docs": [],
+   "current": "z",
+   "ids": []
+  }
+ ],
+ "gate": [
+  {
+   "words": 0,
+   "sep": " ",
+   "toast": "Write at least about 30 words first",
+   "compared": false
+  },
+  {
+   "words": 0,
+   "sep": "\n\n",
+   "toast": "Write at least about 30 words first",
+   "compared": false
+  },
+  {
+   "words": 1,
+   "sep": " ",
+   "toast": "Write at least about 30 words first",
+   "compared": false
+  },
+  {
+   "words": 1,
+   "sep": "\n\n",
+   "toast": "Write at least about 30 words first",
+   "compared": false
+  },
+  {
+   "words": 29,
+   "sep": " ",
+   "toast": "Write at least about 30 words first",
+   "compared": false
+  },
+  {
+   "words": 29,
+   "sep": "\n\n",
+   "toast": "Write at least about 30 words first",
+   "compared": false
+  },
+  {
+   "words": 30,
+   "sep": " ",
+   "toast": null,
+   "compared": true
+  },
+  {
+   "words": 30,
+   "sep": "\n\n",
+   "toast": null,
+   "compared": true
+  },
+  {
+   "words": 31,
+   "sep": " ",
+   "toast": null,
+   "compared": true
+  },
+  {
+   "words": 31,
+   "sep": "\n\n",
+   "toast": null,
+   "compared": true
+  },
+  {
+   "words": 60,
+   "sep": " ",
+   "toast": null,
+   "compared": true
+  },
+  {
+   "words": 60,
+   "sep": "\n\n",
+   "toast": null,
+   "compared": true
+  }
+ ]
+}

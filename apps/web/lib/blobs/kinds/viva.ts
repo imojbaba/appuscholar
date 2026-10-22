@@ -6,7 +6,7 @@ import { z } from "zod";
  * R16 guard (lib/blobs/useProjectBlob UNGUARDED): viva_log is guarded, the panel asking before it sets over a blob that does not open.
  */
 
-/** v1 appu_viva (vivaSave 3625-3631; v1 keeps the last 60): when (ms), who asked ("viva" or "conf", 1136), the question and the student's answer. */
+/** v1 appu_viva (vivaSave 3625-3635; v1 keeps the last 60): when (ms), who asked ("viva" or "conf", 1136), the question and the student's answer. */
 const VivaLogSchema = z.array(z.looseObject({ t: z.number(), aud: z.enum(["viva", "conf"]), q: z.string(), a: z.string() }));
 
 export type VivaLog = z.infer<typeof VivaLogSchema>;

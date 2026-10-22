@@ -1,1 +1,11 @@
-{}
+{
+  "viva_heading": "Viva question",
+  "viva_intro": "The AI asks one question an examiner might ask about the text you selected in your document, or about the start of your document when nothing is selected. Answer from your own head. There is no AI help in the answer box, because the point is to rehearse the real moment.",
+  "viva_private": "Your saved answers are for you only. Appuscholar never reads or grades them.",
+  "viva_reading": "Reading your passage…",
+  "viva_label": "AI wrote this question from your text. It is practice only: check that it asks about something you can defend. It is never added to your document.",
+  "viva_answer_label": "Your answer",
+  "viva_toast_saved": "Saved",
+  "viva_broken": "Your saved viva answers cannot be opened on this device. Nothing was changed.",
+  "viva_broken_confirm": "Your saved viva answers cannot be opened on this device. Saving now replaces them. Save anyway?"
+}
