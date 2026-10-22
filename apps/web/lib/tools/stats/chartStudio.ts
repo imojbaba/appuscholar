@@ -59,6 +59,7 @@ export const recallStudio = (projectId: string): StudioForm => studioMemory.get(
  */
 export function startStudio(projectId: string, lab: ParsedData | null): StudioForm {
   const f = recallStudio(projectId);
+  if (!lab && f.text === "" && f.source === "lab") return { ...f, source: "paste" }; // the Data tab's table is gone: back to the paste box
   return lab && f.text === "" && f.source === "paste" ? { ...f, source: "lab" } : f;
 }
 export const rememberStudio = (projectId: string, f: StudioForm): void => { studioMemory.set(projectId, f); };

@@ -413,6 +413,18 @@ describe("Chart Studio: the data from the Data tab", () => {
     expect(tid("chart-source")).toBeNull();
     expect(tid("chart-controls")).toBeNull();
   });
+  it("goes back to the paste box when it had opened on the Data tab's table and that table is gone", async () => {
+    patchLab("p1", { data: LAB });
+    const root = await mount();
+    expect(text("chart-source")).toBe(fill(E.stats_ch_from_lab!, { n: 5 }));
+    await unmount(root);
+    patchLab("p1", { data: null });
+    await mount();
+    expect(tid("chart-source")).toBeNull();
+    expect(tid("chart-note")).toBeNull(); // not the "no table" note a stale lab source would show
+    expect(tid("chart-use-paste")).toBeNull();
+    expect(tid("chart-paste")).not.toBeNull();
+  });
   it("without a parsed table the button says so and nothing is drawn", async () => {
     await mount();
     await click("chart-use-lab");
