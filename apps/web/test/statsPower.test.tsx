@@ -266,7 +266,13 @@ describe("Power: the simulator", () => {
       expect(r.svgText, c.id).toBe(c.svg);
       // the golden file writes NaN as {"$n":"NaN"} (the mean of no studies, register row D-W2-21)
       const want = Object.fromEntries(Object.entries(c.last!).map(([k, v]) => [k, typeof v === "object" ? NaN : v]));
-      expect(r.last, c.id).toEqual(want);
+      // exact text and svg above; the raw numbers within core's cross-platform rule (the last digit of a float differs between the capture machine and Linux: 1e-12 relative)
+      expect(Object.keys(r.last).sort(), c.id).toEqual(Object.keys(want).sort());
+      for (const [k, v] of Object.entries(want)) {
+        const got = (r.last as Record<string, unknown>)[k];
+        if (typeof v === "number" && Number.isFinite(v) && typeof got === "number") expect(Math.abs(got - v), c.id + " " + k).toBeLessThanOrEqual(1e-12 * Math.max(1, Math.abs(v)));
+        else expect(got, c.id + " " + k).toEqual(v);
+      }
     }
   });
 
