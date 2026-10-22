@@ -117,6 +117,7 @@ export { SCALES, SL_PENDING, slById, slVarNames, slText, slCodebookRows, slCodeb
 export type { Scale, ScaleShape, ScaleCoding, ScaleBand, SlScore, SlScoreData } from "./scales";
 export { QUAL_PALETTE, qualNextColor, qualDescendantIds, qualDeleteCascade, qualPassageText, qualBuildMarkdown } from "./qual";
 export type { QualCode, QualPassage } from "./qual";
+export { aiuBuildV2, AIU_V1_BRACKET, AIU_V2_BRACKET, AIU_V1_THESIS, AIU_V2_THESIS } from "./aiustatementV2";
 export {
   STY_FW, STY_VOCAB, STY_BANDS, STY_PASSAGES, STYLE_PROFILE_MAX, STYLE_MIN_WORDS, STYLE_LIVE_MIN_WORDS, STYLE_SAMPLES_MAX, styleWordCount, styleLiveWordCount, styleFeatures, styleAddSample, styleSamplesKeep,
   styleStats, styleOutliers, styleMeasured, styleCompose, styleKnownWords, styleVocabNote, styleLevelRule, styleLiveCompare, styleLivePassage, styleLiveNext, styleVocabOrder, styleVocabScore,
