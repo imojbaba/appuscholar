@@ -61,6 +61,9 @@ import { getData, getLab, resetLabs, setName } from "../lib/tools/stats/lab";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = { ...(en as Record<string, string>), ...(statsEn as Record<string, string>) };
+/** The Statistics tabs and the ones that are built; each later task adds its id to BUILT_TABS and nothing else here. */
+const ALL_TABS = ["data", "power", "charts", "check", "scales"];
+const BUILT_TABS = ["data", "power"];
 const hi = statsHi as Record<string, string>;
 const roots: Root[] = [];
 const tid = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
@@ -126,7 +129,7 @@ describe("the module (Task B1)", () => {
     expect(stats.Panel).toBe(Panel);
   });
   it("draws 'Not built yet' in words for the tabs that are not built", async () => {
-    for (const tab of ["power", "charts", "check", "scales"]) {
+    for (const tab of ALL_TABS.filter((x) => !BUILT_TABS.includes(x))) {
       await mount(tab);
       expect(text("not-built"), tab).toContain(E.place_not_built);
       expect(tid("stats-paste"), tab).toBeNull();
@@ -585,7 +588,7 @@ describe("a tab switch keeps the rows (ledger R1)", () => {
     await click("stats-parse");
     await unmount(first);
     expect(tid("stats-paste")).toBeNull();
-    // Another tab in between draws "Not built yet"; the lab is not a component's state.
+    // Another tab in between (Power, built in Task B4) comes and goes; the lab is not a component's state.
     const other = await mount("power");
     await unmount(other);
     await mount();
