@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DownloadSimple, Plus } from "@phosphor-icons/react";
 import type { VzType } from "@appuscholar/core";
 import { useLang, useT } from "@/lib/i18n";
@@ -39,7 +39,9 @@ export function ChartStudio({ projectId }: { projectId: string }) {
   const [form, setFormState] = useState<StudioForm>(() => recallStudio(projectId));
   const [note, setNote] = useState<"no_lab" | "img_fail" | null>(null);
   const [busy, setBusy] = useState(false);
-  const set = (patch: Partial<StudioForm>) => { const f = { ...form, ...patch }; setFormState(f); rememberStudio(projectId, f); setNote(null); };
+  // a change is built on the latest form (an update function), so one made while the PNG is being made (an await in Insert) is built on, not undone
+  const set = (patch: Partial<StudioForm>) => { setFormState((prev) => ({ ...prev, ...patch })); setNote(null); };
+  useEffect(() => { rememberStudio(projectId, form); }, [projectId, form]);
 
   const data = useMemo(() => studioData(form, lab.data), [form, lab.data]);
   const figFallback = String(prefs.value?.figno ?? 1);

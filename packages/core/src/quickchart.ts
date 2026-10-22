@@ -68,7 +68,7 @@ export function vennSvg(i: VennInput): string {
  * What it keeps of v1's chart: the purple fill #a78bfa with the border #5b21b6 (1.5 wide), no legend, the title only when one is given, and `beginAtZero: true` on the value axis for
  * BOTH kinds, so a bar always starts at zero (rule 14) and the line's axis includes zero too. The axis is rounded up to nice ticks by charts.ts's vzNice, and the zero baseline is a
  * line of its own (`data-base="1"`) that every bar's edge sits on (`data-bar="1"`); a negative bar hangs below it.
- * Accessible and self-contained: role="img", a <title> and a <desc> naming the values, system fonts only, nothing loaded from outside. Every label and the title go through escHTML.
+ * A label longer than 22 characters (14 when the bars are crowded; 40 in the description) is cut by character and ends in an ellipsis. Accessible and self-contained: role="img", a <title> and a <desc> naming the values, system fonts only, nothing loaded from outside. Every label and the title go through escHTML.
  * An empty list (v1 refused it with a toast) gives ""; a value that is not a finite number (parseFloat("1e999") is Infinity) is left out, and if none is left the answer is "" too.
  */
 export function quickChartSvg(rows: ChartRow[], type: "bar" | "line", title: string): string {
@@ -88,7 +88,9 @@ export function quickChartSvg(rows: ChartRow[], type: "bar" | "line", title: str
   const yz = y(0);
   const bw = (X1 - X0) / n, cx = (i: number): number => r2(X0 + (i + .5) * bw);
   const fmt = (v: number): string => String(+v.toFixed(4));
-  const shown = pts.slice(0, 20).map((r) => r.label.slice(0, 40) + ": " + fmt(r.val)).join("; ") + (n > 20 ? "; and " + (n - 20) + " more" : "");
+  // a cut counts characters, not UTF-16 units, so an emoji is never split; a cut label ends in an ellipsis
+  const cutTo = (label: string, n: number): string => { const c = Array.from(label); return c.length > n ? c.slice(0, n).join("") + "…" : label; };
+  const shown = pts.slice(0, 20).map((r) => cutTo(r.label, 40) + ": " + fmt(r.val)).join("; ") + (n > 20 ? "; and " + (n - 20) + " more" : "");
   const desc = kind + " of " + n + (n === 1 ? " value" : " values") + ", from " + fmt(Math.min(...vals)) + " to " + fmt(Math.max(...vals)) + ". " + shown + ".";
   let g = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" style="max-width:100%;height:auto" font-family="Arial, Helvetica, sans-serif" role="img" aria-labelledby="qc-title qc-desc">' +
     '<title id="qc-title">' + escHTML(head || kind) + '</title><desc id="qc-desc">' + escHTML(desc) + "</desc>" +
@@ -117,7 +119,7 @@ export function quickChartSvg(rows: ChartRow[], type: "bar" | "line", title: str
     g += '<text x="' + cx(i) + '" y="' + r2(y(r.val) + (up ? -5 : 13)) + '" text-anchor="middle" font-size="11" fill="#1a1a1a">' + fmt(r.val) + "</text>";
   });
   pts.forEach((r, i) => {
-    const ly = Y0 + 18, name = escHTML(r.label.slice(0, cut));
+    const ly = Y0 + 18, name = escHTML(cutTo(r.label, cut));
     g += slant
       ? '<text x="' + cx(i) + '" y="' + ly + '" transform="rotate(-35 ' + cx(i) + " " + ly + ')" text-anchor="end" font-size="' + fs + '" fill="#1a1a1a">' + name + "</text>"
       : '<text x="' + cx(i) + '" y="' + ly + '" text-anchor="middle" font-size="' + fs + '" fill="#1a1a1a">' + name + "</text>";

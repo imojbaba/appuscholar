@@ -26,14 +26,20 @@ export function withSize(svg: string, w: number, h: number): string {
   return svg.replace(/^(\s*<svg\b)([^>]*)>/, (_m, open: string, attrs: string) => open + (/\swidth="/.test(attrs) ? "" : ` width="${w}"`) + (/\sheight="/.test(attrs) ? "" : ` height="${h}"`) + attrs + ">");
 }
 
-/** The svg as a data URL, for an <img> (an image never runs a script) and for loading into the canvas. */
-export function svgDataUrl(svg: string): string { return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); }
+/** A UTF-16 unit of a surrogate pair that has no partner (a slice that cut an emoji in two leaves one): encodeURIComponent throws on it. */
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+/** The svg as a data URL, for an <img> (an image never runs a script) and for loading into the canvas. A lone surrogate in it (core cuts some labels by UTF-16 unit) becomes U+FFFD first, as a file write would make it. */
+export function svgDataUrl(svg: string): string { return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace(LONE_SURROGATE, "\uFFFD")); }
+
+/** How long the browser gets to load the svg as a picture before the PNG step gives up (the buttons are disabled while it runs). */
+export const LOAD_TIMEOUT_MS = 15_000;
 
 const browserEnv = (): PngEnv => ({
   load: (url) => new Promise((res, rej) => {
     const img = new Image();
-    img.onload = () => res(img);
-    img.onerror = () => rej(new Error("svg could not be loaded"));
+    const timer = setTimeout(() => rej(new Error("svg load timed out")), LOAD_TIMEOUT_MS);
+    img.onload = () => { clearTimeout(timer); res(img); };
+    img.onerror = () => { clearTimeout(timer); rej(new Error("svg could not be loaded")); };
     img.src = url;
   }),
   canvas: (width, height) => { const c = document.createElement("canvas"); c.width = width; c.height = height; return c as unknown as PngCanvas; }

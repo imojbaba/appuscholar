@@ -4,7 +4,7 @@ import { Plus } from "@phosphor-icons/react";
 import type { VennInput } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useDocAccess } from "@/lib/editor/docAccess";
-import { pictureHtml, quickView, recallQuick, rememberQuick, type QuickForm, type QuickView } from "@/lib/tools/stats/chartStudio";
+import { pictureHtml, quickView, VENN_WIDTH, recallQuick, rememberQuick, type QuickForm, type QuickView } from "@/lib/tools/stats/chartStudio";
 import { PNG_URL, svgToPng } from "@/lib/tools/stats/png";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export function QuickChart({ projectId }: { projectId: string }) {
       let url: string | null = null;
       try { url = await svgToPng(shown.svg, 2); } catch { /* said below */ }
       if (!url || !PNG_URL.test(url)) { setFailed(true); return; }
-      if (!(await access.insertBlock(pictureHtml(url, alt), { at: "cursor" }))) return;
+      if (!(await access.insertBlock(pictureHtml(url, alt, venn ? VENN_WIDTH : undefined), { at: "cursor" }))) return;
       toast(t("stats_res_inserted"));
     } finally { setBusy(false); }
   };

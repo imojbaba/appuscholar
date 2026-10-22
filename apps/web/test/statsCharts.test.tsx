@@ -4,7 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { chartParseLines, quickChartSvg, statsParseText, vennSvg, VZ_I18N, type ParsedData, type VzOptions } from "@appuscholar/core";
+import { Editor } from "@tiptap/core";
+import { chartParseLines, quickChartSvg, sanitizeHtml, statsParseText, vennSvg, VZ_I18N, type ParsedData, type VzOptions } from "@appuscholar/core";
 import en from "../messages/en.json";
 import hiBase from "../messages/hi.json";
 import statsEn from "../messages/tools/stats.en.json";
@@ -78,9 +79,10 @@ vi.setConfig({ testTimeout: 90_000, hookTimeout: 120_000 });
 import { Panel } from "../components/tools/stats/Panel";
 import { ChartsTab } from "../components/tools/stats/ChartsTab";
 import { LangProvider } from "../lib/i18n";
+import { editorExtensions } from "../lib/editorExtensions";
 import { patchLab, resetLabs } from "../lib/tools/stats/lab";
 import { resetCharts, quickView, defaultQuickForm, vzTrFor } from "../lib/tools/stats/chartStudio";
-import { dataUrlToBlob, PNG_URL, setPngEnv, svgDataUrl, svgSize, svgToPng, withSize, type PngCanvas, type PngEnv } from "../lib/tools/stats/png";
+import { dataUrlToBlob, LOAD_TIMEOUT_MS, PNG_URL, setPngEnv, svgDataUrl, svgSize, svgToPng, withSize, type PngCanvas, type PngEnv } from "../lib/tools/stats/png";
 
 const E = { ...(en as Record<string, string>), ...(statsEn as Record<string, string>) };
 const roots: Root[] = [];
@@ -133,8 +135,10 @@ async function until(cond: () => boolean, ms = 5000) {
 type Stub = PngCanvas & { drawn: Array<{ w: number; h: number }>; fills: string[]; loaded: string[] };
 let canvases: Stub[] = [];
 let loadFails = false;
+/** While set, the stub's image load waits for it (a slow PNG step). */
+let loadGate: Promise<void> | null = null;
 const stubEnv = (): PngEnv => ({
-  load: async (url) => { if (loadFails) throw new Error("no"); stubLog.loaded.push(url); return { url }; },
+  load: async (url) => { if (loadGate) await loadGate; if (loadFails) throw new Error("no"); stubLog.loaded.push(url); return { url }; },
   canvas: (width, height) => {
     const c: Stub = {
       width, height, drawn: [], fills: [], loaded: stubLog.loaded,
@@ -159,7 +163,7 @@ beforeEach(() => {
   resetLabs(); resetCharts();
   h.store = {}; h.writes = []; h.loading = {}; h.locked = {};
   h.toast.mockClear(); h.download.mockClear(); h.insertBlock.mockClear(); h.insertBlock.mockResolvedValue(true);
-  canvases = []; stubLog.loaded = []; loadFails = false;
+  canvases = []; stubLog.loaded = []; loadFails = false; loadGate = null;
   setPngEnv(stubEnv());
 });
 afterEach(async () => {
@@ -437,7 +441,7 @@ describe("Chart Studio: Insert into my document, and the downloads", () => {
     const img = kids[2] as HTMLImageElement;
     expect(PNG_URL.test(img.getAttribute("src")!)).toBe(true);
     expect(img.getAttribute("alt")).toBe("Scores by arm");
-    expect(img.getAttribute("style")).toBe("max-width:520px;width:100%");
+    expect(img.getAttribute("style")).toBe("width:520px;max-width:100%");
     expect(kids[3]!.innerHTML).toBe("<em>Note.</em> Bars show means.");
     // 640 by 420 is core's frame; the PNG is twice that
     expect(pngInfo(img.getAttribute("src")!)).toBe("image/png|1280x840");
@@ -758,5 +762,143 @@ describe("the words (stats_ch_*)", () => {
     await mount("hi");
     expect(text("chart-studio")).toContain((statsHi as Record<string, string>).stats_ch_studio);
     expect(text("quick-chart")).toContain((statsHi as Record<string, string>).stats_ch_quick);
+  });
+});
+
+describe("fix round 1: what the document keeps of an inserted picture", () => {
+  type Node = { type?: string; text?: string; marks?: Array<{ type: string }>; attrs?: Record<string, unknown>; content?: Node[] };
+  /** The inserted markup as the document gets it: through the sanitizer insertBlock applies, then into the real editor schema. */
+  const intoEditor = (html: string): { json: Node; editor: Editor } => {
+    const editor = new Editor({ extensions: editorExtensions, content: sanitizeHtml(html) });
+    return { json: editor.getJSON() as Node, editor };
+  };
+  const flat = (n: Node): Node[] => [n, ...(n.content ?? []).flatMap(flat)];
+  const textOf = (n: Node) => flat(n).map((x) => x.text ?? "").join("");
+  afterEach(() => { loadGate = null; });
+
+  it("Chart Studio's figure keeps a 520 px picture (not a 100 px thumbnail), the bold 'Figure N', the italic title and the Note", async () => {
+    await mount();
+    await type("chart-paste", ANOVA);
+    await type("chart-title", "Scores by arm");
+    await type("chart-note", "Bars show means.");
+    await click("chart-insert");
+    await until(() => h.insertBlock.mock.calls.length === 1);
+    const { json, editor } = intoEditor(h.insertBlock.mock.calls[0]![0]);
+    const nodes = flat(json);
+    const img = nodes.find((n) => n.type === "image")!;
+    expect(img).toBeTruthy();
+    expect(img.attrs!.width).toBe(520);
+    expect(PNG_URL.test(img.attrs!.src as string)).toBe(true);
+    expect(img.attrs!.alt).toBe("Scores by arm");
+    const fig = nodes.find((n) => n.text === "Figure 1")!;
+    expect(fig.marks!.map((m) => m.type)).toContain("bold");
+    const title = nodes.find((n) => n.text === "Scores by arm")!;
+    expect(title.marks!.map((m) => m.type)).toContain("italic");
+    const note = nodes.find((n) => n.text === "Note.")!;
+    expect(note.marks!.map((m) => m.type)).toContain("italic");
+    expect(textOf(json)).toContain("Bars show means.");
+    // saved again as html the width is a pixel width
+    expect(editor.getHTML()).toMatch(/<img[^>]*style="width: 520px;?"/);
+    editor.destroy();
+  });
+  it("the quick chart goes in 520 px wide and the Venn diagram 420 px wide (v1's widths)", async () => {
+    await mount();
+    await pick("quick-type", "bar");
+    await type("quick-data", "A,1\nB,2");
+    await click("quick-make");
+    await click("quick-insert");
+    await until(() => h.insertBlock.mock.calls.length === 1);
+    let r = intoEditor(h.insertBlock.mock.calls[0]![0]);
+    expect(flat(r.json).find((n) => n.type === "image")!.attrs!.width).toBe(520);
+    r.editor.destroy();
+    await pick("quick-type", "venn2");
+    await click("quick-make");
+    await click("quick-insert");
+    await until(() => h.insertBlock.mock.calls.length === 2);
+    r = intoEditor(h.insertBlock.mock.calls[1]![0]);
+    expect(flat(r.json).find((n) => n.type === "image")!.attrs!.width).toBe(420);
+    r.editor.destroy();
+  });
+  it("the figure carries no data-cap attributes (the editor drops them)", async () => {
+    await mount();
+    await type("chart-paste", ANOVA);
+    await click("chart-insert");
+    await until(() => h.insertBlock.mock.calls.length === 1);
+    expect(h.insertBlock.mock.calls[0]![0]).not.toContain("data-cap");
+  });
+  it("text typed while the PNG is being made is not lost when the figure goes in", async () => {
+    let open!: () => void;
+    loadGate = new Promise<void>((r) => { open = r; });
+    await mount();
+    await type("chart-paste", ANOVA);
+    await click("chart-insert");
+    await type("chart-title", "Typed while waiting");
+    await type("chart-xl", "My x label");
+    open();
+    await until(() => h.insertBlock.mock.calls.length === 1);
+    await until(() => (tid("chart-fig") as HTMLInputElement).value === "2");
+    expect((tid("chart-title") as HTMLInputElement).value).toBe("Typed while waiting");
+    expect((tid("chart-xl") as HTMLInputElement).value).toBe("My x label");
+    expect((tid("chart-paste") as HTMLTextAreaElement).value).toBe(ANOVA);
+  });
+});
+
+describe("fix round 1: a character cut by a slice cannot crash the page", () => {
+  const LONE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+  it("svgDataUrl repairs a lone surrogate instead of throwing", () => {
+    const bad = '<svg viewBox="0 0 1 1"><text>' + "a".repeat(3) + "\uD83D" + "</text></svg>";
+    expect(() => encodeURIComponent(bad)).toThrow();
+    const url = svgDataUrl(bad);
+    expect(decodeURIComponent(url.replace(/^data:image\/svg\+xml;charset=utf-8,/, ""))).toContain("aaa\uFFFD</text>");
+    // a pair is left whole
+    expect(decodeURIComponent(svgDataUrl("<svg>😀</svg>").replace(/^data:image\/svg\+xml;charset=utf-8,/, ""))).toBe("<svg>😀</svg>");
+  });
+  it("Chart Studio: a group name of 21 letters and an emoji (core cuts it at 22 code units) still draws, and the picture is a well formed data URL", async () => {
+    await mount();
+    await type("chart-paste", "group,score\n" + ("a".repeat(21) + "😀 tail") + ",3\n" + ("a".repeat(21) + "😀 tail") + ",5\nB,4\nB,7");
+    expect(tid("chart-img")).not.toBeNull();
+    expect(tid("chart-failed")).toBeNull();
+    expect(LONE.test(svgOf(tid("chart-img")))).toBe(false);
+    // the table still names the whole group
+    expect(tid("chart-table")!.textContent).toContain("a".repeat(21) + "😀 tail");
+    // and the PNG step can load it
+    await click("chart-insert");
+    await until(() => h.insertBlock.mock.calls.length === 1);
+  });
+  it("Quick chart: a label and a long label with an emoji at the cut draw, show an ellipsis, and insert", async () => {
+    await mount();
+    await pick("quick-type", "bar");
+    await type("quick-data", "a".repeat(21) + "😀tail,3\n" + "b".repeat(39) + "😀tail,4");
+    await click("quick-make");
+    expect(tid("quick-img")).not.toBeNull();
+    const svg = svgOf(tid("quick-img"));
+    expect(LONE.test(svg)).toBe(false);
+    expect(svg).toContain("a".repeat(21) + "😀…");
+    expect(svg).toContain("b".repeat(39) + "😀…: 4");
+    await click("quick-insert");
+    await until(() => h.insertBlock.mock.calls.length === 1);
+  });
+  it("any failure in making the picture's data URL is a message, not a crash", async () => {
+    // a group the chart draws with a name that makes encodeURIComponent throw cannot happen once repaired; the guard is for anything else: force it
+    const mod = await import("../lib/tools/stats/png");
+    const spy = vi.spyOn(mod, "svgDataUrl").mockImplementation(() => { throw new URIError("boom"); });
+    try {
+      const { studioView, defaultStudioForm } = await import("../lib/tools/stats/chartStudio");
+      const d = statsParseText(ANOVA)!;
+      expect(studioView({ ...defaultStudioForm(), text: ANOVA }, d, vzTrFor("en"), "1")).toEqual({ kind: "failed" });
+    } finally { spy.mockRestore(); }
+  });
+});
+
+describe("fix round 1: the browser's image loader gives up", () => {
+  it("svgToPng rejects when the image neither loads nor fails (the buttons are not left disabled)", async () => {
+    setPngEnv(null);
+    vi.useFakeTimers();
+    try {
+      const p = svgToPng(quickChartSvg([{ label: "a", val: 1 }], "bar", ""), 2);
+      const seen = p.then(() => "resolved", (e: Error) => e.message);
+      await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS + 1000);
+      expect(await seen).toMatch(/time/i);
+    } finally { vi.useRealTimers(); }
   });
 });

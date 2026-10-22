@@ -126,25 +126,36 @@ export function studioView(form: StudioForm, d: ParsedData, tr: VzTr, figFallbac
     return { kind: "failed" };
   }
   if (!r) return { kind: "nodata" };
-  return {
-    kind: "ok", svg: r.svg, src: svgDataUrl(r.svg), tableHtml: sanitizeHtml(blocksToHtml(r.table)), warn: r.warn ?? "",
-    caption: vzCaption(form.fig ?? figFallback, title, note), fields: { title, note, xl, yl }
-  };
+  try {
+    return {
+      kind: "ok", svg: r.svg, src: svgDataUrl(r.svg), tableHtml: sanitizeHtml(blocksToHtml(r.table)), warn: r.warn ?? "",
+      caption: vzCaption(form.fig ?? figFallback, title, note), fields: { title, note, xl, yl }
+    };
+  } catch {
+    // whatever else goes wrong in making the picture or the table is a message, never a crash of the page
+    return { kind: "failed" };
+  }
 }
 
 /**
- * What vzInsert puts in the document (3891-3900), in v1's order: "Figure N" in bold, the title in italics, the picture, "Note." and the note, and an empty paragraph. The words
+ * What vzInsert puts in the document (3891-3900), in v1's order: "Figure N" in bold, the title in italics, the picture, "Note." and the note, and an empty paragraph (v1's data-cap attributes are not written: the editor drops them). The words
  * "Figure" and "Note." are APA 7's, as v1 wrote them. `png` must be a PNG data URL (the caller checks); the title, note and alt text are escaped.
  */
 export function figureHtml(cp: { n: number; title: string; note: string }, png: string): string {
-  return '<p data-cap="figure"><strong>Figure ' + cp.n + "</strong></p>" + (cp.title ? '<p data-cap-title="1"><em>' + escHTML(cp.title) + "</em></p>" : "") +
-    '<img src="' + png + '" alt="' + escHTML(cp.title || "Figure " + cp.n) + '" style="max-width:520px;width:100%">' +
+  return "<p><strong>Figure " + cp.n + "</strong></p>" + (cp.title ? "<p><em>" + escHTML(cp.title) + "</em></p>" : "") +
+    '<img src="' + png + '" alt="' + escHTML(cp.title || "Figure " + cp.n) + '" style="width:' + FIGURE_WIDTH + 'px;max-width:100%">' +
     (cp.note ? "<p><em>Note.</em> " + escHTML(cp.note) + "</p>" : "") + "<p><br></p>";
 }
 
-/** What chartInsertToDoc puts in (4941-4946) for a quick chart or a Venn diagram: the picture as PNG (R3), at the width v1 gave it. */
-export function pictureHtml(png: string, alt: string): string {
-  return '<img src="' + png + '" alt="' + escHTML(alt) + '" style="max-width:520px;width:100%">';
+/**
+ * The width a picture goes into the document at, in pixels: the editor keeps a pixel width (lib/editorExtensions.ts SizedImage reads `parseInt` of the style, so a percentage
+ * would become 100 px). v1's on-screen widths: 520 for a figure, a quick chart (`max-width:520px`) and 420 for a Venn diagram (its `img-wrap` span).
+ */
+export const FIGURE_WIDTH = 520;
+export const VENN_WIDTH = 420;
+/** What chartInsertToDoc puts in (4941-4946) for a quick chart or a Venn diagram: the picture as PNG (R3), at a pixel width. */
+export function pictureHtml(png: string, alt: string, width: number = FIGURE_WIDTH): string {
+  return '<img src="' + png + '" alt="' + escHTML(alt) + '" style="width:' + width + 'px;max-width:100%">';
 }
 
 export type QuickView = { kind: "empty" } | { kind: "ok"; svg: string; src: string };

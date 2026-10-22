@@ -97,7 +97,7 @@ describe("quickChartSvg: labels are text, never markup", () => {
   it("a long label is cut, not allowed to run across the picture", () => {
     const svg = quickChartSvg([{ label: "x".repeat(200), val: 1 }], "bar", "");
     expect(svg).not.toContain("x".repeat(41));
-    expect([...svg.matchAll(/<text\b[^>]*text-anchor="middle"[^>]*>(x+)<\/text>/g)].map((m) => m[1]!.length)).toEqual([22]);
+    expect([...svg.matchAll(/<text\b[^>]*text-anchor="middle"[^>]*>(x+…)<\/text>/g)].map((m) => m[1]!.length)).toEqual([23]);
   });
 });
 
@@ -162,5 +162,33 @@ describe("quickChartSvg: nothing to draw", () => {
     const bs = bars(svg);
     expect(bs.length).toBe(40);
     for (const b of bs) { expect(num(b, "x")).toBeGreaterThanOrEqual(0); expect(num(b, "x") + num(b, "width")).toBeLessThanOrEqual(w); expect(num(b, "width")).toBeGreaterThan(0); }
+  });
+});
+
+describe("quickChartSvg: a cut never splits a character (Task B5 fix round 1)", () => {
+  const LONE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+  it("a label with an emoji where the cut falls is cut by character, with an ellipsis, and the string stays well formed", () => {
+    // 21 letters and an emoji: the emoji is character 22 and stays whole; the cut is after it
+    const label = "a".repeat(21) + "😀" + "tail";
+    for (const type of ["bar", "line"] as const) {
+      const svg = quickChartSvg([{ label, val: 3 }], type, "");
+      expect(LONE.test(svg), type).toBe(false);
+      expect(() => encodeURIComponent(svg)).not.toThrow();
+      expect(svg).toContain(">" + "a".repeat(21) + "😀…</text>");
+      expect(svg).not.toContain("tail</text>");
+    }
+  });
+  it("the cut falls inside what would have been a surrogate pair at 14 (crowded labels) and at 40 (the description)", () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({ label: i === 0 ? "b".repeat(13) + "😀" + "tail" : "L" + i, val: i + 1 }));
+    const crowded = quickChartSvg(many, "bar", "");
+    expect(LONE.test(crowded)).toBe(false);
+    expect(crowded).toContain(">" + "b".repeat(13) + "😀…</text>");
+    const desc = quickChartSvg([{ label: "c".repeat(39) + "😀" + "tail", val: 1 }], "bar", "");
+    expect(LONE.test(desc)).toBe(false);
+    expect(() => encodeURIComponent(desc)).not.toThrow();
+    expect(desc).toContain("c".repeat(39) + "😀…: 1");
+  });
+  it("a label that fits is not given an ellipsis", () => {
+    expect(quickChartSvg([{ label: "a".repeat(22), val: 1 }], "bar", "")).not.toContain("…");
   });
 });
