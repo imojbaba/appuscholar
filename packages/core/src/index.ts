@@ -118,3 +118,12 @@ export type { Scale, ScaleShape, ScaleCoding, ScaleBand, SlScore, SlScoreData } 
 export { QUAL_PALETTE, qualNextColor, qualDescendantIds, qualDeleteCascade, qualPassageText, qualBuildMarkdown } from "./qual";
 export type { QualCode, QualPassage } from "./qual";
 export { aiuBuildV2, AIU_V1_BRACKET, AIU_V2_BRACKET, AIU_V1_THESIS, AIU_V2_THESIS } from "./aiustatementV2";
+export {
+  CL_STOP, CL_HOMO, CL_MIN_WORDS, clTok, clExcludeRanges, clHtmlToText, clK, clMin, clCompare, clReportText, clGather, clOtherDocs, clEnoughWords,
+} from "./closeness";
+export type { ClTok, ClSource, ClRun, ClResult, ClShelfPaper, ClDoc } from "./closeness";
+export {
+  PPT_MAX_BULLETS, PPT_PREVIEW_BULLETS, PPT_BULLET_CHARS, PPT_PREVIEW_CHARS, docToSlideModel, pptHasHeadings, pptPreviewBullets, pptxFileName, pptxDeckSpec,
+  docToSlideModelV2,
+} from "./pptModel";
+export type { PptSlide, PptxText, PptxDeck } from "./pptModel";
