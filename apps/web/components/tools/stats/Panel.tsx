@@ -4,6 +4,7 @@ import { useLabActions } from "@/lib/tools/stats/useLabActions";
 import { useRunActions } from "@/lib/tools/stats/useRunActions";
 import { NotBuilt } from "@/components/places/NotBuilt";
 import { ChartsTab } from "./ChartsTab";
+import { CheckTab } from "./CheckTab";
 import { DataIntake } from "./DataIntake";
 import { Guide } from "./Guide";
 import { PdBox } from "./PdBox";
@@ -36,6 +37,7 @@ export function Panel({ tab, projectId }: { tab: string; projectId: string }) {
   switch (tab) {
     case "data": return <DataTab projectId={projectId} />;
     case "power": return <PowerTab projectId={projectId} />;
+    case "check": return <CheckTab projectId={projectId} />;
     case "charts": return <ChartsTab projectId={projectId} />;
     default: return <NotBuilt />;
   }
