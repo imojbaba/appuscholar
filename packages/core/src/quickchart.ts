@@ -1,4 +1,5 @@
 import { escHTML } from "./html";
+import { vzFmt, vzNice } from "./charts";
 
 /* v1's Quick chart dialog (S9), the compute half: chartParseLines (index.html:4868-4873), _vennNum (4899) and the SVG vennGenerate builds (4900-4936; vennGenerate runs to 4940).
    Not ported: chartGenerate (4874-4898: draws a bar or line chart with Chart.js on a canvas and keeps it as a PNG; register row D-W2-8), chartTypeChange (4856-4867, shows and hides the
@@ -60,4 +61,66 @@ export function vennSvg(i: VennInput): string {
       '</svg>';
   }
   return svg;
+}
+
+/**
+ * Task B5: the quick bar and line chart as an svg string, instead of v1's Chart.js canvas (chartGenerate 4874-4898; register row D-W2-8 settled). A new function: nothing above is touched.
+ * What it keeps of v1's chart: the purple fill #a78bfa with the border #5b21b6 (1.5 wide), no legend, the title only when one is given, and `beginAtZero: true` on the value axis for
+ * BOTH kinds, so a bar always starts at zero (rule 14) and the line's axis includes zero too. The axis is rounded up to nice ticks by charts.ts's vzNice, and the zero baseline is a
+ * line of its own (`data-base="1"`) that every bar's edge sits on (`data-bar="1"`); a negative bar hangs below it.
+ * Accessible and self-contained: role="img", a <title> and a <desc> naming the values, system fonts only, nothing loaded from outside. Every label and the title go through escHTML.
+ * An empty list (v1 refused it with a toast) gives ""; a value that is not a finite number (parseFloat("1e999") is Infinity) is left out, and if none is left the answer is "" too.
+ */
+export function quickChartSvg(rows: ChartRow[], type: "bar" | "line", title: string): string {
+  const pts = rows.filter((r) => Number.isFinite(r.val));
+  if (!pts.length) return "";
+  const kind = type === "line" ? "Line chart" : "Bar chart";
+  const head = title.trim();
+  const n = pts.length;
+  const vals = pts.map((r) => r.val);
+  const lo = Math.min(0, ...vals);
+  let hi = Math.max(0, ...vals);
+  if (hi === lo) hi = lo + 1;
+  const sc = vzNice(lo, hi, 5);
+  const W = 560, H = 340, X0 = 54, X1 = W - 16, Y1 = head ? 44 : 20, Y0 = H - 70;
+  const r2 = (v: number): number => +v.toFixed(2);
+  const y = (v: number): number => r2(Y0 - (v - sc.min) / (sc.max - sc.min) * (Y0 - Y1));
+  const yz = y(0);
+  const bw = (X1 - X0) / n, cx = (i: number): number => r2(X0 + (i + .5) * bw);
+  const fmt = (v: number): string => String(+v.toFixed(4));
+  const shown = pts.slice(0, 20).map((r) => r.label.slice(0, 40) + ": " + fmt(r.val)).join("; ") + (n > 20 ? "; and " + (n - 20) + " more" : "");
+  const desc = kind + " of " + n + (n === 1 ? " value" : " values") + ", from " + fmt(Math.min(...vals)) + " to " + fmt(Math.max(...vals)) + ". " + shown + ".";
+  let g = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" style="max-width:100%;height:auto" font-family="Arial, Helvetica, sans-serif" role="img" aria-labelledby="qc-title qc-desc">' +
+    '<title id="qc-title">' + escHTML(head || kind) + '</title><desc id="qc-desc">' + escHTML(desc) + "</desc>" +
+    '<rect width="' + W + '" height="' + H + '" fill="#ffffff"/>';
+  if (head) g += '<text x="' + W / 2 + '" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">' + escHTML(head) + "</text>";
+  g += '<line x1="' + X0 + '" y1="' + Y1 + '" x2="' + X0 + '" y2="' + Y0 + '" stroke="#333" stroke-width="1.5"/>';
+  for (const v of sc.ticks) {
+    const ty = y(v);
+    if (v !== 0) g += '<line x1="' + X0 + '" y1="' + ty + '" x2="' + X1 + '" y2="' + ty + '" stroke="#e5e7eb" stroke-width="1"/>';
+    g += '<line x1="' + (X0 - 5) + '" y1="' + ty + '" x2="' + X0 + '" y2="' + ty + '" stroke="#333" stroke-width="1.5"/><text x="' + (X0 - 9) + '" y="' + r2(ty + 4) + '" text-anchor="end" font-size="12" fill="#333">' + vzFmt(v, sc.step) + "</text>";
+  }
+  const bar = type !== "line", barW = r2(Math.min(80, bw * .6)), slant = bw < 60, fs = bw < 30 ? 10 : 11.5, cut = slant ? 14 : 22;
+  if (bar) {
+    pts.forEach((r, i) => {
+      const top = y(r.val);
+      g += '<rect data-bar="1" x="' + r2(cx(i) - barW / 2) + '" y="' + Math.min(top, yz) + '" width="' + barW + '" height="' + r2(Math.abs(top - yz)) + '" fill="#a78bfa" stroke="#5b21b6" stroke-width="1.5"/>';
+    });
+  } else {
+    g += '<polyline fill="none" stroke="#5b21b6" stroke-width="2" points="' + pts.map((r, i) => cx(i) + "," + y(r.val)).join(" ") + '"/>';
+    pts.forEach((r, i) => { g += '<circle cx="' + cx(i) + '" cy="' + y(r.val) + '" r="4" fill="#a78bfa" stroke="#5b21b6" stroke-width="1.5"/>'; });
+  }
+  // the zero baseline, over the bars' edges
+  g += '<line data-base="1" x1="' + X0 + '" y1="' + yz + '" x2="' + X1 + '" y2="' + yz + '" stroke="#333" stroke-width="1.5"/>';
+  if (bw >= 24) pts.forEach((r, i) => {
+    const up = r.val >= 0;
+    g += '<text x="' + cx(i) + '" y="' + r2(y(r.val) + (up ? -5 : 13)) + '" text-anchor="middle" font-size="11" fill="#1a1a1a">' + fmt(r.val) + "</text>";
+  });
+  pts.forEach((r, i) => {
+    const ly = Y0 + 18, name = escHTML(r.label.slice(0, cut));
+    g += slant
+      ? '<text x="' + cx(i) + '" y="' + ly + '" transform="rotate(-35 ' + cx(i) + " " + ly + ')" text-anchor="end" font-size="' + fs + '" fill="#1a1a1a">' + name + "</text>"
+      : '<text x="' + cx(i) + '" y="' + ly + '" text-anchor="middle" font-size="' + fs + '" fill="#1a1a1a">' + name + "</text>";
+  });
+  return g + "</svg>";
 }
