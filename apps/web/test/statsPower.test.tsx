@@ -23,6 +23,8 @@ const GOLD = JSON.parse(readFileSync(join(__dirname, "../../../packages/core/tes
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 vi.setConfig({ testTimeout: 90_000, hookTimeout: 120_000 });
 
+// The Panel records the lab's table in stats_sets under every tab (StatsSetsHost); the Power tab itself touches no blob, so the list is an empty one here.
+vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: false, locked: false, broken: false, error: false, readOnly: false, set: () => {}, flush: async () => true }) }));
 import { Panel } from "../components/tools/stats/Panel";
 import { PowerTab } from "../components/tools/stats/PowerTab";
 import { benchmarkList, defaultPowerForm, powerFields, resetPower, runPower, runSim, toPowerInput, toSimInput, defaultSimForm } from "../lib/tools/stats/power";

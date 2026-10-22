@@ -221,7 +221,10 @@ describe("Rule 10: the wording is fixed and no AI path touches it", () => {
     await click("scale-run");
     await until(() => !!tid("scale-out"));
     expect(h.ai).not.toHaveBeenCalled();
-    expect(h.writes).toEqual([]);
+    // The Scales tab writes nothing itself; the table given and the scored table are recorded in stats_sets by the stats Panel (StatsSetsHost, as v1 registered every parse), and nothing else is written.
+    const kinds = h.writes.map((x) => x.kind);
+    expect(kinds.length).toBeGreaterThan(0);
+    expect(kinds.every((k) => k === "stats_sets")).toBe(true);
   });
 });
 

@@ -32,7 +32,7 @@ export function ResultsLinking({ projectId }: { projectId: string }) {
   const items = actions.items;
   const counts = items ? resultCounts(items) : null;
   const stale = (items ?? []).filter((i) => i.status === "stale");
-  const off = busy || actions.scanning || actions.readOnly;
+  const off = busy || actions.scanning || actions.readOnly || !!actions.waiting;
   const docs = new Set((items ?? []).map((i) => i.docId)).size;
 
   const scan = async () => { setMsgs({}); setAll(null); setSaid(""); await actions.scan(); };
@@ -80,7 +80,9 @@ export function ResultsLinking({ projectId }: { projectId: string }) {
       {actions.readOnly && stale.length > 0 && <p className="ap-small" data-testid="check-rt-readonly">{t("stats_check_rt_readonly")}</p>}
       {items && counts && (
         <div data-testid="check-rt-result">
-          <p role="status" data-testid="check-rt-sum" style={{ fontWeight: 700 }}>{counts.n ? t("rt_sum", counts) : t("stats_check_rt_none")}</p>
+          {/* Never "none found" when some documents were not read: that would be a reassurance nothing supports (rule 8). */}
+          {(counts.n > 0 || actions.unread === 0) && <p role="status" data-testid="check-rt-sum" style={{ fontWeight: 700 }}>{counts.n ? t("rt_sum", counts) : t("stats_check_rt_none")}</p>}
+          {actions.unread > 0 && <p role="alert" className="ap-banner" data-testid="check-rt-unread">{t("stats_check_rt_unread", { n: actions.unread })}</p>}
           {all && (
             <p role="status" data-testid="check-rt-all-msg" className="ap-box">{all.text}{all.flip && <> {t("rt_sig_flip")}</>}</p>
           )}

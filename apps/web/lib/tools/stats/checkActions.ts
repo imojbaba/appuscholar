@@ -4,8 +4,11 @@ import { useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import type { StatsRuns } from "@/lib/blobs/kinds/stats";
 import { useDocAccess } from "@/lib/editor/docAccess";
-import { getLab, NO_GATE, patchLab } from "./lab";
-import { flipped, scanProject, tagText, withTagText, type ResultItem } from "./checkResults";
+import { useSuggestion } from "@/lib/ai/suggestion";
+import { useProject } from "@/components/frame/ProjectContext";
+import { getLab, NO_GATE, patchLab, useLab } from "./lab";
+import { blockedBy, flipped, scanProject, tagText, withTagText, type ResultItem } from "./checkResults";
+import { useStatsSets } from "./StatsSets";
 import { prepareRerun } from "./rerun";
 
 /*
@@ -22,9 +25,14 @@ export function useCheckActions(projectId: string) {
   const t = useT();
   const access = useDocAccess();
   const runs = useProjectBlob("stats_runs", projectId || null);
-  const sets = useProjectBlob("stats_sets", projectId || null);
-  const live = useRef({ t, access, runs, sets });
-  useEffect(() => { live.current = { t, access, runs, sets }; });
+  const sets = useStatsSets();
+  const { editor } = useSuggestion();
+  const { currentDoc, documents } = useProject();
+  const live = useRef({ t, access, runs, sets, editor, currentDocId: currentDoc?.id ?? null, documents });
+  useEffect(() => { live.current = { t, access, runs, sets, editor, currentDocId: currentDoc?.id ?? null, documents }; });
+  // A table the lab holds that the project has not recorded is recorded by StatsSetsHost (the Panel) under whichever tab is open; until it is, nothing is compared.
+  const lab = useLab(projectId);
+  const unrecorded = !!lab.data && lab.registered !== lab.data;
   /** The runs as last set here until the hook shows them (a set shows at once, but a render may not have happened by the time the next step reads it). */
   const mine = useRef<StatsRuns | null>(null);
   useEffect(() => { mine.current = null; }, [runs.value]);
@@ -33,9 +41,10 @@ export function useCheckActions(projectId: string) {
   const [items, setItems] = useState<ResultItem[] | null>(null);
   const [scanning, setScanning] = useState(false);
 
-  /** Why the lists cannot be compared yet, or "" when they can. */
-  const waiting: "" | "loading" | "locked" | "unreadable" =
-    runs.locked || sets.locked ? "locked" : runs.loading || sets.loading ? "loading" : runs.broken || sets.broken || runs.error || sets.error ? "unreadable" : "";
+  /** Why results cannot be compared yet, or "" when they can (lists locked, still being read, unreadable, or the lab's table not yet recorded). */
+  const waiting = blockedBy({ runs, sets }, unrecorded);
+  /** The documents of the project the last scan could not read (a locked vault, or one that does not decrypt): their results were not checked. */
+  const [unread, setUnread] = useState(0);
 
   const currentRuns = useCallback((): StatsRuns => mine.current ?? live.current.runs.value ?? {}, []);
 
@@ -44,6 +53,8 @@ export function useCheckActions(projectId: string) {
     setScanning(true);
     try {
       const docs = await live.current.access.allDocuments();
+      const read = new Set(docs.map((d) => d.id));
+      setUnread(live.current.documents.filter((d) => !read.has(d.id)).length);
       const found = scanProject(docs, currentRuns(), live.current.sets.value ?? {});
       setItems(found);
       return found;
@@ -58,21 +69,30 @@ export function useCheckActions(projectId: string) {
    */
   const rerunOne = useCallback(async (item: ResultItem): Promise<RerunOutcome> => {
     const L = live.current;
+    // The lists are written only when they are known, open and not broken (R16: a list that does not open is never set over without asking, and this tab does not ask).
+    if (blockedBy({ runs: L.runs, sets: L.sets }, false)) return { kind: "failed", msg: words("stats_check_rt_" + blockedBy({ runs: L.runs, sets: L.sets }, false)) };
     const run = currentRuns()[item.id];
     if (!run) return { kind: "failed", msg: words("rt_why_norec") };
     const doc = (await L.access.allDocuments()).find((d) => d.id === item.docId);
-    const there = doc ? tagText(doc.html, item.id, item.nth) : null;
-    if (!doc || there === null) return { kind: "failed", msg: words("stats_check_gone") };
+    if (!doc) return { kind: "failed", msg: words("stats_check_gone") };
     const prep = prepareRerun(getLab(projectId), run, L.sets.value ?? {}, words, Date.now());
     if (!prep.ok) return { kind: "failed", msg: prep.msg };
-    const html = withTagText(doc.html, item.id, item.nth, prep.sentence);
-    if (html === null) return { kind: "failed", msg: words("stats_check_gone") };
+    // Everything from here to the write is synchronous: the open document is read from its editor at this moment, not from what the scan or allDocuments() read earlier,
+    // so words typed since are in the HTML that is written back. Another document is written from what was read just now (its text cannot change under the student's hands).
+    const ed = L.editor && !L.editor.isDestroyed && L.currentDocId === doc.id ? L.editor : null;
+    const base = ed ? ed.getHTML() : doc.html;
+    const there = tagText(base, item.id, item.nth);
+    const html = there === null ? null : withTagText(base, item.id, item.nth, prep.sentence);
+    if (html === null || there === null) return { kind: "failed", msg: words("stats_check_gone") };
     if (there !== run.sentence && !window.confirm(words("rt_edit_warn"))) return { kind: "skipped" };
     patchLab(projectId, { test: prep.test, form: prep.form, gate: NO_GATE });
-    if (!(await L.access.rewriteDocument(doc.id, html))) return { kind: "failed", msg: words("stats_check_nowrite", { title: doc.title }) };
-    const next: StatsRuns = { ...currentRuns(), [item.id]: prep.record };
-    mine.current = next;
-    live.current.runs.set(next);
+    // A confirm is synchronous too, but typing after it cannot be told apart from typing before it: read once more when the editor is live and has moved on.
+    const final = ed && ed.getHTML() !== base ? withTagText(ed.getHTML(), item.id, item.nth, prep.sentence) : html;
+    if (final === null) return { kind: "failed", msg: words("stats_check_gone") };
+    if (!(await L.access.rewriteDocument(doc.id, final))) return { kind: "failed", msg: words("stats_check_nowrite", { title: doc.title }) };
+    mine.current = { ...currentRuns(), [item.id]: prep.record };
+    // An update of what is stored, as the Data tab's Insert does it, so a run saved meanwhile is kept.
+    live.current.runs.set((prev) => ({ ...(prev ?? {}), [item.id]: prep.record }));
     return { kind: "done", flip: flipped(run.sentence, prep.sentence), sentence: prep.sentence };
   }, [currentRuns, projectId, words]);
 
@@ -89,6 +109,6 @@ export function useCheckActions(projectId: string) {
   }, [rerunOne]);
 
   // eslint-disable-next-line react-hooks/refs -- the ref only holds what was set a moment ago, for a render that has not happened yet
-  return { items, scanning, waiting, scan, rerunOne, rerunAll, readOnly: runs.readOnly, runs: mine.current ?? runs.value };
+  return { items, scanning, waiting, unread, scan, rerunOne, rerunAll, readOnly: runs.readOnly, runs: mine.current ?? runs.value };
 }
 export type CheckActions = ReturnType<typeof useCheckActions>;

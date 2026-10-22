@@ -79,3 +79,19 @@ export function withTagText(html: string, id: string, nth: number, text: string)
 
 /** Whether the conclusion at .05 differs between the sentence that was inserted and the new one (v1 rtRerunOne 12325, core's rtFlip). */
 export const flipped = (oldSentence: string, newSentence: string): boolean => rtFlip(oldSentence, newSentence);
+
+/** What a stored list's hook says about it (the fields of useProjectBlob that matter here). */
+export type BlobFlags = { locked?: boolean; loading?: boolean; broken?: boolean; error?: boolean };
+/** Why results cannot be compared with the data yet: nothing is shown as checked while this is not "". */
+export type Block = "" | "locked" | "loading" | "unreadable" | "unrecorded";
+/**
+ * What stops a comparison, most pressing first: a locked vault, a list still being read, a list that cannot be read, and last a table the lab holds that the project has
+ * not recorded yet (every result would be compared with a list that does not know that data, and could be called current wrongly).
+ */
+export function blockedBy(lists: { runs: BlobFlags; sets: BlobFlags }, unrecorded: boolean): Block {
+  const { runs, sets } = lists;
+  if (runs.locked || sets.locked) return "locked";
+  if (runs.loading || sets.loading) return "loading";
+  if (runs.broken || sets.broken || runs.error || sets.error) return "unreadable";
+  return unrecorded ? "unrecorded" : "";
+}

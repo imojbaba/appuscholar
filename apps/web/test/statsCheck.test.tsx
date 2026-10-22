@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -34,11 +34,14 @@ const h = vi.hoisted(() => ({
   state: {} as Record<string, { loading?: boolean; locked?: boolean; broken?: boolean; error?: boolean }>,
   forces: new Set<() => void>(),
   editor: null as unknown,
+  /** The documents the project lists (what the shell knows); null = the ones allDocuments gives. */
+  listed: null as null | Array<{ id: string }>,
   project: { projectId: "p1", docOpen: true, openDocument: vi.fn(), selectDoc: vi.fn(async (_id: string) => true), currentDoc: null as null | { id: string } },
   confirm: vi.fn((_m?: unknown) => true)
 }));
+vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => async () => "" }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => h.project }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ ...h.project, documents: (h.listed ?? h.docs).map((d) => ({ id: d.id })) }) }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/editor/docAccess", () => ({
   useDocAccess: () => ({
@@ -83,6 +86,9 @@ import { defaultForm } from "../lib/tools/stats/form";
 import { runLabTest, runRecord } from "../lib/tools/stats/run";
 import { toStatsForm } from "../lib/tools/stats/form";
 import { numbersView } from "../lib/tools/stats/checkNumbers";
+import { StatsSetsHost } from "../lib/tools/stats/StatsSets";
+import { blockedBy } from "../lib/tools/stats/checkResults";
+import { useCheckActions, type CheckActions } from "../lib/tools/stats/checkActions";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -95,12 +101,12 @@ const text = (id: string) => tid(id)?.textContent ?? "";
 const fill = (s: string, vars: Record<string, string | number> = {}) => s.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
 const w = (key: string, vars?: Record<string, string | number>) => fill(E[key] ?? key, vars);
 
-async function mount(): Promise<Root> {
+async function mount(tab = "check"): Promise<Root> {
   const el = document.createElement("div");
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<Panel tab="check" projectId="p1" />); });
+  await act(async () => { root.render(<Panel tab={tab} projectId="p1" />); });
   return root;
 }
 async function click(testId: string, i = 0) {
@@ -113,7 +119,7 @@ async function rerender() { await act(async () => { for (const f of [...h.forces
 
 beforeEach(() => {
   resetLabs();
-  h.text = ""; h.docs = []; h.rewrite = null; h.rewrites = []; h.store = {}; h.writes = []; h.state = {}; h.editor = null; h.confirm = vi.fn((_m?: unknown) => true);
+  h.text = ""; h.docs = []; h.rewrite = null; h.rewrites = []; h.store = {}; h.writes = []; h.state = {}; h.editor = null; h.listed = null; h.confirm = vi.fn((_m?: unknown) => true);
   h.project.currentDoc = null; h.project.docOpen = true;
   h.toast.mockClear(); h.project.openDocument.mockClear(); h.project.selectDoc.mockClear();
   vi.spyOn(window, "confirm").mockImplementation((m) => h.confirm(m));
@@ -173,6 +179,14 @@ describe("Numbers check", () => {
     const glued = numbersView(docInnerText(bodies.find((g) => g.id === "html-glued-boundary")!.html!));
     expect(glued.cards.map((c) => [c.raw, c.status])).toEqual([["t(58) = 2.36, p = .022", "ok"]]);
     expect(bodies.find((g) => g.id === "html-glued-boundary")!.find).toHaveLength(0);
+  });
+
+  it("digits are not joined across a paragraph break: 'p = .0' ending one paragraph and '5' starting the next are not read as p = .05", () => {
+    const v = numbersView(docInnerText("<p>t(58) = 2.36, p = .0</p><p>5 participants dropped out.</p>"));
+    expect(v.cards).toHaveLength(1);
+    expect(v.cards[0]!.wrote).toBe("p = .0");
+    // v1's run-together text read the same words as p = .05
+    expect(numbersView("t(58) = 2.36, p = .05 participants dropped out.").cards[0]!.wrote).toBe("p = .05");
   });
 
   it("says in one sentence that nothing was found, and never calls a document fine", async () => {
@@ -588,3 +602,227 @@ describe("Check tab: wording", () => {
     for (const k of used) { expect((en as Record<string, string>)[k], k).toBeTruthy(); expect((hiAll as Record<string, string>)[k], k).toBeTruthy(); }
   });
 });
+
+/* ---- fix round 1 ---- */
+
+describe("Re-run keeps what the student typed in the open document", () => {
+  it("text typed between the scan and the write survives: the open document is read again right before the write", async () => {
+    const { old } = setUp();
+    const html = P("Intro.") + P(tag("r1", old));
+    const ed = new Editor({ extensions: editorExtensions, content: html });
+    h.editor = ed;
+    h.project.currentDoc = { id: "d1" };
+    h.docs = [doc("d1", "Methods", html)]; // what the scan read; the editor moves on below
+    await mount();
+    await click("check-rt-run");
+    ed.commands.insertContentAt(ed.state.doc.content.size, "<p>Typed after the scan.</p>");
+    await click("check-rt-rerun");
+    const neu = sentenceOf(parse(APART));
+    expect(h.rewrites).toHaveLength(1);
+    expect(h.rewrites[0]!.html).toContain("Typed after the scan.");
+    expect(h.rewrites[0]!.html).toContain(escHTML(neu));
+    expect(h.rewrites[0]!.html).toContain('data-run="r1"');
+    ed.destroy();
+  });
+
+  it("words the student changed inside the tag after the scan are noticed: the edit question is asked from the document as it is now", async () => {
+    const { old } = setUp();
+    const html = P(tag("r1", old));
+    const ed = new Editor({ extensions: editorExtensions, content: html });
+    h.editor = ed;
+    h.project.currentDoc = { id: "d1" };
+    h.docs = [doc("d1", "Methods", html)];
+    await mount();
+    await click("check-rt-run");
+    ed.commands.setContent(P(tag("r1", old + " (my words)")));
+    h.confirm = vi.fn((_m?: unknown) => false);
+    await click("check-rt-rerun");
+    expect(h.confirm).toHaveBeenCalledWith(E.rt_edit_warn);
+    expect(h.rewrites).toHaveLength(0);
+    ed.destroy();
+  });
+
+  it("a sentence the student deleted from the open document after the scan is not re-run", async () => {
+    const { old } = setUp();
+    const html = P(tag("r1", old));
+    const ed = new Editor({ extensions: editorExtensions, content: html });
+    h.editor = ed;
+    h.project.currentDoc = { id: "d1" };
+    h.docs = [doc("d1", "Methods", html)];
+    await mount();
+    await click("check-rt-run");
+    ed.commands.setContent(P("Gone."));
+    await click("check-rt-rerun");
+    expect(msg()).toBe(E.stats_check_gone);
+    expect(h.rewrites).toHaveLength(0);
+    ed.destroy();
+  });
+});
+
+describe("A table the lab holds but the project has not recorded", () => {
+  it("the Check tab records it first, so the results are compared with the data that is loaded and re-run works", async () => {
+    const dA = parse(SIMILAR);
+    const dB = parse(APART);
+    h.store.stats_runs = { r1: recordOf(dA) };
+    h.store.stats_sets = rtSetRecord(dA, DS, {}, 1000);
+    patchLab("p1", { data: dB, name: DS }); // parsed, never recorded (the Data tab was closed)
+    const old = sentenceOf(dA);
+    h.docs = [doc("d1", "Methods", P(tag("r1", old)))];
+    await mount();
+    const sets = h.writes.filter((x) => x.kind === "stats_sets");
+    expect(sets).toHaveLength(1);
+    expect((h.store.stats_sets as Record<string, { hash: string }>)[DS]!.hash).toBe(rtHash(dB));
+    expect(getLab("p1").registered).toBe(dB);
+    await click("check-rt-run");
+    expect(all("check-rt-card")[0]!.dataset.status).toBe("stale");
+    await click("check-rt-rerun");
+    expect(msg()).toContain(E.rt_done);
+    expect(msg()).not.toContain("Load the changed data");
+    expect(h.rewrites).toHaveLength(1);
+  });
+
+  it("it is recorded whichever stats tab is open, once, and the Data tab does not record it a second time", async () => {
+    for (const tab of ["data", "power", "charts", "check", "scales"]) {
+      resetLabs();
+      h.writes = [];
+      const dA = parse(SIMILAR), dB = parse(APART);
+      h.store.stats_sets = rtSetRecord(dA, DS, {}, 1000);
+      patchLab("p1", { data: dB, name: DS });
+      const root = await mount(tab);
+      const writes = h.writes.filter((x) => x.kind === "stats_sets");
+      expect(writes, tab).toHaveLength(1);
+      expect((h.store.stats_sets as Record<string, { hash: string }>)[DS]!.hash, tab).toBe(rtHash(dB));
+      expect(getLab("p1").registered, tab).toBe(dB);
+      expect(getLab("p1").regName, tab).toBe(DS);
+      await act(async () => { root.unmount(); });
+      roots.splice(roots.indexOf(root), 1);
+      document.body.innerHTML = "";
+    }
+  });
+
+  it("a table parsed on the Data tab is still recorded once the student is on another tab", async () => {
+    const dA = parse(SIMILAR);
+    h.store.stats_sets = rtSetRecord(dA, DS, {}, 1000);
+    await mount("power");
+    expect(h.writes.filter((x) => x.kind === "stats_sets")).toHaveLength(0);
+    await act(async () => { patchLab("p1", { data: parse(APART), name: DS }); });
+    expect(h.writes.filter((x) => x.kind === "stats_sets")).toHaveLength(1);
+    expect(getLab("p1").registered).not.toBeNull();
+  });
+
+  it("while it cannot be recorded (the vault is locked) no status is shown, only why", async () => {
+    const dA = parse(SIMILAR);
+    h.store.stats_runs = { r1: recordOf(dA) };
+    h.store.stats_sets = rtSetRecord(dA, DS, {}, 1000);
+    h.state = { stats_sets: { locked: true } };
+    patchLab("p1", { data: parse(APART), name: DS });
+    h.docs = [doc("d1", "Methods", P(tag("r1", sentenceOf(dA))))];
+    await mount();
+    expect(text("check-rt-waiting")).toBe(E.stats_check_rt_locked);
+    expect(tid("check-rt-run")).toBeNull();
+    expect(all("check-rt-card")).toHaveLength(0);
+    expect(h.writes).toHaveLength(0);
+  });
+
+  it("a broken list of data sets is only replaced after the student says yes; when they say no nothing is compared", async () => {
+    const dA = parse(SIMILAR);
+    h.store.stats_runs = { r1: recordOf(dA) };
+    h.state = { stats_sets: { broken: true } };
+    h.confirm = vi.fn((_m?: unknown) => false);
+    patchLab("p1", { data: parse(APART), name: DS });
+    h.docs = [doc("d1", "Methods", P(tag("r1", sentenceOf(dA))))];
+    await mount();
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    expect(h.writes).toHaveLength(0);
+    expect(text("check-rt-waiting")).toBe(E.stats_check_rt_unreadable);
+    expect(tid("check-rt-run")).toBeNull();
+  });
+
+  it("what blocks a comparison, in the order the student should deal with it", () => {
+    const ok = {};
+    expect(blockedBy({ runs: ok, sets: ok }, false)).toBe("");
+    expect(blockedBy({ runs: ok, sets: ok }, true)).toBe("unrecorded");
+    expect(blockedBy({ runs: { locked: true }, sets: ok }, true)).toBe("locked");
+    expect(blockedBy({ runs: ok, sets: { loading: true } }, true)).toBe("loading");
+    expect(blockedBy({ runs: { broken: true }, sets: ok }, true)).toBe("unreadable");
+    expect(blockedBy({ runs: ok, sets: { error: true } }, false)).toBe("unreadable");
+    expect(E.stats_check_rt_unrecorded).toMatch(/Data tab/);
+  });
+});
+
+describe("Documents that could not be read", () => {
+  it("a locked vault (nothing read) never says 'none found': it says how many documents were not checked", async () => {
+    setUp();
+    h.listed = [{ id: "d1" }, { id: "d2" }];
+    h.docs = [];
+    await mount();
+    await click("check-rt-run");
+    expect(text("check-rt-unread")).toBe(w("stats_check_rt_unread", { n: 2 }));
+    expect(tid("check-rt-sum")).toBeNull();
+    expect(document.body.textContent).not.toContain(E.stats_check_rt_none);
+  });
+
+  it("one document that does not decrypt is named in the count next to the results of the others", async () => {
+    const { old } = setUp();
+    h.listed = [{ id: "d1" }, { id: "d2" }];
+    h.docs = [doc("d1", "Methods", P(tag("r1", old)))];
+    await mount();
+    await click("check-rt-run");
+    expect(text("check-rt-sum")).toBe(w("rt_sum", { n: 1, c: 0, s: 1, u: 0 }));
+    expect(text("check-rt-unread")).toBe(w("stats_check_rt_unread", { n: 1 }));
+  });
+
+  it("with every document read and no tag, the none-found sentence stays, and no count of unread documents", async () => {
+    h.docs = [doc("d1", "Methods", P("No tags."))];
+    await mount();
+    await click("check-rt-run");
+    expect(text("check-rt-sum")).toBe(E.stats_check_rt_none);
+    expect(tid("check-rt-unread")).toBeNull();
+  });
+});
+
+describe("Writing stats_runs", () => {
+  const box: { acts: CheckActions | null } = { acts: null };
+  function Harness() { const a = useCheckActions("p1"); useEffect(() => { box.acts = a; }); return null; }
+  it("Re-run is disabled while the saved lists cannot be read or written, and the action itself refuses (R16)", async () => {
+    const { old } = setUp();
+    h.docs = [doc("d1", "Methods", P(tag("r1", old)))];
+    await mount();
+    await click("check-rt-run");
+    expect((tid("check-rt-rerun") as HTMLButtonElement).disabled).toBe(false);
+    h.state = { stats_runs: { broken: true } };
+    await rerender();
+    expect((tid("check-rt-rerun") as HTMLButtonElement).disabled).toBe(true);
+    expect(tid("check-rt-all")).toBeNull(); // the scan and re-run-all buttons give way to the line that says why
+    // the action refuses on its own, for each reason
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const root = createRoot(el);
+    roots.push(root);
+    for (const state of [{ broken: true }, { error: true }, { locked: true }, { loading: true }]) {
+      h.state = { stats_runs: state };
+      await act(async () => { root.render(<StatsSetsHost projectId="p1"><Harness /></StatsSetsHost>); });
+      const item = { id: "r1", docId: "d1", docTitle: "Methods", nth: 0, at: 0, text: old, status: "stale" as const, why: "" as const };
+      const before = JSON.stringify(h.store.stats_runs);
+      const r = await box.acts!.rerunOne(item);
+      expect(r.kind, JSON.stringify(state)).toBe("failed");
+      expect(h.rewrites, JSON.stringify(state)).toHaveLength(0);
+      expect(JSON.stringify(h.store.stats_runs)).toBe(before);
+    }
+  });
+
+  it("the record goes in as an update of what is stored, so a run saved meanwhile is not lost", async () => {
+    const { old } = setUp();
+    h.docs = [doc("d1", "Methods", P(tag("r1", old)))];
+    await mount();
+    await click("check-rt-run");
+    // another run was stored after the tab last drew (the Data tab inserted one)
+    h.store.stats_runs = { ...(h.store.stats_runs as object), r9: { ...recordOf(parse(SIMILAR)), sentence: "later run" } };
+    await click("check-rt-rerun");
+    const runs = h.store.stats_runs as Record<string, { sentence: string }>;
+    expect(Object.keys(runs).sort()).toEqual(["r1", "r2", "r9"]);
+    expect(runs.r9!.sentence).toBe("later run");
+    expect(runs.r1!.sentence).toBe(sentenceOf(parse(APART)));
+  });
+});
+

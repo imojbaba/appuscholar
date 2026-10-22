@@ -1,5 +1,6 @@
 "use client";
 import { useT } from "@/lib/i18n";
+import { StatsSetsHost } from "@/lib/tools/stats/StatsSets";
 import { useLabActions } from "@/lib/tools/stats/useLabActions";
 import { useRunActions } from "@/lib/tools/stats/useRunActions";
 import { NotBuilt } from "@/components/places/NotBuilt";
@@ -30,11 +31,15 @@ function DataTab({ projectId }: { projectId: string }) {
 }
 
 /**
- * Collection and analysis' statistics tabs (module `stats`): `data`, `power`, `charts`, `check` and `scales`. Data (Task B1), Power (Task B4) and Charts (Task B5) are built; the
- * others draw the frame's "Not built yet" until their tasks land. The lab's rows live in lib/tools/stats/lab.ts, so switching tabs (which mounts a
+ * Collection and analysis' statistics tabs (module `stats`): `data`, `power`, `charts`, `check` and `scales`. Data (Task B1), Power (Task B4), Charts (Task B5), Check (Task B6)
+ * and Scales (Task B7) are built; any other tab draws the frame's "Not built yet". Whichever tab is open sits under StatsSetsHost, which records the lab's table in `stats_sets`. The lab's rows live in lib/tools/stats/lab.ts, so switching tabs (which mounts a
  * Panel again) loses nothing.
  */
 export function Panel({ tab, projectId }: { tab: string; projectId: string }) {
+  return <StatsSetsHost projectId={projectId}>{tabOf(tab, projectId)}</StatsSetsHost>;
+}
+
+function tabOf(tab: string, projectId: string) {
   switch (tab) {
     case "data": return <DataTab projectId={projectId} />;
     case "power": return <PowerTab projectId={projectId} />;
