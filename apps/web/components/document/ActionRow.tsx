@@ -10,12 +10,13 @@ import { OriginBadge } from "./OriginBadge";
 import { CaretChip } from "./CaretChip";
 import { TemplatePicker } from "@/components/workspace/dialogs/TemplatePicker";
 import { useProject } from "@/components/frame/ProjectContext";
+import { placeHref } from "@/lib/frame/places";
 
-/** The writing actions under the document (mockup 02): Continue / Improve / Extend, Template, AI text, Viva question, Draft first, the caret chip, and the live word count. */
+/** The writing actions under the document (mockup 02): Continue / Improve / Extend, Template, AI text, Viva question (opens Review > Viva, D-S2-46), Draft first, the caret chip, and the live word count. */
 export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Editor; highlightAi: boolean; onHighlightAi(on: boolean): void }) {
   const t = useT();
   const { settings, update } = useSettings();
-  const { currentDoc, wordCount } = useProject();
+  const { currentDoc, wordCount, go, projectId } = useProject();
   const run = useWritingRun(editor);
   const draftFirst = settings.draftFirst === true;
   // The buttons must not take focus from the document: the selection Improve and Extend work on stays visible.
@@ -30,7 +31,7 @@ export function ActionRow({ editor, highlightAi, onHighlightAi }: { editor: Edit
       <TemplatePicker editor={editor} />
       <Button type="button" variant={highlightAi ? "toggle" : "ghost"} size="sm" aria-pressed={highlightAi} title={t("aitext_btn_title")} data-testid="act-ai-text" onMouseDown={keep}
         onClick={() => { onHighlightAi(!highlightAi); toast(highlightAi ? "Highlight off" : "AI-inserted text highlighted in the document"); }}>{t("aitext_btn")}</Button>
-      <Button type="button" variant="ghost" size="sm" title={t("viva_btn_title")} data-testid="act-viva" onClick={() => toast("Viva question arrives in a later phase.")}>{t("viva_btn")}</Button>
+      <Button type="button" variant="ghost" size="sm" title={t("viva_btn_title")} data-testid="act-viva" onClick={() => void go(placeHref(projectId ?? "", "review", "viva"))}>{t("viva_btn")}</Button>
       <Button type="button" variant={draftFirst ? "toggle" : "ghost"} size="sm" aria-pressed={draftFirst} title={t("df_btn_title")} data-testid="act-draft-first"
         onClick={() => { void update({ draftFirst: !draftFirst }); toast(draftFirst ? t("df_off") : t("df_on")); }}>{t("df_btn")}</Button>
       {/* v1 618: the caret chip sits after Draft first, before the word count. */}
