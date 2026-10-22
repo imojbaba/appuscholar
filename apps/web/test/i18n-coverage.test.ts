@@ -39,9 +39,10 @@ const STAGE2_DIRS = [
 
 /**
  * Keys whose value is also a data token, not copy: "DELETE" (a typed confirmation) is also the HTTP method the API client sends; the stage
- * names of the project list's spoken summary ("idea", "writing", "review") are also the stage ids (StageKey).
+ * names of the project list's spoken summary ("idea", "writing", "review") are also the stage ids (StageKey); the closeness check's source kind
+ * "pasted" (close_kind_pasted) is also the result kind of the style live check (components/tools/style/StyleChecks.tsx).
  */
-const NOT_COPY = new Set(["erase_confirm_word", "state_sum_idea", "state_sum_writing", "state_sum_review"]);
+const NOT_COPY = new Set(["erase_confirm_word", "state_sum_idea", "state_sum_writing", "state_sum_review", "close_kind_pasted"]);
 
 /**
  * Values worth guarding: 3+ characters with at least one letter or digit (so "✨", "…", "—" are skipped). Read from the dictionary t() reads,
