@@ -24,10 +24,14 @@ export type DemoRun = {
   isScale: boolean;
   /** TG_DEMO's "How to read it" text. */
   read: string;
+  /** The item the demo reverses (the scale demo), or null. */
+  rev: string | null;
+  /** The same demo run again without the reversal, once the student asked for it. */
+  second: Extract<Outcome, { kind: "ok" }> | null;
 };
 
 /** The form v1 filled for a demo (12466-12470): the defaults, then the columns, boxes and ticks the demo names (a name not in the table leaves the field as it was). */
-export function demoForm(data: ParsedData, dm: TgDemo) {
+export function demoForm(data: ParsedData, dm: TgDemo, reversed = true) {
   const f = defaultForm(data, dm.test);
   const idx = (name: string): string => { const c = data.cols.find((c2) => c2.name === name); return c ? String(c.index) : ""; };
   for (const [k, name] of Object.entries(dm.sel ?? {})) if (k in f.values) f.values[k] = idx(name);
@@ -36,8 +40,9 @@ export function demoForm(data: ParsedData, dm: TgDemo) {
     const multi = STAT_TESTS[dm.test].fields.find((x) => x.multi && x.id === "items");
     if (multi) f.ticked[multi.id] = dm.tick.map(idx).filter((s) => s !== "").map(Number).sort((a, b) => a - b);
   }
-  if (dm.rev && "rev" in f.values) f.values.rev = dm.rev;
-  if (dm.rrange && "rrange" in f.values) f.values.rrange = dm.rrange;
+  // `reversed` false leaves the reversal out (the scale demo's "run it again without reversing", core's note on it)
+  if (reversed && dm.rev && "rev" in f.values) f.values.rev = dm.rev;
+  if (reversed && dm.rrange && "rrange" in f.values) f.values.rrange = dm.rrange;
   return f;
 }
 
@@ -54,5 +59,12 @@ export function runDemo(id: string, dm: TgDemo, guess: "yes" | "no", w: Words): 
   const outcome = runLabTest(data, dm.test, demoForm(data, dm), w);
   if (outcome.kind !== "ok") return null;
   const isScale = dm.test === "alpha";
-  return { id, title: dm.title, guess, test: dm.test, data, outcome, sig: isScale || sentenceIsClear(outcome.res.apa), isScale, read: dm.read };
+  return { id, title: dm.title, guess, test: dm.test, data, outcome, sig: isScale || sentenceIsClear(outcome.res.apa), isScale, read: dm.read, rev: dm.rev ?? null, second: null };
+}
+
+/** The demo run again with its reversal left out (core's note on the scale demo: "run it again without reversing and watch the alpha fall"); the first result is kept. Null if it cannot be run. */
+export function runDemoUnreversed(demo: DemoRun, dm: TgDemo, w: Words): DemoRun | null {
+  if (!demo.rev) return null;
+  const outcome = runLabTest(demo.data, dm.test, demoForm(demo.data, dm, false), w);
+  return outcome.kind === "ok" ? { ...demo, second: outcome } : null;
 }

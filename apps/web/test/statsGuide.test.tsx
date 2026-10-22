@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runStats, STATS_TEST_OPTIONS, statsParseText, tgCheck, tgCountsText, TG_CHECK_FALLBACK, TG_DEMO, TG_RES, type StatsForm, type StatsTestKey } from "@appuscholar/core";
+import { runStats, STATS_TEST_OPTIONS, statsParseText, tgCheck, tgCountsText, TG_CHECK_FALLBACK, TG_CHECK_TEXT, TG_DEMO, TG_RES, type StatsForm, type StatsTestKey } from "@appuscholar/core";
 import en from "../messages/en.json";
 import statsEn from "../messages/tools/stats.en.json";
 import statsHi from "../messages/tools/stats.hi.json";
@@ -15,7 +15,7 @@ import statsHi from "../messages/tools/stats.hi.json";
  */
 
 type Path = { answers: Record<string, string>; out: { ask?: string; res?: { id: string; built: boolean; name: string; keys: string[]; why: string; alt: Array<[string, string]>; note?: string } } };
-type Check = { id: string; dataset: string; sel: { num: string; grp: string; c1: string; c2: string }; fallback: string | null; text: string };
+type Check = { id: string; dataset: string; sel: { num: string; grp: string; c1: string; c2: string }; fallback: string | null; text: string; blocks: Array<{ kind: string; rows?: string[][]; html?: string }> };
 const GOLD = JSON.parse(readFileSync(join(__dirname, "../../../packages/core/test/golden/guide/cases.json"), "utf8")) as {
   paths: Path[]; why: Array<{ answers: Record<string, string>; id: string; items: string[]; text: string }>; datasets: Array<{ id: string; csv: string }>; checks: Check[];
 };
@@ -375,6 +375,65 @@ describe("the predict-first demo", () => {
     expect(text("stats-guide-demo-verdict")).toBe(E.stats_guide_you_none + " " + E.stats_guide_says_clear);
   });
 
+  it("the scale demo can be run again without reversing its item: core's sentence for that, and alpha is lower", async () => {
+    const dm = TG_DEMO.alpha!;
+    const data = statsParseText(dm.csv)!;
+    const idx = (n: string) => data.cols.find((c) => c.name === n)!.index;
+    const items = dm.tick!.map(idx);
+    const plain = runStats(data, "alpha", { values: { rev: "", rrange: "" }, ticked: { items } });
+    const reversed = runStats(data, "alpha", { values: { rev: dm.rev!, rrange: dm.rrange! }, ticked: { items } });
+    if (!plain.ok || !reversed.ok) throw new Error("alpha demo did not run");
+    const alphaOf = (s: string) => parseFloat(/α = (\.\d+)/.exec(s)![1]!.replace(/^/, "0"));
+    expect(alphaOf(plain.apa)).toBeLessThan(alphaOf(reversed.apa));
+    await mount();
+    await walk(pathTo("alpha"));
+    expect(tid("stats-guide-demo-unrev")).toBeNull(); // nothing to undo before the first run
+    await click("stats-guide-pred-yes");
+    await click("stats-guide-demo-run");
+    expect(text("stats-guide-demo-sentence")).toBe(reversed.apa);
+    expect(text("stats-guide-demo-unrev")).toBe(fill(E.stats_guide_demo_unrev, { item: dm.rev! }));
+    expect(tid("stats-guide-demo-second")).toBeNull();
+    const writes = h.writes.length;
+    await click("stats-guide-demo-unrev");
+    expect(text("stats-guide-demo-second-sentence")).toBe(plain.apa);
+    expect(text("stats-guide-demo-sentence")).toBe(reversed.apa); // the first result stays beside it
+    expect(tid("stats-guide-demo-second")!.querySelector("table")).not.toBeNull();
+    expect(alphaOf(text("stats-guide-demo-second-sentence"))).toBeLessThan(alphaOf(text("stats-guide-demo-sentence")));
+    expect(h.writes.length).toBe(writes);
+    expect(getLab("p1").data).toBeNull();
+    await click("stats-guide-demo-back");
+    expect(tid("stats-guide-demo-second")).toBeNull();
+  });
+
+  it("only the demo with a reversed item offers it", async () => {
+    await mount();
+    for (const id of DEMO_IDS.filter((i) => i !== "alpha")) {
+      await walk(pathTo(id));
+      await click("stats-guide-pred-yes");
+      await click("stats-guide-demo-run");
+      expect(tid("stats-guide-demo-unrev"), id).toBeNull();
+    }
+  });
+
+  it("Back to my own data after new data was parsed in the middle of a demo keeps the new data and puts the demo away", async () => {
+    await mount();
+    await load("g,x\nA,1\nA,2\nB,3\nB,4");
+    await walk(pathTo("pearson"));
+    await click("stats-guide-pred-yes");
+    await click("stats-guide-demo-run");
+    expect(tid("stats-guide-demo-out")).not.toBeNull();
+    const second = "h,y\nC,10\nC,20\nD,30\nD,40\nD,50";
+    await load(second);
+    const parsed = getLab("p1").data;
+    expect(parsed!.rows).toHaveLength(5);
+    await click("stats-guide-demo-back");
+    expect(tid("stats-guide-demo-out")).toBeNull();
+    expect(getLab("p1").text).toBe(second);
+    expect(getLab("p1").data).toBe(parsed);
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toBe(second);
+    expect(text("stats-rows")).toBe(fill(E.stats_data_rows_found, { n: 5 }));
+  });
+
   it("sentenceIsClear reads the p-value of the sentence as v1 did", () => {
     expect(sentenceIsClear("t(10) = 2.50, p < .001")).toBe(true);
     expect(sentenceIsClear("t(10) = 2.50, p = .034")).toBe(true);
@@ -483,12 +542,48 @@ describe("Check my numbers", () => {
         await pick("stats-guide-check-c1", c.sel.c1);
         await pick("stats-guide-check-c2", c.sel.c2);
         await click("stats-guide-check-btn");
-        expect(text("stats-guide-check-out"), c.id).toBe(c.text);
-        if (c.fallback !== null) expect(text("stats-guide-check-out"), c.id).toBe(TG_CHECK_FALLBACK);
+        // core's text (v1's), then, after each half that raised no flag, one line saying what the check did not look at (rule 8)
+        const out = text("stats-guide-check-out");
+        const quiet = (html: string) => html.startsWith(TG_CHECK_TEXT.means) || html.endsWith(TG_CHECK_TEXT.fine);
+        // golden table cells are HTML (escaped); the notes are plain: the line goes after each quiet note, found in v1's text in order
+        let expected = c.text, from = 0;
+        for (const b of c.blocks) {
+          if (b.kind !== "note" || !quiet(b.html!)) continue;
+          const at = expected.indexOf(b.html!, from) + b.html!.length;
+          expected = expected.slice(0, at) + E.stats_guide_check_not_proof + expected.slice(at);
+          from = at + E.stats_guide_check_not_proof!.length;
+        }
+        expect(out, c.id).toBe(expected);
+        expect(out.split(E.stats_guide_check_not_proof!).join(""), c.id).toBe(c.text); // with the line taken out it is v1's text, character for character
+        expect(all("stats-guide-check-not-proof").length, c.id).toBe(c.blocks.filter((b) => b.kind === "note" && quiet(b.html!)).length);
+        if (c.fallback !== null) expect(out, c.id).toBe(TG_CHECK_FALLBACK);
         seen++;
       }
     }
     expect(seen).toBe(531);
+  });
+
+  it("a flagged case shows no such line: small skewed groups and a sparse table say what core says and nothing more", async () => {
+    await mount();
+    await load("g,x,a,b\nA,1,u,p\nA,2,u,p\nA,30,u,q\nB,4,v,q\nB,5,v,p\nB,6,v,p");
+    await walk({ goal: "reliab" });
+    await pick("stats-guide-check-num", "1");
+    await pick("stats-guide-check-grp", "0");
+    await pick("stats-guide-check-c1", "2");
+    await pick("stats-guide-check-c2", "3");
+    await click("stats-guide-check-btn");
+    const out = text("stats-guide-check-out");
+    expect(out).toContain(TG_CHECK_TEXT.rank);
+    expect(out).toContain(TG_CHECK_TEXT.low);
+    expect(out).not.toContain(TG_CHECK_TEXT.means);
+    expect(out).not.toContain(TG_CHECK_TEXT.fine);
+    expect(out).not.toContain(E.stats_guide_check_not_proof);
+    expect(tid("stats-guide-check-not-proof")).toBeNull();
+  });
+
+  it("the line is plain words, not a clearance: it names what was looked at and says it does not show the assumptions are met", () => {
+    expect(E.stats_guide_check_not_proof).toBe("This looked only at group size, skew, outliers and expected counts. It does not show that the test's assumptions are met.");
+    expect(E.stats_guide_check_not_proof).not.toMatch(/\u2014/);
   });
 
   it("offers score columns for the score box and category columns for the others, as v1's selects did", async () => {

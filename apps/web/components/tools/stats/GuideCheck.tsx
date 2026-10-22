@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 
 const NONE: TgCheckSel = { num: "", grp: "", c1: "", c2: "" };
 
+/** Where nothing was flagged, core's sentence ("Nothing here points away...", "Chi-square is fine...") could read as a clearance; this says what the check did not look at (rule 8: no flag is not "safe"). */
+function NotProof() {
+  const t = useT();
+  return <p className="ap-small" data-testid="stats-guide-check-not-proof" style={{ margin: "0 0 6px" }}>{t("stats_guide_check_not_proof")}</p>;
+}
+
 /** What v1 wrote into #tgCheckOut (12534-12561) from core's tgCheck: the group table with its two paragraphs, the counts paragraph, or the fallback sentence. Labels are text nodes. */
 function CheckOut({ out }: { out: TgCheckOut }) {
   const n = out.numbers, c = out.counts;
@@ -22,10 +28,12 @@ function CheckOut({ out }: { out: TgCheckOut }) {
             </tbody>
           </table>
           <p style={{ margin: "6px 0" }}>{n.rank ? TG_CHECK_TEXT.rank : TG_CHECK_TEXT.means}{TG_CHECK_TEXT.thumb}</p>
+          {!n.rank && <NotProof />}
           {n.tiny && <p style={{ margin: "6px 0" }}>{TG_CHECK_TEXT.tiny}</p>}
         </>
       )}
       {c && <p style={{ margin: "6px 0" }}>{tgCountsText(c)}</p>}
+      {c && c.ok && <NotProof />}
     </>
   );
 }

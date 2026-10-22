@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { STAT_TESTS, tgNext, TG_DEMO, TG_RES, type StatsTestKey, type TgAnswers, type TgDemo, type TgNextOut, type TgQuestionKey, type TgResult } from "@appuscholar/core";
 import { getLab } from "./lab";
 import { setTest } from "./runLab";
-import { runDemo, type DemoRun } from "./guideDemo";
+import { runDemo, runDemoUnreversed, type DemoRun } from "./guideDemo";
 import type { Words } from "./resultChart";
 
 /*
@@ -105,6 +105,14 @@ export function runGuideDemo(projectId: string, r: TgResult, w: Words): boolean 
   const demo = runDemo(r.id, dm, g.pred, w);
   patchGuide(projectId, { demo, needPred: false });
   return demo !== null;
+}
+/** The scale demo run again without reversing its item, shown beside the first result. Pure like the first run: the lab and every blob are left alone. */
+export function runGuideDemoUnreversed(projectId: string, r: TgResult, w: Words): boolean {
+  const g = getGuide(projectId), dm = demoOf(r);
+  if (!g.demo || g.demo.id !== r.id || !dm) return false;
+  const next = runDemoUnreversed(g.demo, dm, w);
+  if (next) patchGuide(projectId, { demo: next });
+  return next !== null;
 }
 /** v1 tgBackToMine (12453-12460): the demo is put away. The student's own data was never touched, so it is exactly as it was. */
 export function backToMine(projectId: string): void { patchGuide(projectId, { demo: null }); }

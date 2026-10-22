@@ -32,7 +32,8 @@ export function newRunId(now: number = Date.now(), random: () => number = Math.r
 
 /**
  * What goes into the document (v1 insertIntoEditor 4196-4204, called by statsInsert 12024): the sentence as escaped text in its own paragraph (core's apa holds a
- * literal "<" in "p < .001"), wrapped in the run's tag when the run is recorded. With no run id the text goes in as v1's demo runs did, with no tag.
+ * literal "<" in "p < .001"), wrapped in the run's tag when the run is recorded. With no run id (only when the record could not be made) the text goes in with no tag.
+ * The guide's practice demos (Task B3) are never inserted: they are shown in the guide's card and have no Insert button.
  */
 export function sentenceHtml(sentence: string, runId: string | null): string {
   const text = escHTML(sentence);

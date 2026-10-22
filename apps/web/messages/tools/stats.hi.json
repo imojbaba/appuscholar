@@ -150,5 +150,8 @@
   "stats_guide_check_c1": "श्रेणी कॉलम 1",
   "stats_guide_check_c2": "श्रेणी कॉलम 2",
   "stats_guide_check_none": "कोई नहीं",
-  "stats_guide_check_btn": "जाँचिए"
+  "stats_guide_check_btn": "जाँचिए",
+  "stats_guide_check_not_proof": "इसने केवल समूहों का आकार, तिरछापन, बाहरी मान और अपेक्षित गिनतियाँ देखी हैं। इससे यह साबित नहीं होता कि परीक्षण की मान्यताएँ पूरी होती हैं।",
+  "stats_guide_demo_unrev": "{item} को उलटे बिना इसे फिर से चलाइए",
+  "stats_guide_demo_second": "{item} को उलटे बिना"
 }

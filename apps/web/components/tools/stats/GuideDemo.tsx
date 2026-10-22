@@ -1,6 +1,6 @@
 "use client";
 import { useT } from "@/lib/i18n";
-import { backToMine, demoOf, runGuideDemo, setPrediction, useGuide } from "@/lib/tools/stats/guide";
+import { backToMine, demoOf, runGuideDemo, runGuideDemoUnreversed, setPrediction, useGuide } from "@/lib/tools/stats/guide";
 import { Button } from "@/components/ui/button";
 import type { TgResult } from "@appuscholar/core";
 import { ResultChart } from "./ResultChart";
@@ -53,6 +53,18 @@ export function GuideDemo({ projectId, r }: { projectId: string; r: TgResult }) 
             <div dangerouslySetInnerHTML={{ __html: d.outcome.html }} />
             {d.outcome.chart && <ResultChart spec={d.outcome.chart} />}
           </div>
+          {d.rev && (
+            <div style={{ marginTop: 8 }}>
+              <div className="ap-row"><Button variant="ghost" size="sm" data-testid="stats-guide-demo-unrev" onClick={() => { runGuideDemoUnreversed(projectId, r, t); }}>{t("stats_guide_demo_unrev", { item: d.rev })}</Button></div>
+              {d.second && (
+                <div className="ap-box" data-testid="stats-guide-demo-second">
+                  <p style={{ margin: 0, fontWeight: 700 }}>{t("stats_guide_demo_second", { item: d.rev })}</p>
+                  <p data-testid="stats-guide-demo-second-sentence" style={{ margin: "4px 0 0" }}>{d.second.res.apa}</p>
+                  <div className="stats-res" dangerouslySetInnerHTML={{ __html: d.second.html }} />
+                </div>
+              )}
+            </div>
+          )}
           <p className="ap-small" data-testid="stats-guide-demo-apart">{t("stats_guide_demo_apart")}</p>
           <div className="ap-row" style={{ marginTop: 8 }}>
             <Button variant="ghost" size="sm" data-testid="stats-guide-demo-back" onClick={() => backToMine(projectId)}>{t("stats_guide_back_mine")}</Button>

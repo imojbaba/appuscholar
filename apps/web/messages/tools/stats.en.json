@@ -149,5 +149,8 @@
   "stats_guide_check_c1": "Category column 1",
   "stats_guide_check_c2": "Category column 2",
   "stats_guide_check_none": "None",
-  "stats_guide_check_btn": "Check"
+  "stats_guide_check_btn": "Check",
+  "stats_guide_check_not_proof": "This looked only at group size, skew, outliers and expected counts. It does not show that the test's assumptions are met.",
+  "stats_guide_demo_unrev": "Run it again without reversing {item}",
+  "stats_guide_demo_second": "Without reversing {item}"
 }
