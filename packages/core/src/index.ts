@@ -118,6 +118,18 @@ export type { Scale, ScaleShape, ScaleCoding, ScaleBand, SlScore, SlScoreData } 
 export { QUAL_PALETTE, qualNextColor, qualDescendantIds, qualDeleteCascade, qualPassageText, qualBuildMarkdown } from "./qual";
 export type { QualCode, QualPassage } from "./qual";
 export {
+  STY_FW, STY_VOCAB, STY_BANDS, STY_PASSAGES, STYLE_PROFILE_MAX, STYLE_MIN_WORDS, STYLE_LIVE_MIN_WORDS, STYLE_SAMPLES_MAX, styleWordCount, styleLiveWordCount, styleFeatures, styleAddSample, styleSamplesKeep,
+  styleStats, styleOutliers, styleMeasured, styleCompose, styleKnownWords, styleVocabNote, styleLevelRule, styleLiveCompare, styleLivePassage, styleLiveNext, styleVocabOrder, styleVocabScore,
+  styleProfileSave, styleVoiceOffNote, styleOwnText, stylePrompt, styleSampleCorpus, buildStyleAnalyzePrompt, buildStyleFilesPrompt, buildStyleTryPrompt,
+} from "./style";
+export type { StyleFeatures, StyleSample, StyleLevel, StyleBandKey, StyleLiveRow, StyleLiveResult } from "./style";
+export {
+  GR_NOUNS, GR_UK_US, GR_IZE, GR_RULES, GRAM_LOCAL_MIN_CHARS, GRAM_AI_MIN_CHARS, GRAM_AI_MAX_CHARS, GRAM_CHUNK_CHARS, GRAM_CHUNK_BREAK_AFTER, GRAM_LOCAL_MAX_CHARS, BANK_MAX, BANK_MEANING_MAX, BANK_CSV_NAME,
+  BANK_CSV_HEADERS, DICT_CACHE_MAX, DICT_API, dictUrl, dictNorm, dictCachePut, dictParse, buildDictPrompt, dictAiClean, bankAdd, bankRemove, bankCsv, gramSpellStd, gramSpellSet, gramSpellRules,
+  gramQuoteRanges, gramLocal, gramNorm, gramVerifyAI, gramStatAdd, gramTop, gramChunks, buildGrammarPrompt, gramAiMerge,
+} from "./words";
+export type { SpellStd, GramKind, GramHit, GramAiItem, GramAiPlaced, GramItem, GramRule, GramStats, BankEntry, DictDef, DictMeaning, DictEntry, DictNotFound, DictAi } from "./words";
+export {
   CL_STOP, CL_HOMO, CL_MIN_WORDS, clTok, clExcludeRanges, clHtmlToText, clK, clMin, clCompare, clReportText, clGather, clOtherDocs, clEnoughWords,
 } from "./closeness";
 export type { ClTok, ClSource, ClRun, ClResult, ClShelfPaper, ClDoc } from "./closeness";
