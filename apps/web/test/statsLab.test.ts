@@ -180,19 +180,28 @@ describe("the lab store (R1)", () => {
     const text = semicolonTable(20000, [7, 9000, 19999]);
     setText("p1", text);
     expect((await parse("p1"))!.cols).toHaveLength(1); // v1's reading: one column
-    let ticks = 0;
-    const timer = setInterval(() => { ticks++; }, 0);
+    // Deterministic: a budget of 0 ms makes every slice hand control back, whatever the machine's speed. A timer set before the read must run while the read is
+    // still going (a macrotask is a turn the page gets), and the read must have handed control back more than once.
+    let yields = 0;
+    let timerRan = false;
+    let ranBeforeFirstYield: boolean | null = null;
+    setTimeout(() => { timerRan = true; }, 0);
     const t0 = performance.now();
-    const p = splitOnSemicolons("p1");
+    const p = splitOnSemicolons("p1", {
+      budgetMs: 0,
+      yieldNow: () => { yields++; if (ranBeforeFirstYield === null) ranBeforeFirstYield = timerRan; return new Promise<void>((r) => setTimeout(r, 0)); }
+    });
     const d = (await p)!;
     const took = performance.now() - t0;
-    clearInterval(timer);
     expect(d.rows).toHaveLength(19997);
+    expect(d).toEqual(statsParseText(semicolonsToTabs(text))); // the same as core's whole-table call
     expect(d.cols.map((c) => [c.name, c.type])).toEqual([["id", "numeric"], ["score", "numeric"], ["answer", "categorical"]]);
     expect(getLab("p1").skipped).toEqual({ count: 3, lines: [8, 9001, 20000] });
     expect(getLab("p1").busy).toBe(false);
     expect(took).toBeLessThan(2000);
-    expect(ticks).toBeGreaterThan(0); // the page got control back while the table was being read
+    expect(yields).toBeGreaterThan(1); // the page got control back while the table was being read
+    expect(ranBeforeFirstYield).toBe(false); // the timer had not run when the first slice finished, and has run since: the loop turned in between
+    expect(timerRan).toBe(true);
   }, 30000);
 
   it("a newer parse wins: a slow one that is overtaken says nothing", async () => {
