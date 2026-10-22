@@ -38,11 +38,17 @@ export function useCheckActions(projectId: string) {
   useEffect(() => { mine.current = null; }, [runs.value]);
   const words = useCallback((key: string, vars?: Record<string, string | number>) => live.current.t(key, vars), []);
 
-  const [items, setItems] = useState<ResultItem[] | null>(null);
+  const [scanned, setItems] = useState<ResultItem[] | null>(null);
+  /** What the statuses were worked out against: the stored data sets and the table the lab held. When either has moved on the list is cleared, never left saying "Current". */
+  const [basis, setBasis] = useState<{ sets: unknown; registered: unknown } | null>(null);
   const [scanning, setScanning] = useState(false);
 
   /** Why results cannot be compared yet, or "" when they can (lists locked, still being read, unreadable, or the lab's table not yet recorded). */
   const waiting = blockedBy({ runs, sets }, unrecorded);
+  const moved = !!scanned && (!!waiting || !basis || basis.sets !== sets.value || basis.registered !== lab.registered);
+  const items = moved ? null : scanned;
+  /** A list was cleared because the data it was worked out against changed (not merely because a list is blocked, which has its own line). */
+  const changed = moved && !waiting;
   /** The documents of the project the last scan could not read (a locked vault, or one that does not decrypt): their results were not checked. */
   const [unread, setUnread] = useState(0);
 
@@ -57,9 +63,10 @@ export function useCheckActions(projectId: string) {
       setUnread(live.current.documents.filter((d) => !read.has(d.id)).length);
       const found = scanProject(docs, currentRuns(), live.current.sets.value ?? {});
       setItems(found);
+      setBasis({ sets: live.current.sets.value, registered: getLab(projectId).registered });
       return found;
     } finally { setScanning(false); }
-  }, [currentRuns]);
+  }, [currentRuns, projectId]);
 
   /**
    * v1 rtRerunOne (12313-12330) for the project. The document is read again first (the student may have typed since the scan), so the span replaced is the one that
@@ -109,6 +116,6 @@ export function useCheckActions(projectId: string) {
   }, [rerunOne]);
 
   // eslint-disable-next-line react-hooks/refs -- the ref only holds what was set a moment ago, for a render that has not happened yet
-  return { items, scanning, waiting, unread, scan, rerunOne, rerunAll, readOnly: runs.readOnly, runs: mine.current ?? runs.value };
+  return { items, changed, scanning, waiting, unread, scan, rerunOne, rerunAll, readOnly: runs.readOnly, runs: mine.current ?? runs.value };
 }
 export type CheckActions = ReturnType<typeof useCheckActions>;

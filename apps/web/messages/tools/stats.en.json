@@ -21,6 +21,7 @@
   "stats_check_all_summary": "Updated {done} of {n} out-of-date results. {skipped} skipped, {failed} could not be re-run.",
   "stats_check_rt_unrecorded": "The data loaded in the Data tab has not been recorded in your project yet, so results cannot be compared with it. Open the Data tab so it is recorded, then scan again.",
   "stats_check_rt_unread": "{n} of the documents in this project could not be read (the vault may be locked, or a document does not open), so their results were not checked.",
+  "stats_check_rt_changed": "The saved data sets or the loaded data have changed since you last scanned, so the statuses were cleared. Scan again.",
   "stats_data_title": "Your data",
   "stats_data_privacy": "Paste a table from Excel, SPSS, Google Sheets or a CSV file, with the column names in the first row. Your rows are not sent or saved anywhere: they stay in memory and are gone when you reload or close the page. Only the data set's name, its row count and a fingerprint of it are saved to your project.",
   "stats_data_name_label": "Name of this dataset",

@@ -208,7 +208,7 @@ describe("Rule 10: the wording is fixed and no AI path touches it", () => {
     expect(fs.length).toBeGreaterThanOrEqual(3);
     for (const f of fs) {
       const src = readFileSync(f, "utf8");
-      expect(src, f).not.toMatch(/useCallAI|lib\/ai|from\s+["'][^"']*\/ai\b|callAI|\bfetch\(|localStorage|sessionStorage|useProjectBlob/);
+      expect(src, f).not.toMatch(/useCallAI|lib\/ai|from\s+["'][^"']*\/ai\b|callAI|\bfetch\(|localStorage|sessionStorage|useProjectBlob|useStatsSets|StatsSets/);
     }
   });
   it("a whole visit (pick, copy, download, score) sends nothing to the AI and writes no blob", async () => {
@@ -222,9 +222,13 @@ describe("Rule 10: the wording is fixed and no AI path touches it", () => {
     await until(() => !!tid("scale-out"));
     expect(h.ai).not.toHaveBeenCalled();
     // The Scales tab writes nothing itself; the table given and the scored table are recorded in stats_sets by the stats Panel (StatsSetsHost, as v1 registered every parse), and nothing else is written.
-    const kinds = h.writes.map((x) => x.kind);
-    expect(kinds.length).toBeGreaterThan(0);
-    expect(kinds.every((k) => k === "stats_sets")).toBe(true);
+    expect(h.writes.length).toBeGreaterThan(0);
+    expect(h.writes.every((x) => x.kind === "stats_sets")).toBe(true);
+    // each record is a fingerprint, a time and a row count (never a row), and each distinct table is recorded once
+    const lists = h.writes.map((x) => JSON.parse(x.json) as Record<string, Record<string, unknown>>);
+    for (const l of lists) for (const v of Object.values(l)) expect(Object.keys(v).sort()).toEqual(["hash", "n", "ts"]);
+    const seen = lists.map((l) => Object.values(l).map((v) => String(v.hash)).sort().join("|"));
+    expect(new Set(seen).size).toBe(h.writes.length);
   });
 });
 

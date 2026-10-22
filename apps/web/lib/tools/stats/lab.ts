@@ -69,12 +69,18 @@ export type LabState = {
   lockedName: string | null;
   /** Run records of sentences already in the document, waiting for `stats_runs` to be known, unlocked and not broken (R16); the Data tab writes them from an effect. */
   pendingRuns: PendingRun[];
+  /**
+   * The student's answer to "replace the saved data sets that do not open?" (R16), kept here and not in a component because the Panel mounts again on every tab and a question
+   * asked on each visit would be asked five times: null = not asked, true = replace, false = keep. It is forgotten when the list can be read again (StatsSets.tsx); a new parse
+   * does not reset it (the student already said no to replacing that list).
+   */
+  setsDecided: boolean | null;
 };
 
 export const NO_GATE: GateState = { open: false, design: "", verdict: null, switched: false };
 const EMPTY: LabState = {
   text: "", name: "", data: null, skipped: NO_SKIPPED, scan: null, choices: {}, pdResult: null, semicolons: false, status: { kind: "none" }, registered: null, busy: false,
-  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null, pendingRuns: [], lockedName: null
+  regName: "", test: "desc", form: null, gate: NO_GATE, lastRun: null, pendingRuns: [], lockedName: null, setsDecided: null
 };
 
 const labs = new Map<string, LabState>();

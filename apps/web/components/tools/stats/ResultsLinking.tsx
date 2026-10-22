@@ -76,6 +76,7 @@ export function ResultsLinking({ projectId }: { projectId: string }) {
           {stale.length > 0 && <Button variant="ghost" size="sm" data-testid="check-rt-all" disabled={off} onClick={() => { void rerunAll(); }}>{t("rt_all")}</Button>}
         </div>
       )}
+      {actions.changed && <p className="ap-small" role="status" data-testid="check-rt-changed">{t("stats_check_rt_changed")}</p>}
       {actions.scanning && <p className="ap-small" role="status" data-testid="check-rt-reading">{t("stats_check_rt_reading")}</p>}
       {actions.readOnly && stale.length > 0 && <p className="ap-small" data-testid="check-rt-readonly">{t("stats_check_rt_readonly")}</p>}
       {items && counts && (

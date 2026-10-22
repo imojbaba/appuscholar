@@ -781,6 +781,79 @@ describe("Documents that could not be read", () => {
   });
 });
 
+describe("The R16 question about a broken list of data sets is asked once, not on every tab", () => {
+  const TABS = ["data", "power", "charts", "check", "scales"];
+  async function visit(tab: string) {
+    const root = await mount(tab);
+    await act(async () => { root.unmount(); });
+    roots.splice(roots.indexOf(root), 1);
+    document.body.innerHTML = "";
+  }
+  it("answer no: switching through every tab (the Panel mounts again each time, the lab is kept) asks once and writes nothing", async () => {
+    h.state = { stats_sets: { broken: true } };
+    h.confirm = vi.fn((_m?: unknown) => false);
+    patchLab("p1", { data: parse(APART), name: DS });
+    for (const tab of TABS) await visit(tab);
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    expect(h.writes.filter((x) => x.kind === "stats_sets")).toHaveLength(0);
+    expect(getLab("p1").registered).toBeNull();
+  });
+  it("answer yes: asked once, written once", async () => {
+    h.state = { stats_sets: { broken: true } };
+    h.confirm = vi.fn((_m?: unknown) => true);
+    patchLab("p1", { data: parse(APART), name: DS });
+    for (const tab of TABS) await visit(tab);
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    expect(h.writes.filter((x) => x.kind === "stats_sets")).toHaveLength(1);
+  });
+  it("once the list can be read again the question is forgotten, so a later broken list asks again", async () => {
+    h.state = { stats_sets: { broken: true } };
+    h.confirm = vi.fn((_m?: unknown) => false);
+    patchLab("p1", { data: parse(APART), name: DS });
+    await visit("power");
+    expect(h.confirm).toHaveBeenCalledTimes(1);
+    h.state = {};
+    await visit("power"); // readable now: the answer is dropped (and the table is recorded)
+    expect(h.writes.filter((x) => x.kind === "stats_sets")).toHaveLength(1);
+    patchLab("p1", { data: parse([9, 9, 9, 9, 10]) });
+    h.state = { stats_sets: { broken: true } };
+    await visit("power");
+    expect(h.confirm).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Old statuses are not left on screen", () => {
+  it("a change in the recorded data sets, or in the table the lab holds, clears the list and says to scan again", async () => {
+    const { old } = setUp();
+    h.docs = [doc("d1", "Methods", P(tag("r1", old)))];
+    await mount();
+    await click("check-rt-run");
+    expect(all("check-rt-card")).toHaveLength(1);
+    h.store.stats_sets = { ...(h.store.stats_sets as object), Other: { hash: "x", ts: 5, n: 1 } };
+    await rerender();
+    expect(all("check-rt-card")).toHaveLength(0);
+    expect(text("check-rt-changed")).toBe(E.stats_check_rt_changed);
+    await click("check-rt-run");
+    expect(all("check-rt-card")).toHaveLength(1);
+    expect(tid("check-rt-changed")).toBeNull();
+    // a different table in the lab, recorded, changes what a status means
+    const dC = parse([9, 9, 9, 9, 10]);
+    await act(async () => { patchLab("p1", { data: dC, name: "Study 2" }); });
+    expect(all("check-rt-card")).toHaveLength(0);
+    expect(text("check-rt-changed")).toBe(E.stats_check_rt_changed);
+  });
+  it("a locked vault clears it too", async () => {
+    const { old } = setUp();
+    h.docs = [doc("d1", "Methods", P(tag("r1", old)))];
+    await mount();
+    await click("check-rt-run");
+    h.state = { stats_sets: { locked: true } };
+    await rerender();
+    expect(all("check-rt-card")).toHaveLength(0);
+    expect(text("check-rt-waiting")).toBe(E.stats_check_rt_locked);
+  });
+});
+
 describe("Writing stats_runs", () => {
   const box: { acts: CheckActions | null } = { acts: null };
   function Harness() { const a = useCheckActions("p1"); useEffect(() => { box.acts = a; }); return null; }
@@ -792,8 +865,11 @@ describe("Writing stats_runs", () => {
     expect((tid("check-rt-rerun") as HTMLButtonElement).disabled).toBe(false);
     h.state = { stats_runs: { broken: true } };
     await rerender();
-    expect((tid("check-rt-rerun") as HTMLButtonElement).disabled).toBe(true);
-    expect(tid("check-rt-all")).toBeNull(); // the scan and re-run-all buttons give way to the line that says why
+    // the old statuses are not left on screen, and the buttons give way to the line that says why
+    expect(all("check-rt-card")).toHaveLength(0);
+    expect(tid("check-rt-rerun")).toBeNull();
+    expect(tid("check-rt-all")).toBeNull();
+    expect(text("check-rt-waiting")).toBe(E.stats_check_rt_unreadable);
     // the action refuses on its own, for each reason
     const el = document.createElement("div");
     document.body.appendChild(el);

@@ -25,7 +25,7 @@ export function useStatsSets(): SetsBlob {
 /**
  * Records the table the lab holds whenever it has not been recorded. Gates: not before the stored list is known (a failed read says loading:false, locked:false, error:true,
  * value:null, and the update would replay over whatever a retry finds), not while the vault is locked (it would raise the passphrase prompt from a mount), and a list that
- * does not open is replaced only after the student says yes, once for this visit (R16, kinds/stats.ts). Done here and not by the click that parsed the table: a big table is
+ * does not open is replaced only after the student says yes, once per project while it stays broken (the answer lives in the lab store, lab.ts `setsDecided`: the Panel mounts again on every tab; R16, kinds/stats.ts). Done here and not by the click that parsed the table: a big table is
  * read in slices and may finish after the student left the tab. (rtSetRecord keeps a set that is already recorded as it was.) The name is kept with the marker: a run is
  * recorded under the name its table was registered under (v1 `_statsDsName`).
  */
@@ -35,14 +35,21 @@ function useRegisterLab(projectId: string, sets: SetsBlob): void {
   const setsRef = useRef(sets);
   const tRef = useRef(t);
   useEffect(() => { setsRef.current = sets; tRef.current = t; });
-  const decided = useRef<{ pid: string; yes: boolean } | null>(null);
   const mayRegister = useCallback((): boolean => {
     if (!setsRef.current.broken) return true;
-    if (decided.current?.pid !== projectId) decided.current = { pid: projectId, yes: window.confirm(tRef.current("stats_data_sets_confirm")) };
-    return decided.current.yes;
+    const kept = getLab(projectId).setsDecided;
+    if (kept !== null) return kept;
+    const yes = window.confirm(tRef.current("stats_data_sets_confirm"));
+    patchLab(projectId, { setsDecided: yes });
+    return yes;
   }, [projectId]);
   const { data, registered } = useLab(projectId);
-  const { loading: setsLoading, locked: setsLocked, error: setsError } = sets;
+  const { loading: setsLoading, locked: setsLocked, error: setsError, broken: setsBroken } = sets;
+  // The list reads fine now: the old answer is no longer about anything, a later broken list asks again.
+  const decided = useLab(projectId).setsDecided;
+  useEffect(() => {
+    if (decided !== null && !setsBroken && !setsLoading && !setsLocked && !setsError) patchLab(projectId, { setsDecided: null });
+  }, [decided, setsBroken, setsLoading, setsLocked, setsError, projectId]);
   useEffect(() => {
     if (!data || registered === data || pid === null || setsLoading || setsLocked || setsError || !mayRegister()) return;
     const ds = getLab(projectId).lockedName ?? (getLab(projectId).name.trim() || UNTITLED);
