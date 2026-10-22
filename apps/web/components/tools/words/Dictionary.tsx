@@ -103,7 +103,7 @@ export function Dictionary({ data, callAI, field }: Props) {
       {cur && (
         <div className="mt-2 border-t border-line pt-1.5" data-testid="dict-actions">
           {ai?.kind === "ok" && (
-            <div data-testid="dict-ai-out" className="text-[13.5px]">
+            <div data-testid="dict-ai-out" className="ap-box text-[13.5px]" style={{ borderColor: "var(--gold)" }}>
               <div><b>{t("wd2_ai_simple")}</b> {ai.ai.simple}</div>
               {ai.ai.hindi && <div><b>{t("wd2_ai_hindi")}</b> {ai.ai.hindi}</div>}
               {ai.ai.example && <div><b>{t("wd2_ai_ex")}</b> {ai.ai.example}</div>}

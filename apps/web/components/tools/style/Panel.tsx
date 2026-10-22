@@ -176,7 +176,7 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
       <div className="field">
         <label htmlFor="styleProfile">{t("style_profile_label")}</label>
         {aiMade && <section className="ai-read" data-testid="style-ai-label"><p className="ai-read-label">{t("sty2_ai_profile")}</p></section>}
-        <textarea id="styleProfile" className="input" rows={6} maxLength={STYLE_PROFILE_MAX} value={shown} disabled={!data.ready || !data.hasProject}
+        <textarea id="styleProfile" className="input" rows={6} maxLength={STYLE_PROFILE_MAX} value={shown} disabled={!data.ready || !data.hasProject || busy}
           placeholder={t("style_profile_placeholder")} data-testid="style-profile" onChange={(e) => setDraft(e.target.value)} />
         <p className="text-xs text-muted-foreground" data-testid="style-chars">
           {t("sty2_chars", { n: shown.length, max: fmt(STYLE_PROFILE_MAX) })}{dirty ? " · " + t("sty2_unsaved") : ""}
@@ -193,7 +193,7 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
         <input ref={fileInput} type="file" multiple accept={FILE_ACCEPT} hidden data-testid="style-files" onChange={(e) => learnFiles(e.target.files)} />
         <p className="desc" style={{ margin: 0 }}>{t("sty2_files_hint", { files: STYLE_MAX_FILES, mb: STYLE_MAX_FILE_BYTES / (1024 * 1024), pages: STYLE_MAX_PDF_PAGES })}</p>
         <p className="desc" role="status" aria-live="polite" style={{ margin: 0 }} data-testid="style-status">{status}</p>
-        <Button variant="ghost" className="w-full" data-testid="style-save" disabled={!data.ready || !data.hasProject}
+        <Button variant="ghost" className="w-full" data-testid="style-save" disabled={!data.ready || !data.hasProject || busy}
           onClick={() => data.guard(["profile"], () => { data.saveProfile(shown); setDraft(null); toast(t("sty2_saved")); })}>{t("style_save_btn")}</Button>
       </div>
 

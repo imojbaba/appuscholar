@@ -203,6 +203,24 @@ describe("My style panel: declaration and learning", () => {
   });
 });
 
+describe("while a learn runs", () => {
+  it("the profile box and Save profile are disabled, and are enabled again afterwards", async () => {
+    mount();
+    click("style-decl");
+    h.docText = prose(100);
+    let release!: (v: string) => void;
+    h.ai.mockImplementationOnce(() => new Promise<string>((r) => { release = r; }));
+    click("style-learn");
+    await until(() => ($("style-learn") as HTMLButtonElement).disabled, "the learn has begun");
+    expect(($("style-profile") as HTMLTextAreaElement).disabled).toBe(true);
+    expect(($("style-save") as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => { release("- Plain tone."); });
+    await idle();
+    expect(($("style-profile") as HTMLTextAreaElement).disabled).toBe(false);
+    expect(($("style-save") as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
 describe("only the student's own words are learned from (D-S2-89)", () => {
   const html = (ai: string) => "<p>" + prose(100) + ' <span class="ai-ins" data-h="x">' + ai + "</span></p>";
   it("a word that only an AI span holds is in neither the prompt nor the sample's long words", async () => {

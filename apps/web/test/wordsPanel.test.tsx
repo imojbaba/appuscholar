@@ -236,6 +236,8 @@ describe("Dictionary: Hindi meaning (AI)", () => {
     expect(o).toEqual({ temp: 0.2, max: 600, noLang: true });
     const a = $("dict-ai-out")!;
     expect(a.textContent).toContain("Learning about a subject");
+    // AI output carries the gold edge (Global Constraints), as the grammar AI cards do.
+    expect(a.style.borderColor).toBe("var(--gold)");
     expect(a.textContent).toContain("अध्ययन");
     expect(a.textContent).toContain("The study took a year.");
     expect($("dict-ai-label")!.textContent).toBe(T("wd2_ai_label"));
