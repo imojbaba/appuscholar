@@ -1,0 +1,197 @@
+// Generated from v1 index.html build 2026.10.13a (e3ad7404efcc) by test/golden/harness. Do not edit; re-run: pnpm --filter @appuscholar/core golden:capture words --emit
+export const GR_NOUNS = {
+  "informations": "information",
+  "equipments": "equipment",
+  "advices": "advice",
+  "furnitures": "furniture",
+  "luggages": "luggage",
+  "baggages": "baggage",
+  "feedbacks": "feedback",
+  "knowledges": "knowledge",
+  "evidences": "evidence",
+  "staffs": "staff",
+  "stationeries": "stationery"
+} as const;
+export const GR_UK_US = [
+  [
+    "colour",
+    "color"
+  ],
+  [
+    "colours",
+    "colors"
+  ],
+  [
+    "coloured",
+    "colored"
+  ],
+  [
+    "behaviour",
+    "behavior"
+  ],
+  [
+    "behaviours",
+    "behaviors"
+  ],
+  [
+    "behavioural",
+    "behavioral"
+  ],
+  [
+    "favour",
+    "favor"
+  ],
+  [
+    "favourite",
+    "favorite"
+  ],
+  [
+    "honour",
+    "honor"
+  ],
+  [
+    "labour",
+    "labor"
+  ],
+  [
+    "neighbour",
+    "neighbor"
+  ],
+  [
+    "neighbourhood",
+    "neighborhood"
+  ],
+  [
+    "centre",
+    "center"
+  ],
+  [
+    "centres",
+    "centers"
+  ],
+  [
+    "centred",
+    "centered"
+  ],
+  [
+    "fibre",
+    "fiber"
+  ],
+  [
+    "theatre",
+    "theater"
+  ],
+  [
+    "defence",
+    "defense"
+  ],
+  [
+    "offence",
+    "offense"
+  ],
+  [
+    "analyse",
+    "analyze"
+  ],
+  [
+    "analysed",
+    "analyzed"
+  ],
+  [
+    "analysing",
+    "analyzing"
+  ],
+  [
+    "analyser",
+    "analyzer"
+  ],
+  [
+    "grey",
+    "gray"
+  ],
+  [
+    "ageing",
+    "aging"
+  ],
+  [
+    "modelling",
+    "modeling"
+  ],
+  [
+    "modelled",
+    "modeled"
+  ],
+  [
+    "labelled",
+    "labeled"
+  ],
+  [
+    "travelled",
+    "traveled"
+  ],
+  [
+    "counselling",
+    "counseling"
+  ],
+  [
+    "counsellor",
+    "counselor"
+  ],
+  [
+    "sceptic",
+    "skeptic"
+  ],
+  [
+    "sceptical",
+    "skeptical"
+  ],
+  [
+    "paediatric",
+    "pediatric"
+  ],
+  [
+    "enrolment",
+    "enrollment"
+  ],
+  [
+    "fulfil",
+    "fulfill"
+  ]
+] as const;
+export const GR_IZE = [
+  "organ",
+  "recogn",
+  "real",
+  "summar",
+  "emphas",
+  "critic",
+  "minim",
+  "maxim",
+  "util",
+  "categor",
+  "priorit",
+  "general",
+  "standard",
+  "author",
+  "apolog",
+  "special",
+  "normal",
+  "hypothes",
+  "conceptual",
+  "operational",
+  "random",
+  "character",
+  "memor",
+  "familiar",
+  "social",
+  "individual",
+  "visual",
+  "optim",
+  "mobil",
+  "central",
+  "final",
+  "initial",
+  "legal",
+  "harmon",
+  "synchron"
+] as const;

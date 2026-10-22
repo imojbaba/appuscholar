@@ -1,0 +1,210 @@
+{
+ "engine": "words",
+ "captured": "2026-10-21",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "tables": {
+  "GR_NOUNS": {
+   "informations": "information",
+   "equipments": "equipment",
+   "advices": "advice",
+   "furnitures": "furniture",
+   "luggages": "luggage",
+   "baggages": "baggage",
+   "feedbacks": "feedback",
+   "knowledges": "knowledge",
+   "evidences": "evidence",
+   "staffs": "staff",
+   "stationeries": "stationery"
+  },
+  "GR_UK_US": [
+   [
+    "colour",
+    "color"
+   ],
+   [
+    "colours",
+    "colors"
+   ],
+   [
+    "coloured",
+    "colored"
+   ],
+   [
+    "behaviour",
+    "behavior"
+   ],
+   [
+    "behaviours",
+    "behaviors"
+   ],
+   [
+    "behavioural",
+    "behavioral"
+   ],
+   [
+    "favour",
+    "favor"
+   ],
+   [
+    "favourite",
+    "favorite"
+   ],
+   [
+    "honour",
+    "honor"
+   ],
+   [
+    "labour",
+    "labor"
+   ],
+   [
+    "neighbour",
+    "neighbor"
+   ],
+   [
+    "neighbourhood",
+    "neighborhood"
+   ],
+   [
+    "centre",
+    "center"
+   ],
+   [
+    "centres",
+    "centers"
+   ],
+   [
+    "centred",
+    "centered"
+   ],
+   [
+    "fibre",
+    "fiber"
+   ],
+   [
+    "theatre",
+    "theater"
+   ],
+   [
+    "defence",
+    "defense"
+   ],
+   [
+    "offence",
+    "offense"
+   ],
+   [
+    "analyse",
+    "analyze"
+   ],
+   [
+    "analysed",
+    "analyzed"
+   ],
+   [
+    "analysing",
+    "analyzing"
+   ],
+   [
+    "analyser",
+    "analyzer"
+   ],
+   [
+    "grey",
+    "gray"
+   ],
+   [
+    "ageing",
+    "aging"
+   ],
+   [
+    "modelling",
+    "modeling"
+   ],
+   [
+    "modelled",
+    "modeled"
+   ],
+   [
+    "labelled",
+    "labeled"
+   ],
+   [
+    "travelled",
+    "traveled"
+   ],
+   [
+    "counselling",
+    "counseling"
+   ],
+   [
+    "counsellor",
+    "counselor"
+   ],
+   [
+    "sceptic",
+    "skeptic"
+   ],
+   [
+    "sceptical",
+    "skeptical"
+   ],
+   [
+    "paediatric",
+    "pediatric"
+   ],
+   [
+    "enrolment",
+    "enrollment"
+   ],
+   [
+    "fulfil",
+    "fulfill"
+   ]
+  ],
+  "GR_IZE": [
+   "organ",
+   "recogn",
+   "real",
+   "summar",
+   "emphas",
+   "critic",
+   "minim",
+   "maxim",
+   "util",
+   "categor",
+   "priorit",
+   "general",
+   "standard",
+   "author",
+   "apolog",
+   "special",
+   "normal",
+   "hypothes",
+   "conceptual",
+   "operational",
+   "random",
+   "character",
+   "memor",
+   "familiar",
+   "social",
+   "individual",
+   "visual",
+   "optim",
+   "mobil",
+   "central",
+   "final",
+   "initial",
+   "legal",
+   "harmon",
+   "synchron"
+  ]
+ }
+}
