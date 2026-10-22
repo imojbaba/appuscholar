@@ -157,6 +157,42 @@ describe("Overview (Task A1)", () => {
   });
 });
 
+describe("Overview: no count while the saved work is not known (final review A1)", () => {
+  const unmount = async () => { for (const r of roots.splice(0)) await act(async () => { r.unmount(); }); document.body.innerHTML = ""; };
+  it("hides 'N of 6 ready' while the six blobs are opening, locked, or could not be read, and shows it when they are known", async () => {
+    h.loading = true;
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-count"]')).toBeNull();
+    expect($('[data-testid="design-loading"]')).not.toBeNull();
+    await unmount();
+    h.loading = false; h.locked = true;
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-count"]')).toBeNull();
+    expect($('[data-testid="design-locked"]')).not.toBeNull();
+    await unmount();
+    h.locked = false; h.error = true;
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-count"]')).toBeNull();
+    expect($('[data-testid="design-read-failed"]')).not.toBeNull();
+    await unmount();
+    // A failed save with every value held keeps the count: what is shown is what was entered.
+    done(...KEYS);
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-count"]')!.textContent).toBe("6 of 6 ready");
+    await unmount();
+    h.error = false; h.store.clear();
+    await render(<Overview projectId="p1" />);
+    expect($('[data-testid="design-count"]')!.textContent).toBe("0 of 6 ready");
+  });
+});
+
+describe("the insert-failed line (final review A2)", () => {
+  it("says only that nothing was inserted (the frame opens the document itself), in English and in the Hindi draft", () => {
+    expect(E.design_insert_failed).toBe("Nothing was inserted.");
+    expect((designHi as Record<string, string>).design_insert_failed).toBe("कुछ नहीं जोड़ा गया।");
+  });
+});
+
 describe("Panel (Task A1)", () => {
   it("dispatches overview and pathway to their pages", async () => {
     await render(<Panel tab="overview" projectId="p1" />);

@@ -7,15 +7,17 @@
  *   2. Pathway: the four answers, Check pathway; core's lines, the warning and "Only your committee can say that, in writing."; "exempt" appears nowhere;
  *      the Overview reads "1 of 6 ready";
  *   3. Protocol: two sections, Save ("Saved"), the document opened beside, Generate protocol document (once, at the end; "Inserted");
- *   4. Ethics and consent: a document ticked, minors "yes" shows core's minors note, the ethics statement is inserted ("Inserted");
+ *   4. Ethics and consent: a document ticked, minors "yes" shows core's minors note, the ethics statement is in the document, at its end;
  *   5. Registration exports ctri-readiness-<date>.md; Investigator refuses an empty CV inline and downloads nothing, then exports pi-cv-<date>.txt;
  *      Budget shows the total and exports trial-budget-<date>.md;
  *   6. AI-use statement, with a log of three requests (GET /ai/log?projectId= answered in the browser): everything unticked is refused with core's
  *      "Tick them, or change the dates" sentence; ticked, the statement is core's; Insert puts it in the document;
  *   7. after a reload the Overview still reads the number of ready items (the six blobs were saved and read again);
  *   8. at 375 px the tab row can be scrolled to the last tab, and the Budget and AI-use tabs fit with no sideways scroll on the page.
- * Every text asserted is core's own output or the dictionary's (never typed again here). The AI is never called: this group has no AI step, and the
- * only network answer made up here is the AI-use log. Toasts: the only two this place makes are "Saved" and "Inserted" (checked at the end).
+ * The texts asserted are core's own output (regPathway, REG_WARN, ecMinorsNote, ethicsStatement, protocolMarkdown, ctriMarkdown, piCvText, budgetRows and
+ * budgetTotalText, budgetMarkdown, aiuBuildV2) or the dictionaries' (T). What is typed here is only: the two toast words "Saved" and "Inserted" (the
+ * only two toasts this place makes), the committee sentence of rule 9, and the file-name patterns. The AI is
+ * never called: this group has no AI step, and the only network answer made up here is the AI-use log.
  *
  * Run it with the recipe in e2e/support/pglite-postgres.mjs's header, for example on free ports:
  *   PGLITE_PORT=5451 node e2e/support/pglite-postgres.mjs &
@@ -26,8 +28,8 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Locator, type Page, type Route } from "@playwright/test";
 import {
-  BUDGET_DEFAULTS, CTRI_FIELDS, PROVIDERS, REG_WARN, aiuBuildV2, budgetMarkdown, ctriMarkdown, ecMinorsNote, ethicsStatement, protocolMarkdown, regPathway,
-  type AiuEntry
+  BUDGET_DEFAULTS, CTRI_FIELDS, PROVIDERS, REG_WARN, aiuBuildV2, budgetMarkdown, budgetRows, budgetTotalText, ctriMarkdown, ecMinorsNote, ethicsStatement, piCvText,
+  protocolMarkdown, regPathway, type AiuEntry
 } from "@appuscholar/core";
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
@@ -46,6 +48,15 @@ function T(key: string, vars?: Record<string, string | number>): string {
 
 const TABS = ["overview", "pathway", "protocol", "ethics", "registration", "investigator", "budget", "aiuse"] as const;
 type Tab = (typeof TABS)[number];
+/** "N of 6 ready", from the message the Overview uses. */
+const READY = (done: number) => T("design_home_ready", { done, total: 6 });
+/** core's statement for the log's two kinds of help, with `keep` of them ticked and the rest of the page as it starts (v1's defaults). */
+const statement = (keep: Record<string, 1>) => aiuBuildV2({
+  list: LOG, keep, other: "", fmt: "course",
+  ticks: { own: true, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS
+});
+/** The Budget rows once 1500 and 2500 are typed into the first two lines. */
+const BUDGET_AFTER = BUDGET_DEFAULTS.map((label, i) => ({ label, amount: i === 0 ? "1500" : i === 1 ? "2500" : "" }));
 const PHONE = { width: 375, height: 812 };
 /** The version of the log's answer: three requests on two days, two kinds of help (the rows the statement is built from). */
 const LOG: AiuEntry[] = [
@@ -141,11 +152,10 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await page.getByTestId("home-open-design").click();
     await expect(page).toHaveURL(new RegExp(`/p/${id}/design(/overview)?$`));
     await expect(page.getByTestId("place-name")).toHaveText(T("stage_name_design"));
-    expect(await tabsOf(page)).toEqual(TABS.map((tab) => ["place-tab-" + tab, T("tab_name_" + tab)]));
+    await expect.poll(() => tabsOf(page)).toEqual(TABS.map((tab) => ["place-tab-" + tab, T("tab_name_" + tab)]));
     await expect(page.getByTestId("place-tab-overview")).toHaveAttribute("aria-current", "true");
     await expect(page.getByTestId("panel-design-overview")).toBeVisible();
-    await expect(page.getByTestId("design-count")).toHaveText(T("design_home_ready", { done: 0, total: 6 }));
-    await expect(page.getByTestId("design-count")).toHaveText("0 of 6 ready");
+    await expect(page.getByTestId("design-count")).toHaveText(READY(0));
     // Six pieces and the AI-use statement, each a link to its own tab; the document is closed.
     await expect(page.getByTestId("design-rows").locator("a")).toHaveCount(7);
     await expect(page.getByTestId("frame-doc")).toBeHidden();
@@ -172,7 +182,7 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await neverExempt(page);
     await settled();
     await openTab(page, id, "overview");
-    await expect(page.getByTestId("design-count")).toHaveText("1 of 6 ready");
+    await expect(page.getByTestId("design-count")).toHaveText(READY(1));
     await neverExempt(page);
   });
 
@@ -221,7 +231,6 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     expect(await docText(page)).toContain(st.heading);
     // The statement is added after the protocol: it is the end of the document now.
     expect((await docText(page)).trimEnd().endsWith(st.text.trim())).toBe(true);
-    await expect.poll(toasts).toContain("Inserted");
     await neverExempt(page);
     await settled();
   });
@@ -245,7 +254,7 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await page.getByTestId("pi-item-0").check();
     const before = downloads.length;
     await page.getByTestId("pi-export").click();
-    await expect(page.getByTestId("pi-msg")).toHaveText("Fill in the CV field first");
+    await expect(page.getByTestId("pi-msg")).toHaveText((piCvText("") as { error: string }).error);
     await page.waitForTimeout(800);
     expect(downloads.length, "nothing was downloaded").toBe(before);
     const cv = "Dr A. Student, MA Psychology, first-year research methods tutor, GCP certificate 2026.";
@@ -258,14 +267,13 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
   });
   await test.step("5c. Budget: an amount shows in the total line; Export downloads trial-budget-<date>.md", async () => {
     await openTab(page, id, "budget");
-    await expect(page.getByTestId("budget-total")).toHaveText("Total: ₹0");
+    await expect(page.getByTestId("budget-total")).toHaveText(budgetTotalText(budgetRows(undefined)));
     await page.getByTestId("budget-amount-0").fill("1500");
     await page.getByTestId("budget-amount-1").fill("2500");
-    await expect(page.getByTestId("budget-total")).toHaveText("Total: ₹4,000");
+    await expect(page.getByTestId("budget-total")).toHaveText(budgetTotalText(BUDGET_AFTER));
     const f = await download(page.getByTestId("budget-export"));
     expect(f.name).toMatch(/^trial-budget-\d{4}-\d{2}-\d{2}\.md$/);
-    const rows = BUDGET_DEFAULTS.map((label, i) => ({ label, amount: i === 0 ? "1500" : i === 1 ? "2500" : "" }));
-    expect(f.body).toBe(budgetMarkdown(rows));
+    expect(f.body).toBe(budgetMarkdown(BUDGET_AFTER));
     expect(f.body.startsWith("# Trial budget estimate")).toBe(true);
     await expect(page.getByTestId("budget-msg")).toHaveText(T("design_exported", { name: f.name }));
     await settled();
@@ -285,8 +293,10 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await page.getByTestId("aiu-row-0").uncheck();
     await page.getByTestId("aiu-row-1").uncheck();
     await page.getByTestId("aiu-build").click();
-    await expect(page.getByTestId("aiu-refuse")).toContainText("Tick them, or change the dates");
-    await expect(page.getByTestId("aiu-refuse")).toContainText(`The log shows ${LOG.length} requests in these dates.`);
+    const refused = statement({});
+    if (!("refuse" in refused)) throw new Error("core built a statement with every kind unticked");
+    await expect(page.getByTestId("aiu-refuse")).toHaveText(refused.refuse);
+    expect(refused.refuse).toContain("Tick them, or change the dates");
     await expect(page.getByTestId("aiu-out")).toHaveValue("");
     await expect(page.getByTestId("aiu-insert")).toBeDisabled();
 
@@ -294,10 +304,7 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await page.getByTestId("aiu-row-0").check();
     await page.getByTestId("aiu-row-1").check();
     await page.getByTestId("aiu-build").click();
-    const want = aiuBuildV2({
-      list: LOG, keep: { rewrite: 1, feedback: 1 }, other: "", fmt: "course",
-      ticks: { own: true, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS
-    });
+    const want = statement({ rewrite: 1, feedback: 1 });
     if ("refuse" in want) throw new Error("core refused rows that are ticked: " + want.refuse);
     await expect(page.getByTestId("aiu-refuse")).toHaveText("");
     await expect(page.getByTestId("aiu-out")).toHaveValue(want.text);
@@ -308,6 +315,9 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await page.getByTestId("aiu-insert").click();
     const first = want.text.split("\n").filter((l) => l.trim() !== "").slice(0, 2);
     for (const line of first) await expect(page.locator(".ProseMirror")).toContainText(line);
+    // It went in at the end of the document, after the protocol and the ethics statement (whitespace as the editor shows it).
+    const flat = (x: string) => x.replace(/\s+/g, " ").trim();
+    await expect.poll(async () => flat(await docText(page)).endsWith(flat(want.text))).toBe(true);
     await expect(page.getByTestId("aiu-action-msg")).toHaveText("");
     await neverExempt(page);
   });
@@ -325,14 +335,14 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
   // ---- 7. Reload ----------------------------------------------------------------------------------------------------------------------------------
   await test.step("7. reload: the Overview still reads the six ready items", async () => {
     await openTab(page, id, "overview");
-    await expect(page.getByTestId("design-count")).toHaveText("6 of 6 ready");
+    await expect(page.getByTestId("design-count")).toHaveText(READY(6));
     await settled();
     await page.goto(`/p/${id}/design/overview`);
     await expect(page.getByTestId("panel-design-overview")).toBeVisible();
-    await expect(page.getByTestId("design-count")).toHaveText("6 of 6 ready");
+    await expect(page.getByTestId("design-count")).toHaveText(READY(6));
     // Each tab reads what was saved: the Budget total and the CTRI ticks.
     await openTab(page, id, "budget");
-    await expect(page.getByTestId("budget-total")).toHaveText("Total: ₹4,000");
+    await expect(page.getByTestId("budget-total")).toHaveText(budgetTotalText(BUDGET_AFTER));
     await openTab(page, id, "registration");
     await expect(page.getByTestId("ctri-field-0")).toBeChecked();
     await expect(page.getByTestId("ctri-field-1")).toBeChecked();

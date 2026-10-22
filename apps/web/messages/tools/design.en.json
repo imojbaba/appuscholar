@@ -34,7 +34,7 @@
   "design_save": "Save",
   "design_saved": "Saved",
   "design_inserted": "Inserted",
-  "design_insert_failed": "Nothing was inserted. Open your document and try again.",
+  "design_insert_failed": "Nothing was inserted.",
   "design_proto_intro": "Fill in each section in your own words. \"Generate\" assembles them into one structured document you can drop straight into your document editor, or hand to a funder or your EC.",
   "design_proto_bg": "Background and rationale",
   "design_proto_bg_ph": "What's known already, the gap, why this study is needed now",
