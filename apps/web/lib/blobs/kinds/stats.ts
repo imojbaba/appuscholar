@@ -23,8 +23,11 @@ const StatsSetsSchema = z.record(str, z.looseObject({ hash: str, ts: num, n: num
 const StatsRunsSchema = z.record(str, z.looseObject({
   test: str, label: str, ds: str, hash: str, fields: z.record(str, str), multi: z.record(str, z.array(str)), extra: z.record(str, str), sentence: str, ts: num
 }));
-/** Two v1 keys in one (ruling R8): the data set name last typed (appu_statsname, 9379, 12005) and the practice gate (appu_gen_first, 12574-12576). */
-const StatsPrefsSchema = z.looseObject({ statsname: str.optional(), gen_first: z.boolean().optional() });
+/**
+ * Two v1 keys in one (ruling R8): the data set name last typed (appu_statsname, 9379, 12005) and the practice gate (appu_gen_first, 12574-12576); and the next figure number of
+ * Chart Studio (v1 kept it in the dialog's #vzFig box, 1 after a reload, then counted the figures in the document; the number is kept here, Task B5).
+ */
+const StatsPrefsSchema = z.looseObject({ statsname: str.optional(), gen_first: z.boolean().optional(), figno: num.optional() });
 
 export type StatsSets = z.infer<typeof StatsSetsSchema>;
 export type StatsRuns = z.infer<typeof StatsRunsSchema>;
