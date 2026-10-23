@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
-import { aiuBuild, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shMatrixCsv, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
+import { AIU_V1_BRACKET, AIU_V2_BRACKET, aiuBuildV2, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shMatrixCsv, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
 import { acrossData } from "../lib/analyse/cards";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, exportProject, keptPapers, projectExportFileName, saveProjectExport, type ExportPart, type ProjectExportDeps } from "../lib/export/projectExport";
 import { VaultError } from "../lib/vault/crypto";
@@ -121,7 +121,7 @@ describe("exportProject", () => {
     expect(q).toContain("idea_topic_label\nSleep and exam anxiety");
     expect(q).toContain("idea_constraints_label\nNone");
     expect(q).toContain("exp_ai_read\nFeasible: High. A narrow sample.");
-    const statement = aiuBuild({ list: LOG, keep: { "Idea check": 1 }, other: "", fmt: "course", ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS });
+    const statement = aiuBuildV2({ list: LOG, keep: { "Idea check": 1 }, other: "", fmt: "course", ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS });
     expect(await text(z, "ai-use-statement.txt")).toBe("text" in statement ? statement.text : "");
     expect(await text(z, "writing-record.txt")).toContain("WRITING-PROCESS RECORD");
     expect(await text(z, "writing-record.txt")).toContain("Date: " + localDay(NOW));
@@ -189,6 +189,14 @@ describe("exportProject", () => {
       expect(got.filter((g) => g.includes(line))).toHaveLength(1);
     }
     expect(got.filter((g) => g.includes("Sleep fell by an hour") && g.includes("A survey of two classes."))).toHaveLength(0);
+  });
+
+  it("a project with no AI use gets v2's statement: the log is this project's in the account, not \"in this browser\" (D-S2-58)", async () => {
+    const z = await unzip(await exportProject(deps({ aiUseLog: async () => [] }), ["aiuse"], opts()));
+    const statement = await text(z, "ai-use-statement.txt");
+    expect(statement).toContain(AIU_V2_BRACKET);
+    expect(statement).not.toContain(AIU_V1_BRACKET);
+    expect(statement).not.toMatch(/in (this|my) browser/);
   });
 
   it("with no search this session the search list is the kept papers", async () => {
