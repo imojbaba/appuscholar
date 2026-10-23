@@ -184,6 +184,22 @@ describe("Slides: the preview", () => {
     expect(tid("slides-download")).toBeNull();
     expect(tid("slides-preview")).toBeNull();
   });
+  it("a new press takes the old preview and its download away while it reads, so the previous deck cannot be downloaded as if current (live walk, F4)", async () => {
+    setDoc("T", "<h1>Old</h1><p>a</p>");
+    await mount(); await generate();
+    expect(tid("slides-download")).not.toBeNull();
+    setDoc("T", "<h1>Old</h1><p>a</p><h1>New</h1><p>b</p>");
+    let release!: () => void;
+    h.hold = new Promise<void>((r) => { release = r; });
+    await act(async () => { tid("slides-generate")!.click(); });
+    expect(tid("slides-status")!.textContent).toBe("Reading your document…");
+    expect(tid("slides-preview")).toBeNull();
+    expect(tid("slides-download")).toBeNull();
+    await act(async () => { release(); await Promise.resolve(); });
+    await until(() => !!tid("slides-preview"));
+    expect($$('[data-testid="slides-card"]')).toHaveLength(2);
+    expect(tid("slides-download")).not.toBeNull();
+  });
   it("disables Generate and says it is reading while the documents are read, ignores a second press, then enables it again", async () => {
     setDoc("T", "<h1>One</h1><p>a</p>");
     let release!: () => void;
