@@ -4,7 +4,7 @@ import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { sanitizeHtml } from "@appuscholar/core";
+import { provHash, sanitizeHtml } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { decryptText, encryptText, generateDek, generateKeypair, generateVaultKey, sealVaultCheck, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 import en from "../messages/en.json";
@@ -266,6 +266,23 @@ describe("useDocAccess in the writing window", () => {
     expect(editor().getHTML()).toBe("<p>Their is a small dog. Their is.</p>");
   });
 
+  it("replaceInDocument with { ai: true } marks what went in as AI text (rule 7): one ai-ins span with its hash, Ctrl+Z undoes it", async () => {
+    plainApi('<p>Their is a <b>big</b> cat. <span class="ai-ins" data-h="h0">An AI line here.</span></p>');
+    await mount("p1");
+    await until(() => !!h.editor && !!h.access);
+    const before = editor().getHTML();
+    expect(await call(() => access().replaceInDocument("Their is", "There is", { ai: true }))).toBe(true);
+    expect(editor().getHTML()).toBe(`<p><span class="ai-ins" data-h="${provHash("There is")}">There is</span> a <strong>big</strong> cat. <span class="ai-ins" data-h="h0">An AI line here.</span></p>`);
+    act(() => { editor().commands.undo(); });
+    expect(editor().getHTML()).toBe(before);
+    // Over earlier AI text the fix is one AI span of its own, not one inside the other; the rest keeps its old hash, so it reads as edited.
+    expect(await call(() => access().replaceInDocument("An AI", "One AI", { ai: true }))).toBe(true);
+    expect(editor().getHTML()).toBe(`<p>Their is a <strong>big</strong> cat. <span class="ai-ins" data-h="${provHash("One AI")}">One AI</span><span class="ai-ins" data-h="h0"> line here.</span></p>`);
+    // Without it, as before: the student's own edit, unmarked.
+    expect(await call(() => access().replaceInDocument("Their is", "There is"))).toBe(true);
+    expect(editor().getHTML()).toMatch(/^<p>There is a <strong>big<\/strong> cat\. <span class="ai-ins"/);
+  });
+
   it("rewriteDocument of the open document sets the editor's content in one undoable step, for its autosave to store", async () => {
     const puts = plainApi();
     await mount("p1");
@@ -472,6 +489,16 @@ describe("useDocAccess in a place's own window (ruling R10)", () => {
     expect(requests().map((r) => [r.op, r.args])).toEqual([["insertBlock", ["<p>B.</p>", { at: "cursor" }]], ["insertText", ["t", { at: "end" }]]]);
   });
 
+  it("an AI replacement's mark travels with the request; a plain one sends no options", async () => {
+    popout();
+    plainApi();
+    await mount("p1");
+    await until(() => !!h.access);
+    act(() => { void access().replaceInDocument("a", "b", { ai: true }); void access().replaceInDocument("c", "d"); });
+    await until(() => requests().length === 2);
+    expect(requests().map((r) => [r.op, r.args])).toEqual([["replaceInDocument", ["a", "b", { ai: true }]], ["replaceInDocument", ["c", "d"]]]);
+  });
+
   it("once the writing window acks, the pop-out waits past 10 seconds for the real answer (ruling R28)", async () => {
     popout();
     plainApi();
@@ -567,11 +594,18 @@ describe("the writing window answers a pop-out (ruling R10)", () => {
     act(() => { ch.deliver({ type: "doc-request", id: "q3", projectId: "p9", op: "insertText", args: ["x"] }); });
     act(() => { ch.deliver({ type: "doc-request", id: "q4", projectId: "p1", op: "insertText", args: [42] }); });
     act(() => { ch.deliver({ type: "doc-request", id: "q5", projectId: "p1", op: "insertBlock", args: ["<p>x</p>", { at: "sideways" }] }); });
-    await until(() => sent("doc-reply").length === 4);
+    act(() => { ch.deliver({ type: "doc-request", id: "q6", projectId: "p1", op: "replaceInDocument", args: ["Mine", "Ours", { ai: "yes" }] }); });
+    await until(() => sent("doc-reply").length === 5);
+    expect(sent("doc-reply")[4]).toEqual({ type: "doc-reply", id: "q6", result: false });
     expect(sent("doc-reply")[2]).toEqual({ type: "doc-reply", id: "q4", result: false });
     expect(sent("doc-reply")[3]).toEqual({ type: "doc-reply", id: "q5", result: false });
     // Malformed requests are answered at once, never acked; another project's is neither.
     expect(sent("doc-ack").map((m) => m.id)).toEqual(["q1", "q2"]);
     expect(editor().getHTML()).toBe("<p>Mine.</p><p>From the window.</p>");
+    // An AI grammar fix from a pop-out goes in marked as AI text, as in the writing window.
+    act(() => { ch.deliver({ type: "doc-request", id: "q7", projectId: "p1", op: "replaceInDocument", args: ["Mine", "Ours", { ai: true }] }); });
+    await until(() => sent("doc-reply").length === 6);
+    expect(sent("doc-reply")[5]).toEqual({ type: "doc-reply", id: "q7", result: true });
+    expect(editor().getHTML()).toBe(`<p><span class="ai-ins" data-h="${provHash("Ours")}">Ours</span>.</p><p>From the window.</p>`);
   });
 });

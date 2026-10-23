@@ -58,13 +58,16 @@ export function Grammar({ data, callAI, field }: Props) {
     show(out);
     setStatus(out.error === null ? "" : out.error || t("wd2_ai_failed"));
   }
-  /** v1 gramApply: the verified original is replaced, and the card goes. The replacement is the student's own text edit; the words are not marked as AI text, as in v1. */
+  /**
+   * v1 gramApply: the verified original is replaced, and the card goes. A rule's fix is the student's own text edit; an AI card's fix goes in
+   * marked as AI text (rule 7), where v1 put it in as plain text (D-S2-93, OJ 23 Oct).
+   */
   const applying = useRef(false);
   async function apply(it: GramItem): Promise<void> {
     if (it.fix == null || applying.current) return;
     applying.current = true;
     try {
-      const ok = await docs.replaceInDocument(it.original, it.fix);
+      const ok = await docs.replaceInDocument(it.original, it.fix, it.src === "ai" ? { ai: true } : undefined);
       if (!alive.current) return;
       if (ok) { setItems((cur) => cur.filter((x) => x !== it)); setStatus(t("wd2_applied")); } else setStatus(t("wd2_apply_gone"));
     } finally { applying.current = false; }
