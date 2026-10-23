@@ -19,6 +19,7 @@
   "close_min_15": "15 words or more",
   "close_run": "Check my document",
   "close_running": "Checking…",
+  "close_doc_locked": "Your document is locked. Unlock your vault with the pill at the top, then check again.",
   "close_need_words": "Write at least about 30 words first",
   "close_need_source": "Tick a source, or paste a passage to compare with",
   "close_failed": "The check could not finish. Try again.",
