@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { BANK_MAX, bankCsv, docInnerText, gramChunks, type BankEntry } from "@appuscholar/core";
+import { BANK_MAX, bankCsv, docInnerText, gramChunks, provHash, type BankEntry } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 import wordsEn from "../messages/tools/words.en.json";
@@ -56,7 +56,7 @@ vi.mock("@/lib/editor/docAccess", async (orig) => {
     useDocAccess: () => ({
       text: () => (h.editor ? docInnerText(h.editor.getHTML()) : ""),
       selection: () => (h.editor ? ins.selectionText(h.editor) : ""),
-      replaceInDocument: async (o: string, r: string) => (h.editor ? real.replaceFirstIn(h.editor, o, r) : false)
+      replaceInDocument: async (o: string, r: string, opts?: { ai?: boolean }) => (h.editor ? real.replaceFirstIn(h.editor, o, r, opts) : false)
     })
   };
 });
@@ -421,6 +421,8 @@ describe("Grammar: Apply", () => {
     // only the first occurrence of the original: the second sentence and everything else is as it was
     expect(docText()).toBe("The information were useful. Later the informations were checked again.");
     expect($$("gram-card").length).toBe(1);
+    // A rule's fix is the student's own edit: no AI mark.
+    expect(ed.getHTML()).not.toContain("ai-ins");
     // through the editor's own history
     act(() => { ed.commands.undo(); });
     expect(ed.getHTML()).toBe(before);
@@ -492,7 +494,7 @@ describe("Grammar: check with AI", () => {
     expect(all).not.toContain("6 per cent");
     expect(all).not.toContain("5 percent");
   });
-  it("an AI card is applied as the student's own text edit, through the same Apply, and Ctrl+Z undoes it", async () => {
+  it("an AI card's fix goes in marked as AI text (rule 7; OJ, 23 Oct), through the same Apply, and Ctrl+Z undoes it", async () => {
     const ed = setDoc("<p>" + para + "</p>");
     const before = ed.getHTML();
     mount();
@@ -503,6 +505,7 @@ describe("Grammar: check with AI", () => {
     click(card.querySelector<HTMLElement>('[data-testid="gram-apply"]')!);
     await until(() => $("gram-status")!.textContent === T("wd2_applied"), "applied");
     expect(docText()).toContain("during the long meeting that followed");
+    expect(ed.getHTML()).toContain(`<span class="ai-ins" data-h="${provHash("during the long meeting")}">during the long meeting</span>`);
     act(() => { ed.commands.undo(); });
     expect(ed.getHTML()).toBe(before);
   });
