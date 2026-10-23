@@ -4,7 +4,7 @@ import type { Editor } from "@tiptap/core";
 import { closeHistory } from "@tiptap/pm/history";
 import type { Mark, Node as PMNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
-import { docInnerText, sanitizeHtml } from "@appuscholar/core";
+import { docInnerText, provHash, sanitizeHtml } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSuggestion } from "@/lib/ai/suggestion";
@@ -37,6 +37,9 @@ export type WrapResult = "done" | "no-selection" | "crosses-paragraph";
  * insertHTMLBlockIntoEditor, 4228-4244).
  */
 export type InsertAt = { at?: "end" | "cursor" };
+/** How replaceInDocument marks what it puts in: `ai` for AI text (an AI grammar fix), which the origin share and the AI-text highlight count as AI. */
+export type ReplaceOpts = { ai?: boolean };
+
 /** One document of the project as a tool reads it: its opened title, its HTML, and its text as v1's getEditorText reads it (docInnerText). */
 export type ProjectDocument = { id: string; title: string; text: string; html: string };
 
@@ -64,8 +67,11 @@ export type DocAccess = {
    * "crosses-paragraph" where v1's surroundContents throws (a selection across blocks, or partly over another tag).
    */
   wrapSelection(tag: ToolTag, attrs: Record<string, string>): Promise<WrapResult>;
-  /** v1's gramReplaceInEditor (6801-6817): the first occurrence of `original` in the document's text replaced, undoable with Ctrl+Z. */
-  replaceInDocument(original: string, replacement: string): Promise<boolean>;
+  /**
+   * v1's gramReplaceInEditor (6801-6817): the first occurrence of `original` in the document's text replaced, undoable with Ctrl+Z.
+   * `{ ai: true }`: the replacement is AI text and goes in marked as insertAiText marks it (rule 7).
+   */
+  replaceInDocument(original: string, replacement: string, opts?: ReplaceOpts): Promise<boolean>;
   /** Every live (not deleted) document of this project, decrypted, in creation order; the open one as the editor holds it now. [] when unreadable. */
   allDocuments(): Promise<ProjectDocument[]>;
   /**
@@ -147,8 +153,10 @@ function spanRuns(parent: PMNode, start: number): SpanRun[] {
  * v1 gramReplaceInEditor (6801-6817): the document's text nodes joined with nothing between them, no-break spaces read as spaces; the first
  * exact occurrence of `original` is replaced by `replacement` in one transaction of its own, so Ctrl+Z undoes it as v1's insertText command
  * did. The replacement takes the formatting where the match starts. False when the words are not there (or `original` is empty).
+ * With `ai` it is AI text: one `span.ai-ins` with the hash of the replacement, as insertAiText marks AI text (rule 7), in place of any AI mark
+ * it took from the words it replaced, so it is never an AI span inside another.
  */
-export function replaceFirstIn(editor: Editor, original: string, replacement: string): boolean {
+export function replaceFirstIn(editor: Editor, original: string, replacement: string, opts: ReplaceOpts = {}): boolean {
   if (!original) return false;
   const nodes: Array<{ pos: number; s: number }> = [];
   let full = "";
@@ -165,7 +173,18 @@ export function replaceFirstIn(editor: Editor, original: string, replacement: st
   };
   const from = locate(idx, false), to = locate(idx + original.length, true);
   if (from === null || to === null) return false;
-  editor.chain().focus().command(({ tr }) => { closeHistory(tr); tr.insertText(replacement, from, to); return true; }).run();
+  editor.chain().focus().command(({ tr }) => {
+    closeHistory(tr);
+    tr.insertText(replacement, from, to);
+    if (opts.ai && replacement) {
+      const span = editor.schema.marks.classSpan!, end = from + replacement.length;
+      const old: Mark[] = [];
+      tr.doc.nodesBetween(from, end, (n) => { for (const m of n.marks) if (m.type === span && m.attrs.class === "ai-ins") old.push(m); });
+      for (const m of old) tr.removeMark(from, end, m);
+      tr.addMark(from, end, span.create({ class: "ai-ins", data: { "data-h": provHash(replacement) }, title: null }));
+    }
+    return true;
+  }).run();
   return true;
 }
 
@@ -207,7 +226,7 @@ function writingAccess(editor: Editor | null, ref: { readonly current: Live }): 
       return true;
     }, false),
     wrapSelection: (tag, attrs) => onDoc<WrapResult>((e) => wrapSelectionIn(e, tag, attrs), "no-selection"),
-    replaceInDocument: (original, replacement) => onDoc((e) => replaceFirstIn(e, original, replacement), false),
+    replaceInDocument: (original, replacement, opts) => onDoc((e) => replaceFirstIn(e, original, replacement, opts), false),
     async allDocuments() {
       try {
         const { projectId, vault } = live();
@@ -292,7 +311,7 @@ function popoutAccess(projectId: string | null, t: (key: string) => string): Doc
     insertText: (s, opts) => ask("insertText", opts ? [s, opts] : [s], false, isBool),
     insertBlock: (html, opts) => ask("insertBlock", opts ? [html, opts] : [html], false, isBool),
     wrapSelection: (tag, attrs) => ask<WrapResult>("wrapSelection", [tag, attrs], "no-selection", isWrap),
-    replaceInDocument: (original, replacement) => ask("replaceInDocument", [original, replacement], false, isBool),
+    replaceInDocument: (original, replacement, opts) => ask("replaceInDocument", opts ? [original, replacement, opts] : [original, replacement], false, isBool),
     allDocuments: () => ask<ProjectDocument[]>("allDocuments", [], [], isDocs),
     rewriteDocument: (id, html) => ask("rewriteDocument", [id, html], false, isBool)
   };
@@ -329,6 +348,8 @@ const OPS: readonly DocOp[] = ["insertText", "insertBlock", "wrapSelection", "re
 const isStr = (v: unknown): v is string => typeof v === "string";
 const isAttrs = (v: unknown): v is Record<string, string> => !!v && typeof v === "object" && !Array.isArray(v) && Object.values(v).every(isStr);
 /** An insert's optional position (R29): absent, or an object whose `at`, when given, is "end" or "cursor". */
+const isReplaceOpts = (v: unknown): v is ReplaceOpts | undefined =>
+  v === undefined || (!!v && typeof v === "object" && !Array.isArray(v) && [undefined, true, false].includes((v as ReplaceOpts).ai));
 const isAt = (v: unknown): v is InsertAt | undefined => v === undefined || (!!v && typeof v === "object" && !Array.isArray(v) && [undefined, "end", "cursor"].includes((v as InsertAt).at));
 
 /**
@@ -340,7 +361,7 @@ function accept(a: DocAccess, op: DocOp, x: unknown[]): (() => Promise<unknown>)
     case "insertText": { const [s, at] = x; return isStr(s) && isAt(at) ? () => a.insertText(s, at) : null; }
     case "insertBlock": { const [html, at] = x; return isStr(html) && isAt(at) ? () => a.insertBlock(html, at) : null; }
     case "wrapSelection": { const [tag, attrs] = x; return (tag === "stat-tag" || tag === "qual-tag") && isAttrs(attrs) ? () => a.wrapSelection(tag, attrs) : null; }
-    case "replaceInDocument": { const [o, r] = x; return isStr(o) && isStr(r) ? () => a.replaceInDocument(o, r) : null; }
+    case "replaceInDocument": { const [o, r, opts] = x; return isStr(o) && isStr(r) && isReplaceOpts(opts) ? () => a.replaceInDocument(o, r, opts) : null; }
     case "allDocuments": return () => a.allDocuments();
     case "rewriteDocument": { const [id, html] = x; return isStr(id) && isStr(html) ? () => a.rewriteDocument(id, html) : null; }
   }

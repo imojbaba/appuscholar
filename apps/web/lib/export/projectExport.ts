@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import {
-  AP_STAGES, aiuBuild, apAcrossCols, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shColsOf,
+  AP_STAGES, aiuBuildV2, apAcrossCols, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shColsOf,
   type AiuEntry, type ApNoteLike, type CitationEntry, type CitationStyle, type RsPaper
 } from "@appuscholar/core";
 import { acrossData, cardLabels, stageName } from "@/lib/analyse/cards";
@@ -17,7 +17,7 @@ import { wordText } from "./word";
 /*
  * One export place (Task 12; register D-S2-42): the parts of one project the student ticks, in one zip. Every file is made by the builder the
  * tool's own download uses (v1's and wave A's): the documents as the account export writes them, exportLibrary and the reference list,
- * rsCsvText, the matrix CSV and the shelf backup, the cards CSV, the writing record and aiuBuild. Like the account export, everything is read
+ * rsCsvText, the matrix CSV and the shelf backup, the cards CSV, the writing record and aiuBuildV2. Like the account export, everything is read
  * as ciphertext and opened here, and the folder and file names come from opened titles ("untitled" when a title does not open).
  */
 
@@ -237,9 +237,9 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
     zip.file("writing-record.txt", buildRecordText(rec, APP_VERSION, localDay(o.now)));
   }
   if (step("aiuse")) {
-    // The statement as the AI-use panel opens it: every logged kind ticked, no other tools, no ticks, the course format.
+    // The statement as the AI-use panel opens it: every logged kind ticked, no other tools, no ticks, the course format, and v2's sentences on where the log is kept (D-S2-58).
     const list = await d.aiUseLog();
-    const built = aiuBuild({
+    const built = aiuBuildV2({
       list, keep: Object.fromEntries(list.map((e) => [e.k, 1 as const])), other: "", fmt: "course",
       ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS
     });
