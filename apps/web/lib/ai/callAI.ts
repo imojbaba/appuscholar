@@ -155,7 +155,12 @@ export async function callAI(prompt: string, opts: CallOpts, ctx: CallCtx): Prom
           const text = await request(p2, k2, prompt, opts, ctx, pdAccepted);
           ctx.onFailover(ctx.provider, p2);
           return text;
-        } catch { /* try the next one */ }
+        } catch (e2) {
+          // A quota answer is about the student, not the provider: say so instead of hiding it behind the first provider's error.
+          const e2c = toCallError(e2);
+          if (e2c.code === "quota") throw e2c;
+          /* otherwise try the next one */
+        }
       }
     }
     if (first.code === "rate-limit") ctx.onRateLimit?.();

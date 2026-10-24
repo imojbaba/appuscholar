@@ -202,13 +202,13 @@ export interface Store {
    * Counts one call against each rule, in order, in fixed windows aligned to the epoch (window start = floor(now / windowSec) * windowSec).
    * A rule that is full stops the call: it counts nothing from that rule or the later ones (earlier rules keep their count). Each rule's
    * check and count are one step, so parallel calls never get past the limit. `retryAfterSec` is the time to the end of the full rule's window,
-   * rounded up, at least 1. Also drops this user's counters from windows that began over 2 days ago.
+   * rounded up, at least 1. Also drops this user's counters from windows that began over 2 days ago; that cleanup assumes every rule's window is at most one day.
    */
   consumeQuota(userId: string, rules: QuotaRule[], now: Date): Promise<QuotaResult>;
 
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;
   /** Oldest first. */
   listAudit(userId: string): Promise<AuditEntry[]>;
-  /** Deletes credentials, ai_use_log, vault_keys, verification tokens for the user's email, projects (with their documents, revisions and blobs) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
+  /** Deletes credentials, ai_use_log, rate counters, vault_keys, verification tokens for the user's email, projects (with their documents, revisions and blobs) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
   eraseUser(userId: string): Promise<boolean>;
 }

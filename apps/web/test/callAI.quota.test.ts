@@ -86,4 +86,14 @@ describe("callAI quota answer", () => {
     expect(await callAI("hello", {}, ctx())).toBe("from groq");
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
+
+  it("a quota answer from the fallback provider is what the student sees", async () => {
+    keyStore.setSession("gemini", "AIza1");
+    keyStore.setSession("groq", "gsk_1");
+    keyStore.setSession("openrouter", "sk-or-1");
+    mockFetch.mockRejectedValueOnce(new ApiError(429, "rate-limit")).mockRejectedValueOnce(new ApiError(429, "quota", "hour:1500"));
+    const err = await callAI("hello", {}, ctx()).catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: "quota", message: "You have used your AI calls for this hour. Try again in 25 minutes." });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
 });
