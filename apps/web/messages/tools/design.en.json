@@ -153,5 +153,12 @@
   "design_aiu_style_wait": "Your writing-style record cannot be read yet, so Appuscholar cannot tell whether it belongs in the statement. Unlock your vault or reload the page, then build.",
   "design_aiu_style_broken": "Your writing-style record cannot be opened on this device, so the statement leaves out the sentence about it.",
   "design_aiu_foot": "The log covers Appuscholar only. If you used AI elsewhere, or had the log off, add it in the box above. Your institution or the journal decides what you must disclose. AI cannot be listed as an author.",
-  "design_aiu_scope": "This statement covers this project's log only. AI you used with no project open is not in it. Add anything else under \"AI tools you used outside Appuscholar\" below."
+  "design_aiu_scope": "This statement covers this project's log only. AI you used with no project open is not in it. Add anything else under \"AI tools you used outside Appuscholar\" below.",
+  "design_aiu_erase": "Erase the log",
+  "design_aiu_erase_title": "Erase the AI-use log for all your projects?",
+  "design_aiu_erase_desc": "This erases the AI-use log for all your projects in this account, not only this one. It cannot be undone. A statement you have already built stays in its box.",
+  "design_aiu_erase_yes": "Erase the whole log",
+  "design_aiu_erase_working": "Erasing…",
+  "design_aiu_erased": "The AI-use log is erased for all your projects.",
+  "design_aiu_erase_failed": "The AI-use log could not be erased just now. Nothing was changed."
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardText, DownloadSimple, FilePlus } from "@phosphor-icons/react";
+import { ClipboardText, DownloadSimple, FilePlus, Trash } from "@phosphor-icons/react";
 import { PROVIDERS, aiuBuildV2, aiuInRange, type AiuEntry, type AiuStyle, type AiuTicks } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -9,6 +9,7 @@ import { downloadBlob } from "@/lib/export/download";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useInsertAtEnd } from "@/lib/tools/design/insertEnd";
 import { notesOf, unread } from "@/lib/tools/design/useDesign";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
 /** The file the statement downloads as (v1 aiuDownload 5560). */
@@ -36,7 +37,9 @@ const isEntry = (x: unknown): x is AiuEntry => {
  * format go to core's aiuBuildV2 (aiuBuild with the two sentences that said where the log is kept made true, D-S2-58) with the style declaration (the style blobs, absent until My writing style is used) and the providers table; the text it
  * returns, or its refusal, is shown as it is. The panel never offers a "no AI" statement of its own: with rows in range and nothing ticked and no other
  * tools, core refuses (rule 3). "Keep the log" is the existing setting `aiLogOff`, inverted. The statement is an editable box with Copy, Insert (plain
- * text, at the end of the open document) and Download.
+ * text, at the end of the open document) and Download. "Erase the log" (v1 aiuClear 5487-5491) asks first, then sends DELETE /ai/log, which wipes the
+ * whole account's log, so the confirm says "all your projects" (v1 said "on this computer"); the tab then shows the empty log, the statement already
+ * built stays in its box, and a failure is a line beside the button with nothing changed (C10, D-C-90 to D-C-94).
  */
 export function AiUse({ projectId }: { projectId: string }) {
   const t = useT();
@@ -57,6 +60,9 @@ export function AiUse({ projectId }: { projectId: string }) {
     );
     return () => { live = false; };
   }, [id, reqKey]);
+  const [eraseOpen, setEraseOpen] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [eraseMsg, setEraseMsg] = useState("");
   const answer = res !== null && res.key === reqKey ? res : null;
   const log: Log = id === null || (answer !== null && answer.rows === null) ? { state: "error" } : answer === null ? { state: "loading" } : { state: "ready", rows: answer.rows! };
   const rowsOfLog = log.state === "ready" ? log.rows : null;
@@ -128,6 +134,26 @@ export function AiUse({ projectId }: { projectId: string }) {
     setMsg(t("design_exported", { name: FILE }));
   };
 
+  const erase = async () => {
+    if (erasing) return;
+    setErasing(true);
+    setEraseMsg("");
+    try {
+      await apiFetch<unknown>("/ai/log", { method: "DELETE" });
+    } catch {
+      setErasing(false);
+      setEraseOpen(false);
+      setEraseMsg(t("design_aiu_erase_failed"));
+      return;
+    }
+    // The whole account's log is gone: draw this project's empty log (and the dates and kinds from it), leave the statement box as it is.
+    if (reqKey !== null) setRes({ key: reqKey, rows: [] });
+    dates(null, null);
+    setErasing(false);
+    setEraseOpen(false);
+    setEraseMsg(t("design_aiu_erased"));
+  };
+
   const ready = log.state === "ready" && !styleWait;
   const logOff = settings.aiLogOff === true;
   const field = "flex flex-col gap-1 text-[13.5px] text-ink";
@@ -165,6 +191,24 @@ export function AiUse({ projectId }: { projectId: string }) {
             </p>
           )}
           {log.state === "ready" && all.length > 0 && logOff && <p className="desc" style={{ margin: 0 }} data-testid="aiu-off">{t("design_aiu_off")}</p>}
+          <div className="place-row" style={{ marginBottom: 0 }}>
+            <Button variant="ghost" data-testid="aiu-erase" disabled={log.state === "loading" || erasing} onClick={() => { setEraseMsg(""); setEraseOpen(true); }}><Trash aria-hidden="true" />{t("design_aiu_erase")}</Button>
+          </div>
+          <div role="status" data-testid="aiu-erase-msg" className={eraseMsg ? "text-[13px] leading-[18px] text-ink" : ""}>{eraseMsg}</div>
+          <AlertDialog open={eraseOpen} onOpenChange={(o) => { if (!erasing) setEraseOpen(o); }}>
+            <AlertDialogContent data-testid="aiu-erase-confirm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("design_aiu_erase_title")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("design_aiu_erase_desc")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={erasing} data-testid="aiu-erase-cancel">{t("sap_cancel_btn")}</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" disabled={erasing} data-testid="aiu-erase-yes" onClick={(ev) => { ev.preventDefault(); void erase(); }}>
+                  {erasing ? t("design_aiu_erase_working") : t("design_aiu_erase_yes")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </section>
 
         <section className="mt-3 flex flex-col gap-2" aria-labelledby="aiu-dates-h" data-testid="aiu-dates">
