@@ -234,3 +234,14 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: `select "My first document" [doc-select]` (the title the app gives a project's first document, an English literal in `lib/frame/firstDocument.ts`) and `select "Paragraph style" [fmt-paragraph]`: "Paragraph B I U ≡• ↶ ↷ 🖼 Image ⊞ Table 🔍 Find 🎤 Dictate English (India)" (the toolbar's labels, written into `components/document/FormatBar.tsx`). The rule reads the toolbar as one run of English; the Hindi wording of the Budget page that O9 also names is for Dr. Sharma and is not what this entry is about.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: no English on a Hindi screen". Re-run as Q15.
 - Status: known
+
+### Q96: While the vault is locked, an amount typed into Budget is dropped
+
+- Case: S3-05 (Budget, vault locked; the check "an amount typed into Budget while the vault is locked is kept (it stays in the box), or the box cannot be typed in")
+- Date: 2026-10-24
+- Commit: 07acf1e5fb403f7af4dd0996369a65d44cf96dc1
+- Kind: Unexpected (data)
+- Expected: with the vault locked, an amount typed into Budget is kept (it stays in the box and is saved once the vault is unlocked), or the box cannot be typed in; nothing a student types is lost without a sign (source: spec section 6, S3: "each tab says locked, nothing typed is lost"; the same rule as O7, "kept, or the boxes cannot be typed in yet")
+- Happened: the seven amount boxes are open (not read-only, not disabled) under the locked note. Typing "800" into line 4 leaves the box empty (`Expected: "800"`, `Received: ""`) and the total at `Total: ₹0`: nothing is kept, nothing is saved after the unlock, and nothing at the box says the key was refused. Cause: `Budget.tsx` (the amount `<input type="number" value={r.amount} onChange=...>`, line 55) calls `budget.save(...)` on every key, and `useDesign.save` returns false without setting anything while the blob is unread or locked (`lib/tools/design/useDesign.ts` line 57: `if (id === null || waiting || readOnly) return false`; `waiting` is `unread(blob)`, line 53, true for `locked && value === null`, line 30); the controlled input then goes back to the stored (empty) value. The same line drops the keystrokes of O7 (typed while the tab opens, 1 to 2 s); this entry is the locked state, which does not pass by itself, and a fix for the opening window (holding the keys until the read is done) would not necessarily cover it, so it has its own id.
+- Evidence: the run of 2026-10-24 on 07acf1e: case S3-05, the failed check "an amount typed into Budget while the vault is locked is kept (it stays in the box), or the box cannot be typed in". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S3-05"`.
+- Status: known

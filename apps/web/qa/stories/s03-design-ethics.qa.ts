@@ -12,7 +12,7 @@ import {
   OFFLINE_CONSOLE, apiGet, cancelPassphraseAsks, catchDownload, docText, goOffline, goOnline, lockByReload, newStudent, providerCalls, recordToasts, setLang, slowApi, toPlace, unlock,
   type Downloaded, type Student
 } from "../support/student";
-import { expect, test } from "../support/test";
+import { expect, notChecked, test } from "../support/test";
 
 /**
  * S3, "I plan my study and get the ethics paperwork ready" (docs/walkthroughs/tools-a.md rows 1 to 12; apps/web/e2e/tools-a.spec.ts walks rows 1 to 8, and the live record of the sheet is
@@ -76,6 +76,9 @@ const FILL = {
 };
 /** The Budget rows once 1500 and 2500 are typed into the first two lines. */
 const BUDGET_AFTER = BUDGET_DEFAULTS.map((label, i) => ({ label, amount: FILL.amounts[i] ?? "" }));
+/** What S3-05 types into Budget while the vault is locked: a line the filled paperwork left empty, and an amount that is not one of the saved ones. */
+const LOCKED_LINE = 3;
+const LOCKED_AMOUNT = "800";
 
 const two = (n: number) => String(n).padStart(2, "0");
 /** The local calendar day, YYYY-MM-DD (the app names its files by it: lib/vault/export.ts localDay). */
@@ -95,10 +98,29 @@ async function look(page: Page, qa: Qa, name: string, o?: Parameters<Qa["checkpo
   await qa.checkpoint(name, o);
 }
 
-/** The contrast ratio (WCAG) of each matched element's colour against the first background behind it that is not transparent. */
-function contrastsOf(locator: ReturnType<Page["locator"]>): Promise<number[]> {
-  return locator.evaluateAll((els) => {
-    const rgb = (c: string) => (/rgba?\((\d+), (\d+), (\d+)/.exec(c) ?? []).slice(1, 4).map(Number);
+/**
+ * The contrast ratio (WCAG) of each matched element's colour against the first background behind it that is not transparent. Colours are read in the page through a 1 x 1 canvas, which takes
+ * any CSS colour (rgb(), oklch(), color(), color-mix() ... Tailwind v4 colours can come back from getComputedStyle in any of them) and gives it back as sRGB; a colour the canvas will not take,
+ * or a ratio that is not a number, ends the check NOT CHECKED naming the colour: never a pass on NaN. Alpha is not blended (a background that is not fully transparent counts as solid).
+ */
+async function contrastsOf(locator: ReturnType<Page["locator"]>): Promise<number[]> {
+  const rows = await locator.evaluateAll((els) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    /** [r, g, b, alpha] of a CSS colour as sRGB, or null when the canvas does not take it (an unknown colour leaves the fill style as it was: two different starts tell). */
+    const read = (css: string): number[] | null => {
+      ctx.fillStyle = "#000000";
+      ctx.fillStyle = css;
+      const a = ctx.fillStyle;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = css;
+      if (a !== ctx.fillStyle) return null;
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillRect(0, 0, 1, 1);
+      return Array.from(ctx.getImageData(0, 0, 1, 1).data);
+    };
     const lum = (v: number[]) => {
       const f = (c: number) => {
         const x = c / 255;
@@ -106,20 +128,31 @@ function contrastsOf(locator: ReturnType<Page["locator"]>): Promise<number[]> {
       };
       return 0.2126 * f(v[0]!) + 0.7152 * f(v[1]!) + 0.0722 * f(v[2]!);
     };
-    return els.map((el) => {
-      let bg = "rgb(255, 255, 255)";
+    return els.map((el): { ratio: number } | { unreadable: string } => {
+      const ink = getComputedStyle(el).color;
+      const l1 = read(ink);
+      if (!l1) return { unreadable: ink };
+      let behind = [255, 255, 255, 255];
       for (let p: Element | null = el; p; p = p.parentElement) {
-        const b = getComputedStyle(p).backgroundColor;
-        if (!/^rgba\(\d+, \d+, \d+, 0\)$/.test(b) && b !== "transparent") {
-          bg = b;
+        const css = getComputedStyle(p).backgroundColor;
+        const c = read(css);
+        if (!c) return { unreadable: css };
+        if (c[3]! > 0) {
+          behind = c;
           break;
         }
       }
-      const l1 = lum(rgb(getComputedStyle(el).color));
-      const l2 = lum(rgb(bg));
-      return Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 100) / 100;
+      const a = lum(l1);
+      const b = lum(behind);
+      return { ratio: Math.round(((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)) * 100) / 100 };
     });
   });
+  const bad = rows.find((r): r is { unreadable: string } => "unreadable" in r);
+  if (bad) notChecked(`the page's colour ${JSON.stringify(bad.unreadable)} could not be read as an sRGB colour, so the contrast was not measured`);
+  const ratios = rows.map((r) => ("ratio" in r ? r.ratio : NaN));
+  const nan = ratios.findIndex((r) => !Number.isFinite(r));
+  if (nan >= 0) notChecked(`the contrast of element ${nan + 1} of ${ratios.length} is not a number, so it was not measured`);
+  return ratios;
 }
 
 // ---- Helpers ------------------------------------------------------------------------------------------------------------------------------------------
@@ -301,8 +334,11 @@ async function fillAllTabs(page: Page, id: string, saves: Saves): Promise<void> 
   await saves.settled();
 }
 
-/** One tab shows what `fillAllTabs` (or the plain run) typed into it. `logged`: how many requests the AI-use log holds. */
-async function expectTabFilled(page: Page, id: string, tab: Tab, logged: number): Promise<void> {
+/**
+ * One tab shows what `fillAllTabs` (or the plain run) typed into it. `logged`: how many requests the AI-use log holds. `moreAmounts`: Budget amounts typed besides FILL's (S3-05's, typed while
+ * the vault was locked and kept), which the tab then shows too.
+ */
+async function expectTabFilled(page: Page, id: string, tab: Tab, logged: number, moreAmounts: Record<number, string> = {}): Promise<void> {
   await openTab(page, id, tab);
   switch (tab) {
     case "overview":
@@ -337,10 +373,12 @@ async function expectTabFilled(page: Page, id: string, tab: Tab, logged: number)
       await expect(page.getByTestId("pi-item-0")).toBeChecked();
       await expect(page.getByTestId("pi-cv")).toHaveValue(FILL.cv);
       break;
-    case "budget":
-      for (const [i, amount] of Object.entries(FILL.amounts)) await expect(page.getByTestId("budget-amount-" + i)).toHaveValue(amount);
-      await expect(page.getByTestId("budget-total")).toHaveText(budgetTotalText(BUDGET_AFTER));
+    case "budget": {
+      const amounts = { ...FILL.amounts, ...moreAmounts };
+      for (const [i, amount] of Object.entries(amounts)) await expect(page.getByTestId("budget-amount-" + i)).toHaveValue(amount);
+      await expect(page.getByTestId("budget-total")).toHaveText(budgetTotalText(BUDGET_DEFAULTS.map((label, i) => ({ label, amount: amounts[i] ?? "" }))));
       break;
+    }
     case "aiuse":
       await expect(page.getByTestId("aiu-count")).toHaveText(T("design_aiu_count", { all: logged, n: logged }));
       break;
@@ -413,7 +451,8 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
     }, { source: `${SHEET} row 1; ${E2E} step 1` });
     await qa.check("visual", "the empty circles beside the six pieces can be seen: their colour against the page behind them is at least 3:1", async () => {
       const ratios = await contrastsOf(page.getByTestId("design-rows").locator("li svg"));
-      expect(ratios, "one circle for each of the six pieces").toHaveLength(6);
+      // A wrong count is a fault of the test, not of the product: NOT CHECKED, never the known fault.
+      if (ratios.length !== 6) notChecked(`found ${ratios.length} circles beside the pieces, not the six this check measures, so their contrast was not measured`);
       expect(ratios.filter((r) => r < 3), `contrast of the circles (WCAG 1.4.11 asks 3:1): ${ratios.join(", ")}`).toEqual([]);
     }, { source: `${SHEET} row 1 ("each with an empty circle"); WCAG 1.4.11 (non-text contrast); components/tools/design/Overview.tsx (class text-muted)`, known: "Q11" });
     await look(page, qa, "Overview, nothing ready yet");
@@ -512,13 +551,15 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
       await expect(page.getByTestId("ec-minors-note")).toContainText(/parent or guardian/);
       await expect(page.getByTestId("ec-minors-note")).toContainText(/own agreement/);
     }, { source: `${SHEET} row 4; ${E2E} step 4` });
+    // The protocol's "Inserted" may still be on screen, and the recorder drops a toast equal to the last one it holds: the previous toast goes first, so the one the check sees is this click's.
+    await toastGoes();
     await page.getByTestId("ec-statement").click();
     const st = ethicsStatement({ status: FILL.ec.status, committee: FILL.ec.committee, apprNo: "", apprDate: "", consentMode: "", minors: FILL.ec.minors });
     if ("error" in st) throw new Error("core refused a statement with a status: " + st.error);
     await qa.check("data", "an \"Inserted\" message appears, \"Check every sentence is true.\" shows under the button, and the document ends with \"Ethical considerations\" and the statement, with \"[number]\", \"[date]\" and the under-18 bracket left for me", async () => {
+      await expect(page.getByTestId("toast"), "the toast of this insert").toContainText(T("design_inserted"));
       await expect(page.getByTestId("ec-statement-reminder")).toHaveText(T("design_ec_check_true"));
       expect(T("design_ec_check_true")).toBe("Check every sentence is true.");
-      await expect.poll(toasts).toContain(T("design_inserted"));
       await expectDocEnds(page, st.heading + "\n" + st.text, "the ethics statement");
       expect(st.heading).toBe("Ethical considerations");
       expect(st.text).toContain(`The study was approved by ${FILL.ec.committee}`);
@@ -546,11 +587,12 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
     }, { source: `${SHEET} row 4b; ${E2E} (core's refusal)` });
     await page.getByTestId("ec-title").fill(FILL.ec.title);
     await page.getByTestId("ec-pi").fill(FILL.ec.pi);
+    await toastGoes(); // the ethics statement's "Inserted" has gone, so the toast the check sees is the consent form's
     await page.getByTestId("consent-generate").click();
     const form = consentMarkdown({ title: FILL.ec.title, pi: FILL.ec.pi, what: "", risks: "", benefits: "", contact: "" });
     if (typeof form !== "string") throw new Error("core refused a consent form with a title and an investigator: " + form.error);
     await qa.check("data", "with both filled an \"Inserted\" message appears and the document ends with the consent form: its heading, my title and investigator, the sections, \"[describe]\" where I left one empty, and two signature lines last", async () => {
-      await expect.poll(toasts).toContain(T("design_inserted"));
+      await expect(page.getByTestId("toast"), "the toast of this insert").toContainText(T("design_inserted"));
       await expectDocEnds(page, form, "the consent form");
       const text = await docText(page);
       const tail = text.slice(text.lastIndexOf("# Informed Consent Form"));
@@ -686,8 +728,9 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
       await expect(page.getByTestId("aiu-row-0")).toBeChecked();
     }, { source: `${SHEET} row 6b` });
     await qa.check("visual", "the count beside the kind of help can be read: its colour against the page behind it is at least 4.5:1", async () => {
-      const ratios = await contrastsOf(page.getByTestId("aiu-rows").locator("label span .text-muted"));
-      expect(ratios, "one count for the one kind of help").toHaveLength(1);
+      // The count is found by what it is (the innermost element in the row's label whose text is "(<n>)"), not by the class the fault is in: a fix that renames the class still leaves it found.
+      const ratios = await contrastsOf(page.getByTestId("aiu-rows").locator("label *:not(:has(*))").filter({ hasText: /^\(\d+\)$/ }));
+      if (ratios.length !== 1) notChecked(`found ${ratios.length} counts like "(1)" in the list of kinds of help, not the one this check measures, so its contrast was not measured`);
       expect(ratios.filter((r) => r < 4.5), `contrast of the count (WCAG 1.4.3 asks 4.5:1): ${ratios.join(", ")}`).toEqual([]);
     }, { source: "WCAG 1.4.3 (text contrast); spec section 8, the axe scan (color-contrast); components/tools/design/AiUse.tsx (class text-muted)", known: "Q11" });
     await qa.check("data", "a note says the log covers this project only and that AI used outside Appuscholar goes in the box \"AI tools you used outside Appuscholar (optional)\"", async () => {
@@ -731,9 +774,10 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
       expect(want.text).not.toMatch(/did not use AI|no AI was used|not use AI tools/i);
     }, { source: `${SHEET} row 6 and 6b ("The statement never says 'I did not use AI tools'")` });
     await look(page, qa, "AI-use statement, built");
+    await toastGoes(); // the consent form's "Inserted" has gone, so the toast the check sees is this insert's
     await page.getByTestId("aiu-insert").click();
     await qa.check("data", "Insert into my document puts the text at the end of the document, and \"Inserted\" shows", async () => {
-      await expect.poll(toasts).toContain(T("design_inserted"));
+      await expect(page.getByTestId("toast"), "the toast of this insert").toContainText(T("design_inserted"));
       await expectDocEnds(page, want.text, "the AI-use statement");
       await expect(page.getByTestId("aiu-action-msg")).toHaveText("");
     }, { source: `${SHEET} row 6; ${E2E} step 6` });
@@ -1049,6 +1093,8 @@ test("S3-05 the eight tabs say they are locked while the vault is locked, and gi
   const saves = trackSaves(page);
   let s!: Student;
   let id = "";
+  /** The amount typed into the locked Budget stayed in its box (it was not dropped), so the unlock must give it back too. */
+  let keptWhileLocked = false;
 
   await qa.step("a student with a vault and the paperwork filled in", async () => {
     ({ student: s, id } = await projectWithIdeaCheck(page, qa, { vault: "on" }));
@@ -1077,11 +1123,22 @@ test("S3-05 the eight tabs say they are locked while the vault is locked, and gi
   });
 
   await qa.step("each tab while locked", async () => {
+    /** The locked note is on the page (a short wait: the tab has opened and decided it is locked); false when it is not, for the check that follows to say so. */
+    const lockedNoteShows = () => page.getByTestId("design-locked").waitFor({ state: "visible", timeout: 5_000 }).then(() => true, () => false);
     for (const tab of TABS) {
       if (tab !== "overview") {
         await page.getByTestId("place-tab-" + tab).click();
         await expect(page.getByTestId("panel-design-" + tab)).toBeVisible();
-        // Each tab asks for the passphrase by itself (once for each sealed item it reads: O18, S10-04's); the asks are cancelled and the vault stays locked.
+        // Each tab asks for the passphrase by itself (once for each sealed item it reads: O18, S10-04's); the asks are cancelled and the vault stays locked. The ask comes once the tab's reads are
+        // done, which on a slow runner can be well after 2 s: wait for the tab to show its locked note (the AI-use tab: its count) or for the window, then for the reads to settle, as lockByReload does.
+        await page
+          .getByTestId("design-locked")
+          .or(page.getByTestId("aiu-count"))
+          .or(page.getByTestId("pass-dialog"))
+          .first()
+          .waitFor({ state: "visible", timeout: 15_000 })
+          .catch(() => {}); // a tab that shows neither is reported by its own check below
+        await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
         await cancelPassphraseAsks(page);
       }
       await expect(page.getByTestId("vault-pill")).toHaveAttribute("data-status", "locked");
@@ -1098,23 +1155,55 @@ test("S3-05 the eight tabs say they are locked while the vault is locked, and gi
       }
       if (tab === "overview") {
         await qa.check("conceptual", "Overview while locked does not mark the six pieces \"Not ready yet\" or give a count, as if nothing were done", async () => {
-          expect(await page.getByTestId("design-rows").evaluate((el) => el.textContent ?? "")).not.toContain(T("design_mark_not_ready"));
-          await expect(page.getByTestId("design-count")).toHaveCount(0);
+          // A correct fix may hide the lines and the count while locked: what is not on the page is not shown (no wait for it). The locked note is waited for, so that the page is read once it has settled.
+          if (!(await lockedNoteShows())) notChecked("the locked note did not show within 5 s, so the page was not in the state this check is about");
+          const lines = await page.getByTestId("design-rows").evaluateAll((els) => els.map((el) => el.textContent ?? "").join("\n"));
+          expect(lines, "the text of Overview's lines").not.toContain(T("design_mark_not_ready"));
+          expect(await page.getByTestId("design-count").count(), "Overview's count of pieces ready").toBe(0);
         }, { source, known: "Q12" });
       }
       if (tab === "budget") {
         await qa.check("conceptual", "Budget while locked does not show \"Total: ₹0\" as if I had put in nothing", async () => {
-          expect(await page.getByTestId("budget-total").innerText(), "the total line of the locked Budget").not.toBe(budgetTotalText(budgetRows(undefined)));
+          if (!(await lockedNoteShows())) notChecked("the locked note did not show within 5 s, so the page was not in the state this check is about");
+          const totals = await page.getByTestId("budget-total").allInnerTexts();
+          expect(totals, "the total line of the locked Budget").not.toContain(budgetTotalText(budgetRows(undefined)));
         }, { source, known: "Q13" });
+        // Nothing typed is lost (spec section 6, S3): an amount typed while the vault is locked is kept, or the box cannot be typed in. `useDesign.save` returns false while the blob is locked
+        // (useDesign.ts, `waiting`), so the amount never reaches the blob; a box that took the key and gave it back empty is a silent loss.
+        const box = page.getByTestId("budget-amount-" + LOCKED_LINE);
+        const takesTyping = (await box.count()) > 0 && (await box.isEditable());
+        if (takesTyping) {
+          await box.pressSequentially(LOCKED_AMOUNT, { delay: 30 });
+          await cancelPassphraseAsks(page, { firstWaitMs: 1_000 }); // a page that keeps the amount may ask for the passphrase to save it
+        }
+        await qa.check("data", "an amount typed into Budget while the vault is locked is kept (it stays in the box), or the box cannot be typed in", async () => {
+          if (!takesTyping) return; // the box refuses typing (read-only, disabled or not shown): nothing is dropped
+          await expect(box, "the amount typed into the locked Budget").toHaveValue(LOCKED_AMOUNT, { timeout: 3_000 });
+          keptWhileLocked = true;
+        }, { source: `spec section 6 (S3: "each tab says locked, nothing typed is lost"); apps/web/lib/tools/design/useDesign.ts (save returns false while the blob is locked); components/tools/design/Budget.tsx`, known: "Q96" });
       }
       await look(page, qa, `${T("tab_name_" + tab)}, vault locked`);
     }
   });
 
   await qa.step("unlock", async () => {
+    // The sealed budget the server holds before the unlock, to see a new save of the amount typed while locked.
+    const budgetBefore = (await serverRows(s.uid)).blobs.find((b) => b.kind === "design_budget")?.body;
     await unlock(page, s);
     for (const tab of TABS) {
-      await qa.check("data", `after I unlock, ${T("tab_name_" + tab)} has all my work back`, () => expectTabFilled(page, id, tab, 1), { source: `${SHEET} row 7; docs/walkthroughs/phase-3a.md row 4b` });
+      await qa.check("data", `after I unlock, ${T("tab_name_" + tab)} has all my work back`, () => expectTabFilled(page, id, tab, 1, keptWhileLocked ? { [LOCKED_LINE]: LOCKED_AMOUNT } : {}), {
+        source: `${SHEET} row 7; docs/walkthroughs/phase-3a.md row 4b`
+      });
+    }
+    // Only when the locked Budget kept the amount (otherwise the box refused it, or the fault Q96 dropped it and there is nothing to save).
+    if (keptWhileLocked) {
+      await qa.check("data", "the amount I typed into Budget while the vault was locked is saved once I unlock: the server holds a new sealed budget", async () => {
+        await saves.settled();
+        expect(budgetBefore, "the sealed budget before the unlock").toBeTruthy();
+        await expect
+          .poll(async () => (await serverRows(s.uid)).blobs.find((b) => b.kind === "design_budget")?.body, { timeout: 20_000, message: "the server's sealed budget never changed after the unlock" })
+          .not.toBe(budgetBefore);
+      }, { source: `spec section 6 (S3: "nothing typed is lost"); apps/web/lib/tools/design/useDesign.ts`, known: "Q96" });
     }
     await openTab(page, id, "overview");
     await look(page, qa, "Overview, unlocked");
@@ -1223,7 +1312,8 @@ test("S3-07 [O2, O7] on a slow connection, Overview does not say 'Not ready yet'
     const rows = await page.getByTestId("design-rows").evaluate((el) => el.textContent ?? "");
     const stillOpening = await page.getByTestId("design-loading").isVisible();
     await qa.check("conceptual", "while the saved work is still opening, Overview does not mark the six pieces \"Not ready yet\"", async () => {
-      expect(stillOpening, "the read was still going when the rows were read").toBe(true);
+      // The precondition is the test's: if the read had finished when the rows were read, nothing was measured, which is no sign of the fault (and no sign that it is fixed).
+      if (!stillOpening) notChecked(`the read had finished when the rows were read ("${T("blob_loading")}" was gone), so Overview's lines were not seen while the work was opening`);
       expect(rows).not.toContain(T("design_mark_not_ready"));
     }, { source: `${WALK} O2 (on Overview the six lines read "Not ready yet" during that time, before the count appears)`, known: "O2" });
     await expect(page.getByTestId("design-loading")).toBeHidden({ timeout: 30_000 });
@@ -1240,7 +1330,8 @@ test("S3-07 [O2, O7] on a slow connection, Overview does not say 'Not ready yet'
     const stillOpening = await page.getByTestId("design-loading").isVisible();
     await expect(page.getByTestId("design-loading")).toBeHidden({ timeout: 30_000 });
     await qa.check("data", "keystrokes typed while Budget opens its saved work are kept, or the box could not take them", async () => {
-      expect(stillOpening, "the read was still going when the amount was typed").toBe(true);
+      // As above: a read that had finished by the time the keys were typed says nothing about keystrokes typed while it was going.
+      if (!stillOpening) notChecked(`the read had finished when the amount was typed ("${T("blob_loading")}" was gone), so nothing typed while the work was opening was measured`);
       if (!editable) return;
       expect(await box.inputValue(), "the amount typed while the work was opening").toBe("1500");
       expect(await page.getByTestId("budget-total").innerText()).toBe("Total: ₹1,500");
@@ -1416,7 +1507,7 @@ test("S3-09 [O8] the eight tabs at 1406 px: do they wrap onto two lines beside t
     const wide = await measure();
     await qa.check("visual", "at 1440 px, with the document open beside the place, the eight tabs are still on one line", async () => {
       expect(wide.lines, oneLine(wide)).toBe(1);
-    }, { source: `${WALK} O8 ("at 1440 they fit on one")` });
+    }, { source: `${WALK} O8 ("at 1440 they fit on one" on the walk's Mac; on CI's Linux Chromium the eight tabs need 858 px and the row has 856, so they wrap at 1440 px too: the same open question as O8, whether the row must fit on one line beside the open document)`, known: "O8" });
     await page.setViewportSize({ width: 1406, height: 900 });
     await expect(page.getByTestId("frame-doc")).toBeVisible();
     const m = await measure();
