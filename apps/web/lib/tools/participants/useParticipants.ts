@@ -19,6 +19,9 @@ import { publishList } from "./store";
  *   in error publishes nothing (it must not wipe what another published); locked, off and broken publish `null`.
  * - A read that failed is "error", not "loading" (R20): there is no list and `save` refuses, so nothing is written over a list that is only out of reach; `retry` reads again.
  * - A list that does not open ("broken") is never replaced from here (R21): `save` returns false and the hook asks nothing and shows nothing; the tab says so.
+ * - `saveNow` (R35) is `save` for a caller that must know what was saved before it goes on: Statistics adds the people a table names, and only then codes the table with the codes the saved list
+ *   holds. It sets through the same updater path, sends at once (no debounce) and resolves with the list as the server took it (an update that was run again on a newer list after a conflict
+ *   is the one that counts), or null when nothing was written: refused as `save` refuses, or the save did not land (the list shown keeps the student's change and goes with the next save, `saveFailed`).
  * - `saveFailed` (R24): the list is known and the blob reports an error, so the last save did not land (the list shown is the student's, held, and goes with the next change, flush or unlock).
  *   A failed read is not this ("error" state, no list); neither is a refused save with the vault off ("off").
  */
@@ -37,6 +40,11 @@ export type Participants = {
    * (loading, locked, off, broken, error) and when the window may not write.
    */
   save(update: (prev: ParticipantList) => ParticipantList): boolean;
+  /**
+   * `save`, sent now: resolves with the list as saved, or null when it was refused (as `save` is: any state but "ready", a window that may not write) or did not land. The update must make
+   * the same change to any list it is given, as for `save`; the list that comes back is the result of its last run.
+   */
+  saveNow(update: (prev: ParticipantList) => ParticipantList): Promise<ParticipantList | null>;
   /** After a failed read ("error"): reads the list again. It changes nothing in any other state. */
   retry(): void;
 };
@@ -74,8 +82,16 @@ export function useParticipants(projectId: string): Participants {
     return true;
   }, [id, readOnly, state, set]);
 
+  const saveNow = useCallback(async (update: (prev: ParticipantList) => ParticipantList): Promise<ParticipantList | null> => {
+    if (id === null || readOnly || state !== "ready") return null;
+    // The update may run again on a newer list (a conflict, a rebase); what the server took is the result of the last run.
+    const last: { list: ParticipantList | null } = { list: null };
+    set((prev) => (last.list = update(prev ?? emptyList())));
+    return (await flush()) ? last.list : null;
+  }, [id, readOnly, state, set, flush]);
+
   // flush reads the blob if it is not known yet (a failed read leaves it so), then sends what is pending; with the list read there is nothing more to do.
   const retry = useCallback(() => { if (state === "error") void flush(); }, [state, flush]);
 
-  return { list, state, saveFailed, readOnly, save, retry };
+  return { list, state, saveFailed, readOnly, save, saveNow, retry };
 }

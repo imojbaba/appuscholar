@@ -554,6 +554,98 @@ describe("useParticipants reads and saves the sealed list", () => {
   });
 });
 
+// ---- saveNow (R35): the Statistics box adds people first, then codes its table with the codes the saved list holds -----------------------------------
+
+describe("useParticipants saveNow (R35)", () => {
+  it("sends at once, without the debounce, and resolves with the list as the server holds it", async () => {
+    const m = await mountHook();
+    await until(() => m.h.state === "ready");
+    let saved: ParticipantList | null = null;
+    const t0 = Date.now();
+    await act(async () => { saved = await m.h.saveNow(addNamed("Priya Sharma")); });
+    expect(Date.now() - t0).toBeLessThan(BLOB_SAVE_DEBOUNCE_MS);
+    expect(puts()).toHaveLength(1);
+    expect(puts()[0]!.body!.keyVersion).toBe(1);
+    expect(saved).not.toBeNull();
+    expect(saved!.people.map((p) => [p.code, p.name])).toEqual([["P001", "Priya Sharma"]]);
+    expect(saved).toEqual(stored());
+    // The hook and the store show it too, and the next code goes on from it.
+    expect(m.h.list!.people.map((p) => p.code)).toEqual(["P001"]);
+    expect(listFor("p1")!.people).toHaveLength(1);
+    await act(async () => { saved = await m.h.saveNow(addNamed("Imran Khan")); });
+    expect(saved!.people.map((p) => p.code)).toEqual(["P001", "P002"]);
+    expect(stored()!.next).toBe(3);
+  });
+
+  it("when another window saved first, it resolves with the list rebased onto theirs: the code comes from the newer list", async () => {
+    const a = await mountHook();
+    const b = await mountHook();
+    await until(() => a.h.state === "ready" && b.h.state === "ready");
+    await act(async () => { await b.h.saveNow(addNamed("Imran Khan")); });
+    expect(stored()!.people.map((p) => p.code)).toEqual(["P001"]);
+    // a still holds the empty list it read on version 0; its save is rejected once and replayed on Imran's list.
+    let saved: ParticipantList | null = null;
+    await act(async () => { saved = await a.h.saveNow(addNamed("Priya Sharma")); });
+    expect(saved!.people.map((p) => [p.code, p.name])).toEqual([["P001", "Imran Khan"], ["P002", "Priya Sharma"]]);
+    expect(saved).toEqual(stored());
+  });
+
+  it("is null, and sends nothing, when the list cannot be written: vault off, locked, loading, a failed read, a list that does not open, a window that may not write", async () => {
+    for (const status of ["off", "locked", "loading"]) {
+      h.status = status;
+      const m = await mountHook();
+      await sleep(30);
+      let saved: ParticipantList | null = {} as ParticipantList;
+      await act(async () => { saved = await m.h.saveNow(addNamed("Priya Sharma")); });
+      expect(saved, status).toBeNull();
+      m.unmount();
+    }
+    h.status = "unlocked";
+    server.failGet = true;
+    const bad = await mountHook();
+    await until(() => bad.h.state === "error");
+    let saved: ParticipantList | null = {} as ParticipantList;
+    await act(async () => { saved = await bad.h.saveNow(addNamed("Priya Sharma")); });
+    expect(saved).toBeNull();
+    bad.unmount();
+    server.failGet = false;
+    seed("p1", null, 'sealed:{"nope":true}');
+    const broken = await mountHook();
+    await until(() => broken.h.state === "broken");
+    await act(async () => { saved = await broken.h.saveNow(addNamed("Priya Sharma")); });
+    expect(saved).toBeNull();
+    broken.unmount();
+    server.blobs.clear();
+    window.history.replaceState(null, "", "/p/p1/review/closeness?window=1");
+    try {
+      const ro = await mountHook();
+      await until(() => ro.h.state === "ready");
+      await act(async () => { saved = await ro.h.saveNow(addNamed("Priya Sharma")); });
+      expect(saved).toBeNull();
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+    await sleep(50);
+    expect(puts()).toEqual([]);
+  });
+
+  it("is null when the server does not take the save, and the tab then says Not saved yet (saveFailed)", async () => {
+    const m = await mountHook();
+    await until(() => m.h.state === "ready");
+    server.failPut = true;
+    let saved: ParticipantList | null = {} as ParticipantList;
+    await act(async () => { saved = await m.h.saveNow(addNamed("Priya Sharma")); });
+    expect(saved).toBeNull();
+    expect(stored()).toBeNull();
+    await until(() => m.h.saveFailed);
+    server.failPut = false;
+    await act(async () => { saved = await m.h.saveNow(addNamed("Imran Khan")); });
+    // The failed save was held and goes with the next one: nothing the student made is lost, and both get their codes.
+    expect(saved!.people.map((p) => [p.code, p.name])).toEqual([["P001", "Priya Sharma"], ["P002", "Imran Khan"]]);
+    expect(stored()!.next).toBe(3);
+  });
+});
+
 // ---- R17: the participants kind is never stored in plaintext ----------------------------------------------------------------------------------------
 
 describe("SEALED_ONLY (R17)", () => {

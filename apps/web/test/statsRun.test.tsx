@@ -54,6 +54,8 @@ vi.mock("@/lib/ai/useCallAI", async () => {
 });
 // The Run area's own personal-data question (names written in the request), answered by the test like callAI's.
 vi.mock("@/lib/ai/pdDialog", () => ({ askPd: async (sc: unknown) => { h.calls.push("askPd"); return h.askPd(sc); } }));
+// The Data tab reads the participant list (Task 10), which needs the vault's state. These tests have no vault, so no list is used and the personal-details box is v1's.
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useReducer, useRef, useEffect } = await import("react");
   return {

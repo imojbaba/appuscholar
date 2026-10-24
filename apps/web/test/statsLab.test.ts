@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { pdScan, statsParseText } from "@appuscholar/core";
+import { pdScan, pdScanV2, statsParseText } from "@appuscholar/core";
 import { nameFromFile, parseSliced, scanSliced, semicolonsToTabs, skippedLines, looksSemicolon } from "../lib/tools/stats/intake";
 import { applyPd, clearLab, getData, getLab, parse, resetLabs, setChoice, setName, setText, splitOnSemicolons, subscribeLab } from "../lib/tools/stats/lab";
 
@@ -236,12 +236,24 @@ describe("parseSliced and scanSliced equal core's whole-table calls", () => {
     for (const c of pd) {
       const data = statsParseText(c.text);
       if (!data) continue;
-      expect(await scanSliced(data, { budgetMs: 0, yieldNow: NOW }), c.id).toEqual(pdScan(data));
+      // pdScanV2 (F1: a column the values alone call names is not flagged when an answer has more than four words), which is v1's pdScan everywhere else.
+      expect(await scanSliced(data, { budgetMs: 0, yieldNow: NOW }), c.id).toEqual(pdScanV2(data));
     }
+  });
+  it("is v1's scan on every table of the corpus where no name column is dropped (F1 changes nothing else)", async () => {
+    let same = 0;
+    for (const c of pd) {
+      const data = statsParseText(c.text);
+      if (!data) continue;
+      const sliced = await scanSliced(data);
+      if (JSON.stringify(sliced) === JSON.stringify(pdScan(data))) same++;
+      else expect(sliced!.found.length, c.id).toBeLessThan(pdScan(data).found.length);
+    }
+    expect(same).toBeGreaterThan(pd.length / 2);
   });
   it("puts Col<n> back for a blank heading", async () => {
     const data = statsParseText("a,,c\nx,y@mail.org,1\nz,w@mail.org,2\nq,r@mail.org,3")!;
-    expect(await scanSliced(data)).toEqual(pdScan(data));
+    expect(await scanSliced(data)).toEqual(pdScanV2(data));
     expect(pdScan(data).found[0]!.name).toBe("Col2");
   });
 });

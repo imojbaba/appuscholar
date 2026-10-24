@@ -11,8 +11,9 @@ import { askPd } from "@/lib/ai/pdDialog";
 import type { StatsRuns } from "@/lib/blobs/kinds/stats";
 import { toast } from "@/components/ui/toast";
 import { buildStatsExplainPrompt, statsExplainText } from "./explain";
-import { codesFor, flaggedCounts, flaggedInText, maskLabels } from "./explainGuard";
+import { codesFor, flaggedCounts, flaggedInText, listedMasks, maskLabels } from "./explainGuard";
 import { getLab, patchLab, useLab } from "./lab";
+import { listInUse } from "./pdList";
 import { addRun, newRunId, runRecord, sentenceHtml } from "./run";
 import { checkChoice, chooseDesign, requestRun, runNow, setExplain, setField, setTest, switchTest, tickColumn } from "./runLab";
 import { UNTITLED, type LabActions } from "./useLabActions";
@@ -103,7 +104,13 @@ export function useRunActions(projectId: string, labActions: LabActions) {
       const sig = found.map((f) => f.kind + f.value).join("||");
       const answer = await askPd({ counts: flaggedCounts(found), total: found.length, sig });
       if (answer === "cancel") { setExplain(projectId, forRun, { status: "cancelled", message: apiMsg("cancelled") }); return; }
-      if (answer === "mask") { const codes = codesFor(found); tables = maskLabels(tables, found, codes); apa = maskLabels(apa, found, codes); }
+      if (answer === "mask") {
+        // With the participant list open, a name on it is masked as that person's code (their made-up name in made-up names mode): the answer then reads against the study's codes.
+        const { ctx } = getLab(projectId);
+        const codes = codesFor(found, listInUse(ctx) ? listedMasks(ctx.list, ctx.mode === "pseudonyms") : undefined);
+        tables = maskLabels(tables, found, codes);
+        apa = maskLabels(apa, found, codes);
+      }
     }
     const built = buildStatsExplainPrompt(fieldLabel(live.current.field), tables, apa);
     try {
