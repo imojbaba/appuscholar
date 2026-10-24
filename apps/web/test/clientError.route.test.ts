@@ -51,6 +51,21 @@ describe("POST /api/client-error", () => {
     expect(JSON.parse(logs[1]!).requestId).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it("a hostile x-vercel-id is replaced by a uuid and never logged", async () => {
+    const hostile = ["student@example.test", "abc\ndef", "a".repeat(2048)];
+    for (const h of hostile) {
+      const headers = new Headers({ "content-type": "application/json" });
+      try { headers.set("x-vercel-id", h); } catch { continue; } // the platform may refuse a newline before it reaches us
+      const res = await POST(new Request(URL_, { method: "POST", headers, body: JSON.stringify({ name: "Error", route: "/", build: "dev" }) }));
+      expect(res.status).toBe(204);
+    }
+    expect(logs.length).toBeGreaterThanOrEqual(2);
+    for (const l of logs) {
+      expect(JSON.parse(l).requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      expect(l).not.toMatch(/student|example\.test|aaaa|def/);
+    }
+  });
+
   it("a route with ids is masked", async () => {
     await POST(req({ name: "Error", route: "/projects/0f8fad5bd9cb469fa16570867728950e/doc/1234567/edit", build: "dev" }));
     expect(JSON.parse(logs[0]!).route).toBe("/projects/:id/doc/:id/edit");

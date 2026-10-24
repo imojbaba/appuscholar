@@ -48,7 +48,9 @@ export async function POST(req: Request) {
   if (windowCount >= CAP_PER_MINUTE) return done(204);
   windowCount += 1;
 
-  const requestId = req.headers.get("x-vercel-id") || crypto.randomUUID();
+  // The header is client-controllable on a direct call, so only a plain id shape is logged.
+  const vid = req.headers.get("x-vercel-id");
+  const requestId = vid && /^[A-Za-z0-9:_-]{1,128}$/.test(vid) ? vid : crypto.randomUUID();
   console.log(JSON.stringify({ kind: "client-error", name: errorClass(b.name), route: routeOf(b.route), build: buildOf(b.build), requestId }));
   return done(204);
 }
