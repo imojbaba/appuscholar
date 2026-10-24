@@ -349,6 +349,29 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     }
   }
 
+  /**
+   * An absolutely placed control inside a text field, in the room the field keeps for it (the eye of a password field, `absolute inset-y-0 right-0 w-11` over `pr-11`): the field's box holds it,
+   * but nothing that is typed goes under it. Keyed on the field's computed padding, not on what it asked for: the padding on the control's side (the side of the field its centre is on) must be at
+   * least the control's width, and the control must lie in that padding. A field that asks for the room and does not get it (a padding of 10 px under a 44 px control) is still a collision.
+   */
+  const NO_TEXT_TO_COVER = /^(checkbox|radio|range|file|button|submit|reset|image|color|hidden)$/;
+  const heldInPadding = (field: Box, control: Box): boolean => {
+    const el = field.el;
+    if (!(el.matches("textarea") || (el.matches("input") && !NO_TEXT_TO_COVER.test((el as HTMLInputElement).type)))) return false;
+    if (style(control.el).position !== "absolute") return false;
+    const f = field.r;
+    const c = control.r;
+    if (c.left < f.left - 1 || c.right > f.right + 1 || c.top < f.top - 1 || c.bottom > f.bottom + 1) return false;
+    const s = style(el);
+    const px = (property: string) => parseFloat(s.getPropertyValue(property)) || 0;
+    if (c.left + c.width / 2 > f.left + f.width / 2) {
+      const room = px("padding-right");
+      return room >= c.width - 0.5 && c.left >= f.right - px("border-right-width") - room - 1;
+    }
+    const room = px("padding-left");
+    return room >= c.width - 0.5 && c.right <= f.left + px("border-left-width") + room + 1;
+  };
+
   // Overlap: two controls whose boxes cross by more than 4 px both ways. A control inside another is nesting, not a collision.
   if (want.has("overlap") && controls.length >= 2) {
     measured.overlap = controls.length;
@@ -360,7 +383,9 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
         if (B.r.left >= A.r.right - 4) break; // sorted by left edge: no later control starts inside A by more than 4 px
         const across = Math.min(A.r.right, B.r.right) - B.r.left;
         const down = Math.min(A.r.bottom, B.r.bottom) - Math.max(A.r.top, B.r.top);
-        if (across > 4 && down > 4 && !A.el.contains(B.el) && !B.el.contains(A.el)) found("overlap", `${label(A.el)} over ${label(B.el)}`, `they cross by ${round1(across)} × ${round1(down)} px`);
+        if (across > 4 && down > 4 && !A.el.contains(B.el) && !B.el.contains(A.el) && !heldInPadding(A, B) && !heldInPadding(B, A)) {
+          found("overlap", `${label(A.el)} over ${label(B.el)}`, `they cross by ${round1(across)} × ${round1(down)} px`);
+        }
       }
     }
   }

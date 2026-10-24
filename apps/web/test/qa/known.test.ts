@@ -30,6 +30,14 @@ describe("matchKnown", () => {
     expect(matchKnown({ text: "Failed to unlock the vault" }, known)).toBeUndefined();
   });
 
+  it("matches a list of texts when the finding contains any one of them, and not a control that shares only a fragment", () => {
+    const eyes: KnownEntry[] = [{ id: "E", title: "eyes", status: "known", match: { rule: "overlap", text: ["[pass-input-toggle]", "[recover-pass-toggle]"] } }];
+    expect(matchKnown({ rule: "overlap", text: 'input [pass-input] over button "Show" [pass-input-toggle] they cross' }, eyes)?.id).toBe("E");
+    expect(matchKnown({ rule: "overlap", text: 'input [recover-pass] over button "Show" [recover-pass-toggle] they cross' }, eyes)?.id).toBe("E");
+    expect(matchKnown({ rule: "overlap", text: 'input [x] over button "Language" [lang-toggle] they cross' }, eyes)).toBeUndefined();
+    expect(matchKnown({ rule: "small-target", text: "[pass-input-toggle]" }, eyes)).toBeUndefined();
+  });
+
   it("returns undefined otherwise", () => {
     expect(matchKnown({}, known)).toBeUndefined();
     expect(matchKnown({ rule: "axe" }, known)).toBeUndefined();
@@ -119,8 +127,9 @@ describe("known.json", () => {
 describe("parseKnown", () => {
   const ok = { id: "X1", title: "t", status: "known" };
 
-  it("accepts a list of entries", () => {
+  it("accepts a list of entries, a match text as one text or a list of texts", () => {
     expect(parseKnown([ok, { ...ok, id: "X2", status: "awaiting", owner: "Dr. Sharma", match: { rule: "r", text: "t" } }])).toHaveLength(2);
+    expect(parseKnown([{ ...ok, match: { rule: "r", text: ["a", "b"] } }])[0]!.match).toEqual({ rule: "r", text: ["a", "b"] });
   });
 
   it.each([
@@ -133,6 +142,9 @@ describe("parseKnown", () => {
     ["a match that is not an object", [{ ...ok, match: "text" }]],
     ["an empty match text", [{ ...ok, match: { text: "" } }]],
     ["a match rule that is not text", [{ ...ok, match: { rule: 4 } }]],
+    ["an empty list of match texts", [{ ...ok, match: { text: [] } }]],
+    ["a list of match texts with an empty one", [{ ...ok, match: { text: ["a", ""] } }]],
+    ["a list of match texts with one that is not text", [{ ...ok, match: { text: ["a", 4] } }]],
     ["the same id twice", [ok, ok]]
   ])("refuses %s", (_what, data) => {
     expect(() => parseKnown(data)).toThrow(/known\.json/);

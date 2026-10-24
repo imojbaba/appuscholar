@@ -146,6 +146,47 @@ test("layout: two controls on top of each other overlap, side by side they do no
   expect(rulesOf(nested, "overlap")).toEqual([]);
 });
 
+test("layout: an absolutely placed control in a text field's padding (the eye of a password field) is held there only when the field's padding is as wide as the control", TAGS, async ({ page, qa }) => {
+  measuring(qa, "SELF-LAYOUT-M21");
+  const field = (padding: string, button: string) =>
+    `<div style="position:relative;width:300px;margin:10px"><input aria-label="Passphrase" style="box-sizing:border-box;width:300px;height:44px;padding:${padding};border:1px solid #888">` +
+    `<button style="position:absolute;${button}">Show</button></div>`;
+  const EYE = "top:0;right:0;width:44px;height:44px";
+  // The field's computed padding on the control's side is 44 px, the control is 44 px wide: it sits in room the field keeps for it, nothing typed goes under it.
+  const eye = await measure(page, field("0 44px 0 8px", EYE));
+  expect(rulesOf(eye, "overlap")).toEqual([]);
+  expect(eye.measured["overlap"]).toBe(2);
+  // A text area with the same room at its corner.
+  const corner = await measure(
+    page,
+    `<div style="position:relative;width:300px;margin:10px"><textarea aria-label="Note" style="box-sizing:border-box;width:300px;height:100px;padding:8px 44px 8px 8px;border:1px solid #888"></textarea>` +
+      `<button style="position:absolute;top:0;right:0;width:44px;height:44px">Show</button></div>`
+  );
+  expect(rulesOf(corner, "overlap")).toEqual([]);
+  // The same control on a field whose padding is 10 px (the room was asked for and not given, as on the app's passphrase fields while `.input` outranks `pr-11`): on top of what is typed.
+  const short = await measure(page, field("0 10px", EYE));
+  expect(rulesOf(short, "overlap")).toHaveLength(1);
+  // Padding narrower than the control by a little is still a collision; as wide as it is, is not.
+  expect(rulesOf(await measure(page, field("0 40px 0 8px", EYE)), "overlap")).toHaveLength(1);
+  expect(rulesOf(await measure(page, field("0 44px 0 8px", EYE)), "overlap")).toEqual([]);
+  // A control wider than the room kept for it.
+  const wider = await measure(page, field("0 44px 0 8px", "top:0;right:0;width:120px;height:44px"));
+  expect(rulesOf(wider, "overlap")).toHaveLength(1);
+  // A control that is not at the field's edge but over what is typed (on the right side, 60 px in; and in the middle).
+  expect(rulesOf(await measure(page, field("0 44px 0 8px", "top:0;right:60px;width:44px;height:44px")), "overlap")).toHaveLength(1);
+  expect(rulesOf(await measure(page, field("0 44px 0 8px", "top:0;left:100px;width:44px;height:44px")), "overlap")).toHaveLength(1);
+  // Only a control placed absolutely is held by the padding: one pulled over the field by a negative margin is just on top of it.
+  const pulled = await measure(
+    page,
+    `<div style="width:300px;margin:10px"><input aria-label="Passphrase" style="box-sizing:border-box;width:300px;height:44px;padding:0 44px 0 8px;border:1px solid #888">` +
+      `<button style="position:relative;display:block;margin:-44px 0 0 256px;width:44px;height:44px">Show</button></div>`
+  );
+  expect(rulesOf(pulled, "overlap")).toHaveLength(1);
+  // Only a text field keeps room for what is typed: a control over a checkbox's own box is on top of it.
+  const box = await measure(page, `<div style="position:relative;width:300px;margin:10px"><input type="checkbox" aria-label="Agree" style="width:44px;height:44px;margin:0;padding:0 44px"><button style="position:absolute;top:0;left:0;width:44px;height:44px">Over</button></div>`);
+  expect(rulesOf(box, "overlap")).toHaveLength(1);
+});
+
 test("layout: controls behind a modal dialog are not collided with", TAGS, async ({ page, qa }) => {
   measuring(qa, "SELF-LAYOUT-M14");
   const button = (left: number, text: string) => `<button style="position:absolute;top:10px;left:${left}px;width:100px;height:44px">${text}</button>`;

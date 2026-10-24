@@ -10,9 +10,11 @@ import type { CheckResult } from "./qa";
  * - `fixed`: it was fixed. A check that still names it and fails is a regression, so it fails the case; one that passes is a pass.
  *
  * `match` lets a finding be recognised without its case naming the id: the layout rules and the watcher match by `rule` (for example "small-target", "console") and by
- * a substring of `text`. An entry with both needs both; an entry with neither never matches (it is found by its id only).
+ * a substring of `text`. An entry with both needs both; an entry with neither never matches (it is found by its id only). `text` names the fault narrowly: the control's target
+ * and, for a rule with many findings on one control (axe), the rule id, never a fragment other controls share. A fault that sits in several controls lists each target in a
+ * list of texts; the finding fits when it contains any one of them.
  */
-export type KnownEntry = { id: string; title: string; status: "known" | "awaiting" | "fixed"; owner?: "OJ" | "Dr. Sharma"; match?: { rule?: string; text?: string } };
+export type KnownEntry = { id: string; title: string; status: "known" | "awaiting" | "fixed"; owner?: "OJ" | "Dr. Sharma"; match?: { rule?: string; text?: string | string[] } };
 
 const STATUSES: ReadonlyArray<KnownEntry["status"]> = ["known", "awaiting", "fixed"];
 const OWNERS: ReadonlyArray<NonNullable<KnownEntry["owner"]>> = ["OJ", "Dr. Sharma"];
@@ -39,8 +41,10 @@ export function parseKnown(data: unknown): KnownEntry[] {
     if (e.match !== undefined) {
       if (typeof e.match !== "object" || e.match === null || Array.isArray(e.match)) return bad(`${where} has a match that is not an object`);
       const m = e.match as Record<string, unknown>;
-      for (const k of ["rule", "text"]) if (m[k] !== undefined && (typeof m[k] !== "string" || !m[k])) return bad(`${where} has a match ${k} that is not text`);
-      match = { ...(m.rule !== undefined ? { rule: m.rule as string } : {}), ...(m.text !== undefined ? { text: m.text as string } : {}) };
+      if (m.rule !== undefined && (typeof m.rule !== "string" || !m.rule)) return bad(`${where} has a match rule that is not text`);
+      const texts = Array.isArray(m.text) ? m.text : [m.text];
+      if (m.text !== undefined && (texts.length === 0 || texts.some((t) => typeof t !== "string" || !t))) return bad(`${where} has a match text that is not text, or a list of texts with one that is not`);
+      match = { ...(m.rule !== undefined ? { rule: m.rule as string } : {}), ...(m.text !== undefined ? { text: m.text as string | string[] } : {}) };
     }
     return { id: e.id, title: e.title, status: e.status as KnownEntry["status"], ...(e.owner !== undefined ? { owner: e.owner as KnownEntry["owner"] } : {}), ...(match ? { match } : {}) };
   });
@@ -64,7 +68,7 @@ export function matchKnown(f: { rule?: string; text?: string }, known: KnownEntr
     const m = e.match;
     if (!m || (m.rule === undefined && m.text === undefined)) return false;
     if (m.rule !== undefined && m.rule !== f.rule) return false;
-    if (m.text !== undefined && !(f.text !== undefined && f.text.includes(m.text))) return false;
+    if (m.text !== undefined && !(f.text !== undefined && (Array.isArray(m.text) ? m.text : [m.text]).some((t) => f.text!.includes(t)))) return false;
     return true;
   });
 }

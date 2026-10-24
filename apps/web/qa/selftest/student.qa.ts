@@ -7,7 +7,7 @@ import { QA_API_ORIGIN } from "../support/origins";
 import { serverRows } from "../support/server";
 import { routeServices, SERVICE_DOWN_CONSOLE, SERVICE_HOSTS } from "../support/services";
 import {
-  cancelPassphraseAsks, catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, providerCalls, sameAccountElsewhere, selectInDoc, setLang, slowApi, toPlace,
+  answerPassphrase, apiGet, cancelPassphraseAsks, catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, openUnlockWindow, providerCalls, recordToasts, sameAccountElsewhere, selectInDoc, setLang, slowApi, toPlace,
   OFFLINE_CONSOLE, typeInDoc, unlock, vaultRemembered, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
@@ -559,6 +559,64 @@ test("student: cancelPassphraseAsks counts the Cancels that went through, and st
     // The default is twenty presses.
     await qa.check("data", "the default cap is twenty attempts", async () => {
       await expect(cancelPassphraseAsks(page, { clickMs: 20 })).rejects.toThrow(/after 20 attempts/);
+    });
+  });
+});
+
+test("student: the passphrase window is opened and answered, toasts are recorded, and the api is read as the app reads it", TAGS, async ({ page, qa }) => {
+  qa.begin({
+    story: "S0",
+    id: "SELF-STUDENT-WINDOW",
+    goal: "openUnlockWindow, answerPassphrase, recordToasts and apiGet do what they say",
+    situation: { vault: "locked" },
+    steps: ["new student", "the passphrase window", "toasts", "the api"]
+  });
+  qa.allow({ responses: [{ method: "GET", path: /^\/qa-no-such-path$/, status: 404, reason: "the case reads a path the api does not have, to see apiGet say so" }] });
+  const pill = page.getByTestId("vault-pill");
+  let s!: Student;
+
+  await qa.step("new student", async () => {
+    s = await newStudent(page, qa, { key: "none", vault: "on", project: PROJECT });
+  });
+
+  await qa.step("the passphrase window", async () => {
+    await lockByReload(page, s);
+    await openUnlockWindow(page);
+    await qa.check("data", "the window the pill opens asks the unlock question", async () => {
+      await expect(page.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint"));
+    });
+    await answerPassphrase(page, s.passphrase! + "-wrong");
+    await qa.check("data", "a wrong answer keeps the window open and shows its verdict", async () => {
+      await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_wrong"));
+      await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    });
+    // The window is already open: openUnlockWindow takes it as it is, and does not press the pill behind it.
+    await openUnlockWindow(page);
+    await answerPassphrase(page, s.passphrase!);
+    await qa.check("data", "the right answer closes the window and opens the vault", async () => {
+      await expect(page.getByTestId("pass-dialog")).toBeHidden();
+      await expect(pill).toHaveText(T("vault_pill_yours"));
+    });
+  });
+
+  await qa.step("toasts", async () => {
+    await lockByReload(page, s);
+    await unlock(page, s, { remember: true });
+    const toasts = await recordToasts(page);
+    await forgetOnThisComputer(page);
+    await qa.check("data", "a toast that was shown and replaced is still in the record", async () => {
+      await expect.poll(toasts).toContain(T("vault_forgotten"));
+    });
+  });
+
+  await qa.step("the api", async () => {
+    await qa.check("data", "apiGet reads what the api holds for the signed-in account", async () => {
+      expect((await apiGet<{ email: string }>(page, "/me")).email).toBe(s.email);
+      const projects = await apiGet<Array<{ id: string }>>(page, "/projects");
+      expect(projects.map((p) => p.id)).toContain(s.projectId);
+    });
+    await qa.check("data", "apiGet throws, naming the path and the status, when the api does not answer ok", async () => {
+      await expect(apiGet(page, "/qa-no-such-path")).rejects.toThrow(/GET \/qa-no-such-path answered 404/);
     });
   });
 });

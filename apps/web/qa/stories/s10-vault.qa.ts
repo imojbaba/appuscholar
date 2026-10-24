@@ -7,8 +7,8 @@ import { dictionary, T, type Lang } from "../support/dict";
 import { QA_API_ORIGIN } from "../support/origins";
 import { serverRows } from "../support/server";
 import {
-  catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, OFFLINE_CONSOLE, sameAccountElsewhere, slowApi, toPlace, typeInDoc, unlock,
-  vaultRemembered, type Student
+  answerPassphrase, apiGet, catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, OFFLINE_CONSOLE, openUnlockWindow, recordToasts,
+  sameAccountElsewhere, slowApi, toPlace, typeInDoc, unlock, vaultRemembered, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
 
@@ -24,8 +24,12 @@ import { expect, notChecked, test } from "../support/test";
  */
 const SHEET = "phase-3a.md";
 const E2E = "e2e/phase3a-vault.spec.ts";
-/** The folders a fix for any of these cases starts in. */
+/**
+ * The folders a fix for these cases starts in: the vault and its windows; plus, for a fault, where it sits: Q1 the header (AppHeader.tsx), Q2 the project's home (ProjectHome.tsx),
+ * Q3 and Q4 the windows' tick rows (the dialogs folder), Q5 the passphrase field (ui/secret-input.tsx, and the `.input` rule in app/globals.css that outranks its `pr-11`).
+ */
 const CODE = ["apps/web/lib/vault", "apps/web/components/workspace/dialogs", "apps/web/components/workspace/VaultPill.tsx"];
+const CODE_FIELD = ["apps/web/components/ui/secret-input.tsx", "apps/web/app/globals.css"];
 
 const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 /** A sealed title or body (lib/vault's AES-GCM output: a 16-character IV, a dot, the ciphertext, base64url). */
@@ -45,60 +49,31 @@ const fresh = () => `qa-pass-${randomUUID().replace(/-/g, "").slice(0, 12)}`;
 const pill = (page: Page) => page.getByTestId("vault-pill");
 const isDocPut = (r: Response) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url());
 
-/**
- * Every toast shown from now on, in order (one toast replaces another, so two that arrive close together are read from this record, not from the screen). The record lives
- * in the page: ask again after a reload. (The e2e suite has the same helper in e2e/support/toasts.ts, which the QA layer does not import.)
- */
-async function recordToasts(page: Page): Promise<() => Promise<string[]>> {
-  await page.evaluate(() => {
-    const w = window as unknown as { __toasts: string[] };
-    w.__toasts = [];
-    const host = document.querySelector('[data-testid="toast-host"]')!;
-    new MutationObserver(() => {
-      const text = host.querySelector('[data-testid="toast"] span')?.textContent;
-      if (text && w.__toasts[w.__toasts.length - 1] !== text) w.__toasts.push(text);
-    }).observe(host, { childList: true, subtree: true, characterData: true });
-  });
-  return () => page.evaluate(() => (window as unknown as { __toasts: string[] }).__toasts);
-}
-
-/** What our api answers a signed-in GET, read from inside the page the way the app reads it (the token comes from the web app's own /api/token). */
-async function apiGet<T>(page: Page, path: string): Promise<T> {
-  return (await page.evaluate(
-    async ({ api, path: p }) => {
-      const { token } = (await (await fetch("/api/token", { cache: "no-store" })).json()) as { token: string };
-      const r = await fetch(api + p, { headers: { authorization: "Bearer " + token } });
-      if (!r.ok) throw new Error(`GET ${p} answered ${r.status}`);
-      return (await r.json()) as unknown;
-    },
-    { api: QA_API_ORIGIN, path }
-  )) as T;
-}
-
-/** The passphrase window, open: by itself if the page has asked, else by pressing the "Vault locked" pill. */
-async function openUnlockWindow(page: Page, lang: Lang = "en"): Promise<void> {
-  const dialog = page.getByTestId("pass-dialog");
-  if (!(await dialog.isVisible())) {
-    // The page may ask while the pill is pressed: its window then covers the pill, and is the window wanted.
-    await pill(page).click({ timeout: 5_000 }).catch(async (e: unknown) => {
-      if (!(await dialog.isVisible())) throw e;
-    });
-  }
-  await expect(dialog).toBeVisible();
-  await expect(page.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint", {}, lang));
-}
-
-/** Types `pass` into the open passphrase window and presses OK. */
-async function answer(page: Page, pass: string): Promise<void> {
-  await page.getByTestId("pass-input").fill(pass);
-  await page.getByTestId("pass-ok").click();
-}
-
 /** The open document has all three sentences of the walk. */
 async function expectAllSentences(page: Page): Promise<void> {
   const text = await docText(page);
   for (const sentence of [SENTENCE_1, SENTENCE_2, SENTENCE_3]) expect(text).toContain(sentence);
 }
+
+/**
+ * Each passphrase field keeps room at its right edge for its eye: the field's computed padding-right is at least the eye button's width (components/ui/secret-input.tsx reserves it with
+ * `pr-11`; the `.input` rule in app/globals.css, outside any layer, outranks it, so today the padding is 10 px and the eye lies over what is typed: Q5). The eye's test id is the field's and "-toggle".
+ */
+async function expectEyeRoom(page: Page, fields: string[]): Promise<void> {
+  const rooms = await page.evaluate(
+    (ids) =>
+      ids.map((id) => {
+        const input = document.querySelector(`[data-testid="${id}"]`);
+        const eye = document.querySelector(`[data-testid="${id}-toggle"]`);
+        return { id, padding: input ? parseFloat(getComputedStyle(input).paddingRight) : NaN, eye: eye ? eye.getBoundingClientRect().width : NaN };
+      }),
+    fields
+  );
+  const missing = rooms.filter((r) => Number.isNaN(r.padding) || Number.isNaN(r.eye)).map((r) => r.id);
+  expect(missing, "passphrase fields (or their eyes) not on the screen").toEqual([]);
+  expect(rooms.filter((r) => r.padding < r.eye).map((r) => `${r.id}: padding-right ${r.padding} px, eye ${r.eye} px wide`), "fields whose padding is narrower than their eye").toEqual([]);
+}
+const EYE_SOURCE = "components/ui/secret-input.tsx (the field keeps 44 px for its eye: pr-11); spec section 8, layout rules (no two controls on top of each other)";
 
 /** The saved versions of a document as the server lists them, each read whole. */
 async function revisionsOf(page: Page, docId: string): Promise<Array<{ seq: number; keyVersion: number; bodyHtml: string }>> {
@@ -118,12 +93,17 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
       "sign in and write two sentences", "open a second tab", "set up the vault", "type in the second tab while it is locked", "wrong passphrase, then the right one", "reload locked",
       "open a fresh browser", "a fresh browser", "change the passphrase", "recover with the sheet", "export all my work"
     ],
-    code: CODE
+    code: [...CODE, ...CODE_FIELD, "apps/web/components/frame/AppHeader.tsx"]
   });
   let s!: Student;
   let docId = "";
   // The second tab is opened before the vault exists: it keeps believing there is none (the sheet's row 2b and 4a).
   const stale = await context.newPage();
+  // The 409s the second tab is answered for its refused plaintext save: what the case excuses below must be these and no others.
+  const refusedForStale: string[] = [];
+  stale.on("response", (r) => {
+    if (r.request().method() === "PUT" && r.status() === 409 && /\/documents\/[0-9a-f-]+$/.test(r.url())) refusedForStale.push(r.url());
+  });
 
   await qa.step("sign in and write two sentences", async () => {
     s = await newStudent(page, qa, { key: "none", project: PROJECT });
@@ -175,9 +155,9 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     }, { source: `${SHEET} row 3` });
     await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
-    await answer(page, s.passphrase!);
+    await answerPassphrase(page, s.passphrase!);
     await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
-    await answer(page, s.passphrase!);
+    await answerPassphrase(page, s.passphrase!);
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     s.recoveryCode = (await page.getByTestId("vault-code").innerText()).trim();
     await qa.check("data", "the recovery sheet shows a code of four groups of five (XXXXX-XXXXX-XXXXX-XXXXX)", async () => {
@@ -200,7 +180,9 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     }, { source: `${SHEET} row 3 (the sheet says "Vault on"; the app's pill for an open vault is "Vault unlocked", as ${E2E} asserts)` });
     await qa.check("data", "every saved version of the document is now sealed on the server: key version 1, no tag and none of the words", async () => {
       const revisions = await revisionsOf(page, docId);
-      if (revisions.length === 0) notChecked("the server lists no saved version of the document, so there was nothing to read");
+      // Every save keeps a version (phase-3a.md, "Not yet in this phase": thinning old versions is not built; the api's PUT /documents/:id always appends one), and this case saw its saves answered ok:
+      // a document with no saved version is lost work, so an empty list is a failure here, not a check that measured nothing.
+      expect(revisions.length, "saved versions the server lists for the document").toBeGreaterThan(0);
       for (const r of revisions) {
         expect(r.keyVersion, `version ${r.seq}`).toBe(1);
         expect(r.bodyHtml, `version ${r.seq}`).toMatch(CIPHERTEXT);
@@ -222,6 +204,7 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
       await expect(stale.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint"));
       await expect(pill(stale)).toHaveText(T("vault_pill_locked"));
     }, { source: `${SHEET} row 4a` });
+    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(stale, ["pass-input"]), { source: EYE_SOURCE, known: "Q5" });
     await qa.checkpoint("the second tab asks for the passphrase");
     await stale.getByTestId("pass-cancel").click();
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
@@ -249,14 +232,14 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     await openUnlockWindow(stale);
     const saved = stale.waitForResponse((r) => isDocPut(r) && r.ok(), { timeout: 30_000 });
     saved.catch(() => undefined);
-    await answer(stale, s.passphrase! + "-wrong");
+    await answerPassphrase(stale, s.passphrase! + "-wrong");
     await qa.check("data", "a wrong passphrase gives the verdict inside the window, and as a toast, and the window stays open", async () => {
       await expect(stale.getByTestId("pass-verdict")).toHaveText(T("vault_wrong"));
       await expect.poll(toasts).toContain(T("vault_wrong"));
       await expect(stale.getByTestId("pass-dialog")).toBeVisible();
     }, { source: `${SHEET} row 4b; O9 ("show it inside the window")` });
     await qa.checkpoint("the unlock window with the wrong-passphrase verdict");
-    await answer(stale, s.passphrase!);
+    await answerPassphrase(stale, s.passphrase!);
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
     const sent = (await saved).request().postDataJSON() as { bodyHtml: string; keyVersion: number };
     await qa.check("data", "the right passphrase saves the held sentence, sealed (key version 1, not in clear), and the badge says Auto-save on", async () => {
@@ -303,6 +286,11 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
         await expect(pill(other.page)).toHaveText(T("vault_pill_locked"));
         await expect(other.page.locator(".ProseMirror")).toHaveCount(0);
       }, { source: `${SHEET} row 5` });
+      // `unlock` presses the pill when the page has not asked, which would hide a page that never asks: the page must open the window itself, as a student who just opens it sees.
+      await qa.check("data", "the page asks for the passphrase by itself, before any press (the document it opens is sealed)", async () => {
+        await expect(other.page.getByTestId("pass-dialog")).toBeVisible();
+        await expect(other.page.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint"));
+      }, { source: `${SHEET} row 5 ("the unlock window asks for the passphrase before the document opens")` });
       await unlock(other.page, s);
       await expect(other.page.getByTestId("project-home")).toBeVisible();
       await other.page.getByTestId("home-open-writing").click();
@@ -324,6 +312,7 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     await page.getByTestId("help-btn").click();
     await page.getByTestId("help-change-pass").click();
     await expect(page.getByTestId("vault-change-dialog")).toBeVisible();
+    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["vault-change-old", "vault-change-new", "vault-change-again"]), { source: EYE_SOURCE, known: "Q5" });
     await qa.checkpoint("the change passphrase window");
     await page.getByTestId("vault-change-old").fill(s.passphrase!);
     await page.getByTestId("vault-change-new").fill(next);
@@ -337,11 +326,11 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     s.passphrase = next;
     await lockByReload(page, s);
     await openUnlockWindow(page);
-    await answer(page, old);
+    await answerPassphrase(page, old);
     await qa.check("data", "after a reload the old passphrase is refused (the verdict shows and the window stays), and the new one opens the document with all three sentences", async () => {
       await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_wrong"));
       await expect(page.getByTestId("pass-dialog")).toBeVisible();
-      await answer(page, next);
+      await answerPassphrase(page, next);
       await expect(page.getByTestId("pass-dialog")).toBeHidden();
       await expect(pill(page)).toHaveText(T("vault_pill_yours"));
       await expectAllSentences(page);
@@ -356,6 +345,7 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     await page.getByTestId("vault-forgot").click();
     await expect(page.getByTestId("pass-dialog")).toBeHidden();
     await expect(page.getByTestId("vault-recover-dialog")).toBeVisible();
+    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["recover-pass", "recover-pass2"]), { source: EYE_SOURCE, known: "Q5" });
     await qa.checkpoint("the recovery window");
     const toasts = await recordToasts(page);
     const third = fresh();
@@ -422,13 +412,15 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
       await expect.poll(toasts).toContain(T("export_done"));
     }, { source: `${SHEET} row 8` });
     await qa.check("data", "the zip holds index.json and writing-process-record.txt", async () => {
-      if (files.size === 0) notChecked("the zip holds no files, so there was nothing to read");
+      // The download came and the toast said Export ready: a zip with no file in it is an export that lost the student's work, a failure.
+      expect(files.size, "files in the export zip").toBeGreaterThan(0);
       const names = [...files.keys()];
       expect(names.filter((n) => /(^|\/)index\.json$/.test(n))).toHaveLength(1);
       expect(names.filter((n) => /(^|\/)writing-process-record\.txt$/.test(n))).toHaveLength(1);
     }, { source: `${SHEET} row 8` });
     await qa.check("data", "one .html and one .doc hold the three sentences in readable text", async () => {
-      if (files.size === 0) notChecked("the zip holds no files, so there was nothing to read");
+      // The download came and the toast said Export ready: a zip with no file in it is an export that lost the student's work, a failure.
+      expect(files.size, "files in the export zip").toBeGreaterThan(0);
       const text = (name: string) => files.get(name)!.toString("utf8");
       const pages = [...files.keys()].filter((n) => n.endsWith(".html")).map(text);
       expect(pages.filter((h) => h.includes(SENTENCE_1) && h.includes(SENTENCE_2) && h.includes(SENTENCE_3))).toHaveLength(1);
@@ -437,12 +429,17 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     }, { source: `${SHEET} row 8` });
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("help-dialog")).toBeHidden();
+    await qa.check("data", "the one answer the case excused, a 409 on a save, was the second tab's refused save, and no other page was refused", async () => {
+      const excused = (qa.result().allowed ?? []).find((a) => a.kind === "response" && !a.builtIn)?.count ?? 0;
+      expect(refusedForStale.length, "saves of the second tab the api refused").toBeGreaterThanOrEqual(1);
+      expect(excused, "409 answers excused (every one must be the second tab's)").toBe(refusedForStale.length);
+    }, { source: `${E2E} step 4a (the plaintext save is refused once a vault exists)` });
   });
 });
 
 // ---- S10-02 [F2] ------------------------------------------------------------------------------------------------------------------------------------------
 
-test("S10-02 [F2] the pill and the titles stay unlocked when the network returns", async ({ page, context, qa }) => {
+test("S10-02 [F2] the pill and the titles stay unlocked when the network returns", { tag: ["@slice"] }, async ({ page, context, qa }) => {
   qa.begin({
     story: "S10",
     id: "S10-02 [F2]",
@@ -495,6 +492,7 @@ test("S10-02 [F2] the pill and the titles stay unlocked when the network returns
         }));
         const bad = now.status !== "unlocked" || now.pill !== T("vault_pill_yours") || !now.project.includes(PROJECT.name) || now.doc !== doc;
         if (bad) seen.push(`${((Date.now() - started) / 1000).toFixed(1)} s: pill "${now.pill}" (${now.status}), project "${now.project}", document "${now.doc}"`);
+        // The sampling period of a watch that lasts a fixed 10 s on purpose (F2 flipped the header within 6 s): what is checked is that nothing changes in that time, so the loop is bounded by it.
         await page.waitForTimeout(250);
       }
       expect(seen, "the first moment the header was not as it was").toEqual([]);
@@ -513,7 +511,7 @@ test("S10-02 [F2] the pill and the titles stay unlocked when the network returns
 
 // ---- S10-03 [O23] -----------------------------------------------------------------------------------------------------------------------------------------
 
-test("S10-03 [O23] Remember on this computer works again after Forget on this computer", async ({ page, qa }) => {
+test("S10-03 [O23] Remember on this computer works again after Forget on this computer", { tag: ["@slice"] }, async ({ page, qa }) => {
   qa.begin({
     story: "S10",
     id: "S10-03 [O23]",
@@ -562,8 +560,9 @@ test("S10-03 [O23] Remember on this computer works again after Forget on this co
     await page.reload();
     await qa.check("data", "after the reload the vault is open and no passphrase is asked", async () => {
       await expect(pill(page)).toHaveAttribute("data-status", "unlocked");
-      // A page that asks does so a moment after the pill settles: look again after its reads are done.
-      await page.waitForTimeout(2_000);
+      // A page that has to ask does so once its reads are done. The home shows its stages only after it has read its sealed work, so with the stages on the screen every read that
+      // could have asked has been made: that is the condition to wait for, not a time.
+      await expect(page.getByTestId("home-stages")).toBeVisible();
       await expect(page.getByTestId("pass-dialog")).toBeHidden();
       await expect(pill(page)).toHaveAttribute("data-status", "unlocked");
     }, { source: "docs/walkthroughs/notes/2026-10-23-tools-walk.md, O23; spec section 9 ('the next reload does not ask')" });
@@ -572,7 +571,7 @@ test("S10-03 [O23] Remember on this computer works again after Forget on this co
 
 // ---- S10-04 [O18] -----------------------------------------------------------------------------------------------------------------------------------------
 
-test("S10-04 [O18] a locked vault asks for the passphrase once when Closeness opens", async ({ page, qa }) => {
+test("S10-04 [O18] a locked vault asks for the passphrase once when Closeness opens", { tag: ["@slice"] }, async ({ page, qa }) => {
   qa.begin({
     story: "S10",
     id: "S10-04 [O18]",
@@ -618,7 +617,7 @@ test("S10-04 [O18] a locked vault asks for the passphrase once when Closeness op
       const kinds = rows.blobs.map((b) => b.kind);
       expect(kinds.some((k) => k.startsWith("shelf_paper:"))).toBe(true);
       expect(kinds).toEqual(expect.arrayContaining(["shelf_index", "qual_codes", "design_budget"]));
-    });
+    }, { source: "e2e/stage2-idea-literature.spec.ts step 7 (the shelf's blobs), e2e/tools-c.spec.ts (a code), e2e/tools-a.spec.ts step 5c (a budget amount): the reload has something sealed to read only once each is on the server" });
   });
 
   await qa.step("lock on Closeness", async () => {
@@ -645,7 +644,7 @@ test("S10-05 unlocking on a slow network shows a sign of progress, and a second 
     goal: "My vault is locked and every answer from the server takes 3 s: pressing OK on the passphrase shows that something is happening within a second, and pressing again opens no second passphrase window",
     situation: { vault: "locked", network: "slow", screen: "desktop", lang: "en", data: "realistic" },
     steps: ["new student", "lock", "unlock on a slow network"],
-    code: CODE
+    code: [...CODE, "apps/web/components/frame/ProjectHome.tsx"]
   });
   let s!: Student;
 
@@ -664,18 +663,28 @@ test("S10-05 unlocking on a slow network shows a sign of progress, and a second 
     try {
       await openUnlockWindow(page);
       await page.getByTestId("pass-input").fill(s.passphrase!);
-      // Counted from the moment OK is pressed: the passphrase windows the page opens (a second unlock would open a second one), and the page's own second press, 300 ms into the
-      // wait, on the one button it offers for the same thing (the home's "Unlock", which it shows while it reads the project again).
+      // From the moment OK is pressed, in the page itself (so that no wait of the test's own is in the numbers): the passphrase windows the page opens (a second unlock would open a second one);
+      // how long the home goes on saying "This project is locked" (its `home-locked` card); and a second press, 300 ms into the wait, a synthetic click on the one button the page offers for the
+      // same thing, the home's "Unlock", which it shows while it reads the project again.
       await page.evaluate(() => {
-        const w = window as unknown as { __asks: number; __second: boolean | null };
+        const w = window as unknown as { __asks: number; __second: boolean | null; __lockedGoneAt: number | null };
         w.__asks = 0;
         w.__second = null;
+        w.__lockedGoneAt = null;
         new MutationObserver((records) => {
           for (const r of records) for (const n of r.addedNodes) if (n instanceof Element && (n.matches('[data-testid="pass-dialog"]') || n.querySelector('[data-testid="pass-dialog"]'))) w.__asks++;
         }).observe(document.body, { childList: true, subtree: true });
         document.querySelector('[data-testid="pass-ok"]')!.addEventListener(
           "click",
           () => {
+            const pressed = performance.now();
+            const watch = setInterval(() => {
+              const t = performance.now() - pressed;
+              if (!document.querySelector('[data-testid="home-locked"]')) {
+                w.__lockedGoneAt = t;
+                clearInterval(watch);
+              } else if (t > 20_000) clearInterval(watch);
+            }, 50);
             setTimeout(() => {
               const again = document.querySelector<HTMLElement>('[data-testid="home-unlock"]');
               w.__second = again !== null;
@@ -696,16 +705,23 @@ test("S10-05 unlocking on a slow network shows a sign of progress, and a second 
         },
         { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer)", known: "Q2" }
       );
-      await qa.check("data", "a second press on the page's own Unlock button during the wait opens no second passphrase window", async () => {
+      await qa.check("conceptual", "within 1 s of OK the home no longer says \"This project is locked\" (the pill reads Vault unlocked by then, and the page must not contradict it)", async () => {
+        await expect.poll(() => page.evaluate(() => (window as unknown as { __lockedGoneAt: number | null }).__lockedGoneAt), { timeout: 20_000, message: "the home's locked card never went" }).not.toBeNull();
+        const goneAt = await page.evaluate(() => (window as unknown as { __lockedGoneAt: number | null }).__lockedGoneAt);
+        expect(goneAt, "ms from OK until the home stopped saying the project is locked").toBeLessThanOrEqual(PROGRESS_MS);
+      }, { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); the header's own \"Vault unlocked\" at the same moment", known: "Q2" });
+      // The end of the wait is the stages on the screen, a condition, not a time: a window a second unlock would open shows up before then.
+      await expect(page.getByTestId("home-stages")).toBeVisible({ timeout: 30_000 });
+      // "No second unlock" is proved as "no second passphrase window": a second unlock would have to ask again, and the app's one ask is the window. The press is a synthetic click from the page (above).
+      await qa.check("data", "a second press on the page's own Unlock button during the wait opens no second passphrase window (so none is asked for a second unlock)", async () => {
         const second = await page.evaluate(() => (window as unknown as { __second: boolean | null }).__second);
         if (second !== true) notChecked("the page offered no button to press a second time during the wait, so a second press was not made");
-        await page.waitForTimeout(1_500);
         await expect(page.getByTestId("pass-dialog")).toBeHidden();
         expect(await page.evaluate(() => (window as unknown as { __asks: number }).__asks), "passphrase windows opened after OK").toBe(0);
       }, { source: "plan S10-05: a second press during the wait makes no second unlock" });
       await qa.check("data", "when the wait ends the vault is open: the pill reads Vault unlocked, the project's work shows and nothing was asked again", async () => {
-        await expect(pill(page)).toHaveText(T("vault_pill_yours"), { timeout: 30_000 });
-        await expect(page.getByTestId("home-stages")).toBeVisible({ timeout: 30_000 });
+        await expect(pill(page)).toHaveText(T("vault_pill_yours"));
+        await expect(page.getByTestId("home-stages")).toBeVisible();
         await expect(page.getByTestId("pass-dialog")).toBeHidden();
         expect(await page.evaluate(() => (window as unknown as { __asks: number }).__asks), "passphrase windows opened after OK").toBe(0);
       }, { source: `${SHEET} row 4c` });
@@ -724,7 +740,7 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
     goal: "On my phone, in Hindi, I set up my vault, unlock it and recover it with my sheet, and every window fits the screen and speaks Hindi",
     situation: { vault: "open", network: "fine", screen: "phone", lang: "hi", data: "realistic" },
     steps: ["new student in Hindi", "set up the vault", "unlock", "recover with the sheet"],
-    code: CODE
+    code: [...CODE, ...CODE_FIELD]
   });
   const hi: Lang = "hi";
   let s!: Student;
@@ -757,10 +773,11 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
     await qa.checkpoint("the set-up window, on a phone, in Hindi");
     await page.getByTestId("vault-setup-submit").click();
     await inHindi("the passphrase window explains the vault in Hindi", () => page.getByTestId("pass-message"), "vault_setup_intro", `${SHEET} row 3`);
+    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(page, ["pass-input"]), { source: EYE_SOURCE, known: "Q5" });
     await qa.checkpoint("the passphrase window of the set-up, on a phone, in Hindi");
-    await answer(page, s.passphrase!);
+    await answerPassphrase(page, s.passphrase!);
     await inHindi("asked again, it says so in Hindi", () => page.getByTestId("pass-message"), "bk_pass2", `${SHEET} row 3`);
-    await answer(page, s.passphrase!);
+    await answerPassphrase(page, s.passphrase!);
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     s.recoveryCode = (await page.getByTestId("vault-code").innerText()).trim();
     await qa.check("data", "the recovery sheet speaks Hindi (title, explanation, the download, \"I have saved it\", Done) and shows a code of four groups of five", async () => {
@@ -792,11 +809,12 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
         await expect(dialogText("pass-dialog", key)(page), key).toBeVisible();
       }
     }, { source: `${SHEET} row 4c; spec section 6 (the windows' words in Hindi)` });
+    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(page, ["pass-input"]), { source: EYE_SOURCE, known: "Q5" });
     await qa.checkpoint("the unlock window, on a phone, in Hindi");
-    await answer(page, s.passphrase! + "-wrong");
+    await answerPassphrase(page, s.passphrase! + "-wrong");
     await inHindi("a wrong passphrase gives its verdict in Hindi, inside the window", () => page.getByTestId("pass-verdict"), "vault_wrong", `${SHEET} row 4b; O9`);
     await qa.checkpoint("the unlock window with the verdict, on a phone, in Hindi");
-    await answer(page, s.passphrase!);
+    await answerPassphrase(page, s.passphrase!);
     await qa.check("data", "the right passphrase opens the vault, and the pill says so in Hindi", async () => {
       await expect(page.getByTestId("pass-dialog")).toBeHidden();
       await expect(pill(page)).toHaveText(T("vault_pill_yours", {}, hi));
@@ -814,6 +832,7 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
         await expect(dialogText("vault-recover-dialog", key)(page), key).toBeVisible();
       }
     }, { source: `${SHEET} row 7a; spec section 6 (the windows' words in Hindi)` });
+    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["recover-pass", "recover-pass2"]), { source: EYE_SOURCE, known: "Q5" });
     await qa.checkpoint("the recovery window, on a phone, in Hindi");
     // A code that is not the sheet's is refused first: the verdict, in Hindi, inside the window (the alphabet is the sheet's: no 0, 1, I or O).
     const next = fresh();
@@ -910,7 +929,8 @@ test("S10-07 the server holds none of my words in clear: no title, no blob, no s
     const rows = await serverRows(s.uid);
     const leaks = [MARK, project.idea.replace(` ${MARK}`, ""), "bedtime routine", sentence, code, "Exam anxiety", docTitle];
     await qa.check("data", "no blob body holds the marker, the idea, a code name or the document's words, and every blob is sealed", async () => {
-      if (rows.blobs.length === 0) notChecked("the account has no blobs on the server, so there was nothing to read");
+      // The case saw its idea, shelf paper and code saved (each PUT answered ok): no blob on the server is data lost, not a check that measured nothing.
+      expect(rows.blobs.length, "blobs the server holds for the account").toBeGreaterThan(0);
       const kinds = rows.blobs.map((b) => b.kind);
       expect(kinds, "the blobs the case made").toEqual(expect.arrayContaining(["idea_intake", "qual_codes", "shelf_index"]));
       for (const b of rows.blobs) {
@@ -919,7 +939,8 @@ test("S10-07 the server holds none of my words in clear: no title, no blob, no s
       }
     }, { source: "docs/walkthroughs/stage-2.md row 12 ('bodies of ciphertext only; none holds the idea, a title or a highlight in readable text')" });
     await qa.check("data", "no project title or document title holds the marker or the names, and every title is sealed (the scratch space's own is the one title in clear)", async () => {
-      if (rows.titles.length === 0) notChecked("the account has no titles on the server, so there was nothing to read");
+      // The project was created and the document renamed (both answered ok): no title on the server is a failure, not a check that measured nothing.
+      expect(rows.titles.length, "titles the server holds for the account").toBeGreaterThan(0);
       for (const t of rows.titles) {
         if (t === SCRATCH_TITLE) continue;
         expect(t).toMatch(CIPHERTEXT);
@@ -940,7 +961,9 @@ test("S10-07 the server holds none of my words in clear: no title, no blob, no s
         expect(d.title).toMatch(CIPHERTEXT);
       }
       const revisions = await revisionsOf(page, docId);
-      if (revisions.length === 0) notChecked("the server lists no saved version of the document, so there was nothing to read");
+      // Every save keeps a version (phase-3a.md, "Not yet in this phase": thinning old versions is not built; the api's PUT /documents/:id always appends one), and this case saw its saves answered ok:
+      // a document with no saved version is lost work, so an empty list is a failure here, not a check that measured nothing.
+      expect(revisions.length, "saved versions the server lists for the document").toBeGreaterThan(0);
       for (const r of revisions) {
         expect(r.keyVersion, `version ${r.seq}`).toBeGreaterThanOrEqual(1);
         expect(r.bodyHtml, `version ${r.seq}`).toMatch(CIPHERTEXT);
@@ -948,7 +971,8 @@ test("S10-07 the server holds none of my words in clear: no title, no blob, no s
       }
     }, { source: "docs/walkthroughs/wave-b1.md row 7 (title_key_version 1 or more); docs/walkthroughs/stage-2.md row 12 (key_version 1 or more)" });
     await qa.check("data", "nothing the browser sent our api in a write held the marker, the idea or a code name in clear", async () => {
-      if (sent.length === 0) notChecked("the browser sent no write to the api, so there was nothing to read");
+      // The account, the project, the document and the blobs were all written from this page: no write seen means the recorder is broken, which must not read as a pass.
+      expect(sent.length, "writes to the api the page made").toBeGreaterThan(0);
       for (const plain of [MARK, "bedtime routine", "Exam anxiety"]) expect(sent.filter((w) => w.includes(plain)).map((w) => w.slice(0, 120))).toEqual([]);
     }, { source: "docs/walkthroughs/wave-b1.md row 7; spec section 4 (the server's stored copies are ciphertext)" });
   });

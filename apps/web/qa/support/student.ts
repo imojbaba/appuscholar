@@ -525,3 +525,49 @@ export async function catchDownload(page: Page, click: () => Promise<void>): Pro
     }
   };
 }
+
+// ---- The passphrase window, the toasts and the api's answers --------------------------------------------------------------------------------------------
+
+/**
+ * Every toast shown from now on, in order (one toast replaces another, so two that arrive close together are read from this record, not from the screen). The record lives in the
+ * page: ask again after a reload. It is the e2e suite's own recorder, imported (e2e/support/toasts.ts), so the two never drift apart.
+ */
+export { recordToasts } from "../../e2e/support/toasts";
+
+/**
+ * What our api answers a signed-in GET, read from inside the page the way the app reads it (the token comes from the web app's own /api/token), so the case sees what the server
+ * would give a student's browser: key versions, sealed titles, saved versions. Throws, naming the path and the status, when the api does not answer ok. The watcher sees the request like any other.
+ */
+export async function apiGet<T>(page: Page, path: string): Promise<T> {
+  return (await page.evaluate(
+    async ({ api, path: p }) => {
+      const { token } = (await (await fetch("/api/token", { cache: "no-store" })).json()) as { token: string };
+      const r = await fetch(api + p, { headers: { authorization: "Bearer " + token } });
+      if (!r.ok) throw new Error(`GET ${p} answered ${r.status}`);
+      return (await r.json()) as unknown;
+    },
+    { api: QA_API_ORIGIN, path }
+  )) as T;
+}
+
+/**
+ * The passphrase window of the vault's unlock, open and asking its question: by itself if the page has asked, else by pressing the "Vault locked" pill. For a case that answers the window
+ * its own way (a wrong passphrase first, the recovery link, a window in Hindi: `lang`); `unlock` is for the plain answer.
+ */
+export async function openUnlockWindow(page: Page, lang: Lang = "en"): Promise<void> {
+  const dialog = page.getByTestId("pass-dialog");
+  if (!(await dialog.isVisible())) {
+    // The page may ask while the pill is pressed: its window then covers the pill, and is the window wanted.
+    await vaultPill(page).click({ timeout: 5_000 }).catch(async (e: unknown) => {
+      if (!(await dialog.isVisible())) throw e;
+    });
+  }
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint", {}, lang));
+}
+
+/** Types `pass` into the open passphrase window and presses OK. What follows (the verdict, the window closing) is the caller's to look at. */
+export async function answerPassphrase(page: Page, pass: string): Promise<void> {
+  await page.getByTestId("pass-input").fill(pass);
+  await page.getByTestId("pass-ok").click();
+}
