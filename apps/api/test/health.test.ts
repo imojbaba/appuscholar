@@ -28,6 +28,7 @@ describe("health", () => {
     const ping = vi.spyOn(store, "ping");
     const res = await app.request("/health/db");
     expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
     expect(await res.json()).toEqual({ ok: true });
     expect(ping).toHaveBeenCalledTimes(1);
   });
@@ -54,7 +55,71 @@ describe("health", () => {
     const res = await app.request("/health/db");
     expect(res.status).toBe(503);
     expect(await res.text()).toBe('{"ok":false}');
-    expect(JSON.stringify(spy.mock.calls)).not.toContain("secret");
+    expect(spy.mock.calls.flat()).toEqual(["health/db failed", "unknown", "none"]);
+  });
+
+  it("an error name or code that is not a short token is logged as other", async () => {
+    const { app, store } = make();
+    store.failPing = Object.assign(new Error("x"), { name: "connect failed postgres://user:secret@host/db", code: "a b" });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await app.request("/health/db");
+    expect(res.status).toBe(503);
+    expect(spy.mock.calls.flat()).toEqual(["health/db failed", "other", "other"]);
+  });
+
+  it("a hung ping answers 503 after 5 seconds and logs Timeout", async () => {
+    vi.useFakeTimers();
+    try {
+      const { app, store } = make();
+      vi.spyOn(store, "ping").mockReturnValue(new Promise<void>(() => {}));
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const pending = app.request("/health/db");
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(spy).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      const res = await pending;
+      expect(res.status).toBe(503);
+      expect(await res.text()).toBe('{"ok":false}');
+      expect(res.headers.get("cache-control")).toBe("no-store");
+      expect(spy.mock.calls.flat()).toEqual(["health/db failed", "Timeout", "none"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a prompt ping leaves no timer behind", async () => {
+    vi.useFakeTimers();
+    try {
+      const { app } = make();
+      const res = await app.request("/health/db");
+      expect(res.status).toBe(200);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("both answers are no-store", async () => {
+    const { app, store } = make();
+    expect((await app.request("/health/db")).headers.get("cache-control")).toBe("no-store");
+    store.failPing = new Error("x");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await app.request("/health/db")).headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("a Drizzle-wrapped driver error is read through its cause and leaks nothing", async () => {
+    const d = drizzle(new PGlite(), { schema });
+    const cause = Object.assign(new Error("connect failed postgres://user:secret@host/db"), { name: "NeonDbError", code: "ECONNREFUSED" });
+    vi.spyOn(d, "execute").mockRejectedValue(Object.assign(new Error("Failed query: select 1 postgres://user:secret@host/db"), { cause }));
+    const app = createApp({ store: new DrizzleStore(d), jwtSecret: SECRET });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await app.request("/health/db");
+    expect(res.status).toBe(503);
+    expect(await res.text()).toBe('{"ok":false}');
+    expect(spy.mock.calls.flat()).toEqual(["health/db failed", "NeonDbError", "ECONNREFUSED"]);
+    const logged = JSON.stringify(spy.mock.calls);
+    expect(logged).not.toContain("select 1");
+    expect(logged).not.toContain("postgres://");
   });
 
   it("the Drizzle store pings pglite", async () => {
