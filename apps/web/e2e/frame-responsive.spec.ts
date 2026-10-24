@@ -62,7 +62,7 @@ async function newProject(page: Page) {
 
 test("the home has no horizontal scroll", async ({ page }) => {
   await newProject(page);
-  // The header: the wordmark, the vault pill and Menu; the switcher, the AI pill, Help and the account live in the menu.
+  // The header: the wordmark, the vault pill, the theme button and Menu; the switcher, the AI pill, Help and the account live in the menu.
   const header = page.getByTestId("app-header");
   await expect(header.getByTestId("wordmark")).toBeVisible();
   await expect(header.getByTestId("vault-pill")).toBeVisible();
