@@ -2,6 +2,7 @@
 // The Playwright reporter (qa/reporter.ts) reads the results and writes what this returns. Everything here is in plain words, for OJ first.
 import { failsCase, findKnown, type KnownEntry } from "../support/known";
 import type { CaseResult, CheckResult, FailKind, Situation, StoryId } from "../support/qa";
+import { htmlEscape as esc, redactText, secretForms } from "../support/secrets";
 
 export type Mark = "PASS" | "FAIL: UI" | "FAIL: Error" | "FAIL: Unexpected" | "FAIL: Slow" | "KNOWN FAULT" | "FIXED?" | "AWAITING DECISION" | "BLOCKED" | "NOT RUN";
 
@@ -144,6 +145,9 @@ function gist(s: string): string {
   return text.length > 300 ? text.slice(0, 299) + "…" : text;
 }
 
+/** A long text cut to `n` characters. Only ever applied to text that has been through the redaction. */
+const cap = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // The facts of each case, worked out once for the markdown and the html
 
@@ -176,6 +180,8 @@ type CaseFacts = {
   secondTry: boolean;
   /** For a case that passed only on a retry: its first try, as a case of its own (ruling R22). */
   first?: CaseFacts;
+  /** Playwright's own error, for a case it failed with no check to say why (redacted, then cut). */
+  playwrightError?: string;
   failed: CheckFacts[];
   awaiting: AwaitingFacts[];
   /** Passed checks on a known fault: the fault may be fixed. */
@@ -233,14 +239,17 @@ function factsOf(c: ReportCase, known: KnownEntry[], isFirstTry = false): CaseFa
     }
   }
   // Playwright failed the case and its checks do not say why (an error after the result was attached, in a teardown): that is an Error, not a pass.
+  let playwrightError: string | undefined;
   if (c.status === "failed" && !mark.startsWith("FAIL")) {
     mark = "FAIL: Error";
+    // Cut here, after the redaction of everything handed in: a text cut earlier could leave a piece of a secret.
+    playwrightError = cap(c.error ?? "(Playwright gave no message)", 2000);
     failed.push({
       title: "Playwright ended the case as failed, and none of its checks says why",
       kind: "an error outside the checks",
       fail: "Error",
       expected: "the case ends without an error",
-      happened: c.error ?? "(Playwright gave no message)",
+      happened: playwrightError,
       failsCase: true
     });
   }
@@ -269,6 +278,7 @@ function factsOf(c: ReportCase, known: KnownEntry[], isFirstTry = false): CaseFa
     tookText: seconds(c.durationMs),
     secondTry,
     ...(first ? { first } : {}),
+    ...(playwrightError ? { playwrightError } : {}),
     failed,
     awaiting,
     nowPassing,
@@ -706,8 +716,6 @@ function fixBriefMarkdown(d: Fact): string {
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Html
 
-/** Html text and double-quoted attribute values (every attribute here is double-quoted, so the apostrophe stays as it is). */
-const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const MARK_CLASS: Record<Mark, string> = {
   PASS: "pass",
   "FAIL: UI": "fail",
@@ -889,6 +897,7 @@ function jsonOf(d: Fact): string {
       checks: f.c.checks,
       reached: f.c.reached,
       steps: f.c.meta.steps,
+      ...(f.playwrightError ? { playwrightError: f.playwrightError } : {}),
       ...(f.c.stoppedAt ? { stoppedAt: f.c.stoppedAt } : {}),
       ...(f.c.blocked !== undefined ? { blocked: f.c.blocked } : {}),
       screenshots: f.c.screenshots,
@@ -911,17 +920,6 @@ function jsonOf(d: Fact): string {
   return JSON.stringify(out, null, 2) + "\n";
 }
 
-/** Each secret as it can appear in the outputs: as written, in a URL, inside a JSON string, and in html. Longest first, so a longer form is not left half done. */
-export function secretForms(secrets: string[]): string[] {
-  const forms = new Set<string>();
-  for (const s of secrets) {
-    if (!s) continue;
-    for (const f of [s, encodeURIComponent(s), JSON.stringify(s).slice(1, -1), esc(s)]) if (f) forms.add(f);
-  }
-  return [...forms].sort((a, b) => b.length - a.length);
-}
-const REDACTED = "[redacted]";
-const redactText = (s: string, forms: string[]): string => forms.reduce((t, f) => t.split(f).join(REDACTED), s);
 function redactDeep<T>(v: T, forms: string[]): T {
   if (typeof v === "string") return redactText(v, forms) as T;
   if (Array.isArray(v)) return v.map((x) => redactDeep(x, forms)) as T;

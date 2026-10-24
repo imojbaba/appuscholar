@@ -2,6 +2,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { dictionary } from "./dict";
 import { matchKnown, type KnownEntry } from "./known";
+import { liveKeyForms, redactLiveKey } from "./secrets";
 
 /**
  * The layout, accessibility and Hindi rules of spec section 8, measured in the page at a checkpoint (`qa.checkpoint`, qa.ts). `measureLayout` measures; `planChecks` turns what it
@@ -223,6 +224,8 @@ type InPageArgs = {
   exact: string[];
   patterns: string[];
   fallbacks: string[];
+  /** The forms of the live-AI key (secrets.ts): taken out of any text of the page before it is cut to a name or a sample. */
+  secrets: string[];
 };
 type InPageResult = { findings: LayoutFinding[]; measured: Record<LayoutRule, number>; visible: number };
 
@@ -256,14 +259,19 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     if (!s) styles.set(el, (s = getComputedStyle(el)));
     return s;
   };
-  const shorten = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  /** The text without the secrets (the page can show a key), before it is cut: cut first and a prefix of the key would stay. */
+  const scrub = (s: string) => a.secrets.reduce((t, f) => t.split(f).join("[redacted]"), s);
+  const shorten = (s: string, n: number) => {
+    const t = scrub(s);
+    return t.length > n ? t.slice(0, n - 1) + "…" : t;
+  };
   const round1 = (n: number) => String(Math.round(n * 10) / 10);
   /** The element as a person would name it, and where the test ids can find it: `button "Insert image" [fmt-image]`. */
   const label = (el: Element): string => {
     const own = el.getAttribute("data-testid");
     const holder = own ? el : el.closest("[data-testid]");
     const id = holder ? holder.getAttribute("data-testid") : null;
-    const raw = el.getAttribute("aria-label") || (el.textContent ?? "").slice(0, 200) || el.getAttribute("title") || el.getAttribute("placeholder") || "";
+    const raw = el.getAttribute("aria-label") || scrub(el.textContent ?? "").slice(0, 200) || el.getAttribute("title") || el.getAttribute("placeholder") || "";
     const name = shorten(raw.replace(/\s+/g, " ").trim(), 40);
     return el.localName + (name ? ` "${name}"` : "") + (id ? (own ? ` [${id}]` : ` in [${id}]`) : "");
   };
@@ -506,7 +514,7 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
 /** axe's serious and critical findings, and how many elements it examined. */
 async function scan(page: Page): Promise<{ findings: LayoutFinding[]; examined: number }> {
   const results = await new AxeBuilder({ page }).analyze();
-  const selector = (target: ReadonlyArray<string | string[]>) => target.map((t) => (Array.isArray(t) ? t.join(" ") : t)).join(" ");
+  const selector = (target: ReadonlyArray<string | string[]>) => redactLiveKey(target.map((t) => (Array.isArray(t) ? t.join(" ") : t)).join(" "));
   const examined = new Set<string>();
   for (const group of [results.passes, results.violations, results.incomplete]) for (const r of group) for (const n of r.nodes) examined.add(selector(n.target));
   const findings: LayoutFinding[] = [];
@@ -527,7 +535,7 @@ export async function measureLayout(
 ): Promise<LayoutMeasure> {
   const rules = [...(o.rules ?? LAYOUT_RULES)];
   const skipSelector = [".ProseMirror", ...[...STUDENT_TEXT_IDS, ...(o.exempt ?? [])].map((id) => `[data-testid="${id.replace(/["\\]/g, "\\$&")}"]`)].join(", ");
-  const args: InPageArgs = { rules, phone: o.phone, lang: o.lang, skipSelector, namesSrc: namesSource(), exact: registerMatcher().exact, patterns: registerMatcher().patterns, fallbacks: appFallbacks() };
+  const args: InPageArgs = { rules, phone: o.phone, lang: o.lang, skipSelector, namesSrc: namesSource(), exact: registerMatcher().exact, patterns: registerMatcher().patterns, fallbacks: appFallbacks(), secrets: liveKeyForms() };
   const inside = await page.evaluate(inPage, args);
   const measured = inside.measured;
   const findings = [...inside.findings];

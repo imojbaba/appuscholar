@@ -1,5 +1,6 @@
 import type { BrowserContext, Dialog, Page } from "@playwright/test";
 import { QA_API_ORIGIN, QA_WEB_ORIGIN } from "./origins";
+import { redactLiveKey } from "./secrets";
 
 /**
  * The watcher (spec section 8): it runs through every case and records an Error for what no step looked for. It records; the `qa` fixture (qa.ts) turns what it recorded
@@ -206,7 +207,8 @@ export class Watcher {
 
   private add(rule: WatcherRule, message: string): void {
     const step = this.o.step();
-    this.found.push({ rule, message, ...(step ? { step } : {}) });
+    // The live-AI key is taken out of what a page printed before any of it is cut (see the sites below), and once more here for what was composed.
+    this.found.push({ rule, message: redactLiveKey(message), ...(step ? { step } : {}) });
   }
 
   private note(kind: Note["kind"], detail: string): void {
@@ -228,7 +230,7 @@ export class Watcher {
 
     context.on("weberror", (e) => {
       const error = e.error();
-      this.add("pageerror", `${error.message || String(error)} (on ${this.where(e.page())})`);
+      this.add("pageerror", `${redactLiveKey(error.message || String(error))} (on ${this.where(e.page())})`);
     });
 
     context.on("console", (msg) => {
@@ -240,7 +242,7 @@ export class Watcher {
         return;
       }
       if (RESOURCE_ECHO.test(text) && (this.statusOf.get(msg.location().url) ?? 0) >= 400) return;
-      this.add("console", `${text.slice(0, 300)} (on ${this.where(msg.page())})`);
+      this.add("console", `${redactLiveKey(text).slice(0, 300)} (on ${this.where(msg.page())})`);
     });
 
     context.on("response", (res) => {
@@ -291,7 +293,7 @@ export class Watcher {
         this.note("csp-eval-probe", `${v.violatedDirective} refused eval${at}`);
         return;
       }
-      const sample = v.sample ? `: ${v.sample.slice(0, 80)}` : "";
+      const sample = v.sample ? `: ${redactLiveKey(v.sample).slice(0, 80)}` : "";
       this.add("csp", `${v.violatedDirective} blocked ${v.blockedURI || "a resource"}${at}${sample} (on ${this.where(source.page)})`);
     });
     await context.addInitScript(() => {
@@ -322,7 +324,7 @@ export class Watcher {
       void answer(expected!.accept);
       return;
     }
-    this.add("dialog", `${type}() with the text "${dialog.message().slice(0, 200)}", dismissed (on ${this.where(dialog.page())})`);
+    this.add("dialog", `${type}() with the text "${redactLiveKey(dialog.message()).slice(0, 200)}", dismissed (on ${this.where(dialog.page())})`);
     void answer(false);
   }
 

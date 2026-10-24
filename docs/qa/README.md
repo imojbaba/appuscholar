@@ -42,7 +42,7 @@ After a run, `apps/web/qa-report/` holds:
 
 Playwright's own output for each case is in `apps/web/qa-results/`. Both folders are ignored by git.
 
-If the live-AI key is set (`QA_LIVE_AI_KEY`, release runs only), its value is replaced with `[redacted]` in every file above, and a replay that holds it is not copied. Set `QA_REPORT_DIR` to write the report somewhere else, and `QA_RUN_KIND` (`slice`, `full` or `release`) to say what the run was when it cannot be told from the `-g` filter.
+If the live-AI key is set (`QA_LIVE_AI_KEY`, release runs only), its value is replaced with `[redacted]` in every file above, and a replay that holds it is not copied. The fixture takes it out of every message, console line, dialog text and page text before any of it is cut to a length (and out of the `qa-result` it attaches), so no piece of it is left behind. Set `QA_REPORT_DIR` to write the report somewhere else, and `QA_RUN_KIND` (`slice`, `full` or `release`) to say what the run was when it cannot be told from the `-g` filter.
 
 ## How to read the marks
 

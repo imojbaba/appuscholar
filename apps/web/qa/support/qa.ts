@@ -4,6 +4,7 @@ import { FAILURE_MODES, type ShimLogEntry } from "../provider-shim/core.mjs";
 import { failsCase, loadKnown, matchKnown, missingKnownIds, type KnownEntry } from "./known";
 import { LAYOUT_LABEL, measureLayout, planChecks, readScreen, type LayoutRule, type RulePlan } from "./layout";
 import { readProviderLog } from "./providerLog";
+import { redactLiveKey } from "./secrets";
 import { RULE_LABEL, Watcher, type Allow, type Allowance, type DialogType, type Note, type WatcherRule } from "./watcher";
 
 export type { Allow, Allowance, Note };
@@ -133,7 +134,11 @@ export function notChecked(reason: string): never {
   throw new NotChecked(reason);
 }
 
-const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+/** Cuts `s` to `n` characters. The live-AI key is taken out first (secrets.ts): cut first and a prefix of it would stay in the text. Every cut of a message goes through here. */
+const clip = (s: string, n: number) => {
+  const t = redactLiveKey(s);
+  return t.length > n ? t.slice(0, n - 1) + "…" : t;
+};
 /** An error as text for the report: the message without the colours Playwright puts in it. */
 const plain = (message: string, n: number): string => clip(stripVTControlCharacters(message).trim(), n);
 const errorText = (e: unknown, n: number): string => plain(e instanceof Error ? e.message : String(e), n);
@@ -367,7 +372,8 @@ export class QaCase implements Qa {
     }
     await this.noteStopNobodyCaught();
     const result = this.result();
-    await this.testInfo.attach("qa-result", { body: JSON.stringify(result, null, 2), contentType: "application/json" });
+    // The attachment is what the report, the blob report and the output folder keep: the live-AI key is not in it, whatever it was found in.
+    await this.testInfo.attach("qa-result", { body: redactLiveKey(JSON.stringify(result, null, 2)), contentType: "application/json" });
     if (this.selfTest) return;
     const failing = result.checks.filter((c) => failsCase(c, this.known));
     if (failing.length === 0) return;
@@ -476,7 +482,7 @@ export class QaCase implements Qa {
     const out: CheckResult[] = [];
     for (const e of this.readLog()) {
       if (!this.keys.has(e.key)) continue;
-      const asked = `“${e.prompt.slice(0, 120)}”`;
+      const asked = `“${redactLiveKey(e.prompt).slice(0, 120)}”`;
       if (e.outcome === "unknown") out.push(this.finding("provider", `${e.host} had no recorded reply for the prompt ${asked}`));
       else if (e.outcome === "refused") out.push(this.finding("provider", `${e.host} is not faked, so the request was refused and the key went nowhere; the prompt was ${asked}`));
       else if (e.outcome === "failed" && !FAILURE_MODES.has(e.mode)) {

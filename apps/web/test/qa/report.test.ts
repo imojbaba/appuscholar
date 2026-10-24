@@ -611,6 +611,20 @@ describe("harness selftests, blocked and skipped cases, information", () => {
     expect(out.summaryMd).not.toContain("S5-01 goal PASS");
   });
 
+  it("keeps Playwright's error in results.json too, redacted and cut after the redaction", () => {
+    const secret = "gsk_live_0a1b2c3d4e5f";
+    const error = "x".repeat(1980) + ` ${secret} ` + "y".repeat(100);
+    const out = buildReport([kase([ok()], { status: "failed", error })], known, RUN, { redact: [secret] });
+    const kept = (JSON.parse(out.json) as { cases: Array<{ playwrightError?: string }> }).cases[0]!.playwrightError!;
+    expect(kept).toContain("[redacted]");
+    expect(kept.length).toBeLessThanOrEqual(2000);
+    for (const text of Object.values(out)) {
+      expect(text).not.toContain(secret);
+      expect(text).not.toContain(secret.slice(0, 12));
+    }
+    expect((JSON.parse(buildReport([kase([bad("ui")], { status: "failed", error: "teardown threw" })], known, RUN).json) as { cases: Array<Record<string, unknown>> }).cases[0]!.playwrightError).toBeUndefined();
+  });
+
   it("does not add that failure to a case that already fails by its checks", () => {
     const failing = kase([bad("ui")], { status: "failed", error: "the teardown threw: 1 check failed" });
     const out = buildReport([failing], known, RUN);

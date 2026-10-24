@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
 import { T } from "../support/dict";
 import { HINDI_EXCEPTIONS, LAYOUT_RULES, measureLayout, type LayoutRule } from "../support/layout";
@@ -223,6 +224,25 @@ test("layout: a name on the allow-list, Hindi, numbers, the editor, form fields 
   const mine = await measure(page, `<header><span data-testid="project-switcher">Sleep and exam anxiety</span></header><p data-testid="home-q-text">Does a fixed bedtime routine lower anxiety?</p><p>अपना काम सहेजें</p>`, { lang: "hi" });
   expect(rulesOf(mine, "english-in-hindi")).toEqual([]);
   expect(mine.measured["english-in-hindi"]).toBe(1);
+});
+
+test("layout: the live-AI key on a page is taken out of a finding's name before it is cut", TAGS, async ({ page, qa }) => {
+  measuring(qa, "SELF-LAYOUT-M20");
+  const key = `gsk_live_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  const before = process.env.QA_LIVE_AI_KEY;
+  process.env.QA_LIVE_AI_KEY = key;
+  try {
+    await page.setViewportSize(PHONE_SIZE);
+    // A 20 px button whose words hold the key 25 characters in: a name cut to 40 characters would keep 14 characters of it.
+    const r = await measure(page, `<button style="width:20px;height:20px">${"w".repeat(25)} ${key} and on</button>`, { phone: true });
+    const small = rulesOf(r, "small-target");
+    expect(small).toHaveLength(1);
+    expect(small[0]!.target).toContain("[redacted]");
+    expect(JSON.stringify(r)).not.toContain(key.slice(0, 12));
+  } finally {
+    if (before === undefined) delete process.env.QA_LIVE_AI_KEY;
+    else process.env.QA_LIVE_AI_KEY = before;
+  }
 });
 
 test("layout: a short word joins a run of English without counting, so a label of small words is English", TAGS, async ({ page, qa }) => {

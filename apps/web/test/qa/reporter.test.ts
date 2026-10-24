@@ -127,10 +127,25 @@ describe("selectionOf", () => {
     expect(selectionOf(at("-c", "qa/playwright.qa.config.ts", "-g", "@slice"))).toBe("-g @slice");
     expect(selectionOf(at("-g", "S5-01", "--project=phone"))).toBe("-g S5-01 --project=phone");
     expect(selectionOf(at("--project", "desktop", "--grep-invert", "@slow"))).toBe("--project desktop --grep-invert @slow");
-    expect(selectionOf(at("-gv", "@slow"))).toBe("-gv @slow");
+    expect(selectionOf(at("-G", "@slow"))).toBe("-G @slow");
+    expect(selectionOf(at("--test-list", "list.txt"))).toBe("--test-list list.txt");
     expect(selectionOf(at("stories/s05.qa.ts", "--last-failed"))).toBe("stories/s05.qa.ts --last-failed");
-    expect(selectionOf(at("--shard=2/4", "--tag", "@phone"))).toBe("--shard=2/4 --tag @phone");
+    expect(selectionOf(at("--shard=2/4", "--project", "phone"))).toBe("--shard=2/4 --project phone");
     expect(selectionOf(at("--only-changed"))).toBe("--only-changed");
+    expect(selectionOf(at("--only-changed", "main", "-g", "S5-01"))).toBe("--only-changed main -g S5-01");
+    expect(selectionOf(at("--project", "desktop", "phone", "-g", "S5-01"))).toBe("--project desktop phone -g S5-01");
+  });
+
+  it("does not swallow a selecting option after a flag with no value or an optional one (playwright test --help)", () => {
+    // --pass-with-no-tests is a flag; -u / --update-snapshots, --debug and --shuffle take a value only when the next word is not an option.
+    expect(selectionOf(at("--pass-with-no-tests", "-g", "S5-01"))).toBe("-g S5-01");
+    expect(selectionOf(at("-u", "-g", "S5-01"))).toBe("-g S5-01");
+    expect(selectionOf(at("--update-snapshots", "changed", "--project=phone"))).toBe("--project=phone");
+    expect(selectionOf(at("--update-snapshots=all", "-g", "S5-01"))).toBe("-g S5-01");
+    expect(selectionOf(at("--shuffle", "-g", "S5-01"))).toBe("-g S5-01");
+    expect(selectionOf(at("--shuffle", "42", "--grep=@slice"))).toBe("--grep=@slice");
+    expect(selectionOf(at("--debug", "-g", "S5-01"))).toBe("-g S5-01");
+    expect(selectionOf(at("--pass-with-no-tests"))).toBeUndefined();
   });
 
   it("does not count what only sets how the run goes", () => {
@@ -303,9 +318,10 @@ describe("retries", () => {
 });
 
 describe("a case Playwright failed after its result was attached", () => {
-  it("is FAIL: Error, with Playwright's own message, and is in the fix brief", async () => {
+  it("is FAIL: Error, with Playwright's own message, and is in the fix brief and in results.json", async () => {
     const t = testCase("S5-01", [attempt({ status: "failed", error: "Error: the fixture teardown threw", attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })], { outcome: "unexpected" });
     const r = await run([t], { status: "failed" });
+    expect((JSON.parse(r.read("results.json")) as { cases: Array<{ playwrightError?: string }> }).cases[0]!.playwrightError).toBe("Error: the fixture teardown threw");
     expect(r.json().cases[0]).toMatchObject({ id: "S5-01", mark: "FAIL: Error", status: "failed" });
     expect(r.read("fix-brief.md")).toContain("Entry 1: S5-01 — FAIL: Error");
     expect(r.read("fix-brief.md")).toContain("Error: the fixture teardown threw");
@@ -436,6 +452,32 @@ describe("the live-AI key", () => {
     for (const f of ["index.html", "summary.md", "fix-brief.md", "results.json"]) expect(r.read(f), f).not.toContain(key);
     const dead = await run([testCase("S5-02 dead", [attempt({ status: "failed", error: `boom ${key}` })], { outcome: "unexpected" })], { status: "failed" });
     for (const f of ["index.html", "summary.md", "fix-brief.md", "results.json"]) expect(dead.read(f), f).not.toContain(key);
+  });
+
+  it("is removed from Playwright's own error before it is cut (the key across character 2000), whichever way the error reaches the report", async () => {
+    vi.stubEnv("QA_LIVE_AI_KEY", key);
+    const prefix = key.slice(0, 12);
+    // The key starts at character 1981 and ends at 2002: a cut at 2000 would keep "gsk_live_" and a few characters.
+    const error = "x".repeat(1980) + ` ${key} ` + "y".repeat(120);
+    expect(error.indexOf(key)).toBeLessThan(2000);
+    expect(error.indexOf(key) + key.length).toBeGreaterThan(2000);
+    const outputs = async (r: Awaited<ReturnType<typeof run>>) => ["index.html", "summary.md", "fix-brief.md", "results.json"].map((f) => [f, r.read(f)] as const);
+    const all: Array<Awaited<ReturnType<typeof run>>> = [];
+    // 1. A case Playwright failed after its checks, and 2. a test that failed with no result.
+    all.push(await run([testCase("S5-01", [attempt({ status: "failed", error, attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })], { outcome: "unexpected" })], { status: "failed" }));
+    all.push(await run([testCase("S5-02 dead", [attempt({ status: "failed", error })], { outcome: "unexpected" })], { status: "failed" }));
+    // 3. The first try of a case that passed on a retry, with and without a result.
+    const retried = (first: TestResult) => testCase("S5-03", [first, attempt({ retry: 1, attachments: [qaAttachment(caseResult("S5-03", [ok()]))] })], { outcome: "flaky" });
+    all.push(await run([retried(attempt({ status: "timedOut", error }))]));
+    all.push(await run([retried(attempt({ status: "failed", error, attachments: [qaAttachment(caseResult("S5-03", [ok()]))] }))]));
+    for (const r of all) {
+      for (const [f, text] of await outputs(r)) {
+        expect(text, f).not.toContain(key);
+        expect(text, f).not.toContain(prefix);
+      }
+    }
+    // Where the error is kept long (the fix brief), the key stands as [redacted]; a one-line gist cuts it off at 300 characters, before the key.
+    for (const i of [0, 2, 3]) expect(all[i]!.read("fix-brief.md"), `run ${i}`).toContain("[redacted]");
   });
 
   it("is not kept in a trace that holds it: the trace is not copied", async () => {

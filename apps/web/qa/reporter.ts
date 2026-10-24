@@ -11,9 +11,10 @@ import path from "node:path";
 import { stripVTControlCharacters } from "node:util";
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult } from "@playwright/test/reporter";
 import JSZip from "jszip";
-import { buildReport, secretForms, type FirstTry, type ProviderLogInfo, type ReportCase, type RunInfo, type Unreported } from "./report/build";
+import { buildReport, type FirstTry, type ProviderLogInfo, type ReportCase, type RunInfo, type Unreported } from "./report/build";
 import { loadKnown } from "./support/known";
 import { readProviderLog } from "./support/providerLog";
+import { secretForms } from "./support/secrets";
 import type { CaseResult } from "./support/qa";
 
 export type QaReporterOptions = {
@@ -189,16 +190,40 @@ export function grepOf(argv: string[]): string | undefined {
   return undefined;
 }
 
-/** Options of `playwright test` that take a value and do not choose which tests run: skipped, with their value. */
-const OPTIONS_WITH_A_VALUE = new Set(["-c", "--config", "-j", "--workers", "--retries", "--timeout", "--reporter", "--output", "--global-timeout", "--max-failures", "--trace", "--repeat-each", "--tsconfig", "--ui-host", "--ui-port", "--update-snapshots", "--pass-with-no-tests"]);
-/** Options that take a value and choose which tests run. */
-const SELECTING_WITH_A_VALUE = new Set(["-g", "--grep", "-gv", "--grep-invert", "--project", "--shard", "--tag"]);
-/** Options without a value that choose which tests run. */
+/** Options of `playwright test` that take a value and do not choose which tests run (`playwright test --help`, 1.64): skipped, with their value. */
+const OPTIONS_WITH_A_VALUE = new Set([
+  "-c",
+  "--config",
+  "-j",
+  "--workers",
+  "--retries",
+  "--timeout",
+  "--reporter",
+  "--add-reporter",
+  "--output",
+  "--global-timeout",
+  "--max-failures",
+  "--trace",
+  "--repeat-each",
+  "--tsconfig",
+  "--browser",
+  "--ui-host",
+  "--ui-port",
+  "--update-source-method",
+  "--last-failed-file",
+  "--run-agents"
+]);
+/** Options whose value is optional (`[mode]`, `[seed]`, `[ref]`): the next word is the value only when it does not start with a dash, as the command line reads it. */
+const OPTIONAL_VALUE = new Set(["-u", "--update-snapshots", "--debug", "--shuffle", "--only-changed"]);
+/** Options that choose which tests run, with a value (`--project` takes a list of names). */
+const SELECTING_WITH_A_VALUE = new Set(["-g", "--grep", "-G", "--grep-invert", "--project", "--shard", "--test-list", "--test-list-invert"]);
+/** Options that choose which tests run, without a value or with an optional one. */
 const SELECTING = new Set(["--last-failed", "--only-changed"]);
 
 /**
- * What narrowed a `playwright test` run, as it was typed: `-g`, `--grep-invert`, `--project`, `--shard`, `--tag`, `--last-failed`, `--only-changed` and file arguments.
- * undefined when nothing did, and for any other command (`merge-reports`: the shards' selections are not known to it).
+ * What narrowed a `playwright test` run, as it was typed: `-g`, `-G` / `--grep-invert`, `--project`, `--shard`, `--test-list`, `--last-failed`, `--only-changed` and file arguments.
+ * Options that only set how the run goes are left out, and so is the value they take, so that a selecting option after them is not swallowed (`--pass-with-no-tests -g x`,
+ * `-u -g x`). undefined when nothing narrowed the run, and for any other command (`merge-reports`: its argument is a folder).
  */
 export function selectionOf(argv: string[]): string | undefined {
   const at = argv.indexOf("test");
@@ -206,15 +231,30 @@ export function selectionOf(argv: string[]): string | undefined {
   const parts: string[] = [];
   for (let i = at + 1; i < argv.length; i++) {
     const a = argv[i]!;
-    if (a.startsWith("-")) {
-      const [name] = a.split("=");
-      const inline = a.includes("=");
-      if (SELECTING_WITH_A_VALUE.has(name!)) {
-        parts.push(inline ? a : `${a} ${argv[i + 1] ?? ""}`.trim());
-        if (!inline) i++;
-      } else if (SELECTING.has(name!)) parts.push(a);
-      else if (OPTIONS_WITH_A_VALUE.has(name!) && !inline) i++;
-    } else parts.push(a);
+    if (!a.startsWith("-")) {
+      parts.push(a); // a file filter
+      continue;
+    }
+    const eq = a.indexOf("=");
+    const name = eq < 0 ? a : a.slice(0, eq);
+    const next = argv[i + 1];
+    const optionalValue = OPTIONAL_VALUE.has(name) && eq < 0 && next !== undefined && !next.startsWith("-") ? next : undefined;
+    if (SELECTING_WITH_A_VALUE.has(name)) {
+      if (eq >= 0) parts.push(a);
+      else {
+        const values = [next ?? ""];
+        // --project takes a list: the words after it that are not options are projects.
+        if (name === "--project") while (argv[i + 1 + values.length] !== undefined && !argv[i + 1 + values.length]!.startsWith("-")) values.push(argv[i + 1 + values.length]!);
+        parts.push([a, ...values].join(" ").trim());
+        i += values.length;
+      }
+    } else if (SELECTING.has(name)) {
+      parts.push(optionalValue ? `${a} ${optionalValue}` : a);
+      if (optionalValue) i++;
+    } else if (OPTIONAL_VALUE.has(name)) {
+      if (optionalValue) i++;
+    } else if (OPTIONS_WITH_A_VALUE.has(name) && eq < 0) i++;
+    // any other option has no value (--headed, -x, --list, --pass-with-no-tests, --ui ...)
   }
   return parts.length ? parts.join(" ") : undefined;
 }
@@ -246,14 +286,16 @@ function readResult(r: TestResult): CaseResult | Error | undefined {
   }
 }
 
-/** Playwright's own error for an attempt, as text without colours: how a case is failed that its checks do not explain. */
+/**
+ * Playwright's own error for an attempt, as text without colours: how a case is failed that its checks do not explain. It is NOT cut here: the report removes the secrets from
+ * it first and cuts it after (build.ts), so that a key that straddles a cut cannot leave a prefix behind.
+ */
 function errorText(r: TestResult): string {
   const text = (r.errors ?? [])
     .map((e) => e.message ?? "")
     .filter(Boolean)
     .join("\n\n");
-  const one = text || r.error?.message || "";
-  return stripVTControlCharacters(one).slice(0, 2000);
+  return stripVTControlCharacters(text || r.error?.message || "");
 }
 
 /**

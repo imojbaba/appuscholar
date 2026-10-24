@@ -249,6 +249,44 @@ test("fixture: a console error is a finding unless the case allows it; warnings 
   expect(qa.result().allowed).toEqual([{ kind: "console", what: "/known noise: \\d+/", reason: "a library prints its retry count", builtIn: false, count: 2 }]);
 });
 
+test("fixture: the live-AI key is taken out before a message is cut: in a check, a console line, a dialog and a stop", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  const key = `gsk_live_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  const prefix = key.slice(0, 12);
+  const before = process.env.QA_LIVE_AI_KEY;
+  process.env.QA_LIVE_AI_KEY = key;
+  try {
+    qa.begin(meta("SELF-38", ["ask", "stop"]));
+    await page.setContent("<p>x</p>");
+    await qa.step("ask", async () => {
+      // Each text holds the key where the fixture cuts it: a check's message at 2,000 characters, a console line at 300, a dialog's text at 200. Cut first, and 14 characters of it stay.
+      await qa.check("data", "the key never shows", async () => {
+        throw new Error("x".repeat(1985) + ` ${key} ` + "y".repeat(50));
+      });
+      await page.evaluate((text) => console.error(text), "c".repeat(285) + ` ${key} and on`);
+      await page.evaluate((text) => alert(text), "d".repeat(185) + ` ${key} and on`);
+    });
+    await expect(
+      qa.step("stop", async () => {
+        throw new Error("s".repeat(585) + ` ${key} and on`);
+      })
+    ).rejects.toThrow();
+    const r = qa.result();
+    const found = (label: string) => r.checks.find((c) => c.label === label)!.message!;
+    for (const text of [found("the key never shows"), found(RULE_LABEL.console), found(RULE_LABEL.dialog), r.stoppedAt!.reason]) {
+      expect(text).toContain("[redacted]");
+      expect(text).not.toContain(prefix);
+    }
+    // Nowhere in the result, whole or as a prefix.
+    const everything = JSON.stringify(r);
+    expect(everything).not.toContain(key);
+    expect(everything).not.toContain(prefix);
+  } finally {
+    if (before === undefined) delete process.env.QA_LIVE_AI_KEY;
+    else process.env.QA_LIVE_AI_KEY = before;
+  }
+});
+
 test("fixture: an answer of 500 or more from the web or the api is a finding; the browser's own echo of it is not a second one", TAGS, async ({ page, qa }) => {
   qa.selfTest = true;
   qa.begin(meta("SELF-13", ["ask"]));
@@ -466,7 +504,10 @@ test("fixture: a timed action over its budget is slow, and one within it is not"
   await qa.timed("a quick one", 5000, async () => {});
   const [slow, quick] = qa.result().checks;
   expect(slow).toMatchObject({ kind: "time", label: "a slow export", ok: false, fail: "slow", source: "O10" });
-  expect(slow!.message).toMatch(/1,5\d\d ms.*1,000 ms/);
+  // About 1,500 ms: a loaded machine takes longer to wake a timer, so the number is read, not matched digit by digit.
+  const took = Number(/took ([\d,]+) ms; the budget is 1,000 ms/.exec(slow!.message ?? "")?.[1]?.replace(/,/g, ""));
+  expect(took).toBeGreaterThanOrEqual(1500);
+  expect(took).toBeLessThan(5000);
   expect(quick).toMatchObject({ kind: "time", label: "a quick one", ok: true });
   expect(quick!.fail).toBeUndefined();
 });
