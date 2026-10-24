@@ -44,10 +44,10 @@ describe("the deviation register: D-S2-113 to D-S2-121", () => {
     }
   });
 
-  it("D-S2-116 names OJ, the day and the ruling, and does not quote him", () => {
+  it("D-S2-116 names OJ, the day, that it was approved in chat and the ruling, and does not quote him", () => {
     const c = cells(rowOf("D-S2-116")[0]!);
     expect(c[5]).toBe("approved");
-    expect(c[6]).toBe("OJ, 2026-10-24 (spec 2026-10-24-participants-design.md §3, ruling 3)");
+    expect(c[6]).toBe("OJ, 2026-10-24: approved in chat (spec 2026-10-24-participants-design.md §3, ruling 3)");
   });
 
   it("no approver cell puts quotation marks round words: OJ's approval is cited by its day and the spec's ruling, not quoted", () => {
