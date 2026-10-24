@@ -43,7 +43,7 @@ export type ShelfOps = {
   extract(f: File): ReturnType<typeof extractPdfPages>;
   /**
    * Fix wave A (W15, register row D-S2-28): the title (and the DOI printed on page 1, if any) a NEW paper takes: core's resolveShelfTitle over the library and Crossref, v1's first-line guess
-   * as the fallback. Only addFiles asks; a stored paper keeps its title (its Analyse notes are keyed by it), and a restore keeps each record's own.
+   * as the fallback. Only Add your own PDF (addOwnPdf) asks; a stored paper keeps its title (its Analyse notes are keyed by it), and a restore keeps each record's own.
    */
   resolveTitle(pages: string[], fileStem: string): Promise<{ title: string; doi?: string }>;
   setStatus(s: string): void;
@@ -53,51 +53,6 @@ export type ShelfOps = {
 
 const EMPTY_PAPER: ShelfPaper = { pages: [], notes: [], cells: {} };
 const PAPER_ID = /^[A-Za-z0-9_-]{1,64}$/;
-
-/**
- * v1's "➕ Add PDFs", the port the Reading list no longer uses: it adds PDFs through `addOwnPdf` below (three at a time, titles from the paper's metadata, a DOI attached to a kept paper). This stays
- * with its v1 golden cases (packages/core/test/golden/shelf) until the reader of B3 replaces the shelf's code.
- * "➕ Add PDFs" (shAddFiles 11580-11599): for each file in turn, "Reading <name>…", then one sentence: not a PDF, already on the shelf (same name and size), no readable text, added
- * with its page count (and "(first 200 of N)"), or the error's message ("could not be read" when it has none). A paper is stored (its own blob, then its index entry) only once its
- * text is read; the PDF itself never is. The sentences, joined by " | ", are the status line.
- */
-export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
-  if (!files.length || !d.canWriteIndex()) return;
-  const have: Array<{ file: string; size: number }> = d.entries().map((e) => ({ file: e.file, size: e.size }));
-  const msgs: string[] = [];
-  for (const f of files) {
-    if (!d.alive()) return;
-    d.setStatus(d.t("sh2_reading", { name: f.name }));
-    if (!/\.pdf$/i.test(f.name)) { msgs.push(f.name + d.t("sh2_not_a_pdf")); continue; }
-    if (have.some((p) => p.file === f.name && p.size === f.size)) { msgs.push(f.name + d.t("sh2_already_on_the_shelf")); continue; }
-    try {
-      const r = await d.extract(f);
-      if (r === "not-a-pdf") { msgs.push(f.name + d.t("sh2_not_a_pdf")); continue; }
-      if (r === "no-text") { msgs.push(f.name + d.t("sh2_no_readable_text_it")); continue; }
-      // W15: the title from the DOI or the library (Crossref, 4 s at most); any failure is v1's first-line guess, so the add is never blocked.
-      const stem = f.name.replace(/\.pdf$/i, "");
-      const named = await d.resolveTitle(r.pages, stem).catch(() => ({ title: shTitleGuess(r.pages, stem) } as { title: string; doi?: string }));
-      // Closed while the PDF was read (or its title looked up): nothing more is stored.
-      if (!d.alive()) return;
-      const now = d.now();
-      const id = shPaperId(now.getTime());
-      // Once its text is stored the entry is always added, the list open or not (updateIndex writes it through a client of its own after a close).
-      await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
-      const entry: ShelfEntry = { id, title: named.title, ...(named.doi ? { doi: named.doi } : {}), file: f.name, size: f.size, added: now.toISOString(), total: r.total, kept: r.pages.length };
-      // The pid comes with the entry (Task 17): the library entry's when it is the same paper (the DOI printed on page 1, then the title), else a new one. With the library not
-      // read, no pid is made for this paper or any other: the migration's next run links them all against the library.
-      d.updateIndex((prev) => linkWith([...(prev ?? []), entry], d.library?.() ?? null));
-      have.push(entry);
-      const n = r.pages.length;
-      // f.name+': added, '+n+' pages'+(r.total>n?' (first '+n+' of '+r.total+')':'') (11594)
-      msgs.push(f.name + d.t("sh2_added_pages", { pagesCount: n }) + (r.total > n ? " " + d.t("sh2_first_of", { pagesCount: n, total: r.total }) : ""));
-    } catch (e) {
-      const m = e instanceof PdfReaderUnavailable ? d.t("sh2_the_pdf_reader_needs") : e instanceof Error && e.message ? e.message : d.t("sh2_could_not_be_read");
-      msgs.push(f.name + ": " + m);
-    }
-  }
-  d.setStatus(msgs.join(" | "));
-}
 
 /** What Add your own PDF needs besides the reading list's operations (Task 21a). */
 export type OwnPdfOps = ShelfOps & {
@@ -111,11 +66,12 @@ export type OwnPdfOps = ShelfOps & {
 export const OWN_PDF_PARALLEL = 3;
 
 /**
- * "Add your own PDF" (wave B Task 21a, register row D-S2-126; replaces addFiles in the Reading list). Each file is read and its title looked up, three at a time (the DOI printed on
- * page 1 asked of the library, then of Crossref: core's resolveShelfTitle, so a title comes from the paper's metadata, W15), and then the papers are stored one after the other, in the
- * order the files were chosen. A DOI that is a kept paper's attaches the PDF to that paper; a DOI not kept yet keeps the paper from Crossref's record and attaches the PDF to it;
- * a PDF with no DOI the page proves is its own is a paper only the reading list has (unless its title is a kept paper's, which linkShelf finds). A kept paper that has a PDF already
- * says so and the second one is not stored. The PDF itself is never stored, only its text. The sentences, one per file in the order chosen, are the status line.
+ * "Add your own PDF" (wave B Task 21a, register row D-S2-126; it replaced v1's "Add PDFs"). Each file is read and its title looked up, three at a time (the DOI printed on page 1 asked
+ * of the library, then of Crossref: core's resolveShelfTitle, so a title comes from the paper's metadata, W15). A paper is stored as soon as its own text and title are read, not after
+ * the whole batch, one paper at a time (its text first, then its place in the index), so a long batch fills the list as it goes. A DOI that is a kept paper's attaches the PDF to that paper; a
+ * DOI not kept yet keeps the paper from Crossref's record and attaches the PDF to it; a PDF with no DOI the page proves is its own is a paper only the reading list has (unless its title is a kept
+ * paper's, which linkShelf finds). A kept paper that has a PDF already says so and the second one is not stored. The PDF itself is never stored, only its text. Nothing is stored, kept or looked
+ * up for a paper once the list has been left. The sentences, one per file in the order chosen, are the status line.
  */
 export async function addOwnPdf(files: File[], d: OwnPdfOps): Promise<void> {
   if (!files.length || !d.canWriteIndex()) return;
@@ -130,9 +86,47 @@ export async function addOwnPdf(files: File[], d: OwnPdfOps): Promise<void> {
   });
   if (todo.length) d.setStatus(todo.length === 1 ? d.t("rl_add_reading", { name: todo[0]!.f.name }) : d.t("rl_add_reading_n", { n: todo.length }));
 
-  // The reading and the title lookups, a few at a time.
   type Read = { f: File; pages: string[]; total: number; named: { title: string; doi?: string } };
-  const read: Array<Read | undefined> = [];
+  /** One paper's storing: its pid (attached, kept or none), then its text, then its place in the index. Checks that the list is still there before each step that changes anything. */
+  const storeOne = async (i: number, r: Read): Promise<void> => {
+    if (!d.alive()) return;
+    const name = r.f.name;
+    try {
+      let title = r.named.title;
+      let pid: string | undefined;
+      let how: "attached" | "kept" | "plain" = "plain";
+      const doi = r.named.doi;
+      if (doi) {
+        const mine = (d.library?.() ?? []).find((e) => e.pid && retrNormDoi(e.doi ?? "") === retrNormDoi(doi));
+        if (mine) { pid = mine.pid; title = (mine.title ?? "").trim() || title; how = "attached"; }
+        else {
+          const cr = await d.lookupDoi(doi).catch(() => null);
+          // Left while Crossref was asked: nothing is kept.
+          if (!d.alive()) return;
+          const kept = cr ? await d.keep({ ...cr, doi: cr.doi || doi }).catch(() => null) : null;
+          if (cr && kept) { pid = kept.pid; title = (cr.title ?? "").trim() || title; how = kept.state === "kept" ? "kept" : "attached"; }
+        }
+        // Left while the paper was kept: the paper stays kept, but its text is not stored.
+        if (!d.alive()) return;
+      }
+      if (pid && pids.has(pid)) { msgs[i] = d.t("rl_add_dup", { name, title }); return; }
+      const now = d.now();
+      const id = shPaperId(now.getTime());
+      // Once its text is stored the entry is always added, the list open or not (updateIndex writes it through a client of its own after a close).
+      await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
+      const n = r.pages.length;
+      const entry: ShelfEntry = { id, title, ...(doi ? { doi } : {}), ...(pid ? { pid } : {}), file: name, size: r.f.size, added: now.toISOString(), total: r.total, kept: n };
+      d.updateIndex((prev) => linkWith([...(prev ?? []), entry], d.library?.() ?? null));
+      if (pid) pids.add(pid);
+      msgs[i] = d.t(how === "attached" ? "rl_add_attached" : how === "kept" ? "rl_add_kept" : "rl_add_plain", { name, title }) + (r.total > n ? " " + d.t("rl_add_cut", { pagesCount: n, total: r.total }) : "");
+    } catch (e) {
+      msgs[i] = name + ": " + (e instanceof Error && e.message ? e.message : d.t("rl_add_unreadable"));
+    }
+  };
+  /** The storing goes through one chain, so papers read at the same time are stored one after the other, each as soon as the one before it is done. */
+  let stored: Promise<void> = Promise.resolve();
+
+  // The reading and the title lookups, a few at a time; a paper is queued for storing the moment its own are done.
   let next = 0;
   const worker = async () => {
     for (;;) {
@@ -146,48 +140,16 @@ export async function addOwnPdf(files: File[], d: OwnPdfOps): Promise<void> {
         if (r === "no-text") { msgs[i] = d.t("rl_add_no_text", { name: f.name }); continue; }
         const stem = f.name.replace(/\.pdf$/i, "");
         const named = await d.resolveTitle(r.pages, stem).catch(() => ({ title: shTitleGuess(r.pages, stem) } as { title: string; doi?: string }));
-        read[i] = { f, pages: r.pages, total: r.total, named };
+        const read: Read = { f, pages: r.pages, total: r.total, named };
+        stored = stored.then(() => storeOne(i, read));
       } catch (e) {
         msgs[i] = f.name + ": " + (e instanceof PdfReaderUnavailable ? d.t("sh2_the_pdf_reader_needs") : e instanceof Error && e.message ? e.message : d.t("rl_add_unreadable"));
       }
     }
   };
   await Promise.all(Array.from({ length: Math.min(OWN_PDF_PARALLEL, todo.length) }, worker));
-
-  // The storing, one paper at a time: its text first, then its place in the index.
-  for (let i = 0; i < read.length; i++) {
-    const r = read[i];
-    if (!r) continue;
-    if (!d.alive()) return;
-    const name = r.f.name;
-    let title = r.named.title;
-    let pid: string | undefined;
-    let how: "attached" | "kept" | "plain" = "plain";
-    const doi = r.named.doi;
-    if (doi) {
-      const mine = (d.library?.() ?? []).find((e) => e.pid && retrNormDoi(e.doi ?? "") === retrNormDoi(doi));
-      if (mine) { pid = mine.pid; title = (mine.title ?? "").trim() || title; how = "attached"; }
-      else {
-        const cr = await d.lookupDoi(doi).catch(() => null);
-        const kept = cr ? await d.keep({ ...cr, doi: cr.doi || doi }).catch(() => null) : null;
-        if (cr && kept) { pid = kept.pid; title = (cr.title ?? "").trim() || title; how = kept.state === "kept" ? "kept" : "attached"; }
-      }
-    }
-    if (pid && pids.has(pid)) { msgs[i] = d.t("rl_add_dup", { name, title }); continue; }
-    try {
-      const now = d.now();
-      const id = shPaperId(now.getTime());
-      // Once its text is stored the entry is always added, the list open or not (updateIndex writes it through a client of its own after a close).
-      await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
-      const n = r.pages.length;
-      const entry: ShelfEntry = { id, title, ...(doi ? { doi } : {}), ...(pid ? { pid } : {}), file: name, size: r.f.size, added: now.toISOString(), total: r.total, kept: n };
-      d.updateIndex((prev) => linkWith([...(prev ?? []), entry], d.library?.() ?? null));
-      if (pid) pids.add(pid);
-      msgs[i] = d.t(how === "attached" ? "rl_add_attached" : how === "kept" ? "rl_add_kept" : "rl_add_plain", { name, title }) + (r.total > n ? " " + d.t("rl_add_cut", { pagesCount: n, total: r.total }) : "");
-    } catch (e) {
-      msgs[i] = name + ": " + (e instanceof Error && e.message ? e.message : d.t("rl_add_unreadable"));
-    }
-  }
+  await stored;
+  if (!d.alive()) return;
   d.setStatus(msgs.filter(Boolean).join(" "));
 }
 
@@ -287,8 +249,9 @@ const num = (v: unknown, fallback: number): number => (typeof v === "number" && 
  * "Restore a shelf backup" (shRestore 11714-11725): core's shRestoreParse decides ("That file is not a shelf backup."); each paper it keeps is stored as v1's shPut stores it, by id
  * (the same id replaces the paper on the shelf, another is added), then v1's count. Beyond v1, since the blob store needs them: a field the index requires and the record lacks is
  * made from what is there (the title from the file name, the counts from the pages), an id outside [A-Za-z0-9_-]{1,64} gets a new one, and the pages and notes are made strings.
- * Task 17 (ruling B2-R12): a paper that replaces one keeps that entry's `pid` and `doi`; a new one takes its record's pid only when a library entry of this project has it,
- * else linkShelf finds the library entry it is, or makes a pid.
+ * Task 17 (ruling B2-R12): a paper that replaces one keeps that entry's `pid` and `doi` (taking the record's DOI when the entry has none); a new one takes its record's `doi` and its pid only
+ * when a library entry of this project has it, else linkShelf finds the library entry it is (by the DOI first, then the title), or makes a pid. The DOI keeps a restore from splitting a
+ * paper the library holds under another pid when the record's title differs.
  */
 export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
   const list = shRestoreParse(text);
@@ -309,6 +272,8 @@ export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
     const id = PAPER_ID.test(p.id) ? p.id : shPaperId(d.now().getTime());
     const file = str(p.file);
     const entry: ShelfEntry = { id, title: str(p.title, file), file, size: num(p.size, 0), added: str(p.added, d.now().toISOString()), total: num(p.total, pages.length), kept: pages.length };
+    // The record's own DOI (the backup carries it) goes on the entry, so linkShelf finds the library entry that is this paper by it, whatever the record's title says (B2-R12).
+    const recordDoi = typeof p.doi === "string" ? p.doi.trim() : "";
     try {
       if (onShelf.has(id)) { if (!d.updatePaper(id, () => paper)) continue; }
       else await d.createPaper(id, paper);
@@ -320,8 +285,8 @@ export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
       const cur = prev ?? [];
       const old = cur.find((e) => e.id === id);
       const next: ShelfEntry = old
-        ? { ...entry, ...(old.pid ? { pid: old.pid } : recordPid ? { pid: recordPid } : {}), ...(old.doi ? { doi: old.doi } : {}) }
-        : { ...entry, ...(recordPid ? { pid: recordPid } : {}) };
+        ? { ...entry, ...(old.pid ? { pid: old.pid } : recordPid ? { pid: recordPid } : {}), ...(old.doi ? { doi: old.doi } : recordDoi ? { doi: recordDoi } : {}) }
+        : { ...entry, ...(recordPid ? { pid: recordPid } : {}), ...(recordDoi ? { doi: recordDoi } : {}) };
       return linkWith(old ? cur.map((e) => (e.id === id ? next : e)) : [...cur, next], library());
     });
     n += occurrences(p.id);

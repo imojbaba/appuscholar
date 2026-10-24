@@ -43,6 +43,7 @@ vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) thr
 
 import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
 import { StubPanel } from "../components/tools/StubPanel";
+import type { ApNotesStore } from "../lib/analyse/notes";
 import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 

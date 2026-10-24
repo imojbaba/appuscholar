@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CaretDown } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import { paperShort, paperStatus, type Paper } from "@/lib/papers/list";
@@ -24,6 +24,20 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
   const nameId = useId();
   const [mode, setMode] = useState<"idle" | "rename" | "remove">("idle");
   const [failed, setFailed] = useState(false);
+  // Keyboard focus. A menu item that opens a form in the row ends with the menu closing, and the menu hands the focus back to More, which sits after the form: so the focus is put in the
+  // form instead (the rename box, or Keep it, the safe answer) and the menu is told not to take it; closing the form gives it back to More.
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const keepRef = useRef<HTMLButtonElement>(null);
+  const formOpened = useRef(false);
+  const backToMore = useRef(false);
+  useEffect(() => {
+    if (mode === "rename") titleRef.current?.focus();
+    else if (mode === "remove") keepRef.current?.focus();
+    else if (backToMore.current) { backToMore.current = false; moreRef.current?.focus(); }
+  }, [mode]);
+  /** Closes a form the row opened and gives the focus back to More (the form's own button had it, and is gone). */
+  const closeForm = () => { backToMore.current = true; setMode("idle"); };
   const short = paperShort(paper, t);
   const { entry, shelf } = paper;
   const only = entry === null;
@@ -56,13 +70,13 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
             e.preventDefault();
             const v = new FormData(e.currentTarget).get("title");
             onRename(typeof v === "string" ? v : shelf.title);
-            setMode("idle");
+            closeForm();
           }}>
             <label htmlFor={nameId + "-t"}>{t("rl_rename_label")}</label>
-            <input id={nameId + "-t"} name="title" className="input" type="text" defaultValue={shelf.title} data-testid="rl-title" autoFocus />
+            <input id={nameId + "-t"} ref={titleRef} name="title" className="input" type="text" defaultValue={shelf.title} data-testid="rl-title" />
             <div className="rl-confirm-acts">
               <button type="submit" className="rl-btn rl-btn-primary" data-testid="rl-rename-save">{t("rl_rename_save")}</button>
-              <button type="button" className="rl-btn" onClick={() => setMode("idle")}>{t("rl_cancel")}</button>
+              <button type="button" className="rl-btn" data-testid="rl-rename-cancel" onClick={closeForm}>{t("rl_cancel")}</button>
             </div>
           </form>
         )}
@@ -71,7 +85,7 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
             <p>{t(only ? "rl_remove_ask_paper" : "rl_remove_ask_pdf")}</p>
             <div className="rl-confirm-acts">
               <button type="button" className="rl-btn rl-btn-danger" data-testid="rl-remove-yes" onClick={() => { void remove(); }}>{t("rl_remove_yes")}</button>
-              <button type="button" className="rl-btn" data-testid="rl-remove-no" onClick={() => { setMode("idle"); setFailed(false); }}>{t("rl_remove_no")}</button>
+              <button type="button" className="rl-btn" ref={keepRef} data-testid="rl-remove-no" onClick={() => { setFailed(false); closeForm(); }}>{t("rl_remove_no")}</button>
             </div>
             {failed && <p className="rl-fail" role="alert" data-testid="rl-remove-fail">{t("shelf_remove_fail")}</p>}
           </div>
@@ -83,12 +97,13 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
           {menu && (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="rl-btn" data-testid="rl-more" aria-label={t("rl_more_aria", { title: short })}>{t("rl_more")}<CaretDown size={14} aria-hidden="true" /></button>
+                <button type="button" className="rl-btn" ref={moreRef} data-testid="rl-more" aria-label={t("rl_more_aria", { title: short })}>{t("rl_more")}<CaretDown size={14} aria-hidden="true" /></button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rl-menu" data-testid="rl-menu">
-                {only && <DropdownMenuItem data-testid="rl-item-rename" onSelect={() => setMode("rename")}>{t("rl_rename")}</DropdownMenuItem>}
+              <DropdownMenuContent align="end" className="rl-menu" data-testid="rl-menu"
+                onCloseAutoFocus={(e) => { if (formOpened.current) { formOpened.current = false; e.preventDefault(); } }}>
+                {only && <DropdownMenuItem data-testid="rl-item-rename" onSelect={() => { formOpened.current = true; setMode("rename"); }}>{t("rl_rename")}</DropdownMenuItem>}
                 {only && !!paper.pid && <DropdownMenuItem data-testid="rl-item-refs" onSelect={onAddRefs}>{t("rl_add_refs")}</DropdownMenuItem>}
-                <DropdownMenuItem data-testid="rl-item-remove" onSelect={() => { setFailed(false); setMode("remove"); }}>{t(only ? "rl_remove_paper" : "rl_remove_pdf")}</DropdownMenuItem>
+                <DropdownMenuItem data-testid="rl-item-remove" onSelect={() => { formOpened.current = true; setFailed(false); setMode("remove"); }}>{t(only ? "rl_remove_paper" : "rl_remove_pdf")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
