@@ -27,7 +27,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q1: The language button is announced differently from what it shows
 
-- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07, and in S8-01, S8-02, S8-05 and S8-07 (the same scan on Review's Closeness, Viva and Make PPT)
+- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07, and in S8-01, S8-02, S8-05 and S8-07 (the same scan on Review's Closeness, Viva and Make PPT), and in the checkpoints of S2-01, S2-02, S2-03, S2-05 and S2-07 (Find, the Reading list, Compare, Citations, Writing)
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI (accessibility)
@@ -182,7 +182,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q15: On a phone, the project name in a place's top line is 20 px tall and the "Your question" strip's summary 32 px
 
-- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs), S7-06 (the Writing place's four screens) and S8-06 (Review's Closeness, Viva and Make PPT); it shows at the top of every place
+- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs), S7-06 (the Writing place's four screens), S8-06 (Review's Closeness, Viva and Make PPT) and S2-08 (every Literature checkpoint); it shows at the top of every place
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -204,18 +204,18 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q17: On a phone, the document toolbar's Undo, Bold, Italic, Underline, bulleted list and numbered list buttons are 32 to 35.5 px wide
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage), S5-07 (the document after a figure is inserted, the same screen, where Undo shows too) and S7-06 (the Writing place's document tab, My style and Words: all four of its screens carry the toolbar)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage), S5-07 (the document after a figure is inserted, the same screen, where Undo shows too), S2-08 (the same screen; it also measured Undo) and S7-06 (the Writing place's document tab, My style and Words: all four of its screens carry the toolbar)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
 - Expected: as Q15 (source: spec section 8, layout rules, O17)
-- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag in S6-06, after a figure in S5-07, in S7-06), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx` (the `Fmt` buttons, line 24); the Redo button beside it is disabled until there is something to redo, and the layout rule does not measure a disabled control, so it is not listed. This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
+- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag in S6-06, after a figure in S5-07, in S7-06 and S2-08), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx` (the `Fmt` buttons, line 24); the Redo button beside it is disabled until there is something to redo, and the layout rule does not measure a disabled control, so it is not listed. This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q15.
 - Status: known
 
 ### Q18: On a Hindi page, the document toolbar's more-formatting button shows Hindi but is named in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted), S7-06 (the Writing place) and S2-08 (the same screen)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -226,7 +226,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q19: On a Hindi page, the document bar and toolbar are in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place: the document tab, My style and Words each carry the toolbar and the document bar; its own check of the toolbar's words names Q19)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place: the document tab, My style and Words each carry the toolbar and the document bar; its own check of the toolbar's words names Q19), and S2-08 (the same screen)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (Hindi)
@@ -424,6 +424,61 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: with the browser in `Asia/Kolkata` and its clock at 20:00 UTC on 2026-10-24 (01:30 on 25 October in India), the declaration reads "declared as my own writing on 2026-10-24" and the ten-word level "(7 of 10, 2026-10-24)" (`todayIso` in `lib/tools/style/learn.ts` line 26: `new Date().toISOString().slice(0, 10)`, UTC), while the one AI request (describing my writing style) is logged under 2026-10-25 (`localDay` in `lib/ai/callAI.ts` line 61, the browser's own day). The AI-use statement built from them names both days: "25 October 2026" for the request and "24 October 2026" for the declaration. The writing-process record's own date is the local day as well (`components/workspace/dialogs/MyWriting.tsx` line 18). By reading, the word bank's "date saved" is the UTC day too (`components/tools/words/Dictionary.tsx` line 18); the case does not measure it. A student in India meets this between 00:00 and 05:30 every day.
 - Evidence: the qa-report artifact of the run of 2026-10-24: case S7-08, the failed check "the day beside my declaration, the day beside my ten-word level, the day my request is logged under and the days my AI-use statement names are all my day" (declaration 2026-10-24, ten words 2026-10-24, request 2026-10-25, statement "25 October 2026" and "24 October 2026"). The case sets the browser's time zone and clock (`timezoneId`, `page.clock.setSystemTime`), which work with the app. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S7-08"`.
 - Status: awaiting (OJ)
+
+### Q62: The Reading list and the paper card say they are kept in this browser, on this computer
+
+- Case: S2-02 (the check "the pages do not tell me the reading list or my cards are kept only in this browser or on this computer, when the server holds them")
+- Date: 2026-10-24
+- Commit: 70e65ef
+- Kind: Unexpected (conceptual)
+- Expected: what the page says about where the student's work is kept is true (source: spec section 4, Conceptual: honest; register D-S2-19, which records the four sentences as untrue and proposes that Dr. Sharma rewords them)
+- Happened: with the shelf, the notes and the card columns on the server (the case reads them from the database, sealed: `shelf_index`, `shelf_paper:<id>`, `ap_notes`, `ap_cols`), the Reading list says "Appuscholar reads each one in your browser and keeps only the extracted text, on this computer." (`sh2_intro`) and "Clearing your browser data erases the shelf." (`sh2_the_shelf_is_kept`), the paper card says "it saves as you type, in this browser." (`ap2_paper_card_your_own`), and Compare says "Cards live in this browser; back them up in Settings, Backup." (`ap2_cells_are_your_words`). The words are v1's, kept byte-equal (`apps/web/messages/en.json`, lines 1076, 1120, 89 and 30). The register already lists them (D-S2-19, status proposed, awaits Dr. Sharma), so the entry is known, not new; it is here so that the case shows KNOWN FAULT until the wording changes.
+- Evidence: the run of 2026-10-24 on 70e65ef: S2-02, the failed check named above, which lists each sentence. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S2-02"`.
+- Status: known
+
+### Q63: While the vault is locked, Insert reference list says "Library is empty — add a source first"
+
+- Case: S2-04
+- Date: 2026-10-24
+- Commit: 70e65ef
+- Kind: Unexpected (conceptual)
+- Expected: with the unlock cancelled, Insert reference list puts nothing into the document and says why: that the library is locked (source: spec section 6, S2: "Insert reference list with the unlock cancelled inserts nothing and says so"; the Citations page's own note, `vault_cite_locked`)
+- Happened: the library holds two sources (a Cohen book kept before the lock, a paper kept while locked and saved after the passphrase). After a reload (locked) and Cancel on the passphrase windows the page, below its locked note ("Your saved library is locked. Unlock your vault to read it and save your sources."), answers the press with the toast "Library is empty — add a source first". Nothing is inserted and nothing is saved (both checked), but the sentence is false: the library is not empty, it is locked. Cause: `citeInsertBib` tests `d.lib.length` (`apps/web/lib/cite/share.ts:26`) and `lib` is `[]` while the blob is locked (`apps/web/lib/cite/useLibrary.ts:114`, `value ?? []`).
+- Evidence: the run of 2026-10-24 on 70e65ef: S2-04, the failed check "what the page says after the press is that the library is locked, not that the library is empty (it holds two sources)" (`Received array: ["Library is empty — add a source first"]`). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S2-04"`.
+- Status: known
+
+### Q64: After a PDF is added to the Reading list, the tab shows no count until the student leaves it and comes back
+
+- Case: S2-02 (right after the add; the count appears after Compare and back), S2-08 (the count is there on the last screen)
+- Date: 2026-10-24
+- Commit: 70e65ef
+- Kind: Unexpected (data)
+- Expected: "Reading list" shows its count once it holds a paper, as "Citations (n)" follows the library as soon as a source is kept (source: `wave-b1.md` row 10, "Citations shows its count (\"Citations (n)\"), and Reading list its count once it holds a paper")
+- Happened: the shelf lists "shelf-paper.pdf · 2 pages · 0 highlights" and the tab above it reads "Reading list" for the 5 s the check waited; the count "(1)" shows after the student has been to Compare and back. Cause: `LitPlace.tsx:38` reads the index with `useShelf()`, which opens a read-only client of its own on `shelf_index` (`apps/web/lib/shelf/useShelf.ts:102`), while the add is written through the shelf's own client (`useShelf.ts:137`); the read-only one is not told. The e2e journey asserts the count only after leaving and re-entering the tab (`stage2-idea-literature.spec.ts` step 7).
+- Evidence: the run of 2026-10-24 on 70e65ef: S2-02, the failed check "the Reading list tab counts the paper at once, as the Citations tab counts a source" (`Expected: "Reading list (1)"`, `Received: "Reading list"`). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S2-02"`.
+- Status: known
+
+### Q65: On a phone, the Literature tabs' own controls are under 44 px
+
+- Case: S2-08 (Find with and without results, the Reading list, the reader, Analyse a paper with its walk-through, Compare, Citations; on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: 70e65ef
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way; a tick is pressed through its label, so the larger of the two is its target (source: spec section 8, layout rules, O17; as Q3)
+- Happened: Find: `input in [rs-src-oa]` and `[rs-src-pm]` 317 × 20 px, `input in [rs-term]` 317 × 20 px, the filters' `summary "Filter these results" in [rs-filters]` 317 × 20 px with its two ticks 317 × 20 px and its year and sample boxes 80 × 30 px, the three "more" boxes' summaries `[rs-external]` (317 × 40 px), `[rs-manual]` and `[rs-connected-box]` (317 × 20 px), each result's `input in [rs-card]` (15 × 15 px) and `a "Show more / less" [rs-more]` (88.5 × 15 px). Reading list: `button "‹" [sh-prev]` and `"›" [sh-next]` 26 × 44 px, `button "Remove column" [sh-col-del]` 25.2 × 44 px, `summary "Check what Appuscholar read" in [ap-head]` 295 × 18 px, the twelve stage buttons `button "1" in [ap-stages]` to `"12"` 25.2 to 38.6 × 44 px, `summary "📊 My paper cards side by side" in [ap-across]` 317 × 20 px (343 × 20 px with its column ticks, 55 to 87 × 20 px, on Compare). Citations: `summary ... in [cite-bookmarklet-details]` 317 × 20 px, `a ... [cite-bookmarklet]` 207.5 × 36 px, `button "Remove" [cite-del]` 24 × 44 px. Files: `components/tools/research/SearchForm.tsx`, `Filters.tsx`, `ResultCard.tsx`, `components/tools/shelf/Reader.tsx`, `Matrix.tsx`, `components/tools/analyse/AnalysePanel.tsx`, `Walk.tsx`, `Across.tsx`, `components/tools/cite/CiteLibrary.tsx`, `CiteQuote.tsx`. The result card's buttons (Insert citation, + Citation library, Quick read, ...) are tall enough and are not in this entry.
+- Evidence: the run of 2026-10-24 on 70e65ef: S2-08, the failed checks "... every control at least 44 px each way" of Find, the Reading list, the reader, Analyse a paper, Compare and Citations. Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S2-08"`.
+- Status: known
+
+### Q66: On a Hindi page the Citation Manager's form shows English placeholders
+
+- Case: S2-08 (Citations, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: 70e65ef
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's D-S2-18 names the Citation Manager's action modules, `lib/cite/{actions,share,quote,capture}.ts`, not the form's placeholders)
+- Happened: the author, title, journal and link boxes show `Miller, George A.; Smith, Jane B.`, `Title of work`, `e.g. Psychological Review` and `https://… or 10.xxxx/… or a full reference`, while their labels above are Hindi (`cite_author_label`, `cite_title_label`, ... in `messages/hi.json`). The placeholders are JSX literals in `apps/web/components/tools/cite/CiteForm.tsx` (lines 67, 71, 103 and 117; the hidden container, editors and number boxes have English ones too, lines 85, 89 and 93). v1 has the same literals in its page, so this is v1's English as ported, not covered by a register row.
+- Evidence: the run of 2026-10-24 on 70e65ef: S2-08, the failed check "Citations, one source, on a phone, in Hindi: no English on a Hindi screen". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S2-08"`.
+- Status: known
 
 ### Q80: A second project opens with the first project's Research search on show
 
