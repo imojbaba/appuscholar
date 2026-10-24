@@ -48,7 +48,7 @@ import { ProjectShell } from "../components/frame/ProjectShell";
 import { PlaceHeader } from "../components/frame/PlaceHeader";
 import { ProjectProvider, useProject, type ProjectValue } from "../components/frame/ProjectContext";
 import OldPopoutPage from "../app/(app)/popout/page";
-import { CiteShare } from "../components/tools/cite/CiteShare";
+import { InsertReferenceList } from "../components/literature/CitationsTab";
 import { NotBuilt } from "../components/places/NotBuilt";
 import { ExportLink } from "../components/export/ExportLink";
 import { EXPORT_PARTS } from "../lib/export/projectExport";
@@ -386,7 +386,7 @@ describe("inserts: the pop-out sends them to the writing window", () => {
   it("Insert reference list is enabled in the pop-out and sends the list as one HTML block", async () => {
     popoutAt();
     const lib = { lib: [BANDURA], style: "apa", ready: true, update: () => true } as unknown as Library;
-    render(inShell(<CiteShare library={lib} />));
+    render(inShell(<InsertReferenceList library={lib} />));
     const btn = tid("cite-insertbib") as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
     act(() => { btn.click(); });

@@ -2,7 +2,8 @@ import type { CitationEntry } from "@appuscholar/core";
 
 /**
  * Fills the first entry `match` finds with the fields of `fill` that are empty there (a field already written, by the source or by the student, is kept). A fill value
- * that is itself empty writes nothing. The list is returned as it is (the same array) when nothing changes, so a fill that adds nothing saves nothing.
+ * that is itself empty writes nothing. The list is returned as it is (the same array) when nothing changes, so a fill that adds nothing saves nothing; it is also the
+ * list returned when no entry matches, which useLibrary().fillEmpty answers with false (wave A LATER T11) instead of saving an unchanged library.
  * Used by useLibrary().fillEmpty (fix wave A, Task 8: the one-click capture that recaptures an authorless entry, W1, and Crossref's volume, issue and pages after
  * "+ Citation library", W2).
  */

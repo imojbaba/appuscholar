@@ -1,9 +1,9 @@
 "use client";
-import { citExtractDoi, citExtractPmid, citIsNumbered, type CitationStyle } from "@appuscholar/core";
+import { citExtractDoi, citExtractPmid } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { citeAdd, citeInsert, citeLookup, FORM_CLEARED, type CiteDeps } from "@/lib/cite/actions";
 import {
-  CITE_DEGREE_OPTIONS, CITE_LANG_OPTIONS, CITE_MONTH_OPTIONS, CITE_ONLY, CITE_STYLE_OPTIONS, CITE_TYPE_OPTIONS,
+  CITE_DEGREE_OPTIONS, CITE_LANG_OPTIONS, CITE_MONTH_OPTIONS, CITE_ONLY, CITE_TYPE_OPTIONS,
   citeFieldOf, citOnlyShown, clearedForm, filledForm, getCiteForm, readForm, setCiteForm, useCiteForm
 } from "@/lib/cite/form";
 import type { Library } from "@/lib/cite/useLibrary";
@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 
 /**
- * The form of the Citation Manager (v1 876-912), in v1's order: style (with citStyleNote), type, source language, the fields with the type-specific
- * `cit-only` groups, DOI, the link box (a paste with a DOI or PubMed ID looks it up, 7970-7976), the lookup button, Insert citation / + Library, Clear form.
+ * The form of "Add a source by hand" in the Citations tab (v1 876-912), in v1's order: type, source language, the fields with the type-specific `cit-only` groups,
+ * DOI, the link box (a paste with a DOI or PubMed ID looks it up, 7970-7976), the lookup button, Insert citation / + Library, Clear form. v1's style select (with
+ * citStyleNote) is the tab's own now, above the sources, and the form reads the style from the library as it did.
  */
 export function CiteForm({ library, deps }: { library: Library; deps: () => CiteDeps }) {
   const t = useT();
@@ -43,13 +44,6 @@ export function CiteForm({ library, deps }: { library: Library; deps: () => Cite
   const only = (k: keyof typeof CITE_ONLY) => !citOnlyShown(f.type, CITE_ONLY[k]);
   return (
     <>
-      <div className="field">
-        <label htmlFor="citStyle">{t("cite_style_label")}</label>
-        <select className="input" id="citStyle" value={library.style} onChange={(e) => library.setStyle(e.target.value as CitationStyle)}>
-          {CITE_STYLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <p className="desc cite-note" data-testid="cite-style-note">{citIsNumbered(library.style) ? t("cite_note_numbered") : t("cite_note_check")}</p>
-      </div>
       <div className="field">
         <label htmlFor="citType">{t("cite_type_label")}</label>
         <select className="input" id="citType" value={f.type} onChange={edit}>

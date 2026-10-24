@@ -27,10 +27,9 @@ import { useProjectBlob } from "../lib/blobs/useProjectBlob";
 import { VaultProvider } from "../lib/vault/useVault";
 import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectContext";
 import { ExportDialog, exportPartsFor } from "../components/export/ExportDialog";
-import { CiteShare } from "../components/tools/cite/CiteShare";
+import { ExportLink } from "../components/export/ExportLink";
 import { Matrix } from "../components/tools/shelf/Matrix";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, type ExportPartId } from "../lib/export/projectExport";
-import type { Library } from "../lib/cite/useLibrary";
 
 // Every tool module this file does not set up itself is pinned to its unbuilt stub, so a tool session's real export parts never appear here (session C, 2026-10-22).
 vi.mock("@/components/tools/stats", () => ({ built: false }));
@@ -120,7 +119,6 @@ function ideaPanel(box: IdeaBox) {
     return <span data-testid="idea-loaded">{b.loading ? "" : "yes"}</span>;
   };
 }
-const library = { lib: LIB, style: "apa", ready: true, update: () => true } as unknown as Library;
 
 describe("ExportDialog", () => {
   it("shows the Export canvas's copy, every part but the reading list backup ticked", async () => {
@@ -178,7 +176,7 @@ describe("ExportDialog", () => {
 
   it("a per-tool Export link opens the dialog with only its part ticked (W11)", async () => {
     const opened = vi.fn();
-    await render(<><CiteShare library={library} /><Matrix items={[]} loading={false} cols={[]} onAddCol={() => {}} onDelCol={() => {}} onCell={() => {}} /></>, opened);
+    await render(<><ExportLink part="citations" testId="cite-export" /><Matrix items={[]} loading={false} cols={[]} onAddCol={() => {}} onDelCol={() => {}} onCell={() => {}} /></>, opened);
     expect(tid("cite-export")!.textContent).toBe(E.exp_link);
     await click(tid("cite-export"));
     expect(opened).toHaveBeenLastCalledWith("citations");
@@ -228,7 +226,7 @@ describe("ExportDialog", () => {
   });
 
   it("the zip holds the ticked parts, with the reference list in the style chosen here", async () => {
-    await render(<CiteShare library={library} />);
+    await render(<ExportLink part="citations" testId="cite-export" />);
     await click(tid("cite-export"));
     const sel = tid("exp-style") as HTMLSelectElement;
     await act(async () => { sel.value = "vancouver"; sel.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -244,7 +242,7 @@ describe("ExportDialog", () => {
   });
 
   it("nothing ticked: Download zip is disabled; a failed build says so in the dialog and saves nothing", async () => {
-    await render(<CiteShare library={library} />);
+    await render(<ExportLink part="citations" testId="cite-export" />);
     await click(tid("cite-export"));
     await click(tid("exp-part-citations"));
     expect((tid("exp-download") as HTMLButtonElement).disabled).toBe(true);

@@ -18,7 +18,8 @@ function walk(dir: string, ext: (p: string) => boolean = p => p.endsWith(".tsx")
 /**
  * What the .ts modules of the stage-2 directories (and lib/ai, whose action modules the stage-2 panels call) carry that equals a dictionary value,
  * one entry per occurrence. Each is a stored data token, not copy: the source type values of v1 880 ("Journal article", "Book" ... saved in the record,
- * labelled through cite_type_*), the sort and field ids ("year"), the source name "PubMed" and the "year" key of the retraction check's reply.
+ * labelled through cite_type_*), the sort and field ids ("year"), the source name "PubMed", the "year" key of the retraction check's reply and, in lib/cite/checks.ts,
+ * the "year" kind of a stored Crossref difference with the Citations tab's status id of the same name (SourceStatus, labelled through cit_status_year).
  * One entry is not a data token: lib/ai/callAI.ts's "bad-pass" sentence equals `vault_wrong`, which has Hindi. It is v1's apiMsg, a pure function with no
  * `t`, from before stage 2 (Phase 3A code); it stays pinned by controller ruling R31. A new literal anywhere in these directories, or a second use of a pinned one in the same file, fails this test until it goes through t() or is
  * added here with its reason. (The English constants that have no dictionary key, ruling R15, are not hits and are not listed.)
@@ -28,6 +29,7 @@ const STAGE2_TS_KNOWN = [
   'lib/cite/form.ts "Report"', 'lib/cite/form.ts "Conference paper"', 'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "year"',
   'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "PubMed"',
   'lib/blobs/kinds.ts "year"',
+  'lib/cite/checks.ts "year"', 'lib/cite/checks.ts "year"', 'lib/cite/checks.ts "year"',
   'lib/ai/callAI.ts "Wrong passphrase — nothing was unlocked. Try again."',
 ];
 

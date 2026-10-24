@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=99999999",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esummary\",\"version\":\"0.3\"},\"result\":{\"uids\":[\"99999999\"],\"99999999\":{\"uid\":\"99999999\",\"error\":\"cannot get document summary\"}}}\n"
+}

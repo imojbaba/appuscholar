@@ -1,0 +1,8 @@
+{
+ "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1038/s41598-019-49466-6&format=json&resultType=lite",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json;charset=UTF-8"
+ },
+ "body": "{\"version\":\"6.9\",\"hitCount\":1,\"request\":{\"queryString\":\"DOI:10.1038/s41598-019-49466-6\",\"resultType\":\"lite\",\"cursorMark\":\"*\",\"pageSize\":25,\"sort\":\"\",\"synonym\":false},\"resultList\":{\"result\":[{\"id\":\"31527670\",\"source\":\"MED\",\"pmid\":\"31527670\",\"pmcid\":\"PMC6746734\",\"fullTextIdList\":{\"fullTextId\":[\"PMC6746734\"]},\"doi\":\"10.1038/s41598-019-49466-6\",\"title\":\"Open-label placebos reduce test anxiety and improve self-management skills: A randomized-controlled trial.\",\"authorString\":\"Schaefer M, Denke C, Harke R, Olk N, Erkovan M, Enge S.\",\"journalTitle\":\"Sci Rep\",\"issue\":\"1\",\"journalVolume\":\"9\",\"pubYear\":\"2019\",\"journalIssn\":\"2045-2322\",\"pageInfo\":\"13317\",\"pubType\":\"research-article; randomized controlled trial; journal article\",\"isOpenAccess\":\"Y\",\"inEPMC\":\"Y\",\"inPMC\":\"Y\",\"citedByCount\":33,\"hasReferences\":\"Y\",\"hasTextMinedTerms\":\"Y\",\"hasDbCrossReferences\":\"N\",\"hasPDF\":\"Y\",\"hasBook\":\"N\",\"hasSuppl\":\"N\",\"hasLabsLinks\":\"Y\",\"hasTMAccessionNumbers\":\"N\",\"firstPublicationDate\":\"2019-09-16\",\"firstIndexDate\":\"2019-09-19\"}]}}"
+}

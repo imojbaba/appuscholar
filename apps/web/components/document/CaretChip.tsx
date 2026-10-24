@@ -16,7 +16,7 @@ export const CARET_CHIP_DELAY_MS = 120;
 /**
  * The document-to-library chip in the writing toolbar (v1 618, citCaretUpdate 7703-7712, citJumpToCaret 7714-7719): when the caret or the
  * selection touches an in-text citation of a library source (the surname-then-year rule of "Cited in"), "📚 Smith, 2020 — show in Citation
- * Manager"; a click opens the Citation Manager with that card lit and brought to the middle. While the manager is on screen the card lights by
+ * Manager"; a click opens the Citations tab with that source lit and brought to the middle. While the tab is on screen the source lights by
  * itself as the caret moves, and goes dark when the caret leaves every citation.
  */
 export function CaretChip({ editor }: { editor: Editor }) {

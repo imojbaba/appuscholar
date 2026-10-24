@@ -132,30 +132,10 @@
 .field label { font-size: 13px; line-height: 18px; font-weight: 500; }
 .input, .field .input { width: 100%; min-height: var(--ctl); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font-size: 14px; line-height: 20px; resize: vertical; }
 .input::placeholder, .field .input::placeholder { color: var(--muted); }
-/* Citation Manager (v1 874-947): side-by-side fields, the style note under its select, the library cards. */
+/* Citations (v1 874-947 as the Citations tab lays it out; its own block is "Citations tab" below): side-by-side fields of the form for a source by hand. */
 .cite-row { display: flex; gap: 8px; }
 .cite-row > .field, .cite-row > .flex-1 { min-width: 0; }
-.panel .desc.cite-note { margin: 4px 0 0; }
-.panel .note.cite-state { margin: 0 0 12px; }
-.panel h3.cite-lib-h { margin-top: 18px; display: flex; align-items: center; gap: 8px; }
-.cite-lib { margin-top: 8px; }
-.cit-item { position: relative; margin-bottom: 8px; padding: 10px 32px 10px 12px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--card); font-size: 13px; line-height: 19px; overflow-wrap: anywhere; }
-.cit-item .del { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: var(--r-ctl); color: var(--muted); }
-.cit-item .del:hover { background: var(--chip); color: var(--ink); }
-.cit-item .cite-card-row { margin-top: 6px; }
-/* Task 8a: the card the caret chip points at (v1 84), the checks' lines and the retraction warning (v1 305), the cross-check dialog (v1 1614). */
-.cit-item.cit-active { outline: 2px solid var(--purple-600, #6d28d9); background: #f3ebff; }
-.cit-item .cite-used, .cit-item .rc-line { margin-top: 4px; }
-.cit-item .cite-not-used { opacity: .75; }
-.cit-item .rc-ok { color: #166534; }
-.cit-item .rc-nf { color: #92400e; }
-.cit-item .rc-diff { color: #92400e; font-weight: 600; }
-.cit-item .rc-diff .rc-sub { font-weight: 400; }
-.retr-warn { background: rgba(220, 38, 38, .12); border: 1px solid #dc2626; color: var(--ink); border-radius: 8px; padding: 6px 9px; font-size: 12px; line-height: 1.5; margin-top: 5px; }
-.panel .desc.cite-usage-sum { margin-top: 6px; font-weight: 600; }
-.panel .desc.cite-retr-sum, .panel .desc.cite-rc-sum, .panel .desc.cite-num-missing { margin-top: 2px; }
-.panel .desc.cite-retr-sum.cite-flagged { font-weight: 700; }
-.panel .desc.cite-num-missing { font-weight: 600; }
+/* The caret chip under the document (v1 84); the source row it points at is lit by `.cit-active` in the Citations tab block. */
 .cit-caret-chip { border-color: var(--purple-600, #6d28d9); color: var(--accent-ink); }
 .cc-dlg { max-height: 85vh; overflow-y: auto; }
 .cc-dlg .cc-desc, .cc-dlg .cc-src { font-size: 13px; }
@@ -455,15 +435,8 @@
   /* Dialogs render outside the frame: their close X gets a 44px hit area by padding, the icon stays 16px. */
   [data-slot="dialog-close"] { top: 4px; right: 4px; min-width: 44px; padding: 14px; display: inline-flex; align-items: center; justify-content: center; }
 }
-/* Task 8b: a translated quote (v1 250), the quote box, the one-click capture's <details> (v1 921-928) and the library's last buttons (v1 940-946). */
+/* Task 8b: a translated quote (v1 250). */
 .editor .ProseMirror .translated-quote { border-bottom: 2px dotted #7c3aed; cursor: help; }
-.panel .cite-quote { margin-top: 10px; }
-.panel details.cite-capture { margin-top: 14px; }
-.panel details.cite-capture summary { cursor: pointer; font-weight: 700; color: var(--purple-800); font-size: 13.5px; }
-.panel details.cite-capture .desc { margin-top: 8px; }
-.panel .cite-capture-link { text-align: center; margin: 10px 0; }
-.panel .cite-share { margin-top: 8px; }
-.panel .desc.cite-sharing { margin-top: 10px; }
 /* Research (v1 950-1034), what Find still draws with it (wave B Task 18): the card the connected papers use (v1 293-311), the quick-read box (v1 8163) and the connected papers (v1 310-311). */
 .paper-card { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55; margin-bottom: 8px; overflow-wrap: anywhere; }
 .paper-card h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--purple-800); }
@@ -693,6 +666,74 @@
   .doc-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 8px; padding: 0 4px; border: none; background: none; color: var(--purple-800); font: inherit; font-weight: 600; cursor: pointer; }
   .doc-back:focus-visible, .home-project:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 }
+
+/* Citations tab (wave B Task 23): canvas Citations. The heading with its Style select, one card per source (reference, status and use, the problem, More), the aside "In your document" and
+   "Check again", and the folds "Add a source by hand" and "More". Colours are the tokens above. Up to 700px the aside goes below the sources, the controls are 44px targets and nothing runs past the 16px gutters. */
+.cit { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.cit-grid { display: flex; flex-wrap: wrap; gap: var(--s6); align-items: flex-start; }
+.cit-main { flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.cit-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3); }
+.cit-top-text { min-width: 0; }
+.cit-head { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 700; }
+.cit-checked { margin: var(--s1) 0 0; font-size: 14px; color: var(--muted); }
+.cit-checked.cite-flagged { color: var(--ink); font-weight: 700; }
+.cit-style { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.cit-style .input { width: auto; min-height: 40px; }
+.cit-note { margin: 0; font-size: 13px; line-height: 18px; color: var(--muted); max-width: 62ch; }
+.cit-note-strong { font-weight: 600; color: var(--ink); }
+.cit-list { display: flex; flex-direction: column; gap: var(--s3); }
+.cit-empty { margin: 0; color: var(--muted); }
+.cit-row { display: flex; flex-wrap: wrap; gap: var(--s3); padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); overflow-wrap: anywhere; }
+.cit-row.cit-active { outline: 2px solid var(--purple-600); background: var(--soft); }
+.cit-row-main { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.cit-ref { margin: 0; font-size: 16px; line-height: 1.5; }
+.cit-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); font-size: 13px; }
+.cit-status { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.cit-status-checked { color: var(--ok-ink); }
+.cit-status-fix, .cit-status-year { color: var(--flag-ink); }
+.cit-status-retracted { color: var(--danger-ink); }
+.cit-status-unchecked { color: var(--muted); }
+.cit-use { color: var(--muted); }
+.cit-use-link { display: inline; padding: 0; border: none; background: none; color: var(--purple-800); font: inherit; text-decoration: underline; cursor: pointer; }
+.cit-row-more { display: inline-flex; align-items: center; justify-content: center; gap: 6px; align-self: flex-start; min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
+.cit-row-more:hover { background: var(--soft); }
+.cit-row-more:focus-visible, .cit-use-link:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.cit-menu { min-width: 14rem; }
+.cit-problem-slot { flex: 1 1 100%; display: flex; flex-direction: column; gap: var(--s2); }
+.cit-problem-slot:empty { display: none; }
+.cit-problem { padding: 10px 12px; border-radius: var(--r-ctl); background: var(--flag-bg); color: var(--flag-ink); font-size: 14px; line-height: 1.5; }
+.cit-problem-retracted { background: var(--danger-bg); color: var(--danger-ink); }
+.cit-problem-found { background: var(--ok-bg); color: var(--ok-ink); }
+.cit-sub { font-weight: 400; }
+.cit-fix { min-height: 38px; margin-left: var(--s2); }
+.cit-fold { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.cit-fold > summary { display: flex; align-items: center; min-height: 44px; padding: 0 var(--s5); cursor: pointer; font-weight: 700; font-size: 15px; }
+.cit-fold > summary:focus-visible { outline: 2px solid var(--purple-800); outline-offset: -2px; border-radius: var(--r-card); }
+.cit-fold-body { padding: 0 var(--s5) var(--s5); }
+.cit-fold-body .stack { display: flex; flex-direction: column; gap: var(--s2); }
+.cit-fold-body .desc { margin: 0 0 14px; font-size: 13px; line-height: 18px; color: var(--muted); max-width: 62ch; }
+.cit-fold-body .cite-quote { margin-top: 10px; }
+.cit-more-acts { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
+.cit-more-acts > * { min-height: 40px; }
+.cit-aside { flex: 1 1 320px; max-width: 400px; display: flex; flex-direction: column; gap: var(--s4); }
+.cit-card { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s5); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.cit-card h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.cit-btn { width: 100%; min-height: 40px; }
+@media (max-width: 700px) {
+  .cit-grid { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s4); }
+  .cit-main { flex: none; }
+  .cit-aside { flex: none; max-width: none; }
+  .cit-head { font-size: 20px; }
+  .cit-style .input, .cit-btn, .cit-more-acts > *, .cit-fix { min-height: 44px; }
+  .cit-row { padding: var(--s4); }
+  .cit-row-more { flex: 1 1 100%; min-height: 44px; }
+  .cit-use-link { min-height: 44px; display: inline-flex; align-items: center; }
+  .cit-fold > summary { padding: 0 var(--s4); }
+  .cit-fold-body { padding: 0 var(--s4) var(--s4); }
+  .cit-card { padding: var(--s4); }
+  .cit-menu [role="menuitem"] { min-height: 44px; }
+}
+/* end Citations tab */
 
 /* Find (wave B Task 18, canvas Find): the search box and its AI terms, the filters aside beside the results, the count with Sort and Export, and one result with a Keep and
    a More menu. Colours are the tokens above. Up to 700px the aside goes above the results, the controls are 44px targets and nothing runs past the 16px gutters. */

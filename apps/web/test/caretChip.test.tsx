@@ -29,7 +29,7 @@ vi.mock("@/lib/api", () => ({ apiFetch: async () => { throw new Error("no docume
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
 
 import { CaretChip } from "../components/document/CaretChip";
-import { CitePanel } from "../components/tools/cite/CitePanel";
+import { CitationsTab } from "../components/literature/CitationsTab";
 import { getCiteActive, resetCiteActive } from "../lib/cite/active";
 import { resetCheckBusy } from "../lib/cite/checks";
 
@@ -104,24 +104,24 @@ describe("the caret chip (v1 618, 7668-7727)", () => {
     expect(tid("cit-caret-chip")).toBeNull();
   });
 
-  it("a click opens the Citation Manager and highlights that card", async () => {
+  it("a click opens the Citations tab and highlights that source", async () => {
     const e = make();
     mount(<CaretChip editor={e} />);
     await caretAt(e, "(Smith", 3);
     await act(async () => { tid("cit-caret-chip")!.click(); });
     expect(h.go).toHaveBeenCalledWith("/p/p1/lit/citations");
     expect(getCiteActive()).toMatchObject({ index: 1, jump: true });
-    // The manager then opens with that card lit.
-    mount(<CitePanel />);
-    const cards = document.body.querySelectorAll('[data-testid="cite-card"]');
-    expect(cards[1]!.classList.contains("cit-active")).toBe(true);
-    expect(cards[0]!.classList.contains("cit-active")).toBe(false);
+    // The tab then opens with that source lit.
+    mount(<CitationsTab />);
+    const rows = document.body.querySelectorAll('[data-testid="source-row"]');
+    expect(rows[1]!.classList.contains("cit-active")).toBe(true);
+    expect(rows[0]!.classList.contains("cit-active")).toBe(false);
   });
 
-  it("with the manager open, the card lights as the cursor moves, and goes dark off a citation", async () => {
+  it("with the Citations tab open, the source lights as the cursor moves, and goes dark off a citation", async () => {
     const e = make();
-    mount(<><CaretChip editor={e} /><CitePanel /></>);
-    const lit = () => [...document.body.querySelectorAll('[data-testid="cite-card"]')].map((c) => c.classList.contains("cit-active"));
+    mount(<><CaretChip editor={e} /><CitationsTab /></>);
+    const lit = () => [...document.body.querySelectorAll('[data-testid="source-row"]')].map((c) => c.classList.contains("cit-active"));
     expect(lit()).toEqual([false, false]);
     await caretAt(e, "(Smith", 3);
     expect(lit()).toEqual([false, true]);
@@ -132,7 +132,7 @@ describe("the caret chip (v1 618, 7668-7727)", () => {
     expect(lit()).toEqual([false, false]);
   });
 
-  it("with the manager closed, moving the cursor lights nothing", async () => {
+  it("with the Citations tab closed, moving the cursor lights nothing", async () => {
     const e = make();
     mount(<CaretChip editor={e} />);
     await caretAt(e, "(Lee", 2);

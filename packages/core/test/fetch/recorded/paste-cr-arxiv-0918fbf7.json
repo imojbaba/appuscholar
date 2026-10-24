@@ -1,0 +1,8 @@
+{
+ "url": "https://api.crossref.org/works/10.48550%2Farxiv.2101.00001",
+ "status": 404,
+ "headers": {
+  "content-type": "text/plain"
+ },
+ "body": "Resource not found."
+}

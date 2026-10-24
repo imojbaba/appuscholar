@@ -2,10 +2,10 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 /*
- * The library card the caret chip points at (v1 citActiveIdx 7673, citMarkActive 7697-7702), shared by the chip under the document and the
- * library in the dock: the card at `index` is lit (-1: none); `jump` asks the library to bring it to the middle of the panel (the chip's click,
- * citJumpToCaret 7714-7719) rather than only into view (the cursor moving while the manager is on screen). By index, as v1, so a source saved
- * twice lights only the card the caret matched first.
+ * The library entry the caret chip points at (v1 citActiveIdx 7673, citMarkActive 7697-7702), shared by the chip under the document and the Citations
+ * tab (wave B Task 23; v1's library card is its source row): the row at `index` is lit (-1: none); `jump` asks the tab to bring it to the middle
+ * (the chip's click, citJumpToCaret 7714-7719) rather than only into view (the cursor moving while the tab is on screen). By index, as v1, so a source
+ * saved twice lights only the row the caret matched first.
  */
 export type CiteActive = { index: number; jump: boolean; seq: number };
 
@@ -23,7 +23,7 @@ export function setCiteActive(index: number, jump = false): void {
 export function getCiteActive(): CiteActive { return active; }
 export function useCiteActive(): CiteActive { return useSyncExternalStore(subscribe, read, read); }
 
-/** citPanelVisible 7696: the Citation Manager's library is on screen (mounted in the dock). */
+/** citPanelVisible 7696: the Citations tab's list is on screen (v1: the Citation Manager's library, mounted in the dock). */
 export function citePanelShown(): boolean { return shown > 0; }
 /** The library marks itself on screen while it is mounted. */
 export function useCitePanelShown(): void {

@@ -44,7 +44,7 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: () => <div data-testid="reading-list" /> }));
-vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
+vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], ask: () => {} }), ChatPanel: () => <div data-testid="chat-panel" /> }));
 vi.mock("@/components/tools/HelpersPanel", () => ({ HelpersPanel: () => <div data-testid="panel-psych" /> }));
@@ -122,7 +122,7 @@ describe("Literature (Task 10)", () => {
       find: ["panel-find"],
       reading: ["reading-list", "read-a-paper", "panel-analyse"],
       compare: ["shelf-matrix", "ap-across"],
-      citations: ["panel-cite"]
+      citations: ["panel-citations"]
     };
     for (const tab of PLACE_TABS.lit) {
       await mount("lit", tab);
@@ -162,10 +162,10 @@ describe("Literature waits for the paper ids (wave B, Task 17, ruling B2-R6)", (
   it.each(["done", "busy", "broken", "locked"])("the body renders when the migration answers %s", async (answer) => {
     h.paperIds = "running";
     await mount("lit", "citations");
-    expect(tid("panel-cite")).toBeNull();
+    expect(tid("panel-citations")).toBeNull();
     h.paperIds = answer;
     await rerender("lit", "citations");
-    expect(tid("panel-cite")).not.toBeNull();
+    expect(tid("panel-citations")).not.toBeNull();
     expect(tid("panel-loading")).toBeNull();
   });
 
