@@ -23,7 +23,7 @@ async function click(id: string) {
   await act(async () => { el.click(); await new Promise((r) => setTimeout(r, 0)); });
 }
 const EMAIL = { counts: { "email address": 1 }, total: 1, sig: "email addressa@b.com" };
-const scan = (names?: ScanResult["names"], base: Partial<ScanResult> = EMAIL): ScanResult => ({ ...base, ...(names ? { names } : {}) }) as ScanResult;
+const scan = (names?: ScanResult["names"], base: Partial<ScanResult> = EMAIL, checked?: ScanResult["checked"]): ScanResult => ({ ...base, ...(names ? { names } : {}), ...(checked ? { checked } : {}) }) as ScanResult;
 
 async function open(sc: ScanResult): Promise<{ answer: Promise<PdChoice> }> {
   let answer!: Promise<PdChoice>;
@@ -151,8 +151,8 @@ describe("a participant list that is locked", () => {
 });
 
 describe("the sentences", () => {
-  it("says it finds names on the list and common first names, but not every name; the line about the AI provider stays as it was", async () => {
-    await open(scan());
+  it("says it finds names on the list and common first names, but not every name, when both ran; the line about the AI provider stays as it was", async () => {
+    await open(scan({ listed: 0, maybe: [], locked: false }, EMAIL, { list: true, firstNames: true }));
     const body = text("pd-dialog")!;
     expect(body).toContain("This text goes straight to your AI provider.");
     expect(body).toContain(en.pp_ai_checks);
@@ -160,6 +160,33 @@ describe("the sentences", () => {
     expect(en.pp_ai_checks).toMatch(/common first names/);
     expect(en.pp_ai_checks).toMatch(/cannot find every name/);
     expect(body).not.toContain("cannot find a name written inside a sentence");
+  });
+
+  // The sentence is chosen by what ran (R54b): it never claims a check that did not.
+  it.each([
+    ["the list only (a literature request in a project with a list)", { list: true, firstNames: false }, "pp_ai_checks_list", true, false],
+    ["common first names only (a project with no list)", { list: false, firstNames: true }, "pp_ai_checks_first", false, true],
+    ["neither (a literature request with no list)", { list: false, firstNames: false }, "pp_ai_checks_none", false, false]
+  ] as const)("%s", async (_why, checked, key, list, first) => {
+    await open(scan({ listed: 0, maybe: [], locked: false }, EMAIL, checked));
+    const body = text("pd-dialog")!;
+    const sentence = (en as Record<string, string>)[key]!;
+    expect(body).toContain(sentence);
+    expect(body).not.toContain(en.pp_ai_checks);
+    expect(/participant list/.test(sentence)).toBe(list);
+    expect(/first names/.test(sentence)).toBe(first);
+    expect(sentence).toMatch(/email addresses, phone numbers/);
+    expect(sentence).toMatch(/read the text once yourself/);
+  });
+
+  it("outside a project, or with the list locked, it says only what the check always finds", async () => {
+    await open(scan());
+    expect(text("pd-dialog")).toContain(en.pp_ai_checks_none);
+    expect(text("pd-dialog")).not.toMatch(/participant list|first names/);
+    await click("pd-cancel");
+    await open(scan({ listed: 0, maybe: [], locked: true }, EMAIL, { list: false, firstNames: false }));
+    expect(text("pd-dialog")).toContain(en.pp_ai_checks_none);
+    expect(text("pd-dialog")).not.toContain(en.pp_ai_checks);
   });
 
   it("explains Mask for names only when there are names", async () => {

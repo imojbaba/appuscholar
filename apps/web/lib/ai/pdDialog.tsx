@@ -64,6 +64,9 @@ function PdBody({ sc, finish }: { sc: ScanResult; finish(c: PdChoice): void }) {
   const listed = names && names.listed > 0 ? (names.listed === 1 ? t("pp_ai_listed_one") : t("pp_ai_listed_many", { n: names.listed })) : undefined;
   const maybe = names?.maybe ?? [];
   const locked = names?.locked === true;
+  // The sentence about what the check finds says only what ran on this request (R54b): the list, common first names, both, or neither.
+  const ran = sc.checked ?? { list: false, firstNames: false };
+  const checks = ran.list && ran.firstNames ? "pp_ai_checks" : ran.list ? "pp_ai_checks_list" : ran.firstNames ? "pp_ai_checks_first" : "pp_ai_checks_none";
   /** The words at Leave. */
   const [left, setLeft] = useState<string[]>([]);
   const toggle = (word: string, leave: boolean) => setLeft((l) => (leave ? (l.includes(word) ? l : [...l, word]) : l.filter((w) => w !== word)));
@@ -103,7 +106,7 @@ function PdBody({ sc, finish }: { sc: ScanResult; finish(c: PdChoice): void }) {
       )}
       {locked && <p className="m-0 text-sm text-amber-900" data-testid="pd-locked">{t("pp_ai_locked")}</p>}
       {(listed || maybe.length > 0) && <p className="m-0 text-[13px] text-muted-foreground" data-testid="pd-mask-note">{t("pp_ai_mask_note")}</p>}
-      <p className="m-0 text-[13px] text-muted-foreground">This text goes straight to your AI provider. {t("pp_ai_checks")}</p>
+      <p className="m-0 text-[13px] text-muted-foreground">This text goes straight to your AI provider. {t(checks)}</p>
       <DialogFooter>
         {maskable && <Button variant="primary" data-testid="pd-mask" onClick={() => finish({ answer: "mask", leave })}>Mask them and send</Button>}
         {locked && <Button variant={maskable ? "ghost" : "primary"} data-testid="pd-unlock" onClick={() => finish({ answer: "unlock", leave: [] })}>{t("pp_ai_unlock")}</Button>}

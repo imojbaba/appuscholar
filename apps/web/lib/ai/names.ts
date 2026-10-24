@@ -41,7 +41,11 @@ export type PromptNames = {
   maybe: string[];
   /** The names in normal form, for the request's signature: the listed ones and the might-be ones, each once. */
   sig: string;
+  /** Which checks ran on this request, for the dialog's sentence (R54b): the list had somebody on it to look for, and common first names were suggested (not for a literature request, and only when C13 says so). */
+  checked: NamesChecked;
 };
+/** What the names check ran on a request. */
+export type NamesChecked = { list: boolean; firstNames: boolean };
 
 const byStart = (a: NameFind, b: NameFind) => a.start - b.start;
 
@@ -89,7 +93,10 @@ export function scanNames(text: string, ctx: Pick<NamesCtx, "list" | "mode">, op
   const sureKeys = [...new Set(finds.filter((f) => f.kind === "sure").map((f) => normName(f.text)))].sort();
   const maybeKeys = [...seen].sort();
   const sig = [sureKeys.length ? "names:" + sureKeys.join("|") : "", maybeKeys.length ? "maybe:" + maybeKeys.join("|") : ""].filter(Boolean).join("||");
-  return { finds, people: new Map(base.people.map((p) => [p.id, p])), pseudonyms, listed: finds.filter((f) => f.kind === "sure").length, maybe, sig };
+  return {
+    finds, people: new Map(base.people.map((p) => [p.id, p])), pseudonyms, listed: finds.filter((f) => f.kind === "sure").length, maybe, sig,
+    checked: { list: list !== null && list.people.length > 0, firstNames: suggest }
+  };
 }
 
 /** What stands in for a person: their made-up name in made-up names mode when they have one, else their code. */

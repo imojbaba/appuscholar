@@ -433,3 +433,38 @@ describe("Explain asks first about the table's names; callAI does not ask again 
     expect(sent()).toBe("Priya wrote to [email].");
   });
 });
+
+describe("what the check ran, for the dialog's sentence (R54b)", () => {
+  const MAIL = "Write to a@b.com about the week.";
+  const ran = async (names: Setup["names"] | null, opts: { literature?: boolean } = {}) => {
+    const { ctx, shown } = setup(names === null ? { over: { names: undefined } } : { names });
+    await callAI(MAIL, opts, ctx);
+    expect(shown).toHaveLength(1);
+    return shown[0]!.checked;
+  };
+
+  it("inside a project with a readable list, the list ran, and common first names too (not for a literature request)", async () => {
+    expect(await ran({ list: CLASS_9, mode: "codes" })).toEqual({ list: true, firstNames: true });
+    expect(await ran({ list: CLASS_9, mode: "codes" }, { literature: true })).toEqual({ list: true, firstNames: false });
+  });
+
+  it("with no list, common first names ran only when the plan or the list asks for them (C13), and never for a literature request", async () => {
+    expect(await ran({ list: null, mode: "codes" })).toEqual({ list: false, firstNames: true });
+    expect(await ran({ list: null, mode: "codes" }, { literature: true })).toEqual({ list: false, firstNames: false });
+    expect(await ran({ list: null, mode: null })).toEqual({ list: false, firstNames: false });
+    expect(await ran({ list: null, mode: "anonymous" })).toEqual({ list: false, firstNames: false });
+  });
+
+  it("a list nobody is on, and a destroyed one, have nobody to look for", async () => {
+    expect(await ran({ list: emptyList(), mode: null })).toEqual({ list: false, firstNames: false });
+    expect(await ran({ list: destroyList(CLASS_9, "2026-10-20"), mode: "anonymous" })).toEqual({ list: false, firstNames: false });
+  });
+
+  it("a locked list ran nothing", async () => {
+    expect(await ran({ list: null, mode: "codes", locked: true })).toEqual({ list: false, firstNames: false });
+  });
+
+  it("outside a project there is no names check at all", async () => {
+    expect(await ran(null)).toBeUndefined();
+  });
+});

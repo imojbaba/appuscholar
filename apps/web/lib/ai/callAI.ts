@@ -2,7 +2,7 @@ import { PROV_ORDER, maskText, scanText, type ProviderId } from "@appuscholar/co
 import { ApiError, apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { keyStore, unlockKeyBlob } from "./keys";
-import { maskNames, scanNames, type NamesCtx } from "./names";
+import { maskNames, scanNames, type NamesChecked, type NamesCtx } from "./names";
 
 /** The gateway's error classes (apps/api/src/ai/types.ts). */
 export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms";
@@ -11,7 +11,11 @@ export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | 
  * participant list, the words that might be names (suggestions, and listed words the list asks about), and whether the list is locked so names on it were not checked.
  * `sig` carries the names too, so "Send as it is" is remembered for these names and a new name asks again.
  */
-export type ScanResult = ReturnType<typeof scanText> & { names?: { listed: number; maybe: string[]; locked: boolean } };
+export type ScanResult = ReturnType<typeof scanText> & {
+  names?: { listed: number; maybe: string[]; locked: boolean };
+  /** Which name checks ran on this request (there when `names` is): the dialog says only what ran (R54b). A locked list, or a request outside a project, ran none. */
+  checked?: NamesChecked;
+};
 
 /**
  * What the student chose in the personal-data dialog. `leave`: the "might be a name" words left as written (the toggle at Leave), when the answer is Mask or Send. "unlock" is only
@@ -151,7 +155,7 @@ export async function callAI(prompt: string, opts: CallOpts, ctx: CallCtx): Prom
       const names = nc ? { listed: found?.listed ?? 0, maybe: found?.maybe ?? [], locked: nc.locked } : undefined;
       if (base.total === 0 && !(names && (names.listed > 0 || names.maybe.length > 0 || names.locked))) break;
       // The signature holds the project: a Send in one project never covers another's list and names (R43).
-      const sc: ScanResult = { ...base, sig: [ctx.projectId ? "project:" + ctx.projectId : "", base.sig, found?.sig ?? "", names?.locked ? "list-locked" : ""].filter(Boolean).join("||"), ...(names ? { names } : {}) };
+      const sc: ScanResult = { ...base, sig: [ctx.projectId ? "project:" + ctx.projectId : "", base.sig, found?.sig ?? "", names?.locked ? "list-locked" : ""].filter(Boolean).join("||"), ...(names ? { names, checked: found?.checked ?? { list: false, firstNames: false } } : {}) };
       if (pdOk.has(sc.sig)) { pdAccepted = true; break; }
       const choice = await ctx.askPd(sc);
       if (choice.answer === "cancel") throw new AiCallError("cancelled", apiMsg("cancelled"));
