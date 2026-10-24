@@ -159,7 +159,6 @@ function textHolders(v: unknown, path = "input"): Array<{ path: string; o: Recor
   }
   return out;
 }
-const textOf = (o: Record<string, unknown>): string => String(o.text ?? o.abstract ?? "");
 
 describe("the six test sets", () => {
   it("are the six the plan names", () => {
