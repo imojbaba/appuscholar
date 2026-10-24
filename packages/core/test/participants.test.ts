@@ -159,6 +159,15 @@ describe("findNames", () => {
     expect(findNames("In 2019 -- (3) Anu 'said' it...", m).map((f) => f.text)).toEqual(["Anu"]);
   });
 
+  it("a one-letter spelling is found only as a capital letter, so a spelling \"A\" is never the article", () => {
+    const m = buildMatcher([person("p1", "Anu Rao", ["A"])]);
+    expect(findNames("a cat", m)).toEqual([]);
+    expect(findNames("I saw a cat and a dog", m)).toEqual([]);
+    expect(findNames("A said", m)).toEqual([{ start: 0, end: 1, text: "A", personIds: ["p1"], kind: "ask", why: "short" }]);
+    const text = "then a said, then A said";
+    expect(findNames(text, m).map((f) => f.start)).toEqual([text.indexOf("A")]);
+  });
+
   it("a spelling of one letter is asked about, and is never the s of Priya's", () => {
     const m = buildMatcher([person("p1", "Anu Rao", ["S"])]);
     expect(findNames("Priya's book", m)).toEqual([]);
@@ -166,6 +175,7 @@ describe("findNames", () => {
     expect(findNames("S said", m)).toEqual([{ start: 0, end: 1, text: "S", personIds: ["p1"], kind: "ask", why: "short" }]);
     expect(findNames("Anu Rao's book", m).map((f) => f.text)).toEqual(["Anu Rao"]);
     expect(findNames("then S. said", m)).toHaveLength(1);
+    expect(findNames("then s said", m)).toEqual([]); // a one-letter spelling needs a capital, like an everyday one
     const shared = buildMatcher([person("p1", "Anu Rao", ["S"]), person("p2", "Sita Rao", ["S"])]);
     expect(findNames("S said", shared)[0]).toMatchObject({ kind: "ask", why: "shared", personIds: ["p1", "p2"] });
   });
@@ -248,10 +258,12 @@ describe("suggestNames", () => {
     expect(suggestNames(text, m, [], { speakerLabels: true, firstNames: false })).toEqual([]);
   });
 
-  it("skips a speaker label only when the whole label is a role word: \"Dr A Kumar:\" is a suggestion", () => {
-    const text = "Dr A Kumar: yes\nInterviewee: yes\nI: yes\nInterviewer Meena: yes";
+  it("role words at the front of a speaker label are left out of the suggestion; a label of role words only is skipped", () => {
+    const text = "Dr A Kumar: yes\nInterviewee: yes\nI: yes\nInterviewer Meena: yes\nParticipant Researcher: no\nQ Priya Rao: ok\nMeena Participant: no";
     const f = suggestNames(text, m, [], { speakerLabels: true, firstNames: false });
-    expect(f.map((x) => text.slice(x.start, x.end))).toEqual(["Dr A Kumar", "Interviewer Meena"]);
+    expect(f.map((x) => text.slice(x.start, x.end))).toEqual(["Dr A Kumar", "Meena", "Priya Rao", "Meena Participant"]);
+    const at = text.indexOf("Interviewer Meena") + "Interviewer ".length;
+    expect(f[1]).toEqual({ start: at, end: at + 5, text: "Meena", personIds: [], kind: "suggest", why: "speaker" });
   });
 
   it("takes a speaker label of one to three capitalised words from the start of a line only", () => {

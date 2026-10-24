@@ -15,8 +15,8 @@ import { FIRST_NAME_LIST } from "./data/names-first";
  * signs, the anusvara and the virama are marks, so a name that ends in a vowel sign is found before a space and not inside a longer name that goes on with another mark.
  * At any start index the longest matching spelling wins, finds never overlap, and scanning goes on after the end of a find.
  * Sure, ask: a find is sure unless it is one of these, which are asked about, never replaced in bulk: the spelling belongs to two or more people (all their ids are offered);
- * the spelling is one letter long ("short"); or the person marked the spelling as also an everyday word in their own `everyday` list, in which case it is found only when written
- * with a capital first letter (C12; a script with no capitals counts as capital). That order is also the order of `why`: shared, then short, then everyday. The built-in
+ * the spelling is one letter long ("short"); or the person marked the spelling as also an everyday word in their own `everyday` list. An everyday or a one-letter spelling is
+ * found only when written with a capital first letter (C12; a script with no capitals counts as capital), so a spelling "A" is never the article "a". That order is also the order of `why`: shared, then short, then everyday. The built-in
  * EVERYDAY_NAMES do not make a find ask (ruling R6): they are the default the Add form pre-ticks, and isEverydayName reports them. A spelling with no letter in it is not looked for
  * ("2019" would match everywhere), and a one-letter spelling is never the s of "Priya's".
  * How it runs: the text is folded to a copy in which the case, the dots and the apostrophes are the normal form's and nothing else has moved; one compiled regular expression
@@ -146,7 +146,7 @@ function notLowerCase(text: string, i: number): boolean {
 }
 
 /**
- * The sure and ask finds of the people on the list in `text`, in text order, never overlapping. A spelling the person marked everyday is found only when it starts with a capital;
+ * The sure and ask finds of the people on the list in `text`, in text order, never overlapping. A spelling the person marked everyday, or a spelling of one letter, is found only when it starts with a capital;
  * when it does not, the scan goes on one character later, so a later word inside the same candidate can still be found.
  */
 export function findNames(text: string, m: Matcher): NameFind[] {
@@ -159,8 +159,8 @@ export function findNames(text: string, m: Matcher): NameFind[] {
   for (let hit = re.exec(folded); hit; hit = re.exec(folded)) {
     const sp = spellings.get(hit[0].replace(/\s+/g, " "));
     const start = at(hit.index);
-    // Rejected: unknown (cannot happen), an everyday spelling in lower case, or a one-letter spelling right after an apostrophe (the s of "Priya's").
-    if (!sp || (sp.everyday && !notLowerCase(text, start)) || (sp.short && folded[hit.index - 1] === "'")) {
+    // Rejected: unknown (cannot happen); an everyday or one-letter spelling that does not start with a capital; or a one-letter spelling right after an apostrophe (the s of "Priya's").
+    if (!sp || ((sp.everyday || sp.short) && !notLowerCase(text, start)) || (sp.short && folded[hit.index - 1] === "'")) {
       const first = folded.charCodeAt(hit.index);
       re.lastIndex = hit.index + (first >= 0xd800 && first <= 0xdbff ? 2 : 1);
       continue;
@@ -188,8 +188,9 @@ const plainName = (s: string) => normName(s).normalize("NFD").replace(/\p{M}/gu,
 
 /**
  * Names that are not on the list, as `kind: "suggest"` finds in text order (spec §7.5). With `speakerLabels`, a speaker label at the start of a line: one to three capitalised
- * words before a colon, and the find is those words (no colon, no leading space), unless the whole label is a role word (Interviewer, Interviewee, Researcher, Moderator,
- * Participant, Respondent, I, R, T, S, Q, A), so "Dr A Kumar:" is the suggestion "Dr A Kumar". A code such as "P001:" never makes a label (label words hold no digits). With
+ * words before a colon, and the find is those words (no colon, no leading space) without any role words at the front (Interviewer, Interviewee, Researcher, Moderator,
+ * Participant, Respondent, I, R, T, S, Q, A): "Interviewer Meena:" is the suggestion "Meena", a label of role words only is skipped, and a role word that is not at the
+ * front stays ("Dr A Kumar:" is "Dr A Kumar"). A code such as "P001:" never makes a label (label words hold no digits). With
  * `firstNames`, a capitalised Latin-script word on FIRST_NAMES, not one written all in capitals ("Ram", not "RAM"). Skipped: a span that overlaps a find of findNames, a span the
  * student said is not a name (`notNames`, compared as FIRST_NAMES is, in normal form with accents removed, so "Jose" also silences "José"), and a word inside a speaker label that
  * is already suggested. Suggestions never overlap each other or the finds, so both can be painted and replaced together.
@@ -205,9 +206,12 @@ export function suggestNames(text: string, m: Matcher, notNames: string[], opts:
   if (opts.speakerLabels) {
     for (const hit of text.matchAll(SPEAKER_LABEL)) {
       const label = hit[1] ?? "";
-      if (SPEAKER_WORDS.has(normName(label))) continue;
-      const start = (hit.index ?? 0) + hit[0].indexOf(label);
-      add(start, start + label.length, "speaker");
+      // Role words at the front are not part of the name ("Interviewer Meena:" is Meena); a label of role words only is no name at all.
+      const words = [...label.matchAll(/\S+/g)];
+      const first = words.findIndex((w) => !SPEAKER_WORDS.has(normName(w[0])));
+      if (first < 0) continue;
+      const labelStart = (hit.index ?? 0) + hit[0].indexOf(label);
+      add(labelStart + (words[first]?.index ?? 0), labelStart + label.length, "speaker");
     }
   }
   if (opts.firstNames) {
