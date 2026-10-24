@@ -1,0 +1,327 @@
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { statsParseText, type ParsedData } from "../src/intake";
+import { pdScan } from "../src/pdscan";
+import { pdCsv } from "../src/csv";
+import { buildMatcher, codeOf, type MatchPerson } from "../src/participants";
+import { listTableScan, listTransform, pdScanV2, type ColumnNames, type ColumnPlan } from "../src/participantsTable";
+
+/**
+ * Tables against the participant list (spec §8.1, calls C14 and C17) and the fix for F1. pdScanV2 is v1's pdScan except that a column of open answers is not "names"; listTableScan
+ * says, per column, which cells are people on the list, which names are not on it, which rows belong to a person who withdrew, and which names sit inside answers; listTransform writes
+ * the table back with the student's choices. v2's own code, so there is no golden: these tests are its specification. pdscan.ts itself is v1's and is never edited.
+ */
+const person = (id: string, name: string, spellings: string[] = [], over: Partial<MatchPerson> = {}): MatchPerson =>
+  ({ id, code: codeOf(Number(id.slice(1))), name, spellings, everyday: [], ...over });
+const table = (text: string): ParsedData => {
+  const d = statsParseText(text);
+  if (!d) throw new Error("test table did not parse");
+  return d;
+};
+const PRIYA = person("p1", "Priya Sharma", ["Priya"]);
+const RAHUL = person("p2", "Rahul Verma", ["Rahul"]);
+const OPTS = { rolls: new Map<string, string>(), nameColumns: [] as number[], suggest: false, notNames: [] as string[] };
+const plan = (index: number, over: Partial<ColumnPlan> = {}): ColumnPlan => ({ index, action: "keep", inText: "keep", dropRows: false, picks: [], ...over });
+const column = (scan: ColumnNames[], index: number): ColumnNames => {
+  const c = scan.find((s) => s.index === index);
+  if (!c) throw new Error(`no scan entry for column ${index}`);
+  return c;
+};
+
+describe("pdScanV2", () => {
+  it("f1OpenAnswersAreNotNames", () => {
+    const data = table(
+      [
+        "notes",
+        "Priya said she liked it in the second week of the course honestly",
+        "Rahul told me he found the group work helpful most of the time",
+        "Meena felt the lectures were too fast for her at the start",
+      ].join("\n"),
+    );
+    // v1, untouched: every answer is letters and spaces, so the column "looks like names".
+    expect(pdScan(data).found).toEqual([{ index: 0, name: "notes", kind: "name", why: "values" }]);
+    expect(pdScan(data).freeText).toEqual([]);
+    // v2: a value of more than four words is not a name, so the column goes on to the long-text rule.
+    expect(pdScanV2(data)).toEqual({ found: [], freeText: ["notes"] });
+  });
+
+  it("drops only the column that has a long value, keeps the other findings and the column order of freeText", () => {
+    const data = table(
+      [
+        "comments,full name,remarks,email",
+        "Priya said she liked it in the second week of the course honestly,Asha Verma,Rahul told me he found the group work helpful most of the time,a@x.com",
+        "Rahul told me he found the group work helpful most of the time,Ravi Kumar,Meena felt the lectures were too fast for her at the start,b@x.com",
+        "Meena felt the lectures were too fast for her at the start,Meena Rao,Priya said she liked it in the second week of the course honestly,c@x.com",
+      ].join("\n"),
+    );
+    const v1 = pdScan(data);
+    expect(v1.found.map((f) => [f.index, f.kind, f.why])).toEqual([[0, "name", "values"], [1, "name", "heading"], [2, "name", "values"], [3, "email", "values"]]);
+    const v2 = pdScanV2(data);
+    expect(v2.found.map((f) => [f.index, f.kind, f.why])).toEqual([[1, "name", "heading"], [3, "email", "values"]]);
+    expect(v2.freeText).toEqual(["comments", "remarks"]);
+  });
+
+  it("a name column with values of up to four words stays a name column, and five words is the first that is not", () => {
+    const four = table("who\nDr Asha Verma Rao\nRavi Kumar\nMeena Rao");
+    expect(pdScanV2(four)).toEqual(pdScan(four));
+    expect(pdScanV2(four).found).toEqual([{ index: 0, name: "who", kind: "name", why: "values" }]);
+    const five = table("who\nDr Asha Verma Rao Singh\nRavi Kumar\nMeena Rao");
+    expect(pdScan(five).found).toHaveLength(1);
+    expect(pdScanV2(five).found).toEqual([]);
+    // five short words are not long text either: it is simply not flagged
+    expect(pdScanV2(five).freeText).toEqual([]);
+  });
+
+  it("a name found by its heading is kept however long its values", () => {
+    const data = table("full name,score\nPriya said she liked it in the second week of the course honestly,1\nRahul told me he found it helpful,2");
+    expect(pdScanV2(data)).toEqual(pdScan(data));
+    expect(pdScanV2(data).found[0]).toMatchObject({ kind: "name", why: "heading" });
+  });
+
+  it("pdScanV2KeepsV1Elsewhere", () => {
+    const corpus = JSON.parse(readFileSync(new URL("./golden/pdscan/corpus.json", import.meta.url), "utf8")) as Array<{ id: string; text: string }>;
+    const words = (v: string) => (v.match(/\S+/g) ?? []).length;
+    let compared = 0;
+    for (const entry of corpus) {
+      const data = statsParseText(entry.text);
+      if (!data) continue;
+      const v1 = pdScan(data);
+      const longName = v1.found.some((f) => f.kind === "name" && f.why === "values" && data.rows.some((r) => words((r[f.index] ?? "").trim()) > 4));
+      if (longName) continue;
+      expect(pdScanV2(data), entry.id).toEqual(v1);
+      compared++;
+    }
+    expect(compared).toBeGreaterThanOrEqual(20);
+  });
+});
+
+describe("listTableScan", () => {
+  it("listedInAnyCaseAndSpacing", () => {
+    const m = buildMatcher([PRIYA, RAHUL]);
+    const data = table("student name\npriya  sharma\nRAHUL VERMA\nSunita Devi");
+    const c = column(listTableScan(data, m, OPTS), 0);
+    expect(c.listed).toEqual([{ row: 0, personId: "p1" }, { row: 1, personId: "p2" }]);
+    expect(c.unlisted).toEqual(["Sunita Devi"]);
+    expect(c.inText).toEqual([]);
+    // the heading rule can say it is a name column too, with the same result
+    expect(column(listTableScan(data, m, { ...OPTS, nameColumns: [0] }), 0)).toEqual(c);
+  });
+
+  it("a column is a name column by the caller's list or by its listed values, and only then are other values unlisted", () => {
+    const m = buildMatcher([PRIYA]);
+    const data = table("who,notes,other\nSunita Devi,Priya Sharma,Great course\nAnita Rao,Good,Fine");
+    const none = listTableScan(data, m, OPTS);
+    expect(none.find((c) => c.index === 0)).toBeUndefined(); // no list value, not named by the caller: nothing to say
+    expect(column(none, 1)).toMatchObject({ listed: [{ row: 0, personId: "p1" }], unlisted: ["Good"] });
+    expect(none.find((c) => c.index === 2)).toBeUndefined();
+    const named = listTableScan(data, m, { ...OPTS, nameColumns: [0] });
+    expect(column(named, 0).unlisted).toEqual(["Sunita Devi", "Anita Rao"]);
+  });
+
+  it("unlisted values are distinct by normal form, first seen, and empty cells are skipped", () => {
+    const m = buildMatcher([PRIYA]);
+    const data = table("name\nSunita Devi\n\nsunita  DEVI\nAnita Rao\nSunita Devi");
+    // a blank line is dropped by the parser; a blank cell needs a second column
+    const two = table("name,x\nSunita Devi,1\n,2\nsunita  DEVI,3\nAnita Rao,4\nSunita Devi,5");
+    expect(column(listTableScan(data, m, { ...OPTS, nameColumns: [0] }), 0).unlisted).toEqual(["Sunita Devi", "Anita Rao"]);
+    expect(column(listTableScan(two, m, { ...OPTS, nameColumns: [0] }), 0).unlisted).toEqual(["Sunita Devi", "Anita Rao"]);
+  });
+
+  it("withdrawnRowsByNameOrCode", () => {
+    const imran = person("p4", "Imran Khan", ["Mohd. Imran"], { withdrawn: { on: "2026-10-15", data: "remove" } });
+    const zara = person("p5", "Zara Ali", [], { withdrawn: { on: "2026-10-16", data: "keep" } });
+    const m = buildMatcher([PRIYA, imran, zara]);
+    const byName = column(listTableScan(table("student name,score\nPriya Sharma,1\nMohd. Imran,2\nZara Ali,3\nMeena Rao,4"), m, OPTS), 0);
+    expect(byName.withdrawnRows).toEqual([1]); // Zara kept her data: never in withdrawnRows
+    expect(byName.listed.map((l) => l.personId)).toEqual(["p1", "p4", "p5"]);
+    const byCode = column(listTableScan(table("id,score\nP001,1\np004,2\nP004,3\nP005,4"), m, { ...OPTS, nameColumns: [0] }), 0);
+    expect(byCode.withdrawnRows).toEqual([1, 2]);
+    // a code is already a code: it is neither a listed name nor a name that is not on the list
+    expect(byCode.listed).toEqual([]);
+    expect(byCode.unlisted).toEqual([]);
+  });
+
+  it("namesInsideAnswers", () => {
+    const m = buildMatcher([PRIYA, RAHUL]);
+    const data = table("notes,score\nRahul and I studied together,5\nNobody here,7\n12,3");
+    const scan = listTableScan(data, m, OPTS);
+    const c = column(scan, 0);
+    expect(c.inText).toHaveLength(1);
+    expect(c.inText[0]?.row).toBe(0);
+    expect(c.inText[0]?.finds).toEqual([{ start: 0, end: 5, text: "Rahul", personIds: ["p2"], kind: "sure" }]);
+    expect(c.listed).toEqual([]);
+    expect(c.unlisted).toEqual([]);
+    expect(scan.find((s) => s.index === 1)).toBeUndefined();
+  });
+
+  it("an answer that holds a name is not a value of a name column: the cell is looked at as a whole, not twice", () => {
+    const m = buildMatcher([PRIYA, RAHUL]);
+    const c = column(listTableScan(table("name\nPriya Sharma\nRahul S.\nSunita Devi"), m, OPTS), 0);
+    expect(c.listed).toEqual([{ row: 0, personId: "p1" }]);
+    expect(c.unlisted).toEqual(["Rahul S.", "Sunita Devi"]);
+    expect(c.inText).toEqual([]);
+  });
+
+  it("suggestions come from first names only when asked for, are joined with the sure finds in text order, and honour notNames", () => {
+    const m = buildMatcher([RAHUL]);
+    const data = table("notes\nMeena and Rahul walked home");
+    expect(column(listTableScan(data, m, OPTS), 0).inText[0]?.finds.map((f) => [f.text, f.kind])).toEqual([["Rahul", "sure"]]);
+    const asked = column(listTableScan(data, m, { ...OPTS, suggest: true }), 0);
+    expect(asked.inText[0]?.finds.map((f) => [f.text, f.kind, f.why])).toEqual([["Meena", "suggest", "first-name"], ["Rahul", "sure", undefined]]);
+    const said = column(listTableScan(data, m, { ...OPTS, suggest: true, notNames: ["meena"] }), 0);
+    expect(said.inText[0]?.finds.map((f) => f.text)).toEqual(["Rahul"]);
+  });
+
+  it("rollMatches", () => {
+    const m = buildMatcher([PRIYA, person("p3", "Asha Rao")]);
+    const rolls = new Map([["21cs014", "p3"]]);
+    const scan = listTableScan(table("roll,score\n21CS014,5\n99X,3"), m, { ...OPTS, rolls });
+    expect(column(scan, 0).roll).toEqual([{ row: 0, personId: "p3" }]);
+    expect(column(scan, 0).unlisted).toEqual([]);
+    expect(scan.find((s) => s.index === 1)).toBeUndefined();
+  });
+
+  it("an everyday, one-letter or shared spelling alone in a cell is a name only in a name column; elsewhere it is asked about as a find", () => {
+    const will = person("p6", "Will Thomas", ["Will"], { everyday: ["Will"] });
+    const m = buildMatcher([PRIYA, will]);
+    const answers = table("answer,x\nWill,1\nGreat course,2\nThe teacher was good,3");
+    const scan = listTableScan(answers, m, OPTS);
+    const c = column(scan, 0);
+    expect(c.listed).toEqual([]);
+    expect(c.unlisted).toEqual([]); // one lone "Will" must not turn open answers into "names not on your list"
+    expect(c.inText).toEqual([{ row: 0, finds: [{ start: 0, end: 4, text: "Will", personIds: ["p6"], kind: "ask", why: "everyday" }] }]);
+    // told it is a name column, the same cell is the person
+    expect(column(listTableScan(answers, m, { ...OPTS, nameColumns: [0] }), 0).listed).toEqual([{ row: 0, personId: "p6" }]);
+    // and a sure name in the same column makes it a name column too
+    const mixed = table("who\nPriya Sharma\nWill\nSunita Devi");
+    expect(column(listTableScan(mixed, m, OPTS), 0)).toMatchObject({ listed: [{ row: 0, personId: "p1" }, { row: 1, personId: "p6" }], unlisted: ["Sunita Devi"] });
+  });
+
+  it("a shared spelling in a name column is listed with the first person by list order", () => {
+    const m = buildMatcher([PRIYA, person("p7", "Priya Rao", ["Priya"])]);
+    const c = column(listTableScan(table("name\nPriya Rao\nPriya"), m, { ...OPTS, nameColumns: [0] }), 0);
+    expect(c.listed).toEqual([{ row: 0, personId: "p7" }, { row: 1, personId: "p1" }]);
+  });
+});
+
+describe("listTransform", () => {
+  const imran = person("p4", "Imran Khan", ["Mohd. Imran"], { withdrawn: { on: "2026-10-15", data: "remove" } });
+  const m = buildMatcher([PRIYA, RAHUL, imran]);
+  const data = table(
+    ["student name,village,notes,score", "Priya Sharma,Rampur,Liked the course,7", "Sunita Devi,Kheda,Rahul and I studied together,8", "Mohd. Imran,Nagla,Left early,2"].join("\n"),
+  );
+
+  it("transformUsesListCodes", () => {
+    const scan = listTableScan(data, m, OPTS);
+    const asked: string[] = [];
+    const out = listTransform(
+      data,
+      scan,
+      [plan(0, { action: "codes", dropRows: true }), plan(1, { action: "remove" }), plan(2, { inText: "codes" })],
+      m,
+      (name) => {
+        asked.push(name);
+        return "P006";
+      },
+    );
+    expect(out.headers).toEqual(["ParticipantCode", "notes", "score"]);
+    expect(out.rows).toEqual([["P001", "Liked the course", "7"], ["P006", "P002 and I studied together", "8"]]);
+    expect(out.added).toEqual(["Sunita Devi"]);
+    expect(asked).toEqual(["Sunita Devi"]);
+    expect(out.coded).toBe(1);
+    expect(out.removed).toBe(1);
+    expect(out.removedRows).toBe(1);
+    expect(out.csv).toBe(pdCsv(out.headers, out.rows));
+    expect(out.csv).toBe("ParticipantCode,notes,score\nP001,Liked the course,7\nP006,P002 and I studied together,8");
+  });
+
+  it("the same unlisted name is added once, even in two columns, and a coded column keeps its place and later ones are numbered", () => {
+    const d = table("first,mid,last\nSunita Devi,5,sunita devi\nAnita Rao,6,Sunita Devi\nPriya Sharma,7,Anita  Rao");
+    const scan = listTableScan(d, buildMatcher([PRIYA]), { ...OPTS, nameColumns: [0, 2] });
+    let n = 5;
+    const asked: string[] = [];
+    const out = listTransform(d, scan, [plan(0, { action: "codes" }), plan(2, { action: "codes" })], buildMatcher([PRIYA]), (name) => {
+      asked.push(name);
+      return `P00${++n}`;
+    });
+    expect(out.headers).toEqual(["ParticipantCode", "mid", "ParticipantCode 2"]);
+    expect(out.rows).toEqual([["P006", "5", "P006"], ["P007", "6", "P006"], ["P001", "7", "P007"]]);
+    expect(asked).toEqual(["Sunita Devi", "Anita Rao"]);
+    expect(out.added).toEqual(["Sunita Devi", "Anita Rao"]);
+    expect(out.coded).toBe(2);
+  });
+
+  it("a name that is only in a row that is dropped is not added to the list", () => {
+    const d = table("name,witness\nMohd. Imran,Sunita Devi\nPriya Sharma,Anita Rao");
+    const scan = listTableScan(d, m, { ...OPTS, nameColumns: [1] });
+    const out = listTransform(d, scan, [plan(0, { action: "codes", dropRows: true }), plan(1, { action: "codes" })], m, (name) => `<${name}>`);
+    expect(out.rows).toEqual([["P001", "<Anita Rao>"]]);
+    expect(out.added).toEqual(["Anita Rao"]);
+  });
+
+  it("keep leaves the column as it is; a column with no plan is untouched; roll values become the person's code", () => {
+    const d = table("roll,name,score\n21CS014,Priya Sharma,5\n99X,Rahul Verma,6");
+    const people = buildMatcher([PRIYA, RAHUL]);
+    const scan = listTableScan(d, people, { ...OPTS, rolls: new Map([["21cs014", "p1"]]) });
+    const kept = listTransform(d, scan, [plan(0, { action: "keep" })], people, () => "X");
+    expect(kept.headers).toEqual(["roll", "name", "score"]);
+    expect(kept.rows).toEqual([["21CS014", "Priya Sharma", "5"], ["99X", "Rahul Verma", "6"]]);
+    expect(kept.coded).toBe(0);
+    expect(kept.removed).toBe(0);
+    expect(kept.removedRows).toBe(0);
+    expect(kept.added).toEqual([]);
+    const coded = listTransform(d, scan, [plan(0, { action: "codes" })], people, () => "X");
+    expect(coded.headers).toEqual(["ParticipantCode", "name", "score"]);
+    expect(coded.rows).toEqual([["P001", "Priya Sharma", "5"], ["99X", "Rahul Verma", "6"]]);
+  });
+
+  it("inText keep leaves sure finds as they are, and dropRows needs the plan: a withdrawn row stays when no column asks for it", () => {
+    const scan = listTableScan(data, m, OPTS);
+    const out = listTransform(data, scan, [plan(0, { action: "codes" }), plan(2)], m, () => "P009");
+    expect(out.rows.map((r) => r[2])).toEqual(["Liked the course", "Rahul and I studied together", "Left early"]);
+    expect(out.removedRows).toBe(0);
+    expect(out.rows[2]?.[0]).toBe("P004"); // Imran's row stays and is coded
+  });
+
+  it("dropRows works from a column that is itself removed", () => {
+    const scan = listTableScan(data, m, OPTS);
+    const out = listTransform(data, scan, [plan(0, { action: "remove", dropRows: true })], m, () => "P009");
+    expect(out.headers).toEqual(["village", "notes", "score"]);
+    expect(out.rows).toHaveLength(2);
+    expect(out.removed).toBe(1);
+    expect(out.removedRows).toBe(1);
+  });
+
+  it("picksApply", () => {
+    const asha = person("p3", "Asha Rao", ["Asha"], { everyday: ["Asha"] });
+    const am = buildMatcher([asha]);
+    const d = table("notes\nAsha helped and Asha left");
+    const scan = listTableScan(d, am, OPTS);
+    expect(column(scan, 0).inText[0]?.finds.map((f) => [f.text, f.kind, f.why])).toEqual([["Asha", "ask", "everyday"], ["Asha", "ask", "everyday"]]);
+    const picked = listTransform(d, scan, [plan(0, { picks: [{ text: "asha", to: "P003" }] })], am, () => "X");
+    expect(picked.rows).toEqual([["P003 helped and P003 left"]]);
+    // no pick: left as it is, even with the sure finds going to codes
+    const none = listTransform(d, scan, [plan(0, { inText: "codes" })], am, () => "X");
+    expect(none.rows).toEqual([["Asha helped and Asha left"]]);
+    // a pick may be the mask, and it is matched on the find's normal form
+    const masked = listTransform(d, scan, [plan(0, { picks: [{ text: "ASHA ", to: "[name]" }] })], am, () => "X");
+    expect(masked.rows).toEqual([["[name] helped and [name] left"]]);
+  });
+
+  it("picks answer suggestions inside answers too, alongside sure finds that go to codes", () => {
+    const d = table("notes\nMeena said Rahul left");
+    const people = buildMatcher([RAHUL]);
+    const scan = listTableScan(d, people, { ...OPTS, suggest: true });
+    const out = listTransform(d, scan, [plan(0, { inText: "codes", picks: [{ text: "meena", to: "[name]" }] })], people, () => "X");
+    expect(out.rows).toEqual([["[name] said P002 left"]]);
+    const unanswered = listTransform(d, scan, [plan(0, { inText: "codes" })], people, () => "X");
+    expect(unanswered.rows).toEqual([["Meena said P002 left"]]);
+  });
+
+  it("does not change its input", () => {
+    const scan = listTableScan(data, m, OPTS);
+    const before = JSON.stringify([data, scan]);
+    listTransform(data, scan, [plan(0, { action: "codes", dropRows: true }), plan(1, { action: "remove" }), plan(2, { inText: "codes" })], m, () => "P006");
+    expect(JSON.stringify([data, scan])).toBe(before);
+  });
+});

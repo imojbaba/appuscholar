@@ -144,3 +144,5 @@ export {
   EVERYDAY_NAMES, FIRST_NAMES, codeOf, normName, isEverydayName, buildMatcher, findNames, suggestNames, replaceFinds,
 } from "./participants";
 export type { MatchPerson, NameFind, Matcher } from "./participants";
+export { pdScanV2, listTableScan, listTransform } from "./participantsTable";
+export type { ColumnNames, ColumnPlan } from "./participantsTable";
