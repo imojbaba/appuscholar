@@ -15,6 +15,7 @@ import { openVaultSetup } from "@/components/workspace/dialogs/VaultSetup";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { Button } from "@/components/ui/button";
 import { Actions, PlanNotes } from "./Actions";
+import { FindNames } from "./FindNames";
 import { PasteList } from "./PasteList";
 import { PeopleTable } from "./PeopleTable";
 import { PersonForm, type PersonValues, type Withdrawal } from "./PersonForm";
@@ -23,7 +24,7 @@ import { PersonForm, type PersonValues, type Withdrawal } from "./PersonForm";
  * Collection and analysis → Participants (spec 2026-10-24-participants-design.md §5; the mockup participants-tab.html; calls C1, C2, C8 and C16; rulings R20, R21 and R24): the student's
  * sealed list of the people in the study. Top to bottom: the heading and the sealed pill, the plan line (read from the Ethics tab's `design_ec`; an unanswered plan says so and does not block,
  * C8), the notes for a plan that has moved on (C15), the count line (it warns, it never blocks), the table, and the buttons Add a person and Paste a list, with their form below, then Copy,
- * Download, Destroy and the highlight switch (Actions.tsx). Withdraw, and undoing it, are in the Edit form (R25b). Finding names in documents comes with Task 9.
+ * Download, Destroy and the highlight switch (Actions.tsx). Withdraw, and undoing it, are in the Edit form (R25b). Find names in my documents (FindNames.tsx) sits with Add and Paste once there are people on the list.
  *
  * Only the list's own states draw anything else, and each draws its line and nothing from the list: the vault off ("Set up your vault first"), locked ("Unlock to see your participants";
  * the header's vault pill unlocks, as it does for every tab), a list that does not open on this device (R21: there is no way to replace it from here), a failed read (R20: Try again), and an
@@ -204,10 +205,16 @@ function Tab({ list, plan, href, saveFailed, readOnly, save, onDestroyedAnonymou
           {plan.aboutKeys.length > 0 && <p className="mb-0 mt-1.5 text-xs text-muted-foreground" data-testid="pp-about-note">{t("pp_about_note")}</p>}
         </>
       )}
-      {plan.mode !== "anonymous" && (
+      {(plan.mode !== "anonymous" || people.length > 0) && (
         <div className="my-3 flex flex-wrap gap-2">
-          <Button type="button" variant="primary" size="sm" data-testid="pp-add" onClick={openAdd}><Plus aria-hidden="true" />{t("pp_add")}</Button>
-          <Button type="button" variant="ghost" size="sm" data-testid="pp-paste" onClick={openPaste}>{t("pp_paste")}</Button>
+          {plan.mode !== "anonymous" && (
+            <>
+              <Button type="button" variant="primary" size="sm" data-testid="pp-add" onClick={openAdd}><Plus aria-hidden="true" />{t("pp_add")}</Button>
+              <Button type="button" variant="ghost" size="sm" data-testid="pp-paste" onClick={openPaste}>{t("pp_paste")}</Button>
+            </>
+          )}
+          {/* Finding names needs people on the list; it works under an anonymous plan that still has a list (C15), where Add and Paste are not offered. Its results open on a line of their own. */}
+          {people.length > 0 && <FindNames list={list} plan={plan} save={save} refused={refused} />}
         </div>
       )}
       {people.length > 0 && (

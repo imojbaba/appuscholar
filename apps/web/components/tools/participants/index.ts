@@ -1,8 +1,10 @@
 /**
  * Participants (spec 2026-10-24-participants-design.md §5): Collection and analysis' first tab, the student's list of the people in the study with their
  * names, stored sealed in the vault and used to swap names for codes in the study's data, documents and AI requests. Task 5 builds the module, its place
- * and the list's state (lib/tools/participants: list.ts, useParticipants.ts, store.ts); Task 6 draws the tab (list, add, edit and paste) and turns the module on.
+ * and the list's state (lib/tools/participants: list.ts, useParticipants.ts, store.ts); Task 6 draws the tab (list, add, edit and paste) and turns the module on; Task 9 adds Find names
+ * and the DocumentLayer, which paints the names of the open document (CSS Custom Highlight API, mounted once by the project shell in the writing window).
  * The module's shape is in lib/tools/registry.ts; this file stays light and imports the registry for types only.
  */
 export const built = true;
 export { Panel } from "./Panel";
+export { DocumentLayer } from "./DocumentLayer";

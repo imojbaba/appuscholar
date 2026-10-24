@@ -158,6 +158,34 @@ describe("the module", () => {
   });
 });
 
+// ---- Find names (Task 9) ------------------------------------------------------------------------------------------------------------------------------
+
+describe("Find names in my documents, on the tab (its results are tested in participantsDocs.test.ts)", () => {
+  it("is a button beside Add a person and Paste a list once there are people on the list", async () => {
+    seed(PLAN);
+    await mount();
+    expect(text("pp-find")).toBe("Find names in my documents");
+    expect($("pp-add")!.parentElement!.contains($("pp-find"))).toBe(true);
+    // Nothing is read until it is pressed: no results are on the page.
+    expect($("pp-find-results")).toBeNull();
+  });
+
+  it("is not offered with nobody on the list, and the documents are not read by the tab itself", async () => {
+    seed(PLAN, list([]));
+    await mount();
+    expect($("pp-find")).toBeNull();
+    expect($("pp-add")).not.toBeNull();
+  });
+
+  it("is offered under an anonymous plan that still has a list (C15), where Add and Paste are not", async () => {
+    seed({ idMode: "anonymous", record: ["age"], minors: "no" });
+    await mount();
+    expect($("pp-add")).toBeNull();
+    expect($("pp-paste")).toBeNull();
+    expect($("pp-find")).not.toBeNull();
+  });
+});
+
 // ---- The list -----------------------------------------------------------------------------------------------------------------------------------------
 
 describe("the mockup's five people", () => {
