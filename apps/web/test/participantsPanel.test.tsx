@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   store: {} as Record<string, unknown>,
-  flags: {} as Record<string, { loading?: boolean; locked?: boolean; broken?: boolean; error?: boolean }>,
+  flags: {} as Record<string, { loading?: boolean; locked?: boolean; broken?: boolean; error?: boolean; readOnly?: boolean }>,
   listeners: new Set<() => void>(),
   /** Every value ever handed to a blob's set(), after the update was applied: what would have gone to the server. */
   written: [] as Array<{ kind: string; value: unknown }>,
@@ -31,6 +31,8 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       const [, bump] = React.useState(0);
       React.useEffect(() => { const l = () => bump((n) => n + 1); h.listeners.add(l); return () => { h.listeners.delete(l); }; }, []);
       const set = React.useCallback((next: unknown) => {
+        // A read-only window (a pop-out of another stage) sets nothing.
+        if (h.flags[kind]?.readOnly) return;
         const v = typeof next === "function" ? (next as (p: unknown) => unknown)(h.store[kind] ?? null) : next;
         h.store[kind] = v;
         h.written.push({ kind, value: JSON.parse(JSON.stringify(v)) });
@@ -42,7 +44,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       const f = h.flags[kind] ?? {};
       return {
         value: f.locked || f.loading ? null : (h.store[kind] ?? null),
-        loading: !!f.loading, locked: !!f.locked, broken: f.broken, error: f.error, version: 1, set, flush, readOnly: false
+        loading: !!f.loading, locked: !!f.locked, broken: f.broken, error: f.error, version: 1, set, flush, readOnly: !!f.readOnly
       };
     }
   };
@@ -135,6 +137,8 @@ afterEach(async () => {
   // No name goes to a toast or a console line, and no browser dialog is used.
   expect(h.toast).not.toHaveBeenCalled();
   for (const s of consoleSpies) expect(JSON.stringify(s.mock.calls)).not.toMatch(/Priya|Rahul|Asha|Imran|Kiran|Sunita|Meena|Neha|Tara/);
+  // The console is muted so a run reads cleanly, but an error (a React warning, a failed act) is a defect: none was written.
+  expect(consoleSpies[3]!.mock.calls, "console.error").toEqual([]);
   expect(confirmSpy).not.toHaveBeenCalled();
   expect(alertSpy).not.toHaveBeenCalled();
   expect(promptSpy).not.toHaveBeenCalled();
@@ -790,6 +794,118 @@ describe("the vault and the other states", () => {
     await type("pp-paste-box", "Meena Gupta");
     await click("pp-paste-go");
     expect(written()).toHaveLength(3);
+  });
+});
+
+// ---- Round 1 fixes (R26, R27) ---------------------------------------------------------------------------------------------------------------------
+
+describe("a plan that cannot be read (R26)", () => {
+  const heads = () => $("pp-table")!.querySelector("thead")!.textContent!;
+  /** Rahul is 15 with no own agreement; Meena is ticked under 18 with no age; the adult has neither. */
+  const LIST = list([
+    person({ code: "P001", name: "Priya Sharma", guardian: true, assent: true, about: { age: "14" } }),
+    person({ code: "P002", name: "Rahul Verma", guardian: true, assent: false, about: { age: "15" } }),
+    person({ code: "P003", name: "Meena Gupta", minor: true }),
+    person({ code: "P004", name: "Neha Singh", about: { age: "30" } })
+  ]);
+
+  for (const flag of ["error", "broken"] as const) {
+    it(`design_ec ${flag} with no value: the plan line says it could not be read, with the link; the list shows with the under-18 columns on and the amber kept`, async () => {
+      seed(null, LIST);
+      h.flags.design_ec = { [flag]: true };
+      await mount();
+      const plan = text("pp-plan")!;
+      expect(plan).toContain("Could not read your plan in Design and ethics.");
+      expect(plan).not.toContain("Not answered yet");
+      expect($("pp-plan")!.querySelector("a")!.getAttribute("href")).toBe("/p/p1/design/ethics");
+      expect($("pp-table")).not.toBeNull();
+      for (const w of ["Under 18", "Parent's permission", "Own agreement"]) expect(heads(), w).toContain(w);
+      // Age is not known to be recorded, so a person is under 18 by their age or by their tick: both are warned about, the adult is not.
+      expect($("pp-flag-P002")).not.toBeNull();
+      expect($("pp-flag-P003")).not.toBeNull();
+      for (const c of ["P001", "P004"]) expect($("pp-flag-" + c), c).toBeNull();
+      expect(text("pp-count")).toBe("4 people · 2 consent not complete");
+      expect(written()).toEqual([]);
+    });
+  }
+
+  it("an error on a plan that was read (a save that did not land) leaves the plan as it is read", async () => {
+    seed(PLAN, LIST);
+    h.flags.design_ec = { error: true };
+    await mount();
+    expect(text("pp-plan")).toContain("participants are known by codes");
+    expect(text("pp-plan")).not.toContain("Could not read");
+  });
+
+  it("the Add form of an unreadable plan still asks the consent questions", async () => {
+    seed(null, LIST);
+    h.flags.design_ec = { error: true };
+    await mount();
+    await click("pp-add");
+    for (const f of ["minor", "guardian", "assent"]) expect($("pp-form-" + f), f).not.toBeNull();
+  });
+});
+
+describe("round 1 (R27)", () => {
+  it("(a) no person field is spell-checked: the red lines under a name are noise", async () => {
+    seed({ idMode: "pseudonyms", record: ["name", "spellings", "contact", "roll", "age", "gender"], recordOther: ["Father's job"], minors: "yes" }, list([]));
+    await mount();
+    await click("pp-add");
+    for (const f of ["name", "spellings", "contact", "roll", "pseudonym", "age", "gender", "other-0"]) {
+      expect($("pp-form-" + f), f).not.toBeNull();
+      expect($("pp-form-" + f)!.getAttribute("spellcheck"), f).toBe("false");
+    }
+  });
+
+  it("(c) with spellings not ticked there are no everyday boxes for spellings, and an edit keeps the spellings and their marks it did not show", async () => {
+    seed({ idMode: "codes", record: ["name", "age"], minors: "no" }, list([person({ code: "P001", name: "Asha Kumari", spellings: ["Asha"], everyday: ["Asha"] })]));
+    await mount();
+    await click("pp-edit-P001");
+    expect($("pp-form-spellings")).toBeNull();
+    expect($("pp-form-everyday-0")).toBeNull();
+    await type("pp-form-age", "30");
+    await click("pp-form-save");
+    expect(lastWritten()!.people[0]).toMatchObject({ code: "P001", spellings: ["Asha"], everyday: ["Asha"], about: { age: "30" } });
+  });
+
+  it("(d) age recorded and none given: Under 18 reads \u2014, not No, and no consent is asked of the row", async () => {
+    seed(PLAN, list([person({ code: "P001", name: "Priya Sharma" }), person({ code: "P002", name: "Rahul Verma", about: { age: "30" } })]));
+    await mount();
+    const cells = (code: string) => Array.from($("pp-row-" + code)!.querySelectorAll("td")).map((c) => c.textContent!.trim());
+    expect(cells("P001").slice(4, 7)).toEqual(["\u2014", "\u2013", "\u2013"]);
+    expect(cells("P002").slice(4, 7)).toEqual(["No", "\u2013", "\u2013"]);
+    expect($("pp-flag-P001")).toBeNull();
+  });
+
+  it("(d) a person who withdrew is not counted in 'consent not complete' and has no amber on their row", async () => {
+    const gone = person({ code: "P002", name: "Rahul Verma", guardian: true, assent: false, about: { age: "15" }, withdrawn: { on: "2026-10-15", data: "keep" } });
+    seed(PLAN, list([person({ code: "P001", name: "Priya Sharma", guardian: true, assent: true, about: { age: "14" } }), gone]));
+    await mount();
+    expect(text("pp-count")).toBe("2 people · 1 withdrawn");
+    expect($("pp-flag-P002")).toBeNull();
+  });
+
+  it("(e) the table uses the theme's colours, not colours of its own", async () => {
+    seed(PLAN);
+    await mount();
+    expect($("pp-table")!.outerHTML).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
+  });
+
+  it("(g) a window that may not write says where to change the list; nothing is written", async () => {
+    seed(PLAN);
+    h.flags.participants = { readOnly: true };
+    await mount();
+    await click("pp-add");
+    await type("pp-form-name", "Sunita Devi");
+    await click("pp-form-save");
+    expect(text("pp-form-error")).toBe("You can change the list in the Collection and analysis window.");
+    expect($("pp-form")).not.toBeNull();
+    await click("pp-form-cancel");
+    await click("pp-paste");
+    await type("pp-paste-box", "Meena Gupta");
+    await click("pp-paste-go");
+    expect(text("pp-paste-result")).toBe("You can change the list in the Collection and analysis window.");
+    expect(written()).toEqual([]);
   });
 });
 

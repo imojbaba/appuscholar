@@ -465,6 +465,23 @@ describe("useParticipants reads and saves the sealed list", () => {
     expect(m.h.saveFailed).toBe(false);
   });
 
+  it("readOnly: a window that may not write the list (a pop-out of another stage) says so, and save refuses", async () => {
+    window.history.replaceState(null, "", "/p/p1/review/closeness?window=1");
+    try {
+      const m = await mountHook();
+      await until(() => m.h.state === "ready");
+      expect(m.h.readOnly).toBe(true);
+      expect(m.h.save(addNamed("Priya Sharma"))).toBe(false);
+      await sleep(50);
+      expect(puts()).toEqual([]);
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+    const w = await mountHook();
+    await until(() => w.h.state === "ready");
+    expect(w.h.readOnly).toBe(false);
+  });
+
   it("retry() reads again: with the server back the state is ready with the stored list, and save works", async () => {
     const l = addPerson(emptyList(), { name: "Priya Sharma", spellings: ["Priya"], joined: "2026-10-24" }).list;
     seed("p1", l);

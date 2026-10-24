@@ -2,9 +2,8 @@
 import { normName } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import type { Participant } from "@/lib/blobs/kinds/participants";
-import { consentComplete, isMinor } from "@/lib/tools/participants/list";
 import { dmy } from "@/lib/tools/participants/dates";
-import type { ParticipantsPlan } from "@/lib/tools/participants/plan";
+import { consentWarned, minorState, type ParticipantsPlan } from "@/lib/tools/participants/plan";
 import { Button } from "@/components/ui/button";
 
 /*
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
  * containing block is outside the box escapes its clipping and widens the page (seen at 375 px).
  */
 
-const TH = "whitespace-nowrap bg-[#faf9fc] px-2 py-[7px] text-left text-xs font-semibold text-muted-foreground";
+const TH = "whitespace-nowrap bg-soft px-2 py-[7px] text-left text-xs font-semibold text-muted-foreground";
 /** The second heading row (the columns) has the line under it; the first (the groups) has none. */
 const COLS = TH + " border-b border-line";
 const GROUP = "border-l border-line text-center text-[11px] font-semibold uppercase tracking-[.04em]";
@@ -44,7 +43,7 @@ export function PeopleTable({ people, plan, labels, onEdit }: {
   onEdit(id: string): void;
 }) {
   const t = useT();
-  const { minorsOn, recordsAge } = plan;
+  const { minorsOn } = plan;
   const who = [plan.contact && "contact", plan.roll && "roll", plan.pseudonyms && "pseudonym"].filter((x): x is "contact" | "roll" | "pseudonym" => !!x);
   const consentSpan = minorsOn ? 4 : 1;
   const isEveryday = (p: Participant, w: string) => p.everyday.some((e) => normName(e) === normName(w));
@@ -78,14 +77,14 @@ export function PeopleTable({ people, plan, labels, onEdit }: {
         </thead>
         <tbody>
           {people.map((p) => {
-            const minor = minorsOn && isMinor(p, recordsAge);
-            const incomplete = minorsOn && !consentComplete(p, recordsAge);
+            const minor = minorState(p, plan);
+            const incomplete = consentWarned(p, plan);
             const gone = !!p.withdrawn;
             const marks = p.spellings.map((s) => ({ s, mark: isEveryday(p, s) }));
             // A name that is itself an everyday word, and not among the spellings, is shown once under the name so that its mark has a place.
             if (isEveryday(p, p.name) && !p.spellings.some((s) => normName(s) === normName(p.name))) marks.unshift({ s: p.name, mark: true });
             return (
-              <tr key={p.id} data-testid={"pp-row-" + p.code} data-withdrawn={gone ? "true" : undefined} className={gone ? "text-[#9a94a6]" : undefined}>
+              <tr key={p.id} data-testid={"pp-row-" + p.code} data-withdrawn={gone ? "true" : undefined} className={gone ? "text-muted-foreground" : undefined}>
                 <td className={TD + " font-mono font-semibold " + (gone ? "line-through" : "text-purple-800")}>{p.code}</td>
                 <td className={TD}>
                   {p.name}
@@ -103,11 +102,11 @@ export function PeopleTable({ people, plan, labels, onEdit }: {
                 </td>
                 <td className={TD}>{dmy(p.joined)}</td>
                 <td className={TD + " " + lead}>{p.consentHow ? t("pp_how_" + p.consentHow) : "—"}</td>
-                {minorsOn && <td className={TD}>{minor ? t("pp_yes") : t("pp_no")}</td>}
-                {minorsOn && <td className={TD}>{minor ? <Tick on={p.guardian === true} /> : "–"}</td>}
+                {minorsOn && <td className={TD}>{minor === "yes" ? t("pp_yes") : minor === "no" ? t("pp_no") : "—"}</td>}
+                {minorsOn && <td className={TD}>{minor === "yes" ? <Tick on={p.guardian === true} /> : "–"}</td>}
                 {minorsOn && (
                   <td className={TD}>
-                    {minor ? <Tick on={p.assent === true} /> : "–"}
+                    {minor === "yes" ? <Tick on={p.assent === true} /> : "–"}
                     {incomplete && <> <ConsentFlag code={p.code} /></>}
                   </td>
                 )}

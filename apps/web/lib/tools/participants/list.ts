@@ -166,7 +166,7 @@ function asciiDigits(s: string): string {
 }
 
 /** The age a person's `about.age` says, or null when it does not start with a number ("16", " 16 ", "16 years" and "१६" are 16). */
-function ageOf(p: Participant): number | null {
+export function ageOf(p: Participant): number | null {
   const n = Number.parseFloat(asciiDigits(p.about?.age ?? ""));
   return Number.isFinite(n) ? n : null;
 }

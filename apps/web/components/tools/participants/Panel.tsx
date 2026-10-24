@@ -6,9 +6,9 @@ import { useT } from "@/lib/i18n";
 import type { Participant, ParticipantList } from "@/lib/blobs/kinds/participants";
 import { useDesign } from "@/lib/tools/design/useDesign";
 import { todayIso } from "@/lib/tools/participants/dates";
-import { addPeople, addPerson, consentComplete, editPerson, nextCode, type NewPerson } from "@/lib/tools/participants/list";
+import { addPeople, addPerson, editPerson, nextCode, type NewPerson } from "@/lib/tools/participants/list";
 import { parsePaste, pasteSummary } from "@/lib/tools/participants/paste";
-import { ethicsHref, planOf, type ParticipantsPlan } from "@/lib/tools/participants/plan";
+import { consentWarned, ethicsHref, planOf, type ParticipantsPlan } from "@/lib/tools/participants/plan";
 import { useParticipants } from "@/lib/tools/participants/useParticipants";
 import { useVault } from "@/lib/vault/useVault";
 import { openVaultSetup } from "@/components/workspace/dialogs/VaultSetup";
@@ -72,26 +72,29 @@ function PlanLine({ plan, href }: { plan: ParticipantsPlan; href: string }) {
   return (
     <div className="my-3 rounded-[10px] border border-line bg-soft px-3 py-2.5 text-[13.5px]" data-testid="pp-plan">
       <b className="text-purple-800">{t("pp_plan_head")}</b> {t("pp_plan_src")}:{" "}
-      {plan.mode === null ? t("pp_plan_unanswered") : (
+      {plan.unread ? t("pp_plan_unread") : plan.mode === null ? t("pp_plan_unanswered") : (
         <>
           {t("pp_plan_mode_" + plan.mode)} {t("pp_plan_record", { who, about: about ? t("pp_plan_about", { fields: about }) : "" })}
           {plan.minorsOn ? " " + t("pp_plan_minors") : ""}
         </>
       )}
-      <Link href={href} className="ml-1.5 text-accent-ink underline" data-testid="pp-plan-link">{plan.mode === null ? t("pp_plan_answer") : t("pp_plan_change")}</Link>
+      <Link href={href} className="ml-1.5 text-accent-ink underline" data-testid="pp-plan-link">{plan.unread ? t("pp_plan_open") : plan.mode === null ? t("pp_plan_answer") : t("pp_plan_change")}</Link>
     </div>
   );
 }
 
 /** The list is read and the plan is known: the tab. */
-function Tab({ list, plan, href, saveFailed, save }: {
+function Tab({ list, plan, href, saveFailed, readOnly, save }: {
   list: ParticipantList;
   plan: ParticipantsPlan;
   href: string;
   saveFailed: boolean;
+  /** This window may not write the list: a refused save says where the list can be changed. */
+  readOnly: boolean;
   save(update: (prev: ParticipantList) => ParticipantList): boolean;
 }) {
   const t = useT();
+  const refused = () => t(readOnly ? "pp_read_only" : "pp_cannot_save");
   // The form that is open: null is none, an id is that person's Edit, and "" is Add.
   const [form, setForm] = useState<string | null>(null);
   const [formError, setFormError] = useState("");
@@ -118,7 +121,7 @@ function Tab({ list, plan, href, saveFailed, save }: {
 
   const people = list.people;
   const withdrawn = people.filter((p) => p.withdrawn).length;
-  const incomplete = plan.minorsOn ? people.filter((p) => !consentComplete(p, plan.recordsAge)).length : 0;
+  const incomplete = people.filter((p) => consentWarned(p, plan)).length;
   const editing = form ? people.find((p) => p.id === form) ?? null : null;
 
   const openAdd = () => { setStatus(""); setPasteResult(""); setFormError(""); setPasting(false); setForm(""); };
@@ -132,14 +135,14 @@ function Tab({ list, plan, href, saveFailed, save }: {
       if (!save((prev) => {
         const cur = prev.people.find((p) => p.id === id);
         return cur ? editPerson(prev, id, patchOf(v, cur)) : prev;
-      })) { setFormError(t("pp_cannot_save")); return; }
+      })) { setFormError(refused()); return; }
       setStatus(t("pp_saved", { code: editing.code }));
       closeForm("pp-edit-" + editing.code);
       return;
     }
     // The code is made inside the update, from the latest list; the line below says the one the first run made.
     const made: { code?: string } = {};
-    if (!save((prev) => { const r = addPerson(prev, newPersonOf(v)); made.code ??= r.person.code; return r.list; })) { setFormError(t("pp_cannot_save")); return; }
+    if (!save((prev) => { const r = addPerson(prev, newPersonOf(v)); made.code ??= r.person.code; return r.list; })) { setFormError(refused()); return; }
     setStatus(t("pp_added", { code: made.code ?? nextCode(list) }));
     closeForm("pp-add");
   };
@@ -153,7 +156,7 @@ function Tab({ list, plan, href, saveFailed, save }: {
     // Nobody new: nothing is saved, and the line says who was skipped and why.
     if (preview.added.length === 0) { setPasteResult(pasteSummary(t, [], preview.skipped, parsed)); return false; }
     const made: { r?: ReturnType<typeof addPeople> } = {};
-    if (!save((prev) => { const r = addPeople(prev, parsed, today); made.r ??= r; return r.list; })) { setPasteResult(t("pp_cannot_save")); return false; }
+    if (!save((prev) => { const r = addPeople(prev, parsed, today); made.r ??= r; return r.list; })) { setPasteResult(refused()); return false; }
     const r = made.r ?? preview;
     setPasteResult(pasteSummary(t, r.added, r.skipped, parsed));
     return true;
@@ -223,7 +226,9 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   // The plan is the Ethics tab's blob. It is asked for only where that raises no passphrase prompt: the vault open, or none (the blob is plain then). A locked vault is the list's own state.
   const planReadable = status === "off" || status === "unlocked" || status === "migrating";
   const ec = useDesign("ec", planReadable ? projectId : "");
-  const plan = planOf(ec.value);
+  // A plan that could not be read (the blob in error or not opening, nothing read) is not an unanswered one (R26): the tab says so and keeps the consent warnings on.
+  const planUnread = !ec.loading && !ec.locked && ec.value === null && (ec.error === true || ec.broken === true);
+  const plan = planOf(ec.value, planUnread);
   const href = ethicsHref(projectId);
 
   let body: React.ReactNode;
@@ -260,7 +265,7 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   } else if (ec.loading || ec.locked || people.list === null) {
     body = <PanelLoading testId="pp-loading" />;
   } else {
-    body = <Tab list={people.list} plan={plan} href={href} saveFailed={people.saveFailed} save={people.save} />;
+    body = <Tab list={people.list} plan={plan} href={href} saveFailed={people.saveFailed} readOnly={people.readOnly} save={people.save} />;
   }
   return <div className="panel" data-testid="pp-panel">{body}</div>;
 }

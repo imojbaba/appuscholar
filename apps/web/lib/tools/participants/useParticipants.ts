@@ -30,6 +30,8 @@ export type Participants = {
   state: ParticipantsState;
   /** True in "ready" while the blob reports an error with the list held: the last save did not land. The tab says "Not saved yet" (R24). */
   saveFailed: boolean;
+  /** True when this window may not write the list (a pop-out of another stage, lib/popout/mode.ts): `save` refuses, and the tab says where the list can be changed. */
+  readOnly: boolean;
   /**
    * Applies `update` to the latest list and saves the result (after the blob's debounce); the new list shows at once. False, and nothing changed, in every state but "ready"
    * (loading, locked, off, broken, error) and when the window may not write.
@@ -75,5 +77,5 @@ export function useParticipants(projectId: string): Participants {
   // flush reads the blob if it is not known yet (a failed read leaves it so), then sends what is pending; with the list read there is nothing more to do.
   const retry = useCallback(() => { if (state === "error") void flush(); }, [state, flush]);
 
-  return { list, state, saveFailed, save, retry };
+  return { list, state, saveFailed, readOnly, save, retry };
 }

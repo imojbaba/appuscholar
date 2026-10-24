@@ -123,6 +123,10 @@ describe("pasteSummary: the sentence after Paste a list", () => {
     expect(sentence("P002,Meena Gupta\nP009,Neha Singh")).toBe("Added 1 person (P009). Skipped 1 whose code is already used: P002 Meena Gupta.");
   });
 
+  it("a code is shown as it is stored: P0003 is P003", () => {
+    expect(sentence("P0003,Meena Gupta\np009,Neha Singh")).toBe("Added 1 person (P009). Skipped 1 whose code is already used: P003 Meena Gupta.");
+  });
+
   it("a long list of skipped names shows ten and how many more", () => {
     const many = Array.from({ length: 12 }, (_, i) => "Person" + String.fromCharCode(65 + i)).join("\n");
     const parsed = parsePaste(many);

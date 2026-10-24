@@ -1,3 +1,4 @@
+import { codeOf } from "@appuscholar/core";
 import type { Participant } from "@/lib/blobs/kinds/participants";
 import type { PastedPerson, SkippedPerson } from "./list";
 
@@ -64,6 +65,12 @@ function namesText(t: Translate, names: string[]): string {
   return names.length <= 10 ? names.join(", ") : names.slice(0, 10).join(", ") + " " + t("pp_paste_more", { n: names.length - 10 });
 }
 
+/** A code as the list stores it ("P0003" is "P003"); a first cell that is not a code (a key file's odd cell) as it was typed. */
+function storedCode(code: string): string {
+  const m = /^P(\d{1,6})$/i.exec(code);
+  return m && Number(m[1]) >= 1 ? codeOf(Number(m[1])) : code;
+}
+
 /**
  * The plain sentence after Paste a list, built from what addPeople did ("Added 2 people (P006–P007). Skipped 1 already on your list: Priya Sharma."). It sits in the page, where the
  * student can read the names; it is never a toast. A skip for a code already used names the code the line gave ("P003 Rahul Verma"), from `parsed`.
@@ -75,7 +82,7 @@ export function pasteSummary(t: Translate, added: Participant[], skipped: Skippe
   const already = skipped.filter((s) => s.why === "already").map((s) => s.name.trim());
   const used = skipped.filter((s) => s.why === "code-taken").map((s) => {
     const code = parsed.find((p) => p.name === s.name && p.code)?.code;
-    return (code ? code + " " : "") + s.name.trim();
+    return (code ? storedCode(code) + " " : "") + s.name.trim();
   });
   if (already.length) parts.push(t("pp_paste_skipped_already", { n: already.length, names: namesText(t, already) }));
   if (used.length) parts.push(t("pp_paste_skipped_code", { n: used.length, names: namesText(t, used) }));

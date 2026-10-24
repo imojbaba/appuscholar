@@ -89,10 +89,13 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
     if (!touched && plan.spellings) setSpellings(suggestedShortName(v));
   };
 
-  // The spellings that can be marked: each one typed, and the name when it is a single word and not already among them (it is looked for too).
+  // What can be marked "also an everyday word": each spelling the student can see (none when spellings are not ticked in the plan), and the name when it is a single word and not already
+  // among them (it is looked for too). A spelling kept but not shown keeps the mark it had.
   const spelled = splitSpellings(spellings);
-  const single = name.trim() !== "" && !/\s/.test(name.trim()) && !spelled.some((s) => same(s, name)) ? [name.trim()] : [];
-  const candidates = [...spelled, ...single];
+  const shown = plan.spellings ? spelled : [];
+  const single = name.trim() !== "" && !/\s/.test(name.trim()) && !shown.some((s) => same(s, name)) ? [name.trim()] : [];
+  const candidates = [...shown, ...single];
+  const marked = [...spelled, ...single].filter((w, i, all) => all.findIndex((x) => same(x, w)) === i);
   const wasListed = (w: string) => person !== null && (same(person.name, w) || person.spellings.some((s) => same(s, w)));
   const isMarked = (w: string) => marks[normName(w)] ?? (wasListed(w) ? person!.everyday.some((e) => same(e, w)) : isEverydayName(w));
 
@@ -102,7 +105,7 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
     const v: PersonValues = {
       name: nm,
       spellings: spelled,
-      everyday: candidates.filter(isMarked),
+      everyday: marked.filter(isMarked),
       joined: joined || today,
       consentHow: (HOWS as readonly string[]).includes(how) ? (how as Participant["consentHow"]) : undefined,
       about: Object.fromEntries(plan.aboutKeys.map((k) => [k, (about[k] ?? "").trim()]))
@@ -145,10 +148,10 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
       </div>
       <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {field("pp-form-name", t("pp_form_name"), (
-          <input id="pp-form-name" ref={nameRef} className="input" data-testid="pp-form-name" autoComplete="off" value={name} aria-invalid={missing} onChange={(e) => onName(e.target.value)} />
+          <input id="pp-form-name" ref={nameRef} className="input" data-testid="pp-form-name" autoComplete="off" spellCheck={false} value={name} aria-invalid={missing} onChange={(e) => onName(e.target.value)} />
         ))}
         {plan.spellings && field("pp-form-spellings", t("pp_form_spellings"), (
-          <input id="pp-form-spellings" className="input" data-testid="pp-form-spellings" autoComplete="off" value={spellings} onChange={(e) => { setTouched(true); setSpellings(e.target.value); }} />
+          <input id="pp-form-spellings" className="input" data-testid="pp-form-spellings" autoComplete="off" spellCheck={false} value={spellings} onChange={(e) => { setTouched(true); setSpellings(e.target.value); }} />
         ))}
         {field("pp-form-joined", t("pp_form_joined"), (
           <input id="pp-form-joined" type="date" className="input" data-testid="pp-form-joined" value={joined} onChange={(e) => setJoined(e.target.value)} />
@@ -163,19 +166,19 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
         {plan.minorsOn && yesNo("pp-form-guardian", t("pp_form_guardian"), guardian, setGuardian, t("pp_not_yet"))}
         {plan.minorsOn && yesNo("pp-form-assent", t("pp_form_assent"), assent, setAssent, t("pp_not_yet"))}
         {plan.contact && field("pp-form-contact", t("pp_form_contact"), (
-          <input id="pp-form-contact" className="input" data-testid="pp-form-contact" autoComplete="off" value={contact} onChange={(e) => setContact(e.target.value)} />
+          <input id="pp-form-contact" className="input" data-testid="pp-form-contact" autoComplete="off" spellCheck={false} value={contact} onChange={(e) => setContact(e.target.value)} />
         ))}
         {plan.roll && field("pp-form-roll", t("pp_form_roll"), (
-          <input id="pp-form-roll" className="input" data-testid="pp-form-roll" autoComplete="off" value={roll} onChange={(e) => setRoll(e.target.value)} />
+          <input id="pp-form-roll" className="input" data-testid="pp-form-roll" autoComplete="off" spellCheck={false} value={roll} onChange={(e) => setRoll(e.target.value)} />
         ))}
         {plan.pseudonyms && field("pp-form-pseudonym", t("pp_form_pseudonym"), (
-          <input id="pp-form-pseudonym" className="input" data-testid="pp-form-pseudonym" autoComplete="off" value={pseudonym} onChange={(e) => setPseudonym(e.target.value)} />
+          <input id="pp-form-pseudonym" className="input" data-testid="pp-form-pseudonym" autoComplete="off" spellCheck={false} value={pseudonym} onChange={(e) => setPseudonym(e.target.value)} />
         ))}
         {plan.about.map((id) => field("pp-form-" + id, labels[id] ?? id, (
-          <input id={"pp-form-" + id} className="input" data-testid={"pp-form-" + id} autoComplete="off" value={about[id] ?? ""} onChange={(e) => setAbout((a) => ({ ...a, [id]: e.target.value }))} />
+          <input id={"pp-form-" + id} className="input" data-testid={"pp-form-" + id} autoComplete="off" spellCheck={false} value={about[id] ?? ""} onChange={(e) => setAbout((a) => ({ ...a, [id]: e.target.value }))} />
         )))}
         {plan.other.map((label, i) => field("pp-form-other-" + i, label, (
-          <input id={"pp-form-other-" + i} className="input" data-testid={"pp-form-other-" + i} autoComplete="off" value={about[label] ?? ""} onChange={(e) => setAbout((a) => ({ ...a, [label]: e.target.value }))} />
+          <input id={"pp-form-other-" + i} className="input" data-testid={"pp-form-other-" + i} autoComplete="off" spellCheck={false} value={about[label] ?? ""} onChange={(e) => setAbout((a) => ({ ...a, [label]: e.target.value }))} />
         )))}
       </div>
       {candidates.length > 0 && (
