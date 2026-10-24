@@ -8,16 +8,20 @@
 /** A set() as it is queued: a plain value replaces what came before, an update transforms it. */
 export type HeldOp<T = unknown> = { value: T } | { update: (prev: T | null) => T };
 
-/** Sends the queued ops for one blob; answers the ops still not on the server (empty when done). */
-export type HeldSender = (ops: HeldOp[]) => Promise<HeldOp[]>;
+/**
+ * Sends the queued ops for one blob; answers the ops still not on the server (empty when done). `broken` is told whether what is left waits on a stored blob
+ * that does not open on this device (rather than on the passphrase, the network or another window); a sender that never says leaves the entry as it was.
+ */
+export type HeldSender = (ops: HeldOp[], broken?: (over: boolean) => void) => Promise<HeldOp[]>;
 
-type Entry = { ops: HeldOp[]; send: HeldSender };
+/** `broken`: the ops wait on a stored blob that does not open here (a panel asks the student before it replaces it), not on the passphrase. */
+type Entry = { ops: HeldOp[]; send: HeldSender; broken: boolean };
 
 const entries = new Map<string, Entry>();
 /** A blob's last save from a panel that is gone, or a drain, while it runs: a panel mounting for that blob waits for it. */
 const busy = new Map<string, Promise<unknown>>();
-/** Mounted clients holding a value not yet on the server, each with its flush (sends it now). */
-const dirty = new Map<object, () => Promise<unknown>>();
+/** Mounted clients holding a value not yet on the server, each with its flush (sends it now) and whether it waits on a blob that does not open. */
+const dirty = new Map<object, { flush: () => Promise<unknown>; broken: boolean }>();
 
 /** Everything before the last plain value is replaced by it. */
 export function compactOps<T>(ops: HeldOp<T>[]): HeldOp<T>[] {
@@ -42,16 +46,26 @@ export function shouldWarnOnUnloadBlobs(): boolean {
   return entries.size > 0 || dirty.size > 0 || busy.size > 0;
 }
 
+/**
+ * Everything held (kept for a gone panel, or unsent in a mounted one) waits on a stored blob that does not open on this device, and not on the passphrase: the
+ * project switch then says so, since "waiting for your passphrase" would send the student to a prompt that changes nothing. Anything held for another reason,
+ * or nothing held at all, is false. A last save still running is no held value and does not count.
+ */
+export function heldOnlyOverBrokenBlobs(): boolean {
+  if (entries.size + dirty.size === 0) return false;
+  return [...entries.values()].every((e) => e.broken) && [...dirty.values()].every((d) => d.broken);
+}
+
 export const heldBlobs = {
   get size() { return entries.size; },
   has: (id: string) => entries.has(id),
   /** The ops held for a blob (tests). */
   ops: (id: string): HeldOp[] | undefined => entries.get(id)?.ops,
-  /** Keeps ops for a blob, after any already held for it (the newest plain value wins). */
-  put(id: string, ops: HeldOp[], send: HeldSender) {
+  /** Keeps ops for a blob, after any already held for it (the newest plain value wins). `broken`: they wait on a stored blob that does not open here. */
+  put(id: string, ops: HeldOp[], send: HeldSender, broken = false) {
     if (ops.length === 0) return;
     const cur = entries.get(id);
-    entries.set(id, { ops: compactOps([...(cur?.ops ?? []), ...ops]), send });
+    entries.set(id, { ops: compactOps([...(cur?.ops ?? []), ...ops]), send, broken: broken && (cur?.broken ?? true) });
     listen();
   },
   /** Removes and answers what is held for a blob (a mounting panel adopts it). */
@@ -81,16 +95,16 @@ export const heldBlobs = {
   async idle(id: string) {
     for (let p = busy.get(id); p; p = busy.get(id)) await p;
   },
-  /** A mounted client holds (true) or no longer holds (false) a value not yet on the server; `flush` sends it now (saveAll). */
-  markDirty(client: object, on: boolean, flush: () => Promise<unknown> = async () => {}) {
-    if (on) { dirty.set(client, flush); listen(); } else dirty.delete(client);
+  /** A mounted client holds (true) or no longer holds (false) a value not yet on the server; `flush` sends it now (saveAll). `broken`: it waits on a blob that does not open here. */
+  markDirty(client: object, on: boolean, flush: () => Promise<unknown> = async () => {}, broken = false) {
+    if (on) { dirty.set(client, { flush, broken }); listen(); } else dirty.delete(client);
   },
   /**
    * Sends what can go now (the project export, before it reads the server): everything held is drained, every mounted client's unsent value
    * is flushed, and every last save still running is waited for. What still cannot go stays as it was (shouldWarnOnUnloadBlobs says so).
    */
   async saveAll(): Promise<void> {
-    await Promise.allSettled([heldBlobs.drain(), ...[...dirty.values()].map((f) => f())]);
+    await Promise.allSettled([heldBlobs.drain(), ...[...dirty.values()].map((d) => d.flush())]);
     await Promise.allSettled([...busy.values()]);
   },
   /** Tries to send everything held. What still cannot go is kept, ahead of anything held for the same blob meanwhile. */
@@ -99,12 +113,13 @@ export const heldBlobs = {
       const e = entries.get(id);
       if (!e) return;
       entries.delete(id);
-      const run = e.send(e.ops).catch(() => e.ops);
+      let broken = e.broken;
+      const run = e.send(e.ops, (over) => { broken = over; }).catch(() => e.ops);
       heldBlobs.track(id, run);
       const left = await run;
       if (left.length === 0) return;
       const cur = entries.get(id);
-      entries.set(id, { ops: compactOps([...left, ...(cur?.ops ?? [])]), send: cur?.send ?? e.send });
+      entries.set(id, { ops: compactOps([...left, ...(cur?.ops ?? [])]), send: cur?.send ?? e.send, broken: broken && (cur?.broken ?? true) });
     }));
   },
   /** Tests only. */

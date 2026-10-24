@@ -269,6 +269,11 @@ export const V2_STRINGS = {
     en: "Some changes are waiting for your passphrase. They are kept and saved once you unlock.",
     hi: "कुछ बदलाव आपके पासफ़्रेज़ की प्रतीक्षा कर रहे हैं। वे रखे गए हैं और अनलॉक करते ही सहेजे जाएंगे।"
   },
+  // Task 21a, fix round 2: the same switch, when what waits is on a saved copy that does not open on this device, not on the passphrase. DRAFT Hindi.
+  blob_switch_held_broken: {
+    en: "A change is waiting: what is saved here cannot be opened on this device. Open the place it belongs to and choose whether to replace it.",
+    hi: "एक बदलाव प्रतीक्षा में है: यहाँ जो सहेजा गया है वह इस डिवाइस पर खुल नहीं सकता। जिस जगह का यह है उसे खोलें और चुनें कि उसे बदलना है या नहीं।"
+  },
   // Task 8: all projects, six states each (canvas Projects). DRAFT Hindi.
   list_title: { en: "Your projects", hi: "आपके प्रोजेक्ट" },
   list_meta: { en: "{field}. Edited {date}.", hi: "{field}। {date} बदला गया।" },
