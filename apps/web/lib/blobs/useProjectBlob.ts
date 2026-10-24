@@ -33,7 +33,15 @@ export const BLOB_SAVE_DEBOUNCE_MS = 800;
  * was set is kept and goes with the next set, flush or unlock. While a value is held over a blob that did not open at a save's re-read (a 409), `value` is
  * that held value (the panel shows the student's own text) and `broken` is true.
  */
-export type ProjectBlobState<T> = { value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean };
+export type ProjectBlobState<T> = {
+  value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean;
+  /**
+   * The server's version of the value `value` is based on (0 for a blob not there yet): from the last read or accepted save, so a value set here and not yet saved
+   * carries the version it was set on. Undefined while the stored value is not known, and from an api without versions. A reader that keeps the latest of several
+   * windows' values (lib/tools/participants/store.ts) takes the newest by this.
+   */
+  version?: number;
+};
 /** A new value, or an update of the current one (`prev` is null while there is no blob yet). */
 export type BlobUpdate<T> = T | ((prev: T | null) => T);
 export type ProjectBlob<T> = ProjectBlobState<T> & {
@@ -147,7 +155,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     loading: !attempted,
     locked: (!known && lockedRead) || heldByLock,
     broken: known && broken && (value === null || brokenHeld),
-    error
+    error,
+    version: known ? version : undefined
   });
   const emit = () => {
     if (!active || o.headless) return;

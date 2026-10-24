@@ -32,7 +32,7 @@ import { ApiError } from "../lib/api";
 import { emptyList, type ParticipantList } from "../lib/blobs/kinds/participants";
 import { blobId } from "../lib/blobs/kinds";
 import { heldBlobs } from "../lib/blobs/held";
-import { SEALED_ONLY, useProjectBlob, type ProjectBlob } from "../lib/blobs/useProjectBlob";
+import { BLOB_SAVE_DEBOUNCE_MS, SEALED_ONLY, useProjectBlob, type ProjectBlob } from "../lib/blobs/useProjectBlob";
 import { addPerson } from "../lib/tools/participants/list";
 import { listFor, publishList, resetLists, subscribeList, useListFor } from "../lib/tools/participants/store";
 import { useParticipants } from "../lib/tools/participants/useParticipants";
@@ -168,6 +168,47 @@ describe("the participants store", () => {
     expect(n()).toBe("1");
     await act(async () => { publishList("p1", null); });
     expect(n()).toBe("none");
+  });
+
+  it("keeps each list with the version it came from: a publish of an older version is ignored (R22)", () => {
+    const v2 = withOne();
+    const v3 = addPerson(v2, { name: "Imran Khan", spellings: [], joined: "2026-10-24" }).list;
+    const v3b = addPerson(v2, { name: "Sunita Devi", spellings: [], joined: "2026-10-24" }).list;
+    const v4 = addPerson(v3, { name: "Rahul Jain", spellings: [], joined: "2026-10-24" }).list;
+    publishList("p1", v3, 3);
+    publishList("p1", v2, 2);
+    expect(listFor("p1")).toBe(v3);
+    // The same version is accepted (a save's provisional value, then the value the server accepted on the same base), and a newer one.
+    publishList("p1", v3b, 3);
+    expect(listFor("p1")).toBe(v3b);
+    publishList("p1", v4, 4);
+    expect(listFor("p1")).toBe(v4);
+    publishList("p1", v2, 3);
+    expect(listFor("p1")).toBe(v4);
+    // No version is accepted whatever is held (a clear, a test), and forgets the held version: the next read of any version is taken.
+    publishList("p1", null);
+    expect(listFor("p1")).toBeNull();
+    publishList("p1", v2, 2);
+    expect(listFor("p1")).toBe(v2);
+    // Versions are a project's own.
+    publishList("p2", v2, 1);
+    expect(listFor("p2")).toBe(v2);
+  });
+
+  it("an ignored publish tells nobody; the same list on a newer version tells nobody but moves the version on", () => {
+    const l = withOne();
+    const other = addPerson(l, { name: "Imran Khan", spellings: [], joined: "2026-10-24" }).list;
+    const cb = vi.fn();
+    publishList("p1", l, 5);
+    subscribeList(cb);
+    publishList("p1", other, 4);
+    expect(cb).not.toHaveBeenCalled();
+    publishList("p1", l, 6);
+    expect(cb).not.toHaveBeenCalled();
+    // Version 6 is now held, so 5 no longer gets in.
+    publishList("p1", other, 5);
+    expect(listFor("p1")).toBe(l);
+    expect(cb).not.toHaveBeenCalled();
   });
 
   it("resetLists forgets every project", () => {
@@ -335,6 +376,29 @@ describe("useParticipants reads and saves the sealed list", () => {
     expect(l.people.map((p) => p.code).sort()).toEqual(["P001", "P002"]);
     expect(l.people.map((p) => p.name).sort()).toEqual(["Imran Khan", "Priya Sharma"]);
     expect(l.next).toBe(3);
+    // Once both saves have settled the store shows what the server holds, not either window's provisional P001 (R22).
+    await until(() => JSON.stringify(listFor("p1")) === JSON.stringify(stored()));
+    expect(listFor("p1")!.people.map((p) => p.code).sort()).toEqual(["P001", "P002"]);
+    await sleep(100);
+    expect(JSON.stringify(listFor("p1"))).toBe(JSON.stringify(stored()));
+  });
+
+  it("a save's provisional list (on the version it read) does not replace a newer list the store holds; the settled one does (R22)", async () => {
+    const a = await mountHook();
+    const b = await mountHook();
+    await until(() => a.h.state === "ready" && b.h.state === "ready");
+    await act(async () => { b.h.save(addNamed("Imran Khan")); });
+    await until(() => stored()?.people.length === 1);
+    await until(() => listFor("p1")?.people.length === 1);
+    expect(stored()!.people[0]).toMatchObject({ code: "P001", name: "Imran Khan" });
+    // a still holds the empty list it read on version 0. Its save is provisional until its PUT is rebased onto version 1: P001 is Imran's, not Priya's.
+    await act(async () => { a.h.save(addNamed("Priya Sharma")); });
+    expect(a.h.list!.people.map((p) => p.code)).toEqual(["P001"]);
+    expect(listFor("p1")!.people.map((p) => [p.code, p.name])).toEqual([["P001", "Imran Khan"]]);
+    await until(() => stored()?.people.length === 2);
+    expect(stored()!.people.map((p) => [p.code, p.name])).toEqual([["P001", "Imran Khan"], ["P002", "Priya Sharma"]]);
+    await until(() => listFor("p1")?.people.length === 2);
+    expect(listFor("p1")!.people.map((p) => [p.code, p.name])).toEqual([["P001", "Imran Khan"], ["P002", "Priya Sharma"]]);
   });
 
   it("allocatesFromTheLatestValue: the second hook saves after the first has landed, from a value it never saw, and still gets the next code", async () => {
@@ -353,40 +417,87 @@ describe("useParticipants reads and saves the sealed list", () => {
     expect(listFor("p1")!.people.map((p) => p.code)).toEqual(["P001", "P002"]);
   });
 
-  it("a failed read is not known, so it is not written over: state loading, save refuses, nothing is sent", async () => {
+  it("a failed read is state error, not loading forever: no list, save refuses, nothing is sent (R20)", async () => {
     server.failGet = true;
     const m = await mountHook();
-    await sleep(100);
+    await until(() => m.h.state === "error");
     expect(gets().length).toBeGreaterThan(0);
-    expect(m.h.state).toBe("loading");
     expect(m.h.list).toBeNull();
     expect(m.h.save(addNamed("Priya Sharma"))).toBe(false);
     await sleep(50);
+    expect(puts()).toEqual([]);
+    expect(listFor("p1")).toBeNull();
+  });
+
+  it("retry() reads again: with the server back the state is ready with the stored list, and save works", async () => {
+    const l = addPerson(emptyList(), { name: "Priya Sharma", spellings: ["Priya"], joined: "2026-10-24" }).list;
+    seed("p1", l);
+    server.failGet = true;
+    const m = await mountHook();
+    await until(() => m.h.state === "error");
+    const before = gets().length;
+    server.failGet = false;
+    await act(async () => { m.h.retry(); });
+    await until(() => m.h.state === "ready");
+    expect(gets().length).toBeGreaterThan(before);
+    expect(m.h.list).toEqual(l);
+    expect(listFor("p1")).toEqual(l);
+    await act(async () => { expect(m.h.save(addNamed("Imran Khan"))).toBe(true); });
+    await until(() => stored()?.people.length === 2);
+    expect(stored()!.people.map((p) => p.code)).toEqual(["P001", "P002"]);
+  });
+
+  it("retry() with the server still down stays in error, and a retry when the list is fine changes nothing", async () => {
+    server.failGet = true;
+    const m = await mountHook();
+    await until(() => m.h.state === "error");
+    await act(async () => { m.h.retry(); });
+    await sleep(50);
+    expect(m.h.state).toBe("error");
+    server.failGet = false;
+    await act(async () => { m.h.retry(); });
+    await until(() => m.h.state === "ready");
+    const reads = gets().length;
+    await act(async () => { m.h.retry(); });
+    await sleep(50);
+    expect(m.h.state).toBe("ready");
+    expect(gets().length).toBe(reads);
     expect(puts()).toEqual([]);
   });
 
-  it("a stored list that does not open is broken; replacing it asks first (R16), once, and a No sends nothing", async () => {
+  it("save refuses while the read is still in flight, and works once it lands", async () => {
+    let release = () => {};
+    server.gate = new Promise<void>((r) => { release = r; });
+    const m = await mountHook();
+    expect(m.h.state).toBe("loading");
+    expect(m.h.save(addNamed("Priya Sharma"))).toBe(false);
+    await sleep(50);
+    expect(m.h.list).toBeNull();
+    expect(puts()).toEqual([]);
+    await act(async () => { release(); });
+    await until(() => m.h.state === "ready");
+    // The refused save left nothing behind.
+    expect(m.h.list).toEqual(emptyList());
+    await act(async () => { expect(m.h.save(addNamed("Priya Sharma"))).toBe(true); });
+    await until(() => stored()?.people.length === 1);
+    expect(stored()!.people.map((p) => p.code)).toEqual(["P001"]);
+  });
+
+  it("a stored list that does not open is broken: save returns false, nothing is written, and the hook asks nothing (R21)", async () => {
     seed("p1", null, 'sealed:{"nope":true}');
-    const confirm = vi.spyOn(window, "confirm");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const m = await mountHook();
     await until(() => m.h.state === "broken");
     expect(m.h.list).toBeNull();
-
-    confirm.mockReturnValue(false);
+    expect(listFor("p1")).toBeNull();
     expect(m.h.save(addNamed("Priya Sharma"))).toBe(false);
-    expect(confirm).toHaveBeenCalledTimes(1);
-    await sleep(50);
+    expect(m.h.save(addNamed("Imran Khan"))).toBe(false);
+    // Past the save's debounce, so a held write would have gone out.
+    await sleep(BLOB_SAVE_DEBOUNCE_MS + 200);
     expect(puts()).toEqual([]);
+    expect(confirm).not.toHaveBeenCalled();
     expect(m.h.state).toBe("broken");
-
-    confirm.mockReturnValue(true);
-    await act(async () => { expect(m.h.save(addNamed("Priya Sharma"))).toBe(true); });
-    expect(confirm).toHaveBeenCalledTimes(2);
-    // A Yes is remembered: the next save does not ask again.
-    await act(async () => { expect(m.h.save(addNamed("Imran Khan"))).toBe(true); });
-    expect(confirm).toHaveBeenCalledTimes(2);
-    await until(() => stored()?.people?.length === 2);
-    expect(m.h.state).toBe("ready");
+    expect(server.blobs.get(key("p1", "participants"))!.body).toBe('sealed:{"nope":true}');
   });
 });
 

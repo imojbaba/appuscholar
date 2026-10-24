@@ -4,24 +4,34 @@ import type { ParticipantList } from "@/lib/blobs/kinds/participants";
 
 /*
  * What the window last knew of each project's participant list, for code that is not the Participants tab: the Statistics box, the documents' highlights, the AI request's scan
- * (spec 2026-10-24-participants-design.md §8; ruling R1). Two useProjectBlob instances in one window do not hear each other's saves, so useParticipants publishes here on every
- * read and every save, and whoever needs the list reads it from here (the same shape as lib/tools/qual/liveStore.ts). `null` is "no list to use": the vault is locked or off, the list
- * does not open, or nothing has published yet. The store holds the list in memory only, never stored; a hook that sees the vault lock publishes `null`.
+ * (spec 2026-10-24-participants-design.md §8; rulings R1 and R22). Two useProjectBlob instances in one window do not hear each other's saves, so useParticipants publishes here
+ * whenever its blob delivers a value (a read, a save set here, a save the server accepted), and whoever needs the list reads it from here (the same shape as lib/tools/qual/liveStore.ts).
+ *
+ * Each list is held with the blob version it came from (R22): a publish of a lower version than the one held is ignored, so a window that has not heard of another's save
+ * cannot put its older (provisional) list over the newer one. The same version is accepted (a value set on that version, then the one the server accepted), and so is a publish with
+ * no version (a clear when the vault locks, a test), which also forgets the held version.
+ *
+ * `null` is "no list to use": the vault is locked or off, the list does not open, or nothing has published yet. The store holds the list in memory only, never stored.
  */
-const byProject = new Map<string, ParticipantList | null>();
+type Held = { list: ParticipantList | null; version: number | undefined };
+const byProject = new Map<string, Held>();
 const subs = new Set<() => void>();
 
 const emit = () => { for (const f of subs) f(); };
 
-/** The list a project has now, or null for none. Publishing the list that is already there tells nobody. */
-export function publishList(projectId: string, l: ParticipantList | null): void {
-  if ((byProject.get(projectId) ?? null) === l) return;
-  byProject.set(projectId, l);
-  emit();
+/**
+ * The list a project has now, or null for none, with the blob version it came from. Tells subscribers only when the list changes: the same list again, or on a newer version, tells
+ * nobody (the version moves on); an older version is ignored.
+ */
+export function publishList(projectId: string, l: ParticipantList | null, version?: number): void {
+  const held = byProject.get(projectId);
+  if (version !== undefined && held?.version !== undefined && version < held.version) return;
+  byProject.set(projectId, { list: l, version });
+  if ((held?.list ?? null) !== l) emit();
 }
 
-/** The latest list published for a project; the same object until the next publish (useSyncExternalStore). */
-export function listFor(projectId: string): ParticipantList | null { return byProject.get(projectId) ?? null; }
+/** The latest list published for a project; the same object until the next change (useSyncExternalStore). */
+export function listFor(projectId: string): ParticipantList | null { return byProject.get(projectId)?.list ?? null; }
 
 export function subscribeList(cb: () => void): () => void {
   subs.add(cb);

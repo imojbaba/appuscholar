@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { codeOf, normName } from "@appuscholar/core";
+import { RECORD_FIELDS, codeOf, normName } from "@appuscholar/core";
 import { emptyList, type Participant, type ParticipantList } from "../lib/blobs/kinds/participants";
 import {
   addNotName, addPeople, addPerson, characteristicsTable, consentComplete, destroyList, editPerson, isMinor, listCsv, suggestedShortName, toMatchPeople, withdraw
@@ -62,6 +62,16 @@ describe("addPerson", () => {
   it("keeps an explicit everyday as it is, even an empty one", () => {
     expect(add(emptyList(), "Asha Kumari", { spellings: ["Asha"], everyday: [] }).person.everyday).toEqual([]);
     expect(add(emptyList(), "Priya Sharma", { spellings: ["Priya"], everyday: ["Priya"] }).person.everyday).toEqual(["Priya"]);
+  });
+
+  it("trims the name and the spellings, and drops blank and repeated spellings, as Paste a list does", () => {
+    const p = add(emptyList(), "  Priya Sharma ", { spellings: [" Priya ", "", "priya", "प्रिया", "  "] }).person;
+    expect(p.name).toBe("Priya Sharma");
+    expect(p.spellings).toEqual(["Priya", "प्रिया"]);
+    // R6 reads the trimmed values.
+    expect(add(emptyList(), " Asha Kumari ", { spellings: [" Asha ", "asha"] }).person).toMatchObject({ name: "Asha Kumari", spellings: ["Asha"], everyday: ["Asha"] });
+    // An explicit everyday is the caller's.
+    expect(add(emptyList(), "Asha Kumari", { spellings: [" Asha "], everyday: ["Asha "] }).person.everyday).toEqual(["Asha "]);
   });
 
   it("an about of nothing becomes an empty object", () => {
@@ -138,6 +148,18 @@ describe("addPeople (Paste a list)", () => {
     const r = addPeople(emptyList(), [{ name: "Asha Kumari", spellings: [], code: "ID-5" }], TODAY);
     expect(r.added[0]!.code).toBe("P001");
     expect(r.list.next).toBe(2);
+  });
+
+  it("P000 and a code of more than six digits are not codes either: no code, no skip, the next code is taken", () => {
+    const r = addPeople(emptyList(), [{ name: "Zero Zero", spellings: [], code: "P000" }, { name: "Very Long", spellings: [], code: "P1234567" }, { name: "Also Long", spellings: [], code: "p0000000" }], TODAY);
+    expect(r.skipped).toEqual([]);
+    expect(r.added.map((p) => [p.code, p.name])).toEqual([["P001", "Zero Zero"], ["P002", "Very Long"], ["P003", "Also Long"]]);
+    expect(r.list.next).toBe(4);
+    // Six digits is the most that is kept, and it moves next on.
+    const six = addPeople(emptyList(), [{ name: "Six Digits", spellings: [], code: "P999999" }], TODAY);
+    expect(six.added[0]!.code).toBe("P999999");
+    expect(six.list.next).toBe(1000000);
+    expect(addPeople(emptyList(), [{ name: "One", spellings: [], code: "P1" }], TODAY).added[0]!.code).toBe("P001");
   });
 
   it("trims names and spellings, drops blank and repeated spellings, and ignores a blank name", () => {
@@ -250,6 +272,13 @@ describe("isMinor and consentComplete (under 18)", () => {
     expect(isMinor(person({ about: { age: " 15 " } }), true)).toBe(true);
     expect(isMinor(person({ about: { age: "15 years" } }), true)).toBe(true);
     expect(isMinor(person({ about: { age: "twenty" } }), true)).toBe(false);
+    // Digits of other scripts: Devanagari and Arabic-Indic.
+    expect(isMinor(person({ about: { age: "१६" } }), true)).toBe(true);
+    expect(isMinor(person({ about: { age: "१७ वर्ष" } }), true)).toBe(true);
+    expect(isMinor(person({ about: { age: "१८" } }), true)).toBe(false);
+    expect(isMinor(person({ about: { age: "२१" } }), true)).toBe(false);
+    expect(isMinor(person({ about: { age: "١٦" } }), true)).toBe(true);
+    expect(consentComplete(person({ about: { age: "१५" } }), true)).toBe(false);
     expect(isMinor(person({ about: { age: "" } }), true)).toBe(false);
     expect(isMinor(person({}), true)).toBe(false);
     expect(isMinor(person({ minor: true, about: { age: "30" } }), true)).toBe(false);
@@ -351,6 +380,25 @@ describe("listCsv (Download the list)", () => {
   it("is just the heading for a list with nobody on it", () => {
     expect(rows(listCsv(emptyList(), ["age"]))).toHaveLength(1);
   });
+
+  it("drops the who-they-are field ids from the fields, so the plan's whole list never doubles Name, Contact or Roll", () => {
+    const head = (fields: string[]) => rows(listCsv(list(), fields))[0]!.split(",");
+    const whole = head(RECORD_FIELDS.map((f) => f.id));
+    for (const h of ["Name", "Contact", "Roll"]) expect(whole.filter((x) => x === h), h).toHaveLength(1);
+    expect(whole.filter((x) => /^(name|spellings|contact|roll)$/i.test(x))).toEqual(["Name", "Contact", "Roll"]);
+    // The about-them fields are all there once.
+    for (const f of RECORD_FIELDS.filter((x) => x.group === "about")) expect(whole, f.id).toContain(f.id.charAt(0).toUpperCase() + f.id.slice(1));
+    expect(head(["name", "contact", "age"])).toEqual(head(["age"]));
+  });
+
+  it("uses the labels it is given for the fields' headings, and the English default where it is given none", () => {
+    const head = rows(listCsv(list(), ["age", "Hostel block", "course"], { age: "आयु", course: "Course of study" }))[0]!.split(",");
+    expect(head).toContain("आयु");
+    expect(head).toContain("Course of study");
+    expect(head).toContain("Hostel block");
+    expect(head).not.toContain("Age");
+    expect(head).not.toContain("Course");
+  });
 });
 
 describe("characteristicsTable (Copy as table: codes, no names)", () => {
@@ -388,6 +436,29 @@ describe("characteristicsTable (Copy as table: codes, no names)", () => {
 
   it("is only the heading for a list with nobody on it", () => {
     expect(characteristicsTable(emptyList(), ["age"], false)).toBe("Code\tAge");
+  });
+
+  it("drops the who-they-are field ids by construction: the plan's whole record list never yields a Name, Spellings, Contact or Roll column", () => {
+    const whole = RECORD_FIELDS.map((f) => f.id);
+    for (const pseudonyms of [false, true]) {
+      const t = characteristicsTable(list(), whole, pseudonyms);
+      const head = cells(t)[0]!;
+      for (const who of ["name", "spellings", "contact", "roll"]) {
+        expect(head.map((h) => h.toLowerCase()), who).not.toContain(who);
+      }
+      expect(head).toEqual(["Code", ...(pseudonyms ? ["Made-up name"] : []), ...RECORD_FIELDS.filter((f) => f.group === "about").map((f) => f.id.charAt(0).toUpperCase() + f.id.slice(1))]);
+      for (const secret of ["Priya", "Sharma", "Imran", "Khan", "priya@example.org", "ROLL-17"]) expect(t, secret).not.toContain(secret);
+      // Every row has a cell for every heading.
+      for (const row of cells(t)) expect(row).toHaveLength(head.length);
+    }
+    expect(characteristicsTable(list(), ["name", "age", "contact"], false)).toBe(characteristicsTable(list(), ["age"], false));
+  });
+
+  it("uses the labels it is given for the fields' headings, and the English default where it is given none", () => {
+    const t = characteristicsTable(list(), ["age", "gender", "Hostel block"], false, { age: "आयु", "Hostel block": "Hostel" });
+    expect(cells(t)[0]).toEqual(["Code", "आयु", "Gender", "Hostel"]);
+    expect(cells(t)[1]).toEqual(["P001", "21", "female", "B"]);
+    expect(cells(characteristicsTable(list(), ["age"], true, { age: "Years" }))[0]).toEqual(["Code", "Made-up name", "Years"]);
   });
 });
 

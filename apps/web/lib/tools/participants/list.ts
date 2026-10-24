@@ -37,10 +37,14 @@ function everydayOf(name: string, spellings: string[]): string[] {
   return distinct([name, ...spellings, ...name.split(/\s+/)]).filter(isEverydayName);
 }
 
-/** The number in a participant code ("P007" is 7), or null for anything that is not P and digits. */
+/**
+ * The number in a participant code ("P007" is 7), or null for anything that is not P and one to six digits, and for P000 (the first code is P001). Six digits is the most kept (P999999):
+ * a longer run is not a code of ours, and would carry `next` to a number nobody means.
+ */
 function codeNumber(code: string | undefined): number | null {
-  const m = /^P(\d+)$/i.exec((code ?? "").trim());
-  return m ? Number(m[1]) : null;
+  const m = /^P(\d{1,6})$/i.exec((code ?? "").trim());
+  const n = m ? Number(m[1]) : 0;
+  return n >= 1 ? n : null;
 }
 
 /** A list with people added: the counter moved on past `next`, and no longer a destroyed list (it has people to look for). */
@@ -58,7 +62,10 @@ export function addPerson(l: ParticipantList, p: NewPerson): { list: Participant
   const taken = new Set(l.people.map((x) => x.code));
   let n = l.next;
   while (taken.has(codeOf(n))) n++;
-  const person: Participant = { ...p, id: crypto.randomUUID(), code: codeOf(n), everyday: p.everyday ?? everydayOf(p.name, p.spellings), about: p.about ?? {} };
+  // The name and the spellings are tidied as a pasted list's are (trimmed; no blank or repeated spelling), so an Add form and Paste a list make the same person.
+  const name = p.name.trim();
+  const spellings = distinct(p.spellings);
+  const person: Participant = { ...p, id: crypto.randomUUID(), code: codeOf(n), name, spellings, everyday: p.everyday ?? everydayOf(name, spellings), about: p.about ?? {} };
   return { list: withPeople(l, [...l.people, person], n + 1), person };
 }
 
@@ -133,9 +140,23 @@ export function suggestedShortName(name: string): string {
   return at >= 0 ? words[at]! : (words[0] ?? "");
 }
 
-/** The age a person's `about.age` says, or null when it does not start with a number ("16", " 16 " and "16 years" are 16). */
+/**
+ * A text with its decimal digits of any script written as 0 to 9 ("१६" is "16"). Decimal digits come in runs of ten from a zero (Devanagari U+0966 to U+096F), so a digit's value is
+ * its distance from the start of its run of consecutive digits, modulo ten.
+ */
+function asciiDigits(s: string): string {
+  const isDigit = (cp: number) => cp > 0 && /^\p{Nd}$/u.test(String.fromCodePoint(cp));
+  return s.replace(/\p{Nd}/gu, (ch) => {
+    const cp = ch.codePointAt(0)!;
+    let start = cp;
+    while (isDigit(start - 1)) start--;
+    return String((cp - start) % 10);
+  });
+}
+
+/** The age a person's `about.age` says, or null when it does not start with a number ("16", " 16 ", "16 years" and "१६" are 16). */
 function ageOf(p: Participant): number | null {
-  const n = Number.parseFloat(p.about?.age ?? "");
+  const n = Number.parseFloat(asciiDigits(p.about?.age ?? ""));
   return Number.isFinite(n) ? n : null;
 }
 
@@ -164,19 +185,27 @@ export function toMatchPeople(l: ParticipantList, pseudonyms: boolean): MatchPer
   }));
 }
 
-/** A field's heading: a menu field's id with a capital ("age" is "Age"); a label the student added as it was typed. */
-const fieldLabel = (f: string): string => (RECORD_FIELDS.some((r) => r.id === f) ? f.charAt(0).toUpperCase() + f.slice(1) : f);
+/** The menu's who-they-are fields (name, spellings, contact, roll): the list's own columns, kept out of every field list below. */
+const WHO_IDS: ReadonlySet<string> = new Set(RECORD_FIELDS.filter((f) => f.group === "who").map((f) => f.id));
+/** The answers' fields among `fields`: the plan's record list, as it is, minus the who-they-are ids, each once. */
+const aboutOnly = (fields: string[]): string[] => [...new Set(fields.filter((f) => !WHO_IDS.has(f)))];
+
+/** The headings of the answers' fields: the labels the caller gives, by field id or the student's own label; else a menu field's id with a capital ("age" is "Age"); a label the student added as it was typed. */
+export type FieldLabels = Record<string, string>;
+const fieldLabel = (f: string, labels?: FieldLabels): string =>
+  labels?.[f] ?? (RECORD_FIELDS.some((r) => r.id === f) ? f.charAt(0).toUpperCase() + f.slice(1) : f);
 
 /**
- * Download the list: everything on it as v1's CSV (core's pdCsv). The first heading is `ParticipantCode`, as a key file's. `fields` are the answers' fields the plan records (ids and the
- * student's own labels); a value stored under another key (the plan dropped the field since, C15) still gets its column, so nothing on the list is left out.
+ * Download the list: everything on it as v1's CSV (core's pdCsv). The first heading is `ParticipantCode`, as a key file's. `fields` are the fields the plan records (ids and the
+ * student's own labels, the whole record list will do): the who-they-are ids among them are dropped, since Name, Contact and Roll are columns already. A value stored under another key
+ * (the plan dropped the field since, C15) still gets its column, so nothing on the list is left out. `labels` are the headings of the answers' fields (English where it gives none).
  */
-export function listCsv(l: ParticipantList, fields: string[]): string {
-  const keys = [...fields];
-  for (const p of l.people) for (const k of Object.keys(p.about ?? {})) if (!keys.includes(k)) keys.push(k);
+export function listCsv(l: ParticipantList, fields: string[], labels?: FieldLabels): string {
+  const keys = aboutOnly(fields);
+  for (const p of l.people) for (const k of Object.keys(p.about ?? {})) if (!keys.includes(k) && !WHO_IDS.has(k)) keys.push(k);
   const headers = [
     "ParticipantCode", "Name", "Other spellings", "Also an everyday word", "Joined", "How they agreed", "Under 18", "Parent's permission", "Own agreement",
-    "Contact", "Roll", "Made-up name", ...keys.map(fieldLabel), "Withdrew on", "Their data"
+    "Contact", "Roll", "Made-up name", ...keys.map((k) => fieldLabel(k, labels)), "Withdrew on", "Their data"
   ];
   const yes = (b: boolean | undefined) => (b ? "yes" : "");
   const rows = l.people.map((p) => [
@@ -191,10 +220,12 @@ const cell = (v: string): string => v.replace(/[\t\r\n]+/g, " ").trim();
 
 /**
  * Copy as table (codes, no names): the code, the made-up name in made-up names mode, and the about-them fields asked for, tab-separated so it pastes into Word and Excel. Never a name,
- * a spelling, contact or roll.
+ * a spelling, contact or roll: the who-they-are ids are dropped from `aboutFields` by construction, so the plan's whole record list may be passed. `labels` are the headings of the fields
+ * (English where it gives none).
  */
-export function characteristicsTable(l: ParticipantList, aboutFields: string[], pseudonyms: boolean): string {
-  const head = ["Code", ...(pseudonyms ? ["Made-up name"] : []), ...aboutFields.map(fieldLabel)];
-  const rows = l.people.map((p) => [p.code, ...(pseudonyms ? [p.pseudonym ?? ""] : []), ...aboutFields.map((f) => p.about?.[f] ?? "")]);
+export function characteristicsTable(l: ParticipantList, aboutFields: string[], pseudonyms: boolean, labels?: FieldLabels): string {
+  const fields = aboutOnly(aboutFields);
+  const head = ["Code", ...(pseudonyms ? ["Made-up name"] : []), ...fields.map((f) => fieldLabel(f, labels))];
+  const rows = l.people.map((p) => [p.code, ...(pseudonyms ? [p.pseudonym ?? ""] : []), ...fields.map((f) => p.about?.[f] ?? "")]);
   return [head, ...rows].map((r) => r.map(cell).join("\t")).join("\n");
 }
