@@ -15,6 +15,7 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import { e2eEmail, signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
 import { WEB_ORIGIN } from "./support/origins";
+import * as editorAt from "./support/editor";
 
 /** The vault passphrase (at least 10 characters). Since Phase 3A "Protect with a passphrase" locks the key under the vault, so this one passphrase opens both. */
 const PASS = "secret passphrase 1";
@@ -53,35 +54,11 @@ async function selectInEditor(page: Page, text: string) {
   }, text);
 }
 
-/** Puts the cursor at the very end of the document (the same on every platform, unlike an End key chord). */
-async function cursorToEnd(page: Page) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate(() => {
-    const last = document.querySelector(".ProseMirror")!.lastElementChild!;
-    last.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(last);
-    range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
-}
-
+// Set in the editor's own state (support/editor.ts says why a DOM range placed after focus can be lost).
+/** Puts the cursor at the very end of the document. */
+const cursorToEnd = (page: Page) => editorAt.cursorToEnd(page.locator(".ProseMirror"));
 /** Selects the whole block of the editor that contains `text`. */
-async function selectBlockWith(page: Page, text: string) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate((needle) => {
-    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle));
-    if (!block) throw new Error("block not found in the editor: " + needle);
-    block.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(block);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, text);
-}
+const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockWith(page.locator(".ProseMirror"), text);
 
 // A stuck step fails in seconds with its own message instead of eating the whole test timeout.
 test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
