@@ -10,6 +10,13 @@ export type LowContrast = { where: string; text: string; fg: string; bg: string;
  * the light theme). Run it with a dialog open to audit the dialog. `skip` is a selector for text to leave out, for a fault that is the same in both themes.
  */
 export async function lowContrast(page: Page, root = "body", skip = ""): Promise<LowContrast[]> {
+  // Let running transitions finish first: a control that has just stopped being disabled fades its opacity back up (the Button's transition-all), and
+  // measured half-way it reads as faint although it is not (CI 0768a3f, the shelf's buttons as the shelf finished loading).
+  // A spinner runs for ever, so only finite ones are waited for, and never more than 2 s.
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))),
+    new Promise((done) => setTimeout(done, 2000))
+  ]));
   return page.evaluate(([rootSel, skipSel]) => {
     type RGBA = [number, number, number, number];
     const canvas = document.createElement("canvas");
