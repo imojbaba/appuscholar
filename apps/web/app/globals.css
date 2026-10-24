@@ -661,6 +661,7 @@
 .cit-problem-slot:empty { display: none; }
 .cit-problem { padding: 10px 12px; border-radius: var(--r-ctl); background: var(--flag-bg); color: var(--flag-ink); font-size: 14px; line-height: 1.5; }
 .cit-problem-retracted { background: var(--danger-bg); color: var(--danger-ink); }
+.cit-problem-found { background: var(--ok-bg); color: var(--ok-ink); }
 .cit-sub { font-weight: 400; }
 .cit-fix { min-height: 38px; margin-left: var(--s2); }
 .cit-fold { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }

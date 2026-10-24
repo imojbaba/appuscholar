@@ -70,15 +70,15 @@ export function citationUsage(lib: CitationEntry[], docs: PlainDoc[], style: Cit
 
 /**
  * How a source is used, for the Citations tab's row (wave B Task 23): not at all, once (in one document, named), or `n` times (more than one mention, in one document or in several).
- * `n` counts every mention across the project's documents.
+ * `n` counts every mention across the project's documents; `docs` are the documents that mention it, each with its own count, as v1's "Cited in: A (2x), B" listed them (citRender 7851-7854).
  */
-export type SourceUse = { kind: "none" } | { kind: "once"; doc: Usage } | { kind: "many"; n: number };
+export type SourceUse = { kind: "none" } | { kind: "once"; doc: Usage } | { kind: "many"; n: number; docs: Usage[] };
 
 /** The row's use line from citUsage's list for one source. */
 export function sourceUse(used: Usage[]): SourceUse {
   const n = used.reduce((sum, u) => sum + u.n, 0);
   if (!used.length || n === 0) return { kind: "none" };
-  return n === 1 ? { kind: "once", doc: used[0]! } : { kind: "many", n };
+  return n === 1 ? { kind: "once", doc: used[0]! } : { kind: "many", n, docs: used };
 }
 
 /** num_missing_fmt's {n} (7839): each number in brackets, comma-separated. */

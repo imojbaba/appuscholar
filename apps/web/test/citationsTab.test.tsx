@@ -14,7 +14,7 @@ import en from "../messages/en.json";
  * Manager panel; what the panel carried and the tab keeps (ruling B2-R28) is pinned here too: per-source Insert citation and Remove in the row's More menu, the caret chip's lit
  * row, and the quote box inside "Add a source by hand".
  */
-type Blob = { value: unknown; loading: boolean; locked: boolean; broken?: boolean; readOnly?: boolean; set: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> };
+type Blob = { value: unknown; loading: boolean; locked: boolean; broken?: boolean; error?: boolean; readOnly?: boolean; set: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> };
 const h = vi.hoisted(() => ({
   blobs: {} as Record<string, Blob>,
   toast: vi.fn(),
@@ -195,8 +195,11 @@ describe("each source's use in the student's documents", () => {
   it("sourceUse: none, once in a document, n times", () => {
     expect(sourceUse([])).toEqual({ kind: "none" });
     expect(sourceUse([{ id: "d1", title: "Review", n: 1 }])).toEqual({ kind: "once", doc: { id: "d1", title: "Review", n: 1 } });
-    expect(sourceUse([{ id: "d1", title: "Review", n: 2 }])).toEqual({ kind: "many", n: 2 });
-    expect(sourceUse([{ id: "d1", title: "Review", n: 1 }, { id: "d2", title: "Draft", n: 1 }])).toEqual({ kind: "many", n: 2 });
+    // More than one mention: the count and the documents it is in, each with its own count (v1 citRender 7851-7854).
+    expect(sourceUse([{ id: "d1", title: "Review", n: 2 }])).toEqual({ kind: "many", n: 2, docs: [{ id: "d1", title: "Review", n: 2 }] });
+    expect(sourceUse([{ id: "d1", title: "Review", n: 1 }, { id: "d2", title: "Draft", n: 1 }])).toEqual({
+      kind: "many", n: 2, docs: [{ id: "d1", title: "Review", n: 1 }, { id: "d2", title: "Draft", n: 1 }]
+    });
   });
 
   it("Not cited yet, Cited once in {document}, Cited {n} times; the document's name opens it", async () => {
@@ -210,11 +213,34 @@ describe("each source's use in the student's documents", () => {
     mount();
     await settle(20);
     const use = rows().map((r) => r.querySelector('[data-testid="source-use"]')!.textContent);
-    expect(use).toEqual(["Not cited yet", "Cited 2 times", "Cited once in Draft"]);
+    expect(use).toEqual(["Not cited yet", "Cited 2 times: My first document (2×)", "Cited once in Draft"]);
     const link = rows()[2]!.querySelector<HTMLElement>('[data-testid="source-use"] a, [data-testid="source-use"] button')!;
     expect(link.textContent).toBe("Draft");
     await click(link);
     expect(h.selectDoc).toHaveBeenCalledWith("d2");
+  });
+
+  it("a source cited more than once names its documents, each a link that opens it, with a count where a document has it more than once (v1's \"Cited in: A (2x), B\")", async () => {
+    h.blobs.citations = blob([PUTWAIN, COHEN]);
+    h.documents = ["d1", "d2", "d3"].map((id, i) => ({ id, title: ["My first document", "Draft", "Notes"][i]!, titleKeyVersion: 0, deks: [], updatedAt: "1" }));
+    h.stored = {
+      d1: { bodyHtml: "sealed:<p>As Putwain (2008) says, and again (Putwain, 2008).</p>", keyVersion: 1 },
+      d2: { bodyHtml: "<p>Once more (Putwain, 2008), and Cohen (1988).</p>", keyVersion: 0 },
+      d3: { bodyHtml: "<p>Nothing cited here.</p>", keyVersion: 0 }
+    };
+    h.currentDoc = { id: "d3" };
+    mount();
+    await settle(20);
+    const useOf = (i: number) => rows()[i]!.querySelector<HTMLElement>('[data-testid="source-use"]')!;
+    // The plan's "Cited {n} times" first, then the documents in the project's order; the count only where a document has more than one.
+    expect(useOf(0).textContent).toBe("Cited 3 times: My first document (2×), Draft");
+    expect(useOf(1).textContent).toBe("Cited once in Draft");
+    const links = [...useOf(0).querySelectorAll<HTMLElement>("button")];
+    expect(links.map((l) => l.textContent)).toEqual(["My first document", "Draft"]);
+    await click(links[1]!);
+    expect(h.selectDoc).toHaveBeenLastCalledWith("d2");
+    await click(links[0]!);
+    expect(h.selectDoc).toHaveBeenLastCalledWith("d1");
   });
 });
 
@@ -568,6 +594,129 @@ describe("Use Crossref details (the fix a row offers until Needs your attention 
     mount();
     await settle();
     expect(rows()[0]!.querySelector('[data-cite-slot="cite-attention"]')!.textContent).toBe(E.retr_lib_warn);
+  });
+});
+
+describe("DOI found after a title search (v1 rcLine 7794: \"Found in Crossref and the details match. DOI found: 10...\")", () => {
+  const FOUND = "10.1111/found.2008.1";
+  const byTitle = (over: Partial<RcCheck> = {}): RcCheck => ({ s: "ok", m: [], f: { title: "x", year: 2008, author: "Putwain", doi: FOUND }, viaTitle: true, t: 1, ...over });
+  const problemOf = (i = 0) => rows()[i]!.querySelector('[data-cite-slot="cite-attention"]')!;
+
+  it("a source with no DOI that Crossref matched by its title reads Checked and shows the DOI that was found", async () => {
+    h.blobs.citations = blob([PUTWAIN]);
+    h.blobs.refcheck_cache = blob(rcOf(PUTWAIN, byTitle()));
+    mount();
+    await settle();
+    expect(rows()[0]!.querySelector('[data-testid="source-status"]')!.textContent).toBe("Checked");
+    expect(tid("cite-rc-doi")!.textContent).toBe(`${E.rc_doi_found} ${FOUND}`);
+    expect(E.rc_doi_found).toBe("DOI found:");
+    expect(problemOf().contains(tid("cite-rc-doi"))).toBe(true);
+    // It is information, not a problem: no fix button, and the warning words are not used.
+    expect(tid("source-fix")).toBeNull();
+    expect(problemOf().textContent).not.toContain(E.rc_doi_missing);
+  });
+
+  it("only for a match by title: a match by DOI, or a title match that found no DOI, says nothing more", async () => {
+    h.blobs.citations = blob([PUTWAIN, COHEN]);
+    h.blobs.refcheck_cache = blob({ ...rcOf(PUTWAIN, byTitle({ viaTitle: undefined })), ...rcOf(COHEN, byTitle({ f: { title: "x", year: 1988, author: "Cohen", doi: "" } })) });
+    mount();
+    await settle();
+    expect(rows().map((r) => r.querySelector('[data-testid="source-status"]')!.textContent)).toEqual(["Checked", "Checked"]);
+    expect(tid("cite-rc-doi")).toBeNull();
+    expect(problemOf(0).textContent).toBe("");
+    expect(problemOf(1).textContent).toBe("");
+  });
+});
+
+describe("a library that could not be read is not an empty library", () => {
+  const unread = ["cite-insertbib", "cite-retract-btn", "cite-rc-btn"];
+  const off = (id: string) => (tid(id) as HTMLButtonElement).disabled;
+
+  it("a failed read says so: no count, no \"No sources yet\", and Insert reference list, Check for retractions and Check details are off", async () => {
+    h.blobs.citations = { ...blob(null), error: true };
+    mount();
+    await settle();
+    expect(tid("cit-library-error")!.textContent).toBe(E.cit_library_error);
+    expect(tid("cit-head")).toBeNull();
+    expect(document.body.textContent).not.toContain("0 sources");
+    expect(tid("cite-lib")!.textContent).not.toContain(E.cit_empty);
+    expect(tid("cite-broken")).toBeNull();
+    for (const id of unread) expect(off(id), id).toBe(true);
+    // Each says why it is off, by the line that tells the student.
+    for (const id of unread) expect(tid(id)!.getAttribute("aria-describedby"), id).toBe(tid("cit-library-error")!.id);
+    // Nothing it would have done was done.
+    await click(tid("cite-insertbib")!);
+    await click(tid("cite-retract-btn")!);
+    await click(tid("cite-rc-btn")!);
+    expect(toasts()).toEqual([]);
+  });
+
+  it("a broken blob says what it said before, and the same three buttons are off", async () => {
+    h.blobs.citations = { ...blob(null), broken: true };
+    mount();
+    await settle();
+    expect(tid("cite-broken")!.textContent).toBe(E.vault_cite_broken);
+    expect(tid("cit-library-error")).toBeNull();
+    expect(tid("cit-head")).toBeNull();
+    expect(document.body.textContent).not.toContain("0 sources");
+    expect(tid("cite-lib")!.textContent).not.toContain(E.cit_empty);
+    for (const id of unread) expect(off(id), id).toBe(true);
+    for (const id of unread) expect(tid(id)!.getAttribute("aria-describedby"), id).toBe(tid("cite-broken")!.id);
+  });
+
+  it("what the student has put in meanwhile is still shown, but never counted as the whole library", async () => {
+    h.blobs.citations = { ...blob([COHEN]), error: true };
+    mount();
+    await settle();
+    expect(rows()).toHaveLength(1);
+    expect(tid("cit-head")).toBeNull();
+    expect(tid("cit-library-error")).not.toBeNull();
+    for (const id of unread) expect(off(id), id).toBe(true);
+  });
+
+  it("while it is read and while it is locked the three buttons are off too, and once it is read they are on (an empty library then really is empty)", async () => {
+    h.blobs.citations = { ...blob(null), loading: true };
+    mount();
+    for (const id of unread) expect(off(id), id).toBe(true);
+    unmountAll();
+    h.blobs.citations = { ...blob(null), locked: true };
+    mount();
+    for (const id of unread) expect(off(id), id).toBe(true);
+    unmountAll();
+    h.blobs.citations = blob([]);
+    mount();
+    await settle();
+    expect(tid("cit-head")!.textContent).toBe("0 sources, 0 cited in your document");
+    expect(tid("cit-library-error")).toBeNull();
+    for (const id of unread) expect(off(id), id).toBe(false);
+  });
+
+  it("the sentence is in both languages", () => {
+    const hi = JSON.parse(readFileSync(join(__dirname, "../messages/hi.json"), "utf8")) as Record<string, string>;
+    expect(E.cit_library_error).toBe("Your sources could not be reached. Check your connection, then reload this page.");
+    expect(hi.cit_library_error).toBeTruthy();
+    expect(hi.cit_library_error).not.toBe(E.cit_library_error);
+  });
+});
+
+describe("the cross-check hint in a pop-out", () => {
+  afterEach(() => { window.history.replaceState(null, "", "/"); });
+
+  it("the document is not in a pop-out, so the hint says to open it in the main window; in the main window it keeps saying open your document", async () => {
+    window.history.replaceState(null, "", "/p/p1/lit/citations?window=1");
+    mount();
+    await settle();
+    const hint = tid("cit-cc-hint")!;
+    expect(hint.textContent).toBe(E.cit_cc_hint_window);
+    expect(E.cit_cc_hint_window).toBe("Open the document in the main window first, then cross-check it there.");
+    expect(hint.textContent).not.toBe(E.cit_cc_hint);
+    expect((tid("cite-cc-btn") as HTMLButtonElement).disabled).toBe(true);
+    expect(tid("cite-cc-btn")!.getAttribute("aria-describedby")).toBe(hint.id);
+    unmountAll();
+    window.history.replaceState(null, "", "/p/p1/lit/citations");
+    mount();
+    await settle();
+    expect(tid("cit-cc-hint")!.textContent).toBe(E.cit_cc_hint);
   });
 });
 

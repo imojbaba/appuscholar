@@ -351,7 +351,7 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     expect((failing.saved.at(-1) as Record<string, RcCheck>)[citKey(SMITH)]!.s).toBe("err");
   });
 
-  it("each row's Crossref sentence per state: a difference, a source Crossref does not know; a match and a failed lookup say nothing there", async () => {
+  it("each row's Crossref sentence per state: a difference, a source Crossref does not know, the DOI a title match found; a match by DOI and a failed lookup say nothing there", async () => {
     const LIN: CitationEntry = { author: "Lin, May", year: "2011", title: "Title search" };
     const ERR: CitationEntry = { author: "Err, Ann", year: "2001", title: "Could not check" };
     h.blobs.citations = blob([SMITH, LEE, RAO, LIN, ERR]);
@@ -370,7 +370,7 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
       "",
       E.rc_title + " Other  ·  " + E.rc_year + " 2012" + E.rc_doi_missing + " 10.9/x",
       E.rc_nf,
-      "",
+      E.rc_doi_found + " 10.5/lin",
       ""
     ]);
     expect(rows[1]!.querySelector('[data-cite-slot="cite-attention"] br')).not.toBeNull();
@@ -679,7 +679,7 @@ describe("usage in the tab (v1 citRender 7835-7858)", () => {
     await settle(10);
     expect(tid("cit-head")!.textContent).toBe("3 sources, 2 cited in your document");
     const used = all("source-row").map((c) => c.querySelector('[data-testid="source-use"]')!.textContent);
-    expect(used).toEqual(["Cited 2 times", "Cited once in Draft", "Not cited yet"]);
+    expect(used).toEqual(["Cited 2 times: Review (2×)", "Cited once in Draft", "Not cited yet"]);
     await click(all("source-row")[1]!.querySelector('[data-testid="source-use"] button')!);
     expect(h.selectDoc).toHaveBeenCalledWith("d2");
     // Typing in the open document counts shortly after.
