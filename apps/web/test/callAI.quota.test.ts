@@ -49,6 +49,14 @@ describe("callAI quota answer", () => {
     expect(toCallError(new ApiError(429, "quota", "day:40000")).message).toBe("You have used your AI calls for today. Try again tomorrow.");
   });
 
+  it("a minute quota says to wait a moment and try again, whatever the seconds", () => {
+    const e = toCallError(new ApiError(429, "quota", "minute:40"));
+    expect(e.code).toBe("quota");
+    expect(e.message).toBe("Too many AI requests in a minute. Wait a moment and try again.");
+    expect(apiMsg("quota", "minute:1")).toBe("Too many AI requests in a minute. Wait a moment and try again.");
+    expect(apiMsg("quota", "minute:60")).toBe("Too many AI requests in a minute. Wait a moment and try again.");
+  });
+
   it("a quota with an unreadable detail still gives a sentence about the day", () => {
     expect(apiMsg("quota")).toBe("You have used your AI calls for today. Try again tomorrow.");
     expect(apiMsg("quota", "weird")).toBe("You have used your AI calls for today. Try again tomorrow.");
@@ -61,8 +69,15 @@ describe("callAI quota answer", () => {
     expect(apiMsg("quota", "day:5")).not.toBe((en as Record<string, string>).ai_quota_day);
   });
 
+  it("answers a minute quota in Hindi when the page language is hi", () => {
+    setLang("hi");
+    expect(apiMsg("quota", "minute:30")).toBe((hi as Record<string, string>).ai_quota_minute);
+    expect(apiMsg("quota", "minute:30")).not.toBe((en as Record<string, string>).ai_quota_minute);
+    expect(apiMsg("quota", "minute:30")).toBeTruthy();
+  });
+
   it("the new copy has no em-dash and no emoji", () => {
-    for (const d of [en, hi] as Array<Record<string, string>>) for (const k of ["ai_quota_hour", "ai_quota_hour_one", "ai_quota_day"]) {
+    for (const d of [en, hi] as Array<Record<string, string>>) for (const k of ["ai_quota_minute", "ai_quota_hour", "ai_quota_hour_one", "ai_quota_day"]) {
       expect(d[k], k).toBeTruthy();
       expect(d[k]).not.toMatch(/—|\p{Extended_Pictographic}/u);
     }
@@ -75,6 +90,17 @@ describe("callAI quota answer", () => {
     const onFailover = vi.fn();
     const err = await callAI("hello", {}, ctx({ onFailover })).catch((e: unknown) => e);
     expect(err).toMatchObject({ code: "quota", message: "You have used your AI calls for this hour. Try again in 25 minutes." });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(onFailover).not.toHaveBeenCalled();
+  });
+
+  it("callAI does not fail over on a minute quota answer either", async () => {
+    keyStore.setSession("gemini", "AIza1");
+    keyStore.setSession("groq", "gsk_1");
+    mockFetch.mockRejectedValue(new ApiError(429, "quota", "minute:40"));
+    const onFailover = vi.fn();
+    const err = await callAI("hello", {}, ctx({ onFailover })).catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: "quota", message: "Too many AI requests in a minute. Wait a moment and try again." });
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(onFailover).not.toHaveBeenCalled();
   });

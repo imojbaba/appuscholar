@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - The repository is public: no secret, key, password or personal data in any commit, test fixture or log line.
-- Quota numbers (per user): `/ai/complete` 40 per hour and 200 per day; `/ai/test` 5 per hour and 20 per day. Windows are fixed and aligned to the epoch hour and the UTC day.
+- Quota numbers (per user): `/ai/complete` 40 per hour and 200 per day; `/ai/test` 5 per hour and 20 per day. (superseded by the ledger ruling of 2026-10-24: complete 20/min 150/h 800/d, test 10/h 40/d) Windows are fixed and aligned to the epoch hour and the UTC day.
 - A quota rejection is HTTP 429 `{ error: "quota", detail: "<hour|day>:<seconds to wait>" }` plus a `Retry-After` header. A rejected call does not reach the provider and does not count against the window.
 - A quota rejection logs one line holding only the bucket name and the opaque user id. No text, no key, no prompt.
 - `/health/db`: `{ ok: true }` (200) or `{ ok: false }` (503); the answer and the log carry no error message and no query: at most the error's name and code.

@@ -14,6 +14,7 @@
   "ai_quota_day": "You have used your AI calls for today. Try again tomorrow.",
   "ai_quota_hour": "You have used your AI calls for this hour. Try again in {minutes} minutes.",
   "ai_quota_hour_one": "You have used your AI calls for this hour. Try again in 1 minute.",
+  "ai_quota_minute": "Too many AI requests in a minute. Wait a moment and try again.",
   "aitest_btn": "🔌 Test my AI connection",
   "aitest_fail": "Not working. Provider: {p}.",
   "aitest_ok": "Working ✓ Provider: {p}.",
