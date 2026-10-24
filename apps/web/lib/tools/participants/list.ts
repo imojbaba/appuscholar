@@ -85,8 +85,8 @@ export function addPerson(l: ParticipantList, p: NewPerson): { list: Participant
 /**
  * Adds the people of a pasted list (Paste a list, C16), each with the next code, joined `today`, consent left for the student. A given code (a key file's) is kept and `next`
  * becomes the highest kept plus one. A name equal (normName) to one already listed, or pasted before in the same list, is skipped as `already`; a code another name holds,
- * as `code-taken`. A given code below the counter the list had when the paste began, which nobody holds now, was used before (a person since gone, or a destroyed list: R52): it is
- * refused, as a code that is taken is, but the person is still added, with the next code, and `reissued` says so, so the sentence can. A blank name is ignored. Nothing added
+ * as `code-taken`. A given code below `destroyedNext` (the counter at the last Destroy), which nobody holds now, was used before (R52, R57): it is refused, as a code that is
+ * taken is, but the person is still added, with the next code, and `reissued` says so, so the sentence can. On a list never destroyed a key file keeps its own codes, gaps too. A blank name is ignored. Nothing added
  * returns the list as it was.
  */
 export function addPeople(l: ParticipantList, names: PastedPerson[], today: string): { list: ParticipantList; added: Participant[]; skipped: SkippedPerson[]; reissued: ReissuedCode[] } {
@@ -190,7 +190,7 @@ export function clearAbout(l: ParticipantList, key: string): ParticipantList {
 
 /** Destroys the list (C7): nobody, no "not names", only the next code number and the counter it stood at (so a code is never used again, R52) and the date. Anything else the list held is gone. */
 export function destroyList(l: ParticipantList, now: string): ParticipantList {
-  return { v: 1, next: l.next, people: [], notNames: [], destroyedAt: now, destroyedNext: l.next };
+  return { v: 1, next: l.next, people: [], notNames: [], destroyedAt: now, destroyedNext: Math.max(l.next, l.destroyedNext ?? 0) };
 }
 
 /** Learns "Not a name" for a word (§7.5): its normal form, once. A blank word changes nothing. */

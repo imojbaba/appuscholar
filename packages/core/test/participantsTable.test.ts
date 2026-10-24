@@ -246,6 +246,13 @@ describe("listTableScan", () => {
     expect(c.inText.map((t) => t.row)).toContain(2);
   });
 
+  it("leftover (R49): a long cell that holds a person's code or roll number is not a leftover either", () => {
+    const m = buildMatcher([PRIYA, RAHUL]);
+    const d = table("student name,x\nPriya Sharma,1\nP001 (absent on day two),2\nP001 and P002 were absent on day two,3\nRoll 21CS014 was absent on day two,4\nP0011 was not on any list at all,5");
+    const c = column(listTableScan(d, m, { ...OPTS, nameColumns: [0], rolls: new Map([["21cs014", "p1"]]) }), 0);
+    expect(c.leftover).toEqual([{ row: 4, value: "P0011 was not on any list at all" }]);
+  });
+
   it("leftover (R49): a name column's cells that are not on the list, not a name to add, not a code and not a placeholder are reported, and are never added as people", () => {
     const m = buildMatcher([PRIYA, RAHUL]);
     const d = table(

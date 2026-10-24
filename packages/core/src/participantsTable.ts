@@ -22,7 +22,8 @@ import type { PdFound } from "./pdscan";
  *   does not turn the column into names (F1 again). In a name column, a value that is not on the list is one name, "unlisted" (distinct, first seen), unless it is not shaped like a name:
  *   more than four words, no letter in it (a number, a dash), or a placeholder (NA, N/A, nil, none); those are never unlisted, so one exact-name answer cannot turn a comments column into
  *   new participants. Those values, and any other value with a letter in it that is neither on the list, nor a name to add, nor a code, are the column's `leftover` (R49): reported, never
- *   added as people (R11), and emptied by listTransform when the plan says `leftover: "remove"`. Every cell that is not wholly a name is also searched for names inside it (inText). A name column's value whose sure finds name exactly one person is that person's
+ *   added as people (R11), and emptied by listTransform when the plan says `leftover: "remove"`. A cell that holds someone on the list (a name the matcher finds, not only guesses, or a
+ *   person's code or roll number as a word of its own) is never leftover (R56): it is searched like an answer. Every cell that is not wholly a name is also searched for names inside it (inText). A name column's value whose sure finds name exactly one person is that person's
  *   cell (listed, and withdrawn if they withdrew with remove), not a new name, so "Dr. Priya Sharma" is never added beside P001. A cell that is a person's code is already a code: it is
  *   neither listed nor unlisted (but it still marks the row of a withdrawn person). A cell that is only a number is not searched. Cells are the table's own, not trimmed again: finds are
  *   positions in the cell as it is.
@@ -74,7 +75,7 @@ export type ColumnNames = {
   roll: Array<{ row: number; personId: string }>;
   /**
    * In a name column, the cells (not the distinct values) with a letter in them that are not on the list and not a name to add either: an answer of more than four words (R11), as written
-   * (trimmed). Not a code, a roll number, a placeholder or a number, and not a cell that holds someone on the list (that one is in `inText`). They are never added as people; the student keeps them or removes them (ColumnPlan.leftover).
+   * (trimmed). Not a code, a roll number, a placeholder or a number, and not a cell that holds someone on the list by name, code or roll number (that one is in `inText`). They are never added as people; the student keeps them or removes them (ColumnPlan.leftover).
    */
   leftover: Array<{ row: number; value: string }>;
 };
@@ -176,8 +177,9 @@ export function listTableScan(
       if (!isName) return;
       if (!shapedLikeAName(value)) {
         // Not one person's name (R11), so not added; but it is in a name column and will sit under the coded header unless the student says otherwise (R49). A number or a placeholder is not worth a word,
-        // and a cell that holds someone on the list is theirs: it stays an answer with the names inside it (inText), never emptied as a leftover.
-        if (/\p{L}/u.test(value) && !PLACEHOLDER.test(value) && !finds.some((f) => f.kind !== "suggest")) col.leftover.push({ row, value });
+        // and a cell that holds someone on the list (their name, their code or their roll number as a word of its own) is theirs: it stays an answer (inText), never emptied as a leftover.
+        const holdsSomeone = finds.some((f) => f.kind !== "suggest") || value.split(/[^\p{L}\p{N}]+/u).some((w) => !!w && (codes.has(normName(w)) || opts.rolls.has(normName(w))));
+        if (/\p{L}/u.test(value) && !PLACEHOLDER.test(value) && !holdsSomeone) col.leftover.push({ row, value });
         return;
       }
       // A value of a name column that holds exactly one person's name is that person's cell; otherwise it is a name that is not on the list.

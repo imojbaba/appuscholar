@@ -150,8 +150,9 @@ describe("addPeople (Paste a list)", () => {
     expect(again.destroyedAt).toBeUndefined();
     expect(again.destroyedNext).toBe(3);
     expect(addPeople(again, [{ name: "Imran Khan", spellings: [], code: "P002" }], TODAY).reissued).toEqual([{ name: "Imran Khan", was: "P002", code: "P004" }]);
-    // A second Destroy keeps the higher counter.
+    // A second Destroy keeps the higher counter, even from a list whose counter was written by hand below it.
     expect(destroyList(again, "2026-11-05").destroyedNext).toBe(4);
+    expect(destroyList({ ...again, next: 2, destroyedNext: 10 }, "2026-11-05").destroyedNext).toBe(10);
   });
 
   it("after Destroy the counter is kept, so a key file's old codes are not given again: P001 and P002 are used, the two people get P003 and P004 (R52)", () => {

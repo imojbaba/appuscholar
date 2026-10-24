@@ -123,7 +123,7 @@ Behaviour:
 - **Withdraw** (in Edit): date, and "Remove their data" or "Keep what was collected" (the consent form says which the student may do; the tab says to check it). The code is kept. Their row is greyed.
 - **Copy as table**: code, made-up name in pseudonyms mode, and the about-them columns; never names, spellings, contact or roll. Tab-separated so it pastes into Word and Excel.
 - **Download the list**: a CSV of everything on the list, named `participant-list-<project>.csv`, with a line above the button: "This file holds names. Keep it apart from your data."
-- **Destroy the list**: asks twice (an in-page dialog, not `confirm()`); writes a list with no people and keeps `next` and `destroyedAt` (C7). Matching stops. The tab then says the list was destroyed on <date> and new people continue from the next code.
+- **Destroy the list**: asks twice (an in-page dialog, not `confirm()`); writes a list with no people and keeps `next`, `destroyedAt` and `destroyedNext` (C7; R57). Matching stops. The tab then says the list was destroyed on <date> and new people continue from the next code.
 - **Anonymous** plan: the whole tab is one line, "Your plan says this study is anonymous, so no list is kept. If that changes, change it in Design and ethics." plus the link. Matching against a list is off; suggestions (§7.5) still run.
 - **Vault**: the list is only ever stored sealed. Vault off: the tab says "Set up your vault first: your participant list is only ever stored sealed." with the vault's own set-up button; nothing is stored. Vault locked: "Unlock to see your participants" and nothing else. The API refuses a plaintext write (`keyVersion` 0) for this kind with 409 (defence in depth: `apps/api/src/routes/blobWrite.ts`).
 - **The home's facts** for Collection may show counts only ("5 participants"), never a name.
@@ -155,6 +155,7 @@ type ParticipantList = {
   notNames: string[];         // normalised words the student answered "Not a name" for (§7.5)
   highlight?: boolean;        // C9; absent = on
   destroyedAt?: string;
+  destroyedNext?: number;      // the counter at the last Destroy, kept when people are added again: a key file's code below it was used before (R52, R57)
 };
 ```
 
