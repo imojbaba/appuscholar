@@ -23,6 +23,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@tiptap/react/menus", () => ({ BubbleMenu: ({ children, ...p }: { children: React.ReactNode; "data-testid"?: string }) => <div data-testid={p["data-testid"]}>{children}</div> }));
 
 import { SuggestionProvider, useSuggestion, type SuggestionValue } from "../lib/ai/suggestion";
+import { HELPER_MENU } from "../lib/ai/helperMenu";
 import { resetHelperSession } from "../lib/ai/useHelperRun";
 import { HelpButton, HelpMenu } from "../components/document/HelpMenu";
 import { DocAside } from "../components/document/DocAside";
@@ -141,10 +142,55 @@ describe("Research helpers in the document (Task 32)", () => {
     mount();
     await open();
     const names = ITEMS.map((i) => $(i.testid)!.querySelector(".help-item-name")!.textContent);
-    expect(names).toEqual(["Paper helper", "Explain a case", "Literature review helper", "Explain the statistics", "Format results in APA", "Challenge my argument"]);
+    expect(names).toEqual(["Paper helper", "Explain a case", "Literature review helper", "Explain a concept", "Format results in APA", "Challenge my argument"]);
     expect([...$("help-menu")!.querySelectorAll("button.help-item")].map((b) => b.getAttribute("data-testid"))).toEqual(ITEMS.map((i) => i.testid));
     for (const i of ITEMS) expect($(i.testid)!.querySelector(".help-item-what")!.textContent!.length).toBeGreaterThan(20);
     expect($("help-menu")!.textContent).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+
+  it("each entry is named for what its prompt does: Explain a concept runs the concept explainer, and no entry promises statistics it does not explain", async () => {
+    mount();
+    await open();
+    const names = HELPER_MENU.map((i) => E[i.name]);
+    expect(names).toContain("Explain a concept");
+    expect(names.join("|")).not.toMatch(/statistics/i);
+    // Format results in APA is v1's own name for the statistics prompt (ruling B3-R3 keeps its AI-use label).
+    expect(E.help_stats).toBe("Format results in APA");
+    h.callAI.mockClear();
+    const entry = [...document.body.querySelectorAll<HTMLElement>("button.help-item")].find((b) => b.querySelector(".help-item-name")!.textContent === "Explain a concept")!;
+    await act(async () => { entry.click(); await settle(); await settle(); });
+    const built = buildHelperPrompt("explain", "psychology", docInnerText(editor.getHTML()));
+    expect(built.prompt).toContain("concept");
+    expect(h.callAI).toHaveBeenCalledWith(built.prompt, { temp: built.temp, max: built.max });
+    expect($("ai-source")!.textContent).toContain("Explain a concept");
+  });
+
+  it("after Accept the menu reads the whole document, not the passage that was selected before the answer went in", async () => {
+    mount();
+    select(1, 3001);
+    await open();
+    expect($("help-scope")!.textContent).toBe("On your selection (3,000 characters)");
+    await click("help-paper");
+    // The Accept button takes the focus from the document, then the answer goes in at the end and the cursor follows it.
+    act(() => { editor.view.dom.dispatchEvent(new FocusEvent("blur")); });
+    await click("ai-accept");
+    expect(editor.getText()).toContain("Aim: to test it.");
+    await open();
+    expect($("help-scope")!.textContent).toBe("On the whole document");
+    h.callAI.mockClear();
+    await click("help-paper");
+    expect(h.callAI.mock.calls[0]![0]).toBe(buildHelperPrompt("paper", "psychology", docInnerText(editor.getHTML())).prompt);
+    expect(h.callAI.mock.calls[0]![0]).toContain("Aim: to test it.");
+  });
+
+  it("after Tab the menu reads the whole document too", async () => {
+    mount();
+    select(1, 3001);
+    await open();
+    await click("help-paper");
+    act(() => { expect(sugNow().tab()).toBe(true); });
+    await open();
+    expect($("help-scope")!.textContent).toBe("On the whole document");
   });
 
   it("after a helper runs the menu is one click away and the result is beside the document (W25)", async () => {
@@ -320,5 +366,47 @@ describe("where the menu is opened from", () => {
     await click("sel-more");
     expect($("help-menu")).not.toBeNull();
     expect($("help-scope")!.textContent).toBe("On your selection (499 characters)");
+  });
+});
+
+describe("the menu on a phone (375 px wide, 44 px targets)", () => {
+  const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
+  /** The body of the first `@media (max-width: 700px)` block: the phone rules every control grows in. */
+  const phone = (() => {
+    const at = css.indexOf("@media (max-width: 700px) {");
+    let depth = 0;
+    for (let i = css.indexOf("{", at); i < css.length; i++) {
+      if (css[i] === "{") depth++;
+      else if (css[i] === "}" && --depth === 0) return css.slice(at, i);
+    }
+    return css.slice(at);
+  })();
+  const ruleOf = (src: string, sel: RegExp) => [...src.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find((m) => sel.test(m[1]!.trim()))?.[2] ?? "";
+
+  it("the menu has its own close button, not the shared dialog's 16 px cross, and it closes the menu", async () => {
+    mount();
+    await open();
+    const menu = $("help-menu")!;
+    expect(menu.querySelectorAll("[data-slot=dialog-close]").length).toBe(1);
+    const close = $("help-close")!;
+    expect(close.getAttribute("data-slot")).toBe("dialog-close");
+    expect(close.classList.contains("help-x")).toBe(true);
+    expect(close.getAttribute("aria-label")).toBe("Close");
+    expect(close.querySelector(".sr-only")).toBeNull();
+    await click("help-close");
+    expect($("help-menu")).toBeNull();
+  });
+
+  it("the close button and Help with this text are 44 px targets", () => {
+    expect(ruleOf(css, /^\.help-x$/)).toMatch(/width:\s*44px/);
+    expect(ruleOf(css, /^\.help-x$/)).toMatch(/height:\s*44px/);
+    expect(ruleOf(phone, /^\.help-btn$/)).toMatch(/min-height:\s*44px/);
+    expect(ruleOf(css, /^\.help-item$/)).toMatch(/min-height:\s*44px/);
+  });
+
+  it("the answer's place is named for both layouts: next to the document, or under it on a narrow screen", () => {
+    expect(E.help_where).toMatch(/next to your document/);
+    expect(E.help_where).toMatch(/under it on a narrow screen/);
+    expect(E.help_where).not.toMatch(/beside/);
   });
 });

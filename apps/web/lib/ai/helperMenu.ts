@@ -4,9 +4,10 @@ import type { HelperKind } from "@appuscholar/core";
 export type HelperId = HelperKind | "devil";
 
 /**
- * The entries of "Help with this text", in v1's order (the Research helpers panel, 729-736). `name` and `what` are dictionary keys: the name is what
- * the student presses, and again the label on the answer; `what` is one plain line saying what the helper does, so the name need not carry it.
- * "Explain the statistics" runs v1's "Explain concept simply" prompt and "Format results in APA" keeps v1's own name for the APA prompt (register D-S2-135).
+ * The entries of "Help with this text": v1's six tools, in v1's order (the Research helpers panel, 729-736). `name` and `what` are dictionary keys: the
+ * name is what the student presses, and again the label on the answer; `what` is one plain line saying what the helper does, so the name need not carry it.
+ * "Explain a concept" runs v1's "Explain concept simply" prompt (it explains an idea in the text, not statistics), and "Format results in APA" keeps v1's
+ * own name for the APA prompt (register D-S2-135).
  */
 export const HELPER_MENU: ReadonlyArray<{ id: HelperId; name: string; what: string }> = [
   { id: "paper", name: "help_paper", what: "help_paper_what" },

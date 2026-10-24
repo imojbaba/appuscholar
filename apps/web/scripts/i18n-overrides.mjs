@@ -314,21 +314,21 @@ export const V2_STRINGS = {
   not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
   not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
   // Wave B Task 32 (register D-S2-135): the research helpers in the document. "Help with this text" in the document's toolbar and "More help" in the
-  // selection bubble open one menu; its subtitle says how much text the helper reads, and the answer beside the document says which helper made
+  // selection bubble open one menu; its subtitle says how much text the helper reads, and the answer next to the document says which helper made
   // it and to check it. DRAFT Hindi.
   help_with_text: { en: "Help with this text", hi: "इस पाठ में मदद" },
   help_more: { en: "More help", hi: "और मदद" },
   help_scope_selection: { en: "On your selection ({chars} characters)", hi: "आपके चुने हुए पाठ पर ({chars} अक्षर)" },
   help_scope_whole: { en: "On the whole document", hi: "पूरे दस्तावेज़ पर" },
   help_scope_cut: { en: "Only the first {n} characters were sent.", hi: "केवल पहले {n} अक्षर भेजे गए।" },
-  help_where: { en: "The answer opens beside your document. You choose what goes into it.", hi: "उत्तर आपके दस्तावेज़ के पास खुलता है। उसमें क्या जाए, यह आप तय करते हैं।" },
+  help_where: { en: "The answer opens next to your document, or under it on a narrow screen. You choose what goes into it.", hi: "उत्तर आपके दस्तावेज़ के बगल में खुलता है, या छोटी स्क्रीन पर उसके नीचे। उसमें क्या जाए, यह आप तय करते हैं।" },
   help_paper: { en: "Paper helper", hi: "पेपर सहायक" },
   help_paper_what: { en: "Sums up a research paper under four headings: aim, method, key findings and limitations.", hi: "शोध पेपर का सार चार शीर्षकों में देता है: उद्देश्य, विधि, मुख्य निष्कर्ष और सीमाएँ।" },
   help_case: { en: "Explain a case", hi: "केस समझाएँ" },
   help_case_what: { en: "Names the issues and the ideas that fit a case description. It gives no diagnosis.", hi: "केस विवरण के मुद्दे और उस पर लागू होने वाले सिद्धांत बताता है। यह कोई निदान नहीं देता।" },
   help_litrev: { en: "Literature review helper", hi: "साहित्य समीक्षा सहायक" },
   help_litrev_what: { en: "Advises how to build a literature review paragraph from the sources in your text. It does not write the paragraph.", hi: "आपके पाठ के स्रोतों से साहित्य समीक्षा का अनुच्छेद बनाने की सलाह देता है। यह अनुच्छेद खुद नहीं लिखता।" },
-  help_explain: { en: "Explain the statistics", hi: "आँकड़े समझाएँ" },
+  help_explain: { en: "Explain a concept", hi: "अवधारणा समझाएँ" },
   help_explain_what: { en: "Explains an idea in your text in plain words, with an everyday example.", hi: "आपके पाठ के किसी विचार को सरल शब्दों में, रोज़मर्रा के उदाहरण के साथ समझाता है।" },
   help_stats: { en: "Format results in APA", hi: "परिणाम APA में लिखें" },
   help_stats_what: { en: "Writes pasted test output as APA sentences. It adds no interpretation.", hi: "चिपकाए गए परीक्षण परिणाम को APA वाक्यों में लिखता है। यह कोई व्याख्या नहीं जोड़ता।" },

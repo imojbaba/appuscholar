@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { Sparkle } from "@phosphor-icons/react";
+import { Sparkle, X } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import { HELPER_MENU, scopeLine } from "@/lib/ai/helperMenu";
 import { useHelperRun } from "@/lib/ai/useHelperRun";
 import { heldEditorSelection, helperScope } from "@/lib/editor/heldSelection";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /** Who wants the menu open, per editor: the toolbar's button and the selection bubble's "More help" are in different components of one card. */
 const asks = new WeakMap<Editor, Set<() => void>>();
@@ -32,8 +32,8 @@ export function HelpButton({ editor }: { editor: Editor }) {
 /**
  * The research helpers where the student's text is (Task 32, W25): one menu for the toolbar's "Help with this text" and the bubble's "More help".
  * Its line under the title says what the helper will read, the selection the document holds (of any length, kept while this menu has the focus) or the
- * whole document. A choice closes the menu and the answer opens in the pane beside the document; the place does not change, and the menu is one click
- * away again. The helpers and their prompts are v1's (Research helpers panel 728-738, psychTool, devilTool); only where they are reached has changed.
+ * whole document. A choice closes the menu and the answer opens in the pane next to the document (under it on a narrow screen); the place does not change,
+ * and the menu is one click away again. The helpers and their prompts are v1's (Research helpers panel 728-738, psychTool, devilTool); only where they are reached has changed.
  */
 export function HelpMenu({ editor }: { editor: Editor }) {
   const t = useT();
@@ -51,11 +51,17 @@ export function HelpMenu({ editor }: { editor: Editor }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {/* sm:max-w-md, not max-w-md: the dialog keeps its 16px gutter on a phone. */}
-      <DialogContent className="help-menu sm:max-w-md" data-testid="help-menu">
-        <DialogHeader>
-          <DialogTitle>{t("help_with_text")}</DialogTitle>
-          <DialogDescription data-testid="help-scope">{scope ? scopeLine(t, scope) : ""}</DialogDescription>
-        </DialogHeader>
+      {/* The shared dialog's own cross is 16 px, too small to hit on a phone: the menu draws its own 44 px close, as the export dialog does. */}
+      <DialogContent className="help-menu sm:max-w-md" data-testid="help-menu" showCloseButton={false}>
+        <div className="help-head">
+          <DialogHeader>
+            <DialogTitle>{t("help_with_text")}</DialogTitle>
+            <DialogDescription data-testid="help-scope">{scope ? scopeLine(t, scope) : ""}</DialogDescription>
+          </DialogHeader>
+          <DialogClose asChild>
+            <button type="button" className="help-x" aria-label={t("close_btn")} data-testid="help-close"><X size={16} aria-hidden="true" /></button>
+          </DialogClose>
+        </div>
         <div className="help-list">
           {HELPER_MENU.map(({ id, name, what }) => (
             <button key={id} type="button" className="help-item" data-testid={"help-" + id} onClick={() => { setOpen(false); void run(id); }}>

@@ -235,6 +235,11 @@
 /* The help menu (Task 32): "Help with this text" in the document's toolbar and "More help" in the bubble open it. Each choice is a whole row, 44px at least. */
 .help-btn { gap: 6px; }
 .help-btn svg { width: 16px; height: 16px; color: var(--gold); }
+.help-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.help-head > :first-child { min-width: 0; flex: 1; }
+.help-x { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); cursor: pointer; }
+.help-x:hover { background: var(--soft); }
+.help-x:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .help-list { display: grid; gap: var(--s2); }
 .help-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
 .help-item:hover { background: var(--soft); }
@@ -456,6 +461,7 @@
   .actions > * { flex: none; }
   .sel-bubble button { min-height: 44px; }
   .help-menu { max-height: calc(100vh - 32px); overflow-y: auto; }
+  .help-btn { min-height: 44px; }
   .panel { padding: 14px 12px; }
   .exp-dlg { padding: 20px 16px; gap: 14px; }
   .exp-x { width: 44px; height: 44px; }

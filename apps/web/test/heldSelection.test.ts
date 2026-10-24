@@ -4,6 +4,8 @@ import { Editor } from "@tiptap/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { heldEditorSelection, helperScope } from "../lib/editor/heldSelection";
 import { selBubbleVisible } from "../lib/editor/selectionBubble";
+import { insertAiText } from "../lib/editor/insert";
+import { replaceRanges } from "../lib/editor/findInEditor";
 
 let editor: Editor;
 const para = (n: number, c = "a") => c.repeat(n);
@@ -66,7 +68,8 @@ describe("heldEditorSelection (Task 32)", () => {
   it("an edit inside the held range clears it", () => {
     editor.commands.setTextSelection({ from: 10, to: 110 });
     blur();
-    editor.commands.insertContentAt(60, "typed");
+    editor.commands.setTextSelection(500); // the page collapses the live selection; only the hold remembers it
+    editor.commands.insertContentAt(60, "typed", { updateSelection: false });
     expect(heldEditorSelection(editor)).toBeNull();
   });
 
@@ -87,17 +90,72 @@ describe("heldEditorSelection (Task 32)", () => {
   it("an edit before the range moves it with the text; an edit after leaves it", () => {
     editor.commands.setTextSelection({ from: 10, to: 110 });
     blur();
-    editor.commands.insertContentAt(3, "xx");
+    editor.commands.setTextSelection(500);
+    editor.commands.insertContentAt(3, "xx", { updateSelection: false });
     expect(heldEditorSelection(editor)).toMatchObject({ from: 12, to: 112, text: para(100) });
-    editor.commands.insertContentAt(2000, "yy");
+    editor.commands.insertContentAt(2000, "yy", { updateSelection: false });
     expect(heldEditorSelection(editor)).toMatchObject({ from: 12, to: 112, text: para(100) });
   });
 
   it("typing right after the end of the range does not clear it", () => {
     editor.commands.setTextSelection({ from: 10, to: 110 });
     blur();
-    editor.commands.insertContentAt(110, "z");
+    editor.commands.setTextSelection(500);
+    editor.commands.insertContentAt(110, "z", { updateSelection: false });
     expect(heldEditorSelection(editor)).toMatchObject({ from: 10, to: 110 });
+  });
+
+  it("Replace all, which leaves the selection alone, moves the hold with its text", () => {
+    editor.commands.setTextSelection({ from: 10, to: 110 });
+    blur();
+    editor.commands.setTextSelection(500);
+    expect(replaceRanges(editor, [{ from: 3, to: 5 }], "xyz")).toBe(1);
+    expect(heldEditorSelection(editor)).toMatchObject({ from: 11, to: 111, text: para(100) });
+  });
+
+  it("a mark added to other words keeps it", () => {
+    editor.commands.setTextSelection({ from: 10, to: 110 });
+    blur();
+    editor.commands.setTextSelection(700);
+    editor.view.dispatch(editor.state.tr.addMark(500, 600, editor.schema.marks.bold!.create()));
+    expect(heldEditorSelection(editor)).toMatchObject({ from: 10, to: 110, text: para(100) });
+  });
+
+  // The hold is the student's choice of words, not of a place: once an edit has put the cursor somewhere else (an insert, Accept, Tab, typing),
+  // the helpers read the whole document again, as v1 does (its savedRange follows every caret). The cases below failed before the hold ended here.
+  it("an insert that moves the cursor ends the hold", () => {
+    editor.commands.setTextSelection({ from: 10, to: 110 });
+    blur();
+    editor.commands.setTextSelection(500);
+    editor.commands.insertContentAt(2000, "yy");
+    expect(heldEditorSelection(editor)).toBeNull();
+  });
+
+  it("accepting an AI answer (it goes in at the end and the cursor follows) ends the hold, blurred or not", () => {
+    editor.commands.setTextSelection({ from: 1, to: 3001 });
+    blur(); // the Accept button took the focus
+    insertAiText(editor, "Aim: to test it.", false, null);
+    expect(heldEditorSelection(editor)).toBeNull();
+    editor.commands.setTextSelection({ from: 1, to: 3001 });
+    focus(); // Tab, with the document focused
+    insertAiText(editor, "Aim: to test it.", false, null);
+    expect(heldEditorSelection(editor)).toBeNull();
+  });
+
+  it("an answer that replaces the selection (Improve, Extend) ends the hold", () => {
+    editor.commands.setTextSelection({ from: 1, to: 101 });
+    blur();
+    insertAiText(editor, "Better words.", true, { from: 1, to: 101, text: para(100) });
+    expect(heldEditorSelection(editor)).toBeNull();
+  });
+
+  it("typing after the document is focused again does not bring the old hold back", () => {
+    editor.commands.setTextSelection({ from: 1, to: 101 });
+    blur();
+    editor.commands.setTextSelection(200);
+    focus();
+    editor.view.dispatch(editor.state.tr.insertText("x"));
+    expect(heldEditorSelection(editor)).toBeNull();
   });
 
   it("a selection of white space only is nothing", () => {

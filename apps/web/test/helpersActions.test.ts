@@ -237,7 +237,7 @@ describe("the helpers read the held selection through helperScope (Task 32)", ()
   it("a held selection of 3,000 characters is counted with its thousands separator", async () => {
     const { d, m } = deps({ selectionText: vi.fn(() => "x".repeat(3000)) });
     await runHelper("explain", d);
-    expect(m.set.mock.calls[0]![3]).toEqual({ title: "Explain the statistics", scope: "On your selection (3,000 characters)" });
+    expect(m.set.mock.calls[0]![3]).toEqual({ title: "Explain a concept", scope: "On your selection (3,000 characters)" });
   });
 
   it("a held selection of white space only is read as the whole document, as the menu says", async () => {

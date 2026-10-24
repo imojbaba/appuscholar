@@ -23,8 +23,9 @@ function liveSelection({ doc, selection }: EditorState): HeldSelection | null {
 }
 
 /**
- * Follows `held` through a transaction's steps. An edit inside the range (text typed in it, part of it deleted or replaced) ends the hold, because
- * the words the student chose are no longer the words there; an edit before it moves it with its text; an edit after it, or touching one end, leaves it.
+ * Follows `held` through the steps of a transaction that left the selection alone (Replace all, marks). An edit inside the range (part of it deleted
+ * or replaced) ends the hold, because the words the student chose are no longer the words there; an edit before it moves it with its text; an edit
+ * after it, or touching one end, leaves it.
  */
 function mapHeld(held: HeldSelection, tr: Transaction): HeldSelection | null {
   let { from, to } = held;
@@ -45,8 +46,8 @@ function mapHeld(held: HeldSelection, tr: Transaction): HeldSelection | null {
  * Keeps what the student selected in the document, so a helper can still act on it after the selection has gone from the screen (Task 32). The
  * help menu takes focus away from the document, and on a phone that can collapse the live selection; the hold is kept in plugin state across the blur.
  * It follows the live selection while there is one, and ends when the student makes a new selection (a cursor placed in the focused document, or
- * another range) or edits inside the range. While the document is blurred the held words are drawn with a wash, so the student sees what the helper will read.
- * Nothing is written into the document, so it never reaches autosave.
+ * another range), edits inside the range, or an edit moves the cursor (an inserted answer, typing). While the document is blurred the held words are
+ * drawn with a wash, so the student sees what the helper will read. Nothing is written into the document, so it never reaches autosave.
  */
 export const HeldSelection = Extension.create({
   name: "heldSelection",
@@ -65,8 +66,11 @@ export const HeldSelection = Extension.create({
               return p && p.from === live.from && p.to === live.to && p.text === live.text && blurred === prev.blurred ? prev : { held: live, blurred };
             }
             if (!prev.held) return blurred === prev.blurred ? prev : { held: null, blurred };
-            // The live selection is a cursor. An edit that spared the held range moves it; a cursor chosen while the document has focus is a new selection.
+            // The live selection is a cursor. An edit that put the cursor somewhere (an insert, Accept or Tab, typing) is the student's new place in the
+            // document, so the helpers read the whole document again, as v1 does (its savedRange follows every caret); without this the menu would go on
+            // offering a passage the student has since written past. An edit that left the selection alone (Replace all, marks) moves the hold with its text.
             if (tr.docChanged) {
+              if (tr.selectionSet) return { held: null, blurred };
               const mapped = mapHeld(prev.held, tr);
               const text = mapped ? next.doc.textBetween(Math.min(mapped.from, next.doc.content.size), Math.min(mapped.to, next.doc.content.size), "\n") : "";
               return { held: mapped && text === mapped.text ? mapped : null, blurred };
