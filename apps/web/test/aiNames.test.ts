@@ -278,6 +278,25 @@ describe("Send as it is is remembered, with the names in the signature", () => {
     expect(shown[0]!.sig).toContain("priya");
   });
 
+  it("the signature includes the project: a Send in project A never covers project B (R43)", async () => {
+    const a = setup({ names: { list: CLASS_9, mode: "codes" }, choice: { answer: "send", leave: [] }, over: { projectId: "A" } });
+    const b = setup({ names: { list: CLASS_9, mode: "codes" }, choice: { answer: "send", leave: [] }, over: { projectId: "B" } });
+    await callAI("Priya said hello.", {}, a.ctx);
+    await callAI("Priya said hello.", {}, a.ctx);
+    expect(a.shown).toHaveLength(1);
+    await callAI("Priya said hello.", {}, b.ctx);
+    expect(b.shown).toHaveLength(1);
+    expect(b.shown[0]!.sig).toContain("B");
+    expect(a.shown[0]!.sig).not.toBe(b.shown[0]!.sig);
+    // The locked line is the same: a project's own.
+    const la = setup({ names: { list: null, mode: null, locked: true }, choice: { answer: "send", leave: [] }, over: { projectId: "A" } });
+    const lb = setup({ names: { list: null, mode: null, locked: true }, choice: { answer: "send", leave: [] }, over: { projectId: "B" } });
+    await callAI("Plain words.", {}, la.ctx);
+    await callAI("Plain words.", {}, lb.ctx);
+    expect(la.shown).toHaveLength(1);
+    expect(lb.shown).toHaveLength(1);
+  });
+
   it("an email address and a name together are one signature: a new name still asks", async () => {
     const { ctx, shown } = setup({ names: { list: CLASS_9, mode: "codes" }, choice: { answer: "send", leave: [] } });
     await callAI("Priya wrote to a@b.com.", {}, ctx);
@@ -381,18 +400,29 @@ describe("Explain asks first about the table's names; callAI does not ask again 
     expect(sent()).toBe("Meena and [name].");
   });
 
-  it("a word inside a name the step asked about is the same name: the first name in a group label, a spelling on the list", async () => {
+  it("only the whole asked value is skipped: a lone first name elsewhere that belongs to another listed person is still found (R43)", async () => {
+    const list = listOf({ name: "Priya Sharma" }, { name: "Priya Iyer", spellings: ["Priya"] });
+    const { ctx, shown } = setup({ names: { mode: "codes", list }, choice: { answer: "mask", leave: [] } });
+    await callAI("Priya Sharma met Priya at the door.", { namesAsked: ["priya sharma"] }, ctx);
+    expect(shown).toHaveLength(1);
+    expect(shown[0]!.names).toEqual({ listed: 1, maybe: [], locked: false });
+    expect(sent()).toBe("Priya Sharma met P002 at the door.");
+  });
+
+  it("a word inside the asked value's own place in the request is the same name: the first name in a group label", async () => {
     const a = setup({ names: { mode: "codes", list: null } });
     await callAI("Sara Khan scored higher than the others.", { namesAsked: ["sara khan"] }, a.ctx);
     expect(a.shown).toHaveLength(0);
     expect(sent(0)).toBe("Sara Khan scored higher than the others.");
-    const b = setup({ names: { mode: "codes", list: CLASS_9 } });
-    await callAI("Priya Sharma was in group A; Priya was the first to finish.", { namesAsked: ["priya sharma"] }, b.ctx);
+    // Written another way (case, a dot, extra spaces) it is still the asked value's place.
+    const b = setup({ names: { mode: "codes", list: null } });
+    await callAI("SARA  khan scored higher; so did sara.", { namesAsked: ["sara khan"] }, b.ctx);
     expect(b.shown).toHaveLength(0);
-    // A word that is not inside it is another name.
+    expect(sent(1)).toBe("SARA  khan scored higher; so did sara.");
+    // A lone first name outside any place of it is another mention, and is asked about.
     const c = setup({ names: { mode: "codes", list: null } });
-    await callAI("Sara Khan and Sunita.", { namesAsked: ["sara khan"] }, c.ctx);
-    expect(c.shown[0]!.names?.maybe).toEqual(["Sunita"]);
+    await callAI("Sara Khan met Sara and Sunita.", { namesAsked: ["sara khan"] }, c.ctx);
+    expect(c.shown[0]!.names?.maybe).toEqual(["Sara", "Sunita"]);
   });
 
   it("an email in the same request is still callAI's to ask about", async () => {

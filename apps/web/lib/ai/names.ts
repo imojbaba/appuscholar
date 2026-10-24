@@ -13,7 +13,8 @@ import { suggestionNotNames, toMatchPeople } from "@/lib/tools/participants/list
  *   (C13), and never for a request whose text is published papers (`literature`). They skip the words the student answered "Not a name" and the made-up names (R34).
  * - The "might be a name" words are the suggestions and the finds the list asks about (a spelling that is also an everyday word, one letter long, or shared by two people). Each is listed once;
  *   the student can Leave a word. Mask writes a suggestion as `[name]`, a listed word as the one person's code, and a word two people share as `[name]`.
- * - A name the caller has already asked about (`asked`, in normal form: Explain's step), or a word or run of words inside one, is not found again, so nobody is asked twice about it in one request.
+ * - A name the caller has already asked about (`asked`, in normal form: Explain's step), and what is found inside the places it is written, is not found again, so nobody is asked twice about
+ *   it in one request. Only the whole value: the same word elsewhere in the request is another mention and is still found (R43).
  */
 
 /** What callAI is told of the project's names for one request. */
@@ -44,17 +45,23 @@ export type PromptNames = {
 
 const byStart = (a: NameFind, b: NameFind) => a.start - b.start;
 
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+
 /**
- * Every run of whole words of the names already asked about, in normal form ("sara khan" gives "sara", "khan" and "sara khan"): a find that is one of them was asked about with that name.
- * Explain's step asks about a group label as the table has it ("Sara Khan"); the first name in it (a suggestion) or a spelling on the list ("Priya" for "Priya Sharma") is the same person.
+ * The places in `text` where one of the names already asked about is written: any case, a dot or white space between its words, curly or straight apostrophes (the matcher's normal form).
+ * Explain's step asks about a group label as the table has it ("Sara Khan"); the first name that suggestions find inside that place is the same name, asked about once. Only these places:
+ * the same word somewhere else in the request is another mention (it may be another person's), and is still found.
  */
-function wordRuns(asked: readonly string[]): Set<string> {
-  const runs = new Set<string>();
+function askedPlaces(text: string, asked: readonly string[]): Array<[number, number]> {
+  const places: Array<[number, number]> = [];
   for (const a of asked) {
-    const w = normName(a).split(" ").filter(Boolean);
-    for (let i = 0; i < w.length; i++) for (let j = i + 1; j <= w.length; j++) runs.add(w.slice(i, j).join(" "));
+    const words = normName(a).split(" ").filter(Boolean);
+    if (!words.length) continue;
+    const word = (w: string) => escapeRe(w).replace(/'/g, "['\u2018\u2019\u02bc]");
+    const re = new RegExp(String.raw`(?<![\p{L}\p{N}\p{M}])` + words.map(word).join(String.raw`[\s.]+`) + String.raw`(?![\p{L}\p{N}\p{M}])`, "giu");
+    for (const m of text.matchAll(re)) places.push([m.index ?? 0, (m.index ?? 0) + m[0].length]);
   }
-  return runs;
+  return places;
 }
 
 /** The names of `text`, by `ctx` (a locked list has none to find: nothing is read of it). `asked`: names already asked about, in normal form. */
@@ -63,8 +70,10 @@ export function scanNames(text: string, ctx: Pick<NamesCtx, "list" | "mode">, op
   const base = list ?? emptyList();
   const pseudonyms = ctx.mode === "pseudonyms";
   const matcher = buildMatcher(toMatchPeople(base, pseudonyms));
-  const asked = wordRuns(opts.asked);
-  const fresh = (f: NameFind) => !asked.has(normName(f.text));
+  // Asked about already: the whole value (compared in normal form), or a find inside one of its places in this text.
+  const asked = new Set(opts.asked.map(normName));
+  const places = askedPlaces(text, opts.asked);
+  const fresh = (f: NameFind) => !asked.has(normName(f.text)) && !places.some(([from, to]) => f.start >= from && f.end <= to);
   const listedFinds = findNames(text, matcher).filter(fresh);
   const suggest = !opts.literature && (ctx.mode === "codes" || ctx.mode === "pseudonyms" || base.people.length > 0);
   const suggestions = suggest ? suggestNames(text, matcher, suggestionNotNames(base), { speakerLabels: true, firstNames: true }).filter(fresh) : [];

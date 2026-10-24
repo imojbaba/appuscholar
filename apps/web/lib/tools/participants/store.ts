@@ -35,23 +35,46 @@ export function publishList(projectId: string, l: ParticipantList | null, versio
 /** The latest list published for a project; the same object until the next change (useSyncExternalStore). */
 export function listFor(projectId: string): ParticipantList | null { return byProject.get(projectId)?.list ?? null; }
 
+/** How many hooks per project are keeping its list current right now (useParticipants while mounted). */
+const publishers = new Map<string, number>();
+
+/**
+ * A hook that reads the project's list, publishes it, hears other windows' saves and publishes null when the vault locks (useParticipants) says so while it is mounted; the returned function says
+ * it is gone (once: calling it again changes nothing). A list in this store with no such hook behind it is only what was last published: nobody keeps it up to date.
+ */
+export function holdPublisher(projectId: string): () => void {
+  publishers.set(projectId, (publishers.get(projectId) ?? 0) + 1);
+  let held = true;
+  return () => {
+    if (!held) return;
+    held = false;
+    const n = (publishers.get(projectId) ?? 1) - 1;
+    if (n > 0) publishers.set(projectId, n); else publishers.delete(projectId);
+  };
+}
+
+/** Whether a mounted hook is keeping the project's list current. */
+export const hasPublisher = (projectId: string): boolean => (publishers.get(projectId) ?? 0) > 0;
+
 /**
  * The project's list for code that is not the Participants tab and may run where no tab is mounted, a pop-out above all (it has no DocumentLayer to publish one): the AI request's names
- * check (R1). The list the window holds, else, when the vault is open ("unlocked", or "migrating" as useParticipants counts it), one read of the `participants` blob with a headless client,
- * published here and returned (a project with no blob has an empty list, as the tab shows it). It never raises a passphrase prompt, never writes, and reads nothing while the vault is
- * locked or off: null then, and when the list does not open or the read fails (nothing is published for those). `vault` is the window's vault (useVault).
+ * check (R1, R42). The list the window holds while a hook is keeping it current (it is up to date: it hears other windows' saves); otherwise one read of the `participants` blob with a
+ * headless client when the vault is open ("unlocked", or "migrating" as useParticipants counts it), for this request only: it is returned and NOT published, so it is read again for the next
+ * request (a person added in another window is in it) and no decrypted list is left in this window's memory. A project with no blob has an empty list, as the tab shows it. It never raises a
+ * passphrase prompt and makes no write of its own. A vault that is not open drops the list the window holds (publishes null) and returns null, and so do a list that does not open and a
+ * failed read. `vault` is the window's vault (useVault).
  */
 export async function ensureList(projectId: string, vault: () => BlobVault): Promise<ParticipantList | null> {
-  const held = listFor(projectId);
-  if (held) return held;
   const status = await vault().known();
-  if (status !== "unlocked" && status !== "migrating") return null;
+  if (status !== "unlocked" && status !== "migrating") {
+    publishList(projectId, null);
+    return null;
+  }
+  const held = listFor(projectId);
+  if (held && hasPublisher(projectId)) return held;
   const read = await readBlobOnce("participants", projectId, vault);
   if (read.locked || read.broken || read.error) return null;
-  const list = read.value ?? emptyList();
-  publishList(projectId, list, read.version);
-  // A newer list may have been published while this read was out; that one wins.
-  return listFor(projectId) ?? list;
+  return read.value ?? emptyList();
 }
 
 export function subscribeList(cb: () => void): () => void {
@@ -67,5 +90,6 @@ export function useListFor(projectId: string): ParticipantList | null {
 /** For tests: forget every project's list. */
 export function resetLists(): void {
   byProject.clear();
+  publishers.clear();
   emit();
 }

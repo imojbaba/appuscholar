@@ -150,7 +150,8 @@ export async function callAI(prompt: string, opts: CallOpts, ctx: CallCtx): Prom
       const base = scanText(prompt);
       const names = nc ? { listed: found?.listed ?? 0, maybe: found?.maybe ?? [], locked: nc.locked } : undefined;
       if (base.total === 0 && !(names && (names.listed > 0 || names.maybe.length > 0 || names.locked))) break;
-      const sc: ScanResult = { ...base, sig: [base.sig, found?.sig ?? "", names?.locked ? "list-locked" : ""].filter(Boolean).join("||"), ...(names ? { names } : {}) };
+      // The signature holds the project: a Send in one project never covers another's list and names (R43).
+      const sc: ScanResult = { ...base, sig: [ctx.projectId ? "project:" + ctx.projectId : "", base.sig, found?.sig ?? "", names?.locked ? "list-locked" : ""].filter(Boolean).join("||"), ...(names ? { names } : {}) };
       if (pdOk.has(sc.sig)) { pdAccepted = true; break; }
       const choice = await ctx.askPd(sc);
       if (choice.answer === "cancel") throw new AiCallError("cancelled", apiMsg("cancelled"));

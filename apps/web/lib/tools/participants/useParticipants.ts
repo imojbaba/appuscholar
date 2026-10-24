@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { emptyList, type ParticipantList } from "@/lib/blobs/kinds/participants";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { useVault } from "@/lib/vault/useVault";
-import { publishList } from "./store";
+import { holdPublisher, publishList } from "./store";
 
 /*
  * The participant list's state (spec 2026-10-24-participants-design.md §5 "Vault" and §6; rulings R1, R17, R20, R21 and R22). One sealed blob, `participants`, one project's list.
@@ -70,6 +70,9 @@ export function useParticipants(projectId: string): Participants {
   const none = useMemo(() => emptyList(), []);
   const list = state === "ready" ? (value ?? none) : null;
   const saveFailed = state === "ready" && error === true && value !== null;
+
+  // While mounted this hook keeps the project's list current in the store: code with no hook of its own (an AI request in a pop-out) trusts the store's list only while one is here (R42).
+  useEffect(() => (id === null ? undefined : holdPublisher(id)), [id]);
 
   useEffect(() => {
     if (id === null || state === "loading" || state === "error") return;

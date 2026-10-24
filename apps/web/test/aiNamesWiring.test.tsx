@@ -42,7 +42,7 @@ import { resetPdMemo } from "../lib/ai/callAI";
 import { useCallAI } from "../lib/ai/useCallAI";
 import { emptyList, type ParticipantList } from "../lib/blobs/kinds/participants";
 import { addPerson } from "../lib/tools/participants/list";
-import { resetLists } from "../lib/tools/participants/store";
+import { holdPublisher, listFor, publishList, resetLists } from "../lib/tools/participants/store";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -61,6 +61,7 @@ async function mountProbe() {
 }
 let probe: Awaited<ReturnType<typeof mountProbe>>;
 const calls = () => h.api.mock.calls.map(([path, init]) => ((init as RequestInit | undefined)?.method ?? "GET") + " " + String(path));
+const sentPrompts = () => h.api.mock.calls.filter((c) => c[0] === "/ai/complete").map((c) => JSON.parse((c[1] as { body: string }).body).prompt as string);
 const sentPrompt = () => JSON.parse((h.api.mock.calls.find((c) => c[0] === "/ai/complete")![1] as { body: string }).body).prompt as string;
 
 
@@ -90,16 +91,50 @@ beforeEach(async () => {
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
 
 describe("useCallAI gives callAI the open project's names", () => {
-  it("a name on the stored list is found and masked as its code; the list is read once for the window", async () => {
+  it("a name on the stored list is found and masked as its code; with no hook keeping the list (a pop-out) it is read for each request (R42)", async () => {
     blobs.set("participants", LIST);
     await probe.call("Priya Sharma said hello.");
     expect(h.askPd).toHaveBeenCalledTimes(1);
     expect(h.askPd.mock.calls[0]![0]).toMatchObject({ names: { listed: 1, maybe: [], locked: false } });
     expect(sentPrompt()).toBe("P001 said hello.");
     await probe.call("Priya Sharma said goodbye.");
-    expect(calls().filter((c) => c === "GET /projects/p1/blobs/participants")).toHaveLength(1);
+    expect(calls().filter((c) => c === "GET /projects/p1/blobs/participants")).toHaveLength(2);
+    expect(listFor("p1")).toBeNull();
     // The check reads and never writes: the only POST is the request itself.
     expect(calls().filter((c) => !c.startsWith("GET"))).toEqual(["POST /ai/complete", "POST /ai/complete"]);
+  });
+
+  it("a person added in another window between two requests is masked in the second (a pop-out, R42)", async () => {
+    blobs.set("participants", LIST);
+    await probe.call("Priya Sharma said hello.");
+    blobs.set("participants", addPerson(LIST, { name: "Rahul Verma", spellings: ["Rahul"], joined: "2026-10-02" }).list);
+    h.askPd.mockClear();
+    await probe.call("Rahul Verma said hello.");
+    expect(h.askPd.mock.calls[0]![0]).toMatchObject({ names: { listed: 1, locked: false } });
+    expect(sentPrompts().at(-1)).toBe("P002 said hello.");
+  });
+
+  it("the vault locks between two requests: the second takes the locked path, and the list is not left in memory (R42)", async () => {
+    blobs.set("participants", LIST);
+    const release = holdPublisher("p1");
+    publishList("p1", LIST, 1);
+    await probe.call("Priya Sharma said hello.");
+    expect(listFor("p1")).not.toBeNull();
+    h.status = "locked";
+    h.askPd.mockClear().mockResolvedValue({ answer: "send", leave: [] });
+    await probe.call("Priya Sharma said hello again.");
+    expect(h.askPd.mock.calls[0]![0]).toMatchObject({ names: { listed: 0, maybe: [], locked: true } });
+    expect(listFor("p1")).toBeNull();
+    release();
+    // And with no hook keeping a list (a pop-out) it is the same (the earlier Send as it is is forgotten, so the locked line asks again).
+    resetPdMemo();
+    h.status = "unlocked";
+    await probe.call("Priya Sharma said hi.");
+    h.status = "locked";
+    h.askPd.mockClear();
+    await probe.call("Priya Sharma said bye.");
+    expect(h.askPd.mock.calls[0]![0]).toMatchObject({ names: { locked: true } });
+    expect(listFor("p1")).toBeNull();
   });
 
   it("the plan is read: a codes plan suggests Meena, and a literature request does not", async () => {

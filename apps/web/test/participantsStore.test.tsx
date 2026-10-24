@@ -34,7 +34,7 @@ import { blobId } from "../lib/blobs/kinds";
 import { heldBlobs } from "../lib/blobs/held";
 import { BLOB_SAVE_DEBOUNCE_MS, SEALED_ONLY, useProjectBlob, type ProjectBlob } from "../lib/blobs/useProjectBlob";
 import { addPerson } from "../lib/tools/participants/list";
-import { listFor, publishList, resetLists, subscribeList, useListFor } from "../lib/tools/participants/store";
+import { hasPublisher, listFor, publishList, resetLists, subscribeList, useListFor } from "../lib/tools/participants/store";
 import { useParticipants } from "../lib/tools/participants/useParticipants";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -318,6 +318,22 @@ describe("useParticipants reads and saves the sealed list", () => {
     await until(() => m.h.state === "ready");
     expect(m.h.list).toEqual(l);
     expect(listFor("p1")).toEqual(l);
+  });
+
+  it("a mounted hook is a live publisher of its project's list until it unmounts (R42)", async () => {
+    expect(hasPublisher("p1")).toBe(false);
+    const a = await mountHook("p1");
+    expect(hasPublisher("p1")).toBe(true);
+    expect(hasPublisher("p2")).toBe(false);
+    const b = await mountHook("p1");
+    a.unmount();
+    expect(hasPublisher("p1")).toBe(true);
+    b.unmount();
+    expect(hasPublisher("p1")).toBe(false);
+    // No project open (an empty id) keeps nothing current.
+    const none = await mountHook("");
+    expect(hasPublisher("")).toBe(false);
+    none.unmount();
   });
 
   it("a hook still loading does not wipe the list another one published", async () => {

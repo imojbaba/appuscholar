@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
  * Task 11: how an AI request learns of the participant list and the plan (controller rulings R1 and R41; spec 2026-10-24-participants-design.md §8.3).
- * - ensureList (lib/tools/participants/store.ts): the list the window holds, else one read of the `participants` blob with a headless client when the vault is open (so a pop-out,
- *   which has no DocumentLayer, still checks names). It never raises a passphrase prompt and never writes.
+ * - ensureList (lib/tools/participants/store.ts): the list the window holds while a hook is keeping it current (a live publisher), else one read of the `participants` blob with a headless
+ *   client when the vault is open, for this request only (R42: a pop-out has no publisher, so a read there is never kept, and a person added in the main window is in the next request).
+ *   It never raises a passphrase prompt and makes no write of its own; a vault that is not open drops the list the window holds.
  * - readNamesCtx (lib/ai/namesRead.ts): the list, the plan's mode and whether the list is locked, as callAI's CallCtx.names gives them. With the vault locked the project's blob listing
  *   (the one "Export all my work" makes) says whether a list exists at all.
  * The api is an in-memory stand-in with the blob routes; the vault is a status and a "sealed:" wrapper.
@@ -19,7 +20,7 @@ import { readNamesCtx } from "../lib/ai/namesRead";
 import { emptyList, type ParticipantList } from "../lib/blobs/kinds/participants";
 import type { BlobVault } from "../lib/blobs/useProjectBlob";
 import { addPerson } from "../lib/tools/participants/list";
-import { ensureList, listFor, publishList, resetLists } from "../lib/tools/participants/store";
+import { ensureList, holdPublisher, listFor, publishList, resetLists } from "../lib/tools/participants/store";
 
 type Wire = { body: string; keyVersion: number; version: number };
 let server: { blobs: Map<string, Wire>; calls: Array<{ path: string; method: string }>; failGet: Set<string> };
@@ -63,25 +64,72 @@ beforeEach(() => {
 });
 
 describe("ensureList (R1)", () => {
-  it("returns the list the window holds without asking the server", async () => {
+  it("returns the list the window holds, without asking the server, while a hook is keeping it current", async () => {
+    const release = holdPublisher("p1");
     publishList("p1", PRIYA, 2);
     expect(await ensureList("p1", vault)).toBe(PRIYA);
     expect(h.api).not.toHaveBeenCalled();
+    release();
   });
 
-  it("with none held and the vault open, reads the blob once, publishes it and returns it", async () => {
+  it("with none held and the vault open, reads the blob for this request and returns it; nothing is published (R42)", async () => {
     put("p1", "participants", PRIYA);
     const got = await ensureList("p1", vault);
     expect(got?.people.map((p) => p.name)).toEqual(["Priya Sharma"]);
-    expect(listFor("p1")).toBe(got);
-    expect(gets("participants")).toHaveLength(1);
-    // The next request finds it held.
-    expect(await ensureList("p1", vault)).toBe(got);
+    expect(listFor("p1")).toBeNull();
     expect(gets("participants")).toHaveLength(1);
     expect(ensureUnlocked).not.toHaveBeenCalled();
   });
 
-  it("writes nothing and holds nothing back: no request but the read", async () => {
+  it("is read again for the next request: a person added in another window is in it (R42)", async () => {
+    put("p1", "participants", PRIYA);
+    expect((await ensureList("p1", vault))?.people).toHaveLength(1);
+    const two = addPerson(PRIYA, { name: "Rahul Verma", spellings: ["Rahul"], joined: "2026-10-02" }).list;
+    put("p1", "participants", two);
+    expect((await ensureList("p1", vault))?.people.map((p) => p.name)).toEqual(["Priya Sharma", "Rahul Verma"]);
+    expect(gets("participants")).toHaveLength(2);
+    expect(listFor("p1")).toBeNull();
+  });
+
+  it("a list a hook published and then went away (no live publisher) is not trusted: it is read again", async () => {
+    const release = holdPublisher("p1");
+    publishList("p1", PRIYA, 2);
+    release();
+    const two = addPerson(PRIYA, { name: "Rahul Verma", spellings: ["Rahul"], joined: "2026-10-02" }).list;
+    put("p1", "participants", two);
+    expect((await ensureList("p1", vault))?.people).toHaveLength(2);
+    expect(gets("participants")).toHaveLength(1);
+  });
+
+  it("publishers are counted: one of two going away leaves the other, and releasing twice counts once", async () => {
+    const a = holdPublisher("p1");
+    const b = holdPublisher("p1");
+    publishList("p1", PRIYA, 2);
+    a();
+    a();
+    expect(await ensureList("p1", vault)).toBe(PRIYA); // the other still keeps it current
+    expect(h.api).not.toHaveBeenCalled();
+    b();
+    put("p1", "participants", PRIYA);
+    expect(await ensureList("p1", vault)).not.toBe(PRIYA); // none left: read
+    expect(gets("participants")).toHaveLength(1);
+  });
+
+  it("a vault that is not open drops the list the window holds: nothing is returned and listFor is null (R42)", async () => {
+    const release = holdPublisher("p1");
+    publishList("p1", PRIYA, 2);
+    status = "locked";
+    expect(await ensureList("p1", vault)).toBeNull();
+    expect(listFor("p1")).toBeNull();
+    status = "off";
+    publishList("p1", PRIYA, 3);
+    expect(await ensureList("p1", vault)).toBeNull();
+    expect(listFor("p1")).toBeNull();
+    release();
+    expect(h.api).not.toHaveBeenCalled();
+  });
+
+  it("makes no write of its own: no request but the read", async () => {
     put("p1", "participants", PRIYA);
     await ensureList("p1", vault);
     expect(server.calls.filter((c) => c.method !== "GET")).toEqual([]);
@@ -90,7 +138,7 @@ describe("ensureList (R1)", () => {
   it("a project with no blob has an empty list, as the Participants tab shows it", async () => {
     const got = await ensureList("p1", vault);
     expect(got?.people).toEqual([]);
-    expect(listFor("p1")).toBe(got);
+    expect(listFor("p1")).toBeNull();
   });
 
   it("a locked vault reads nothing, raises no passphrase prompt and publishes nothing", async () => {
@@ -152,6 +200,7 @@ describe("readNamesCtx (R41)", () => {
   });
 
   it("the held list is used and the plan is read: a Participants tab in the window", async () => {
+    holdPublisher("p1");
     publishList("p1", PRIYA, 3);
     put("p1", "design_ec", ec("codes"));
     const c = await readNamesCtx("p1", vault);
@@ -189,12 +238,26 @@ describe("readNamesCtx (R41)", () => {
     expect(await readNamesCtx("p1", vault)).toEqual({ list: null, mode: null, locked: false });
   });
 
-  it("a locked vault but a list the window already holds: the held list is used", async () => {
-    status = "locked";
+  it("a vault that locks drops the list the window holds: the next request sees the locked path, and listFor is null (R42)", async () => {
+    const release = holdPublisher("p1");
     publishList("p1", PRIYA, 3);
-    const c = await readNamesCtx("p1", vault);
-    expect(c.list).toBe(PRIYA);
-    expect(c.locked).toBe(false);
+    put("p1", "participants", PRIYA);
+    put("p1", "design_ec", ec("codes"));
+    expect((await readNamesCtx("p1", vault)).list).toBe(PRIYA);
+    status = "locked";
+    expect(await readNamesCtx("p1", vault)).toEqual({ list: null, mode: null, locked: true });
+    expect(listFor("p1")).toBeNull();
+    release();
+  });
+
+  it("with no publisher (a pop-out): the list gains a person between two requests, the second has them; the vault then locks, the third has none", async () => {
+    put("p1", "participants", PRIYA);
+    expect((await readNamesCtx("p1", vault)).list?.people).toHaveLength(1);
+    put("p1", "participants", addPerson(PRIYA, { name: "Rahul Verma", spellings: ["Rahul"], joined: "2026-10-02" }).list);
+    expect((await readNamesCtx("p1", vault)).list?.people).toHaveLength(2);
+    status = "locked";
+    expect(await readNamesCtx("p1", vault)).toEqual({ list: null, mode: null, locked: true });
+    expect(listFor("p1")).toBeNull();
   });
 
   it("a failed read of the list is none, not an error: the request goes on", async () => {
