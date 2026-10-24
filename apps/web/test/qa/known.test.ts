@@ -111,12 +111,12 @@ describe("known.json", () => {
 
   it("holds the faults fixed in #25 as fixed, and the open ones as known or awaiting a decision (spec section 9)", () => {
     for (const id of ["F2", "F3", "F4", "F5"]) expect(byId(id)?.status, id).toBe("fixed");
-    for (const id of ["F1", "O1", "O2", "O3", "O6", "O7", "O12", "O15", "O18", "O21", "O24"]) expect(byId(id)?.status, id).toBe("known");
+    for (const id of ["F1", "O1", "O2", "O3", "O6", "O7", "O10", "O12", "O15", "O18", "O21", "O24"]) expect(byId(id)?.status, id).toBe("known");
     for (const id of ["O4", "O5", "O8", "O11", "O14", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
   });
 
   it("has no entry for a budget row or O23 until a run shows it failing", () => {
-    for (const id of ["O10", "O19", "O23"]) expect(byId(id), id).toBeUndefined();
+    for (const id of ["O19", "O23"]) expect(byId(id), id).toBeUndefined();
   });
 
   it("names OJ as the owner of the decisions that are his", () => {

@@ -127,7 +127,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q10: The project export window has no accessible name
 
-- Case: S3-01 (the project's export place, row 12 of the Design and ethics sheet); it shows wherever the export place opens (S9)
+- Case: S3-01 (the project's export place, row 12 of the Design and ethics sheet); it shows wherever the export place opens: in S9-01 (the project's export window), S9-02 (locked, after Cancel), S9-03 (after it failed offline) and S9-05 (on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -489,6 +489,61 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: while a huge library's reference list goes into the document, no stretch of the main thread is blocked for more than 1 s, so that typing and the buttons keep answering (source: spec section 8, "no main-thread freeze over 1,000 ms during huge data"; plan Task 15, S2-06)
 - Happened: with 2,000 sources, the list goes in with the longest blocking task (the browser's long-task entries, read by a probe in the page) of 590 to 1,062 ms on a computer with nothing else running (the reviewer's six runs; ours 748 to 1,016 ms), and above 1 s whenever the machine is busy (1.2 to 2.1 s with other work running); the whole insert, from the press to the list in the document, takes 2.2 to 3 s (budget 10 s, met). With the CPU slowed four times (Chromium's own throttle, a student's slower laptop) the longest task is 1.87 to 2.23 s in each of five runs, so the case judges that second insert and the plain one is only timed. The unthrottled figure is at the edge of the budget, so it cannot be the case's mark. Cause: the 2,000 references are put in as one block: `components/tools/cite/CiteShare.tsx:21` calls `target.block(bibliographyHtml(lib, style))`, one ProseMirror insertion of 2,000 paragraphs, followed by the Citation Manager's recomputation of which documents cite each source (`lib/cite/usage.ts:62`, one pass over the document text for each of the 2,000 sources, 400 ms after the change, `USAGE_DEBOUNCE_MS`), which shows as further long tasks of 0.05 to 0.5 s over the next 3 s; the split between the two was not profiled. Importing the 2,000 sources and drawing their cards is not a freeze: its longest task was 0.2 to 0.5 s.
 - Evidence: the run of 2026-10-24 on 70e65ef: S2-06, the failed check named above ("took 1,963 ms; the budget is 1,000 ms" and four more of 1,872 to 2,227 ms). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S2-06"`.
+- Status: known
+
+### Q70: Reading notes in the project export list the student's own summary as a highlight on "p. 0" with an empty quotation
+
+- Case: S9-01 (the project's zip: the check "a note is a highlight or a line of the student's own: no line of the notes says \"p. 0\" or shows an empty quotation")
+- Date: 2026-10-24
+- Commit: 74806ed224f5fdfff77861a624a3c8600bc9b7ec
+- Kind: Unexpected (conceptual)
+- Expected: `notes/<paper>.txt` lists the highlights under "Highlights", each as a page and the quoted passage, and the student's own lines as her own words; no line shows a page 0 or an empty quotation (source: `wave-b1.md` row 12, `notes/<paper>.txt`; the export window's own line for the part, "Highlights, your own summaries and AI summaries, marked as such", messages `exp_detail_notes`)
+- Happened: after a shelf paper was read, one passage was kept with a note, and "Summarise with AI" was pressed after two lines of her own, the paper's file reads `Highlights`, `p. 1: "Many families depend on older children"`, `  Field work keeps some pupils at home.`, `p. 0: ""`, `  My own summary before the AI: The paper says evening reading groups raised attendance.` and her second line. Cause (read, and reproduced by the case): the shelf stores the student's own lines as a note with `page: 0` and `quote: ""` (`lib/ai/actions.ts` line 343, `shelfSummarise`, v1's shape); the notes writer prints every note as a page and a quotation (`lib/export/projectExport.ts` line 102: `t("exp_page", { page: h.page }) + ": \"" + h.quote + "\""`) and does not tell the two apart. Read, not run: the AI's own summary is only shown in the reader (`setOut`, `lib/ai/actions.ts` line 346 on) and never stored, so the file holds "AI summaries" only for a paper that went through Analyse a paper.
+- Evidence: the run of 2026-10-24 on 74806ed: case S9-01, the failed check named above (its message holds the file and the line `p. 0: ""`). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S9-01"`.
+- Status: known
+
+### Q71: Export all my work, cancelled at the passphrase window, says nothing
+
+- Case: S9-02 (step "export all my work, locked": the check "Export all my work says that the export needs the passphrase: a toast, or a line in Help")
+- Date: 2026-10-24
+- Commit: 74806ed224f5fdfff77861a624a3c8600bc9b7ec
+- Kind: Unexpected (conceptual); small
+- Expected: with the vault locked, a student who presses Export all my work and cancels the passphrase window is told that nothing was exported and why, as the project's export window tells her ("Unlock with your passphrase to export this project.") (source: the plan's S9-02, "Export while locked: it says locked"; `components/export/ExportDialog.tsx` line 95 and messages `exp_locked`)
+- Happened: after Cancel, Help's text is as it was, no toast is shown (measured for 1.5 s), and the button is free again: no zip, no log, and no word. Cause: `exportWork` returns at once when the vault is not unlocked (`components/workspace/dialogs/Help.tsx` line 78: `if (... !(await vault.ensureUnlocked())) return;`), while its only message, `export_fail`, is in the `catch` (line 108). The account menu's "Export all my work" runs the same function (`components/frame/AppHeader.tsx` line 190).
+- Evidence: the run of 2026-10-24 on 74806ed: case S9-02, the failed check named above (message: "after Cancel at the passphrase window, Help showed no new line and no toast was shown (toasts: [])"). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S9-02"`.
+- Status: known
+
+### Q72: Export all my work shows no sign of progress while it reads
+
+- Case: S9-04 [O10] (step "export all my work on a slow network": the check "a sign of progress after Export all my work")
+- Date: 2026-10-24
+- Commit: 74806ed224f5fdfff77861a624a3c8600bc9b7ec
+- Kind: Slow (no sign of progress)
+- Expected: a sign within 1 s of any press that takes longer: words or a bar that say the work is going on, not only a dimmed button (source: spec section 8, time budgets; the walk's O3, "the button dimmed with no other sign of progress", and S1-03 which holds first run's Save to the same rule). The project's export window names its part while it builds ("Building your zip: <part>. Keep this page open.", `ExportDialog.tsx` line 174)
+- Happened: with every answer from the server delayed 3 s, Export all my work took 27 s. Its button greyed at once (`components/workspace/dialogs/Help.tsx` line 76, `setExporting(true)`, and line 178, `disabled={exporting}`; the account menu's item the same, `components/frame/AppHeader.tsx` line 190), and for the 10 s the case watched nothing else changed: no text under or on the button, no progress bar, no `aria-busy`, no toast. The only word comes at the end (`export_done`).
+- Evidence: the run of 2026-10-24 on 74806ed: case S9-04, the time check named above ("took 10,008 ms; the budget is 1,000 ms": the wait for a sign gave up at 10 s). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S9-04"`.
+- Status: known
+
+### Q73: On a Hindi page, Help's "Import a v1 backup" button and its "Signed in as" line are in English
+
+- Case: S9-05 (Help, and the window that asks for DELETE, which opens over Help)
+- Date: 2026-10-24
+- Commit: 74806ed224f5fdfff77861a624a3c8600bc9b7ec
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens (source: spec section 8, layout rules; the other Help buttons are in Hindi)
+- Happened: `button "Import a v1 backup" [help-import-v1]` (English run found: "backup Signed in as"), and the line `Signed in as <address>` beside it. Both are written into the component, not the dictionaries: `components/workspace/dialogs/Help.tsx` line 171 (`Import a v1 backup`) and line 174 (`Signed in as {email}`). The same window's other buttons, its title, introduction and the Export all my work and Delete my account buttons, are Hindi.
+- Evidence: the run of 2026-10-24 on 74806ed: case S9-05, the failed checks "Help, on a phone, in Hindi: no English on a Hindi screen" and "the window that asks for DELETE, on a phone, in Hindi: no English on a Hindi screen". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S9-05"`.
+- Status: known
+
+### Q74: On a phone, the three questions of Help's list are 20 to 40 px tall
+
+- Case: S9-05 (Help, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: 74806ed224f5fdfff77861a624a3c8600bc9b7ec
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way (source: spec section 8, layout rules, O17)
+- Happened: `summary [faq-lost]` 299 x 40 px, `summary [faq-hindi]` 299 x 20 px, `summary [faq-key]` 299 x 20 px: the lines that open Help's answers. They are `<summary className="cursor-pointer font-medium">` (`components/workspace/dialogs/Help.tsx` line 155) with no minimum height, and the phone rule that gives buttons 44 px (`.place-body button { min-height: 44px }`, `app/globals.css`) does not reach a dialog or a `summary`.
+- Evidence: the run of 2026-10-24 on 74806ed: case S9-05, the failed check "Help, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S9-05"`.
 - Status: known
 
 ### Q80: A second project opens with the first project's Research search on show
