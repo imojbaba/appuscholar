@@ -206,6 +206,6 @@
   "pp_ai_checks": "The check finds email addresses, phone numbers, ID numbers, names on your participant list and common first names. It cannot find every name, so read the text once yourself.",
   "pp_facts": "{n} participants",
   "pp_facts_one": "1 participant",
-  "pp_export_names": "This file includes your participant lists, with names. Keep it apart from your data.",
+  "pp_export_names": "This file includes your participant lists, with any names they still hold. Keep it apart from your data.",
   "pp_export_go": "Export my work"
 }

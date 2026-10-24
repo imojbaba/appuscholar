@@ -213,7 +213,9 @@ describe("Help: export, change passphrase", () => {
     await render();
     await click("help-export");
     await until(() => !!$("export-names-dialog"));
-    expect($("export-names-dialog")!.textContent).toContain("This file includes your participant lists, with names. Keep it apart from your data.");
+    // A destroyed list is still a participants blob, with nobody on it: the sentence does not claim names the list no longer holds (R54a).
+    expect($("export-names-dialog")!.textContent).toContain("This file includes your participant lists, with any names they still hold. Keep it apart from your data.");
+    expect($("export-names-dialog")!.textContent).not.toContain("lists, with names");
     expect($("export-names-dialog")!.textContent).toContain(pp.pp_export_names);
     // Nothing is built, logged or saved while the question is open; the button is held.
     expect(h.download).not.toHaveBeenCalled();
