@@ -1,0 +1,8 @@
+{
+ "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1037/0003-066x.55.1.68&format=json&resultType=lite",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json;charset=UTF-8"
+ },
+ "body": "{\"version\":\"6.9\",\"hitCount\":0,\"request\":{\"queryString\":\"DOI:10.1037/0003-066x.55.1.68\",\"resultType\":\"lite\",\"cursorMark\":\"*\",\"pageSize\":25,\"sort\":\"\",\"synonym\":false},\"resultList\":{\"result\":[]}}"
+}

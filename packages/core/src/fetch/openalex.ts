@@ -13,14 +13,17 @@
    - types, and `as` casts on the JSON read.
    Wave A (walk fault W2, register row D-S2-24): rsFetchOpenAlex's result also carries `authorList`, every author's display name (`authors` is still v1's card line,
    four names and "et al."). The select list is v1's, so OpenAlex sends no volume, issue or pages; the web fills them from Crossref after "+ Citation library".
-   test/fetch/openalex.test.ts holds v1View(result) to the golden. */
+   test/fetch/openalex.test.ts holds v1View(result) to the golden.
+   Wave B2 (Task 19, "paste a link, DOI or PubMed number"; rulings B2-R17 and B2-R36): oaWorkByRef asks for one work by an id (a DOI, a PMC number or an OpenAlex id) and
+   oaWorkToEntry turns it into a library entry. They sit beside the ports and change none of them; OaWork is exported and gains `biblio`. test/fetch/lookup-by-id.test.ts. */
 import { retrNormDoi, retrValidDoi } from "../analyse";
-import { RS_DESIGN, rsBuildQuery, rsOaStatus, rsReconstructAbstract } from "../research";
+import type { CitationEntry } from "../citation";
+import { RS_DESIGN, rsBuildQuery, rsEntryFromResultV2, rsOaStatus, rsReconstructAbstract } from "../research";
 import { settle, withFallback } from "./types";
 import type { OaPaper, RsBrief, SearchResult } from "./types";
 
 type OaAuthorship = { author?: { display_name?: string } | null };
-type OaWork = { id?: string; display_name?: string; authorships?: OaAuthorship[]; publication_year?: number | null; primary_location?: { source?: { display_name?: string } | null } | null; abstract_inverted_index?: Record<string, number[]> | null; cited_by_count?: number; doi?: string | null; referenced_works?: string[]; cited_by_api_url?: string; open_access?: { is_oa?: boolean; oa_status?: string; oa_url?: string | null } | null; is_retracted?: boolean };
+export type OaWork = { id?: string; display_name?: string; authorships?: OaAuthorship[]; publication_year?: number | null; primary_location?: { source?: { display_name?: string } | null } | null; abstract_inverted_index?: Record<string, number[]> | null; cited_by_count?: number; doi?: string | null; referenced_works?: string[]; cited_by_api_url?: string; open_access?: { is_oa?: boolean; oa_status?: string; oa_url?: string | null } | null; is_retracted?: boolean; biblio?: { volume?: string | null; issue?: string | null; first_page?: string | null; last_page?: string | null } | null };
 type OaList = { results?: OaWork[] };
 
 export function oaUrl(u: string,key?: string): string{const k=(key||'').trim();return k?u+(u.indexOf('?')>=0?'&':'?')+'api_key='+encodeURIComponent(k):u}
@@ -132,4 +135,40 @@ export async function apRefCheck(f: typeof fetch,dois: string[],key?: string): P
     refs.finished=true;
   }catch(e){refs.error=((e as Error | null)&&(e as Error).message)||'the lookup failed'}
   return refs;
+}
+
+/** The select of oaWorkByRef: rsFetchOpenAlex's, then `biblio` (the volume, issue, first and last page), which no search select has (B2-R17). */
+export const OA_WORK_SELECT='id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio';
+
+/**
+ * One work by an id: `doi:<doi>`, `pmcid:<PMC number>` or an OpenAlex id (`W…`), as OpenAlex's /works/<id> reads them. null for a 404 (no such work); rejects on another HTTP
+ * error ("429" when the budget is spent, as oaHttpError) or a failed fetch. The id goes into the path with its characters percent-encoded except the colon and the slashes
+ * (a DOI can hold ( ) ; < > # ?).
+ */
+export async function oaWorkByRef(f: typeof fetch,ref: string,key?: string): Promise<OaWork | null>{
+  const path=encodeURIComponent(ref).replace(/%3A/gi,':').replace(/%2F/gi,'/');
+  const r=await f(oaUrl('https://api.openalex.org/works/'+path+'?select='+OA_WORK_SELECT,key));
+  if(r.status===404)return null;
+  if(!r.ok)throw oaHttpError(r);
+  return await r.json() as OaWork;
+}
+
+/**
+ * An OpenAlex work as a library entry, the way "+ Citation library" writes a search result (rsEntryFromResultV2): every author by wave A's name rule (OpenAlex gives "Ellen M. Schaefer";
+ * the entry has "Schaefer, Ellen M."), the volume and issue, the pages from `biblio` (first-last, or the one number when they are the same: Scientific Reports' article number is both),
+ * the DOI bare, and the OpenAlex address as the URL when the work has no DOI. It sets no citation style: the page's own choice stays the caller's.
+ */
+export function oaWorkToEntry(w: OaWork): CitationEntry{
+  const names=(w.authorships||[]).map(a=>a.author&&a.author.display_name).filter(Boolean) as string[];
+  const doi=(w.doi||'').replace(/^https?:\/\/doi\.org\//i,'');
+  const b=w.biblio||{};
+  const first=String(b.first_page||'').trim(),last=String(b.last_page||'').trim();
+  const pages=first&&last&&first!==last?first+'-'+last:(first||last);
+  const entry=rsEntryFromResultV2({
+    source:'OpenAlex',title:w.display_name||'Untitled',authors:names.join(', ')||'Unknown authors',year:String(w.publication_year||''),
+    venue:(w.primary_location&&w.primary_location.source&&w.primary_location.source.display_name)||'',doi,
+    url:w.doi||('https://openalex.org/'+(w.id||'').split('/').pop()),authorList:names,volume:String(b.volume||''),issue:String(b.issue||''),pages
+  },'apa');
+  delete entry.style;
+  return entry;
 }

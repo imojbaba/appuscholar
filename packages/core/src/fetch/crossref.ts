@@ -10,7 +10,9 @@
      request (rows=1, the first hit with no similarity test), and crLookupTitle rcCheckOne's title request (rows=3, the best rcSim, null under 0.6),
      returning the Crossref work beside its entry and score;
    - rcCompare(d, it) and rcCheckOne(f, d) return what rcRun stores per entry in appu_refcheck, `t` (Date.now()) included;
-   - types, and `as` casts on the JSON read. */
+   - types, and `as` casts on the JSON read.
+   Wave B2 (Task 19, "paste a link, DOI or PubMed number"; ruling B2-R36): crLookupDoiV2 is crLookupDoi with Crossref's article number as the pages when it lists no page. It sits
+   beside the port and changes none of it. test/fetch/lookup-by-id.test.ts. */
 import { citLastName, citNames } from "../citation";
 import type { CitationEntry } from "../citation";
 import { retrNormDoi, retrValidDoi } from "../analyse";
@@ -173,6 +175,17 @@ export function crToEntry(it: CrWork): CitationEntry{
 export async function crLookupDoi(f: typeof fetch,doi: string): Promise<CitationEntry | null>{
   const it=await crWork(f,doi);
   return it?crToEntry(it):null;
+}
+/**
+ * crLookupDoi, with one difference (Task 19): when Crossref lists no `page` but an `article-number` (Scientific Reports' 13317, PLOS ONE's e0123), the entry's `pages` is that number,
+ * as the same paper's OpenAlex `biblio` and PubMed's `pages` give it. v1's fill (crToEntry) reads `page` only and leaves `pages` empty. A work with a `page` is crLookupDoi's, key for key.
+ */
+export async function crLookupDoiV2(f: typeof fetch,doi: string): Promise<CitationEntry | null>{
+  const it=await crWork(f,doi) as (CrWork & { "article-number"?: string }) | null | undefined;
+  if(!it)return null;
+  const e=crToEntry(it);
+  if(!e.pages&&it['article-number'])e.pages=String(it['article-number']);
+  return e;
 }
 /** citLookup's title request (7944-7947): rows=1, Crossref's first hit with no similarity test; null when there is none (or a 404, as citLookup reads
  * either request). Rejects on another HTTP error. */

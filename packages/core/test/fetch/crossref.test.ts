@@ -157,7 +157,8 @@ describe("rcCheckOneV2 flags an authorless source and the volume, issue and page
     expect((await rcCheckOneV2((async () => { throw new TypeError("Failed to fetch"); }) as typeof fetch, { title: "x", doi: "10.1/x" })).s).toBe("err");
   });
   it("rcCheckOneV2 is v1's rcCheckOne when nothing is missing (over the 10 recorded corpus DOIs, each entry written as Crossref lists it)", async () => {
-    const dois = [...RECORDINGS.keys()].filter((u) => u.startsWith("https://api.crossref.org/works/")).map((u) => decodeURIComponent(u.slice("https://api.crossref.org/works/".length)));
+    // The 10 DOIs of the golden corpus (capture.mjs CR_DOIS); Task 19's paste-cr-* recordings (the walk paper, an arXiv DOI) are Crossref works too and are held by their own tests.
+    const dois = [...RECORDINGS.values()].filter((r) => r.url.startsWith("https://api.crossref.org/works/") && r.file.startsWith("cr-doi-")).map((r) => decodeURIComponent(r.url.slice("https://api.crossref.org/works/".length)));
     expect(dois).toHaveLength(10);
     const seen = new Set<string>();
     for (const doi of dois) {
