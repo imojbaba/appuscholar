@@ -38,7 +38,8 @@ export function DocumentCard() {
   // Writing always shows the document; beside any other place the student can close it.
   const beside = !!place && place.stage !== "writing";
   // Red from the first failed save until a save succeeds: retries ("saving") and typing offline ("dirty") do not turn it green.
-  const [failed, setFailed] = useState(false);
+  // "too-large" (the api refused the size) says so, in place of AUTO-SAVE OFF.
+  const [failed, setFailed] = useState<false | "error" | "too-large">(false);
   // The vault is locked and the student has not opened it: the text waits in the editor (vault_save_locked).
   const [held, setHeld] = useState(false);
   // One toast per failure streak: it is armed again by the next successful save (a newly opened editor reports "saved" first).
@@ -56,9 +57,9 @@ export function DocumentCard() {
 
   const onStatus = useCallback((s: SaveStatus) => {
     setHeld(s === "locked");
-    if (s === "error") { setFailed(true); if (!warned.current) { warned.current = true; toast(AUTOSAVE_STOPPED_TOAST); } }
+    if (s === "error" || s === "too-large") { setFailed(s); if (!warned.current) { warned.current = true; toast(s === "error" ? AUTOSAVE_STOPPED_TOAST : t("doc_too_large")); } }
     else if (s === "saved") { setFailed(false); warned.current = false; }
-  }, []);
+  }, [t]);
   const onCount = useCallback((n: number) => { if (docId) setWordCount(docId, n); }, [docId, setWordCount]);
   const onReady = useCallback((api: { flushNow: () => Promise<boolean> }) => registerFlush(api.flushNow), [registerFlush]);
   useEffect(() => () => registerFlush(null), [registerFlush]);
@@ -86,7 +87,7 @@ export function DocumentCard() {
           {held
             ? <Badge variant="flag" data-testid="save-status" role="status">{t("vault_save_locked")}</Badge>
             : failed
-            ? <Badge variant="danger" data-testid="save-status" role="status">{AUTOSAVE_OFF_BADGE}</Badge>
+            ? <Badge variant="danger" data-testid="save-status" role="status">{failed === "too-large" ? t("doc_too_large") : AUTOSAVE_OFF_BADGE}</Badge>
             : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
           {hasKey(provider) && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
           <div className="right">

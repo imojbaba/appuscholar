@@ -8,8 +8,11 @@ import { sealTitle, type TitleFields } from "./vault/titles";
 import { toast } from "@/components/ui/toast";
 import { useT } from "./i18n";
 
-/** "locked": the vault is locked and the student has not opened it, so the text is held in the editor and nothing is sent. */
-export type SaveStatus = "saved" | "saving" | "error" | "dirty" | "locked";
+/**
+ * "locked": the vault is locked and the student has not opened it, so the text is held in the editor and nothing is sent.
+ * "too-large": the api refused the body as over its size limit (HTTP 413). Sending it again cannot help, so nothing is retried until the text changes.
+ */
+export type SaveStatus = "saved" | "saving" | "error" | "dirty" | "locked" | "too-large";
 type SaveResult = { seq: number; created: boolean };
 /**
  * What PUT /documents/:id (and a document create) sends. Vault off: `{ bodyHtml, keyVersion: 0 }`, the server sanitises and counts.
@@ -66,6 +69,9 @@ export function shouldWarnOnUnload(status: SaveStatus): boolean {
 }
 
 const plaintext = async (html: string): Promise<SaveBody> => ({ bodyHtml: html, keyVersion: 0 });
+
+/** The api answered 413 `too-large` (apiFetch's ApiError carries the HTTP status). Read off the status, so a 413 from a proxy in front of the api counts too. */
+const isTooLarge = (e: unknown): boolean => typeof e === "object" && e !== null && (e as { status?: unknown }).status === 413;
 
 export function createAutosaver(o: {
   initialHtml: string;
@@ -145,9 +151,11 @@ export function createAutosaver(o: {
       // Typing during the request left newer text pending; its debounce timer is already running.
       set(pending !== null ? "dirty" : "saved", r.seq);
       return true;
-    } catch {
+    } catch (e) {
       // Keep newer text typed during the failed request; only fall back to the failed body if nothing newer exists.
       hold(html);
+      // The same body is refused every time: no retry timer. The next change (onChange) sends the edited text, a smaller one if a picture went.
+      if (isTooLarge(e)) { set("too-large"); return false; }
       set("error");
       scheduleRetry();
       return false;

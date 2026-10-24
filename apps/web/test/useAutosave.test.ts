@@ -13,7 +13,7 @@ vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
-import { createAutosaver, heldDocs, newDocumentBody, shouldWarnOnUnload, RETRY_DELAYS_MS, useAutosave, type SaveBody } from "../lib/useAutosave";
+import { createAutosaver, heldDocs, newDocumentBody, shouldWarnOnUnload, RETRY_DELAYS_MS, useAutosave, type SaveBody, type SaveStatus } from "../lib/useAutosave";
 import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../lib/vault/useVault";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -97,6 +97,88 @@ describe("createAutosaver", () => {
     await vi.advanceTimersByTimeAsync(60_000);
     expect(save).toHaveBeenCalledTimes(3);
   });
+  it("a 413 gives too-large, stops retrying, and waits for the next change", async () => {
+    vi.useFakeTimers();
+    const seen: SaveStatus[] = [];
+    const save = vi.fn().mockRejectedValue(new ApiError(413, "too-large"));
+    const a = createAutosaver({ initialHtml: "", save, delayMs: 100, onStatus: (s) => seen.push(s) });
+    a.onChange("<p>x</p>");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(a.getStatus()).toBe("too-large");
+    // Longer than the whole backoff ladder (2 + 4 + 8 + 16 + 30 s, then every 30 s): no request goes out.
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(a.getStatus()).toBe("too-large");
+    expect(seen).not.toContain("error");
+    // Still unsaved: the text is kept and leaving the page asks.
+    expect(a.unsaved()).toBe("<p>x</p>");
+    expect(shouldWarnOnUnload(a.getStatus())).toBe(true);
+  });
+  it("the next change tries again: a 200 gives saved, another 413 gives too-large again with no loop", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn()
+      .mockRejectedValueOnce(new ApiError(413, "too-large"))
+      .mockRejectedValueOnce(new ApiError(413, "too-large"))
+      .mockResolvedValueOnce({ seq: 2, created: true });
+    const a = createAutosaver({ initialHtml: "", save, delayMs: 100 });
+    a.onChange("<p>x</p>");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(a.getStatus()).toBe("too-large");
+    // Typing is a change: dirty until the debounce fires, then one more try, still too large.
+    a.onChange("<p>xy</p>");
+    expect(a.getStatus()).toBe("dirty");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith(plain("<p>xy</p>"));
+    expect(a.getStatus()).toBe("too-large");
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(save).toHaveBeenCalledTimes(2);
+    // The student removed a picture: that change saves.
+    a.onChange("<p>y</p>");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(save).toHaveBeenCalledTimes(3);
+    expect(save).toHaveBeenLastCalledWith(plain("<p>y</p>"));
+    expect(a.getStatus()).toBe("saved");
+    expect(a.unsaved()).toBeNull();
+  });
+  it("a flush asked for (leaving the editor) tries once and reports false on a 413, without a retry timer", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn().mockRejectedValue(new ApiError(413, "too-large"));
+    const a = createAutosaver({ initialHtml: "", save, delayMs: 100 });
+    a.onChange("<p>x</p>");
+    expect(await a.flushNow()).toBe(false);
+    expect(a.getStatus()).toBe("too-large");
+    expect(a.unsaved()).toBe("<p>x</p>");
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+  it("a 413 on the retry after a 409 re-read is a too-large document as well", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn().mockRejectedValueOnce(new ApiError(409, "vault-required")).mockRejectedValueOnce(new ApiError(413, "too-large"));
+    const a = createAutosaver({ initialHtml: "", save, encrypt: async (html) => plain(html), reload: async () => undefined, delayMs: 100 });
+    a.onChange("<p>x</p>");
+    expect(await a.flushNow()).toBe(false);
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(a.getStatus()).toBe("too-large");
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(save).toHaveBeenCalledTimes(2);
+  });
+  it("any other refusal, a 500 included, still reads as error and retries on the backoff", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn().mockRejectedValueOnce(new ApiError(500, "error")).mockRejectedValueOnce(new ApiError(502, "error")).mockResolvedValueOnce({ seq: 2, created: true });
+    const a = createAutosaver({ initialHtml: "", save, delayMs: 100 });
+    a.onChange("<p>x</p>");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(a.getStatus()).toBe("error");
+    expect(save).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(a.getStatus()).toBe("error");
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(save).toHaveBeenCalledTimes(3);
+    expect(a.getStatus()).toBe("saved");
+  });
   it("caps the backoff at 30s", () => {
     expect(RETRY_DELAYS_MS[0]).toBe(2000);
     expect(Math.max(...RETRY_DELAYS_MS)).toBe(30000);
@@ -118,6 +200,7 @@ describe("createAutosaver", () => {
     expect(shouldWarnOnUnload("dirty")).toBe(true);
     expect(shouldWarnOnUnload("saving")).toBe(true);
     expect(shouldWarnOnUnload("error")).toBe(true);
+    expect(shouldWarnOnUnload("too-large")).toBe(true);
     expect(shouldWarnOnUnload("saved")).toBe(false);
   });
   it("reports dirty, not saved, when text changed while the save was in flight", async () => {
@@ -372,6 +455,20 @@ describe("useAutosave", () => {
     await until(() => box.v!.status === "off");
     await act(async () => { box.save!.onChange(SENTENCE); await box.save!.flushNow(); });
     expect(puts).toEqual([{ bodyHtml: SENTENCE, keyVersion: 0 }]);
+  });
+
+  it("a 413 from the server shows as too-large in the hook, and the next change saves once the document fits", async () => {
+    const { box, puts } = await mountAutosave(null);
+    await until(() => box.v!.status === "off");
+    const accepting = h.api.getMockImplementation()!;
+    h.api.mockImplementation((path: string, init?: RequestInit) => path === "/documents/d1" && init?.method === "PUT" ? Promise.reject(new ApiError(413, "too-large")) : accepting(path, init));
+    await act(async () => { box.save!.onChange(SENTENCE); await box.save!.flushNow(); });
+    expect(box.save!.status).toBe("too-large");
+    expect(puts).toEqual([]);
+    h.api.mockImplementation(accepting);
+    await act(async () => { box.save!.onChange("<p>Short.</p>"); await box.save!.flushNow(); });
+    expect(box.save!.status).toBe("saved");
+    expect(puts).toEqual([{ bodyHtml: "<p>Short.</p>", keyVersion: 0 }]);
   });
 
   it("with the vault locked the hook sends nothing until the passphrase is given, then ciphertext", async () => {
