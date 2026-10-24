@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
  *
  * Edit also holds the person's withdrawal (spec §5 "Withdraw", ruling R25b): a date that starts as today, "Remove their data" or "Keep what was collected" (the consent form says which the
  * student may do, and the form says to check it), and, for a person who withdrew, a way to undo it. Withdraw, Save the withdrawal and Undo save what is in the form along with it, so nothing
- * typed is lost; the tab does the saving, as it does for Save.
+ * typed is lost; Save (and Enter) of a person who has withdrawn saves the withdrawal box as it stands, so a changed date or choice is kept. The tab does the saving.
  */
 
 export type PersonValues = {
@@ -67,7 +67,9 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
   today: string;
   /** A line the tab asks the form to show (the save did not go through). */
   error: string;
-  /** `withdrawal` is absent for Save (the person's withdrawal stays as it is), a withdrawal for Withdraw, and null for Undo. */
+  /**
+   * `withdrawal` is absent for Save of a person who has not withdrawn, a withdrawal for Withdraw and for Save of a person who has (their date and choice as the box holds them), and null for Undo.
+   */
   onSave(v: PersonValues, withdrawal?: Withdrawal | null): void;
   onCancel(): void;
 }) {
@@ -133,7 +135,8 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
     if (plan.pseudonyms) v.pseudonym = pseudonym.trim();
     return v;
   };
-  const submit = () => { const v = collect(); if (v) onSave(v); };
+  // Save keeps what the withdrawal box holds for a person who has withdrawn (a changed date or choice is not lost); for anyone else the box is only a withdrawal once Withdraw is pressed.
+  const submit = () => { const v = collect(); if (v) onSave(v, person?.withdrawn ? { on: wOn || today, data: wData } : undefined); };
   const withdrawNow = () => { const v = collect(); if (v) onSave(v, { on: wOn || today, data: wData }); };
   const undoNow = () => { const v = collect(); if (v) onSave(v, null); };
 

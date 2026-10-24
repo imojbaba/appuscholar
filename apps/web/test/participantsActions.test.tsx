@@ -263,6 +263,37 @@ describe("Withdraw, in Edit", () => {
     expect($("pp-row-P004")!.textContent).toContain("Withdrew 18/10/2026 · keep their data");
   });
 
+  it("Save (the button, and Enter in a field) keeps a changed withdrawal: the data choice and the date are not lost (R32)", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-edit-P004");
+    await type("pp-withdraw-data", "keep");
+    await click("pp-form-save");
+    expect(written()).toHaveLength(1);
+    expect(byCode(lastWritten(), "P004").withdrawn).toEqual({ on: "2026-10-15", data: "keep" });
+    expect($("pp-row-P004")!.textContent).toContain("Withdrew 15/10/2026 · keep their data");
+    await click("pp-edit-P004");
+    await type("pp-withdraw-date", "2026-10-18");
+    await act(async () => { $("pp-form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    expect(written()).toHaveLength(2);
+    expect(byCode(lastWritten(), "P004").withdrawn).toEqual({ on: "2026-10-18", data: "keep" });
+    expect($("pp-row-P004")!.textContent).toContain("Withdrew 18/10/2026 · keep their data");
+  });
+
+  it("Save leaves a withdrawal that was not touched as it was, and does not withdraw someone who has not (the box is only a withdrawal once Withdraw is pressed)", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-edit-P004");
+    await click("pp-form-save");
+    expect(byCode(lastWritten(), "P004").withdrawn).toEqual({ on: "2026-10-15", data: "remove" });
+    await click("pp-edit-P001");
+    await type("pp-withdraw-date", "2026-10-20");
+    await type("pp-withdraw-data", "keep");
+    await click("pp-form-save");
+    expect("withdrawn" in byCode(lastWritten(), "P001")).toBe(false);
+    expect($("pp-row-P001")!.getAttribute("data-withdrawn")).toBeNull();
+  });
+
   it("what was typed in the form goes with the withdrawal (it is not lost), and a missing name stops it", async () => {
     seed(PLAN);
     await mount();
@@ -573,6 +604,41 @@ describe("Destroy the list", () => {
     expect(document.querySelectorAll("[data-aria-hidden]").length).toBe(0);
   });
 
+  it("the two buttons of both steps are the same width at every breakpoint (a double click on step 1's button lands on a button of the same size, in the other place)", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-destroy");
+    const widths = () => ["pp-destroy-cancel", "pp-destroy-1", "pp-destroy-2"].map((id) => $(id)).filter(Boolean).map((b) => b!.className);
+    for (const cls of widths()) {
+      expect(cls).toContain("w-full");
+      expect(cls).toContain("sm:w-52");
+    }
+    await click("pp-destroy-1");
+    expect(widths()).toHaveLength(2);
+    for (const cls of widths()) {
+      expect(cls).toContain("w-full");
+      expect(cls).toContain("sm:w-52");
+    }
+  });
+
+  it("the text above the buttons keeps its room in both steps (the other step's text is there, hidden from a screen reader), so the dialog does not change size", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-destroy");
+    const d = dialog()!;
+    const describedBy = () => document.getElementById(d.getAttribute("aria-describedby")!)!.textContent;
+    const room = () => $("pp-destroy-room")!;
+    expect(describedBy()).toBe(en.pp_destroy_desc1);
+    expect(room().textContent).toBe(en.pp_destroy_desc2);
+    expect(room().getAttribute("aria-hidden")).toBe("true");
+    expect(room().className).toContain("invisible");
+    await click("pp-destroy-1");
+    expect(describedBy()).toBe(en.pp_destroy_desc2);
+    expect(room().textContent).toBe(en.pp_destroy_desc1);
+    expect(room().getAttribute("aria-hidden")).toBe("true");
+    expect(d.querySelectorAll("[data-slot='dialog-description']")).toHaveLength(1);
+  });
+
   it("the dialog has a title and a description, for a screen reader", async () => {
     seed(PLAN);
     await mount();
@@ -652,6 +718,39 @@ describe("when the plan no longer records what is stored (C15)", () => {
     expect($("pp-drift-spellings")).toBeNull();
   });
 
+  it("'Remove these values' closes an open Edit form, so the form cannot write the cleared values back (R32)", async () => {
+    seed(PLAN, withContact(3));
+    await mount();
+    await click("pp-edit-P001");
+    expect($("pp-form")).not.toBeNull();
+    await click("pp-drift-clear-contact");
+    expect($("pp-form")).toBeNull();
+    expect(written()).toHaveLength(1);
+    for (const p of lastWritten().people) expect("contact" in p, p.code).toBe(false);
+    // Nothing is written afterwards by the form that was open, and the page says what was removed.
+    expect(text("pp-status")).toContain("Removed Contact for everyone.");
+  });
+
+  it("an open Add form is left open by 'Remove these values' (it holds nothing that could write a cleared value back)", async () => {
+    seed(PLAN, withContact(3));
+    await mount();
+    await click("pp-add");
+    await type("pp-form-name", "Sunita Devi");
+    await click("pp-drift-clear-contact");
+    expect($("pp-form")).not.toBeNull();
+    expect(val("pp-form-name")).toBe("Sunita Devi");
+  });
+
+  it("a refused 'Remove these values' leaves an open Edit form open", async () => {
+    seed(PLAN, withContact(3));
+    h.flags.participants = { readOnly: true };
+    await mount();
+    await click("pp-edit-P001");
+    await click("pp-drift-clear-contact");
+    expect($("pp-form")).not.toBeNull();
+    expect(written()).toEqual([]);
+  });
+
   it("an unanswered plan or one that could not be read says nothing is drifting (it must not invite a clean-up)", async () => {
     seed(null, withContact(3));
     await mount();
@@ -712,6 +811,20 @@ describe("an anonymous plan with people on the list (C15)", () => {
     expect(text("pp-destroyed")).toContain("destroyed on 24/10/2026");
     expect($("pp-table")).toBeNull();
     expect($("pp-plan-drift")).toBeNull();
+  });
+
+  it("after destroying under an anonymous plan (there is no Add button) the focus is on a control that is there: the link to the plan (R32)", async () => {
+    seed(ANON);
+    await mount();
+    await act(async () => { $("pp-destroy")!.focus(); });
+    await click("pp-destroy");
+    await click("pp-destroy-1");
+    await click("pp-destroy-2");
+    await tick(20);
+    expect($("pp-anonymous")).not.toBeNull();
+    const active = document.activeElement as HTMLElement;
+    expect(active).not.toBe(document.body);
+    expect(active.dataset.testid).toBe("pp-anonymous-link");
   });
 
   it("changing the plan back brings the ordinary tab, with Add", async () => {

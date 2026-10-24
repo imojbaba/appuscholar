@@ -64,7 +64,7 @@ export function Actions({ list, plan, labels, save, refused, onDestroyed }: {
     setError("");
     // A value still stored for a field the plan no longer ticks has its column too (list.ts listCsv), headed as the tab heads it.
     const csv = listCsv(list, plan.aboutKeys, { ...Object.fromEntries(RECORD_FIELDS.filter((f) => f.group === "about").map((f) => [f.id, t("pp_f_" + f.id)])), ...labels });
-    downloadBlob(listFileName(title.state === "open" ? title.text : ""), new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+    downloadBlob(listFileName(title.state === "open" ? title.text : ""), new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
   };
 
   const destroy = () => {

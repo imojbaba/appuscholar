@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { addPeople, listCsv } from "../lib/tools/participants/list";
 import { emptyList } from "../lib/blobs/kinds/participants";
@@ -184,5 +185,13 @@ describe("parsePaste: the list's own download (Download the list → Paste a lis
     const r = addPeople(src, parsePaste(listCsv(src, [])), TODAY);
     expect(r.added).toEqual([]);
     expect(r.skipped).toHaveLength(4);
+  });
+});
+
+describe("the byte-order mark is written as an escape, never as the invisible character", () => {
+  it.each(["components/tools/participants/Actions.tsx", "lib/tools/participants/paste.ts"])("%s", (file) => {
+    const src = readFileSync(file, "utf8");
+    expect(src.includes("\uFEFF")).toBe(false);
+    expect(src).toContain("\\uFEFF");
   });
 });

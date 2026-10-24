@@ -40,7 +40,7 @@ function cellsOf(line: string): string[] {
 
 /** The people a pasted text names, in order. Codes are upper case; a code is given only where the text had one. */
 export function parsePaste(text: string): PastedPerson[] {
-  const rows = text.replace(/^﻿/, "").split(/\r\n|\r|\n/).filter((l) => l.trim() !== "").map(cellsOf);
+  const rows = text.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/).filter((l) => l.trim() !== "").map(cellsOf);
   const keyFile = rows.length > 0 && rows[0]![0]!.toLowerCase() === "participantcode";
   // The list's own download names its spellings column; any other key file has none, and its later cells are not spellings.
   const spellingsAt = keyFile ? rows[0]!.findIndex((c) => c.toLowerCase() === SPELLINGS_HEADING) : -1;

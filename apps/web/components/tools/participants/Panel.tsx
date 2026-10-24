@@ -86,7 +86,7 @@ function PlanLine({ plan, href }: { plan: ParticipantsPlan; href: string }) {
 }
 
 /** The list is read and the plan is known: the tab. */
-function Tab({ list, plan, href, saveFailed, readOnly, save }: {
+function Tab({ list, plan, href, saveFailed, readOnly, save, onDestroyedAnonymous }: {
   list: ParticipantList;
   plan: ParticipantsPlan;
   href: string;
@@ -94,6 +94,8 @@ function Tab({ list, plan, href, saveFailed, readOnly, save }: {
   /** This window may not write the list: a refused save says where the list can be changed. */
   readOnly: boolean;
   save(update: (prev: ParticipantList) => ParticipantList): boolean;
+  /** The list was destroyed under an anonymous plan: this tab is replaced by the anonymous line, and the panel moves focus to its link. */
+  onDestroyedAnonymous(): void;
 }) {
   const t = useT();
   const refused = () => t(readOnly ? "pp_read_only" : "pp_cannot_save");
@@ -186,7 +188,7 @@ function Tab({ list, plan, href, saveFailed, readOnly, save }: {
         </span>
       </div>
       <PlanLine plan={plan} href={href} />
-      <PlanNotes list={list} plan={plan} save={save} refused={refused} onCleared={(m) => { setStatus(m); setPasteResult(""); }} />
+      <PlanNotes list={list} plan={plan} save={save} refused={refused} onCleared={(m) => { setStatus(m); setPasteResult(""); if (editing) closeForm("pp-edit-" + editing.code); }} />
       {saveFailed && <p className="ap-banner" role="status" data-testid="pp-save-failed">{t("pp_save_failed")}</p>}
       {list.destroyedAt && people.length === 0 && (
         <p className="note" role="status" data-testid="pp-destroyed">{t("pp_destroyed", { date: dmy(list.destroyedAt), code: nextCode(list) })}</p>
@@ -209,7 +211,11 @@ function Tab({ list, plan, href, saveFailed, readOnly, save }: {
         </div>
       )}
       {people.length > 0 && (
-        <Actions list={list} plan={plan} labels={labels} save={save} refused={refused} onDestroyed={() => { refocus.current = "pp-add"; setStatus(""); setPasteResult(""); setForm(null); setPasting(false); }} />
+        <Actions list={list} plan={plan} labels={labels} save={save} refused={refused} onDestroyed={() => {
+          // Under an anonymous plan there is no Add button, and the tab gives way to the one line: focus goes to its link (the panel does it); otherwise to Add a person.
+          if (plan.mode === "anonymous") onDestroyedAnonymous(); else refocus.current = "pp-add";
+          setStatus(""); setPasteResult(""); setForm(null); setPasting(false);
+        }} />
       )}
       {form !== null && (editing !== null || form === "") && (
         <PersonForm
@@ -244,6 +250,9 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   const planUnread = !ec.loading && !ec.locked && ec.value === null && (ec.error === true || ec.broken === true);
   const plan = planOf(ec.value, planUnread);
   const href = ethicsHref(projectId);
+  // Set when the list was destroyed under an anonymous plan: the anonymous line's link takes the focus once it is drawn (the button that had it is gone).
+  const focusAnonymousLink = useRef(false);
+  const takeFocus = (el: HTMLElement | null) => { if (el && focusAnonymousLink.current) { focusAnonymousLink.current = false; el.focus(); } };
 
   let body: React.ReactNode;
   if (projectId === "") {
@@ -255,7 +264,7 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
     body = (
       <>
         <p className="note" data-testid="pp-anonymous">
-          {before}<Link href={href} className="text-accent-ink underline" data-testid="pp-anonymous-link">{t("pp_anonymous_link")}</Link>{after}
+          {before}<Link ref={takeFocus} href={href} className="text-accent-ink underline" data-testid="pp-anonymous-link">{t("pp_anonymous_link")}</Link>{after}
         </p>
         {people.list?.destroyedAt && <p className="note" role="status" data-testid="pp-destroyed">{t("pp_destroyed_short", { date: dmy(people.list.destroyedAt) })}</p>}
       </>
@@ -283,7 +292,7 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   } else if (ec.loading || ec.locked || people.list === null) {
     body = <PanelLoading testId="pp-loading" />;
   } else {
-    body = <Tab list={people.list} plan={plan} href={href} saveFailed={people.saveFailed} readOnly={people.readOnly} save={people.save} />;
+    body = <Tab list={people.list} plan={plan} href={href} saveFailed={people.saveFailed} readOnly={people.readOnly} save={people.save} onDestroyedAnonymous={() => { focusAnonymousLink.current = true; }} />;
   }
   return <div className="panel" data-testid="pp-panel">{body}</div>;
 }
