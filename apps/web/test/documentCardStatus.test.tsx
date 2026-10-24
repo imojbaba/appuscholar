@@ -13,6 +13,8 @@ vi.mock("@/lib/settings", () => ({ useSettings: () => ({ settings: {} }) }));
 vi.mock("@/lib/ai/useKeys", () => ({ useKeys: () => ({ hasKey: () => false }) }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ setEditor: () => undefined, tab: () => false, status: "idle", text: null }) }));
 vi.mock("@/lib/vault/titles", () => ({ fileTitle: () => "untitled", useTitle: () => ({ state: "open", text: "" }) }));
+// The card holds the photo studio host, which reads the vault's status (to size a picture); a card with no editor never uses it.
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
   useProject: () => ({
     currentDoc: { id: "d1", bodyHtml: "", currentSeq: 1, deks: [], unreadable: null }, place: null,

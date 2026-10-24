@@ -24,6 +24,7 @@ import { ActionRow } from "./ActionRow";
 import { DocAside, aiPaneHasContent } from "./DocAside";
 import { SelectionBubble } from "./SelectionBubble";
 import { WritingSampleCapture } from "@/lib/writingSamples/useWritingSampleCapture";
+import { usePhotoStudioHost } from "@/lib/editor/photoStudioHost";
 import { FormatBar } from "./FormatBar";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
@@ -67,6 +68,9 @@ export function DocumentCard() {
   const suggestion = useSuggestion();
   const { setEditor: registerEditor, tab } = suggestion;
   const setEditor = useCallback((e: TipTapEditor | null) => { setEditorLocal(e); registerEditor(e); registerForInsert(e); }, [registerEditor, registerForInsert]);
+  // The photo studio's host answers its windows for as long as the card stands: the bar below is rebuilt for every editor, and a host inside it would go with
+  // the document that was closed, locked or switched (the studio would then say the document window is not listening instead of that the document is gone).
+  const studio = usePhotoStudioHost(editor);
   const aside = aiPaneHasContent(suggestion, t("ai_pane_placeholder"));
   const [highlightAi, setHighlightAi] = useState(false);
 
@@ -146,7 +150,7 @@ export function DocumentCard() {
         </div>
         <DocBar />
         {/* Keyed by the instance, so a new document's bar subscribes afresh. Its slot keeps its height until the editor exists. */}
-        {editor ? <FormatBar key={editor.instanceId} editor={editor} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
+        {editor ? <FormatBar key={editor.instanceId} editor={editor} openStudio={studio.openStudio} /> : <div className="fmtbar fmtbar-pending" aria-hidden="true" />}
         {/* A document that did not open (vault locked, or its key missing or the text damaged) gets no editor, so nothing can be saved over it. */}
         {currentDoc && currentDoc.unreadable && (
           <p role="alert" className="px-4 py-6 text-sm text-muted-foreground sm:px-6" data-testid="doc-unreadable">

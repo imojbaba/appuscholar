@@ -28,10 +28,11 @@ vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: h.vault }) }
 vi.mock("@/lib/editor/image", async (orig) => ({ ...(await orig<typeof import("../lib/editor/image")>()), resizeImage: h.resize }));
 
 import { editorExtensions } from "../lib/editorExtensions";
-import { DICTS, LangProvider } from "../lib/i18n";
+import { DICTS, LangProvider, plainText } from "../lib/i18n";
 import * as dictate from "../lib/editor/dictate";
 import { hasAcked, writeDictLang } from "../lib/editor/dictPrefs";
 import { BODY_LIMIT_PLAIN, BODY_LIMIT_SEALED } from "../lib/editor/sizeBudget";
+import { usePhotoStudioHost } from "../lib/editor/photoStudioHost";
 import { setPhotoChannel } from "../lib/popout/photoChannel";
 import { FormatBar } from "../components/document/FormatBar";
 
@@ -113,16 +114,18 @@ afterEach(() => {
 });
 
 const SRC = "data:image/png;base64,AAAA";
+const SRC_B = "data:image/png;base64,BBBB";
 const IMG = `<img src="${SRC}" alt="A photo" style="width: 360px">`;
 function make(content = "<p>start</p>") {
   const e = new Editor({ extensions: editorExtensions, content });
   editors.push(e);
   return e;
 }
-function imagePos(e: Editor): number {
-  let at = -1;
-  e.state.doc.descendants((n, pos) => { if (at < 0 && n.type.name === "image") at = pos; return at < 0; });
-  return at;
+/** The position of the n-th picture in the document. */
+function imagePos(e: Editor, n = 0): number {
+  const at: number[] = [];
+  e.state.doc.descendants((node, pos) => { if (node.type.name === "image") at.push(pos); });
+  return at[n] ?? -1;
 }
 const selectImage = (e: Editor) => act(() => { e.commands.setNodeSelection(imagePos(e)); });
 const caretAtEnd = (e: Editor) => act(() => { e.commands.setTextSelection(e.state.doc.content.size - 1); });
@@ -136,11 +139,16 @@ async function choose(el: HTMLElement | null, value: string) {
     el!.dispatchEvent(new Event("change", { bubbles: true }));
   });
 }
+/** What DocumentCard does: the photo studio host above the bar, the bar keyed by its editor, the host's openStudio handed down. */
+function Card({ editor }: { editor: Editor }) {
+  const studio = usePhotoStudioHost(editor);
+  return <FormatBar key={editor.instanceId} editor={editor} openStudio={studio.openStudio} />;
+}
 async function mount(editor: Editor, lang: "en" | "hi" = "en") {
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   roots.push(root);
-  await act(async () => { root.render(<LangProvider lang={lang} onChange={() => {}}><FormatBar editor={editor} /></LangProvider>); });
+  await act(async () => { root.render(<LangProvider lang={lang} onChange={() => {}}><Card editor={editor} /></LangProvider>); });
   return { unmount: () => act(() => { root.unmount(); roots.splice(roots.indexOf(root), 1); }) };
 }
 /** Opens the More row, whose settings key the toolbar reads. */
@@ -154,7 +162,9 @@ describe("Caption button", () => {
     const btn = tid("fmt-caption")!;
     expect(btn.previousElementSibling).toBe(tid("fmt-table"));
     expect(btn.textContent).toBe(E.cap_btn);
-    expect(btn.getAttribute("aria-label")).toBe(E.cap_btn);
+    // The emoji is decoration: the name a screen reader gets is the words.
+    expect(btn.getAttribute("aria-label")).toBe(plainText(E.cap_btn!));
+    expect(btn.getAttribute("aria-label")).toBe("Caption");
     expect(tid("caption-dialog")).toBeNull();
     await click(btn);
     expect(tid("caption-dialog")).not.toBeNull();
@@ -181,6 +191,7 @@ describe("Edit picture button", () => {
     expect(btn.closest('[data-testid="img-bar"]')).not.toBeNull();
     expect(tid("img-width")!.compareDocumentPosition(btn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(btn.textContent).toBe(E.ie_btn);
+    expect(btn.getAttribute("aria-label")).toBe("Edit picture");
     act(() => { e.commands.setTextSelection(2); });
     expect(tid("fmt-edit-picture")).toBeNull();
   });
@@ -223,6 +234,7 @@ describe("Photo studio button", () => {
     expect(btn.previousElementSibling).toBe(tid("fmt-col"));
     expect(btn.nextElementSibling).toBe(tid("fmt-pagebreak"));
     expect(btn.textContent).toBe(E.ps_tb_btn);
+    expect(btn.getAttribute("aria-label")).toBe("Photo studio");
     await click(btn);
     expect(open).toHaveBeenCalledTimes(1);
     const [href, name, features] = open.mock.calls[0] as unknown as [string, string, string];
@@ -297,6 +309,48 @@ describe("Photo studio button", () => {
       expect(open).not.toHaveBeenCalled();
       expect(h.toast).toHaveBeenCalledWith(E.ps_nochan);
       expect(tid("picture-editor")).not.toBeNull();
+    });
+
+    it("the studio gets the picture the editor is on, wherever it has moved to since the editor opened", async () => {
+      const e = make(`<p><img src="${SRC}"></p><p><img src="${SRC_B}"></p>`);
+      await mount(e);
+      act(() => { e.commands.setNodeSelection(imagePos(e, 1)); });
+      await click(tid("fmt-edit-picture"));
+      await flush();
+      // A paragraph put in above both pictures (the first one's position now belongs to something else).
+      act(() => { e.commands.insertContentAt(0, "<p>x</p>"); });
+      await click(tid("pe-studio"));
+      const id = String((open.mock.calls[0] as unknown[])[0]).split("#id=")[1]!;
+      act(() => { ch.deliver({ t: "ready", id }); });
+      expect(ch.sent).toEqual([{ t: "load", id, src: SRC_B, capExists: false }]);
+    });
+
+    it("a blocked window keeps the picture editor, and its work, when the selection has moved on meanwhile (dictation still typing)", async () => {
+      open.mockImplementation((() => null) as unknown as typeof window.open);
+      const e = make(`<p>text</p><p>${IMG}</p>`);
+      await mount(e);
+      await selectImage(e);
+      await startDictating();
+      await click(tid("fmt-edit-picture"));
+      await flush();
+      await say("hello");
+      expect(e.state.selection instanceof NodeSelection).toBe(false);
+      await click(tid("pe-studio"));
+      await flush();
+      expect(h.toast).toHaveBeenCalledWith(E.pop_blocked);
+      expect(tid("pe-apply")).not.toBeNull();
+      const sel = e.state.selection;
+      expect(sel instanceof NodeSelection && sel.node.type.name === "image").toBe(true);
+    });
+
+    it("a picture deleted while the editor is open leaves the studio empty, and a blocked window then has no editor to fall back to", async () => {
+      open.mockImplementation((() => null) as unknown as typeof window.open);
+      const e = await openEditor();
+      act(() => { e.commands.deleteRange({ from: imagePos(e), to: imagePos(e) + 1 }); });
+      await click(tid("pe-studio"));
+      await flush();
+      expect(h.toast).toHaveBeenCalledWith(E.pop_blocked);
+      expect(tid("picture-editor")).toBeNull();
     });
   });
 });
@@ -674,6 +728,40 @@ describe("dictation: what is typed", () => {
     expect(e.getText()).toBe("AI words. My own words");
     expect(html.match(/ai-ins/g)).toHaveLength(1);
     expect(html).toMatch(/<\/span> My own words<\/p>$/);
+  });
+
+  it("words dictated into the middle of AI text are the student's own: the AI span is split around them", async () => {
+    const e = make('<p><span class="ai-ins" data-h="abc">AI words here.</span></p>');
+    await mount(e);
+    act(() => { e.commands.setTextSelection(1 + "AI words ".length); });
+    await startDictating();
+    await say("my own");
+    expect(e.getHTML()).toBe('<p><span class="ai-ins" data-h="abc">AI words </span>my own<span class="ai-ins" data-h="abc">here.</span></p>');
+  });
+
+  it("the formatting at the caret is kept on dictated words, the AI mark is not", async () => {
+    const e = make('<p><span class="ai-ins" data-h="abc">AI <strong>bold words</strong> here.</span></p>');
+    await mount(e);
+    act(() => { e.commands.setTextSelection(1 + "AI bold".length); });
+    await startDictating();
+    await say("my own");
+    const pieces: { text: string; marks: string[] }[] = [];
+    e.state.doc.descendants((n) => { if (n.isText) pieces.push({ text: n.text!, marks: n.marks.map((m) => (m.type.name === "classSpan" ? "ai" : m.type.name)).sort() }); });
+    expect(pieces.find((p) => p.text.includes("my own"))).toEqual({ text: " my own", marks: ["bold"] });
+    expect(pieces.filter((p) => p.marks.includes("ai")).map((p) => p.text).join("")).toBe("AI bold words here.");
+    expect(e.getText()).toBe("AI bold my own words here.");
+  });
+
+  it("a paragraph break inside AI text does not carry the AI mark onto the words after it", async () => {
+    const e = make('<p><span class="ai-ins" data-h="abc">AI words here.</span></p>');
+    await mount(e);
+    act(() => { e.commands.setTextSelection(1 + "AI words ".length); });
+    await startDictating();
+    await say("new paragraph mine");
+    const pieces: { text: string; ai: boolean }[] = [];
+    e.state.doc.descendants((n) => { if (n.isText) pieces.push({ text: n.text!, ai: n.marks.some((m) => m.type.name === "classSpan") }); });
+    expect(pieces.find((p) => p.text === "Mine")).toEqual({ text: "Mine", ai: false });
+    expect(pieces.filter((p) => p.ai).map((p) => p.text).join("")).toBe("AI words here.");
   });
 
   it("works in Hindi: the spoken danda and no capital", async () => {
