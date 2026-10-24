@@ -54,7 +54,7 @@ function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; ext
     const w = window.open("", "_blank");
     if (!w) { setPopupBlocked(true); return; }
     setPopupBlocked(false);
-    w.document.write(buildGuidePrintDocument(sections, APP_VERSION));
+    w.document.write(buildGuidePrintDocument(sections, t("wc_guide_print_title"), t("wc_guide_print_from", { build: APP_VERSION })));
     w.document.close();
     w.focus();
     setTimeout(() => { try { w.print(); } catch { /* the window may already be closed */ } }, 400);

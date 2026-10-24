@@ -14,5 +14,7 @@
   "wc_guide_group_Begin": "शुरुआत",
   "wc_guide_group_Tools": "उपकरण",
   "wc_guide_group_Practice": "अभ्यास",
-  "wc_guide_group_Help": "सहायता"
+  "wc_guide_group_Help": "सहायता",
+  "wc_guide_print_title": "Appuscholar गाइड",
+  "wc_guide_print_from": "ऐप से छापा गया। बिल्ड {build}।"
 }

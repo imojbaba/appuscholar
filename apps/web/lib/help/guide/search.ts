@@ -40,15 +40,16 @@ function escapeText(s: string): string {
 }
 
 /**
- * v1 `guidePrint`'s page: every section (not only the matches) under its title, then "Printed from the app. Build {version}." The titles are
- * escaped and each body goes through sanitizeHtml, so the new window gets no script and no handler; the opener calls print() itself.
+ * v1 `guidePrint`'s page: every section (not only the matches) under its title, after the page's title and the line "Printed from the app. Build
+ * {build}." (both passed in through t()). The titles are escaped and each body goes through sanitizeHtml, so the new window gets no script and no
+ * handler; the opener calls print() itself. The page sets its own light colours, so it prints the same whatever theme the app is in.
  */
-export function buildGuidePrintDocument(sections: GuideSection[], version: string): string {
+export function buildGuidePrintDocument(sections: GuideSection[], title: string, printedLine: string): string {
   const body = sections.map((s) => "<h2>" + escapeText(s.title) + "</h2>" + sanitizeHtml(s.html)).join("");
   return (
-    '<!doctype html><html><head><meta charset="utf-8"><title>Appuscholar guide</title><style>' +
-    "body{font:14px/1.6 Georgia,serif;max-width:720px;margin:24px auto;padding:0 16px;color:#111}h1{font-size:24px}" +
+    '<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light"><title>' + escapeText(title) + "</title><style>" +
+    "body{font:14px/1.6 Georgia,serif;max-width:720px;margin:24px auto;padding:0 16px;color:#111;background:#fff}h1{font-size:24px}" +
     "h2{font-size:17px;margin:22px 0 4px;border-bottom:1px solid #bbb}pre{background:#f4f4f4;padding:8px}dt{font-weight:bold;margin-top:6px}small{color:#555}" +
-    "</style></head><body><h1>Appuscholar guide</h1><small>Printed from the app. Build " + escapeText(version) + ".</small>" + body + "</body></html>"
+    "</style></head><body><h1>" + escapeText(title) + "</h1><small>" + escapeText(printedLine) + "</small>" + body + "</body></html>"
   );
 }

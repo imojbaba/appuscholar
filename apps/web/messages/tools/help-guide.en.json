@@ -13,5 +13,7 @@
   "wc_guide_group_Begin": "Begin",
   "wc_guide_group_Tools": "Tools",
   "wc_guide_group_Practice": "Practice",
-  "wc_guide_group_Help": "Help"
+  "wc_guide_group_Help": "Help",
+  "wc_guide_print_title": "Appuscholar guide",
+  "wc_guide_print_from": "Printed from the app. Build {build}."
 }

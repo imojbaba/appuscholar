@@ -68,7 +68,7 @@ describe("guideCount (v1 guideFilter's counter line)", () => {
 });
 
 describe("buildGuidePrintDocument (v1 guidePrint)", () => {
-  const doc = buildGuidePrintDocument(FIX, "abc1234");
+  const doc = buildGuidePrintDocument(FIX, "Appuscholar guide", "Printed from the app. Build abc1234.");
   it("holds every section's title and the build id", () => {
     for (const s of FIX) expect(doc).toContain(s.title);
     expect(doc).toContain("Appuscholar guide");
@@ -84,7 +84,7 @@ describe("buildGuidePrintDocument (v1 guidePrint)", () => {
   });
   it("escapes titles and sanitises bodies: no handler, no script", () => {
     const evil: GuideSection = { id: "x", group: "Help", title: "A <b> & <script>alert(1)</script>", keywords: "", html: '<p>hi</p><img src="x" onerror="alert(1)"><script>alert(2)</script>' };
-    const d = buildGuidePrintDocument([evil], "dev");
+    const d = buildGuidePrintDocument([evil], "Appuscholar guide", "Printed from the app. Build dev.");
     expect(d).not.toMatch(/onerror/i);
     expect(d).not.toMatch(/<script/i);
     expect(d).toContain("A &lt;b&gt; &amp; &lt;script&gt;alert(1)&lt;/script&gt;");

@@ -6,7 +6,7 @@
  *   2. typing a query changes the counter to the "of N sections match" form and clearing it brings the total back; a query nothing matches
  *      shows the empty line (and no section rows); with sections, a word from the first title narrows the list to a count that includes it,
  *      and one to three matches are open;
- *   3. Print or save as PDF opens a window (stubbed here) holding "Appuscholar guide" and the build line, without script;
+ *   3. Print or save as PDF opens a window (stubbed here) holding the guide's print title and the build line, without script;
  *   4. Escape closes only the Guide, Help is still there and the Guide button has focus again;
  *   5. at 375 px the dialog fits the screen, has no sideways scroll, and its contents scroll while the Close button stays on screen;
  *   6. once C1 is merged there are at least 26 contents rows (asserted only when the Guide has sections).
@@ -21,6 +21,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { GUIDE } from "../lib/help/guide/content";
 
 const EN = JSON.parse(readFileSync(path.join(__dirname, "../messages/tools/help-guide.en.json"), "utf8")) as Record<string, string>;
 const NEW_ACCOUNT = { prefix: "c2", newAccount: true, ready: ["first-run"] };
@@ -55,7 +56,9 @@ test("Help opens the Guide: banner, search, counter, empty line, print, Escape",
   await expect(box).toHaveAttribute("placeholder", EN.wc_guide_search_ph);
   const count = page.getByTestId("guide-count");
   const rows = page.locator("[data-testid^=guide-section-]");
-  const total = await rows.count();
+  // The count comes from the content, not the page, so a dialog that draws no rows cannot pass.
+  const total = GUIDE.length;
+  await expect(rows).toHaveCount(total);
   await expect(count).toHaveText(counterAll(total));
   if (total) expect(total).toBeGreaterThanOrEqual(26);
 
@@ -74,7 +77,7 @@ test("Help opens the Guide: banner, search, counter, empty line, print, Escape",
     const word = title.split(/[^a-z]+/).filter((w) => w.length >= 4).sort((a, b) => b.length - a.length)[0];
     expect(word, "the first title has a word of four letters or more").toBeTruthy();
     await box.fill(word);
-    await expect(count).toHaveText(new RegExp("^\\d+ of " + total + " sections match$"));
+    await expect(count).toHaveText(new RegExp("^" + counterMatch("\\d+", total) + "$"));
     await expect(page.getByTestId(id)).toBeVisible();
     const n = await rows.count();
     expect(n).toBeGreaterThanOrEqual(1);
@@ -91,8 +94,8 @@ test("Help opens the Guide: banner, search, counter, empty line, print, Escape",
   await page.getByTestId("guide-print").click();
   const printed = await page.evaluate(() => (window as unknown as { __printed: string[] }).__printed);
   expect(printed).toHaveLength(1);
-  expect(printed[0]).toContain("<title>Appuscholar guide</title>");
-  expect(printed[0]).toMatch(/Printed from the app\. Build \w+\./);
+  expect(printed[0]).toContain("<title>" + EN.wc_guide_print_title + "</title>");
+  expect(printed[0]).toMatch(new RegExp(EN.wc_guide_print_from.replace(/\./g, "\\.").replace("{build}", "\\w+")));
   expect(printed[0]).not.toMatch(/<script/i);
   await expect.poll(() => page.evaluate(() => (window as unknown as { __printCalls: number }).__printCalls)).toBe(1);
 
@@ -137,7 +140,8 @@ test.describe("on a phone", () => {
     for (const id of ["guide-search", "guide-print", "guide-close"]) await expect(page.getByTestId(id)).toBeInViewport();
 
     const rows = page.locator("[data-testid^=guide-section-]");
-    const total = await rows.count();
+    const total = GUIDE.length;
+    await expect(rows).toHaveCount(total);
     if (total) {
       // Every row is a touch target of 44 px, and the list (not the dialog) is what scrolls.
       expect(await page.evaluate(() => Array.from(document.querySelectorAll("[data-testid=guide-list] summary")).filter((s) => s.getBoundingClientRect().height < 44).length)).toBe(0);
