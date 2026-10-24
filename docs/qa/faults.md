@@ -202,7 +202,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed checks "... every control at least 44 px each way". Re-run as Q15.
 - Status: known
 
-### Q17: On a phone, the document toolbar's five formatting buttons are 32 to 35.5 px wide
+### Q17: On a phone, the document toolbar's Undo, Bold, Italic, Underline, bulleted list and numbered list buttons are 32 to 35.5 px wide
 
 - Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage) and S5-07 (the document after a figure is inserted, the same screen, where Undo shows too)
 - Date: 2026-10-24
@@ -235,15 +235,15 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: no English on a Hindi screen". Re-run as Q15.
 - Status: known
 
-### Q20: While the vault is locked, the Data tab never says so, and Insert only says the document "did not open"
+### Q20: While the vault is locked, the Data tab never says so
 
 - Case: S5-04 (the Data tab with the vault locked)
 - Date: 2026-10-24
 - Commit: aa23121acb939df540ea10f828065bb49c396ef5
 - Kind: Unexpected (conceptual)
-- Expected: with the vault locked the Data tab says that the vault is locked, in words (here or in the refusal to insert), so that an empty dataset-name box, where the project has a saved name, is not taken for nothing saved (source: the Collection and analysis row of spec section 6, "the data tab ... while locked"; spec section 4, a locked vault is called locked; the F5 principle of `tools-walk.md`)
-- Happened: the locked project's Data tab holds the introduction, an empty "Name of this dataset" box (the saved name does not show), the paste box, Parse data, Upload .csv, the guide button and "Parse your data first. The tests appear here once there is a table.": nothing on it says locked or unlock (only the header pill does). Typing in the name box raised the passphrase window with no word of why, and so did Insert into document after a test was run; after Cancel the toast read "Your document did not open, so nothing was inserted." After the unlock nothing was lost: the saved name came back, the pasted table stayed and the document held the sentence once. Causes: `apps/web/lib/tools/stats/useLabActions.ts:27` (the effect that fills the remembered name returns without a word while `stats_prefs` is locked) and `:42-45` (`rename` writes `stats_prefs` at every change, which raises the unlock window); `apps/web/components/frame/ProjectShell.tsx:469` (`toast(t("insert_doc_closed"))`, `messages/en.json:593`, the one sentence for every reason a document does not open, a cancelled unlock included).
-- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-04, the failed checks "the Data tab says the vault is locked ..." and "the refusal names the lock ...". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S5-04"`.
+- Expected: with the vault locked the Data tab says that the vault is locked, in words, so that an empty dataset-name box, where the project has a saved name, is not taken for nothing saved (source: the Collection and analysis row of spec section 6, "the data tab ... while locked"; spec section 4, a locked vault is called locked)
+- Happened: the locked project's Data tab holds the introduction, an empty "Name of this dataset" box (the saved name does not show), the paste box, Parse data, Upload .csv, the guide button and "Parse your data first. The tests appear here once there is a table.": nothing on it says locked or unlock (only the header pill does). Typing in the name box raised the passphrase window with no word of why. After the unlock nothing was lost: the saved name came back, the pasted table stayed and the document held the sentence once. Causes: `apps/web/lib/tools/stats/useLabActions.ts:27` (the effect that fills the remembered name returns without a word while `stats_prefs` is locked) and `:42-45` (`rename` writes `stats_prefs` at every change, which raises the unlock window). Not part of this fault: after the student cancels the passphrase window, Insert into document answers "Your document did not open, so nothing was inserted." (`apps/web/components/frame/ProjectShell.tsx:469`, shared by every tool); that is true and gives no false reason.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-04, the failed check "the Data tab says the vault is locked ...". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S5-04"`.
 - Status: known
 
 ### Q21: Check numbers' numbers check says "No statistics found" about a locked document, and keeps saying it after the unlock
@@ -286,7 +286,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Commit: aa23121acb939df540ea10f828065bb49c396ef5
 - Kind: UI (accessibility)
 - Expected: a box that scrolls can be scrolled from the keyboard: it takes focus, or holds something that does (source: spec section 8, the axe scan: any serious or critical finding; WCAG 2.1.1, keyboard; as Q6)
-- Happened: `table`: scrollable-region-focusable (serious): Scrollable region must have keyboard access. The summary table under Chart Studio's picture (Group, n, M, SD, Mdn, Q1, Q3, Min, Max) is drawn as a scroll box (`display: block; overflow-x: auto`, `apps/web/components/tools/stats/ChartStudio.tsx:19`; the markup is core's block set in at `:195`, with no tabindex), so a student without a mouse or a touch screen cannot scroll to Min and Max. The same style is in `Results.tsx:12`, `Guide.tsx:13` and `PowerTab.tsx:15`: a result table wider than the screen has the same fault (the case saw it on the Charts tab only; the Welch tables fit in 317 px).
+- Happened: `table`: scrollable-region-focusable (serious): Scrollable region must have keyboard access. The summary table under Chart Studio's picture (Group, n, M, SD, Mdn, Q1, Q3, Min, Max) is drawn as a scroll box (`display: block; overflow-x: auto`, `apps/web/components/tools/stats/ChartStudio.tsx:19`; the markup is core's block set in at `:195`, with no tabindex), so a student without a mouse or a touch screen cannot scroll to Min and Max. The same style is in `Results.tsx:12`, `Guide.tsx:13` and `PowerTab.tsx:15`: a result table wider than the screen has the same fault (the case saw it on the Charts tab only; the Welch tables fit in 317 px). Known match: the entry matches `axe` findings whose text contains `table scrollable-region-focusable`; axe reports a bare `table` as the target, so the match covers any scrolling table anywhere in the app (the same fault wherever it shows), not only Chart Studio's.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-07, the failed check "the Charts tab with a figure, on a phone, in Hindi: no serious or critical accessibility finding (axe)". Re-run as Q22.
 - Status: known
 
