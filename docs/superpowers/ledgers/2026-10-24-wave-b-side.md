@@ -17,3 +17,6 @@ Ruling: hindi-strings.csv in the private blueprint is not used (the sheet is bui
 Ruling: Q2's baseline is not run: it needs OJ's capped test key (timeline decision 7); the runner is built and tested against a fake provider — as instructed.
 
 ## Tasks
+Task 39: implemented 4a7cc75 (DONE_WITH_CONCERNS: byte-for-byte test fails whenever en/hi change; 57 style strings lack Hindi keys, added a status). Review pending; sheet to be regenerated after Task 38's dictionary edit lands.
+Task 38: implemented 80e6065; Opus review: 1 Critical (doi/url escaped in BibTeX), minors; fix round 1 sent (Critical, citDoiBare, D-S2-120 text). Deferred minors: page forms (12-3, -12, "pp. 12-15"); chapter editors/thesis degree/report number not exported; @misc publisher; ^ ~ not escaped; single-braced titles.
+Task 39: implemented 4a7cc75 + 4426010 (pinned base and head snapshots, --check for B4 CI); Opus review running. Note for parent: 57 strings in tools/style.hi.json have no Hindi key (the app shows English).
