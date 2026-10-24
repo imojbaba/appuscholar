@@ -65,7 +65,9 @@ const run = (cmd, args, opts = {}) => new Promise((resolve) => {
 });
 
 // pglite: started first so a database that will not start fails before a build of several minutes.
-const pglite = spawn(process.execPath, ["e2e/support/pglite-postgres.mjs"], { cwd: WEB_DIR, env: { ...env, PGLITE_PORT: String(PG_PORT) }, stdio: ["ignore", "pipe", "inherit"] });
+// TZ=UTC: through its socket, pglite's session time zone follows the machine's (Etc/GMT-5 on a machine in IST, UTC+5:30), and `defaultNow()` columns (timestamps without a time zone)
+// then lay down a clock hours ahead of the browser's: a project made a minute ago read "Edited 25 Oct" at 20:30 in Mumbai. The real database (Neon) and CI run on UTC.
+const pglite = spawn(process.execPath, ["e2e/support/pglite-postgres.mjs"], { cwd: WEB_DIR, env: { ...env, PGLITE_PORT: String(PG_PORT), TZ: "UTC" }, stdio: ["ignore", "pipe", "inherit"] });
 const pgExit = new Promise((resolve) => pglite.once("exit", (code) => resolve(code ?? 1)));
 const pgReady = new Promise((resolve, reject) => {
   const timer = setTimeout(() => reject(new Error("pglite did not become ready within 60 s")), 60_000);

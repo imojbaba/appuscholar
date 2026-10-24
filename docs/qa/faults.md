@@ -69,14 +69,58 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc: case S10-06, failed checks "the recovery sheet" and "the new recovery sheet": "every control at least 44 px each way". Re-run as Q3.
 - Status: known
 
-### Q5: The show-passphrase eye lies over the right end of every passphrase field
+### Q5: The show-passphrase eye lies over the right end of every passphrase and key field
 
-- Case: S10-01 (the unlock windows, the change-passphrase window, the recovery window) and S10-06 (the passphrase, unlock and recovery windows on a phone, in Hindi)
+- Case: S10-01 (the unlock windows, the change-passphrase window, the recovery window), S10-06 (the passphrase, unlock and recovery windows on a phone, in Hindi), and S1-01 and S1-02 (the key window's two key fields: the AI key and the OpenAlex key)
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI
 - Expected: a passphrase field keeps room at its right edge for its eye, so that nothing typed goes under it (source: `components/ui/secret-input.tsx` keeps 44 px with `pr-11`; spec section 8, layout rules, no two controls on top of each other)
-- Happened: the field's right padding computes to 10 px, not 44 px, and the eye is 44 px wide: the `.input` rule in `app/globals.css` (line 133) is outside any `@layer`, so it wins over Tailwind's `pr-11` utility. A passphrase of about 70 characters or more runs under the eye (measured: field 462 px wide, eye 44 px at its right end, `padding-right: 10px`; a screenshot with a long passphrase shows the dots up to and under the icon). It shows as the overlap rule's finding `input ... over button ... [pass-input-toggle]: they cross by 44 × 36 px` (on a phone 44 × 44 px) for `pass-input`, `vault-change-old`, `vault-change-new`, `vault-change-again`, `recover-pass` and `recover-pass2`.
-- Detected by: the check "the passphrase field(s) keep room for their eye" of S10-01 and S10-06 (the field's computed padding-right against the eye's width), which carries Q5 and passes once the padding is 44 px; the overlap rule (`qa/support/layout.ts`) does not flag an absolutely placed control held in a field's padding as wide as itself, so it stops flagging the eyes at the same time.
+- Happened: the field's right padding computes to 10 px, not 44 px, and the eye is 44 px wide: the `.input` rule in `app/globals.css` (line 133) is outside any `@layer`, so it wins over Tailwind's `pr-11` utility. A passphrase of about 70 characters or more runs under the eye (measured: field 462 px wide, eye 44 px at its right end, `padding-right: 10px`; a screenshot with a long passphrase shows the dots up to and under the icon). It shows as the overlap rule's finding `input ... over button ... [pass-input-toggle]: they cross by 44 × 36 px` (on a phone 44 × 44 px) for `pass-input`, `vault-change-old`, `vault-change-new`, `vault-change-again`, `recover-pass` and `recover-pass2`. The key window (`components/workspace/dialogs/ProviderKey.tsx`) has two more: `key-input` (eye `key-input-toggle`) and `oa-key-input` (its eye has no test id: `input "Paste a free OpenAlex key" [oa-key-input] over button "Show key"`), each measured at padding-right 10 px against an eye 44 px wide, crossing by 44 × 36 px (44 × 44 px on a phone).
+- Detected by: the check "the passphrase field(s) keep room for their eye" of S10-01 and S10-06, and "the key fields keep room for their eyes" of S1-01 and S1-02 (the field's computed padding-right against the eye's width), which carries Q5 and passes once the padding is 44 px; the overlap rule (`qa/support/layout.ts`) does not flag an absolutely placed control held in a field's padding as wide as itself, so it stops flagging the eyes at the same time.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc: cases S10-01 and S10-06, the failed checks "... no two controls on top of each other" of the second tab, the unlock window with the verdict, the change passphrase window and the two recovery windows. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S10-01"`.
+- Status: known
+
+### Q6: The terms window's text scrolls, but the keyboard cannot reach it
+
+- Case: S1-01 (the terms) and S1-02 (the terms, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: cfada864b83bd9de526ec7bc672e9256f8bd60a2
+- Kind: UI (accessibility)
+- Expected: a box that scrolls can be scrolled from the keyboard: it takes focus, or holds something that does (source: spec section 8, the axe scan: any serious or critical finding; WCAG 2.1.1, keyboard)
+- Happened: `.max-h-[56vh]`: scrollable-region-focusable (serious): Scrollable region must have keyboard access. It is the text of the terms (`data-testid="terms-body"` in `apps/web/components/workspace/dialogs/Terms.tsx`: `max-h-[56vh] overflow-auto`, no tabindex, nothing focusable inside). A student who does not use a mouse or a touch screen cannot scroll to the end of what they are asked to accept. The window cannot be dismissed (the gate), so it is the first screen of every new account.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86 (kept with that run, not in the repository): cases S1-01 and S1-02, the failed check "the terms: no serious or critical accessibility finding (axe)". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S1-01"`.
+- Status: known
+
+### Q7: On a phone, the terms window's two tick rows are 40 px and 20 px tall
+
+- Case: S1-02 (the terms, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: cfada864b83bd9de526ec7bc672e9256f8bd60a2
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way; a tick box is pressed through its label, so the larger of the two is its target (source: spec section 8, layout rules, O17; as Q3)
+- Happened: `input [terms-age]: 325 × 40 px` and `input [terms-agree]: 325 × 20 px` (the box itself is the browser's 13 px one). These are the two ticks a new student must press to go on. File: `components/workspace/dialogs/Terms.tsx`.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86: case S1-02, the failed check "the terms, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S1-02"`.
+- Status: known
+
+### Q8: On a phone, the key window's key-mode choices and option ticks are 18 to 36 px tall, and its ORCID link 17 px
+
+- Case: S1-02 (the key window, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: cfada864b83bd9de526ec7bc672e9256f8bd60a2
+- Kind: UI
+- Expected: as Q7 (source: spec section 8, layout rules, O17)
+- Happened: six controls under 44 px: `input [key-mode-pass]: 325 × 36 px`, `[key-mode-plain]` and `[key-mode-session]`: 325 × 18 px, `[ai-fallback]`: 325 × 36 px, `[ai-log]`: 325 × 18 px, and the link "Don't have one? Get a free ORCID iD →" (in Hindi: "नहीं है? मुफ़्त ORCID iD पाएं →"): 160.4 × 17 px. The first three are how a new student chooses to keep their key. File: `components/workspace/dialogs/ProviderKey.tsx`.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86: case S1-02, the failed check "the key window, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q7.
+- Status: known
+
+### Q9: On a Hindi page the key window's choices and hints, and the toast that says the key is connected, are in English
+
+- Case: S1-02 (the key window, and the toast that follows the vault's set-up, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: cfada864b83bd9de526ec7bc672e9256f8bd60a2
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name this window or this toast)
+- Happened: on the key window, four pieces of English: the provider list (`select [prov-select]`: "Google Gemini — free, easiest", "Groq — free & very fast" ... and the steps under it: "Sign up free → API Keys → Create API Key → copy ..."), the key-mode hint (`[key-mode-hint]`: "You choose a passphrase now and type it once each time you open Appuscholar ..."), the label "My field of study" with its note, and the option "If my AI is busy or fails, try my other saved keys automatically" with its note. The toast after the key is saved reads "Groq connected ✓ and encrypted 🔒" in English (`PROVIDERS[p].name + " connected ✓" + ...` in the same file; the sheet quotes it in English). All are v1's English literals in `components/workspace/dialogs/ProviderKey.tsx` (OPTION, MODE_HINT, and the strings in Form). The dictionary has Hindi for the window's title, labels and buttons, which show in Hindi (the case's own check passes).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86: case S1-02, the failed check "the key window, on a phone, in Hindi: no English on a Hindi screen", and "every toast speaks Hindi (the provider's name apart)". Re-run as Q7.
 - Status: known
