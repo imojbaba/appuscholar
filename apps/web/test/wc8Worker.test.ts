@@ -42,13 +42,15 @@ function fakeCaches(seed: Record<string, Record<string, Res>> = {}) {
   };
 }
 
-function load(opts: { caches?: ReturnType<typeof fakeCaches>; fetch?: (r: Req) => Promise<Res> } = {}) {
-  const listeners: Record<string, (e: unknown) => void> = {};
+/** `v` is the build the page registered the worker for (`/sw.js?v=<build>`); null registers `/sw.js` bare. */
+function load(opts: { caches?: ReturnType<typeof fakeCaches>; fetch?: (r: Req) => Promise<Res>; v?: string | null } = {}) {
+  const listeners: Record<string, ((e: unknown) => void) | undefined> = {};
+  const waits: Promise<unknown>[] = [];
   const caches = opts.caches ?? fakeCaches();
   const calls = { fetch: [] as Req[], skipWaiting: 0, claim: 0 };
   const ctx: Record<string, unknown> = {
-    URL, caches, console,
-    location: { origin: ORIGIN },
+    URL, URLSearchParams, caches, console,
+    location: { origin: ORIGIN, search: opts.v === null ? "" : "?v=" + (opts.v ?? "abc1234") },
     addEventListener: (t: string, f: (e: unknown) => void) => { listeners[t] = f; },
     skipWaiting: async () => { calls.skipWaiting++; },
     clients: { claim: async () => { calls.claim++; } },
@@ -61,15 +63,15 @@ function load(opts: { caches?: ReturnType<typeof fakeCaches>; fetch?: (r: Req) =
   /** Fires a fetch event; `responded` is undefined when the worker did not call respondWith (the browser then goes to the network itself). */
   async function fire(r: Req) {
     let responded: Promise<Res> | undefined;
-    listeners.fetch({ request: r, respondWith: (p: Promise<Res>) => { responded = p; }, waitUntil: () => {} });
+    listeners.fetch!({ request: r, respondWith: (p: Promise<Res>) => { responded = p; }, waitUntil: (p: Promise<unknown>) => { waits.push(p); } });
     return responded ? await responded.then((v) => ({ value: v }), (e) => ({ error: e as Error })) : undefined;
   }
   async function lifecycle(name: "install" | "activate") {
-    const waits: Promise<unknown>[] = [];
-    listeners[name]({ waitUntil: (p: Promise<unknown>) => waits.push(p) });
-    await Promise.all(waits);
+    const pending: Promise<unknown>[] = [];
+    listeners[name]!({ waitUntil: (p: Promise<unknown>) => pending.push(p) });
+    await Promise.all(pending);
   }
-  return { decide, VER, fire, lifecycle, caches, calls, listeners };
+  return { decide, VER, fire, lifecycle, caches, calls, listeners, waits };
 }
 
 describe("the service worker's decide(request, response?) (Review Focus 1)", () => {
@@ -101,8 +103,15 @@ describe("the service worker's decide(request, response?) (Review Focus 1)", () 
     expect(decide(req("/_next/static/media/font.woff2"))).toBe("cache-first");
     expect(decide(req("/icon-192.png"))).toBe("cache-first");
     expect(decide(req("/icon-512.png"))).toBe("cache-first");
-    expect(decide(req("/fonts/x.woff2"))).toBe("cache-first");
     expect(decide(req("/_next/image?url=%2Fa.png&w=64"))).toBe("ignore");
+  });
+
+  it("keeps no font by its extension: next/font serves from /_next/static/media, so any other same-origin path stays on the network", () => {
+    expect(decide(req("/_next/static/media/plex.woff2"))).toBe("cache-first");
+    expect(decide(req("/fonts/x.woff2"))).toBe("ignore");
+    expect(decide(req("/uploads/a.ttf"))).toBe("ignore");
+    expect(decide(req("/p/123/x.otf"))).toBe("ignore");
+    expect(decide(req("/anything.woff"))).toBe("ignore");
   });
 
   it("stores a cache-first response only when it is a plain successful same-origin file: never one with Set-Cookie, never HTML, never an error or an opaque answer", () => {
@@ -120,15 +129,15 @@ describe("the service worker's listeners", () => {
   it("install precaches the offline page and the two icons, and nothing else", async () => {
     const w = load();
     await w.lifecycle("install");
-    expect(w.VER).toBe("appu-wc-1");
+    expect(w.VER).toBe("appu-wc-1-abc1234");
     expect([...w.caches.store.get(w.VER)!.keys()].sort()).toEqual([ORIGIN + "/icon-192.png", ORIGIN + "/icon-512.png", ORIGIN + "/offline.html"]);
     expect(w.calls.skipWaiting).toBe(1);
   });
 
   it("activate removes old appu- caches and keeps the current one and caches that are not ours", async () => {
-    const w = load({ caches: fakeCaches({ "appu-wc-0": {}, "appu-v55-2026.10.13": {}, "appu-wc-1": {}, "other-app": {} }) });
+    const w = load({ caches: fakeCaches({ "appu-wc-0": {}, "appu-v55-2026.10.13": {}, "appu-wc-1": {}, "appu-wc-1-0000000": {}, "appu-wc-1-abc1234": {}, "other-app": {} }) });
     await w.lifecycle("activate");
-    expect([...w.caches.store.keys()].sort()).toEqual(["appu-wc-1", "other-app"]);
+    expect([...w.caches.store.keys()].sort()).toEqual(["appu-wc-1-abc1234", "other-app"]);
     expect(w.calls.claim).toBe(1);
   });
 
@@ -163,16 +172,57 @@ describe("the service worker's listeners", () => {
   it("serves a hashed asset from the saved copy first, and saves a fresh one from the network", async () => {
     const hit = res({ tag: "saved" });
     const url = ORIGIN + "/_next/static/chunks/a.js";
-    const w = load({ caches: fakeCaches({ "appu-wc-1": { [url]: hit } }), fetch: async () => res({ tag: "fresh" }) });
+    const w = load({ caches: fakeCaches({ "appu-wc-1-abc1234": { [url]: hit } }), fetch: async () => res({ tag: "fresh" }) });
     expect(((await w.fire(req("/_next/static/chunks/a.js"))) as { value: Res }).value.tag).toBe("saved");
     expect(w.calls.fetch).toEqual([]);
     const w2 = load({ fetch: async () => res({ tag: "fresh" }) });
     await w2.fire(req("/_next/static/chunks/b.js"));
     await new Promise((r) => setTimeout(r, 0));
-    expect(w2.caches.store.get("appu-wc-1")?.get(ORIGIN + "/_next/static/chunks/b.js")?.tag).toBe("fresh");
+    expect(w2.caches.store.get("appu-wc-1-abc1234")?.get(ORIGIN + "/_next/static/chunks/b.js")?.tag).toBe("fresh");
     const w3 = load({ fetch: async () => res({ setCookie: true }) });
     await w3.fire(req("/_next/static/chunks/c.js"));
     await new Promise((r) => setTimeout(r, 0));
-    expect(w3.caches.store.get("appu-wc-1")?.size ?? 0).toBe(0);
+    expect(w3.caches.store.get("appu-wc-1-abc1234")?.size ?? 0).toBe(0);
+  });
+
+  it("saves a fresh file inside waitUntil, so the worker is kept alive until the copy is written", async () => {
+    const w = load({ fetch: async () => res({ tag: "fresh" }) });
+    await w.fire(req("/_next/static/chunks/d.js"));
+    expect(w.waits).toHaveLength(1);
+    await Promise.all(w.waits);
+    expect(w.caches.store.get(w.VER)?.get(ORIGIN + "/_next/static/chunks/d.js")?.tag).toBe("fresh");
+    // A file that is not stored (Set-Cookie) asks for no extension, and a failed write never fails the page.
+    const w2 = load({ fetch: async () => res({ setCookie: true }) });
+    await w2.fire(req("/_next/static/chunks/e.js"));
+    expect(w2.waits).toHaveLength(0);
+    const w3 = load({ fetch: async () => res() });
+    (w3.caches as unknown as { open: unknown }).open = async () => ({ match: async () => undefined, put: async () => { throw new Error("quota"); } });
+    expect(await w3.fire(req("/_next/static/chunks/f.js"))).toHaveProperty("value");
+    await expect(Promise.all(w3.waits)).resolves.toBeDefined();
+  });
+});
+
+describe("the worker is versioned per build (the cache cannot grow for ever)", () => {
+  it("names its cache from the build the page registered it for: /sw.js?v=<build>", () => {
+    expect(load({ v: "abc1234" }).VER).toBe("appu-wc-1-abc1234");
+    expect(load({ v: "def5678" }).VER).toBe("appu-wc-1-def5678");
+    expect(load({ v: "dev" }).VER).toBe("appu-wc-1-dev");
+  });
+  it("registered bare or with an empty version it is the dev build, and a hostile value cannot shape the cache name", () => {
+    expect(load({ v: null }).VER).toBe("appu-wc-1-dev");
+    expect(load({ v: "" }).VER).toBe("appu-wc-1-dev");
+    expect(load({ v: "../x y/%00" }).VER).toBe("appu-wc-1-xy");
+    expect(load({ v: "a".repeat(200) }).VER).toBe("appu-wc-1-" + "a".repeat(40));
+  });
+  it("a new build's worker deletes the previous build's cache when it activates, so hashed chunks do not pile up", async () => {
+    const old = load({ v: "aaaaaaa", fetch: async () => res() });
+    await old.lifecycle("install");
+    await old.fire(req("/_next/static/chunks/old.js"));
+    await Promise.all(old.waits);
+    expect(old.caches.store.get("appu-wc-1-aaaaaaa")!.size).toBeGreaterThan(3);
+    const next = load({ v: "bbbbbbb", caches: old.caches });
+    await next.lifecycle("install");
+    await next.lifecycle("activate");
+    expect([...next.caches.store.keys()]).toEqual(["appu-wc-1-bbbbbbb"]);
   });
 });
