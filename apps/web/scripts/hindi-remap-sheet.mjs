@@ -20,7 +20,7 @@
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { KIND, REMAP_URL, stripEmoji } from "./v1-hindi-remap.mjs";
+import { KIND, REMAP_URL, SOURCES, sourceOf, stripEmoji } from "./v1-hindi-remap.mjs";
 
 export { stripEmoji };
 
@@ -47,6 +47,14 @@ export const KIND_LABEL = {
   [KIND.EXACT]: "exact English",
   [KIND.NORMALISED]: "same words (emoji, spacing or spelling differ)",
   [KIND.PLACEHOLDERS]: "placeholders renamed",
+};
+
+/** Where in v1 the Hindi of a remapped key was found, in words (v1 keeps Hindi in its dictionary and in three tables beside it). */
+export const SOURCE_LABEL = {
+  I18N: "I18N dictionary",
+  AP_STAGES_HI: "stage table AP_STAGES_HI",
+  TOAST_HI: "toast table TOAST_HI",
+  STATIC_HI: "dialog table STATIC_HI",
 };
 
 /** Why a main-dictionary Hindi is still English after the remap. The text before the first comma is the short name used in the counts. */
@@ -148,8 +156,9 @@ function remapView(remap, en, hi) {
   const still = sortedKeys(en).filter(k => hi[k] === en[k]).map(k => [k, en[k], ...reasonOf(k)]);
   const before = remapped.length + Object.keys(remap.ambiguous).length + Object.keys(remap.rejected).length + remap.keepEnglish.length + remap.noV1Hindi.length;
   const kinds = Object.values(KIND).map(kd => [kd, remapped.filter(r => r[4] === kd).length]);
+  const sources = SOURCES.map(src => [src, remapped.filter(r => sourceOf(r[3]) === src).length]);
   const reasons = Object.values(REASON).map(r => [r, still.filter(x => x[2] === r).length]);
-  return { remapped, still, before, kinds, reasons };
+  return { remapped, still, before, kinds, sources, reasons };
 }
 
 /**
@@ -210,6 +219,7 @@ export function renderSheet({ base, head, baseKeys, en, hi, tools, remap }) {
     const short = r => r.split(",")[0];
     out.push(`- English copies before the v1 remap, main dictionary: ${fmt(view.before)}`);
     out.push(`- Remapped from v1 build ${remap.v1.build} (commit \`${remap.v1.commit}\`): ${fmt(view.remapped.length)} (exact English ${fmt(exact)}, same words ${fmt(same)}, placeholders renamed ${fmt(shaped)})`);
+    out.push(`- Remapped, by where v1 keeps the Hindi: ${view.sources.map(([src, n]) => `${SOURCE_LABEL[src]} ${fmt(n)}`).join(", ")}`);
     out.push(`- Still English after the remap, main dictionary: ${fmt(view.still.length)} (${view.reasons.map(([r, n]) => `${short(r)} ${fmt(n)}`).join(", ")})`);
   }
   out.push(`- Hindi values still English now, main dictionary: ${fmt(nowCopies)}`);
@@ -230,12 +240,12 @@ export function renderSheet({ base, head, baseKeys, en, hi, tools, remap }) {
   out.push("");
   if (view) {
     out.push(`## Hindi remapped from v1: ${fmt(view.remapped.length)} keys`, "");
-    out.push(`Until now Hindi mode showed the English text for these keys. They now show the Hindi in Dr. Sharma's own v1 (build ${remap.v1.build}, commit \`${remap.v1.commit}\`), found by the English text; v1's key is in the table. The Hindi is hers, not a draft, but it was written for v1's screens, so please check it in place. Three things were adjusted to keep the two languages alike: "Appuscholer" is spelt "Appuscholar", the Hindi has the same edge spaces as the English, and the Hindi starts with the same emoji as the English (or none).`, "");
+    out.push(`Until now Hindi mode showed the English text for these keys. They now show the Hindi in Dr. Sharma's own v1 (build ${remap.v1.build}, commit \`${remap.v1.commit}\`), found by the English text; v1's key is in the table (a key such as \`TOAST_HI["..."]\` or \`AP_STAGES_HI.gap.name\` names one of the tables beside v1's dictionary: toasts, dialog text, the stage names and questions of Analyse a paper). The Hindi is hers, not a draft, but it was written for v1's screens, so please check it in place. Three things were adjusted to keep the two languages alike: "Appuscholer" is spelt "Appuscholar", the Hindi has the same edge spaces as the English, and the Hindi starts with the same emoji as the English (or none).`, "");
     out.push("| Key | English | Hindi from v1 | v1 key | Match |", "|---|---|---|---|---|");
     for (const [k, e, h, v, kd] of view.remapped) out.push(`| ${cell(k)} | ${cell(e)} | ${cell(h)} | ${cell(v)} | ${KIND_LABEL[kd]} |`);
     out.push("");
     out.push(`## Hindi still English after the remap: ${fmt(view.still.length)} keys`, "");
-    out.push("Hindi mode shows the English text for these keys. Reasons: \"no Hindi in v1\" (v1 has no Hindi for that English, often because v1 itself still shows it in English; Dr. Sharma to provide); \"ambiguous in v1\" (v1 has two different Hindi values for it; she is asked to choose); \"v1 Hindi not used\" (v1's Hindi has other tags, placeholders or emoji than the English); \"a name or format\" (a product name, a file format or a typed word, which stays as it is in both languages).", "");
+    out.push("Hindi mode shows the English text for these keys. Reasons: \"no Hindi in v1\" (v1 has no Hindi for that English, in its dictionary or in its toast, dialog and stage tables, often because v1 itself still shows it in English; Dr. Sharma to provide); \"ambiguous in v1\" (v1 has two different Hindi values for it; she is asked to choose); \"v1 Hindi not used\" (v1's Hindi has other tags, placeholders or emoji than the English); \"a name or format\" (a product name, a file format or a typed word, which stays as it is in both languages).", "");
     out.push("| Key | English | Reason |", "|---|---|---|");
     for (const [k, e, , text] of view.still) out.push(`| ${cell(k)} | ${cell(e)} | ${plain(text)} |`);
     out.push("");

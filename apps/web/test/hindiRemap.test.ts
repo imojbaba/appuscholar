@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { BASE_COMMIT, KIND_LABEL, REASON, STATUS, buildSheet, readBaseFromGit, renderSheet } from "../scripts/hindi-remap-sheet.mjs";
-import { KIND } from "../scripts/v1-hindi-remap.mjs";
+import { KIND, SOURCES, sourceOf } from "../scripts/v1-hindi-remap.mjs";
 
 // Task 39: docs/i18n/wave-b-hindi-remap.md lists what Dr. Sharma must re-map into Hindi after wave B.
 // The sheet is a snapshot: these tests run against two pinned files (scripts/fixtures/wave-b-base.json and wave-b-head.json), never the live
@@ -102,6 +102,15 @@ describe("the Hindi re-map sheet (wave B)", () => {
     expect(remapped + still).toBe(369);   // the head snapshot is the dictionaries with the remap applied
   });
 
+  it("the header gives the remap by kind and by where v1 keeps the Hindi", () => {
+    const text = sheet();
+    expect(text).toContain("- Remapped from v1 build 2026.10.24a (commit `f5336be`): 159 (exact English 147, same words 7, placeholders renamed 5)");
+    expect(text).toContain("- Remapped, by where v1 keeps the Hindi: I18N dictionary 114, stage table AP_STAGES_HI 23, toast table TOAST_HI 20, dialog table STATIC_HI 2");
+    expect(text).toContain("- Still English after the remap, main dictionary: 210 (no Hindi in v1 190, ambiguous in v1 1, v1 Hindi not used 8, a name or format 11, added after the remap 0)");
+    const bySource = (src: string) => Object.values(remap.keys).filter(e => sourceOf(e.v1Key) === src).length;
+    expect(SOURCES.map(bySource)).toEqual([114, 23, 20, 2]);
+  });
+
   it("lists every remapped key once, with its English, the Hindi from v1, the v1 key and the match kind", () => {
     const rows = rowsOf(section("Hindi remapped from v1"));
     expect(rows.length).toBe(Object.keys(remap.keys).length);
@@ -135,12 +144,15 @@ describe("the Hindi re-map sheet (wave B)", () => {
   it("gives each English copy a remap section row: remapped, or still English with one reason", () => {
     const text = renderSheet({
       base: "x", head: "y", baseKeys: {},
-      en: { m: "Ask", amb: "Same", rej: "<b>X</b>", name: "CSV", none: "Nothing", late: "Added later", done: "Done" },
-      hi: { m: "पूछें", amb: "Same", rej: "<b>X</b>", name: "CSV", none: "Nothing", late: "Added later", done: "पूरा" },
+      en: { m: "Ask", tt: "Highlight off", amb: "Same", rej: "<b>X</b>", name: "CSV", none: "Nothing", late: "Added later", done: "Done" },
+      hi: { m: "पूछें", tt: "चिह्न बंद", amb: "Same", rej: "<b>X</b>", name: "CSV", none: "Nothing", late: "Added later", done: "पूरा" },
       tools: {},
       remap: {
         v1: { commit: "abc1234", build: "2026.10.24a", sha256: "0".repeat(64) },
-        keys: { m: { en: "Ask", hi: "पूछें", v1Key: "ap_ask", kind: KIND.EXACT } },
+        keys: {
+          m: { en: "Ask", hi: "पूछें", v1Key: "ap_ask", kind: KIND.EXACT },
+          tt: { en: "Highlight off", hi: "चिह्न बंद", v1Key: 'TOAST_HI["Highlight off"]', kind: KIND.EXACT },
+        },
         ambiguous: { amb: { en: "Same", v1: [["s1", "एक"], ["s2", "दो"]] } },
         rejected: { rej: { en: "<b>X</b>", v1Key: "x", reason: "tags differ" } },
         keepEnglish: ["name"],
@@ -155,11 +167,13 @@ describe("the Hindi re-map sheet (wave B)", () => {
     expect(reason("none")).toBe(REASON.NONE);
     expect(reason("late")).toBe(REASON.LATE);
     expect(rowsOf(still).map(r => r.split("`")[1]).sort()).toEqual(["amb", "late", "name", "none", "rej"]);   // not the remapped key, not the translated one
-    expect(text).toContain("- English copies before the v1 remap, main dictionary: 5");
-    expect(text).toContain("- Remapped from v1 build 2026.10.24a (commit `abc1234`): 1 (exact English 1, same words 0, placeholders renamed 0)");
+    expect(text).toContain("- English copies before the v1 remap, main dictionary: 6");
+    expect(text).toContain("- Remapped from v1 build 2026.10.24a (commit `abc1234`): 2 (exact English 2, same words 0, placeholders renamed 0)");
+    expect(text).toContain("- Remapped, by where v1 keeps the Hindi: I18N dictionary 1, stage table AP_STAGES_HI 0, toast table TOAST_HI 1, dialog table STATIC_HI 0");
     expect(text).toContain("- Still English after the remap, main dictionary: 5 (no Hindi in v1 1, ambiguous in v1 1, v1 Hindi not used 1, a name or format 1, added after the remap 1)");
     const remapped = text.split("\n## ").find(x => x.startsWith("Hindi remapped from v1"))!;
     expect(remapped).toContain("| `m` | `Ask` | `पूछें` | `ap_ask` | " + KIND_LABEL.exact + " |");
+    expect(remapped).toContain('| `tt` | `Highlight off` | `चिह्न बंद` | `TOAST_HI["Highlight off"]` | ' + KIND_LABEL.exact + " |");
   });
 
   it("the committed base snapshot equals the dictionaries at the base commit", ctx => {
