@@ -21,9 +21,9 @@ function isProvider(v: unknown): v is ProviderId { return typeof v === "string" 
 const ITEM = "min-h-[40px]";
 
 /**
- * The app's header (canvas Main): the wordmark (the project list), the project switcher, the vault pill, the AI pill, the language, Help and
- * the account menu. The version pill moved into Help. Every title shown is the opened one (useTitle): "Locked title" while the vault is locked.
- * On a phone (canvas Phone, PHONE_QUERY) it is the wordmark, the vault pill and Menu, which holds the rest (PhoneMenu). The desktop-only items
+ * The app's header (canvas Main): the wordmark (the project list), the project switcher, the vault pill, the theme button, the AI pill, the language,
+ * Help and the account menu. The version pill moved into Help. Every title shown is the opened one (useTitle): "Locked title" while the vault is locked.
+ * On a phone (canvas Phone, PHONE_QUERY) it is the wordmark, the vault pill, the theme button and Menu, which holds the rest (PhoneMenu). The desktop-only items
  * carry `app-desk`, which globals.css hides at phone width: the server's render and the first paint, before useMedia knows, show no desktop header.
  */
 export function AppHeader() {

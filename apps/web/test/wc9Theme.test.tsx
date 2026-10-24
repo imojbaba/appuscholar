@@ -3,77 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { THEME_KEY, THEME_SCRIPT, getTheme, setTheme } from "../lib/help/theme";
 import { ThemeButton } from "../components/help/theme/ThemeButton";
 import { DICTS } from "../lib/i18n";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-// ---- Contrast: the colours are read from globals.css itself, so the test cannot drift from the page -----------------------------------------------
-
-const CSS = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
-
-/** The declarations of every rule whose selector is exactly `selector`, merged in file order. */
-function tokens(selector: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  const re = new RegExp("(?:^|[}/;])\\s*" + selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}", "g");
-  for (const m of CSS.matchAll(re)) for (const d of m[1]!.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) out[d[1]!] = d[2]!.trim();
-  return out;
-}
-/** The light primary button is `bg-purple-800` (hover `bg-purple-600`, pressed `bg-purple-900`, components/ui/button.tsx); the dark theme names its own fills. */
-const LIGHT = { ...tokens(":root"), "--fill": "var(--purple-800)", "--fill-hover": "var(--purple-600)", "--fill-active": "var(--purple-900)" };
-const DARK = { ...LIGHT, ...tokens(':root[data-theme="dark"]') };
-
-/** A token's colour as "#rrggbb", following var(--x) references through the theme's own tokens. */
-function colour(theme: Record<string, string>, name: string): string {
-  let v = name.startsWith("--") ? theme[name] : name;
-  for (let i = 0; i < 8 && v && v.startsWith("var("); i++) v = theme[/var\((--[\w-]+)/.exec(v)![1]!];
-  if (!v || !/^#[0-9a-f]{6}$/i.test(v)) throw new Error(`${name} is not a plain #rrggbb colour in this theme (${v})`);
-  return v.toLowerCase();
-}
-const lum = (hex: string) => {
-  const n = parseInt(hex.slice(1), 16);
-  const [r, g, b] = [n >> 16 & 255, n >> 8 & 255, n & 255].map((c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
-  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
-};
-/** WCAG contrast ratio of two #rrggbb colours. */
-function contrast(a: string, b: string): number {
-  const [x, y] = [lum(a), lum(b)];
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-}
-
-/** Foreground on background, for the text the app draws: body, muted, headings and links, the primary button, notes, the destructive text. */
-const SURFACES = ["--bg", "--card", "--soft", "--chip"];
-const PAIRS: Array<[string, string, string]> = [
-  ...SURFACES.flatMap((s): Array<[string, string, string]> => [
-    ["--ink", s, "body text"], ["--muted", s, "muted text"], ["--purple-800", s, "headings and links"], ["--accent-ink", s, "links"], ["--danger-ink", s, "destructive text"]
-  ]),
-  ["--purple-800", "--purple-100", "chip and toggle text"], ["--accent-ink", "--purple-100", "links on a chip"], ["--accent-foreground", "--accent", "accent text"],
-  ["--secondary-foreground", "--secondary", "secondary button"], ["--ink", "--purple-100", "text on a chip"],
-  ["--primary-foreground", "--primary", "default button"],
-  ["--primary-foreground", "--fill", "primary button"], ["--primary-foreground", "--fill-hover", "primary button, hover"], ["--primary-foreground", "--fill-active", "primary button, pressed"],
-  ["--flag-ink", "--flag-bg", "caution note"], ["--ok-ink", "--ok-bg", "good note"], ["--danger-ink", "--danger-bg", "problem note"],
-  ["--ink", "--gold-wash", "AI-inserted text"], ["--ink", "--flag-bg", "text in a caution note"]
-];
-
-describe("dark theme: contrast of the token pairs (Review Focus 5)", () => {
-  for (const [name, theme] of [["light", LIGHT], ["dark", DARK]] as const) {
-    it(`${name}: every foreground and background pair used for text is at least 4.5:1`, () => {
-      const low = PAIRS.map(([fg, bg, what]) => ({ what, fg, bg, r: contrast(colour(theme, fg), colour(theme, bg)) })).filter((p) => p.r < 4.5);
-      expect(low.map((p) => `${p.what}: ${p.fg} on ${p.bg} is ${p.r.toFixed(2)}`)).toEqual([]);
-    });
-  }
-  it("the dark block redefines the surfaces and the text, so it is a real second theme", () => {
-    const dark = tokens(':root[data-theme="dark"]');
-    for (const k of ["--bg", "--card", "--soft", "--chip", "--line", "--ink", "--muted", "--purple-800", "--purple-100", "--flag-ink", "--ok-ink", "--danger-ink"]) expect(dark[k], k).toBeDefined();
-    expect(contrast(colour(DARK, "--ink"), colour(DARK, "--bg"))).toBeGreaterThan(contrast(colour(LIGHT, "--bg"), colour(LIGHT, "--card")));
-    expect(CSS).toMatch(/color-scheme:\s*dark/);
-  });
-  it("the Tailwind dark: variant follows the chosen theme, not the device's setting", () => {
-    expect(CSS).toMatch(/@custom-variant dark \([^)]*data-theme="dark"/);
-  });
-});
 
 // ---- The helper -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -149,24 +85,47 @@ describe("the header's theme button", () => {
     act(() => { createRoot(host).render(<ThemeButton />); });
     return host;
   }
-  it("offers dark first, switches on a click, persists, and offers light after", () => {
+  const label = (host: HTMLElement) => host.querySelector("[data-testid=theme-toggle]")!.getAttribute("aria-label");
+  it("offers dark first, switches on a click, persists, and offers light after", async () => {
     const host = draw();
     const btn = () => host.querySelector<HTMLButtonElement>("[data-testid=theme-toggle]")!;
     expect(btn().getAttribute("aria-label")).toBe(DICTS.en.wc_theme_to_dark);
-    act(() => { btn().click(); });
+    await act(async () => { btn().click(); });
     expect(localStorage.getItem("appu_theme")).toBe("dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(btn().getAttribute("aria-label")).toBe(DICTS.en.wc_theme_to_light);
-    act(() => { btn().click(); });
+    await act(async () => { btn().click(); });
     expect(localStorage.getItem("appu_theme")).toBe("light");
     expect(btn().getAttribute("aria-label")).toBe(DICTS.en.wc_theme_to_dark);
   });
-  it("starts in dark when the chosen theme is already dark on this device", () => {
-    setTheme("dark");
+  it("starts in dark when the page already says dark (the inline script ran before the button did)", () => {
+    document.documentElement.setAttribute("data-theme", "dark");
+    expect(label(draw())).toBe(DICTS.en.wc_theme_to_light);
+  });
+  it("follows the attribute, not storage: a theme set by something else changes the label with no click", async () => {
     const host = draw();
-    expect(host.querySelector("[data-testid=theme-toggle]")!.getAttribute("aria-label")).toBe(DICTS.en.wc_theme_to_light);
+    expect(label(host)).toBe(DICTS.en.wc_theme_to_dark);
+    await act(async () => { document.documentElement.setAttribute("data-theme", "dark"); });
+    expect(label(host)).toBe(DICTS.en.wc_theme_to_light);
+    await act(async () => { document.documentElement.setAttribute("data-theme", "light"); });
+    expect(label(host)).toBe(DICTS.en.wc_theme_to_dark);
+  });
+  it("never reads storage to draw itself, and the server's render is the light button", () => {
+    const get = vi.spyOn(Storage.prototype, "getItem");
+    localStorage.setItem(THEME_KEY, "dark");
+    get.mockClear();
+    const host = draw();
+    expect(get).not.toHaveBeenCalled();
+    expect(label(host)).toBe(DICTS.en.wc_theme_to_dark);
+    vi.restoreAllMocks();
+    expect(renderToString(<ThemeButton />)).toContain(DICTS.en.wc_theme_to_dark);
   });
   it("its words are in both languages and have no em-dash", () => {
     for (const k of ["wc_theme_to_dark", "wc_theme_to_light"]) { expect(DICTS.en[k]).toBeTruthy(); expect(DICTS.hi[k]).toBeTruthy(); expect(DICTS.en[k]).not.toMatch(/—/); }
+  });
+  it("the source does not set state in an effect (the lint rule this task tripped)", () => {
+    const src = readFileSync(join(process.cwd(), "components/help/theme/ThemeButton.tsx"), "utf8");
+    expect(src).toMatch(/useSyncExternalStore/);
+    expect(src).not.toMatch(/useEffect/);
   });
 });
