@@ -70,6 +70,9 @@ describe("resizeImage large PNG fallback", () => {
     expect(calls).toContainEqual(["image/jpeg", 0.85]);
     expect(ctx.fillStyle).toBe("#fff");
     expect(ctx.fillRect).toHaveBeenCalled();
+    // The picture is drawn again over the white, or the JPEG would be blank.
+    expect(ctx.drawImage).toHaveBeenCalledTimes(2);
+    expect(ctx.fillRect.mock.invocationCallOrder[0]!).toBeLessThan(ctx.drawImage.mock.invocationCallOrder[1]!);
   });
   it("keeps the PNG at 400000 characters or fewer", async () => {
     stubPng(1000);
@@ -87,7 +90,7 @@ describe("shrinkDataUrl", () => {
       width: 0,
       height: 0,
       getContext: vi.fn(() => ctx),
-      toDataURL: vi.fn((type: string) => (type === "image/png" ? "data:image/png;base64,PNG" : "data:image/jpeg;base64,JPG")),
+      toDataURL: vi.fn((type: string): string => (type === "image/png" ? "data:image/png;base64,PNG" : "data:image/jpeg;base64,JPG")),
     };
     vi.stubGlobal("document", { createElement: vi.fn(() => canvas) });
     vi.stubGlobal(
