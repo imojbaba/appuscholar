@@ -21,9 +21,10 @@ const DOI = /^10\.\d{4,9}\/[^\s"\\<>]+$/;
 const PMCID = /^PMC\d{1,10}$/;
 /**
  * JATS as Europe PMC sends it: the `article` element as the root, after any XML declaration, processing instruction, comment or DOCTYPE (with or without an internal subset) that
- * the service puts before it. Only the start of the body is read. A page that merely has an `article` element somewhere in it (a sign-in page) does not match.
+ * the service puts before it. Only the start of the body is read. A page that merely has an `article` element somewhere in it (a sign-in page) does not match. Neither a comment
+ * nor a DOCTYPE's subset can run past its own end marker, so a body of many comments and no `article` is refused at once (no backtracking without end).
  */
-const JATS = /^\uFEFF?\s*(?:(?:<\?[^>]*\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>[]*(?:\[[\s\S]*?\])?\s*>)\s*)*<article[\s>]/;
+const JATS = /^\uFEFF?\s*(?:(?:<\?[^>]*\?>|<!--(?:[^-]|-(?!->))*-->|<!DOCTYPE[^>[]*(?:\[[^\]]*\])?\s*>)\s*)*<article[\s>]/;
 
 type SearchHit = { doi?: unknown; pmcid?: unknown; isOpenAccess?: unknown; inEPMC?: unknown };
 
