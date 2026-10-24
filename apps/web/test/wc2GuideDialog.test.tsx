@@ -11,6 +11,9 @@ import { GUIDE } from "@/lib/help/guide/content";
 import { DICTS } from "@/lib/i18n";
 import type { GuideSection } from "@/lib/help/guide/types";
 
+// Task C3 puts Ask Appu in the Guide's dialog (GuideSlot); its AI hook needs the workspace's providers, and these tests are about the dialog.
+vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => async () => "" }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const FIX: GuideSection[] = [

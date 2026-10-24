@@ -32,7 +32,7 @@ export type QuoteDeps = {
   srcLang: string;
   /** The project's content language, else the default in Settings (getContentLang 2472; the language useCallAI sends). */
   contentLang: "en" | "hi";
-  callAI(prompt: string, opts: { temp: number; max: number; noLang: boolean }): Promise<string>;
+  callAI(prompt: string, opts: { temp: number; max: number; noLang: boolean; literature?: boolean }): Promise<string>;
   /** insertHTMLBlockIntoEditor (insertHtmlBlock), through the shell's requestInsert; false when the document did not open (nothing was inserted, and the student was told). */
   insertBlock(html: string): Promise<boolean>;
   /** citInsertAtCursor (insertTextAtCursor), the same way; false when the document did not open. */
@@ -49,7 +49,8 @@ export async function citeInsertQuote(d: QuoteDeps): Promise<void> {
   if (srcLang === "en" && d.contentLang === "hi") {
     d.toast(TRANSLATING_QUOTE);
     try {
-      const translated = await d.callAI(quotePrompt(txt), { ...QUOTE_OPTS });
+      // A quotation from a source is published text: no name in it is a participant's to suggest (C13).
+      const translated = await d.callAI(quotePrompt(txt), { ...QUOTE_OPTS, literature: true });
       // The document may have been closed, or locked, while the AI answered: the insert opens it. When it does not open nothing went in, so the box keeps the quote and no success is claimed.
       if (!(await d.insertBlock(translatedQuoteHtml(txt, translated)))) return;
       d.clearQuote();

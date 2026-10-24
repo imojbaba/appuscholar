@@ -9,7 +9,6 @@ vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 vi.mock("@/lib/help/report/mail", () => ({ openMail: vi.fn() }));
 
 import { HelpButtons } from "@/components/help/HelpButtons";
-import { ChromeExtras } from "@/components/help/ChromeExtras";
 import { ErrorSlot } from "@/components/help/slots/ErrorSlot";
 import { ToastHost } from "@/components/ui/toast";
 import { SessionProvider } from "@/lib/session";
@@ -138,7 +137,8 @@ describe("Report a problem (Task C4)", () => {
   });
 
   it("the error slot draws nothing and records errors while mounted", async () => {
-    await act(async () => { root.render(<ChromeExtras />); });
+    // The slot itself: the chrome beside it now keeps the offline bar's empty status region mounted (Task C8).
+    await act(async () => { root.render(<ErrorSlot />); });
     expect(host.innerHTML).toBe("");
     window.dispatchEvent(new ErrorEvent("error", { message: "late failure", filename: "x/y.js", lineno: 3 }));
     expect(readErrors().map((e) => e.message)).toEqual(["late failure"]);

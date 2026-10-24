@@ -57,6 +57,7 @@ import { TOOL_TABS } from "../lib/tools/registry";
 // Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
 // what this file sees (session C, 2026-10-21).
 vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/participants", () => ({ built: false }));
 vi.mock("@/components/tools/stats", () => ({ built: false }));
 vi.mock("@/components/tools/qual", () => ({ built: false }));
 vi.mock("@/components/tools/style", () => ({ built: false }));
@@ -200,8 +201,8 @@ describe("Writing and the stages not built (Task 10)", () => {
     const stubs = ["style", "words", "design", "stats", "qual", "close", "slides"];
     const banned = [E.ap2_lib_open_btn!, E.ap2_lesson_on_this_paper!, E.ap2_short_talks_on_reading!, E.backup_btn!, "All lectures", "Lesson on this paper", "arrive in a later phase", "This tool arrives in a later phase"];
     const places: Array<[StageKey, string | null]> = STAGE_ORDER.flatMap((s) => (PLACE_TABS[s].length ? PLACE_TABS[s].map((x) => [s, x] as [StageKey, string]) : [[s, null] as [StageKey, null]]));
-    // Idea, Literature's four tabs, Design and ethics' eight, Collection and analysis' six, Writing's three and Review's three.
-    expect(places).toHaveLength(25);
+    // Idea, Literature's four tabs, Design and ethics' eight, Collection and analysis' seven, Writing's three and Review's three.
+    expect(places).toHaveLength(26);
     for (const [stage, tab] of places) {
       await mount(stage, tab);
       for (const d of document.querySelectorAll("details")) act(() => { d.open = true; d.dispatchEvent(new Event("toggle")); });
@@ -223,7 +224,7 @@ describe("Writing and the stages not built (Task 10)", () => {
 /** Each stage 3 to 6 place's tabs as the student reads them, in order (v1's own names in plain words). */
 const STAGED_LABELS: Record<"design" | "collect" | "writing" | "review", string[]> = {
   design: ["Overview", "Pathway", "Protocol", "Ethics and consent", "Registration", "Investigator", "Budget", "AI-use statement"],
-  collect: ["Statistics", "Sample size", "Charts", "Check numbers", "Scales", "Coding"],
+  collect: ["Participants", "Statistics", "Sample size", "Charts", "Check numbers", "Scales", "Coding"],
   writing: ["Document", "My style", "Words"],
   review: ["Closeness", "Viva", "Make PPT"]
 };
@@ -233,7 +234,7 @@ describe("the stage 3 to 6 places (Task G2)", () => {
     // The registry's tabs, in the plan's order and ids; Writing's document tab is the frame's, not a tool's (ruling R2).
     expect(TOOL_TABS.map((x) => x.stage + "/" + x.tab)).toEqual([
       "design/overview", "design/pathway", "design/protocol", "design/ethics", "design/registration", "design/investigator", "design/budget", "design/aiuse",
-      "collect/data", "collect/power", "collect/charts", "collect/check", "collect/scales", "collect/coding",
+      "collect/participants", "collect/data", "collect/power", "collect/charts", "collect/check", "collect/scales", "collect/coding",
       "writing/style", "writing/words",
       "review/closeness", "review/viva", "review/slides"
     ]);

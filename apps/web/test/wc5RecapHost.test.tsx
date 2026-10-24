@@ -194,7 +194,9 @@ describe("RecapSlot: the host (v1 recapCheck 3739-3750, touchActive 3696)", () =
     const root = createRoot(box);
     roots.push(root);
     act(() => { root.render(<ChromeExtras />); });
-    expect(box.innerHTML).toBe("");
+    // Nothing to read and no dialog (the offline bar keeps an empty status region mounted, Task C8).
+    expect(box.textContent).toBe("");
+    expect(box.querySelector("[role=dialog], [role=alertdialog]")).toBeNull();
   });
 
   it("the timer is cleared when the shell goes away first", async () => {

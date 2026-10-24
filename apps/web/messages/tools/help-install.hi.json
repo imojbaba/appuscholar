@@ -1,3 +1,12 @@
 {
-  "$draft": "DRAFT: Hindi for Dr. Sharma's review, reviewed by: (pending)"
+  "$draft": "DRAFT: Hindi for Dr. Sharma's review, reviewed by: (pending)",
+  "wc_offline_bar": "आप ऑफ़लाइन हैं। आपका पिछला पन्ना स्क्रीन पर है, लेकिन सहेजने, एआई, शोध-पत्र खोज और नए पन्नों के लिए कनेक्शन चाहिए।",
+  "wc_install_btn": "Appuscholar को इस डिवाइस पर इंस्टॉल करें",
+  "wc_install_menu": "अपने ब्राउज़र के मेनू का उपयोग करें: Install app, या Add to Home Screen।",
+  "wc_install_cleared": "इस डिवाइस पर ऑफ़लाइन प्रति बंद कर दी गई और हटा दी गई।",
+  "wc_offpage_tab": "Appuscholar ऑफ़लाइन है",
+  "wc_offpage_title": "आप ऑफ़लाइन हैं",
+  "wc_offpage_body": "Appuscholar इंटरनेट तक नहीं पहुँच सका। आपने जो सहेजा है, वह आपके खाते में रखा है। सहेजने, एआई, शोध-पत्र खोज और नए पन्नों के लिए कनेक्शन चाहिए।",
+  "wc_offpage_check": "अपना कनेक्शन जाँचें, फिर दोबारा कोशिश करें।",
+  "wc_offpage_retry": "दोबारा कोशिश करें"
 }

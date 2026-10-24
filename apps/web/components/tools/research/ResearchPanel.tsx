@@ -5,6 +5,7 @@ import { plain, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { gapFinder, litReview, quickRead, quickReadTicked, type GeneratorDeps, type QuickDeps } from "@/lib/ai/actions";
 import { useCallAI } from "@/lib/ai/useCallAI";
+import { useLiterature } from "@/lib/ai/literature";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { retrCacheSet } from "@/lib/cite/checks";
@@ -46,7 +47,8 @@ export function ResearchPanel() {
   const t = useT();
   const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go } = useProject();
   const { me, settings } = useSettings();
-  const callAI = useCallAI();
+  // Every request this panel makes is about papers found by the search (quick reads, the literature review, the gap finder): published text, so no name in it is a participant's to suggest (C13).
+  const callAI = useLiterature(useCallAI());
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
   const prefs = useProjectBlob("rs_prefs", projectId);
   const library = useLibrary();
