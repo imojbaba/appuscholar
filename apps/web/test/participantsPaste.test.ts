@@ -126,7 +126,7 @@ describe("pasteSummary: the sentence after Paste a list", () => {
 
   it("a code that was used before gets the person a new one, and the sentence says which (R52)", () => {
     const t0 = (key: string, vars?: Record<string, string | number>) => tFormat(DICTS.en, DICTS.hi, key, "en", vars);
-    const destroyed = { v: 1 as const, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02" };
+    const destroyed = { v: 1 as const, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02", destroyedNext: 3 };
     const parsed = parsePaste("ParticipantCode,Name\nP001,Kavya Rao\nP002,Imran Khan");
     const r = addPeople(destroyed, parsed, "2026-11-03");
     expect(pasteSummary(t0, r.added, r.skipped, parsed, r.reissued)).toBe(

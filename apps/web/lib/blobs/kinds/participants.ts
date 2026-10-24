@@ -35,7 +35,10 @@ export const ParticipantSchema = z.looseObject({
   withdrawn: z.looseObject({ on: str, data: z.enum(["remove", "keep"]) }).optional()
 });
 
-/** The list. `next` is the next code's number and never goes down; `notNames` holds the normalised words answered "Not a name"; `highlight` absent means on; `destroyedAt` is when the list was destroyed. */
+/**
+ * The list. `next` is the next code's number and never goes down; `notNames` holds the normalised words answered "Not a name"; `highlight` absent means on; `destroyedAt` is when the list was
+ * destroyed; `destroyedNext` is the counter at the last Destroy, kept after people are added again: a code below it was given to someone the list no longer has (R52).
+ */
 export const ParticipantListSchema = z.looseObject({
   v: z.literal(1),
   /** A whole number of at least 1: codes are made from it, so a fraction or 0 would make "P0.5" or a code that was never meant to be. */
@@ -43,7 +46,8 @@ export const ParticipantListSchema = z.looseObject({
   people: z.array(ParticipantSchema),
   notNames: z.array(str),
   highlight: z.boolean().optional(),
-  destroyedAt: str.optional()
+  destroyedAt: str.optional(),
+  destroyedNext: z.number().int().min(1).optional()
 });
 
 export type Participant = z.infer<typeof ParticipantSchema>;

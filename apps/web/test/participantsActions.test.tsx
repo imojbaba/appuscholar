@@ -514,7 +514,7 @@ describe("Destroy the list", () => {
     await click("pp-destroy-1");
     await click("pp-destroy-2");
     expect(written()).toHaveLength(1);
-    expect(lastWritten()).toEqual({ v: 1, next: 6, people: [], notNames: [], destroyedAt: "2026-10-24" });
+    expect(lastWritten()).toEqual({ v: 1, next: 6, people: [], notNames: [], destroyedAt: "2026-10-24", destroyedNext: 6 });
     expect(dialog()).toBeNull();
     const msg = text("pp-destroyed")!;
     expect(msg).toContain("destroyed on 24/10/2026");

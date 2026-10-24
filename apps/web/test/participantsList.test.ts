@@ -125,12 +125,33 @@ describe("addPeople (Paste a list)", () => {
     expect(addPeople(l, [{ name: "At Next", spellings: [], code: "P008" }], TODAY).list.next).toBe(9);
     expect(addPeople(l, [{ name: "Far Ahead", spellings: [], code: "P020" }], TODAY).list.next).toBe(21);
     expect(addPeople(l, [{ name: "Big", spellings: [], code: "P1500" }], TODAY).added[0]!.code).toBe("P1500");
-    // P002 is below the counter and nobody holds it now: it was used before, by somebody the list no longer has. It is refused and the person takes the next code.
-    const old = addPeople(l, [{ name: "Old Friend", spellings: [], code: "P002" }], TODAY);
+    // P002 was given to somebody the list destroyed (the counter stood at 8 then): it is refused and the person takes the next code.
+    const old = addPeople({ ...l, destroyedNext: 8 }, [{ name: "Old Friend", spellings: [], code: "P002" }], TODAY);
     expect(old.added.map((p) => [p.code, p.name])).toEqual([["P008", "Old Friend"]]);
     expect(old.list.next).toBe(9);
     expect(old.skipped).toEqual([]);
     expect(old.reissued).toEqual([{ name: "Old Friend", was: "P002", code: "P008" }]);
+  });
+
+  it("a list that was never destroyed keeps a key file's own code below the counter: nothing else takes a code away, so a gap was never used", () => {
+    const first = addPeople(emptyList(), [{ name: "Asha Kumari", spellings: [], code: "P007" }], TODAY).list;
+    expect(first.next).toBe(8);
+    const later = addPeople(first, [{ name: "Imran Khan", spellings: [], code: "P003" }], TODAY);
+    expect(later.added.map((p) => [p.code, p.name])).toEqual([["P003", "Imran Khan"]]);
+    expect(later.reissued).toEqual([]);
+    expect(later.list.next).toBe(8);
+  });
+
+  it("Destroy remembers the counter it stood at, and adding people afterwards does not forget it", () => {
+    const before = addPeople(emptyList(), [{ name: "Priya Sharma", spellings: [] }, { name: "Rahul Verma", spellings: [] }], TODAY).list;
+    const destroyed = destroyList(before, "2026-11-02");
+    expect(destroyed.destroyedNext).toBe(3);
+    const again = addPeople(destroyed, [{ name: "Kavya Rao", spellings: [] }], TODAY).list;
+    expect(again.destroyedAt).toBeUndefined();
+    expect(again.destroyedNext).toBe(3);
+    expect(addPeople(again, [{ name: "Imran Khan", spellings: [], code: "P002" }], TODAY).reissued).toEqual([{ name: "Imran Khan", was: "P002", code: "P004" }]);
+    // A second Destroy keeps the higher counter.
+    expect(destroyList(again, "2026-11-05").destroyedNext).toBe(4);
   });
 
   it("after Destroy the counter is kept, so a key file's old codes are not given again: P001 and P002 are used, the two people get P003 and P004 (R52)", () => {
@@ -257,11 +278,11 @@ describe("editPerson, withdraw, addNotName", () => {
 });
 
 describe("destroyList (C7)", () => {
-  it("keeps only next and the date; nothing else, and next never goes down", () => {
+  it("keeps only next, the counter it stood at, and the date; nothing else, and next never goes down", () => {
     const l = addNotName({ ...addPeople(emptyList(), [{ name: "Priya Sharma", spellings: [] }, { name: "Imran Khan", spellings: [] }], TODAY).list, highlight: false }, "Hope");
     const d = destroyList(l, "2026-11-02");
-    expect(d).toEqual({ v: 1, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02" });
-    expect(Object.keys(d).sort()).toEqual(["destroyedAt", "next", "notNames", "people", "v"]);
+    expect(d).toEqual({ v: 1, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02", destroyedNext: 3 });
+    expect(Object.keys(d).sort()).toEqual(["destroyedAt", "destroyedNext", "next", "notNames", "people", "v"]);
   });
 
   it("new people continue from the next code, and the list matches again", () => {

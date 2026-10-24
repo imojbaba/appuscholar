@@ -107,8 +107,8 @@ export function addPeople(l: ParticipantList, names: PastedPerson[], today: stri
     if (given !== null) {
       const wanted = codeOf(given);
       if (taken.has(wanted)) { skipped.push({ name: line.name, why: "code-taken" }); continue; }
-      // The counter of the list as it was given, not the one this paste has moved on: a key file's codes come in any order.
-      if (given < l.next) was = wanted;
+      // Below the counter at the last Destroy, a code nobody holds was given to someone destroyed (R52). Nothing else takes a code away, so on a list never destroyed a gap is the key file's own.
+      if (given < (l.destroyedNext ?? 0)) was = wanted;
       else code = wanted;
     }
     if (code === null) {
@@ -188,9 +188,9 @@ export function clearAbout(l: ParticipantList, key: string): ParticipantList {
   };
 }
 
-/** Destroys the list (C7): nobody, no "not names", only the next code number (so a code is never used again) and the date. Anything else the list held is gone. */
+/** Destroys the list (C7): nobody, no "not names", only the next code number and the counter it stood at (so a code is never used again, R52) and the date. Anything else the list held is gone. */
 export function destroyList(l: ParticipantList, now: string): ParticipantList {
-  return { v: 1, next: l.next, people: [], notNames: [], destroyedAt: now };
+  return { v: 1, next: l.next, people: [], notNames: [], destroyedAt: now, destroyedNext: l.next };
 }
 
 /** Learns "Not a name" for a word (§7.5): its normal form, once. A blank word changes nothing. */

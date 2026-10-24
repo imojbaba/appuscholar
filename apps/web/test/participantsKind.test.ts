@@ -57,6 +57,12 @@ describe("the participants blob kind", () => {
     for (const next of [1, 3, 1000, 123456]) expect(parseBlob("participants", JSON.stringify({ ...SAMPLE, next }))?.next, `next ${next}`).toBe(next);
   });
 
+  it("`destroyedNext` (the counter at the last Destroy, R52) is optional, and a whole number of at least 1 when given", () => {
+    expect(parseBlob("participants", JSON.stringify(SAMPLE))?.destroyedNext).toBeUndefined();
+    expect(parseBlob("participants", JSON.stringify({ ...SAMPLE, destroyedNext: 3 }))?.destroyedNext).toBe(3);
+    for (const destroyedNext of [0, 1.5, -1, "3"]) expect(parseBlob("participants", JSON.stringify({ ...SAMPLE, destroyedNext })), `destroyedNext ${destroyedNext}`).toBeNull();
+  });
+
   it("emptyList is a fresh list at P001 with nobody on it each time", () => {
     expect(emptyList()).toEqual({ v: 1, next: 1, people: [], notNames: [] });
     expect(emptyList()).not.toBe(emptyList());

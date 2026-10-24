@@ -691,7 +691,7 @@ describe("Paste a list", () => {
   });
 
   it("after Destroy, a key file's old codes are not given again: the status line says they were used before (R52)", async () => {
-    seed(PLAN, { v: 1, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02" });
+    seed(PLAN, { v: 1, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02", destroyedNext: 3 });
     await mount();
     await click("pp-paste");
     await type("pp-paste-box", "ParticipantCode,Name\nP001,Kavya Rao\nP002,Imran Khan");
