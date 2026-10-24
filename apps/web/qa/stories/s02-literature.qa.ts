@@ -1341,6 +1341,8 @@ test("S2-03 I put the papers together and check my citations: a drafted paragrap
     const opened = page.waitForEvent("popup");
     await page.getByTestId("place-new-window").click();
     const pop = await opened;
+    // The window starts on about:blank: its document can be replaced while the unlock reads <html lang> (1 run in 5 read a null root), so the app's page loads first.
+    await pop.waitForLoadState("domcontentloaded");
     await unlock(pop, s);
     await qa.check("data", "the window opens Citations at /p/<id>/lit/citations?window=1; its header reads \"<project> / Literature\" and it has no document and no \"Open my document\"", async () => {
       expect(new URL(pop.url()).pathname + new URL(pop.url()).search).toBe(`/p/${id}/lit/citations?window=1`);
