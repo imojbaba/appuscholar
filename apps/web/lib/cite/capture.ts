@@ -1,106 +1,76 @@
-"use client";
-import { createElement, useCallback, useEffect, useRef, useState } from "react";
-import { captureConfirmText, captureMatch, captureRecordV2, captureYearV2, decodeCapture, type CitationEntry } from "@appuscholar/core";
-import { toast } from "@/components/ui/toast";
-import { useT } from "@/lib/i18n";
-import { useLibrary } from "./useLibrary";
+import { captureMatch, captureRecordV2, captureYearV2, decodeCapture, retrNormDoi, type CaptureData, type CitationEntry } from "@appuscholar/core";
+import type { StoredEntry } from "@/lib/blobs/kinds";
+import { paperMatch } from "@/lib/papers/ids";
+import { keepEntry, libraryRead, type KeepDeps } from "@/lib/papers/keep";
+import type { Library } from "./useLibrary";
+import { fillEmptyIn } from "./fillEmpty";
+import { CAPTURE_PREFIX } from "./captureHash";
 
 /*
- * The one-click capture (v1 "Zotero-lite", citSetupBookmarklet 13622-13636, citCheckCaptureHash 13637-13655, called at boot 13676-13677). The bookmarklet,
- * dragged to the bookmarks bar, reads the citation_* meta tags of the page it is clicked on and opens this app at `#capture=<base64 JSON>`; nothing goes to
- * a server (the hash never leaves the browser). On load the hash is taken off the address, decoded, and after a confirm saved to the library unless
- * the same title and author are already there (13651). The bookmarklet's source, the decode, the question, the entry and the duplicate rule are core's
- * (citcapture.ts); this module reads and strips the address, asks, saves and toasts. Held to v1 running by test/golden/citshare.
- * The unreadable and captured sentences are literals of v1's script (no data-i18n key): English constants byte-equal to v1 (ruling R15); the duplicate toast is the keyed `rs2_already_in_your_library`, through `t`.
- * Fix wave A (walk fault W1, register row D-S2-23): the bookmarklet is bookmarkletSourceV2 (PubMed's `citation_authors`, the volume, the issue and the pages), the entry
- * is captureRecordV2 (PubMed's "Surname Initials" as "Surname, Initials"), and a capture whose title is in the library without an author fills that entry's empty
- * fields (captureMatch's `fill`, useLibrary().fillEmpty) in place of adding a second one, with the V2 toast `cap_filled`.
- * Walk fault W30 (register row D-S2-37): a year that is not four digits (an old bookmark's "09/1") is dropped from the question and the entry (captureYearV2).
+ * The one-click capture (v1 "Zotero-lite", citSetupBookmarklet 13622-13636, citCheckCaptureHash 13637-13655, called at boot 13676-13677). The bookmark, dragged to the bookmarks
+ * bar, reads the citation_* meta tags of the page it is clicked on and opens this app at `/add#capture=<base64 JSON>`; nothing goes to a server (the hash never leaves the browser).
+ * The bookmarklet's source, the decode, the entry and the duplicate rule are core's (citcapture.ts); this module reads the address and files the paper. Held to v1 running by
+ * test/golden/citshare.
+ * Fix wave A (walk fault W1, register row D-S2-23): the bookmarklet reads PubMed's `citation_authors`, the volume, the issue and the pages, the entry is captureRecordV2, and a capture
+ * whose title is in the library without an author fills that entry's empty fields in place of adding a second one.
+ * Walk fault W30 (register row D-S2-37): a year that is not four digits (an old bookmark's "09/1") is dropped from the facts and the entry (captureYearV2).
+ * Wave B Task 20 (register row D-S2-125, walk faults W5, W6, W13): the bookmark opens the adding screen (components/literature/AddingPaper.tsx), not the workspace. That screen shows
+ * the paper before anything else and files it with Task 18's keepEntry, so a paper kept from the bookmark joins the library and the reading list as any Keep does; v1's confirm
+ * question and its two toasts are gone with the workspace tab. The address is read, not rewritten: a reload shows the same paper, and keeping it twice says it is already kept.
  */
 
-export const CAPTURE_PREFIX = "#capture=";
-export const CAPTURE_UNREADABLE = "Could not read that captured citation";
-/** 13653: `'Captured "'+d.title+'" into your citation library ✓'`. */
-export const capturedToast = (title: string): string => 'Captured "' + title + '" into your citation library ✓';
+export { CAPTURE_PREFIX };
 
-/** 13638-13642: a `#capture=` hash is taken off the address (history.replaceState to the path and query); its text is returned. Any other hash is left alone. */
-export function takeCaptureHash(loc: { hash: string; pathname: string; search: string }, replace: (url: string) => void): string | null {
-  const h = loc.hash;
-  if (h.indexOf(CAPTURE_PREFIX) !== 0) return null;
-  replace(loc.pathname + loc.search);
-  return h.slice(CAPTURE_PREFIX.length);
+/** What the adding screen has in its address: nothing to add, a payload that cannot be read (or has no title), or the paper with the entry a Keep would store. */
+export type CaptureRead = { kind: "none" } | { kind: "unreadable" } | { kind: "paper"; data: CaptureData; entry: CitationEntry };
+
+/**
+ * Reads the address's hash (`location.hash`). A hash that is not `#capture=...` is nothing to add. A payload that is not base64 JSON, or has no title, is unreadable (v1 alerted the
+ * first, 13653, and returned quietly for the second, 13647). The year of the facts and of the entry is a four-digit year or nothing (W30). The hash is left in the address.
+ */
+export function readCapture(hash: string): CaptureRead {
+  if (hash.indexOf(CAPTURE_PREFIX) !== 0) return { kind: "none" };
+  const d = decodeCapture(hash.slice(CAPTURE_PREFIX.length));
+  if (!d || !d.title) return { kind: "unreadable" };
+  const data: CaptureData = { ...d, year: captureYearV2(d.year) };
+  return { kind: "paper", data, entry: captureRecordV2(data) };
 }
 
-export type FileCaptureDeps = {
-  lib: CitationEntry[];
-  update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean;
-  /** useLibrary().fillEmpty: fills the empty fields of the first stored entry that matches. */
-  fillEmpty(match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>): boolean;
-  toast(msg: string): void;
-  t(key: string, vars?: Record<string, string | number>): string;
+/** What the library gives a capture: Keep's reads and `update` (lib/papers/keep.ts), and `fillEmpty`. */
+export type FileCaptureDeps = KeepDeps & Pick<Library, "fillEmpty">;
+/** "kept": the paper was not in the project and is now (and on its reading list). "already": it was; `filled` says some of its empty fields were filled from the capture. */
+export type CaptureFiled = { state: "kept" | "already"; filled: boolean };
+
+/** Two papers whose DOIs disagree: both have one and they are not the same DOI (retrNormDoi: no URL, lower case). With a DOI missing on either side nothing disagrees. */
+const doisDisagree = (a: { doi?: string }, b: { doi?: string }): boolean => {
+  const da = retrNormDoi(a.doi ?? ""), db = retrNormDoi(b.doi ?? "");
+  return !!da && !!db && da !== db;
 };
+
 /**
- * 13650-13653: the duplicate rule (same title and same author), then the entry appended as an update and the toast; nothing when a broken library is kept (R16).
- * Wave A (W1): an entry with the same title and no author (v1's capture of a PubMed page) is filled with what this capture has, and `cap_filled` is toasted.
+ * Files a captured paper through keepEntry (Task 18: the DOI decides when both have one, else the same long title and year; so "Smith JA" and "Smith, JA" captures of one paper are
+ * one). Before keepEntry, wave A's rule still applies, as ruling B2-R15 says it must not regress (W1): v1's duplicate (the same title and the same author) and the same title with
+ * no author on file count as the paper already kept, whatever its year (an entry the student gave another year by hand, or v1 saved as "09/1"). Only against a paper whose DOI does not
+ * disagree with the capture's, though: D-S2-125 says the DOI decides when both have one, so a stored "Editorial" with one DOI is not the "Editorial" a capture brings with another, and
+ * is neither filled with its authors nor taken for its duplicate (the same guard picks the entry that is filled). When the paper is already kept, its
+ * empty fields are filled from the capture (the authors, volume, issue, pages, source), by useLibrary().fillEmpty, which writes nothing over a field that has text; `filled` is true
+ * only when that changed something. Throws, before it changes anything, when the library has not been read (loading, locked, broken, a failed read) or will not take the paper.
  */
-export function fileCapture(rec: CitationEntry, d: FileCaptureDeps): void {
-  const m = captureMatch(d.lib, rec);
-  if (m.kind === "dup") { d.toast(d.t("rs2_already_in_your_library")); return; }
-  if (m.kind === "fill") {
-    if (!d.fillEmpty((e) => e.title === rec.title && !e.author, rec)) return;
-    d.toast(d.t("cap_filled", { title: rec.title ?? "" }));
-    return;
+export function fileCapture(rec: CitationEntry, d: FileCaptureDeps): CaptureFiled {
+  if (!libraryRead(d)) throw new Error("Keep needs a library that has been read.");
+  const m = captureMatch(d.lib.filter((e) => !doisDisagree(rec, e)), rec);
+  let inShown: (e: CitationEntry) => boolean;
+  let inStored: (e: CitationEntry) => boolean;
+  if (m.kind !== "new") {
+    // The entry captureMatch found, by the same title and no DOI of another paper; the stored copy may have changed since the copy shown was read, so it is matched the same way.
+    inShown = inStored = (e) => !doisDisagree(rec, e) && e.title === rec.title && (m.kind === "fill" ? !e.author : e.author === rec.author);
+  } else {
+    const r = keepEntry(rec, d);
+    if (r.state === "kept") return { state: "kept", filled: false };
+    // The copy shown may be from before the paper-id migration reached it (no pid yet); the stored one has the pid keepEntry answered.
+    inShown = (e) => paperMatch(rec, e);
+    inStored = (e) => (e as StoredEntry).pid === r.pid;
   }
-  if (!d.update((prev) => [...prev, rec])) return;
-  d.toast(capturedToast(rec.title ?? ""));
-}
-
-/** The hash is read once per page load, as v1's boot reads it once. */
-let taken = false;
-function takeOnce(): string | null {
-  if (taken || typeof window === "undefined") return null;
-  taken = true;
-  return takeCaptureHash(window.location, (url) => window.history.replaceState(null, "", url));
-}
-/** Lets the next mount read the address again, as a new page load would (for tests). */
-export function resetCaptureHash(): void { taken = false; }
-
-/**
- * Mounted once in the workspace. On load it takes a `#capture=` hash off the address, decodes it and asks v1's question at once, as v1 does before it reads
- * the library; on OK the entry waits for the library (the project resolved and the vault open; a locked vault asks for the passphrase as the Citation
- * Manager does, ruling R5) and is then filed once, after which the library is released.
- */
-export function CaptureHash() {
-  const [rec, setRec] = useState<CitationEntry | null>(null);
-  const filed = useCallback(() => setRec(null), []);
-  useEffect(() => {
-    const raw = takeOnce();
-    if (raw === null) return;
-    const d = decodeCapture(raw);
-    if (!d) { toast(CAPTURE_UNREADABLE); return; }
-    if (!d.title) return;
-    // W30: a bookmark dragged before the fix sends a 4-character slice of the date ("09/1"); the question shows no year then, as the entry stores none.
-    if (!window.confirm(captureConfirmText({ ...d, year: captureYearV2(d.year) }))) return;
-    // The address is outside React and read once, on mount; the entry exists only once the student has said yes.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRec(captureRecordV2(d));
-  }, []);
-  // Once filed, CaptureFile goes: the library is no longer asked for (it would otherwise stay demanded for the session, R5's prompt on a later project switch).
-  return rec ? createElement(CaptureFile, { rec, onDone: filed }) : null;
-}
-
-function CaptureFile({ rec, onDone }: { rec: CitationEntry; onDone(): void }) {
-  const library = useLibrary();
-  const t = useT();
-  const done = useRef(false);
-  const { lib, ready, loading, locked, update, fillEmpty, flush } = library;
-  useEffect(() => {
-    if (done.current || !ready || loading || locked) return;
-    done.current = true;
-    fileCapture(rec, { lib, update, fillEmpty, toast, t });
-    // Sent now, not after the save delay: the toast has said ✓, so a tab closed straight after it must not lose the entry (nothing pending sends nothing).
-    void flush();
-    onDone();
-  }, [rec, lib, ready, loading, locked, update, fillEmpty, flush, onDone, t]);
-  return null;
+  const filled = fillEmptyIn(d.lib, inShown, rec) !== d.lib && d.fillEmpty(inStored, rec);
+  return { state: "already", filled };
 }

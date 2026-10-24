@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useProject } from "@/components/frame/ProjectContext";
 import { ExportLink } from "@/components/export/ExportLink";
 import { Connected } from "@/components/tools/research/Connected";
+import { AddFromPage } from "./AddFromPage";
 import { FindFilters } from "./FindFilters";
 import { FindResult, type ResultActions } from "./FindResult";
 import { PasteBox } from "./PasteBox";
@@ -167,6 +168,7 @@ export function FindTab() {
         </div>
       </form>
       <PasteBox />
+      <AddFromPage />
       <div className="find-grid">
         <FindFilters s={s} rank={rank} rankLoading={prefs.loading && !prefs.locked} onRank={(on) => setResearch({ rank: on })}
           onScholar={() => openExternal("scholar", getResearch().topic, { open: (url) => { window.open(url, "_blank", "noopener,noreferrer"); }, toast, t })} />

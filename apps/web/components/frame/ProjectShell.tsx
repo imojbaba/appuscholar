@@ -19,12 +19,11 @@ import { listOrSeed } from "@/lib/frame/firstDocument";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sync";
-import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
+import { WINDOW_PARAM, holdPopout, isPopout, mayMigrate, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import type { PaperIdsState } from "@/lib/papers/migrate";
 import { DocAccessHost } from "@/lib/editor/docAccess";
 import { documentLayers } from "@/lib/tools/registry";
-import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
 import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
@@ -112,7 +111,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
   // After each unlock of a complete vault, titles still in plaintext (from before the vault, or renamed since by an older tab) are sealed.
-  const titlesSealable = vault.status === "unlocked" && vault.complete && !isPopout();
+  const titlesSealable = vault.status === "unlocked" && vault.complete && mayMigrate();
   const scratchForTitles = me?.scratchProjectId ?? null;
   useEffect(() => {
     // Once per unlock in this tab, not on every page: a lock lets the next unlock run it again.
@@ -494,8 +493,6 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       <SuggestionProvider>
         {/* One citation library for the Citations tab and the caret chip under the document. */}
         <CiteLibraryProvider>
-        {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
-        {inProject && <CaptureHash />}
         {/* The paper-id migration (Task 17): once per project per unlock per tab, when the vault is off or open, through this shared library; never in a place's own window. */}
         {inProject && !popout && <PaperIdsRunner onState={reportPaperIds} />}
         {/* The tools' document access in a place's own window is answered here: snapshots of the open document and its requests (lib/editor/docAccess). */}
