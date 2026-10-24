@@ -1,6 +1,6 @@
-import { and, asc, count, desc, eq, gte, inArray, isNull, lte, max, ne, sql, type AnyColumn, type SQL } from "drizzle-orm";
-import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, projectBlobs, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, StageMarks, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, lte, max, ne, sql, type AnyColumn, type SQL } from "drizzle-orm";
+import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, projectBlobs, rateCounters, type Db } from "@appuscholar/db";
+import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, StageMarks, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite, QuotaRule, QuotaResult } from "./types";
 import { asTitle, DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 const APPEND_RETRIES = 2;
@@ -439,6 +439,25 @@ export class DrizzleStore implements Store {
     const rows = await this.d.select({ action: auditLog.action, target: auditLog.target, at: auditLog.at }).from(auditLog).where(eq(auditLog.userId, userId)).orderBy(asc(auditLog.at));
     return rows.map(r => ({ action: r.action as AuditAction, target: r.target, at: r.at }));
   }
+  async ping(): Promise<void> {
+    await this.d.execute(sql`select 1`);
+  }
+  async consumeQuota(userId: string, rules: QuotaRule[], now: Date): Promise<QuotaResult> {
+    const ms = now.getTime();
+    // No interactive transaction on the Neon HTTP driver, so each rule is one atomic statement: insert the window's row at 1, or add 1 only
+    // while the count is under the limit. No row back means the window is full.
+    await this.d.delete(rateCounters).where(and(eq(rateCounters.userId, userId), lt(rateCounters.windowStart, new Date(ms - 2 * 86_400_000))));
+    for (const r of rules) {
+      const len = r.windowSec * 1000;
+      const start = Math.floor(ms / len) * len;
+      const rows = r.limit < 1 ? [] : await this.d.insert(rateCounters).values({ userId, bucket: r.bucket, windowStart: new Date(start), count: 1 })
+        .onConflictDoUpdate({ target: [rateCounters.userId, rateCounters.bucket, rateCounters.windowStart], set: { count: sql`${rateCounters.count} + 1` }, setWhere: lt(rateCounters.count, r.limit) })
+        .returning({ count: rateCounters.count });
+      if (rows.length === 0) return { ok: false, bucket: r.bucket, retryAfterSec: Math.max(1, Math.ceil((start + len - ms) / 1000)) };
+    }
+    return { ok: true };
+  }
+
   async eraseUser(userId: string): Promise<boolean> {
     // accounts and sessions go with the users row by foreign-key cascade; sign-in tokens are keyed by email, so they are deleted by it.
     // Atomic without an interactive transaction: the neon-http driver used in production has none, but a single

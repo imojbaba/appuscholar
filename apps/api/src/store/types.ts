@@ -90,6 +90,10 @@ export class VersionConflictError extends Error {
   constructor(public current: number) { super(`blob is at version ${current}`); this.name = "VersionConflictError"; }
 }
 
+/** One fixed-window counter: `bucket` names it (for example "complete:hour"), `windowSec` is the window length, `limit` the calls allowed in it. */
+export type QuotaRule = { bucket: string; windowSec: number; limit: number };
+export type QuotaResult = { ok: true } | { ok: false; bucket: string; retryAfterSec: number };
+
 export interface Store {
   /** DekExistsError cannot happen here: a new project has no deks. */
   createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage): Promise<Project>;
@@ -194,9 +198,20 @@ export interface Store {
   /** Deletes the (project, kind) blob (a Reading shelf paper removed from the shelf). False if there is none or the project is not the user's. */
   deleteBlob(userId: string, projectId: string, kind: string): Promise<boolean>;
 
+  /**
+   * Counts one call against each rule, in order, in fixed windows aligned to the epoch (window start = floor(now / windowSec) * windowSec).
+   * A rule that is full stops the call: it counts nothing from that rule or the later ones (earlier rules keep their count). Each rule's
+   * check and count are one step, so parallel calls never get past the limit. `retryAfterSec` is the time to the end of the full rule's window,
+   * rounded up, at least 1. Also drops this user's counters from windows that began over 2 days ago; that cleanup assumes every rule's window is at most one day.
+   */
+  consumeQuota(userId: string, rules: QuotaRule[], now: Date): Promise<QuotaResult>;
+
+  /** Asks the database one trivial question; resolves when it answers, rejects when it cannot. Used by GET /health/db. */
+  ping(): Promise<void>;
+
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;
   /** Oldest first. */
   listAudit(userId: string): Promise<AuditEntry[]>;
-  /** Deletes credentials, ai_use_log, vault_keys, verification tokens for the user's email, projects (with their documents, revisions and blobs) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
+  /** Deletes credentials, ai_use_log, rate counters, vault_keys, verification tokens for the user's email, projects (with their documents, revisions and blobs) and the user (accounts and sessions by cascade), then appends an "account-erased" audit row. Existing audit rows stay. False if the user does not exist. */
   eraseUser(userId: string): Promise<boolean>;
 }

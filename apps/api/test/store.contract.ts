@@ -761,6 +761,68 @@ export function storeContract(name: string, make: () => Promise<ContractEnv>) {
       expect((await s.listProjectWork(a)).find((x) => x.id === p.id)!.draftEditedAt).toEqual(rev.createdAt);
     });
 
+    describe("consumeQuota", () => {
+      const HOUR = 3600;
+      const at = (sec: number) => new Date(sec * 1000);
+      const rule = (limit: number, bucket = "complete:hour", windowSec = HOUR) => ({ bucket, windowSec, limit });
+      // 1_000_000 s since the epoch is 277 h 46 min 40 s: 2800 s into its hour, so the window ends 800 s later.
+      const T0 = 1_000_000;
+      const WINDOW_END = Math.ceil((T0 + 1) / HOUR) * HOUR;
+
+      it("allows up to the limit, then blocks with the seconds left in the window", async () => {
+        for (let i = 0; i < 3; i++) expect(await s.consumeQuota(a, [rule(3)], at(T0))).toEqual({ ok: true });
+        expect(await s.consumeQuota(a, [rule(3)], at(T0))).toEqual({ ok: false, bucket: "complete:hour", retryAfterSec: WINDOW_END - T0 });
+        // A blocked call does not count: still blocked, and the seconds left follow the clock.
+        expect(await s.consumeQuota(a, [rule(3)], at(T0 + 100))).toEqual({ ok: false, bucket: "complete:hour", retryAfterSec: WINDOW_END - T0 - 100 });
+      });
+
+      it("a new window passes again, and the old window's count is not carried", async () => {
+        for (let i = 0; i < 3; i++) await s.consumeQuota(a, [rule(3)], at(T0));
+        expect((await s.consumeQuota(a, [rule(3)], at(T0))).ok).toBe(false);
+        for (let i = 0; i < 3; i++) expect(await s.consumeQuota(a, [rule(3)], at(WINDOW_END))).toEqual({ ok: true });
+        expect((await s.consumeQuota(a, [rule(3)], at(WINDOW_END))).ok).toBe(false);
+      });
+
+      it("quota is per user and per bucket", async () => {
+        expect(await s.consumeQuota(a, [rule(1)], at(T0))).toEqual({ ok: true });
+        expect((await s.consumeQuota(a, [rule(1)], at(T0))).ok).toBe(false);
+        expect(await s.consumeQuota(b, [rule(1)], at(T0))).toEqual({ ok: true });
+        expect(await s.consumeQuota(a, [rule(1, "test:hour")], at(T0))).toEqual({ ok: true });
+      });
+
+      it("a full first rule consumes nothing from the second", async () => {
+        const rules = [rule(1, "complete:hour"), rule(5, "complete:day", 86_400)];
+        expect(await s.consumeQuota(a, rules, at(T0))).toEqual({ ok: true });
+        const blocked = await s.consumeQuota(a, rules, at(T0));
+        expect(blocked).toMatchObject({ ok: false, bucket: "complete:hour" });
+        // The day bucket was used once (by the first call), not twice: four more day-only calls fit, the fifth does not.
+        const dayOnly = [rule(5, "complete:day", 86_400)];
+        for (let i = 0; i < 4; i++) expect(await s.consumeQuota(a, dayOnly, at(T0))).toEqual({ ok: true });
+        expect((await s.consumeQuota(a, dayOnly, at(T0))).ok).toBe(false);
+      });
+
+      it("parallel consume never exceeds the limit", async () => {
+        const results = await Promise.all(Array.from({ length: 10 }, () => s.consumeQuota(a, [rule(3)], at(T0))));
+        expect(results.filter((r) => r.ok)).toHaveLength(3);
+        expect(results.filter((r) => !r.ok)).toHaveLength(7);
+      });
+
+      it("a call at the window edge is blocked; one second later it passes", async () => {
+        const last = WINDOW_END - 1;
+        expect(await s.consumeQuota(a, [rule(1)], at(last))).toEqual({ ok: true });
+        expect(await s.consumeQuota(a, [rule(1)], at(last))).toEqual({ ok: false, bucket: "complete:hour", retryAfterSec: 1 });
+        expect(await s.consumeQuota(a, [rule(1)], at(last + 1))).toEqual({ ok: true });
+      });
+
+      it("erasing the user removes the counters", async () => {
+        expect(await s.consumeQuota(a, [rule(1)], at(T0))).toEqual({ ok: true });
+        expect((await s.consumeQuota(a, [rule(1)], at(T0))).ok).toBe(false);
+        expect(await s.eraseUser(a)).toBe(true);
+        await s.ensureUser(a, `${a}@contract.local`);
+        expect(await s.consumeQuota(a, [rule(1)], at(T0))).toEqual({ ok: true });
+      });
+    });
+
     it("the scratch project is not in listProjectWork", async () => {
       const scratch = await s.getScratchProject(a);
       await s.putBlob(a, scratch.id, "idea_intake", { body: "{}", keyVersion: 0 });
