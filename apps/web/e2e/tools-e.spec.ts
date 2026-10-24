@@ -30,6 +30,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { signIn } from "./support/signin";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { tabBuilt } from "./support/builtTools";
+import { selectBlockWith } from "./support/editor";
 
 // ---- Copy: every sentence asserted is read from the dictionary ---------------------------------------------------------------------------------------
 
@@ -158,20 +159,6 @@ async function saved(act: () => Promise<void>) {
   const put = page.waitForResponse((r) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url()) && r.ok());
   await act();
   await put;
-}
-/** Selects the whole editor block that contains `text`. */
-async function selectBlockWith(text: string) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate((needle) => {
-    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle));
-    if (!block) throw new Error("block not found in the editor: " + needle);
-    block.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(block);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, text);
 }
 /** The project's Writing place, from wherever the student is: the header's project name, then the home's row (client-side, so the open document stays). */
 async function toWriting() {
@@ -372,7 +359,7 @@ test("4. Viva: the toolbar button carries the selection to Review; an AI questio
 
   // Under 25 words: the viva_need message, and no AI request.
   const asked = net.prompts.length;
-  await selectBlockWith(VIVA_P2);
+  await selectBlockWith(page.locator(".ProseMirror"), VIVA_P2);
   await page.getByTestId("act-viva").click();
   await expect(page).toHaveURL(new RegExp(`/p/${projectId}/review/viva$`));
   await expect(page.getByTestId("panel-viva")).toBeVisible();
@@ -383,7 +370,7 @@ test("4. Viva: the toolbar button carries the selection to Review; an AI questio
 
   // 30 or more words selected: the toolbar button lands on Review > Viva; the question is about that selection (the prompt carries it, not the rest).
   await toWriting();
-  await selectBlockWith(VIVA_P1);
+  await selectBlockWith(page.locator(".ProseMirror"), VIVA_P1);
   await page.getByTestId("act-viva").click();
   await expect(page).toHaveURL(new RegExp(`/p/${projectId}/review/viva$`));
   await expect(page.getByTestId("viva-get")).toHaveText(T("viva_get"));
