@@ -200,6 +200,13 @@ describe("rekeyNotes", () => {
     expect(rekeyNotes(once, papers)).toBe(once);
   });
 
+  it("a note that already moved is not touched again: what a tab on the previous build writes to its old key stays there, the note it moved to is as it was (B2-R34)", () => {
+    const first = rekeyNotes({ a1: { title: SDT_TITLE, stages: { design: { mine: "A survey." } }, card: { verdict: "Useful" } } }, papers);
+    const edited: ApNotes = { ...first, a1: { ...first.a1!, stages: { ...first.a1!.stages, limits: { mine: "Written in the previous build." } }, card: { ...first.a1!.card, weak: "Self-report only." } } };
+    expect(rekeyNotes(edited, papers)).toBe(edited);
+    expect(edited["p:ksdt"]!.stages.limits).toBeUndefined();
+  });
+
   it("a title two different papers share is left alone, and so is a note without a title", () => {
     const twin = [{ pid: "k1", title: SDT_TITLE }, { pid: "k2", title: SDT_TITLE.toUpperCase() }];
     const notes: ApNotes = { a1: { title: SDT_TITLE, stages: {}, card: { verdict: "v" } }, a2: { stages: {}, card: { verdict: "no title" } } };
@@ -217,54 +224,6 @@ describe("rekeyNotes", () => {
     expect(id).toMatch(/^a/);
     const out = rekeyNotes({ [id]: { title: THESIS_TITLE, stages: {}, card: { weak: "w" } } }, [{ pid: "kthesis", title: THESIS_TITLE }]);
     expect(out[id]!.movedTo).toBe("p:kthesis");
-  });
-});
-
-describe("rekeyNotes: what an old build writes to a key that already moved (B2-R33)", () => {
-  const papers = [{ pid: "ksdt", title: SDT_TITLE }];
-  const moved = (): ApNotes => rekeyNotes({
-    a1: { title: SDT_TITLE, stages: { design: { mine: "A survey." } }, card: { verdict: "Useful" } }
-  }, papers);
-
-  it("a stage text and a card field the old key got since are copied to the note it moved to, once", () => {
-    const first = moved();
-    // A tab on the previous build writes to the old key: it knows nothing of the move, so movedTo stays as the note had it.
-    const edited: ApNotes = { ...first, a1: { ...first.a1!, stages: { ...first.a1!.stages, limits: { mine: "Small sample." } }, card: { ...first.a1!.card, weak: "Self-report only." } } };
-    const out = rekeyNotes(edited, papers);
-    expect(out["p:ksdt"]!.stages.limits).toEqual({ mine: "Small sample." });
-    expect(out["p:ksdt"]!.card).toEqual({ verdict: "Useful", weak: "Self-report only." });
-    expect(out.a1).toBe(edited.a1);
-    // Once: the run after finds nothing to copy.
-    expect(rekeyNotes(out, papers)).toBe(out);
-  });
-
-  it("never writes over what the target has: a text it has stays, a card field it has stays", () => {
-    const first = moved();
-    const edited: ApNotes = { ...first, a1: { ...first.a1!, stages: { design: { mine: "Rewritten in the old build." } }, card: { verdict: "Changed in the old build" } } };
-    expect(rekeyNotes(edited, papers)).toBe(edited);
-  });
-
-  it("words for a stage the target has only a reading for are added to that stage, keeping its reading", () => {
-    const base: ApNotes = {
-      a1: { title: SDT_TITLE, stages: { gap: { mine: "" } }, card: {} }
-    };
-    const first = rekeyNotes(base, papers);
-    const target: ApNotes = { ...first, "p:ksdt": { ...first["p:ksdt"]!, stages: { gap: { res: { reading: "AI reading" } } } }, a1: { ...first.a1!, stages: { gap: { mine: "My words, written in the old build." } } } };
-    const out = rekeyNotes(target, papers);
-    expect(out["p:ksdt"]!.stages.gap).toEqual({ res: { reading: "AI reading" }, mine: "My words, written in the old build." });
-  });
-
-  it("nothing is copied to a note that is gone (a deleted card does not come back), or from a stage with nothing in it", () => {
-    const first = moved();
-    const { "p:ksdt": _gone, ...withoutTarget } = first;
-    expect(rekeyNotes(withoutTarget, papers)).toBe(withoutTarget);
-    const emptyStage: ApNotes = { ...first, a1: { ...first.a1!, stages: { ...first.a1!.stages, stats: {}, results: { mine: "  " } }, card: { ...first.a1!.card, notes: "" } } };
-    expect(rekeyNotes(emptyStage, papers)).toBe(emptyStage);
-  });
-
-  it("a move that points at something that is not a p: note is left alone", () => {
-    const odd: ApNotes = { a1: { title: SDT_TITLE, stages: { gap: { mine: "x" } }, card: {}, movedTo: "aother" }, aother: { stages: {}, card: {} } };
-    expect(rekeyNotes(odd, papers)).toBe(odd);
   });
 });
 

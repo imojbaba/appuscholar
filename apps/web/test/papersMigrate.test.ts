@@ -200,25 +200,20 @@ describe("ensurePaperIds with the vault off", () => {
     expect(server.puts().length).toBe(before);
   });
 
-  it("a stage text an old build wrote to a key that already moved is copied to the paper's note once, never over what it has (B2-R33)", async () => {
+  it("what a tab on the previous build writes to a key that already moved stays on that key: the next run sends nothing (B2-R34)", async () => {
     const vault = await vaultOff();
     const s = await seed(null);
     expect(await run(vault)).toBe("done");
     const notes = (await server.value<ApNotes>("ap_notes"))!;
     const sdt = (await server.value<ShelfIndex>("shelf_index"))![0]!.pid!;
-    // A tab still on the previous build, reading the same paper, writes a new text to the old key, and rewrites a text the new note already has.
     const old = notes[s.keys.sdtPdf]!;
-    server.putPlain("ap_notes", { ...notes, [s.keys.sdtPdf]: { ...old, stages: { ...old.stages, limits: { mine: "Written in the previous build." }, design: { mine: "Rewritten in the previous build." } } } });
+    server.putPlain("ap_notes", { ...notes, [s.keys.sdtPdf]: { ...old, stages: { ...old.stages, limits: { mine: "Written in the previous build." } } } });
     const puts = server.puts("ap_notes").length;
     expect(await run(vault)).toBe("done");
-    expect(server.puts("ap_notes")).toHaveLength(puts + 1);
+    expect(server.puts("ap_notes")).toHaveLength(puts);
     const after = (await server.value<ApNotes>("ap_notes"))!;
-    expect(after["p:" + sdt]!.stages.limits).toEqual({ mine: "Written in the previous build." });
-    expect(after["p:" + sdt]!.stages.design).toEqual(notes["p:" + sdt]!.stages.design);
-    expect(after[s.keys.sdtPdf]!.movedTo).toBe("p:" + sdt);
-    // Once: the next run sends nothing.
-    expect(await run(vault)).toBe("done");
-    expect(server.puts("ap_notes")).toHaveLength(puts + 1);
+    expect(after[s.keys.sdtPdf]!.stages.limits).toEqual({ mine: "Written in the previous build." });
+    expect(after["p:" + sdt]!.stages.limits).toBeUndefined();
   });
 
   it("two runs at once are one run", async () => {

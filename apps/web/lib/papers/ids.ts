@@ -116,36 +116,11 @@ function mergeNotes(notes: ApNote[]): Pick<ApNote, "stages" | "card"> {
 }
 
 /**
- * What a note that moved earlier now holds and its target lacks (ruling B2-R33): a tab on the previous build can still write to the old key. A stage the target does not have
- * (with words or a reading), the words of a stage the target has none for, and a card field the target has empty are copied; nothing the target has is written over. The same
- * note when it lacks nothing.
- */
-function fillFrom(target: ApNote, moved: ApNote): ApNote {
-  let stages = target.stages, card = target.card;
-  for (const [k, s] of Object.entries(moved.stages)) {
-    const cur = target.stages[k];
-    if (cur === undefined && (filled(s.mine) || s.res !== undefined)) {
-      if (stages === target.stages) stages = { ...stages };
-      stages[k] = s;
-    } else if (cur !== undefined && !filled(cur.mine) && filled(s.mine)) {
-      if (stages === target.stages) stages = { ...stages };
-      stages[k] = { ...cur, mine: s.mine };
-    }
-  }
-  for (const [k, v] of Object.entries(moved.card)) {
-    if (!filled(v) || filled(target.card[k])) continue;
-    if (card === target.card) card = { ...card };
-    card[k] = v;
-  }
-  return stages === target.stages && card === target.card ? target : { ...target, stages, card };
-}
-
-/**
  * Moves each old note ('a' + the squashed title + the characters read) to `p:<pid>` of the paper whose title it has (apSquash equal). A title that two different pids
  * share is left alone, and so is a note with no title. The notes of one paper are merged with a note already kept under its `p:<pid>` first (mergeNotes: the distinct texts of
- * the student, joined); the old keys stay, whole, with `movedTo`, so nothing is lost and a build that does not know the move still reads them. A note that moved on an earlier run
- * gives the note it moved to whatever that lacks (fillFrom). A second run changes nothing and gives back the same object. `papers` may name a paper twice (the library and the
- * reading list), and in different words.
+ * the student, joined); the old keys stay, whole, with `movedTo`, so nothing is lost and a build that does not know the move still reads them. A note that already moved is not
+ * touched again, whatever a tab on the previous build writes to its old key afterwards (that stays on the old key: copying it on would bring back text the student cleared), so a
+ * second run changes nothing and gives back the same object. `papers` may name a paper twice (the library and the reading list), and in different words.
  */
 export function rekeyNotes(notes: ApNotes, papers: Array<{ pid: string; title: string }>): ApNotes {
   const byTitle = new Map<string, string | null>();
@@ -171,16 +146,6 @@ export function rekeyNotes(notes: ApNotes, papers: Array<{ pid: string; title: s
     const merged = mergeNotes([...(kept ? [kept] : []), ...keys.map((k) => notes[k]!)]);
     out[target] = { ...(kept ?? {}), ...merged, title: kept?.title ?? titleOf.get(pid) ?? notes[keys[0]!]!.title, pid };
     for (const k of keys) out[k] = { ...notes[k]!, movedTo: target };
-  }
-  // Notes that moved on an earlier run: what an old build wrote to the old key since is carried to the note it moved to (only while that note exists).
-  for (const n of Object.values(notes)) {
-    const to = n.movedTo;
-    const target = to === undefined || !to.startsWith("p:") ? undefined : out[to];
-    if (to === undefined || target === undefined) continue;
-    const filledIn = fillFrom(target, n);
-    if (filledIn === target) continue;
-    if (out === notes) out = { ...notes };
-    out[to] = filledIn;
   }
   return out;
 }
