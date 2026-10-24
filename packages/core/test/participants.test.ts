@@ -332,3 +332,36 @@ describe("dataLists", () => {
     expect(isEverydayName("priya")).toBe(false);
   });
 });
+
+describe("the built-in everyday list holds words, not the Hindi names that English writing uses as names (R50)", () => {
+  /** Romanised Hindi words that in English-language writing are chiefly given names. */
+  const NAMES_NOT_WORDS = [
+    "seema", "usha", "vijay", "anand", "prakash", "pawan", "sapna", "jyoti", "aarti", "arti", "madhu", "kamal", "sagar", "suraj", "roshni", "khushi", "noor", "diya", "tara", "prem",
+    "veer", "amrit", "shanti", "neel", "preet", "chandni",
+  ];
+  it("the spec's six and the English words stay everyday; the names are first names, and none is everyday", () => {
+    for (const w of ["asha", "kiran", "pooja", "raja", "rani", "dev", "will", "joy", "rose", "hope", "sunny", "bill", "mark"]) expect(EVERYDAY_NAMES, w).toContain(w);
+    for (const w of NAMES_NOT_WORDS) {
+      expect(EVERYDAY_NAMES, w).not.toContain(w);
+      expect(isEverydayName(w), w).toBe(false);
+      expect(FIRST_NAMES.has(w), w).toBe(true);
+    }
+    expect([...FIRST_NAMES].filter((w) => EVERYDAY_NAMES.includes(w))).toEqual([]);
+  });
+  it("Seema, listed with no everyday mark, is found whatever the case: the matcher never read the built-in list (R6)", () => {
+    const m = buildMatcher([person("p7", "Seema Rao", ["Seema"])]);
+    const f = findNames("seema said she would come; Seema left", m);
+    expect(f.map((x) => [x.text, x.kind])).toEqual([["seema", "sure"], ["Seema", "sure"]]);
+  });
+  it("Seema, not listed, is suggested as a first name", () => {
+    const f = suggestNames("Then Seema left.", buildMatcher([]), [], { speakerLabels: false, firstNames: true });
+    expect(f.map((x) => [x.text, x.kind, x.why])).toEqual([["Seema", "suggest", "first-name"]]);
+    for (const w of ["Vijay", "Anand", "Jyoti", "Prakash", "Noor"]) {
+      expect(suggestNames(`Then ${w} left.`, buildMatcher([]), [], { speakerLabels: false, firstNames: true }), w).toHaveLength(1);
+    }
+  });
+  it("an everyday word is still never suggested: Asha and Will are asked about only when the student marked them", () => {
+    expect(suggestNames("Then Asha left. Will said so.", buildMatcher([]), [], { speakerLabels: false, firstNames: true })).toEqual([]);
+  });
+});
+

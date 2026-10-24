@@ -6,6 +6,10 @@
  * Compiled by the builder on 2026-10-24 from common English words and from common Hindi and Urdu words that are used as given names. It is a judgement, not a verdict: a word
  * belongs here when its lower-case use in ordinary English or Hinglish speech is common enough that a lower-case match would usually be wrong. Surnames are not here.
  * The first-names list (names-first.ts) holds none of these words.
+ * Ruling R50 (2026-10-24): the romanised Hindi words that English-language writing uses chiefly as given names (Seema, Usha, Vijay, Anand, Prakash, Jyoti, Noor, Tara and others of that kind) are
+ * not here but in names-first.ts: a listed person with one of them is not pre-ticked "also an everyday word", and a capitalised one that is not listed is suggested. What stays of the Hindi words
+ * is the spec's six and the words that are still common ordinary words (sona, sundar: "to sleep", "beautiful"; meet, deep, harsh, lovely: English; ganga, bharat, surya, chand, shakti: a river,
+ * a country, the sun, the moon, power).
  */
 export const EVERYDAY_NAMES: readonly string[] = [
   // English words
@@ -20,8 +24,6 @@ export const EVERYDAY_NAMES: readonly string[] = [
   "angel", "sandy", "sky", "skye", "star", "storm", "rain", "river", "brook", "forest", "dale", "glen", "lane", "hunter", "mason", "archer", "major",
   "king", "prince", "earl", "duke", "victor", "christian", "job", "carol", "eve", "penny", "nick", "miles", "bliss", "harmony", "destiny", "liberty",
   "lucky", "happy", "baby", "princess", "precious",
-  // Hindi words
-  "asha", "kiran", "pooja", "puja", "raja", "rani", "dev", "anand", "prem", "shanti", "shakti", "sagar", "tara", "usha", "jyoti", "kamal", "neel", "sona",
-  "sundar", "sunder", "vijay", "sapna", "seema", "diya", "bharat", "ganga", "madhu", "pawan", "prakash", "roshni", "chandni", "chand", "suraj", "surya",
-  "noor", "khushi", "veer", "jeet", "preet", "meet", "lovely", "amrit", "deep", "harsh", "aarti", "arti",
+  // Hindi words that are also ordinary words in Hinglish and in English writing about India (the spec's six first: Asha, Kiran, Pooja, Raja, Rani, Dev)
+  "asha", "kiran", "pooja", "puja", "raja", "rani", "dev", "shakti", "sona", "sundar", "sunder", "bharat", "ganga", "chand", "surya", "jeet", "meet", "lovely", "deep", "harsh",
 ];

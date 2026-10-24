@@ -261,4 +261,8 @@ export const FIRST_NAME_LIST: readonly string[] = [
   "mirabel", "nadine", "natasha", "nell", "nicola", "noelle", "nora", "odette", "ophelia", "paige", "phoebe", "pippa", "portia", "rebekah", "renee",
   "rhiannon", "rosa", "rosie", "rowena", "sadie", "sasha", "savannah", "selene", "shea", "shelby", "simone", "sloane", "stacey", "tamsin", "tessa", "thea",
   "tiffany", "trudy", "una", "ursula", "vivienne", "whitney", "willa", "winifred", "yvette", "zelda",
+  // Hindi and Urdu words that English-language writing uses chiefly as given names (moved here from names-everyday.ts, ruling R50, 2026-10-24: a listed person with one of these is found
+  // in any case and replaced, not asked about, and a capitalised one that is not on the list is suggested)
+  "seema", "usha", "vijay", "anand", "prakash", "pawan", "sapna", "jyoti", "aarti", "arti", "madhu", "kamal", "sagar", "suraj", "roshni", "khushi", "noor",
+  "diya", "tara", "prem", "veer", "amrit", "shanti", "neel", "preet", "chandni",
 ];

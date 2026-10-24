@@ -429,6 +429,17 @@ describe("Add a person", () => {
     expect(checked("pp-form-everyday-0")).toBe(false);
   });
 
+  it("a Hindi word that English writing uses as a name (Seema) is not pre-marked, so she is found in any case and replaced (R50)", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-add");
+    await type("pp-form-name", "Seema Rao");
+    expect(val("pp-form-spellings")).toBe("Seema");
+    expect(checked("pp-form-everyday-0")).toBe(false);
+    await click("pp-form-save");
+    expect(lastWritten()!.people.at(-1)).toMatchObject({ name: "Seema Rao", spellings: ["Seema"], everyday: [] });
+  });
+
   it("saving adds P006 with joined = today, the spellings and the 'about them' values, closes the form and says which code", async () => {
     seed(PLAN);
     await mount();
