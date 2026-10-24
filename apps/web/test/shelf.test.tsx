@@ -4,15 +4,15 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildShelfSummaryPromptV2, fieldLabel, shTitleGuess, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
+import { shTitleGuess, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
 import en from "../messages/en.json";
 
 /*
- * The Reading shelf (v1 11513-11725, the dialog 1247-1254). The orchestration (lib/shelf/actions.ts, shelfSummarise) is driven with fakes and checked against what v1 did with the same
+ * The Reading shelf (v1 11513-11725, the dialog 1247-1254). The orchestration (lib/shelf/actions.ts) is driven with fakes and checked against what v1 did with the same
  * inputs (packages/core/test/golden/shelf/cases.json, `golden:capture shelf`): shSaveHL's quotes and toasts, shRestore's checks and count,
- * shBackup's bundle, shMatrixCsv's text, shColAdd/shColDel, and shSummarise's note, prompt, options and summary box. The Reading list (wave B Task 21a, which replaced the
+ * shBackup's bundle, shMatrixCsv's text and shColAdd/shColDel. (shSummarise left with the shelf's reader: Your take first, wave B Task 28, test/yourTake.test.tsx.) The Reading list (wave B Task 21a, which replaced the
  * shelf's dialog) is then mounted with the real store (lib/shelf/useShelf.ts, useProjectBlob) over a fake blob api: PDFs added, papers renamed and removed (after the question,
- * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the summary gate, backup
+ * the paper's blob deleted), search and passages, highlights saved to the paper's blob, backup
  * and restore, and R16's confirm over a blob that does not open.
  */
 
@@ -23,9 +23,6 @@ type Fx = {
   find: Array<{ q: string; empty: string | null; cards: Array<{ id: string; page: number }> }>;
   add: { files: Array<{ name: string; size: number; pdf?: Spec }>; status: string; records: Array<{ title: string; file: string; size: number; pages: string[]; total: number }> };
   quotes: Array<{ pageText: string; selection: string; note: string; toasts: string[]; notes: Array<{ idShape: boolean; page: number; quote: string; note: string }> }>;
-  summaries: Array<{ field: string | null; prompt: string; opts: Record<string, unknown>; pages: string[]; mine: string; notes: Array<{ note: string }>; out: string }>;
-  trim: { reply: string; out: string };
-  gate: Array<{ text: string; out: boolean }>;
   colOps: Array<{ op: ["add", string] | ["del", number]; out: string[]; stored: string | null }>;
   csv: Array<{ stored: string | null; papers: Array<{ title: string; cells?: Record<string, string> }>; name: string; text: string }>;
   backup: { keys: string[]; bundle: { app: string; v: number; papers: ShRecord[] }; status: string };
@@ -64,7 +61,6 @@ vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("
 
 import { ApiError } from "../lib/api";
 import { tFormat } from "../lib/i18n";
-import { shelfSummarise } from "../lib/ai/actions";
 import { heldBlobs } from "../lib/blobs/held";
 import type { ShelfIndex, ShelfPaper, StoredEntry } from "../lib/blobs/kinds";
 import {
@@ -404,55 +400,6 @@ describe("the matrix, the backup and the restore are v1's", () => {
     expect(st.created).toHaveLength(1);
     expect(st.created[0]![0]).toMatch(/^p[0-9a-z]+$/);
     expect(st.index).toHaveLength(2);
-  });
-});
-
-describe("shelfSummarise is shSummarise", () => {
-  it("saves the student's lines first, then sends core's prompt with v1's options, and shows the reply with v1's comparison line in the summary box", async () => {
-    for (const s of FX.summaries) {
-      const order: string[] = [];
-      const outs: string[] = [];
-      const saved: unknown[] = [];
-      const callAI = vi.fn(async () => { order.push("call"); return "OK"; });
-      await shelfSummarise({ callAI, field: fieldLabel(s.field), t, mine: s.mine, pages: s.pages, setOut: (x) => outs.push(x), saveNote: async (n) => { order.push("note"); saved.push(n); return true; }, now: () => NOW });
-      expect(order).toEqual(["note", "call"]);
-      expect(saved).toEqual([{ id: "n" + NOW.getTime().toString(36), page: 0, quote: "", note: s.notes[0]!.note, at: NOW.toISOString() }]);
-      // Fix wave A (W18): the prompt is buildShelfSummaryPromptV2's (the passages that matter); v1's prompt before PAPER TEXT and v1's options are unchanged.
-      const v2 = buildShelfSummaryPromptV2(fieldLabel(s.field), s.pages);
-      expect(callAI).toHaveBeenCalledWith(v2.prompt, s.opts);
-      expect(v2.prompt.slice(0, v2.prompt.indexOf("\n\nPAPER TEXT"))).toBe(s.prompt.slice(0, s.prompt.indexOf("\n\nPAPER TEXT")));
-      expect(outs).toEqual([E.sh2_reading_2, s.out]);
-    }
-  });
-  it("a long paper's limitations section reaches the model (W18)", async () => {
-    const filler = Array.from({ length: 400 }, (_, i) => `Filler sentence number ${i} about the study and nothing else of note at all.`).join("\n");
-    const pages = ["Abstract\nWe studied students.\nIntroduction\n" + filler, "Limitations\nA limitation is that every participant came from one university.\n" + filler];
-    const callAI = vi.fn(async (_prompt: string, _opts: object) => "OK");
-    await shelfSummarise({ callAI, field: "psychology", t, mine: FX.summaries[1]!.mine, pages, setOut: () => {}, saveNote: async () => true, now: () => NOW });
-    const sent = callAI.mock.calls[0]![0];
-    expect(sent).toContain("A limitation is that every participant came from one university.");
-    expect(sent).toContain("(selected passages: the opening, any limitations, then the discussion, method and results)");
-    expect(sent.length).toBeLessThan(20000);
-  });
-  it("trims the reply; does nothing before the gate passes; says the error, or v1's sentence; makes no call when the note cannot be stored", async () => {
-    const outs: string[] = [];
-    const base = { field: "psychology", t, pages: ["p"], setOut: (x: string) => outs.push(x), saveNote: async () => true };
-    await shelfSummarise({ ...base, mine: FX.summaries[1]!.mine, callAI: async () => FX.trim.reply });
-    expect(outs.at(-1)).toBe(FX.trim.out);
-    const callAI = vi.fn(async () => "OK");
-    const saveNote = vi.fn(async () => true);
-    for (const g of FX.gate.filter((x) => !x.out)) await shelfSummarise({ ...base, mine: g.text, callAI, saveNote });
-    expect(callAI).not.toHaveBeenCalled();
-    expect(saveNote).not.toHaveBeenCalled();
-    const mine = FX.gate.find((x) => x.out)!.text;
-    await shelfSummarise({ ...base, mine, callAI: async () => { throw new Error("Add your <b>Gemini</b> key first."); } });
-    expect(outs.at(-1)).toBe("Add your Gemini key first.");
-    await shelfSummarise({ ...base, mine, callAI: async () => { throw new Error(""); } });
-    expect(outs.at(-1)).toBe(E.sh2_the_summary_could_not);
-    const never = vi.fn(async () => "OK");
-    await shelfSummarise({ ...base, mine, callAI: never, saveNote: async () => false });
-    expect(never).not.toHaveBeenCalled();
-    expect(outs.at(-1)).toBe(E.sh2_the_summary_could_not);
   });
 });
 

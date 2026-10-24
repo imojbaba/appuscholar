@@ -1,8 +1,8 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
   accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
-  buildShelfSummaryPromptV2, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
-  shSummaryNoteId, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
+  buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse,
+  type Built, type HelperKind, type RsPaper, type RsQuick, type WritingKind
 } from "@appuscholar/core";
 import { currentStylePrompt, currentStyleVocabNote } from "@/lib/tools/style/current";
 
@@ -299,37 +299,3 @@ export const litReview = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
 export const gapFinder = (papers: RsPaper[], d: GeneratorDeps): Promise<void> =>
   generate(buildGapFinderPromptV2, d.t("rs2_looking_for_what_these"), papers, d);
 
-/** What the Reading shelf's summary touches: the AI (callAI scans for personal data first), the field, the copy, the paper, the note store and the reader's summary box. */
-export type ShelfSummaryDeps = Pick<ResearchAiDeps, "callAI" | "field" | "t"> & {
-  /** The student's own lines (the textarea under "Summary, after you think first"). */
-  mine: string;
-  pages: string[];
-  /** Adds the note to the paper and stores it now: true once it is on the server. */
-  saveNote(note: ShNote): Promise<boolean>;
-  /** The reader's summary box (#shAi): v1 writes the result there, not in the AI pane. */
-  setOut(text: string): void;
-  now?(): Date;
-};
-
-/**
- * "Summarise with AI" (shSummarise 11685-11696): nothing until the student's text passes core's shMineOk (2 non-empty lines, 12 words); their lines are saved first, as the note
- * "My own summary before the AI: …" on page 0 (11688); then "Reading…", core's buildShelfSummaryPromptV2 over the pages (email addresses replaced; the opening, any limitations, then the discussion, method and results, within 18,000 characters: W18; temp 0.2,
- * max 1000, noLang), and the reply, trimmed, with v1's comparison line. A failure shows callAI's sentence with any tag removed, else "The summary could not be made.". Beyond v1:
- * when the note cannot be stored (v1's shPut would have thrown before the call), no call is made and the box says "The summary could not be made.".
- */
-export async function shelfSummarise(d: ShelfSummaryDeps): Promise<void> {
-  if (!shMineOk(d.mine)) return;
-  const now = d.now ? d.now() : new Date();
-  const saved = await d.saveNote({ id: shSummaryNoteId(now.getTime()), page: 0, quote: "", note: d.t("sh2_my_own_summary_before") + " " + d.mine.trim(), at: now.toISOString() });
-  if (!saved) { d.setOut(d.t("sh2_the_summary_could_not")); return; }
-  const built = buildShelfSummaryPromptV2(d.field, d.pages);
-  d.setOut(d.t("sh2_reading_2"));
-  try {
-    const a = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });
-    d.setOut(String(a || "").trim() + "\n\n" + d.t("sh2_compare_this_with_your"));
-  } catch (e) {
-    let m = d.t("sh2_the_summary_could_not");
-    if (e instanceof Error && e.message) m = e.message.replace(/<[^>]+>/g, "");
-    d.setOut(m);
-  }
-}

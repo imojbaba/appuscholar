@@ -1,52 +1,19 @@
 "use client";
 import { useState } from "react";
-import { fieldLabel, shMineOk, type ShNote } from "@appuscholar/core";
+import type { ShNote } from "@appuscholar/core";
 import { tHtml, useT } from "@/lib/i18n";
-import { useSettings } from "@/lib/settings";
-import { shelfSummarise } from "@/lib/ai/actions";
-import { useCallAI } from "@/lib/ai/useCallAI";
 import { deleteHighlight, saveHighlight, type ShelfItem, type ShelfOps } from "@/lib/shelf/actions";
 import { Button } from "@/components/ui/button";
 
-/** What the two bodies write through: the paper's blob client (highlights, the note kept before a summary), the toast and the clock. */
+/** What the highlights body writes through: the paper's blob client, the toast and the clock. */
 export type PaperOps = Pick<ShelfOps, "paper" | "updatePaper" | "flushPaper" | "toast" | "t" | "now">;
 /** A reading-list paper whose text has been read, as the reader holds it. */
 export type ReadItem = ShelfItem & { paper: NonNullable<ShelfItem["paper"]> };
 
 /*
- * The bodies of two tabs until their own tasks replace them (wave B Task 27). "Your take first" is today's "Summary, after you think first" of the reading shelf's reader, with its lines,
- * "Summarise with AI" and the summary box (v1 shReaderRender 11657-11666, shSummarise); Task 28 builds the real tab (the take kept with the paper, the gold-edged summary). "Highlights"
- * is today's note box with "Save selected passage as a highlight", and the highlights by page; Task 29 builds the real tab (the selection held while the note is typed). Both read and
- * write the paper's own blob, so nothing the shelf's reader could do is lost between the tasks.
+ * The body of the Highlights tab until Task 29 replaces it (wave B Task 27): today's note box with "Save selected passage as a highlight", and the highlights by page. It reads and writes the
+ * paper's own blob, so nothing the shelf's reader could do is lost meanwhile. (The other tab of the shelf's reader, "Summary, after you think first", is Your take first now: YourTake.tsx, Task 28.)
  */
-
-/** shReaderRender's last block: the student's own lines, then "Summarise with AI" (off until core's shMineOk passes, with that sentence under it as its reason), then the summary. */
-export function TakeInterim({ item, ops }: { item: ReadItem; ops: PaperOps }) {
-  const t = useT();
-  const { settings } = useSettings();
-  const callAI = useCallAI();
-  const [mine, setMine] = useState("");
-  const [out, setOut] = useState("");
-  const ok = shMineOk(mine);
-  const summarise = () => {
-    void shelfSummarise({
-      callAI, field: fieldLabel(settings.field), t, mine, pages: item.paper.pages, setOut,
-      saveNote: async (n) => ops.updatePaper(item.id, (p) => ({ ...p, notes: [...p.notes, n] })) && ops.flushPaper(item.id)
-    });
-  };
-  return (
-    <div data-testid="reader-take">
-      <h3 className="sh-h3">{t("sh2_summary_after_you_think")}</h3>
-      <p className="sh-small">{t("sh2_in_your_own_words")}</p>
-      <textarea className="input sh-wide" id="shMine" data-testid="sh-mine" rows={3} value={mine} aria-label={t("sh2_summary_after_you_think")} onChange={(e) => setMine(e.target.value)} />
-      <div className="sh-row">
-        <Button variant={ok ? "primary" : "ghost"} id="shAiBtn" data-testid="sh-ai" disabled={!ok} aria-describedby={ok ? undefined : "shAiWhy"} onClick={summarise}>{t("sh2_ai_btn")}</Button>
-      </div>
-      {!ok && <p className="sh-small sh-muted" id="shAiWhy" data-testid="sh-ai-why">{t("sh2_in_your_own_words")}</p>}
-      <div id="shAi" className="sh-ai" data-testid="sh-ai-out" aria-live="polite">{out}</div>
-    </div>
-  );
-}
 
 /**
  * shSaveHL's box and the highlights by page (11657-11666): the note box and "Save selected passage as a highlight" (the selection must start inside the paper's text, `textRef`), then each

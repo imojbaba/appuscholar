@@ -684,8 +684,19 @@ export const V2_STRINGS = {
   reader_prev: { en: "Previous page", hi: "पिछला पृष्ठ" },
   reader_next: { en: "Next page", hi: "अगला पृष्ठ" },
   reader_walk_needs_pdf: { en: "The walk-through needs the full paper. Add your own PDF from the Reading list.", hi: "चरण-दर-चरण पढ़ने के लिए पूरा शोध-पत्र चाहिए। पढ़ने की सूची से अपना PDF जोड़ें।" },
-  reader_take_not_built: { en: "Not built yet. Your two lines about the paper, then the AI summary, will be here.", hi: "अभी बना नहीं है। यहाँ शोध-पत्र के बारे में आपकी दो पंक्तियाँ, फिर AI का सारांश आएगा।" },
   reader_highlights_need_pdf: { en: "Add your own PDF to keep highlights.", hi: "हाइलाइट रखने के लिए अपना PDF जोड़ें।" },
+  // Your take first, then the AI summary (wave B Task 28; register row D-S2-132; canvas Read): the student's own lines come first, the AI summary opens at twelve words. DRAFT Hindi for Dr. Sharma:
+  // सारांश as in the shelf strings, AI as everywhere else.
+  take_label: { en: "In two lines, what does this paper say?", hi: "दो पंक्तियों में, यह शोध-पत्र क्या कहता है?" },
+  take_hint: { en: "Write at least 12 words in your own words. The AI summary unlocks after that.", hi: "अपने शब्दों में कम से कम 12 शब्द लिखें। इसके बाद AI का सारांश खुलेगा।" },
+  take_ready: { en: "Done. The AI summary is unlocked.", hi: "हो गया। AI का सारांश खुल गया है।" },
+  take_show: { en: "Show the AI summary", hi: "AI का सारांश दिखाएँ" },
+  take_again: { en: "Summarise again", hi: "फिर से सारांश बनाएँ" },
+  take_working: { en: "Reading the paper and writing the summary…", hi: "शोध-पत्र पढ़कर सारांश लिखा जा रहा है…" },
+  take_ai_label: { en: "AI summary of the passages that matter most. Compare it with your two lines.", hi: "सबसे ज़रूरी अंशों का AI सारांश। इसे अपनी दो पंक्तियों से मिलाएँ।" },
+  take_ai_partial: { en: "The paper is long, so the AI read the opening, any limitations, then the discussion, method and results.", hi: "शोध-पत्र लंबा है, इसलिए AI ने शुरुआत, सीमाएँ (यदि हों), फिर चर्चा, विधि और परिणाम पढ़े।" },
+  take_ai_check: { en: "The AI can be wrong or miss a limitation.", hi: "AI गलत हो सकता है या कोई सीमा छोड़ सकता है।" },
+  take_next: { en: "Next: add this paper to your comparison", hi: "अगला: इस शोध-पत्र को अपनी तुलना में जोड़ें" },
   // Wave B Task 23 (register row D-S2-129): Literature's Citations tab (canvas Citations). The heading with its count and the day the retraction check last ran, the Style select, one
   // row per source (its reference, status, use and a More menu), "In your document", "Check again", "Add a source by hand" and More. DRAFT Hindi throughout, in the register of the keys above.
   cit_head: { en: "{n} sources, {c} cited in your document", hi: "{n} स्रोत, {c} आपके दस्तावेज़ में उद्धृत" },

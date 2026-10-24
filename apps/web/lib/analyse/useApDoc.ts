@@ -43,11 +43,13 @@ export type ApState = {
   res: Record<string, ApWalkReply>;
   /** The paper card's fields as typed in this tab, by docId then field: shown in place of the stored ones, so words a refused write (R16) did not store stay in the box. */
   cardDraft: Record<string, Record<string, string>>;
+  /** "Your take first" as typed in this tab, by docId (wave B Task 28): shown in place of the stored lines, so words a refused write (R16) did not store stay in the box. */
+  takeDraft: Record<string, string>;
 };
 
 const INITIAL: ApState = {
   doc: null, gen: 0, log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false,
-  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, cardDraft: {}
+  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, cardDraft: {}, takeDraft: {}
 };
 let state: ApState = INITIAL;
 const listeners = new Set<() => void>();

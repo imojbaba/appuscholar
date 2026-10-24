@@ -214,13 +214,31 @@ function shSummaryTier(c: ApChunk, first: boolean, abstractOk: boolean = true): 
 }
 /** A passage longer than this is cut at sentence ends into pieces of about 700 characters, when the paper has to be picked from: apBuild cuts only at the end of a line, so a text with no line ends is one passage. */
 const SH_LONG_PASSAGE = 2000;
+/** The length of a piece when a stretch with no sentence end has to be cut (T14, wave B Task 28). */
+const SH_PIECE = 700;
+/** A cut falls at a space at least this far into the piece; with none that far in, the stretch is not made of words (a PDF whose spaces were lost) and is cut at SH_PIECE. */
+const SH_PIECE_MIN = 350;
+/**
+ * A stretch with no sentence end (more than SH_LONG_PASSAGE characters), in pieces of at most SH_PIECE characters, each cut at the last space before SH_PIECE, so no word is cut in two
+ * ("limitations" no longer reaches the model as "limitation" and "s"). apBuild has joined the text with single spaces. Text with no space in the last half of a piece is cut at SH_PIECE, as wave A's
+ * cut did everywhere (every 700 characters wherever that fell: wave A's LATER T14), so a paper extracted without spaces is still summarised.
+ */
+function shCutAtSpaces(w: string): string[]{
+  const out: string[]=[];let rest=w;
+  while(rest.length>SH_PIECE){
+    const sp=rest.lastIndexOf(' ',SH_PIECE);
+    const at=sp>=SH_PIECE_MIN?sp:SH_PIECE;
+    out.push(rest.slice(0,at));rest=rest.slice(at).trimStart();
+  }
+  out.push(rest);return out;
+}
 function shSplitLong(c: ApChunk): ApChunk[]{
   if(c.text.length<=SH_LONG_PASSAGE)return [c];
   const out: ApChunk[]=[];let buf='';
   const push=()=>{const t=buf.trim();if(t.length>=2)out.push({...c,text:t,sq:apSquash(t)});buf=''};
   for(const w of c.text.split(/(?<=[.!?)])\s+/)){
-    if(w.length>SH_LONG_PASSAGE){push();for(let i=0;i<w.length;i+=700){buf=w.slice(i,i+700);push()}continue}
-    buf+=(buf?' ':'')+w;if(buf.length>=700)push();
+    if(w.length>SH_LONG_PASSAGE){push();for(const piece of shCutAtSpaces(w)){buf=piece;push()}continue}
+    buf+=(buf?' ':'')+w;if(buf.length>=SH_PIECE)push();
   }
   push();return out;
 }

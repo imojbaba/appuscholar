@@ -12,6 +12,7 @@ import type { Paper } from "@/lib/papers/list";
 import { useLibrary } from "@/lib/cite/useLibrary";
 import { placeHref } from "@/lib/frame/places";
 import { fromEuropePmc, keptPaper, PASTED_PID, paperPageUrl, PRACTICE_PID, readerBy, readerQueryOf, textKindOf, type ReaderTab } from "@/lib/reader/load";
+import { needsTick } from "@/lib/reader/take";
 import { readPaperOnce, useShelfStore } from "@/lib/shelf/useShelf";
 import { useVault } from "@/lib/vault/useVault";
 import { toast } from "@/components/ui/toast";
@@ -20,16 +21,17 @@ import { PanelLoading } from "@/components/tools/PanelLoading";
 import { Ask } from "@/components/tools/analyse/Ask";
 import { Card } from "@/components/tools/analyse/Card";
 import { Walk } from "@/components/tools/analyse/Walk";
-import { HighlightsInterim, TakeInterim, type PaperOps, type ReadItem } from "./Interim";
+import { HighlightsInterim, type PaperOps, type ReadItem } from "./Interim";
 import { NumbersTab } from "./NumbersTab";
 import { PaperText, ReadCheck } from "./PaperText";
 import { ReaderTabs } from "./ReaderTabs";
+import { YourTake } from "./YourTake";
 
 /*
  * The reader (wave B Task 27, register row D-S2-131; canvas Read): one paper, named at the top, with its text on the left and its tabs on the right. It replaces Analyse a paper's intake and
  * panel. The paper is a kept paper of the Reading list, found by its id in the address (`/p/<project>/lit/reading/<pid>`), or the practice paper (`sample`), or a pasted text (`pasted`, from the
- * Reading list's More). The tabs, in order: Your take first, Ask, Check numbers, Walk-through, Card and Highlights; the open one is `?tab=`. Until Tasks 28 to 31 give them their own screens,
- * each tab's body is what Analyse a paper (and the shelf's reader) had, moved in as it was.
+ * Reading list's More). The tabs, in order: Your take first, Ask, Check numbers, Walk-through, Card and Highlights; the open one is `?tab=`. Your take first has its own screen (Task 28); until Tasks 29 to 31
+ * give the others theirs, each body is what Analyse a paper (and the shelf's reader) had, moved in as it was.
  */
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
@@ -84,10 +86,10 @@ function Consent() {
   );
 }
 
-/** A reading-list paper whose text has been read, as the highlights and the summary write to it. */
+/** A reading-list paper whose text has been read, as the highlights write to it. */
 type Shelf = { item: ReadItem; ops: PaperOps };
 
-/** The body of the open tab. "Your take first" and "Highlights" are today's Summarise and highlight box for a paper that has its text on the list; the others are Analyse a paper's modes, as they were. */
+/** The body of the open tab. "Your take first" is the student's own lines and the AI summary (Task 28) for any paper the reader has loaded; "Highlights" is today's highlight box for a paper that has its text on the list (Task 29 replaces it); the others are Analyse a paper's modes, as they were. */
 function Body({ tab, doc, notes, shelf, page, onPage, textRef }: {
   tab: ReaderTab; doc: ApLoaded; notes: ApNotesStore; shelf: Shelf | null | "reading"; page: number; onPage(n: number): void; textRef: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -101,8 +103,8 @@ function Body({ tab, doc, notes, shelf, page, onPage, textRef }: {
     if (shelf === "reading") return <PanelLoading />;
     return shelf ? <HighlightsInterim item={shelf.item} page={page} ops={shelf.ops} textRef={textRef} onPage={onPage} /> : <p className="rd-quiet" data-testid="reader-highlights-none">{t("reader_highlights_need_pdf")}</p>;
   }
-  if (shelf === "reading") return <PanelLoading />;
-  return shelf ? <TakeInterim item={shelf.item} ops={shelf.ops} /> : <p className="rd-quiet" data-testid="reader-take-none">{t("reader_take_not_built")}</p>;
+  // A pasted text is read by the AI only once the box is ticked, as Ask asks; a kept paper and the practice paper need none.
+  return <>{needsTick(doc) && <Consent />}<YourTake doc={doc} notes={notes} /></>;
 }
 
 /**

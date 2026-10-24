@@ -405,7 +405,7 @@ describe("the tabs", () => {
     expect(tid("reader-tab-highlights")!.textContent).toBe("Highlights (1)");
   });
 
-  it("a paper with no PDF has no highlights to keep, and says how to get some; Your take first says it is not built", async () => {
+  it("a paper with no PDF has no highlights to keep, and says how to get some; Your take first is open to it all the same (Task 28)", async () => {
     seed();
     await open("kb", "tab=highlights");
     await until(() => !!tid("reader-tabs"), "the tabs");
@@ -413,30 +413,12 @@ describe("the tabs", () => {
     expect(tid("reader-tab-highlights")!.textContent).toBe("Highlights (0)");
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     await open("kb", "");
-    await until(() => !!tid("reader-take-none"), "the line");
-    expect(tid("reader-take-none")!.textContent).toBe("Not built yet. Your two lines about the paper, then the AI summary, will be here.");
+    await until(() => !!tid("take-box"), "the box");
+    expect(tid("reader-take")!.querySelector("label")!.textContent).toBe("In two lines, what does this paper say?");
   });
 });
 
 describe("what the tabs keep from today's Analyse a paper", () => {
-  it("Your take first is today's Summarise: off until two lines and twelve words, then the lines are saved first and the summary lands", async () => {
-    seed();
-    await open("ka");
-    await until(() => !!tid("reader-take"), "the tab");
-    const btn = tid("sh-ai") as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-    expect(tid("sh-ai-why")!.textContent).toBe(E.sh2_in_your_own_words);
-    typeIn(tid("sh-mine") as HTMLTextAreaElement, "one two three four five six\nseven eight nine ten eleven twelve");
-    expect(btn.disabled).toBe(false);
-    h.callAI.mockImplementation(async () => { return "Aim: calm."; });
-    await click(btn);
-    await until(() => tid("sh-ai-out")!.textContent!.startsWith("Aim"), "the summary");
-    expect(tid("sh-ai-out")!.textContent).toBe("Aim: calm.\n\nCompare this with your own two lines. The AI can be wrong or miss a limitation.");
-    expect(stored<ShelfPaper>("shelf_paper:sa")!.notes[0]).toMatchObject({ page: 0, quote: "", note: "My own summary before the AI: one two three four five six\nseven eight nine ten eleven twelve" });
-    const [, opts] = h.callAI.mock.calls[0] as [string, unknown];
-    expect(opts).toEqual({ temp: 0.2, max: 1000, noLang: true });
-  });
-
   it("Highlights saves the selected passage on the paper's blob, marks it on the page, and counts it", async () => {
     seed();
     await open("ka", "tab=highlights");

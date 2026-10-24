@@ -159,6 +159,41 @@ describe("buildShelfSummaryPromptV2 (W18)", () => {
     expect(small.text.length).toBeLessThanOrEqual(4500);
   });
 
+  describe("a passage with no sentence end is cut at a space (T14, wave B Task 28)", () => {
+    /** Words that each carry a number, so that a word cut in two ("limitation" and "s50") is not one of them. */
+    const words = (n: number): string[] => Array.from({ length: n }, (_, i) => "limitations" + i);
+    const known = new Set(words(190));
+    /** About 2,200 characters with no sentence end: apBuild cuts only at line ends, so it is one passage, and a budget under its size makes the pick cut it into pieces. */
+    const run = words(190).join(" ");
+    /** The text of each passage the pick keeps (what follows each "[ page 1 ]" label). */
+    const passages = (text: string): string[] => text.split("\n\n").map((p) => p.replace(/^\[[^\]]*\]\n/, ""));
+
+    it("a 2,000-character run with no full stop is never cut inside a word", () => {
+      expect(run.length).toBeGreaterThan(2000);
+      expect(run).not.toMatch(/[.!?)]/);
+      const pk = shSummaryPick(apBuild("", [run], "pdf"), 1500);
+      expect(pk.partial).toBe(true);
+      const kept = passages(pk.text);
+      expect(kept.length).toBeGreaterThanOrEqual(2);
+      for (const piece of kept) for (const w of piece.split(" ")) expect(known.has(w), "a word cut in two: " + w).toBe(true);
+    });
+
+    it("each cut falls at the last space before 700 characters: the first piece is as long as it can be without passing 700", () => {
+      const first = passages(shSummaryPick(apBuild("", [run], "pdf"), 1500).text)[0]!;
+      expect(run.startsWith(first)).toBe(true);
+      expect(first.length).toBeLessThanOrEqual(700);
+      expect(run[first.length]).toBe(" ");
+      const next = run.slice(first.length + 1).split(" ")[0]!;
+      expect(first.length + 1 + next.length).toBeGreaterThan(700);
+    });
+
+    it("text with no spaces at all (a PDF that lost them) is still cut every 700 characters, so such a paper can be summarised", () => {
+      const pk = shSummaryPick(apBuild("", ["x".repeat(2600)], "pdf"), 1500);
+      expect(pk.partial).toBe(true);
+      expect(passages(pk.text).map((p) => p.length)).toEqual([700, 700]);
+    });
+  });
+
   it("the tier-0 cap is 3,000", () => {
     expect(SHELF_SUMMARY_TIER0_CAP_V2).toBe(3000);
   });
