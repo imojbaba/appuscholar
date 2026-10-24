@@ -20,11 +20,19 @@ export const CROSSREF_FILL_TIMEOUT_MS = 4000;
 export type KeepDeps = Pick<Library, "lib" | "update" | "ready" | "loading" | "locked" | "broken" | "error">;
 
 /**
- * The stored library has been read: it is not loading, locked, broken or failed to read, and there is a project. Keep decides "kept" or "already" against nothing else:
+ * The stored library is known: there is a project, and it is not loading, locked or broken. A failed save or read does not unknow it (the blob client sets `error` for a
+ * save that failed too, and then still holds the library and the keep for a retry), so what the library holds can still be shown: a paper in it is Kept.
+ */
+export function libraryKnown(l: Pick<Library, "ready" | "loading" | "locked" | "broken">): boolean {
+  return l.ready && !l.loading && !l.locked && !l.broken;
+}
+
+/**
+ * The stored library has been read: it is known (libraryKnown) and the last read or save did not fail. Keep decides "kept" or "already" against nothing else:
  * an unread library reads as empty, so a keep decided on it would add a duplicate (the trap Task 17's review found in linkShelf).
  */
 export function libraryRead(l: Pick<Library, "ready" | "loading" | "locked" | "broken" | "error">): boolean {
-  return l.ready && !l.loading && !l.locked && !l.broken && !l.error;
+  return libraryKnown(l) && !l.error;
 }
 
 /**

@@ -735,12 +735,14 @@
 .find-badge { padding: 2px 8px; border-radius: 6px; background: var(--chip); color: var(--ink); }
 .find-badge-retracted { background: var(--danger-bg); color: var(--danger-ink); font-weight: 600; cursor: help; }
 .find-why { margin: 2px 0 0; padding-left: 10px; border-left: 2px solid var(--gold); font-size: 14px; color: var(--ink); }
+.find-result .rs-quick { border-left: 3px solid var(--gold); background: var(--gold-wash); }
 .find-result-acts { display: flex; flex-direction: column; gap: var(--s2); align-items: stretch; width: 150px; }
 .find-keep, .find-more { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border-radius: var(--r-ctl); font: inherit; cursor: pointer; }
 .find-keep { border: 1px solid var(--purple-800); background: var(--purple-800); color: var(--primary-foreground); font-weight: 700; }
-.find-keep:hover:not(:disabled) { background: var(--purple-600); border-color: var(--purple-600); }
+.find-keep:hover:not([aria-disabled="true"]) { background: var(--purple-600); border-color: var(--purple-600); }
 .find-keep[data-kept] { border-color: var(--ok-ink); background: var(--ok-bg); color: var(--ok-ink); opacity: 1; }
-.find-keep:disabled:not([data-kept]) { opacity: 0.6; cursor: progress; }
+.find-keep[aria-disabled="true"]:not([data-kept]) { opacity: 0.6; cursor: default; }
+.find-keep[aria-busy="true"] { cursor: progress; }
 .find-more { min-height: 40px; border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); }
 .find-more:hover { background: var(--soft); }
 .find-keep:focus-visible, .find-more:focus-visible, .find-link:focus-visible, .find-go:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }

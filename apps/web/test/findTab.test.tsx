@@ -216,6 +216,26 @@ describe("Find: the results (canvas Find)", () => {
     expect(row.compareDocumentPosition(cards()[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("the count reads right for one paper, and for one that matches: '1 paper', 'that matches' for 1, 'that match' for 0 and for 2 or more", async () => {
+    const [a, b] = run("oa-plain").merged as unknown as RsPaper[];
+    const old = { ...b!, year: 2010 } as unknown as RsPaper;
+    const recent = { ...a!, year: 2022 } as unknown as RsPaper;
+    setResearch({ original: [recent], topic: "growth mindset" });
+    await mount();
+    expect(tid("find-papers")!.textContent).toBe("1 paper. Showing 1 that matches your filters.");
+    type("rsFYear", "2023");
+    expect(cards()).toHaveLength(0);
+    expect(tid("find-papers")!.textContent).toBe("1 paper. Showing 0 that match your filters.");
+    // two papers: one that passes the filter, then both, then none
+    type("rsFYear", "");
+    await act(async () => { setResearch({ original: [recent, old] }); });
+    expect(tid("find-papers")!.textContent).toBe("2 papers. Showing 2 that match your filters.");
+    type("rsFYear", "2020");
+    expect(tid("find-papers")!.textContent).toBe("2 papers. Showing 1 that matches your filters.");
+    type("rsFYear", "2023");
+    expect(tid("find-papers")!.textContent).toBe("2 papers. Showing 0 that match your filters.");
+  });
+
   it("there is no CSV button; Export opens the export place with the search list ticked (W11)", async () => {
     await mount();
     await search(run("oa-plain"));
@@ -272,7 +292,7 @@ describe("Find: the results (canvas Find)", () => {
     const i = c.merged.findIndex((p) => p.oaUrl && p.doi);
     await openMore(cards()[i]!);
     expect(menuItems().map((m) => m.textContent)).toEqual([
-      "Put a citation in my document", "Open the paper", "Get the free PDF", "Papers connected to this one", "Quick read", "Read it now"
+      "Put a citation in my document", "Open the paper", "Get the free PDF", "Papers connected to this one", "Read the abstract with AI", "Read it now"
     ]);
     const p = c.merged[i]!;
     const open = tid("find-item-open") as HTMLAnchorElement;
@@ -288,7 +308,7 @@ describe("Find: the results (canvas Find)", () => {
     const c = run("pm-noabstract");
     await search(c);
     await openMore(cards()[0]!);
-    expect(menuItems().map((m) => m.textContent)).toEqual(["Put a citation in my document", "Open the paper", "Quick read", "Read it now"]);
+    expect(menuItems().map((m) => m.textContent)).toEqual(["Put a citation in my document", "Open the paper", "Read the abstract with AI", "Read it now"]);
     expect((tid("find-item-open") as HTMLAnchorElement).getAttribute("href")).toBe(c.merged[0]!.url);
   });
 
@@ -338,7 +358,7 @@ describe("Find: Keep", () => {
     h.blobs.citations = blob([entry]);
     await act(async () => { root.render(<FindTab />); });
     expect(keepBtn(i).textContent).toBe("Kept");
-    expect(keepBtn(i).disabled).toBe(true);
+    expect(keepBtn(i).getAttribute("aria-disabled")).toBe("true");
     await click(keepBtn(i));
     expect(set).toHaveBeenCalledTimes(1);
     expect(h.blobs.citations.set).not.toHaveBeenCalled();
@@ -392,7 +412,7 @@ describe("Find: Keep", () => {
     const i = firstWithDoi(c);
     await click(keepBtn(i));
     expect(keepBtn(i).getAttribute("aria-busy")).toBe("true");
-    expect(keepBtn(i).disabled).toBe(true);
+    expect(keepBtn(i).getAttribute("aria-disabled")).toBe("true");
     expect(h.blobs.citations!.set).not.toHaveBeenCalled();
     // the read lands: the paper is kept once, on top of what was stored
     const stored = [{ author: "Stored, S.", title: "A stored paper that is not the one", year: "1999", pid: "kstored1" }];
@@ -440,7 +460,7 @@ describe("Find: Keep", () => {
     await mount();
     await search(run("oa-plain"));
     expect(tid("find-broken")!.textContent).toBe(E.vault_cite_broken);
-    expect(keepBtn(0).disabled).toBe(true);
+    expect(keepBtn(0).getAttribute("aria-disabled")).toBe("true");
     await click(keepBtn(0));
     expect(h.blobs.citations!.set).not.toHaveBeenCalled();
   });
@@ -467,6 +487,88 @@ describe("Find: Keep", () => {
     expect(keepBtn(0).hasAttribute("aria-busy")).toBe(false);
     expect(h.blobs.citations.set).not.toHaveBeenCalled();
     expect(tid("find-error")).not.toBeNull();
+  });
+});
+
+describe("Find: Keep, after a failed save and for a keyboard or screen-reader student", () => {
+  const firstWithDoi = (c: Case) => c.merged.findIndex((p) => p.doi && p.source === "OpenAlex");
+
+  it("a kept paper still reads Kept after a save fails (the blob client sets error while the library is known and the keep is held for a retry)", async () => {
+    const root = await mount();
+    const c = run("oa-plain");
+    await search(c);
+    const i = firstWithDoi(c);
+    await click(keepBtn(i));
+    const [entry] = libAfter();
+    // the save then failed: the library still holds the keep, the client holds it for a retry, and says the save failed
+    h.blobs.citations = blob([entry], { error: true });
+    await act(async () => { root.render(<FindTab />); });
+    expect(tid("find-error")).not.toBeNull();
+    expect(cards().map((_, k) => keepBtn(k).textContent)).toEqual(cards().map((_, k) => (k === i ? "Kept" : "Keep")));
+    expect(keepBtn(i).getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("a library that failed to read shows no paper as Kept (nothing is known about it)", async () => {
+    h.blobs.citations = blob(null, { error: true });
+    await mount();
+    await search(run("oa-plain"));
+    expect(cards().every((_, k) => keepBtn(k).textContent === "Keep")).toBe(true);
+  });
+
+  it("Keep is aria-disabled, never disabled, while busy and once Kept, so focus stays on it; the click is ignored then", async () => {
+    h.blobs.citations = blob([], { loading: true });
+    const root = await mount();
+    const c = run("oa-plain");
+    await search(c);
+    const i = firstWithDoi(c);
+    const btn = keepBtn(i);
+    act(() => { btn.focus(); });
+    expect(document.activeElement).toBe(btn);
+    await click(btn);
+    expect(btn.getAttribute("aria-busy")).toBe("true");
+    expect(btn.getAttribute("aria-disabled")).toBe("true");
+    expect(btn.hasAttribute("disabled")).toBe(false);
+    expect(document.activeElement).toBe(btn);
+    // a second press while it waits is ignored: the paper is kept once
+    await click(btn);
+    h.blobs.citations = blob([]);
+    await act(async () => { root.render(<FindTab />); });
+    expect(h.blobs.citations.set).toHaveBeenCalledTimes(1);
+    // the library now holds the keep
+    const [entry] = libAfter();
+    h.blobs.citations = blob([entry]);
+    await act(async () => { root.render(<FindTab />); });
+    expect(keepBtn(i)).toBe(btn);
+    expect(btn.textContent).toBe("Kept");
+    expect(btn.getAttribute("aria-disabled")).toBe("true");
+    expect(btn.hasAttribute("disabled")).toBe(false);
+    expect(document.activeElement).toBe(btn);
+    await click(btn);
+    expect(h.blobs.citations.set).not.toHaveBeenCalled();
+  });
+
+  it("one polite live region says 'Kept: {title}' when a Keep went through, and nothing when it did not", async () => {
+    h.blobs.citations = blob([], { error: true });
+    const root = await mount();
+    const c = run("oa-plain");
+    await search(c);
+    const live = $$('[data-testid="find-announce"]');
+    expect(live).toHaveLength(1);
+    expect(live[0]!.getAttribute("role")).toBe("status");
+    expect(live[0]!.getAttribute("aria-live")).toBe("polite");
+    // the region is in the page before anything is said, and no result carries a live region of its own
+    expect(live[0]!.textContent).toBe("");
+    expect(cards().flatMap((card) => [...card.querySelectorAll('[aria-live], [role="status"], [role="alert"]')])).toEqual([]);
+    // a Keep that keeps nothing (the library failed to read) says nothing
+    await click(keepBtn(0));
+    expect(tid("find-announce")!.textContent).toBe("");
+    // the read is made, and a Keep goes through
+    h.blobs.citations = blob([]);
+    await act(async () => { root.render(<FindTab />); });
+    const i = firstWithDoi(c);
+    await click(keepBtn(i));
+    expect(tid("find-announce")!.textContent).toBe("Kept: " + c.merged[i]!.title);
+    expect($$('[data-testid="find-announce"]')).toHaveLength(1);
   });
 });
 
@@ -527,6 +629,40 @@ describe("Find: More", () => {
     expect(toasts()).toEqual([E.rs2_no_abstract_came_with_2]);
   });
 
+  it("on a library that cannot be opened, 'Put a citation in my document' and 'Read it now' are off like Keep (the others still work)", async () => {
+    const ed = new Editor({ extensions: editorExtensions, content: "<p>Learning is social.</p>" });
+    editors.push(ed);
+    h.editor = ed;
+    h.blobs.citations = blob([], { broken: true });
+    await mount();
+    const c = run("oa-plain");
+    await search(c);
+    const i = c.merged.findIndex((p) => p.oaUrl && p.doi);
+    await openMore(cards()[i]!);
+    for (const id of ["find-item-cite", "find-item-read"]) {
+      const item = tid(id)!;
+      expect(item.getAttribute("aria-disabled"), id).toBe("true");
+      expect(item.hasAttribute("data-disabled"), id).toBe(true);
+    }
+    for (const id of ["find-item-open", "find-item-pdf", "find-item-connected", "find-item-quick"]) expect(tid(id)!.getAttribute("aria-disabled"), id).toBeNull();
+    const before = ed.getText();
+    await click(tid("find-item-cite"));
+    await click(tid("find-item-read"));
+    expect(h.blobs.citations!.set).not.toHaveBeenCalled();
+    expect(ed.getText()).toBe(before);
+    expect(h.setPendingAnalyse).not.toHaveBeenCalled();
+    expect(h.go).not.toHaveBeenCalled();
+    expect(toasts()).toEqual([]);
+  });
+
+  it("on a library that opens, those two items are on", async () => {
+    await mount();
+    const c = run("oa-plain");
+    await search(c);
+    await openMore(cards()[0]!);
+    for (const id of ["find-item-cite", "find-item-read"]) expect(tid(id)!.getAttribute("aria-disabled"), id).toBeNull();
+  });
+
   it("Read it now does not read the abstract of a paper the library would not take (a library that cannot be read)", async () => {
     h.blobs.citations = blob([], { broken: true });
     await mount();
@@ -577,6 +713,13 @@ describe("Find: the layout rules (375 px wide, tokens only)", () => {
 
   it("the AI line has a gold edge", () => {
     expect(find.find((r) => /\.find-why\b/.test(r.sel))?.body).toMatch(/border-left:[^;]*var\(--gold\)/);
+  });
+
+  it("the AI box inside a result has a gold edge too (not the purple of the tools' own boxes)", () => {
+    const box = find.find((r) => /\.find-result\s+\.rs-quick\b/.test(r.sel));
+    expect(box?.body).toMatch(/border-left:[^;]*var\(--gold\)/);
+    // the shared rule is left as it is: other tools' boxes keep their edge
+    expect(rules.find((r) => r.sel.endsWith(".rs-quick") && !/find-result/.test(r.sel))?.body).toMatch(/border-left:[^;]*var\(--purple-600\)/);
   });
 
   it("uses colour tokens only: no hex or rgb colour in a .find- rule", () => {

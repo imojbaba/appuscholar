@@ -111,8 +111,6 @@ export type FilterForm = { year: string; oa: boolean; ret: boolean; des: string;
 export const FILTER_EMPTY: FilterForm = { year: "", oa: false, ret: false, des: "", n: "" };
 /** rsFilterVals (8332-8335): the boxes read as v1 reads them. */
 export const filterVals = (f: FilterForm): RsFilter => ({ year: parseInt(f.year, 10) || 0, oa: !!f.oa, ret: !!f.ret, des: f.des || "", n: parseInt(f.n, 10) || 0 });
-/** rsFilterActive (8353). */
-export const filterActive = (F: RsFilter): boolean => !!(F.year || F.oa || F.ret || F.des || F.n);
 
 /**
  * rsApplySort's list (8357-8364): the results that pass core's rsFilterPass, in the chosen order (core's rsSortResults), and how many were hidden
