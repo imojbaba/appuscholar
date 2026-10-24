@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { parsePasted, pasteLookup, type PastedRef } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import type { StoredEntry } from "@/lib/blobs/kinds";
-import { keepEntry, pastedEntry, undoKeep } from "@/lib/papers/keep";
+import type { Library } from "@/lib/cite/useLibrary";
+import { keepEntry, pastedEntry, undoKeepSettled } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
 import { useOpenAlexKey } from "@/lib/research/oaKey";
 import { Button } from "@/components/ui/button";
@@ -21,19 +22,23 @@ const refOf = (r: PastedRef, typed: string): string => ("v" in r ? r.v : typed.t
  * The paste box in Find (wave B Task 19, canvas Find, register row D-S2-124; walk fault W4): "Already have a paper? Paste a link, DOI or PubMed number", one box and "Look it up and keep".
  * core reads what was pasted and looks it up (parsePasted, pasteLookup: a DOI, a PubMed, PMC, arXiv or OpenAlex id; a link with no id in it and a title are told apart and sent
  * nowhere), and the paper is kept at once through the same door as a search result (keepEntry, with the abstract and the free link when the lookup brought them, so a paper already
- * kept by its DOI is not added again). The line under the box then reads "Kept: {title}" with Undo, which takes the paper out again only while it is as it was kept (undoKeep), or
+ * kept by its DOI is not added again). The line under the box then reads "Kept: {title}" with Undo, which takes the paper out again only while it is as it was kept (undoKeepSettled), or
  * "Already in your reading list: {title}". A press waits for the library as Keep does (useKeep: busy while it loads, one passphrase prompt when it is locked) and is refused when the
- * library cannot be opened. Every request goes to Crossref, PubMed or OpenAlex and carries only an id (and the student's OpenAlex key, as the search does); a student who left Find
+ * library cannot be opened; while it waits on a locked library the line says so (a cancelled prompt would otherwise leave "Looking it up…" up), and a library that turns out broken
+ * says that, not that the connection failed. Undo says "Removed" only once the save has gone and the paper is out (undoKeepSettled; another window may have saved first), and puts
+ * the cursor back in the box, as the Undo button is gone. Every request goes to Crossref, PubMed or OpenAlex and carries only an id (and the student's OpenAlex key, as the search does); a student who left Find
  * before the answer came keeps nothing. Self-contained: FindTab only places it, under the search.
  */
 export function PasteBox() {
   const t = useT();
-  const { library, keepWhenRead } = useKeep();
+  const { library, current, keepWhenRead } = useKeep();
   const oaKey = useOpenAlexKey();
   const [value, setValue] = useState("");
   const [line, setLine] = useState<Line | null>(null);
   // What is going on: the lookup and keep, or an Undo. The ref is the guard against a second press before the state shows; both buttons keep focus (aria-disabled, never disabled).
   const [working, setWorking] = useState<"lookup" | "undo" | null>(null);
+  // The press is queued for the library (it is loading or locked) and nothing else is going on: the lookup is over, or Undo has begun.
+  const [waiting, setWaiting] = useState<"keep" | "undo" | null>(null);
   const busy = useRef(false);
   const mounted = useRef(true);
   const box = useRef<HTMLInputElement>(null);
@@ -52,6 +57,11 @@ export function PasteBox() {
     }
   };
   const say = (l: Line) => { if (mounted.current) setLine(l); };
+  /** keepWhenRead, with `waiting` showing while the job waits for the library. */
+  const whenRead = async <R,>(kind: "keep" | "undo", job: (l: Library) => R): Promise<Awaited<R> | null> => {
+    if (mounted.current) setWaiting(kind);
+    try { return await keepWhenRead(job); } finally { if (mounted.current) setWaiting(null); }
+  };
 
   const lookUp = () => {
     if (busy.current || library.broken) return;
@@ -75,8 +85,9 @@ export function PasteBox() {
         }
         const entry = pastedEntry(out);
         const title = entry.title || refOf(ref, typed);
-        const r = await keepWhenRead((l) => keepEntry(entry, l));
-        if (r === null) { say({ kind: "msg", text: t("find_paste_not_kept") }); return; }
+        const r = await whenRead("keep", (l) => keepEntry(entry, l));
+        // Nothing was kept: the library does not open (the vault's unlock found it broken), or the read failed. The library as it is now says which.
+        if (r === null) { say({ kind: "msg", text: t(current().broken ? "vault_cite_broken" : "find_paste_not_kept") }); return; }
         if (mounted.current) setValue("");
         // What keepEntry stored, for Undo to compare with: the entry, its pid and the reading list.
         if (r.state === "kept") say({ kind: "kept", text: t("find_paste_kept", { title }), undo: { added: { ...entry, pid: r.pid, rl: true }, title } });
@@ -90,16 +101,23 @@ export function PasteBox() {
   const undo = (u: NonNullable<Line["undo"]>) => {
     if (busy.current) return;
     void work("undo", async () => {
+      /** The Undo button is gone with its line, so the cursor goes to the box; a line that keeps Undo (to try again) keeps it there. */
+      const end = (l: Line) => { say(l); if (!l.undo && mounted.current) box.current?.focus(); };
       try {
-        const r = await keepWhenRead((l) => undoKeep(u.added, l));
-        if (r === null) say({ kind: "msg", text: t("list_action_fail"), undo: u });
-        else if (r === "changed") say({ kind: "changed", text: t("find_paste_changed", { title: u.title }) });
-        else say({ kind: "removed", text: t("find_paste_removed", { title: u.title }) });
+        const r = await whenRead("undo", (l) => undoKeepSettled(u.added, l));
+        if (r === null) end(current().broken ? { kind: "msg", text: t("vault_cite_broken") } : { kind: "msg", text: t("list_action_fail"), undo: u });
+        else if (r === "changed") end({ kind: "changed", text: t("find_paste_changed", { title: u.title }) });
+        else end({ kind: "removed", text: t("find_paste_removed", { title: u.title }) });
       } catch {
-        say({ kind: "msg", text: t("list_action_fail"), undo: u });
+        end({ kind: "msg", text: t("list_action_fail"), undo: u });
       }
     });
   };
+
+  // What the line shows: while a press waits on a locked library, that (with Undo still there when it is Undo that waits); else what the last press ended with.
+  const shown: Line | null = waiting !== null && library.locked
+    ? { kind: "msg", text: t("vault_cite_locked"), ...(waiting === "undo" && line?.undo ? { undo: line.undo } : {}) }
+    : line;
 
   return (
     <details className="find-paste" data-testid="find-paste">
@@ -110,13 +128,13 @@ export function PasteBox() {
         <Button variant="ghost" type="submit" className="find-paste-go" data-testid="find-paste-go"
           aria-disabled={working !== null || library.broken || undefined} aria-busy={working === "lookup" || undefined}>{t("find_paste_btn")}</Button>
       </form>
-      <div className="find-paste-line" role="status" data-testid="find-paste-line" data-kind={line?.kind}>
-        {line && (
+      <div className="find-paste-line" role="status" data-testid="find-paste-line" data-kind={shown?.kind}>
+        {shown && (
           <>
-            <span data-testid="find-paste-text">{line.text}</span>
-            {line.undo && (
+            <span data-testid="find-paste-text">{shown.text}</span>
+            {shown.undo && (
               <Button variant="ghost" type="button" className="find-paste-undo" data-testid="find-paste-undo" aria-disabled={working !== null || undefined} aria-busy={working === "undo" || undefined}
-                onClick={() => { undo(line.undo!); }}>{t("find_paste_undo")}</Button>
+                onClick={() => { undo(shown.undo!); }}>{t("find_paste_undo")}</Button>
             )}
           </>
         )}

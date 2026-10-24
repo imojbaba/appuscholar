@@ -98,6 +98,26 @@ function putLibrary(value: StoredEntry[] | null, over: Partial<Blob> = {}) {
 const library = () => h.blobs.citations as Blob;
 const stored = () => (library().value ?? []) as StoredEntry[];
 const sets = () => library().set.mock.calls.length;
+/**
+ * The next save is refused because another window saved first: the client reads that window's library (`theirs`) and replays every edit made here onto it (createBlobClient's 409 path),
+ * so an edit that no longer fits is dropped by its own update. The edits made from now on are the ones replayed; flush() is where it happens.
+ */
+function loseNextSave(theirs: StoredEntry[]) {
+  const ops: Array<(p: StoredEntry[]) => StoredEntry[]> = [];
+  const set: Blob["set"] = vi.fn((next: unknown) => {
+    const fn = next as (p: StoredEntry[]) => StoredEntry[];
+    ops.push(fn);
+    h.blobs.citations = { ...library(), value: fn(stored()) };
+    h.emit();
+  });
+  const flush = vi.fn(async () => {
+    h.blobs.citations = { ...library(), value: ops.reduce((acc, fn) => fn(acc), theirs) };
+    h.emit();
+    return true;
+  });
+  h.blobs.citations = { ...library(), set, flush };
+  act(() => { h.emit(); });
+}
 const STORED_OTHER: StoredEntry = { author: "Stored, S.", title: "A stored paper that is not the one", year: "1999", pid: "kstored1", rl: true };
 
 beforeEach(() => {
@@ -356,6 +376,66 @@ describe("Paste box: Undo", () => {
     expect(sets()).toBe(before);
   });
 
+  it("Undo says Removed only when the paper was taken out: another window edited it and the save was refused, so the paper stays and the line says so", async () => {
+    await mount();
+    await paste(WALK_DOI);
+    const kept = stored()[0]!;
+    loseNextSave([{ ...kept, pages: "13317-1" }]);
+    await click(undoBtn());
+    await until(() => !undoBtn()?.hasAttribute("aria-busy"));
+    expect(library().flush).toHaveBeenCalled();
+    expect(stored()).toEqual([{ ...kept, pages: "13317-1" }]);
+    expect(line()).toBe("Not removed: " + WALK_TITLE + " has changed since you kept it. You can still remove it in Citations.");
+    expect(undoBtn()).toBeNull();
+  });
+
+  it("Undo still says Removed when the save went through and the paper is out of the library", async () => {
+    await mount();
+    await paste(WALK_DOI);
+    const kept = stored()[0]!;
+    loseNextSave([kept]);
+    await click(undoBtn());
+    await until(() => line().startsWith("Removed"));
+    expect(stored()).toEqual([]);
+    expect(line()).toBe("Removed: " + WALK_TITLE);
+  });
+
+  it("a keep that lost to another window's keep of the same paper has an id that was never stored: Undo leaves the other window's copy and says so, and writes nothing", async () => {
+    await mount();
+    await paste(WALK_DOI);
+    const kept = stored()[0]!;
+    // the keep was replayed onto the library the other window saved first: the paper is there under that window's id
+    const theirs: StoredEntry = { ...kept, pid: "kwindow2" };
+    act(() => { (library().set as (f: (p: StoredEntry[]) => StoredEntry[]) => void)(() => [theirs]); });
+    const before = sets();
+    await click(undoBtn());
+    expect(line()).toBe("Not removed: " + WALK_TITLE + " has changed since you kept it. You can still remove it in Citations.");
+    expect(stored()).toEqual([theirs]);
+    expect(sets()).toBe(before);
+  });
+
+  it("focus goes to the paste box after Undo, as the Undo button is gone", async () => {
+    await mount();
+    await paste(WALK_DOI);
+    undoBtn()!.focus();
+    expect(document.activeElement).toBe(undoBtn());
+    await click(undoBtn());
+    await until(() => line().startsWith("Removed"));
+    expect(undoBtn()).toBeNull();
+    expect(document.activeElement).toBe(input());
+  });
+
+  it("focus goes to the paste box after an Undo that left the paper, too", async () => {
+    await mount();
+    await paste(WALK_DOI);
+    const kept = stored()[0]!;
+    act(() => { (library().set as (f: (p: StoredEntry[]) => StoredEntry[]) => void)((prev) => prev.map((e) => (e.pid === kept.pid ? { ...e, pages: "13317-1" } : e))); });
+    undoBtn()!.focus();
+    await click(undoBtn());
+    expect(line()).toMatch(/^Not removed/);
+    expect(document.activeElement).toBe(input());
+  });
+
   it("the next lookup replaces the line, and with it the Undo", async () => {
     await mount();
     await paste(WALK_DOI);
@@ -374,6 +454,8 @@ describe("Paste box: Undo", () => {
     expect(library().flush).toHaveBeenCalled();
     expect(sets()).toBe(0);
     expect(undoBtn()!.getAttribute("aria-busy")).toBe("true");
+    // the wait is named, and Undo stays on the line for when the library opens
+    expect(line()).toBe(E.vault_cite_locked);
     putLibrary([kept]);
     await until(() => line().startsWith("Removed"));
     expect(stored()).toHaveLength(0);
@@ -427,6 +509,44 @@ describe("Paste box: a press waits for the library as Keep does", () => {
     await until(() => line().startsWith("Kept"));
     expect(stored()).toHaveLength(2);
     expect(stored()[0]).toEqual(STORED_OTHER);
+  });
+
+  it("while the press waits for an unlock the line says the library is locked, not 'Looking it up…', and the paper is kept when it opens", async () => {
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    rf.standIn({
+      match: (u) => u.startsWith("https://api.openalex.org/works/W7000000004"),
+      respond: async () => { await held; return new Response(JSON.stringify({ id: "https://openalex.org/W7000000004", display_name: "A paper about learning that waits for the vault", authorships: [], publication_year: 2020, open_access: { is_oa: false } }), { status: 200 }); }
+    });
+    putLibrary([], { locked: true });
+    await mount();
+    type("W7000000004");
+    await click(go());
+    // the lookup is on its way: that is what the line says, locked library or not
+    await until(() => rf.requested.length === 1);
+    expect(line()).toBe("Looking it up…");
+    release();
+    // the lookup is over and the paper waits for the unlock: the line says so
+    await until(() => line() === E.vault_cite_locked);
+    expect(go().getAttribute("aria-disabled")).toBe("true");
+    expect(sets()).toBe(0);
+    putLibrary([STORED_OTHER]);
+    await until(() => line().startsWith("Kept"));
+    expect(stored()).toHaveLength(2);
+    expect(line()).toBe("Kept: A paper about learning that waits for the vault");
+  });
+
+  it("a library that turns out broken once the vault is unlocked says so, not that the saved papers could not be reached", async () => {
+    putLibrary([], { locked: true });
+    await mount();
+    type(WALK_DOI);
+    await click(go());
+    await until(() => line() === E.vault_cite_locked);
+    putLibrary([], { broken: true });
+    await until(() => !go().hasAttribute("aria-busy"));
+    expect(line()).toBe(E.vault_cite_broken);
+    expect(sets()).toBe(0);
+    expect(input().value).toBe(WALK_DOI);
   });
 
   it("a library that cannot be opened refuses the press: the button is off, nothing is looked up or kept", async () => {

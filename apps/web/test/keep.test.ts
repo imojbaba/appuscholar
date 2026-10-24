@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import * as core from "@appuscholar/core";
 import type { StoredEntry } from "../lib/blobs/kinds";
-import { ABSTRACT_MAX, CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryKnown, libraryRead, pastedEntry, resultEntry, undoKeep, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
+import { ABSTRACT_MAX, CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryKnown, libraryRead, pastedEntry, resultEntry, undoKeep, undoKeepSettled, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
 import { insertResult } from "../lib/research/library";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
@@ -288,6 +288,67 @@ describe("undoKeep: Undo of a keep", () => {
   it("needs a library that has been read, and fails when the library does not take the change", () => {
     expect(() => undoKeep(added, make([added], { locked: true }).d)).toThrow(/read/);
     expect(() => undoKeep(added, make([added], { update: () => false }).d)).toThrow(/did not take/);
+  });
+  it("leaves the paper when it is in the library under another id (another window kept it first and this keep's id was never stored): changed, not gone, and nothing is written", () => {
+    const theirs: StoredEntry = { ...added, pid: "kother99" };
+    const shownOnly = make([theirs]);
+    expect(undoKeep(added, shownOnly.d)).toBe("changed");
+    expect(shownOnly.log.updates).toBe(0);
+    // by the stored entries too: the shown copy still has the entry, the stored library has the other window's copy of the paper
+    const stale = make([added]);
+    stale.log.lib = [theirs];
+    expect(undoKeep(added, stale.d)).toBe("changed");
+    expect(stale.log.lib).toEqual([theirs]);
+    // a different paper under another id is no reason to keep anything: still gone
+    const unrelated = make([{ ...SLEEP, pid: "kelse001", doi: "10.1000/else", title: "Something else entirely about learning" }]);
+    expect(undoKeep(added, unrelated.d)).toBe("gone");
+  });
+});
+
+describe("undoKeepSettled: Undo, once the save has gone", () => {
+  const added: StoredEntry = { ...SLEEP, pid: "kundo002", rl: true };
+  /** A library that saves on flush(): its updates are kept, and a flush that finds another window's library (`theirs`) replays them onto it, as the blob client does after a 409. */
+  function saving(start: StoredEntry[], theirs?: StoredEntry[]) {
+    const log = { lib: start, ops: [] as Array<(p: StoredEntry[]) => StoredEntry[]>, flushes: 0, order: [] as string[] };
+    const d: KeepDeps & { flush(): Promise<boolean> } = {
+      lib: start, ready: true, loading: false, locked: false, broken: false, error: false,
+      update: (fn) => { log.ops.push(fn); log.lib = fn(log.lib); log.order.push("update"); return true; },
+      flush: async () => {
+        log.flushes++;
+        log.order.push("flush");
+        if (theirs) log.lib = log.ops.reduce((acc, fn) => fn(acc), theirs);
+        return true;
+      }
+    };
+    return { d, log };
+  }
+  it("says removed when the save went through, after the save", async () => {
+    const { d, log } = saving([added]);
+    expect(await undoKeepSettled(added, d)).toBe("removed");
+    expect(log.lib).toEqual([]);
+    expect(log.order).toEqual(["update", "flush"]);
+  });
+  it("says changed when the save was refused because another window edited the entry: the replay found it changed and kept it", async () => {
+    const edited: StoredEntry = { ...added, pages: "13317-1" };
+    const { d, log } = saving([added], [edited]);
+    expect(undoKeep(added, saving([added]).d)).toBe("removed"); // the first, local pass would have said removed
+    expect(await undoKeepSettled(added, d)).toBe("changed");
+    expect(log.lib).toEqual([edited]);
+  });
+  it("says changed when the replay finds the paper kept under another id, and gone when the other window took it out", async () => {
+    const theirCopy: StoredEntry = { ...added, pid: "kother98" };
+    expect(await undoKeepSettled(added, saving([added], [theirCopy]).d)).toBe("changed");
+    expect(await undoKeepSettled(added, saving([added], []).d)).toBe("gone");
+  });
+  it("answers at once, with no save, when the first pass found it changed or gone", async () => {
+    const changed = saving([{ ...added, volume: "3" }]);
+    expect(await undoKeepSettled(added, changed.d)).toBe("changed");
+    const gone = saving([]);
+    expect(await undoKeepSettled(added, gone.d)).toBe("gone");
+    expect(changed.log.flushes + gone.log.flushes).toBe(0);
+  });
+  it("needs a library that has been read, like undoKeep", async () => {
+    await expect(undoKeepSettled(added, { ...saving([added]).d, locked: true })).rejects.toThrow(/read/);
   });
 });
 
