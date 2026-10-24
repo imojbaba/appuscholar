@@ -435,6 +435,15 @@ describe("the caption", () => {
     expect(e.state.doc.nodeAt(e.state.selection.from)?.type.name).not.toBe("image");
   });
 
+  it("puts the title and the note on one line, as the Caption dialog does, so the document reads the same after a reload", async () => {
+    const e = make(DOC);
+    const { id } = await studioFor(e, images(e)[0]!.pos);
+    act(() => ch.deliver(done(id, { capOn: true, title: "Two\nlines", note: "a\n\nb\tc" })));
+    expect(outline(e)).toEqual(["paragraph:one", "paragraph[figure]:Figure 1", "paragraph[title]:Two lines", "paragraph:text +img", "paragraph[note]:Note. a b c", "paragraph:two"]);
+    const again = make(e.getHTML());
+    expect(again.getHTML()).toBe(e.getHTML());
+  });
+
   it("capOn when a caption already sits above adds none and leaves alt alone", async () => {
     const e = make(CAPTIONED);
     const { id } = await studioFor(e, images(e)[0]!.pos);

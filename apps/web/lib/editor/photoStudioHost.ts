@@ -83,8 +83,9 @@ function insertionPoint(editor: Editor): number {
  * The caption is checked before anything is written, so a picture and its caption go in as two steps at most.
  */
 function putPicture(editor: Editor, pos: number | null, m: PhotoDone): void {
-  const title = m.title.trim();
-  const note = m.note.trim();
+  // On one line, as the Caption dialog puts them (a typed line break would not survive a reload).
+  const title = m.title.replace(/\s+/g, " ").trim();
+  const note = m.note.replace(/\s+/g, " ").trim();
   const at = pos ?? insertionPoint(editor);
   const caption = m.capOn && !hasCaptionAbove(editor, at);
   let image = -1;
