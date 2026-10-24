@@ -63,8 +63,9 @@ const vaultPill = (page: Page) => page.getByTestId("vault-pill");
 /**
  * From the vault set-up window (`vault-setup-dialog`, open) to its end: the window, the passphrase asked twice, the recovery sheet read, ticked and closed with Done.
  * Returns the recovery code. The set-up opens from the vault pill ("Vault off") or from the key window's "Protect with a passphrase" (stage2-idea-literature.spec.ts, step 1).
+ * Exported for the story that walks the first day through its own screens (S1); the words it expects are the page's language's.
  */
-async function setUpVault(page: Page, passphrase: string): Promise<string> {
+export async function setUpVault(page: Page, passphrase: string): Promise<string> {
   const lang = await pageLang(page);
   await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
   await page.getByTestId("vault-setup-submit").click();

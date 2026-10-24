@@ -4,6 +4,7 @@ import { MARK } from "../fixtures/common";
 import { shelfPdfs } from "../fixtures/pdfs";
 import { PROGRESS_MS } from "../support/budgets";
 import { dictionary, T, type Lang } from "../support/dict";
+import { EYE_SOURCE, expectEyeRoom } from "../support/eyes";
 import { QA_API_ORIGIN } from "../support/origins";
 import { serverRows } from "../support/server";
 import {
@@ -54,26 +55,6 @@ async function expectAllSentences(page: Page): Promise<void> {
   const text = await docText(page);
   for (const sentence of [SENTENCE_1, SENTENCE_2, SENTENCE_3]) expect(text).toContain(sentence);
 }
-
-/**
- * Each passphrase field keeps room at its right edge for its eye: the field's computed padding-right is at least the eye button's width (components/ui/secret-input.tsx reserves it with
- * `pr-11`; the `.input` rule in app/globals.css, outside any layer, outranks it, so today the padding is 10 px and the eye lies over what is typed: Q5). The eye's test id is the field's and "-toggle".
- */
-async function expectEyeRoom(page: Page, fields: string[]): Promise<void> {
-  const rooms = await page.evaluate(
-    (ids) =>
-      ids.map((id) => {
-        const input = document.querySelector(`[data-testid="${id}"]`);
-        const eye = document.querySelector(`[data-testid="${id}-toggle"]`);
-        return { id, padding: input ? parseFloat(getComputedStyle(input).paddingRight) : NaN, eye: eye ? eye.getBoundingClientRect().width : NaN };
-      }),
-    fields
-  );
-  const missing = rooms.filter((r) => Number.isNaN(r.padding) || Number.isNaN(r.eye)).map((r) => r.id);
-  expect(missing, "passphrase fields (or their eyes) not on the screen").toEqual([]);
-  expect(rooms.filter((r) => r.padding < r.eye).map((r) => `${r.id}: padding-right ${r.padding} px, eye ${r.eye} px wide`), "fields whose padding is narrower than their eye").toEqual([]);
-}
-const EYE_SOURCE = "components/ui/secret-input.tsx (the field keeps 44 px for its eye: pr-11); spec section 8, layout rules (no two controls on top of each other)";
 
 /** The saved versions of a document as the server lists them, each read whole. */
 async function revisionsOf(page: Page, docId: string): Promise<Array<{ seq: number; keyVersion: number; bodyHtml: string }>> {

@@ -4,9 +4,10 @@ import path from "node:path";
 import type { BrowserContext, Page, Route } from "@playwright/test";
 import { PROGRESS_MS } from "../support/budgets";
 import { dictionary, T, type Lang } from "../support/dict";
+import { EYE_SOURCE, expectEyeRoom } from "../support/eyes";
 import { QA_API_ORIGIN } from "../support/origins";
 import { signInAs } from "../support/session";
-import { answerPassphrase, apiGet, docText, newStudent, providerCalls, qaKey, recordToasts, slowApi, toPlace, type Student } from "../support/student";
+import { apiGet, docText, newStudent, providerCalls, qaKey, recordToasts, setUpVault, slowApi, toPlace, type Student } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
 // The sentence callAI's apiMsg gives a rate limit: an English constant in the module, not a dictionary key (the way e2e/stage2-idea-literature.spec.ts imports its English constants, ruling R15).
 import { apiMsg } from "../../lib/ai/callAI";
@@ -79,28 +80,6 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const pill = (page: Page) => page.getByTestId("vault-pill");
 
-/**
- * Each field keeps room at its right edge for its eye: its computed padding-right is at least the eye button's width (components/ui/secret-input.tsx reserves it with `pr-11`; the
- * `.input` rule in app/globals.css, outside any layer, outranks it, so today the padding is 10 px and the eye lies over what is typed: Q5). The eye is the field's `<id>-toggle` when the
- * field has given it a test id (the key field), else the button beside the field (the OpenAlex key field does not).
- * (S10 has the same check for its passphrase fields; a copy, because a story file cannot import another's: importing it would register its tests.)
- */
-async function expectEyeRoom(page: Page, fields: string[]): Promise<void> {
-  const rooms = await page.evaluate(
-    (ids) =>
-      ids.map((id) => {
-        const input = document.querySelector(`[data-testid="${id}"]`);
-        const eye = document.querySelector(`[data-testid="${id}-toggle"]`) ?? input?.parentElement?.querySelector("button") ?? null;
-        return { id, padding: input ? parseFloat(getComputedStyle(input).paddingRight) : NaN, eye: eye ? eye.getBoundingClientRect().width : NaN };
-      }),
-    fields
-  );
-  const missing = rooms.filter((r) => Number.isNaN(r.padding) || Number.isNaN(r.eye)).map((r) => r.id);
-  expect(missing, "fields (or their eyes) not on the screen").toEqual([]);
-  expect(rooms.filter((r) => r.padding < r.eye).map((r) => `${r.id}: padding-right ${r.padding} px, eye ${r.eye} px wide`), "fields whose padding is narrower than their eye").toEqual([]);
-}
-const EYE_SOURCE = "components/ui/secret-input.tsx (the field keeps 44 px for its eye: pr-11); spec section 8, layout rules (no two controls on top of each other)";
-
 /** Where the student's idea goes into the four fields of first run, by the ids the e2e suite uses (the labels differ with the language). */
 async function writeIdea(page: Page): Promise<void> {
   await page.locator("#ideaTopic").fill(IDEA.topic);
@@ -129,23 +108,6 @@ async function fillKeyWindow(page: Page, key: string): Promise<void> {
   await expect(page.getByTestId("prov-select"), "the key must be saved as Groq: the fake AI provider refuses the default, Gemini").toHaveValue("groq");
   await page.getByTestId("key-input").fill(key);
   await page.getByTestId("key-mode-pass").check();
-}
-
-/** From the vault set-up window to its end: the passphrase twice, the recovery sheet read, ticked and closed. Returns the recovery code. */
-async function setUpVault(page: Page, passphrase: string, lang: Lang = "en"): Promise<string> {
-  await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
-  await page.getByTestId("vault-setup-submit").click();
-  await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro", {}, lang));
-  await answerPassphrase(page, passphrase);
-  await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2", {}, lang));
-  await answerPassphrase(page, passphrase);
-  await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
-  const code = (await page.getByTestId("vault-code").innerText()).trim();
-  expect(code).toMatch(RECOVERY_CODE);
-  await page.getByTestId("vault-sheet-saved").check();
-  await page.getByTestId("vault-sheet-done").click();
-  await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-  return code;
 }
 
 /**
@@ -266,6 +228,9 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
     s.passphrase = fresh();
     s.recoveryCode = await setUpVault(page, s.passphrase);
     await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await qa.check("data", "the recovery sheet showed a code of four groups of five (XXXXX-XXXXX-XXXXX-XXXXX)", async () => {
+      expect(s.recoveryCode).toMatch(RECOVERY_CODE);
+    }, { source: `${ROW1} ("write the recovery code down"); e2e/phase3a-vault.spec.ts step 3` });
     await qa.check("data", "the toasts: the key is connected and encrypted, and all the documents are locked in the vault, each once", async () => {
       // The sheet names the two and no order (the app showed the vault's first in every run so far). One toast replaces another, so they are read from the record.
       await expect.poll(async () => [...(await toasts())].sort(), { message: "the toasts shown so far" }).toEqual([...KEY_TOASTS].sort());
@@ -402,6 +367,10 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       await expect(page.getByTestId("word-count")).toHaveText("0 words");
       expect((await docText(page)).trim()).toBe("");
     }, { source: `${ROW1} ("Its first document is made, empty")` });
+    await qa.check("data", "the save made exactly one document for the project", async () => {
+      const documents = await apiGet<Array<{ id: string }>>(page, `/projects/${projectId}/documents`);
+      expect(documents, "the project's documents on the server").toHaveLength(1);
+    }, { source: `${ROW1} ("Its first document is made"); apps/web/lib/frame/firstDocument.ts (listOrSeed)` });
     await page.getByTestId("place-home").click();
     await expect(page.getByTestId("project-home")).toBeVisible();
   });
@@ -523,7 +492,7 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
 
   await qa.step("my vault", async () => {
     // The vault's own windows on a phone in Hindi are S10-06's: here they are only walked through.
-    s.recoveryCode = await setUpVault(page, s.passphrase!, hi);
+    s.recoveryCode = await setUpVault(page, s.passphrase!);
     await expect(page.getByTestId("provider-dialog")).toBeHidden();
     await qa.check("data", "the vault pill says in Hindi that the vault is open", async () => {
       await expect(pill(page)).toHaveText(T("vault_pill_yours", {}, hi));
@@ -559,9 +528,12 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
       await expect(read.getByTestId("idea-read-line")).toHaveCount(RATED.length);
       await expect(read.getByTestId("idea-read-verdict")).toHaveText(VERDICT);
     }, { source: `${B1} row 2` });
-    // The read is the AI's answer, in English: the Hindi rule does not read the AI's words (the labels around them it does).
+    await qa.check("data", "beside the read the project's name and its two buttons speak Hindi", inHindi("idea-read", ["idea_save_title", "idea_save_btn", "idea_edit_btn"]), {
+      source: `${B1} row 3; spec section 6 (the windows' words in Hindi)`
+    });
+    // Only the AI's own words (each line's area, reason and rating, and the verdict: English, as the model wrote them) are left unread by the Hindi rule; the label, the project's name and the buttons around them are read.
     await quiet();
-    await qa.checkpoint("the AI read, on a phone, in Hindi", { exempt: ["idea-read"] });
+    await qa.checkpoint("the AI read, on a phone, in Hindi", { exempt: ["idea-read-area", "idea-read-why", "idea-read-rating", "idea-read-verdict"] });
     await page.getByTestId("idea-save-title").fill(PROJECT);
     await page.getByTestId("idea-save").click();
     await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
@@ -575,9 +547,14 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
       await expect(page.getByTestId("home-next-say")).toHaveText(T("next_find", {}, hi));
       await expect(page.getByTestId("home-export")).toHaveText(T("home_out_btn", {}, hi));
     }, { source: `${B1} rows 3 and 14 ("The home in the canvas's phone order"); spec section 6 (phone + Hindi)` });
-    // The Idea row and the question's verdict carry the AI's words (English).
+    // The Idea row is one piece of text, the app's sentence with the AI's verdict (English) inside it, so the Hindi rule cannot read it: the app's words are checked whole instead (the sentence of the
+    // Hindi dictionary with the verdict in it). The question's own verdict line (`home-q-verdict`, "संभाव्यता: ...") is not on the phone's home: QuestionFold shows no verdict.
+    await qa.check("data", "the Idea row says in Hindi that the question is set, with the verdict of the read inside the sentence", async () => {
+      expect("detail_idea" in dictionary(hi), "detail_idea has no Hindi sentence in messages/hi.json").toBe(true);
+      await expect(page.getByTestId("home-detail-idea")).toHaveText(T("detail_idea", { verdict: VERDICT.replace(/\.$/, "") }, hi));
+    }, { source: `${B1} row 3 ("Idea reads ... Feasibility: <the verdict>"); spec section 6 (phone + Hindi)` });
     await quiet();
-    await qa.checkpoint("the project's home, on a phone, in Hindi", { exempt: ["home-detail-idea", "home-q-verdict"] });
+    await qa.checkpoint("the project's home, on a phone, in Hindi", { exempt: ["home-detail-idea"] });
   });
 });
 
@@ -599,10 +576,28 @@ test("S1-03 [O3] on a slow network, Save as my project shows a sign of progress 
   });
 
   await qa.step("save on a slow network", async () => {
+    // Every request to the api that makes a project, from the first press on.
+    const made: string[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && r.url() === `${QA_API_ORIGIN}/projects`) made.push(r.url());
+    });
+    const title = page.getByTestId("idea-save-title");
     const undo = await slowApi(context, 3_000);
     try {
       // A sign: words or a spinner that say the work is going on, new since the press. A button that only dims is not one (the walk's O3: "the button dimmed with no other sign of progress").
       const before = await page.evaluate(liveTexts);
+      // While it waits, a student who sees nothing happen presses Enter in the name field, where first run also saves (FirstRun.tsx: Enter calls save). The field stays on the screen and is
+      // not off, so this is a real test of the guard against a second save, unlike a press on the greyed button. The first request alone takes 3 s, so a press 500 ms in is a press during the wait.
+      let enter = "not tried";
+      const pressEnter = (async () => {
+        await page.waitForTimeout(500);
+        try {
+          await title.press("Enter", { timeout: 3_000 });
+          enter = "pressed";
+        } catch (e) {
+          enter = `Enter could not be pressed in the name field: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`;
+        }
+      })();
       await qa.timed(
         "a sign of progress after Save as my project",
         PROGRESS_MS,
@@ -612,17 +607,20 @@ test("S1-03 [O3] on a slow network, Save as my project shows a sign of progress 
         },
         { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); tools-walk O3", known: "O3" }
       );
-      // A second press while it waits (a student who sees nothing happen presses again): the button is off, so nothing is made twice.
-      await page.getByTestId("idea-save").click({ force: true, timeout: 5_000 }).catch(() => undefined);
+      await pressEnter;
       await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 120_000 });
+      await qa.check("data", "pressing Enter in the name field while the save waits starts no second save: one request made a project, and the account holds exactly one", async () => {
+        if (enter !== "pressed") notChecked(enter);
+        expect(made, "requests that made a project").toHaveLength(1);
+        const projects = await apiGet<Array<{ id: string; kind?: string }>>(page, "/projects");
+        expect(projects.filter((p) => p.kind !== "scratch"), "the account's projects").toHaveLength(1);
+      }, { source: "apps/web/components/frame/FirstRun.tsx (save returns while busy: a second press never creates a second project)" });
     } finally {
       await undo();
     }
-    await qa.check("data", "when the wait ends the project's home is open and names the project, and the account holds exactly one project", async () => {
+    await qa.check("data", "when the wait ends the project's home is open and names the project", async () => {
       await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
-      const projects = await apiGet<Array<{ id: string; kind?: string }>>(page, "/projects");
-      expect(projects.filter((p) => p.kind !== "scratch"), "the account's projects").toHaveLength(1);
-    }, { source: `${B1} row 3; apps/web/components/frame/FirstRun.tsx (a retry never creates a second project)` });
+    }, { source: `${B1} row 3` });
   });
 });
 
