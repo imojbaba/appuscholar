@@ -702,3 +702,42 @@
   .rs-line .rs-select { display: block; width: 100%; max-width: 100%; min-height: 44px; margin-top: 4px; }
   .doc-back:focus-visible, .home-project:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 }
+
+/* ---- Dark theme (Task C9; v1 :root[data-theme="dark"], index.html 26). Light stays the default: the inline script in layout.tsx sets data-theme from
+   this device's choice (appu_theme) and says "light" unless dark was chosen, whatever the device itself prefers. Only the tokens above are
+   redefined, so every component that reads a token follows; below the tokens are the few places that cannot (a colour written as a hex, or a
+   purple used as a fill as well as a text colour). The editor's paper is dark too (card and ink), as v1's was. test/wc9Theme.test.tsx reads this
+   block and holds every text pair to 4.5:1. --fill, --fill-hover and --fill-active are dark-only: the primary button's own purples. ---- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --purple-900: #ede9fe; --purple-800: #c4b5fd; --purple-700: #a78bfa; --purple-600: #8b5cf6; --purple-500: #7c3aed; --purple-100: #35295a;
+  --gold-wash: #3a2d12;
+  --bg: #17131f; --card: #211b2e; --soft: #2a2339; --chip: #30283f; --line: #3a3150; --line-strong: #4d4266; --dashed: #6b58a3;
+  --ink: #eee9f7; --muted: #b0a8c4; --accent-ink: #c4b5fd;
+  --flag-ink: #fcd34d; --flag-bg: #3b2a0a; --ok-ink: #86efac; --ok-bg: #0f3321; --danger-ink: #fca5a5; --danger-bg: #44181a;
+  --shadow-float: 0 6px 18px rgba(0, 0, 0, 0.55); --shadow-dialog: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --fill: #6d28d9; --fill-hover: #7c3aed; --fill-active: #5b21b6;
+  --primary: var(--fill); --primary-foreground: #ffffff;
+}
+/* Filled purple: the token is a light lavender for text in this theme, so a fill takes its own value, with white text on it. */
+:root[data-theme="dark"] .bg-purple-800 { background-color: var(--fill); border-color: var(--fill); }
+:root[data-theme="dark"] .hover\:bg-purple-600:hover { background-color: var(--fill-hover); border-color: var(--fill-hover); }
+:root[data-theme="dark"] .active\:bg-purple-900:active { background-color: var(--fill-active); }
+:root[data-theme="dark"] .bg-destructive { background-color: #b91c1c; color: #ffffff; }
+:root[data-theme="dark"] .home-next { background: var(--fill); }
+:root[data-theme="dark"] .home-next-sub { color: #ede9fe; }
+:root[data-theme="dark"] .home-next-btn { color: #4c1d95; }
+/* Colours the light theme writes as a hex. */
+:root[data-theme="dark"] .select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b0a8c4' stroke-width='1.5'/%3E%3C/svg%3E"); }
+:root[data-theme="dark"] .cit-item.cit-active { background: #2d2150; }
+:root[data-theme="dark"] .cit-item .rc-ok { color: var(--ok-ink); }
+:root[data-theme="dark"] .cit-item .rc-nf, :root[data-theme="dark"] .cit-item .rc-diff, :root[data-theme="dark"] .rs-quick .ap-warn { color: var(--flag-ink); }
+:root[data-theme="dark"] .app-ai-pill, :root[data-theme="dark"] .ai-read-label { color: var(--gold-bright); }
+/* A highlighter stays a pale yellow, so its text is the dark ink in both themes. */
+:root[data-theme="dark"] .editor .ProseMirror mark, :root[data-theme="dark"] .editor .ProseMirror .find-hit { color: #2a2438; }
+/* Text a student coloured black (or pasted so) would vanish on the dark paper; it takes the page's ink. */
+:root[data-theme="dark"] .editor .ProseMirror [style*="color: #000000"], :root[data-theme="dark"] .editor .ProseMirror [style*="color:#000000"],
+:root[data-theme="dark"] .editor .ProseMirror [style*="color: #000;"], :root[data-theme="dark"] .editor .ProseMirror [style*="color: rgb(0, 0, 0)"] { color: var(--ink) !important; }
+/* Charts are drawn on a white sheet (they export as a white picture), so their text stays dark on it. */
+:root[data-theme="dark"] [style*="background: rgb(255, 255, 255)"] { color: #2a2438; }

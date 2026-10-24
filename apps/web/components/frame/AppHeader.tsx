@@ -13,6 +13,7 @@ import { toast } from "@/components/ui/toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { VaultPill } from "@/components/workspace/VaultPill";
 import { useAccount } from "@/components/workspace/dialogs/Help";
+import { ThemeButton } from "@/components/help/theme/ThemeButton";
 import { useProject, type Project } from "./ProjectContext";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
@@ -49,6 +50,7 @@ export function AppHeader() {
       {!phone && <Switcher />}
       <span className="app-hdr-gap" aria-hidden="true" />
       <VaultPill />
+      <ThemeButton />
       {phone ? <PhoneMenu account={account} lang={lang} switchLang={switchLang} /> : (
         <>
           <AiPill onOpen={() => openSettings()} />
