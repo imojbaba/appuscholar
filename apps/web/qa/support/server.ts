@@ -3,7 +3,7 @@ import { QA_DATABASE_URL } from "./origins";
 
 /**
  * What the server holds for one account, read from the test database the QA servers share (spec section 6: the server must never hold the student's words in clear). Reads only:
- * every query runs in one `begin read only` transaction (so a write cannot slip in, and the three reads see one moment), with the uid as a parameter.
+ * every query runs in one `begin isolation level repeatable read read only` transaction (so a write cannot slip in, and every read sees the one snapshot the first took: at READ COMMITTED, Postgres's default, each statement would take its own), with the uid as a parameter.
  *
  *  - `blobs`: every project blob of the account's projects, as stored: its kind and its body (ciphertext once the vault is on).
  *  - `titles`: the account's project titles and its documents' titles, as stored.
@@ -51,7 +51,7 @@ export async function serverRows(uid: string): Promise<ServerRows> {
   // node-postgres (the only driver a localhost database gets: packages/db/src/client.ts) answers { rows }.
   const client = await (database() as unknown as { $client: Pool }).$client.connect();
   try {
-    await client.query("begin read only");
+    await client.query("begin isolation level repeatable read read only");
     const mine = "select id from projects where user_id = $1";
     const blobs = (await client.query(`select kind, body from project_blobs where project_id in (${mine}) order by project_id, kind`, [uid])).rows;
     const projectTitles = (await client.query("select title from projects where user_id = $1 order by created_at, id", [uid])).rows;

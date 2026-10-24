@@ -221,10 +221,36 @@ async function reloadUnlessLeaveSiteAsked(page: Page): Promise<void> {
 }
 
 /**
+ * Cancels the passphrase window the page opens by itself, again each time it asks again (O18), until it has been quiet for a second. Returns how many Cancels went through.
+ * Two caps stop a page that never goes quiet: ten Cancels that went through (the page keeps asking), and `attempts` presses in all, whether the click went through or not
+ * (twenty by default): a Cancel that cannot be pressed (covered, disabled) would otherwise be tried until the test's timeout. `clickMs`: how long one press may take. Both end in an error that says which.
+ * A window that is already closing (its exit animation) has no Cancel left to press: that is not a failure, nor an ask, and the next wait sees it gone.
+ * Exported for its selftest; a case calls lockByReload.
+ */
+export async function cancelPassphraseAsks(page: Page, o: { attempts?: number; clickMs?: number; firstWaitMs?: number } = {}): Promise<number> {
+  const attempts = o.attempts ?? 20;
+  const dialog = page.getByTestId("pass-dialog");
+  let cancelled = 0;
+  let pressed = 0;
+  let wait = o.firstWaitMs ?? 2_000;
+  for (;;) {
+    const asked = await dialog.waitFor({ state: "visible", timeout: wait }).then(() => true, () => false);
+    if (!asked) return cancelled;
+    if (cancelled === 10) throw new Error("QA lockByReload: the page asked for the passphrase again after each of ten cancels.");
+    if (pressed === attempts) {
+      throw new Error(`QA lockByReload: the passphrase window was still open after ${attempts} attempts to press Cancel (${cancelled} went through). Is the Cancel button covered or disabled?`);
+    }
+    pressed++;
+    await page.getByTestId("pass-cancel").click({ timeout: o.clickMs ?? 2_000 }).then(() => void cancelled++, () => {});
+    wait = 1_000;
+  }
+}
+
+/**
  * Reloads the page, so that the vault is locked again (nothing is kept in memory across a reload), and leaves it locked: the pill reads locked, and if the page asked for the
  * passphrase by itself (a page that opens a sealed document does) the ask is cancelled. This is how the spec makes "locked" (section 6). A vault this browser remembers opens again
  * by itself on the reload, so the pill never reads locked: the helper fails saying so (forget it first with forgetOnThisComputer). A page that asks for the passphrase again after
- * a Cancel (O18) is cancelled again until it has been quiet for a second, at most ten times.
+ * a Cancel (O18) is cancelled again until it has been quiet for a second, at most ten times (cancelPassphraseAsks, which also caps the presses at twenty).
  * Returns how many passphrase windows it cancelled, so that a case about asking at most once (S10-04) can count them: 0 for a page that does not ask.
  */
 export async function lockByReload(page: Page, s: Student): Promise<number> {
@@ -233,17 +259,7 @@ export async function lockByReload(page: Page, s: Student): Promise<number> {
   await expect(vaultPill(page), "the vault did not read locked after the reload (is it remembered on this computer? forgetOnThisComputer first)").toHaveAttribute("data-status", "locked");
   // The page asks a moment after the pill reads locked, once its reads are done: let them finish first, so that a slow runner's late ask is not taken for none.
   await settled(page);
-  const dialog = page.getByTestId("pass-dialog");
-  let cancelled = 0;
-  let wait = 2_000;
-  for (;;) {
-    const asked = await dialog.waitFor({ state: "visible", timeout: wait }).then(() => true, () => false);
-    if (!asked) break;
-    if (cancelled === 10) throw new Error("QA lockByReload: the page asked for the passphrase again after each of ten cancels.");
-    // A window that is already closing (its exit animation) has no Cancel left to press: that is not a failure, nor an ask, and the next wait sees it gone.
-    await page.getByTestId("pass-cancel").click({ timeout: 2_000 }).then(() => void cancelled++, () => {});
-    wait = 1_000;
-  }
+  const cancelled = await cancelPassphraseAsks(page);
   await expect(vaultPill(page)).toHaveAttribute("data-status", "locked");
   return cancelled;
 }

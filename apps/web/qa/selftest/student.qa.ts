@@ -7,7 +7,7 @@ import { QA_API_ORIGIN } from "../support/origins";
 import { serverRows } from "../support/server";
 import { routeServices, SERVICE_DOWN_CONSOLE, SERVICE_HOSTS } from "../support/services";
 import {
-  catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, providerCalls, sameAccountElsewhere, selectInDoc, setLang, slowApi, toPlace,
+  cancelPassphraseAsks, catchDownload, docText, forgetOnThisComputer, goOffline, goOnline, lockByReload, newStudent, providerCalls, sameAccountElsewhere, selectInDoc, setLang, slowApi, toPlace,
   OFFLINE_CONSOLE, typeInDoc, unlock, vaultRemembered, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
@@ -514,6 +514,51 @@ test("student: lockByReload says at once when the page asks 'Leave site?', and c
     await qa.check("data", "once the page lets go the vault is locked by the reload, and a page that does not ask costs no Cancel", async () => {
       await expect(page.getByTestId("vault-pill")).toHaveAttribute("data-status", "locked");
       expect(cancelled).toBe(0);
+    });
+  });
+});
+
+test("student: cancelPassphraseAsks counts the Cancels that went through, and stops at its caps when the page never goes quiet or Cancel cannot be pressed", TAGS, async ({ page, qa }) => {
+  qa.begin({
+    story: "S0",
+    id: "SELF-STUDENT-CANCEL",
+    goal: "The Cancel loop of lockByReload ends: quiet page, a page that asks once, a page that asks for ever, and a Cancel that cannot be pressed",
+    situation: { vault: "locked" },
+    steps: ["quiet", "asks once", "asks for ever", "cannot press"]
+  });
+  const dialog = (cancel: string) => `<div id="d" data-testid="pass-dialog">Passphrase</div><button data-testid="pass-cancel" ${cancel}>Cancel</button>`;
+
+  await qa.step("quiet", async () => {
+    await page.setContent("<p>nothing asks</p>");
+    await qa.check("data", "a page that does not ask costs no Cancel", async () => {
+      expect(await cancelPassphraseAsks(page, { firstWaitMs: 200 })).toBe(0);
+    });
+  });
+
+  await qa.step("asks once", async () => {
+    await page.setContent(dialog(`onclick="document.getElementById('d').hidden = true"`));
+    await qa.check("data", "a window that closes on Cancel is counted once", async () => {
+      expect(await cancelPassphraseAsks(page)).toBe(1);
+    });
+  });
+
+  await qa.step("asks for ever", async () => {
+    await page.setContent(dialog(`onclick="const d = document.getElementById('d'); d.hidden = true; setTimeout(() => (d.hidden = false), 30)"`));
+    await qa.check("data", "a page that asks again after every Cancel stops at ten, and says so", async () => {
+      await expect(cancelPassphraseAsks(page)).rejects.toThrow(/again after each of ten cancels/);
+    });
+  });
+
+  await qa.step("cannot press", async () => {
+    await page.setContent(dialog("disabled"));
+    const started = Date.now();
+    await qa.check("data", "a Cancel that cannot be pressed stops at the attempt cap with a message that says so, not at the test timeout", async () => {
+      await expect(cancelPassphraseAsks(page, { attempts: 3, clickMs: 100 })).rejects.toThrow(/still open after 3 attempts to press Cancel \(0 went through\)/);
+      expect(Date.now() - started).toBeLessThan(10_000);
+    });
+    // The default is twenty presses.
+    await qa.check("data", "the default cap is twenty attempts", async () => {
+      await expect(cancelPassphraseAsks(page, { clickMs: 20 })).rejects.toThrow(/after 20 attempts/);
     });
   });
 });

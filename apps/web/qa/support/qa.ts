@@ -2,6 +2,7 @@ import { stripVTControlCharacters } from "node:util";
 import { test, type BrowserContext, type Page, type TestInfo } from "@playwright/test";
 import { FAILURE_MODES, type ShimLogEntry } from "../provider-shim/core.mjs";
 import { failsCase, loadKnown, matchKnown, missingKnownIds, type KnownEntry } from "./known";
+import { LAYOUT_LABEL, measureLayout, planChecks, readScreen, type LayoutRule, type RulePlan } from "./layout";
 import { readProviderLog } from "./providerLog";
 import { RULE_LABEL, Watcher, type Allow, type Allowance, type DialogType, type Note, type WatcherRule } from "./watcher";
 
@@ -85,7 +86,16 @@ export interface Qa {
   check(kind: CheckKind, label: string, fn: () => Promise<void>, o?: CheckOptions & { page?: Page }): Promise<boolean>;
   /** Runs `fn` and records how long it took against `budgetMs` (budgets.ts). Over the budget is `FAIL: Slow`. What `fn` returns, or throws, goes on to the caller. */
   timed<T>(label: string, budgetMs: number, fn: () => Promise<T>, o?: CheckOptions): Promise<T>;
-  /** A full-page screenshot of the screen (of `page`, the step's page by default) as it stands, attached and listed. The layout, accessibility and Hindi rules join it in Task 5. */
+  /**
+   * A checkpoint: a full-page screenshot of the screen (of `page`, the step's page by default) as it stands, attached and listed, and the Visual rules of spec section 8 measured
+   * on it (layout.ts), each recorded as one visual check labelled "<name>: <what the rule demands>": no sideways page scroll, nothing past the window's edge, no text cut off,
+   * no two controls on top of each other, and (on a phone) every control at least 44 px each way, (in Hindi) no English on the screen, and the axe scan (serious and critical).
+   * A rule that found something fails as UI, unless a known fault fits it (known.json `match`); a rule that looked at nothing is NOT CHECKED with the reason.
+   * The page tells which rules apply: it is in Hindi when `<html lang>` says so, and a phone when it has a coarse pointer on a narrow window (the `phone` project). A rule that
+   * does not apply is not recorded. A case that declares Hindi (`situation.lang`) on a page that says otherwise has its Hindi rule NOT CHECKED, not skipped.
+   * `layout: false` leaves out the six layout rules, `axe: false` the scan (the huge-data screens, where it would take long). `exempt`: test ids of boxes that hold the student's own
+   * words (a library list, a transcript), which the Hindi rule does not read; so is the editor, and the project's name and question (STUDENT_TEXT_IDS in layout.ts).
+   */
   checkpoint(name: string, o?: { layout?: boolean; axe?: boolean; exempt?: string[]; page?: Page }): Promise<void>;
   /**
    * What this case expects the watcher to see, from now on: hosts it may reach; console errors it may print, each with a pattern and a reason; answers it expects from a
@@ -241,10 +251,44 @@ export class QaCase implements Qa {
   }
 
   async checkpoint(name: string, o?: { layout?: boolean; axe?: boolean; exempt?: string[]; page?: Page }): Promise<void> {
-    this.needMeta("checkpoint");
-    // Task 5 measures the layout, accessibility and Hindi rules here (o.layout, o.axe, o.exempt); for now a checkpoint is its screenshot
-    const path = await this.shoot(o?.page ?? this.currentPage(), "checkpoint", name, `checkpoint: ${name}`, { fullPage: true, strict: true });
+    const meta = this.needMeta("checkpoint");
+    const page = o?.page ?? this.currentPage();
+    const plans: RulePlan[] = [];
+    if (o?.layout !== false || o?.axe !== false) {
+      const screen = await readScreen(page);
+      const rules: LayoutRule[] = [];
+      if (o?.layout !== false) {
+        rules.push("sideways-scroll", "off-edge", "cut-off", "overlap");
+        if (screen.phone) rules.push("small-target");
+        if (screen.lang === "hi") rules.push("english-in-hindi");
+      }
+      if (o?.axe !== false) rules.push("axe");
+      // Measured before the screenshot: it waits for what is moving to stop, so the picture is of the screen the rules saw.
+      const measure = await measureLayout(page, { phone: screen.phone, lang: screen.lang, exempt: o?.exempt, rules });
+      plans.push(...planChecks(measure, { name, rules, known: this.known }));
+      if (o?.layout !== false && meta.situation.lang === "hi" && screen.lang !== "hi") {
+        // The case is in Hindi and the page is not: the language did not switch (or was switched back). Reading English as English would pass; say that nothing was read.
+        plans.push({
+          rule: "english-in-hindi",
+          label: `${name}: ${LAYOUT_LABEL["english-in-hindi"]}`,
+          outcome: { notChecked: `the case is in Hindi, but the page says lang="${screen.htmlLang}", so its words were not read as Hindi` }
+        });
+      }
+    }
+    const path = await this.shoot(page, "checkpoint", name, `checkpoint: ${name}`, { fullPage: true, strict: true });
     if (path) this.shots.push({ name, path });
+    for (const plan of plans) {
+      const source = plan.rule === "axe" ? "spec section 8: the axe scan" : "spec section 8: layout rules";
+      await this.check(
+        "visual",
+        plan.label,
+        async () => {
+          if ("notChecked" in plan.outcome) notChecked(plan.outcome.notChecked);
+          if ("fail" in plan.outcome) throw new Error(plan.outcome.fail);
+        },
+        { source, page, ...(plan.known ? { known: plan.known } : {}) }
+      );
+    }
   }
 
   allow(o: Allow): void {

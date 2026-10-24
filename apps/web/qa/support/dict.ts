@@ -37,6 +37,11 @@ function dictionaries(): Record<Lang, Dict> {
   return (loaded ??= { en: load("en"), hi: load("hi") });
 }
 
+/** Every key of the interface language's dictionary and its sentence, as the app reads them (Hindi: only the keys the Hindi files give; `T` falls back to English for the rest). */
+export function dictionary(lang: Lang): Readonly<Record<string, string>> {
+  return dictionaries()[lang];
+}
+
 /** The sentence for `key` in `lang` (English by default), with `{name}` filled from `vars`; a `{name}` that `vars` does not give is left as it is. A key no dictionary has throws. */
 export function T(key: string, vars?: Record<string, string | number>, lang: Lang = "en"): string {
   const d = dictionaries();
