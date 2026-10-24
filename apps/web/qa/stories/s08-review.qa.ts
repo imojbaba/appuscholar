@@ -151,6 +151,28 @@ const decodeXml = (s: string) =>
   s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_m, n: string) => String.fromCodePoint(Number(n))).replace(/&amp;/g, "&");
 /** The text runs of a slide's xml, in order, as PowerPoint shows them. */
 const runsOf = (xml: string) => [...xml.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => decodeXml(m[1]!));
+/** What a text run of a slide says of its type: its text and the size (in hundredths of a point), bold, colour and face on its run properties (`<a:rPr>`). */
+type RunStyle = { text: string; size: string | null; bold: boolean; color: string | null; face: string | null };
+const styledRunsOf = (xml: string): RunStyle[] =>
+  [...xml.matchAll(/<a:r>([\s\S]*?)<\/a:r>/g)].map((m) => {
+    const run = m[1]!;
+    const props = /<a:rPr([^>]*)>/.exec(run)?.[1] ?? "";
+    return {
+      text: decodeXml(/<a:t>([^<]*)<\/a:t>/.exec(run)?.[1] ?? ""),
+      size: /\bsz="(\d+)"/.exec(props)?.[1] ?? null,
+      bold: /\bb="1"/.test(props),
+      color: /<a:srgbClr val="([0-9A-Fa-f]{6})"/.exec(run)?.[1]?.toUpperCase() ?? null,
+      face: /<a:latin typeface="([^"]*)"/.exec(run)?.[1] ?? null
+    };
+  });
+/** The style core's deck spec gives a text (its `options`: fontSize in points, bold, color, fontFace), as the run properties of the file spell it. */
+const styleOfSpec = (text: string, options: Record<string, unknown>): RunStyle => ({
+  text,
+  size: String(Number(options.fontSize) * 100),
+  bold: options.bold === true,
+  color: String(options.color).toUpperCase(),
+  face: String(options.fontFace)
+});
 
 // ---- The page ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -344,7 +366,7 @@ async function setShelfTicks(page: Page, on: boolean): Promise<number> {
 
 // ---- A probe in the page: the longest freeze, "Checking…" seen, the typing --------------------------------------------------------------------------
 
-type Probe = { maxGapMs: number; sawChecking: boolean; pressedAt: number | null; resultAt: number | null; keys: number[]; docAtPress: string | null };
+type Probe = { maxGapMs: number; sawChecking: boolean; sawDisabled: boolean; pressedAt: number | null; resultAt: number | null; keys: number[]; docAtPress: string | null };
 /**
  * A timer that ticks every 20 ms and keeps the longest time it was late (the main thread was busy that long), a watcher for "Checking…" and for the result of the check, when
  * "Check my document" was pressed, and when each key reached the document. It runs in the page, so no wait of the test's own is in its numbers.
@@ -353,7 +375,7 @@ async function installProbe(page: Page, o: { captureDoc?: boolean } = {}): Promi
   await page.evaluate((captureDoc) => {
     const w = window as unknown as { __qaProbe?: Probe & { stop(): void } };
     w.__qaProbe?.stop();
-    const p: Probe = { maxGapMs: 0, sawChecking: false, pressedAt: null, resultAt: null, keys: [], docAtPress: null };
+    const p: Probe = { maxGapMs: 0, sawChecking: false, sawDisabled: false, pressedAt: null, resultAt: null, keys: [], docAtPress: null };
     let last = performance.now();
     const timer = window.setInterval(() => {
       const now = performance.now();
@@ -369,6 +391,10 @@ async function installProbe(page: Page, o: { captureDoc?: boolean } = {}): Promi
         }
       }
     });
+    const dis = new MutationObserver((records) => {
+      for (const rec of records) if ((rec.target as Element).matches?.('[data-testid="close-run"]') && (rec.target as HTMLButtonElement).disabled) p.sawDisabled = true;
+    });
+    dis.observe(document.body, { attributes: true, attributeFilter: ["disabled"], subtree: true });
     mo.observe(document.body, { childList: true, subtree: true });
     const onClick = (e: Event) => {
       if ((e.target as Element | null)?.closest?.('[data-testid="close-run"]')) {
@@ -388,6 +414,7 @@ async function installProbe(page: Page, o: { captureDoc?: boolean } = {}): Promi
       stop: () => {
         clearInterval(timer);
         mo.disconnect();
+        dis.disconnect();
         document.removeEventListener("click", onClick, true);
         document.removeEventListener("keydown", onKey, true);
       }
@@ -398,7 +425,7 @@ const readProbe = (page: Page): Promise<Probe> =>
   page.evaluate(() => {
     const p = (window as unknown as { __qaProbe?: Probe }).__qaProbe;
     if (!p) throw new Error("QA S8: the probe is not installed on this page");
-    return { maxGapMs: p.maxGapMs, sawChecking: p.sawChecking, pressedAt: p.pressedAt, resultAt: p.resultAt, keys: [...p.keys], docAtPress: p.docAtPress };
+    return { maxGapMs: p.maxGapMs, sawChecking: p.sawChecking, sawDisabled: p.sawDisabled, pressedAt: p.pressedAt, resultAt: p.resultAt, keys: [...p.keys], docAtPress: p.docAtPress };
   });
 
 // ---- What the slides tab shows and what the file holds -------------------------------------------------------------------------------------------------
@@ -432,6 +459,10 @@ async function expectDeck(file: Downloaded, slides: PptSlide[], title: string): 
   for (const [i, s] of spec.slides.entries()) {
     const want = [...(s.title ? [s.title.text] : []), ...(s.bullets ? s.bullets.items.map((b) => b.text) : [])];
     expect(runsOf(xml(i + 1)), `slide ${i + 1}'s text`).toEqual(want);
+    // The type of each run, on its run properties: the title's and the bullets', as core's deck spec gives them.
+    const styled = styledRunsOf(xml(i + 1));
+    const wantStyled = [...(s.title ? [styleOfSpec(s.title.text, s.title.options)] : []), ...(s.bullets ? s.bullets.items.map((b) => styleOfSpec(b.text, s.bullets!.options)) : [])];
+    expect(styled, `slide ${i + 1}'s runs with their size, bold, colour and face`).toEqual(wantStyled);
     const pics = (xml(i + 1).match(/<p:pic>/g) ?? []).length;
     expect(pics, `slide ${i + 1}'s pictures (<p:pic>)`).toBe(s.image ? 1 : 0);
     pictures += pics;
@@ -439,6 +470,40 @@ async function expectDeck(file: Downloaded, slides: PptSlide[], title: string): 
   expect([...files.keys()].filter((f) => /^ppt\/media\/.+\.png$/.test(f)).length, "the pictures in the file").toBeGreaterThanOrEqual(pictures);
   return { files, xml };
 }
+
+/**
+ * Records, from now on, each drop and each paste that reaches the editor with the text it carries (`text/plain`), in the page; the returned function reads the record. Called again it
+ * starts a new record. It says whether a drag or a paste really got to the editor.
+ */
+async function recordEditorEvents(page: Page): Promise<() => Promise<Array<{ type: string; text: string }>>> {
+  await page.evaluate(() => {
+    const w = window as unknown as { __qaEditorEvents?: Array<{ type: string; text: string }>; __qaEditorEventsOn?: boolean };
+    w.__qaEditorEvents = [];
+    if (w.__qaEditorEventsOn) return;
+    w.__qaEditorEventsOn = true;
+    for (const type of ["drop", "paste"] as const) {
+      document.addEventListener(
+        type,
+        (e) => {
+          if (!(e.target as Element | null)?.closest?.(".ProseMirror")) return;
+          const data = type === "drop" ? (e as DragEvent).dataTransfer : (e as ClipboardEvent).clipboardData;
+          w.__qaEditorEvents!.push({ type, text: data?.getData("text/plain") ?? "" });
+        },
+        true
+      );
+    }
+  });
+  return () => page.evaluate(() => [...((window as unknown as { __qaEditorEvents?: Array<{ type: string; text: string }> }).__qaEditorEvents ?? [])]);
+}
+/** What the document's html holds where the question's words fell (the evidence of Q40; the inline styles are left out). */
+const dropSnippet = (page: Page): Promise<string> =>
+  page.locator(".ProseMirror").first().evaluate((el, q) => {
+    const html = el.innerHTML;
+    const at = html.indexOf(q);
+    if (at < 0) return "(the question's words are not in the document)";
+    const from = Math.max(html.lastIndexOf("<span", at), html.lastIndexOf("<p>", at), 0);
+    return html.slice(from, at + q.length + 30).replace(/style="[^"]*"/g, 'style="…"');
+  }, VIVA_QUESTION.slice(0, 20));
 
 /** Whether the document holds AI text (a span the editor marks `ai-ins`) and what it reads. */
 const aiTextIn = (page: Page): Promise<string[]> => page.locator(".ProseMirror span.ai-ins").evaluateAll((els) => els.map((e) => e.textContent ?? ""));
@@ -543,8 +608,11 @@ test(
       await page.getByTestId("close-paste").fill(SOURCE_PASTE);
       const want = closeness(THESIS, pastedSource(SOURCE_PASTE));
       expect(want.runs, "core's reading of the draft against the pasted passage").toHaveLength(1);
+      // The page's requests from the press to the result, to say what the check sent and where.
+      const pressed = requests.length;
       await page.getByTestId("close-run").click();
       await expect(page.getByTestId("close-result")).toBeVisible();
+      const during = requests.slice(pressed);
       await qa.check("data", "the result says what percentage of my words sit inside matching passages, in the sheet's form, with core's own numbers, and the limits", async () => {
         await expectNumbers(page, want);
         await expect(page.getByTestId("close-result")).toContainText(`of your words`);
@@ -569,11 +637,13 @@ test(
         expect(claimsIn(text)).toEqual([]);
         expect(text).toContain(T("close_cannot_body").slice(0, 60));
       }, { source: `${SHEET} row 2 ("The words 'copied', 'plagiarism' (except in 'It is not a plagiarism verdict') and 'safe' appear nowhere in the tool"), row 4; register D-S2-98` });
-      await qa.check("conceptual", "Closeness sends nothing anywhere: while it ran the page read my own api and wrote nothing, asked no AI and reached no other host", async () => {
-        const during = requests.filter((r) => /^https?:/.test(r.url));
-        const foreign = during.filter((r) => !r.url.startsWith(QA_API_ORIGIN) && new URL(r.url).hostname !== "localhost");
-        expect(foreign.map((r) => r.url)).toEqual([]);
-        expect(during.filter((r) => r.url.includes("/ai/")).map((r) => `${r.method} ${r.url}`), "requests to the AI gateway so far").toEqual([]);
+      await qa.check("conceptual", "Closeness sends nothing anywhere: from the press to the result the page wrote nothing to the api, asked no AI and reached no other host", async () => {
+        const net = during.filter((r) => /^https?:/.test(r.url));
+        if (net.length === 0) notChecked("the page made no request between the press and the result, so there was nothing to read");
+        expect(net.filter((r) => r.method !== "GET" && r.method !== "OPTIONS").map((r) => `${r.method} ${r.url}`), "writes from the press to the result").toEqual([]);
+        expect(net.filter((r) => r.url.includes("/ai/")).map((r) => `${r.method} ${r.url}`), "requests to the AI gateway from the press to the result").toEqual([]);
+        const foreign = net.filter((r) => !r.url.startsWith(QA_API_ORIGIN) && new URL(r.url).hostname !== "localhost");
+        expect(foreign.map((r) => r.url), "requests to a host that is neither the app nor its api").toEqual([]);
       }, { source: `${SHEET} row 2; apps/web/messages/tools/close.en.json close_intro ("Nothing is sent anywhere, and no AI is used")` });
       await look(page, qa, "Closeness, a pasted passage found");
     });
@@ -586,7 +656,7 @@ test(
       await qa.check("data", "closeness-check.txt opens CLOSENESS CHECK (made with Appuscholar), has the date, sources, settings, result, LIMITS and the passage, and is core's report", async () => {
         expect(file.name).toBe("closeness-check.txt");
         expect(file.bytes.subarray(0, 3).toString("hex"), "a byte-order mark first").toBe("efbbbf");
-        const text = file.text().replace(/^﻿/, "");
+        const text = file.text().replace(/^\uFEFF/, "");
         expect(text.split("\n")[0]).toBe("CLOSENESS CHECK (made with Appuscholar)");
         for (const label of ["Date: ", "Sources compared: ", "Settings: ", "Result: ", "LIMITS: "]) expect(text, label).toContain(label);
         const dates = [...new Set([before, after])];
@@ -645,9 +715,10 @@ test(
         await expect(page.getByTestId("close-by-source")).toContainText(`${paperTitle(PAPER)} (${kindWord(KIND.shelf)}): ` + T("close_by_one", { words: want.runs[0]!.words }));
         await expect(page.getByTestId("close-skipped")).toHaveCount(0);
       }, { source: `${SHEET} row 5 ("the paragraph you took from a paper is found and named with that paper's title and, where known, its page"); core clCompare` });
-      await qa.check("data", "\"Checking…\" showed while the 20 papers were read and the button was greyed", async () => {
+      await qa.check("data", "\"Checking…\" showed while the 20 papers were read, and the button was greyed meanwhile", async () => {
         const probe = await readProbe(page);
         expect(probe.sawChecking, "the Checking… status showed").toBe(true);
+        expect(probe.sawDisabled, "the Check my document button was disabled while it ran").toBe(true);
       }, { source: `${SHEET} row 5 ("'Checking…' shows and the button is greyed while it runs")` });
       await qa.check("conceptual", "the shelf's result claims nothing either: no copied, safe, original, clean or all clear anywhere on the panel", async () => {
         const text = (await page.getByTestId("panel-close").innerText()) + "\n" + (await page.getByTestId("close-marked").innerText());
@@ -688,14 +759,16 @@ test(
         expect(deck.xml(results + 1)).toContain("<p:pic>");
         expect(runsOf(deck.xml(results + 1)).some((t) => t.startsWith("Table: Group | Students | Mean end score"))).toBe(true);
       }, { source: `${SHEET} rows 8, 9 and 10; ${E2E} step 3; ${WALK} tools-e row 9 ('<p:pic>')` });
-      await qa.check("data", "slide 1's title is bold 28 pt purple Georgia (5B21B6) and the bullets are dark Georgia (1E1B2E)", async () => {
-        const first = deck.xml(1);
-        expect(first).toContain("5B21B6");
-        expect(first).toContain("Georgia");
-        expect(first).toMatch(/sz="2800"/);
-        expect(first).toMatch(/b="1"/);
-        expect(deck.xml(2)).toContain("1E1B2E");
-      }, { source: `${SHEET} row 10 ("the title in purple Georgia (bold, about 28 pt), the bullets in dark Georgia"); ${E2E} step 3` });
+      await qa.check("data", "slide 1's title and the bullets under it have the size, bold, colour and face of core's deck spec, on their run properties", async () => {
+        const spec = pptxDeckSpec(thesisModel.slides);
+        const title = spec.slides[0]!.title;
+        const withBullets = spec.slides.findIndex((x) => x.bullets !== null);
+        expect(title, "core's deck spec gives slide 1 a title").not.toBeNull();
+        expect(withBullets, "a slide of core's spec with bullets").toBeGreaterThan(-1);
+        expect(styledRunsOf(deck.xml(1))[0], "slide 1's title run").toEqual(styleOfSpec(title!.text, title!.options));
+        const bullets = spec.slides[withBullets]!.bullets!;
+        expect(styledRunsOf(deck.xml(withBullets + 1)).slice(spec.slides[withBullets]!.title ? 1 : 0)[0], `slide ${withBullets + 1}'s first bullet run`).toEqual(styleOfSpec(bullets.items[0]!.text, bullets.options));
+      }, { source: `${SHEET} row 10 ("the title in purple Georgia (bold, about 28 pt), the bullets in dark Georgia"); ${E2E} step 3; core pptxDeckSpec on the same slides` });
       await qa.check("data", "no toast appears for the download", async () => {
         expect(await toasts()).toHaveLength(shown);
       }, { source: `${SHEET} row 10 ("no toast appears")` });
@@ -764,30 +837,54 @@ test(
         expect(await docText(page)).toBe(docBefore);
         expect(await aiTextIn(page), "gold AI text in the document").toEqual([]);
       }, { source: `${SHEET} row 14 ("There is no Insert, Accept, Add to my document, no copy button ... The document is word for word what it was; no gold AI text appears in it"); rule 4` });
-      // A drag of the question's selected words onto the document (the sheet asks for one; a scripted drag may not start a real one: this one does).
-      await page.getByTestId("viva-q-text").selectText();
+      // The question's words moved into the document two ways a student has: a drag of the selected words (the sheet asks for one; a scripted drag may not start a real one: this one
+      // does), and Ctrl+C then Ctrl+V. What reached the editor is recorded in the page (a drop or a paste that carries the question's words), so that a try that never got there is
+      // NOT CHECKED and not a pass. After each the draft is put back (Ctrl+Z), so that the checks that follow are about their own business and not about this one.
+      const questionWords = VIVA_QUESTION.slice(0, 40);
+      const putBack = async () => {
+        for (let i = 0; i < 4 && (await docText(page)) !== docBefore; i++) {
+          await page.locator(".ProseMirror").first().focus();
+          await page.keyboard.press("ControlOrMeta+z");
+        }
+        expect(await docText(page), "the case could not put the draft back (Ctrl+Z)").toBe(docBefore);
+      };
+      const selectedQuestion = async () => {
+        await page.getByTestId("viva-q-text").selectText();
+        return page.evaluate(() => window.getSelection()?.toString() ?? "");
+      };
+      const tried = async (selected: string, events: Array<{ type: string; text: string }>, type: "drop" | "paste") => {
+        const afterText = await docText(page);
+        const aiText = await aiTextIn(page);
+        const arrived = events.filter((e) => e.type === type && e.text.includes(questionWords));
+        const where = await dropSnippet(page);
+        await putBack();
+        return { selected, arrived: arrived.length, afterText, aiText, where };
+      };
+      let events = await recordEditorEvents(page);
+      const selectedForDrag = await selectedQuestion();
       await page.getByTestId("viva-q-text").dragTo(page.locator(".ProseMirror").first());
-      const afterDrag = await docText(page);
-      const dragAi = await aiTextIn(page);
-      // What the document's html holds where the words were dropped (for the report: the evidence of Q40).
-      const dropped = await page.locator(".ProseMirror").first().evaluate((el, q) => {
-        const html = el.innerHTML;
-        const at = html.indexOf(q);
-        if (at < 0) return "(the question's words are not in the document)";
-        const from = Math.max(html.lastIndexOf("<span", at), html.lastIndexOf("<p>", at), 0);
-        return html.slice(from, at + q.length + 30).replace(/style="[^"]*"/g, 'style="…"');
-      }, VIVA_QUESTION.slice(0, 20));
-      // Whatever the drag did, the draft is put back (Ctrl+Z) so that the checks that follow are about their own business and not about this one.
-      for (let i = 0; i < 4 && (await docText(page)) !== docBefore; i++) {
-        await page.locator(".ProseMirror").first().focus();
-        await page.keyboard.press("ControlOrMeta+z");
-      }
-      expect(await docText(page), "the case could not put the draft back after the drag (Ctrl+Z)").toBe(docBefore);
-      await qa.check("conceptual", "dragging the question's words onto the document puts nothing in it", async () => {
-        expect(afterDrag, `the document after the drag (the question's words have no business there); its html where they fell: ${dropped}`).toBe(docBefore);
-        expect(afterDrag).not.toContain(VIVA_QUESTION.slice(0, 40));
-        expect(dragAi, "gold AI text in the document").toEqual([]);
-      }, { source: `${SHEET} row 14 ("Try to drag the question into the document ... Dragging the question does nothing"); the label of the question: "It is never added to your document" (viva_label)`, known: "Q40" });
+      const drag = await tried(selectedForDrag, await events(), "drop");
+      events = await recordEditorEvents(page);
+      const selectedForCopy = await selectedQuestion();
+      await page.keyboard.press("ControlOrMeta+c");
+      await page.locator(".ProseMirror").first().click();
+      await page.keyboard.press("ControlOrMeta+v");
+      const copy = await tried(selectedForCopy, await events(), "paste");
+      const asWords = (t: { selected: string; arrived: number; afterText: string; aiText: string[]; where: string }, what: string) => {
+        if (t.selected.trim() !== "" && t.arrived === 0) notChecked(`the question's words were selected (${t.selected.length} characters) but no ${what} carrying them reached the editor, so the try did not happen`);
+        // An empty selection is a question that cannot be dragged or copied: nothing can go in, and the draft must be as it was.
+        expect(t.afterText, `the document after the ${what} (the question's words have no business there); its html where they fell: ${t.where}`).toBe(docBefore);
+        expect(t.afterText).not.toContain(questionWords);
+        expect(t.aiText, "gold AI text in the document").toEqual([]);
+      };
+      await qa.check("conceptual", "dragging the question's words onto the document puts nothing in it", async () => asWords(drag, "drop"), {
+        source: `${SHEET} row 14 ("Try to drag the question into the document ... Dragging the question does nothing"); the label of the question: "It is never added to your document" (viva_label)`,
+        known: "Q40"
+      });
+      await qa.check("conceptual", "copying the question's words and pasting them into the document puts nothing in it", async () => asWords(copy, "paste"), {
+        source: `${SHEET} row 14 ("The document is word for word what it was; no gold AI text appears in it"); the label of the question: "It is never added to your document" (viva_label)`,
+        known: "Q40"
+      });
       await closeDocBeside(page);
       await look(page, qa, "Viva, a question asked");
     });
@@ -1064,7 +1161,7 @@ test("S8-02 [F5, O18] with the vault locked, Closeness says my document is locke
     await toPlace(page, id, "review", "closeness");
     await page.getByTestId("close-k").selectOption("5");
     await saves.settled();
-    await qa.check("data", "with the vault on, what the server holds of the work is sealed: the shelf, the settings and both documents' texts are in no clear form", async () => {
+    await qa.check("data", "with the vault on, the shelf, the settings and the titles of the project and its documents are on the server sealed, none in clear", async () => {
       const rows = await serverRows(s.uid);
       const sealed = /^[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]+$/;
       const wanted = rows.blobs.filter((b) => b.kind.startsWith("shelf_") || b.kind === "close_prefs");
@@ -1073,7 +1170,10 @@ test("S8-02 [F5, O18] with the vault locked, Closeness says my document is locke
         expect(b.body, b.kind).toMatch(sealed);
         expect(b.body).not.toContain(MARK);
       }
-    }, { source: "docs/walkthroughs/phase-3a.md (the vault seals every blob)" });
+      // serverRows holds titles and blobs, not document bodies: the documents are met through their titles.
+      for (const clear of [PROJECT.name, DOC_A, DOC_B]) expect(rows.titles, `a title in clear on the server`).not.toContain(clear);
+      expect(rows.titles.filter((t) => sealed.test(t)).length, "sealed titles on the server").toBeGreaterThanOrEqual(3);
+    }, { source: "docs/walkthroughs/phase-3a.md (the vault seals every blob and every title); spec section 6" });
   });
 
   await qa.step("lock the vault on Closeness", async () => {
@@ -1160,6 +1260,12 @@ test("S8-02 [F5, O18] with the vault locked, Closeness says my document is locke
 
 // ---- S8-03 [F4, O24] ---------------------------------------------------------------------------------------------------------------------------------
 
+/*
+ * Why four documents: an ordinary thesis project has several (the draft, interview notes, reading notes, a short note). Generate reads the project's list and then every document but
+ * the open one, one after another (lib/editor/docAccess.ts, allDocuments), so with a 3 s answer from the server the read costs (1 list + (n - 1) documents) x 3 s: 12 s for four.
+ * Three documents would cost 9 s, a second under the 10 s budget, and the mark would then follow the machine's noise; four is a project a student has, and the mark does not.
+ */
+
 test("S8-03 [F4, O24] on a slow connection, a new press of Generate clears the old preview and its Download while it reads, and the preview comes within 10 s", { tag: ["@slice"] }, async ({ page, context, qa }) => {
   qa.begin({
     story: "S8",
@@ -1193,7 +1299,7 @@ test("S8-03 [F4, O24] on a slow connection, a new press of Generate clears the o
     await qa.check("data", "the project has four documents and the draft is the open one", async () => {
       await expect(page.getByTestId("doc-select").locator("option")).toHaveCount(4);
       await expect(page.getByTestId("doc-select").locator("option:checked")).toHaveText(DOC_A);
-    }, { source: `${WALK} O24 (with three documents it takes about 7 s: it reads every document of the project)` });
+    }, { source: `${WALK} O24 (Generate reads every document of the project one after another: "about 7 s" with three documents at about 2.3 s each); the read costs (1 list + (n - 1) documents) x 3 s here` });
     await toPlace(page, id, "review", "slides");
     slow = await slowApi(context, 3_000);
   });
@@ -1351,8 +1457,9 @@ test("S8-04 [O19] 50,000 words against 20 papers: the result comes within 30 s, 
       await expect(page.getByTestId("close-note")).toHaveCount(0);
       expect(await page.getByTestId("panel-close").innerText()).not.toContain(T("close_failed"));
     }, { source: `${SHEET} row 5 ("the paragraph you took from a paper is found and named with that paper's title and, where known, its page. The percentage is low ... No red error line and no 'The check could not finish'")` });
-    await qa.check("data", "\"Checking…\" showed while it ran", async () => {
-      expect(probe.sawChecking).toBe(true);
+    await qa.check("data", "\"Checking…\" showed while it ran, and the button was greyed meanwhile", async () => {
+      expect(probe.sawChecking, "the Checking… status showed").toBe(true);
+      expect(probe.sawDisabled, "the Check my document button was disabled while it ran").toBe(true);
     }, { source: `${SHEET} row 5` });
     await qa.check("data", "the sentence I typed while it ran is whole in the document, at the end of the text", async () => {
       const whole = await page.locator(".ProseMirror").first().evaluate((el) => el.textContent ?? "");
@@ -1414,7 +1521,7 @@ test("S8-05 when the AI provider fails, Viva says so in words, shows no question
       await expect(page.getByTestId("viva-note")).toContainText(sentence);
       await expect.poll(toasts).not.toContain(T("viva_toast_saved"));
     }, { source: "apps/web/lib/ai/callAI.ts apiMsg('provider-error') (v1 apiMsg 5253-5266); spec section 6 (AI fails)" });
-    await qa.check("data", "no question is shown and no answer box is offered; the button still reads \"Get a question\" and can be pressed again; no answer count appears", async () => {
+    await qa.check("data", "no question is shown and no answer box is offered; the button still reads \"Get a question\" and is enabled; no answer count appears", async () => {
       await expect(page.getByTestId("viva-question")).toHaveCount(0);
       await expect(page.getByTestId("viva-answer")).toHaveCount(0);
       await expect(page.getByTestId("viva-save")).toHaveCount(0);
@@ -1423,6 +1530,14 @@ test("S8-05 when the AI provider fails, Viva says so in words, shows no question
       await expect(page.getByTestId("viva-get")).toBeEnabled();
       await expect(page.getByTestId("viva-status")).toHaveCount(0);
     }, { source: `register D-S2-101 ("an error is never saved as the question"); ${SHEET} row 13` });
+    const askedBefore = (await providerCalls(s.key!)).length;
+    await page.getByTestId("viva-get").click();
+    await qa.check("data", "pressing Get a question again asks the AI again and gives the same message", async () => {
+      await expect.poll(async () => (await providerCalls(s.key!)).length, { message: "requests the provider received after the second press", timeout: 30_000 }).toBeGreaterThan(askedBefore);
+      await expect(page.getByTestId("viva-get")).toBeEnabled();
+      await expect(page.getByTestId("viva-note")).toContainText(sentence);
+      await expect(page.getByTestId("viva-question")).toHaveCount(0);
+    }, { source: `${SHEET} row 13 ("Get a question" is pressed again; nothing in it is saved after an error); register D-S2-101` });
     await qa.check("data", "nothing is saved or logged: the server has no viva_log, the project's AI-use log is empty, and the provider answered none of the requests", async () => {
       expect(await blobBody(s.uid, "viva_log"), "a viva_log on the server").toBeUndefined();
       expect(await apiGet<AiuEntry[]>(page, `/ai/log?projectId=${id}`), "the project's AI-use log").toEqual([]);
@@ -1539,14 +1654,14 @@ test("S8-06 on a phone, in Hindi, Closeness, Viva and Make PPT speak Hindi and f
       await expect(page.getByTestId("viva-get")).toHaveText(T("viva_another", {}, hi));
       await expect(page.getByTestId("viva-save")).toHaveText(T("viva_save", {}, hi));
       await expect(page.getByTestId("viva-q-text")).toHaveText(VIVA_QUESTION);
-    }, { source: `${SHEET} row 18 ("Viva (intro, roles, button, 'अब तक सहेजे उत्तर')")` });
+    }, { source: `${WALK} tools-e row 18 ("Viva (intro, roles, button, 'अब तक सहेजे उत्तर: 2।')"); ${SHEET} row 18 ("including buttons ... and the viva label")` });
     await page.getByTestId("viva-answer").fill("मंडल में सबको बोलने का मौका मिलता है।");
     const put = page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/viva_log$/.test(r.url()) && r.ok());
     await page.getByTestId("viva-save").click();
     await put;
     await qa.check("data", "after Save my answer the line \"Answers saved so far\" is Hindi", async () => {
       await expect(page.getByTestId("viva-count")).toHaveText(T("viva_count", { n: 1 }, hi));
-    }, { source: `${SHEET} row 18 ("अब तक सहेजे उत्तर: 2।")` });
+    }, { source: `${WALK} tools-e row 18 ("Viva (... 'अब तक सहेजे उत्तर: 2।')"); ${SHEET} row 16 ("Answers saved so far")` });
     await page.getByTestId("viva-get").click();
     await expect(page.getByTestId("viva-question")).toBeVisible();
     await look(page, qa, "Viva, on a phone, in Hindi", { exempt: ["viva-q-text"] });
@@ -1562,8 +1677,7 @@ test("S8-06 on a phone, in Hindi, Closeness, Viva and Make PPT speak Hindi and f
       await inHindi("panel-slides", ["slides_desc", "slides_generate_btn", "slides_download"]);
       await expectCards(page, model, hi);
     }, { source: `${SHEET} row 18 ('the "Slide 1" cards')` });
-    // The download button's name holds the product's (PowerPoint, .pptx), which the Hindi rule's list of names lacks (it has PPT, PDF and CSV); its Hindi words are read above.
-    await look(page, qa, "Make PPT, on a phone, in Hindi", { exempt: ["slides-download"] });
+    await look(page, qa, "Make PPT, on a phone, in Hindi");
   });
 
   await qa.step("back to English", async () => {

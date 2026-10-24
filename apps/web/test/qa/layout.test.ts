@@ -75,11 +75,11 @@ describe("HINDI_EXCEPTIONS", () => {
     }
   });
 
-  it("names the allow-list the brief gives, LaTeX (ruling R20), and the programs a table is pasted from (S5)", () => {
+  it("names the allow-list the brief gives, LaTeX (ruling R20), the programs a table is pasted from (S5) and PowerPoint (S8)", () => {
     expect(HINDI_NAMES).toEqual(
-      expect.arrayContaining(["Appuscholar", "OpenAlex", "PubMed", "Crossref", "CTRI", "ICMR", "APA", "DOI", "PDF", "CSV", "PPT", "AI", "Groq", "OpenAI", "ChatGPT", "Gemini", "Claude", "DeepSeek", "OpenRouter", "Google Scholar", "Wiktionary", "LaTeX", "Excel", "SPSS", "Google Sheets"])
+      expect.arrayContaining(["Appuscholar", "OpenAlex", "PubMed", "Crossref", "CTRI", "ICMR", "APA", "DOI", "PDF", "CSV", "PPT", "AI", "Groq", "OpenAI", "ChatGPT", "Gemini", "Claude", "DeepSeek", "OpenRouter", "Google Scholar", "Wiktionary", "LaTeX", "Excel", "SPSS", "Google Sheets", "PowerPoint"])
     );
-    expect(HINDI_NAMES).toHaveLength(25);
+    expect(HINDI_NAMES).toHaveLength(26);
   });
 });
 
