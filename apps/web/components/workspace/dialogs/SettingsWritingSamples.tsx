@@ -2,13 +2,15 @@
 import { useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { blobId } from "@/lib/blobs/kinds";
+import { heldBlobs } from "@/lib/blobs/held";
 import { blobPath, useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import type { ProjectWork } from "@/lib/frame/useProjectWork";
 import { useT } from "@/lib/i18n";
 import { announceBlob } from "@/lib/popout/channel";
 import { useSettings } from "@/lib/settings";
 import { useVault } from "@/lib/vault/useVault";
-import { sampleStats } from "@/lib/writingSamples/captureSample";
+import { fullSamples, sampleStats } from "@/lib/writingSamples/captureSample";
+import { flushOpenSamples, noteSamplesCleared } from "@/lib/writingSamples/useWritingSampleCapture";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
@@ -42,16 +44,28 @@ export function SettingsWritingSamples() {
     if (busy) return;
     setBusy(true);
     try {
+      // Nothing typed before this is to land after it: a change still waiting in an open document is not captured, and a capture already set
+      // is sent now, so the list below names its project and the delete takes it.
+      noteSamplesCleared();
+      await flushOpenSamples();
       const work = await apiFetch<ProjectWork[]>("/projects?include=work");
       const ids = work.filter((p) => p.blobs.some((b) => b.kind === "writing_samples")).map((p) => p.id);
       // The list leaves the scratch space out.
-      if (me?.scratchProjectId && !ids.includes(me.scratchProjectId)) ids.push(me.scratchProjectId);
+      const scratch = me?.scratchProjectId;
+      if (scratch && !ids.includes(scratch)) ids.push(scratch);
+      // A save of the blob from a panel that has gone is waited for, and a value that panel could not send (offline, a locked vault) is dropped,
+      // for every project, not only those that have a blob: either would make the blob again, with what was typed before the clear.
+      await Promise.all([...new Set([...work.map((p) => p.id), ...ids])].map(async (id) => {
+        const bid = blobId(id, "writing_samples");
+        await heldBlobs.idle(bid);
+        heldBlobs.take(bid);
+      }));
       const done = await Promise.all(ids.map((id) => apiFetch<void>(blobPath(id, "writing_samples"), { method: "DELETE" }).then(
         () => true,
         (e: unknown) => e instanceof ApiError && e.status === 404
       )));
       // Another window of this browser that has one of these open reads it again.
-      ids.forEach((id, i) => { if (done[i]) announceBlob(blobId(id, "writing_samples")); });
+      ids.forEach((id, i) => { if (done[i]) { announceBlob(blobId(id, "writing_samples")); fullSamples.delete(id); } });
       toast(t(done.every(Boolean) ? "writingsample_cleared" : "wsamp_clear_fail"));
     } catch {
       toast(t("wsamp_clear_fail"));
@@ -94,5 +108,5 @@ function Status({ projectId }: { projectId: string | null }) {
   const blob = useProjectBlob("writing_samples", projectId, { readOnly: true });
   if (projectId === null || blob.loading || blob.locked || blob.broken || blob.error) return null;
   const { count, words } = sampleStats(blob.value);
-  return <>{t("writingsample_status_fmt", { n: count, w: words })}</>;
+  return <>{t("writingsample_status_fmt", { n: count, w: words })}{fullSamples.has(projectId) && " " + t("wsamp_full")}</>;
 }

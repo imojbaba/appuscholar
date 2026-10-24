@@ -4,5 +4,6 @@
   "wsamp_on_toast": "Writing-style capture turned on",
   "wsamp_off_toast": "Writing-style capture turned off",
   "wsamp_clear_yes": "Yes, clear them",
-  "wsamp_clear_fail": "Could not clear the saved writing samples. Check your connection and try again."
+  "wsamp_clear_fail": "Could not clear the saved writing samples. Check your connection and try again.",
+  "wsamp_full": "This project's saved copy is full, so newer writing is not being added. Clear it to make room."
 }

@@ -113,7 +113,10 @@ export function DocBar() {
   async function undo(id: string, docProjectId: string) {
     try {
       // The workspace restores into whichever project is open by now, so a late Undo never mixes projects.
-      if (await restoreDocument(id, docProjectId)) { resumeSample(id); toast("Restored ✓"); }
+      const shown = await restoreDocument(id, docProjectId);
+      // The document is back even when the student declined the switch to it, so its writing is captured again (not when the restore failed).
+      resumeSample(docProjectId, id);
+      if (shown) toast("Restored ✓");
     } catch { toast("Could not bring the document back."); }
   }
 
@@ -138,6 +141,9 @@ export function DocBar() {
       // Stored first, so the switch that follows never asks about a document that has already left this project.
       if (!(await flushOpen())) { toast(t("doc_move_unsaved")); return; }
       await apiFetch(`/documents/${moving.id}/move`, { method: "POST", body: JSON.stringify({ projectId: target }) });
+      // The copy of its writing stays with the project it was written for no longer: it goes from the old one, and is captured in the new one.
+      void forgetSample(moving.projectId, moving.id, () => vault).catch(() => undefined);
+      resumeSample(target, moving.id);
       setDialog(null);
       await openProject(target, { docId: moving.id });
     } catch { toast(t("doc_move_fail")); }
@@ -152,7 +158,7 @@ export function DocBar() {
       patchDoc(d.id, { kind: d.kind });
       // v1 3172: a source paper is not the student's writing, so its sample goes.
       if (kind === "source") void forgetSample(currentDoc.projectId, currentDoc.id, () => vault).catch(() => undefined);
-      else resumeSample(currentDoc.id);
+      else resumeSample(currentDoc.projectId, currentDoc.id);
       toast(t(kind === "source" ? "org_toast_src" : "org_toast_own"));
     } catch { toast("Could not change the document. Try again."); }
   }

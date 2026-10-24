@@ -19,6 +19,7 @@ const h = vi.hoisted(() => ({
   settings: {} as Record<string, unknown>,
   blob: { value: null, loading: false, locked: false, broken: false } as unknown as B,
   set: vi.fn(),
+  flush: vi.fn(async () => true),
   opened: [] as Array<[string, string | null]>,
   api: vi.fn(),
   toast: vi.fn(),
@@ -29,7 +30,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async (orig) => ({
   ...(await orig<typeof import("../lib/blobs/useProjectBlob")>()),
   useProjectBlob: (kind: string, id: string | null) => {
     h.opened.push([kind, id]);
-    return { ...h.blob, set: h.set, flush: async () => true, readOnly: false };
+    return { ...h.blob, set: h.set, flush: h.flush, readOnly: false };
   }
 }));
 // The title is plain here (titles.test pins sealed ones).
@@ -42,7 +43,7 @@ import { ApiError } from "../lib/api";
 import { UNTITLED } from "../lib/vault/titles";
 import { VaultProvider } from "../lib/vault/useVault";
 import { forgetSample, resumeSample, WritingSampleCapture } from "../lib/writingSamples/useWritingSampleCapture";
-import { SAMPLE_THROTTLE_MS, SAMPLES_MAX_CHARS, sampleOf, sampleStats, withSample, withoutSample } from "../lib/writingSamples/captureSample";
+import { fitsBlob, fullSamples, SAMPLE_THROTTLE_MS, SAMPLES_MAX_BYTES, sampleOf, sampleStats, withSample, withoutSample } from "../lib/writingSamples/captureSample";
 import { DocBar } from "../components/document/DocBar";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -78,6 +79,8 @@ beforeEach(() => {
   h.settings = { writingSampleCapture: true };
   h.blob = { value: null, loading: false, locked: false, broken: false };
   h.set.mockReset();
+  h.flush.mockReset().mockResolvedValue(true);
+  fullSamples.clear();
   h.opened = [];
   window.history.replaceState({}, "", "/");
 });
@@ -102,6 +105,17 @@ describe("the pure part", () => {
     expect(withSample({ a: e("old") }, "a", e("new"))).toEqual({ a: e("new") });
     expect(withoutSample({ a: e("A"), b: e("B") }, "a")).toEqual({ b: e("B") });
     expect(withoutSample(null, "a")).toEqual({});
+  });
+  it("fitsBlob counts bytes of UTF-8, not characters: 1.4 million letters of ASCII fit, 600 thousand Hindi letters do not", () => {
+    const e = (text: string) => ({ title: "T", text, words: 31, updated: 1 });
+    expect(SAMPLES_MAX_BYTES).toBe(1_500_000);
+    expect(fitsBlob(null, "D1", e("x".repeat(1_400_000)))).toBe(true);
+    expect(fitsBlob(null, "D1", e("x".repeat(1_500_000)))).toBe(false);
+    expect(fitsBlob(null, "D1", e("\u0915".repeat(600_000)))).toBe(false);
+    expect(fitsBlob(null, "D1", e("\u0915".repeat(400_000)))).toBe(true);
+    // The other documents' entries count too; a document's own old entry does not (it is replaced).
+    expect(fitsBlob({ D2: e("\u0915".repeat(450_000)) }, "D1", e("\u0915".repeat(100_000)))).toBe(false);
+    expect(fitsBlob({ D1: e("\u0915".repeat(450_000)) }, "D1", e("\u0915".repeat(100_000)))).toBe(true);
   });
   it("sampleStats counts the documents and sums their words (v1 writingSampleStats)", () => {
     expect(sampleStats(null)).toEqual({ count: 0, words: 0 });
@@ -331,9 +345,9 @@ describe("the capture hook", () => {
   });
 
   describe("a document the student took out of the samples", () => {
-    const vaultOff = { known: async () => "off" as const, ensureUnlocked: async () => true, encryptBody: async () => { throw new Error("unused"); }, decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml };
+    const vaultOff = { status: "off" as const, known: async () => "off" as const, ensureUnlocked: async () => true, encryptBody: async () => { throw new Error("unused"); }, decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml };
     beforeEach(() => { h.api.mockReset().mockRejectedValue(new ApiError(404, "not-found")); });
-    afterEach(() => { resumeSample("D1"); });
+    afterEach(() => { resumeSample("p1", "D1"); resumeSample("p2", "D1"); });
 
     it("is not written by the change that was waiting when the editor goes away", async () => {
       const e = newEditor();
@@ -363,20 +377,109 @@ describe("the capture hook", () => {
       type(e, para(40));
       await tick(SAMPLE_THROTTLE_MS);
       expect(h.set).not.toHaveBeenCalled();
-      resumeSample("D1");
+      resumeSample("p1", "D1");
       type(e, para(41));
       await tick(SAMPLE_THROTTLE_MS);
       expect(h.set).toHaveBeenCalledTimes(1);
     });
+
+    it("is out of one project only: the same document in another project, after a move, is captured there", async () => {
+      const e = newEditor();
+      const r = mount(capture(e, doc("D1")));
+      type(e, para(40));
+      await tick(1);
+      type(e, para(46));
+      await act(async () => { await forgetSample("p1", "D1", () => vaultOff); });
+      // The shell re-files the open document under the project it moved to; the change that was waiting is not flushed into the old project.
+      act(() => { r.render(capture(e, doc("D1", { projectId: "p2" }))); });
+      expect(h.set).toHaveBeenCalledTimes(1);
+      expect(h.opened.at(-1)).toEqual(["writing_samples", "p2"]);
+      type(e, para(47));
+      await tick(1);
+      expect(h.set).toHaveBeenCalledTimes(2);
+      expect(written(1).D1!.words).toBe(47);
+    });
+
+    it("sends what this window's capture has on its way before it reads the project's blob", async () => {
+      const e = newEditor();
+      mount(capture(e, doc("D1")));
+      let sent!: () => void;
+      h.flush.mockReturnValue(new Promise<boolean>((r) => { sent = () => r(true); }));
+      const calls = () => h.api.mock.calls.length;
+      let done = false;
+      const p = forgetSample("p1", "D1", () => vaultOff).then(() => { done = true; });
+      await act(async () => { await Promise.resolve(); });
+      expect(h.flush).toHaveBeenCalledTimes(1);
+      await tick(30);
+      expect(calls()).toBe(0);
+      expect(done).toBe(false);
+      sent();
+      await act(async () => { await p; });
+      expect(calls()).toBeGreaterThan(0);
+    });
+
+    it("does not wait for a capture that is off, or in another project, or gone", async () => {
+      h.settings = {};
+      const e = newEditor();
+      const r = mount(capture(e, doc("D1")));
+      await act(async () => { await forgetSample("p1", "D1", () => vaultOff); });
+      expect(h.flush).not.toHaveBeenCalled();
+      h.settings = { writingSampleCapture: true };
+      act(() => { r.render(capture(e, doc("D1", { projectId: "p2" }))); });
+      await act(async () => { await forgetSample("p1", "D1", () => vaultOff); });
+      expect(h.flush).not.toHaveBeenCalled();
+      act(() => r.unmount());
+      await act(async () => { await forgetSample("p2", "D1", () => vaultOff); });
+      expect(h.flush).not.toHaveBeenCalled();
+    });
   });
 
-  it("adds nothing once the blob is as large as the api takes", async () => {
-    h.blob.value = { big: { title: "B", text: "x".repeat(SAMPLES_MAX_CHARS), words: 9, updated: 1 } };
-    const e = newEditor();
-    mount(capture(e, doc("D1")));
-    type(e, para(40));
-    await tick(SAMPLE_THROTTLE_MS);
-    expect(h.set).not.toHaveBeenCalled();
+  describe("a copy that is full", () => {
+    const hindi = (n: number) => "\u0915".repeat(n);
+    it("adds nothing once the blob is as large as the api takes", async () => {
+      h.blob.value = { big: { title: "B", text: "x".repeat(SAMPLES_MAX_BYTES), words: 9, updated: 1 } };
+      const e = newEditor();
+      mount(capture(e, doc("D1")));
+      type(e, para(40));
+      await tick(SAMPLE_THROTTLE_MS);
+      expect(h.set).not.toHaveBeenCalled();
+    });
+
+    it("counts bytes: 600 thousand Hindi letters are refused, though they are fewer than the characters allowed", async () => {
+      h.blob.value = { big: { title: "B", text: hindi(600_000), words: 9, updated: 1 } };
+      const e = newEditor();
+      mount(capture(e, doc("D1")));
+      type(e, para(40));
+      await tick(SAMPLE_THROTTLE_MS);
+      expect(h.set).not.toHaveBeenCalled();
+    });
+
+    it("remembers the project whose copy is full, and forgets it when a write fits again", async () => {
+      h.blob.value = { big: { title: "B", text: hindi(600_000), words: 9, updated: 1 } };
+      const e = newEditor();
+      const r = mount(capture(e, doc("D1")));
+      type(e, para(40));
+      await tick(1);
+      expect(fullSamples.has("p1")).toBe(true);
+      expect(fullSamples.has("p2")).toBe(false);
+      // The student cleared it (or the long document went): the next change fits and is written.
+      h.blob.value = null;
+      act(() => { r.render(capture(e, doc("D1"))); });
+      type(e, para(41));
+      await tick(SAMPLE_THROTTLE_MS);
+      expect(h.set).toHaveBeenCalledTimes(1);
+      expect(fullSamples.has("p1")).toBe(false);
+    });
+
+    it("a write that is refused is not tried again every minute", async () => {
+      h.blob.value = { big: { title: "B", text: hindi(600_000), words: 9, updated: 1 } };
+      const e = newEditor();
+      mount(capture(e, doc("D1")));
+      type(e, para(40));
+      await tick(1);
+      await tick(SAMPLE_THROTTLE_MS * 5);
+      expect(h.set).not.toHaveBeenCalled();
+    });
   });
 });
 
@@ -386,6 +489,7 @@ describe("a document leaving the samples", () => {
   let calls: Call[];
   let server: { blob: { body: string; version: number } | null };
 
+  afterEach(() => { resumeSample("p1", "D1"); });
   beforeEach(() => {
     vi.useRealTimers();
     calls = [];

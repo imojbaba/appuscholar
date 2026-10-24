@@ -46,6 +46,9 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => h.ws }));
 
 import { ApiError } from "../lib/api";
+import { blobId } from "../lib/blobs/kinds";
+import { heldBlobs } from "../lib/blobs/held";
+import { fullSamples } from "../lib/writingSamples/captureSample";
 import { KeysProvider } from "../lib/ai/useKeys";
 import { SettingsWritingSamples } from "../components/workspace/dialogs/SettingsWritingSamples";
 import { ProviderKey } from "../components/workspace/dialogs/ProviderKey";
@@ -96,7 +99,7 @@ beforeEach(() => {
     return Promise.reject(new ApiError(404, "not-found"));
   });
 });
-afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; vi.restoreAllMocks(); });
+afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; vi.restoreAllMocks(); heldBlobs.clear(); fullSamples.clear(); });
 const deletes = () => calls.filter((c) => c.method === "DELETE").map((c) => c.path);
 
 describe("the writing-sample block of Settings", () => {
@@ -138,6 +141,24 @@ describe("the writing-sample block of Settings", () => {
     await mount();
     expect($("wsamp-status")!.textContent).toBe(fill(E.writingsample_status_fmt!, { n: 2, w: 75 }));
     expect(h.opened.at(-1)).toEqual(["writing_samples", "p1", { readOnly: true }]);
+  });
+
+  it("says when the open project's copy is full, and only then", async () => {
+    h.settings = { writingSampleCapture: true };
+    h.blob.value = { D1: entry(40) };
+    await mount();
+    expect($("wsamp-status")!.textContent).toBe(fill(E.writingsample_status_fmt!, { n: 1, w: 40 }));
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    fullSamples.add("p2");
+    await mount();
+    expect($("wsamp-status")!.textContent).toBe(fill(E.writingsample_status_fmt!, { n: 1, w: 40 }));
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    fullSamples.add("p1");
+    await mount();
+    expect($("wsamp-status")!.textContent).toBe(fill(E.writingsample_status_fmt!, { n: 1, w: 40 }) + " " + samplesEn.wsamp_full);
+    expect(samplesEn.wsamp_full).toBe("This project's saved copy is full, so newer writing is not being added. Clear it to make room.");
   });
 
   it("shows none yet for a project without a blob", async () => {
@@ -250,6 +271,41 @@ describe("the writing-sample block of Settings", () => {
       await until(() => h.toast.mock.calls.length > 0);
       expect(h.toast).toHaveBeenCalledWith(samplesEn.wsamp_clear_fail);
       expect(h.api.mock.calls.filter(([, i]) => (i as { method?: string } | undefined)?.method === "DELETE")).toEqual([]);
+    });
+
+    it("drops what a panel that has gone still holds for any project, so it cannot make the blob again after the clear", async () => {
+      const send = vi.fn(async () => []);
+      for (const id of ["p1", "p2", "s1"]) heldBlobs.put(blobId(id, "writing_samples"), [{ value: { D1: entry(40) } }], send);
+      await mount();
+      await click($("wsamp-clear"));
+      await click($("wsamp-clear-yes"));
+      await until(() => h.toast.mock.calls.length > 0);
+      for (const id of ["p1", "p2", "s1"]) expect(heldBlobs.has(blobId(id, "writing_samples"))).toBe(false);
+      await heldBlobs.drain();
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("waits for a save of the blob that is still on its way before it deletes", async () => {
+      let landed!: () => void;
+      heldBlobs.track(blobId("p1", "writing_samples"), new Promise<void>((r) => { landed = r; }));
+      await mount();
+      await click($("wsamp-clear"));
+      await click($("wsamp-clear-yes"));
+      await act(async () => { await new Promise((r) => setTimeout(r, 40)); });
+      expect(deletes()).toEqual([]);
+      expect(h.toast).not.toHaveBeenCalled();
+      landed();
+      await until(() => h.toast.mock.calls.length > 0);
+      expect(deletes()).toContain("/projects/p1/blobs/writing_samples");
+    });
+
+    it("forgets the full copies it cleared", async () => {
+      fullSamples.add("p1"); fullSamples.add("p3");
+      await mount();
+      await click($("wsamp-clear"));
+      await click($("wsamp-clear-yes"));
+      await until(() => h.toast.mock.calls.length > 0);
+      expect(fullSamples.size).toBe(0);
     });
 
     it("reads the open project's blob again afterwards, so the count is not the old one", async () => {

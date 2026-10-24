@@ -15,10 +15,16 @@ export type WritingSample = WritingSamples[string];
 export const SAMPLE_THROTTLE_MS = 60_000;
 
 /**
- * The blob is sent whole and the api refuses a body past 2.8 MB (sealing adds a third), so nothing is added past this many characters of JSON.
- * A copy that cannot be saved would stay held for good and make leaving the page ask first.
+ * The blob is sent whole and the api refuses a body past 2.8 MB, and sealing makes it a third larger, so nothing is added past this many bytes of
+ * JSON (UTF-8: a Hindi letter is three). A copy that cannot be saved would stay held for good and make leaving the page ask first.
  */
-export const SAMPLES_MAX_CHARS = 1_500_000;
+export const SAMPLES_MAX_BYTES = 1_500_000;
+
+/**
+ * The projects (by id) whose copy did not take a new entry because it is full, until a write fits again or the copy is cleared. The Settings
+ * status says so; it is this tab's memory only.
+ */
+export const fullSamples = new Set<string>();
 
 /** v1 captureWritingSample's entry (3956-3958): null when the student typed fewer than MIN_SAMPLE_WORDS words. */
 export function sampleOf(html: string, title: string, now: number): WritingSample | null {
@@ -38,9 +44,9 @@ export function withoutSample(prev: WritingSamples | null, docId: string): Writi
   return next;
 }
 
-/** Whether the blob would stay under SAMPLES_MAX_CHARS with this entry in it. */
+/** Whether the blob would stay under SAMPLES_MAX_BYTES, as UTF-8, with this entry in it. */
 export function fitsBlob(prev: WritingSamples | null, docId: string, entry: WritingSample): boolean {
-  return JSON.stringify(withSample(prev, docId, entry)).length <= SAMPLES_MAX_CHARS;
+  return new TextEncoder().encode(JSON.stringify(withSample(prev, docId, entry))).length <= SAMPLES_MAX_BYTES;
 }
 
 /** v1 writingSampleStats (3960-3965): how many documents are stored and their words summed. */
