@@ -238,7 +238,7 @@ All run in the tab except `get_status`. Paragraph ids are `p1`, `p2` … of the 
 
 | Tool | Scope | Reads | Does | Notes |
 |---|---|---|---|---|
-| `get_status` | read | nothing | Says whether the tab is open with Copilot on, the project title, whether draft first is on, and how to fix what is missing | Answered by the server; the project title comes from the tab's last heartbeat as a sealed field, or is left out |
+| `get_status` | read | nothing | Says whether the tab is open with Copilot on, the project title, whether draft first is on, and how to fix what is missing | Answered by the server from the tab's heartbeat and the student's settings; no title, because titles are sealed (`get_project` gives it) |
 | `get_project` | read | project, document list, stage marks | Title, stage, each document's id, title, kind and word count, citation count | |
 | `read_document` | read | one document | Text by paragraph with ids, word count, revision number, which paragraphs are the student's, AI text, or marked source | Source-marked text is labelled as third-party text |
 | `list_citations` | read | citation library | Each entry's fields and its reference in the project's style | |

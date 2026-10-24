@@ -49,7 +49,7 @@
   - `type CopilotScope = "appuscholar.read" | "appuscholar.write"`
   - `type CopilotToolName = "get_status" | "get_project" | "read_document" | "list_citations" | "list_data" | "which_test" | "run_test" | "power_analysis" | "check_numbers" | "check_citations" | "format_reference" | "design_checklist" | "search_papers" | "edit_document" | "insert_result" | "add_citation"`
   - `type CopilotLogKind = "copilot-read" | "copilot-check" | "copilot-stats" | "copilot-edit" | "copilot-cite"`
-  - `type CopilotToolDef = { name: CopilotToolName; title: string; description: string; scope: CopilotScope; runsIn: "server" | "tab"; input: z.ZodObject; annotations: { readOnlyHint: boolean; destructiveHint: boolean; openWorldHint: boolean }; logKind: CopilotLogKind | null }`
+  - `type CopilotToolDef = { name: CopilotToolName; title: string; description: string; scope: CopilotScope; runsIn: "server" | "tab"; input: z.ZodType; annotations: { readOnlyHint: boolean; destructiveHint: boolean; openWorldHint: boolean }; logKind: CopilotLogKind | null }`
   - `const COPILOT_TOOLS: readonly CopilotToolDef[]`; `function copilotTool(name: string): CopilotToolDef | undefined`
   - `type EditOp = { op: "insert_after"; after: string; text: string } | { op: "replace"; target: string; text: string } | { op: "append"; text: string }`
   - `type CopilotRefusal = "not-open" | "off" | "locked" | "elsewhere" | "draft-first" | "too-large" | "stale" | "no-data" | "not-found" | "rate-limit" | "invalid" | "timeout"`
@@ -265,7 +265,7 @@ git commit -m "feat: copilot OAuth authorise, consent, token and revoke"
 
 **Files:**
 - Create: `apps/api/src/copilot/bearer.ts`, `apps/api/src/routes/mcp.ts`, `apps/api/src/copilot/log.ts`
-- Modify: `apps/api/src/app.ts`, `apps/api/package.json` (`@modelcontextprotocol/sdk`)
+- Modify: `apps/api/src/app.ts`, `apps/api/package.json` (`@modelcontextprotocol/sdk`), `apps/api/vercel.json` (`"functions": { "api/index.js": { "maxDuration": 60 } }`: `/mcp` waits up to 45 s and the long-poll 25 s; today's file sets no limit, so the platform default applies, which is UNKNOWN for this project)
 - Test: `apps/api/test/mcp.test.ts`
 
 **Interfaces:**
@@ -278,7 +278,7 @@ git commit -m "feat: copilot OAuth authorise, consent, token and revoke"
 - `tools/list equals the registry`: 16 tools, names, annotations and `inputSchema` equal `z.toJSONSchema(def.input)`.
 - `a write tool without the write scope → 403 insufficient_scope with scope="appuscholar.write"`.
 - `invalid arguments → a tool error, nothing relayed`.
-- `get_status with no tab says not open` and is answered without the relay and without a log row.
+- `get_status with no tab says not open` and is answered without the relay and without a log row; `get_status with a fresh tab` answers `{ open: true, draftFirst, projectId }` with `draftFirst` from the student's settings and no title (titles are sealed; `get_project` gives it).
 - `read_document is relayed and answered`; one `ai_use_log` row with `k: "a copilot reading my documents"`, `g: "explain"`, the tab's `day`, provider `claude`, and nothing from the document.
 - `a refused call is logged too` (the tab answers `{ ok: false, code: "draft-first" }` → one row, `isError: true` in the result, the refusal text as the content).
 - `the AI-use log off setting writes no row` (`settings.aiLogOff: true`).
@@ -307,7 +307,7 @@ git commit -m "feat: copilot OAuth authorise, consent, token and revoke"
   - `filterAnswer(a: CopilotAnswer, m: Matcher | null): CopilotAnswer` (masks every string inside `content`; adds counts to `masked`)
 
 - [ ] **Step 1: Write the failing tests**
-- `bridge.test.ts` (fake fetch, fake clock): `switchOn registers a key and heartbeats`; `a call is opened, executed, filtered, sealed and posted`; `an unknown tool answers invalid`; `an executor that throws answers invalid and the loop continues`; `polls every 1 s after a call and every 5 s when idle`; `switches itself off after 60 minutes without a call`; `locking the vault switches Copilot off and refuses the taken call` (the taken call answers `locked`); `the older tab shows elsewhere` (heartbeat answer says another tab is newer).
+- `bridge.test.ts` (fake fetch, fake clock): `switchOn registers a key and heartbeats`; `a call is opened, executed, filtered, sealed and posted`; `an unknown tool answers invalid`; `an executor that throws answers invalid and the loop continues`; `polls every 1 s after a call and every 5 s when idle`; `switches itself off after 60 minutes without a call`; `locking the vault switches Copilot off and refuses the taken call` (the taken call answers `locked`); `the older tab shows elsewhere` (heartbeat answer says another tab is newer); `the tab validates arguments against the registry schema` (an unknown field answers `invalid`, the executor is not called); `executors import no secret` (a test reads every file under `apps/web/lib/copilot/` and fails on an import of `lib/ai/keys`, `lib/ai/useKeys`, `lib/vault/crypto` or `lib/vault/remember`).
 - `filter.test.ts`: an email and a phone number in nested strings are masked with `maskText` and counted; with a matcher built by `buildMatcher` from two test people, their names become their codes and `masked.participant === 2`; numbers and ids are untouched; Devanagari text passes through except matched names.
 - `pill.test.tsx`: hidden without a grant; "Copilot off" → click with the vault unlocked → "Copilot on: Claude can work on Thesis"; with the vault locked, the click asks to unlock first; the list shows events newest first, with Undo on edits.
 
@@ -393,7 +393,7 @@ git commit -m "feat: copilot OAuth authorise, consent, token and revoke"
 - Produces: `GET /me/copilot/grants` → `[{ id, clientName, createdAt, lastUsedAt }]`; `DELETE /me/copilot/grants/:id` → 204 (revokes tokens, writes `audit_log` `copilot-disconnected`); `eraseUser` also calls `copilotStore.eraseUser`.
 
 - [ ] **Step 1: Write the failing tests**
-- `dialog.test.tsx`: shows the address `<COPILOT_ISSUER>/mcp` with Copy; the Claude steps (Customize → Connectors → Add custom connector) and the ChatGPT steps (Settings → Apps → Advanced settings → Developer mode) with the plain line that ChatGPT may not allow edits on every plan; lists grants with "connected <date>" and "last used <time>"; Disconnect asks once and removes the row.
+- `dialog.test.tsx`: shows the address (the web's existing `NEXT_PUBLIC_API_URL` + `/mcp`) with Copy; the Claude steps (Customize → Connectors → Add custom connector) and the ChatGPT steps (Settings → Apps → Advanced settings → Developer mode) with the plain line that ChatGPT may not allow edits on every plan; lists grants with "connected <date>" and "last used <time>"; Disconnect asks once and removes the row.
 - `statement.test.ts`: with copilot log rows, `aiuBuildV2` names copilot use (provider and kinds) and never says "no AI".
 - `copilot.blindness.test.ts` (Drizzle store on pglite): run every tab tool through `/mcp` with a fake tab that uses the real executors' outputs for a fixture containing the sentence "The marigold protocol reduced anxiety", the participant name "Ishaan Verma" and the cell value "ZZ-UNIQUE-77"; then read every row of every table and assert none of the three strings appears; capture `console` output during the run and assert the same.
 - `copilot.spec.ts` (Playwright, the pglite recipe in `apps/web/e2e/support/`): a test student signs in, accepts terms, sets up the vault, writes a document and pastes a data set; an MCP SDK client in the test performs the OAuth flow (the test clicks Allow on the consent page) with PKCE and `resource`; the student switches on Copilot; the client calls `read_document`, `run_test`, `insert_result`, `edit_document`; the page shows the AI-marked edit and the copilot list with Undo; Undo restores the text; Copilot off → the next call returns the not-open text; Disconnect → the next call is 401.
