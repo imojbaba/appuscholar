@@ -28,15 +28,17 @@ const h = vi.hoisted(() => ({
   gate: null as Promise<void> | null,
   error: {} as Record<string, boolean>,
   confirm: vi.fn(() => true),
-  askPd: vi.fn(async (_sc: unknown) => "mask" as "send" | "mask" | "cancel"),
+  askPd: vi.fn(async (_sc: unknown) => ({ answer: "mask", leave: [] as string[] }) as { answer: "send" | "mask" | "cancel"; leave: string[] }),
   prompts: [] as string[],
+  /** The options each Explain request went out with. */
+  opts: [] as unknown[],
   forces: new Set<() => void>()
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download, safeFileName: (s: string) => s }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ projectId: "p1", docOpen: false, openDocument: vi.fn() }) }));
 vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ insertBlock: async () => true }) }));
-vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => async (prompt: string) => { h.prompts.push(prompt); return "The groups differ."; } }));
+vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => async (prompt: string, opts?: unknown) => { h.prompts.push(prompt); h.opts.push(opts); return "The groups differ."; } }));
 vi.mock("@/lib/ai/pdDialog", () => ({ askPd: async (sc: unknown) => h.askPd(sc) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: h.vault }) }));
@@ -160,10 +162,10 @@ beforeEach(() => {
   resetLists();
   for (const k of Object.keys(h.store)) delete h.store[k];
   for (const k of Object.keys(h.loading)) delete h.loading[k];
-  h.writes.length = 0; h.prompts.length = 0;
+  h.writes.length = 0; h.prompts.length = 0; h.opts.length = 0;
   h.vault = "unlocked"; h.flushOk = true; h.gate = null;
   for (const k of Object.keys(h.error)) delete h.error[k];
-  h.toast.mockClear(); h.download.mockClear(); h.askPd.mockReset(); h.askPd.mockResolvedValue("mask");
+  h.toast.mockClear(); h.download.mockClear(); h.askPd.mockReset(); h.askPd.mockResolvedValue({ answer: "mask", leave: [] });
   vi.spyOn(window, "confirm").mockImplementation(h.confirm);
 });
 afterEach(async () => {
@@ -715,6 +717,8 @@ describe("Explain in plain language", () => {
     expect(prompt).not.toContain("[name 2]");
     for (const n of ["Priya", "Sharma", "Kavya", "Sita", "Gupta"]) expect(prompt).not.toContain(n);
     expect(prompt).toContain("P002");
+    // callAI's own check for names is told which values this step asked about, in normal form, so it does not ask about the same names again (Task 11).
+    expect((h.opts[0] as { namesAsked: string[] }).namesAsked.slice().sort()).toEqual(["kavya nair", "priya sharma", "sita gupta"]);
   });
 });
 

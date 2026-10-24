@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { fieldLabel } from "@appuscholar/core";
+import { fieldLabel, normName } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
@@ -102,7 +102,7 @@ export function useRunActions(projectId: string, labActions: LabActions) {
     const found = flaggedInText(lr.data, lab.scan, [tables, apa]);
     if (found.length) {
       const sig = found.map((f) => f.kind + f.value).join("||");
-      const answer = await askPd({ counts: flaggedCounts(found), total: found.length, sig });
+      const { answer } = await askPd({ counts: flaggedCounts(found), total: found.length, sig });
       if (answer === "cancel") { setExplain(projectId, forRun, { status: "cancelled", message: apiMsg("cancelled") }); return; }
       if (answer === "mask") {
         // With the participant list open, a name on it is masked as that person's code (their made-up name in made-up names mode): the answer then reads against the study's codes.
@@ -114,7 +114,8 @@ export function useRunActions(projectId: string, labActions: LabActions) {
     }
     const built = buildStatsExplainPrompt(fieldLabel(live.current.field), tables, apa);
     try {
-      const text = await live.current.callAI(built.prompt, { temp: built.temp, max: built.max });
+      // The values asked about above are not asked about again by callAI's own check for names (on the list, or that might be names), whatever the answer was.
+      const text = await live.current.callAI(built.prompt, { temp: built.temp, max: built.max, ...(found.length ? { namesAsked: found.map((f) => normName(f.value)) } : {}) });
       setExplain(projectId, forRun, { status: "done", text: text.trim() });
     } catch (e) {
       if (e instanceof AiCallError && e.code === "cancelled") setExplain(projectId, forRun, { status: "cancelled", message: e.message });

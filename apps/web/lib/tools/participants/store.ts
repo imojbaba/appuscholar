@@ -1,6 +1,8 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import type { ParticipantList } from "@/lib/blobs/kinds/participants";
+import { emptyList, type ParticipantList } from "@/lib/blobs/kinds/participants";
+import { readBlobOnce } from "@/lib/blobs/readOnce";
+import type { BlobVault } from "@/lib/blobs/useProjectBlob";
 
 /*
  * What the window last knew of each project's participant list, for code that is not the Participants tab: the Statistics box, the documents' highlights, the AI request's scan
@@ -32,6 +34,25 @@ export function publishList(projectId: string, l: ParticipantList | null, versio
 
 /** The latest list published for a project; the same object until the next change (useSyncExternalStore). */
 export function listFor(projectId: string): ParticipantList | null { return byProject.get(projectId)?.list ?? null; }
+
+/**
+ * The project's list for code that is not the Participants tab and may run where no tab is mounted, a pop-out above all (it has no DocumentLayer to publish one): the AI request's names
+ * check (R1). The list the window holds, else, when the vault is open ("unlocked", or "migrating" as useParticipants counts it), one read of the `participants` blob with a headless client,
+ * published here and returned (a project with no blob has an empty list, as the tab shows it). It never raises a passphrase prompt, never writes, and reads nothing while the vault is
+ * locked or off: null then, and when the list does not open or the read fails (nothing is published for those). `vault` is the window's vault (useVault).
+ */
+export async function ensureList(projectId: string, vault: () => BlobVault): Promise<ParticipantList | null> {
+  const held = listFor(projectId);
+  if (held) return held;
+  const status = await vault().known();
+  if (status !== "unlocked" && status !== "migrating") return null;
+  const read = await readBlobOnce("participants", projectId, vault);
+  if (read.locked || read.broken || read.error) return null;
+  const list = read.value ?? emptyList();
+  publishList(projectId, list, read.version);
+  // A newer list may have been published while this read was out; that one wins.
+  return listFor(projectId) ?? list;
+}
 
 export function subscribeList(cb: () => void): () => void {
   subs.add(cb);

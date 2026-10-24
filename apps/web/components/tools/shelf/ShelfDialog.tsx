@@ -6,6 +6,7 @@ import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { shelfSummarise } from "@/lib/ai/actions";
 import { useCallAI } from "@/lib/ai/useCallAI";
+import { useLiterature } from "@/lib/ai/literature";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
@@ -67,7 +68,8 @@ function ShelfBody({ inline = false }: { inline?: boolean }) {
   const t = useT();
   const store = useShelfStore();
   const { settings } = useSettings();
-  const callAI = useCallAI();
+  // The shelf summarises the pages of a paper: published text, so no name in it is a participant's to suggest (C13).
+  const callAI = useLiterature(useCallAI());
   const { editor } = useSuggestion();
   const [tab, setTab] = useState<Tab>("papers");
   const [cur, setCur] = useState<string | null>(null);

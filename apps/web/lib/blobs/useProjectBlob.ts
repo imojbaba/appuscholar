@@ -376,6 +376,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   return {
     /** Takes ops held for this blob (from a panel that went away) before the first read; they replay onto the loaded value. */
     adopt(held: HeldOp<T>[]) { ops = compactOps([...held, ...ops]); },
+    /** What the client knows now, as a panel's state would show it. A headless client reports no state of its own, so a caller that only reads asks here once `start()` has answered. */
+    state: snapshot,
     leftover,
     /** The first read, after any last save of this blob from a panel that went away; what it held is adopted. */
     start(): Promise<boolean> {

@@ -27,7 +27,7 @@ const h = vi.hoisted(() => ({
   confirm: vi.fn(() => true),
   insert: vi.fn(async (_html: string, _o?: unknown) => true),
   api: vi.fn(),
-  askPd: vi.fn(async (_sc: unknown) => "send" as "send" | "mask" | "cancel"),
+  askPd: vi.fn(async (_sc: unknown) => ({ answer: "send", leave: [] as string[] }) as { answer: "send" | "mask" | "cancel"; leave: string[] }),
   calls: [] as string[]
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -133,7 +133,7 @@ beforeEach(() => {
   h.writes.length = 0; h.calls.length = 0;
   h.toast.mockClear(); h.insert.mockReset(); h.insert.mockResolvedValue(true);
   h.confirm.mockReset(); h.confirm.mockReturnValue(true);
-  h.api.mockReset(); h.askPd.mockReset(); h.askPd.mockResolvedValue("send");
+  h.api.mockReset(); h.askPd.mockReset(); h.askPd.mockResolvedValue({ answer: "send", leave: [] });
   window.confirm = h.confirm as typeof window.confirm;
 });
 afterEach(async () => {

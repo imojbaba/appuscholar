@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
+import pp from "../messages/tools/participants.en.json";
 
 type FakeVault = { status: string; lock: ReturnType<typeof vi.fn>; forgetThisComputer: ReturnType<typeof vi.fn>; known: ReturnType<typeof vi.fn>; ensureUnlocked: ReturnType<typeof vi.fn>; decryptBody: ReturnType<typeof vi.fn>; changePassphrase: ReturnType<typeof vi.fn> };
 const h = vi.hoisted(() => ({
@@ -185,6 +186,93 @@ describe("Help: export, change passphrase", () => {
     expect(record).toContain(en.export_scratch + "\n");
     // Nothing decrypted goes back to the server: the only write is the audit row.
     expect(calls().filter(([m]) => m !== "GET")).toEqual([["POST", "/me/export-audit"]]);
+    // No project has a participant list, so the export did not stop to ask (C10).
+    expect($("export-names-dialog")).toBeNull();
+  });
+
+  /** Two projects, the first (Thesis) with a stored participant list when `lists` has "p1", the second (Pilot) when it has "p2"; the scratch space has none. */
+  function twoProjects(lists: string[]) {
+    const listing = (id: string) => [{ kind: "idea_intake", keyVersion: 1, updatedAt: "2026-09-08T00:00:00.000Z" }, ...(lists.includes(id) ? [{ kind: "participants", keyVersion: 1, updatedAt: "2026-10-20T00:00:00.000Z" }] : [])];
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/projects?include=work") return ["p1", "p2"].map((id, i) => ({ id, title: ["Thesis", "Pilot"][i], titleKeyVersion: 0, deks: [], stageMarks: {}, draftWords: 0, draftEditedAt: null, createdAt: "2026-09-01T00:00:00.000Z" }));
+      if (/^\/projects\/(p1|p2|scratch1)\/documents$/.test(path)) return [];
+      if (path === "/projects/p1/blobs" || path === "/projects/p2/blobs") return listing(path.split("/")[2]!);
+      if (path === "/projects/scratch1/blobs") return [];
+      if (/^\/projects\/(p1|p2)\/blobs\/idea_intake$/.test(path)) return { kind: "idea_intake", body: 'ct:{"topic":"Sleep"}', keyVersion: 1, deks: [{ v: 1, wrapped: "w" }], updatedAt: "2026-09-08T00:00:00.000Z", version: 1 };
+      if (/^\/projects\/(p1|p2)\/blobs\/participants$/.test(path)) return { kind: "participants", body: 'ct:{"v":1,"next":2,"people":[{"id":"a","code":"P001","name":"Priya Sharma","spellings":[],"joined":"2026-10-01"}],"notNames":[]}', keyVersion: 1, deks: [{ v: 1, wrapped: "w" }], updatedAt: "2026-10-20T00:00:00.000Z", version: 2 };
+      if (path.endsWith("/writing-record")) return { docs: [], sources: [], weekly: [], aiLog: { byKind: {}, byService: {}, total: 0, firstAt: null, lastAt: null, loggingOff: false } };
+      if (path === "/me/export-audit" && init?.method === "POST") { h.order.push("audit"); return undefined; }
+      throw new ApiError(404, "not-found");
+    });
+    h.download.mockImplementation(() => { h.order.push("download"); });
+  }
+  const listingCalls = () => calls().filter(([m, p]) => m === "GET" && /^\/projects\/[^/]+\/blobs$/.test(p!));
+
+  it("a project with a participant list: the export says the file has names, and makes nothing until the student agrees (C10)", async () => {
+    twoProjects(["p2"]);
+    await render();
+    await click("help-export");
+    await until(() => !!$("export-names-dialog"));
+    expect($("export-names-dialog")!.textContent).toContain("This file includes your participant lists, with names. Keep it apart from your data.");
+    expect($("export-names-dialog")!.textContent).toContain(pp.pp_export_names);
+    // Nothing is built, logged or saved while the question is open; the button is held.
+    expect(h.download).not.toHaveBeenCalled();
+    expect(calls().filter(([m]) => m !== "GET")).toEqual([]);
+    expect(($("help-export") as HTMLButtonElement).disabled).toBe(true);
+    await click("export-names-go");
+    await until(() => h.toast.mock.calls.length > 0);
+    expect(h.toast).toHaveBeenCalledWith(en.export_done);
+    expect(h.order).toEqual(["audit", "download"]);
+    // The list goes in the file as every kind does: the student's own backup.
+    const zip = await JSZip.loadAsync((h.download.mock.calls[0] as [string, Blob])[1]);
+    expect(JSON.parse(await zip.file("Pilot/stage-data/participants.json")!.async("string")).people[0].name).toBe("Priya Sharma");
+    expect(zip.file("Thesis/stage-data/participants.json")).toBeNull();
+    // Cheap: each project's listing was read once, for the question and for the export together.
+    expect(listingCalls().map(([, p]) => p).sort()).toEqual(["/projects/p1/blobs", "/projects/p2/blobs", "/projects/scratch1/blobs"]);
+    expect($("export-names-dialog")).toBeNull();
+  });
+
+  it("Cancel on that question exports nothing, logs nothing, and the button is free again", async () => {
+    twoProjects(["p1"]);
+    await render();
+    await click("help-export");
+    await until(() => !!$("export-names-dialog"));
+    await click("export-names-cancel");
+    await until(() => !$("export-names-dialog"));
+    await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+    expect(h.download).not.toHaveBeenCalled();
+    expect(h.toast).not.toHaveBeenCalled();
+    expect(calls().filter(([m]) => m !== "GET")).toEqual([]);
+    expect(($("help-export") as HTMLButtonElement).disabled).toBe(false);
+    // Asking again asks again.
+    await click("help-export");
+    await until(() => !!$("export-names-dialog"));
+    await click("export-names-go");
+    await until(() => h.toast.mock.calls.length > 0);
+    expect(h.download).toHaveBeenCalledTimes(1);
+  });
+
+  it("projects with no participant list make no question", async () => {
+    twoProjects([]);
+    await render();
+    await click("help-export");
+    await until(() => h.toast.mock.calls.length > 0);
+    expect($("export-names-dialog")).toBeNull();
+    expect(h.download).toHaveBeenCalledTimes(1);
+    expect(h.order).toEqual(["audit", "download"]);
+  });
+
+  it("a second click while that question is open makes no second export", async () => {
+    twoProjects(["p1"]);
+    await render();
+    await click("help-export");
+    await until(() => !!$("export-names-dialog"));
+    await act(async () => { $("help-export")!.click(); $("help-export")!.click(); await new Promise((r) => setTimeout(r, 0)); });
+    await click("export-names-go");
+    await until(() => h.toast.mock.calls.length > 0);
+    await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+    expect(h.download).toHaveBeenCalledTimes(1);
+    expect(calls().filter(([m, p]) => m === "POST" && p === "/me/export-audit")).toHaveLength(1);
   });
 
   it("a second click while the first export waits on the unlock ask makes no second export", async () => {

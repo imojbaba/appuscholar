@@ -188,5 +188,19 @@
   "pp_find_refused": "Could not change “{title}”. It may have been deleted, or it has changes that are not saved yet. Nothing was changed in it.",
   "pp_find_versions": "Earlier saved versions of a document still hold the old text, sealed in your vault.",
   "pp_find_close": "Close",
-  "pp_find_stale": "Nothing to replace there now: the text has changed. The results are fresh again."
+  "pp_find_stale": "Nothing to replace there now: the text has changed. The results are fresh again.",
+  "pp_ai_listed_one": "1 name from your participant list",
+  "pp_ai_listed_many": "{n} names from your participant list",
+  "pp_ai_maybe": "Might be a name:",
+  "pp_ai_mask": "Mask",
+  "pp_ai_leave": "Leave",
+  "pp_ai_word_aria": "What to do with {word}",
+  "pp_ai_mask_note": "Mask turns names on your list into their codes and other names into [name], so the AI's answer still makes sense.",
+  "pp_ai_locked": "Your participant list is locked, so names on it were not checked.",
+  "pp_ai_unlock": "Unlock",
+  "pp_ai_checks": "The check finds email addresses, phone numbers, ID numbers, names on your participant list and common first names. It cannot find every name, so read the text once yourself.",
+  "pp_facts": "{n} participants",
+  "pp_facts_one": "1 participant",
+  "pp_export_names": "This file includes your participant lists, with names. Keep it apart from your data.",
+  "pp_export_go": "Export my work"
 }
