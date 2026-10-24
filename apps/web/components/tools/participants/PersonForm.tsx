@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button";
  * Edit also holds the person's withdrawal (spec §5 "Withdraw", ruling R25b): a date that starts as today, "Remove their data" or "Keep what was collected" (the consent form says which the
  * student may do, and the form says to check it), and, for a person who withdrew, a way to undo it. Withdraw, Save the withdrawal and Undo save what is in the form along with it, so nothing
  * typed is lost; Save (and Enter) of a person who has withdrawn saves the withdrawal box as it stands, so a changed date or choice is kept. The tab does the saving.
+ *
+ * Add checks the name against the list (ruling R53): a name that is already a person's name, or one of their spellings, in any case or spacing, is not added at once. The form says who has it
+ * ("… is already on your list as P001") and offers Add anyway, since two people may share a name (the matcher then asks about it). Edit does not check: a person keeps their own name.
  */
 
 export type PersonValues = {
@@ -55,12 +58,14 @@ function splitSpellings(s: string): string[] {
   return out;
 }
 
-export function PersonForm({ plan, labels, person, nextCode, today, error, onSave, onCancel }: {
+export function PersonForm({ plan, labels, person, people, nextCode, today, error, onSave, onCancel }: {
   plan: ParticipantsPlan;
   /** The headings of the about-them fields, by key (a menu field's translated name, or the student's own label). */
   labels: Record<string, string>;
   /** The person being edited; null for Add. */
   person: Participant | null;
+  /** Everyone on the list: Add says when the typed name is one of theirs. */
+  people: Participant[];
   /** The code the next person gets, said in Add. */
   nextCode: string;
   /** Today as yyyy-mm-dd: the date joined an added person starts with. */
@@ -91,6 +96,8 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
   // The student's own ticks of "also an everyday word", by the spelling's normal form; a spelling not ticked or unticked here follows the default.
   const [marks, setMarks] = useState<Record<string, boolean>>({});
   const [missing, setMissing] = useState(false);
+  // The people who already have the name that was typed when Save was pressed (Add only): the form says so and waits for Add anyway.
+  const [dup, setDup] = useState<{ name: string; codes: string[] } | null>(null);
   const [wOn, setWOn] = useState(person?.withdrawn?.on ?? today);
   const [wData, setWData] = useState<"remove" | "keep">(person?.withdrawn?.data ?? "remove");
 
@@ -99,6 +106,7 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
   const onName = (v: string) => {
     setName(v);
     setMissing(false);
+    setDup(null);
     // The suggestion is for a box the student can see: with spellings not ticked in the plan there is no box, and nothing is suggested.
     if (!touched && plan.spellings) setSpellings(suggestedShortName(v));
   };
@@ -136,7 +144,17 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
     return v;
   };
   // Save keeps what the withdrawal box holds for a person who has withdrawn (a changed date or choice is not lost); for anyone else the box is only a withdrawal once Withdraw is pressed.
-  const submit = () => { const v = collect(); if (v) onSave(v, person?.withdrawn ? { on: wOn || today, data: wData } : undefined); };
+  const submit = () => {
+    const v = collect();
+    if (!v) return;
+    if (!person) {
+      const key = normName(v.name);
+      const have = people.filter((p) => same(p.name, v.name) || p.spellings.some((s) => normName(s) === key));
+      if (have.length) { setDup({ name: v.name, codes: have.map((p) => p.code) }); return; }
+    }
+    onSave(v, person?.withdrawn ? { on: wOn || today, data: wData } : undefined);
+  };
+  const addAnyway = () => { const v = collect(); if (v) { setDup(null); onSave(v); } };
   const withdrawNow = () => { const v = collect(); if (v) onSave(v, { on: wOn || today, data: wData }); };
   const undoNow = () => { const v = collect(); if (v) onSave(v, null); };
 
@@ -242,6 +260,12 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
             {person.withdrawn && <Button type="button" variant="ghost" size="sm" data-testid="pp-unwithdraw" onClick={undoNow}>{t("pp_unwithdraw_btn")}</Button>}
           </div>
         </fieldset>
+      )}
+      {dup && !person && (
+        <div className="mb-0 mt-2" role="alert" data-testid="pp-form-dup">
+          <p className="m-0 text-[13px]" data-testid="pp-form-dup-text">{t("pp_form_dup", { name: dup.name, codes: dup.codes.join(", ") })}</p>
+          <Button type="button" variant="ghost" size="sm" className="mt-1.5" data-testid="pp-form-dup-add" onClick={addAnyway}>{t("pp_form_dup_add")}</Button>
+        </div>
       )}
       {(missing || error) && <p className="mb-0 mt-2 text-[13px] text-danger-ink" role="alert" data-testid="pp-form-error">{missing ? t("pp_form_name_missing") : error}</p>}
       <div className="mt-3 flex flex-wrap gap-2">

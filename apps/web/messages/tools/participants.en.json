@@ -101,6 +101,8 @@
   "pp_form_save_edit": "Save",
   "pp_form_cancel": "Cancel",
   "pp_form_name_missing": "Type their name.",
+  "pp_form_dup": "“{name}” is already on your list as {codes}. Two people can share a name: add anyway only if this is someone else.",
+  "pp_form_dup_add": "Add anyway",
   "pp_paste_label": "Your list",
   "pp_paste_hint": "One person on each line. Put other spellings after a comma, like: Priya Sharma, Priya, प्रिया. A key file from Statistics (appuscholar_key_keep_separate.csv) or a list you downloaded here keeps its codes.",
   "pp_paste_go": "Add these people",

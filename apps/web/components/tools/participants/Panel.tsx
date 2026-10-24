@@ -230,6 +230,7 @@ function Tab({ list, plan, href, saveFailed, readOnly, save, onDestroyedAnonymou
           plan={plan}
           labels={labels}
           person={editing}
+          people={people}
           nextCode={nextCode(list)}
           today={todayIso()}
           error={formError}

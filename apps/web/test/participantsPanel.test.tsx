@@ -429,6 +429,55 @@ describe("Add a person", () => {
     expect(checked("pp-form-everyday-0")).toBe(false);
   });
 
+  it("a name already on the list (any case or spacing, or another person's spelling) is not added at once: the form says who has it and offers Add anyway (R53)", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-add");
+    await type("pp-form-name", "  priya   SHARMA ");
+    await click("pp-form-save");
+    expect(written()).toEqual([]);
+    expect(text("pp-form-dup-text")).toBe("“priya   SHARMA” is already on your list as P001. Two people can share a name: add anyway only if this is someone else.");
+    expect(text("pp-form-dup-add")).toBe("Add anyway");
+    expect($("pp-form")).not.toBeNull();
+    await click("pp-form-dup-add");
+    expect(lastWritten()!.people.at(-1)).toMatchObject({ code: "P006", name: "priya   SHARMA" });
+    expect(lastWritten()!.people).toHaveLength(6);
+    expect($("pp-form")).toBeNull();
+    expect(text("pp-status")).toBe("Added P006.");
+  });
+
+  it("a spelling of somebody counts too, and every person who has the name is named", async () => {
+    seed(PLAN, list([person({ code: "P001", name: "Sam Rao", spellings: ["Sam"] }), person({ code: "P002", name: "Sam Iyer", spellings: ["Sam"] }), person({ code: "P003", name: "Kavya Nair" })]));
+    await mount();
+    await click("pp-add");
+    await type("pp-form-name", "Sam");
+    await click("pp-form-save");
+    expect(text("pp-form-dup-text")).toContain("“Sam” is already on your list as P001, P002.");
+    expect(written()).toEqual([]);
+  });
+
+  it("typing another name takes the notice away, and a new name is added at once as before", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-add");
+    await type("pp-form-name", "Rahul Verma");
+    await click("pp-form-save");
+    expect($("pp-form-dup")).not.toBeNull();
+    await type("pp-form-name", "Rahul Verma Jr");
+    expect($("pp-form-dup")).toBeNull();
+    await click("pp-form-save");
+    expect(lastWritten()!.people.at(-1)).toMatchObject({ code: "P006", name: "Rahul Verma Jr" });
+  });
+
+  it("Edit does not warn: a person keeps their own name, and renaming is the student's", async () => {
+    seed(PLAN);
+    await mount();
+    await click("pp-edit-P001");
+    await click("pp-form-save");
+    expect($("pp-form-dup")).toBeNull();
+    expect(text("pp-status")).toBe("Saved P001.");
+  });
+
   it("a Hindi word that English writing uses as a name (Seema) is not pre-marked, so she is found in any case and replaced (R50)", async () => {
     seed(PLAN);
     await mount();
