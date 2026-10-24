@@ -179,13 +179,49 @@ describe("the fake AI provider", () => {
     const typo = await ask(shim, "gsk_qa_fail999_a", STATS_PROMPT);
     expect(typo.status).toBe(400);
     expect(await typo.text()).toMatch(/^QA: .*fail999/);
-    // A provider address the api does not use, and a body that is not a chat request.
-    expect((await ask(shim, "gsk_qa_ok_a", STATS_PROMPT, "https://api.groq.com/openai/v1/models")).status).toBe(400);
-    expect((await shim(GROQ, { method: "POST", headers: { Authorization: "Bearer gsk_qa_ok_a" }, body: "not json" })).status).toBe(400);
+    // A provider address the api does not use, and a body that is not a chat request: told apart from "no recorded reply", which is a prompt problem.
+    const models = await ask(shim, "gsk_qa_ok_a", STATS_PROMPT, "https://api.groq.com/openai/v1/models");
+    expect(models.status).toBe(400);
+    expect(await models.text()).toMatch(/^QA: .* got POST api\.groq\.com\/openai\/v1\/models$/);
+    const notJson = await shim(GROQ, { method: "POST", headers: { Authorization: "Bearer gsk_qa_ok_a" }, body: "not json" });
+    expect(notJson.status).toBe(400);
+    expect(await notJson.text()).toMatch(/^QA: .*messages\[0\]\.content/);
     expect(original).not.toHaveBeenCalled();
+    // None of the four is "unknown" (that is only for a prompt with no recorded reply).
+    expect(log.map((e) => e.outcome)).toEqual(["failed", "failed", "failed", "failed"]);
     // The log never holds what looks like a real key.
     expect(JSON.stringify(log)).not.toContain("sk-live");
-    expect(log.every((e) => e.outcome !== "answered")).toBe(true);
+  });
+
+  it("refuses Gemini and Anthropic here: 400, logged as refused, and never passed on", async () => {
+    const { shim, original, log } = setup();
+    const gemini = await shim("https://generativelanguage.googleapis.com/v1beta/models/gemini-x:generateContent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": "gsk_qa_ok_g1" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: STATS_PROMPT }] }], generationConfig: { temperature: 0 } })
+    });
+    expect(gemini.status).toBe(400);
+    expect(await gemini.text()).toBe("QA: provider not faked: generativelanguage.googleapis.com");
+    const anthropic = await shim("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": "gsk_qa_ok_a1", "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: "claude-x", max_tokens: 20, messages: [{ role: "user", content: STATS_PROMPT }] })
+    });
+    expect(anthropic.status).toBe(400);
+    expect(await anthropic.text()).toBe("QA: provider not faked: api.anthropic.com");
+    // A key that is not a test key is kept out of the log here too, and a request whose body cannot be read is refused all the same.
+    const real = await shim("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": "sk-ant-live-0123456789" }, body: "not json" });
+    expect(real.status).toBe(400);
+    expect(original).not.toHaveBeenCalled();
+    expect(log.map((e) => [e.host, e.key, e.outcome])).toEqual([
+      ["generativelanguage.googleapis.com", "gsk_qa_ok_g1", "refused"],
+      ["api.anthropic.com", "gsk_qa_ok_a1", "refused"],
+      ["api.anthropic.com", "<not a QA key>", "refused"]
+    ]);
+    // The log still says which feature reached them.
+    expect(log[0]).toMatchObject({ prompt: STATS_PROMPT, kind: classifyAiUse(STATS_PROMPT)?.k });
+    expect(log[1]).toMatchObject({ prompt: STATS_PROMPT });
+    expect(JSON.stringify(log)).not.toContain("sk-ant");
   });
 
   it("accepts the other shapes fetch takes: a URL, and a Request", async () => {

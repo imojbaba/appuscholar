@@ -10,9 +10,14 @@
  * @property {string} key The API key it carried (a `gsk_qa_<mode>_<random>` test key; "<not a QA key>" for anything else, which is never written down).
  * @property {string} mode What the key asked for: ok, fail429, fail401, fail500, nonet, empty, slow<ms>, failonce; "invalid" for a key that is not a test key.
  * @property {string} host The provider address the request went to.
- * @property {string | null} kind The AI-use kind of the prompt, as the API logs it (`classifyAiUse(prompt)?.k`); null for the Appu help assistant.
- * @property {string} prompt The full prompt (`messages[0].content`), as the provider received it: the content-language line the API adds is included.
- * @property {"answered" | "failed" | "unknown"} outcome answered: text was given back. failed: the key's mode failed it (or empty/refused). unknown: no recorded reply.
+ * @property {string | null} kind The AI-use kind of the prompt, as the API logs it (`classifyAiUse(prompt)?.k`); null for the Appu help assistant or when no prompt could be read.
+ * @property {string} prompt The full prompt (`messages[0].content`), as the provider received it: the content-language line the API adds is included. Empty when none could be read.
+ * @property {"answered" | "failed" | "unknown" | "refused"} outcome
+ *   answered: text was given back.
+ *   failed: the key's mode failed it, `empty` gave no text, or the shim could not take the request (a key that is not a test key, a mode that does not exist, a path that is
+ *     not /chat/completions, a body that is not a chat request); the answer then says which.
+ *   unknown: the request was fine and no recorded reply fits the prompt (and only that).
+ *   refused: the request went to a provider the shim does not fake (Gemini, Anthropic). It was answered 400 here and not sent on.
  */
 
 /**
@@ -30,6 +35,11 @@
 
 /** The addresses apps/api/src/ai/providers/openaiCompat.ts posts to (its URLS table); all four end in /chat/completions. */
 const PROVIDER_HOSTS = new Set(["api.groq.com", "api.openai.com", "api.deepseek.com", "openrouter.ai"]);
+/**
+ * The other providers the API can call: Gemini (apps/api/src/ai/providers/gemini.ts, through the fetch given to the gateway) and Anthropic (the SDK, which uses the global
+ * fetch). They are not faked, and the QA keys must not reach them, so a request to one is answered 400 here ("refused") and never sent on. Cases choose Groq.
+ */
+const REFUSED_HOSTS = new Set(["generativelanguage.googleapis.com", "api.anthropic.com"]);
 /** The key: gsk_qa_<mode>_<random>. */
 const KEY = /^gsk_qa_([a-z0-9]+)_(.+)$/;
 const FIXED_MODES = new Set(["ok", "fail429", "fail401", "fail500", "nonet", "empty", "failonce"]);
@@ -115,7 +125,8 @@ function urlOf(input) {
  *   slow<ms>   the recorded reply after that many milliseconds (slow8000);
  *   failonce   the first request with this key answers 429, the later ones answer (the count is per key, and per shim).
  * A prompt no recorded reply fits is answered 400 `QA: no recorded reply for: <its first 120 characters>`, which the API shows as the provider's error.
- * A request to a provider address that is not a usable chat request, or whose key is not a test key, is refused the same way: such a request is never passed on.
+ * A request to one of those addresses that is not a usable chat request, or whose key is not a test key, is answered 400 with a message that says why (`failed`).
+ * A request to Gemini or Anthropic, which are not faked, is answered 400 `QA: provider not faked: <host>` (`refused`). Neither kind is ever passed on.
  *
  * @param {typeof fetch} original
  * @param {ShimOptions} o
@@ -137,12 +148,14 @@ export function createShimFetch(original, o) {
     } catch {
       return original(input, init);
     }
-    if (!PROVIDER_HOSTS.has(url.hostname)) return original(input, init);
+    const host = url.hostname;
+    const faked = PROVIDER_HOSTS.has(host);
+    if (!faked && !REFUSED_HOSTS.has(host)) return original(input, init);
 
     // Past this point nothing goes to `original`: a provider address is only ever answered here.
-    const host = url.hostname;
     const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-    const bearer = /^Bearer\s+(.+)$/i.exec(headers.get("authorization") ?? "")?.[1]?.trim() ?? "";
+    // Groq, OpenAI, DeepSeek and OpenRouter send the key as a Bearer token; Anthropic as x-api-key, Gemini as x-goog-api-key.
+    const bearer = (/^Bearer\s+(.+)$/i.exec(headers.get("authorization") ?? "")?.[1] ?? headers.get("x-api-key") ?? headers.get("x-goog-api-key") ?? "").trim();
     const keyMatch = KEY.exec(bearer);
     const mode = keyMatch ? /** @type {string} */ (keyMatch[1]) : "invalid";
     const slowMs = /^slow(\d+)$/.exec(mode)?.[1];
@@ -153,7 +166,13 @@ export function createShimFetch(original, o) {
     try {
       const raw = init?.body !== undefined ? init.body : input instanceof Request ? await input.clone().text() : undefined;
       const body = JSON.parse(typeof raw === "string" ? raw : "");
-      if (typeof body?.messages?.[0]?.content === "string") prompt = body.messages[0].content;
+      if (faked) {
+        if (typeof body?.messages?.[0]?.content === "string") prompt = body.messages[0].content;
+      } else {
+        // Only to say, in the log, which feature reached a provider that is not faked: Anthropic's messages[0].content, Gemini's contents[0].parts[0].text.
+        const asked = body?.messages?.[0]?.content ?? body?.contents?.[0]?.parts?.[0]?.text;
+        if (typeof asked === "string") prompt = asked;
+      }
       if (typeof body?.model === "string") model = body.model;
     } catch {
       // Not JSON: handled below, as a request with no prompt.
@@ -163,8 +182,9 @@ export function createShimFetch(original, o) {
     const entry = { t: Date.now(), key: keyMatch ? bearer : "<not a QA key>", mode, host, kind: prompt ? classifyKind(prompt) : null, prompt, outcome: "failed" };
     const refuse = (status, message, outcome) => { entry.outcome = outcome; o.log(entry); return text(status, message); };
 
+    if (!faked) return refuse(400, "QA: provider not faked: " + host, "refused");
     if (!url.pathname.endsWith("/chat/completions") || !prompt) {
-      return refuse(400, `QA: the fake provider answers chat completions with a prompt in messages[0].content; got ${init?.method ?? "GET"} ${host}${url.pathname}`, "unknown");
+      return refuse(400, `QA: the fake provider answers chat completions with a prompt in messages[0].content; got ${init?.method ?? "GET"} ${host}${url.pathname}`, "failed");
     }
     if (!keyMatch) {
       return refuse(400, "QA: the API key is not a gsk_qa_<mode>_<random> test key. The fake provider answers test keys only and never passes a request on to the real provider.", "failed");

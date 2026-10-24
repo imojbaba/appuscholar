@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { buildWritingPrompt, classifyAiUse } from "@appuscholar/core";
-import type { ShimLogEntry } from "../provider-shim/core.mjs";
-import { QA_API_ORIGIN, QA_PROVIDER_LOG } from "../support/origins";
+import { QA_API_ORIGIN } from "../support/origins";
+import { readProviderLog, type ShimLogEntry } from "../support/providerLog";
 import { signInAs } from "../support/session";
 
 /**
@@ -18,16 +18,8 @@ const IMPROVED = (JSON.parse(readFileSync(path.join(__dirname, "../fixtures/ai-r
 /** A key of its own for each request: nothing is shared between cases, and a failonce count is per key. */
 const key = (mode: string) => `gsk_qa_${mode}_${randomUUID().slice(0, 8)}`;
 
-/** The calls the provider received with this key: the JSON lines of QA_PROVIDER_LOG (the shim writes each one before the API gets its answer). */
-function callsFor(apiKey: string): ShimLogEntry[] {
-  let text: string;
-  try {
-    text = readFileSync(QA_PROVIDER_LOG, "utf8");
-  } catch {
-    return [];
-  }
-  return text.split("\n").filter(Boolean).map((l) => JSON.parse(l) as ShimLogEntry).filter((e) => e.key === apiKey);
-}
+/** The calls the provider received with this key (the shim writes each one before the API gets its answer). */
+const callsFor = (apiKey: string): ShimLogEntry[] => readProviderLog().filter((e) => e.key === apiKey);
 
 test("provider: the api's AI route meets the fake provider", { tag: ["@selftest", "@slice"] }, async ({ page, context }) => {
   await signInAs(context);
@@ -104,6 +96,19 @@ test("provider: the api's AI route meets the fake provider", { tag: ["@selftest"
     expect(r.body.error).toBe("provider-error");
     expect(r.body.detail).toContain("QA: no recorded reply for: " + prompt);
     expect(callsFor(k).map((c) => c.outcome)).toEqual(["unknown"]);
+  });
+
+  await test.step("Gemini and Anthropic are not faked: refused here, and the key goes nowhere", async () => {
+    // Gemini is the app's default provider. The api tries its fallback models after a 400, so it may ask more than once; every request is refused.
+    for (const [provider, host] of [["gemini", "generativelanguage.googleapis.com"], ["claude", "api.anthropic.com"]] as const) {
+      const k = key("ok");
+      const r = await page.request.post(QA_API_ORIGIN + "/ai/complete", { headers, data: { provider, apiKey: k, prompt: PROMPT, day } });
+      expect({ provider, status: r.status() }).toEqual({ provider, status: 502 });
+      expect(((await r.json()) as { error: string }).error).toBe("provider-error");
+      const calls = callsFor(k);
+      expect(calls.length, provider).toBeGreaterThan(0);
+      expect(calls.every((c) => c.host === host && c.outcome === "refused" && c.kind === KIND && c.prompt === PROMPT)).toBe(true);
+    }
   });
 
   await test.step("test my key: the key test prompt is answered, and a rejected key is told", async () => {
