@@ -32,7 +32,20 @@ const h = vi.hoisted(() => ({
   prompts: [] as string[],
   /** The options each Explain request went out with. */
   opts: [] as unknown[],
-  forces: new Set<() => void>()
+  forces: new Set<() => void>(),
+  /** The kinds the project's blob listing holds (GET /projects/:id/blobs); "fail" is a listing that cannot be read. While `listGate` is set the listing waits for it. */
+  listing: [] as string[] | "fail",
+  listGate: null as Promise<void> | null,
+  listCalls: 0
+}));
+vi.mock("@/lib/blobs/listing", async (orig) => ({
+  ...(await orig<typeof import("@/lib/blobs/listing")>()),
+  listProjectBlobs: async () => {
+    h.listCalls++;
+    if (h.listGate) await h.listGate;
+    if (h.listing === "fail") throw new Error("listing failed");
+    return h.listing.map((kind) => ({ kind, keyVersion: 1, updatedAt: "2026-10-24T00:00:00Z" }));
+  }
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download, safeFileName: (s: string) => s }));
@@ -169,7 +182,7 @@ beforeEach(() => {
   for (const k of Object.keys(h.store)) delete h.store[k];
   for (const k of Object.keys(h.loading)) delete h.loading[k];
   h.writes.length = 0; h.prompts.length = 0; h.opts.length = 0;
-  h.vault = "unlocked"; h.flushOk = true; h.gate = null;
+  h.vault = "unlocked"; h.flushOk = true; h.gate = null; h.listing = []; h.listGate = null; h.listCalls = 0;
   for (const k of Object.keys(h.error)) delete h.error[k];
   h.toast.mockClear(); h.download.mockClear(); h.askPd.mockReset(); h.askPd.mockResolvedValue({ answer: "mask", leave: [] });
   vi.spyOn(window, "confirm").mockImplementation(h.confirm);
@@ -692,11 +705,14 @@ describe("without a list the box is v1's, and says why", () => {
     expect(h.download).toHaveBeenCalledTimes(1);
   });
 
-  it("a locked vault, or a list that is not read yet: v1's box, and the line says the list was not used", async () => {
+  it("a locked vault with no participant list in the project: v1's box as it was, and the line does not claim a list exists (R51)", async () => {
     h.vault = "locked";
+    h.listing = ["design_ec", "stats_prefs"];
     await load(PEOPLE);
     expect(sel("pd-sel-0").value).toBe("code");
-    expect(text("pd-why")).toBe(E.stats_pd_why_locked);
+    expect(text("pd-why")).toBe(E.stats_pd_why_locked_none);
+    // It says the vault is locked and that no list was used; it does not call a list "yours" or ask for an unlock.
+    expect(text("pd-why")).not.toMatch(/your participant list|unlock/i);
   });
 
   it("the list is read after the table was parsed: the box then uses it", async () => {
@@ -734,6 +750,140 @@ describe("without a list the box is v1's, and says why", () => {
     expect(sel("pd-sel-0").value).toBe("remove");
     expect(text("pd-col-0")).toContain(E.stats_pd_anonymous);
     expect(sel("pd-sel-1").value).toBe("remove");
+  });
+});
+
+// ---- A list that is loading or locked (R51) --------------------------------------------------------------------------------------------------------
+
+describe("a participant list that is still being read, or locked, is never coded against with fresh codes (R51)", () => {
+  const optionOf = (id: string, value: string) => [...sel(id).options].find((o) => o.value === value);
+  const values = (id: string) => [...sel(id).options].map((o) => o.value);
+  const pasted = () => (tid("stats-paste") as HTMLTextAreaElement).value;
+  const ROLLS = "roll no,score\nR101,5\nR102,6\nR103,7\nR104,8";
+
+  it("while the list is being read, Replace with a code is off for the names until the read answers, and Apply makes no fresh codes", async () => {
+    h.store.participants = MOCK_LIST();
+    h.loading.participants = true;
+    await load(PEOPLE);
+    expect(text("pd-why")).toBe(E.stats_pd_why_loading);
+    expect(values("pd-sel-0")).toEqual(["remove", "code", "keep"]);
+    expect(optionOf("pd-sel-0", "code")!.disabled).toBe(true);
+    expect(sel("pd-sel-0").value).not.toBe("code");
+    // The phone column is not a name: v1's choices are as they were.
+    expect(optionOf("pd-sel-1", "code")!.disabled).toBe(false);
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(pasted().split("\n")[0]).not.toContain("ParticipantCode");
+    expect(pasted()).not.toMatch(/P00\d/);
+    expect(h.download).not.toHaveBeenCalled();
+  });
+
+  it("a roll column is not coded with fresh codes either while the list is being read", async () => {
+    h.store.participants = MOCK_LIST();
+    h.loading.participants = true;
+    await load(ROLLS);
+    expect(optionOf("pd-sel-0", "code")!.disabled).toBe(true);
+    expect(sel("pd-sel-0").value).not.toBe("code");
+  });
+
+  it("when the read answers, the box is the list's and codes are offered again", async () => {
+    h.store.participants = MOCK_LIST();
+    h.loading.participants = true;
+    await load(MOCK);
+    expect(optionOf("pd-sel-0", "code")!.disabled).toBe(true);
+    h.loading.participants = false;
+    await rerender();
+    await until(() => tid("pd-list-0") !== null);
+    expect(sel("pd-sel-0").value).toBe("code");
+    expect(optionOf("pd-sel-0", "code")!.disabled).toBe(false);
+  });
+
+  it("locked, and the project's blob listing holds a participant list: the box says it is locked and to unlock, offers Remove and Keep for names, and never makes fresh codes", async () => {
+    h.vault = "locked";
+    h.listing = ["design_ec", "participants"];
+    await load(PEOPLE);
+    expect(h.listCalls).toBeGreaterThan(0);
+    expect(text("pd-why")).toBe(E.stats_pd_why_locked);
+    expect(E.stats_pd_why_locked).toMatch(/locked/);
+    expect(E.stats_pd_why_locked).toMatch(/[Uu]nlock/);
+    expect(values("pd-sel-0")).toEqual(["remove", "keep"]);
+    expect(sel("pd-sel-0").value).toBe("remove");
+    // Other columns are v1's.
+    expect(values("pd-sel-1")).toEqual(["remove", "code", "keep"]);
+    await choose("pd-sel-0", "keep");
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(pasted().split("\n")[0]).toBe("name,site,score");
+    expect(pasted()).not.toMatch(/P00\d/);
+    expect(h.download).not.toHaveBeenCalled();
+  });
+
+  it("locked with a list, a column the student never touched is not coded by Apply either: it is removed, as it is shown", async () => {
+    h.vault = "locked";
+    h.listing = ["participants"];
+    await load(PEOPLE);
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(pasted().split("\n")[0]).toBe("site,score");
+    expect(h.download).not.toHaveBeenCalled();
+  });
+
+  it("locked with a list: a roll column has Remove and Keep only", async () => {
+    h.vault = "locked";
+    h.listing = ["participants"];
+    await load(ROLLS);
+    expect(values("pd-sel-0")).toEqual(["remove", "keep"]);
+  });
+
+  it("locked with no participant list: v1's behaviour, fresh codes and the key file, and a line that does not say a list exists", async () => {
+    h.vault = "locked";
+    h.listing = ["design_ec"];
+    await load(PEOPLE);
+    expect(values("pd-sel-0")).toEqual(["remove", "code", "keep"]);
+    expect(sel("pd-sel-0").value).toBe("code");
+    expect(text("pd-why")).toBe(E.stats_pd_why_locked_none);
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(pasted().split("\n")[0]).toBe("ParticipantCode,site,score");
+    expect(h.download).toHaveBeenCalledTimes(1);
+  });
+
+  it("a listing that cannot be read says nothing is locked (there is no way to tell): v1's box", async () => {
+    h.vault = "locked";
+    h.listing = "fail";
+    await load(PEOPLE);
+    await until(() => tid("pd-why") !== null && text("pd-why") === E.stats_pd_why_locked_none);
+    expect(sel("pd-sel-0").value).toBe("code");
+  });
+
+  it("until the listing answers, codes are off as they are while a list is read; the answer then settles the box", async () => {
+    h.vault = "locked";
+    h.listing = ["participants"];
+    let open!: () => void;
+    h.listGate = new Promise<void>((r) => { open = r; });
+    await load(PEOPLE);
+    expect(optionOf("pd-sel-0", "code")!.disabled).toBe(true);
+    expect(sel("pd-sel-0").value).not.toBe("code");
+    open();
+    await until(() => text("pd-why") === E.stats_pd_why_locked);
+    expect(values("pd-sel-0")).toEqual(["remove", "keep"]);
+  });
+
+  it("the listing is asked only when the vault is locked", async () => {
+    h.store.participants = MOCK_LIST();
+    await load(MOCK);
+    expect(h.listCalls).toBe(0);
+    h.vault = "off";
+    await rerender();
+    expect(h.listCalls).toBe(0);
+  });
+
+  it("an anonymous plan with no list expected says nothing about a locked vault with none", async () => {
+    h.vault = "locked";
+    h.listing = [];
+    h.store.design_ec = { idMode: "anonymous" };
+    await load(PEOPLE);
+    expect(tid("pd-why")).toBeNull();
   });
 });
 
@@ -1016,6 +1166,7 @@ describe("under an anonymous plan (R39)", () => {
 
   it("a locked list is still said, without advice about codes", async () => {
     h.vault = "locked";
+    h.listing = ["participants"];
     h.store.design_ec = { idMode: "anonymous" };
     await load(PEOPLE);
     expect(text("pd-why")).toBe(E.stats_pd_why_locked_anon);

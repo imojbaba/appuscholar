@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { hasParticipantsBlob, listProjectBlobs } from "@/lib/blobs/listing";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
 import { todayIso } from "@/lib/tools/participants/dates";
@@ -43,9 +44,20 @@ export function useLabActions(projectId: string) {
   const participants = useParticipants(projectId);
   const ec = useProjectBlob("design_ec", pid);
   const mode = planOf(ec.value).mode;
+  // With the vault locked the list cannot be read, but the project's blob listing says whether there is one (R41, R51; the same listing the AI request reads). A listing that cannot be read says there
+  // is none: there is no way to tell, so nothing is said to be locked.
+  const locked = participants.state === "locked";
+  const [listing, setListing] = useState<{ projectId: string; has: boolean } | null>(null);
   useEffect(() => {
-    setPdContext(projectId, { list: participants.list, state: participants.state, mode, saveFailed: participants.saveFailed });
-  }, [projectId, participants.list, participants.state, participants.saveFailed, mode]);
+    if (!locked || !pid) return;
+    let live = true;
+    listProjectBlobs(pid).then((l) => { if (live) setListing({ projectId: pid, has: hasParticipantsBlob(l) }); }, () => { if (live) setListing({ projectId: pid, has: false }); });
+    return () => { live = false; setListing(null); };
+  }, [locked, pid]);
+  const listLocked = locked && listing?.projectId === pid ? listing.has : undefined;
+  useEffect(() => {
+    setPdContext(projectId, { list: participants.list, state: participants.state, mode, saveFailed: participants.saveFailed, listLocked });
+  }, [projectId, participants.list, participants.state, participants.saveFailed, mode, listLocked]);
   useEffect(() => () => setPdContext(projectId, NO_CONTEXT), [projectId]);
   const saveNowRef = useRef(participants.saveNow);
   useEffect(() => { saveNowRef.current = participants.saveNow; });

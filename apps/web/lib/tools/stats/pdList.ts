@@ -31,15 +31,25 @@ import type { ParticipantsState } from "@/lib/tools/participants/useParticipants
  * What the box knows of the participant list: the list when it is read, the hook's state, whether its last save failed (the list shown is then the student's held copy, not what is stored: R38),
  * and the identification plan's mode.
  */
-export type PdContext = { list: ParticipantList | null; state: ParticipantsState; mode: IdMode | null; saveFailed: boolean };
+export type PdContext = {
+  list: ParticipantList | null; state: ParticipantsState; mode: IdMode | null; saveFailed: boolean;
+  /**
+   * With the vault locked: whether the project's blob listing holds a `participants` blob (R51), so a list exists that could not be read. false: it does not, or the listing could not be read
+   * (there is no way to tell, so nothing is said to be locked: R41); undefined: the listing has not answered yet. Not read in any other state.
+   */
+  listLocked?: boolean;
+};
 export const NO_CONTEXT: PdContext = { list: null, state: "loading", mode: null, saveFailed: false };
 
-/** Why the list is not used: the vault is off or locked, the list is still being read or cannot be read, its last save failed, or nobody is on it. */
-export type NotUsed = "off" | "locked" | "loading" | "unreadable" | "unsaved" | "empty";
+/**
+ * Why the list is not used: the vault is off, or locked (`locked`: the project has a list that could not be read; `lockedNone`: it has none), the list is still being read (or, with the vault
+ * locked, the listing that says whether there is one), or cannot be read, its last save failed, or nobody is on it.
+ */
+export type NotUsed = "off" | "locked" | "lockedNone" | "loading" | "unreadable" | "unsaved" | "empty";
 export function listNotUsed(ctx: PdContext): NotUsed | null {
   switch (ctx.state) {
     case "off": return "off";
-    case "locked": return "locked";
+    case "locked": return ctx.listLocked === undefined ? "loading" : ctx.listLocked ? "locked" : "lockedNone";
     case "loading": return "loading";
     case "broken":
     case "error": return "unreadable";
@@ -47,6 +57,18 @@ export function listNotUsed(ctx: PdContext): NotUsed | null {
   }
 }
 export const listInUse = (ctx: PdContext): boolean => listNotUsed(ctx) === null;
+
+/**
+ * v1's fresh codes (P001, P002 ...) are never made for a name or roll column while the list is being read, or while it is locked and the project has one (R51): they would clash with the
+ * codes on the list. With no list at all they are v1's as ever.
+ */
+export const freshCodesBlocked = (kind: PdFound["kind"], why: NotUsed | null): boolean => (why === "loading" || why === "locked") && (kind === "name" || kind === "roll");
+
+/** The select of a column of v1's box as it is shown and as Apply takes it: what the student chose (or the start), except that a code the box may not make is Remove. */
+export function v1Choice(f: PdFound, chosen: ColAction | undefined, anonymous: boolean, why: NotUsed | null): ColAction {
+  const c = chosen ?? startChoice(f, anonymous);
+  return c === "code" && freshCodesBlocked(f.kind, why) ? "remove" : c;
+}
 
 /** A column's select: Choose… is "", Not names is "notnames" (both are Keep when Apply runs). v1's `lab.choices` hold these too. */
 export type ColAction = "" | "code" | "remove" | "keep" | "notnames";

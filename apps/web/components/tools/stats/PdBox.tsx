@@ -5,7 +5,7 @@ import type { PdFound } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { dmy, todayIso } from "@/lib/tools/participants/dates";
 import { setChoice, setListChoice, useLab, type PdResult } from "@/lib/tools/stats/lab";
-import { choiceKey, listNotUsed, startChoice, viewOf, type ColAction, type ColView, type NotUsed } from "@/lib/tools/stats/pdList";
+import { choiceKey, freshCodesBlocked, listNotUsed, v1Choice, viewOf, type ColAction, type ColView, type NotUsed } from "@/lib/tools/stats/pdList";
 import type { LabActions } from "@/lib/tools/stats/useLabActions";
 import { Button } from "@/components/ui/button";
 
@@ -39,10 +39,10 @@ function shortList(t: T, names: string[], max: number): string {
   return names.length <= max ? names.join(", ") : names.slice(0, max).join(", ") + " " + t("stats_pd_more", { n: names.length - max });
 }
 
-function Pick({ id, label, by, value, options, onChange }: { id: string; label?: string; by?: string; value: string; options: Array<[string, string]>; onChange: (v: string) => void }) {
+function Pick({ id, label, by, value, options, off, onChange }: { id: string; label?: string; by?: string; value: string; options: Array<[string, string]>; off?: string; onChange: (v: string) => void }) {
   return (
     <select className="input" style={{ width: "auto", minWidth: 150 }} data-testid={id} aria-label={label} aria-labelledby={by} value={value} onChange={(e) => onChange(e.target.value)}>
-      {options.map(([v, text]) => <option key={v} value={v}>{text}</option>)}
+      {options.map(([v, text]) => <option key={v} value={v} disabled={v === off}>{text}</option>)}
     </select>
   );
 }
@@ -69,13 +69,16 @@ const actionText = (t: T, a: ColAction, fromList: boolean): string => {
 };
 
 /** v1's rows for a flagged column: what the scan thinks the column is, with its select. A column only the values call names starts at Choose… and has Not names; an anonymous plan starts names at Remove. */
-function V1Row({ projectId, f, value, anonymous }: { projectId: string; f: PdFound; value: ColAction; anonymous: boolean }) {
+function V1Row({ projectId, f, value, anonymous, why }: { projectId: string; f: PdFound; value: ColAction; anonymous: boolean; why: NotUsed | null }) {
   const t = useT();
   const guess = f.kind === "name" && f.why === "values";
-  const options: ColAction[] = guess ? ["", "remove", "code", "keep", "notnames"] : ["remove", "code", "keep"];
+  // The list is being read: Replace with a code waits for the answer (greyed). The list is locked and the project has one: it is not offered at all (R51).
+  const blocked = freshCodesBlocked(f.kind, why);
+  const all: ColAction[] = guess ? ["", "remove", "code", "keep", "notnames"] : ["remove", "code", "keep"];
+  const options = blocked && why === "locked" ? all.filter((a) => a !== "code") : all;
   return (
     <div data-testid={`pd-col-${f.index}`}>
-      <Line pick={() => <Pick id={"pd-sel-" + f.index} label={t("stats_pd_select_aria", { name: f.name })} value={value} options={options.map((a) => [a, actionText(t, a, false)])} onChange={(v) => setChoice(projectId, f.index, v as ColAction)} />}>
+      <Line pick={() => <Pick id={"pd-sel-" + f.index} label={t("stats_pd_select_aria", { name: f.name })} value={value} off={blocked ? "code" : undefined} options={options.map((a) => [a, actionText(t, a, false)])} onChange={(v) => setChoice(projectId, f.index, v as ColAction)} />}>
         <b>{f.name}</b> {t(guess ? "stats_pd_label_name_values" : "stats_pd_label_" + f.kind)}
       </Line>
       {anonymous && f.kind === "name" && <p className="ap-small" style={{ margin: "2px 0 6px 14px" }} data-testid={`pd-anon-${f.index}`}>{t("stats_pd_anonymous")}</p>}
@@ -210,12 +213,12 @@ const hasWords = (c: ColView): boolean =>
 
 /** Why the box is v1's, in one line. */
 const WHY: Record<NotUsed, string> = {
-  off: "stats_pd_why_off", locked: "stats_pd_why_locked", loading: "stats_pd_why_loading", unreadable: "stats_pd_why_unreadable", unsaved: "stats_pd_why_unsaved", empty: "stats_pd_why_empty"
+  off: "stats_pd_why_off", locked: "stats_pd_why_locked", lockedNone: "stats_pd_why_locked_none", loading: "stats_pd_why_loading", unreadable: "stats_pd_why_unreadable", unsaved: "stats_pd_why_unsaved", empty: "stats_pd_why_empty"
 };
 /** Under an anonymous plan no list is expected: the line says only what is wrong with a list that is there, and gives no advice about setting up a vault or adding participants (R39e). */
 const whyKey = (why: NotUsed, anonymous: boolean): string | null => {
   if (!anonymous) return WHY[why];
-  return why === "locked" ? "stats_pd_why_locked_anon" : why === "unreadable" || why === "unsaved" ? WHY[why] : null;
+  return why === "locked" ? "stats_pd_why_locked_anon" : why === "unreadable" || why === "unsaved" ? WHY[why] : null; // a locked vault with no list in the project is not a thing to say under an anonymous plan
 };
 
 /**
@@ -268,7 +271,7 @@ export function PdBox({ projectId, actions }: { projectId: string; actions: LabA
             ? shown.map((c) => (c.role === "other" && c.found
               ? <OtherRow key={c.index} projectId={projectId} c={c} f={c.found} />
               : <ListColumn key={c.index} projectId={projectId} c={c} />))
-            : found.map((f) => <V1Row key={f.index} projectId={projectId} f={f} value={lab.choices[f.index] ?? startChoice(f, anonymous)} anonymous={anonymous} />)}
+            : found.map((f) => <V1Row key={f.index} projectId={projectId} f={f} value={v1Choice(f, lab.choices[f.index], anonymous, why)} anonymous={anonymous} why={why} />)}
           {view && view.adds.length > 0 && (
             <p className="ap-box" style={{ marginTop: 8 }} data-testid="pd-will-add">
               {view.adds.length === 1

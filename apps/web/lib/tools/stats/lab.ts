@@ -5,7 +5,7 @@ import type { ParticipantList } from "@/lib/blobs/kinds/participants";
 import { addNotName, addPeople } from "@/lib/tools/participants/list";
 import type { ChartSpec } from "./resultChart";
 import { looksSemicolon, NO_SKIPPED, parseSliced, scanNamesSliced, scanSliced, semicolonsToTabs, skippedLines, type SliceOpts, type Skipped } from "./intake";
-import { listNotUsed, makePlan, NO_CHOICES, NO_CONTEXT, startChoice, viewOf, type ColAction, type ListChoices, type PdContext } from "./pdList";
+import { listNotUsed, makePlan, NO_CHOICES, NO_CONTEXT, startChoice, v1Choice, viewOf, type ColAction, type ListChoices, type PdContext } from "./pdList";
 
 /*
  * The Statistics lab's memory (ledger ruling R1): the pasted text, the dataset name, the parsed table, the personal-data scan and the student's
@@ -237,7 +237,7 @@ export async function rescanNames(projectId: string, opts: SliceOpts = {}): Prom
  */
 export function setPdContext(projectId: string, next: PdContext): void {
   const prev = getLab(projectId).ctx;
-  if (prev.list === next.list && prev.state === next.state && prev.mode === next.mode && prev.saveFailed === next.saveFailed) return;
+  if (prev.list === next.list && prev.state === next.state && prev.mode === next.mode && prev.saveFailed === next.saveFailed && prev.listLocked === next.listLocked) return;
   patchLab(projectId, { ctx: next });
   const lab = getLab(projectId);
   const was = prev.mode === "anonymous";
@@ -275,7 +275,8 @@ export async function applyPd(projectId: string, opts: SliceOpts = {}, io?: Appl
   }
   const choices: Record<number, PdChoice> = {};
   for (const f of lab.scan.found) {
-    const c = lab.choices[f.index] ?? "keep";
+    // As the box shows it: a code the box may not make (the list is being read, or locked with a list in the project: R51) is Remove.
+    const c = v1Choice(f, lab.choices[f.index] ?? "keep", lab.ctx.mode === "anonymous", why);
     choices[f.index] = c === "" || c === "notnames" ? "keep" : c;
   }
   const r = pdTransform(lab.data, choices);
