@@ -280,3 +280,4 @@ Task 23: nit (deferred): CrossCheckDialog's label and className defaults are dea
 Task 23: nit (deferred): useLibrary's `known` stays null after a write that changes nothing (only reachable from Task 18's lost-409 nit).
 For Task 35: the caret chip's v1 key cit_caret_chip says "show in Citation Manager", a name no longer on screen.
 Task 23 fix round dispatched (wt-t23).
+Task 20: implemented 754daf4 on wave-b2-t20 (from the Task 23 branch; web 2383 pass, core 8031, golden 7708, typecheck, lint, i18n clean, per the implementer). Review running.
