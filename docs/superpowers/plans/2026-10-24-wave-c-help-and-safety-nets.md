@@ -30,7 +30,7 @@
 3. **A wrong passphrase on a locked backup** says so without crashing or leaving a half-restored project, and the passphrase is never stored. Tests in C6 and C7.
 4. **A problem report must carry no document text, source, data, key or unmasked email/phone,** even when an error message contains them. Test in C4 ("an error message with an email address and a phone number is masked; the report holds no text from the open document").
 5. **Dark theme must keep text readable everywhere the light theme is:** every page, dialog and the editor's paper stay legible; contrast of body text and the primary button at least 4.5:1 in both themes. Test in C9 (token contrast check, plus screenshots at 1440 and 375 px).
-6. **Guide search and print with 26 sections:** an empty query shows all; a stemmed query ("consents") finds "consent"; print opens every section; a section's HTML cannot run script (rendered through `sanitizeHtml`). Tests in C2.
+6. **Guide search and print with 26 sections:** an empty query shows all; a stemmed query ("consents") finds "consent" in Ask Appu (C3), while the Guide's own search does not stem, as v1's `guideFilter` (C2; corrected at C11); print opens every section; a section's HTML cannot run script (rendered through `sanitizeHtml`). Tests in C2.
 
 ## File structure (mapped before tasks)
 
