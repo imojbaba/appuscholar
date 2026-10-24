@@ -164,19 +164,114 @@ describe("the quality CLI", () => {
       expect(h.out.join("\n")).toMatch(/summary: 3 replies, 1 failed/);
     });
 
-    it("waits and tries again on a rate limit, up to three times, and records the failure when it lasts", async () => {
+    it("waits and tries again on a rate limit that lifts, and the run goes on as if nothing happened", async () => {
       const once = harness({ reply: (_i, n) => { if (n === 0) throw new AiError("rate-limit", "HTTP 429: slow down"); return SUMMARY; } });
-      await run(once, "--set", "summary", "--provider", "groq", "--repeats", "1");
+      expect(await run(once, "--set", "summary", "--provider", "groq", "--repeats", "1")).toBe(0);
       expect(once.sleeps).toEqual([20_000]);
       expect(once.calls).toHaveLength(5); // the first call twice, then the other three
       expect([...once.files.values()][0]).not.toContain("No reply");
 
-      const always = harness({ reply: () => { throw new AiError("rate-limit", "HTTP 429: slow down"); } });
-      expect(await run(always, "--set", "idea", "--provider", "groq", "--repeats", "1")).toBe(1); // no reply came back at all
-      expect(always.calls).toHaveLength(5 * 4); // each of the five prompts: the call and three tries more
-      expect(always.sleeps).toEqual(Array.from({ length: 5 }, () => [20_000, 40_000, 60_000]).flat());
-      expect([...always.files.values()][0]).toContain("No reply (rate-limit (HTTP 429)). Nothing to grade.");
-      expect(always.err.join("\n")).toMatch(/No reply came back for idea/);
+      // A limit that lifts on the third wait is still a limit that lifted.
+      const late = harness({ reply: (_i, n) => { if (n < 3) throw new AiError("rate-limit", "HTTP 429: slow down"); return SUMMARY; } });
+      expect(await run(late, "--set", "summary", "--provider", "groq", "--repeats", "1")).toBe(0);
+      expect(late.sleeps).toEqual([20_000, 40_000, 60_000]);
+      expect(late.calls).toHaveLength(3 + 4);
+      expect([...late.files.values()][0]).not.toContain("No reply");
+    });
+  });
+
+  describe("a rate limit that never lifts", () => {
+    /** A provider whose cap is reached after `after` good calls: every call from then on is a 429 that does not lift. */
+    const capped = (after: number) => (_i: CompleteInput, n: number): string => {
+      if (n >= after) throw new AiError("rate-limit", `HTTP 429: You exceeded your current quota, key ${KEY}`);
+      return SUMMARY;
+    };
+    const reportPath = (name: string) => join("/repo", "reports", `${name}-groq-2026-10-24.md`);
+    const count = (text: string, part: string): number => text.split(part).length - 1;
+    const LIMIT_HELD = "No reply (not sent: the provider's limit held). Nothing to grade.";
+
+    it("is waited out by one call only; the calls after it are refused at once without a request", async () => {
+      // One set, five prompts, one repeat: the cap is reached after two replies.
+      const h = harness({ reply: capped(2) });
+      expect(await run(h, "--set", "idea", "--provider", "groq", "--repeats", "1")).toBe(1);
+      // 2 good calls, then the third: the call and three tries more, with the three waits. The last two prompts send nothing.
+      expect(h.calls).toHaveLength(2 + 4);
+      expect(h.sleeps).toEqual([20_000, 40_000, 60_000]);
+      const md = h.files.get(reportPath("idea"))!;
+      expect(count(md, "No reply (rate-limit (HTTP 429)). Nothing to grade.")).toBe(1);
+      expect(count(md, LIMIT_HELD)).toBe(2);
+      expect(md).toContain(`| ${SETS.idea.items[0]!.id} | 1/1 |`); // the replies that came back are in the report
+      expect(everything(h)).not.toContain(KEY);
+      expect(everything(h)).not.toContain("exceeded your current quota");
+    });
+
+    it("holds across the repeats of an item: the rest of the repeats and the items after it send nothing", async () => {
+      const h = harness({ reply: capped(1) });
+      expect(await run(h, "--set", "gap", "--provider", "groq", "--repeats", "3")).toBe(1);
+      expect(h.calls).toHaveLength(1 + 4); // one reply, then the second call and its three tries; the other seven repeats send nothing
+      expect(h.sleeps).toEqual([20_000, 40_000, 60_000]);
+      const md = h.files.get(reportPath("gap"))!;
+      expect(count(md, "No reply (rate-limit (HTTP 429)). Nothing to grade.")).toBe(1);
+      expect(count(md, LIMIT_HELD)).toBe(7);
+    });
+
+    it("writes no report, and keeps an earlier one, when the limit holds from the set's first call so no reply came back", async () => {
+      const h = harness({ reply: capped(0) });
+      const kept = "# Quality report: gap\n\na good report from earlier today\n";
+      h.files.set(reportPath("gap"), kept);
+      expect(await run(h, "--set", "gap", "--provider", "groq", "--repeats", "3")).toBe(1);
+      expect(h.calls).toHaveLength(4);
+      expect(h.files.get(reportPath("gap"))).toBe(kept);
+      expect(h.err.join("\n")).toContain("groq's limit held from the first call of gap, so no reply came back and no report was written. Run gap again later.");
+      expect(h.out.join("\n")).not.toMatch(/Wrote /);
+      expect(everything(h)).not.toContain(KEY);
+    });
+
+    it("writes the replies that came back, names the limit on stderr, says to run the set again later, and exits 1", async () => {
+      const h = harness({ reply: capped(2) });
+      expect(await run(h, "--set", "idea", "--provider", "groq", "--repeats", "1")).toBe(1);
+      const err = h.err.join("\n");
+      expect(err).toContain("groq's limit was reached during idea");
+      expect(err).toMatch(/did not lift after 3 waits/);
+      expect(err).toMatch(/Run idea again later/);
+      expect(err).not.toMatch(/No reply came back for idea/); // some did come back: the limit is the news
+      expect(h.out.join("\n")).toMatch(/idea: 2 replies, 3 failed\. Wrote /);
+      expect([...h.files.keys()]).toEqual([reportPath("idea")]);
+    });
+
+    it("stops the whole of --set all at the set where the limit held: later sets send nothing and write nothing, and say so", async () => {
+      // Two repeats: idea is 10 calls, summary 8, gap 6. The cap is reached on the fourth call of gap (its second item, second repeat).
+      const h = harness({ reply: capped(10 + 8 + 3) });
+      expect(await run(h, "--set", "all", "--provider", "groq", "--repeats", "2")).toBe(1);
+      expect(h.sleeps).toEqual([20_000, 40_000, 60_000]); // one call had the waits, in the whole run
+      expect(h.calls).toHaveLength(21 + 4);
+      // The sets before the limit are whole, the set it was reached in holds what came back, the sets after it are not written.
+      expect([...h.files.keys()].map((p) => p.split(/[\\/]/).pop())).toEqual(["idea-groq-2026-10-24.md", "summary-groq-2026-10-24.md", "gap-groq-2026-10-24.md"]);
+      const gap = h.files.get(reportPath("gap"))!;
+      expect(count(gap, "No reply (rate-limit (HTTP 429)). Nothing to grade.")).toBe(1);
+      expect(count(gap, LIMIT_HELD)).toBe(2);
+      expect(count(gap, "#### Reply")).toBe(6);
+      const err = h.err.join("\n");
+      expect(err).toContain("groq's limit was reached during gap");
+      for (const later of ["litreview", "ask", "walk"]) expect(err).toContain(`${later}: not run, because groq's limit still held. Nothing was sent and no report was written.`);
+      expect(err).not.toContain("summary: not run");
+      expect(everything(h)).not.toContain(KEY);
+    });
+
+    it("does not replace an existing report for a set that sent nothing, and says that nothing was written for it", async () => {
+      const h = harness({ reply: capped(5 + 4) });
+      const kept = "# Quality report: ask\n\na good report from earlier today\n";
+      h.files.set(reportPath("ask"), kept);
+      h.files.set(reportPath("walk"), kept);
+      // idea 5 and summary 4 are good; the cap is reached on the first call of gap, so gap, litreview, ask and walk come after it.
+      expect(await run(h, "--set", "all", "--provider", "groq", "--repeats", "1")).toBe(1);
+      expect(h.files.get(reportPath("ask"))).toBe(kept);
+      expect(h.files.get(reportPath("walk"))).toBe(kept);
+      expect(h.files.has(reportPath("litreview"))).toBe(false);
+      expect(h.err.join("\n")).toContain("ask: not run, because groq's limit still held. Nothing was sent and no report was written.");
+      // Only the call that held the limit was waited on, and nothing was sent after it.
+      expect(h.calls).toHaveLength(5 + 4 + 4);
+      expect(h.sleeps).toEqual([20_000, 40_000, 60_000]);
     });
   });
 

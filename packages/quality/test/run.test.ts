@@ -199,7 +199,9 @@ describe("runSet", () => {
     expect(r!.replies[1]!.grades.areas?.missing).toHaveLength(5);
     expect(r!.label).toBe(true);
     expect(head(report.markdown)).toEqual(["Item", "Replies", "Areas", "AI-use label"]);
-    expect(row(report.markdown, "idea-walk-bedtime")).toEqual(["idea-walk-bedtime", "3/3", "2/3 named all 5 areas", "right"]);
+    // The cell says what it measures: replies with a line that starts with the name of each area, not replies that are right.
+    expect(row(report.markdown, "idea-walk-bedtime")).toEqual(["idea-walk-bedtime", "3/3", "2/3 replies have a line starting with each of the 5 area names", "right"]);
+    expect(report.markdown).not.toContain("named all 5 areas");
     expect(report.markdown).toContain("Areas named: 0 of 5 (missing: Topic clarity and researchability, Access to participants or data, Time, Resources and equipment, Ethical complexity)");
   });
 
@@ -371,6 +373,57 @@ describe("runSet", () => {
     const { complete, calls } = fake(() => "{}");
     for (const repeats of [0, -1, 1.5, Number.NaN]) await expect(runSet(SETS.idea, complete, { repeats })).rejects.toThrow(/repeats/);
     expect(calls).toHaveLength(0);
+  });
+
+  describe("what a grade means", () => {
+    it("says in the preamble that every grade checks words and form, that none says a reply is right, and where to read more", async () => {
+      for (const name of SET_NAMES) {
+        const { complete } = fake(() => "{}");
+        const md = (await runSet(only(SETS[name], SETS[name].items[0]!.id), complete, { repeats: 1 })).markdown;
+        const preamble = md.slice(0, md.indexOf("## Summary"));
+        expect(preamble, name).toContain("Every grade is a check of words and form");
+        expect(preamble, name).toContain("a line that starts with an area's name, a surname, a quotation found word for word, a number found in the source");
+        expect(preamble, name).toContain("none says a reply is right");
+        expect(preamble, name).toContain('read each reply against "A good answer"');
+        expect(preamble, name).toContain("packages/quality/reports/README.md");
+      }
+    });
+
+    it("records an empty reply and a reply of only white space as failed with the error \"empty reply\", with no grades, so neither can pass a column", async () => {
+      const set = only(SETS.idea, "idea-walk-bedtime");
+      const { complete } = fake((_p, n) => ["", " \n\t  \r\n", IDEA_GOOD, " "][n]!);
+      const report = await runSet(set, complete, { repeats: 4 });
+      const [r] = report.items;
+      expect(r!.replies[0]).toEqual({ error: "empty reply", grades: {} });
+      expect(r!.replies[1]).toEqual({ error: "empty reply", grades: {} });
+      expect(r!.replies[2]!.text).toBe(IDEA_GOOD);
+      expect(r!.replies[3]).toEqual({ error: "empty reply", grades: {} });
+      // They count as failed in the table and keep their places; only the reply that came back is graded.
+      expect(row(report.markdown, "idea-walk-bedtime").slice(0, 3)).toEqual(["idea-walk-bedtime", "1/4 (3 failed)", "1/1 replies have a line starting with each of the 5 area names"]);
+      expect(report.markdown.match(/No reply \(empty reply\)\. Nothing to grade\./g)).toHaveLength(3);
+
+      // A set whose every reply is empty has no grade in any column, not a pass.
+      const none = await runSet(set, fake(() => "   ").complete, { repeats: 2 });
+      expect(row(none.markdown, "idea-walk-bedtime")).toEqual(["idea-walk-bedtime", "0/2 (2 failed)", "-", "right"]);
+      const ask = await runSet(only(SETS.ask, "ask-exercise-emotion-henan"), fake(() => "").complete, { repeats: 1 });
+      for (const q of ask.items) expect(q.replies).toEqual([{ error: "empty reply", grades: {} }]);
+      expect(row(ask.markdown, "ask-exercise-emotion-henan, question 1").slice(1)).toEqual(["0/1 (1 failed)", "-", "foreign numbers: -", "-", "-"]);
+    });
+
+    it("names the source of the foreign numbers in the table footnote, set by set", async () => {
+      const foot = async (name: SetName): Promise<string> => {
+        const { complete } = fake(() => "{}");
+        const md = (await runSet(only(SETS[name], SETS[name].items[0]!.id), complete, { repeats: 1 })).markdown;
+        return md.split("\n").find((l) => l.startsWith("A dash stands for")) ?? "";
+      };
+      expect(await foot("summary")).toContain("the source is the paper text.");
+      for (const name of ["gap", "litreview"] as const) expect(await foot(name)).toContain("the source is the numbered list the prompt shows: each paper's authors, year, title and abstract.");
+      expect(await foot("ask")).toContain("the source is the paper text plus the student's own question.");
+      expect(await foot("walk")).toContain("the source is the paper text plus the student's own attempt.");
+      // The idea set has no Numbers column, so its footnote says nothing about numbers.
+      expect(await foot("idea")).not.toMatch(/number/i);
+      expect(await foot("idea")).toContain("A dash stands for a reply that did not arrive or a grade the item does not have.");
+    });
   });
 
   describe("the report's own words", () => {

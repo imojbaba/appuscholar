@@ -32,8 +32,11 @@ export interface QualityCliDeps {
 export const KEY_VARIABLE = "QUALITY_API_KEY";
 const DEFAULT_REPEATS = 3;
 const MAX_REPEATS = 10;
-/** How long a rate-limited call waits before it is tried again, one wait for each new try (a provider's limit is for a minute). After the last it is recorded as failed. */
+/** How long a rate-limited call waits before it is tried again, one wait for each new try (a provider's limit is for a minute). A call that has used all of them and is still limited is recorded as
+ *  failed, and the limit is taken to be a lasting one (a spent cap, a daily quota): no later call is sent. */
 const RATE_LIMIT_WAITS_MS: readonly number[] = [20_000, 40_000, 60_000];
+/** What a call refused because the limit held is recorded as. The report shows it as "No reply (...)". */
+const LIMIT_HELD = "not sent: the provider's limit held";
 
 const USAGE = [
   "Usage: pnpm --filter @appuscholar/api exec tsx scripts/quality.ts --set <set> --provider <provider> [--repeats <n>] [--out <folder>]",
@@ -55,10 +58,12 @@ function safeError(e: unknown): string {
 }
 
 /** Gives the sets runner a `complete`: the gateway with this provider and key, a wait and another try on a rate limit, and only safe text in the errors it throws.
- *  `state.rejected` is set when the provider turns the key away; the calls after that are refused here, so the run ends quickly. */
-function wire(deps: QualityCliDeps, provider: ProviderId, key: string, state: { models: Set<string>; rejected: boolean }): CompleteFn {
+ *  `state.rejected` is set when the provider turns the key away; the calls after that are refused here, so the run ends quickly. `state.limited` is set when a call has used all its waits and the rate
+ *  limit still holds; the calls after that are refused here too, without a request, so a spent cap costs one call's waits and not one for every call left. */
+function wire(deps: QualityCliDeps, provider: ProviderId, key: string, state: { models: Set<string>; rejected: boolean; limited: boolean }): CompleteFn {
   return async (prompt, o) => {
     if (state.rejected) throw new Error("key-rejected");
+    if (state.limited) throw new Error(LIMIT_HELD);
     for (let tries = 0; ; tries++) {
       try {
         const r = await deps.complete({ provider, apiKey: key, prompt, temperature: o.temperature, maxTokens: o.maxTokens });
@@ -72,13 +77,14 @@ function wire(deps: QualityCliDeps, provider: ProviderId, key: string, state: { 
           continue;
         }
         if (e instanceof AiError && e.code === "key-rejected") state.rejected = true;
+        if (e instanceof AiError && e.code === "rate-limit") state.limited = true; // all the waits are spent
         throw new Error(safeError(e));
       }
     }
   };
 }
 
-/** Runs the CLI. Returns the exit code: 0 when the reports were written, 1 when it could not run (no key, the key rejected) or no reply came back, 2 for arguments it does not accept. */
+/** Runs the CLI. Returns the exit code: 0 when the reports were written, 1 when it could not run (no key, the key rejected), the provider's limit held or no reply came back, 2 for arguments it does not accept. */
 export async function qualityCli(argv: string[], deps: QualityCliDeps): Promise<number> {
   const usage = (why: string): number => { deps.err(why); USAGE.forEach((l) => deps.err(l)); return 2; };
   let values: { set?: string; provider?: string; repeats?: string; out?: string };
@@ -101,8 +107,13 @@ export async function qualityCli(argv: string[], deps: QualityCliDeps): Promise<
 
   const date = dayOf(deps.now());
   const outDir = values.out ? resolve(values.out) : deps.reportsDir;
+  let limited = false; // the provider's limit held in an earlier set: this set would send nothing, so it is not run and its report file (a good one, maybe) is left as it is
   for (const name of sets) {
-    const state = { models: new Set<string>(), rejected: false };
+    if (limited) {
+      deps.err(`${name}: not run, because ${provider}'s limit still held. Nothing was sent and no report was written. Run ${name} again later.`);
+      continue;
+    }
+    const state = { models: new Set<string>(), rejected: false, limited: false };
     const total = SETS[name].items.length;
     deps.out(`${name}: ${total} item${total === 1 ? "" : "s"}, ${repeats} repeat${repeats === 1 ? "" : "s"} each, on ${provider}`);
     const report = await runSet(SETS[name], wire(deps, provider, key, state), {
@@ -114,14 +125,23 @@ export async function qualityCli(argv: string[], deps: QualityCliDeps): Promise<
       deps.err(`${provider} rejected the key. Check that ${KEY_VARIABLE} holds a key for ${provider} that has not been revoked. No report was written for ${name}.`);
       return 1;
     }
-    const path = join(outDir, `${name}-${provider}-${date}.md`);
-    await deps.writeFile(path, redact(report.markdown));
     const replies = report.items.flatMap((i) => i.replies);
     const got = replies.filter((r) => r.text !== undefined).length;
+    if (state.limited && got === 0) {
+      // A report of nothing but the limit would only replace a good one from earlier today.
+      deps.err(`${provider}'s limit held from the first call of ${name}, so no reply came back and no report was written. Run ${name} again later.`);
+      limited = true;
+      continue;
+    }
+    const path = join(outDir, `${name}-${provider}-${date}.md`);
+    await deps.writeFile(path, redact(report.markdown));
     deps.out(`${name}: ${got} ${got === 1 ? "reply" : "replies"}, ${replies.length - got} failed. Wrote ${path}`);
-    if (replies.length > 0 && got === 0) { deps.err(`No reply came back for ${name}. The report says why each call failed.`); return 1; }
+    if (state.limited) {
+      limited = true;
+      deps.err(`${provider}'s limit was reached during ${name} and did not lift after ${RATE_LIMIT_WAITS_MS.length} waits, so the calls after it were not sent. The report holds the replies that came back. Run ${name} again later, when the limit has lifted.`);
+    } else if (replies.length > 0 && got === 0) { deps.err(`No reply came back for ${name}. The report says why each call failed.`); return 1; }
   }
-  return 0;
+  return limited ? 1 : 0;
 }
 
 /** The gateway's `complete` with the given fetch. */

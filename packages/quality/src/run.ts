@@ -10,7 +10,8 @@
      ask        gradeQuotes, gradeNumbers, whether the reply's in_paper is the item's `inPaper`, which of its `facts` the answer holds
      walk       gradeQuotes, gradeNumbers, which of its `facts` the reading holds
    A number the student wrote (the question of an Ask, the attempt of a Walk-through) counts as the source's, as the paper's text does: a reply that repeats it has not made it up. A grade whose expectation an
-   item does not give is not made. A failed call is a reply with an `error` and no grades; the run goes on. The error is the message of what `complete` threw, so a caller must throw only text that is safe to print. */
+   item does not give is not made. A failed call is a reply with an `error` and no grades; the run goes on. The error is the message of what `complete` threw, so a caller must throw only text that is safe to print.
+   A reply that is empty or only white space is a failed call too ("empty reply"), so it cannot pass a column. Every grade is a check of words and form; none says a reply is right. */
 import {
   AP_STAGES, apBuild, apJson, buildAskPrompt, buildGapFinderPromptV2, buildIdeaPromptV2, buildLitReviewPrompt, buildShelfSummaryPromptV2, buildWalkPrompt, fieldLabel, rsCorpusText, scanText
 } from "@appuscholar/core";
@@ -203,7 +204,7 @@ async function callOnce(job: Job, complete: CompleteFn): Promise<ReplyResult> {
   if (prompt.length > PROMPT_MAX_CHARS) return { error: `not sent: the prompt is ${thousands(prompt.length)} characters and the API accepts at most ${thousands(PROMPT_MAX_CHARS)}`, grades: {} };
   let text: string;
   try { text = await complete(prompt, { temperature: temp, maxTokens: max }); } catch (e) { return { error: errorText(e), grades: {} }; }
-  if (typeof text !== "string") text = "";
+  if (typeof text !== "string" || !text.trim()) return { error: "empty reply", grades: {} };
   return { text, grades: job.grade(text) };
 }
 
@@ -264,7 +265,7 @@ const firstGrade = <K extends keyof ReplyGrades>(r: ItemResult, k: K): ReplyGrad
 
 interface Column { head: string; cell(r: ItemResult): string }
 const COL = {
-  areas: { head: "Areas", cell: (r) => { const a = firstGrade(r, "areas"); return a ? ratio(r, (g) => g.areas && g.areas.missing.length === 0, `named all ${a.named.length + a.missing.length} areas`) : "-"; } },
+  areas: { head: "Areas", cell: (r) => { const a = firstGrade(r, "areas"); return a ? ratio(r, (g) => g.areas && g.areas.missing.length === 0, `replies have a line starting with each of the ${a.named.length + a.missing.length} area names`) : "-"; } },
   limitations: { head: "Limitations", cell: (r) => { const l = firstGrade(r, "limitations"); return l ? `found ${per(r, (g) => (g.limitations ? String(g.limitations.hits.length) : null))} of ${l.expected}` : "-"; } },
   notReported: { head: "Not reported", cell: (r) => (firstGrade(r, "limitations") ? ratio(r, (g) => g.limitations?.notReported, "wrote not reported") : "-") },
   names: { head: "Papers named", cell: (r) => { const n = firstGrade(r, "names"); return n ? `named ${per(r, (g) => (g.names ? String(g.names.named.length) : null))} of ${n.papers}${n.min !== null ? ` (needs ${n.min})` : ""}` : "-"; } },
@@ -282,6 +283,18 @@ const COLUMNS: Record<SetName, Column[]> = {
   litreview: [COL.names, COL.numbered, COL.numbers],
   ask: [COL.quotes, COL.numbers, COL.inPaper, COL.facts],
   walk: [COL.quotes, COL.numbers, COL.facts]
+};
+
+/** The sentence that tells a reader what a grade is. The README it points to says more. */
+const GRADES_ARE = "Every grade is a check of words and form (a line that starts with an area's name, a surname, a quotation found word for word, a number found in the source) and none says a reply is right, so read each reply against \"A good answer\"; see packages/quality/reports/README.md.";
+/** What gradeNumbers is given as the source, for the footnote: the same texts as `jobsOf` passes. The idea set grades no numbers and has no Numbers column, so its entry is never read. */
+const NUMBER_SOURCE: Record<SetName, string> = {
+  idea: "none",
+  summary: "the paper text",
+  gap: "the numbered list the prompt shows: each paper's authors, year, title and abstract",
+  litreview: "the numbered list the prompt shows: each paper's authors, year, title and abstract",
+  ask: "the paper text plus the student's own question",
+  walk: "the paper text plus the student's own attempt"
 };
 
 /** One reply's grades, a line each. */
@@ -316,14 +329,14 @@ function renderMarkdown(r: Omit<QualityReport, "markdown">): string {
   if (r.header.provider) out.push(`- Provider: ${r.header.provider}`);
   if (r.header.model) out.push(`- Model: ${r.header.model}`);
   if (r.header.date) out.push(`- Date: ${r.header.date}`);
-  out.push("", "The prompts are the ones the web sends for a student who reads English. The replies below are the provider's own words, unchanged.", "", "## Summary", "");
+  out.push("", "The prompts are the ones the web sends for a student who reads English. The replies below are the provider's own words, unchanged. " + GRADES_ARE, "", "## Summary", "");
   out.push(row(["Item", "Replies", ...cols.map((c) => c.head)]), row(["---", "---", ...cols.map(() => "---")]));
   for (const it of r.items) {
     const got = received(it).length, failed = it.replies.length - got;
     out.push(row([rowName(it), `${got}/${it.replies.length}${failed ? ` (${failed} failed)` : ""}`, ...cols.map((c) => c.cell(it))]));
   }
   for (const n of r.notRun) out.push(row([n.id, "not run", ...cols.map(() => "-")]));
-  out.push("", "A dash stands for a reply that did not arrive or a grade the item does not have. Foreign numbers are numbers in a reply that the source text (the paper, or the abstracts) does not hold.");
+  out.push("", "A dash stands for a reply that did not arrive or a grade the item does not have." + (cols.includes(COL.numbers) ? ` Foreign numbers are numbers in a reply that the source does not hold; the source is ${NUMBER_SOURCE[r.set]}.` : ""));
   if (r.notRun.length) { out.push("", "## Not run", ""); for (const n of r.notRun) out.push(`- ${n.id}: ${n.reason}`); }
   out.push("", "## Replies");
   for (const it of r.items) {
