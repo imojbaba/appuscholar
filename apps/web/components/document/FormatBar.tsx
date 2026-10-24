@@ -1,13 +1,22 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useEditorState, type Editor } from "@tiptap/react";
+import { NodeSelection, Selection } from "@tiptap/pm/state";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
+import { useProject } from "@/components/frame/ProjectContext";
+import { useVault } from "@/lib/vault/useVault";
 import { toast } from "@/components/ui/toast";
 import { clearFormatting } from "@/lib/editor/clearFormatting";
 import { resizeImage } from "@/lib/editor/image";
-import { DICTATION_LANGS, UNSUPPORTED_MESSAGE, defaultDictationLang, startDictation, type Dictation } from "@/lib/editor/dictate";
+import { DICTATION_LANGS, dictErrorMessage, dictationSupported, formatSpoken, placeSpoken, startDictation, type Dictation } from "@/lib/editor/dictate";
+import { dictLangFor, writeDictLang } from "@/lib/editor/dictPrefs";
+import { usePhotoStudioHost } from "@/lib/editor/photoStudioHost";
+import { fitsBudget, sizeMessageKey } from "@/lib/editor/sizeBudget";
 import { TableSize } from "@/components/workspace/dialogs/TableSize";
+import { useDictationGate } from "@/components/workspace/dialogs/DictationNotice";
+import { CaptionDialog } from "./CaptionDialog";
+import { PictureEditor } from "./PictureEditor";
 import { FindReplace } from "./FindReplace";
 
 const FONTS = ["Georgia", "Times New Roman", "Arial", "Noto Sans Devanagari"];
@@ -18,9 +27,9 @@ const MAX_IMG = 1600;
 type Block = "paragraph" | "h1" | "h2" | "h3" | "quote";
 
 /** Buttons keep the editor's selection: pressing one must not move focus out of the document. */
-function Fmt({ name, label, on, active, disabled, children }: { name: string; label: string; on(): void; active?: boolean; disabled?: boolean; children: React.ReactNode }) {
+function Fmt({ name, label, title, on, active, disabled, children }: { name: string; label: string; title?: string; on(): void; active?: boolean; disabled?: boolean; children: React.ReactNode }) {
   return (
-    <button type="button" className="fmt" aria-label={label} title={label} aria-pressed={active === undefined ? undefined : active} disabled={disabled}
+    <button type="button" className="fmt" aria-label={label} title={title ?? label} aria-pressed={active === undefined ? undefined : active} disabled={disabled}
       data-testid={`fmt-${name}`} onMouseDown={(e) => e.preventDefault()} onClick={on}>
       {children}
     </button>
@@ -28,17 +37,62 @@ function Fmt({ name, label, on, active, disabled, children }: { name: string; la
 }
 const Sep = () => <span className="sep" aria-hidden="true" />;
 
+/** The picture the selection is on: a selected picture, else the first one inside a selected passage (the width bar shows for both); null when there is none. */
+function selectedImagePos(editor: Editor): number | null {
+  const { selection, doc } = editor.state;
+  if (selection instanceof NodeSelection) return selection.node.type.name === "image" ? selection.from : null;
+  let found: number | null = null;
+  doc.nodesBetween(selection.from, selection.to, (n, pos) => {
+    if (found === null && n.type.name === "image") found = pos;
+    return found === null;
+  });
+  return found;
+}
+
+/**
+ * Types one finished phrase at the caret as the student's own words (v1 dictInsert 4265-4277). Spoken punctuation first (formatSpoken), then the capital and
+ * the space in front (placeSpoken), given the text of the paragraph before the caret back to its last line break (v1 looked at the caret's text node only).
+ * Each "\n\n" is a new paragraph and each "\n" a line break; the words go in as plain text with no ai-ins mark and no space after them. A selected picture
+ * is passed over, not replaced.
+ */
+function typeSpoken(editor: Editor, raw: string, lang: string): void {
+  if (editor.isDestroyed) return;
+  const text = formatSpoken(raw, lang);
+  if (!text) return;
+  const { selection, doc } = editor.state;
+  const after = selection instanceof NodeSelection ? Selection.findFrom(doc.resolve(selection.to), 1, true) : null;
+  const { parent, parentOffset } = (after ?? selection).$from;
+  const before = parent.textBetween(0, parentOffset, undefined, "\n").split("\n").pop() ?? "";
+  const { text: spoken, leadSpace } = placeSpoken(text, before, lang);
+  const chain = editor.chain().focus();
+  if (after) chain.setTextSelection(after.from);
+  for (const part of ((leadSpace ? " " : "") + spoken).split(/(\n\n|\n)/)) {
+    if (part === "\n\n") chain.splitBlock();
+    else if (part === "\n") chain.setHardBreak();
+    else if (part) chain.insertContent({ type: "text", text: part });
+  }
+  chain.run();
+}
+
 /**
  * v1's formatting toolbar. It is only mounted once the editor exists (the document card passes a non-null editor) and subscribes to that
  * instance, so every control is live from the first paint, with no wait for a first transaction.
  */
 export function FormatBar({ editor }: { editor: Editor }) {
   const t = useT();
-  const { settings, update } = useSettings();
+  const { me, settings, update } = useSettings();
+  const { project } = useProject();
+  // With a vault the body is sealed whenever it is saved, so the sealed limit applies to a picture (lib/editor/sizeBudget.ts; "loading" counts as sealed).
+  const vaultOn = useVault().status !== "off";
   const more = settings.fmtMore === true;
   const [findOpen, setFindOpen] = useState(false);
   const [findSeed, setFindSeed] = useState("");
   const [tableOpen, setTableOpen] = useState(false);
+  const [captionOpen, setCaptionOpen] = useState(false);
+  const [pictureOpen, setPictureOpen] = useState(false);
+  /** The picture the editor was opened on: where the photo studio is sent from its "bigger window" button. */
+  const pictureAt = useRef<number | null>(null);
+  const studio = usePhotoStudioHost(editor);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const s = useEditorState({
@@ -82,31 +136,77 @@ export function FormatBar({ editor }: { editor: Editor }) {
     return () => dom.removeEventListener("keydown", onKey);
   }, [editor]);
 
-  // Dictation.
+  // Dictation (v1 4246-4321; the engine is lib/editor/dictate.ts, the choices lib/editor/dictPrefs.ts).
+  const userId = me?.id ?? null;
+  const gate = useDictationGate(userId);
   const [dictating, setDictating] = useState(false);
   const [interim, setInterim] = useState("");
   const [pickedLang, setPickedLang] = useState<string | null>(null);
-  const lang = pickedLang ?? defaultDictationLang(settings.contentLang);
+  // v1 dictLang (4254): the saved language, else Hindi for a Hindi project (the open project's language first, then the account's) and English (India).
+  const lang = pickedLang ?? dictLangFor(userId, project ? project.contentLang : settings.contentLang);
   const dictation = useRef<Dictation | null>(null);
-  useEffect(() => () => { dictation.current?.stop(); dictation.current = null; }, []);
-  function toggleDictation() {
-    if (dictation.current) { dictation.current.stop(); return; }
+  const restart = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The recogniser's callbacks outlive the render that started it: they speak in the page's language as it is now.
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; });
+  useEffect(() => () => {
+    if (restart.current) clearTimeout(restart.current);
+    dictation.current?.stop();
+    dictation.current = null;
+  }, []);
+  /** Starts listening in `code`; the support check and the notice are the caller's. A recogniser that would not start shows nothing (v1). */
+  function listen(code: string) {
     const started = startDictation({
-      lang,
+      lang: code,
       onInterim: setInterim,
-      onFinal: (text) => { if (!editor.isDestroyed && text.trim()) editor.chain().focus().insertContent(text.trim() + " ").run(); },
+      onFinal: (raw) => typeSpoken(editor, raw, code),
       onEnd: () => { dictation.current = null; setDictating(false); setInterim(""); },
-      onError: (code) => { if (code === "not-allowed" || code === "service-not-allowed") toast("Microphone access is blocked. Allow it in the browser to dictate."); }
+      onError: (c) => toast(dictErrorMessage(c, tRef.current)),
+      onGiveUp: () => toast(tRef.current("dict_give_up"))
     });
-    if (!started) { toast(UNSUPPORTED_MESSAGE); return; }
+    if (!started) return;
     dictation.current = started;
     setDictating(true);
+  }
+  function toggleDictation() {
+    if (restart.current) { clearTimeout(restart.current); restart.current = null; }
+    if (dictation.current) { dictation.current.stop(); return; }
+    if (!dictationSupported()) { toast(t("dict_unsupported")); return; }
+    gate.request(() => listen(lang));
+  }
+  /** v1 dictSetLang (4256): saved, and a change while listening stops and starts again in the new language after 300 ms. */
+  function pickLang(code: string) {
+    setPickedLang(code);
+    writeDictLang(userId, code);
+    if (!dictation.current && !restart.current) return;
+    if (restart.current) clearTimeout(restart.current);
+    dictation.current?.stop();
+    restart.current = setTimeout(() => { restart.current = null; if (!dictation.current && !editor.isDestroyed) listen(code); }, 300);
+  }
+
+  /** Opens the picture editor on the picture the selection is on (a selected passage with a picture in it selects the picture first). */
+  function openPictureEditor() {
+    const pos = selectedImagePos(editor);
+    if (pos === null) return;
+    const sel = editor.state.selection;
+    if (!(sel instanceof NodeSelection && sel.from === pos)) editor.commands.setNodeSelection(pos);
+    pictureAt.current = pos;
+    setPictureOpen(true);
+  }
+  /** v1 psOpen (4589): a window that would not open says why, and the picture's small editor takes over when there was a picture. */
+  function openStudio(pos: number | null) {
+    const out = studio.openStudio(pos);
+    if (out === "opened") return;
+    toast(t(out === "blocked" ? "pop_blocked" : "ps_nochan"));
+    if (pos !== null) openPictureEditor();
   }
 
   async function onPicture(file: File | undefined) {
     if (!file) return;
     try {
       const src = await resizeImage(file);
+      // A picture is most of a document's size: say so before it goes in rather than let the save fail (wave D Task 9).
+      if (!fitsBudget(editor, src.length, vaultOn)) { toast(t(sizeMessageKey)); return; }
       editor.chain().focus().insertContent({ type: "image", attrs: { src } }).run();
       // No drag handle: the size is set with the width slider that appears when the picture is selected.
       toast("Image inserted — select it to change its size");
@@ -146,9 +246,12 @@ export function FormatBar({ editor }: { editor: Editor }) {
         <input ref={fileRef} type="file" accept="image/*" hidden data-testid="fmt-image-input" aria-label="Choose a picture"
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void onPicture(f); }} />
         <Fmt name="table" label="Insert table" on={() => setTableOpen(true)}>⊞ Table</Fmt>
+        <Fmt name="caption" label={t("cap_btn")} on={() => setCaptionOpen(true)}>{t("cap_btn")}</Fmt>
         <Fmt name="find" label="Find and replace" active={findOpen} on={() => { setFindSeed(""); setFindOpen((o) => !o); }}>🔍 Find</Fmt>
-        <Fmt name="dictate" label={dictating ? "Stop dictation" : "Dictate"} active={dictating} on={toggleDictation}>🎤 Dictate</Fmt>
-        <select className="select" aria-label="Dictation language" data-testid="fmt-dict-lang" value={lang} onChange={(e) => setPickedLang(e.target.value)}>
+        <Fmt name="dictate" label={dictating ? t("dict_stop") : t("dict_btn")} title={t("dict_btn_title")} active={dictating} on={toggleDictation}>
+          {dictating ? "⏹ " : "🎤 "}{dictating ? t("dict_stop") : t("dict_btn")}
+        </Fmt>
+        <select className="select" aria-label={t("dict_lang_label")} data-testid="fmt-dict-lang" value={lang} onChange={(e) => pickLang(e.target.value)}>
           {DICTATION_LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
         <button type="button" className="fmt" aria-label="More formatting" aria-expanded={more} data-testid="fmt-more" onMouseDown={(e) => e.preventDefault()}
@@ -190,6 +293,7 @@ export function FormatBar({ editor }: { editor: Editor }) {
           <Sep />
           <Fmt name="row" label="Add row below" on={() => run().addRowAfter().run()}>+Row</Fmt>
           <Fmt name="col" label="Add column right" on={() => run().addColumnAfter().run()}>+Col</Fmt>
+          <Fmt name="photo" label={t("ps_tb_btn")} on={() => openStudio(null)}>{t("ps_tb_btn")}</Fmt>
           <Fmt name="pagebreak" label="Insert page break" on={() => run().insertContentAt(editor.state.selection.to, { type: "pageBreak" }).run()}>⤓ Page Break</Fmt>
         </div>
       )}
@@ -200,14 +304,18 @@ export function FormatBar({ editor }: { editor: Editor }) {
           <input id="imgWidth" type="range" min={MIN_IMG} max={MAX_IMG} step={10} value={s.imageWidth} data-testid="img-width"
             onChange={(e) => editor.chain().updateAttributes("image", { width: Number(e.target.value) }).run()} />
           <span className="findbar-count" data-testid="img-width-value">{s.imageWidth} px</span>
+          <Fmt name="edit-picture" label={t("ie_btn")} on={openPictureEditor}>{t("ie_btn")}</Fmt>
         </div>
       )}
 
       {findOpen && <FindReplace editor={editor} seed={findSeed} onClose={() => { setFindOpen(false); editor.commands.focus(); }} />}
-      {dictating && <div className="dict-live" role="status" aria-live="polite" data-testid="dict-live">Listening… {interim}</div>}
+      {dictating && <div className="dict-live" role="status" aria-live="polite" data-testid="dict-live">{t("dict_listening")} {interim.slice(-70)}</div>}
 
       <TableSize open={tableOpen} onOpenChange={setTableOpen}
         onInsert={(rows, cols) => { editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run(); }} />
+      <CaptionDialog open={captionOpen} onOpenChange={setCaptionOpen} editor={editor} />
+      <PictureEditor open={pictureOpen} onOpenChange={setPictureOpen} editor={editor} onOpenStudio={() => openStudio(pictureAt.current)} />
+      {gate.notice}
     </>
   );
 }

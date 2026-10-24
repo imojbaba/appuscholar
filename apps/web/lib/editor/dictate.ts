@@ -12,8 +12,6 @@ type Recognition = {
 };
 type Ctor = new () => Recognition;
 
-// v1's words (4292). The toolbar still imports this until Task 14 shows t("dict_unsupported") instead; then it goes.
-export const UNSUPPORTED_MESSAGE = "Dictation works in Chrome and Edge. This browser does not offer it.";
 /** v1 DICT_LANGS (4251), in v1 order. */
 export const DICTATION_LANGS = [
   { code: "en-IN", label: "English (India)" },

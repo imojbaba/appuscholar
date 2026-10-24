@@ -3,6 +3,8 @@
   "dict_notice_1": "Dictation uses your browser's own speech service. In Chrome the audio goes to Google, and in Edge to Microsoft, to be turned into text. Appuscholar never receives it.",
   "dict_notice_2": "Do not dictate participant names, interviews or anything that identifies a person.",
   "dict_unsupported": "Dictation works in Chrome and Edge. This browser does not offer it.",
+  "dict_btn": "Dictate",
+  "dict_lang_label": "Dictation language",
   "dict_btn_title": "Speak to type. Works in Chrome and Edge. Your voice goes to the browser's speech service.",
   "dict_listening": "Listening…",
   "dict_stop": "Stop",
