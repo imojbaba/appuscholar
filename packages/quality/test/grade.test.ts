@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  apBuild, apCheckQuote, classifyAiUse,
+  apBuild, apCheckQuote, classifyAiUse, rsCorpusText,
   buildIdeaPromptV2, buildShelfSummaryPromptV2, buildGapFinderPromptV2, buildLitReviewPrompt, buildAskPrompt, buildWalkPrompt, AP_STAGES
 } from "@appuscholar/core";
 import type { RsPaper } from "@appuscholar/core";
@@ -37,6 +37,39 @@ describe("gradeQuotes", () => {
     expect(apCheckQuote(doc, QUOTE_A).ok).toBe(true);
     expect(gradeQuotes(doc, JSON.stringify({ quotes: [QUOTE_A] })).found).toBe(1);
   });
+
+  describe("a reply that is meant to be JSON but does not parse", () => {
+    it("reads the quotes array with a trailing comma, not the keys and values around it", () => {
+      const reply = `{"in_paper": true, "answer": "Sixty students took part.", "quotes": ["${QUOTE_A}", "${QUOTE_B}",]}`;
+      expect(gradeQuotes(doc, reply)).toEqual({ quotes: 2, found: 2 });
+    });
+    it("reads the quotes of an answer with unescaped inner quotation marks", () => {
+      const reply = `{"in_paper": true, "answer": "The authors call the groups "routine" and "waiting".", "quotes": ["${QUOTE_A}", "${QUOTE_B}"]}`;
+      expect(gradeQuotes(doc, reply)).toEqual({ quotes: 2, found: 2 });
+    });
+    it("keeps a quotation that has unescaped inner quotation marks as one quotation", () => {
+      const reply = `{"in_paper": true, "answer": "x", "quotes": ["The group was called "routine" and the other "waiting" in the paper", "${QUOTE_B}"]}`;
+      expect(gradeQuotes(doc, reply)).toEqual({ quotes: 2, found: 1 });
+    });
+    it("reads the complete quotations of a reply cut off in the quotes array", () => {
+      const cut = `{"in_paper": true, "answer": "Sixty students took part.", "quotes": ["${QUOTE_A}", "${QUOTE_B}"`;
+      expect(gradeQuotes(doc, cut)).toEqual({ quotes: 2, found: 2 });
+      expect(gradeQuotes(doc, `{"in_paper": true, "answer": "x", "quotes": ["${QUOTE_A}", "${QUOTE_B.slice(0, 30)}`)).toEqual({ quotes: 1, found: 1 });
+      expect(gradeQuotes(doc, `{"in_paper": true, "answer": "Sixty students took part.", "quotes": ["${QUOTE_A}",`)).toEqual({ quotes: 1, found: 1 });
+    });
+    it("is zero and zero when it has no quotes array, or the reply is cut off before it", () => {
+      expect(gradeQuotes(doc, `{"in_paper": true, "answer": "Sixty students took part", "quotes"`)).toEqual({ quotes: 0, found: 0 });
+      expect(gradeQuotes(doc, `{"in_paper": false, "answer": "This paper does not say.", "quotes": [],}`)).toEqual({ quotes: 0, found: 0 });
+      expect(gradeQuotes(doc, `{"in_paper": true, "answer": "The authors write "${QUOTE_B}" and nothing else."`)).toEqual({ quotes: 0, found: 0 });
+    });
+    it("does not read the strings that come after the quotes array", () => {
+      const reply = `{"quotes": ["${QUOTE_A}",], "answer": "A long answer that is not a quotation at all.", "in_paper": true}`;
+      expect(gradeQuotes(doc, reply)).toEqual({ quotes: 1, found: 1 });
+    });
+    it("reads a quotes array without the braces around it", () => {
+      expect(gradeQuotes(doc, `"quotes": ["${QUOTE_A}", "${QUOTE_B}"]`)).toEqual({ quotes: 2, found: 2 });
+    });
+  });
 });
 
 describe("gradeNumbers", () => {
@@ -54,6 +87,91 @@ describe("gradeNumbers", () => {
   });
   it("reads a number inside a quotation of the source as the source's", () => {
     expect(gradeNumbers('The authors report "a total of 77 participants" in the sample.', "There were 77 participants.")).toEqual({ foreign: [] });
+  });
+
+  describe("numbers inside quotation marks and inside JSON replies", () => {
+    const paper = "The sample was 1842 students from 12 colleges; 48% of the 3,100 invited took part.";
+    it("finds a foreign number in the answer of an Ask reply", () => {
+      const reply = JSON.stringify({ in_paper: true, answer: "The study had 2,500 students, recruited at 7 universities.", quotes: [] });
+      expect(gradeNumbers(paper, reply)).toEqual({ foreign: ["2500", "7"] });
+    });
+    it("finds a foreign number in a field of a Walk-through reply", () => {
+      const reply = JSON.stringify({ reading: "You noted the sample.", quotes: [], not_stated: [], watch_for: "Only 48% of those invited took part.", check_question: "How many colleges?", check_answer: "There were 15 colleges." });
+      expect(gradeNumbers(paper, reply)).toEqual({ foreign: ["15"] });
+      expect(gradeNumbers(paper.replace("48%", "30%"), reply)).toEqual({ foreign: ["48%", "15"] });
+    });
+    it("finds a foreign number in a list inside a JSON reply", () => {
+      const reply = JSON.stringify({ reading: "ok", not_stated: ["the 99 dropouts", "the sample of 1842"] });
+      expect(gradeNumbers(paper, reply)).toEqual({ foreign: ["99"] });
+    });
+    it("does not read a JSON key as text, nor the numbers of a quotation copied from the paper", () => {
+      const reply = JSON.stringify({ in_paper: true, answer: "The sample was 1842 students.", quotes: ["The sample was 1842 students from 12 colleges; 48% of the 3,100 invited took part."] });
+      expect(gradeNumbers(paper, reply)).toEqual({ foreign: [] });
+    });
+    it("finds a foreign number inside a quoted phrase of a prose reply", () => {
+      expect(gradeNumbers(paper, 'The authors report "a total of 2500 students took part".')).toEqual({ foreign: ["2500"] });
+    });
+    it("does not call a number foreign when a quoted phrase has it and the paper has it", () => {
+      expect(gradeNumbers(paper, 'The authors report "a sample of 1842 students" and "48% of the 3,100 invited".')).toEqual({ foreign: [] });
+      expect(gradeNumbers('The authors report "a total of 77 participants" in the sample.', 'They write "a total of 77 participants".')).toEqual({ foreign: [] });
+      expect(gradeNumbers('The authors report "a total of 77 participants" in the sample.', JSON.stringify({ answer: 'There were "77 participants".', quotes: [] }))).toEqual({ foreign: [] });
+    });
+    it("reads a reply that does not parse as JSON as text", () => {
+      expect(gradeNumbers(paper, '{"answer": "There were 2,500 students", "quotes": [')).toEqual({ foreign: ["2500"] });
+    });
+  });
+
+  describe("citations in the reply", () => {
+    const abstracts = "We surveyed 120 students about their sleep.";
+    it("lists a citation the source never gives, as its text", () => {
+      expect(gradeNumbers(abstracts, "As Smith (2019) and Walker et al. (2017) showed, sleep matters.")).toEqual({ foreign: ["Smith (2019)", "Walker et al. (2017)"] });
+      expect(gradeNumbers(abstracts, "Sleep matters (Smith & Jones, 2019; Brown and Green, 2020).")).toEqual({ foreign: ["Smith & Jones (2019)", "Brown and Green (2020)"] });
+    });
+    it("lists a citation whose surname is in the source but whose year is not", () => {
+      const src = "Trang Le, Bahr Weiss (2026). Relations between sleep quality and academic performance.";
+      expect(gradeNumbers(src, "Sleep matters (Le et al., 2024).")).toEqual({ foreign: ["Le et al. (2024)"] });
+    });
+    it("lists a citation whose year is in the source but whose surname is not", () => {
+      const src = "Trang Le, Bahr Weiss (2026). Relations between sleep quality and academic performance.";
+      expect(gradeNumbers(src, "Sleep matters (Patel, 2026).")).toEqual({ foreign: ["Patel (2026)"] });
+    });
+    it("lets a citation through when its year and its surname are both in the source, in any case", () => {
+      const src = "Trang Le, Bahr Weiss (2026). Relations between sleep quality and academic performance. Noorah Al-Sowayan, Lama Aboselmiya (2025). Sleep patterns.";
+      expect(gradeNumbers(src, "Le et al. (2026) and (Weiss & Le, 2026) agree; so do Al-Sowayan and Aboselmiya (2025), and (LE, 2026).")).toEqual({ foreign: [] });
+    });
+    it("does not find a surname inside another word of the source", () => {
+      expect(gradeNumbers("Learning to sleep (2026). Terrace and Alexandra study sleep.", "Sleep matters (Le, 2026) and (Terra, 2026).")).toEqual({ foreign: ["Le (2026)", "Terra (2026)"] });
+    });
+    it("names a citation once", () => {
+      expect(gradeNumbers(abstracts, "Smith (2019) found it, and (Smith, 2019) again.")).toEqual({ foreign: ["Smith (2019)"] });
+    });
+    it("still grades a plain number that follows a capitalised word", () => {
+      expect(gradeNumbers("The sample was 1842 students.", "Overall 1950 students took part.")).toEqual({ foreign: ["1950"] });
+      expect(gradeNumbers("The sample was 1842 students.", "Overall, 1950 students took part.")).toEqual({ foreign: ["1950"] });
+      expect(gradeNumbers("The sample was 1842 students.", "In 2019 there were 1842 students.")).toEqual({ foreign: ["2019"] });
+      expect(gradeNumbers("The sample was 1842 students.", "Overall 1842 students took part.")).toEqual({ foreign: [] });
+    });
+    it("reads the numbers and the citations of a JSON reply together", () => {
+      const reply = JSON.stringify({ in_paper: true, answer: "Smith (2019) had 2,500 students.", quotes: [] });
+      expect(gradeNumbers("The sample was 1842 students.", reply)).toEqual({ foreign: ["2500", "Smith (2019)"] });
+    });
+  });
+
+  describe("the gap finder's and the literature review's source is rsCorpusText of the papers (authors, years, titles, abstracts)", () => {
+    const group = (SETS.gap.items[0]!.input as GapInput).papers as RsPaper[];
+    const corpus = rsCorpusText(group);
+    const reply = "Gap 1 (Methodological): Zhao and Zhou (2026) used one dataset and Le et al. (2026) one questionnaire (Yunusova et al., 2026), while Al-Sowayan and Aboselmiya (2026) asked 201 female students.";
+    it("does not call the citations of the papers foreign", () => {
+      expect(gradeNumbers(corpus, reply)).toEqual({ foreign: [] });
+      expect(gradeNumbers(corpus, "Zhao and colleagues (2026) found that sleep matters.")).toEqual({ foreign: [] });
+    });
+    it("still finds a wrong year, a surname that is not in the group and a number that is not in the abstracts", () => {
+      expect(gradeNumbers(corpus, "Zhao and Zhou (2024) and Smith (2026) studied 999 students.")).toEqual({ foreign: ["999", "Zhao and Zhou (2024)", "Smith (2026)"] });
+    });
+    it("has no years in the abstracts alone, so the same citation would be foreign there", () => {
+      const abstractsOnly = group.map((p) => p.abstract).join("\n\n");
+      expect(gradeNumbers(abstractsOnly, "Zhao and Zhou (2026) used one dataset.").foreign).toEqual(["Zhao and Zhou (2026)"]);
+    });
   });
 });
 
@@ -94,8 +212,38 @@ describe("gradeLimitations", () => {
     const reply = "Aim: a small sample study.\nMethod: self-reported ratings.\nKey findings: none.\nLimitations: the authors name the short follow-up.";
     expect(gradeLimitations(reply, expected)).toEqual({ notReported: false, hits: [] });
   });
-  it("reads the whole reply when it has no Limitations heading", () => {
-    expect(gradeLimitations("The study had a small sample.", expected)).toEqual({ notReported: false, hits: ["small sample"] });
+  it("finds no limitations, and does not call it not reported, when the reply has no Limitations heading", () => {
+    expect(gradeLimitations("The study had a small sample.", expected)).toEqual({ notReported: false, hits: [] });
+    expect(gradeLimitations("", expected)).toEqual({ notReported: false, hits: [] });
+  });
+
+  describe("the Limitations heading in other forms", () => {
+    const head = "Aim: to describe how students at one university rate their sleep.\nMethod: A cross-sectional survey at a single university using self-reported questionnaires.\nKey findings: most students slept less than they wanted.\n";
+    const exp = ["cross-sectional", "self-report", "single university"];
+    it("reads Study limitations, Limitations and strengths, and each dash after the heading as the heading", () => {
+      for (const tail of ["Study limitations: none stated.", "Limitations and strengths: not reported.", "Limitations – not reported", "Limitations — not reported", "Limitations - not reported", "**Study limitations:** not stated.", "- Limitations: not discussed."]) {
+        expect(gradeLimitations(head + tail, exp), tail).toEqual({ notReported: true, hits: [] });
+      }
+    });
+    it("does not take the words of the Method line for limitations when the heading is in another form", () => {
+      expect(gradeLimitations(head + "Study limitations: none stated.", exp).hits).toEqual([]);
+    });
+    it("reads none mentioned and not discussed as not reported", () => {
+      expect(gradeLimitations(head + "Limitations: none mentioned.", exp).notReported).toBe(true);
+      expect(gradeLimitations(head + "Limitations: not discussed in the abstract.", exp).notReported).toBe(true);
+    });
+    it("finds the limitations a good summary states under these headings", () => {
+      expect(gradeLimitations(head + "Study limitations: the authors name the cross-sectional design and self-report.", exp)).toEqual({ notReported: false, hits: ["cross-sectional", "self-report"] });
+      expect(gradeLimitations(head + "Limitations and strengths – one single university; the self-report was checked.", exp)).toEqual({ notReported: false, hits: ["self-report", "single university"] });
+    });
+    it("finds the heading after a full stop when the summary is one paragraph", () => {
+      const one = "Aim: to compare two groups. Method: a cross-sectional survey of self-reported sleep at a single university. Key findings: sleep was short. Limitations: only one class was asked.";
+      expect(gradeLimitations(one, exp)).toEqual({ notReported: false, hits: [] });
+      expect(gradeLimitations(one.replace("only one class was asked", "not reported"), exp)).toEqual({ notReported: true, hits: [] });
+    });
+    it("does not take a sentence that begins with the word limitations for a heading", () => {
+      expect(gradeLimitations(head + "Limitations of the method were small.", exp)).toEqual({ notReported: false, hits: [] });
+    });
   });
 });
 
@@ -121,6 +269,21 @@ describe("gradeGapNames", () => {
   });
   it("does not take a gap number or a year for a paper number", () => {
     expect(gradeGapNames("Gap 1 (Type): see (Terra, 2025). Gap 2 (Type): thin.", papers).numbered).toBe(false);
+  });
+  it("does not take a list of themes numbered (1), (2), (3) for papers named by number", () => {
+    const r = "Three themes emerge: (1) sleep timing, (2) sleep quality and (3) mood, as Zhao and Zhou (2026), Le et al. (2026) and Yunusova et al. (2026) show.";
+    expect(gradeGapNames(r, papers).numbered).toBe(false);
+  });
+  it("does not take a number of hours, days or times after the word study for a paper number", () => {
+    expect(gradeGapNames("Students who study 3 hours a day slept less (Zhao & Zhou, 2026).", papers).numbered).toBe(false);
+    for (const s of ["Those who study 2 days a week", "People who study 4 times a week", "They study 2 h a night", "Pupils who study 30 minutes more", "Those who study 6 weeks before", "Those who study 5% more"]) {
+      expect(gradeGapNames(s, papers).numbered, s).toBe(false);
+    }
+  });
+  it("still sees a paper named by number: (paper 1), Paper 1, Study 2, studies 2 and 3, [1]", () => {
+    for (const s of ["Thin evidence (paper 1) and (papers 2 and 3).", "Paper 1 used one method.", "Study 2 asked only women.", "Both studies 2 and 3 agree.", "Study 2 had a small sample, so it is thin.", "Evidence is thin [1]."]) {
+      expect(gradeGapNames(s, papers).numbered, s).toBe(true);
+    }
   });
   it("does not find a surname inside another word", () => {
     expect(gradeGapNames("The sample was Leaning, Terrace and Alexandra.", papers)).toEqual({ numbered: false, named: [] });

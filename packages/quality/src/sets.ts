@@ -66,7 +66,9 @@ export interface WalkInput { field: string; paper: PaperWithText; stage: { k: st
  *  ask:       inPaper (per question), facts (per question: what an answer from the paper holds)
  *  walk:      facts (what the reading of that stage holds)
  *  Every set with a paper is also held to gradeNumbers (the paper's text against the reply); ask and walk to gradeQuotes. The ask and the walk carry no `label`: they log as "other help" today
- *  and Task Q3 (only with OJ's yes) may change that on purpose. */
+ *  and Task Q3 (only with OJ's yes) may change that on purpose.
+ *  The `source` gradeNumbers is given: for summary, ask and walk, the paper's text; for gap and litreview, core's rsCorpusText(papers) (each paper's authors, year, title and abstract, the
+ *  numbered list the prompt shows), never the abstracts alone, which hold no years and so would make every "(Zhao & Zhou, 2026)" foreign. */
 export interface Label { k: string; g: "text" | "feedback" | "explain" | "other" }
 
 export const SETS: Record<SetName, QualitySet> = {
