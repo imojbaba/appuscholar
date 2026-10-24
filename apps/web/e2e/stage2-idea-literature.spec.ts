@@ -36,6 +36,7 @@ import { captureConfirmText } from "@appuscholar/core";
 // The English constants (ruling R15) are imported from their modules where the module is plain TypeScript, so the spec cannot drift from them.
 import { CITATION_INSERTED } from "../lib/cite/actions";
 import { stageBuilt } from "./support/builtTools";
+import * as editorAt from "./support/editor";
 
 // ---- Copy: every sentence asserted is read from the dictionary, so it is byte-equal to what the panel shows ------------------------------------------
 
@@ -261,34 +262,11 @@ async function sealedSave(page: Page, kind: string | RegExp, plain: string[], ac
 
 // ---- Editor helpers (as phase2-walkthrough.spec.ts) --------------------------------------------------------------------------------------------------
 
+// Set in the editor's own state (support/editor.ts says why a DOM range placed after focus can be lost).
 /** Puts the cursor at the very end of the document. */
-async function cursorToEnd(page: Page) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate(() => {
-    const last = document.querySelector(".ProseMirror")!.lastElementChild!;
-    last.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(last);
-    range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
-}
+const cursorToEnd = (page: Page) => editorAt.cursorToEnd(page.locator(".ProseMirror"));
 /** Selects the whole block of the editor that contains `text`. */
-async function selectBlockWith(page: Page, text: string) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate((needle) => {
-    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle));
-    if (!block) throw new Error("block not found in the editor: " + needle);
-    block.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(block);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, text);
-}
+const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockWith(page.locator(".ProseMirror"), text);
 /** Selects `text` inside the element of `testid` the way a drag would. */
 async function selectIn(page: Page, testid: string, text: string) {
   await page.evaluate(({ id, needle }) => {

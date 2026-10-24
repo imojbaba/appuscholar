@@ -224,7 +224,8 @@ describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", ()
     expect(doc.id).toBe(w.docId);
     if (w.opts.length) {
       const built = buildWalkPrompt(fieldLabel("psychology"), doc, AP_STAGES[w.stage]!, w.mine ?? "");
-      expect(h.callAI.mock.calls).toEqual([[built.prompt, { temp: 0.2, max: 2000, noLang: true }]]);
+      // v1's options and the one v2 adds: the paper is published text, so the request opts out of name suggestions (C13, Task 11).
+      expect(h.callAI.mock.calls).toEqual([[built.prompt, { temp: 0.2, max: 2000, noLang: true, literature: true }]]);
       expect([{ max: built.max, temp: built.temp, noLang: built.noLang }]).toEqual(w.opts);
     } else expect(h.callAI).not.toHaveBeenCalled();
     expect(walkView()).toEqual(w.view);

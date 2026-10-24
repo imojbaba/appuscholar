@@ -36,7 +36,9 @@ export const KIND_STAGE: Record<FixedBlobKind, { stage: StageKey; work: boolean 
   words_bank: { stage: "writing", work: true },
   words_prefs: { stage: "writing", work: false },
   close_prefs: { stage: "review", work: false },
-  viva_log: { stage: "review", work: true }
+  viva_log: { stage: "review", work: true },
+  // The participant list (spec 2026-10-24-participants-design.md §6): the student's own work in Collection and analysis.
+  participants: { stage: "collect", work: true }
 };
 
 /** The kinds of one stage, work or not, in KIND_STAGE's order: what the home reads for a built tool module's facts (ruling R6). */

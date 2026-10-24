@@ -26,6 +26,7 @@ import { heldBlobs } from "../lib/blobs/held";
 
 // Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
 // what this file sees (session C, 2026-10-21).
+vi.mock("@/components/tools/participants", () => ({ built: false }));
 vi.mock("@/components/tools/stats", () => ({ built: false }));
 vi.mock("@/components/tools/qual", () => ({ built: false }));
 vi.mock("@/components/tools/style", () => ({ built: false }));

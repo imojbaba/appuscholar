@@ -1,9 +1,12 @@
-import { pdScan, statsParseText, statsSplitLine, type ParsedCol, type ParsedData, type PdFound } from "@appuscholar/core";
+import { listTableScan, pdScanV2, statsParseText, statsSplitLine, type ColumnNames, type ParsedCol, type ParsedData, type PdFound } from "@appuscholar/core";
+import type { ParticipantList } from "@/lib/blobs/kinds/participants";
+import { scanSetup } from "./pdList";
 
 /*
  * The Statistics lab's data intake, around core's statsParseText (which stays v1's, untouched). Three things v1's page code did not do, or did
  * not say: which rows the parser dropped (register row D-W2-2 allowed a count "only with a register row of its own": D-S2-60), the semicolon
- * file that v1 reads as one column (F17; D-S2-61), and the name a file seeds (v1 statsUpload 9407).
+ * file that v1 reads as one column (F17; D-S2-61), and the name a file seeds (v1 statsUpload 9407). The personal-data scan is core's pdScanV2: v1's pdScan, except that a column
+ * only the shape of its values calls names is not flagged when a value has more than four words (open answers are not names: fault F1; D-S2-120).
  */
 
 /** The longest list of line numbers kept; the count is always exact. */
@@ -131,7 +134,7 @@ export async function parseSliced(text: string, o: SliceOpts = {}): Promise<Pars
 }
 
 /**
- * pdScan one column at a time (it reads each column on its own), so the event loop gets control between columns. Each column is scanned as a
+ * pdScanV2 one column at a time (it reads each column on its own), so the event loop gets control between columns. Each column is scanned as a
  * one-column table and its index and name put back. Null when `cancelled()` turned true.
  */
 export async function scanSliced(data: ParsedData, o: SliceOpts = {}): Promise<{ found: PdFound[]; freeText: string[] } | null> {
@@ -140,10 +143,29 @@ export async function scanSliced(data: ParsedData, o: SliceOpts = {}): Promise<{
   const turn = pacer(o);
   for (let i = 0; i < data.headers.length; i++) {
     const name = data.headers[i]! || ("Col" + (i + 1));
-    const one = pdScan({ headers: [data.headers[i]!], rows: data.rows.map((r) => [r[i]!]), cols: [data.cols[i]!] });
+    const one = pdScanV2({ headers: [data.headers[i]!], rows: data.rows.map((r) => [r[i]!]), cols: [data.cols[i]!] });
     for (const f of one.found) found.push({ ...f, index: i, name });
     if (one.freeText.length) freeText.push(name);
     if (i + 1 < data.headers.length && await turn()) return null;
   }
   return { found, freeText };
+}
+
+/**
+ * What the participant list says about each column (core's listTableScan), one column at a time like scanSliced, so the event loop gets control between columns: the cells that
+ * are people on the list, the names that are not, the rows of people who withdrew, the names inside answers. `found` is pdScanV2's: the columns it calls names are the ones the scan treats as
+ * name columns. The same as the whole-table call (the columns do not read each other). Null when `cancelled()` turned true.
+ */
+export async function scanNamesSliced(data: ParsedData, found: PdFound[], list: ParticipantList, o: SliceOpts = {}): Promise<ColumnNames[] | null> {
+  const { m, opts } = scanSetup(found, list);
+  const named = new Set(opts.nameColumns);
+  const out: ColumnNames[] = [];
+  const turn = pacer(o);
+  for (let i = 0; i < data.headers.length; i++) {
+    const one: ParsedData = { headers: [data.headers[i]!], rows: data.rows.map((r) => [r[i] ?? ""]), cols: [data.cols[i]!] };
+    const [col] = listTableScan(one, m, { ...opts, nameColumns: named.has(i) ? [0] : [] });
+    if (col) out.push({ ...col, index: i });
+    if (i + 1 < data.headers.length && await turn()) return null;
+  }
+  return out;
 }

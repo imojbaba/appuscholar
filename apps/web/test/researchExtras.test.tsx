@@ -170,7 +170,7 @@ describe("Research part 2: Quick read (rsQuickHTML / rsQuickP 8161-8182)", () =>
     await mount(ps);
     await click(cardOf(ps[0]!.title).querySelector('[data-testid="rs-quick"]'));
     await until(() => !!boxOf(ps[0]!.title));
-    expect(h.callAI).toHaveBeenCalledWith(buildQuickReadPrompt("psychology", c.ab).prompt, { temp: 0.1, max: 700, noLang: true });
+    expect(h.callAI).toHaveBeenCalledWith(buildQuickReadPrompt("psychology", c.ab).prompt, { temp: 0.1, max: 700, noLang: true, literature: true });
     const lines = [...boxOf(ps[0]!.title)!.querySelectorAll<HTMLElement>("[data-line]")].map((l) => l.textContent);
     expect(lines).toEqual([
       "Quick read (AI suggestion, from the abstract only)",
@@ -262,7 +262,7 @@ describe("Research part 2: the literature review and the research gap (8530-8551
     await click(tid("rs-litreview"));
     await until(() => h.set.mock.calls.length === 1);
     // the ticked papers in the order shown
-    expect(h.callAI).toHaveBeenCalledWith(buildLitReviewPrompt("psychology", [ps[1]!, ps[3]!]).prompt, { temp: 0.35, max: 1200 });
+    expect(h.callAI).toHaveBeenCalledWith(buildLitReviewPrompt("psychology", [ps[1]!, ps[3]!]).prompt, { temp: 0.35, max: 1200, literature: true });
     expect(h.setThinking).toHaveBeenCalledWith("custom", null, "💜 Reading 2 abstracts and drafting…");
     expect(h.set).toHaveBeenCalledWith("A grounded paragraph.", null, 7);
     expect(toasts().at(-1)).toBe("Ready — press Tab in the editor to insert");
