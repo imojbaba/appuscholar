@@ -3,7 +3,7 @@ import { shelfPaperKind, type ApNotes, type BlobKind, type BlobShape, type Shelf
 import { projectBlobClient, type BlobVault, type ProjectBlobState } from "@/lib/blobs/useProjectBlob";
 import { stageStates } from "@/lib/frame/stages";
 import type { ProjectWork } from "@/lib/frame/useProjectWork";
-import { isPopout } from "@/lib/popout/mode";
+import { mayMigrate } from "@/lib/popout/mode";
 import type { VaultValue } from "@/lib/vault/useVault";
 import { cellsToNotes, linkShelf, noteKey, rekeyNotes, withPids } from "./ids";
 
@@ -117,10 +117,10 @@ const running = new Map<string, Promise<PaperIdsResult>>();
  * own blob. Answers "done" when nothing is left to do; "locked" when the vault is locked (nothing is read, nothing asked) or locks meanwhile; "broken" when a blob does not
  * open or is not of its shape (it, and every blob after it, is left unwritten; a reading-list paper that does not open is the one exception: it is skipped, its note gets no
  * cells so a later run tries it again, the rest is done, and the answer is "broken"); "busy" when it could not finish now. Two calls for one project at once are one run. Never in a
- * place's own window.
+ * place's own window, nor on the adding screen (B2-R16).
  */
 export function ensurePaperIds(projectId: string, d: PaperMigrateDeps): Promise<PaperIdsResult> {
-  if (isPopout()) return Promise.resolve("busy");
+  if (!mayMigrate()) return Promise.resolve("busy");
   const open = gate(d.vault());
   if (open !== "open") return Promise.resolve(open);
   const going = running.get(projectId);

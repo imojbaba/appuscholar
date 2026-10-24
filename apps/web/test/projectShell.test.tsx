@@ -35,7 +35,6 @@ vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog
 vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children, useLibrary: () => ({ lib: [], loading: false, locked: false }) }));
 // Literature's tab counts (Task 10).
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ index: null }) }));
-vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
@@ -173,6 +172,30 @@ describe("ProjectShell", () => {
     expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held);
     expect(heldBlobs.has("p1:idea_intake")).toBe(true);
     expect(h.push).toHaveBeenCalledWith("/p/p2");
+  });
+
+  it("switching project with a value held over a blob that does not open says that, not that it waits for the passphrase", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    heldBlobs.put("p1:rs_prefs", [{ value: { rank: true } }], async (ops) => ops, true);
+    await act(async () => { await ws().openProject("p2"); });
+    expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held_broken);
+    expect(h.toast).not.toHaveBeenCalledWith(en.blob_switch_held);
+    expect(en.blob_switch_held_broken).not.toMatch(/passphrase/i);
+    expect(heldBlobs.has("p1:rs_prefs")).toBe(true);
+    expect(h.push).toHaveBeenCalledWith("/p/p2");
+  });
+
+  it("switching project with one value held for the passphrase and another over a blob that does not open keeps the general line", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    heldBlobs.put("p1:rs_prefs", [{ value: { rank: true } }], async (ops) => ops, true);
+    heldBlobs.put("p1:idea_intake", [{ value: { topic: "Sleep" } }], async (ops) => ops);
+    await act(async () => { await ws().openProject("p2"); });
+    expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held);
+    expect(h.toast).not.toHaveBeenCalledWith(en.blob_switch_held_broken);
   });
 
   it("the wordmark with an unsaved document asks Switch anyway?; Stay keeps the address", async () => {

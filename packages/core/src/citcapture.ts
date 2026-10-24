@@ -7,7 +7,9 @@
    - captureIsDuplicate(lib, rec) is 13651's `l.some(...)`, with the library a parameter;
    - decodeCapture also keeps `volume`, `issue` and `pages` when the payload has them (only bookmarkletSourceV2's does; a v1 payload decodes as before).
    Wave A (walk fault W1, register row D-S2-23) adds siblings, below, and leaves v1's functions as they are: bookmarkletSourceV2 / bookmarkletHrefV2, capNameToCit,
-   captureRecordV2 and captureMatch. Held to their stated differences by test/citcapture-v2.test.ts. */
+   captureRecordV2 and captureMatch. Held to their stated differences by test/citcapture-v2.test.ts.
+   Wave B (Task 20, register row D-S2-125) adds bookmarkletSourceV3 / bookmarkletHrefV3 beside V2: V2's source with the one address it opens changed to the adding screen,
+   `origin + "/add#capture="`. Held to that one difference by test/citcapture-v3.test.ts. */
 import type { CitationEntry } from "./citation";
 
 /** citSetupBookmarklet's `parts` (13625-13632), verbatim: the bookmarklet's source for an app at `appUrl` (v1's `location.origin+location.pathname`). */
@@ -90,6 +92,20 @@ export function bookmarkletSourceV2(appUrl: string): string {
 }
 /** The link's href for bookmarkletSourceV2, as 13635 builds v1's. */
 export const bookmarkletHrefV2 = (appUrl: string): string => "javascript:" + encodeURIComponent(bookmarkletSourceV2(appUrl));
+
+/**
+ * bookmarkletSourceV2 with the one address it opens changed (wave B Task 20, walk faults W5, W6, W13): `origin + "/add#capture="`, the focused adding screen, where V2 opened
+ * `appUrl + "#capture="`, the workspace. What the bookmark reads from the page, what it sends and the alert on a page with no title are V2's. A trailing slash on `origin` is dropped.
+ */
+export function bookmarkletSourceV3(origin: string): string {
+  const base = origin.replace(/\/+$/, "");
+  const v2 = bookmarkletSourceV2(base + "/");
+  const v2Opens = "window.open('" + base + "/#capture='";
+  if (v2.indexOf(v2Opens) < 0) throw new Error("bookmarkletSourceV3: V2's opened address moved");
+  return v2.replace(v2Opens, () => "window.open('" + base + "/add#capture='");
+}
+/** The link's href for bookmarkletSourceV3, as 13635 builds v1's. */
+export const bookmarkletHrefV3 = (origin: string): string => "javascript:" + encodeURIComponent(bookmarkletSourceV3(origin));
 
 /** One captured name as the library writes it: a name with a comma unchanged; PubMed's "Surname Initials" (the last word one to four capitals) as "Surname, Initials",
  * rsAuthorsToCit's rule for the same shape; anything else unchanged. */

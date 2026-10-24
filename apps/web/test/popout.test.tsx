@@ -34,7 +34,6 @@ vi.mock("@/lib/cite/useLibrary", async (orig) => ({ ...(await orig<typeof import
 // The paper-id migration (wave B, Task 17) needs the real library provider; this file stands the provider in, and is about something else.
 vi.mock("@/components/frame/PaperIdsRunner", () => ({ PaperIdsRunner: () => null }));
 vi.mock("@/components/frame/FullTextRunner", () => ({ FullTextRunner: () => null }));
-vi.mock("@/lib/cite/capture", () => ({ CaptureHash: () => null }));
 vi.mock("@/components/workspace/ChromeDialogs", () => ({ ChromeDialogs: () => <div data-testid="chrome-dialogs" /> }));
 vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: () => null }));
 vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: () => null }));

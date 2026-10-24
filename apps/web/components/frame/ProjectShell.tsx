@@ -13,18 +13,17 @@ import { allPdf, importFiles } from "@/lib/import/run";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
-import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
+import { heldOnlyOverBrokenBlobs, shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
 import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places";
 import { listOrSeed } from "@/lib/frame/firstDocument";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sync";
-import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
+import { WINDOW_PARAM, holdPopout, isPopout, mayMigrate, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
 import type { PaperIdsState } from "@/lib/papers/migrate";
 import { DocAccessHost } from "@/lib/editor/docAccess";
 import { documentLayers } from "@/lib/tools/registry";
-import { CaptureHash } from "@/lib/cite/capture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImportOrigin } from "@/components/workspace/dialogs/ImportOrigin";
 import { MyWriting } from "@/components/workspace/dialogs/MyWriting";
@@ -113,7 +112,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
   // After each unlock of a complete vault, titles still in plaintext (from before the vault, or renamed since by an older tab) are sealed.
-  const titlesSealable = vault.status === "unlocked" && vault.complete && !isPopout();
+  const titlesSealable = vault.status === "unlocked" && vault.complete && mayMigrate();
   const scratchForTitles = me?.scratchProjectId ?? null;
   useEffect(() => {
     // Once per unlock in this tab, not on every page: a lock lets the next unlock run it again.
@@ -317,8 +316,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const confirmExit = useCallback(async (): Promise<boolean> => {
     if (!(await confirmLeave())) return false;
     // A stage's value that has not reached the server (the vault is locked, or another window won the save) stays held for this tab and goes once
-    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual).
-    if (shouldWarnOnUnloadBlobs()) toast(t("blob_switch_held"));
+    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual). When all of it waits on a saved copy that does not open on this
+    // device, the line says that: the passphrase is not what it waits for (Task 21a, fix round 2).
+    if (shouldWarnOnUnloadBlobs()) toast(t(heldOnlyOverBrokenBlobs() ? "blob_switch_held_broken" : "blob_switch_held"));
     return true;
   }, [confirmLeave, t]);
 
@@ -495,8 +495,6 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       <SuggestionProvider>
         {/* One citation library for the Citations tab and the caret chip under the document. */}
         <CiteLibraryProvider>
-        {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
-        {inProject && <CaptureHash />}
         {/* The paper-id migration (Task 17): once per project per unlock per tab, when the vault is off or open, through this shared library; never in a place's own window. */}
         {inProject && !popout && <PaperIdsRunner onState={reportPaperIds} />}
         {/* Open-access full text from Europe PMC for kept papers (Task 21b): one at a time, only while the vault is off or open; never in a place's own window. */}
