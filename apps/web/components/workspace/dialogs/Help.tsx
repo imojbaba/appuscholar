@@ -12,6 +12,7 @@ import { exportAll, exportFileName, localDay, type ExportDoc, type ExportDocSumm
 import { blobId, type BlobKind } from "@/lib/blobs/kinds";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
+import { stampBackup } from "@/lib/help/backup/stamp";
 import { buildAllRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
 import { openTitle, projectKeyId, titleText, UNTITLED } from "@/lib/vault/titles";
 import { APP_VERSION } from "@/lib/version";
@@ -104,6 +105,7 @@ export function useAccount() {
       });
       await apiFetch<void>("/me/export-audit", { method: "POST" });
       downloadBlob(exportFileName(), blob);
+      stampBackup(me?.id);
       toast(t("export_done"));
     } catch {
       toast(t("export_fail"));
