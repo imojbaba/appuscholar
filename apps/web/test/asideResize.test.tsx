@@ -36,7 +36,7 @@ beforeEach(() => {
   h.update.mockReset().mockImplementation(async (patch: Record<string, unknown>) => { h.settings = { ...h.settings, ...patch }; });
   h.settings = {}; h.wide = true; h.cw = 1400;
   h.sug = { status: "done", text: "A read.", setEditor: () => {}, tab: () => false };
-  h.ws = { currentDoc: { id: "d1", projectId: "p1", bodyHtml: "<p>x</p>", currentSeq: 1, deks: [] }, place: null, registerFlush: vi.fn(), registerEditor: vi.fn(), setWordCount: vi.fn(), startImport: vi.fn(), closeDocument: vi.fn() };
+  h.ws = { currentDoc: { id: "d1", projectId: "p1", bodyHtml: "<p>x</p>", currentSeq: 1, deks: [] }, place: { stage: "writing", tab: null }, registerFlush: vi.fn(), registerEditor: vi.fn(), setWordCount: vi.fn(), startImport: vi.fn(), closeDocument: vi.fn() };
   // Only the card's grid is measured; every other box has no size, as in jsdom.
   rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
     const width = this.classList.contains("doc-with-aside") ? h.cw : 0;
@@ -83,7 +83,7 @@ describe("the AI pane's width handle", () => {
     expect(el.getAttribute("role")).toBe("separator");
     expect(el.getAttribute("aria-orientation")).toBe("vertical");
     expect(el.getAttribute("aria-label")).toBe(dock.dock_aside_width);
-    expect(dock.dock_aside_width).toBe("Width of the AI panel");
+    expect(dock.dock_aside_width).toBe("AI pane width");
     expect(el.getAttribute("aria-valuemin")).toBe("320");
     expect(el.getAttribute("aria-valuemax")).toBe("760");
     expect(now()).toBe("420");
@@ -238,9 +238,25 @@ describe("the AI pane's width handle", () => {
   });
 
   it("is there in the Writing place, which shows the document at full width", async () => {
-    h.ws = { ...(h.ws as object), place: { stage: "writing", tab: null } };
     await mount();
+    expect(grid().classList.contains("beside")).toBe(false);
     expect(handle()).not.toBeNull();
+  });
+
+  it("is not there on the project's home, where the document is hidden: it is measured once Writing is open, not before", async () => {
+    // The home shows no document, so nothing there has a width; going on to Writing must measure then (1000 - 480 - 16 = 504), not keep a stale 760.
+    h.cw = 1000;
+    h.settings = { dockW: 760 };
+    h.ws = { ...(h.ws as object), place: null };
+    await mount();
+    expect(handle()).toBeNull();
+    expect(asideW()).toBe("");
+    h.ws = { ...(h.ws as object), place: { stage: "writing", tab: null } };
+    rerender();
+    expect(handle()!.getAttribute("aria-valuemax")).toBe("504");
+    expect(now()).toBe("504");
+    expect(asideW()).toBe("504px");
+    expect(h.update).not.toHaveBeenCalled();
   });
 
   it("is not there when there is no pane to resize", async () => {
@@ -290,6 +306,54 @@ describe("the AI pane's width handle", () => {
     expect(h.update).toHaveBeenLastCalledWith({ dockW: 504 });
     key("End");
     expect(h.update).toHaveBeenLastCalledWith({ dockW: 320 });
+  });
+
+  it("a container with a fractional width (browser zoom) gives whole pixels: the widest is rounded down and only integers reach update", async () => {
+    // 1000.6 - 480 - 16 = 504.6: the API takes whole numbers for dockW, so the widest is 504.
+    h.cw = 1000.6;
+    h.settings = { dockW: 600 };
+    await mount();
+    expect(handle()!.getAttribute("aria-valuemax")).toBe("504");
+    expect(now()).toBe("504");
+    key("ArrowRight");
+    expect(h.update).toHaveBeenLastCalledWith({ dockW: 464 });
+    rerender();
+    key("Home");
+    expect(h.update).toHaveBeenLastCalledWith({ dockW: 504 });
+    rerender();
+    pointer("pointerdown", 1000);
+    pointer("pointermove", -2000);
+    expect(now()).toBe("504");
+    pointer("pointerup", -2000);
+    for (const [patch] of h.update.mock.calls as [{ dockW: number }][]) expect(Number.isInteger(patch.dockW)).toBe(true);
+  });
+
+  it("a drag past the widest on a fractional container stores a whole number", async () => {
+    h.cw = 1000.6;
+    h.settings = { dockW: 400 };
+    await mount();
+    pointer("pointerdown", 1000);
+    pointer("pointermove", -2000);
+    pointer("pointerup", -2000);
+    expect(h.update).toHaveBeenCalledTimes(1);
+    expect(h.update).toHaveBeenCalledWith({ dockW: 504 });
+  });
+
+  it("measures again when the grid itself changes size, where the browser can tell (ResizeObserver)", async () => {
+    const seen: { cb: () => void; el: Element }[] = [];
+    const was = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class { constructor(private cb: () => void) {} observe(el: Element) { seen.push({ cb: this.cb, el }); } unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+    try {
+      h.cw = 1000;
+      h.settings = { dockW: 600 };
+      await mount();
+      expect(now()).toBe("504");
+      expect(seen).toHaveLength(1);
+      expect(seen[0]!.el).toBe(grid());
+      h.cw = 1400;
+      act(() => { seen[0]!.cb(); });
+      expect(now()).toBe("600");
+    } finally { globalThis.ResizeObserver = was; }
   });
 
   it("measures again when the window is resized: a pane clamped down widens back toward its saved width", async () => {

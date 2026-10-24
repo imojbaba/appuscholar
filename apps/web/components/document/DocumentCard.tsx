@@ -36,8 +36,8 @@ const ASIDE_W_STEP = 40;
 /** v1 let the text collapse beside a wide dock; here it keeps this much, with the grid's gap (--s4) between it and the pane. */
 const TEXT_KEEP = 480;
 const ASIDE_GAP = 16;
-/** The widest the pane may be in a grid `container` px wide: 760, or less to leave the text its 480px; never under 320. A grid with no size yet is not limited. */
-const asideRoom = (container: number): number => (container > 0 ? Math.max(ASIDE_W_MIN, Math.min(ASIDE_W_MAX, container - TEXT_KEEP - ASIDE_GAP)) : ASIDE_W_MAX);
+/** The widest the pane may be in a grid `container` px wide: 760, or less to leave the text its 480px; never under 320. A whole number (the API takes no fraction, and a zoomed page has one); a grid with no size yet is not limited. */
+const asideRoom = (container: number): number => (container > 0 ? Math.max(ASIDE_W_MIN, Math.min(ASIDE_W_MAX, Math.floor(container - TEXT_KEEP - ASIDE_GAP))) : ASIDE_W_MAX);
 export const clampAsideW = (w: number, room = ASIDE_W_MAX): number => Math.max(ASIDE_W_MIN, Math.min(room, Math.round(w)));
 
 /**
@@ -69,9 +69,10 @@ export function DocumentCard() {
   const aside = aiPaneHasContent(suggestion, t("ai_pane_placeholder"));
   const [highlightAi, setHighlightAi] = useState(false);
 
-  // The pane's width handle (Task 13, P4): the pane is a column of its own only at 1100px and up, in Writing (beside a place it goes under the text).
+  // The pane's width handle (Task 13, P4): the Writing place's pane, a column of its own only at 1100px and up (beside a place it goes under the text).
+  // Not on the project's home, which shows no document: the grid has no width there to measure.
   const wide = useMedia("(min-width: 1100px)");
-  const resizable = aside && !beside && wide;
+  const resizable = aside && wide && place?.stage === "writing";
   const gridRef = useRef<HTMLDivElement>(null);
   // The widest the pane can be here, measured from the grid; a saved width wider than that shows clamped and is not saved back.
   const [room, setRoom] = useState(ASIDE_W_MAX);
@@ -85,7 +86,10 @@ export function DocumentCard() {
     const measure = () => setRoom(asideRoom(gridRef.current?.getBoundingClientRect().width ?? 0));
     measure();
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    // The grid can change width without the window (the document opening, a scrollbar): the browser says so where it can.
+    const watch = typeof ResizeObserver === "function" && gridRef.current ? new ResizeObserver(measure) : null;
+    if (watch && gridRef.current) watch.observe(gridRef.current);
+    return () => { window.removeEventListener("resize", measure); watch?.disconnect(); };
   }, [resizable]);
   const storeW = (next: number) => { if (next !== savedW) void update({ dockW: next }); };
   const onAsideKey = (e: React.KeyboardEvent) => {
