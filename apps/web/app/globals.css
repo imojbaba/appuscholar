@@ -724,6 +724,12 @@
 .addvia-h { margin: 0; font-size: 15px; font-weight: 700; }
 .addvia-line { margin: 0; font-size: 14px; color: var(--muted); }
 .addvia-btn { min-height: 44px; padding: 0 var(--s4); cursor: grab; }
+/* The terms in place (fix round, D-S2-125): the workspace dialog's text and form in a card under the paper; its ticks and buttons are 44px targets, and its buttons wrap rather than overflow. */
+.addpaper-terms { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+.addpaper-terms label { align-items: center; min-height: 44px; }
+.addpaper-terms [data-testid="terms-actions"] { flex-wrap: wrap; }
+.addpaper-terms button { min-height: 44px; }
+.addpaper-h2:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 @media (max-width: 700px) {
   .addpaper { padding: var(--s6) 16px; }
   .addpaper-h { font-size: 24px; }
@@ -732,6 +738,7 @@
   .addpaper-keep, .addpaper-btn { align-self: stretch; }
   .addvia { padding: var(--s4); }
   .addvia-btn { align-self: stretch; justify-content: center; }
+  .addpaper-terms { padding: var(--s4); }
 }
 /* end Adding this paper */
 

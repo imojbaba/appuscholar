@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { BlobKind } from "@/lib/blobs/kinds";
+import { isCaptureHash } from "@/lib/cite/captureHash";
 import { stageOfKind } from "@/lib/frame/stages";
 import { isStageKey, type StageKey } from "@/lib/tools";
 
@@ -27,10 +28,12 @@ export function isPopout(): boolean {
 
 /**
  * The adding screen (`/add`, wave B Task 20, ruling B2-R16): the tab the bookmark opens to keep one paper. It is not a pop-out (it writes the project's library, which a pop-out
- * of another stage may not), but it is not a place to start the vault's one-off migrations either: its tab is closed straight after the keep.
+ * of another stage may not), but it is not a place to start the vault's one-off migrations either: its tab is closed straight after the keep. An old bookmark opens `/#capture=...`
+ * and `/` sends it on to `/add` only once the app has loaded, so a `#capture=` hash counts as the adding screen wherever it is: the hop through `/` must not start a migration either.
  */
 export function isAddingScreen(): boolean {
-  return typeof window !== "undefined" && /^\/add\/?$/.test(window.location.pathname);
+  if (typeof window === "undefined") return false;
+  return /^\/add\/?$/.test(window.location.pathname) || isCaptureHash(window.location.hash);
 }
 
 /**

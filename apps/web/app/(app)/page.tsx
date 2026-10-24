@@ -3,10 +3,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useSettings } from "@/lib/settings";
+import { addingAddress } from "@/lib/cite/captureHash";
 import { landingTarget } from "@/lib/frame/landing";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** `/` opens nothing of its own: it sends the student to first run, the active project's home or the list (lib/frame/landing.ts). */
+/**
+ * `/` opens nothing of its own: it sends the student to first run, the active project's home or the list (lib/frame/landing.ts). An old bookmark's `/#capture=...` goes to the
+ * adding screen at once, before /me and before GET /projects (wave B Task 20 fix round, walk fault W13): a project list that fails to load must not lose the paper, and the vault's
+ * migration treats that hash as the adding screen (lib/popout/mode.ts), so nothing of the app's own work starts in between.
+ */
 export default function Landing() {
   const router = useRouter();
   const { me } = useSettings();
@@ -15,7 +20,11 @@ export default function Landing() {
   const activeProjectId = me?.activeProjectId ?? null;
   const scratchProjectId = me?.scratchProjectId;
   useEffect(() => {
-    if (!userId || !scratchProjectId) return;
+    const to = addingAddress(window.location.hash);
+    if (to) router.replace(to);
+  }, [router]);
+  useEffect(() => {
+    if (!userId || !scratchProjectId || addingAddress(window.location.hash)) return;
     let live = true;
     apiFetch<Array<{ id: string }>>("/projects").then((list) => {
       if (!live) return;

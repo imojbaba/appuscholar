@@ -599,6 +599,20 @@ describe("where it does not run", () => {
     expect(await run(await vaultOff())).toBe("busy");
     expect(server.calls).toEqual([]);
   });
+
+  it("never at / with a #capture= hash: an old bookmark's hop through / to the adding screen (W13)", async () => {
+    await seed(null);
+    server.calls.length = 0;
+    window.history.replaceState(null, "", "/#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");
+    expect(await run(await vaultOff())).toBe("busy");
+    expect(server.calls).toEqual([]);
+  });
+
+  it("any other hash at / does not stop it", async () => {
+    await seed(null);
+    window.history.replaceState(null, "", "/#top");
+    expect(await run(await vaultOff())).toBe("done");
+  });
 });
 
 describe("the citations step through the shell's library", () => {

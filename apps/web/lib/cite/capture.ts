@@ -1,9 +1,10 @@
-import { captureMatch, captureRecordV2, captureYearV2, decodeCapture, type CaptureData, type CitationEntry } from "@appuscholar/core";
+import { captureMatch, captureRecordV2, captureYearV2, decodeCapture, retrNormDoi, type CaptureData, type CitationEntry } from "@appuscholar/core";
 import type { StoredEntry } from "@/lib/blobs/kinds";
 import { paperMatch } from "@/lib/papers/ids";
 import { keepEntry, libraryRead, type KeepDeps } from "@/lib/papers/keep";
 import type { Library } from "./useLibrary";
 import { fillEmptyIn } from "./fillEmpty";
+import { CAPTURE_PREFIX } from "./captureHash";
 
 /*
  * The one-click capture (v1 "Zotero-lite", citSetupBookmarklet 13622-13636, citCheckCaptureHash 13637-13655, called at boot 13676-13677). The bookmark, dragged to the bookmarks
@@ -18,7 +19,7 @@ import { fillEmptyIn } from "./fillEmpty";
  * question and its two toasts are gone with the workspace tab. The address is read, not rewritten: a reload shows the same paper, and keeping it twice says it is already kept.
  */
 
-export const CAPTURE_PREFIX = "#capture=";
+export { CAPTURE_PREFIX };
 
 /** What the adding screen has in its address: nothing to add, a payload that cannot be read (or has no title), or the paper with the entry a Keep would store. */
 export type CaptureRead = { kind: "none" } | { kind: "unreadable" } | { kind: "paper"; data: CaptureData; entry: CitationEntry };
@@ -40,20 +41,29 @@ export type FileCaptureDeps = KeepDeps & Pick<Library, "fillEmpty">;
 /** "kept": the paper was not in the project and is now (and on its reading list). "already": it was; `filled` says some of its empty fields were filled from the capture. */
 export type CaptureFiled = { state: "kept" | "already"; filled: boolean };
 
+/** Two papers whose DOIs disagree: both have one and they are not the same DOI (retrNormDoi: no URL, lower case). With a DOI missing on either side nothing disagrees. */
+const doisDisagree = (a: { doi?: string }, b: { doi?: string }): boolean => {
+  const da = retrNormDoi(a.doi ?? ""), db = retrNormDoi(b.doi ?? "");
+  return !!da && !!db && da !== db;
+};
+
 /**
  * Files a captured paper through keepEntry (Task 18: the DOI decides when both have one, else the same long title and year; so "Smith JA" and "Smith, JA" captures of one paper are
  * one). Before keepEntry, wave A's rule still applies, as ruling B2-R15 says it must not regress (W1): v1's duplicate (the same title and the same author) and the same title with
- * no author on file count as the paper already kept, whatever its year (an entry the student gave another year by hand, or v1 saved as "09/1"). When the paper is already kept, its
+ * no author on file count as the paper already kept, whatever its year (an entry the student gave another year by hand, or v1 saved as "09/1"). Only against a paper whose DOI does not
+ * disagree with the capture's, though: D-S2-125 says the DOI decides when both have one, so a stored "Editorial" with one DOI is not the "Editorial" a capture brings with another, and
+ * is neither filled with its authors nor taken for its duplicate (the same guard picks the entry that is filled). When the paper is already kept, its
  * empty fields are filled from the capture (the authors, volume, issue, pages, source), by useLibrary().fillEmpty, which writes nothing over a field that has text; `filled` is true
  * only when that changed something. Throws, before it changes anything, when the library has not been read (loading, locked, broken, a failed read) or will not take the paper.
  */
 export function fileCapture(rec: CitationEntry, d: FileCaptureDeps): CaptureFiled {
   if (!libraryRead(d)) throw new Error("Keep needs a library that has been read.");
-  const m = captureMatch(d.lib, rec);
+  const m = captureMatch(d.lib.filter((e) => !doisDisagree(rec, e)), rec);
   let inShown: (e: CitationEntry) => boolean;
   let inStored: (e: CitationEntry) => boolean;
   if (m.kind !== "new") {
-    inShown = inStored = (e) => e.title === rec.title && (m.kind === "fill" ? !e.author : e.author === rec.author);
+    // The entry captureMatch found, by the same title and no DOI of another paper; the stored copy may have changed since the copy shown was read, so it is matched the same way.
+    inShown = inStored = (e) => !doisDisagree(rec, e) && e.title === rec.title && (m.kind === "fill" ? !e.author : e.author === rec.author);
   } else {
     const r = keepEntry(rec, d);
     if (r.state === "kept") return { state: "kept", filled: false };

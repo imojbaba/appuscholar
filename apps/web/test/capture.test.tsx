@@ -141,6 +141,61 @@ describe("fileCapture keeps through keepEntry (Task 18)", () => {
     expect(lib.box.stored[0]).toBe(other);
   });
 
+  describe("the DOI decides when both papers have one (D-S2-125; wave A's title rules apply only when the DOIs do not disagree)", () => {
+    const EDITORIAL = { title: "Editorial", source: "", volume: "", issue: "", pages: "", url: "" };
+    const stored = (over: Partial<StoredEntry>): StoredEntry => ({ title: "Editorial", author: "", year: "2024", type: "Journal article", style: "apa", pid: "kold", rl: true, ...over });
+
+    it("an authorless Editorial with one DOI and a capture of another paper called Editorial with a different DOI: the new paper is kept, nothing is filled into the old record", () => {
+      const old = stored({ doi: "10.1/a" });
+      const lib = library([old]);
+      const rec = entryOf(hashOf({ ...EDITORIAL, author: "Smith J", year: "2024", doi: "10.1/b" }));
+      expect(fileCapture(rec, lib.deps())).toEqual({ state: "kept", filled: false });
+      expect(lib.box.stored).toHaveLength(2);
+      expect(lib.box.stored[0]).toBe(old);
+      expect(lib.box.stored[1]).toMatchObject({ title: "Editorial", author: "Smith, J", doi: "10.1/b", rl: true, pid: expect.stringMatching(/^k/) });
+      expect(lib.fillEmpty).not.toHaveBeenCalled();
+    });
+
+    it("the same title and the same author with different DOIs are two papers, not a duplicate", () => {
+      const old = stored({ author: "Smith, J", doi: "10.1/a" });
+      const lib = library([old]);
+      const rec = entryOf(hashOf({ ...EDITORIAL, author: "Smith J", year: "2024", doi: "10.1/b" }));
+      expect(fileCapture(rec, lib.deps())).toEqual({ state: "kept", filled: false });
+      expect(lib.box.stored).toHaveLength(2);
+      expect(lib.box.stored[0]).toBe(old);
+    });
+
+    it("two DOIs that are one DOI written two ways do not disagree: the title rules still apply (a fill, a duplicate)", () => {
+      const fill = library([stored({ doi: "10.1/a" })]);
+      expect(fileCapture(entryOf(hashOf({ ...EDITORIAL, author: "Smith J", doi: "https://doi.org/10.1/A" })), fill.deps())).toEqual({ state: "already", filled: true });
+      expect(fill.box.stored).toHaveLength(1);
+      expect(fill.box.stored[0]).toMatchObject({ pid: "kold", author: "Smith, J", doi: "10.1/a" });
+      const dup = library([stored({ author: "Smith, J", doi: "10.1/a" })]);
+      expect(fileCapture(entryOf(hashOf({ ...EDITORIAL, author: "Smith J", doi: "https://doi.org/10.1/A" })), dup.deps())).toEqual({ state: "already", filled: false });
+      expect(dup.box.stored).toHaveLength(1);
+    });
+
+    it("one side with no DOI is no disagreement: the stored paper with no DOI is filled; a capture with no DOI matches a stored paper that has one", () => {
+      const noDoi = library([stored({})]);
+      expect(fileCapture(entryOf(hashOf({ ...EDITORIAL, author: "Smith J", doi: "10.1/b" })), noDoi.deps())).toEqual({ state: "already", filled: true });
+      expect(noDoi.box.stored).toHaveLength(1);
+      expect(noDoi.box.stored[0]).toMatchObject({ author: "Smith, J" });
+      const stray = library([stored({ doi: "10.1/a" })]);
+      expect(fileCapture(entryOf(hashOf({ ...EDITORIAL, author: "Smith J", doi: "" })), stray.deps())).toEqual({ state: "already", filled: true });
+      expect(stray.box.stored).toHaveLength(1);
+    });
+
+    it("an entry whose DOI disagrees is left out of the search, so a later entry that does match is the one filled (the shown list and the stored one)", () => {
+      const other = stored({ doi: "10.1/a", pid: "kother" });
+      const mine = stored({ pid: "kmine" });
+      const lib = library([other, mine]);
+      expect(fileCapture(entryOf(hashOf({ ...EDITORIAL, author: "Smith J", doi: "10.1/b" })), lib.deps())).toEqual({ state: "already", filled: true });
+      expect(lib.box.stored).toHaveLength(2);
+      expect(lib.box.stored[0]).toBe(other);
+      expect(lib.box.stored[1]).toMatchObject({ pid: "kmine", author: "Smith, J" });
+    });
+  });
+
   it("a stored entry that has no pid yet is given one and counts as already kept", () => {
     const lib = library([{ ...PM_V1_ENTRY, doi: "10.1038/s41598-024-00001-x", author: "Schaefer, EM" }]);
     const r = fileCapture(entryOf(hashOf({ ...PM, doi: "10.1038/s41598-024-00001-x" })), lib.deps());

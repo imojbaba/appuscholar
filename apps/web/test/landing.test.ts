@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { landingPath, landingTarget } from "@/lib/frame/landing";
+import { addingAddress, carriedCapture, isCaptureHash } from "@/lib/cite/captureHash";
 
 describe("what opens", () => {
   it("landingPath: a new student goes to first run, a returning one to the active project's home, otherwise the list", () => {
@@ -24,5 +25,25 @@ describe("what opens", () => {
 
   it("any other address lands by landingPath; another hash is not carried", () => {
     expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", search: "", hash: "#top" })).toBe("/p/a");
+  });
+});
+
+describe("a #capture= hash is told apart from every other hash (the adding screen's address)", () => {
+  it("isCaptureHash and addingAddress: only a hash that begins #capture= goes to /add, carried as it is", () => {
+    expect(isCaptureHash("#capture=xyz")).toBe(true);
+    for (const h of ["", "#", "#top", "#capture", "#Capture=x", "capture=x", "?capture=x"]) expect(isCaptureHash(h), h).toBe(false);
+    expect(addingAddress("#capture=eyJ0%2B%3D")).toBe("/add#capture=eyJ0%2B%3D");
+    expect(addingAddress("#top")).toBeNull();
+    expect(addingAddress("")).toBeNull();
+  });
+
+  it("carriedCapture (the sign-in forms' redirectTo): a capture hash goes to /add and nothing else is ever a target", () => {
+    expect(carriedCapture("#capture=eyJ0aXRsZSI6IlQifQ%3D%3D")).toBe("/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");
+    expect(carriedCapture("/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D")).toBe("/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");
+    for (const bad of [
+      undefined, null, 42, "", "/", "#top", "#capture", "/add", "/add#top", "/p/x#capture=abc",
+      "https://evil.example/add#capture=abc", "//evil.example/add#capture=abc", "/\\evil.example#capture=abc", "javascript:alert(1)", "#capture=a b", "#capture=<script>", "#capture=a\nb",
+      "/add#capture=a#capture=b", "/add?x=1#capture=abc", "/add/#capture=abc"
+    ]) expect(carriedCapture(bad), String(bad)).toBe("/");
   });
 });

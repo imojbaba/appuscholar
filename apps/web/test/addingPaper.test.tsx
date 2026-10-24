@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bookmarkletSourceV3, captureRecordV2 } from "@appuscholar/core";
 import type { StoredEntry } from "../lib/blobs/kinds";
+import { TERMS_SINCE } from "../lib/terms";
 import en from "../messages/en.json";
 
 /*
@@ -17,7 +18,9 @@ type Blob = { value: StoredEntry[] | null; loading: boolean; locked: boolean; br
 type Vault = { status: string; known: ReturnType<typeof vi.fn>; ensureUnlocked: ReturnType<typeof vi.fn>; decryptBody: ReturnType<typeof vi.fn> };
 const h = vi.hoisted(() => ({
   api: vi.fn(),
-  me: null as unknown as { id: string; activeProjectId: string | null; scratchProjectId: string },
+  me: null as unknown as { id: string; activeProjectId: string | null; scratchProjectId: string; termsAcceptedAt: string | null } | null,
+  reload: vi.fn(async () => {}),
+  toast: vi.fn(),
   vault: null as unknown as Vault,
   /** One citations blob per project id. */
   blobs: {} as Record<string, Blob>,
@@ -25,7 +28,8 @@ const h = vi.hoisted(() => ({
   listeners: new Set<() => void>()
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
-vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {} }) }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {}, reload: h.reload }) }));
+vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => h.vault }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useEffect, useState } = await import("react");
@@ -103,7 +107,10 @@ async function keepIn(name: string) {
 }
 
 beforeEach(() => {
-  h.me = { id: "u1", activeProjectId: "p2", scratchProjectId: "scratch" };
+  // The terms were accepted (at the instant the current terms took effect): the gate is open, unless a test closes it.
+  h.me = { id: "u1", activeProjectId: "p2", scratchProjectId: "scratch", termsAcceptedAt: TERMS_SINCE };
+  h.reload.mockReset().mockImplementation(async () => { h.me = { ...h.me!, termsAcceptedAt: new Date().toISOString() }; });
+  h.toast.mockReset();
   h.vault = {
     status: "locked",
     known: vi.fn(async () => "locked"),
@@ -112,6 +119,7 @@ beforeEach(() => {
   };
   h.api.mockReset().mockImplementation(async (path: string) => {
     if (path === "/projects") return PROJECTS;
+    if (path === "/me/terms") return undefined;
     throw new Error("unexpected request " + path);
   });
   h.blobs = { p1: blob([]), p2: blob([]), p3: blob([]), scratch: blob([]) };
@@ -159,7 +167,8 @@ describe("the adding screen shows the paper before any passphrase (W5)", () => {
     await mount("");
     expect(tid("add-keep")).toBeNull();
     expect(tid("add-none")!.textContent).toBe(t("add_none"));
-    expect($('a[href="/"]')!.textContent).toBe(t("add_home"));
+    // "Go to my projects" goes to the list, not to `/` (which would open the active project's home).
+    expect($('a[href="/projects"]')!.textContent).toBe(t("add_home"));
     act(() => { roots.splice(0)[0]!.unmount(); });
     document.body.innerHTML = "";
     await mount("#capture=%%%");
@@ -245,7 +254,261 @@ describe("Keep it: the passphrase, then Choose a project", () => {
     expect(block).not.toMatch(/(^|[;{\s])width:\s*\d+px/m);
     expect(block).toMatch(/\.addpaper-choice[^{]*\{[^}]*min-height:\s*44px/);
     expect(block).toMatch(/\.addpaper-keep[^{]*\{[^}]*min-height:\s*44px/);
+    // The terms card (fix round): its ticks and its buttons are 44px targets too.
+    expect(block).toMatch(/\.addpaper-terms label[^{]*\{[^}]*min-height:\s*44px/);
+    expect(block).toMatch(/\.addpaper-terms button[^{]*\{[^}]*min-height:\s*44px/);
     expect(block).toMatch(/@media \(max-width: 700px\)/);
+  });
+});
+
+describe("the terms come first, on the write and not on the view (the API enforces them on its AI routes only)", () => {
+  const unaccepted = (at: string | null = null) => { h.me = { ...h.me!, termsAcceptedAt: at }; };
+  const posted = () => h.api.mock.calls.filter((c) => c[0] === "/me/terms");
+  const tick = async () => { await click(tid("terms-age")); await click(tid("terms-agree")); };
+
+  it("the paper still shows first; Keep it then shows the terms in place, before the passphrase, the project list or any write", async () => {
+    unaccepted();
+    await mount();
+    expect(tid("add-title")!.textContent).toBe(PM.title);
+    expect(tid("add-terms")).toBeNull();
+    await click(tid("add-keep"));
+    const terms = tid("add-terms")!;
+    expect(terms).not.toBeNull();
+    // The terms' own words, from the same body the workspace's dialog uses, with the 18+ gate.
+    expect(terms.querySelector("h2")!.textContent).toBe(t("terms_h"));
+    expect(tid("terms-body")!.textContent).toContain(t("terms_d1"));
+    expect(tid("terms-version")).not.toBeNull();
+    expect(tid("terms-age")).not.toBeNull();
+    expect(tid("terms-agree")).not.toBeNull();
+    expect(tid("terms-continue")!.textContent).toBe(t("terms_cont"));
+    // The paper is still in view, and nothing was asked or written.
+    expect(tid("add-title")!.textContent).toBe(PM.title);
+    expect(h.vault.ensureUnlocked).not.toHaveBeenCalled();
+    expect(h.api).not.toHaveBeenCalled();
+    expect(tid("add-keep")).toBeNull();
+    expect(choices()).toHaveLength(0);
+    for (const b of Object.values(h.blobs)) expect(b.set).not.toHaveBeenCalled();
+    // It is a card in the page, not a modal that takes the paper away.
+    expect(terms.closest('[role="dialog"]')).toBeNull();
+  });
+
+  it("Continue without both ticks says what is needed and records nothing", async () => {
+    unaccepted();
+    await mount();
+    await click(tid("add-keep"));
+    await click(tid("terms-continue"));
+    expect(tid("terms-need")!.textContent).toBe(t("terms_need"));
+    await click(tid("terms-age"));
+    await click(tid("terms-continue"));
+    expect(tid("terms-need")).not.toBeNull();
+    expect(posted()).toHaveLength(0);
+    expect(h.reload).not.toHaveBeenCalled();
+  });
+
+  it("accepting records it once (POST /me/terms, then /me again), then goes on to the passphrase and the project choice", async () => {
+    unaccepted();
+    await mount();
+    await click(tid("add-keep"));
+    await tick();
+    await click(tid("terms-continue"));
+    await until(() => choices().length > 0);
+    expect(posted()).toEqual([["/me/terms", { method: "POST" }]]);
+    expect(h.reload).toHaveBeenCalledTimes(1);
+    expect(tid("add-terms")).toBeNull();
+    expect($("h2")!.textContent).toBe("Choose a project");
+    const order = (m: { mock: { invocationCallOrder: number[] } }) => m.mock.invocationCallOrder[0]!;
+    expect(order(h.reload)).toBeLessThan(order(h.vault.ensureUnlocked));
+    expect(h.api.mock.invocationCallOrder[0]!).toBeLessThan(order(h.reload));
+    expect(h.vault.ensureUnlocked).toHaveBeenCalledTimes(1);
+    // The paper is kept as before once a project is chosen.
+    await click(choices()[choiceNames().indexOf("Exam anxiety study")]!);
+    await until(() => !!tid("add-back"));
+    expect(stored("p1")).toHaveLength(1);
+  });
+
+  it("the passphrase is left unanswered after the terms: the terms are not asked again, Keep it asks for the passphrase", async () => {
+    unaccepted();
+    h.vault.ensureUnlocked = vi.fn(async () => false);
+    await mount();
+    await click(tid("add-keep"));
+    await tick();
+    await click(tid("terms-continue"));
+    await until(() => !!tid("add-keep") && status().includes(t("add_locked")));
+    expect(tid("add-terms")).toBeNull();
+    h.vault.ensureUnlocked = vi.fn(async () => { h.vault.status = "unlocked"; return true; });
+    await click(tid("add-keep"));
+    await until(() => choices().length > 0);
+    expect(tid("add-terms")).toBeNull();
+    expect(posted()).toHaveLength(1);
+  });
+
+  it("an acceptance given to an older version of the terms is asked again", async () => {
+    unaccepted("2026-10-14T23:59:59Z");
+    await mount();
+    await click(tid("add-keep"));
+    expect(tid("add-terms")).not.toBeNull();
+  });
+
+  it("under 18 behaves as in the workspace: the answer is not recorded, Back returns to the form, and nothing is kept", async () => {
+    unaccepted();
+    await mount();
+    await click(tid("add-keep"));
+    await click(tid("terms-under"));
+    expect(tid("terms-under-msg")!.textContent).toBe(t("terms_under_msg"));
+    expect(tid("terms-continue")).toBeNull();
+    expect(posted()).toHaveLength(0);
+    expect(h.vault.ensureUnlocked).not.toHaveBeenCalled();
+    await click(tid("terms-back"));
+    expect(tid("terms-continue")).not.toBeNull();
+    expect(tid("add-title")!.textContent).toBe(PM.title);
+    expect(posted()).toHaveLength(0);
+    expect(choices()).toHaveLength(0);
+  });
+
+  it("a record that fails says so and keeps the terms open: nothing goes on to the passphrase", async () => {
+    unaccepted();
+    h.api.mockImplementation(async (path: string) => { if (path === "/me/terms") throw new Error("offline"); return PROJECTS; });
+    await mount();
+    await click(tid("add-keep"));
+    await tick();
+    await click(tid("terms-continue"));
+    expect(h.toast).toHaveBeenCalledWith("Could not save your answer. Try again.");
+    expect(tid("add-terms")).not.toBeNull();
+    expect(h.vault.ensureUnlocked).not.toHaveBeenCalled();
+    expect(h.reload).not.toHaveBeenCalled();
+  });
+
+  it("a student whose terms are accepted never sees them", async () => {
+    await mount();
+    await click(tid("add-keep"));
+    expect(tid("add-terms")).toBeNull();
+    await until(() => choices().length > 0);
+  });
+
+  it("before /me has loaded Keep it waits (it cannot know whether the terms are accepted): busy, and a press does nothing", async () => {
+    h.me = null;
+    await mount();
+    expect(tid("add-keep")!.getAttribute("aria-disabled")).toBe("true");
+    await click(tid("add-keep"));
+    expect(tid("add-terms")).toBeNull();
+    expect(h.vault.known).not.toHaveBeenCalled();
+    expect(h.api).not.toHaveBeenCalled();
+  });
+});
+
+describe("focus follows the student through the screen (it was lost twice)", () => {
+  it("when Keep it takes its button away, focus goes to the \"Choose a project\" heading", async () => {
+    await mount();
+    tid("add-keep")!.focus();
+    await click(tid("add-keep"));
+    await until(() => choices().length > 0);
+    const heading = $("#addChooseH")!;
+    expect(heading.textContent).toBe("Choose a project");
+    expect(heading.getAttribute("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(heading);
+  });
+
+  it("a project list that failed and is asked for again keeps focus on the heading, not on a button that went away", async () => {
+    let fail = true;
+    h.api.mockImplementation(async (path: string) => { if (path === "/projects" && !fail) return PROJECTS; throw new Error("offline"); });
+    await mount();
+    await click(tid("add-keep"));
+    await until(() => !!tid("add-projects-fail"));
+    tid("add-projects-retry")!.focus();
+    fail = false;
+    await click(tid("add-projects-retry"));
+    await until(() => choices().length > 0);
+    expect(document.activeElement).toBe($("#addChooseH"));
+  });
+
+  it("when the keep finishes, focus goes to Back to my project", async () => {
+    await mount();
+    await keepIn("Exam anxiety study");
+    await until(() => !!tid("add-back"));
+    expect(document.activeElement).toBe(tid("add-back"));
+  });
+
+  it("an \"already kept\" result gets focus too", async () => {
+    h.blobs.p1 = blob([{ ...PM_ENTRY, pid: "kold", rl: true } as StoredEntry]);
+    await mount();
+    await keepIn("Exam anxiety study");
+    await until(() => !!tid("add-back"));
+    expect(status()).toContain(t("add_already", { project: "Exam anxiety study" }));
+    expect(document.activeElement).toBe(tid("add-back"));
+  });
+
+  it("the terms get focus on their heading when Keep it opens them", async () => {
+    h.me = { ...h.me!, termsAcceptedAt: null };
+    await mount();
+    tid("add-keep")!.focus();
+    await click(tid("add-keep"));
+    const heading = tid("add-terms")!.querySelector("h2")!;
+    expect(heading.getAttribute("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(heading);
+  });
+});
+
+describe("leaving the page while the paper is being kept, or is not saved, asks first (as the workspace does)", () => {
+  /** Whether leaving the page now would ask: a beforeunload that something cancelled. */
+  const leaveAsks = () => { const e = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; };
+
+  it("not while only the paper is in view or the project is being chosen: nothing has been kept yet", async () => {
+    await mount();
+    expect(leaveAsks()).toBe(false);
+    await click(tid("add-keep"));
+    await until(() => choices().length > 0);
+    expect(leaveAsks()).toBe(false);
+  });
+
+  it("while it waits for the library to be read, while it saves, and while the save failed; not once it is on the server", async () => {
+    let release!: (ok: boolean) => void;
+    h.blobs.p1 = blob(null, { loading: true });
+    h.blobs.p1.flush = vi.fn(() => new Promise<boolean>((r) => { release = r; }));
+    await mount();
+    await keepIn("Exam anxiety study");
+    expect(status()).toContain(t("add_keeping", { project: "Exam anxiety study" }));
+    // Working: the library has not been read yet.
+    expect(leaveAsks()).toBe(true);
+    // Saving: the keep is in the library, the server has not got it.
+    h.blobs.p1.loading = false;
+    h.blobs.p1.value = [];
+    await changed();
+    await until(() => h.blobs.p1!.flush.mock.calls.length > 0);
+    expect(tid("add-back")).toBeNull();
+    expect(leaveAsks()).toBe(true);
+    // Done.
+    await act(async () => { release(true); await Promise.resolve(); });
+    await until(() => !!tid("add-back"));
+    expect(leaveAsks()).toBe(false);
+  });
+
+  it("while the save failed and is held for Try again", async () => {
+    h.blobs.p1!.flush = vi.fn(async () => false);
+    await mount();
+    await keepIn("Exam anxiety study");
+    await until(() => !!tid("add-unsaved"));
+    expect(leaveAsks()).toBe(true);
+    h.blobs.p1!.flush.mockImplementation(async () => true);
+    await click(tid("add-unsaved-retry"));
+    await until(() => !!tid("add-back"));
+    expect(leaveAsks()).toBe(false);
+  });
+
+  it("not for a library that does not open or could not be read: the paper was never written", async () => {
+    h.blobs.p1 = blob(null, { broken: true });
+    await mount();
+    await keepIn("Exam anxiety study");
+    await until(() => !!tid("add-failed"));
+    expect(leaveAsks()).toBe(false);
+  });
+
+  it("the guard is gone when the screen is", async () => {
+    h.blobs.p1 = blob(null, { loading: true });
+    const root = await mount();
+    await keepIn("Exam anxiety study");
+    expect(leaveAsks()).toBe(true);
+    act(() => { root.unmount(); });
+    expect(leaveAsks()).toBe(false);
   });
 });
 
