@@ -542,7 +542,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Commit: 74806ed224f5fdfff77861a624a3c8600bc9b7ec
 - Kind: UI
 - Expected: on a phone, every control at least 44 px each way (source: spec section 8, layout rules, O17)
-- Happened: `summary [faq-lost]` 299 x 40 px, `summary [faq-hindi]` 299 x 20 px, `summary [faq-key]` 299 x 20 px: the lines that open Help's answers. They are `<summary className="cursor-pointer font-medium">` (`components/workspace/dialogs/Help.tsx` line 155) with no minimum height, and the phone rule that gives buttons 44 px (`.place-body button { min-height: 44px }`, `app/globals.css`) does not reach a dialog or a `summary`.
+- Happened: `summary [faq-lost]` 299 x 40 px, `summary [faq-hindi]` 299 x 20 px, `summary [faq-key]` 299 x 20 px: the lines that open Help's answers. They are `<summary className="cursor-pointer font-medium">` (`components/workspace/dialogs/Help.tsx` line 155) with no minimum height. The phone rule does reach a dialog (`[role="dialog"] button { min-height: 44px }`, `app/globals.css` lines 452 to 453), but a `summary` is not a button, so the rule does not cover it.
 - Evidence: the run of 2026-10-24 on 74806ed: case S9-05, the failed check "Help, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S9-05"`.
 - Status: known
 

@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Page, Response } from "@playwright/test";
 import JSZip from "jszip";
-import { BUDGET_DEFAULTS, budgetMarkdown, budgetRows, ctriMarkdown, piCvText } from "@appuscholar/core";
+import {
+  BUDGET_DEFAULTS, PROVIDERS, QUAL_PALETTE, aiuBuildV2, budgetMarkdown, budgetRows, buildIdeaPromptV2, buildShelfSummaryPromptV2, classifyAiUse, ctriMarkdown, piCvText, qualBuildMarkdown,
+  wordCount, type AiuEntry
+} from "@appuscholar/core";
+import { buildAllRecordText, buildRecordText, type WritingRecord } from "../../lib/writingRecord";
 import { MARK } from "../fixtures/common";
 import { paperTitle, shelfPdfs } from "../fixtures/pdfs";
 import { ACTION_MS, PROGRESS_MS } from "../support/budgets";
@@ -51,9 +55,9 @@ const IDEA = {
   timeframe: "One semester",
   constraints: "No sleep-tracking devices; the college ethics committee meets once a month."
 };
-/** What the api logs for the idea check and for the shelf's summary (packages/core/src/aiuse.ts, the AI-use statement's wording). */
-const AI_USE_IDEA = "checking whether my project idea is realistic";
-const AI_USE_SUMMARY = "summarising a paper";
+/** What the api logs for the idea check and for the shelf's summary: core's own label of each prompt (packages/core/src/aiuse.ts classifyAiUse, over the prompt core builds), not retyped. */
+const AI_USE_IDEA = classifyAiUse(buildIdeaPromptV2("psychology", IDEA).prompt)?.k ?? "(core gives the idea prompt no label)";
+const AI_USE_SUMMARY = classifyAiUse(buildShelfSummaryPromptV2("psychology", ["A page of text for the summary."]).prompt)?.k ?? "(core gives the shelf summary prompt no label)";
 
 /** The fake provider's recorded reply to the idea prompt, taken apart for its verdict line (as S1 does). */
 const IDEA_REPLY = (JSON.parse(readFileSync(path.join(__dirname, "../fixtures/ai-replies.json"), "utf8")) as Array<{ match: string; reply: string }>).find(
@@ -261,8 +265,8 @@ async function designFiles(page: Page, id: string): Promise<void> {
   });
 }
 
-/** A code and a tagged passage (Collection, Coding, with the first document beside it). */
-async function codeAPassage(page: Page, id: string): Promise<void> {
+/** A code and a tagged passage (Collection, Coding, with the first document beside it). Returns the code's id. */
+async function codeAPassage(page: Page, id: string): Promise<string> {
   await toPlace(page, id, "collect", "coding");
   await expect(page.getByTestId("panel-qual")).toBeVisible();
   if (await page.getByTestId("place-open-doc").isVisible()) await page.getByTestId("place-open-doc").click();
@@ -286,6 +290,7 @@ async function codeAPassage(page: Page, id: string): Promise<void> {
     await page.getByTestId("qual-name-" + codeId).click();
     await expect(page.getByTestId("qual-status")).toHaveText(T("qual_status_tagged", { name: CODE_NAME }));
   });
+  return codeId;
 }
 
 /** The idea checked again from the Idea place (a second request of the log), saved with the project. */
@@ -298,18 +303,18 @@ async function checkIdeaAgain(page: Page, id: string): Promise<void> {
 }
 
 /** A project with every part the export lists, made through the screens: the idea checked twice, two documents, two sources, a shelf paper and a practice paper, the Design files, a code with a tagged passage. */
-async function projectWithEveryPart(page: Page, qa: Qa): Promise<Student> {
+async function projectWithEveryPart(page: Page, qa: Qa): Promise<{ s: Student; codeId: string }> {
   const s = await firstRunProject(page, qa, { vault: "on" });
   const id = s.projectId!;
   await writeDocuments(page, id);
   await addCitations(page, id);
   await readingList(page, id);
   await designFiles(page, id);
-  await codeAPassage(page, id);
+  const codeId = await codeAPassage(page, id);
   await checkIdeaAgain(page, id);
   await page.getByTestId("place-home").click();
   await expect(page.getByTestId("home-stages")).toBeVisible();
-  return s;
+  return { s, codeId };
 }
 
 /**
@@ -372,26 +377,55 @@ function kindCounts(calls: ShimLogEntry[]): Map<string, number> {
   for (const e of calls) if (e.outcome === "answered" && e.kind) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1);
   return counts;
 }
-const requests = (n: number) => `${n} request${n === 1 ? "" : "s"}`;
 const total = (counts: Map<string, number>) => [...counts.values()].reduce((a, b) => a + b, 0);
-
-/** The AI-use statement holds each kind with its count, as the provider answered, and no other: the same kinds, the same numbers. */
-function expectStatementCounts(statement: string, counts: Map<string, number>): void {
+/** Every request the provider saw was answered and has a kind, so `kindCounts` leaves none out: the counts are the whole of the provider's log for the key. */
+function expectAllCounted(calls: ShimLogEntry[], counts: Map<string, number>): void {
   expect(counts.size, "kinds of help the AI provider answered for this account's key").toBeGreaterThan(0);
-  for (const [k, n] of counts) expect(statement, `the kind "${k}"`).toContain(`${k} (${requests(n)})`);
-  const shown = [...statement.matchAll(/\((\d+) requests?\)/g)].map((m) => Number(m[1]));
-  expect(shown.length, "kinds the statement lists").toBe(counts.size);
-  expect(shown.reduce((a, b) => a + b, 0), "requests the statement counts").toBe(total(counts));
-  expect(statement, "a statement that says no AI was used, over a log with requests").not.toContain("I did not use AI tools");
+  expect(calls.length, "requests the provider saw (every one answered, with a kind)").toBe(total(counts));
+}
+/** The requests of an AI-use log (the api's), by kind. */
+function logCounts(log: AiuEntry[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const e of log) counts.set(e.k, (counts.get(e.k) ?? 0) + 1);
+  return counts;
+}
+/** The project's own AI-use log, as the api serves it (what the export's statement is built from). */
+const projectLog = (page: Page, id: string) => apiGet<AiuEntry[]>(page, `/ai/log?projectId=${id}`);
+
+/** The statement core builds for this log, as the export builds it (every kind ticked, nothing else: components/export, lib/export/projectExport.ts). */
+function coreStatement(log: AiuEntry[]): string {
+  const built = aiuBuildV2({
+    list: log, keep: Object.fromEntries(log.map((e) => [e.k, 1 as const])), other: "", fmt: "course",
+    ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS
+  });
+  if (!("text" in built)) throw new Error(`QA S9: core refused to build the statement: ${built.refuse}`);
+  return built.text;
 }
 
-/** The writing record's AI-use summary holds the same total and the same kinds and numbers. */
-function expectRecordCounts(record: string, counts: Map<string, number>): void {
-  expect(counts.size, "kinds of help the AI provider answered for this account's key").toBeGreaterThan(0);
-  const log = record.slice(record.indexOf("AI-USE LOG (summary)"));
-  expect(log.startsWith("AI-USE LOG (summary)"), "the record has an AI-use log section").toBe(true);
-  expect(log).toContain(`${requests(total(counts))} from `);
-  for (const [k, n] of counts) expect(log, `the kind "${k}"`).toContain(`- ${k}: ${n}\n`);
+/**
+ * The AI-use statement is the statement core builds for the project's log, and that log counts, kind by kind, the requests the provider answered: the same kinds, the same numbers, and a statement
+ * that never says no AI was used over a log with requests.
+ */
+function expectStatement(statement: string, log: AiuEntry[], calls: ShimLogEntry[]): void {
+  const counts = kindCounts(calls);
+  expectAllCounted(calls, counts);
+  expect([...logCounts(log)].sort(), "kinds and counts in the project's log").toEqual([...counts].sort());
+  expect(statement).toBe(coreStatement(log));
+  expect(statement, "a statement that says no AI was used, over a log with requests").not.toMatch(/did not use AI/i);
+}
+
+/**
+ * The record `GET /projects/:id/writing-record` gives, with the documents' titles as the student named them and the AI log counted as the provider answered. The documents come in the order
+ * they were made (the api sorts them so); `typed` is checked against core's word count in the case.
+ */
+function openedRecord(rec: WritingRecord, docs: Array<{ title: string }>, counts: Map<string, number>): WritingRecord {
+  expect(rec.docs.length, "documents in the project's record").toBe(docs.length);
+  expect(Object.values(rec.aiLog.byService).reduce((a, b) => a + b, 0), "requests in the log's services").toBe(total(counts));
+  return {
+    ...rec,
+    docs: rec.docs.map((d, i) => ({ ...d, title: docs[i]!.title, titleKeyVersion: 0 })),
+    aiLog: { ...rec.aiLog, byKind: Object.fromEntries(counts), total: total(counts), loggingOff: false }
+  };
 }
 
 /** The files the zip holds, by name, sorted. */
@@ -410,13 +444,20 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
   });
   let s!: Student;
   let id = "";
+  let codeId = "";
+  let version = "";
   let zip!: Downloaded;
   let files = new Map<string, Buffer>();
   let progress!: () => Promise<string[]>;
 
   await qa.step("a project with every part", async () => {
-    s = await projectWithEveryPart(page, qa);
+    ({ s, codeId } = await projectWithEveryPart(page, qa));
     id = s.projectId!;
+    // The build of the app that is running, as Help names it: the writing record says which build made it.
+    await page.getByTestId("help-btn").click();
+    version = (await page.getByTestId("app-version").innerText()).trim().split(/\s+/).pop()!;
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("help-dialog")).toBeHidden();
   });
 
   await qa.step("the export window", async () => {
@@ -529,7 +570,9 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
       expect(card).toContain(CARD.verdict);
     }, { source: `${SHEET_B1} row 12 ("notes/<paper>.txt")` });
     await qa.check("conceptual", "a note is a highlight or a line of the student's own: no line of the notes says \"p. 0\" or shows an empty quotation", async () => {
-      for (const n of names(files).filter((f) => f.startsWith("notes/"))) {
+      const notes = names(files).filter((f) => f.startsWith("notes/"));
+      expect(notes.length, "notes files in the zip").toBeGreaterThan(0);
+      for (const n of notes) {
         const lines = text(files, n).split("\n");
         expect(lines.filter((l) => /^p\. 0\b/.test(l) || /: ""$/.test(l)), n).toEqual([]);
       }
@@ -551,33 +594,36 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
       expect(text(files, "design/trial-budget.md")).toBe(budgetMarkdown(budgetRows(BUDGET_DEFAULTS.map((label, i) => ({ label, amount: DESIGN.amounts[i] ?? "" })))));
     }, { source: `${SHEET_B1} row 12 (Task 12's parts); D-S2-55 (the Design files join the project export)` });
     await qa.check("data", "the coded passages are there: the heading, my code, and the tagged passage under its document's title", async () => {
-      expect(text(files, `qual/appuscholar-coded-passages-${today()}.md`)).toBe(`# Coded passages\n\n## ${CODE_NAME}\n- **${DOC_A.title}:** "${DOC_A.passage}"\n`);
+      expect(codeId, "the code's id").toBeTruthy();
+      const code = { id: codeId, name: CODE_NAME, parentId: null, color: QUAL_PALETTE[0]! };
+      expect(text(files, `qual/appuscholar-coded-passages-${today()}.md`)).toBe(qualBuildMarkdown([code], (c) => (c === codeId ? [{ doc: DOC_A.title, text: DOC_A.passage }] : [])));
     }, { source: "docs/walkthroughs/notes/2026-10-23-tools-walk.md tools-c row 8 (the project export lists Coded passages; the zip has qual/ ...)" });
 
     const calls = await providerCalls(s.key!);
     const counts = kindCounts(calls);
-    await qa.check("data", "the AI-use statement counts the requests the AI provider answered for this key, kind by kind: the idea check twice and the paper summary once", async () => {
+    await qa.check("data", "the provider answered every request of this key, and they are the idea check twice and the paper summary once", async () => {
       expect(calls.filter((c) => c.outcome !== "answered"), "requests the provider did not answer").toEqual([]);
       expect([...counts]).toEqual([[AI_USE_IDEA, 2], [AI_USE_SUMMARY, 1]]);
-      expectStatementCounts(text(files, "ai-use-statement.txt"), counts);
-    }, { source: `${SHEET_B1} row 12 ("ai-use-statement.txt"); apps/api/src/routes/ai.ts (the log counts an answered request); the fake provider's log for this key` });
+      expectAllCounted(calls, counts);
+    }, { source: "the fake provider's log for this key; packages/core/src/aiuse.ts (the label of each prompt)" });
     await qa.check("data", "the project's own AI-use log on the server counts the same kinds and numbers", async () => {
-      const log = await apiGet<Array<{ k: string }>>(page, `/ai/log?projectId=${id}`);
-      const byKind = new Map<string, number>();
-      for (const e of log) byKind.set(e.k, (byKind.get(e.k) ?? 0) + 1);
-      expect([...byKind].sort()).toEqual([...counts].sort());
-    }, { source: "apps/api/src/routes/ai.ts (GET /ai/log?projectId=); the fake provider's log for this key" });
-    await qa.check("conceptual", "the statement never claims that no AI was used, and holds nothing I wrote or the AI answered", async () => {
+      expectAllCounted(calls, counts);
+      expect([...logCounts(await projectLog(page, id))].sort()).toEqual([...counts].sort());
+    }, { source: "apps/api/src/routes/ai.ts (the log counts an answered request; GET /ai/log?projectId=); the fake provider's log for this key" });
+    await qa.check("data", "the AI-use statement is core's statement for that log: the requests the provider answered, kind by kind, and it never says that no AI was used", async () => {
+      expectStatement(text(files, "ai-use-statement.txt"), await projectLog(page, id), calls);
+    }, { source: `${SHEET_B1} row 12 ("ai-use-statement.txt"); packages/core/src/aiustatementV2.ts (aiuBuildV2, as the export calls it); the fake provider's log for this key` });
+    await qa.check("conceptual", "the statement holds nothing I wrote or the AI answered", async () => {
       const statement = text(files, "ai-use-statement.txt");
-      expect(statement).not.toMatch(/did not use AI/i);
       for (const mine of [IDEA.topic, MARK, VERDICT, SHELF.mine.split("\n")[0]!, SHELF.highlight]) expect(statement, mine).not.toContain(mine);
     }, { source: `${SHEET_B1} row 12; the window's own promise for AI-use statement ("Which AI helped, for what, on which days; never your text")` });
-    await qa.check("data", "the writing record counts the same AI requests, and lists both documents as typed by me", async () => {
-      const record = text(files, "writing-record.txt");
-      expect(record.startsWith("WRITING-PROCESS RECORD (made with Appuscholar, ")).toBe(true);
-      for (const d of [DOC_A, DOC_B]) expect(record).toMatch(new RegExp(`- ${d.title}: \\d+ words, 100% typed; 0 AI passages`));
-      expectRecordCounts(record, counts);
-    }, { source: `${SHEET_B1} row 12 ("writing-record.txt"); the fake provider's log for this key` });
+    await qa.check("data", "the writing record is the one the app's builder makes from the project's record, with the AI log counted as the provider answered: both documents typed by me", async () => {
+      const rec = await apiGet<WritingRecord>(page, `/projects/${id}/writing-record`);
+      expect(rec.docs.map((d) => d.stats.typed), "words typed, by document").toEqual([wordCount(DOC_A.text), wordCount(DOC_B.text)]);
+      expect(rec.docs.filter((d) => d.stats.ai !== 0 || d.stats.passages !== 0), "documents with AI words or passages").toEqual([]);
+      expect([rec.aiLog.firstAt, rec.aiLog.lastAt], "the days of the first and the last request").toEqual([today(), today()]);
+      expect(text(files, "writing-record.txt")).toBe(buildRecordText(openedRecord(rec, [DOC_A, DOC_B], counts), version, today()));
+    }, { source: `${SHEET_B1} row 12 ("writing-record.txt"); apps/web/lib/writingRecord.ts (buildRecordText); the fake provider's log for this key` });
     await qa.check("conceptual", "the zip holds nothing secret: not my AI key, not my passphrase, not my recovery code", async () => {
       const secrets = [s.key, s.passphrase, s.recoveryCode];
       expect(secrets.filter((x): x is string => !!x), "secrets to look for").toHaveLength(3);
@@ -649,12 +695,19 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
         await expect(page.getByTestId("home-state-" + stage), stage).toHaveText(T("state_" + state.replace("-", "_")));
       }
     }, { source: "lib/vault/export.ts (\"index.json carries each stage's state\"); wave-b1.md row 6 (the states the home shows)" });
-    await qa.check("data", "the writing record in the export names my project and counts the same AI requests", async () => {
-      const record = text(everything, "writing-process-record.txt");
-      expect(record).toContain(`${PROJECT}\n${"=".repeat(PROJECT.length)}`);
-      for (const d of [DOC_A, DOC_B]) expect(record).toMatch(new RegExp(`- ${d.title}: \\d+ words, 100% typed; 0 AI passages`));
-      expectRecordCounts(record, kindCounts(await providerCalls(s.key!)));
-    }, { source: `${SHEET_P3} row 8 ("writing-process-record.txt"); the fake provider's log for this key` });
+    await qa.check("data", "the writing record in the export is the one the app's builder makes for every project: mine and the scratch space, with the AI log counted as the provider answered", async () => {
+      const calls = await providerCalls(s.key!);
+      const counts = kindCounts(calls);
+      expectAllCounted(calls, counts);
+      const rec = await apiGet<WritingRecord>(page, `/projects/${id}/writing-record`);
+      const mine = openedRecord(rec, [DOC_A, DOC_B], counts);
+      // The scratch space holds no writing (its first document is empty), so its part is the same text whatever its documents are.
+      const scratch: WritingRecord = { docs: [], sources: [], weekly: [], aiLog: mine.aiLog };
+      const order = index.projects.map((p) => p.title);
+      expect([...order].sort(), "projects in the export").toEqual([PROJECT, T("export_scratch")].sort());
+      const parts = order.map((title) => ({ title, rec: title === PROJECT ? mine : scratch }));
+      expect(text(everything, "writing-process-record.txt")).toBe(buildAllRecordText(parts, version, today()));
+    }, { source: `${SHEET_P3} row 8 ("writing-process-record.txt"); apps/web/lib/writingRecord.ts (buildAllRecordText); the fake provider's log for this key` });
   });
 
   await qa.step("delete my account", async () => {
@@ -686,10 +739,16 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
     }, { source: `${SHEET_P3} row 9 ("With delete the button stays greyed out; with DELETE it is enabled"); ${E2E_V} step 9` });
     await look(page, qa, "the window that asks for DELETE");
     expect(before.userRows["users"], "the account's row, before").toBe(1);
-    // Once DELETE /me has answered, the account is gone: the page signs out (the vault is locked, the keys are forgotten), the home's panels read their blobs again with the old token,
-    // and the api answers those reads 401 (the account-erased tombstone, apps/api/src/auth.ts line 20) until the sign-out has navigated to the sign-in page.
+    // Once DELETE /me has answered, the account is gone. The sign-out locks the vault (vault.lock()), which changes the vault's state, and the home's StageFactsReader clients (ProjectHome.tsx,
+    // Help.tsx useAccount) read their blobs again with the old token: the api answers 401 (the account-erased tombstone, apps/api/src/auth.ts line 20) until the sign-out has navigated to the
+    // sign-in page. A failed read only drops the facts. The allowance is the erased project's blobs and nothing else, so a 401 on the new account's reads later is not excused.
     qa.allow({
-      responses: [{ method: "GET", path: /^\/projects\/[0-9a-f-]+\/blobs\/[A-Za-z0-9_.%-]+$/, status: 401, reason: "reads the home's panels make with the old token in the moments between the account's erasure and the sign-out's navigation: the account no longer exists" }]
+      responses: [{
+        method: "GET",
+        path: new RegExp(`^/projects/${id}/blobs/[A-Za-z0-9_.%-]+$`),
+        status: 401,
+        reason: "the erased project's blobs, read again by the home's StageFactsReader clients when the sign-out's vault.lock() changes the vault's state: the account no longer exists, so the api answers the old token 401 (a failed read only drops the facts)"
+      }]
     });
     const erased = page.waitForResponse((r) => r.request().method() === "DELETE" && r.url() === `${QA_API_ORIGIN}/me`);
     await page.getByTestId("erase-confirm").click();
@@ -804,7 +863,7 @@ async function windowCloses(qa: Qa, page: Page): Promise<void> {
 }
 
 /** The zip of a `lightProject`, complete: its files and no other, the document in readable text, the idea and its read, and the AI-use statement counting the one request. */
-async function expectLightZip(files: Map<string, Buffer>, s: Student, name: string): Promise<void> {
+async function expectLightZip(page: Page, files: Map<string, Buffer>, s: Student, name: string): Promise<void> {
   expect(files.size, "entries in the zip").toBeGreaterThan(0);
   expect(name).toBe(ZIP_NAME());
   expect(names(files)).toEqual(LIGHT_ENTRIES());
@@ -813,9 +872,9 @@ async function expectLightZip(files: Map<string, Buffer>, s: Student, name: stri
   const q = text(files, "question.txt");
   expect(q).toContain(IDEA.topic);
   expect(q.slice(q.indexOf(T("exp_ai_read")))).toContain(VERDICT);
-  const counts = kindCounts(await providerCalls(s.key!));
-  expect([...counts]).toEqual([[AI_USE_IDEA, 1]]);
-  expectStatementCounts(text(files, "ai-use-statement.txt"), counts);
+  const calls = await providerCalls(s.key!);
+  expect([...kindCounts(calls)]).toEqual([[AI_USE_IDEA, 1]]);
+  expectStatement(text(files, "ai-use-statement.txt"), await projectLog(page, s.projectId!), calls);
 }
 
 // ---- S9-02 -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -886,8 +945,12 @@ test("S9-02 with my vault locked, the exports ask for the passphrase and say so,
       await expect(page.getByTestId("help-export")).toBeEnabled();
     }, { source: "plan S9-02 (\"no partial zip is downloaded\"); components/workspace/dialogs/Help.tsx (exportWork)" });
     await qa.check("conceptual", "Export all my work says that the export needs the passphrase: a toast, or a line in Help", async () => {
-      const told = (await toasts()).length > 0 || (await help.innerText()) !== before;
-      expect(told, `after Cancel at the passphrase window, Help showed no new line and no toast was shown (toasts: ${JSON.stringify(await toasts())})`).toBe(true);
+      // A word about the lock: the project export's own sentence, or any new toast or new line in Help that mentions the lock or the passphrase.
+      const mentionsLock = (t: string) => t === T("exp_locked") || /\b(lock(ed)?|unlock|passphrase)\b/i.test(t);
+      const toastsNow = await toasts();
+      const after = await help.innerText();
+      const newLines = after.split("\n").map((l) => l.trim()).filter((l) => l && !before.includes(l));
+      expect([...toastsNow, ...newLines].some(mentionsLock), `after Cancel at the passphrase window, no toast and no new line in Help spoke of the lock (toasts: ${JSON.stringify(toastsNow)}; new lines: ${JSON.stringify(newLines)})`).toBe(true);
     }, { source: "plan S9-02 (\"Export while locked: it says locked\"); the project export's own sentence (messages exp_locked: \"Unlock with your passphrase to export this project.\")", known: "Q71" });
     await page.keyboard.press("Escape");
     await expect(help).toBeHidden();
@@ -903,7 +966,7 @@ test("S9-02 with my vault locked, the exports ask for the passphrase and say so,
     });
     const files = await zip.zip();
     await qa.check("data", "with the passphrase typed, the zip is saved and complete: the document in readable text, the idea and its read, the record and the AI-use statement, under the project's real name", async () => {
-      await expectLightZip(files, s, zip.name);
+      await expectLightZip(page, files, s, zip.name);
     }, { source: `${SHEET_B1} row 12; plan S9-02 (unlocked, the zip is complete)` });
     await windowCloses(qa, page);
     await qa.check("data", "exactly one zip was saved, and exactly one export logged", async () => {
@@ -957,7 +1020,7 @@ test("S9-03 with the network dropped, the exports say so and save nothing, and o
     base = await zip.zip();
     await windowCloses(qa, page);
     await qa.check("data", "the zip made with the network up is the project's complete zip (what the later zip is compared with)", async () => {
-      await expectLightZip(base, s, zip.name);
+      await expectLightZip(page, base, s, zip.name);
     }, { source: `${SHEET_B1} row 12` });
   });
 
@@ -999,7 +1062,7 @@ test("S9-03 with the network dropped, the exports say so and save nothing, and o
     const files = await zip.zip();
     await windowCloses(qa, page);
     await qa.check("data", "pressing Download zip again gives the complete zip: the same files as before, byte for byte", async () => {
-      await expectLightZip(files, s, zip.name);
+      await expectLightZip(page, files, s, zip.name);
       for (const [name, bytes] of base) expect(files.get(name)?.equals(bytes), name).toBe(true);
     }, { source: `${SHEET_B1} row 12; plan S9-03 ("online -> the zip is complete")` });
     await qa.check("data", "two zips were saved in all, each logged once, and the window is clear of the failure", async () => {
@@ -1043,7 +1106,7 @@ function liveTexts(): string[] {
   return [...new Set([...document.querySelectorAll('[role="status"], [data-testid="toast"]')].map((el) => (el.textContent ?? "").trim()).filter(Boolean))];
 }
 
-test("S9-04 [O10] on a slow network, the export names each part as it builds, and its zip comes within its budget", async ({ page, context, qa }) => {
+test("S9-04 [O10] on a slow network, the export names each part as it builds, and its zip comes within its budget", { tag: ["@slice"] }, async ({ page, context, qa }) => {
   qa.begin({
     story: "S9",
     id: "S9-04 [O10]",
@@ -1056,7 +1119,7 @@ test("S9-04 [O10] on a slow network, the export names each part as it builds, an
   let seen!: ReturnType<typeof watchExports>;
   /** The parts that read the server one answer at a time, and so can be named while they wait. The search lists read the library the citations part has read, and the reading list backup is not ticked. */
   const NAMED = ["documents", "question", "citations", "notes", "compare", "record", "aiuse", "design", "qual"];
-  /** Parts that make the zip longer than a student waits for are told apart from the build below by the number of answers they read: this is for the report. */
+  /** How long every answer from the server is held (spec section 6: slow by delaying the api's answers, e.g. 3 s). */
   const SLOW_MS = 3_000;
 
   await qa.step("a student with a project", async () => {
@@ -1110,7 +1173,7 @@ test("S9-04 [O10] on a slow network, the export names each part as it builds, an
       expect([...at].sort((a, b) => a - b), "in the window's order").toEqual(at);
     }, { source: `${SHEET_B1} row 12 ("While it builds: 'Building your zip: <part>. Keep this page open.'"); plan S9-04 ("each part named")` });
     await qa.check("data", "the slow zip is the same complete zip, saved once and logged once", async () => {
-      await expectLightZip(files, s, zip.name);
+      await expectLightZip(page, files, s, zip.name);
       expect(seen.downloads).toEqual([ZIP_NAME()]);
       expect(seen.audits).toHaveLength(1);
     }, { source: `${SHEET_B1} row 12` });
@@ -1131,7 +1194,10 @@ test("S9-04 [O10] on a slow network, the export names each part as it builds, an
           catchSlowDownload(page, 240_000, async () => {
             await page.getByTestId("help-export").click();
             await qa.timed("a sign of progress after Export all my work", PROGRESS_MS, async () => {
-              await page.waitForFunction(progressSign, { testId: "help-export", label, before }, { polling: 50, timeout: 10_000 }).catch(() => undefined);
+              // Only the wait's own timeout (no sign came) ends the wait quietly: a page that closed or crashed is an error of the case, not a slow answer.
+              await page.waitForFunction(progressSign, { testId: "help-export", label, before }, { polling: 50, timeout: 10_000 }).catch((e: unknown) => {
+                if (!(e instanceof Error) || e.name !== "TimeoutError") throw e;
+              });
             }, { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); the walk's O3 (a button that only dims is no sign)", known: "Q72" });
           }),
         { source: "spec section 8, time budgets (an ordinary action within 10 s on test data); O10", known: "O10" }
@@ -1227,8 +1293,9 @@ test("S9-05 on a phone in Hindi, the export window, Help and the window that ask
     const files = await zip.zip();
     await windowCloses(qa, page);
     await qa.check("data", "the zip is saved under the project's Hindi name", async () => {
-      // Headless Chromium reports the file name "download" for any download name with a letter outside ASCII, whatever the page (probed on a bare page with "café"), so the name cannot be read here.
-      if (zip.name === "download") notChecked(`the browser under test names every download with a non-ASCII name "download" (probed on a bare page), so the name appuscholar-${zipName(PROJECT_HI)}-<today>.zip was not measured`);
+      // A browser that runs without a UTF-8 locale (LANG=C) names every download with a non-ASCII name "download", whatever the page (probed on a bare page with "café"; with LANG=C.UTF-8 the
+      // name is kept exactly). The guard keeps such a run from passing, or failing, on a name the browser never gave.
+      if (zip.name === "download") notChecked(`the browser runs without a UTF-8 locale, so it names the download "download" and not appuscholar-${zipName(PROJECT_HI)}-<today>.zip: the name was not measured`);
       expect(zip.name).toBe(`appuscholar-${zipName(PROJECT_HI)}-${today()}.zip`);
     }, { source: `${SHEET_B1} row 12 ("The file appuscholar-<project>-<date>.zip")` });
     await qa.check("data", "the zip holds the document, the idea, the record and the AI-use statement, and its progress line was in Hindi", async () => {
