@@ -31,13 +31,13 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({
 vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import("../lib/ai/useCallAI")>()), useCallAI: () => async () => "" }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {} }) }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {},
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.project, documents: [], currentDoc: null, selectDoc: async () => true, go: () => {}, openExport: () => {},
   // The shell's insert: into the test's editor; with none, the document did not open.
   requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } }) }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decryptBody: async () => "" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
-import { CitePanel } from "../components/tools/cite/CitePanel";
+import { CitationsTab } from "../components/literature/CitationsTab";
 import { filledForm, EMPTY_CITE_FORM, resetCiteForm } from "../lib/cite/form";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
 import { noPids } from "./support/noPids";
@@ -83,7 +83,7 @@ function mount() {
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  act(() => { root.render(<CitePanel />); });
+  act(() => { root.render(<CitationsTab />); });
   return root;
 }
 function type(id: string, value: string) {
@@ -102,6 +102,12 @@ async function click(testid: string) {
 async function settle(ms = 0) { await act(async () => { await new Promise((r) => setTimeout(r, ms)); }); }
 const toasts = () => h.toast.mock.calls.map((c) => c[0] as string);
 const shown = (testid: string) => !(tid(testid) as HTMLElement).hidden;
+const rowEls = () => [...document.body.querySelectorAll<HTMLElement>('[data-testid="source-row"]')];
+/** Radix opens a menu from its trigger on Enter. */
+async function openMore(i: number) {
+  await act(async () => { rowEls()[i]!.querySelector('[data-testid="source-more"]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+}
+const items = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
 
 beforeEach(() => {
   h.blob = { value: [], loading: false, locked: false, set: vi.fn(), flush: vi.fn(async () => true) };
@@ -124,7 +130,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("Citation Manager: the form (v1 874-912)", () => {
+describe("Citations: the form (v1 874-912)", () => {
   it("the library is the citations blob of the scratch project, or of the open project", () => {
     mount();
     expect(h.blobArgs).toEqual(["citations", "scratch-1"]);
@@ -194,7 +200,7 @@ describe("Citation Manager: the form (v1 874-912)", () => {
   });
 });
 
-describe("Citation Manager: lookup (citLookup 7931-7961, paste 7970-7976)", () => {
+describe("Citations: lookup (citLookup 7931-7961, paste 7970-7976)", () => {
   it("a DOI fills the form from Crossref and toasts busy then cite_lookup_ok", async () => {
     mount();
     type("citDOI", "10.1037/0003-066X.55.1.68");
@@ -305,7 +311,7 @@ describe("Citation Manager: lookup (citLookup 7931-7961, paste 7970-7976)", () =
   });
 });
 
-describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInsert 7505)", () => {
+describe("Citations: + Library and Insert citation (citAdd 7507, citInsert 7505)", () => {
   function fill(e: CitationEntry) {
     if (e.type) type("citType", e.type);
     for (const [id, k] of [["citAuthor", "author"], ["citYear", "year"], ["citTitle", "title"], ["citSource", "source"], ["citVol", "volume"], ["citIssue", "issue"], ["citPages", "pages"], ["citDOI", "doi"]] as const) type(id, e[k] ?? "");
@@ -429,34 +435,35 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
     expect((tid("cite-add") as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("with no document open Insert citation and the cards' Insert stay enabled (an insert opens it, Task 11); when it does not open, no success is claimed", async () => {
+  it("with no document open Insert citation and a source's Insert citation stay enabled (an insert opens it, Task 11); when it does not open, no success is claimed", async () => {
     h.blob.value = [BANDURA];
     mount();
     expect((tid("cite-insert") as HTMLButtonElement).disabled).toBe(false);
-    expect((tid("cite-use") as HTMLButtonElement).disabled).toBe(false);
     expect((tid("cite-add") as HTMLButtonElement).disabled).toBe(false);
+    await openMore(0);
+    expect(items()[0]!.getAttribute("aria-disabled")).not.toBe("true");
     fill(BANDURA);
     await click("cite-insert");
-    await click("cite-use");
+    await act(async () => { items()[0]!.click(); });
     expect(toasts()).toEqual([]);
   });
 });
 
-describe("Citation Manager: the library (citRender 7819-7866)", () => {
-  it("Cite shows the loading sign, not its empty state, until its data is read (W8)", () => {
+describe("Citations: the library (citRender 7819-7866)", () => {
+  it("Citations shows the loading sign, not its empty state, until its data is read (W8)", () => {
     h.blob.value = null; h.blob.loading = true;
     const root = mount();
     const lib = tid("cite-lib")!;
     expect(lib.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
-    expect(lib.textContent).not.toContain(E.cite_no_sources);
-    expect(tid("cite-count")).toBeNull();
+    expect(lib.textContent).not.toContain(E.cit_empty);
+    expect(tid("cit-head")).toBeNull();
     expect(document.body.textContent).not.toContain("0 sources");
-    // The read lands: the cards (or "No sources yet.") and the count replace the sign.
+    // The read lands: the rows (or the empty sentence) and the count replace the sign.
     h.blob = { ...h.blob, value: [BANDURA, MILLER], loading: false };
-    act(() => { root.render(<CitePanel />); });
+    act(() => { root.render(<CitationsTab />); });
     expect($('[data-testid="panel-loading"]')).toBeNull();
-    expect(tid("cite-count")!.textContent).toBe("2");
-    expect(tid("cite-lib")!.querySelectorAll('[data-testid="cite-card"]')).toHaveLength(2);
+    expect(tid("cit-head")!.textContent).toBe("2 sources, 0 cited in your document");
+    expect(rowEls()).toHaveLength(2);
   });
 
   it("a locked library shows no loading sign (W8)", () => {
@@ -466,38 +473,41 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     expect(tid("cite-locked")!.textContent).toBe(E.vault_cite_locked);
   });
 
-  it("an empty library shows 'No sources yet.' and a 0 badge", () => {
+  it("an empty library says it has no sources yet and counts 0", () => {
     mount();
-    expect(tid("cite-count")!.textContent).toBe("0");
-    expect(tid("cite-lib")!.textContent).toBe(E.cite_no_sources);
+    expect(tid("cit-head")!.textContent).toBe("0 sources, 0 cited in your document");
+    expect(tid("cite-lib")!.textContent).toBe(E.cit_empty);
   });
 
-  it("each card: ✕, surname and year in bold, the formatted reference, and 'Insert <in-text>'; the badge counts", () => {
+  it("each row: the formatted reference, its status and use, and a More menu that holds Insert citation (in-text form) and Remove", async () => {
     h.blob.value = [BANDURA, MILLER, { ...MILLER, author: "", year: "" }];
     mount();
-    expect(tid("cite-count")!.textContent).toBe("3");
-    const cards = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-card"]');
-    expect(cards).toHaveLength(3);
-    expect(cards[0]!.querySelector("b")!.textContent).toBe("Bandura, 1977");
-    expect(cards[2]!.querySelector("b")!.textContent).toBe("Author, n.d.");
-    expect(cards[1]!.querySelector('[data-testid="cite-ref"]')!.innerHTML).toBe(sanitizeHtml(citFmt(MILLER, 2, "apa").refHTML));
-    expect(cards[1]!.querySelector('[data-testid="cite-ref"]')!.innerHTML).toContain("<i>Psychological Review, 63</i>");
-    expect([...cards].map((c) => c.querySelector('[data-testid="cite-use"]')!.textContent)).toEqual(["Insert (Bandura, 1977)", "Insert (Miller et al., 2020)", "Insert (Author, n.d.)"]);
-    expect(cards[0]!.querySelector('[data-testid="cite-del"]')!.getAttribute("title")).toBe("Remove");
-    // the slots Task 8 fills, in v1's order: usage line, retraction warning, Crossref line
-    expect([...cards[0]!.querySelectorAll("[data-cite-slot]")].map((e) => e.getAttribute("data-cite-slot"))).toEqual(["cite-used", "cite-retr", "cite-rc"]);
+    expect(tid("cit-head")!.textContent).toBe("3 sources, 0 cited in your document");
+    const rows = rowEls();
+    expect(rows).toHaveLength(3);
+    expect(rows[1]!.querySelector('[data-testid="source-ref"]')!.innerHTML).toBe(sanitizeHtml(citFmt(MILLER, 2, "apa").refHTML));
+    expect(rows[1]!.querySelector('[data-testid="source-ref"]')!.innerHTML).toContain("<i>Psychological Review, 63</i>");
+    expect(rows.map((r) => r.querySelector('[data-testid="source-more"]')!.getAttribute("aria-label"))).toEqual([
+      "More actions for Bandura, 1977", "More actions for Miller, 2020", "More actions for Author, n.d."
+    ]);
+    for (const [i, want] of [[0, "Insert citation (Bandura, 1977)"], [1, "Insert citation (Miller et al., 2020)"], [2, "Insert citation (Author, n.d.)"]] as const) {
+      await openMore(i);
+      expect(items().map((m) => m.textContent)).toEqual([want, "Remove from my library"]);
+      await act(async () => { document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    }
   });
 
-  it("cards follow the chosen style; AMA's button reads 'Insert ¹ (n)'", () => {
+  it("rows follow the chosen style; AMA's menu item reads 'Insert citation ¹ (n)'", async () => {
     h.blob.value = [BANDURA, MILLER];
     mount();
     type("citStyle", "ama");
-    const cards = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-card"]');
-    expect([...cards].map((c) => c.querySelector('[data-testid="cite-use"]')!.textContent)).toEqual(["Insert ¹ (1)", "Insert ¹ (2)"]);
-    expect(cards[1]!.querySelector('[data-testid="cite-ref"]')!.innerHTML).toBe(sanitizeHtml(citFmt(MILLER, 2, "ama").refHTML));
+    const rows = rowEls();
+    expect(rows[1]!.querySelector('[data-testid="source-ref"]')!.innerHTML).toBe(sanitizeHtml(citFmt(MILLER, 2, "ama").refHTML));
+    await openMore(1);
+    expect(items()[0]!.textContent).toBe("Insert citation ¹ (2)");
   });
 
-  it("a card's Insert puts its citation at the cursor and toasts 'Citation inserted ✓'", async () => {
+  it("a row's Insert citation puts its citation at the cursor and toasts 'Citation inserted ✓'", async () => {
     const ed = new Editor({ extensions: editorExtensions, content: "<p>Seven.</p>" });
     editors.push(ed);
     ed.view.dom.dispatchEvent(new FocusEvent("focus"));
@@ -506,28 +516,28 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     h.blob.value = [BANDURA, MILLER];
     mount();
     type("citStyle", "ieee");
-    const btn = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-use"]')[1]!;
-    await act(async () => { btn.click(); });
+    await openMore(1);
+    await act(async () => { items()[0]!.click(); });
     expect(ed.getHTML()).toBe("<p>Seven. [2]</p>");
     expect(toasts()).toEqual(["Citation inserted ✓"]);
   });
 
-  it("✕ removes that card's entry, as an update", async () => {
+  it("Remove takes that source out, as an update", async () => {
     h.blob.value = [BANDURA, MILLER];
     mount();
-    const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[0]!;
-    await act(async () => { del.click(); });
+    await openMore(0);
+    await act(async () => { items()[1]!.click(); });
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
     expect(noPids(up([BANDURA, MILLER]))).toEqual([MILLER]);
     expect(up(null)).toEqual([]);
   });
 
-  it("✕ replayed onto a newer library (another window removed an earlier entry) still removes the card's own entry", async () => {
+  it("Remove replayed onto a newer library (another window removed an earlier entry) still removes the row's own entry", async () => {
     h.blob.value = [BANDURA, MILLER];
     mount();
-    // The second card: MILLER.
-    const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[1]!;
-    await act(async () => { del.click(); });
+    // The second row: MILLER.
+    await openMore(1);
+    await act(async () => { items()[1]!.click(); });
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
     expect(noPids(up([BANDURA, MILLER]))).toEqual([BANDURA]);
     // A 409 replays the update onto what the other window saved: BANDURA gone, MILLER now first.

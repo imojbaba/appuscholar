@@ -5,7 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { bookmarkletHref, bookmarkletHrefV2, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
+import { exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { noPids } from "./support/noPids";
 import en from "../messages/en.json";
@@ -40,7 +40,7 @@ vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", decry
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
-import { CitePanel } from "../components/tools/cite/CitePanel";
+import { CitationsTab } from "../components/literature/CitationsTab";
 import { resetCiteForm } from "../lib/cite/form";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
 import { citeExport, IMPORT_TOO_LARGE, LIBRARY_EXPORTED, readFileText } from "../lib/cite/share";
@@ -67,7 +67,7 @@ function mount() {
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  act(() => { root.render(<CitePanel />); });
+  act(() => { root.render(<CitationsTab />); });
 }
 async function click(testid: string) {
   const el = tid(testid)!;
@@ -110,53 +110,30 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("the panel's order and copy (v1 914-947)", () => {
-  it("quote block, then the capture <details>, then the library; after the cards: reference list, classics, export/import, the sharing note", () => {
+describe("the tab's order and copy (v1 914-947, as the Citations tab lays them out)", () => {
+  it("the sources, then Add a source by hand with the quote box inside, then More (classics, export, import, the sharing note), then In your document with the reference list", () => {
     h.blob.value = CITLIB.lib.slice(0, 2);
     mount();
-    const order = ["cite-quote", "cite-insertquote", "cite-bookmarklet-details", "cite-lib", "cite-insertbib", "cite-loadclassics", "cite-export", "cite-import", "cite-sharing-note"];
+    const order = ["cite-lib", "cit-hand", "cite-quote", "cite-insertquote", "cit-more", "cite-loadclassics", "cite-export", "cite-import", "cit-share-note", "cit-doc", "cite-insertbib"];
     const els = order.map((x) => tid(x)!);
     for (let i = 1; i < els.length; i++) expect(els[i - 1]!.compareDocumentPosition(els[i]!) & Node.DOCUMENT_POSITION_FOLLOWING, order[i]).toBeTruthy();
     expect($("label[for=citQuoteText]")!.textContent).toBe(E.cite_quote_label);
     expect(($("#citQuoteText") as HTMLTextAreaElement).placeholder).toBe(E.cite_quote_placeholder);
     expect(tid("cite-quote-desc")!.textContent).toBe(E.cite_quote_desc);
     expect(tid("cite-insertquote")!.textContent).toBe(E.cite_insertquote_btn);
-    expect(tid("cite-insertbib")!.textContent).toBe(E.cite_insertbib_btn);
-    expect(tid("cite-loadclassics")!.textContent).toBe(E.cite_loadclassics_btn);
-    // Wave B Task 12 (D-S2-42): v1's "⬆ Export library" is now Export, into the project's export place.
+    expect(tid("cite-insertbib")!.textContent).toBe("Insert reference list");
+    expect(tid("cite-loadclassics")!.textContent).toBe("Add the classic psychology sources");
+    // Wave B Task 12 (D-S2-42): v1's "⬆ Export library" is Export, into the project's export place.
     expect(tid("cite-export")!.textContent).toBe(E.exp_link);
-    expect(tid("cite-import")!.textContent).toBe(E.cite_import_btn);
-    expect(tid("cite-sharing-note")!.innerHTML).toBe(E.cite_sharing_note);
+    expect(tid("cite-import")!.textContent).toBe("Import a library file");
+    expect(tid("cit-share-note")!.textContent).toBe(E.cit_share_note);
     expect(($("#citImportFile") as HTMLInputElement).accept).toBe(".json,application/json");
-    expect(tid("cite-bookmarklet-details")!.querySelector("summary")!.textContent).toBe(E.cite_bookmarklet_summary);
-    expect(tid("cite-bookmarklet-desc")!.textContent).toBe(E.cite_bookmarklet_desc);
-    expect(tid("cite-bookmarklet-note")!.textContent).toBe(E.cite_bookmarklet_note);
-    // Fix wave A (W1): a bookmark dragged before keeps v1's capture code until it is dragged again.
-    expect(tid("cite-bookmarklet-redrag")!.textContent).toBe("Dragged this button before? Drag it to your bookmarks bar again, so it also reads PubMed's authors and the volume, issue and pages.");
-    expect(tid("cite-bookmarklet-note")!.nextElementSibling).toBe(tid("cite-bookmarklet-redrag"));
   });
 
-  it("the bookmarklet is a draggable link carrying v1's javascript: href for this page, and a click does not follow it", () => {
+  it("the one-click capture is not on this tab any more (ruling B2-R37: Find carries the bookmark, Task 20)", () => {
     mount();
-    const a = tid("cite-bookmarklet") as HTMLAnchorElement;
-    expect(a.textContent).toBe(E.cite_bookmarklet_btn);
-    expect(a.getAttribute("draggable")).toBe("true");
-    expect(window.location.origin + window.location.pathname).toBe("http://localhost:3000/");
-    // capture.test.ts holds bookmarkletHref to v1's href for http://localhost/; here it is wave A's (W1: every author, the volume, the issue and the pages), built for
-    // this page, as v1 builds it for its own (13623).
-    expect(a.getAttribute("href")).toBe(bookmarkletHrefV2("http://localhost:3000/"));
-    expect(bookmarkletHref("http://localhost/")).toBe(SHARE.bookmarklet.href);
-    const ev = new MouseEvent("click", { bubbles: true, cancelable: true });
-    act(() => { a.dispatchEvent(ev); });
-    expect(ev.defaultPrevented).toBe(true);
-  });
-
-  it("in a place's own window (?window=1) the bookmarklet still opens the writing window's address, where the capture is read", () => {
-    window.history.replaceState(null, "", "/p/p1/lit/citations?window=1");
-    try {
-      mount();
-      expect(tid("cite-bookmarklet")!.getAttribute("href")).toBe(bookmarkletHrefV2("http://localhost:3000/"));
-    } finally { window.history.replaceState(null, "", "/"); }
+    expect(tid("cite-bookmarklet-details")).toBeNull();
+    expect(tid("cite-bookmarklet")).toBeNull();
   });
 
   it("Clear form empties the quote too (citClearForm 7475)", async () => {
