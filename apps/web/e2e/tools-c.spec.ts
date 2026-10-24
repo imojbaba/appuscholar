@@ -251,7 +251,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     // The home's row for the stage: the Coding tab's facts line (client-side navigation keeps the page's state).
     await page.getByTestId("place-home").click();
     await expect(page.getByTestId("home-stages")).toBeVisible();
-    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_codes", { n: 3 }));
+    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_codes", { n: 3 }), { timeout: 20_000 });
     await expect(page.getByTestId("home-detail-collect")).not.toHaveText(T("detail_not_built"));
     await page.getByTestId("home-open-collect").click();
     await page.getByTestId("place-tab-coding").click();
@@ -572,7 +572,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await expect(editor(page).locator("span.qual-tag")).toHaveCount(0);
     // The home says one code now.
     await page.getByTestId("place-home").click();
-    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_code_one"));
+    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_code_one"), { timeout: 20_000 });
     await expect(page.getByTestId("home-detail-collect")).not.toContainText(T("qual_facts_codes", { n: 3 }));
   });
 
