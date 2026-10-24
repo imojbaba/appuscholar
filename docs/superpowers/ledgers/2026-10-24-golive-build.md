@@ -10,3 +10,7 @@ Plan: `docs/superpowers/plans/2026-10-24-golive-build.md`. One line per task; ru
 - Task 1 minors (deferred): empty apiKey consumes a quota call before `no-key`; three Neon round trips per /complete (cleanup delete could run only when a new window starts); memory cleanup scans every user; fixture email uses `uni.example` not `example.test`.
 - Ruling: no separate scoped re-review of Task 1's fix wave (RED/GREEN evidence in the report, ~20 changed lines); the final whole-branch review reads it — if wrong: found one task later.
 - Task 1: complete (commits 27ec7ea..b7bd3ba)
+- Task 2: fix round 1/5 (1 Important + hardening addressed: wrapped driver errors read through `cause`, name/code filtered, 5 s timeout, no-store; commits 6b9f0d4..4070eab)
+- Task 2 minors (deferred): the unauthenticated route makes one database call per hit (no limit, per plan); only run on pglite, not on Neon.
+- Ruling: no separate scoped re-review of Task 2's fix wave (new tests prove each point); the final whole-branch review reads it — if wrong: found one task later.
+- Task 2: complete (commits a981a55..4070eab)
