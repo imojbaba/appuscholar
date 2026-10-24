@@ -43,8 +43,9 @@ export function citToRis(lib: CitationEntry[]): string {
 
 /* ---- BibTeX ---- */
 const BIB_TYPE: Record<CitationKind, string> = { journal: "article", book: "book", chapter: "incollection", conf: "inproceedings", report: "techreport", thesis: "phdthesis", web: "misc" };
-const BIB_ESC: Record<string, string> = { "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "%": "\\%", "&": "\\&", "$": "\\$", "#": "\\#", "_": "\\_" };
-/** A value with `{ } % & $ # _` escaped (and a backslash, which would start a command). One pass, so an escape is never escaped again. */
+const BIB_ESC: Record<string, string> = { "\\": "\\textbackslash{}", "{": "\\textbraceleft{}", "}": "\\textbraceright{}", "%": "\\%", "&": "\\&", "$": "\\$", "#": "\\#", "_": "\\_" };
+/** A value with `{ } % & $ # _` escaped (and a backslash, which would start a command). One pass, so an escape is never escaped again. A brace is written as a command,
+ *  not as `\{`: BibTeX counts a brace even after a backslash, so one brace without its partner would run the field into the rest of the file. */
 const bibEsc = (x: string): string => x.replace(/[\\{}%&$#_]/g, (c) => BIB_ESC[c]!);
 
 /** A doi or url is written as typed (BibTeX reads these fields verbatim, so an escape would corrupt them): only what would break the braces is percent-encoded, a brace and a space. */

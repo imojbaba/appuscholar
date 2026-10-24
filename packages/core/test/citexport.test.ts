@@ -111,9 +111,19 @@ describe("citToBibtex", () => {
   });
   it("escapes { } % & $ # _ in every value (and a backslash)", () => {
     const s = citToBibtex([{ author: "Lee, K", year: "2001", title: "A_b {c} 50% R&D $5 #1 \\x", source: "J_1", type: "Journal article" }]);
-    expect(s).toContain("title = {A\\_b \\{c\\} 50\\% R\\&D \\$5 \\#1 \\textbackslash{}x}");
+    expect(s).toContain("title = {A\\_b \\textbraceleft{}c\\textbraceright{} 50\\% R\\&D \\$5 \\#1 \\textbackslash{}x}");
     expect(s).toContain("journal = {J\\_1}");
     expect(s).toContain("@article{lee2001ab,");
+  });
+  it("keeps the file whole when a value has a brace without its partner (BibTeX counts \\{ as a brace, so it is written as a command)", () => {
+    const s = citToBibtex([{ title: "Sets written {x | x > 0 and {y" }, BOOK, { title: "Closing } only", source: "J" }]);
+    expect(s).toContain("title = {Sets written \\textbraceleft{}x | x > 0 and \\textbraceleft{}y}\n}");
+    expect(s).toContain("title = {Closing \\textbraceright{} only},");
+    // Every brace in the file is a field or entry delimiter or the {} of a command, so the file balances.
+    let depth = 0;
+    for (const c of s) { depth += c === "{" ? 1 : c === "}" ? -1 : 0; expect(depth).toBeGreaterThanOrEqual(0); }
+    expect(depth).toBe(0);
+    expect(s.match(/^@/gm)).toHaveLength(3);
   });
   it("braces an organisation author so it is not split into a first and last name", () => {
     expect(citToBibtex([{ author: "World Health Organization; Lee, K", year: "2020", title: "Report" }])).toContain("author = {{World Health Organization} and Lee, K},");
