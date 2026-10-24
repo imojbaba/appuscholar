@@ -2,6 +2,96 @@
  "note": "The v2 recordings (not v1 requests, so not in test/golden/fetch/cases.json, which is v1's and never edited). Written by capture.mjs.",
  "recorded": [
   {
+   "file": "epmc-fulltext-oa-8da0c20f.json",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6746734/fullTextXML",
+   "status": 200,
+   "sha256": "1ad30f9b24b59a065cb0a181212d62960cefcade806a3854700b143f180e66a0"
+  },
+  {
+   "file": "epmc-fulltext-unknown-3677d516.json",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC99999999/fullTextXML",
+   "status": 500,
+   "sha256": "05e0c7df0185bf693aa5ac08a77e4b5628604363999372fa61c90ee94cc8fd3d"
+  },
+  {
+   "file": "epmc-search-nopmc-a36ae9c1.json",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1037/0003-066x.55.1.68&format=json&resultType=lite",
+   "status": 200,
+   "sha256": "f6ad988d33a45fa32054407b392828cad595ad6ccb112eb20c3f51611c605a29"
+  },
+  {
+   "file": "epmc-search-nopmcid-cf29ab89.json",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:%2210.1016/s0140-6736(97)11096-0%22&format=json&resultType=lite",
+   "status": 200,
+   "sha256": "1f9980f7b865bdbb897e9a73a830bf1fca9f8f487ea36be701f7a246722799f1"
+  },
+  {
+   "file": "epmc-search-notoa-094c2f79.json",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.4022/jafib.1335&format=json&resultType=lite",
+   "status": 200,
+   "sha256": "3db09e7e209828fb359e24fc82d0939c0a3d31ae921761bd3f17416658ce2b64"
+  },
+  {
+   "file": "epmc-search-oa-60c7b3be.json",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1038/s41598-019-49466-6&format=json&resultType=lite",
+   "status": 200,
+   "sha256": "405c836f655a3cc37f14c889f0fad5273a1d9db89577b899edd7c897e532116e"
+  },
+  {
+   "file": "paste-cr-arxiv-0918fbf7.json",
+   "url": "https://api.crossref.org/works/10.48550%2Farxiv.2101.00001",
+   "status": 404,
+   "sha256": "ae8462e3af85ca7577aaa97ff22a194f9dfd7fada58cf4944b53d2fdfa7b1f92"
+  },
+  {
+   "file": "paste-cr-doi-649a3707.json",
+   "url": "https://api.crossref.org/works/10.1038%2Fs41598-019-49466-6",
+   "status": 200,
+   "sha256": "48a996fe50f1390df2ed9037309ecaebda9b369803084b04eca7b8939c1b51f2"
+  },
+  {
+   "file": "paste-oa-arxiv-f6c0fc09.json",
+   "url": "https://api.openalex.org/works/doi:10.48550/arxiv.2101.00001?select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio",
+   "status": 200,
+   "sha256": "ba108560421e00d7636c6a999bd49bc206642bd1554ba582f93a25e8fbba1069"
+  },
+  {
+   "file": "paste-oa-doi-1db6d1e9.json",
+   "url": "https://api.openalex.org/works/doi:10.1038/s41598-019-49466-6?select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio",
+   "status": 200,
+   "sha256": "908b2e41f21cc18ba726466ffde008fe4e0d6596647deef1720079c978351e58"
+  },
+  {
+   "file": "paste-oa-nf-6d008096.json",
+   "url": "https://api.openalex.org/works/doi:10.9999/appuscholar-no-such-doi-2026?select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio",
+   "status": 404,
+   "sha256": "e9639e3c4681ce85f852fbac48e2eeee5ba51296dbfec57c200d59b76237ab80"
+  },
+  {
+   "file": "paste-oa-pmcid-df0c2f23.json",
+   "url": "https://api.openalex.org/works/pmcid:PMC6746734?select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio",
+   "status": 404,
+   "sha256": "e9639e3c4681ce85f852fbac48e2eeee5ba51296dbfec57c200d59b76237ab80"
+  },
+  {
+   "file": "paste-oa-work-f99ee76f.json",
+   "url": "https://api.openalex.org/works/W2972990769?select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio",
+   "status": 200,
+   "sha256": "908b2e41f21cc18ba726466ffde008fe4e0d6596647deef1720079c978351e58"
+  },
+  {
+   "file": "paste-pm-nf-688ea13f.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=99999999",
+   "status": 200,
+   "sha256": "37b0ed9f7cbf77b4fc8cb44de7b373b225f18eaa7f52f076d19c731ffc48c0a9"
+  },
+  {
+   "file": "paste-pmc-esummary-9fd83f4b.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pmc&retmode=json&id=6746734",
+   "status": 200,
+   "sha256": "4f08a49b24cedef8e1a79ca860e9e6d5efbb67c345467450e9075c26e06f0368"
+  },
+  {
    "file": "pm-efetch-v2-rct-e370471d.json",
    "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=42537418,42316780,42289435,42043979,41814471,41803820",
    "status": 200,
