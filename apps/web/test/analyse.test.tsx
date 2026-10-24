@@ -30,8 +30,6 @@ const h = vi.hoisted(() => ({
   extract: vi.fn(async (_f: File) => "no-text" as unknown),
   mammoth: vi.fn(async (_o: unknown) => ({ value: "" })),
   noMammoth: false,
-  /** The panel's own blobs (ap_notes, ap_cols) are still being read. */
-  apLoading: false,
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
@@ -40,7 +38,7 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", pendingAnalyse: h.pending, setPendingAnalyse: h.setPending }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: h.projectId, index: h.index, loading: h.loading, locked: h.locked, broken: h.broken, error: h.error, loadPaper: h.loadPaper }) }));
 vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("../lib/shelf/extract")>()), extractPdfPages: (f: File) => h.extract(f) }));
-vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: h.apLoading, locked: false, set: () => {}, flush: async () => true }) }));
+vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: null, loading: false, locked: false, set: () => {}, flush: async () => true }) }));
 vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) throw new Error("chunk failed"); return { extractRawText: h.mammoth }; } }));
 
 import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
@@ -116,7 +114,7 @@ beforeEach(() => {
   resetAp();
   for (const f of [h.toast, h.setPending, h.loadPaper, h.extract, h.mammoth]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.error = false; h.projectId = "p-1"; h.noMammoth = false; h.apLoading = false;
+  h.oaKey = null; h.pending = null; h.index = null; h.locked = false; h.loading = false; h.broken = false; h.error = false; h.projectId = "p-1"; h.noMammoth = false;
 });
 afterEach(() => {
   act(() => { for (const r of roots.splice(0)) r.unmount(); });
@@ -162,51 +160,6 @@ describe("Analyse a paper: the panel (v1 741-760)", () => {
     await mount(<StubPanel id="analyse" />);
     expect(tid("pending-analyse")).toBeNull();
     expect(document.body.textContent).not.toContain("Abstract kept");
-  });
-});
-
-describe("Analyse a paper: the cards side by side while the saved notes open (W8)", () => {
-  it("Analyse shows the loading sign, not its empty state, until its data is read (W8)", async () => {
-    h.apLoading = true;
-    const root = await mount();
-    load("sample@apSample");
-    const box = $("#apAcrossBox") as HTMLDetailsElement;
-    await act(async () => { box.open = true; box.dispatchEvent(new Event("toggle")); });
-    const sign = $("#apAcross")!.querySelector('[data-testid="panel-loading"]')!;
-    expect(sign.textContent).toBe(E.blob_loading);
-    expect(sign.getAttribute("aria-busy")).toBe("true");
-    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
-    // The intake's own dropdown keeps its wording (D-S2-15).
-    expect($("#apShelf")!.textContent).not.toContain(E.blob_loading);
-    // The notes are read: "No paper card yet…" (nothing is stored) replaces the sign.
-    h.apLoading = false;
-    await act(async () => { root.render(<AnalysePanel />); });
-    expect($('[data-testid="panel-loading"]')).toBeNull();
-    expect($("#apAcross")!.textContent).toContain(E.ap2_no_paper_card_yet);
-  });
-});
-
-describe("Analyse a paper: the notes store the Reading tab gives it (Task 21a fix round)", () => {
-  const given = (over: Partial<ApNotesStore>): ApNotesStore => ({
-    all: {}, unread: false, loading: false, locked: false, broken: false, readOnly: false, note: () => undefined, put: () => true, remove: () => true, cols: [], toggleCol: () => true, ...over
-  });
-
-  it("the cards side by side read the store it is given, not blobs of their own", async () => {
-    // Its own blobs are read and empty; the given store is still being read.
-    await mount(<AnalysePanel notes={given({ loading: true, unread: true })} />);
-    load("sample@apSample");
-    const box = $("#apAcrossBox") as HTMLDetailsElement;
-    await act(async () => { box.open = true; box.dispatchEvent(new Event("toggle")); });
-    expect($("#apAcross")!.querySelector('[data-testid="panel-loading"]')).not.toBeNull();
-    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
-  });
-
-  it("with no store given the panel makes its own, as before", async () => {
-    await mount(<AnalysePanel />);
-    load("sample@apSample");
-    const box = $("#apAcrossBox") as HTMLDetailsElement;
-    await act(async () => { box.open = true; box.dispatchEvent(new Event("toggle")); });
-    expect($("#apAcross")!.textContent).toContain(E.ap2_no_paper_card_yet);
   });
 });
 

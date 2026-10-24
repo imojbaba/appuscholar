@@ -472,12 +472,6 @@
 .sh-h3 { margin: 12px 0 4px; font-size: 14px; }
 .sh-hl { border-left: 3px solid #d97706; padding: 2px 8px; margin: 6px 0; font-size: 13px; }
 .sh-ai { margin-top: 8px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
-.sh-matrix { overflow: auto; margin-top: 8px; }
-.sh-matrix table { border-collapse: collapse; font-size: 13px; width: 100%; }
-.sh-matrix th { text-align: left; padding: 4px; }
-.sh-matrix td { vertical-align: top; padding: 4px; }
-.sh-matrix td textarea { width: 100%; min-width: 130px; }
-.sh-matrix .sh-matrix-title { font-weight: 700; min-width: 140px; }
 /* The Reading list (wave B Task 21a; canvas Read): one row per kept paper, the way to add a PDF, the practice paper last. The reader, search and backup inside it are the shelf's own (.sh-*) until B3. */
 .rl { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s5) var(--s6); }
 .rl-intro { margin: 0; max-width: 80ch; font-size: 15px; color: var(--muted); }
@@ -543,20 +537,8 @@
 .ap-read pre { white-space: pre-wrap; font-size: 11px; max-height: 180px; overflow: auto; font-family: var(--font-mono); }
 .ap-flags { margin: 4px 0; padding-left: 18px; }
 .ap-flags a { color: var(--accent-ink); text-decoration: underline; }
-/* The walk-through, the paper card and the cards side by side (v1 11302-11331, 9968-9975). */
+/* The walk-through and the paper card (v1 11302-11331). The cards side by side are Compare now (below). */
 .ap-stage-h { margin: 6px 0; font-size: 14px; font-weight: 600; }
-.ap-check { display: flex; gap: 4px; align-items: center; cursor: pointer; font-size: 12.5px; }
-.ap-cols { gap: 10px; margin-bottom: 6px; }
-.ap-check input { accent-color: var(--purple-600); }
-.ap-across { margin-top: 14px; }
-.ap-across > summary { cursor: pointer; font-weight: 700; }
-.ap-across #apAcross { margin-top: 8px; }
-.ap-table { overflow: auto; }
-.ap-table table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
-.ap-table th { text-align: left; padding: 4px; border-bottom: 1px solid var(--line); }
-.ap-table td { vertical-align: top; padding: 4px; min-width: 130px; }
-.ap-table td.ap-paper { font-weight: 700; min-width: 140px; }
-.ap-table td:last-child { min-width: 0; }
 
 /* Task 7: the project home (canvas Main). A side column (the question, taking the work out) and a main one (the suggestion, the stages).
    On a phone both columns dissolve (display: contents) so their cards stack and can be ordered one by one (Task 14). */
@@ -728,6 +710,68 @@
 }
 /* end Citations tab */
 
+/* Compare (wave B Task 22, canvas Compare): one table of the kept papers beside "Write from these papers". Colours are the tokens above. The table scrolls inside its own box, the paper's
+   name staying in view, and up to 700px the aside goes under it, the controls are 44px targets and nothing runs past the 16px gutters. */
+.cmp { display: flex; flex-wrap: wrap; gap: var(--s6); align-items: flex-start; }
+.cmp-main { flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.cmp-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3); }
+.cmp-h { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 700; }
+.cmp-sub { margin: var(--s1) 0 0; color: var(--muted); font-size: 14px; }
+.cmp-choose { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
+.cmp-choose:hover { background: var(--soft); }
+.cmp-choose[aria-expanded="true"] { border-color: var(--purple-800); color: var(--purple-800); font-weight: 600; }
+.cmp-choose:focus-visible, .cmp-col-del:focus-visible, .cmp-scroll:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.cmp-cols { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4) var(--s5); display: flex; flex-direction: column; gap: var(--s3); font-size: 14px; }
+.cmp-cols h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.cmp-cols-list { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); }
+.cmp-cols-list li { display: inline-flex; align-items: center; gap: var(--s2); }
+.cmp-col-del { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 32px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
+.cmp-col-del:hover { background: var(--soft); }
+.cmp-col-add { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.cmp-col-add .input { flex: 1 1 220px; min-width: 0; min-height: 40px; }
+.cmp-scroll { overflow-x: auto; max-width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.cmp-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 14px; }
+.cmp-table thead th { text-align: left; padding: 12px 16px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.cmp-table tbody th { position: sticky; left: 0; z-index: 1; max-width: 220px; padding: 14px 16px; text-align: left; font-weight: 600; vertical-align: top; background: var(--card); border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.cmp-col-name { display: block; }
+.cmp-col-note { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+.cmp-table td { padding: 8px 10px; vertical-align: top; border-top: 1px solid var(--line); }
+.cmp-cell { width: 100%; min-width: 150px; font-size: 14px; resize: vertical; }
+.cmp-cell[readonly] { background: var(--soft); }
+.cmp-empty, .cmp-line { margin: 0; color: var(--muted); }
+.cmp-line { padding: var(--s2) var(--s3); border-left: 3px solid var(--flag-ink); background: var(--flag-bg); color: var(--flag-ink); border-radius: var(--r-ctl); font-size: 14px; }
+.cmp-foot { margin: 0; font-size: 14px; color: var(--muted); }
+.cmp-aside { flex: 1 1 340px; max-width: 420px; min-width: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.cmp-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3); }
+.cmp-card h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.cmp-note { margin: 0; font-size: 14px; color: var(--muted); }
+.cmp-error { margin: 0; font-size: 14px; color: var(--danger-ink); }
+.cmp-ticks { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--s1); }
+.cmp-tick { display: flex; align-items: center; gap: var(--s2); min-height: 32px; font-size: 14px; cursor: pointer; }
+.cmp-tick input { width: 18px; height: 18px; flex: none; accent-color: var(--purple-800); }
+.cmp-tick input:disabled + span { color: var(--muted); }
+.cmp-no-abstract { display: block; padding-left: 26px; font-size: 13px; color: var(--muted); }
+.cmp-acts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.cmp-btn { min-height: 40px; }
+.cmp-btn[aria-disabled="true"] { opacity: 0.6; cursor: progress; }
+.cmp-export { min-height: 36px; }
+.cmp-ai { font-size: 14px; }
+.cmp-ai-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+@media (max-width: 700px) {
+  .cmp { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s4); }
+  .cmp-main { flex: none; }
+  .cmp-aside { flex: none; max-width: none; }
+  .cmp-h { font-size: 20px; }
+  .cmp-choose, .cmp-btn, .cmp-export, .cmp-col-add .input { min-height: 44px; }
+  .cmp-choose { flex: 1 1 100%; }
+  .cmp-tick { min-height: 44px; }
+  .cmp-col-del { min-width: 44px; min-height: 44px; }
+  .cmp-cell { min-height: 44px; }
+  .cmp-table tbody th { max-width: 140px; padding: 10px; font-size: 13px; }
+  .cmp-cols, .cmp-card { padding: var(--s4); }
+  .cmp-acts > * { flex: 1 1 100%; }
+}
+/* end Compare */
 /* Adding this paper (wave B Task 20, register row D-S2-125, canvas Find): the page the bookmark opens, with no workspace around it, and the bookmark's section in Find ("Add from any journal page").
    Tokens only; the screen is one column that grows and shrinks with the window, and every control on it is a 44px target. Placed before the Find block, which the Find layout test reads to the end of the file. */
 .addpaper { max-width: 640px; margin: 0 auto; padding: var(--s7) var(--s4); display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }

@@ -35,6 +35,7 @@ import { getAp, resetAp } from "../lib/analyse/useApDoc";
 import { heldBlobs } from "../lib/blobs/held";
 import type { ApNotes, ShelfIndex, ShelfPaper, StoredEntry } from "../lib/blobs/kinds";
 import { ReadingList } from "../components/literature/ReadingList";
+import { CompareTab } from "../components/literature/CompareTab";
 import { addOwnPdf, addToReferences, backupShelf, OWN_PDF_PARALLEL, toRecord, type ShelfEntry, type ShelfItem, type OwnPdfOps } from "../lib/shelf/actions";
 import { useShelfStore, type ShelfStore } from "../lib/shelf/useShelf";
 
@@ -490,6 +491,53 @@ describe("the backup", () => {
     const text = await new Promise<string>((done) => { const r = new FileReader(); r.onload = () => done(String(r.result)); r.readAsText(sent[0]!); });
     const bundle = JSON.parse(text) as { papers: Array<Record<string, unknown>> };
     expect(bundle.papers.map((p) => [p.id, p.doi, p.pid])).toEqual([["s1", "10.1038/x", "ka"], ["s2", undefined, undefined]]);
+  });
+
+  it("words typed in Compare go into the backup, and a restore into an empty project brings them back to Compare (Task 22 fix round)", async () => {
+    put("citations", [SCHAEFER]);
+    put("shelf_index", [shelfEntry("sa", { title: SCHAEFER.title!, pid: "ka", doi: SCHAEFER.doi })]);
+    put("shelf_paper:sa", { ...paperOf(1), cells: { Sample: "the old copy, which Compare never writes" } });
+    // The student types in Compare.
+    const first = await mount(<CompareTab />);
+    await until(() => tids("cmp-row").length === 1, "the Compare row");
+    const typeIn = (el: HTMLElement, value: string) => act(() => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(el, value);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const box = (col: string) => tid("cmp-row")!.querySelector<HTMLTextAreaElement>(`textarea[aria-label$=", ${col}"]`)!;
+    typeIn(box("Sample"), "58 first-year students");
+    typeIn(box("Weak points"), "One university only");
+    await until(() => (stored<ApNotes>("ap_notes")?.["p:ka"]?.cells?.Sample ?? "") === "58 first-year students", "the cell is saved");
+    first.unmount();
+    // Back up the Reading list.
+    const list = await mount(<ReadingList />);
+    await until(() => tids("rl-row").length === 1 && !tid("panel-loading") && tid("rl-row")!.getAttribute("aria-busy") === null, "the list, with the paper's text read");
+    await click(tid("sh-backup"));
+    expect(h.download).toHaveBeenCalledTimes(1);
+    const sent = h.download.mock.calls[0]![1] as Blob;
+    const text = await new Promise<string>((done) => { const r = new FileReader(); r.onload = () => done(String(r.result)); r.readAsText(sent); });
+    const bundle = JSON.parse(text) as { papers: Array<{ id: string; pid?: string; cells: Record<string, string> }> };
+    // The file has what was typed in Compare, not the copy nothing writes any more.
+    expect(bundle.papers.map((p) => [p.id, p.pid, p.cells])).toEqual([["sa", "ka", { Sample: "58 first-year students" }]]);
+    list.unmount();
+    // A new account: nothing in the project. The restore reads the file.
+    server = { blobs: [], calls: [] };
+    heldBlobs.clear();
+    const empty = await mount(<ReadingList />);
+    await until(() => !tid("panel-loading") && tid("rl-empty") !== null, "the empty list");
+    await pick(tid("sh-rest")!, [new File([text], "backup.json", { type: "application/json" })]);
+    await until(() => tid("rl-add-status")?.textContent === "Papers restored: 1.", "the restore");
+    await until(() => (stored<ShelfIndex>("shelf_index")?.length ?? 0) === 1, "the index is saved");
+    const pid = stored<ShelfIndex>("shelf_index")![0]!.pid!;
+    expect(pid).toMatch(/^k/);
+    await until(() => (stored<ApNotes>("ap_notes")?.["p:" + pid]?.cells ?? null) !== null, "the note's cells");
+    // The note is whole (stages and card, ruling B2-R11) and holds the typed cells.
+    expect(stored<ApNotes>("ap_notes")!["p:" + pid]).toMatchObject({ stages: {}, card: {}, pid, cells: { Sample: "58 first-year students" } });
+    empty.unmount();
+    // Compare in the new project shows them.
+    await mount(<CompareTab />);
+    await until(() => tids("cmp-row").length === 1, "the row after the restore");
+    expect(box("Sample").value).toBe("58 first-year students");
   });
 });
 

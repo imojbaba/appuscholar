@@ -5,8 +5,10 @@ import {
 } from "@appuscholar/core";
 import { acrossData, cardLabels, stageName } from "@/lib/analyse/cards";
 import { forLibraryFile, noteHasWork, pidOfNote } from "@/lib/papers/ids";
+import { cardColsOf, compareCsv, compareTable, stageColsOf } from "@/lib/papers/compare";
+import { papersOf } from "@/lib/papers/list";
 import { parseBlob, shelfPaperKind, type BlobKind, type BlobShape, type Highlight } from "@/lib/blobs/kinds";
-import { backupShelf, downloadMatrix, type ShelfItem, type T } from "@/lib/shelf/actions";
+import { backupShelf, type ShelfItem, type T } from "@/lib/shelf/actions";
 import { VaultError } from "@/lib/vault/crypto";
 import { htmlFile, localDay, unique, zipName, type ExportDoc, type ExportDocSummary } from "@/lib/vault/export";
 import { fileTitle, projectKeyId, UNTITLED, type OpenedTitle, type Titled } from "@/lib/vault/titles";
@@ -18,7 +20,7 @@ import { wordText } from "./word";
 /*
  * One export place (Task 12; register D-S2-42): the parts of one project the student ticks, in one zip. Every file is made by the builder the
  * tool's own download uses (v1's and wave A's): the documents as the account export writes them, exportLibrary and the reference list,
- * rsCsvText, the matrix CSV and the shelf backup, the cards CSV, the writing record and aiuBuildV2. Like the account export, everything is read
+ * rsCsvText, Compare's table (lib/papers/compare) and the shelf backup, the cards CSV, the writing record and aiuBuildV2. Like the account export, everything is read
  * as ciphertext and opened here, and the folder and file names come from opened titles ("untitled" when a title does not open).
  */
 
@@ -132,7 +134,7 @@ function questionText(i: BlobShape<"idea_intake">, t: T): string {
 /**
  * The ticked parts of one project as one zip, at these paths: `documents/<title>.doc` and `.html` (sources under `documents/sources/`),
  * `question.txt`, `citations/library.json` and `citations/references.txt`, `search/kept-papers.csv` (and `search/last-search.csv` when this
- * session ran a search), `notes/<paper title>.txt`, `compare/table.csv` and `compare/paper-cards.csv`, `writing-record.txt`,
+ * session ran a search), `notes/<paper title>.txt`, `compare/table.csv` (Compare's table: the papers that have a cell or a card field) and `compare/paper-cards.csv`, `writing-record.txt`,
  * `ai-use-statement.txt`, `reading-list-backup.json`. A part with nothing in it writes no file. Deleted documents are left out. A document or a
  * blob that does not open (VaultError "corrupt"), or a blob that is not of its kind's shape, is left out and named in `unreadable.txt`, as the
  * account export lists it in index.json; the rest still export. Any other failure rejects.
@@ -234,14 +236,15 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
     for (const p of papers.values()) zip.file(`notes/${unique(zipName(p.title), used)}.txt`, notesText(p, t));
   }
   if (step("compare")) {
-    const items = await shelf();
     const notes = await apNotes();
-    if (items.length) {
-      const cols = shColsOf(await blob("shelf_cols"), SHELF_DEFAULT_COLS);
-      const file = await caught((download) => downloadMatrix(items, cols, { t, download }));
-      if (file) zip.file("compare/table.csv", file);
-    }
-    const cards = acrossData(t, notes, apAcrossCols(await blob("ap_cols")), false);
+    const apCols = await blob("ap_cols");
+    // The table on Compare's screen (ruling B2-R27): its columns, and its cells and card fields from each paper's note, by the paper's id. Only the papers that have words in it get a row.
+    // A paper whose note has no `cells` key yet (the paper-id migration has not taken them, ruling B2-R7) has its cells on its reading-list copy: those are its table words until it does.
+    // The walk-through columns are on screen only: compare/paper-cards.csv below carries those answers, as it always has.
+    const table = compareTable(papersOf(await library(), await shelf(), notes), shColsOf(await blob("shelf_cols"), SHELF_DEFAULT_COLS), stageColsOf(apCols), cardColsOf(apCols), t, (p) => p.shelf?.paper?.cells);
+    const csv = compareCsv(table, t("sh2_paper"));
+    if (csv !== null) zip.file("compare/table.csv", csvBlob(csv));
+    const cards = acrossData(t, notes, apAcrossCols(apCols), false);
     if (cards.body.length) zip.file("compare/paper-cards.csv", csvBlob(apAcrossCsv(cards)));
   }
   if (step("record")) {
@@ -259,7 +262,9 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
   }
   if (step("readingBackup")) {
     const items = await shelf();
-    const file = items.some((x) => x.paper) ? await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {} })) : null;
+    // The cells Compare wrote are the paper's notes', so the backup takes them from there (backupShelf).
+    const notes = await apNotes();
+    const file = items.some((x) => x.paper) ? await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {}, notes })) : null;
     if (file) zip.file("reading-list-backup.json", file);
   }
   for (const m of parts) {

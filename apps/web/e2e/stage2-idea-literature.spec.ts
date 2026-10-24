@@ -762,14 +762,16 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     await sealedSave(page, /\/blobs\/shelf_paper%3A[A-Za-z0-9_-]+$/, ["morning daylight", T("sh2_my_own_summary_before")], () => page.getByTestId("sh-ai").click());
     await expect(page.getByTestId("sh-ai-out")).toHaveText(SHELF_SUMMARY_REPLY + "\n\n" + T("sh2_compare_this_with_your"), { useInnerText: false });
 
-    // Compare's table: the cells are mine.
+    // Compare's table (Task 22): the cells are mine, kept in the paper's note and sealed.
     await litTab(page, "compare");
-    await expect(page.getByTestId("shelf-matrix")).toContainText(T("sh2_one_row_per_paper"));
-    await expect(page.getByTestId("sh-col-head")).toHaveText([T("sh2_sample") + " ×", T("sh2_method") + " ×", T("sh2_key_finding") + " ×"]);
-    const cell = page.getByTestId("sh-matrix-row").first().getByTestId("sh-cell").first();
-    await cell.fill(MATRIX_CELL);
-    await sealedSave(page, /\/blobs\/shelf_paper%3A[A-Za-z0-9_-]+$/, [MATRIX_CELL], () => cell.blur());
-    const mx = await exportFrom(page, page.getByTestId("sh-csv"), "compare");
+    await expect(page.getByTestId("compare-tab")).toContainText(T("cmp_sub"));
+    // The matrix columns, then the walk-through answers the old cards table showed (Design, Sample, Measures, Statistics: ruling B2-R40), then the card fields.
+    const heads = page.locator('[data-testid="cmp-col-head"] .cmp-col-name');
+    const WALK = [T("ap2_design"), T("ap2_sample"), T("ap2_measures"), T("ap2_stage_stats_name")];
+    await expect(heads).toHaveText([T("sh2_paper"), T("sh2_sample"), T("sh2_method"), T("sh2_key_finding"), ...WALK, T("ap2_strengths"), T("cmp_col_weak"), T("ap2_my_verdict"), T("cmp_col_notes")]);
+    const cell = page.getByTestId("cmp-row").first().getByTestId("cmp-cell").first();
+    await sealedSave(page, "ap_notes", [MATRIX_CELL], () => cell.fill(MATRIX_CELL));
+    const mx = await exportFrom(page, page.getByTestId("cmp-export"), "compare");
     expect(await mx.file("compare/table.csv")!.async("string")).toContain(MATRIX_CELL);
     await litTab(page, "reading");
     await expect(page.getByTestId("place-tab-reading")).toHaveText(T("tab_name_count", { name: T("tab_name_reading"), n: 5 }));
@@ -855,22 +857,20 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     quiet();
   });
 
-  await test.step("9. compare: Compare, My paper cards side by side, choose a column (stored, sealed), download the CSV", async () => {
+  await test.step("9. compare: a paper card field is a column of Compare's table (typed, sealed); Choose columns (stored, sealed); the comparison goes out with the export", async () => {
     await litTab(page, "compare");
-    const across = page.getByTestId("ap-across");
-    if (!(await across.evaluate((d) => (d as HTMLDetailsElement).open))) await across.locator("summary").click();
-    await expect(across).toContainText(T("ap2_cells_are_your_words"));
-    await expect(across.locator("tbody tr")).toHaveCount(1);
-    await expect(across.locator("tbody tr").first()).toContainText("Sleep and exam anxiety in first-year students");
-    await expect(across.locator("thead")).toContainText(T("ap2_paper"));
-    // Strengths is one of the columns to choose; the table follows the boxes ticked.
-    const box = across.locator('input[data-apcol="strengths"]');
-    const on = await box.isChecked();
-    await sealedSave(page, "ap_cols", [], () => (on ? box.uncheck() : box.check()));
-    if (on) await sealedSave(page, "ap_cols", [], () => box.check());
-    await expect(box).toBeChecked();
-    await expect(across.locator("tbody tr").first()).toContainText(CARD_STRENGTH);
-    const dl = await exportFrom(page, page.locator("#apAcrossCsv"), "compare");
+    await expect(page.getByTestId("cmp-foot")).toHaveText(T("cmp_foot"));
+    // A kept paper's own strengths, in its row.
+    const strengths = page.getByTestId("cmp-row").first().getByTestId("cmp-cell").nth(7);
+    await expect(strengths).toHaveAttribute("aria-label", /, Strengths$/);
+    await sealedSave(page, "ap_notes", [CARD_STRENGTH], () => strengths.fill(CARD_STRENGTH));
+    // Choose columns edits ap_cols: Weak points out, the others stay.
+    await page.getByTestId("cmp-choose").click();
+    await sealedSave(page, "ap_cols", [], () => page.getByTestId("cmp-card-col-weak").uncheck());
+    await expect(page.locator('[data-testid="cmp-col-head"] .cmp-col-name')).toHaveText([T("sh2_paper"), T("sh2_sample"), T("sh2_method"), T("sh2_key_finding"), T("ap2_design"), T("ap2_sample"), T("ap2_measures"), T("ap2_stage_stats_name"), T("ap2_strengths"), T("ap2_my_verdict"), T("cmp_col_notes")]);
+    const dl = await exportFrom(page, page.getByTestId("cmp-export"), "compare");
+    expect(await dl.file("compare/table.csv")!.async("string")).toContain(CARD_STRENGTH);
+    // The practice paper's card (Analyse a paper, step 8) is not a kept paper's: it stays in the cards file.
     expect(await dl.file("compare/paper-cards.csv")!.async("string")).toContain(CARD_STRENGTH);
     quiet();
   });

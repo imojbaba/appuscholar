@@ -6,13 +6,12 @@ import { apBuild, apNumbers, type ApDoc, type ApNumber, type ApRefs, type ApWalk
  * The paper Analyse a paper has loaded, and what the panel shows of it: v1's page state `AP` (9838), one paper per tab, kept in this tab's memory only, as v1 keeps `AP.doc` (never stored:
  * the chapter's "Never stored: the full text of the loaded paper and the Ask Q&A log"). The panel reads it with useApState(); the actions (intake.ts, ask.ts, refcheck.ts) write it.
  *
- * For the walk-through, the paper card and the cards side by side (Task 13): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
+ * For the walk-through and the paper card (Task 13): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
  * paper loaded (a reply for an earlier paper is dropped); `mode` is the tab; `refs` holds the last reference check (`finished` once it ran to the end),
  * which v1's card text includes (apCardText 10127); `busy` is v1's AP.busy, shared by Ask and the walk-through.
  * The walk-through's page state is v1's too (9838, reset by apLoad 9887): the stage shown (AP.stage), the words typed in "Try first." (AP.tryDraft) and in "Check yourself." (AP.chkDraft, never
  * stored), which suggested answers are shown (AP.shown) and the replies of this visit (AP.res). The stored notes (the ap_notes blob, lib/analyse/notes.ts) stand in for a stage this visit has
- * not touched, which is what v1's apLoad copies into AP.res and AP.tryDraft (9888-9889). "📊 My paper cards side by side": whether the box is open (its <details>) and the AI-columns box,
- * which v1 keeps in localStorage `appu_ap_ai` and v2 keeps in this tab's memory (ruling R28, register D-S2-16).
+ * not touched, which is what v1's apLoad copies into AP.res and AP.tryDraft (9888-9889). (v1's "📊 My paper cards side by side", whose open box and AI-columns box lived here, is Compare now: wave B Task 22.)
  */
 export type ApLoaded = ApDoc & { abstractOnly: boolean };
 export type ApQuote = ReturnType<typeof apCheckQuote>;
@@ -45,13 +44,11 @@ export type ApState = {
   res: Record<string, ApWalkReply>;
   /** The paper card's fields as typed in this tab, by docId then field: shown in place of the stored ones, so words a refused write (R16) did not store stay in the box. */
   cardDraft: Record<string, Record<string, string>>;
-  acrossOpen: boolean;
-  acrossAi: boolean;
 };
 
 const INITIAL: ApState = {
   doc: null, gen: 0, mode: "ask", log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false,
-  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, cardDraft: {}, acrossOpen: false, acrossAi: false
+  stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, cardDraft: {}
 };
 let state: ApState = INITIAL;
 const listeners = new Set<() => void>();

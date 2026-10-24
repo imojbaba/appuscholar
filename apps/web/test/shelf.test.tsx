@@ -2,7 +2,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act } from "react";
-import JSZip from "jszip";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildShelfSummaryPromptV2, fieldLabel, shTitleGuess, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
@@ -13,7 +12,7 @@ import en from "../messages/en.json";
  * inputs (packages/core/test/golden/shelf/cases.json, `golden:capture shelf`): shSaveHL's quotes and toasts, shRestore's checks and count,
  * shBackup's bundle, shMatrixCsv's text, shColAdd/shColDel, and shSummarise's note, prompt, options and summary box. The Reading list (wave B Task 21a, which replaced the
  * shelf's dialog) is then mounted with the real store (lib/shelf/useShelf.ts, useProjectBlob) over a fake blob api: PDFs added, papers renamed and removed (after the question,
- * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the matrix columns in shelf_cols (Compare's table until Task 22), the summary gate, backup
+ * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the summary gate, backup
  * and restore, and R16's confirm over a blob that does not open.
  */
 
@@ -68,12 +67,10 @@ import { shelfSummarise } from "../lib/ai/actions";
 import { heldBlobs } from "../lib/blobs/held";
 import type { ShelfIndex, ShelfPaper, StoredEntry } from "../lib/blobs/kinds";
 import {
-  addColumn, addOwnPdf, backupShelf, deleteColumn, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, type OwnPdfOps, type ShelfEntry, type ShelfItem, type ShelfOps
+  addColumn, addOwnPdf, backupShelf, deleteColumn, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, toRecord, type OwnPdfOps, type ShelfEntry, type ShelfItem, type ShelfOps
 } from "../lib/shelf/actions";
 import { PdfReaderUnavailable, type PdfDoc } from "../lib/shelf/extract";
 import { ReadingList } from "../components/literature/ReadingList";
-import { ShelfMatrix } from "../components/tools/shelf/ShelfMatrix";
-import { exportProject } from "../lib/export/projectExport";
 import { useShelf, writeIndexDetached } from "../lib/shelf/useShelf";
 import { blobId } from "../lib/blobs/kinds";
 import type { BlobVault } from "../lib/blobs/useProjectBlob";
@@ -360,17 +357,6 @@ describe("the matrix, the backup and the restore are v1's", () => {
       expect(JSON.stringify(stored)).toBe(o.stored);
     }
   });
-  it("downloadMatrix is reading_matrix.csv with v1's text and byte-order mark", async () => {
-    for (const c of FX.csv) {
-      h.download.mockReset();
-      const items: ShelfItem[] = c.papers.map((p, i) => ({ id: "m" + i, title: p.title, file: "", size: 0, added: "", total: 0, kept: 0, paper: { pages: [], notes: [], cells: p.cells ?? {} } }));
-      downloadMatrix(items, shColsOf(c.stored ? JSON.parse(c.stored) : null, DEFAULTS), { t, download: h.download });
-      const [name, blob] = h.download.mock.calls[0] as [string, Blob];
-      expect(name).toBe(c.name);
-      expect(blob.type).toBe("text/csv;charset=utf-8");
-      expect(await blobText(blob)).toBe("﻿" + c.text);
-    }
-  });
   it("backupShelf writes shBackup's bundle and v1's status; papers not read yet are left out", async () => {
     h.download.mockReset();
     const statuses: string[] = [];
@@ -406,6 +392,81 @@ describe("the matrix, the backup and the restore are v1's", () => {
     expect(st.created).toHaveLength(1);
     expect(st.created[0]![0]).toMatch(/^p[0-9a-z]+$/);
     expect(st.index).toHaveLength(2);
+  });
+});
+
+describe("the backup carries Compare's cells and the restore puts them back (Task 22 fix round)", () => {
+  const entry = (id: string, extra: Partial<ShelfEntry> = {}): ShelfEntry => ({ id, title: "T " + id, file: id + ".pdf", size: 1, added: "2026-01-01T00:00:00.000Z", total: 1, kept: 1, ...extra });
+  const item = (id: string, cells: Record<string, string>, extra: Partial<ShelfEntry> = {}): ShelfItem & { paper: ShelfPaper } => ({ ...entry(id, extra), paper: { pages: ["x"], notes: [], cells } });
+  const NOTE = (cells?: Record<string, string>) => ({ stages: {}, card: {}, pid: "ka", title: "T", ...(cells ? { cells } : {}) });
+
+  it("toRecord takes a paper's cells from its note p:<pid> when the note has them (even none), and from the reading-list copy only when it has not", () => {
+    const x = item("p1", { Sample: "old copy" }, { pid: "ka" });
+    expect(toRecord(x).cells).toEqual({ Sample: "old copy" });
+    expect(toRecord(x, null).cells).toEqual({ Sample: "old copy" });
+    expect(toRecord(x, {}).cells).toEqual({ Sample: "old copy" });
+    expect(toRecord(x, { "p:ka": NOTE() }).cells).toEqual({ Sample: "old copy" });
+    expect(toRecord(x, { "p:ka": NOTE({ Sample: "typed in Compare", Method: "A survey" }) }).cells).toEqual({ Sample: "typed in Compare", Method: "A survey" });
+    expect(toRecord(x, { "p:ka": NOTE({}) }).cells).toEqual({});
+    // Another paper's note, or a paper with no id: the copy.
+    expect(toRecord(x, { "p:kb": NOTE({ Sample: "not mine" }) }).cells).toEqual({ Sample: "old copy" });
+    expect(toRecord(item("p2", { Sample: "no pid" }), { "p:ka": NOTE({ Sample: "typed" }) }).cells).toEqual({ Sample: "no pid" });
+    // The record is what it was otherwise.
+    expect(Object.keys(toRecord(x, { "p:ka": NOTE({}) }))).toEqual(Object.keys(toRecord(x)));
+  });
+
+  it("backupShelf writes the notes' cells into the file", async () => {
+    h.download.mockReset();
+    backupShelf([item("p1", { Sample: "old" }, { pid: "ka" })], { t, now: () => NOW, download: h.download, setStatus: () => {}, notes: { "p:ka": NOTE({ Sample: "typed in Compare" }) } });
+    const bundle = JSON.parse(await blobText((h.download.mock.calls[0] as [string, Blob])[1])) as { papers: Array<{ cells: unknown }> };
+    expect(bundle.papers[0]!.cells).toEqual({ Sample: "typed in Compare" });
+  });
+
+  const record = (over: Record<string, unknown>) => JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p1", title: "A paper about study habits", file: "a.pdf", pages: ["a"], ...over }] });
+  type Put = [pid: string, title: string, cells: Record<string, string>];
+  const withNotes = (init: Parameters<typeof fakeOps>[0], ok = true) => {
+    const puts: Put[] = [];
+    const f = fakeOps(init);
+    f.ops.putCells = (pid, title, cells) => { puts.push([pid, title, cells]); return ok; };
+    return { ...f, puts };
+  };
+
+  it("a restore writes the record's cells into the paper's note, by the pid the paper has in the index", async () => {
+    const lib: StoredEntry[] = [{ title: "A paper about study habits", pid: "klibrary02" }];
+    // The library holds it: its pid.
+    const a = withNotes({ library: lib });
+    await restoreShelf(record({ cells: { Sample: "58", Method: "Survey" } }), a.ops);
+    expect(a.puts).toEqual([["klibrary02", "A paper about study habits", { Sample: "58", Method: "Survey" }]]);
+    expect(a.st.index[0]!.pid).toBe("klibrary02");
+    // Into an empty project: the pid the index gets is the pid the note is written under (one pid, made once).
+    const b = withNotes({ library: [] });
+    await restoreShelf(record({ cells: { Sample: "58" } }), b.ops);
+    expect(b.st.index[0]!.pid).toMatch(/^k/);
+    expect(b.puts).toEqual([[b.st.index[0]!.pid!, "A paper about study habits", { Sample: "58" }]]);
+    // The reading-list copy still has them too (the paper-id migration takes them from there if a note could not be written now).
+    expect(b.st.papers.p1!.cells).toEqual({ Sample: "58" });
+    // A paper that is replaced keeps its own pid, and the note goes under it.
+    const c = withNotes({ library: [], entries: [entry("p1", { pid: "kkeep" })], papers: { p1: { pages: ["old"], notes: [], cells: {} } } });
+    await restoreShelf(record({ cells: { Sample: "58" }, pid: "kother" }), c.ops);
+    expect(c.puts.map((x) => x[0])).toEqual(["kkeep"]);
+  });
+
+  it("no cells, no pid yet (the library was not read) or no way to write notes: nothing is written, nothing stops, and the count is v1's", async () => {
+    const none = withNotes({ library: [] });
+    await restoreShelf(record({ cells: {} }), none.ops);
+    expect(none.puts).toEqual([]);
+    const unread = withNotes({ library: null });
+    await restoreShelf(record({ cells: { Sample: "58" } }), unread.ops);
+    expect(unread.puts).toEqual([]);
+    expect(unread.st.papers.p1!.cells).toEqual({ Sample: "58" });
+    const plain = fakeOps({ library: [] });
+    await restoreShelf(record({ cells: { Sample: "58" } }), plain.ops);
+    expect(plain.st.status).toEqual(["Restored 1 papers."]);
+    const refused = withNotes({ library: [] }, false);
+    await restoreShelf(record({ cells: { Sample: "58" } }), refused.ops);
+    expect(refused.puts).toHaveLength(1);
+    expect(refused.st.status).toEqual(["Restored 1 papers."]);
+    expect(refused.st.index).toHaveLength(1);
   });
 });
 
@@ -529,10 +590,6 @@ async function click(el: HTMLElement | null) { await act(async () => { el!.click
 function typeIn(el: HTMLElement, value: string) {
   const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   act(() => { Object.getOwnPropertyDescriptor(proto, "value")!.set!.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); });
-}
-async function blurWith(el: HTMLElement, value: string) {
-  (el as HTMLInputElement).value = value;
-  await act(async () => { el.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
 }
 async function pick(input: HTMLElement, files: File[]) {
   Object.defineProperty(input, "files", { value: files, configurable: true });
@@ -756,41 +813,6 @@ describe("the Reading list (wave B Task 21a)", () => {
     expect(opts).toEqual({ temp: 0.2, max: 1000, noLang: true });
     expect(prompt.startsWith("You are helping a student of education read a paper.")).toBe(true);
     expect(prompt).toContain("Contact: [author email removed]");
-  });
-
-  it("Compare's table (ShelfMatrix, until Task 22) shows the default columns, stores added and removed columns in shelf_cols and cells on the paper; Export opens the export place, whose table is reading_matrix.csv", async () => {
-    seedCorpus();
-    await mount(<ShelfMatrix />);
-    await until(() => tids("sh-matrix-row").length === 4 && !(tids("sh-cell")[0] as HTMLTextAreaElement).readOnly && !(tids("sh-cell")[9] as HTMLTextAreaElement).readOnly, "the papers read");
-    expect(tid("shelf-matrix")!.textContent).toContain("The cells are yours, not the AI's.");
-    expect(tids("sh-col-head").map((x) => x.firstChild!.textContent!.trim())).toEqual(DEFAULTS);
-    expect(tids("sh-matrix-row")).toHaveLength(4);
-    typeIn(tid("sh-col")!, "  Sample size ");
-    await click(tid("sh-col-add"));
-    await until(() => stored<string[]>("shelf_cols") !== null, "the columns' save");
-    expect(stored<string[]>("shelf_cols")).toEqual([...DEFAULTS, "Sample size"]);
-    await click(tids("sh-col-del")[0]!);
-    await until(() => stored<string[]>("shelf_cols")!.length === 3, "the column removed");
-    expect(stored<string[]>("shelf_cols")).toEqual(["Method", "Key finding", "Sample size"]);
-    await blurWith(tids("sh-cell")[0]!, "survey");
-    await until(() => stored<ShelfPaper>("shelf_paper:pa")?.cells.Method === "survey", "the cell's save");
-    // Wave B Task 12 (D-S2-42): v1's "Download as CSV" is now Export, with the comparison ticked; the zip's compare/table.csv is v1's file, from what is stored.
-    await click(tid("sh-csv"));
-    expect(h.openExport).toHaveBeenCalledWith("compare");
-    expect(h.download).not.toHaveBeenCalled();
-    // jsdom's Blob has no arrayBuffer(), which the export reads a tool's file with in the browser: one through FileReader, for this test.
-    const readBytes = (b: Blob) => new Promise<ArrayBuffer>((done) => { const r = new FileReader(); r.onload = () => done(r.result as ArrayBuffer); r.readAsArrayBuffer(b); });
-    const had = Blob.prototype.arrayBuffer;
-    Blob.prototype.arrayBuffer = function (this: Blob) { return readBytes(this); };
-    const zip = await exportProject({
-      project: { id: "p1", title: "P", titleKeyVersion: 0, deks: [] }, t: (k) => tFormat(en, en, k, "en"),
-      listDocuments: async () => [], getDocument: async () => { throw new Error("none"); }, decrypt: async () => "", openTitle: async () => ({ state: "unreadable" }),
-      readBlob: async (kind) => { const v = stored<unknown>(kind); return v === null ? null : JSON.stringify(v); },
-      writingRecord: async () => { throw new Error("none"); }, aiUseLog: async () => []
-    }, ["compare"], { style: "apa", now: new Date(), lastSearch: null }).finally(() => { Blob.prototype.arrayBuffer = had; });
-    const table = new TextDecoder("utf-8", { ignoreBOM: true }).decode(await (await JSZip.loadAsync(await readBytes(zip))).file("compare/table.csv")!.async("uint8array"));
-    expect(table.split("\n")[0]).toBe("﻿Paper,Method,Key finding,Sample size");
-    expect(table.split("\n")[1]).toBe("Sleep and memory in adolescents,survey,,");
   });
 
   it("backs up the reading list and restores a backup: a file that is not one says so; one that is adds its papers", async () => {

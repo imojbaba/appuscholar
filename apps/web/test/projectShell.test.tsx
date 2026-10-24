@@ -40,9 +40,8 @@ vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-tes
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
 vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div data-testid="panel-analyse" /> }));
-vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: h.stub }));
-vi.mock("@/components/tools/shelf/ShelfMatrix", () => ({ ShelfMatrix: () => <div data-testid="shelf-matrix" /> }));
+vi.mock("@/components/literature/CompareTab", () => ({ CompareTab: () => <div data-testid="compare-tab" /> }));
 vi.mock("@/components/document/DocumentCard", async () => {
   const { useProject } = await import("../components/frame/ProjectContext");
   return {

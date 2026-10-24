@@ -28,7 +28,6 @@ import { VaultProvider } from "../lib/vault/useVault";
 import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectContext";
 import { ExportDialog, exportPartsFor } from "../components/export/ExportDialog";
 import { ExportLink } from "../components/export/ExportLink";
-import { Matrix } from "../components/tools/shelf/Matrix";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, type ExportPartId } from "../lib/export/projectExport";
 
 // Every tool module this file does not set up itself is pinned to its unbuilt stub, so a tool session's real export parts never appear here (session C, 2026-10-22).
@@ -176,14 +175,14 @@ describe("ExportDialog", () => {
 
   it("a per-tool Export link opens the dialog with only its part ticked (W11)", async () => {
     const opened = vi.fn();
-    await render(<><ExportLink part="citations" testId="cite-export" /><Matrix items={[]} loading={false} cols={[]} onAddCol={() => {}} onDelCol={() => {}} onCell={() => {}} /></>, opened);
+    await render(<><ExportLink part="citations" testId="cite-export" /><ExportLink part="compare" testId="cmp-export" /></>, opened);
     expect(tid("cite-export")!.textContent).toBe(E.exp_link);
     await click(tid("cite-export"));
     expect(opened).toHaveBeenLastCalledWith("citations");
     expect(ticked()).toEqual(["citations"]);
     await click(tid("exp-cancel"));
     expect(tid("export-dialog")).toBeNull();
-    await click(tid("sh-csv"));
+    await click(tid("cmp-export"));
     expect(opened).toHaveBeenLastCalledWith("compare");
     expect(ticked()).toEqual(["compare"]);
     // Every part can still be ticked by hand.

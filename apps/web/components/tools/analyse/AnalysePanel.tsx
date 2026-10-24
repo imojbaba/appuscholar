@@ -9,7 +9,6 @@ import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
-import { Across } from "./Across";
 import { Ask } from "./Ask";
 import { Card } from "./Card";
 import { Intake } from "./Intake";
@@ -56,8 +55,8 @@ function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
 
 /**
  * Analyse a paper (v1 741-760 and apRender 11272-11334), in v1's order: the heading and its sentence, the intake (v1's "📚 All lectures" is not built and not offered: W23), then #apMain for the loaded paper (the head, the
- * tabs, the reference check unless it is an abstract, "Reading the paper and writing the answer…" while a request runs, and the tab's content: Ask, the walk-through, the paper card), then
- * "📊 My paper cards side by side". The walk-through, the card and the cards side by side share one store of the project's ap_notes and ap_cols blobs (lib/analyse/notes.ts).
+ * tabs, the reference check unless it is an abstract, "Reading the paper and writing the answer…" while a request runs, and the tab's content: Ask, the walk-through, the paper card). v1's
+ * "📊 My paper cards side by side" is the Literature place's Compare tab now (wave B Task 22). The walk-through and the card share one store of the project's ap_notes blob (lib/analyse/notes.ts).
  * The paper lives in this tab's memory (lib/analyse/useApDoc.ts). Research's "📄 Analyse this paper" leaves its abstract in the workspace (pendingAnalyse): it is loaded here abstract-only, then
  * cleared (ruling R7).
  */
@@ -97,7 +96,6 @@ export function AnalysePanel({ notes: shared }: { notes?: ApNotesStore }) {
           </>
         )}
       </div>
-      <Across notes={notes} />
     </div>
   );
 }

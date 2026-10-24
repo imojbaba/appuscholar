@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AP_SAMPLE, AP_STAGES, apAcrossCols, apAcrossCsv, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
+import { AP_SAMPLE, AP_STAGES, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
 import en from "../messages/en.json";
 import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 /*
- * Analyse a paper, part 2 (v1 apWalkShow 10048-10064, apDraft/apReveal/apSetStage 10114-10122, apCardText/apCardDownload 10124-10136, apAcross* 9936-9985, apRender's walk and card
- * 11300-11332, #apAcrossBox 753). The expected text is v1's own, read from core's golden fixture test/golden/appanel/cases.json (`golden:capture appanel`): what v1 drew (textContent),
- * stored in appu_ap_notes / appu_ap_cols, asked in its confirm, and wrote into paper-card.txt and paper_cards.csv, for the same inputs.
+ * Analyse a paper, part 2 (v1 apWalkShow 10048-10064, apDraft/apReveal/apSetStage 10114-10122, apCardText/apCardDownload 10124-10136, apRender's walk and card
+ * 11300-11332). The expected text is v1's own, read from core's golden fixture test/golden/appanel/cases.json (`golden:capture appanel`): what v1 drew (textContent),
+ * stored in appu_ap_notes, asked in its confirm, and wrote into paper-card.txt, for the same inputs. (v1's cards side by side, apAcross* 9936-9985, are Compare's now: test/compare.test.tsx.)
  */
 
 type BlobState = { value: unknown; loading?: boolean; locked?: boolean; broken?: boolean };
@@ -23,6 +23,8 @@ const h = vi.hoisted(() => ({
   sets: [] as Array<{ kind: string; update: boolean }>,
   listeners: new Set<() => void>(),
   projectId: "p-1" as string | null,
+  /** Every blob the mocked hook was asked to open: [kind, projectId] (a null project reads nothing). */
+  opened: [] as Array<[string, string | null]>,
   openExport: vi.fn(),
 }));
 const EMPTY: BlobState = { value: null };
@@ -33,6 +35,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const sub = (l: () => void) => { h.listeners.add(l); return () => { h.listeners.delete(l); }; };
   return {
     useProjectBlob: (kind: string, projectId: string | null) => {
+      h.opened.push([kind, projectId]);
       const s = React.useSyncExternalStore(sub, () => (projectId ? h.blobs[kind] ?? EMPTY : EMPTY), () => EMPTY);
       return {
         value: s.value, loading: !!s.loading, locked: !!s.locked, broken: !!s.broken, readOnly: !blobWritable(kind as never),
@@ -60,8 +63,8 @@ import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
 import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 import { apWalkShow } from "../lib/analyse/walk";
-import { NOTES_POPOUT, notePut, resetBrokenAnswers } from "../lib/analyse/notes";
-import { acrossData, downloadCard } from "../lib/analyse/cards";
+import { NOTES_POPOUT, notePut, resetBrokenAnswers, type ApNotesStore } from "../lib/analyse/notes";
+import { downloadCard } from "../lib/analyse/cards";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -73,19 +76,12 @@ type View = {
   tryPlaceholder: string; tryValue: string; show: { text: string; disabled: boolean }; chk: { placeholder: string; value: string } | null; reveal: string | null; nav: Array<{ text: string; disabled: boolean }>;
 };
 type Note = { stages: Record<string, { mine?: string; res?: Record<string, unknown> }>; card: Record<string, string>; title?: string };
-type AcrossView = {
-  sel: Array<{ k: string; label: string; checked: boolean }>; ai: { label: string; checked: boolean }; empty: string | null; head: string[] | null; rows: string[][] | null;
-  remove: Array<{ text: string; title: string }> | null; csvButton: string | null; note: string | null;
-};
 type Fx = {
   walks: Array<{ id: string; paper: string; consent: boolean; stage: number; k: string; mine: string | null; reply: string; docId: string; opts: Array<Record<string, unknown>>; toasts: string[]; res: Record<string, unknown> | null; stored: Note | null; before: View; view: View; revealed: View | null }>;
   navs: Array<{ stage: number; view: View }>;
   typed: Note;
   cards: Array<{ id: string; note: Note | null; refs: unknown; docId: string; boxes: Array<{ text: string; muted: string[] }>; fields: Array<{ label: string; rows: string; value: string }>; button: string; text: string }>;
   cardTyped: Note;
-  across: Array<{ id: string; notes: Record<string, Note>; cols: string | null; ai: string | null; colsRead: string[]; aiRead: boolean; data: { head: string[]; body: string[][]; ids: string[] }; csv: string; view: AcrossView }>;
-  toggles: Array<{ cols: string | null; k: string; on: boolean; stored: string }>;
-  dels: Array<{ id: string; row: number; answer: boolean; loaded: boolean; notes: Record<string, Note>; asked: string[]; after: Record<string, Note>; res: unknown; tryDraft: unknown }>;
 };
 const FX = JSON.parse(readFileSync(join(CORE_TEST, "golden/appanel/cases.json"), "utf8")) as Fx;
 const FETCH = JSON.parse(readFileSync(join(CORE_TEST, "golden/fetch/cases.json"), "utf8")) as { refcheck: { refs: Record<string, unknown> } };
@@ -108,12 +104,12 @@ async function until(pred: () => boolean) {
   for (let i = 0; i < 300; i++) { if (pred()) return; await settle(5); }
   throw new Error("condition not reached");
 }
-async function mount() {
+async function mount(ui: ReactNode = <AnalysePanel />) {
   const el = document.createElement("div");
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<AnalysePanel />); });
+  await act(async () => { root.render(ui); });
 }
 async function click(el: HTMLElement | null) { await act(async () => { el!.click(); await new Promise((r) => setTimeout(r, 0)); }); }
 function typeIn(el: HTMLTextAreaElement, value: string) {
@@ -164,8 +160,6 @@ function walkView(): View {
     nav: [...nav.querySelectorAll("button")].map((b) => ({ text: b.textContent!, disabled: (b as HTMLButtonElement).disabled })),
   };
 }
-/** v1's view with its download button as this build draws it: Export (Task 12). */
-const asExport = (v: AcrossView): AcrossView => ({ ...v, csvButton: v.csvButton === null ? null : E.exp_link! });
 async function blobText(call: unknown[]): Promise<string> {
   const b = call[1] as Blob;
   expect(b.type).toBe("text/csv;charset=utf-8");
@@ -173,19 +167,12 @@ async function blobText(call: unknown[]): Promise<string> {
   const bytes = await new Promise<ArrayBuffer>((done) => { const r = new FileReader(); r.onload = () => done(r.result as ArrayBuffer); r.readAsArrayBuffer(b); });
   return new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes);
 }
-/** The ap_cols blob for what v1 had in localStorage: no blob, a list, or a body that does not parse as a list (broken, value null). */
-function colsBlob(raw: string | null): BlobState | undefined {
-  if (raw === null) return undefined;
-  let v: unknown;
-  try { v = JSON.parse(raw); } catch { return { value: null, broken: true }; }
-  return Array.isArray(v) && v.every((x) => typeof x === "string") ? { value: v } : { value: null, broken: true };
-}
 
 beforeEach(() => {
   resetAp();
   h.toast.mockReset(); h.download.mockReset(); h.openExport.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.blobs = {}; h.sets = []; h.projectId = "p-1";
+  h.blobs = {}; h.sets = []; h.opened = []; h.projectId = "p-1";
   resetBrokenAnswers();
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
@@ -374,6 +361,28 @@ describe("Paper card (apRender 11325-11331, apCardText 10124-10135)", () => {
     expect(text.endsWith(E.ap2_made_with_appuscholer_parts + "\n")).toBe(true);
   });
 
+  it("given a notes store (the Reading tab's), the card reads and writes that store and never opens a blob of its own", async () => {
+    const given = {
+      all: {}, unread: false, loading: false, locked: false, broken: false, readOnly: false, cols: null,
+      note: vi.fn(() => ({ stages: {}, card: { strengths: "From the shared store" }, title: SAMPLE_TITLE })),
+      put: vi.fn((_doc: { id: string; title: string }, _fn: (n: unknown) => void) => true), setCols: vi.fn(() => true)
+    } satisfies ApNotesStore;
+    // The panel's own blob holds a different note for the same paper: it must not be what the card shows.
+    h.blobs.ap_notes = { value: { "anything": { stages: {}, card: { strengths: "From the panel's own blob" }, title: SAMPLE_TITLE } } };
+    await mount(<AnalysePanel notes={given} />);
+    load("sample@apSample");
+    await openTab("card");
+    expect(given.note).toHaveBeenCalledWith(getAp().doc!.id);
+    expect(($("#apC_strengths") as HTMLTextAreaElement).value).toBe("From the shared store");
+    typeIn($("#apC_strengths") as HTMLTextAreaElement, "From the shared store, edited");
+    expect(given.put).toHaveBeenCalledTimes(1);
+    expect(given.put.mock.calls[0]![0]).toMatchObject({ id: getAp().doc!.id });
+    // Nothing was written to the panel's own blob, and no project was opened for it to read.
+    expect(h.sets).toEqual([]);
+    expect(h.opened.filter(([kind, project]) => kind === "ap_notes" && project !== null)).toEqual([]);
+    expect(notes()).toEqual({ anything: { stages: {}, card: { strengths: "From the panel's own blob" }, title: SAMPLE_TITLE } });
+  });
+
   it("each field is saved as it is typed, an update merged into the paper's note (apCardField 10121)", async () => {
     await mount();
     load("sample@apSample");
@@ -383,95 +392,6 @@ describe("Paper card (apRender 11325-11331, apCardText 10124-10135)", () => {
     typeIn($("#apC_verdict") as HTMLTextAreaElement, "V");
     expect(notes()![getAp().doc!.id]!.card).toEqual({ weak: "Typed weakness", verdict: "V" });
     expect(h.sets.map((s) => s.update)).toEqual([true, true]);
-  });
-});
-
-describe("📊 My paper cards side by side (apAcross* 9936-9985, #apAcrossBox 753)", () => {
-  function acrossView(): AcrossView {
-    const box = $("#apAcross")!;
-    const aiBox = box.querySelector("#apAcrossAi") as HTMLInputElement;
-    const table = box.querySelector("table");
-    return {
-      sel: [...box.querySelectorAll("input[data-apcol]")].map((i) => ({ k: i.getAttribute("data-apcol")!, label: i.parentElement!.textContent!, checked: (i as HTMLInputElement).checked })),
-      ai: { label: aiBox.parentElement!.textContent!, checked: aiBox.checked },
-      empty: table ? null : box.querySelector("p")!.textContent,
-      head: table ? [...table.querySelectorAll("th")].map((t) => t.textContent!) : null,
-      rows: table ? [...table.querySelectorAll("tbody tr")].map((tr) => [...tr.querySelectorAll("td")].slice(0, -1).map((td) => td.textContent!)) : null,
-      remove: table ? [...table.querySelectorAll("tbody tr")].map((tr) => { const b = tr.querySelector("button")!; return { text: b.textContent!, title: b.getAttribute("title")! }; }) : null,
-      csvButton: box.querySelector("#apAcrossCsv")?.textContent ?? null,
-      note: table ? box.querySelector("p")!.textContent : null,
-    };
-  }
-  async function open() {
-    const d = $("#apAcrossBox") as HTMLDetailsElement;
-    expect(d.querySelector("summary")!.textContent).toBe("📊 My paper cards side by side");
-    await act(async () => { d.open = true; d.dispatchEvent(new Event("toggle")); });
-  }
-
-  it("closed, nothing is drawn inside; it draws on opening (v1's ontoggle)", async () => {
-    await mount();
-    expect(($("#apAcrossBox") as HTMLDetailsElement).open).toBe(false);
-    expect($("#apAcross")!.textContent).toBe("");
-    await open();
-    expect($("#apAcross")!.textContent).not.toBe("");
-  });
-
-  it.each(FX.across.map((a) => [a.id, a] as const))("%s: the column boxes, the AI box, the table or the empty state, and paper_cards.csv are v1's", async (_id, a) => {
-    h.blobs.ap_notes = { value: structuredClone(a.notes) };
-    const cols = colsBlob(a.cols);
-    if (cols) h.blobs.ap_cols = cols;
-    act(() => { setAp({ acrossAi: a.ai === "1" }); });
-    await mount();
-    await open();
-    expect(acrossView()).toEqual(asExport(a.view));
-    if (!a.view.csvButton) return;
-    // Wave B Task 12 (D-S2-42): v1's download is now Export, which opens the export place with the comparison ticked; the CSV is still v1's.
-    await click($("#apAcrossCsv"));
-    expect(h.openExport).toHaveBeenLastCalledWith("compare");
-    expect(h.download).not.toHaveBeenCalled();
-    expect(apAcrossCsv(acrossData(quiet.t, a.notes as never, apAcrossCols(cols?.value ?? null), a.ai === "1"))).toBe(a.csv);
-  });
-
-  it("the AI box is the tab's memory: it shows the readings' columns and is not stored (ruling R28)", async () => {
-    const a = FX.across.find((x) => x.id === "defaults-ai")!;
-    h.blobs.ap_notes = { value: structuredClone(a.notes) };
-    await mount();
-    await open();
-    await click($("#apAcrossAi"));
-    expect(acrossView()).toEqual(asExport(a.view));
-    expect(getAp().acrossAi).toBe(true);
-    expect(h.sets).toEqual([]);
-  });
-
-  it.each(FX.toggles.map((c, i) => [i, c] as const))("toggle %s: the column list stored as an update is v1's", async (_i, c) => {
-    h.blobs.ap_notes = { value: structuredClone(FX.across[1]!.notes) };
-    const cols = colsBlob(c.cols);
-    if (cols) h.blobs.ap_cols = { value: cols.value };
-    await mount();
-    await open();
-    const box = $(`input[data-apcol="${c.k}"]`) as HTMLInputElement;
-    // v1's apAcrossColToggle called for a column already in that state (a box cannot be ticked when it is ticked): the list stays as it is.
-    if (box.checked === c.on) { expect(JSON.parse(c.stored)).toEqual(FX.across[1]!.colsRead); return; }
-    await click(box);
-    expect(h.blobs.ap_cols!.value).toEqual(JSON.parse(c.stored));
-    expect(h.sets).toEqual([{ kind: "ap_cols", update: true }]);
-  });
-
-  it.each(FX.dels.map((d) => [d.id, d] as const))("remove %s: v1's question, then the paper's note deleted (an update) or kept", async (_id, d) => {
-    await mount();
-    if (d.loaded) {
-      load("sample@apSample");
-      act(() => { setAp({ res: { design: { partial: false, n: 1, of: 1, reading: "x", quotes: [] } }, tryDraft: { design: "Loaded words" } }); });
-    }
-    h.blobs.ap_notes = { value: structuredClone(d.notes) };
-    await act(async () => { for (const l of h.listeners) l(); });
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(d.answer);
-    await open();
-    await click($$("#apAcross tbody tr")[d.row]!.querySelector("button"));
-    expect(confirm.mock.calls.map((x) => x[0])).toEqual(d.asked);
-    expect(notes()).toEqual(d.after);
-    if (d.loaded) expect([getAp().res, getAp().tryDraft]).toEqual([d.res, d.tryDraft]);
-    expect(h.sets.every((s) => s.update)).toBe(true);
   });
 });
 
@@ -543,21 +463,6 @@ describe("a stored note that does not open on this device (ruling R16)", () => {
     typeIn($("#apTry") as HTMLTextAreaElement, "abcd");
     expect(confirm).toHaveBeenCalledTimes(3);
   });
-
-  it("a broken column list reads as the defaults and asks before the first toggle replaces it", async () => {
-    h.blobs.ap_notes = { value: structuredClone(FX.across[1]!.notes) };
-    h.blobs.ap_cols = { value: null, broken: true };
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-    await mount();
-    await open();
-    expect(acrossView().sel.filter((x) => x.checked).map((x) => x.k)).toEqual(["design", "sample", "measures", "stats", "verdict"]);
-    await click($('input[data-apcol="results"]'));
-    expect(confirm.mock.calls).toEqual([[E.vault_ap_cols_broken_confirm]]);
-    expect(h.blobs.ap_cols!.value).toEqual(["design", "sample", "measures", "stats", "results", "verdict"]);
-
-    function acrossView() { return { sel: $$("#apAcross input[data-apcol]").map((i) => ({ k: i.getAttribute("data-apcol")!, checked: (i as HTMLInputElement).checked })) }; }
-    async function open() { const d = $("#apAcrossBox") as HTMLDetailsElement; await act(async () => { d.open = true; d.dispatchEvent(new Event("toggle")); }); }
-  });
 });
 
 describe("notePut is apNotePut (9895) as an update", () => {
@@ -574,7 +479,6 @@ describe("notePut is apNotePut (9895) as an update", () => {
 });
 
 describe("stored notes not read yet, locked or not openable are never shown as empty (Task 12's rule: unread is not empty)", () => {
-  async function openAcross() { const d = $("#apAcrossBox") as HTMLDetailsElement; await act(async () => { d.open = true; d.dispatchEvent(new Event("toggle")); }); }
   const stored = (id: string) => ({ a1: { stages: { design: { mine: "Saved design words" } }, card: { verdict: "Saved verdict" }, title: "Paper one" }, [id]: { stages: { gap: { mine: "Saved gap words" } }, card: { weak: "Saved weakness" }, title: SAMPLE_TITLE } });
 
   it("locked: the locked line in place of the cards, no field to type in, nothing written; once the vault opens the saved words are there, unchanged", async () => {
@@ -582,9 +486,6 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     await mount();
     load("sample@apSample");
     const id = getAp().doc!.id;
-    await openAcross();
-    expect($("#apAcross")!.textContent).toBe(E.vault_ap_locked);
-    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
     await openTab("card");
     expect(tid("ap-card")!.textContent).toBe("Paper card. Your own words come first. Edit freely; it saves as you type, in this browser." + E.vault_ap_locked);
     expect($("#apC_weak")).toBeNull();
@@ -602,15 +503,12 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     await openTab("card");
     expect(($("#apC_weak") as HTMLTextAreaElement).value).toBe("Saved weakness");
     expect(notes()).toEqual(stored(id));
-    expect($("#apAcross tbody")!.textContent).toContain("Saved design words");
   });
 
-  it("being read: neither the empty sentences nor a field, no locked line, and the cards table shows the loading sign (W8)", async () => {
+  it("being read: neither the empty sentences nor a field, and no locked line (W8)", async () => {
     h.blobs.ap_notes = { value: null, loading: true };
     await mount();
     load("sample@apSample");
-    await openAcross();
-    expect($("#apAcross")!.textContent).toBe(E.blob_loading);
     await openTab("card");
     expect(tid("ap-card")!.textContent).toBe("Paper card. Your own words come first. Edit freely; it saves as you type, in this browser.");
     expect($("#apC_notes")).toBeNull();
@@ -625,9 +523,6 @@ describe("stored notes not read yet, locked or not openable are never shown as e
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     await mount();
     load("sample@apSample");
-    await openAcross();
-    expect($("#apAcross p")!.textContent).toBe(E.vault_ap_broken);
-    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
     await openTab("card");
     expect(tid("ap-notes-broken")!.textContent).toBe(E.vault_ap_broken);
     typeIn($("#apC_strengths") as HTMLTextAreaElement, "S");
