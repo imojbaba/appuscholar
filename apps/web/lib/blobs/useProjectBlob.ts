@@ -40,7 +40,7 @@ export type ProjectBlob<T> = ProjectBlobState<T> & {
    * the read lands on top of the stored ones instead of replacing them.
    */
   set(next: BlobUpdate<T>): void;
-  /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server; false always when read-only. */
+  /** Reads the blob if it is not known yet, then sends a pending save now. True once nothing set here is left off the server; false always when read-only (which still reads a value that is not known yet). */
   flush(): Promise<boolean>;
   /** set() sends nothing here: `opts.readOnly`, or the pop-out's guard (a pop-out writes only its own stage's kinds, v1 1964 and register row D-S2-43). */
   readOnly: boolean;
@@ -354,7 +354,9 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   }
   function flush(): Promise<boolean> {
     clearTimer();
-    if (o.readOnly) return Promise.resolve(false);
+    // A read-only client sends nothing and answers false, but it still reads a value that is not known (a locked or failed first read): resume() comes through here, and a client that
+    // never read again after its first read was locked left the Reading list's count, Analyse's intake and Closeness empty for the rest of the visit.
+    if (o.readOnly) return queue(async () => { if (!known) await read(); emit(); return false; });
     return queue(step);
   }
 
@@ -430,12 +432,22 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     },
     /**
      * Another window saved this blob (v1's storage listener, 7614-7616): it is read again, without a passphrase prompt, when it is known and nothing
-     * set here is waiting to go; a re-read that fails or is locked keeps what was shown.
+     * set here is waiting to go; a re-read that fails or is locked keeps what was shown. A value that was never known (a first read that was locked or failed) is read now too.
      */
     refresh() {
       if (!active) return;
       void queue(async () => {
-        if (!known || holds()) return !holds();
+        if (!known) {
+          // A first read that was locked or failed is tried again now, without a prompt (nothing was shown that a failed re-read could lose); a set queued meanwhile is replayed by read().
+          const wasDeclined = declined;
+          declined = true;
+          await read();
+          declined = wasDeclined;
+          if (pending && !timer && active) timer = setTimeout(() => { timer = null; void flush(); }, o.delayMs);
+          emit();
+          return true;
+        }
+        if (holds()) return false;
         const was = value, wasDeks = deks, wasDeclined = declined, wasBroken = broken;
         known = false;
         declined = true;

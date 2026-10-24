@@ -1,8 +1,8 @@
 import {
-  retrNormDoi, shBackupBundle, shBackupFileName, shColsAdd, shColsDel, shColsOf, shMatrixCsv, shNoteId, shPaperId, shQuoteFind, shRestoreParse, shTitleGuess, type CitationEntry, type ShRecord
+  retrNormDoi, shBackupBundle, shBackupFileName, shColsAdd, shColsDel, shColsOf, shNoteId, shPaperId, shQuoteFind, shRestoreParse, shTitleGuess, type CitationEntry, type ShRecord
 } from "@appuscholar/core";
-import type { ShelfCols, ShelfIndex, ShelfPaper, StoredEntry } from "@/lib/blobs/kinds";
-import { linkShelf } from "@/lib/papers/ids";
+import type { ApNotes, ShelfCols, ShelfIndex, ShelfPaper, StoredEntry } from "@/lib/blobs/kinds";
+import { linkShelf, noteKey } from "@/lib/papers/ids";
 import type { KeepResult } from "@/lib/papers/keep";
 import { PdfReaderUnavailable, type extractPdfPages } from "./extract";
 
@@ -34,6 +34,12 @@ export type ShelfOps = {
   createPaper(id: string, paper: ShelfPaper): Promise<void>;
   /** An update of a stored paper's blob (highlights, notes, cells; a restore replaces it). False when the student kept a broken paper (R16). */
   updatePaper(id: string, u: (prev: ShelfPaper) => ShelfPaper): boolean;
+  /**
+   * Task 22 fix round: a restore puts the cells of the backup into the paper's note `p:<pid>` (where Compare keeps them), only if that note has none; `title` is the paper's, for a note
+   * that is made. False when it could not be written now (the notes are locked, not read, or the student kept them as they are): the cells are still on the paper's own copy, which the
+   * paper-id migration takes into the note later. Absent where no notes are at hand.
+   */
+  putCells?(pid: string, title: string, cells: Record<string, string>): boolean;
   /** Sends the paper's pending save now: true once it is on the server. */
   flushPaper(id: string): Promise<boolean>;
   /** Deletes the paper's blob; true when it is gone (or was never there). */
@@ -190,11 +196,6 @@ export function deleteHighlight(id: string, noteId: string, d: Pick<ShelfOps, "u
   d.updatePaper(id, (prev) => ({ ...prev, notes: prev.notes.filter((x) => x.id !== noteId) }));
 }
 
-/** A matrix cell (shCell 11706): stored on the paper under the column's name. */
-export function setCell(id: string, col: string, value: string, d: Pick<ShelfOps, "updatePaper">): void {
-  d.updatePaper(id, (prev) => ({ ...prev, cells: { ...(prev.cells || {}), [col]: value } }));
-}
-
 /** "Add column" (shColAdd 11704): nothing is stored for an empty name; `set` is the shelf_cols blob's update. */
 export function addColumn(name: string, defaults: readonly string[], set: (u: (prev: ShelfCols | null) => ShelfCols) => void): void {
   if (!(name || "").trim()) return;
@@ -205,27 +206,30 @@ export function deleteColumn(i: number, defaults: readonly string[], set: (u: (p
   set((prev) => shColsDel(shColsOf(prev, defaults), i));
 }
 
-/** "Download as CSV" (shMatrixCsv 11707): reading_matrix.csv, v1's byte-order mark, one row per paper. */
-export function downloadMatrix(items: ShelfItem[], cols: string[], d: { t: T; download(name: string, file: Blob): void }): void {
-  const text = shMatrixCsv(d.t("sh2_paper"), cols, items.map((x) => ({ title: x.title, cells: x.paper?.cells })));
-  d.download("reading_matrix.csv", new Blob(["﻿" + text], { type: "text/csv;charset=utf-8" }));
+/**
+ * The cells a backup carries for a paper: its note's (`notes[p:<pid>].cells`, where Compare writes them since Task 22), and the paper's own copy (`paper.cells`, which nothing writes any
+ * more) only when its note has none, as before the paper-id migration reached it (ruling B2-R7). A note that has `cells` has them even when there are none: they are the student's word.
+ */
+function cellsOf(x: ShelfItem & { paper: ShelfPaper }, notes: ApNotes | null | undefined): ShelfPaper["cells"] {
+  const mine = x.pid && notes ? notes[noteKey(x.pid)]?.cells : undefined;
+  return mine ?? x.paper.cells;
 }
 
 /**
  * A paper as v1 stores and backs it up (11592): the index entry's fields and the blob's, in v1's order. From wave B the backup also carries the paper's `doi` (the DOI that named
  * it, wave A LATER T15) and its `pid` (Task 17), where it has them: v1's restore ignores both, and this build's restore keeps a replaced paper's own and takes a record's pid only when
- * the project's library has it (ruling B2-R12).
+ * the project's library has it (ruling B2-R12). `notes`: the project's notes, for the cells Compare wrote (cellsOf).
  */
-export const toRecord = (x: ShelfItem & { paper: ShelfPaper }): ShRecord & { doi?: string; pid?: string } =>
-  ({ id: x.id, title: x.title, file: x.file, size: x.size, added: x.added, pages: x.paper.pages, total: x.total, notes: x.paper.notes, cells: x.paper.cells,
+export const toRecord = (x: ShelfItem & { paper: ShelfPaper }, notes?: ApNotes | null): ShRecord & { doi?: string; pid?: string } =>
+  ({ id: x.id, title: x.title, file: x.file, size: x.size, added: x.added, pages: x.paper.pages, total: x.total, notes: x.paper.notes, cells: cellsOf(x, notes),
     ...(x.doi ? { doi: x.doi } : {}), ...(x.pid ? { pid: x.pid } : {}) });
 
 /**
  * "Back up the shelf" (shBackup 11708-11713): appuscholar-shelf-YYYY-MM-DD.json holding { app: "appuscholar-shelf", v: 1, exported, papers }, the papers whose text is read, in the
- * shelf's order; then v1's count in the status line.
+ * shelf's order; then v1's count in the status line. `notes`: the project's notes, so the cells Compare wrote go into the file (toRecord).
  */
-export function backupShelf(items: ShelfItem[], d: { t: T; now(): Date; download(name: string, file: Blob): void; setStatus(s: string): void }): void {
-  const papers = items.filter((x): x is ShelfItem & { paper: ShelfPaper } => x.paper !== null).map(toRecord);
+export function backupShelf(items: ShelfItem[], d: { t: T; now(): Date; download(name: string, file: Blob): void; setStatus(s: string): void; notes?: ApNotes | null }): void {
+  const papers = items.filter((x): x is ShelfItem & { paper: ShelfPaper } => x.paper !== null).map((x) => toRecord(x, d.notes));
   const now = d.now();
   d.download(shBackupFileName(now), new Blob([JSON.stringify(shBackupBundle(papers, now))], { type: "application/json" }));
   d.setStatus(d.t("sh2_shelf_backed_up_papers", { papersCount: papers.length }));
@@ -281,14 +285,24 @@ export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
     onShelf.add(id);
     const library = (): StoredEntry[] | null => d.library?.() ?? null;
     const recordPid = typeof p.pid === "string" && (library() ?? []).some((e) => e.pid === p.pid) ? p.pid : undefined;
-    d.updateIndex((prev) => {
+    // The pid the paper has in the index once it is stored: the replaced entry's, else the record's (when the library has it), else the library entry it is (linkShelf: the DOI, then the
+    // title), else a new one; none while the library is not read. It is worked out once, here, so the note that holds the paper's cells is written under the very pid the index gets,
+    // however many times the index update is applied (a save that lost a race replays it).
+    const there = d.entries().find((e) => e.id === id);
+    const lib = library();
+    const probe: ShelfEntry = { ...entry, ...(there?.doi || recordDoi ? { doi: there?.doi || recordDoi } : {}) };
+    const pid = there?.pid ?? recordPid ?? (lib === null ? undefined : linkShelf([...d.entries().filter((e) => e.id !== id), probe], lib).at(-1)?.pid);
+    const stored = d.updateIndex((prev) => {
       const cur = prev ?? [];
       const old = cur.find((e) => e.id === id);
       const next: ShelfEntry = old
-        ? { ...entry, ...(old.pid ? { pid: old.pid } : recordPid ? { pid: recordPid } : {}), ...(old.doi ? { doi: old.doi } : recordDoi ? { doi: recordDoi } : {}) }
-        : { ...entry, ...(recordPid ? { pid: recordPid } : {}), ...(recordDoi ? { doi: recordDoi } : {}) };
+        ? { ...entry, ...(old.pid ? { pid: old.pid } : pid ? { pid } : {}), ...(old.doi ? { doi: old.doi } : recordDoi ? { doi: recordDoi } : {}) }
+        : { ...entry, ...(pid ? { pid } : {}), ...(recordDoi ? { doi: recordDoi } : {}) };
       return linkWith(old ? cur.map((e) => (e.id === id ? next : e)) : [...cur, next], library());
     });
+    // The backup's cells are Compare's: they go into the paper's note, where Compare reads them (only if the note has none). Where that cannot be done now (no pid yet, the notes locked)
+    // they stay on the paper's own copy above, and the paper-id migration takes them into the note.
+    if (stored && pid && Object.keys(cells).length > 0) d.putCells?.(pid, entry.title, cells);
     n += occurrences(p.id);
   }
   d.setStatus(d.t("sh2_restored_papers", { n }));

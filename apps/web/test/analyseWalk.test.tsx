@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AP_SAMPLE, AP_STAGES, apBuild, apCardText, buildWalkPrompt, fieldLabel } from "@appuscholar/core";
@@ -23,6 +23,8 @@ const h = vi.hoisted(() => ({
   sets: [] as Array<{ kind: string; update: boolean }>,
   listeners: new Set<() => void>(),
   projectId: "p-1" as string | null,
+  /** Every blob the mocked hook was asked to open: [kind, projectId] (a null project reads nothing). */
+  opened: [] as Array<[string, string | null]>,
   openExport: vi.fn(),
 }));
 const EMPTY: BlobState = { value: null };
@@ -33,6 +35,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const sub = (l: () => void) => { h.listeners.add(l); return () => { h.listeners.delete(l); }; };
   return {
     useProjectBlob: (kind: string, projectId: string | null) => {
+      h.opened.push([kind, projectId]);
       const s = React.useSyncExternalStore(sub, () => (projectId ? h.blobs[kind] ?? EMPTY : EMPTY), () => EMPTY);
       return {
         value: s.value, loading: !!s.loading, locked: !!s.locked, broken: !!s.broken, readOnly: !blobWritable(kind as never),
@@ -60,7 +63,7 @@ import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
 import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 import { apWalkShow } from "../lib/analyse/walk";
-import { NOTES_POPOUT, notePut, resetBrokenAnswers } from "../lib/analyse/notes";
+import { NOTES_POPOUT, notePut, resetBrokenAnswers, type ApNotesStore } from "../lib/analyse/notes";
 import { downloadCard } from "../lib/analyse/cards";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -101,12 +104,12 @@ async function until(pred: () => boolean) {
   for (let i = 0; i < 300; i++) { if (pred()) return; await settle(5); }
   throw new Error("condition not reached");
 }
-async function mount() {
+async function mount(ui: ReactNode = <AnalysePanel />) {
   const el = document.createElement("div");
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<AnalysePanel />); });
+  await act(async () => { root.render(ui); });
 }
 async function click(el: HTMLElement | null) { await act(async () => { el!.click(); await new Promise((r) => setTimeout(r, 0)); }); }
 function typeIn(el: HTMLTextAreaElement, value: string) {
@@ -169,7 +172,7 @@ beforeEach(() => {
   resetAp();
   h.toast.mockReset(); h.download.mockReset(); h.openExport.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
-  h.blobs = {}; h.sets = []; h.projectId = "p-1";
+  h.blobs = {}; h.sets = []; h.opened = []; h.projectId = "p-1";
   resetBrokenAnswers();
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
@@ -356,6 +359,28 @@ describe("Paper card (apRender 11325-11331, apCardText 10124-10135)", () => {
       L: { head: E.ap2_paper_card_head!, myWords: E.ap2_my_words_2!, notWritten: E.ap2_not_written!, reading: E.ap2_reading_3!, refHead: E.ap2_reference_list_check_head!, doisRead: E.ap2_dois_read!, known: E.ap2_known_to_openalex!, flagged: E.ap2_flagged_as_retracted!, none: E.ap2_none_flagged!, warning: E.ap2_a_warning_signal_only!, strengths: E.ap2_strengths_2!, weak: E.ap2_weaknesses_2!, verdict: E.ap2_my_verdict_in_one!, notes: E.ap2_my_notes!, closing: E.ap2_made_with_appuscholer_parts! },
     }));
     expect(text.endsWith(E.ap2_made_with_appuscholer_parts + "\n")).toBe(true);
+  });
+
+  it("given a notes store (the Reading tab's), the card reads and writes that store and never opens a blob of its own", async () => {
+    const given = {
+      all: {}, unread: false, loading: false, locked: false, broken: false, readOnly: false, cols: null,
+      note: vi.fn(() => ({ stages: {}, card: { strengths: "From the shared store" }, title: SAMPLE_TITLE })),
+      put: vi.fn((_doc: { id: string; title: string }, _fn: (n: unknown) => void) => true), setCols: vi.fn(() => true)
+    } satisfies ApNotesStore;
+    // The panel's own blob holds a different note for the same paper: it must not be what the card shows.
+    h.blobs.ap_notes = { value: { "anything": { stages: {}, card: { strengths: "From the panel's own blob" }, title: SAMPLE_TITLE } } };
+    await mount(<AnalysePanel notes={given} />);
+    load("sample@apSample");
+    await openTab("card");
+    expect(given.note).toHaveBeenCalledWith(getAp().doc!.id);
+    expect(($("#apC_strengths") as HTMLTextAreaElement).value).toBe("From the shared store");
+    typeIn($("#apC_strengths") as HTMLTextAreaElement, "From the shared store, edited");
+    expect(given.put).toHaveBeenCalledTimes(1);
+    expect(given.put.mock.calls[0]![0]).toMatchObject({ id: getAp().doc!.id });
+    // Nothing was written to the panel's own blob, and no project was opened for it to read.
+    expect(h.sets).toEqual([]);
+    expect(h.opened.filter(([kind, project]) => kind === "ap_notes" && project !== null)).toEqual([]);
+    expect(notes()).toEqual({ anything: { stages: {}, card: { strengths: "From the panel's own blob" }, title: SAMPLE_TITLE } });
   });
 
   it("each field is saved as it is typed, an update merged into the paper's note (apCardField 10121)", async () => {

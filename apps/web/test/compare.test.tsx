@@ -41,7 +41,7 @@ vi.mock("@/components/frame/ProjectContext", () => ({
 import { CompareTab } from "../components/literature/CompareTab";
 import { resetCompareAi } from "../lib/papers/compareAi";
 import {
-  CARD_FIELDS, cardColsOf, compareCsv, compareTable, rsPaperFromEntry, toggleCardCol
+  CARD_FIELDS, cardColsOf, compareCsv, compareTable, rsPaperFromEntry, STAGE_FIELDS, stageColsOf, toggleCardCol, toggleStageCol
 } from "../lib/papers/compare";
 import { papersOf } from "../lib/papers/list";
 import { exportProject } from "../lib/export/projectExport";
@@ -68,8 +68,11 @@ const SHELF: ShelfIndex = [
   { id: "s2", title: "Loose PDF", file: "loose.pdf", size: 10, added: "2026-02-01T00:00:00.000Z", total: 2, kept: 2, pid: "kx" }
 ];
 const NOTES: ApNotes = {
-  "p:ka": { title: SCHAEFER.title, pid: "ka", stages: {}, card: { strengths: "Control group; real exam" }, cells: { Sample: "58 university students", Method: "Randomised trial" } },
-  "p:kb": { title: PUTWAIN.title, pid: "kb", stages: { gap: { mine: "Background only." } }, card: { verdict: "Background for the introduction" }, cells: {} },
+  "p:ka": {
+    title: SCHAEFER.title, pid: "ka", stages: { design: { mine: "Two groups, pills or no pills" }, sample: { mine: "58 first-year students" } },
+    card: { strengths: "Control group; real exam" }, cells: { Sample: "58 university students", Method: "Randomised trial" }
+  },
+  "p:kb": { title: PUTWAIN.title, pid: "kb", stages: { gap: { mine: "Background only." }, design: { mine: "A review, not an experiment" } }, card: { verdict: "Background for the introduction" }, cells: {} },
   // An old note that moved to p:ka: it is the same paper and is never listed or shown twice.
   aopenlabelplacebos2034: { title: SCHAEFER.title, stages: {}, card: { strengths: "OLD TEXT" }, movedTo: "p:ka" }
 };
@@ -77,7 +80,12 @@ const SHORT = {
   ka: "Schaefer et al., 2019: open-label placebos reduce test", kb: "Putwain, 2008: examination stress and test", kc: "2011: omega-3 supplementation lowers inflammation",
   kd: "Cohen, 1988: statistical power analysis for", kx: "Loose PDF"
 };
-const HEADS = ["Paper", "Sample", "Method", "Key finding", "Strengths", "Weak points", "My verdict", "Notes"];
+/** The walk-through columns (Across's four by default, ruling B2-R40) sit between the matrix columns and the card fields. */
+const STAGE_HEADS = ["Design", "Sample", "Measures", "Statistics"];
+const MATRIX_HEADS = ["Sample", "Method", "Key finding"];
+const CARD_HEADS = ["Strengths", "Weak points", "My verdict", "Notes"];
+const HEADS = ["Paper", ...MATRIX_HEADS, ...STAGE_HEADS, ...CARD_HEADS];
+const FROM_WALK = " (from your walk-through)";
 
 // ---------------------------------------------------------------- the harness
 
@@ -119,9 +127,12 @@ function seed(over: { lib?: StoredEntry[]; shelf?: ShelfIndex; notes?: ApNotes |
 }
 const rowOf = (pidOrShort: string) => tids("cmp-row").find((r) => r.textContent!.includes(pidOrShort in SHORT ? SHORT[pidOrShort as keyof typeof SHORT] : pidOrShort))!;
 const cell = (row: HTMLElement, col: string) => row.querySelector<HTMLTextAreaElement>(`textarea[aria-label$=", ${col}"]`)!;
+/** A walk-through box: its label says where its words come from, so it is told apart from a matrix column of the same name (W19). */
+const stageCell = (row: HTMLElement, col: string) => row.querySelector<HTMLTextAreaElement>(`textarea[aria-label$=", ${col}${FROM_WALK}"]`)!;
+const valuesOf = (row: HTMLElement) => [...row.querySelectorAll("textarea")].map((x) => x.value);
 const stored = <T,>(kind: string) => server.value<T>(kind);
 const tickFor = (short: string) => tids("cmp-tick").find((c) => c.closest("label")!.textContent!.includes(short)) as HTMLInputElement;
-const heads = () => tids("cmp-col-head").map((x) => x.textContent!.trim());
+const heads = () => tids("cmp-col-head").map((x) => x.querySelector(".cmp-col-name")!.textContent!.trim());
 
 beforeEach(async () => {
   server = createBlobServer("p1");
@@ -156,10 +167,10 @@ describe("Compare: the table", () => {
     expect(heads()).toEqual(HEADS);
     // Every kept paper is a row, in the Reading list's order: the library's four, then the PDF no kept paper took.
     expect(tids("cmp-paper").map((x) => x.textContent)).toEqual([SHORT.ka, SHORT.kb, SHORT.kc, SHORT.kd, SHORT.kx]);
-    const ka = rowOf("ka");
-    expect(HEADS.slice(1).map((c) => cell(ka, c).value)).toEqual(["58 university students", "Randomised trial", "", "Control group; real exam", "", "", ""]);
+    // The matrix cells, then the walk-through answers (the note's stages, read-only), then the card fields.
+    expect(valuesOf(rowOf("ka"))).toEqual(["58 university students", "Randomised trial", "", "Two groups, pills or no pills", "58 first-year students", "", "", "Control group; real exam", "", "", ""]);
     // Another paper's note is its own: the card of Putwain is in Putwain's row, and the old note that moved to p:ka shows nowhere.
-    expect(HEADS.slice(1).map((c) => cell(rowOf("kb"), c).value)).toEqual(["", "", "", "", "", "Background for the introduction", ""]);
+    expect(valuesOf(rowOf("kb"))).toEqual(["", "", "", "A review, not an experiment", "", "", "", "", "", "Background for the introduction", ""]);
     expect($("[data-testid=compare-tab]")!.textContent).not.toContain("OLD TEXT");
     expect(tid("cmp-table")!.closest(".cmp-scroll")).not.toBeNull();
   });
@@ -169,13 +180,17 @@ describe("Compare: the table", () => {
     await mount();
     await until(() => tids("cmp-row").length === 5, "the rows");
     const labels = tids("cmp-cell").map((x) => x.getAttribute("aria-label")!);
-    expect(labels).toHaveLength(5 * 7);
+    expect(labels).toHaveLength(5 * 11);
+    // Unique, even though the matrix has a column called Sample and so has the walk-through: the walk-through's says where its words come from.
     expect(new Set(labels).size).toBe(labels.length);
     expect(labels[0]).toBe(SHORT.ka + ", Sample");
+    expect(labels[3]).toBe(SHORT.ka + ", Design" + FROM_WALK);
+    expect(labels[4]).toBe(SHORT.ka + ", Sample" + FROM_WALK);
     expect(labels.at(-1)).toBe(SHORT.kx + ", Notes");
+    const named = [...MATRIX_HEADS, ...STAGE_HEADS.map((c) => c + FROM_WALK), ...CARD_HEADS];
     for (const r of tids("cmp-row")) {
       const short = r.querySelector('[data-testid="cmp-paper"]')!.textContent!;
-      expect([...r.querySelectorAll("textarea")].map((x) => x.getAttribute("aria-label"))).toEqual(HEADS.slice(1).map((c) => short + ", " + c));
+      expect([...r.querySelectorAll("textarea")].map((x) => x.getAttribute("aria-label"))).toEqual(named.map((c) => short + ", " + c));
     }
     // The row's name is its header, and each column's heading is a column header.
     expect(tids("cmp-paper")[0]!.tagName).toBe("TH");
@@ -188,7 +203,7 @@ describe("Compare: the table", () => {
     await mount();
     await until(() => tids("cmp-row").length === 5, "the rows");
     // Kiecolt has no note at all; Cohen is a book with none either.
-    expect(HEADS.slice(1).map((c) => cell(rowOf("kc"), c).value)).toEqual(["", "", "", "", "", "", ""]);
+    expect(valuesOf(rowOf("kc"))).toEqual(Array(11).fill(""));
     typeIn(cell(rowOf("kc"), "Method"), "Survey");
     await until(async () => (await stored<ApNotes>("ap_notes"))?.["p:kc"] !== undefined, "the first cell's save");
     const notes = (await stored<ApNotes>("ap_notes"))!;
@@ -216,7 +231,7 @@ describe("Compare: the table", () => {
     await until(() => tids("cmp-row").length > 0, "the rows");
     expect(tids("cmp-paper").filter((x) => x.textContent === SHORT.ka)).toHaveLength(1);
     const noId = tids("cmp-row").find((r) => r.textContent!.includes("Lee, 2020"))!;
-    expect(noId.querySelectorAll("textarea")).toHaveLength(7);
+    expect(noId.querySelectorAll("textarea")).toHaveLength(11);
     expect([...noId.querySelectorAll("textarea")].every((x) => x.readOnly)).toBe(true);
   });
 
@@ -246,13 +261,13 @@ describe("Compare: the card columns and Choose columns (R25)", () => {
     seed();
     await mount();
     await until(() => tids("cmp-row").length === 5, "the rows");
-    expect(heads().slice(4)).toEqual(["Strengths", "Weak points", "My verdict", "Notes"]);
+    expect(heads().slice(8)).toEqual(CARD_HEADS);
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     document.body.innerHTML = "";
     server.putPlain("ap_cols", ["design", "sample", "measures", "stats", "verdict"]);
     await mount();
     await until(() => tids("cmp-row").length === 5, "the rows again");
-    expect(heads().slice(4)).toEqual(["Strengths", "Weak points", "My verdict", "Notes"]);
+    expect(heads().slice(8)).toEqual(CARD_HEADS);
   });
 
   it("an ap_cols list shows the card fields among its keys, in the card's order", async () => {
@@ -260,7 +275,7 @@ describe("Compare: the card columns and Choose columns (R25)", () => {
     server.putPlain("ap_cols", ["design", "notes", "strengths"]);
     await mount();
     await until(() => tids("cmp-row").length === 5, "the rows");
-    expect(heads()).toEqual(["Paper", "Sample", "Method", "Key finding", "Strengths", "Notes"]);
+    expect(heads()).toEqual(["Paper", ...MATRIX_HEADS, "Design", "Strengths", "Notes"]);
     expect(cell(rowOf("ka"), "Strengths").value).toBe("Control group; real exam");
   });
 
@@ -272,30 +287,30 @@ describe("Compare: the card columns and Choose columns (R25)", () => {
     await click(tid("cmp-choose"));
     expect(tid("cmp-choose")!.getAttribute("aria-expanded")).toBe("true");
     expect(tid("cmp-cols")).not.toBeNull();
-    // Take Weak points out: ap_cols is stored with the other three card fields (the stage columns it held stay).
+    // Take Weak points out: ap_cols is stored with the other three card fields and the four walk-through columns the table was showing.
     const weak = $('[data-testid="cmp-card-col-weak"]') as HTMLInputElement;
     expect(weak.checked).toBe(true);
     await click(weak);
     await until(async () => (await stored<string[]>("ap_cols")) !== null, "ap_cols saved");
     expect(await stored<string[]>("ap_cols")).toEqual(["design", "sample", "measures", "stats", "strengths", "verdict", "notes"]);
-    expect(heads().slice(4)).toEqual(["Strengths", "My verdict", "Notes"]);
+    expect(heads().slice(8)).toEqual(["Strengths", "My verdict", "Notes"]);
     // A column of the student's own: added to the defaults, then the first one removed.
     typeIn(tid("cmp-col-name")!, "  Sample size ");
     await click(tid("cmp-col-add"));
     await until(async () => (await stored<string[]>("shelf_cols")) !== null, "shelf_cols saved");
     expect(await stored<string[]>("shelf_cols")).toEqual([...SHELF_DEFAULT_COLS, "Sample size"]);
-    expect(heads().slice(0, 5)).toEqual(["Paper", "Sample", "Method", "Key finding", "Sample size"]);
+    expect(heads().slice(0, 5)).toEqual(["Paper", ...MATRIX_HEADS, "Sample size"]);
     await click(tids("cmp-col-del")[0]!);
     await until(async () => ((await stored<string[]>("shelf_cols")) ?? []).length === 3, "the column removed");
     expect(await stored<string[]>("shelf_cols")).toEqual(["Method", "Key finding", "Sample size"]);
-    expect(heads()).toEqual(["Paper", "Method", "Key finding", "Sample size", "Strengths", "My verdict", "Notes"]);
+    expect(heads()).toEqual(["Paper", "Method", "Key finding", "Sample size", ...STAGE_HEADS, "Strengths", "My verdict", "Notes"]);
     // A cell typed in the new column goes to cells["Sample size"] of the paper.
     typeIn(cell(rowOf("ka"), "Sample size"), "58");
     await until(async () => (await stored<ApNotes>("ap_notes"))?.["p:ka"]?.cells?.["Sample size"] === "58", "the cell's save");
     expect((await stored<ApNotes>("ap_notes"))!["p:ka"]!.cells).toEqual({ Sample: "58 university students", Method: "Randomised trial", "Sample size": "58" });
   });
 
-  it("the card-field helpers keep ap_cols readable by the old cards table, and never leave a state that reads as 'all four' by accident", () => {
+  it("the card-field helpers leave the stage keys exactly as the student chose them, and never store a list that would read as something else (B2-R25, B2-R40)", () => {
     expect(CARD_FIELDS).toEqual(["strengths", "weak", "verdict", "notes"]);
     expect(cardColsOf(undefined)).toEqual([...CARD_FIELDS]);
     expect(cardColsOf([])).toEqual([...CARD_FIELDS]);
@@ -303,21 +318,208 @@ describe("Compare: the card columns and Choose columns (R25)", () => {
     expect(cardColsOf(["verdict", "design"])).toEqual(["verdict"]);
     expect(cardColsOf(["design"])).toEqual([]);
     expect(cardColsOf(["notes", "weak"])).toEqual(["weak", "notes"]);
-    // From nothing stored: the default stage columns are kept and the card fields chosen follow them, in AP_COLS order, "notes" last.
+    // From nothing stored the list is written out as it reads (the four stage columns and all four card fields), then the one field is taken out; the stage keys are untouched.
     expect(toggleCardCol(undefined, "weak", false)).toEqual(["design", "sample", "measures", "stats", "strengths", "verdict", "notes"]);
-    expect(toggleCardCol(["strengths"], "notes", true)).toEqual(["strengths", "notes"]);
+    expect(toggleCardCol(["design", "sample", "measures", "stats", "verdict"], "notes", false)).toEqual(["design", "sample", "measures", "stats", "strengths", "weak", "verdict"]);
     // Every key it stores except "notes" is one of core's AP_COLS keys.
     const keys = new Set(AP_COLS.map(([k]) => k));
-    expect(toggleCardCol(undefined, "notes", false).every((k) => keys.has(k))).toBe(true);
-    // The last card field taken out of a list with no stage columns: not [] (that is all four), a stage column stands in.
-    expect(toggleCardCol(["strengths"], "strengths", false)).toEqual(["design"]);
-    expect(cardColsOf(toggleCardCol(["strengths"], "strengths", false))).toEqual([]);
-    // A result that would equal core's default list (and so read as all four) is not stored as it is.
-    const odd = toggleCardCol(["design", "sample", "measures", "stats", "strengths", "verdict"], "strengths", false);
-    expect(odd).not.toEqual(["design", "sample", "measures", "stats", "verdict"]);
-    expect(cardColsOf(odd)).toEqual(["verdict"]);
-    // Put back on, a field returns in its place.
+    expect(toggleCardCol(undefined, "notes", false)!.every((k) => keys.has(k))).toBe(true);
+    // A field goes in its place, and a list a student chose by hand keeps its order and the keys it has (a stage the student did not choose is never added).
     expect(toggleCardCol(["design", "verdict"], "weak", true)).toEqual(["design", "weak", "verdict"]);
+    expect(toggleCardCol(["strengths"], "notes", true)).toEqual(["strengths", "notes"]);
+    expect(toggleCardCol(["results", "design", "strengths"], "weak", true)).toEqual(["results", "design", "strengths", "weak"]);
+    expect(toggleCardCol(["results", "design", "strengths"], "strengths", false)).toEqual(["results", "design"]);
+    // A last card field taken out of a list that has stage columns leaves the stage columns, and no card field.
+    expect(toggleCardCol(["results", "strengths"], "strengths", false)).toEqual(["results"]);
+    expect(cardColsOf(["results"])).toEqual([]);
+    // Two results cannot be told from "nothing chosen" when read back, so they are not stored (the caller keeps the list as it was): nothing left at all ([] reads as the defaults), and the
+    // four default stage columns with only My verdict (that list is core's default list, which reads as all four card fields).
+    expect(toggleCardCol(["strengths"], "strengths", false)).toBeNull();
+    expect(toggleCardCol(["design", "sample", "measures", "stats", "strengths", "verdict"], "strengths", false)).toBeNull();
+    expect(toggleStageCol(["design"], "design", false)).toBeNull();
+    // The default list is "nothing chosen yet": a toggle writes out what it shows (all four card fields) before it changes the one.
+    expect(toggleStageCol(["design", "sample", "measures", "stats", "verdict"], "stats", true)).toEqual(["design", "sample", "measures", "stats", "strengths", "weak", "verdict", "notes"]);
+  });
+
+  it("the walk-through helpers: the stage keys as Across chose them, ticked and unticked in place, the card fields untouched", () => {
+    expect(STAGE_FIELDS).toEqual(["design", "sample", "measures", "stats", "results", "limits"]);
+    // Across's reading of the list (core's apAcrossCols): the default list when nothing is stored, the stored keys in the stored order otherwise, keys outside AP_COLS dropped.
+    expect(stageColsOf(null)).toEqual(["design", "sample", "measures", "stats"]);
+    expect(stageColsOf([])).toEqual(["design", "sample", "measures", "stats"]);
+    expect(stageColsOf("not a list")).toEqual(["design", "sample", "measures", "stats"]);
+    expect(stageColsOf(["verdict", "results", "bogus", "design", "limits"])).toEqual(["results", "design", "limits"]);
+    expect(stageColsOf(["verdict"])).toEqual([]);
+    expect(stageColsOf(["x", "y"])).toEqual([]);
+    // From nothing stored: written out as it reads, then the one stage is taken out or put in; the card fields stay all four.
+    expect(toggleStageCol(undefined, "design", false)).toEqual(["sample", "measures", "stats", "strengths", "weak", "verdict", "notes"]);
+    expect(toggleStageCol(undefined, "results", true)).toEqual(["design", "sample", "measures", "stats", "results", "strengths", "weak", "verdict", "notes"]);
+    // A chosen list keeps its card fields exactly.
+    expect(toggleStageCol(["design", "verdict"], "limits", true)).toEqual(["design", "limits", "verdict"]);
+    expect(toggleStageCol(["design", "verdict"], "design", false)).toEqual(["verdict"]);
+    expect(cardColsOf(toggleStageCol(["design", "verdict"], "design", false))).toEqual(["verdict"]);
+    // The last column of all cannot be taken out (that list is [], which reads as the defaults).
+    expect(toggleStageCol(["design"], "design", false)).toBeNull();
+  });
+
+  it("what a toggle stores reads back as exactly what was asked, from every starting list; it is refused only where the list could not say it", () => {
+    const starts: Array<string[] | null> = [
+      null, [], ["design", "sample", "measures", "stats", "verdict"], ["verdict"], ["strengths"], ["design"], ["notes"], ["results", "limits"], ["design", "weak", "notes"],
+      ["design", "sample", "measures", "stats", "strengths", "weak", "verdict", "notes"], ["verdict", "results", "design", "limits"]
+    ];
+    /** What no list can say: nothing chosen at all ([] reads as the defaults), and the default stage columns with only My verdict (core's default list reads as all four card fields). */
+    const unsayable = (stages: Set<string>, cards: Set<string>) =>
+      (stages.size === 0 && cards.size === 0) || (cards.size === 1 && cards.has("verdict") && ["design", "sample", "measures", "stats"].every((k) => stages.has(k)) && stages.size === 4);
+    const check = (from: string[] | null, label: string, to: string[] | null, stages: Set<string>, cards: Set<string>) => {
+      if (to === null) { expect(unsayable(stages, cards), label).toBe(true); return; }
+      expect(unsayable(stages, cards), label).toBe(false);
+      expect([...stageColsOf(to)].sort(), label).toEqual([...stages].sort());
+      expect([...cardColsOf(to)].sort(), label).toEqual([...cards].sort());
+    };
+    for (const from of starts) {
+      for (const on of [true, false]) {
+        for (const k of STAGE_FIELDS) {
+          const stages = new Set(stageColsOf(from)), cards = new Set(cardColsOf(from));
+          if (on) stages.add(k); else stages.delete(k);
+          check(from, JSON.stringify([from, "stage", k, on]), toggleStageCol(from, k, on), stages, cards);
+        }
+        for (const k of CARD_FIELDS) {
+          const stages = new Set(stageColsOf(from)), cards = new Set(cardColsOf(from));
+          if (on) cards.add(k); else cards.delete(k);
+          check(from, JSON.stringify([from, "card", k, on]), toggleCardCol(from, k, on), stages, cards);
+        }
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------- the walk-through side by side (B2-R40)
+
+describe("Compare: the walk-through answers side by side (ruling B2-R40)", () => {
+  it("shows each paper's walk-through answers after the matrix columns and before the card fields: four by default, read-only, each headed 'From your walk-through'", async () => {
+    seed();
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    expect(heads()).toEqual(HEADS);
+    // Only the walk-through columns carry the note, and it is part of the heading a screen reader reads.
+    const stageHeads = tids("cmp-col-head").slice(4, 8);
+    expect(stageHeads.map((x) => x.querySelector(".cmp-col-note")?.textContent)).toEqual(Array(4).fill("From your walk-through"));
+    expect(tids("cmp-col-head").filter((x) => x.querySelector(".cmp-col-note")).length).toBe(4);
+    // The student's own answer from the note's stage, as Across read it; a stage the note has no words for is empty.
+    expect(stageCell(rowOf("ka"), "Design").value).toBe("Two groups, pills or no pills");
+    expect(stageCell(rowOf("ka"), "Sample").value).toBe("58 first-year students");
+    expect(stageCell(rowOf("ka"), "Measures").value).toBe("");
+    expect(stageCell(rowOf("kb"), "Design").value).toBe("A review, not an experiment");
+    // Beside the matrix's own Sample cell, which is another box.
+    expect(cell(rowOf("ka"), "Sample").value).toBe("58 university students");
+    // Read-only everywhere, even for a paper that has an id, and a note about where to write them under the table.
+    expect(tids("cmp-row").flatMap((r) => [...r.querySelectorAll("textarea")].slice(3, 7)).every((x) => x.readOnly)).toBe(true);
+    expect(tids("cmp-row").flatMap((r) => [...r.querySelectorAll("textarea")].slice(0, 3)).every((x) => !x.readOnly)).toBe(true);
+    expect(tid("cmp-stage-foot")!.textContent).toBe("The walk-through columns can be read here. Write them in Analyse a paper.");
+  });
+
+  it("typing in a walk-through box writes nothing", async () => {
+    seed();
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    const box = stageCell(rowOf("ka"), "Design");
+    typeIn(box, "Changed here");
+    await settle(1200);
+    expect(server.puts("ap_notes")).toHaveLength(0);
+    expect(stageCell(rowOf("ka"), "Design").value).toBe("Two groups, pills or no pills");
+    expect((await stored<ApNotes>("ap_notes"))!["p:ka"]!.stages).toEqual(NOTES["p:ka"]!.stages);
+  });
+
+  it("the stage columns are the ones Across chose: ap_cols' stage keys in the stored order, none when it holds none, the default four when it is empty", async () => {
+    seed();
+    server.putPlain("ap_cols", ["verdict", "results", "bogus", "design", "limits"]);
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    expect(heads()).toEqual(["Paper", ...MATRIX_HEADS, "Results", "Design", "Limitations", "My verdict"]);
+    expect(stageCell(rowOf("ka"), "Design").value).toBe("Two groups, pills or no pills");
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    server.putPlain("ap_cols", ["verdict"]);
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows again");
+    expect(heads()).toEqual(["Paper", ...MATRIX_HEADS, "My verdict"]);
+    expect(tid("cmp-stage-foot")).toBeNull();
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    server.putPlain("ap_cols", []);
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows once more");
+    expect(heads()).toEqual(HEADS);
+  });
+
+  it("Choose columns offers the six stages, ticked as the list holds them, and a tick stores the list with the card fields untouched", async () => {
+    seed();
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    await click(tid("cmp-choose"));
+    const box = (k: string) => $(`[data-testid="cmp-stage-col-${k}"]`) as HTMLInputElement;
+    expect(STAGE_FIELDS.map((k) => box(k).checked)).toEqual([true, true, true, true, false, false]);
+    expect(STAGE_FIELDS.map((k) => box(k).closest("label")!.textContent)).toEqual(["Design", "Sample", "Measures", "Statistics", "Results", "Limitations"]);
+    await click(box("results"));
+    await until(async () => (await stored<string[]>("ap_cols")) !== null, "ap_cols saved");
+    // Written out from the defaults, Results put in its place; the four card fields are all there, as the table showed them.
+    expect(await stored<string[]>("ap_cols")).toEqual(["design", "sample", "measures", "stats", "results", "strengths", "weak", "verdict", "notes"]);
+    expect(heads()).toEqual(["Paper", ...MATRIX_HEADS, ...STAGE_HEADS, "Results", ...CARD_HEADS]);
+    await click(box("design"));
+    await until(async () => ((await stored<string[]>("ap_cols")) ?? []).length === 8, "Design taken out");
+    expect(await stored<string[]>("ap_cols")).toEqual(["sample", "measures", "stats", "results", "strengths", "weak", "verdict", "notes"]);
+    expect(heads()).toEqual(["Paper", ...MATRIX_HEADS, "Sample", "Measures", "Statistics", "Results", ...CARD_HEADS]);
+    // A card field taken out now leaves the stage columns exactly as they are.
+    await click($('[data-testid="cmp-card-col-notes"]'));
+    await until(async () => ((await stored<string[]>("ap_cols")) ?? []).length === 7, "Notes taken out");
+    expect(await stored<string[]>("ap_cols")).toEqual(["sample", "measures", "stats", "results", "strengths", "weak", "verdict"]);
+    expect(heads()).toEqual(["Paper", ...MATRIX_HEADS, "Sample", "Measures", "Statistics", "Results", "Strengths", "Weak points", "My verdict"]);
+  });
+
+  it("a choice that cannot be stored is not stored, and the panel says so", async () => {
+    seed();
+    server.putPlain("ap_cols", ["strengths"]);
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    await click(tid("cmp-choose"));
+    expect(tid("cmp-cols-refused")).toBeNull();
+    const strengths = $('[data-testid="cmp-card-col-strengths"]') as HTMLInputElement;
+    expect(strengths.checked).toBe(true);
+    await click(strengths);
+    expect(tid("cmp-cols-refused")!.textContent).toBe("That choice cannot be saved. Tick one more column, or untick a different one.");
+    expect(strengths.checked).toBe(true);
+    await settle(1200);
+    expect(server.puts("ap_cols")).toHaveLength(0);
+    expect(heads().slice(4)).toEqual(["Strengths"]);
+    // A choice that can be stored clears the line.
+    await click($('[data-testid="cmp-card-col-notes"]'));
+    expect(tid("cmp-cols-refused")).toBeNull();
+    await until(async () => ((await stored<string[]>("ap_cols")) ?? []).length === 2, "ap_cols saved");
+    expect(await stored<string[]>("ap_cols")).toEqual(["strengths", "notes"]);
+  });
+});
+
+// ---------------------------------------------------------------- being read (W8)
+
+describe("Compare: the loading sign while its saved work is read (W8, register row D-S2-34)", () => {
+  it.each(["ap_notes", "ap_cols", "shelf_cols"] as const)("while %s is being read the loading sign shows, never 'No papers yet', an empty table or a column to choose", async (kind) => {
+    seed();
+    let release!: () => void;
+    const hold = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.endsWith("/blobs/" + kind) && (init?.method ?? "GET") === "GET") await hold;
+      return server.api(path, init);
+    });
+    await mount();
+    await settle(30);
+    expect(tid("panel-loading")).not.toBeNull();
+    expect(tid("panel-loading")!.getAttribute("aria-busy")).toBe("true");
+    expect(tid("panel-loading")!.textContent).toContain(E.blob_loading);
+    for (const id of ["cmp-table", "cmp-empty", "cmp-locked", "cmp-error", "cmp-choose", "cmp-write"]) expect(tid(id), id).toBeNull();
+    expect(tids("cmp-cell")).toHaveLength(0);
+    release();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    expect(tid("panel-loading")).toBeNull();
+    expect(valuesOf(rowOf("ka"))[0]).toBe("58 university students");
   });
 });
 
@@ -596,6 +798,19 @@ describe("Compare: the export's table is Compare's table (R27)", () => {
     expect(header).toEqual(["Paper", "Sample", "Method", "Key finding", "Weak points", "Notes"]);
   });
 
+  it("the walk-through columns are on screen only: table.csv does not carry them, paper-cards.csv still does, and a paper with only walk-through words has no row in the table file", async () => {
+    seed({ notes: { "p:ka": { ...NOTES["p:ka"]!, cells: {}, card: {} }, "p:kb": { ...NOTES["p:kb"]!, cells: {}, card: {} } } });
+    await mount();
+    await until(() => tids("cmp-row").length === 5, "the rows");
+    expect(heads()).toEqual(HEADS);
+    expect(stageCell(rowOf("ka"), "Design").value).toBe("Two groups, pills or no pills");
+    const z = await exported(["compare"]);
+    expect(z.file("compare/table.csv")).toBeNull();
+    const cards = await csv(z, "compare/paper-cards.csv");
+    expect(cards).toContain("Two groups, pills or no pills");
+    expect(cards.split("\n")[0]).toContain("Design (my words)");
+  });
+
   it("writes no table when nothing is written in it", async () => {
     seed({ notes: {} });
     const z = await exported(["compare"]);
@@ -619,14 +834,45 @@ describe("Compare: the table model and the paper the AI reads", () => {
 
   it("compareTable lists the papers by pid once, and compareCsv keeps the rows that have words in a shown column", () => {
     const papers = papersOf(LIB, SHELF, NOTES);
-    const table = compareTable(papers, [...SHELF_DEFAULT_COLS], ["verdict"], t);
+    const table = compareTable(papers, [...SHELF_DEFAULT_COLS], [], ["verdict"], t);
     expect(table.columns.map((c) => c.label)).toEqual(["Sample", "Method", "Key finding", "My verdict"]);
     expect(table.rows.map((r) => r.pid)).toEqual(["ka", "kb", "kc", "kd", "kx"]);
     expect(table.rows[0]!.values).toEqual(["58 university students", "Randomised trial", "", ""]);
     // Putwain's card is only in a column that is shown here; hide it and the paper has no words in the table.
-    const noVerdict = compareTable(papers, [...SHELF_DEFAULT_COLS], ["strengths"], t);
+    const noVerdict = compareTable(papers, [...SHELF_DEFAULT_COLS], [], ["strengths"], t);
     expect(compareCsv(noVerdict, "Paper")!.split("\n").slice(1)).toHaveLength(1);
-    expect(compareCsv(compareTable(papersOf(LIB, SHELF, {}), ["Sample"], ["notes"], t), "Paper")).toBeNull();
+    expect(compareCsv(compareTable(papersOf(LIB, SHELF, {}), ["Sample"], [], ["notes"], t), "Paper")).toBeNull();
+  });
+
+  it("the walk-through columns come after the matrix columns and before the card fields, take the note's stage words, and are not in the table file", () => {
+    const papers = papersOf(LIB, SHELF, NOTES);
+    const table = compareTable(papers, ["Sample"], ["limits", "design"], ["verdict"], t);
+    expect(table.columns.map((c) => [c.kind, c.key, c.label])).toEqual([["cell", "Sample", "Sample"], ["stage", "limits", "Limitations"], ["stage", "design", "Design"], ["card", "verdict", "My verdict"]]);
+    // A cell says where it is from, so it cannot be mistaken for the matrix column of the same name; only a walk-through column has the note.
+    expect(table.columns.map((c) => c.note ?? null)).toEqual([null, "From your walk-through", "From your walk-through", null]);
+    expect(table.columns.map((c) => c.aria)).toEqual(["Sample", "Limitations" + FROM_WALK, "Design" + FROM_WALK, "My verdict"]);
+    expect(table.rows[0]!.values).toEqual(["58 university students", "", "Two groups, pills or no pills", ""]);
+    expect(table.rows[1]!.values).toEqual(["", "", "A review, not an experiment", "Background for the introduction"]);
+    // The file has the matrix columns and the card fields, and the papers that have words in them: Schaefer's matrix cell, Putwain's verdict. Walk-through words alone make no row.
+    const lines = compareCsv(table, "Paper")!.split("\n");
+    expect(lines[0]).toBe("Paper,Sample,My verdict");
+    expect(lines.slice(1)).toEqual([SCHAEFER.title + ",58 university students,", PUTWAIN.title + ",,Background for the introduction"]);
+    expect(compareCsv(compareTable(papersOf(LIB, SHELF, { "p:ka": { stages: { design: { mine: "x" } }, card: {} } }), ["Sample"], ["design"], [], t), "Paper")).toBeNull();
+  });
+
+  it("a paper whose note has no cells key shows the reading-list copy of its cells when asked to (the export's case, B2-R7); a note that has cells, even {}, wins", () => {
+    const notes: ApNotes = {
+      "p:ka": { title: "a", pid: "ka", stages: {}, card: {} },
+      "p:kb": { title: "b", pid: "kb", stages: {}, card: {}, cells: {} }
+    };
+    const papers = papersOf(LIB, SHELF, notes);
+    const old = (p: { pid: string }) => (p.pid === "ka" || p.pid === "kb" ? { Sample: "old " + p.pid, Other: "ignored?" } : undefined);
+    const without = compareTable(papers, ["Sample"], [], [], t);
+    expect(without.rows.map((r) => r.values[0])).toEqual(["", "", "", "", ""]);
+    const withOld = compareTable(papers, ["Sample"], [], [], t, old);
+    expect(withOld.rows.map((r) => r.values[0])).toEqual(["old ka", "", "", "", ""]);
+    // A non-text value in the old copy is not a cell.
+    expect(compareTable(papers, ["Sample"], [], [], t, () => ({ Sample: 3 as unknown as string })).rows[0]!.values[0]).toBe("");
   });
 });
 

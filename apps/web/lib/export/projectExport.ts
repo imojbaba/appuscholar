@@ -5,7 +5,7 @@ import {
 } from "@appuscholar/core";
 import { acrossData, cardLabels, stageName } from "@/lib/analyse/cards";
 import { forLibraryFile, noteHasWork, pidOfNote } from "@/lib/papers/ids";
-import { cardColsOf, compareCsv, compareTable } from "@/lib/papers/compare";
+import { cardColsOf, compareCsv, compareTable, stageColsOf } from "@/lib/papers/compare";
 import { papersOf } from "@/lib/papers/list";
 import { parseBlob, shelfPaperKind, type BlobKind, type BlobShape, type Highlight } from "@/lib/blobs/kinds";
 import { backupShelf, type ShelfItem, type T } from "@/lib/shelf/actions";
@@ -239,7 +239,9 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
     const notes = await apNotes();
     const apCols = await blob("ap_cols");
     // The table on Compare's screen (ruling B2-R27): its columns, and its cells and card fields from each paper's note, by the paper's id. Only the papers that have words in it get a row.
-    const table = compareTable(papersOf(await library(), (await blob("shelf_index")) ?? [], notes), shColsOf(await blob("shelf_cols"), SHELF_DEFAULT_COLS), cardColsOf(apCols), t);
+    // A paper whose note has no `cells` key yet (the paper-id migration has not taken them, ruling B2-R7) has its cells on its reading-list copy: those are its table words until it does.
+    // The walk-through columns are on screen only: compare/paper-cards.csv below carries those answers, as it always has.
+    const table = compareTable(papersOf(await library(), await shelf(), notes), shColsOf(await blob("shelf_cols"), SHELF_DEFAULT_COLS), stageColsOf(apCols), cardColsOf(apCols), t, (p) => p.shelf?.paper?.cells);
     const csv = compareCsv(table, t("sh2_paper"));
     if (csv !== null) zip.file("compare/table.csv", csvBlob(csv));
     const cards = acrossData(t, notes, apAcrossCols(apCols), false);
@@ -260,7 +262,9 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
   }
   if (step("readingBackup")) {
     const items = await shelf();
-    const file = items.some((x) => x.paper) ? await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {} })) : null;
+    // The cells Compare wrote are the paper's notes', so the backup takes them from there (backupShelf).
+    const notes = await apNotes();
+    const file = items.some((x) => x.paper) ? await caught((download) => backupShelf(items, { t, now: () => o.now, download, setStatus: () => {}, notes })) : null;
     if (file) zip.file("reading-list-backup.json", file);
   }
   for (const m of parts) {

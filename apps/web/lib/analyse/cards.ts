@@ -1,4 +1,4 @@
-import { AP_COLS, AP_STAGES, apAcrossCsv, apAcrossData, apCardText, type ApAcrossLabels, type ApCardLabels, type ApCardRefs, type ApNoteLike } from "@appuscholar/core";
+import { AP_COLS, AP_STAGES, apAcrossData, apCardText, type ApAcrossLabels, type ApCardLabels, type ApCardRefs, type ApNoteLike } from "@appuscholar/core";
 import { downloadBlob } from "@/lib/export/download";
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
@@ -37,5 +37,3 @@ const unmoved = (all: Record<string, ApNoteLike>): Record<string, ApNoteLike> =>
   Object.fromEntries(Object.entries(all).filter(([, n]) => (n as { movedTo?: unknown }).movedTo === undefined));
 /** The table of the cards side by side (apAcrossData). */
 export const acrossData = (t: T, all: Record<string, ApNoteLike>, cols: string[], ai: boolean) => apAcrossData(unmoved(all), cols, ai, acrossLabels(t));
-/** apAcrossCsv (9977): the table as core's apAcrossCsv, saved as paper_cards.csv. */
-export function downloadAcross(d: { head: string[]; body: string[][] }): void { save("paper_cards.csv", apAcrossCsv(d)); }

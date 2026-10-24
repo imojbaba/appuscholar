@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { AIU_V1_BRACKET, AIU_V2_BRACKET, aiuBuildV2, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
+import en from "../messages/en.json";
 import { acrossData } from "../lib/analyse/cards";
+import { tFormat } from "../lib/i18n";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, exportProject, keptPapers, projectExportFileName, saveProjectExport, type ExportPart, type ProjectExportDeps } from "../lib/export/projectExport";
 import { VaultError } from "../lib/vault/crypto";
 import { localDay } from "../lib/vault/export";
@@ -102,7 +106,7 @@ describe("exportProject", () => {
     expect(files(z)).toEqual([
       "ai-use-statement.txt",
       "citations/library.json", "citations/references.txt",
-      "compare/paper-cards.csv",
+      "compare/paper-cards.csv", "compare/table.csv",
       "documents/Draft.doc", "documents/Draft.html", "documents/sources/Source paper.doc", "documents/sources/Source paper.html",
       "notes/Sleep and exam anxiety.txt",
       "question.txt",
@@ -115,8 +119,9 @@ describe("exportProject", () => {
     expect(await text(z, "citations/library.json")).toBe(exportLibrary(LIB));
     expect(await text(z, "search/kept-papers.csv")).toBe("﻿" + rsCsvText(keptPapers(LIB)));
     expect(await text(z, "search/last-search.csv")).toBe("﻿" + rsCsvText(SEARCH));
-    // Compare's table (ruling B2-R27) comes from each paper's note by its id: these notes hold no cells and no card field of a paper with an id, so there is no table.
-    expect(z.file("compare/table.csv")).toBeNull();
+    // Compare's table (ruling B2-R27) comes from each paper's note by its id. This project's reading-list paper has no id yet and no note, so its table words are the cells on its own
+    // reading-list copy (B2-R7's case, where no note has taken them): they are in the table file, and the library's two entries with nothing written are not.
+    expect(await text(z, "compare/table.csv")).toBe("\uFEFFsh2_paper,Sample,Method,Key finding,ap2_my_verdict\nSleep and exam anxiety,120 students,,,");
     expect(await text(z, "compare/paper-cards.csv")).toBe("﻿" + apAcrossCsv(acrossData(t, AP_NOTES, ["design", "verdict"], false)));
     const q = await text(z, "question.txt");
     expect(q).toContain("idea_topic_label\nSleep and exam anxiety");
@@ -369,12 +374,69 @@ describe("with paper ids (Task 17)", () => {
     expect(await text(z, "compare/table.csv")).toBe("\uFEFFsh2_paper,Sample,Design,cmp_col_weak,ap2_my_verdict\nSleep and exam anxiety,120 students,,,\"Useful, with care\"");
   });
 
+  it("compare/table.csv takes a paper's cells from its reading-list copy only while its note has no cells key (ruling B2-R7's case); a note that has cells, even none, wins", async () => {
+    const { cells: _cells, ...noCells } = MERGED;
+    const ask = async (note: unknown) => {
+      const blobs = { shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }], ap_notes: { "p:kone": note }, ap_cols: ["verdict"] };
+      const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["compare"], opts()));
+      return (await text(z, "compare/table.csv")).split("\n")[1];
+    };
+    // The migration has not reached the note: the reading-list paper's cells (the shelf_paper blob) are the paper's cells.
+    expect(await ask(noCells)).toBe('Sleep and exam anxiety,120 students,,,"Useful, with care"');
+    // No note at all: the same, for a paper that has words only there.
+    const bare = { shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }], ap_notes: {}, ap_cols: ["verdict"] };
+    expect((await text(await unzip(await exportProject(deps({ readBlob: blobsWith(bare) }), ["compare"], opts())), "compare/table.csv")).split("\n")[1]).toBe("Sleep and exam anxiety,120 students,,,");
+    // The note has its cells (the migration took them, or the student typed in Compare): they are the table's, and the old copy is not looked at again.
+    expect(await ask({ ...MERGED, cells: { Sample: "typed in Compare" } })).toBe('Sleep and exam anxiety,typed in Compare,,,"Useful, with care"');
+    expect(await ask({ ...MERGED, cells: {} })).toBe('Sleep and exam anxiety,,,,"Useful, with care"');
+  });
+
+  it("the Reading list backup carries the cells Compare wrote (the note's), and the reading-list copy only for a paper whose note has none", async () => {
+    const second = { ...SHELF_PAPER, cells: { Sample: "old copy two" } };
+    const blobs = {
+      shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }, { ...SHELF_INDEX[0]!, id: "s2", title: "Second", pid: "ktwo" }, { ...SHELF_INDEX[0]!, id: "s3", title: "Third" }],
+      "shelf_paper:s2": second, "shelf_paper:s3": { ...SHELF_PAPER, cells: { Sample: "old copy three" } },
+      ap_notes: { "p:kone": { ...MERGED, cells: { Sample: "typed in Compare", Method: "A survey" } } }
+    };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["readingBackup"], opts()));
+    const backup = JSON.parse(await text(z, "reading-list-backup.json")) as { papers: Array<{ id: string; cells: Record<string, string>; pid?: string }> };
+    expect(backup.papers.map((p) => [p.id, p.cells])).toEqual([
+      ["s1", { Sample: "typed in Compare", Method: "A survey" }],
+      ["s2", { Sample: "old copy two" }],
+      ["s3", { Sample: "old copy three" }]
+    ]);
+  });
+
   it("the cards file lists a paper once: the note that moved is left out and the one it moved to is in", async () => {
     const notes = { a1: { ...AP_NOTES.a1, movedTo: "p:kone" }, "p:kone": MERGED };
     const z = await unzip(await exportProject(deps({ readBlob: blobsWith({ ap_notes: notes, shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }] }) }), ["compare"], opts()));
     const cards = await text(z, "compare/paper-cards.csv");
     expect(cards).toBe("﻿" + apAcrossCsv(acrossData(t, { "p:kone": MERGED }, ["design", "verdict"], false)));
     expect(cards.split("\n").filter((l) => l.includes("Sleep and exam anxiety"))).toHaveLength(1);
+  });
+});
+
+/*
+ * compare/paper-cards.csv is v1's cards-side-by-side file (apAcross* 9936-9985, paper_cards.csv), unchanged by Compare (Task 22): for each of core's golden cases whose columns carry no AI
+ * reading (the AI-readings box was the old table's own memory and the export never wrote it), the file the export writes is the golden CSV, byte for byte, from the same notes and the same
+ * stored column list. This was analyseWalk's per-case check until the table left Analyse a paper.
+ */
+describe("compare/paper-cards.csv is v1's file for the golden cases (apAcross*)", () => {
+  type Golden = { id: string; notes: Record<string, unknown>; cols: string | null; ai: string | null; colsRead: string[]; data: { body: string[][] }; csv: string };
+  const FX = (JSON.parse(readFileSync(join(__dirname, "../../../packages/core/test/golden/appanel/cases.json"), "utf8")) as { across: Golden[] }).across;
+  const E = en as Record<string, string>;
+  const v1t = (k: string, v?: Record<string, string | number>) => tFormat(E, E, k, "en", v);
+  const plain = FX.filter((a) => a.ai !== "1");
+
+  it("the golden cases without AI columns are there", () => {
+    expect(plain.map((a) => a.id)).toEqual(["empty", "defaults", "ai-zero", "bad-json", "empty-array", "not-array"]);
+  });
+
+  it.each(plain.map((a) => [a.id, a] as const))("%s: the file is v1's, or there is none when v1 drew none", async (_id, a) => {
+    const readBlob = async (kind: string) => (kind === "ap_notes" ? JSON.stringify(a.notes) : kind === "ap_cols" ? a.cols : null);
+    const z = await unzip(await exportProject(deps({ t: v1t, readBlob }), ["compare"], opts()));
+    if (!a.data.body.length) { expect(z.file("compare/paper-cards.csv")).toBeNull(); return; }
+    expect(await text(z, "compare/paper-cards.csv")).toBe("\uFEFF" + a.csv);
   });
 });
 

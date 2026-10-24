@@ -441,6 +441,81 @@ describe("useProjectBlob", () => {
     expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
   });
 
+  // The Reading list's count on the Literature tab bar, Analyse's "Choose a paper", Review's Closeness tab and every pop-out read of another stage's kinds are read-only clients.
+  describe("a read-only blob reads again after a first read that was locked or failed", () => {
+    it("a cancelled prompt, then the vault opens: the read-only blob is read (a read-only flush still runs the read, and writes nothing)", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      server.blobs = [await sealedBlob(vk, "p1", "idea_intake", INTAKE)];
+      h.ask.mockResolvedValue(null);
+      const s = await mount("idea_intake", "p1", { readOnly: true });
+      await until(() => !s.b.loading);
+      expect(s.b.locked).toBe(true);
+      expect(s.b.value).toBeNull();
+      expect(s.b.readOnly).toBe(true);
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => s.b.value !== null);
+      expect(s.b.value).toEqual(INTAKE);
+      expect(s.b.locked).toBe(false);
+      expect(h.ask).toHaveBeenCalledTimes(1);
+      expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+    }, 30_000);
+
+    it("a first read that failed is tried again at the next resume (the vault opening), not left empty", async () => {
+      const vk = await generateVaultKey();
+      server.vault = await vaultFor(vk, "right");
+      server.blobs = [await sealedBlob(vk, "p1", "idea_intake", INTAKE)];
+      h.ask.mockResolvedValue(null);
+      let down = true;
+      h.api.mockImplementation((path: string, init?: RequestInit) => (down && path.includes("/blobs/") ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+      const s = await mount("idea_intake", "p1", { readOnly: true });
+      await until(() => !s.b.loading);
+      expect(s.b.error).toBe(true);
+      expect(s.b.value).toBeNull();
+      down = false;
+      await act(async () => { await s.v.unlock("right", false); });
+      await until(() => s.b.value !== null);
+      expect(s.b.value).toEqual(INTAKE);
+      expect(s.b.error).toBeFalsy();
+      expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+    }, 30_000);
+
+    it("a read-only client that knows its value is not read again by a resume or a flush, and its flush still answers false", async () => {
+      server.blobs = [{ projectId: "p1", kind: "ap_cols", body: JSON.stringify(["Sample size"]), keyVersion: 0, deks: [] }];
+      const vault: BlobVault = { known: async () => "off", ensureUnlocked: async () => true, encryptBody: async () => { throw new Error("no write"); }, decryptBody: async (d) => d.bodyHtml };
+      const seen: ProjectBlobState<string[]>[] = [];
+      const c = projectBlobClient("ap_cols", "p1", () => vault, (s) => seen.push(s), { readOnly: true });
+      await c.start();
+      expect(seen.at(-1)!.value).toEqual(["Sample size"]);
+      const gets = () => blobCalls().filter((x) => x.method === "GET").length;
+      const before = gets();
+      c.resume();
+      expect(await c.flush()).toBe(false);
+      expect(gets()).toBe(before);
+      c.dispose();
+    });
+
+    it("a client whose first read failed reads again when it is resumed or flushed, and when another window announces a save", async () => {
+      server.blobs = [{ projectId: "p1", kind: "ap_cols", body: JSON.stringify(["Sample size"]), keyVersion: 0, deks: [] }];
+      const vault: BlobVault = { known: async () => "off", ensureUnlocked: async () => true, encryptBody: async () => { throw new Error("no write"); }, decryptBody: async (d) => d.bodyHtml };
+      let down = true;
+      h.api.mockImplementation((path: string, init?: RequestInit) => (down && path.includes("/blobs/") ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+      for (const how of ["resume", "flush", "refresh"] as const) {
+        down = true;
+        const seen: ProjectBlobState<string[]>[] = [];
+        const c = projectBlobClient("ap_cols", "p1", () => vault, (s) => seen.push(s), { readOnly: true });
+        await c.start();
+        expect(seen.at(-1)).toMatchObject({ value: null, error: true });
+        down = false;
+        if (how === "resume") c.resume(); else if (how === "flush") await c.flush(); else c.refresh();
+        await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+        expect(seen.at(-1), how).toMatchObject({ value: ["Sample size"], error: false });
+        c.dispose();
+      }
+      expect(server.calls.filter((c) => c.method === "PUT")).toHaveLength(0);
+    });
+  });
+
   describe("updates set before the stored value is known", () => {
     const A = { author: "Ng, A.", year: "2020", title: "Stored earlier" };
     const B = { author: "Ho, B.", year: "2024", title: "Added now" };

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { heldBlobs } from "@/lib/blobs/held";
-import { blobId, parseBlob, shelfPaperKind, type ShelfCols, type ShelfIndex, type ShelfPaper } from "@/lib/blobs/kinds";
+import { blobId, parseBlob, shelfPaperKind, type ShelfIndex, type ShelfPaper } from "@/lib/blobs/kinds";
 import { blobWritable } from "@/lib/popout/mode";
 import { blobPath, projectBlobClient, useProjectBlob, type BlobVault, type BlobWire, type ProjectBlob, type ProjectBlobState } from "@/lib/blobs/useProjectBlob";
 import { useT } from "@/lib/i18n";
@@ -111,24 +111,18 @@ export function useShelf(): { projectId: string | null; index: ShelfIndex | null
   return { projectId, index: index.value, loading: index.loading, locked: index.locked, broken: !!index.broken, error: !!index.error, loadPaper };
 }
 
-/** New V2 copy (register row D-S2-17; ruling R15: an English constant): a pop-out of another stage than Literature does not store the matrix's columns (D-S2-43). */
-export const COLS_POPOUT = "Columns can be changed only in the writing window.";
-
-/** What the Reading list holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */
+/** What the Reading list holds: the index, each paper's blob as it is read, and the store operations of actions.ts. (The matrix columns are Compare's now: components/literature/CompareTab.) */
 export type ShelfStore = {
   projectId: string | null;
   index: ProjectBlob<ShelfIndex>;
-  cols: ProjectBlob<ShelfCols>;
   papers: ReadonlyMap<string, PaperState>;
   /** The index's papers in v1's order (by date added, 11600) with their blobs. */
   items: ShelfItem[];
-  ops: Omit<ShelfOps, "t" | "extract" | "resolveTitle" | "library" | "setStatus" | "toast" | "now">;
-  /** An update of shelf_cols, R16-guarded; false when nothing is stored (kept, or read-only in a pop-out, where it says so). */
-  setCols(u: (prev: ShelfCols | null) => ShelfCols): boolean;
+  ops: Omit<ShelfOps, "t" | "extract" | "resolveTitle" | "library" | "setStatus" | "toast" | "now" | "putCells">;
 };
 
 /**
- * The Reading list's store: `shelf_index` and `shelf_cols` through useProjectBlob, and one blob client per paper of the index (created as the index lists it, so every paper is read when
+ * The Reading list's store: `shelf_index` through useProjectBlob, and one blob client per paper of the index (created as the index lists it, so every paper is read when
  * the list opens, as v1's shAll reads every record), disposed of when the paper leaves the index, the project changes or the list is left. A write over a blob that does not open
  * on this device asks first, once per blob (R16).
  */
@@ -139,7 +133,6 @@ export function useShelfStore(): ShelfStore {
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
   const index = useProjectBlob("shelf_index", projectId);
-  const cols = useProjectBlob("shelf_cols", projectId);
   const [papers, setPapers] = useState<{ projectId: string | null; map: ReadonlyMap<string, PaperState> }>({ projectId: null, map: new Map() });
   const clients = useRef(new Map<string, PaperClient>());
   const confirmed = useRef(new Set<string>());
@@ -241,16 +234,8 @@ export function useShelfStore(): ShelfStore {
     };
   }, [projectId, mayWrite, t, ensureClient]);
 
-  const setCols = useCallback((u: (prev: ShelfCols | null) => ShelfCols) => {
-    // v1's pop-out refuses appu_shelf_cols silently (LS.set, 1967); here the student is told (register row D-S2-17).
-    if (cols.readOnly) { toast(COLS_POPOUT); return false; }
-    if (!mayWrite("cols", cols.broken)) return false;
-    cols.set(u);
-    return true;
-  }, [cols, mayWrite]);
-
   const map = useMemo(() => (papers.projectId === projectId ? papers.map : new Map<string, PaperState>()), [papers, projectId]);
   const items = useMemo(() => [...(index.value ?? [])].sort((a: ShelfEntry, b: ShelfEntry) => (a.added < b.added ? -1 : 1))
     .map((e) => ({ ...e, paper: map.get(e.id)?.value ?? null })), [index.value, map]);
-  return { projectId, index, cols, papers: map, items, ops, setCols };
+  return { projectId, index, papers: map, items, ops };
 }

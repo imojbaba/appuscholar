@@ -107,9 +107,9 @@ const ApNoteSchema = z.looseObject({
   movedTo: str.optional()
 });
 const ApNotesSchema = z.record(str, ApNoteSchema);
-/** The columns of "📊 My paper cards side by side", AP_COLS keys in the order apAcrossColToggle stores them (v1 appu_ap_cols, 9939-9941; ruling R28: a list only, the AI-columns box is the tab's memory). */
+/** Compare's walk-through and paper-card columns (v1's "📊 My paper cards side by side", appu_ap_cols, 9939-9941, which Compare replaced in Task 22): AP_COLS keys in AP_COLS order, and Compare's own `notes` key (ruling B2-R25); a list only (ruling R28). */
 const ApColsSchema = z.array(str);
-/** The Reading shelf matrix's column names (v1 appu_shelf_cols, 11697; ruling R14). An empty list means the default columns, as v1's shCols reads it. */
+/** Compare's matrix column names (v1's Reading shelf matrix, appu_shelf_cols, 11697; ruling R14). An empty list means the default columns, as v1's shCols reads it. */
 const ShelfColsSchema = z.array(str);
 /** Research panel preferences: "Rank by fit to my question". */
 const RsPrefsSchema = z.looseObject({ rank: z.boolean() });

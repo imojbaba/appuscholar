@@ -10,6 +10,7 @@ import { fromSample, nextIntake } from "@/lib/analyse/intake";
 import { useApNotes, type ApNotesStore } from "@/lib/analyse/notes";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
+import { noteKey } from "@/lib/papers/ids";
 import { keepEntry } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
 import { papersOf, type Paper } from "@/lib/papers/list";
@@ -85,7 +86,10 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
   const readLibrary = () => { const l = libRef.current; return l.loading || l.locked || l.broken || l.error ? null : l.lib; };
   const ops: ShelfOps = {
     ...store.ops, t: (k, v) => t(OWN_WORDS[k] ?? k, v), extract: (f) => extractPdfPages(f), library: readLibrary, setStatus, toast, now: () => new Date(),
-    resolveTitle: (pages, stem) => resolveShelfTitle(pages, stem, { lib: libRef.current.lib, lookupDoi })
+    resolveTitle: (pages, stem) => resolveShelfTitle(pages, stem, { lib: libRef.current.lib, lookupDoi }),
+    // A restore puts the backup's cells in the paper's note, where Compare reads them, unless the note has some: through the notes client (a locked vault waits, a note that does not open is
+    // asked about), the note made with its stages and card (ruling B2-R11) and keeping the title it has.
+    putCells: (pid, title, cells) => notes.put({ id: noteKey(pid), title: notes.note(noteKey(pid))?.title ?? title }, (n) => { if (n.cells === undefined) { n.pid ??= pid; n.cells = { ...cells }; } })
   };
   const own: OwnPdfOps = { ...ops, t, lookupDoi, keep: (entry) => keepWhenRead((l) => keepEntry(entry, l)) };
 
@@ -162,7 +166,7 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
               </>
             )}
             <div className="sh-row sh-wrap">
-              <button type="button" className="rl-btn" data-testid="sh-backup" onClick={() => backupShelf(items, { t: ops.t, now: () => new Date(), download: downloadBlob, setStatus })}>{t("rl_backup")}</button>
+              <button type="button" className="rl-btn" data-testid="sh-backup" onClick={() => backupShelf(items, { t: ops.t, now: () => new Date(), download: downloadBlob, setStatus, notes: notes.unread ? null : notes.all })}>{t("rl_backup")}</button>
               <button type="button" className="rl-btn" data-testid="sh-restore" disabled={busy || !known} onClick={() => fileRef.current?.click()}>{t("rl_restore")}</button>
               <input ref={fileRef} type="file" data-testid="sh-rest" accept=".json" hidden aria-label={t("rl_restore")}
                 onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void run(async () => restoreShelf(await readFileText(f), ops)); }} />

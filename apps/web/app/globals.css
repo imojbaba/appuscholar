@@ -539,8 +539,6 @@
 .ap-flags a { color: var(--accent-ink); text-decoration: underline; }
 /* The walk-through and the paper card (v1 11302-11331). The cards side by side are Compare now (below). */
 .ap-stage-h { margin: 6px 0; font-size: 14px; font-weight: 600; }
-.ap-table td.ap-paper { font-weight: 700; min-width: 140px; }
-.ap-table td:last-child { min-width: 0; }
 
 /* Task 7: the project home (canvas Main). A side column (the question, taking the work out) and a main one (the suggestion, the stages).
    On a phone both columns dissolve (display: contents) so their cards stack and can be ordered one by one (Task 14). */
@@ -735,8 +733,11 @@
 .cmp-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 14px; }
 .cmp-table thead th { text-align: left; padding: 12px 16px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .cmp-table tbody th { position: sticky; left: 0; z-index: 1; max-width: 220px; padding: 14px 16px; text-align: left; font-weight: 600; vertical-align: top; background: var(--card); border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.cmp-col-name { display: block; }
+.cmp-col-note { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
 .cmp-table td { padding: 8px 10px; vertical-align: top; border-top: 1px solid var(--line); }
 .cmp-cell { width: 100%; min-width: 150px; font-size: 14px; resize: vertical; }
+.cmp-cell[readonly] { background: var(--soft); }
 .cmp-empty, .cmp-line { margin: 0; color: var(--muted); }
 .cmp-line { padding: var(--s2) var(--s3); border-left: 3px solid var(--flag-ink); background: var(--flag-bg); color: var(--flag-ink); border-radius: var(--r-ctl); font-size: 14px; }
 .cmp-foot { margin: 0; font-size: 14px; color: var(--muted); }

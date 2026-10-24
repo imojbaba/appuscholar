@@ -70,7 +70,7 @@ export type ApNotesStore = {
   note(id: string): ApNote | undefined;
   /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (ap_notes is read-only there, v1 1964). */
   put(doc: { id: string; title: string }, fn: (n: ApNote) => void): boolean;
-  /** The stored `ap_cols` list as it is, null when none is stored: Compare's card columns are read from it (lib/papers/compare cardColsOf, ruling B2-R25). */
+  /** The stored `ap_cols` list as it is, null when none is stored: Compare's walk-through and card columns are read from it (lib/papers/compare stageColsOf and cardColsOf, rulings B2-R40 and B2-R25). */
   cols: string[] | null;
   /** An update of the stored `ap_cols`; false when no project is open, the list is not read, the student kept a broken blob, or this is a pop-out. */
   setCols(update: (prev: string[] | null) => string[]): boolean;

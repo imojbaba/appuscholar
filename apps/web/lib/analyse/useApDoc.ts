@@ -6,7 +6,7 @@ import { apBuild, apNumbers, type ApDoc, type ApNumber, type ApRefs, type ApWalk
  * The paper Analyse a paper has loaded, and what the panel shows of it: v1's page state `AP` (9838), one paper per tab, kept in this tab's memory only, as v1 keeps `AP.doc` (never stored:
  * the chapter's "Never stored: the full text of the loaded paper and the Ask Q&A log"). The panel reads it with useApState(); the actions (intake.ts, ask.ts, refcheck.ts) write it.
  *
- * For the walk-through, the paper card and the cards side by side (Task 13): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
+ * For the walk-through and the paper card (Task 13): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
  * paper loaded (a reply for an earlier paper is dropped); `mode` is the tab; `refs` holds the last reference check (`finished` once it ran to the end),
  * which v1's card text includes (apCardText 10127); `busy` is v1's AP.busy, shared by Ask and the walk-through.
  * The walk-through's page state is v1's too (9838, reset by apLoad 9887): the stage shown (AP.stage), the words typed in "Try first." (AP.tryDraft) and in "Check yourself." (AP.chkDraft, never
