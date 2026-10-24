@@ -35,7 +35,7 @@ function doiFromLink(t: string,doi: string): string{
     prev=d;
     d=d.replace(/\/+$/,"").replace(/\.pdf$/,"").replace(/\/(?:full|abstract|epdf|pdf)$/,"");
   }
-  try{d=decodeURIComponent(d)}catch{/* a bad escape: the DOI as it was */}
+  try{d=decodeURIComponent(d).toLowerCase()}catch{/* a bad escape: the DOI as it was */}
   return d;
 }
 

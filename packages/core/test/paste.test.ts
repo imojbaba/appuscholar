@@ -72,6 +72,7 @@ describe("parsePasted", () => {
     expect(parsePasted("https://example.org/x/10.1000/100%")).toEqual({ k: "doi", v: "10.1000/100%" });
     expect(parsePasted("https://doi.org/10.1000/a%26b%23c")).toEqual({ k: "doi", v: "10.1000/a&b#c" });
     expect(parsePasted("https://doi.org/10.1002/%28sici%29x")).toEqual({ k: "doi", v: "10.1002/(sici)x" });
+    expect(parsePasted("https://doi.org/10.1000/%41BC")).toEqual({ k: "doi", v: "10.1000/abc" }); // lower-cased after decoding, as every DOI from a link is
   });
   it("an arXiv DOI is a DOI (first match wins); an arXiv id is read from abs and pdf links, 'arXiv:' and a bare id, the version dropped", () => {
     expect(parsePasted("https://doi.org/10.48550/arXiv.2101.00001")).toEqual({ k: "doi", v: "10.48550/arxiv.2101.00001" });

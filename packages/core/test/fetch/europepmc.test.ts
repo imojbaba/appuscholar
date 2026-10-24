@@ -203,6 +203,13 @@ describe("epmcFullText: what counts as JATS", () => {
       expect(await epmcFullText(answering(search(HIT), () => new Response(xml, { status: 200 })).f, { doi: WALK_DOI }), xml.slice(0, 60)).toEqual({ result: "ok", pmcid: "PMC6746734", xml });
     }
   });
+  it("refuses at once a body of many comments or DOCTYPEs with no article element (the check does not backtrack without end)", async () => {
+    for (const body of ["<!---->".repeat(40) + "<html>", "<!-- c -->".repeat(2000) + "<html>", "<!DOCTYPE a [ ]>".repeat(1000) + "<html>"]) {
+      const t0 = Date.now();
+      expect(await epmcFullText(answering(search(HIT), () => new Response(body, { status: 200 })).f, { doi: WALK_DOI })).toEqual({ result: "failed" });
+      expect(Date.now() - t0).toBeLessThan(1000);
+    }
+  });
   it("is not fooled by a page that only has an article element somewhere in it: HTML, a sign-in page, an XML document with another root", async () => {
     for (const body of [
       "<html><body><article>Sign in to the network</article></body></html>",
