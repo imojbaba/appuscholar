@@ -112,11 +112,10 @@ export const V2_STRINGS = {
   // A stored retraction or Crossref check cache that does not open on this device: a forced check asks before replacing it (ruling R16); the quiet
   // refresh on opening the tab leaves it alone. DRAFT Hindi.
   vault_check_broken_confirm: { en: "Your saved check results cannot be opened on this device. Checking now replaces them. Check anyway?", hi: "आपके सहेजे हुए जाँच परिणाम इस डिवाइस पर नहीं खुल सकते। अभी जाँचने से वे बदल जाएँगे। फिर भी जाँचें?" },
-  // The Reading shelf while the vault is locked (its papers cannot be read) and a stored shelf index, paper or matrix column list that does not open on this device (shown,
-  // and confirmed before the first write replaces it: ruling R16). DRAFT Hindi.
+  // The Reading shelf while the vault is locked (its papers cannot be read) and a stored shelf index, paper or matrix column list that does not open on this device (shown;
+  // the Reading list asks before the first write replaces one, with rl_broken_confirm: ruling R16). DRAFT Hindi.
   vault_shelf_locked: { en: "Your Reading shelf is locked. Unlock your vault to read it and save your changes.", hi: "आपकी रीडिंग शेल्फ़ बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   vault_shelf_broken: { en: "Part of your saved Reading shelf cannot be opened on this device. Nothing was changed.", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का कुछ हिस्सा इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
-  vault_shelf_broken_confirm: { en: "This part of your saved Reading shelf cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का यह हिस्सा इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
   // Analyse a paper: stored paper cards (the ap_notes blob) or a stored choice of the cards' columns (ap_cols) that does not open on this device, confirmed before the first write
   // replaces it (ruling R16). DRAFT Hindi.
   // …and while the stored paper cards cannot be read: locked (shown in place of the cards, nothing can be typed until the vault opens) or not openable on this device. DRAFT Hindi.
@@ -124,10 +123,8 @@ export const V2_STRINGS = {
   vault_ap_broken: { en: "Your saved paper cards cannot be opened on this device. Nothing was changed.", hi: "आपके सहेजे हुए पेपर कार्ड इस डिवाइस पर नहीं खुल सकते। कुछ भी बदला नहीं गया।" },
   vault_ap_broken_confirm: { en: "Your saved paper cards cannot be opened on this device. Saving now replaces them. Save anyway?", hi: "आपके सहेजे हुए पेपर कार्ड इस डिवाइस पर नहीं खुल सकते। अभी सहेजने से वे बदल जाएँगे। फिर भी सहेजें?" },
   vault_ap_cols_broken_confirm: { en: "Your saved choice of columns cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "कॉलम का आपका सहेजा हुआ चुनाव इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
-  // Reading shelf copy with no v1 sentence (v1 has no failure path for a removal, and always knows a paper's highlights): a removal the server refused, and a paper's line
-  // while its blob is not read yet (the pages only). DRAFT Hindi.
+  // Reading shelf copy with no v1 sentence (v1 has no failure path for a removal): a removal the server refused. DRAFT Hindi.
   shelf_remove_fail: { en: "That paper could not be removed. Check your connection and try again.", hi: "वह पेपर हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
-  shelf_pages_only: { en: "· {pagesCount} pages", hi: "· {pagesCount} पृष्ठ" },
   vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
   vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
   vault_forget_btn: { en: "Forget on this computer", hi: "इस कंप्यूटर पर भुला दें" },
@@ -163,6 +160,12 @@ export const V2_STRINGS = {
   blob_conflict: {
     en: "This was changed in another window at the same time, so your change is not saved yet. It is kept here and saved with your next edit.",
     hi: "इसे उसी समय किसी दूसरी विंडो में बदला गया, इसलिए आपका बदलाव अभी सहेजा नहीं गया है। यह यहीं रखा है और आपके अगले बदलाव के साथ सहेजा जाएगा।"
+  },
+  // A save found its blob deleted in another window (a Reading list paper removed there), so the edit made here is dropped (wave B Task 21; register D-S2-126).
+  // DRAFT Hindi: विंडो and सहेजा as in blob_conflict.
+  blob_deleted_elsewhere: {
+    en: "This was deleted in another window, so your change to it was not saved.",
+    hi: "इसे किसी दूसरी विंडो में मिटा दिया गया, इसलिए इसमें आपका बदलाव सहेजा नहीं गया।"
   },
   // The one-click capture filled an entry of the same title that had no author (fix wave A, Task 8; walk fault W1, register D-S2-23) in place of adding a second one.
   // DRAFT Hindi: उद्धरण लाइब्रेरी as in cc_src_lib, पेज as in cite_bookmarklet_desc.
@@ -265,6 +268,11 @@ export const V2_STRINGS = {
   blob_switch_held: {
     en: "Some changes are waiting for your passphrase. They are kept and saved once you unlock.",
     hi: "कुछ बदलाव आपके पासफ़्रेज़ की प्रतीक्षा कर रहे हैं। वे रखे गए हैं और अनलॉक करते ही सहेजे जाएंगे।"
+  },
+  // Task 21a, fix round 2: the same switch, when what waits is on a saved copy that does not open on this device, not on the passphrase. DRAFT Hindi.
+  blob_switch_held_broken: {
+    en: "A change is waiting: what is saved here cannot be opened on this device. Open the place it belongs to and choose whether to replace it.",
+    hi: "एक बदलाव प्रतीक्षा में है: यहाँ जो सहेजा गया है वह इस डिवाइस पर खुल नहीं सकता। जिस जगह का यह है उसे खोलें और चुनें कि उसे बदलना है या नहीं।"
   },
   // Task 8: all projects, six states each (canvas Projects). DRAFT Hindi.
   list_title: { en: "Your projects", hi: "आपके प्रोजेक्ट" },
@@ -578,6 +586,73 @@ export const V2_STRINGS = {
   find_item_read: { en: "Read it now", hi: "अभी पढ़ें" },
   find_fold: { en: "{n} probably not relevant (fit 0 or 1). Nothing is deleted.", hi: "{n} शायद प्रासंगिक नहीं (मेल 0 या 1)। कुछ भी मिटाया नहीं गया।" },
   find_library_error: { en: "Your saved papers could not be reached. Check your connection, then press Keep again.", hi: "आपके सहेजे हुए शोध-पत्र तक पहुँचा नहीं जा सका। अपना कनेक्शन जाँचें, फिर 'रखें' दोबारा दबाएँ।" },
+  // The Reading list (wave B Task 21a; register row D-S2-126; canvas Read). DRAFT Hindi for Dr. Sharma: पढ़ने की सूची as tab_name_reading, पासफ़्रेज़ and बंद as in the vault strings above,
+  // शोध-पत्र as in the Find strings.
+  rl_intro: {
+    en: "Papers you keep, with or without their PDF. A PDF stays on your computer; its text is saved to your account, locked with your passphrase. Only you can read it.",
+    hi: "वे शोध-पत्र जो आपने रखे हैं, PDF के साथ या उसके बिना। PDF आपके कंप्यूटर पर रहता है; उसका पाठ आपके खाते में, आपके पासफ़्रेज़ से बंद करके सहेजा जाता है। इसे केवल आप पढ़ सकते हैं।"
+  },
+  rl_intro_off: {
+    en: "Papers you keep, with or without their PDF. A PDF stays on your computer; its text is saved to your account. Set a passphrase to lock it.",
+    hi: "वे शोध-पत्र जो आपने रखे हैं, PDF के साथ या उसके बिना। PDF आपके कंप्यूटर पर रहता है; उसका पाठ आपके खाते में सहेजा जाता है। इसे बंद करने के लिए पासफ़्रेज़ बनाएँ।"
+  },
+  rl_locked: { en: "Your reading list is locked. Unlock your vault to read it and save your changes.", hi: "आपकी पढ़ने की सूची बंद है। उसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी वॉल्ट खोलें।" },
+  rl_broken: { en: "Part of your saved reading list cannot be opened on this device. Nothing was changed.", hi: "आपकी सहेजी हुई पढ़ने की सूची का कुछ हिस्सा इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
+  rl_broken_confirm: {
+    en: "This part of your saved reading list cannot be opened on this device. Saving now replaces it. Save anyway?",
+    hi: "आपकी सहेजी हुई पढ़ने की सूची का यह हिस्सा इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?"
+  },
+  rl_list_aria: { en: "Papers in your reading list", hi: "आपकी पढ़ने की सूची के शोध-पत्र" },
+  rl_empty: { en: "No papers yet. Keep a paper in Find, or add a PDF you already have.", hi: "अभी कोई शोध-पत्र नहीं। Find में कोई शोध-पत्र रखें, या अपने पास का कोई PDF जोड़ें।" },
+  rl_add_pdf: { en: "Add your own PDF", hi: "अपना PDF जोड़ें" },
+  rl_read: { en: "Read", hi: "पढ़ें" },
+  rl_read_aria: { en: "Read {title}", hi: "{title} पढ़ें" },
+  rl_more: { en: "More", hi: "और" },
+  rl_more_aria: { en: "More actions for {title}", hi: "{title} के लिए और विकल्प" },
+  rl_free_pdf: { en: "Get the free PDF", hi: "निःशुल्क PDF पाएँ" },
+  rl_free_pdf_line: { en: "Save it, then add it here with Add your own PDF.", hi: "उसे सहेजें, फिर यहाँ \"अपना PDF जोड़ें\" से जोड़ें।" },
+  rl_rename: { en: "Rename", hi: "नाम बदलें" },
+  rl_rename_label: { en: "Title", hi: "शीर्षक" },
+  rl_rename_save: { en: "Save title", hi: "शीर्षक सहेजें" },
+  rl_cancel: { en: "Cancel", hi: "रद्द करें" },
+  rl_remove_pdf: { en: "Remove the PDF text", hi: "PDF का पाठ हटाएँ" },
+  rl_remove_paper: { en: "Remove from reading list", hi: "पढ़ने की सूची से हटाएँ" },
+  rl_remove_ask_pdf: { en: "Remove the saved PDF text and its highlights? The paper stays in your reading list.", hi: "सहेजा हुआ PDF पाठ और उसके हाइलाइट हटाएँ? शोध-पत्र आपकी पढ़ने की सूची में रहेगा।" },
+  rl_remove_ask_paper: { en: "Remove this paper, its saved text and its highlights from your reading list?", hi: "इस शोध-पत्र, उसके सहेजे हुए पाठ और हाइलाइट को अपनी पढ़ने की सूची से हटाएँ?" },
+  rl_remove_yes: { en: "Yes, remove it", hi: "हाँ, हटाएँ" },
+  rl_remove_no: { en: "Keep it", hi: "रहने दें" },
+  rl_add_refs: { en: "Add to my references", hi: "मेरे संदर्भों में जोड़ें" },
+  rl_status_reading: { en: "Reading", hi: "पढ़ रहे हैं" },
+  rl_status_reading_1: { en: "Reading. 1 highlight", hi: "पढ़ रहे हैं। 1 हाइलाइट" },
+  rl_status_reading_n: { en: "Reading. {n} highlights", hi: "पढ़ रहे हैं। {n} हाइलाइट" },
+  rl_status_unread: { en: "Not read yet", hi: "अभी पढ़ा नहीं" },
+  rl_status_nopdf: { en: "No PDF", hi: "PDF नहीं है" },
+  rl_status_book: { en: "Book. Reference only", hi: "पुस्तक। केवल संदर्भ के लिए" },
+  rl_status_noauthors: { en: "Authors missing", hi: "लेखक नहीं दिए गए" },
+  rl_names_two: { en: "{a} and {b}", hi: "{a} और {b}" },
+  rl_names_many: { en: "{a} et al.", hi: "{a} एवं अन्य" },
+  rl_untitled: { en: "Untitled paper", hi: "बिना शीर्षक का शोध-पत्र" },
+  rl_tools: { en: "Search your PDFs, back up and restore", hi: "अपने PDF में खोजें, बैकअप लें और वापस लाएँ" },
+  rl_backup: { en: "Back up PDF text", hi: "PDF पाठ का बैकअप लें" },
+  rl_restore: { en: "Restore from a backup", hi: "बैकअप से वापस लाएँ" },
+  rl_backed_up: { en: "Papers backed up: {papersCount}.", hi: "बैकअप किए गए शोध-पत्र: {papersCount}।" },
+  rl_restored: { en: "Papers restored: {n}.", hi: "वापस लाए गए शोध-पत्र: {n}।" },
+  rl_not_a_backup: { en: "That file is not a reading list backup.", hi: "वह फ़ाइल पढ़ने की सूची का बैकअप नहीं है।" },
+  rl_add_reading: { en: "Reading {name}…", hi: "{name} पढ़ा जा रहा है…" },
+  rl_add_reading_n: { en: "Reading {n} PDFs…", hi: "{n} PDF पढ़े जा रहे हैं…" },
+  rl_add_not_pdf: { en: "{name}: not a PDF.", hi: "{name}: PDF नहीं है।" },
+  rl_add_same: { en: "{name}: already in your reading list.", hi: "{name}: पहले से आपकी पढ़ने की सूची में है।" },
+  rl_add_no_text: { en: "{name}: no readable text, so it looks scanned. It was not added.", hi: "{name}: कोई पढ़ने योग्य पाठ नहीं, यानी यह स्कैन किया हुआ लगता है। इसे जोड़ा नहीं गया।" },
+  rl_add_attached: { en: "{name}: added to {title}.", hi: "{name}: {title} में जोड़ा गया।" },
+  rl_add_kept: { en: "{name}: kept as {title} and added.", hi: "{name}: {title} के रूप में रखा और जोड़ा गया।" },
+  rl_add_plain: { en: "{name}: added to your reading list.", hi: "{name}: आपकी पढ़ने की सूची में जोड़ा गया।" },
+  rl_add_dup: { en: "{name}: {title} already has a PDF.", hi: "{name}: {title} का PDF पहले से है।" },
+  rl_add_cut: { en: "Only the first {pagesCount} of {total} pages were read.", hi: "{total} में से केवल पहले {pagesCount} पन्ने पढ़े गए।" },
+  rl_add_unreadable: { en: "could not be read.", hi: "पढ़ा नहीं जा सका।" },
+  rl_practice_short: { en: "Practice paper (fictional)", hi: "अभ्यास शोध-पत्र (काल्पनिक)" },
+  rl_practice_status: { en: "Made up for practice. Not a real study.", hi: "अभ्यास के लिए बनाया गया। असली अध्ययन नहीं।" },
+  rl_practice_btn: { en: "Try a practice paper", hi: "अभ्यास शोध-पत्र आज़माएँ" },
+  rl_practice_loaded: { en: "It is open below, under Read a paper.", hi: "यह नीचे \"कोई पेपर पढ़ें\" में खुला है।" },
   // Wave B Task 23 (register row D-S2-129): Literature's Citations tab (canvas Citations). The heading with its count and the day the retraction check last ran, the Style select, one
   // row per source (its reference, status, use and a More menu), "In your document", "Check again", "Add a source by hand" and More. DRAFT Hindi throughout, in the register of the keys above.
   cit_head: { en: "{n} sources, {c} cited in your document", hi: "{n} स्रोत, {c} आपके दस्तावेज़ में उद्धृत" },

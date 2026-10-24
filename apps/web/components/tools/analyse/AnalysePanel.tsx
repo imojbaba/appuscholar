@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { apPreview } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { fromPending, nextIntake } from "@/lib/analyse/intake";
-import { useApNotes } from "@/lib/analyse/notes";
+import { useApNotes, type ApNotesStore } from "@/lib/analyse/notes";
 import { setAp, useApState, type ApLoaded, type ApMode } from "@/lib/analyse/useApDoc";
 import { useSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
@@ -61,12 +61,14 @@ function Tabs({ d, mode }: { d: ApLoaded; mode: ApMode }) {
  * The paper lives in this tab's memory (lib/analyse/useApDoc.ts). Research's "📄 Analyse this paper" leaves its abstract in the workspace (pendingAnalyse): it is loaded here abstract-only, then
  * cleared (ruling R7).
  */
-export function AnalysePanel() {
+export function AnalysePanel({ notes: shared }: { notes?: ApNotesStore }) {
   const t = useT();
   const s = useApState();
   const { project, pendingAnalyse, setPendingAnalyse } = useProject();
   const { me } = useSettings();
-  const notes = useApNotes(project?.id ?? me?.scratchProjectId ?? null);
+  // The Reading tab gives the one store it shares with the list above (a note written here changes the list's row at once); alone, the panel makes its own.
+  const own = useApNotes(shared ? null : project?.id ?? me?.scratchProjectId ?? null);
+  const notes = shared ?? own;
   // The kept abstract is loaded once: a second run of the effect for the same value (React's StrictMode, or a language change before the clear lands) does nothing.
   const consumed = useRef<typeof pendingAnalyse>(null);
   useEffect(() => {

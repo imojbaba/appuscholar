@@ -13,7 +13,8 @@ import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./
 /**
  * The kinds whose panel never asks (R16) before it sets over a blob that does not open: the idea intake, and the preferences (the Research
  * panel's rank, and the stage 3 to 6 tools' `*_prefs`, fix round 1 of Task G3), where a toggle should not ask. A value set over an unreadable
- * one stays held and is never saved over it unasked. Every other kind, each tool's work among them, is guarded.
+ * one in a panel stays held there and is never saved over it unasked. A value a panel left held and the next panel adopts waits only for the
+ * student's next set, which goes through (Task 21a, fix round 2). Every other kind, each tool's work among them, is guarded.
  */
 const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs"]);
 
@@ -33,7 +34,8 @@ export type BlobUpdate<T> = T | ((prev: T | null) => T);
 export type ProjectBlob<T> = ProjectBlobState<T> & {
   /**
    * Shows the result at once and saves it BLOB_SAVE_DEBOUNCE_MS later (sealed under the blob's key unless the vault is off). Set while
-   * the stored value is not known yet (loading, locked, a failed read), it is queued and replayed onto the value once it is read.
+   * the stored value is not known yet (loading, locked, a failed read), it is queued and replayed onto the value once it is read; if that read finds a blob that does not
+   * open, the replayed value is held and shown with `broken` and nothing is sent over the blob until the panel sets again (R16: the panel asks first), as after a conflict.
    * Panels holding a collection (citations, caches, ap_notes, shelf_index, ap_cols) must use the update form, so an entry added before
    * the read lands on top of the stored ones instead of replacing them.
    */
@@ -63,14 +65,17 @@ type ClientDeps<T> = {
   /** set() is a no-op that holds nothing and flush() resolves false (the pop-out's guard). */
   readOnly?: boolean;
   /**
-   * No panel asks (R16) before it sets over a blob that does not open: idea_intake and the preference kinds (UNGUARDED). A value held over an unreadable blob then stays held, takes
-   * further sets, and is never saved over the blob unasked. False or absent: the panel asks, and its next set is the go-ahead.
+   * No panel asks (R16) before it sets over a blob that does not open: idea_intake and the preference kinds (UNGUARDED). A value held over an unreadable blob then stays held in
+   * that panel, takes further sets, and is never saved over the blob unasked; one a gone panel left, adopted by the next, waits for the student's next set, which goes through.
+   * False or absent: the panel asks, and its next set is the go-ahead.
    */
   unguarded?: boolean;
   /** Called after each save the server accepted (the pop-out sync's announce). */
   onSaved?: () => void;
-  /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). */
+  /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). Not called once the client is disposed of: the panel is gone. */
   onConflict?: () => void;
+  /** A save found the blob deleted in another window and dropped the edits made here (the hook's toast, `blob_deleted_elsewhere`). Not called once the client is disposed of. */
+  onDeleted?: () => void;
 };
 
 /** PUTs one save makes while another window keeps saving first; after the last conflict the value is held. */
@@ -117,9 +122,14 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /**
    * A save's re-read after a conflict found a blob that does not open: this window's value is held in `pending` and shown as `value` with `broken`
    * (a guarded panel asks first, R16), and nothing is sent until the panel sets over it; that set goes on from the held value. Kinds with no
-   * guard (`unguarded`) keep the value held for good: later sets land on it, none is sent.
+   * guard (`unguarded`) keep a value held in this panel for good: later sets land on it, none is sent. Their value adopted from a panel that went
+   * away (`heldAdopted`) is held only until the student's next set, as a guarded kind's is.
    */
   let brokenHeld = false;
+  /** The held value (`brokenHeld`) is what the registry kept from a panel that went away: no set made in this panel made it, so the next set is the student's. */
+  let heldAdopted = false;
+  /** `start()` took held ops from the registry, and no read has answered with them yet. */
+  let adoptedOps = false;
   let error = false;
   /** The student cancelled an unlock this blob asked for after its first read: no prompt again until the vault opens (resume). */
   let declined = o.headless === true;
@@ -141,7 +151,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   });
   const emit = () => {
     if (!active || o.headless) return;
-    heldBlobs.markDirty(self, holds(), flush);
+    heldBlobs.markDirty(self, holds(), flush, brokenHeld);
     o.onState(snapshot());
   };
   const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };
@@ -174,14 +184,27 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     const parsed = opened.value;
     broken = w !== null && parsed === null;
     known = true;
+    const adopted = adoptedOps;
+    adoptedOps = false;
     value = parsed;
     version = w ? w.version : 0;
     // The sets queued while the value was unknown are the edits made here since this base.
     sinceBase = [...ops];
     if (ops.length) {
-      value = applyOps(ops, value);
+      const made = applyOps(ops, value);
       ops = [];
-      if (value !== null) pending = { value };
+      if (broken) {
+        // Wave B Task 21 (wave A LATER T5, R16): the sets were made before this window knew the stored blob does not open, so no panel asked the student. They are held and shown,
+        // not sent over the blob: a guarded panel asks on its next set (which goes on from the held value), and an unguarded kind keeps them held, as after a conflict,
+        // unless a panel that went away left them: nothing in this one made them, so its next set goes through, from them.
+        brokenHeld = true;
+        heldAdopted = adopted;
+        value = null;
+        if (made !== null) pending = { value: made };
+      } else {
+        value = made;
+        if (value !== null) pending = { value };
+      }
     }
   }
 
@@ -258,7 +281,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
           if (outcomeUnknown) { markUnsure(json, carried); throw e; }
           if (!isVersionConflict(e)) throw e;
           // Another window saved first. After the last attempt the value is held and goes with the next edit (or flush, unlock, mount).
-          if (++conflicts >= BLOB_CONFLICT_ATTEMPTS) { hold(v); error = true; o.onConflict?.(); return false; }
+          if (++conflicts >= BLOB_CONFLICT_ATTEMPTS) { hold(v); error = true; if (active) o.onConflict?.(); return false; }
           // Read the newer value (no prompt beyond the usual rules) and replay every edit made here since the base onto it.
           const fresh = await o.get();
           const opened = fresh ? await openWire(fresh) : { value: null };
@@ -269,6 +292,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
             version = fresh.version;
             broken = true;
             brokenHeld = true;
+            heldAdopted = false;
             value = null;
             hold(v);
             return false;
@@ -283,6 +307,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
             sinceBase = [];
             broken = false;
             error = false;
+            if (active) o.onDeleted?.();
             return true;
           }
           deks = fresh?.deks ?? [];
@@ -335,17 +360,25 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 
   /**
    * What is still not on the server, as ops: the sets made since the last value read or saved, so whoever sends them later replays them onto
-   * the value it reads then rather than saving this window's copy over another window's newer one. Nothing while a broken blob holds the value
-   * (brokenHeld): the drain has no panel to ask, so it would replace the blob unasked.
+   * the value it reads then rather than saving this window's copy over another window's newer one. A broken blob that holds the value
+   * (brokenHeld) gives them too: they are kept for the next panel, which shows them and asks the student first (R16; a kind that never asks takes the next set as
+   * the go-ahead), and the drain, which has no panel to ask, keeps them held and sends nothing (send() ends with them still held, since this client is brokenHeld
+   * again). Dropping them there lost the student's text silently.
    */
-  const leftover = (): HeldOp<T>[] => (known ? (pending && !brokenHeld ? compactOps([...sinceBase]) : []) : [...ops]);
+  const leftover = (): HeldOp<T>[] => {
+    if (!known) return [...ops];
+    if (!pending) return [];
+    const sets = compactOps([...sinceBase]);
+    return sets.length > 0 || !brokenHeld ? sets : [{ value: pending.value }];
+  };
 
   /** For the registry: a client with no panel, sending `held` the way this one would. */
-  const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
+  const send = async (held: HeldOp[], broken?: (over: boolean) => void): Promise<HeldOp[]> => {
     // No panel to tell: a value still conflicting stays held for the next drain or mount.
-    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true, onConflict: undefined });
+    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true, onConflict: undefined, onDeleted: undefined });
     c.adopt(held as HeldOp<T>[]);
     await c.flush();
+    broken?.(c.waitsOnBroken());
     return c.leftover() as HeldOp[];
   };
 
@@ -353,12 +386,14 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     /** Takes ops held for this blob (from a panel that went away) before the first read; they replay onto the loaded value. */
     adopt(held: HeldOp<T>[]) { ops = compactOps([...held, ...ops]); },
     leftover,
+    /** Something is held and it waits on a stored blob that does not open here (not on the passphrase): the project switch's line says so. */
+    waitsOnBroken: (): boolean => known && brokenHeld && holds(),
     /** The first read, after any last save of this blob from a panel that went away; what it held is adopted. */
     start(): Promise<boolean> {
       return queue(async () => {
         await heldBlobs.idle(o.id);
         const held = heldBlobs.take(o.id);
-        if (held) ops = compactOps([...(held as HeldOp<T>[]), ...ops]);
+        if (held) { ops = compactOps([...(held as HeldOp<T>[]), ...ops]); adoptedOps = true; }
         return step();
       });
     },
@@ -368,8 +403,9 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     set(next: BlobUpdate<T>) {
       if (o.readOnly) return;
       const op = toOp(next);
-      if (known && brokenHeld && o.unguarded && pending) {
-        // No panel asked the student (R16), so this edit is no go-ahead: it lands on the held value, which stays held and shown.
+      if (known && brokenHeld && o.unguarded && !heldAdopted && pending) {
+        // No panel asked the student (R16), so this edit is no go-ahead: it lands on the held value, which stays held and shown. (A value adopted from a
+        // panel that went away is not held for good: its next set goes through, below, or a toggle could never be saved again in this tab.)
         pending = { value: "value" in op ? op.value : op.update(pending.value) };
         sinceBase.push(op);
         emit();
@@ -380,6 +416,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
         // After a re-read found a broken blob, this set is the panel's go-ahead (R16): it goes on from the value this window held.
         const base = brokenHeld && pending ? pending.value : value;
         brokenHeld = false;
+        heldAdopted = false;
         value = "value" in op ? op.value : op.update(base);
         pending = { value };
         sinceBase.push(op);
@@ -433,7 +470,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       clearTimer();
       declined = true;
       if (!holds()) return;
-      const last = flush().then(() => { heldBlobs.put(o.id, leftover() as HeldOp[], send); });
+      const last = flush().then(() => { heldBlobs.put(o.id, leftover() as HeldOp[], send, brokenHeld); });
       heldBlobs.track(o.id, last);
     },
     /**
@@ -458,10 +495,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 export const blobPath = (projectId: string, kind: BlobKind): string => `/projects/${projectId}/blobs/${encodeURIComponent(kind)}`;
 
 /**
- * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
+ * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading list makes one per paper, outside a hook,
  * since the number of papers changes. The caller starts it and disposes of it.
  */
-export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean; onConflict?: () => void } = {}) {
+export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean; onConflict?: () => void; onDeleted?: () => void } = {}) {
   const path = blobPath(projectId, kind);
   const id = blobId(projectId, kind);
   return createBlobClient<BlobShape<K>>({
@@ -480,6 +517,7 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     put: (body, ifMatch) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body), ...(typeof ifMatch === "number" ? { headers: { "if-match": `"${ifMatch}"` } } : {}) }),
     vault,
     onConflict: opts.onConflict,
+    onDeleted: opts.onDeleted,
     delayMs: BLOB_SAVE_DEBOUNCE_MS,
     onState,
     headless: opts.headless
@@ -520,7 +558,9 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
   const readOnly = (opts.readOnly ?? false) || !blobWritable(kind);
   useEffect(() => {
     if (projectId === null || key === null) return;
-    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), { readOnly, onConflict: () => toast(tRef.current("blob_conflict")) });
+    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), {
+      readOnly, onConflict: () => toast(tRef.current("blob_conflict")), onDeleted: () => toast(tRef.current("blob_deleted_elsewhere"))
+    });
     client.current = c;
     void c.start();
     const stop = syncedKind(kind) ? onBlobAnnounced(blobId(projectId, kind), () => c.refresh()) : () => {};

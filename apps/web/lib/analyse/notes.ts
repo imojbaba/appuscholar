@@ -3,13 +3,13 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { apAcrossColToggle, apAcrossCols } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
-import type { ApNote, ApNotes } from "@/lib/blobs/kinds";
+import { blobId, type ApNote, type ApNotes } from "@/lib/blobs/kinds";
 
 /*
  * Analyse a paper's stored notes: v1's appu_ap_notes (apNotes, apNotesSave, apNoteGet, apNotePut 9892-9895) and appu_ap_cols (9939-9941), here the open project's `ap_notes` and `ap_cols`
- * blobs, sealed under the vault. AnalysePanel holds the one client of each and hands this store to the walk-through, the paper card and the cards side by side. Every write is an update of
+ * blobs, sealed under the vault. AnalysePanel holds the one client of each (or, in the Reading tab, takes the one store the tab shares with the Reading list: LitPlace) and hands this store to the walk-through, the paper card and the cards side by side. Every write is an update of
  * the stored value (a write made before the blob is read lands on top of what is stored). A stored blob that does not open on this device is asked about before the first write replaces it
- * (ruling R16); the answer holds for that blob while the panel stays mounted, so typing does not ask at every key.
+ * (ruling R16); a "yes" holds for that blob, whichever panel asked (below), and a "no" while the panel stays mounted, so typing does not ask at every key.
  */
 
 /**
@@ -84,22 +84,32 @@ export type ApNotesStore = {
  */
 const unread = (b: { value: unknown; loading: boolean; locked: boolean; error?: boolean }): boolean => b.loading || ((b.locked || !!b.error) && b.value === null);
 
+/**
+ * R16, per blob (wave B Task 21; wave A's residual): the student's "yes" to replacing a blob that does not open, by the blob's id. Two panels of one project (Analyse a paper and
+ * Compare, both on `ap_notes`) must not ask the same question twice, so the answer is not a panel's. A "no" is kept by the panel that was told it (it stops the asking at every key) and
+ * is asked again by the next one. An answer is forgotten once the blob opens again (a write over it went through), so a blob that breaks later is asked about later.
+ */
+const replaceBroken = new Set<string>();
+/** Forgets every "yes" (tests; a reload does the same). */
+export function resetBrokenAnswers(): void { replaceBroken.clear(); }
+
 /** The two blobs of the project the workspace has open (or the scratch project), as one store. */
 export function useApNotes(projectId: string | null): ApNotesStore {
   const t = useT();
   const notes = useProjectBlob("ap_notes", projectId);
   const cols = useProjectBlob("ap_cols", projectId);
-  /** R16: the student's answer for a broken blob, per blob, until the panel unmounts or the project changes. */
-  const decided = useRef(new Map<string, boolean>());
-  useEffect(() => { decided.current = new Map(); }, [projectId]);
+  /** R16: this panel's "no" for a broken blob, until it unmounts or the project changes. A "yes" is kept per blob (replaceBroken). */
+  const refused = useRef(new Set<string>());
+  useEffect(() => { refused.current = new Set(); }, [projectId]);
   const mayWrite = useCallback((kind: "ap_notes" | "ap_cols", broken: boolean | undefined) => {
-    if (!broken) return true;
-    const had = decided.current.get(kind);
-    if (had !== undefined) return had;
-    const yes = window.confirm(t(kind === "ap_notes" ? "vault_ap_broken_confirm" : "vault_ap_cols_broken_confirm"));
-    decided.current.set(kind, yes);
-    return yes;
-  }, [t]);
+    const id = blobId(projectId ?? "", kind);
+    if (!broken) { replaceBroken.delete(id); return true; }
+    if (replaceBroken.has(id)) return true;
+    if (refused.current.has(kind)) return false;
+    if (window.confirm(t(kind === "ap_notes" ? "vault_ap_broken_confirm" : "vault_ap_cols_broken_confirm"))) { replaceBroken.add(id); return true; }
+    refused.current.add(kind);
+    return false;
+  }, [t, projectId]);
   const all = useMemo(() => notes.value ?? {}, [notes.value]);
   const { set: setNotes, broken: notesBroken, readOnly: notesReadOnly } = notes;
   const { set: setCols, broken: colsBroken, value: colsValue, readOnly: colsReadOnly } = cols;

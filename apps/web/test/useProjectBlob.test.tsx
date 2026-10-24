@@ -14,8 +14,8 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { ApiError } from "../lib/api";
 import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../lib/vault/useVault";
-import { BLOB_SAVE_DEBOUNCE_MS, useProjectBlob, type ProjectBlob } from "../lib/blobs/useProjectBlob";
-import { heldBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
+import { BLOB_SAVE_DEBOUNCE_MS, projectBlobClient, useProjectBlob, type BlobVault, type ProjectBlob, type ProjectBlobState } from "../lib/blobs/useProjectBlob";
+import { heldBlobs, heldOnlyOverBrokenBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
 import { BLOB_KINDS, blobId, isBlobKind, parseBlob, shelfPaperKind, type BlobKind, type IdeaIntake } from "../lib/blobs/kinds";
 import { setSyncChannel } from "../lib/popout/channel";
 import { blobWritable } from "../lib/popout/mode";
@@ -1054,6 +1054,262 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(blobOf("p1", "citations").body).toBe("{not json");
   });
 
+  describe("edits held over a blob that no longer opens are kept, never dropped (Task 21a fix round, ruling R16)", () => {
+    /** A vault that is on and has the key, but is locked until `v.locked = false`: sealing and (while locked) opening throw "vault-locked"; opening is by the plaintext body here. */
+    function lockableVault(locked: boolean) {
+      const v = { locked, asked: 0 };
+      const vault: BlobVault = {
+        known: async () => "unlocked" as const,
+        ensureUnlocked: async () => { v.asked++; return !v.locked; },
+        encryptBody: async (_d, s) => { if (v.locked) throw new Error("vault-locked"); return { bodyHtml: s, keyVersion: 0 }; },
+        decryptBody: async (d) => { if (v.locked) throw new Error("vault-locked"); return d.bodyHtml; }
+      };
+      return { v, vault };
+    }
+    const Z = { author: "Ok, Z.", title: "Typed after the student said yes" };
+
+    it("an edit held after its panel went away is still held when the drain finds the stored blob no longer opens: nothing is sent, the leave-page warning stays, and the next mount shows it and saves it once the student says yes", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      const { v, vault } = lockableVault(false);
+      const c = projectBlobClient("citations", "p1", () => vault, () => {});
+      await c.start();
+      // The vault locks while the panel is open; the student's edit cannot be sealed, and the panel goes away.
+      v.locked = true;
+      c.set(add(Y) as never);
+      c.dispose();
+      await heldBlobs.idle("blob:p1:citations");
+      expect(heldBlobs.ops("blob:p1:citations")).toHaveLength(1);
+      // The stored blob no longer opens on this device (another device wrote it under a key this one lacks, or it was damaged); the vault opens.
+      server.blobs = [{ ...blobOf("p1", "citations"), body: "{not json", version: 2 }];
+      v.locked = false;
+      await act(async () => { await heldBlobs.drain(); });
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      expect(blobOf("p1", "citations").body).toBe("{not json");
+      // Kept, not forgotten: leaving the page still asks, and a second drain (back online) changes nothing.
+      expect(heldBlobs.ops("blob:p1:citations")).toHaveLength(1);
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await settle(50);
+      expect(heldBlobs.ops("blob:p1:citations")).toHaveLength(1);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      // The panel mounts: it adopts the edit and shows it with the blob reported broken, and sends nothing until the student has been asked (R16).
+      const s = await mount("citations", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: [Y], broken: true });
+      expect(heldBlobs.size).toBe(0);
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      // The student said yes: the next set goes on from the held edit, and the blob is replaced with both.
+      act(() => { s.b.set(add(Z)); });
+      await act(async () => { await s.b.flush(); });
+      expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([Y, Z]);
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    });
+
+    it("a panel that goes away while holding a set queued before the first read of a blob that does not open leaves it held: the next mount adopts it", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: "{not json", keyVersion: 0, deks: [] }];
+      let release!: () => void;
+      const gate = new Promise<void>((r) => { release = r; });
+      h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+        if ((init?.method ?? "GET") === "GET" && path.endsWith("/citations")) await gate;
+        return fakeApi(path, init);
+      });
+      const s = await mount("citations", "p1");
+      act(() => { s.b.set(add(Y)); });
+      release();
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: [Y], broken: true });
+      s.unmount();
+      await until(() => heldBlobs.has("blob:p1:citations"));
+      expect(heldBlobs.ops("blob:p1:citations")).toHaveLength(1);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // The drain has nobody to ask, and keeps it.
+      await act(async () => { await heldBlobs.drain(); });
+      expect(heldBlobs.ops("blob:p1:citations")).toHaveLength(1);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      h.api.mockImplementation(fakeApi);
+      const t = await mount("citations", "p1");
+      await until(() => !t.b.loading);
+      expect(t.b).toMatchObject({ value: [Y], broken: true });
+      expect(heldBlobs.size).toBe(0);
+    });
+
+    it("a value held over a broken blob when the panel goes away is kept by the held-blobs registry (the 409 re-read case), and so is an unguarded kind's, which the next panel then saves with its next set", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }, { projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
+      const s = await mount("citations", "p1");
+      const p = await mount("rs_prefs", "p1");
+      await until(() => !s.b.loading && !p.b.loading);
+      server.blobs = server.blobs.map((b) => ({ ...b, body: "{not json", version: 2 }));
+      act(() => { s.b.set(add(Y)); p.b.set({ rank: true }); });
+      await act(async () => { await s.b.flush(); await p.b.flush(); });
+      expect([s.b.broken, p.b.broken]).toEqual([true, true]);
+      s.unmount();
+      p.unmount();
+      await until(() => heldBlobs.has("blob:p1:citations") && heldBlobs.has("blob:p1:rs_prefs"));
+      await act(async () => { await heldBlobs.drain(); });
+      expect(heldBlobs.has("blob:p1:citations") && heldBlobs.has("blob:p1:rs_prefs")).toBe(true);
+      expect(putsTo("p1", "citations")).toHaveLength(1);
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(1);
+      // An unguarded kind's panel shows the held value again and sends nothing by itself.
+      const q = await mount("rs_prefs", "p1");
+      await until(() => !q.b.loading);
+      expect(q.b).toMatchObject({ value: { rank: true }, broken: true });
+      await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(1);
+      // Nothing asks the student here, so the held value does not hold the panel: the next toggle goes through, from the held value, and replaces the blob.
+      act(() => { q.b.set({ rank: false }); });
+      expect(q.b).toMatchObject({ value: { rank: false }, broken: false });
+      await act(async () => { await q.b.flush(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(2);
+      expect(JSON.parse(blobOf("p1", "rs_prefs").body)).toEqual({ rank: false });
+      expect(heldBlobs.size).toBe(1);
+      expect(heldBlobs.has("blob:p1:citations")).toBe(true);
+    });
+
+    it("what is held is told apart by why: over a blob that does not open (in a mounted panel, kept after it went away, after a drain) or waiting for the passphrase (the line the project switch shows)", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      const { v, vault } = lockableVault(false);
+      const c = projectBlobClient("citations", "p1", () => vault, () => {});
+      await c.start();
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+      // An edit the locked vault cannot seal waits for the passphrase: not a broken blob.
+      v.locked = true;
+      c.set(add(Y) as never);
+      await act(async () => { await c.flush(); });
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+      // The vault opens, but the stored blob no longer opens on this device: the same edit now waits on that.
+      server.blobs = [{ ...blobOf("p1", "citations"), body: "{not json", version: 2 }];
+      v.locked = false;
+      await act(async () => { await c.flush(); });
+      expect(putsTo("p1", "citations")).toHaveLength(1);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // Kept for the next panel when this one goes away, and still told apart after a drain that has nobody to ask.
+      c.dispose();
+      await heldBlobs.idle("blob:p1:citations");
+      expect(heldBlobs.has("blob:p1:citations")).toBe(true);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      await act(async () => { await heldBlobs.drain(); });
+      expect(heldBlobs.has("blob:p1:citations")).toBe(true);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // Anything else held for another reason (here: for the passphrase) makes the line the general one.
+      heldBlobs.put("blob:p1:ap_cols", [{ value: ["x"] }], async (ops) => ops);
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+      heldBlobs.take("blob:p1:ap_cols");
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // Taken by the next panel (which shows it and asks): it is a mounted client's now, and still a broken blob's.
+      const s = await mount("citations", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b.broken).toBe(true);
+      expect(heldBlobs.size).toBe(0);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // The student says yes and it is saved: nothing is held, so there is nothing to tell.
+      act(() => { s.b.set(add({ author: "Ok, Z." })); });
+      await act(async () => { await s.b.flush(); });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+    });
+
+    it("an unguarded kind: a toggle made while the vault was locked, over a blob that turns out not to open, is held and kept; the next panel adopts it and the student's next toggle saves, once, and clears the warning", async () => {
+      server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
+      const { v, vault } = lockableVault(true);
+      const c = projectBlobClient("rs_prefs", "p1", () => vault, () => {});
+      void c.start();
+      await settle();
+      c.set({ rank: true });
+      server.blobs = [{ ...blobOf("p1", "rs_prefs"), body: "{not json", version: 2 }];
+      v.locked = false;
+      await act(async () => { c.resume(); await c.flush(); });
+      c.dispose();
+      await heldBlobs.idle("blob:p1:rs_prefs");
+      expect(heldBlobs.ops("blob:p1:rs_prefs")).toHaveLength(1);
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(0);
+      // The next mount adopts the toggle and shows it with the blob reported broken; it sends nothing by itself.
+      const s = await mount("rs_prefs", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: { rank: true }, broken: true });
+      await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(0);
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // The student toggles again, twice: both land, and the last one replaces the blob in one save (it is not held for good).
+      act(() => { s.b.set({ rank: false }); s.b.set({ rank: true }); });
+      expect(s.b).toMatchObject({ value: { rank: true }, broken: false });
+      await act(async () => { await s.b.flush(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(1);
+      expect(JSON.parse(blobOf("p1", "rs_prefs").body)).toEqual({ rank: true });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+      expect(heldBlobs.size).toBe(0);
+      // And the toggles after that save as any others do.
+      act(() => { s.b.set({ rank: false }); });
+      await act(async () => { await s.b.flush(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(2);
+      expect(JSON.parse(blobOf("p1", "rs_prefs").body)).toEqual({ rank: false });
+    });
+
+    it("every unguarded kind adopts a held value the same way: the idea intake and the tools' prefs show it, send nothing by themselves, and save with the student's next set", async () => {
+      const kinds: [BlobKind, unknown, unknown][] = [
+        ["idea_intake", NEXT, NEXT2], ["stats_prefs", { gen_first: true }, { gen_first: false }], ["qual_prefs", { showcolors: true }, { showcolors: false }],
+        ["words_prefs", { spell: "us" }, { spell: "uk" }], ["close_prefs", { k: 8 }, { k: 6 }]
+      ];
+      for (const [kind, held, next] of kinds) {
+        heldBlobs.clear();
+        server.calls = [];
+        server.blobs = [{ projectId: "p1", kind, body: "{not json", keyVersion: 0, deks: [] }];
+        heldBlobs.put(blobId("p1", kind), [{ value: held }], async (ops) => ops);
+        const s = await mount(kind, "p1");
+        await until(() => !s.b.loading);
+        expect(s.b, kind).toMatchObject({ value: held, broken: true });
+        await settle(BLOB_SAVE_DEBOUNCE_MS + 50);
+        expect(putsTo("p1", kind), kind).toHaveLength(0);
+        act(() => { s.b.set(next as never); });
+        await act(async () => { await s.b.flush(); });
+        expect(putsTo("p1", kind), kind).toHaveLength(1);
+        expect(JSON.parse(blobOf("p1", kind).body), kind).toEqual(next);
+        expect(s.b.broken, kind).toBe(false);
+        s.unmount();
+      }
+    });
+
+    it("a save that loses a race and finds the vault locked at its re-read holds the value as locked, keeps the leave-page warning, and sends it merged once the vault opens", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      const { v, vault } = lockableVault(false);
+      let seen: ProjectBlobState<unknown[]> | null = null;
+      const c = projectBlobClient("citations", "p1", () => vault, (st) => { seen = st as ProjectBlobState<unknown[]>; });
+      await c.start();
+      h.api.mockImplementation((path: string, init?: RequestInit) => {
+        if (init?.method === "PUT" && path.endsWith("/citations") && !v.locked) {
+          // Another window saves first, and the vault locks before this window's re-read.
+          elsewhere("p1", "citations", [A, X]);
+          v.locked = true;
+        }
+        return fakeApi(path, init);
+      });
+      c.set(add(Y) as never);
+      let ok: boolean | undefined;
+      await act(async () => { ok = await c.flush(); });
+      expect(ok).toBe(false);
+      expect(putsTo("p1", "citations")).toHaveLength(1);
+      expect(seen).toMatchObject({ value: [A, Y], locked: true, broken: false });
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // Nothing more is sent, and no further prompt is made, while it stays locked.
+      const asked = v.asked;
+      await act(async () => { ok = await c.flush(); });
+      expect(ok).toBe(false);
+      expect(putsTo("p1", "citations")).toHaveLength(1);
+      expect(v.asked).toBe(asked);
+      // The vault opens: the held edit is replayed onto the other window's newer value and saved.
+      v.locked = false;
+      h.api.mockImplementation(fakeApi);
+      await act(async () => { c.resume(); await c.flush(); });
+      expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, X, Y]);
+      expect(seen).toMatchObject({ value: [A, X, Y], locked: false });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+      c.dispose();
+    });
+  });
+
   it("a 409 re-read that finds the blob deleted elsewhere (a shelf paper removed) drops the edits: nothing is re-created", async () => {
     const kind = shelfPaperKind("x1");
     const PAPER = { pages: ["Page one."], notes: [], cells: {} };
@@ -1074,6 +1330,117 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
     expect(putsTo("p1", kind)).toHaveLength(1);
     expect(server.blobs).toEqual([]);
+  });
+
+  it("says so once when a save finds the blob deleted in another window, and never re-creates it (wave B Task 21)", async () => {
+    const kind = shelfPaperKind("x1");
+    const PAPER = { pages: ["Page one."], notes: [], cells: {} };
+    server.blobs = [{ projectId: "p1", kind, body: JSON.stringify(PAPER), keyVersion: 0, deks: [], version: 3 }];
+    const s = await mount(kind, "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [];
+    act(() => { s.b.set((p: typeof PAPER | null) => ({ ...(p ?? PAPER), cells: { Sample: "40" } })); });
+    await act(async () => { await s.b.flush(); });
+    expect(h.toast).toHaveBeenCalledTimes(1);
+    expect(h.toast).toHaveBeenCalledWith(en.blob_deleted_elsewhere);
+    expect(en.blob_deleted_elsewhere).toBe("This was deleted in another window, so your change to it was not saved.");
+    expect(server.blobs).toEqual([]);
+  });
+
+  it("a conflict or a deletion found after the panel went away shows no toast (the save goes on without the panel)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let n = 0;
+    h.api.mockImplementation((path: string, init?: RequestInit) => {
+      if (init?.method === "PUT" && path.endsWith("/citations")) { n++; elsewhere("p1", "citations", [...(JSON.parse(blobOf("p1", "citations").body) as unknown[]), { author: `W${n}` }]); }
+      return fakeApi(path, init);
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    act(() => { s.b.set(add(Y)); });
+    s.unmount();
+    await until(() => n === 3);
+    await settle(50);
+    expect(putsTo("p1", "citations")).toHaveLength(3);
+    expect(h.toast).not.toHaveBeenCalled();
+    // The same for a paper deleted elsewhere.
+    h.api.mockImplementation(fakeApi);
+    const kind = shelfPaperKind("x2");
+    const PAPER = { pages: ["Page one."], notes: [], cells: {} };
+    server.blobs = [{ projectId: "p1", kind, body: JSON.stringify(PAPER), keyVersion: 0, deks: [], version: 2 }];
+    const t = await mount(kind, "p1");
+    await until(() => !t.b.loading);
+    server.blobs = [];
+    act(() => { t.b.set((p: typeof PAPER | null) => ({ ...(p ?? PAPER), cells: { Sample: "1" } })); });
+    t.unmount();
+    await until(() => putsTo("p1", kind).length === 1);
+    await settle(50);
+    expect(h.toast).not.toHaveBeenCalled();
+  });
+
+  describe("a set made before the first read of a blob that does not open (wave A LATER T5, ruling R16)", () => {
+    /** The first read of `kind` is held until `release()`. */
+    function holdFirstRead(kind: string) {
+      let release!: () => void;
+      const gate = new Promise<void>((r) => { release = r; });
+      h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+        if ((init?.method ?? "GET") === "GET" && path.endsWith("/" + encodeURIComponent(kind))) await gate;
+        return fakeApi(path, init);
+      });
+      return () => release();
+    }
+
+    it("is held and shown, not written over the blob; the panel's next set (its R16 ask answered) goes on from it", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: "{not json", keyVersion: 0, deks: [] }];
+      const release = holdFirstRead("citations");
+      const s = await mount("citations", "p1");
+      expect(s.b.loading).toBe(true);
+      act(() => { s.b.set(add(Y)); });
+      release();
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: [Y], broken: true });
+      await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      expect(blobOf("p1", "citations").body).toBe("{not json");
+      // Leaving now asks first: the value is not on the server.
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // The student answered the panel's question: the next set replaces the stored blob, with the held value in it.
+      const Z = { author: "Ok, Z." };
+      act(() => { s.b.set(add(Z)); });
+      await act(async () => { await s.b.flush(); });
+      expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([Y, Z]);
+      expect(s.b).toMatchObject({ value: [Y, Z], broken: false });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    });
+
+    it("a kind with no ask (the preferences) keeps the value held for good, and the drain does not send it either", async () => {
+      server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: "{not json", keyVersion: 0, deks: [] }];
+      const release = holdFirstRead("rs_prefs");
+      const s = await mount("rs_prefs", "p1");
+      act(() => { s.b.set({ rank: true }); });
+      release();
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: { rank: true }, broken: true });
+      act(() => { s.b.set({ rank: false }); });
+      await act(async () => { await s.b.flush(); });
+      expect(s.b).toMatchObject({ value: { rank: false }, broken: true });
+      s.unmount();
+      await settle(50);
+      await act(async () => { await heldBlobs.drain(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(0);
+      expect(blobOf("p1", "rs_prefs").body).toBe("{not json");
+    });
+
+    it("a blob that opens takes the queued set as before", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      const release = holdFirstRead("citations");
+      const s = await mount("citations", "p1");
+      act(() => { s.b.set(add(Y)); });
+      release();
+      await until(() => !s.b.loading);
+      await act(async () => { await s.b.flush(); });
+      expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+      expect(s.b.broken).toBe(false);
+    });
   });
 
   it("an api without versions gets no If-Match", async () => {
