@@ -1,4 +1,4 @@
-import { maskText } from "@appuscholar/core";
+import { maskMessage } from "./mask";
 
 /** One entry of the error ring: when, which tool was open, the masked message, and file:line. */
 export type RingError = { at: number; tool: string; message: string; where: string };
@@ -7,16 +7,17 @@ export type RepFactsInput = {
   build: string; tool: string; lang: string; ua: string;
   /** "<w>x<h>, window <w>x<h>" */
   screen: string;
-  online: boolean; provider: string; keySaved: boolean; errors: RingError[];
+  online: boolean; provider: string; keySaved: boolean; errors: readonly RingError[];
 };
 
 /**
- * A message as the report may carry it: whitespace collapsed, the personal-data mask (core's `maskText`, v1 `pdMask`) applied, then cut to 140
- * characters. v1 cut first and masked after; masking first means an address or number at the cut point is never left half showing.
+ * A message as the report may carry it: whitespace collapsed, cut to the first 400 characters (the masks are slow on a long unbroken one), every
+ * mask applied (`mask.ts`: quoted text, keys, web-address queries, v1's personal-data patterns), then cut to 140 characters. v1 cut to 140 first
+ * and masked that, and masked only emails, phones and ID numbers.
  */
 export function scrubMessage(raw: unknown, max = 140): string {
   const flat = String(raw ?? "").replace(/\s+/g, " ").trim();
-  return maskText(flat).slice(0, max);
+  return maskMessage(flat).slice(0, max).trimEnd();
 }
 
 /** The tool open, from the address: `writing`, `design/budget`; never the project's id. "none" outside a project. */
@@ -25,10 +26,11 @@ export function toolFromPath(path: string | null | undefined): string {
   return m ? m[1] + (m[2] ? "/" + m[2] : "") : "none";
 }
 
-const hhmm = (at: number): string => { try { return new Date(at).toISOString().slice(11, 16); } catch { return "--:--"; } };
+/** The time on this device's clock, as v1's `toTimeString().slice(0,5)`. */
+const hhmm = (at: number): string => { try { return new Date(at).toTimeString().slice(0, 5); } catch { return "--:--"; } };
 
 /**
- * What the app adds to a problem report (v1 repFacts 11355-11385). Labels are fixed English: the report is read by whoever answers it.
+ * What the app adds to a problem report (v1 repFacts). Labels are fixed English: the report is read by whoever answers it.
  * Only these fields; nothing from documents, sources, data or keys (the key line says whether one is saved, never what it is).
  */
 export function repFacts(i: RepFactsInput): string {

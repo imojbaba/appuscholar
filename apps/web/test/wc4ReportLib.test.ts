@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { buildMailto, repFacts, toolFromPath, type RingError } from "@/lib/help/report/repFacts";
-import { clearErrors, installErrorRing, noteError, readErrors } from "@/lib/help/report/errorRing";
-import { bumpUsage, clearUsage, readUsage, usageText } from "@/lib/help/report/usage";
+import { clearErrors, installErrorRing, keepErrorsFor, noteError, readErrors, subscribeErrors } from "@/lib/help/report/errorRing";
+import { bumpUsage, clearUsage, readUsage, subscribeUsage, usageText } from "@/lib/help/report/usage";
 
 const BASE = {
   build: "abc1234", tool: "writing", lang: "en", ua: "TestBrowser/1.0", screen: "1440x900, window 1280x720",
@@ -38,9 +38,16 @@ describe("repFacts (Task C4)", () => {
     for (const i of [3, 4, 5, 6, 7]) expect(f).toContain("boom " + i + " ");
   });
   it("cuts a message at 140 characters", () => {
-    const f = repFacts({ ...BASE, errors: [err(1, "x".repeat(300))] });
-    expect(f).toContain("x".repeat(140));
-    expect(f).not.toContain("x".repeat(141));
+    const words = "ab ".repeat(100);
+    const f = repFacts({ ...BASE, errors: [err(1, words)] });
+    expect(f).toContain(words.slice(0, 140).trim());
+    expect(f).not.toContain(words.slice(0, 142));
+  });
+  it("shows the time an error happened on this device's clock, as v1 did", () => {
+    const e = err(7);
+    const hhmm = new Date(e.at).toTimeString().slice(0, 5);
+    expect(repFacts({ ...BASE, errors: [e] })).toContain("  " + hhmm + " in writing: boom 7");
+    expect(hhmm).toMatch(/^\d\d:\d\d$/);
   });
   it("an error message with an email address and a phone number is masked; the report holds no text from the open document", () => {
     document.body.innerHTML = '<div id="doc">Participant Meera Kulkarni said the hostel food was cold</div>';
@@ -58,8 +65,9 @@ describe("repFacts (Task C4)", () => {
     expect(raw).not.toContain("9876543210");
   });
   it("masks before cutting, so an address at the cut point is not left half showing", () => {
-    const f = repFacts({ ...BASE, errors: [err(1, "a".repeat(130) + " me@example.com and more")] });
+    const f = repFacts({ ...BASE, errors: [err(1, "word ".repeat(26) + "me@example.com and more")] });
     expect(f).not.toContain("me@");
+    expect(f).toContain("[email]");
   });
 });
 
@@ -79,7 +87,28 @@ describe("error ring", () => {
     expect(r).toHaveLength(5);
     expect(r[0]!.message).toBe("err 3");
     expect(r[4]!.message).toBe("err 7");
-    expect(localStorage.getItem("appu_errors")).toBeNull();
+    // nothing of the ring is written down: the only thing on this device is the counts
+    expect(Object.keys(localStorage)).toEqual(["appu_usage"]);
+    expect(sessionStorage.length).toBe(0);
+  });
+  it("tells a listener when the ring changes, and stops when it is removed", () => {
+    let n = 0;
+    const off = subscribeErrors(() => { n++; });
+    noteError("one", "a:1", "writing");
+    expect(n).toBe(1);
+    clearErrors();
+    expect(n).toBe(2);
+    off();
+    noteError("two", "a:2", "writing");
+    expect(n).toBe(2);
+  });
+  it("starts again when a different account is signed in, and keeps the ring for the same one", () => {
+    keepErrorsFor("first@example.org");
+    noteError("one", "a:1", "writing");
+    keepErrorsFor("first@example.org");
+    expect(readErrors()).toHaveLength(1);
+    keepErrorsFor("second@example.org");
+    expect(readErrors()).toHaveLength(0);
   });
   it("installErrorRing records window error and unhandledrejection, and stops when removed", () => {
     const off = installErrorRing();
@@ -108,6 +137,16 @@ describe("usage counts", () => {
     clearUsage();
     expect(localStorage.getItem("appu_usage")).toBeNull();
     expect(readUsage()).toEqual({ tools: {}, errors: {} });
+  });
+  it("tells a listener when the counts change", () => {
+    let n = 0;
+    const off = subscribeUsage(() => { n++; });
+    bumpUsage("writing");
+    clearUsage();
+    expect(n).toBe(2);
+    off();
+    bumpUsage("writing");
+    expect(n).toBe(2);
   });
   it("survives blocked or broken storage", () => {
     localStorage.setItem("appu_usage", "{not json");
