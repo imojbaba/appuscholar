@@ -87,7 +87,8 @@ function StageFactsReader({ stage, projectId, mine, onFacts }: { stage: StageKey
   useEffect(() => { onFactsRef.current = onFacts; }, [onFacts]);
   const open = vault.status === "unlocked" || vault.status === "migrating";
   const present = useMemo(() => {
-    const kinds: readonly string[] = stageKinds(stage);
+    // The writing samples (a copy of everything the student typed) are no tool's facts: never read, let alone opened, on a visit to the home.
+    const kinds: readonly string[] = stageKinds(stage).filter((k) => k !== "writing_samples");
     return (mine?.blobs ?? []).filter((b) => kinds.includes(b.kind));
   }, [mine, stage]);
   const key = present.map((b) => `${b.kind}:${b.version}:${b.updatedAt}`).join("\n");
