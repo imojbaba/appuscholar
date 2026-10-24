@@ -15,6 +15,8 @@ import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { openVaultSetup } from "./VaultSetup";
+import { SettingsPack } from "./SettingsPack";
+import { SettingsWritingSamples } from "./SettingsWritingSamples";
 
 /** v1 FIELD_LIST (index.html:2499). */
 export const FIELD_LIST = ["psychology", "education", "sociology", "medicine and health", "nursing", "management and commerce", "law", "economics", "science", "engineering and technology", "humanities"];
@@ -212,6 +214,7 @@ function Form() {
         </select>
         <p className="m-0 text-[13px] text-muted-foreground">{t("settings_contentlang_desc")}</p>
       </div>
+      <SettingsPack />
 
       <div className="field !mb-0 border-t border-line pt-3">
         <label htmlFor="oaKeyIn">{t("rs2_oa_key_label")}</label>
@@ -235,6 +238,8 @@ function Form() {
         <input className="input" id="orcidIn" type="text" placeholder="0000-0000-0000-0000" maxLength={40} value={orcid} onChange={(e) => setOrcid(e.target.value)} onBlur={saveOrcid} data-testid="orcid-input" />
         <p className="m-0 text-[13px]"><a href="https://orcid.org/register" target="_blank" rel="noopener" className="text-purple-800 underline">{t("settings_orcid_link")}</a></p>
       </div>
+
+      <SettingsWritingSamples />
 
       <div className="field !mb-0 border-t border-line pt-3">
         <label className="flex cursor-pointer items-center gap-2 text-sm">

@@ -6,7 +6,11 @@ const ALLOWED_TAGS = ["p","div","br","b","i","u","s","strong","em","ul","ol","li
  * run behind an APA sentence) and `<span class="qual-tag" data-qcode="…">` (qualTagSelection 6254, a passage's code). DOMPurify's default
  * ALLOW_DATA_ATTR already lets any `data-*` through; they are named here so the list says what a document is meant to keep.
  */
-const ALLOWED_ATTR = ["href","src","alt","title","colspan","rowspan","class","data-origin","data-h","data-run","data-qcode","style"];
+/**
+ * `data-cap`, `data-cap-title`, `data-cap-note` and `data-edits` (wave D) are v1's numbered captions (capBlocksHTML 4501, capNoteHTML 4505) and the picture
+ * editor's audit trail (ieApply 4517-4537). Like the two above they pass DOMPurify's default already; they are named so the list says what a document keeps.
+ */
+const ALLOWED_ATTR = ["href","src","alt","title","colspan","rowspan","class","data-origin","data-h","data-run","data-qcode","data-cap","data-cap-title","data-cap-note","data-edits","style"];
 const ALLOWED_URI = /^(?:https?:|mailto:|data:image\/(?:png|jpe?g|gif|webp);base64,)/i;
 
 export function sanitizeHtml(html: string): string {

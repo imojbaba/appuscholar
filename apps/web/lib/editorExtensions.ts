@@ -64,6 +64,12 @@ const SizedImage = Image.extend({
           return Number.isFinite(n) && n > 0 ? n : null;
         },
         renderHTML: (a) => (a.width ? { style: `width: ${a.width}px` } : {})
+      },
+      // The picture editor's audit trail (v1 ieApply 4517-4537): the operations done, de-duplicated and joined ", ". It is how the picture's note and the writing record can say a face was covered.
+      edits: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-edits") || null,
+        renderHTML: (a) => (a.edits ? { "data-edits": String(a.edits) } : {})
       }
     };
   }
@@ -100,6 +106,38 @@ export const RefParagraph = Extension.create({
   }
 });
 
+/**
+ * v1's numbered APA captions (capBlocksHTML 4501, capNoteHTML 4505) are ordinary paragraphs marked by an attribute, so Word and LaTeX export, which read the
+ * text, keep working and a v1-imported document's captions stay live:
+ * `<p data-cap="figure|table"><strong>Figure 1</strong></p>`, `<p data-cap-title="1"><em>Title</em></p>`, `<p data-cap-note="1"><em>Note.</em> text</p>`.
+ * `cap` is "figure" or "table" (anything else is read as no caption); `capTitle` and `capNote` are booleans, written back as "1".
+ */
+export const CaptionParagraph = Extension.create({
+  name: "captionParagraph",
+  addGlobalAttributes() {
+    return [{
+      types: ["paragraph"],
+      attributes: {
+        cap: {
+          default: null,
+          parseHTML: (el) => { const c = el.getAttribute("data-cap"); return c === "figure" || c === "table" ? c : null; },
+          renderHTML: (a) => (a.cap === "figure" || a.cap === "table" ? { "data-cap": a.cap as string } : {})
+        },
+        capTitle: {
+          default: false,
+          parseHTML: (el) => el.hasAttribute("data-cap-title"),
+          renderHTML: (a) => (a.capTitle ? { "data-cap-title": "1" } : {})
+        },
+        capNote: {
+          default: false,
+          parseHTML: (el) => el.hasAttribute("data-cap-note"),
+          renderHTML: (a) => (a.capNote ? { "data-cap-note": "1" } : {})
+        }
+      }
+    }];
+  }
+});
+
 /** A manual page break: `<div class="page-break" data-page-break>`. The sanitiser drops the data attribute, so the class alone is read back too. */
 export const PageBreak = Node.create({
   name: "pageBreak",
@@ -128,6 +166,7 @@ const schemaExtensions: Extensions = [
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   Indent,
   RefParagraph,
+  CaptionParagraph,
   PageBreak,
   ClassSpan,
   FindDecorations

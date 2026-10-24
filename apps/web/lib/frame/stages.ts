@@ -36,7 +36,9 @@ export const KIND_STAGE: Record<FixedBlobKind, { stage: StageKey; work: boolean 
   words_bank: { stage: "writing", work: true },
   words_prefs: { stage: "writing", work: false },
   close_prefs: { stage: "review", work: false },
-  viva_log: { stage: "review", work: true }
+  viva_log: { stage: "review", work: true },
+  /** Wave D: a derived copy of the words the student typed; it must not make Writing "in progress" by itself. */
+  writing_samples: { stage: "writing", work: false }
 };
 
 /** The kinds of one stage, work or not, in KIND_STAGE's order: what the home reads for a built tool module's facts (ruling R6). */

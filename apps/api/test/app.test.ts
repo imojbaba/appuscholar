@@ -109,6 +109,15 @@ describe("api routes", () => {
     expect(r2.revision.seq).toBe(2);
   });
 
+  it("PUT keeps caption and picture-edit attributes in the plaintext body (wave D)", async () => {
+    const { d } = await makeDoc();
+    const body = '<p data-cap="figure"><strong>Figure 1</strong></p><p data-cap-title="1"><em>T</em></p><p><img src="data:image/png;base64,AAAA" data-edits="cropped, bar"></p><p data-cap-note="1"><em>Note.</em> n</p>';
+    const r = await (await app.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml: body }) })).json() as { revision: { bodyHtml: string } };
+    expect(r.revision.bodyHtml).toBe(body);
+    const got = await (await app.request(`/documents/${d.id}`, { headers: auth })).json() as { bodyHtml: string };
+    expect(got.bodyHtml).toBe(body);
+  });
+
   it("GET /projects/:id/writing-record counts typed versus AI words per revision, and keeps source documents out of docs", async () => {
     const { p, d } = await makeDoc();
     const put = (id: string, bodyHtml: string) => app.request(`/documents/${id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml }) });
@@ -326,6 +335,15 @@ describe("api routes", () => {
     expect(await (await patch(62)).json()).toEqual({ sheetPct: 62 });
     for (const bad of [39, 86, 50.5, "50"]) expect((await patch(bad)).status, String(bad)).toBe(400);
     expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { sheetPct: 62 } });
+  });
+
+  it("settings accept pack and writingSampleCapture; an unknown pack is 400", async () => {
+    await app.request("/me", { headers: auth });
+    const patch = (body: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify(body) });
+    expect(await (await patch({ pack: "general" })).json()).toEqual({ pack: "general" });
+    expect(await (await patch({ pack: "psychology", writingSampleCapture: true })).json()).toEqual({ pack: "psychology", writingSampleCapture: true });
+    for (const bad of [{ pack: "x" }, { pack: 1 }, { writingSampleCapture: "yes" }]) expect((await patch(bad)).status, JSON.stringify(bad)).toBe(400);
+    expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { pack: "psychology", writingSampleCapture: true } });
   });
 
   it("settings accept docBeside and docW from 360 to 900; 359 is 400", async () => {

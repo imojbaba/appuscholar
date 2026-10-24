@@ -5,6 +5,8 @@ export type Settings = {
   contentLang?: "en" | "hi"; orcid?: string; toolTab?: string; sidebarCollapsed?: boolean;
   stageGroupsCollapsed?: string[]; fmtMore?: boolean; dockW?: number; sheetPct?: number; aiLogOff?: boolean; seenWelcome?: boolean;
   docBeside?: boolean; docW?: number;
+  /** Wave D: the specialty pack (absent = psychology) and the opt-in copy of the student's own typed words (absent = off). */
+  pack?: "general" | "psychology"; writingSampleCapture?: boolean;
 };
 export type UserRecord = { id: string; email: string; locale: string; settings: Settings; activeProjectId: string | null; termsAcceptedAt: Date | null; ageConfirmed: boolean };
 export type Credential = { provider: string; encryptedKey: string; updatedAt: Date };

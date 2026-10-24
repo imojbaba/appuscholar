@@ -143,7 +143,8 @@ describe("blob kinds", () => {
     expect(BLOB_KINDS).toEqual([
       "idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols",
       "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
-      "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log"
+      "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log",
+      "writing_samples"
     ]);
     expect(isBlobKind("citations")).toBe(true);
     expect(isBlobKind(shelfPaperKind("p1a2_b-3"))).toBe(true);
@@ -215,7 +216,8 @@ describe("the stage 3 to 6 tools' kinds (Task G3, ruling R8)", () => {
     ["words_bank", [{ w: "salient", pos: "adjective", m: "most noticeable", h: "", d: "2026-10-01" }], [{ w: "salient" }]],
     ["words_prefs", { gram_stats: { discuss_about: 3 }, spell: "uk" }, { spell: "british" }],
     ["close_prefs", { k: 6, min: 8 }, { k: "6" }],
-    ["viva_log", [{ t: 1729500000000, aud: "viva", q: "Why this sample?", a: "Because…" }], [{ t: 1, aud: "viva", q: "Q" }]]
+    ["viva_log", [{ t: 1729500000000, aud: "viva", q: "Why this sample?", a: "Because…" }], [{ t: 1, aud: "viva", q: "Q" }]],
+    ["writing_samples", { d1: { title: "Chapter one", text: "Sleep helps memory.", words: 3, updated: 1729500000000 } }, { d1: { title: "Chapter one", text: "x", words: "3", updated: 1 } }]
   ];
 
   it("parseBlob reads each new kind in v1's shape, keeps unknown fields, and refuses another shape", () => {
@@ -1037,6 +1039,21 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(JSON.parse(blobOf("p1", "design_reg").body)).toEqual({ type: "observational" });
     expect(blobOf("p1", "close_prefs").body).toBe("{not json");
     expect(putsTo("p1", "close_prefs")).toHaveLength(1);
+  });
+
+  it("writing_samples is unguarded like a preference: set over an unreadable blob never asks and stays held, unlike a work kind (wave D)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "writing_samples", body: JSON.stringify({}), keyVersion: 0, deks: [] }];
+    const p = await mount("writing_samples", "p1");
+    await until(() => !p.b.loading);
+    server.blobs = server.blobs.map((b) => ({ ...b, body: "{not json", version: 2 }));
+    act(() => { p.b.set({ d1: { title: "A", text: "words here", words: 2, updated: 1 } }); });
+    await act(async () => { await p.b.flush(); });
+    expect(p.b.broken).toBe(true);
+    act(() => { p.b.set({ d1: { title: "A", text: "more words here", words: 3, updated: 2 } }); });
+    await act(async () => { await p.b.flush(); });
+    await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+    expect(blobOf("p1", "writing_samples").body).toBe("{not json");
+    expect(putsTo("p1", "writing_samples")).toHaveLength(1);
   });
 
   it("a value held over a broken blob is not sent by the held-blobs drain once the panel goes away (no panel to ask, R16)", async () => {
