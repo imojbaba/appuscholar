@@ -54,14 +54,25 @@ function withPeople(l: ParticipantList, people: Participant[], next: number): Pa
   return out;
 }
 
-/**
- * Adds one person with the next code (`codeOf(l.next)`), the counter moving on by one. `p.joined` is the caller's date (yyyy-mm-dd).
- * The code is never one an existing person holds: a counter behind the people (a list from outside) is moved on past them.
- */
-export function addPerson(l: ParticipantList, p: NewPerson): { list: ParticipantList; person: Participant } {
+/** The number the next added person gets: `next`, moved on past any code a person holds (a counter behind the people, a list from outside). */
+function nextNumber(l: ParticipantList): number {
   const taken = new Set(l.people.map((x) => x.code));
   let n = l.next;
   while (taken.has(codeOf(n))) n++;
+  return n;
+}
+
+/** The code the next person added will get (the Add form says it: "the next code is P006"). */
+export function nextCode(l: ParticipantList): string {
+  return codeOf(nextNumber(l));
+}
+
+/**
+ * Adds one person with the next code (`nextCode(l)`), the counter moving on by one. `p.joined` is the caller's date (yyyy-mm-dd).
+ * The code is never one an existing person holds: a counter behind the people (a list from outside) is moved on past them.
+ */
+export function addPerson(l: ParticipantList, p: NewPerson): { list: ParticipantList; person: Participant } {
+  const n = nextNumber(l);
   // The name and the spellings are tidied as a pasted list's are (trimmed; no blank or repeated spelling), so an Add form and Paste a list make the same person.
   const name = p.name.trim();
   const spellings = distinct(p.spellings);

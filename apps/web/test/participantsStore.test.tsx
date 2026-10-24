@@ -44,7 +44,7 @@ import { useParticipants } from "../lib/tools/participants/useParticipants";
 type SBlob = { body: string; keyVersion: number; version: number };
 type Call = { path: string; method: string; body?: { body: string; keyVersion: number }; ifMatch?: string };
 /** `gate`: while set, a GET is not answered until it resolves (a read still under way). */
-let server: { blobs: Map<string, SBlob>; calls: Call[]; failGet: boolean; gate: Promise<void> | null };
+let server: { blobs: Map<string, SBlob>; calls: Call[]; failGet: boolean; failPut: boolean; gate: Promise<void> | null };
 const puts = () => server.calls.filter((c) => c.method === "PUT");
 const gets = () => server.calls.filter((c) => c.method === "GET");
 const key = (projectId: string, kind: string) => projectId + "/" + kind;
@@ -71,6 +71,7 @@ function fakeApi(path: string, init: RequestInit = {}): Promise<unknown> {
     return (server.gate ?? Promise.resolve()).then(() => (cur ? wire(cur) : Promise.reject(new ApiError(404, "not-found"))));
   }
   if (method !== "PUT") return Promise.reject(new ApiError(404, "not-found"));
+  if (server.failPut) return Promise.reject(new ApiError(500, "error"));
   // As apps/api answers: ciphertext only for the participants kind, whether or not there is a vault.
   if (body!.keyVersion === 0 && m[2] === "participants") return Promise.reject(new ApiError(409, "vault-required"));
   const want = ifMatch === undefined ? undefined : Number(/^"?(\d+)"?$/.exec(ifMatch)?.[1]);
@@ -84,7 +85,7 @@ function fakeApi(path: string, init: RequestInit = {}): Promise<unknown> {
 
 const roots: Root[] = [];
 beforeEach(() => {
-  server = { blobs: new Map(), calls: [], failGet: false, gate: null };
+  server = { blobs: new Map(), calls: [], failGet: false, failPut: false, gate: null };
   h.status = "unlocked";
   h.api.mockReset();
   h.ensure.mockReset();
@@ -427,6 +428,41 @@ describe("useParticipants reads and saves the sealed list", () => {
     await sleep(50);
     expect(puts()).toEqual([]);
     expect(listFor("p1")).toBeNull();
+  });
+
+  it("saveFailed (R24): a save the server does not take keeps the list shown and reports it; the next save that lands clears it", async () => {
+    const m = await mountHook();
+    await until(() => m.h.state === "ready");
+    expect(m.h.saveFailed).toBe(false);
+    server.failPut = true;
+    await act(async () => { m.h.save(addNamed("Priya Sharma")); });
+    await until(() => m.h.saveFailed);
+    // The list the student made is still there, and the tab is still ready: only the save did not land.
+    expect(m.h.state).toBe("ready");
+    expect(m.h.list!.people.map((p) => p.code)).toEqual(["P001"]);
+    expect(stored()).toBeNull();
+    server.failPut = false;
+    await act(async () => { m.h.save(addNamed("Rahul Verma")); });
+    await until(() => stored() !== null && !m.h.saveFailed);
+    expect(stored()!.people.map((p) => p.code)).toEqual(["P001", "P002"]);
+  });
+
+  it("saveFailed is false for a failed read (that is state error), for the vault off, and for a list that was saved", async () => {
+    server.failGet = true;
+    const bad = await mountHook();
+    await until(() => bad.h.state === "error");
+    expect(bad.h.saveFailed).toBe(false);
+    bad.unmount();
+    server.failGet = false;
+    const m = await mountHook();
+    await until(() => m.h.state === "ready");
+    await act(async () => { m.h.save(addNamed("Priya Sharma")); });
+    await until(() => puts().length === 1);
+    expect(m.h.saveFailed).toBe(false);
+    h.status = "off";
+    await m.rerender();
+    expect(m.h.state).toBe("off");
+    expect(m.h.saveFailed).toBe(false);
   });
 
   it("retry() reads again: with the server back the state is ready with the stored list, and save works", async () => {

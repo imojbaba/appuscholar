@@ -19,6 +19,8 @@ import { publishList } from "./store";
  *   in error publishes nothing (it must not wipe what another published); locked, off and broken publish `null`.
  * - A read that failed is "error", not "loading" (R20): there is no list and `save` refuses, so nothing is written over a list that is only out of reach; `retry` reads again.
  * - A list that does not open ("broken") is never replaced from here (R21): `save` returns false and the hook asks nothing and shows nothing; the tab says so.
+ * - `saveFailed` (R24): the list is known and the blob reports an error, so the last save did not land (the list shown is the student's, held, and goes with the next change, flush or unlock).
+ *   A failed read is not this ("error" state, no list); neither is a refused save with the vault off ("off").
  */
 
 export type ParticipantsState = "loading" | "off" | "locked" | "broken" | "error" | "ready";
@@ -26,6 +28,8 @@ export type Participants = {
   /** The list, once it is read (an empty one, starting at P001, when none is stored yet); null in every other state. */
   list: ParticipantList | null;
   state: ParticipantsState;
+  /** True in "ready" while the blob reports an error with the list held: the last save did not land. The tab says "Not saved yet" (R24). */
+  saveFailed: boolean;
   /**
    * Applies `update` to the latest list and saves the result (after the blob's debounce); the new list shows at once. False, and nothing changed, in every state but "ready"
    * (loading, locked, off, broken, error) and when the window may not write.
@@ -55,6 +59,7 @@ export function useParticipants(projectId: string): Participants {
 
   const none = useMemo(() => emptyList(), []);
   const list = state === "ready" ? (value ?? none) : null;
+  const saveFailed = state === "ready" && error === true && value !== null;
 
   useEffect(() => {
     if (id === null || state === "loading" || state === "error") return;
@@ -70,5 +75,5 @@ export function useParticipants(projectId: string): Participants {
   // flush reads the blob if it is not known yet (a failed read leaves it so), then sends what is pending; with the list read there is nothing more to do.
   const retry = useCallback(() => { if (state === "error") void flush(); }, [state, flush]);
 
-  return { list, state, save, retry };
+  return { list, state, saveFailed, save, retry };
 }

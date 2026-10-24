@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { RECORD_FIELDS, codeOf, normName } from "@appuscholar/core";
 import { emptyList, type Participant, type ParticipantList } from "../lib/blobs/kinds/participants";
 import {
-  addNotName, addPeople, addPerson, characteristicsTable, consentComplete, destroyList, editPerson, isMinor, listCsv, suggestedShortName, toMatchPeople, withdraw
+  addNotName, addPeople, addPerson, characteristicsTable, consentComplete, destroyList, editPerson, isMinor, listCsv, nextCode, suggestedShortName, toMatchPeople, withdraw
 } from "../lib/tools/participants/list";
 
 /*
@@ -14,6 +14,16 @@ const TODAY = "2026-10-24";
 const add = (l: ParticipantList, name: string, extra: Partial<Participant> = {}) => addPerson(l, { name, spellings: [], joined: TODAY, ...extra });
 const names = (l: ParticipantList) => l.people.map((p) => p.name);
 const codes = (l: ParticipantList) => l.people.map((p) => p.code);
+
+describe("nextCode (what the Add form says before the person is added)", () => {
+  it("is the code addPerson gives: from next, moved on past a code a person holds", () => {
+    expect(nextCode(emptyList())).toBe("P001");
+    const l: ParticipantList = { ...add(add(emptyList(), "Priya Sharma").list, "Imran Khan").list, next: 1 };
+    expect(nextCode(l)).toBe("P003");
+    expect(add(l, "Asha Verma").person.code).toBe("P003");
+    expect(nextCode({ ...emptyList(), next: 12 })).toBe("P012");
+  });
+});
 
 describe("addPerson", () => {
   it("gives codes P001, P002 … from next, and moves next on", () => {
