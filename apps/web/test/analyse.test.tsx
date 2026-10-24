@@ -45,6 +45,7 @@ vi.mock("mammoth/mammoth.browser", () => ({ get default() { if (h.noMammoth) thr
 
 import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
 import { StubPanel } from "../components/tools/StubPanel";
+import type { ApNotesStore } from "../lib/analyse/notes";
 import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 
@@ -181,6 +182,30 @@ describe("Analyse a paper: the cards side by side while the saved notes open (W8
     h.apLoading = false;
     await act(async () => { root.render(<AnalysePanel />); });
     expect($('[data-testid="panel-loading"]')).toBeNull();
+    expect($("#apAcross")!.textContent).toContain(E.ap2_no_paper_card_yet);
+  });
+});
+
+describe("Analyse a paper: the notes store the Reading tab gives it (Task 21a fix round)", () => {
+  const given = (over: Partial<ApNotesStore>): ApNotesStore => ({
+    all: {}, unread: false, loading: false, locked: false, broken: false, readOnly: false, note: () => undefined, put: () => true, remove: () => true, cols: [], toggleCol: () => true, ...over
+  });
+
+  it("the cards side by side read the store it is given, not blobs of their own", async () => {
+    // Its own blobs are read and empty; the given store is still being read.
+    await mount(<AnalysePanel notes={given({ loading: true, unread: true })} />);
+    load("sample@apSample");
+    const box = $("#apAcrossBox") as HTMLDetailsElement;
+    await act(async () => { box.open = true; box.dispatchEvent(new Event("toggle")); });
+    expect($("#apAcross")!.querySelector('[data-testid="panel-loading"]')).not.toBeNull();
+    expect($("#apAcross")!.textContent).not.toContain(E.ap2_no_paper_card_yet);
+  });
+
+  it("with no store given the panel makes its own, as before", async () => {
+    await mount(<AnalysePanel />);
+    load("sample@apSample");
+    const box = $("#apAcrossBox") as HTMLDetailsElement;
+    await act(async () => { box.open = true; box.dispatchEvent(new Event("toggle")); });
     expect($("#apAcross")!.textContent).toContain(E.ap2_no_paper_card_yet);
   });
 });

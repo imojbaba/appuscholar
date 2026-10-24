@@ -20,7 +20,10 @@ const h = vi.hoisted(() => ({
   shelfIndex: null as null | Array<{ id: string }>,
   lib: [] as unknown[],
   libLoading: false,
-  paperIds: undefined as undefined | string
+  paperIds: undefined as undefined | string,
+  /** The notes store the Reading tab gave the list, and the one it gave Analyse a paper (Task 21a fix round). */
+  readingNotes: undefined as unknown,
+  analyseNotes: undefined as unknown
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1" }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -43,7 +46,12 @@ vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) 
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
-vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: () => <div data-testid="reading-list" /> }));
+vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: (p: { notes?: unknown }) => { h.readingNotes = p.notes; return <div data-testid="reading-list" />; } }));
+// The real Analyse a paper, seen through the store the tab gives it.
+vi.mock("@/components/tools/analyse/AnalysePanel", async (orig) => {
+  const m = await orig<typeof import("../components/tools/analyse/AnalysePanel")>();
+  return { ...m, AnalysePanel: (p: { notes?: unknown }) => { h.analyseNotes = p.notes; return <m.AnalysePanel {...(p as object)} />; } };
+});
 vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], ask: () => {} }), ChatPanel: () => <div data-testid="chat-panel" /> }));
@@ -144,6 +152,13 @@ describe("Literature (Task 10)", () => {
     expect(tid("shelf-dialog")).toBeNull();
     expect(tid("reading-list")).not.toBeNull();
     expect(tid("read-a-paper")!.textContent).toBe("Read a paper");
+  });
+
+  it("the Reading tab gives the list and Analyse a paper one store of the project's notes, so a note written in one is heard by the other", async () => {
+    h.readingNotes = undefined; h.analyseNotes = undefined;
+    await mount("lit", "reading");
+    expect(h.readingNotes).toMatchObject({ all: {}, unread: false, loading: false });
+    expect(h.analyseNotes).toBe(h.readingNotes);
   });
 });
 

@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { crLookupDoi, fieldLabel, resolveShelfTitle, retrNormDoi, SHELF_TITLE_TIMEOUT_MS, type CitationEntry } from "@appuscholar/core";
+import { crLookupDoiV2, fieldLabel, resolveShelfTitle, retrNormDoi, SHELF_TITLE_TIMEOUT_MS, type CitationEntry } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { shelfSummarise } from "@/lib/ai/actions";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { fromSample, nextIntake } from "@/lib/analyse/intake";
-import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
+import { useApNotes, type ApNotesStore } from "@/lib/analyse/notes";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
 import { keepEntry } from "@/lib/papers/keep";
@@ -43,12 +43,15 @@ type Tool = "search" | "find";
  * "Search your PDFs, back up and restore" are Search, Find passages for a sentence, the backup and the restore; More on a row has Rename and Remove. "Read it now" in Find opens this
  * list with the abstract loaded in Analyse a paper, below (ruling B2-R14).
  * `textState`: a line for a paper's automatic full text under its status, for Task 21b's runner.
+ * `notes`: the project's notes store (lib/analyse/notes). The Reading tab makes one and gives it to this list and to Analyse a paper under it, so a note the student writes there changes the
+ * row's status at once: two stores in one window do not hear each other's writes (the sync channel never echoes to its own window). Without it the list reads the notes itself.
  */
-export function ReadingList({ textState }: { textState?(p: Paper): ReactNode }) {
+export function ReadingList({ textState, notes: shared }: { textState?(p: Paper): ReactNode; notes?: ApNotesStore }) {
   const t = useT();
   const store = useShelfStore();
   const { library, keepWhenRead } = useKeep();
-  const notes = useProjectBlob("ap_notes", store.projectId, { readOnly: true });
+  const ownNotes = useApNotes(shared ? null : store.projectId);
+  const notes = shared ?? ownNotes;
   const vault = useVault();
   const { settings } = useSettings();
   const callAI = useCallAI();
@@ -72,7 +75,7 @@ export function ReadingList({ textState }: { textState?(p: Paper): ReactNode }) 
     const key = retrNormDoi(doi);
     let p = crossref.current.get(key);
     if (!p) {
-      p = crLookupDoi((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SHELF_TITLE_TIMEOUT_MS) }), doi).then(
+      p = crLookupDoiV2((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SHELF_TITLE_TIMEOUT_MS) }), doi).then(
         (r) => { if (!r) crossref.current.delete(key); return r; }, () => { crossref.current.delete(key); return null; });
       crossref.current.set(key, p);
     }
@@ -86,11 +89,12 @@ export function ReadingList({ textState }: { textState?(p: Paper): ReactNode }) 
   };
   const own: OwnPdfOps = { ...ops, t, lookupDoi, keep: (entry) => keepWhenRead((l) => keepEntry(entry, l)) };
 
-  const opening = (index.loading && !index.locked) || (library.loading && !library.locked);
-  const locked = index.locked || library.locked || [...store.papers.values()].some((s) => s.locked);
-  const broken = !!index.broken || library.broken || [...store.papers.values()].some((s) => s.broken);
+  // A row's status reads the student's own notes, so the list waits for them too: a status drawn before they are read would say "Not read yet" for a paper the student has written about.
+  const opening = (index.loading && !index.locked) || (library.loading && !library.locked) || notes.loading;
+  const locked = index.locked || library.locked || notes.locked || [...store.papers.values()].some((s) => s.locked);
+  const broken = !!index.broken || library.broken || notes.broken || [...store.papers.values()].some((s) => s.broken);
   const known = !opening && !index.locked;
-  const papers = papersOf(library.locked || library.broken ? [] : library.lib, items, notes.value);
+  const papers = papersOf(library.locked || library.broken ? [] : library.lib, items, notes.unread ? null : notes.all);
   const paperReading = (p: Paper): boolean => { if (!p.shelf) return false; const st = store.papers.get(p.shelf.id); return !st || (st.loading && !st.locked); };
 
   const run = async (job: () => Promise<void>) => { setBusy(true); try { await job(); } finally { setBusy(false); } };

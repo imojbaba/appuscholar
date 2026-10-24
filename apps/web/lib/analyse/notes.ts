@@ -7,7 +7,7 @@ import { blobId, type ApNote, type ApNotes } from "@/lib/blobs/kinds";
 
 /*
  * Analyse a paper's stored notes: v1's appu_ap_notes (apNotes, apNotesSave, apNoteGet, apNotePut 9892-9895) and appu_ap_cols (9939-9941), here the open project's `ap_notes` and `ap_cols`
- * blobs, sealed under the vault. AnalysePanel holds the one client of each and hands this store to the walk-through, the paper card and the cards side by side. Every write is an update of
+ * blobs, sealed under the vault. AnalysePanel holds the one client of each (or, in the Reading tab, takes the one store the tab shares with the Reading list: LitPlace) and hands this store to the walk-through, the paper card and the cards side by side. Every write is an update of
  * the stored value (a write made before the blob is read lands on top of what is stored). A stored blob that does not open on this device is asked about before the first write replaces it
  * (ruling R16); a "yes" holds for that blob, whichever panel asked (below), and a "no" while the panel stays mounted, so typing does not ask at every key.
  */

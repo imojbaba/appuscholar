@@ -348,10 +348,16 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 
   /**
    * What is still not on the server, as ops: the sets made since the last value read or saved, so whoever sends them later replays them onto
-   * the value it reads then rather than saving this window's copy over another window's newer one. Nothing while a broken blob holds the value
-   * (brokenHeld): the drain has no panel to ask, so it would replace the blob unasked.
+   * the value it reads then rather than saving this window's copy over another window's newer one. A broken blob that holds the value
+   * (brokenHeld) gives them too: they are kept for the next panel, which shows them and asks the student first (R16), and the drain, which has no panel to
+   * ask, keeps them held and sends nothing (send() ends with them still held, since this client is brokenHeld again). Dropping them there lost the student's text silently.
    */
-  const leftover = (): HeldOp<T>[] => (known ? (pending && !brokenHeld ? compactOps([...sinceBase]) : []) : [...ops]);
+  const leftover = (): HeldOp<T>[] => {
+    if (!known) return [...ops];
+    if (!pending) return [];
+    const sets = compactOps([...sinceBase]);
+    return sets.length > 0 || !brokenHeld ? sets : [{ value: pending.value }];
+  };
 
   /** For the registry: a client with no panel, sending `held` the way this one would. */
   const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
@@ -471,7 +477,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
 export const blobPath = (projectId: string, kind: BlobKind): string => `/projects/${projectId}/blobs/${encodeURIComponent(kind)}`;
 
 /**
- * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
+ * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading list makes one per paper, outside a hook,
  * since the number of papers changes. The caller starts it and disposes of it.
  */
 export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean; onConflict?: () => void; onDeleted?: () => void } = {}) {

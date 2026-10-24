@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { shTitleGuess } from "@appuscholar/core";
+import { shTitleGuess, type CitationEntry } from "@appuscholar/core";
 import en from "../messages/en.json";
 
 /*
@@ -30,11 +30,12 @@ vi.mock("@/lib/shelf/extract", async (orig) => ({ ...(await orig<typeof import("
 
 import { ApiError } from "../lib/api";
 import { tFormat } from "../lib/i18n";
+import { useApNotes } from "../lib/analyse/notes";
 import { getAp, resetAp } from "../lib/analyse/useApDoc";
 import { heldBlobs } from "../lib/blobs/held";
 import type { ApNotes, ShelfIndex, ShelfPaper, StoredEntry } from "../lib/blobs/kinds";
 import { ReadingList } from "../components/literature/ReadingList";
-import { addOwnPdf, backupShelf, OWN_PDF_PARALLEL, toRecord, type ShelfEntry, type ShelfItem, type OwnPdfOps } from "../lib/shelf/actions";
+import { addOwnPdf, addToReferences, backupShelf, OWN_PDF_PARALLEL, toRecord, type ShelfEntry, type ShelfItem, type OwnPdfOps } from "../lib/shelf/actions";
 import { useShelfStore, type ShelfStore } from "../lib/shelf/useShelf";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -205,6 +206,21 @@ describe("the list of kept papers", () => {
     expect($$('[role="menuitem"]').map((x) => x.textContent)).toEqual(["Remove the PDF text"]);
   });
 
+  it("Add to my references never adds a paper twice, and a paper with no pid is not added", () => {
+    const entry = shelfEntry("s1", { title: "A loose PDF", pid: "kz", doi: "10.1000/loose" });
+    let lib: StoredEntry[] = [PUTWAIN];
+    const d = { update: (fn: (prev: StoredEntry[]) => StoredEntry[]) => { lib = fn(lib); return true; } };
+    expect(addToReferences(entry, d)).toBe(true);
+    const once = lib;
+    expect(once).toEqual([PUTWAIN, { title: "A loose PDF", doi: "10.1000/loose", pid: "kz", rl: true }]);
+    // Pressed again (or a second window did it first): the library is left exactly as it is.
+    expect(addToReferences(entry, d)).toBe(true);
+    expect(lib).toBe(once);
+    const update = vi.fn(() => true);
+    expect(addToReferences(shelfEntry("s2"), { update })).toBe(false);
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it("the PDF text of a kept paper can be removed after the question; the paper stays on the list as No PDF", async () => {
     put("citations", [PUTWAIN]);
     put("shelf_index", [shelfEntry("s1", { pid: "kb" })]);
@@ -255,19 +271,24 @@ describe("Add your own PDF", () => {
   it("a PDF whose DOI is a kept paper's attaches to it, titled from the paper's metadata (W15), and the library is not touched", async () => {
     put("citations", [SCHAEFER, PUTWAIN]);
     h.extract.mockImplementation(async () => ({ pages: PAGE(SCHAEFER.title!, SCHAEFER.doi!), total: 1 }));
-    await mount();
-    await until(() => tids("rl-row").length === 2, "the rows");
-    expect(rowOf("Schaefer").querySelector('[data-testid="rl-status"]')!.textContent).toBe("Not read yet. No PDF");
-    await pick(tid("rl-file")!, [fileOf("scan-2019_final(3).pdf", 5)]);
-    await until(() => puts("shelf_index").length > 0, "the index save");
-    const entry = stored<ShelfIndex>("shelf_index")![0]!;
-    expect(entry).toMatchObject({ title: SCHAEFER.title, doi: SCHAEFER.doi, pid: "ka", file: "scan-2019_final(3).pdf" });
-    expect(tid("rl-add-status")!.textContent).toBe(`scan-2019_final(3).pdf: added to ${SCHAEFER.title}.`);
-    // The paper keeps its place and now has a PDF; nothing new is on the list and the library was not written.
-    await until(() => rowOf("Schaefer").querySelector('[data-testid="rl-status"]')?.textContent === "Not read yet", "the status");
-    expect(tids("rl-row")).toHaveLength(2);
-    expect(puts("citations")).toHaveLength(0);
-    expect(server.calls.some((c) => c.path.includes("crossref"))).toBe(false);
+    // The page's own fetch is what reaches Crossref (the blob api double above never does), so that is the double that must stay unused.
+    const crossref = vi.fn(async () => new Response("{}", { status: 404 }));
+    vi.stubGlobal("fetch", crossref);
+    try {
+      await mount();
+      await until(() => tids("rl-row").length === 2, "the rows");
+      expect(rowOf("Schaefer").querySelector('[data-testid="rl-status"]')!.textContent).toBe("Not read yet. No PDF");
+      await pick(tid("rl-file")!, [fileOf("scan-2019_final(3).pdf", 5)]);
+      await until(() => puts("shelf_index").length > 0, "the index save");
+      const entry = stored<ShelfIndex>("shelf_index")![0]!;
+      expect(entry).toMatchObject({ title: SCHAEFER.title, doi: SCHAEFER.doi, pid: "ka", file: "scan-2019_final(3).pdf" });
+      expect(tid("rl-add-status")!.textContent).toBe(`scan-2019_final(3).pdf: added to ${SCHAEFER.title}.`);
+      // The paper keeps its place and now has a PDF; nothing new is on the list and the library was not written.
+      await until(() => rowOf("Schaefer").querySelector('[data-testid="rl-status"]')?.textContent === "Not read yet", "the status");
+      expect(tids("rl-row")).toHaveLength(2);
+      expect(puts("citations")).toHaveLength(0);
+      expect(crossref).not.toHaveBeenCalled();
+    } finally { vi.unstubAllGlobals(); }
   });
 
   it("a PDF with a DOI not kept yet keeps the paper from Crossref's record (one request, the DOI only) and attaches to it", async () => {
@@ -277,7 +298,7 @@ describe("Add your own PDF", () => {
     const seen: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
       seen.push(String(url));
-      return new Response(JSON.stringify({ message: { title: [title], DOI: doi, author: [{ family: "Lee", given: "Ann" }], issued: { "date-parts": [[2021]] }, "container-title": ["Sleep Journal"] } }), { status: 200, headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify({ message: { title: [title], DOI: doi, author: [{ family: "Lee", given: "Ann" }], issued: { "date-parts": [[2021]] }, "container-title": ["Sleep Journal"], "article-number": "13317" } }), { status: 200, headers: { "content-type": "application/json" } });
     }));
     h.extract.mockImplementation(async () => ({ pages: PAGE(title, doi), total: 1 }));
     try {
@@ -289,7 +310,8 @@ describe("Add your own PDF", () => {
       expect(seen[0]).toContain("api.crossref.org/works/10.1038");
       const lib = stored<StoredEntry[]>("citations")!;
       expect(lib).toHaveLength(2);
-      expect(lib[1]).toMatchObject({ title, doi, rl: true, author: expect.stringContaining("Lee") });
+      // crLookupDoiV2, as the paste box and Keep: Crossref lists no page, so its article number is the pages.
+      expect(lib[1]).toMatchObject({ title, doi, rl: true, author: expect.stringContaining("Lee"), pages: "13317" });
       expect(stored<ShelfIndex>("shelf_index")![0]).toMatchObject({ title, doi, pid: lib[1]!.pid });
       expect(tid("rl-add-status")!.textContent).toBe(`sleep.pdf: kept as ${title} and added.`);
       await until(() => tids("rl-row").length === 2, "the new paper's row");
@@ -324,6 +346,36 @@ describe("Add your own PDF", () => {
     await until(() => tid("rl-add-status")?.textContent?.includes("already has a PDF") ?? false, "the status");
     expect(tid("rl-add-status")!.textContent).toBe(`again.pdf: ${SCHAEFER.title} already has a PDF.`);
     expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
+  });
+
+  it("Add your own PDF and the restore are disabled while a batch runs, and enabled again when it is done", async () => {
+    put("citations", [PUTWAIN]);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.extract.mockImplementation(async () => { await gate; return { pages: ["Some Paper About Sleep\n" + "word ".repeat(60)], total: 1 }; });
+    await mount();
+    await until(() => tids("rl-row").length === 1, "the rows");
+    const add = () => tid("rl-add") as HTMLButtonElement, restore = () => tid("sh-restore") as HTMLButtonElement;
+    expect([add().disabled, restore().disabled]).toEqual([false, false]);
+    await pick(tid("rl-file")!, [fileOf("a.pdf", 5)]);
+    expect([add().disabled, restore().disabled]).toEqual([true, true]);
+    release();
+    await until(() => puts("shelf_index").length > 0 && !add().disabled, "the batch done");
+    expect(restore().disabled).toBe(false);
+  });
+
+  it("they are disabled while the list is not known: its index is locked", async () => {
+    put("citations", [PUTWAIN]);
+    server.blobs.push({ projectId: "p1", kind: "shelf_index", body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1, version: 1 });
+    const was = { decryptBody: vault.decryptBody, ensureUnlocked: vault.ensureUnlocked };
+    vault.decryptBody = async (d: { bodyHtml: string; keyVersion: number }) => { if (d.keyVersion > 0) throw new Error("vault-locked"); return d.bodyHtml; };
+    vault.ensureUnlocked = async () => false;
+    try {
+      await mount();
+      await until(() => !!tid("rl-locked"), "the locked note");
+      expect((tid("rl-add") as HTMLButtonElement).disabled).toBe(true);
+      expect((tid("sh-restore") as HTMLButtonElement).disabled).toBe(true);
+    } finally { Object.assign(vault, was); }
   });
 
   describe("addOwnPdf with fakes", () => {
@@ -375,6 +427,39 @@ describe("Add your own PDF", () => {
       await vi.advanceTimersByTimeAsync(7999);
       expect(finished).toBe(true);
       expect(st.index).toHaveLength(3);
+    });
+
+    it("each PDF is stored as soon as its own text and title are read, not after the whole batch; the sentences stay in the order chosen", async () => {
+      vi.useFakeTimers();
+      const wait: Record<string, number> = { a: 4000, b: 1000, c: 2500 };
+      const { st, ops } = fake({ resolveTitle: (_p, stem) => new Promise((res) => { setTimeout(() => res({ title: "Title of " + stem }), wait[stem]!); }) });
+      const done = addOwnPdf(["a", "b", "c"].map((n) => fileOf(n + ".pdf", 1)), ops);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(st.index).toEqual([]);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(st.index.map((e) => e.file)).toEqual(["b.pdf"]);
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(st.index.map((e) => e.file)).toEqual(["b.pdf", "c.pdf"]);
+      await vi.advanceTimersByTimeAsync(1500);
+      await done;
+      expect(st.index.map((e) => e.file)).toEqual(["b.pdf", "c.pdf", "a.pdf"]);
+      expect(st.status.at(-1)).toBe("a.pdf: added to your reading list. b.pdf: added to your reading list. c.pdf: added to your reading list.");
+    });
+
+    it("nothing is stored for a PDF once the list was left, whether that happened while Crossref was asked for its DOI or while the paper was being kept", async () => {
+      let alive = true;
+      const cr = { title: "Crossref title", doi: "10.1/x", author: "Lee, A." } as CitationEntry;
+      const keep = vi.fn(async () => ({ state: "kept" as const, pid: "kx" }));
+      const one = fake({ alive: () => alive, resolveTitle: async () => ({ title: "T", doi: "10.1/x" }), lookupDoi: async () => { alive = false; return cr; }, keep });
+      await addOwnPdf([fileOf("a.pdf", 1)], one.ops);
+      expect(keep).not.toHaveBeenCalled();
+      expect(one.st.created).toEqual([]);
+      expect(one.st.index).toEqual([]);
+      alive = true;
+      const two = fake({ alive: () => alive, resolveTitle: async () => ({ title: "T", doi: "10.1/x" }), lookupDoi: async () => cr, keep: async () => { alive = false; return { state: "kept" as const, pid: "kx" }; } });
+      await addOwnPdf([fileOf("a.pdf", 1)], two.ops);
+      expect(two.st.created).toEqual([]);
+      expect(two.st.index).toEqual([]);
     });
 
     it("a title lookup that fails falls back to v1's first line; a file that is not a PDF, one already there and a scanned one are said so, in the order chosen", async () => {
@@ -467,5 +552,122 @@ describe("ruling B2-R14 and the counts", () => {
     await mount();
     await until(() => tid("rl-status")?.textContent === "Reading. No PDF", "the status");
     expect(server.calls.filter((c) => c.method !== "GET")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------- Task 21a fix round
+
+describe("keyboard focus after Rename and Remove (Task 21a fix round)", () => {
+  async function loosePdf() {
+    put("citations", []);
+    put("shelf_index", [shelfEntry("s1", { title: "A loose PDF", pid: "kz" })]);
+    put("shelf_paper:s1", paperOf());
+    await mount();
+    await until(() => tids("rl-row").length === 1 && !(tid("rl-read") as HTMLButtonElement).disabled, "the row");
+  }
+
+  it("Rename puts the focus in the title box, not back on More; Cancel gives it back to More", async () => {
+    await loosePdf();
+    (tid("rl-more") as HTMLElement).focus();
+    await openMore(tids("rl-row")[0]!);
+    await click($('[data-testid="rl-item-rename"]'));
+    await settle(60);
+    expect(tid("rl-title")).not.toBeNull();
+    expect(document.activeElement).toBe(tid("rl-title"));
+    await click(tid("rl-rename-cancel"));
+    expect(tid("rl-title")).toBeNull();
+    expect(document.activeElement).toBe(tid("rl-more"));
+  });
+
+  it("Save title gives the focus back to More", async () => {
+    await loosePdf();
+    await openMore(tids("rl-row")[0]!);
+    await click($('[data-testid="rl-item-rename"]'));
+    await settle(60);
+    await act(async () => { (tid("rl-rename") as HTMLFormElement).requestSubmit(); });
+    expect(tid("rl-title")).toBeNull();
+    expect(document.activeElement).toBe(tid("rl-more"));
+  });
+
+  it("Remove puts the focus on Keep it, the safe answer, not back on More; answering Keep it gives it back to More", async () => {
+    await loosePdf();
+    (tid("rl-more") as HTMLElement).focus();
+    await openMore(tids("rl-row")[0]!);
+    await click($('[data-testid="rl-item-remove"]'));
+    await settle(60);
+    expect(tid("rl-confirm")).not.toBeNull();
+    expect(document.activeElement).toBe(tid("rl-remove-no"));
+    await click(tid("rl-remove-no"));
+    expect(tid("rl-confirm")).toBeNull();
+    expect(document.activeElement).toBe(tid("rl-more"));
+  });
+
+  it("a menu item that opens no form (Add to my references) leaves the focus on More, as the menu does", async () => {
+    await loosePdf();
+    await openMore(tids("rl-row")[0]!);
+    await click($('[data-testid="rl-item-refs"]'));
+    await settle(60);
+    expect(document.activeElement).toBe(tid("rl-more"));
+  });
+});
+
+describe("a row's status hears the student's own words (Task 21a fix round)", () => {
+  const TAKE: ApNotes = { "p:kb": { stages: { design: { mine: "A cohort study of students." } }, card: {}, pid: "kb" } };
+
+  it("while the notes are being read the list shows its loading sign, so no row says Not read yet first; then the status the student's words make", async () => {
+    put("citations", [PUTWAIN]);
+    put("ap_notes", TAKE);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
+      if ((init.method ?? "GET") === "GET" && decodeURIComponent(path).endsWith("/blobs/ap_notes")) await gate;
+      return fakeApi(path, init);
+    });
+    await mount();
+    await settle(100);
+    expect(tid("panel-loading")).not.toBeNull();
+    expect(tids("rl-row")).toHaveLength(0);
+    expect(tids("rl-status")).toHaveLength(0);
+    release();
+    await until(() => tid("rl-status")?.textContent === "Reading. No PDF", "the status from the notes");
+    expect(tid("panel-loading")).toBeNull();
+  });
+
+  it("a note written in this window by another panel of the Reading tab changes the row's status at once", async () => {
+    put("citations", [PUTWAIN]);
+    function Tab() {
+      const notes = useApNotes("p1");
+      return (
+        <>
+          <ReadingList notes={notes} />
+          <button type="button" data-testid="write-take" onClick={() => { notes.put({ id: "p:kb", title: PUTWAIN.title! }, (n) => { n.stages.design = { mine: "A cohort study of students." }; }); }}>write</button>
+        </>
+      );
+    }
+    await mount(<Tab />);
+    await until(() => tid("rl-status")?.textContent === "Not read yet. No PDF", "the row");
+    await click(tid("write-take"));
+    await until(() => tid("rl-status")?.textContent === "Reading. No PDF", "the new status");
+  });
+
+  it("notes that do not open on this device are said so, as an index or a library that does not open is", async () => {
+    put("citations", [PUTWAIN]);
+    server.blobs.push({ projectId: "p1", kind: "ap_notes", body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1, version: 1 });
+    await mount();
+    await until(() => !!tid("rl-broken"), "the broken note");
+    expect(tid("rl-broken")!.textContent).toBe(E.rl_broken);
+  });
+
+  it("notes that are locked are said so too", async () => {
+    put("citations", [PUTWAIN]);
+    server.blobs.push({ projectId: "p1", kind: "ap_notes", body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1, version: 1 });
+    const was = { decryptBody: vault.decryptBody, ensureUnlocked: vault.ensureUnlocked };
+    vault.decryptBody = async (d: { bodyHtml: string; keyVersion: number }) => { if (d.keyVersion > 0) throw new Error("vault-locked"); return d.bodyHtml; };
+    vault.ensureUnlocked = async () => false;
+    try {
+      await mount();
+      await until(() => !!tid("rl-locked"), "the locked note");
+      expect(tid("rl-locked")!.textContent).toBe(E.rl_locked);
+    } finally { Object.assign(vault, was); }
   });
 });

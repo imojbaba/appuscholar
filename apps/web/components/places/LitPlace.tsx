@@ -84,11 +84,14 @@ function Content({ tab }: { tab: string }) {
 
 function Reading() {
   const t = useT();
+  const { projectId } = useProject();
+  // One store of the project's notes for the list and for Analyse a paper: each row's status reads the notes that Analyse writes, and two stores in a window do not hear each other.
+  const notes = useApNotes(projectId);
   return (
     <>
-      <ReadingList />
+      <ReadingList notes={notes} />
       <h2 className="place-h2" data-testid="read-a-paper">{t("lit_read_a_paper")}</h2>
-      <AnalysePanel />
+      <AnalysePanel notes={notes} />
     </>
   );
 }

@@ -10,7 +10,7 @@ import en from "../messages/en.json";
 
 /*
  * The Reading shelf (v1 11513-11725, the dialog 1247-1254). The orchestration (lib/shelf/actions.ts, shelfSummarise) is driven with fakes and checked against what v1 did with the same
- * inputs (packages/core/test/golden/shelf/cases.json, `golden:capture shelf`): shAddFiles' status line and records, shSaveHL's quotes and toasts, shRestore's checks and count,
+ * inputs (packages/core/test/golden/shelf/cases.json, `golden:capture shelf`): shSaveHL's quotes and toasts, shRestore's checks and count,
  * shBackup's bundle, shMatrixCsv's text, shColAdd/shColDel, and shSummarise's note, prompt, options and summary box. The Reading list (wave B Task 21a, which replaced the
  * shelf's dialog) is then mounted with the real store (lib/shelf/useShelf.ts, useProjectBlob) over a fake blob api: PDFs added, papers renamed and removed (after the question,
  * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the matrix columns in shelf_cols (Compare's table until Task 22), the summary gate, backup
@@ -68,7 +68,7 @@ import { shelfSummarise } from "../lib/ai/actions";
 import { heldBlobs } from "../lib/blobs/held";
 import type { ShelfIndex, ShelfPaper, StoredEntry } from "../lib/blobs/kinds";
 import {
-  addColumn, addFiles, backupShelf, deleteColumn, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, type ShelfEntry, type ShelfItem, type ShelfOps
+  addColumn, addOwnPdf, backupShelf, deleteColumn, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, type OwnPdfOps, type ShelfEntry, type ShelfItem, type ShelfOps
 } from "../lib/shelf/actions";
 import { PdfReaderUnavailable, type PdfDoc } from "../lib/shelf/extract";
 import { ReadingList } from "../components/literature/ReadingList";
@@ -84,6 +84,7 @@ const t = (k: string, v?: Record<string, string | number>) => tFormat(E, E, k, "
 const NOW = new Date("2026-10-19T10:00:00.000Z");
 const DEFAULTS = ["Sample", "Method", "Key finding"];
 const EMPTY: ShelfPaper = { pages: [], notes: [], cells: {} };
+const paperOf1 = (): ShelfPaper => ({ pages: ["First page text."], notes: [], cells: {} });
 /** A pdf.js stand-in for one file, from the specs the v1 capture drove shExtractPdf with. */
 const readPdfOf = (spec: Spec) => async (): Promise<PdfDoc> => {
   if (spec.error !== undefined) throw new Error(spec.error);
@@ -97,6 +98,9 @@ const blobText = (b: Blob) => new Promise<string>((done, fail) => {
   r.onerror = () => fail(r.error);
   r.readAsArrayBuffer(b);
 });
+
+/** Add your own PDF over fakes that find nothing at Crossref and keep nothing: a PDF is a paper only the reading list has unless the library holds it. */
+const addOwn = (files: File[], ops: ShelfOps, over: Partial<OwnPdfOps> = {}) => addOwnPdf(files, { ...ops, lookupDoi: async () => null, keep: async () => null, ...over });
 
 /** ShelfOps over plain arrays, recording what was stored and in what order. */
 function fakeOps(init: { library?: StoredEntry[] | null; entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; resolveTitle?: ShelfOps["resolveTitle"]; canWrite?: boolean; create?: ShelfOps["createPaper"]; alive?: () => boolean } = {}) {
@@ -123,42 +127,6 @@ function fakeOps(init: { library?: StoredEntry[] | null; entries?: ShelfEntry[];
   return { st, ops };
 }
 
-describe("addFiles is shAddFiles", () => {
-  it("v1's status line and records over v1's batch: not a PDF, already on the shelf, scanned, added (first 200 of 205), the two errors; each paper stored before its index entry", async () => {
-    // The dialog's tests replace extractPdfPages; this one runs the real one over the stand-in documents.
-    const { extractPdfPages } = await vi.importActual<typeof import("../lib/shelf/extract")>("../lib/shelf/extract");
-    const specs = new Map<File, Spec>();
-    const files = FX.add.files.map((f) => { const file = fileOf(f.name, f.size); specs.set(file, f.pdf ?? {}); return file; });
-    const { st, ops } = fakeOps({
-      entries: [{ id: "p0", title: "Dup", file: "dup.pdf", size: 100, added: "2026-01-01T00:00:00.000Z", total: 1, kept: 1 }],
-      extract: (f) => extractPdfPages(f, readPdfOf(specs.get(f)!))
-    });
-    await addFiles(files, ops);
-    expect(st.status[0]).toBe("Reading notes.docx…");
-    expect(st.status.at(-1)!.split(" | ")).toEqual(FX.add.status.split(" | "));
-    expect(st.created.map(([, p]) => p.pages)).toEqual(FX.add.records.map((r) => r.pages));
-    expect(st.created.every(([id, p]) => /^p[0-9a-z]+$/.test(id) && p.notes.length === 0 && Object.keys(p.cells).length === 0)).toBe(true);
-    expect(st.index.slice(1).map((e) => ({ title: e.title, file: e.file, size: e.size, total: e.total, kept: e.kept }))).toEqual(
-      FX.add.records.map((r) => ({ title: r.title, file: r.file, size: r.size, total: r.total, kept: r.pages.length })));
-    expect(st.index.slice(1).every((e) => e.added === NOW.toISOString())).toBe(true);
-    const ids = st.created.map(([id]) => id);
-    expect(st.log).toEqual(ids.flatMap((id) => ["create:" + id, "index"]));
-  });
-  it("pdf.js that does not load says v1's sentence; a paper that cannot be stored is not added; a kept broken index adds nothing (R16)", async () => {
-    const one = fakeOps({ extract: async () => { throw new PdfReaderUnavailable(); } });
-    await addFiles([fileOf("a.pdf", 3)], one.ops);
-    expect(one.st.status.at(-1)).toBe("a.pdf: " + E.sh2_the_pdf_reader_needs);
-    const two = fakeOps({ extract: async () => ({ pages: ["x".repeat(300)], total: 1 }), create: async () => { throw new Error(E.vault_save_locked); } });
-    await addFiles([fileOf("b.pdf", 3)], two.ops);
-    expect(two.st.status.at(-1)).toBe("b.pdf: " + E.vault_save_locked);
-    expect(two.st.index).toEqual([]);
-    const three = fakeOps({ canWrite: false, extract: vi.fn() });
-    await addFiles([fileOf("c.pdf", 3)], three.ops);
-    expect(three.st.status).toEqual([]);
-    expect(three.ops.extract).not.toHaveBeenCalled();
-  });
-});
-
 describe("a reading-list paper gets its pid when it is added or restored (wave B, Task 17)", () => {
   const LIBRARY: StoredEntry[] = [
     { title: "Daily screen time and sleep quality in adolescents", doi: "10.1038/s41598-019-49731-x", pid: "klibrary01" },
@@ -174,7 +142,7 @@ describe("a reading-list paper gets its pid when it is added or restored (wave B
       alone: { title: "A paper the library does not hold at all" }
     };
     const { st, ops } = fakeOps({ library: LIBRARY, extract: async (f) => page(f.name), resolveTitle: async (_p, stem) => named[stem]! });
-    await addFiles([fileOf("byDoi.pdf", 1), fileOf("byTitle.pdf", 2), fileOf("alone.pdf", 3)], ops);
+    await addOwn([fileOf("byDoi.pdf", 1), fileOf("byTitle.pdf", 2), fileOf("alone.pdf", 3)], ops);
     expect(st.index.map((e) => e.pid?.slice(0, 1))).toEqual(["k", "k", "k"]);
     expect(st.index[0]!.pid).toBe("klibrary01");
     expect(st.index[1]!.pid).toBe("klibrary02");
@@ -184,7 +152,7 @@ describe("a reading-list paper gets its pid when it is added or restored (wave B
 
   it("adding to a reading list whose older papers have no pid gives them one too", async () => {
     const { st, ops } = fakeOps({ library: LIBRARY, entries: [old("p0", { title: "Another kept paper about study habits" })], extract: async (f) => page(f.name), resolveTitle: async () => ({ title: "A new one on circadian rhythm" }) });
-    await addFiles([fileOf("n.pdf", 1)], ops);
+    await addOwn([fileOf("n.pdf", 1)], ops);
     expect(st.index[0]!.pid).toBe("klibrary02");
     expect(st.index[1]!.pid).toMatch(/^k/);
   });
@@ -192,7 +160,7 @@ describe("a reading-list paper gets its pid when it is added or restored (wave B
   it("with the library not read (null) nothing is linked and no pid is made: a new paper has none, and the papers already on the list stay as they are", async () => {
     const entries = [old("p0", { title: "Another kept paper about study habits" }), old("p1", { pid: "kkeep01" })];
     const { st, ops } = fakeOps({ library: null, entries, extract: async (f) => page(f.name), resolveTitle: async () => ({ title: "A new one on circadian rhythm" }) });
-    await addFiles([fileOf("n.pdf", 1)], ops);
+    await addOwn([fileOf("n.pdf", 1)], ops);
     expect(st.index).toHaveLength(3);
     expect(st.index.map((e) => e.pid)).toEqual([undefined, "kkeep01", undefined]);
     expect(st.index[2]).toMatchObject({ title: "A new one on circadian rhythm", file: "n.pdf" });
@@ -213,6 +181,33 @@ describe("a reading-list paper gets its pid when it is added or restored (wave B
     await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p1", title: "Restored", file: "r.pdf", pid: "klibrary02", pages: ["new"] }] }), ops);
     expect(st.index).toHaveLength(1);
     expect(st.index[0]).toMatchObject({ id: "p1", title: "Restored", file: "r.pdf", pid: "kkeep", doi: "10.1/kept" });
+  });
+
+  it("a restore keeps a new record's DOI, so a paper the library holds under another pid is found by it even when the titles differ (B2-R12: a restore must not split a paper)", async () => {
+    const { st, ops } = fakeOps({ library: LIBRARY });
+    // The backup came from another project: its pid is unknown here and its title is the student's own wording.
+    const rec = { id: "p9", title: "My renamed copy of the screen time paper", file: "s.pdf", doi: " 10.1038/S41598-019-49731-X ", pid: "kfromotherproject", pages: ["a"] };
+    await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [rec] }), ops);
+    expect(st.index).toHaveLength(1);
+    expect(st.index[0]).toMatchObject({ id: "p9", title: "My renamed copy of the screen time paper", doi: "10.1038/S41598-019-49731-X", pid: "klibrary01" });
+    // A DOI that is blank, or not a string, adds no doi key.
+    const two = fakeOps({ library: LIBRARY });
+    await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p1", title: "A", pages: ["a"], doi: "  " }, { id: "p2", title: "B", pages: ["b"], doi: 5 }] }), two.ops);
+    expect(two.st.index.every((e) => !("doi" in e))).toBe(true);
+  });
+
+  it("a restore with the library not read still keeps the record's DOI (the paper-id migration links by it later); a replaced paper with no DOI of its own takes the record's, one that has a DOI keeps it", async () => {
+    const { st, ops } = fakeOps({
+      library: null, entries: [old("p1"), old("p2", { doi: "10.1/kept" })],
+      papers: { p1: { pages: ["old"], notes: [], cells: {} }, p2: { pages: ["old"], notes: [], cells: {} } }
+    });
+    const papers = [
+      { id: "p1", title: "One", pages: ["x"], doi: "10.1038/s41598-019-49731-x" },
+      { id: "p2", title: "Two", pages: ["y"], doi: "10.9/other" },
+      { id: "p3", title: "Three", pages: ["z"], doi: "10.1/new" }
+    ];
+    await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers }), ops);
+    expect(st.index.map((e) => [e.id, e.doi, e.pid])).toEqual([["p1", "10.1038/s41598-019-49731-x", undefined], ["p2", "10.1/kept", undefined], ["p3", "10.1/new", undefined]]);
   });
 
   it("a restore takes a backup record's pid only if a library entry in this project has it; otherwise the library is matched by title, or a new pid is made", async () => {
@@ -240,29 +235,29 @@ describe("a new shelf paper takes its real title (W15, register row D-S2-28)", (
   it("the resolved title and DOI go on the new entry; the file stem and the pages are what was asked of it", async () => {
     const resolveTitle = vi.fn(async () => ({ title: "Daily screen time and sleep quality in adolescents", doi: "10.1038/s41598-019-49731-x" }));
     const { st, ops } = fakeOps({ extract: async () => ({ pages: PAGES, total: 1 }), resolveTitle });
-    await addFiles([fileOf("scirep.pdf", 9)], ops);
+    await addOwn([fileOf("scirep.pdf", 9)], ops);
     expect(resolveTitle).toHaveBeenCalledWith(PAGES, "scirep");
     expect(st.index).toHaveLength(1);
     expect(st.index[0]).toMatchObject({ title: "Daily screen time and sleep quality in adolescents", doi: "10.1038/s41598-019-49731-x", file: "scirep.pdf" });
   });
   it("a paper with no DOI gets no doi key; a title lookup that throws falls back to v1's guess and the paper is still added", async () => {
     const plain = fakeOps({ extract: async () => ({ pages: ["Sleep and Memory in Adolescents\n" + "word ".repeat(60)], total: 1 }), resolveTitle: async () => ({ title: "Sleep and Memory in Adolescents" }) });
-    await addFiles([fileOf("a.pdf", 1)], plain.ops);
+    await addOwn([fileOf("a.pdf", 1)], plain.ops);
     expect(plain.st.index[0]).not.toHaveProperty("doi");
     const broken = fakeOps({ extract: async () => ({ pages: PAGES, total: 1 }), resolveTitle: async () => { throw new Error("boom"); } });
-    await addFiles([fileOf("b.pdf", 2)], broken.ops);
+    await addOwn([fileOf("b.pdf", 2)], broken.ops);
     expect(broken.st.index.map((e) => e.title)).toEqual([shTitleGuess(PAGES, "b")]);
-    expect(broken.st.status.at(-1)).toBe("b.pdf" + E.sh2_added_pages!.replace("{pagesCount}", "1"));
+    expect(broken.st.status.at(-1)).toBe("b.pdf: added to your reading list.");
   });
   it("papers already on the shelf keep their titles (their Analyse notes are keyed by the title); a restore keeps each record's own", async () => {
     const resolveTitle = vi.fn(async () => ({ title: "Resolved Title Of The New Paper", doi: "10.1/x" }));
     const { st, ops } = fakeOps({ entries: [old("p0", "Named by the first line"), old("p1", "Renamed by the student")], extract: async () => ({ pages: PAGES, total: 1 }), resolveTitle });
-    await addFiles([fileOf("new.pdf", 3)], ops);
+    await addOwn([fileOf("new.pdf", 3)], ops);
     expect(resolveTitle).toHaveBeenCalledTimes(1);
     expect(st.index.map((e) => e.title)).toEqual(["Named by the first line", "Renamed by the student", "Resolved Title Of The New Paper"]);
     expect(st.index[0]).not.toHaveProperty("doi");
     // The same file added again is refused before any title is asked for; a restore asks for none.
-    await addFiles([fileOf("new.pdf", 3)], ops);
+    await addOwn([fileOf("new.pdf", 3)], ops);
     await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p9", title: "From the backup", file: "r.pdf", pages: PAGES }] }), ops);
     expect(resolveTitle).toHaveBeenCalledTimes(1);
     expect(st.index.at(-1)!.title).toBe("From the backup");
@@ -303,20 +298,20 @@ describe("a new shelf paper takes its real title (W15, register row D-S2-28)", (
 });
 
 describe("a batch stops once the dialog that started it has gone (alive() false)", () => {
-  it("addFiles stores no paper after the close, and a paper whose text was already being stored still gets its index entry", async () => {
+  it("Add your own PDF stores no paper after the close, and a paper whose text was already being stored still gets its index entry", async () => {
     let alive = true;
     const { st, ops } = fakeOps({
       alive: () => alive,
-      extract: async (f) => { if (f.name === "b.pdf") alive = false; return { pages: ["x".repeat(300)], total: 1 }; },
+      extract: async () => ({ pages: ["x".repeat(300)], total: 1 }),
       create: async (id, p) => { st.created.push([id, p]); st.log.push("create:" + id); if (st.created.length === 1) alive = false; }
     });
-    await addFiles([fileOf("a.pdf", 1), fileOf("b.pdf", 2), fileOf("c.pdf", 3)], ops);
-    // a: closed while its text was stored, so its entry is still written; b and c: nothing.
+    await addOwn([fileOf("a.pdf", 1), fileOf("b.pdf", 2), fileOf("c.pdf", 3)], ops);
+    // a: closed while its text was stored, so its entry is still written; b and c were read together with a, and are not stored.
     expect(st.created).toHaveLength(1);
     expect(st.index.map((e) => e.file)).toEqual(["a.pdf"]);
     alive = true;
     const two = fakeOps({ alive: () => alive, extract: async () => { alive = false; return { pages: ["x".repeat(300)], total: 1 }; } });
-    await addFiles([fileOf("a.pdf", 1)], two.ops);
+    await addOwn([fileOf("a.pdf", 1)], two.ops);
     expect(two.st.created).toEqual([]);
     expect(two.st.index).toEqual([]);
   });
@@ -882,6 +877,82 @@ describe("the Reading list (wave B Task 21a)", () => {
     await until(() => heldBlobs.has(blobId("p1", "shelf_index")), "the held entry");
     expect(ensureUnlocked).not.toHaveBeenCalled();
     expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
+  });
+
+  describe("a detached index write over an index that does not open on this device (Task 21a fix round, ruling R16)", () => {
+    const BAD = "AAAAAAAAAAAAAAAA.sealed";
+    const entry: ShelfEntry = { id: "pz", title: "Z", file: "z.pdf", size: 1, added: NOW.toISOString(), total: 1, kept: 1 };
+    const detachedVault = () => vault as unknown as BlobVault;
+
+    it("after the student said yes in the list it replaces the index with the paper's entry, so a stored paper is not left out of its index", async () => {
+      server.blobs.push({ projectId: "p1", kind: "shelf_index", body: BAD, keyVersion: 1 });
+      writeIndexDetached("p1", (prev) => [...(prev ?? []), entry], detachedVault, { replaceBroken: true });
+      await until(() => puts("shelf_index").length > 0, "the index replaced");
+      await settle(50);
+      expect(stored<ShelfIndex>("shelf_index")).toEqual([entry]);
+      expect(puts("shelf_index")).toHaveLength(1);
+      expect(heldBlobs.size).toBe(0);
+    });
+
+    it("without that yes the entry is held, not dropped and not written over the index: the next list shows it and asks before it writes", async () => {
+      server.blobs.push({ projectId: "p1", kind: "shelf_index", body: BAD, keyVersion: 1 });
+      server.blobs.push({ projectId: "p1", kind: "shelf_paper:pz", body: JSON.stringify(paperOf1()), keyVersion: 0 });
+      writeIndexDetached("p1", (prev) => [...(prev ?? []), entry], detachedVault);
+      await until(() => heldBlobs.has(blobId("p1", "shelf_index")), "the held entry");
+      await settle(50);
+      expect(puts("shelf_index")).toEqual([]);
+      expect(heldBlobs.ops(blobId("p1", "shelf_index"))).toHaveLength(1);
+      // A drain has nobody to ask either.
+      await act(async () => { await heldBlobs.drain(); });
+      expect(heldBlobs.ops(blobId("p1", "shelf_index"))).toHaveLength(1);
+      expect(puts("shelf_index")).toEqual([]);
+      // The next list adopts it, says the index does not open, lists the paper, and asks before its next write replaces the index.
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+      h.extract.mockImplementation(async () => ({ pages: ["x".repeat(300)], total: 1 }));
+      await mount();
+      await until(() => !!tid("rl-broken") && tids("rl-row").length === 1, "the held paper in the list");
+      expect(heldBlobs.size).toBe(0);
+      expect(puts("shelf_index")).toEqual([]);
+      await pick(tid("rl-file")!, [fileOf("next.pdf", 5)]);
+      await until(() => puts("shelf_index").length > 0, "the index replaced");
+      expect(confirm).toHaveBeenCalledWith(E.rl_broken_confirm);
+      expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.file)).toEqual(["z.pdf", "next.pdf"]);
+    });
+
+    it("leaving the list after saying yes to replacing a broken index, while a paper's text is being stored: the index is replaced and lists that paper, and its text is not orphaned", async () => {
+      server.blobs.push({ projectId: "p1", kind: "shelf_index", body: BAD, keyVersion: 1 });
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      const held = holdPaperPut(1);
+      h.extract.mockImplementation(async (f: File) => ({ pages: [f.name + " " + "word ".repeat(60)], total: 1 }));
+      const d = await mount();
+      await until(() => !!tid("rl-broken"), "the broken note");
+      await pick(tid("rl-file")!, [fileOf("a.pdf", 1)]);
+      await until(() => held.reached, "a's text being stored");
+      await d.close();
+      held.release();
+      await until(() => puts("shelf_index").length > 0, "the index replaced");
+      await settle(100);
+      const index = stored<ShelfIndex>("shelf_index")!;
+      expect(index.map((e) => e.file)).toEqual(["a.pdf"]);
+      expect(paperIds()).toEqual([index[0]!.id]);
+      expect(heldBlobs.size).toBe(0);
+    });
+
+    it("leaving the list when the student was never asked (the index broke meanwhile): the entry is held for the next list, not written over the index", async () => {
+      const held = holdPaperPut(1);
+      h.extract.mockImplementation(async (f: File) => ({ pages: [f.name + " " + "word ".repeat(60)], total: 1 }));
+      const d = await mount();
+      await pick(tid("rl-file")!, [fileOf("a.pdf", 1)]);
+      await until(() => held.reached, "a's text being stored");
+      await d.close();
+      // Another device writes an index this one cannot open, before the entry goes in.
+      server.blobs.push({ projectId: "p1", kind: "shelf_index", body: BAD, keyVersion: 1 });
+      held.release();
+      await until(() => heldBlobs.has(blobId("p1", "shelf_index")), "the held entry");
+      await settle(100);
+      expect(puts("shelf_index")).toEqual([]);
+      expect(heldBlobs.ops(blobId("p1", "shelf_index"))).toHaveLength(1);
+    });
   });
 
   it("the list shows one loading sign, not its empty state or its rows, until its data is read (W8; one status region, wave A LATER T18)", async () => {

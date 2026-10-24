@@ -74,15 +74,19 @@ export async function readPaperOnce(projectId: string, paperId: string, vault: B
  * An update of a project's shelf_index made after the Reading list that started it went away (left, or another project opened): a headless client of its own (no passphrase
  * prompt: the list is gone) reads the index (after any last save of the list's client, and any held value), applies the update, sends it, and is disposed of; what it
  * cannot send is held and sent later, as any blob value is (held.ts). The run is tracked under the blob's id, so a list opened meanwhile waits for it before its first read.
+ * `replaceBroken`: the student said yes, in the list, to replacing a stored index that does not open on this device (R16), so the update may go over it: the index is read first
+ * and the update is set after the read, which is a panel's go-ahead for the client. Without that yes the update is set before the read, so over an index that does not open it is held
+ * (not sent, not dropped) and the next list shows it and asks.
  */
-export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | null) => ShelfIndex, vault: () => BlobVault): void {
+export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | null) => ShelfIndex, vault: () => BlobVault, opts: { replaceBroken?: boolean } = {}): void {
   const id = blobId(projectId, "shelf_index");
   const c = projectBlobClient("shelf_index", projectId, vault, () => {}, { headless: true });
-  c.set(u);
+  if (!opts.replaceBroken) c.set(u);
   // Not c.start(): it waits for idle(id), which now includes this run. What is held for the blob is adopted ahead of the update, as start() does.
   void heldBlobs.after(id, async () => {
     const held = heldBlobs.take(id);
     if (held) c.adopt(held as Parameters<typeof c.adopt>[0]);
+    if (opts.replaceBroken) { await c.flush(); c.set(u); }
     await c.flush();
   }).finally(() => c.dispose());
 }
@@ -151,10 +155,9 @@ export function useShelfStore(): ShelfStore {
     return () => { l.mounted = false; };
   }, []);
 
-  // A project's clients go with it.
+  // A project's clients go with it. The student's yeses (R16, `confirmed`) are kept with their project's id, so they need no reset here: a batch of the project left behind still has its own.
   useEffect(() => {
     const mine = clients.current;
-    confirmed.current = new Set();
     return () => { for (const c of mine.values()) c.dispose(); mine.clear(); };
   }, [projectId]);
 
@@ -184,13 +187,14 @@ export function useShelfStore(): ShelfStore {
   const open = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => { if (open) for (const c of clients.current.values()) c.resume(); }, [open]);
 
-  /** R16: the first write over a blob that does not open on this device asks; the answer holds for that blob while the list is open. */
+  /** R16: the first write over a blob that does not open on this device asks; the answer holds for that blob while the list is open. It is kept with the project's id, so a yes in one project is never read as another's. */
   const mayWrite = useCallback((key: string, broken: boolean | undefined) => {
-    if (!broken || confirmed.current.has(key)) return true;
+    const k = `${projectId}\u0000${key}`;
+    if (!broken || confirmed.current.has(k)) return true;
     if (!window.confirm(t("rl_broken_confirm"))) return false;
-    confirmed.current.add(key);
+    confirmed.current.add(k);
     return true;
-  }, [t]);
+  }, [t, projectId]);
 
   const ops = useMemo<ShelfStore["ops"]>(() => {
     const here = () => live.current.mounted && live.current.projectId === projectId;
@@ -202,7 +206,8 @@ export function useShelfStore(): ShelfStore {
       // A refused write never reports success (a pop-out's guard, lib/popout/mode.ts).
       if (!projectId || !blobWritable("shelf_index")) return false;
       // Closed (or another project) while a paper was being stored: its entry goes through a client of its own, so no stored paper is left out of its index.
-      if (!here()) { writeIndexDetached(projectId, u, () => vaultRef.current); return true; }
+      // The index is replaced over a stored one that does not open only if the student said yes to that in this list (R16).
+      if (!here()) { writeIndexDetached(projectId, u, () => vaultRef.current, { replaceBroken: confirmed.current.has(`${projectId}\u0000index`) }); return true; }
       if (current.current.index.readOnly || !mayWrite("index", current.current.index.broken)) return false;
       current.current.index.set(u);
       return true;

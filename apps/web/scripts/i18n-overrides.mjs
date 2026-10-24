@@ -112,11 +112,10 @@ export const V2_STRINGS = {
   // A stored retraction or Crossref check cache that does not open on this device: a forced check asks before replacing it (ruling R16); the quiet
   // refresh on opening the tab leaves it alone. DRAFT Hindi.
   vault_check_broken_confirm: { en: "Your saved check results cannot be opened on this device. Checking now replaces them. Check anyway?", hi: "आपके सहेजे हुए जाँच परिणाम इस डिवाइस पर नहीं खुल सकते। अभी जाँचने से वे बदल जाएँगे। फिर भी जाँचें?" },
-  // The Reading shelf while the vault is locked (its papers cannot be read) and a stored shelf index, paper or matrix column list that does not open on this device (shown,
-  // and confirmed before the first write replaces it: ruling R16). DRAFT Hindi.
+  // The Reading shelf while the vault is locked (its papers cannot be read) and a stored shelf index, paper or matrix column list that does not open on this device (shown;
+  // the Reading list asks before the first write replaces one, with rl_broken_confirm: ruling R16). DRAFT Hindi.
   vault_shelf_locked: { en: "Your Reading shelf is locked. Unlock your vault to read it and save your changes.", hi: "आपकी रीडिंग शेल्फ़ बंद है। इसे पढ़ने और अपने बदलाव सहेजने के लिए अपनी तिजोरी खोलें।" },
   vault_shelf_broken: { en: "Part of your saved Reading shelf cannot be opened on this device. Nothing was changed.", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का कुछ हिस्सा इस डिवाइस पर नहीं खुल सकता। कुछ भी बदला नहीं गया।" },
-  vault_shelf_broken_confirm: { en: "This part of your saved Reading shelf cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "आपकी सहेजी हुई रीडिंग शेल्फ़ का यह हिस्सा इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
   // Analyse a paper: stored paper cards (the ap_notes blob) or a stored choice of the cards' columns (ap_cols) that does not open on this device, confirmed before the first write
   // replaces it (ruling R16). DRAFT Hindi.
   // …and while the stored paper cards cannot be read: locked (shown in place of the cards, nothing can be typed until the vault opens) or not openable on this device. DRAFT Hindi.
@@ -124,10 +123,8 @@ export const V2_STRINGS = {
   vault_ap_broken: { en: "Your saved paper cards cannot be opened on this device. Nothing was changed.", hi: "आपके सहेजे हुए पेपर कार्ड इस डिवाइस पर नहीं खुल सकते। कुछ भी बदला नहीं गया।" },
   vault_ap_broken_confirm: { en: "Your saved paper cards cannot be opened on this device. Saving now replaces them. Save anyway?", hi: "आपके सहेजे हुए पेपर कार्ड इस डिवाइस पर नहीं खुल सकते। अभी सहेजने से वे बदल जाएँगे। फिर भी सहेजें?" },
   vault_ap_cols_broken_confirm: { en: "Your saved choice of columns cannot be opened on this device. Saving now replaces it. Save anyway?", hi: "कॉलम का आपका सहेजा हुआ चुनाव इस डिवाइस पर नहीं खुल सकता। अभी सहेजने से वह बदल जाएगा। फिर भी सहेजें?" },
-  // Reading shelf copy with no v1 sentence (v1 has no failure path for a removal, and always knows a paper's highlights): a removal the server refused, and a paper's line
-  // while its blob is not read yet (the pages only). DRAFT Hindi.
+  // Reading shelf copy with no v1 sentence (v1 has no failure path for a removal): a removal the server refused. DRAFT Hindi.
   shelf_remove_fail: { en: "That paper could not be removed. Check your connection and try again.", hi: "वह पेपर हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" },
-  shelf_pages_only: { en: "· {pagesCount} pages", hi: "· {pagesCount} पृष्ठ" },
   vault_remember: { en: "Remember on this computer", hi: "इस कंप्यूटर पर याद रखें" },
   vault_forget_q: { en: "Forget the vault on this computer?", hi: "इस कंप्यूटर पर तिजोरी को भुला दें?" },
   vault_forget_btn: { en: "Forget on this computer", hi: "इस कंप्यूटर पर भुला दें" },
