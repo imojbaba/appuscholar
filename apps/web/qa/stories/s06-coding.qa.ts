@@ -1,4 +1,4 @@
-import type { Page, Response } from "@playwright/test";
+import type { BrowserContext, Page, Response, Route } from "@playwright/test";
 import { QUAL_PALETTE, qualBuildMarkdown, qualDeleteCascade, type QualCode, type QualPassage } from "@appuscholar/core";
 import { MARK } from "../fixtures/common";
 import { hugeWords } from "../fixtures/huge";
@@ -10,7 +10,7 @@ import { serverRows } from "../support/server";
 import {
   OFFLINE_CONSOLE, apiGet, catchDownload, goOffline, goOnline, lockByReload, newStudent, selectInDoc, setLang, toPlace, typeInDoc, unlock, type Downloaded, type Student
 } from "../support/student";
-import { expect, test } from "../support/test";
+import { expect, notChecked, test } from "../support/test";
 
 /**
  * S6, "I code my interviews and export the coded passages" (docs/walkthroughs/tools-c.md rows 1 to 13; apps/web/e2e/tools-c.spec.ts walks rows 1 to 10, and the live record of the sheet is
@@ -32,11 +32,11 @@ import { expect, test } from "../support/test";
  *    PUT that carries the change (`savedBy`), never for a time.
  *  - The Hindi checkpoints exempt only what is not the app's words: the delete question is core's English sentence (D-S2-80, the register keeps it English), and it holds the student's code name;
  *    its two buttons are checked in Hindi by name. The phone case names its codes in Hindi, as a student in Hindi would: the Hindi rule reads two English code names side by side as English.
- *  - Tagging by touch (S6-06, row 10) is AWAITING OJ's and Dr. Sharma's decision, and known.json has no id for it yet. The case records what happens in the label of one conceptual check, which
- *    fails only if the tap ends in neither of the sheet's two outcomes ("Tagged as ..." or "Select some text ... first"), or the page and the document disagree about it.
- *  - Going home. Seen on this build (a probe, four of four runs, vault on and off): a click on the project's name 0.2 s after the last code was added, inside the 0.8 s the code list takes to be
- *    saved, leaves the home's Collection row empty (no "3 codes") for at least 6 s, until the page is read again. That is faster than the sheet's walk, so S6-01 goes at a student's pace (it
- *    waits for the save, as the sheet's "read the line under the tree" does) and the observation is in the story's report, not in known.json.
+ *  - Tagging by touch (S6-06, row 10) is OJ's and Dr. Sharma's decision (Q32, awaiting): the case asserts that the passage is on the screen when the code is tapped, which it is not on a phone, and
+ *    puts what happened in the message. A second check, with a fixed label, holds that the tap ends in one of the sheet's two outcomes and that the page and the document agree about it.
+ *  - Going home (Q31). The last code's save is held for 2 s (a slow network) and the student presses the project's name at once: the home reads the work list while the save is still on its way,
+ *    and its Collection row stays empty and the stage "Not started" until it is opened again. The case checks that the press came before the save was let go, so a stalled runner is NOT CHECKED
+ *    and a later FIXED? means a fix. The sheet's own "3 codes" check follows, once the codes are on the server.
  */
 const SHEET = "tools-c.md";
 const E2E = "e2e/tools-c.spec.ts";
@@ -116,6 +116,23 @@ async function savedBy<T>(page: Page, saved: (r: Response) => boolean, action: (
   const out = await action();
   await put;
   return out;
+}
+
+/**
+ * Holds each PUT of the project's code list for `ms` before it goes on (spec section 6, a slow network, for this one save), and notes when each was let go. The hold ends on time, not when
+ * the page does something (a page that waits for its save must not wait for this too). `stop` takes the hold off.
+ */
+async function slowCodesSave(context: BrowserContext, ms: number): Promise<{ released: number[]; stop(): Promise<void> }> {
+  const released: number[] = [];
+  const pattern = /\/blobs\/qual_codes$/;
+  const hold = async (route: Route) => {
+    if (route.request().method() !== "PUT") return void (await route.fallback().catch(() => {}));
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    released.push(Date.now());
+    await route.fallback().catch(() => {});
+  };
+  await context.route(pattern, hold);
+  return { released, stop: () => context.unroute(pattern, hold) };
 }
 
 /** The id of the code with this name: the tree's name button carries it in its test id. */
@@ -328,7 +345,7 @@ async function setup(page: Page, qa: Qa, o: { vault?: "on" | "off"; lang?: "en" 
 
 // ---- S6-01 ---------------------------------------------------------------------------------------------------------------------------------------------
 
-test("S6-01 I code my interviews and export the coded passages: three codes, tags in two documents, shading, passages, the Markdown file, the project zip and a delete", { tag: ["@slice"] }, async ({ page, qa }) => {
+test("S6-01 I code my interviews and export the coded passages: three codes, tags in two documents, shading, passages, the Markdown file, the project zip and a delete", { tag: ["@slice"] }, async ({ page, context, qa }) => {
   qa.begin({
     story: "S6",
     id: "S6-01",
@@ -405,9 +422,48 @@ test("S6-01 I code my interviews and export the coded passages: three codes, tag
     }, { source: `${SHEET} row 2` });
     await addCode(page, "Exam nerves", { under: ids.anxiety });
     ids.nerves = await codeId(page, "Exam nerves");
-    // The codes are saved 0.8 s after the last one is added; a student reads the line under the tree before going to the home, and so does the case.
-    await savedBy(page, isBlobPut("qual_codes"), () => addCode(page, "Sleep"));
+    // The last code's save is slow (2 s, a slow network), and the student presses the project's name at once: Q31. The page saves a code list 0.8 s after the last change, or when the place is left.
+    const slow = await slowCodesSave(context, 2_000);
+    /** What `GET /projects?include=work` answered each time the home asked, and when: the kinds of blob it lists for this project. */
+    const lists: Array<{ at: number; kinds: string[] }> = [];
+    const onList = (r: Response) => {
+      if (r.request().method() !== "GET" || !/\/projects\?include=work$/.test(r.url())) return;
+      const at = Date.now();
+      void r.json().then(
+        (all: Array<{ id: string; blobs?: Array<{ kind: string }> }>) => void lists.push({ at, kinds: (all.find((p) => p.id === id)?.blobs ?? []).map((b) => b.kind) }),
+        () => void lists.push({ at, kinds: [] })
+      );
+    };
+    page.on("response", onList);
+    await addCode(page, "Sleep");
     ids.sleep = await codeId(page, "Sleep");
+    await page.getByTestId("place-home").click();
+    const pressedAt = Date.now();
+    await expect(page.getByTestId("home-stages")).toBeVisible();
+    await qa.check("data", "going home straight after the last code, the home's Collection and analysis row says \"3 codes\" and the stage is not Not started, without a reload", async () => {
+      // The row and the stage are each looked at (together, so a failure costs one wait, not two).
+      const looked = await Promise.allSettled([
+        expect(page.getByTestId("home-detail-collect"), "the Collection and analysis row").toContainText(T("qual_facts_codes", { n: 3 }), { timeout: ACTION_MS }),
+        expect(page.getByTestId("home-state-collect"), "the Collection and analysis stage").not.toHaveText(T("state_not_started"), { timeout: ACTION_MS })
+      ]);
+      const failed = looked.flatMap((r) => (r.status === "rejected" ? [r.reason instanceof Error ? r.reason.message.split("\n")[0]! : String(r.reason)] : []));
+      const failure = failed.length ? failed.join("; ") : undefined;
+      // The race is only reproduced when the student pressed the name while the save was still held: a press after its release (a stalled runner) measures nothing about the page.
+      // A page that waits for the save before it reads, or reads again after it, passes this and the check above, and then the case says FIXED?.
+      if (slow.released.length > 0 && slow.released[0]! <= pressedAt) notChecked(`the save was let go ${pressedAt - slow.released[0]!} ms before the project's name was pressed, so the race was not set up`);
+      if (failure) {
+        const asked = lists.map((l) => `${l.at - pressedAt} ms after the press: ${l.kinds.includes("qual_codes") ? "lists" : "does not list"} the code list`).join("; ");
+        const row = await page.getByTestId("home-detail-collect").innerText();
+        const stage = await page.getByTestId("home-state-collect").innerText();
+        throw new Error(`Not as expected (${failure}). The row reads "${row}" and the stage "${stage}". The home asked for the work list ${lists.length} time(s) (${asked || "no answer seen"}); the code list's save was let go ${slow.released.length ? `${slow.released[0]! - pressedAt} ms after` : "not yet"} the press.`);
+      }
+    }, { source: `${SHEET} row 2 ("Then press the project's name ... The home's row ends with \"3 codes\""); spec section 4 (cross-tool: the home's stage states follow the work done)`, known: "Q31" });
+    page.off("response", onList);
+    // Back to the tab and to the home again, as the sheet's walk goes: once the save has landed (the tab waits for it) the server holds the codes.
+    await openCoding(page, id);
+    await expect.poll(() => slow.released.length, { timeout: ACTION_MS }).toBeGreaterThan(0);
+    await slow.stop();
+    await expect.poll(async () => (await serverRows(s.uid)).blobs.some((b) => b.kind === "qual_codes"), { timeout: ACTION_MS, message: "the server holds the code list" }).toBe(true);
     await qa.check("data", "the tree reads Anxiety, Exam nerves indented under it, then Sleep", async () => {
       const rows = await page.locator('li[data-testid^="qual-code-"]').evaluateAll((els) =>
         els.map((e) => [e.getAttribute("data-testid"), (e as HTMLElement).style.paddingLeft, e.querySelector('[data-testid^="qual-name-"]')?.textContent?.trim() ?? ""] as [string | null, string, string]));
@@ -423,7 +479,7 @@ test("S6-01 I code my interviews and export the coded passages: three codes, tag
       expect(g[1]! > g[0]! && g[1]! > g[2]!, `green: ${g}`).toBe(true);
       expect(b[2]! > b[0]! && b[2]! > b[1]!, `blue: ${b}`).toBe(true);
     }, { source: `${SHEET} row 2 ("amber, green, blue"); ${E2E} step 2` });
-    await qa.check("data", "the home's Collection and analysis row ends with \"3 codes\" and never says \"Not built yet\"", async () => {
+    await qa.check("data", "the home's Collection and analysis row ends with \"3 codes\" and never says \"Not built yet\", once the codes are on the server", async () => {
       await page.getByTestId("place-home").click();
       await expect(page.getByTestId("home-stages")).toBeVisible();
       await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_codes", { n: 3 }));
@@ -661,10 +717,10 @@ test("S6-01 I code my interviews and export the coded passages: three codes, tag
       await expect(page.getByTestId("qual-name-" + ids.sleep)).toHaveText("Sleep");
     }, { source: `${SHEET} row 9; ${E2E} step 9` });
     await qa.check("data", "in both documents the Anxiety shading is gone and every word is still there, and the Sleep phrase is still shaded blue", async () => {
-      await pickDoc(page, ZOE.title);
+      await pickDoc(page, ZOE.title, PHRASE.anxiety2);
       expect(await tagCount(page), "tags left in the second interview").toBe(0);
       expect(flat(await editorOf(page).innerText())).toBe(words[ZOE.title]);
-      await pickDoc(page, KAVITA.title);
+      await pickDoc(page, KAVITA.title, PHRASE.anxiety1);
       expect(await tagTexts(page, ids.anxiety)).toEqual([]);
       expect(await tagCount(page), "tags left in the first interview").toBe(1);
       expect(await tagTexts(page, ids.sleep)).toEqual([PHRASE.sleep1]);
@@ -823,7 +879,8 @@ test("S6-03 a code named with quotes and an accent, and passages in Hindi, with 
   await qa.step("codes with quotes, an accent and Hindi", async () => {
     await addCode(page, NAMES.late);
     await addCode(page, NAMES.worth);
-    await addCode(page, NAMES.hindi);
+    // The code list is saved 0.8 s after the last change: the reload below must not come before it.
+    await savedBy(page, isBlobPut("qual_codes"), () => addCode(page, NAMES.hindi));
     ids.late = await codeId(page, NAMES.late);
     ids.worth = await codeId(page, NAMES.worth);
     ids.hindi = await codeId(page, NAMES.hindi);
@@ -843,7 +900,7 @@ test("S6-03 a code named with quotes and an accent, and passages in Hindi, with 
     await tagWith(page, ids.worth, NAMES.worth);
     await qa.check("data", "each tag holds the words selected, quotes, accent and Hindi as they are", async () => {
       expect(await tagTexts(page, ids.worth)).toEqual([AWKWARD.straight]);
-      await pickDoc(page, KAVITA.title);
+      await pickDoc(page, KAVITA.title, AWKWARD.cafe);
       expect(await tagTexts(page, ids.late)).toEqual([AWKWARD.cafe]);
       expect(await tagTexts(page, ids.worth)).toEqual([AWKWARD.curly]);
       expect(await tagTexts(page, ids.hindi)).toEqual([AWKWARD.hindi]);
@@ -852,7 +909,6 @@ test("S6-03 a code named with quotes and an accent, and passages in Hindi, with 
   });
 
   await qa.step("reload", async () => {
-    // The names are saved with the code list (0.8 s after the last change): the reload must not come before it.
     await page.reload();
     await expect(panel(page)).toBeVisible();
     await ensureDoc(page);
@@ -1066,10 +1122,10 @@ test("S6-05 deleting a code while the network is off says \"Not deleted\" and ke
       await expect(page.getByTestId("qual-name-" + ids.sleep)).toHaveText("Sleep");
     }, { source: `${SHEET} row 12 ("Online, the same delete works")` });
     await qa.check("data", "in both documents the Anxiety shading is gone, every word is kept and Sleep is still tagged", async () => {
-      await pickDoc(page, ZOE.title);
+      await pickDoc(page, ZOE.title, PHRASE.anxiety2);
       expect(await tagCount(page)).toBe(0);
       expect(flat(await editorOf(page).innerText())).toBe(words[ZOE.title]);
-      await pickDoc(page, KAVITA.title);
+      await pickDoc(page, KAVITA.title, PHRASE.anxiety1);
       expect(await tagTexts(page, ids.anxiety)).toEqual([]);
       expect(await tagTexts(page, ids.sleep)).toEqual([PHRASE.sleep1]);
       expect(flat(await editorOf(page).innerText())).toBe(words[KAVITA.title]);
@@ -1225,20 +1281,23 @@ test("S6-06 on a phone in Hindi, the Coding tab fits the screen, its row control
     if (!openedByTap) await page.getByTestId("place-open-doc").tap();
     await expect(editorOf(page)).toBeVisible();
     const tagsInDoc = await tagTexts(page, ids.chinta);
-    const sentence = [
-      docOnScreen ? "the passage is on the screen when the code is tapped" : "back at the place the document is hidden, so the passage is not on the screen when the code is tapped",
+    // What the student met, in words, for the report's message (the labels of the checks stay the same whatever happens).
+    const observed = [
+      docOnScreen ? "the passage was on the screen when the code was tapped" : "back at the place the document is hidden, so the passage was not on the screen when the code was tapped",
       tagged ? "tapping the code tagged the selected phrase" : refused ? "tapping the code said to select some text first and tagged nothing" : `tapping the code said "${said}"`,
-      ...(openedByTap ? ["the tap then opened the document full screen over the place"] : [])
+      ...(openedByTap ? ["the tap then opened the document full screen over the place, hiding the code list and the line that says what was done"] : [])
     ].join("; ");
-    await qa.check("conceptual", `tag by touch, recorded for OJ and Dr. Sharma (row 10, awaiting a decision; no id in known.json yet): ${sentence}`, async () => {
+    await qa.check("conceptual", "the passage to be tagged is on the screen when the code is tapped", async () => {
+      expect(docOnScreen, `${observed}. On a phone an open document hides the place (DocumentBeside), so the student cannot see the passage and the codes together: the sheet's Observations leave it to OJ and Dr. Sharma`).toBe(true);
+    }, { source: `${SHEET} row 10 and Observations ("on a phone the open document hides the place ... so tagging may not be possible there"); apps/web/components/frame/DocumentBeside.tsx`, known: "Q32" });
+    await qa.check("data", "tapping the code ends in one of the sheet's two ways, and a tag is in the document exactly when the page says it tagged", async () => {
       expect(tagged || refused, `the tap ended on neither of the sheet's two outcomes: "${said}"`).toBe(true);
-      // Consistent with itself: a tag is in the document exactly when the page said it tagged.
-      expect(tagsInDoc.length > 0, "a tag is in the document exactly when the page says it tagged").toBe(tagged);
+      expect(tagsInDoc.length > 0, `a tag is in the document exactly when the page says it tagged (${observed})`).toBe(tagged);
       if (tagged) {
         expect(tagsInDoc).toEqual([PHRASE.anxiety1]);
         await expectShaded(page, ids.chinta, QUAL_PALETTE[0]!);
       }
-    }, { source: `${SHEET} row 10 ("record exactly what you see: whether the phrase is still selected after going back, and whether tapping the code tags it or says \"Select some text in your document first\""; Observations: an open question for OJ and Dr. Sharma)` });
+    }, { source: `${SHEET} row 10 ("record exactly what you see: whether the phrase is still selected after going back, and whether tapping the code tags it or says \"Select some text in your document first\"")` });
     await look(page, qa, "the interview after the tap, on a phone, in Hindi");
     await page.getByTestId("doc-back").tap();
     await expect(page.getByTestId("doc-back")).toHaveCount(0);
