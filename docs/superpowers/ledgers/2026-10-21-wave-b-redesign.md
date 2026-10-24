@@ -293,3 +293,4 @@ Task 19 web: nit (deferred): .find-paste-line:empty { display: none } (and Task 
 Task 19 web: nit (deferred): the paste box is its own card, not inside the search card as the canvas draws it (nested forms).
 Task 19 web: nit (deferred): "Undo" literals in DocBar.tsx:102 and FormatBar.tsx:142 are untranslated copy, listed in i18n-coverage's NOT_COPY.
 Task 19 web: nit (deferred): a lookup's success clears what the student typed meanwhile; a pasted retracted paper is kept with no warning (v1 parity; Citations flags it).
+Task Q3: implemented f1d1bec on wave-b3-q3 (classifyAiUseV2 beside the untouched port; ai.ts:82; eight aiuse-labels rows changed on purpose; core 8185, golden 7708, api 267, web 2303, per the implementer). The implementer flags that buildHelperPrompt("stats") is the APA formatter, so the plan's "explaining statistics" may understate it. Review running.
