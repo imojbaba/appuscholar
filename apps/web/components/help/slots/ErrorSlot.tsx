@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { installErrorRing, keepErrorsFor } from "@/lib/help/report/errorRing";
 import { toolFromPath } from "@/lib/help/report/repFacts";
@@ -14,9 +14,13 @@ import { useSession } from "@/lib/session";
 export function ErrorSlot(): null {
   const pathname = usePathname();
   const { email } = useSession();
+  // The address last counted: React's development double run of an effect, or a render with the same address, is not a second opening.
+  const counted = useRef<string | null>(null);
   useEffect(() => installErrorRing(), []);
   useEffect(() => { keepErrorsFor(email); }, [email]);
   useEffect(() => {
+    if (counted.current === pathname) return;
+    counted.current = pathname;
     const tool = toolFromPath(pathname);
     if (tool !== "none") bumpUsage(tool);
   }, [pathname]);

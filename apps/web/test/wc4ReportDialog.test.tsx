@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { StrictMode, act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -240,6 +240,12 @@ describe("tool opens are counted by the error slot, from the address (Task C4, D
     await slot();
     expect(tools()).toEqual({ writing: 2, "design/budget": 1 });
     expect(localStorage.getItem("appu_usage")).not.toContain("abc123");
+  });
+
+  it("one opening counts once under React's StrictMode, which runs a new component's effects twice in development", async () => {
+    pathname = "/p/abc123/lit";
+    await act(async () => { root.render(<StrictMode><ErrorSlot /></StrictMode>); });
+    expect(tools()).toEqual({ lit: 1 });
   });
 
   it("opening the report does not count the tool, and the first run (no tool) counts none", async () => {
