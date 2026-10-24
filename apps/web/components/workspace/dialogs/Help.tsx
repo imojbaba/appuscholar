@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { tHtml, useT } from "@/lib/i18n";
 import { keyStore } from "@/lib/ai/keys";
@@ -10,6 +10,7 @@ import { useVault } from "@/lib/vault/useVault";
 import { hasRemembered } from "@/lib/vault/remember";
 import { exportAll, exportFileName, localDay, type ExportDoc, type ExportDocSummary, type ExportProject } from "@/lib/vault/export";
 import { blobId, type BlobKind } from "@/lib/blobs/kinds";
+import { hasParticipantsBlob, listProjectBlobs, type BlobListing } from "@/lib/blobs/listing";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
 import { buildAllRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
@@ -65,6 +66,13 @@ export function useAccount() {
   const [changing, setChanging] = useState(false);
   const [erasing, setErasing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  /** The export's question when a project has a participant list (C10): resolves with the student's answer. Set while the question is open. */
+  const [askNames, setAskNames] = useState<((go: boolean) => void) | null>(null);
+  const askNamesRef = useRef(askNames);
+  useEffect(() => { askNamesRef.current = askNames; }, [askNames]);
+  // The question goes with its owner: an export waiting on it is not left waiting for good (the busy flag would hold every later export).
+  useEffect(() => () => { askNamesRef.current?.(false); }, []);
+  const answerNames = (go: boolean) => { const resolve = askNames; setAskNames(null); resolve?.(go); };
   /** Change passphrase is offered once the vault exists (locked or open). */
   const hasVault = vault.status === "locked" || vault.status === "unlocked" || vault.status === "migrating";
   /**
@@ -82,6 +90,12 @@ export function useAccount() {
       const scratch = me?.scratchProjectId;
       if (scratch && !projects.some((p) => p.id === scratch)) projects.push({ id: scratch, title: t("export_scratch"), titleKeyVersion: 0, deks: [], stageMarks: {}, draftWords: 0, draftEditedAt: null, createdAt: "" });
       const day = localDay();
+      // Each project's blob listing is read once: for the question below and for the export itself.
+      const listings = new Map<string, Promise<BlobListing>>();
+      const listing = (id: string) => { const had = listings.get(id); if (had) return had; const p = listProjectBlobs(id); listings.set(id, p); return p; };
+      // C10: the file carries the participant lists, with names. Say so before it is made, when any project has one, and let the student back out.
+      const lists = await Promise.all(projects.map((p) => listing(p.id)));
+      if (lists.some(hasParticipantsBlob) && !(await new Promise<boolean>((resolve) => setAskNames(() => resolve)))) return;
       const blob = await exportAll({
         listProjects: async () => projects,
         listDocuments: (id) => apiFetch<ExportDocSummary[]>(`/projects/${id}/documents`),
@@ -89,7 +103,7 @@ export function useAccount() {
         decrypt: (doc) => vault.decryptBody(doc),
         openTitle: (title, keyId) => openTitle(vault, title, keyId),
         // Every stage's data: ciphertext from the api, opened here under the blob's own key.
-        listBlobs: (id) => apiFetch<Array<{ kind: string; keyVersion: number; updatedAt: string }>>(`/projects/${id}/blobs`),
+        listBlobs: listing,
         getBlob: (id, kind) => apiFetch<BlobWire>(`/projects/${id}/blobs/${encodeURIComponent(kind)}`),
         decryptBlob: (id, w) => vault.decryptBody({ id: blobId(id, w.kind as BlobKind), deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion }),
         // The record MyWriting downloads: each project's words under its title, the AI-use log (the whole account's) once.
@@ -114,6 +128,18 @@ export function useAccount() {
   };
   const dialogs = (
     <>
+      <AlertDialog open={!!askNames} onOpenChange={(o) => { if (!o) answerNames(false); }}>
+        <AlertDialogContent data-testid="export-names-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("acct_export")}</AlertDialogTitle>
+            <AlertDialogDescription data-testid="export-names-line">{t("pp_export_names")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="export-names-cancel">{t("sap_cancel_btn")}</AlertDialogCancel>
+            <Button variant="primary" data-testid="export-names-go" onClick={() => answerNames(true)}>{t("pp_export_go")}</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={!!askForget} onOpenChange={(o) => { if (!o) setAskForget(null); }}>
         {/* With only the vault remembered, the AI-keys sentence does not apply: no description then. */}
         <AlertDialogContent data-testid="forget-keys-confirm" {...(askForget && !askForget.keys ? { "aria-describedby": undefined } : {})}>

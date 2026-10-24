@@ -548,7 +548,7 @@ describe("Grammar: check with AI", () => {
 describe("the AI path is the scanned one", () => {
   const ctx = (askPd: "cancel" | "mask" | "send") => ({
     provider: "gemini" as const, blobs: {}, fallbackOn: false, contentLang: "en" as const, projectId: "p1",
-    askPassphrase: async () => null, askPd: vi.fn(async () => askPd), openSettings: vi.fn(), onFailover: vi.fn()
+    askPassphrase: async () => null, askPd: vi.fn(async () => ({ answer: askPd, leave: [] })), openSettings: vi.fn(), onFailover: vi.fn()
   });
   beforeEach(async () => {
     const { keyStore } = await import("../lib/ai/keys");

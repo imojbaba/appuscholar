@@ -28,7 +28,8 @@ async function run(q: Q) {
   let after = q.quote;
   await citeInsertQuote({
     quote: q.quote, srcLang: q.srcLang, contentLang: q.contentLang,
-    callAI: async (prompt, opts) => { calls.push({ prompt, opts: { ...opts } }); if (q.error !== undefined) throw v2Error(q.error); return q.reply ?? ""; },
+    // v1's options: the one v2 adds (`literature`, the quotation is published text, C13) is asserted on its own below.
+    callAI: async (prompt, opts) => { calls.push({ prompt, opts: Object.fromEntries(Object.entries(opts).filter(([key]) => key !== "literature")) }); if (q.error !== undefined) throw v2Error(q.error); return q.reply ?? ""; },
     insertBlock: async (html) => { block.push(html); return true; },
     insertAtCursor: async (text) => { atCursor.push(text); return true; },
     clearQuote: () => { after = ""; },
@@ -55,6 +56,14 @@ describe("citeInsertQuote equals v1's citInsertQuote", () => {
     expect(quotePrompt("The span of absolute judgment is limited.")).toBe(o.calls[0]!.prompt);
     expect(QUOTE_OPTS).toEqual({ temp: 0.2, max: 900, noLang: true });
     expect(o.calls[0]!.opts).toEqual(QUOTE_OPTS);
+  });
+  it("the translation is a request about published text: it opts out of name suggestions (C13)", async () => {
+    const callAI = vi.fn(async (_prompt: string, _opts: Record<string, unknown>) => "अनुवाद");
+    await citeInsertQuote({
+      quote: "The span of absolute judgment is limited.", srcLang: "en", contentLang: "hi", callAI,
+      insertBlock: async () => true, insertAtCursor: async () => true, clearQuote: () => {}, toast: () => {}
+    });
+    expect(callAI.mock.calls[0]![1]).toEqual({ ...QUOTE_OPTS, literature: true });
   });
   it("the AI-use log files the call as v1 does (5419): translating a quotation into Hindi", () => {
     expect(classifyAiUse(quotePrompt("x"))).toEqual({ k: "translating a quotation into Hindi", g: "text" });

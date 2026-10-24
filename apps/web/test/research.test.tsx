@@ -340,7 +340,8 @@ describe("Research: Rank by fit (rsRank 8220-8234, the fold 8402-8403)", () => {
     const c = run("oa-rank");
     await search(c);
     expect(h.callAI).toHaveBeenCalledTimes(2);
-    expect(h.callAI.mock.calls.map((x) => x[1])).toEqual([{ temp: 0.1, max: 1500, noLang: true }, { temp: 0.1, max: 1500, noLang: true }]);
+    // Ranking reads published abstracts: it opts out of name suggestions (C13, Task 11). "Suggest related terms" (below) is made from the student's own topic and does not.
+    expect(h.callAI.mock.calls.map((x) => x[1])).toEqual([{ temp: 0.1, max: 1500, noLang: true, literature: true }, { temp: 0.1, max: 1500, noLang: true, literature: true }]);
     expect(tid("rs-status")!.textContent).toMatch(/^22 papers found · ranked by fit to your question \(22 of 22 scored, about [\d,]+ words sent to your AI\)$/);
     expect(field<HTMLSelectElement>("rsSort").value).toBe("fit");
     const chips = cards().map((card) => card.querySelector('[data-testid="rs-fit"]')!.textContent);

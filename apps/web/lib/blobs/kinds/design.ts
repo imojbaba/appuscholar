@@ -23,12 +23,14 @@ const DesignProtoSchema = z.looseObject({
 });
 /**
  * The ethics committee package (v1 ecRender, ecToggle, ecSave 5979-6027): the documents checklist, the consent form's fields (title, pi, what,
- * risks, benefits, contact) and the approval record (status, committee, apprNo, apprDate, consentMode, minors).
+ * risks, benefits, contact) and the approval record (status, committee, apprNo, apprDate, consentMode, minors). The identification plan (spec
+ * 2026-10-24-participants-design.md §4, "Storage") adds three optional fields, so a blob stored before it still parses: `idMode` (codes, pseudonyms or
+ * anonymous), `record` (the ids of the fields the student will record about each person) and `recordOther` (up to five labels the student typed).
  */
 const DesignEcSchema = z.looseObject({
   checklist: ChecklistSchema.optional(), title: str.optional(), pi: str.optional(), what: str.optional(), risks: str.optional(), benefits: str.optional(),
   contact: str.optional(), status: str.optional(), committee: str.optional(), apprNo: str.optional(), apprDate: str.optional(), consentMode: str.optional(),
-  minors: str.optional(), done: z.boolean().optional()
+  minors: str.optional(), idMode: str.optional(), record: z.array(str).optional(), recordOther: z.array(str).optional(), done: z.boolean().optional()
 });
 /** CTRI registration readiness (v1 ctriRender, ctriToggle 6072-6083): the fields checklist. */
 const DesignCtriSchema = z.looseObject({ checklist: ChecklistSchema.optional(), done: z.boolean().optional() });

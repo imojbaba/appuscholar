@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { pickedTerms, rankPapers, suggestTerms, type ResearchAiDeps, type RsTerms, type RsTermsBox } from "@/lib/ai/actions";
 import { useCallAI } from "@/lib/ai/useCallAI";
+import { useLiterature } from "@/lib/ai/literature";
 import { toast } from "@/components/ui/toast";
 import { useOpenAlexKey } from "./oaKey";
 import { failedSource, rankFailedNote, rankingStatus, rankNote, statusLine } from "./status";
@@ -218,6 +219,8 @@ export function useResearchState(): ResearchState {
 export function useSearch(opts: { rankStored: boolean; persistRank(rank: boolean): void }) {
   const t = useT();
   const callAI = useCallAI();
+  // Ranking reads the abstracts of the papers found: published text, so no name in it is a participant's to suggest (C13). "Suggest related terms" is made from the student's own topic, and is not.
+  const rankAI = useLiterature(callAI);
   const { settings } = useSettings();
   const oaKey = useOpenAlexKey();
   const s = useResearchState();
@@ -237,14 +240,14 @@ export function useSearch(opts: { rankStored: boolean; persistRank(rank: boolean
     const out = await runSearch(
       { topic: topic ?? cur.topic, oa: cur.oa, pm: cur.pm, design, designLabel: label, rank: cur.rank ?? opts.rankStored, terms: pickedTerms(cur.terms, q) },
       {
-        callAI, field, t, toast, fetch: f, oaKey, persistRank,
+        callAI: rankAI, field, t, toast, fetch: f, oaKey, persistRank,
         setStatus: (status) => setResearch({ status }),
         begin: () => { gen = ++searchGen; setResearch({ original: [], ticked: new Set(), actions: false, open: new Set() }); },
         isCurrent: () => gen === searchGen
       }
     );
     if (out && gen === searchGen) setResearch({ original: out.papers, sort: out.sort, status: out.status, ticked: new Set(), actions: false, open: new Set() });
-  }, [callAI, field, t, oaKey, persistRank, opts.rankStored]);
+  }, [rankAI, field, t, oaKey, persistRank, opts.rankStored]);
 
   const suggest = useCallback(() => suggestTerms(getResearch().topic, {
     callAI, field, t, toast, setBox: (termsBox) => setResearch({ termsBox }), setTerms: (terms) => setResearch({ terms })

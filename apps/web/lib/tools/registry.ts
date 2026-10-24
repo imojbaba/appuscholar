@@ -4,6 +4,7 @@ import type { ExportDeps } from "@/lib/export/projectExport";
 import type { ToolId } from "@/lib/tools";
 import { TOOL_TABS, type ToolTab } from "./tabs";
 import * as design from "@/components/tools/design";
+import * as participants from "@/components/tools/participants";
 import * as stats from "@/components/tools/stats";
 import * as qual from "@/components/tools/qual";
 import * as style from "@/components/tools/style";
@@ -69,7 +70,7 @@ export type ToolModule = {
   exportParts?: ExportPartDef[];
 };
 
-const MODULES: Partial<Record<ToolTab["tool"], ToolModule>> = { design, stats, qual, style, words, close, slides, viva };
+const MODULES: Partial<Record<ToolTab["tool"], ToolModule>> = { design, participants, stats, qual, style, words, close, slides, viva };
 /** What a tool with no tab here has (the Idea and Literature tools and Chat, which are drawn by their own places, not by the registry). */
 const NO_MODULE: ToolModule = { built: false };
 

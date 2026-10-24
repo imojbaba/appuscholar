@@ -271,7 +271,8 @@ describe("Insert quote", () => {
     typeArea("citQuoteText", "The span of absolute judgment is limited.");
     await click("cite-insertquote");
     const want = SHARE.quotes.find((q) => q.id === "en-hi")!;
-    expect(h.callAI.mock.calls).toEqual(want.calls.map((c) => [c.prompt, c.opts]));
+    // v1's prompt and options, and the one v2 adds: a quotation is published text, so the request opts out of name suggestions (C13, Task 11).
+    expect(h.callAI.mock.calls).toEqual(want.calls.map((c) => [c.prompt, { ...c.opts, literature: true }]));
     expect(toasts()).toEqual(want.toasts);
     const span = new DOMParser().parseFromString(e.getHTML(), "text/html").querySelector("span.translated-quote")!;
     expect(span.getAttribute("title")).toBe("The span of absolute judgment is limited.");

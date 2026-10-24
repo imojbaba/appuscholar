@@ -17,7 +17,7 @@ const mockFetch = vi.mocked(apiFetch);
 function ctx(over: Partial<CallCtx> = {}): CallCtx {
   return {
     provider: "gemini", blobs: {}, fallbackOn: true, contentLang: "en", projectId: null,
-    askPassphrase: vi.fn(async () => null), askPd: vi.fn(async () => "cancel" as const),
+    askPassphrase: vi.fn(async () => null), askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })),
     openSettings: vi.fn(), onFailover: vi.fn(), ...over
   };
 }
@@ -31,7 +31,7 @@ beforeEach(() => {
 describe("callAI personal-data step", () => {
   it("rejects when the student cancels the personal-data dialog and sends nothing", async () => {
     keyStore.setSession("gemini", "AIza1");
-    const c = ctx({ askPd: vi.fn(async () => "cancel" as const) });
+    const c = ctx({ askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })) });
     await expect(callAI("write to a@b.com", {}, c)).rejects.toThrow("Cancelled. Nothing was sent to the AI provider.");
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -39,7 +39,7 @@ describe("callAI personal-data step", () => {
   it("send: marks pdAccepted, and asks only once for the same findings", async () => {
     keyStore.setSession("gemini", "AIza1");
     mockFetch.mockResolvedValue({ text: "ok", model: "m" });
-    const askPd = vi.fn(async () => "send" as const);
+    const askPd = vi.fn(async () => ({ answer: "send" as const, leave: [] }));
     const c = ctx({ askPd });
     await callAI("mail a@b.com now", {}, c);
     expect(body().pdAccepted).toBe(true);
@@ -51,13 +51,13 @@ describe("callAI personal-data step", () => {
   it("mask: the prompt sent has [email] in place of the address", async () => {
     keyStore.setSession("gemini", "AIza1");
     mockFetch.mockResolvedValue({ text: "ok", model: "m" });
-    await callAI("mail a@b.com now", {}, ctx({ askPd: vi.fn(async () => "mask" as const) }));
+    await callAI("mail a@b.com now", {}, ctx({ askPd: vi.fn(async () => ({ answer: "mask" as const, leave: [] })) }));
     expect(body().prompt).toContain("[email]");
     expect(String(body().prompt)).not.toContain("a@b.com");
   });
 
   it("scans before the key step: personal data, no key, cancel -> Cancelled message and the settings dialog is not opened", async () => {
-    const c = ctx({ askPd: vi.fn(async () => "cancel" as const) });
+    const c = ctx({ askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })) });
     await expect(callAI("mail a@b.com now", {}, c)).rejects.toThrow("Cancelled. Nothing was sent to the AI provider.");
     expect(c.openSettings).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
@@ -66,7 +66,7 @@ describe("callAI personal-data step", () => {
   it("noScan skips only the dialog: nothing is asked and pdAccepted stays false", async () => {
     keyStore.setSession("gemini", "AIza1");
     mockFetch.mockResolvedValue({ text: "ok", model: "m" });
-    const askPd = vi.fn(async () => "send" as const);
+    const askPd = vi.fn(async () => ({ answer: "send" as const, leave: [] }));
     await callAI("mail a@b.com now", { noScan: true }, ctx({ askPd }));
     expect(askPd).not.toHaveBeenCalled();
     expect(body().pdAccepted).toBe(false);
@@ -75,7 +75,7 @@ describe("callAI personal-data step", () => {
   it("does not scan or ask when there is nothing to find", async () => {
     keyStore.setSession("gemini", "AIza1");
     mockFetch.mockResolvedValue({ text: "ok", model: "m" });
-    const askPd = vi.fn(async () => "cancel" as const);
+    const askPd = vi.fn(async () => ({ answer: "cancel" as const, leave: [] }));
     await expect(callAI("plain text", {}, ctx({ askPd }))).resolves.toBe("ok");
     expect(askPd).not.toHaveBeenCalled();
     expect(body()).toMatchObject({ provider: "gemini", apiKey: "AIza1", prompt: "plain text", pdAccepted: false, contentLang: "en" });
