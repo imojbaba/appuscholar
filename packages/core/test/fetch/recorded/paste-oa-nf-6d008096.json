@@ -1,0 +1,8 @@
+{
+ "url": "https://api.openalex.org/works/doi:10.9999/appuscholar-no-such-doi-2026?select=id,display_name,authorships,publication_year,primary_location,abstract_inverted_index,cited_by_count,doi,referenced_works,cited_by_api_url,open_access,is_retracted,biblio",
+ "status": 404,
+ "headers": {
+  "content-type": "text/html; charset=utf-8"
+ },
+ "body": "<!doctype html>\n<html lang=en>\n<title>404 Not Found</title>\n<h1>Not Found</h1>\n<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>\n"
+}

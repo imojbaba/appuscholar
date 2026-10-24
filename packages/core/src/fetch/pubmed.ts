@@ -9,7 +9,10 @@
    - types, and `as` casts on the JSON read.
    Wave A (walk fault W2, register row D-S2-24): rsFetchPubmed's result also carries `authorList` (every name), `volume`, `issue` and `pages` (PubMed's short range
    written out by pmFullPages); `authors` is still v1's card line. test/fetch/pubmed.test.ts holds v1View(result) to the golden.
-   Wave A (W12, register row D-S2-27): pmSearchV2 is pmSearch with the topic's own words tagged [tiab] (rsBuildQueryV2); pmSearch is v1's and unchanged. */
+   Wave A (W12, register row D-S2-27): pmSearchV2 is pmSearch with the topic's own words tagged [tiab] (rsBuildQueryV2); pmSearch is v1's and unchanged.
+   Wave B2 (Task 19, "paste a link, DOI or PubMed number"; rulings B2-R18 and B2-R36): pmPaperById reads one PubMed paper by its number, with rsFetchPubmed's item mapping copied
+   into it (the port is not refactored); pmcidToIds names the PMID and DOI that PubMed Central lists for a PMC number. Both sit beside the ports and change none of them.
+   test/fetch/lookup-by-id.test.ts. */
 import { pmTopicBlock, rsBuildQuery, rsBuildQueryV2 } from "../research";
 import { settle, withFallback } from "./types";
 import type { PmPaper, SearchResult } from "./types";
@@ -17,7 +20,7 @@ import { xmlAll, xmlParse, xmlText } from "./xml";
 import type { XmlEl } from "./xml";
 
 type ESearch = { esearchresult?: { idlist?: string[] } };
-type ESummaryItem = { title?: string; authors?: Array<{ name?: string }>; pubdate?: string; fulljournalname?: string; source?: string; volume?: string; issue?: string; pages?: string; articleids?: Array<{ idtype?: string; value?: string }> };
+type ESummaryItem = { error?: string; title?: string; authors?: Array<{ name?: string }>; pubdate?: string; fulljournalname?: string; source?: string; volume?: string; issue?: string; pages?: string; articleids?: Array<{ idtype?: string; value?: string }> };
 type ESummary = { result?: Record<string, ESummaryItem | undefined> };
 
 const child = (parent: string, name: string) => (el: XmlEl) => el.name === name && !!el.parent && el.parent.name === parent;
@@ -83,6 +86,44 @@ export async function pmidToDoi(f: typeof fetch,pmid: string): Promise<string | 
   const ids=(rec&&rec.articleids)||[];
   const d=ids.find(x=>x.idtype==='doi');
   return d?String(d.value).toLowerCase():null;
+}
+
+/**
+ * One PubMed paper by its number, from the one esummary request pmidToDoi makes (so a recording of either answers both). The item is mapped as rsFetchPubmed maps it (the card line's four
+ * names and "et al.", `authorList` with every name, the year from `pubdate`, the journal, volume, issue and pages by pmFullPages), with two differences: there is no efetch, so `abstract` is
+ * empty, and `doi` is the DOI PubMed lists for the paper, in lower case (rsFetchPubmed leaves it empty, v1's choice, because a search result is kept by its PubMed address; a pasted number
+ * has no other source for it). null when PubMed does not know the number (esummary answers 200 with an item that holds an `error`, or none). Rejects on an HTTP error.
+ */
+export async function pmPaperById(f: typeof fetch,pmid: string): Promise<PmPaper | null>{
+  const r=await f('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id='+encodeURIComponent(pmid));
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const dj=await r.json() as ESummary;
+  const it=dj.result&&dj.result[pmid];
+  if(!it||it.error)return null;
+  const authors=(it.authors||[]).map(a=>a.name).filter(Boolean) as string[];
+  const d=(it.articleids||[]).find(x=>x.idtype==='doi');
+  return{source:'PubMed',ssId:null,title:it.title||'Untitled',
+    authors:authors.length>4?authors.slice(0,4).join(', ')+', et al.':authors.join(', ')||'Unknown authors',
+    year:(it.pubdate||'').slice(0,4),venue:it.fulljournalname||it.source||'',
+    abstract:'',pmid,citationCount:0,doi:d&&d.value?String(d.value).toLowerCase():'',url:'https://pubmed.ncbi.nlm.nih.gov/'+pmid+'/',
+    authorList:authors,volume:String(it.volume||''),issue:String(it.issue||''),pages:pmFullPages(String(it.pages||''))};
+}
+
+/**
+ * The PMID and the DOI PubMed Central lists for a PMC number ("PMC6746734"), from E-utilities' esummary on db=pmc for the number part, each null when the article lists none (the DOI in
+ * lower case). null when PubMed Central does not know the number (an item that holds an `error`, or none). Rejects on an HTTP error. OpenAlex does not look a paper up by its PMC number
+ * (the recorded `pmcid:` request answers 404), so a pasted PMC number is named through here.
+ */
+export async function pmcidToIds(f: typeof fetch,pmcid: string): Promise<{ pmid: string | null; doi: string | null } | null>{
+  const num=String(pmcid).replace(/^PMC/i,'');
+  const r=await f('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pmc&retmode=json&id='+encodeURIComponent(num));
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json() as ESummary;
+  const rec=j.result&&j.result[num];
+  if(!rec||rec.error)return null;
+  const ids=rec.articleids||[];
+  const pm=ids.find(x=>x.idtype==='pmid'),d=ids.find(x=>x.idtype==='doi');
+  return{pmid:pm&&pm.value?String(pm.value):null,doi:d&&d.value?String(d.value).toLowerCase():null};
 }
 
 /** PubMed's page range written out: PubMed drops the leading digits the last page shares with the first ("123-30" is 123-130, "1171-9" is 1171-1179). Each
