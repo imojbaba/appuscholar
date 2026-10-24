@@ -1,5 +1,11 @@
 {
   "pic_too_big": "This document is too large to hold this picture. Make a picture smaller or remove one, then try again.",
   "doc_too_large": "This document is too large to save. Make a picture smaller or remove one.",
-  "doc_too_large_badge": "Too large to save"
+  "doc_too_large_badge": "Too large to save",
+  "pic_rect_hint": "Or type the box in pixels, measured from the top left corner. Each side must be at least {min} pixels.",
+  "pic_rect_x": "Left (x)",
+  "pic_rect_y": "Top (y)",
+  "pic_rect_w": "Width",
+  "pic_rect_h": "Height",
+  "pic_rect_apply": "Apply rectangle"
 }
