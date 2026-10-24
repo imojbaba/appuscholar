@@ -689,6 +689,76 @@ test("fixture: a step or a check on another page is screenshotted, and a stop is
   }
 });
 
+test("fixture: a step after a step on another page acts on the fixture's page again, and a nested step on the enclosing step's", TAGS, async ({ browser, page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-33B", ["there", "nested", "back"]));
+  const other = await browser.newContext({ viewport: { width: 500, height: 400 } });
+  try {
+    await qa.watch(other);
+    const second = await other.newPage();
+    for (const [p, name] of [[page, "first"], [second, "second"]] as const) {
+      await p.route(`${NOWHERE}/**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: `<h1>${name} browser</h1>` }));
+      await p.goto(`${NOWHERE}/${name}`);
+    }
+    const mainSize = (await page.viewportSize())!;
+    const secondSize = { width: 500, height: 400 };
+
+    await qa.step("there", async () => {
+      await qa.step("nested", async () => {
+        // No page given: the enclosing step's.
+        await qa.check("data", "fails in the nested step", async () => expect(1).toBe(2));
+      });
+    }, { page: second });
+    // A top-level step with no page is the fixture's page, not the page the step before it acted on.
+    await expect(
+      qa.step("back", async () => {
+        await qa.check("data", "fails in the step after", async () => expect(1).toBe(2));
+        throw new Error("the first browser did not answer");
+      })
+    ).rejects.toThrow("the first browser did not answer");
+
+    const r = qa.result();
+    expect(r.checks[0]).toMatchObject({ label: "fails in the nested step", step: "nested" });
+    expect(pngSize(r.checks[0]!.screenshot!)).toEqual(secondSize);
+    expect(r.checks[1]).toMatchObject({ label: "fails in the step after", step: "back" });
+    expect(pngSize(r.checks[1]!.screenshot!)).toEqual(mainSize);
+    expect(r.stoppedAt).toMatchObject({ step: "back", url: `${NOWHERE}/first` });
+    expect(pngSize(r.stoppedAt!.screenshot)).toEqual(mainSize);
+  } finally {
+    await other.close();
+  }
+});
+
+test("fixture: expectLoad acts on the page of the step it is called in, else the fixture's", TAGS, async ({ browser, page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-37", ["second"]));
+  const other = await browser.newContext();
+  try {
+    await qa.watch(other);
+    const second = await other.newPage();
+    for (const p of [page, second]) {
+      await p.route(`${NOWHERE}/**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<p>page</p>" }));
+      await p.goto(`${NOWHERE}/a`);
+    }
+    const navigate = (p: typeof page, to: string) => Promise.all([p.waitForEvent("load"), p.evaluate((u) => void setTimeout(() => (location.href = u), 0), to)]);
+
+    await qa.step("second", async () => {
+      qa.expectLoad(); // the second page: this is its step
+      await navigate(second, `${NOWHERE}/b`);
+    }, { page: second });
+    // Had it gone to the fixture's page, the second page's load would be a finding and the fixture's page would hold an announcement that never came.
+    expect(withLabel(qa.result(), RULE_LABEL.reload)).toEqual([]);
+    expect(qa.result().checks.filter((c) => c.ok === null)).toEqual([]);
+
+    qa.expectLoad(); // outside every step: the fixture's page, even right after a step on the second
+    await navigate(page, `${NOWHERE}/c`);
+    expect(withLabel(qa.result(), RULE_LABEL.reload)).toEqual([]);
+    expect(qa.result().checks.filter((c) => c.ok === null)).toEqual([]);
+  } finally {
+    await other.close();
+  }
+});
+
 test("fixture: a load a click really causes is announced, and one announced that never comes is NOT CHECKED", TAGS, async ({ page, qa }) => {
   qa.selfTest = true;
   qa.begin(meta("SELF-34", ["go"]));
@@ -760,6 +830,28 @@ test("fixture: a soft expectation that fails inside a check fails that check", T
   expect(qa.result().stoppedAt).toBeUndefined();
   // A check whose soft expectation passes is ok.
   expect(await qa.check("data", "a soft one that holds", async () => expect.soft(2).toBe(2))).toBe(true);
+});
+
+test("fixture: a soft expectation that fails in a check that then measured nothing still fails the check, and is not a stop", TAGS, async ({ qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-36B", ["go"]));
+  const info = test.info();
+  const before = info.errors.length;
+  const held = await qa.check("data", "soft, then nothing to measure", async () => {
+    expect.soft(1, "the soft one before").toBe(2);
+    notChecked("there was nothing on the page");
+  });
+  const soft = info.errors.length - before;
+  info.errors.splice(before, soft);
+  (info as { status: string | undefined }).status = "passed";
+  expect(soft).toBe(1);
+  expect(held).toBe(false);
+  const [c] = qa.result().checks;
+  expect(c).toMatchObject({ kind: "data", ok: false, fail: "unexpected" });
+  expect(c!.message).toContain("the soft one before");
+  // With no soft failure, measuring nothing is still NOT CHECKED.
+  await qa.check("data", "nothing to measure", async () => notChecked("there was nothing on the page"));
+  expect(qa.result().checks[1]).toMatchObject({ ok: null, message: "there was nothing on the page" });
 });
 
 test.describe("blocked", () => {

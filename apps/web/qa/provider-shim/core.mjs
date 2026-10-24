@@ -42,7 +42,9 @@ const PROVIDER_HOSTS = new Set(["api.groq.com", "api.openai.com", "api.deepseek.
 const REFUSED_HOSTS = new Set(["generativelanguage.googleapis.com", "api.anthropic.com"]);
 /** The key: gsk_qa_<mode>_<random>. */
 const KEY = /^gsk_qa_([a-z0-9]+)_(.+)$/;
-const FIXED_MODES = new Set(["ok", "fail429", "fail401", "fail500", "nonet", "empty", "failonce"]);
+/** The key modes that fail a request on purpose; the log says `failed` for them. The QA fixture (qa/support/qa.ts) reads this set: a request the shim failed under any other mode is a fault of the case, not of the app. */
+export const FAILURE_MODES = new Set(["fail429", "fail401", "fail500", "nonet", "empty", "failonce"]);
+const FIXED_MODES = new Set(["ok", ...FAILURE_MODES]);
 
 // The AI-use kind of a prompt: a copy of AIU_RULES and classifyAiUse in packages/core/src/aiuse.ts (a preload cannot import the TypeScript sources).
 // apps/web/test/qa/shim.test.ts fails when a row here differs from the core's, so change both together.
