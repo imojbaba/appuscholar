@@ -132,7 +132,8 @@ export function startDictation(opts: DictationOptions): Dictation | null {
       if (r.isFinal) { fast = 0; opts.onFinal(r[0].transcript); }
       else interim += r[0].transcript;
     }
-    opts.onInterim(interim);
+    // v1 dictStatus shows nothing once stopped; a finished phrase that arrives after stop is still typed (v1).
+    if (on) opts.onInterim(interim);
   };
   rec.onerror = (e) => {
     const code = e.error;
@@ -147,6 +148,7 @@ export function startDictation(opts: DictationOptions): Dictation | null {
     opts.onInterim("");
     try { startedAt = Date.now(); rec.start(); } catch { finish(); }
   };
-  try { rec.start(); } catch { return null; }
+  // A recogniser that would not start leaves nothing listening and nothing to end (the caller shows no sentence, as v1).
+  try { rec.start(); } catch { on = false; rec.onresult = rec.onerror = rec.onend = null; return null; }
   return { stop: finish };
 }

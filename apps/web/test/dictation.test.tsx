@@ -147,6 +147,13 @@ describe("startDictation", () => {
     r.say("last words");
     expect(cb.onFinal).toHaveBeenCalledWith("last words");
   });
+  it("shows no words still forming once stopped (v1 dictStatus checks it is on)", () => {
+    const { d, r, cb } = begin();
+    d.stop();
+    cb.onInterim.mockClear();
+    r.say("half a", false);
+    expect(cb.onInterim).not.toHaveBeenCalled();
+  });
   it("passes a blocked microphone to onError as the code string, stops, and does not restart", () => {
     const { r, cb } = begin();
     r.fail("not-allowed");
@@ -199,7 +206,12 @@ describe("startDictation", () => {
   it("returns null when the first start throws", () => {
     class Broken extends FakeRec { constructor() { super(); this.failStart = true; } }
     G.webkitSpeechRecognition = Broken;
-    expect(startDictation({ lang: "en-IN", ...spies() })).toBeNull();
+    const cb = spies();
+    expect(startDictation({ lang: "en-IN", ...cb })).toBeNull();
+    // Nothing is left listening: a late event from that recogniser reaches no callback.
+    const r = rec();
+    expect([r.onresult, r.onerror, r.onend]).toEqual([null, null, null]);
+    expect(cb.onEnd).not.toHaveBeenCalled();
   });
 });
 
