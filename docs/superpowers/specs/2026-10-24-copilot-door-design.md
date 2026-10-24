@@ -154,7 +154,7 @@ ChatGPT: Settings → Apps → Advanced settings → Developer mode on, then cre
 
 Each sitting:
 1. Open Appuscholar and the project; unlock the vault.
-2. Press the **Copilot** pill in the header: "Copilot off" becomes "Copilot on: Claude can work on *Thesis*". **Ruling**: the copilot works only on the project open in that tab. To work on another project, the student opens it.
+2. Press the **Copilot** pill in the header: "Copilot off" becomes "Copilot on: Claude can work on *Thesis*". **Ruling**: the copilot works only on the project open in that tab. To work on another project, the student opens it. **Ruling**: Copilot needs the vault. A student who chose "Not now" at vault setup (the vault is optional today, VERIFIED: `VaultStatus` includes `"off"`) sees "Set up your vault to use Copilot" and the existing setup dialog. Reasons: everything the door writes is sealed, the server-blindness test holds without a second plaintext path, and the consent copy stays one sentence. If the vault becomes mandatory (lawyer brief, question 9), nothing changes here.
 3. Ask Claude, for example "Check the numbers in my Results chapter" or "Run an independent t-test of score by group and put the result after paragraph 4".
 4. Each call appears in the tab's copilot list: time, what was done, which document, and the outcome ("Read *Results*", "Ran t-test", "Edited *Results*: Undo", "Refused: draft first is on").
 5. An edit appears in the document at once, wrapped as AI text, and in its history as a revision by "Claude (copilot)". **Undo** in the list restores the revision before it.
@@ -202,6 +202,7 @@ Endpoints on the api's origin, which is the issuer:
 - Tokens are random opaque strings, stored only as SHA-256 hashes, checked against the database on every call, so a revoke takes effect on the next call. Access tokens live 1 hour. Refresh tokens live 30 days, rotate on every use, and a reused refresh token revokes the whole grant (it means one was stolen). `offline_access` is accepted so ChatGPT keeps access (F8).
 - Every token is bound to the resource `/mcp`; a token for any other resource is refused (F9).
 - A grant unused for 30 days expires.
+- **The address is permanent once students connect.** The issuer and the resource are bound into every grant and token and into each student's connector. The go-live pack (`appuscholar-blueprint/go-live/04-public-sign-in.md`) says a custom domain is needed in practice and depends on Dr. Sharma. So the door is released on the final production address. If that address changes after students have connected, the old address keeps serving for 30 days and the Copilot page asks each student to reconnect. Before release, a change is configuration only (`COPILOT_ISSUER`).
 - Scopes: `appuscholar.read` covers reading and the compute tools; `appuscholar.write` covers the three write tools. A write tool called without it answers 403 `insufficient_scope` (F9).
 
 ### 5.4 The relay
@@ -220,7 +221,17 @@ Flow of one call:
 5. The handler opens the answer, deletes the row, writes the AI-use log row (§5.7), and answers Claude.
 6. Rows past their expiry are deleted by the next call of any user (no cron needed).
 
-`POST /copilot/bridge/heartbeat` keeps the tab row fresh and carries the switch state. **Ruling**: the tab polls about once a second while a call came in the last two minutes, and every five seconds otherwise; Copilot switches itself off after 60 minutes without a call. The database load this puts on Neon is measured in the build; LISTEN/NOTIFY on a direct connection is the builder's alternative if polling costs too much.
+`POST /copilot/bridge/heartbeat` registers the tab's key and carries the switch state (on, off).
+
+**Ruling, background tabs.** The student's usual position is Claude in front and Appuscholar behind it, so the tab must keep answering while hidden. Browsers slow timers in hidden tabs: Chrome limits chained timers in a tab hidden for five minutes to about once a minute (BELIEVED), and Memory Saver may discard a background tab on a small laptop (BELIEVED). So the tab uses no timer for the bridge:
+- The tab keeps one long-poll `GET /copilot/bridge/next` open at all times while Copilot is on, and opens the next one the moment the last returns. That request is also the heartbeat: the api counts a tab as live while one of its long-polls is open or ended less than 30 seconds ago.
+- Inside the long-poll the api checks for a waiting call every 500 ms if a call came in the last two minutes, else every 2 seconds (server side, so the browser's throttling does not apply). The first call after a quiet spell may wait up to 2 seconds.
+- While Copilot is on, the tab holds a Web Lock, which Chrome counts as a reason not to freeze a page (BELIEVED).
+- The Copilot page tells Chrome users to add Appuscholar under Settings → Performance → "Always keep these sites active" (BELIEVED to exist under that name).
+- Copilot switches itself off after 60 minutes without a call, checked when a long-poll returns.
+- If the walk shows a hidden tab still stops answering, the fallback is a small Copilot window (the app already has a `/popout` route), planned then, not now. Whether this is needed is UNKNOWN until the walk.
+
+The database load of the long-polls on Neon is measured in the build; LISTEN/NOTIFY on a direct connection is the builder's alternative if it costs too much.
 
 Multiple tabs: the newest tab with Copilot on gets the calls; the others show "Copilot is working in another tab".
 
@@ -230,6 +241,7 @@ Multiple tabs: the newest tab with Copilot on gets the calls; the others show "C
 - **Copilot list** (a drawer from the pill): each call with time, tool, document title, outcome, and **Undo** on edits. Kept in the tab's memory only; the AI-use log keeps the counts.
 - **Executors**: one per tool, built on the existing code (`useDocAccess`, the vault client, the Statistics lab store, the citation library blob, `@appuscholar/core`). An executor gets the decrypted inputs it needs and nothing else; no executor can reach AI keys, the recovery code, the passphrase or the vault key (a test checks the import graph).
 - **Outgoing filter** on every answer before it is sealed: the personal-data scan (`scanText` / `maskText`) and, once the participants work (PR #28, branch `participants-register`) is merged, the participant matcher (`buildMatcher`, `findNames`, `replaceFinds`), which replaces a participant's name with their code. The answer tells the copilot what was masked ("2 email addresses and 3 participant names were masked"). **Decision 3** asks OJ whether masking is automatic (recommended), asked each time, or off.
+- **Masked text coming back (Ruling).** Each masked item becomes a numbered placeholder (`⟦email 1⟧`, `⟦participant P03⟧`), and the tab keeps the map from placeholder to original for that document's revision until the switch goes off. Before `edit_document` applies an edit, every placeholder in the copilot's text is put back to its original, so the student's real email or name is never overwritten by a placeholder or a code. A placeholder that is not in the map (made up by the copilot) refuses the edit as `invalid`. A placeholder the copilot drops counts as removed student text under the 20% rule. This decides only how an edit is written back; what is sent to the copilot is Decision 3.
 - A page reload or a sign-out ends the switch. A browser that freezes a background tab stops the loop; the next call then gets the "not open" message. Whether Chrome freezes such a tab on an 8 GB laptop is UNKNOWN; the walk checks it.
 
 ### 5.6 Tools in the door's first version
@@ -270,7 +282,7 @@ The server's `instructions` (sent at `initialize`) and every tool description sa
 5. **Revisions by the copilot, with undo.** The tab saves the edit as a new revision through the existing save route `PUT /documents/:id` with a new field `copilotCall: <call id>`. The api accepts `author_kind = "copilot"` only with a call id that is `taken` by that user's tab for `edit_document` or `insert_result` on that document, and sets `author_label` to the client's name ("Claude (copilot)"). If the document is open in the editor, the tab first saves the student's pending text as their own revision, then applies the edit through the editor so it appears at once. **Undo** restores the previous revision with the existing restore route.
 6. **AI-use log.** Every call the tab answers, done or refused, adds one `ai_use_log` row: the day from the tab, provider = the client (`claude` or `chatgpt`, from the grant), model = `copilot` (the MCP client does not tell us which model it runs; `initialize` carries the client's name and version: BELIEVED), kind = one of five new copilot kinds (read, check, statistics, edit, citation), and the group the AI-use statement already uses. No text. **Ruling**: the student's existing "AI-use log off" setting applies to copilot calls as it does to the buttons. The AI-use statement (`aiuBuildV2`) names copilot use; its wording is a register row for Dr. Sharma.
 7. **Nothing leaves by itself.** No tool sends, submits, emails, exports or posts (rule 12). `search_papers` and `add_citation` reach only OpenAlex, PubMed and Crossref, never an address the copilot supplies.
-8. **Rate limits** (**Ruling**): 60 calls a minute and 600 an hour per connection; 30 copilot revisions an hour per document.
+8. **Rate limits** (**Ruling**): 60 calls a minute and 600 an hour per connection; 30 copilot revisions an hour per document. They use the fixed-window counters the go-live build adds (`rate_counters`, `Store.consumeQuota`, branch `golive-build`), with buckets named per connection and per document.
 
 ### 5.8 What is stored, and where
 
@@ -346,6 +358,7 @@ Unit and integration (Hono test client, the memory store and the Drizzle store o
 - **Server blindness**: run every tool with a known sentence in a document, a known participant name and distinctive data values, then search every table and the captured logs for any of them in clear. None may appear.
 - Rules: draft first on refuses text with v1's wording; the 20% boundary (just under passes, just over refuses); a stale revision number refused; a copilot revision has `author_kind = "copilot"` and the client's label; `copilotCall` that is not `taken`, or for another document, is refused; Undo restores the previous revision; inserted text is AI-marked; an unmatched number in copilot text is listed as unverified; `insert_result` inserts a run-linked sentence and records the run; `run_test` and `list_data` never return a data value (checked with distinctive values); masking of personal data and participant names; one AI-use log row per call with no text in it; the AI-use statement names copilot use; the "AI-use log off" setting.
 - Executors cannot import the AI-key or vault-secret modules (an import-graph test).
+- Masked items are put back when an edit is written; a made-up placeholder refuses the edit; the tab's bridge loop sets no timer; an open long-poll keeps a tab live; Copilot cannot be switched on with the vault off.
 
 End to end (Playwright on the local pglite recipe):
 - A test MCP client (the MCP SDK's client) runs the full OAuth flow against the local api and web, with a signed-in test student and an open tab with the vault unlocked; it calls `read_document`, `run_test` on pasted data, `insert_result` and `edit_document`; the student sees the revision and its Undo; Disconnect makes the next call 401.
@@ -395,6 +408,8 @@ Release 1, production v1 (12 tasks, plus one if Decision 2 is yes):
 
 The implementation plan is `docs/superpowers/plans/2026-10-24-copilot-door.md`.
 
+Order with the work in flight: the door's branch starts from `phase-3a-vault` after `golive-build` (rate counters, migration 0007) and `participants-register` (PR #28, the participant matcher) have merged. Its migration takes the next free number. If either has not merged when the build starts, the plan says what to do.
+
 Release 2 (after the live walk): D1 tools served without the tab (1 task); whatever the ChatGPT walk shows (1); v1's viva and devil's-advocate prompts as MCP prompts (1); the closeness check as a tool (1). The sealed inbox (D2, 2 tasks) only if students ask.
 
 Pace: the participants feature was 12 tasks, designed, built and reviewed within 2026-10-24 (SUPPORTED by its progress note in the shared notes folder), so release 1 is one to two days of build in a cloud session (BELIEVED), plus migration, deploy (api first, then web) and the live walk with OJ.
@@ -402,14 +417,14 @@ Pace: the participants feature was 12 tasks, designed, built and reviewed within
 ## 10. Decisions for OJ
 
 1. **Which door.** B, the browser bridge (recommended): nothing installed, our server never reads the work, but Appuscholar must stay open and unlocked while the copilot works. A, the time-boxed unlock: the student may close Appuscholar, but for those hours our server can read that project, and the privacy promise must change. C, the local connector: the most private, but only in Claude Desktop and Claude Code, with a program to install; no ChatGPT, no phone, no claude.ai.
-2. **Data sets.** Keep participant rows only in the open tab (v1's behaviour, ruling R1): the copilot can run tests only on data the student loaded in this sitting, and the student pastes it again after a reload. Or keep data sets sealed in the vault (recommended): they open again after unlock, for the buttons and the copilot alike; our server still cannot read them. The lab asks once per data set ("Keep this data in my vault?"). Adds one task.
+2. **Data sets.** Keep participant rows only in the open tab (v1's behaviour, ruling R1): the copilot can run tests only on data the student loaded in this sitting, and the student pastes it again after a reload. Or keep data sets sealed in the vault (recommended): they open again after unlock, for the buttons and the copilot alike; our server still cannot read them. The lab asks once per data set ("Keep this data in my vault?"). Adds one task. It departs from v1 (rows never stored), so a yes from OJ goes in the register as `proposed` for Dr. Sharma, like every deviation.
 3. **Personal data in what the copilot reads.** Mask personal data and participant names automatically and tell the copilot what was masked (recommended). Or ask the student in the tab before each read (v1's mask / send as is / cancel; slow, because the student must switch to the tab every time). Or send as is. This touches Dr. Sharma's rule 2, so it also goes in the register for him.
 4. **Edit limits.** Draft first on means the copilot inserts no text at all (recommended, as v1's rule 4), or allows short insertions. One edit may rewrite at most 20% of the student's own words (recommended), or another share.
 5. **The rest of Phase 6.** Leave "Sign in with ChatGPT" and the operator-metered key out of production v1 (recommended, §8), or add a small capped pilot allowance after the door.
 
 ## 11. Calls made in this document, and what is left to the builder
 
-Calls (each a **Ruling** above, listed so OJ can check them): OAuth built in this repo; redirect and metadata-host allowlists; opaque hashed tokens, 1 hour and 30 days with rotation; grants expire after 30 days unused; the copilot works on the project open in the tab; P-256 sealing; polling intervals and the 60-minute auto-off; 45-second call limit; the tool list of §5.6; plain-text edit operations; the AI-use log setting applies to copilot calls; rate limits; a consent page whose write scope is ticked by default and can be unticked.
+Calls (each a **Ruling** above, listed so OJ can check them): Copilot needs the vault; masked items are put back from a map before an edit is written; the long-poll is the heartbeat and the tab uses no timer; released only on the final production address; OAuth built in this repo; redirect and metadata-host allowlists; opaque hashed tokens, 1 hour and 30 days with rotation; grants expire after 30 days unused; the copilot works on the project open in the tab; P-256 sealing; the server-side check intervals and the 60-minute auto-off; 45-second call limit; the tool list of §5.6; plain-text edit operations; the AI-use log setting applies to copilot calls; rate limits; a consent page whose write scope is ticked by default and can be unticked.
 
 Left to the builder: the MCP SDK and Hono transport package to use; the exact paragraph id scheme; how the Statistics lab store is read by `run_test`; polling versus LISTEN/NOTIFY after measuring; the copy of the Copilot page within the voice of the existing account pages; the ChatGPT redirect URI, read from OpenAI's documentation at build time.
 
@@ -420,3 +435,16 @@ Left to the builder: the MCP SDK and Hono transport package to use; the exact pa
 - v2 spec §8: replaced by this document. Its tools `explain_result`, `viva_question` and `pd_scan_text` are dropped (the copilot is the AI; the scan runs on every answer).
 - Parity-port spec, Decision 6 (a dataset key wrapped to an 8-hour server session key): replaced by Decision 1 here.
 - Vault spec §Doors and builder-check answer 2: confirmed and made concrete ("the MCP door runs where the student is"; the X25519 key is kept for the D2 inbox).
+
+## 13. Answers from the builder check (2026-10-24)
+
+A fresh reviewer read this document as the builder would, checked its claims against the code at 1ec773b and the branches in flight, and asked seven questions. Where each went:
+1. **Which door?** Decision 1, OJ's. The plan assumes B and stops if he picks otherwise.
+2. **A student without a vault.** Settled here: Copilot needs the vault (§5.1).
+3. **Masked text written back by the copilot.** Settled here: placeholders are put back from the tab's map, and invented ones refuse the edit (§5.5). Whether to mask at all stays Decision 3. The participant matcher lives on `participants-register` (PR #28); the plan's Task 7 says what to do if it has not merged.
+4. **A hidden or frozen tab.** Settled here: the long-poll is the heartbeat, the server does the timing, the tab holds a Web Lock, and the Copilot page gives the "keep active" step. A small Copilot window is the fallback if the walk fails (§5.4).
+5. **Data sets in the vault.** Decision 2, OJ's; a yes is `proposed` for Dr. Sharma in the register.
+6. **The permanent address.** Settled here: released on the final production address; a later move keeps the old one for 30 days and asks students to reconnect (§5.3). The domain itself is the go-live pack's question.
+7. **Branch order.** Settled here: after `golive-build` and `participants-register`; the rate limits reuse `consumeQuota`; the migration takes the next free number (§9).
+
+The reviewer also confirmed the document's claims about the code hold, apart from small slips it could handle itself. One it did not name, found while writing the plan: the save route is `PUT /documents/:id`, now corrected in F13 and §5.7.
