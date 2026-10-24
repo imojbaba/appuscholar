@@ -3,7 +3,8 @@ name: qa
 # database, and writes a report by story (qa-report/: index.html, summary.md, fix-brief.md, results.json). It never signs in to the live site.
 #   qa-slice   every pull request into phase-3a-vault: each story's plain run and every F/O regression (`-g @slice`), about 15 min. Known faults are marked in
 #              apps/web/qa/known.json, so the slice is green on the current build and turns red only on a FAIL that no known id explains.
-#   qa-full    every push to phase-3a-vault (a merge) and the Run workflow button: the full grid in 4 shards, joined by qa-report into one report.
+#   qa-full    every push to phase-3a-vault (a merge) and a manual run: the full grid in 4 shards, joined by qa-report into one report. GitHub shows the Run workflow
+#              button only for workflows on the default branch (main); until qa.yml is there, start a manual run with `gh workflow run qa.yml --ref phase-3a-vault`.
 # The live-AI and live-site runs (plan Task 17) are added when their cases are built; the live-AI key is a GitHub Actions secret OJ creates, never a value in this file.
 on:
   pull_request:
@@ -11,9 +12,10 @@ on:
   push:
     branches: [phase-3a-vault]
   workflow_dispatch:
-# A newer push to the same pull request cancels the run for the older commit; runs on phase-3a-vault are never cancelled (each merge gets its full report).
+# A newer push to the same pull request cancels the run for the older commit. Every push and manual run has a group of its own (its run id): a shared group would keep
+# only one waiting run and cancel it when a newer one queued, and a merge would lose its full report. The runs share nothing (each job has its own runner and Postgres).
 concurrency:
-  group: qa-${{ github.event.pull_request.number || github.ref }}
+  group: qa-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
@@ -42,21 +44,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @appuscholar/db db:migrate
       - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
-      # The build carries the PR's head commit (Help's version, the report's header), as the pull request's checks are listed under it.
+      # The build carries the PR's head commit (Help's version, the report's header), as the pull request's checks are listed under it. GITHUB_SHA is set inline:
+      # the runner writes its own GITHUB_* values over a step's env.
       - name: Build the api and the web app as production builds them
-        run: GITHUB_SHA=${{ github.event.pull_request.head.sha }} pnpm --filter @appuscholar/web qa:build
+        env: { HEAD_SHA: "${{ github.event.pull_request.head.sha }}" }
+        run: GITHUB_SHA="$HEAD_SHA" pnpm --filter @appuscholar/web qa:build
       - name: Run the slice
-        run: GITHUB_SHA=${{ github.event.pull_request.head.sha }} QA_RUN_KIND=slice pnpm --filter @appuscholar/web qa -g @slice
+        env: { HEAD_SHA: "${{ github.event.pull_request.head.sha }}" }
+        run: GITHUB_SHA="$HEAD_SHA" QA_RUN_KIND=slice pnpm --filter @appuscholar/web qa -g @slice
       - name: Upload the report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with: { name: qa-report-slice, path: apps/web/qa-report, retention-days: 14, if-no-files-found: warn }
       - name: Write the summary
         if: ${{ !cancelled() }}
+        env: { HEAD_SHA: "${{ github.event.pull_request.head.sha }}", BASE_REF: "${{ github.base_ref }}" }
         run: |
-          echo "Built from the merge of ${{ github.event.pull_request.head.sha }} into ${{ github.base_ref }}. The full report, screenshots and replays: the run's artifact qa-report-slice." >> "$GITHUB_STEP_SUMMARY"
+          echo "Built from the merge of $HEAD_SHA into $BASE_REF. The full report, screenshots and replays: the run's artifact qa-report-slice." >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
-          if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the Run the slice step's log." >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the log of the first step that failed (the build or the slice)." >> "$GITHUB_STEP_SUMMARY"; fi
 
   qa-full:
     if: github.event_name != 'pull_request'
@@ -101,6 +107,7 @@ jobs:
     needs: qa-full
     if: ${{ !cancelled() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -110,15 +117,23 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { pattern: qa-blob-*, path: shards }
       # One folder of the four blob reports, and one provider log of the four shards' requests, so the joined report checks every request the fake provider took.
+      # A shard that died before writing its blob report (its own job is red) leaves the join short: the count goes into the summary, so a partial report never reads as the full grid.
       - name: Gather the shards
+        id: gather
         run: |
           mkdir -p apps/web/all-blob-reports
           find shards -path '*/blob-report/*.zip' -exec cp {} apps/web/all-blob-reports/ \;
           find shards -name provider-calls.jsonl -exec cat {} + > "$RUNNER_TEMP/provider-calls.jsonl" || true
           ls -la apps/web/all-blob-reports
+          n=$(find apps/web/all-blob-reports -name '*.zip' | wc -l)
+          echo "joined=$n" >> "$GITHUB_OUTPUT"
+          if [ "$n" -ne 4 ]; then echo "::warning::The full report joins $n of 4 shards: the missing shards' cases are not in it (see the red qa-full jobs)."; fi
+      # merge-reports exits 0 even when the reporter could not write the report (Playwright 1.64 ignores the status onEnd returns there), so the report itself is checked.
       - name: Join the shards into one report
         working-directory: apps/web
-        run: QA_RUN_KIND=full QA_PROVIDER_LOG="$RUNNER_TEMP/provider-calls.jsonl" pnpm exec playwright merge-reports --reporter ./qa/reporter.ts ./all-blob-reports
+        run: |
+          QA_RUN_KIND=full QA_PROVIDER_LOG="$RUNNER_TEMP/provider-calls.jsonl" pnpm exec playwright merge-reports --reporter ./qa/reporter.ts ./all-blob-reports
+          test -s qa-report/summary.md || { echo "::error::merge-reports wrote no qa-report/summary.md"; exit 1; }
       - name: Upload the report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -126,6 +141,6 @@ jobs:
       - name: Write the summary
         if: ${{ !cancelled() }}
         run: |
-          echo "The full grid on ${{ github.sha }}, in 4 shards. The full report, screenshots and replays: the run's artifact qa-report-full." >> "$GITHUB_STEP_SUMMARY"
+          echo "The full grid on $GITHUB_SHA: ${{ steps.gather.outputs.joined || 0 }} of 4 shards joined. The full report, screenshots and replays: the run's artifact qa-report-full." >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the Join step's log." >> "$GITHUB_STEP_SUMMARY"; fi

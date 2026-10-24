@@ -35,10 +35,12 @@ Good to know:
 | Job | When | What it runs | Where the report is |
 | --- | --- | --- | --- |
 | `qa-slice` | every pull request into `phase-3a-vault` | `qa -g @slice`: each story's plain run and every F/O regression (about 3 minutes of cases, plus the build) | the run's page (the summary) and its artifact `qa-report-slice` |
-| `qa-full` and `qa-report` | every push to `phase-3a-vault` (a merge), and the **Run workflow** button | the full grid in 4 shards, joined into one report by `playwright merge-reports --reporter ./qa/reporter.ts` | the `qa-report` job's page and its artifact `qa-report-full` |
+| `qa-full` and `qa-report` | every push to `phase-3a-vault` (a merge), and a manual run | the full grid in 4 shards, joined into one report by `playwright merge-reports --reporter ./qa/reporter.ts` | the `qa-report` job's page and its artifact `qa-report-full` |
 
-- A pull request is tested as its merge with `phase-3a-vault`, so a pull request opened before the layer merged still runs the layer's cases. The report's commit is the pull request's head.
-- The slice is green on the current build because every fault the runs know about is marked in `apps/web/qa/known.json`. It turns red only on a FAIL that no known id explains, or on a known fault marked `fixed` that fails again.
+- A manual run: GitHub shows the **Run workflow** button only for workflows on the default branch (`main`). Until `qa.yml` reaches `main`, start one with `gh workflow run qa.yml --ref phase-3a-vault` (or the API's workflow dispatch); once it is there, press the button and pick `phase-3a-vault`.
+- A pull request is tested as its merge with `phase-3a-vault`, so a pull request opened before the layer merged runs the layer's cases on its next push (or when it is reopened). A pull request with a merge conflict gets no run until the conflict is resolved. The report's commit is the pull request's head.
+- The full report says how many of the 4 shards it joined; a shard that died before writing its results leaves it short, and its own job is red.
+- The slice is green on the current build because every fault the runs know about is marked in `apps/web/qa/known.json`. It turns red on a FAIL that no known id explains, on a known fault marked `fixed` that fails again, and on a run-level error (a key that is not a test key reaching the fake provider, a report that could not be written).
 - Whether the slice blocks merging (a required check) is OJ's call (spec section 16, question 2).
 - The live-AI and live-site runs (plan Task 17) are not in the workflow yet. The live-AI run needs a test key with a small spending cap, saved by OJ as the repository secret `QA_LIVE_AI_KEY`; until it exists those cases are NOT RUN. The key is never written in a file, a log or the report.
 
