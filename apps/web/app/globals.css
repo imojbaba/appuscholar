@@ -308,7 +308,11 @@
 .doc-resize:hover { background: var(--purple-100); }
 .doc-resize:focus-visible { background: var(--purple-100); outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .doc-with-aside { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s4); align-items: start; }
-.doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); }
+/* Task 13: the AI pane is `--aside-w` wide (`dockW`, 320 to 760, set by DocumentCard), with a handle centred in the gap before it. */
+.doc-with-aside.has-aside:not(.beside) { position: relative; grid-template-columns: minmax(0, 1fr) var(--aside-w, 420px); }
+.aside-resize { position: absolute; top: var(--s2); bottom: var(--s2); right: calc(var(--aside-w, 420px) + var(--s4) / 2 - 5px); width: 10px; border-radius: 5px; cursor: col-resize; touch-action: none; z-index: 1; }
+.aside-resize:hover { background: var(--purple-100); }
+.aside-resize:focus-visible { background: var(--purple-100); outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .doc-aside { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
 .home-interim, .start-interim { max-width: 860px; margin: 0 auto; padding: var(--s7); }
 .home-interim h1, .start-interim h1 { margin: 0 0 var(--s4); font-size: 26px; line-height: 1.25; }
@@ -402,7 +406,7 @@
   .doc-with-aside.has-aside:not(.beside) { grid-template-columns: minmax(0, 1fr); }
   .frame-body.beside { display: block; }
   .frame-doc.beside { position: static; max-height: none; overflow: visible; padding: var(--s6) var(--s7) 0; }
-  .doc-resize { display: none; }
+  .doc-resize, .aside-resize { display: none; }
 }
 
 /* Phone, up to 700px: 16px gutters, nothing wider than the screen, controls grow to 44px. */
