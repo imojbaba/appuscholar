@@ -74,7 +74,7 @@ export type ColumnNames = {
   roll: Array<{ row: number; personId: string }>;
   /**
    * In a name column, the cells (not the distinct values) with a letter in them that are not on the list and not a name to add either: an answer of more than four words (R11), as written
-   * (trimmed). Not a code, a roll number, a placeholder or a number. They are never added as people; the student keeps them or removes them (ColumnPlan.leftover).
+   * (trimmed). Not a code, a roll number, a placeholder or a number, and not a cell that holds someone on the list (that one is in `inText`). They are never added as people; the student keeps them or removes them (ColumnPlan.leftover).
    */
   leftover: Array<{ row: number; value: string }>;
 };
@@ -175,8 +175,9 @@ export function listTableScan(
       if (finds.length) col.inText.push({ row, finds });
       if (!isName) return;
       if (!shapedLikeAName(value)) {
-        // Not one person's name (R11), so not added; but it is in a name column and will sit under the coded header unless the student says otherwise (R49). A number or a placeholder is not worth a word.
-        if (/\p{L}/u.test(value) && !PLACEHOLDER.test(value)) col.leftover.push({ row, value });
+        // Not one person's name (R11), so not added; but it is in a name column and will sit under the coded header unless the student says otherwise (R49). A number or a placeholder is not worth a word,
+        // and a cell that holds someone on the list is theirs: it stays an answer with the names inside it (inText), never emptied as a leftover.
+        if (/\p{L}/u.test(value) && !PLACEHOLDER.test(value) && !finds.some((f) => f.kind !== "suggest")) col.leftover.push({ row, value });
         return;
       }
       // A value of a name column that holds exactly one person's name is that person's cell; otherwise it is a name that is not on the list.

@@ -237,6 +237,15 @@ describe("listTableScan", () => {
     expect(column(listTableScan(table("comments\nRahul Verma\nDr Asha Verma Rao\nDr Asha Verma Rao Singh"), m, OPTS), 0).unlisted).toEqual(["Dr Asha Verma Rao"]);
   });
 
+  it("leftover (R49): a long cell that holds a person of the list is not a leftover; one that only holds a guess still is", () => {
+    const m = buildMatcher([PRIYA, RAHUL]);
+    const d = table("student name,x\nPriya Sharma,1\nPriya Sharma (absent on day two),2\nPriya Sharma & Rahul Verma,3\nMohammed Abdul Rahman Khan Siddiqui,4");
+    const c = column(listTableScan(d, m, { ...OPTS, nameColumns: [0], suggest: true }), 0);
+    expect(c.leftover).toEqual([{ row: 3, value: "Mohammed Abdul Rahman Khan Siddiqui" }]);
+    expect(c.inText.map((t) => t.row)).toContain(1);
+    expect(c.inText.map((t) => t.row)).toContain(2);
+  });
+
   it("leftover (R49): a name column's cells that are not on the list, not a name to add, not a code and not a placeholder are reported, and are never added as people", () => {
     const m = buildMatcher([PRIYA, RAHUL]);
     const d = table(

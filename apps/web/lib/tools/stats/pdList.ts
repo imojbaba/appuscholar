@@ -399,8 +399,10 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
         // A row that may be several people stays as typed unless it is removed: it is not coded as the first of them. Nor is a cell that is wholly a name several people have (R36).
         const listed = n.listed.filter((l) => !askChoice.has(l.row) && (owners.get(normName(data.rows[l.row]?.[c.index] ?? ""))?.length ?? 0) < 2);
         const adding = action === "codes" && c.unlistedChoice === "add" && !c.noAdd;
-        // The cells that are not on the list and were not added go with the codes when the student says so (R49): nothing is replaced inside them.
-        const leftGone = new Set(action !== "remove" && c.leftover.choice === "remove" ? n.leftover.map((l) => l.row) : []);
+        // The cells that are not on the list and were not added go with the codes when the student says so (R49): nothing is replaced inside them. Only the cells the box named
+        // (a name column's): a column the box does not show as names loses no cell this way.
+        const shown = c.leftover.cells > 0;
+        const leftGone = new Set(action !== "remove" && shown && c.leftover.choice === "remove" ? n.leftover.map((l) => l.row) : []);
         const inText = n.inText.filter((t) => {
           const key = cellKey(t.row);
           if (singleKeys.has(key) || leftGone.has(t.row)) return false;
@@ -433,8 +435,8 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
             if (!gone.has(t.row) && !whole.has(t.row) && t.finds.some((f) => picked.has(normName(f.text)) || (f.kind === "sure" && c.inText === "codes"))) answers++;
           }
         }
-        scan.push({ index: c.index, listed, unlisted: adding ? c.unlisted : [], withdrawn, withdrawnAsk: [], inText, roll: [], leftover: n.leftover });
-        plans.push({ index: c.index, action, inText: c.inText, dropRows: withdrawn.length > 0, picks, leftover: c.leftover.choice });
+        scan.push({ index: c.index, listed, unlisted: adding ? c.unlisted : [], withdrawn, withdrawnAsk: [], inText, roll: [], leftover: shown ? n.leftover : [] });
+        plans.push({ index: c.index, action, inText: c.inText, dropRows: withdrawn.length > 0, picks, leftover: shown ? c.leftover.choice : "keep" });
       }
       const r = listTransform({ ...data, rows }, scan, plans, m, codeOfName);
       const same = !r.coded && !r.removed && !r.removedRows && r.headers.length === data.headers.length

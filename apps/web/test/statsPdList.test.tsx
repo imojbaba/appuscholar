@@ -647,6 +647,20 @@ describe("cells of a name column that are not on the list and were not added (R4
     expect(tid("pd-leftover-0")).toBeNull();
   });
 
+  it("a long cell that holds a listed person is not a leftover: it keeps its words and the person in it is coded", async () => {
+    await load("student name,score\nPriya Sharma,1\nPriya Sharma (absent on day two),2\nKavya Nair & Rahul Verma,3\nSunita Devi,4");
+    expect(tid("pd-leftover-0")).toBeNull();
+    await applyAndWait();
+    expect(pasted()).toEqual(["ParticipantCode,score", "P001,1", "P001 (absent on day two),2", "P003 & P002,3", "P006,4"]);
+  });
+
+  it("a column the box does not show as names never loses a cell to the leftover choice", async () => {
+    await load("who,score\nPriya Sharma,1\nRahul Verma,2\nKavya Nair,3\nI would rather not say who I am,4");
+    expect(tid("pd-leftover-0")).toBeNull();
+    await applyAndWait();
+    expect(pasted()).toContain("I would rather not say who I am,4");
+  });
+
   it("a long list of them shows a few and the number", async () => {
     const many = Array.from({ length: 6 }, (_, i) => `Mr Ravi Kumar Number${i} Of Nagpur`).join("\n");
     await load(`student name,score\nPriya Sharma,1\n${many.split("\n").map((v, i) => `${v},${i}`).join("\n")}`);
