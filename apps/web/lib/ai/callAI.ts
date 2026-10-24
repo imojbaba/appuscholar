@@ -2,9 +2,10 @@ import { PROV_ORDER, maskText, scanText, type ProviderId } from "@appuscholar/co
 import { ApiError, apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { keyStore, unlockKeyBlob } from "./keys";
+import { DICTS, tFormat } from "@/lib/i18n";
 
 /** The gateway's error classes (apps/api/src/ai/types.ts). */
-export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms";
+export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms" | "quota";
 export type ScanResult = ReturnType<typeof scanText>;
 
 export type CallOpts = { temp?: number; max?: number; noLang?: boolean; noScan?: boolean; purposeDay?: string };
@@ -26,6 +27,18 @@ export type CallCtx = {
   onRateLimit?(): void;
 };
 
+/**
+ * The sentence for a per-user quota answer. `detail` is "hour:<seconds to wait>" or "day:<seconds>": the hour says how long to wait in whole
+ * minutes (rounded up), the day says to come back tomorrow. In Hindi (a draft for the Hindi reader) when the page language is hi.
+ */
+function quotaMessage(detail?: string): string {
+  const lang = typeof document !== "undefined" && document.documentElement.lang === "hi" ? "hi" : "en";
+  const m = /^hour:(\d+)$/.exec(detail ?? "");
+  if (!m) return tFormat(DICTS.en, DICTS.hi, "ai_quota_day", lang);
+  const minutes = Math.max(1, Math.ceil(Number(m[1]) / 60));
+  return minutes === 1 ? tFormat(DICTS.en, DICTS.hi, "ai_quota_hour_one", lang) : tFormat(DICTS.en, DICTS.hi, "ai_quota_hour", lang, { minutes });
+}
+
 /** v1 apiMsg (index.html:5253-5266), keyed by the gateway's error class instead of by pattern-matching text. */
 export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: string): string {
   switch (code) {
@@ -40,6 +53,7 @@ export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: st
     case "network": return "Could not reach the AI provider. Check your connection and try again, or switch provider using the tabs at the top.";
     case "truncated": return "The answer was cut off. Select a smaller piece of text and try again.";
     case "empty": return "The AI returned an empty answer. Try again.";
+    case "quota": return quotaMessage(detail);
     case "terms": return "Accept the terms first (open ❓ Help → Terms and where your data goes).";
   }
 }
@@ -49,7 +63,7 @@ export class AiCallError extends Error {
   constructor(public code: AiErrorCode | "cancelled" | "bad-pass" | "unknown", message: string) { super(message); }
 }
 
-const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms"];
+const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms", "quota"];
 /** Errors worth trying another provider for: v1 aiRetriable (429, 5xx, 401/403, 404, network). */
 const RETRIABLE: readonly string[] = ["rate-limit", "provider-error", "key-rejected", "model-gone", "network"];
 
