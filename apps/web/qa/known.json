@@ -16,5 +16,10 @@
   { "id": "O15", "title": "The dictionary failing tells the student \"The dictionary needs the internet\"", "status": "known" },
   { "id": "O18", "title": "A locked vault asks for the passphrase once for each sealed item a page reads", "status": "known" },
   { "id": "O20", "title": "Tab on the Viva tab inserts AI text, and nothing there says so", "status": "awaiting", "owner": "OJ" },
-  { "id": "O21", "title": "The Make PPT download's type is application/zip, not a presentation", "status": "known" }
+  { "id": "O21", "title": "The Make PPT download's type is application/zip, not a presentation", "status": "known" },
+  { "id": "Q1", "title": "The language button's accessible name (\"Switch interface language\") does not contain the text it shows (\"EN\" or \"हि\")", "status": "known", "match": { "rule": "axe", "text": "Switch interface language" } },
+  { "id": "Q2", "title": "After the right passphrase, the project's home keeps saying \"This project is locked\" and shows no sign that it is opening, until its saved work has been read again", "status": "known" },
+  { "id": "Q3", "title": "On a phone, the \"Remember on this computer\" tick row of the set-up and unlock windows is 20 px tall", "status": "known", "match": { "rule": "small-target", "text": "-remember]" } },
+  { "id": "Q4", "title": "On a phone, the recovery sheet's \"I have saved it\" tick row is 20 px tall", "status": "known", "match": { "rule": "small-target", "text": "[vault-sheet-saved]" } },
+  { "id": "Q5", "title": "The show-passphrase eye lies over the right end of every passphrase field (the field's right padding is not applied), so a long passphrase runs under it", "status": "known", "match": { "rule": "overlap", "text": "-toggle]" } }
 ]
