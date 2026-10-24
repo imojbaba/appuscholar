@@ -81,11 +81,15 @@ describe("findNames", () => {
     expect(f[0]).toMatchObject({ kind: "ask", why: "everyday" });
   });
 
-  it("a spelling the built-in everyday names know is asked about without being ticked", () => {
-    const m = buildMatcher([person("p1", "Kiran Rao", ["Kiran"])]);
-    expect(findNames("the kiran of light", m)).toEqual([]);
-    expect(findNames("Kiran came", m)[0]).toMatchObject({ kind: "ask", why: "everyday" });
-    expect(findNames("Kiran Rao came", m)[0]).toMatchObject({ kind: "sure" });
+  it("only the person's own everyday mark makes a find ask: the built-in list does not (R6)", () => {
+    const unticked = buildMatcher([person("p1", "Kiran Rao", ["Kiran"])]);
+    expect(findNames("Kiran said", unticked)).toEqual([{ start: 0, end: 5, text: "Kiran", personIds: ["p1"], kind: "sure" }]);
+    expect(findNames("kiran said", unticked).map((f) => [f.text, f.kind])).toEqual([["kiran", "sure"]]);
+    expect(isEverydayName("Kiran")).toBe(true); // the list is still there, for the Add form to pre-tick with
+    const ticked = buildMatcher([person("p1", "Kiran Rao", ["Kiran"], { everyday: ["Kiran"] })]);
+    expect(findNames("Kiran said", ticked)[0]).toMatchObject({ kind: "ask", why: "everyday" });
+    expect(findNames("kiran said", ticked)).toEqual([]);
+    expect(findNames("Kiran Rao said", ticked)[0]).toMatchObject({ kind: "sure" });
   });
 
   it("sharedShortNameIsAsk", () => {
@@ -131,10 +135,39 @@ describe("findNames", () => {
     expect(findNames("Priya", buildMatcher([person("p1", "...", [" "])]))).toEqual([]);
   });
 
-  it("finds a name written across a line break, and keeps hyphens and apostrophes inside a spelling", () => {
+  it("a space in a spelling matches horizontal white space only, never a line break (R5)", () => {
+    const m = buildMatcher([PRIYA]);
+    const para = "I interviewed Priya\n\nSharma (2019) argued";
+    const f = findNames(para, m);
+    expect(f.map((x) => x.text)).toEqual(["Priya"]);
+    expect(replaceFinds(para, f, () => "P001")).toBe("I interviewed P001\n\nSharma (2019) argued");
+    expect(findNames("ask Priya\nSharma: I did", m).map((x) => x.text)).toEqual(["Priya"]);
+    expect(findNames("Priya\r\nSharma", m).map((x) => x.text)).toEqual(["Priya"]);
+    expect(findNames("Priya\u2028Sharma", m).map((x) => x.text)).toEqual(["Priya"]);
+    expect(findNames("Priya \t Sharma and Priya\u00a0Sharma", m).map((x) => x.text)).toEqual(["Priya \t Sharma", "Priya\u00a0Sharma"]);
+    expect(findNames("R.\nK. Sharma", buildMatcher([person("p1", "R K Sharma")]))).toEqual([]);
+  });
+
+  it("keeps hyphens and apostrophes inside a spelling", () => {
     const m = buildMatcher([person("p1", "Anne-Marie O'Brien")]);
-    const text = "Anne-Marie\nO\u2019Brien said that Anne-Marie  O'Brien and Anne Marie O'Brien";
-    expect(findNames(text, m).map((f) => text.slice(f.start, f.end))).toEqual(["Anne-Marie\nO\u2019Brien", "Anne-Marie  O'Brien"]);
+    const text = "Anne-Marie O\u2019Brien said that Anne-Marie  O'Brien and Anne Marie O'Brien";
+    expect(findNames(text, m).map((f) => text.slice(f.start, f.end))).toEqual(["Anne-Marie O\u2019Brien", "Anne-Marie  O'Brien"]);
+  });
+
+  it("looks for no spelling without a letter in it", () => {
+    const m = buildMatcher([person("p1", "Anu", ["2019", "--", "...", "'", "(3)"])]);
+    expect(findNames("In 2019 -- (3) Anu 'said' it...", m).map((f) => f.text)).toEqual(["Anu"]);
+  });
+
+  it("a spelling of one letter is asked about, and is never the s of Priya's", () => {
+    const m = buildMatcher([person("p1", "Anu Rao", ["S"])]);
+    expect(findNames("Priya's book", m)).toEqual([]);
+    expect(findNames("Priya\u2019s book", m)).toEqual([]);
+    expect(findNames("S said", m)).toEqual([{ start: 0, end: 1, text: "S", personIds: ["p1"], kind: "ask", why: "short" }]);
+    expect(findNames("Anu Rao's book", m).map((f) => f.text)).toEqual(["Anu Rao"]);
+    expect(findNames("then S. said", m)).toHaveLength(1);
+    const shared = buildMatcher([person("p1", "Anu Rao", ["S"]), person("p2", "Sita Rao", ["S"])]);
+    expect(findNames("S said", shared)[0]).toMatchObject({ kind: "ask", why: "shared", personIds: ["p1", "p2"] });
   });
 
   it("treats a spelling with regex characters as plain text", () => {
@@ -187,6 +220,11 @@ describe("suggestNames", () => {
     expect(suggestNames("Then Rahulji left", m, [], { speakerLabels: false, firstNames: true })).toEqual([]);
   });
 
+  it("does not suggest a word written all in capitals (RAM), only a capitalised one (Ram)", () => {
+    const f = suggestNames("Then RAM left. Then Ram left. Then RAHUL left.", m, [], { speakerLabels: false, firstNames: true });
+    expect(f.map((x) => x.text)).toEqual(["Ram"]);
+  });
+
   it("does nothing unless the option is on", () => {
     expect(suggestNames("Meena: Then Rahul left.", m, [], NONE)).toEqual([]);
   });
@@ -196,9 +234,24 @@ describe("suggestNames", () => {
     expect(suggestNames("Meena: Hi", m, ["Meena"], { speakerLabels: true, firstNames: false })).toEqual([]);
   });
 
+  it("compares notNames as it compares first names: accents do not matter either way", () => {
+    const first = { speakerLabels: false, firstNames: true };
+    const text = "Then Jos\u00e9 left and Jose\u0301 and Jose too.";
+    expect(suggestNames(text, m, ["Jose"], first)).toEqual([]);
+    expect(suggestNames(text, m, ["Jos\u00e9"], first)).toEqual([]);
+    expect(suggestNames(text, m, ["jose\u0301"], first)).toEqual([]);
+    expect(suggestNames("Jos\u00e9 Rao: hi", m, ["jose rao"], { speakerLabels: true, firstNames: false })).toEqual([]);
+  });
+
   it("never suggests the role words or a code as a speaker", () => {
-    const text = ["Interviewer: a", "Researcher: b", "Moderator: c", "Participant: d", "Respondent: e", "Q: f", "A: g", "P001: h", "P1234: i", "INTERVIEWER: j"].join("\n");
+    const text = ["Interviewer: a", "Researcher: b", "Moderator: c", "Participant: d", "Respondent: e", "Q: f", "A: g", "P001: h", "P1234: i", "INTERVIEWER: j", "Interviewee: k", "I: l", "R: m", "T: n", "S: o"].join("\n");
     expect(suggestNames(text, m, [], { speakerLabels: true, firstNames: false })).toEqual([]);
+  });
+
+  it("skips a speaker label only when the whole label is a role word: \"Dr A Kumar:\" is a suggestion", () => {
+    const text = "Dr A Kumar: yes\nInterviewee: yes\nI: yes\nInterviewer Meena: yes";
+    const f = suggestNames(text, m, [], { speakerLabels: true, firstNames: false });
+    expect(f.map((x) => text.slice(x.start, x.end))).toEqual(["Dr A Kumar", "Interviewer Meena"]);
   });
 
   it("takes a speaker label of one to three capitalised words from the start of a line only", () => {
@@ -261,7 +314,8 @@ describe("dataLists", () => {
     for (const w of FIRST_NAMES) expect(normName(w)).toBe(w);
     expect(new Set(EVERYDAY_NAMES).size).toBe(EVERYDAY_NAMES.length);
     expect([...FIRST_NAMES].filter((w) => EVERYDAY_NAMES.includes(w))).toEqual([]);
-    for (const w of ["priya", "rahul", "meena"]) expect(FIRST_NAMES.has(w)).toBe(true);
+    for (const w of ["priya", "rahul", "meena", "ram"]) expect(FIRST_NAMES.has(w)).toBe(true);
+    for (const w of ["tamil", "danish", "milan", "chad"]) expect(FIRST_NAMES.has(w), w).toBe(false); // a language, a nationality, a city, a country
     expect(isEverydayName("Will")).toBe(true);
     expect(isEverydayName("priya")).toBe(false);
   });

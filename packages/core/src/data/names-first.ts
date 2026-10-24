@@ -3,7 +3,7 @@
  * requests (spec §7.5, C3). Compiled by the builder on 2026-10-24 as plain data from general knowledge of names in use among Indian communities (Hindi-belt, South Indian,
  * Bengali, Marathi, Gujarati, Punjabi and Sikh, Muslim, Christian and Parsi) and in English; names are facts, so nothing was downloaded or copied from a published list.
  * Left out on purpose: every word in names-everyday.ts, surnames (so "Sharma" and "Singh" are never suggested), and given names that are more often a place or an ordinary
- * word (Jordan, Asia, Georgia, Austin, Mini).
+ * word (Jordan, Asia, Georgia, Austin, Mini, and Tamil, Danish, Milan and Chad: a language, a nationality, a city, a country).
  * Each name appears once, under the first community that came to mind; a name is not claimed by that community alone. Variant spellings are listed separately on purpose,
  * since a transcript spells a name as its writer does.
  */
@@ -18,7 +18,7 @@ export const FIRST_NAME_LIST: readonly string[] = [
   "gopal", "govind", "gulshan", "gunjan", "hardik", "harish", "harshad", "harshit", "hemant", "himanshu", "hitesh", "hrithik", "indra", "ishaan", "ishan",
   "jagdish", "jatin", "jayant", "jayesh", "jitendra", "jitesh", "jugal", "kabir", "kailash", "kamlesh", "kanhaiya", "kapil", "karan", "kartik", "kaushal",
   "kaushik", "keshav", "ketan", "kishan", "kishore", "kuldeep", "kunal", "lakshay", "lakshman", "lalit", "lav", "lokesh", "madan", "mahendra", "mahesh",
-  "manan", "manas", "mandeep", "manish", "manoj", "mayank", "mayur", "milan", "mohan", "mohit", "mrinal", "mukesh", "mukul", "murari", "nagesh", "naman",
+  "manan", "manas", "mandeep", "manish", "manoj", "mayank", "mayur", "mohan", "mohit", "mrinal", "mukesh", "mukul", "murari", "nagesh", "naman",
   "narayan", "narendra", "naresh", "naveen", "navin", "nikhil", "nikunj", "nilesh", "nimish", "niraj", "nirav", "nirmal", "nishant", "nitin", "nitish",
   "om", "omkar", "pankaj", "paras", "parth", "piyush", "pradeep", "pramod", "pranav", "prashant", "pratap", "pratik", "praveen", "pritam", "puneet",
   "purushottam", "pushkar", "raghav", "raghu", "rahul", "rajat", "rajeev", "rajendra", "rajesh", "rajiv", "rajkumar", "rajneesh", "rakesh", "ram",
@@ -90,7 +90,7 @@ export const FIRST_NAME_LIST: readonly string[] = [
   "sakthi", "sanal", "sankaran", "santhosh", "saravanan", "sasi", "sathish", "sathya", "sathyamoorthy", "sathyan", "satyanarayana", "sekar", "selvam",
   "sengottuvel", "senthil", "seshu", "shaji", "shanmugam", "shibu", "shivaji", "shivakumar", "siva", "sivakumar", "sivasankar", "somasundaram", "sreejith",
   "sridhar", "srikanth", "srinivasan", "srinu", "sriram", "subbaiah", "subramanian", "sudhakar", "sudheer", "sudheesh", "sugumar", "sundaram", "surendran",
-  "sureshkumar", "suriya", "swaminathan", "tamil", "teja", "thangaraj", "thiagarajan", "thirugnanam", "thirumal", "tirumala", "udhayakumar", "umapathy",
+  "sureshkumar", "suriya", "swaminathan", "teja", "thangaraj", "thiagarajan", "thirugnanam", "thirumal", "tirumala", "udhayakumar", "umapathy",
   "unni", "vadivel", "vairamuthu", "vamsi", "varaprasad", "vasanth", "vedanth", "velmurugan", "velu", "vengadesh", "venkat", "venkatesh", "venkateswara",
   "venu", "vetrivel", "vignesh", "vijayakumar", "vijayaraghavan", "vikraman", "vinayagam", "vineeth", "vinoth", "vishwanath", "viswanathan", "yadagiri",
   "yuvaraj",
@@ -168,7 +168,7 @@ export const FIRST_NAME_LIST: readonly string[] = [
   "aamir", "abbas", "abdul", "abdullah", "abid", "adil", "adnan", "aftab", "afzal", "ahmad", "ahmed", "ahsan", "ahtesham", "ajmal", "akbar", "akeel",
   "akhtar", "akram", "alam", "aleem", "ali", "alim", "altaf", "amaan", "amanullah", "ameen", "amir", "amjad", "anas", "anwar", "aqib", "arif", "armaan",
   "arman", "arshad", "asad", "asghar", "ashfaq", "ashraf", "asif", "aslam", "atif", "aurangzeb", "ayaan", "ayaz", "ayub", "azam", "azeem", "azhar", "aziz",
-  "babar", "badar", "badruddin", "basit", "bilal", "burhan", "danish", "dawood", "dilshad", "ehsan", "emaan", "fahad", "faheem", "fahim", "faisal", "faiz",
+  "babar", "badar", "badruddin", "basit", "bilal", "burhan", "dawood", "dilshad", "ehsan", "emaan", "fahad", "faheem", "fahim", "faisal", "faiz",
   "fakhruddin", "faraz", "fardeen", "farhan", "farid", "farooq", "fasih", "fawad", "fayaz", "fazal", "feroz", "fida", "firdaus", "firoz", "ghani",
   "ghulam", "gulzar", "habib", "hafeez", "hakim", "hamid", "hamza", "hanif", "haris", "haroon", "hasan", "haseeb", "hashim", "hassaan", "hassan", "hazim",
   "hidayat", "husain", "hussain", "ibrahim", "idris", "iftikhar", "ikram", "imaad", "imran", "imtiaz", "inayat", "irfan", "irshad", "isa", "ishaq",
@@ -244,7 +244,7 @@ export const FIRST_NAME_LIST: readonly string[] = [
   "jehangir", "kaikhushru", "keki", "kersi", "khorshed", "khushru", "meher", "mehroo", "minoo", "nariman", "navroz", "nergis", "noshir", "percy", "perin",
   "pesi", "pheroze", "rustom", "shernaz", "sohrab", "soli", "sorab", "villoo", "xerxes", "zarine", "zarir", "zerxes",
   // English, men
-  "adrien", "aiden", "blake", "brad", "brandon", "brett", "bryan", "caleb", "cameron", "carl", "chad", "cody", "connor", "craig", "damian", "dante",
+  "adrien", "aiden", "blake", "brad", "brandon", "brett", "bryan", "caleb", "cameron", "carl", "cody", "connor", "craig", "damian", "dante",
   "dario", "darryl", "dax", "dexter", "dustin", "dwight", "dylan", "eddie", "elliot", "elton", "emmett", "errol", "ethan", "evan", "floyd", "garrett",
   "gavin", "geoffrey", "glenn", "grayson", "greg", "hamish", "hugo", "ivor", "jake", "jared", "jasper", "jayden", "jett", "jonah", "kai", "kane", "keanu",
   "kyle", "landon", "leon", "levi", "liam", "logan", "lucian", "lyle", "miguel", "neville", "nico", "nolan", "orlando", "otto", "pablo", "perry",

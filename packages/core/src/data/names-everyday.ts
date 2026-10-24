@@ -1,7 +1,8 @@
 /*
- * Everyday names: words that are given names and also ordinary words, lower case (the form normName gives). A person's spelling that is one of these is found only when it
- * is written with a capital first letter, and is then asked about, never replaced in bulk (spec §7.4, C12): "I will go" is never a find, "Will said" is asked. Devanagari
- * has no capitals, so a Devanagari spelling the student marks everyday is always an ask find.
+ * Everyday names: words that are given names and also ordinary words, lower case (the form normName gives). This is the default the Add form pre-ticks "also an everyday word"
+ * from (spec §7.4), and what isEverydayName reports. The matcher itself does not read it (ruling R6, 2026-10-24): only a spelling the person's own `everyday` list marks is found
+ * just when written with a capital first letter and then asked about, never replaced in bulk (C12); "I will go" is then never a find and "Will said" is asked. Devanagari has no
+ * capitals, so a Devanagari spelling the student marks everyday is always an ask find.
  * Compiled by the builder on 2026-10-24 from common English words and from common Hindi and Urdu words that are used as given names. It is a judgement, not a verdict: a word
  * belongs here when its lower-case use in ordinary English or Hinglish speech is common enough that a lower-case match would usually be wrong. Surnames are not here.
  * The first-names list (names-first.ts) holds none of these words.

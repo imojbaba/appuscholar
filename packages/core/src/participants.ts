@@ -14,11 +14,13 @@ import { FIRST_NAME_LIST } from "./data/names-first";
  * Whole words: a find may not have a letter, digit or combining mark right before or after it, so "Priya's" and "Priya-ji" match and "Priyanka" does not; Devanagari vowel
  * signs, the anusvara and the virama are marks, so a name that ends in a vowel sign is found before a space and not inside a longer name that goes on with another mark.
  * At any start index the longest matching spelling wins, finds never overlap, and scanning goes on after the end of a find.
- * Sure, ask: a find is sure unless the spelling is an everyday word (the person's `everyday` list or EVERYDAY_NAMES), which is asked about and found only when written with a
- * capital first letter (C12; a script with no capitals counts as capital), or the spelling belongs to two or more people, which is asked about with all their ids. Shared wins
- * when both apply.
+ * Sure, ask: a find is sure unless it is one of these, which are asked about, never replaced in bulk: the spelling belongs to two or more people (all their ids are offered);
+ * the spelling is one letter long ("short"); or the person marked the spelling as also an everyday word in their own `everyday` list, in which case it is found only when written
+ * with a capital first letter (C12; a script with no capitals counts as capital). That order is also the order of `why`: shared, then short, then everyday. The built-in
+ * EVERYDAY_NAMES do not make a find ask (ruling R6): they are the default the Add form pre-ticks, and isEverydayName reports them. A spelling with no letter in it is not looked for
+ * ("2019" would match everywhere), and a one-letter spelling is never the s of "Priya's".
  * How it runs: the text is folded to a copy in which the case, the dots and the apostrophes are the normal form's and nothing else has moved; one compiled regular expression
- * over every spelling, longest first, runs over the copy, and white space inside a spelling matches any run of white space, which stands in for collapsing it. Positions in a
+ * over every spelling, longest first, runs over the copy, and a space inside a spelling matches any run of horizontal white space (never a line break, R5: "Priya" at the end of a paragraph is not the start of "Priya Sharma"), which stands in for collapsing it. Positions in a
  * find are in the ORIGINAL text. The copy is the same length as the original unless the text is not in NFC or a capital changes length in lower case (a dotted capital I does),
  * and then a position map is built cluster by cluster (a base character and its marks), which is also why the cases of a composed and a decomposed spelling agree.
  * Suggestions: a speaker label at the start of a line, and a capitalised word on FIRST_NAMES (§7.5, C3); never a Devanagari word, another capitalised word or a surname.
@@ -44,6 +46,7 @@ export type MatchPerson = {
 /**
  * One place in a text. `start` and `end` are code-unit positions in the text that was searched and `text` is `slice(start, end)` of it. `personIds` are the people on the list
  * the find belongs to (empty for a suggestion). A sure find is replaced without asking, an ask find is answered one by one, a suggestion is a name that is not on the list.
+ * `why` says why an ask find is asked (shared by several people, one letter long, or marked everyday by the person) or where a suggestion came from.
  */
 export type NameFind = {
   start: number;
@@ -51,10 +54,10 @@ export type NameFind = {
   text: string;
   personIds: string[];
   kind: "sure" | "ask" | "suggest";
-  why?: "everyday" | "shared" | "speaker" | "first-name";
+  why?: "everyday" | "shared" | "short" | "speaker" | "first-name";
 };
 
-type Spelling = { personIds: string[]; everyday: boolean };
+type Spelling = { personIds: string[]; everyday: boolean; short: boolean };
 type Compiled = { re: RegExp | null; spellings: Map<string, Spelling> };
 const COMPILED = Symbol("compiled matcher");
 
@@ -79,18 +82,23 @@ export function normName(s: string): string {
   return foldCase(s.normalize("NFC")).replace(/\s+/g, " ").trim();
 }
 
-/** Whether a word is on the built-in list of given names that are also everyday words (any case, any spacing). */
+/** Whether a word is on the built-in list of given names that are also everyday words (any case, any spacing): what the Add form pre-ticks. The matcher itself uses only the person's own `everyday` list. */
 export function isEverydayName(word: string): boolean {
   return EVERYDAY_SET.has(normName(word));
 }
 
+/** A spelling that is one letter (with its marks). */
+const ONE_LETTER = /^\p{L}\p{M}*$/u;
 const NOT_WORD = String.raw`\p{L}\p{N}\p{M}`;
 const WORD_START = `(?<![${NOT_WORD}])`;
 const WORD_END = `(?![${NOT_WORD}])`;
 
-/** A normalised spelling as regular expression source: its characters literally, each space as any run of white space. */
+/** White space that is not a line break. */
+const HSPACE = String.raw`[^\S\r\n\u2028\u2029]`;
+
+/** A normalised spelling as regular expression source: its characters literally, each space as any run of horizontal white space. */
 function spellingSource(key: string): string {
-  return key.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&").replace(/ /g, "\\s+");
+  return key.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&").replace(/ /g, `${HSPACE}+`);
 }
 
 /** Compiles the people into a matcher. Cheap enough to rebuild when the list changes. */
@@ -99,11 +107,11 @@ export function buildMatcher(people: MatchPerson[]): Matcher {
   for (const p of people) {
     const everyday = new Set(p.everyday.map(normName));
     for (const key of new Set([p.name, ...p.spellings].map(normName))) {
-      if (!key) continue;
+      if (!/\p{L}/u.test(key)) continue;
       let s = spellings.get(key);
-      if (!s) spellings.set(key, (s = { personIds: [], everyday: false }));
+      if (!s) spellings.set(key, (s = { personIds: [], everyday: false, short: ONE_LETTER.test(key) }));
       s.personIds.push(p.id);
-      s.everyday ||= everyday.has(key) || EVERYDAY_SET.has(key);
+      s.everyday ||= everyday.has(key);
     }
   }
   // Longest first: the first alternative that matches at a position is then the longest one that does.
@@ -138,7 +146,7 @@ function notLowerCase(text: string, i: number): boolean {
 }
 
 /**
- * The sure and ask finds of the people on the list in `text`, in text order, never overlapping. A spelling that is an everyday word is found only when it starts with a capital;
+ * The sure and ask finds of the people on the list in `text`, in text order, never overlapping. A spelling the person marked everyday is found only when it starts with a capital;
  * when it does not, the scan goes on one character later, so a later word inside the same candidate can still be found.
  */
 export function findNames(text: string, m: Matcher): NameFind[] {
@@ -151,57 +159,62 @@ export function findNames(text: string, m: Matcher): NameFind[] {
   for (let hit = re.exec(folded); hit; hit = re.exec(folded)) {
     const sp = spellings.get(hit[0].replace(/\s+/g, " "));
     const start = at(hit.index);
-    if (!sp || (sp.everyday && !notLowerCase(text, start))) {
+    // Rejected: unknown (cannot happen), an everyday spelling in lower case, or a one-letter spelling right after an apostrophe (the s of "Priya's").
+    if (!sp || (sp.everyday && !notLowerCase(text, start)) || (sp.short && folded[hit.index - 1] === "'")) {
       const first = folded.charCodeAt(hit.index);
       re.lastIndex = hit.index + (first >= 0xd800 && first <= 0xdbff ? 2 : 1);
       continue;
     }
     const end = at(hit.index + hit[0].length);
     const shared = sp.personIds.length > 1;
-    const find: NameFind = { start, end, text: text.slice(start, end), personIds: [...sp.personIds], kind: shared || sp.everyday ? "ask" : "sure" };
+    const find: NameFind = { start, end, text: text.slice(start, end), personIds: [...sp.personIds], kind: shared || sp.short || sp.everyday ? "ask" : "sure" };
     if (shared) find.why = "shared";
+    else if (sp.short) find.why = "short";
     else if (sp.everyday) find.why = "everyday";
     finds.push(find);
   }
   return finds;
 }
 
-const SPEAKER_WORDS: ReadonlySet<string> = new Set(["interviewer", "researcher", "moderator", "participant", "respondent", "q", "a"]);
+const SPEAKER_WORDS: ReadonlySet<string> = new Set(["interviewer", "interviewee", "researcher", "moderator", "participant", "respondent", "i", "r", "t", "s", "q", "a"]);
 const NAME_WORD = String.raw`\p{Lu}[\p{L}\p{M}'\u2019-]*`;
-const HSPACE = String.raw`[^\S\r\n]`;
 /** One to three capitalised words at the start of a line, then a colon. Words hold no digits, so a code such as "P001:" never makes a label. */
 const SPEAKER_LABEL = new RegExp(`^${HSPACE}*(${NAME_WORD}(?:${HSPACE}+${NAME_WORD}){0,2})${HSPACE}*:`, "gmu");
 /** A capitalised word, whole. */
 const CAPITAL_WORD = new RegExp(`${WORD_START}\\p{Lu}[\\p{L}\\p{M}]*${WORD_END}`, "gu");
 
-/** The look-up form of a given name: lower case, accents removed ("José" is "jose"). */
-const bareName = (w: string) => w.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+/** The look-up form of a name for FIRST_NAMES and notNames: the normal form with accents removed ("José" is "jose"). */
+const plainName = (s: string) => normName(s).normalize("NFD").replace(/\p{M}/gu, "");
 
 /**
- * Names that are not on the list, as `kind: "suggest"` finds in text order (spec §7.5). With `speakerLabels`, a speaker label at the start of a line other than the role words
- * (Interviewer, Researcher, Moderator, Participant, Respondent, Q, A; a label with any of them in it is skipped); with `firstNames`, a capitalised Latin-script word on
- * FIRST_NAMES. Skipped: a span that overlaps a find of findNames, a span the student said is not a name (`notNames`, compared in normal form), and a word inside a speaker
- * label that is already suggested. Suggestions never overlap each other or the finds, so both can be painted and replaced together.
+ * Names that are not on the list, as `kind: "suggest"` finds in text order (spec §7.5). With `speakerLabels`, a speaker label at the start of a line: one to three capitalised
+ * words before a colon, and the find is those words (no colon, no leading space), unless the whole label is a role word (Interviewer, Interviewee, Researcher, Moderator,
+ * Participant, Respondent, I, R, T, S, Q, A), so "Dr A Kumar:" is the suggestion "Dr A Kumar". A code such as "P001:" never makes a label (label words hold no digits). With
+ * `firstNames`, a capitalised Latin-script word on FIRST_NAMES, not one written all in capitals ("Ram", not "RAM"). Skipped: a span that overlaps a find of findNames, a span the
+ * student said is not a name (`notNames`, compared as FIRST_NAMES is, in normal form with accents removed, so "Jose" also silences "José"), and a word inside a speaker label that
+ * is already suggested. Suggestions never overlap each other or the finds, so both can be painted and replaced together.
  */
 export function suggestNames(text: string, m: Matcher, notNames: string[], opts: { speakerLabels: boolean; firstNames: boolean }): NameFind[] {
   if (!text || (!opts.speakerLabels && !opts.firstNames)) return [];
-  const notName = new Set(notNames.map(normName));
+  const notName = new Set(notNames.map(plainName));
   const candidates: NameFind[] = [];
   const add = (start: number, end: number, why: "speaker" | "first-name") => {
     const found = text.slice(start, end);
-    if (!notName.has(normName(found))) candidates.push({ start, end, text: found, personIds: [], kind: "suggest", why });
+    if (!notName.has(plainName(found))) candidates.push({ start, end, text: found, personIds: [], kind: "suggest", why });
   };
   if (opts.speakerLabels) {
     for (const hit of text.matchAll(SPEAKER_LABEL)) {
       const label = hit[1] ?? "";
-      if (label.split(/\s+/).some((w) => SPEAKER_WORDS.has(normName(w)))) continue;
+      if (SPEAKER_WORDS.has(normName(label))) continue;
       const start = (hit.index ?? 0) + hit[0].indexOf(label);
       add(start, start + label.length, "speaker");
     }
   }
   if (opts.firstNames) {
     for (const hit of text.matchAll(CAPITAL_WORD)) {
-      if (FIRST_NAMES.has(bareName(hit[0]))) add(hit.index ?? 0, (hit.index ?? 0) + hit[0].length, "first-name");
+      const word = hit[0];
+      if (word.length > 1 && word === word.toUpperCase()) continue;
+      if (FIRST_NAMES.has(plainName(word))) add(hit.index ?? 0, (hit.index ?? 0) + word.length, "first-name");
     }
   }
   // Text order; at one start the longer span first, so a whole speaker label wins over the first name at its front.
