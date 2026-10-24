@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { DESIGN_TOASTS, protoDone, protocolMarkdown, type ProtoFields } from "@appuscholar/core";
+import { DESIGN_TOASTS, protoDone, protocolMarkdownV2, type Plan, type ProtoFields } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { toast } from "@/components/ui/toast";
 import { useInsertAtEnd } from "@/lib/tools/design/insertEnd";
@@ -17,10 +17,14 @@ const FIELDS = Object.keys(ROWS) as Array<keyof ProtoFields>;
  * student's own words. Save stores them trimmed with `done` (core's protoDone). "Generate protocol document" saves them first (v1 calls protoSave),
  * then puts core's protocolMarkdown at the end of the open document as plain text and says "Inserted"; with every section empty it inserts nothing and
  * shows core's "Fill in at least one section first" beside the button. What is typed is kept in the blob only when Save or Generate is pressed, as in v1.
+ * The protocol is core's protocolMarkdownV2: with the identification plan answered on the Ethics tab (`idMode` on the `design_ec` blob, read here and never written) it gains
+ * the line "How participants are identified"; with no answer it is v1's text.
  */
 export function Protocol({ projectId }: { projectId: string }) {
   const t = useT();
   const proto = useDesign("proto", projectId);
+  // The identification plan lives on the Ethics tab; this tab only reads it.
+  const plan = useDesign("ec", projectId).value;
   const { insert, busy } = useInsertAtEnd();
   const stored = proto.value;
   // What the boxes show: the stored texts, then what the student has typed since (nothing is stored until Save or Generate).
@@ -39,7 +43,7 @@ export function Protocol({ projectId }: { projectId: string }) {
   const generate = async () => {
     setMsg("");
     const o = read();
-    const doc = protocolMarkdown(o);
+    const doc = protocolMarkdownV2(o, { idMode: plan?.idMode, record: plan?.record, recordOther: plan?.recordOther } as Plan);
     if (doc === null) { setMsg(DESIGN_TOASTS.protoEmpty); return; }
     // A save that was refused (still opening, locked, or a blob that does not open and the student said No) stops the generator: the notes above say why.
     if (!store(o)) return;
