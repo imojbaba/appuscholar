@@ -10,8 +10,9 @@
  * this student) and restores that file through the real file chooser: the dialog reads it, says what will happen, and adds "<project> (restored)"
  * with its document. Every request the restore makes is a POST of a new project or a write under a new id; none touches the first project. The new
  * project opens with the same sentence in its document. Then the stamp is cleared and 200 words are written, and after a reload the reminder
- * appears once the 4 seconds are up, fits the screen at 1280 and 375 px and steps aside by itself after 12 seconds (no snooze is stored, so it is
- * back at the next load); Later hides it, stores a 3-day snooze for this student, and a reload brings nothing back.
+ * appears as a strip under the header once the 4 seconds are up; at 1280 and 375 px it lies below the header, fits the width, and no button, link
+ * or field of the header or the page is under it; moving to the project list keeps it on screen at once (decided once per page load); Later hides
+ * it, stores a 3-day snooze for this student, and a reload brings nothing back.
  * Every sentence asserted is read from the dictionaries, so it is byte-equal to what the dialog shows. The AI is never called.
  */
 import path from "node:path";
@@ -20,6 +21,7 @@ import JSZip from "jszip";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { signIn } from "./support/signin";
 import { API_ORIGIN } from "./support/origins";
+import { cursorToEnd } from "./support/editor";
 
 const dict = (f: string) => JSON.parse(readFileSync(path.join(__dirname, f), "utf8")) as Record<string, string>;
 const EN = { ...dict("../messages/en.json"), ...dict("../messages/tools/help-backup.en.json") };
@@ -37,7 +39,8 @@ function RX(key: string, holes: Record<string, string>): RegExp {
 }
 
 const PROJECT = "Sleep and memory study";
-const RESTORED = PROJECT + " (restored)";
+const SUFFIX = T("wc_bk_rs_suffix");
+const RESTORED = PROJECT + " " + SUFFIX;
 const TOPIC = "Does a good night of sleep help first-year students remember what they read?";
 const SENTENCE = "Sleep helps students remember what they read.";
 const LONG = Array.from({ length: 20 }, () => "Students who sleep well remember more of what they read.").join(" ");
@@ -99,8 +102,10 @@ test("restore adds the backup as new projects and leaves the first alone; the re
     await page.getByTestId("bk-restore-read").click();
     const confirm = page.getByTestId("bk-restore-confirm");
     await expect(confirm).toBeVisible();
-    await expect(confirm).toContainText("(restored)");
-    await expect(confirm).toContainText("Nothing you have now is changed or replaced");
+    // The confirm's sentence, its holes (counts, the day) as patterns, anywhere in the box.
+    const sentence = RX("wc_bk_rs_confirm", { n: "\\d+", w: "\\d+", d: "[\\d-]+", suffix: SUFFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") });
+    await expect(confirm).toContainText(new RegExp(sentence.source.slice(1, -1)));
+    await expect(confirm).toContainText(T("wc_bk_rs_note"));
     // Nothing has been written yet.
     expect(writes).toEqual([]);
 
@@ -140,36 +145,53 @@ test("restore adds the backup as new projects and leaves the first alone; the re
     await expect(page.locator(".ProseMirror")).toContainText(SENTENCE);
   });
 
-  await test.step("5. with no backup stamp and 200 words written, a reload brings the reminder after the 4 seconds", async () => {
+  await test.step("5. with no backup stamp and 200 words written, a reload brings the reminder as a strip under the header after the 4 seconds", async () => {
     const saved = page.waitForResponse((r) => isDocPut(r) && r.ok() && (r.request().postData() ?? "").includes("Students who sleep well"));
     await page.locator(".ProseMirror").click();
-    await page.keyboard.press("End");
+    await cursorToEnd(page.locator(".ProseMirror"));
     await page.keyboard.insertText(" " + LONG);
     await saved;
     await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("appu_last_backup")) localStorage.removeItem(k); });
     await page.reload();
     await expect(page.getByTestId("doc-select")).toBeVisible();
-    // Not at once: the check runs 4 seconds after the account is known.
-    await expect(nudge(page)).toHaveCount(0);
     await expect(nudge(page)).toBeVisible({ timeout: 20_000 });
-    // A pointer over it holds it open while it is looked at.
-    await nudge(page).hover();
     const text = (await page.getByTestId("backup-nudge-text").innerText()).trim();
     const m = RX("wc_bk_nudge_new", { w: "(\\d+)" }).exec(text);
     expect(m, text).not.toBeNull();
     expect(Number(m![1])).toBeGreaterThanOrEqual(150);
     await expect(page.getByTestId("backup-nudge-now")).toHaveText(T("backup_now"));
     await expect(page.getByTestId("backup-nudge-later")).toHaveText(T("backup_later"));
-    // A note, not a dialog: it is a small fixed panel in the bottom left that holds no focus, and nothing is drawn over its buttons.
+    // A strip in the page, not a dialog: it is announced from a polite status region, takes no focus and is not positioned over the page.
     await expect(page.locator("[role=dialog]")).toHaveCount(0);
+    await expect(page.locator('[role="status"][aria-live="polite"]').filter({ has: nudge(page) })).toHaveCount(1);
+    expect(await nudge(page).evaluate((el) => getComputedStyle(el).position)).toBe("static");
     for (const size of [{ width: 1280, height: 720 }, { width: 375, height: 667 }]) {
       await page.setViewportSize(size);
-      const box = (await nudge(page).boundingBox())!;
-      expect(box.x, "left edge at " + size.width).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width, "right edge at " + size.width).toBeLessThanOrEqual(size.width);
-      expect(box.y + box.height, "bottom edge at " + size.width).toBeLessThanOrEqual(size.height);
-      expect(box.width).toBeLessThanOrEqual(360);
+      await expect(nudge(page)).toBeVisible();
+      // It lies below the header, inside the width, and nothing the page offers is under it.
+      const fit = await page.evaluate(() => {
+        const n = document.querySelector('[data-testid="backup-nudge"]')!;
+        const nr = n.getBoundingClientRect();
+        const header = document.querySelector("header")?.getBoundingClientRect();
+        const under: string[] = [];
+        for (const el of Array.from(document.querySelectorAll("button, a[href], input, select, textarea, summary, [role=tab], .ProseMirror"))) {
+          if (n.contains(el)) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          const ix = Math.min(r.right, nr.right) - Math.max(r.left, nr.left), iy = Math.min(r.bottom, nr.bottom) - Math.max(r.top, nr.top);
+          if (ix > 1 && iy > 1) under.push((el.getAttribute("data-testid") ?? el.tagName) + " " + Math.round(ix) + "x" + Math.round(iy));
+        }
+        return { left: nr.left, right: nr.right, top: nr.top, headerBottom: header ? header.bottom : null, width: window.innerWidth, scrollW: document.documentElement.scrollWidth, under };
+      });
+      expect(fit.left, "left edge at " + size.width).toBeGreaterThanOrEqual(0);
+      expect(fit.right, "right edge at " + size.width).toBeLessThanOrEqual(fit.width);
+      expect(fit.scrollW, "no sideways scroll at " + size.width).toBeLessThanOrEqual(fit.width);
+      expect(fit.headerBottom, "a header at " + size.width).not.toBeNull();
+      expect(fit.top, "below the header at " + size.width).toBeGreaterThanOrEqual(fit.headerBottom! - 1);
+      expect(fit.under, "under the strip at " + size.width).toEqual([]);
       for (const id of ["backup-nudge-now", "backup-nudge-later"]) {
+        const box = (await page.getByTestId(id).boundingBox())!;
+        if (size.width <= 700) expect(box.height, id + " is 44 px on a phone").toBeGreaterThanOrEqual(43.5);
         const hit = await page.getByTestId(id).evaluate((el) => { const r = el.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return el === top || el.contains(top); });
         expect(hit, id + " at " + size.width).toBe(true);
       }
@@ -177,14 +199,14 @@ test("restore adds the backup as new projects and leaves the first alone; the re
     await page.setViewportSize({ width: 1280, height: 720 });
   });
 
-  await test.step("6. left alone it steps aside after 12 seconds without a snooze, and is back at the next load", async () => {
-    await page.mouse.move(640, 60);
-    await expect(nudge(page)).toHaveCount(0, { timeout: 25_000 });
+  await test.step("6. it is decided once per page load: going to the project list keeps it on screen at once, without the 4 seconds again", async () => {
+    await page.getByTestId("wordmark").click();
+    await expect(page.getByTestId("project-list")).toBeVisible();
+    await expect(nudge(page)).toBeVisible({ timeout: 1500 });
+    await expect(page.getByTestId("backup-nudge-text")).toHaveText(RX("wc_bk_nudge_new", { w: "\\d+" }));
+    // Nobody answered it: no snooze, no backup stamp.
     expect(await stampKeys(page, "appu_backup_snooze")).toEqual([]);
-    await page.reload();
-    await expect(page.getByTestId("doc-select")).toBeVisible();
-    await expect(nudge(page)).toBeVisible({ timeout: 20_000 });
-    await nudge(page).hover();
+    expect(await stampKeys(page, "appu_last_backup")).toEqual([]);
   });
 
   await test.step("7. Later hides it and snoozes it for 3 days, for this student; a reload brings nothing back", async () => {
@@ -198,7 +220,7 @@ test("restore adds the backup as new projects and leaves the first alone; the re
     expect(days).toBeGreaterThan(2.99);
     expect(days).toBeLessThanOrEqual(3);
     await page.reload();
-    await expect(page.getByTestId("doc-select")).toBeVisible();
+    await expect(page.getByTestId("project-list")).toBeVisible();
     await page.waitForTimeout(7000);
     await expect(nudge(page)).toHaveCount(0);
   });

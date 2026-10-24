@@ -60,6 +60,23 @@ export async function bytesOf(b: Blob): Promise<Uint8Array> {
 }
 export const fixtureZip = async (o?: FixtureOpts) => bytesOf(await exportAll(fixtureDeps(o)));
 
+/** A zip, recompressed, with the first bytes of one entry's data spoiled, so that reading that entry (not the zip) fails. */
+export async function damageEntry(zipBytes: Uint8Array, entry: string): Promise<Uint8Array> {
+  const JSZip = (await import("jszip")).default;
+  const z = await JSZip.loadAsync(zipBytes);
+  const packed = new Uint8Array(await z.generateAsync({ type: "arraybuffer", compression: "DEFLATE" }));
+  const name = new TextEncoder().encode(entry);
+  let at = -1;
+  for (let i = 0; i + name.length < packed.length && at < 0; i++) if (name.every((b, k) => packed[i + k] === b)) at = i;
+  if (at < 0) throw new Error("no such entry: " + entry);
+  const dv = new DataView(packed.buffer);
+  // The local header: name length at 26, extra length at 28, then the entry's data.
+  const header = at - 30;
+  const data = header + 30 + dv.getUint16(header + 26, true) + dv.getUint16(header + 28, true);
+  for (let k = 0; k < 6; k++) packed[data + k] = 0xff;
+  return packed;
+}
+
 export type Call = { method: string; path: string; body: Record<string, unknown> | undefined; headers: Record<string, string> };
 /**
  * An api that remembers every request it is sent and answers like the real one for the three writes a restore makes: POST /projects (a new id),

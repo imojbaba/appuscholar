@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { isPopout } from "@/lib/popout/mode";
-import { NUDGE_DELAY_MS, NUDGE_SHOW_MS, OLD_DAYS, daysSince, nudgeDue, type NudgeKind } from "@/lib/help/backup/nudge";
+import { NUDGE_DELAY_MS, OLD_DAYS, daysSince, nudgeDue, type NudgeKind } from "@/lib/help/backup/nudge";
+import { nudgeVisit, patchNudgeVisit, subscribeNudgeVisit } from "@/lib/help/backup/nudgeVisit";
 import { lastBackup, snoozeNudge, snoozedUntil } from "@/lib/help/backup/stamp";
 import type { ProjectValue } from "@/components/frame/ProjectContext";
 import { useAccount } from "@/components/workspace/dialogs/Help";
@@ -29,12 +30,13 @@ const subscribeOnline = (cb: () => void) => {
 const useOnline = () => useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
 
 /**
- * The backup reminder (v1 backupNudgeCheck 4454-4471, markup 686): four seconds after the account is known it reads the projects' draft word
+ * The backup reminder (v1 backupNudgeCheck 4454-4471, markup 686). Four seconds after the account is known it reads the projects' draft word
  * counts (GET /projects?include=work; no document is opened) and, if the student has written 150 or more words and has no backup on this device
- * (or one a week old), shows a small panel at the bottom left with Back up now and Later. It is a note, not a dialog: it takes no focus and
- * covers nothing but its own corner, and for only twelve seconds (a pointer over it or focus in it holds it open; it is back at the next load if
- * there is still no backup). It waits while the terms or the tour are open, while any dialog is open (the welcome-back recap is one), in a pop-out
- * and while offline (the export needs the connection). Later hides it for three days, for this student on this device.
+ * (or one a week old), shows a strip under the header with Back up now and Later. It stays until one of them is pressed. It is in the page, not over
+ * it, so it covers no control: the page moves down once when it appears. It is decided once for each student in a page load (nudgeVisit), however
+ * many shells mount, and a strip that is showing keeps showing across them. It waits to appear while the terms or the tour are open, while any
+ * dialog is open (the welcome-back recap is one) and while offline (the export needs the connection); in a pop-out it never runs. Later hides it
+ * for three days, for this student on this device. Announced politely, from a status region that is always there.
  */
 export function BackupNudge({ shell }: { shell: ProjectValue }) {
   const t = useT();
@@ -42,34 +44,35 @@ export function BackupNudge({ shell }: { shell: ProjectValue }) {
   const { exportWork, exporting } = useAccount();
   const online = useOnline();
   const who = me?.id ?? null;
-  /** The draft words the check found, once it has run and found the reminder worth deciding on. */
-  const [words, setWords] = useState<number | null>(null);
+  const visit = useSyncExternalStore(subscribeNudgeVisit, () => nudgeVisit(who), () => nudgeVisit(null));
+  const { words, shown } = visit;
   const [dialogOpen, setDialogOpen] = useState(false);
   /** What the device's stamps say is due now (the reminder's kind and, for "old", the days), or null. */
-  const [due, setDue] = useState<{ kind: NudgeKind; days: number } | null>(null);
-  const box = useRef<HTMLElement>(null);
-  /** Its time on screen has run out for this page load. */
-  const [away, setAway] = useState(false);
+  const [due, setDue] = useState<{ kind: NudgeKind; days: number } | null>(() => (who && words !== null ? dueNow(who, words) : null));
 
+  // The check: once for this student in this page load, 4 seconds after a shell has mounted with the account known. What it finds is kept in
+  // nudgeVisit even if the shell has gone by then.
   useEffect(() => {
-    if (!who || isPopout()) return;
-    let cancelled = false;
+    if (!who || isPopout() || nudgeVisit(who).checked) return;
     const check = async () => {
+      patchNudgeVisit(who, { checked: true });
       const now = Date.now(), last = lastBackup(who);
       // Cannot be due (snoozed, or backed up within the week): no request.
       if (snoozedUntil(who) > now || (last > 0 && daysSince(last, now) < OLD_DAYS)) return;
       try {
         const list = await apiFetch<Array<{ draftWords?: number }>>("/projects?include=work");
-        if (!cancelled) setWords(list.reduce((n, p) => n + (Number.isFinite(p.draftWords) ? Number(p.draftWords) : 0), 0));
-      } catch { /* no reminder this time */ }
+        patchNudgeVisit(who, { words: list.reduce((n, p) => n + (Number.isFinite(p.draftWords) ? Number(p.draftWords) : 0), 0) });
+      } catch {
+        // No reminder this time; the next shell may try again.
+        patchNudgeVisit(who, { checked: false });
+      }
     };
     const id = setTimeout(() => { void check(); }, NUDGE_DELAY_MS);
-    return () => { cancelled = true; clearTimeout(id); };
+    return () => clearTimeout(id);
   }, [who]);
 
   // Once the words are known: whether a dialog is open (Radix mounts each one straight under the body), and what the device's stamps say is due.
-  // Read again whenever a dialog opens or closes, so a backup made meanwhile (Help's Export all my work) or a snooze ends the reminder before
-  // it can come back.
+  // Read again whenever a dialog opens or closes, so a backup made meanwhile (Help's Export all my work) or a snooze ends the reminder.
   useEffect(() => {
     if (!who || words === null) return;
     const sync = () => {
@@ -86,39 +89,34 @@ export function BackupNudge({ shell }: { shell: ProjectValue }) {
   }, [who, words, shell.dialog]);
 
   const blocked = needsTerms(me, TERMS_SINCE) || !settings.seenWelcome || shell.dialog !== null || dialogOpen || !online;
-  const visible = !!due && !blocked && !!who && !away;
-  // Each time it comes on screen it has its twelve seconds; a pointer over it or focus in it when they are up gives it twelve more.
+  // The waits are for appearing: a strip that is already on screen is not taken away when a dialog opens over the page.
+  const visible = !!who && !!due && (shown || !blocked);
   useEffect(() => {
-    if (!visible) return;
-    let id: ReturnType<typeof setTimeout>;
-    const arm = () => {
-      id = setTimeout(() => {
-        const el = box.current;
-        if (el && (el.matches(":hover") || el.contains(document.activeElement))) arm(); else setAway(true);
-      }, NUDGE_SHOW_MS);
-    };
-    arm();
-    return () => clearTimeout(id);
-  }, [visible]);
-  if (!due || !visible || !who) return null;
+    if (visible && who && !shown) patchNudgeVisit(who, { shown: true });
+  }, [visible, who, shown]);
 
   const backUpNow = async () => {
     await exportWork();
-    setDue(words === null ? null : dueNow(who, words));
+    setDue(who && words !== null ? dueNow(who, words) : null);
   };
   const later = () => {
+    if (!who) return;
     snoozeNudge(who, Date.now());
-    setDue(words === null ? null : dueNow(who, words));
+    setDue(words !== null ? dueNow(who, words) : null);
   };
-  const text = due.kind === "new" ? t("wc_bk_nudge_new", { w: words ?? 0 }) : t("wc_bk_nudge_old", { n: due.days });
+  const text = !due ? "" : due.kind === "new" ? t("wc_bk_nudge_new", { w: words ?? 0 }) : t("wc_bk_nudge_old", { n: due.days });
   return (
-    <section ref={box} aria-label={t("wc_bk_nudge_label")} data-testid="backup-nudge" data-kind={due.kind}
-      className="fixed bottom-[72px] left-4 right-4 z-40 max-w-[360px] max-[700px]:bottom-4 rounded-xl border border-line border-l-4 border-l-gold bg-card px-3.5 py-3 text-[13px] leading-snug text-ink shadow-float">
-      <p className="m-0" data-testid="backup-nudge-text">{text}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <Button type="button" variant="primary" size="sm" disabled={exporting} data-testid="backup-nudge-now" onClick={() => { void backUpNow(); }}>{t("backup_now")}</Button>
-        <Button type="button" variant="ghost" size="sm" data-testid="backup-nudge-later" onClick={later}>{t("backup_later")}</Button>
-      </div>
-    </section>
+    <div role="status" aria-live="polite">
+      {visible && due && (
+        <section aria-label={t("wc_bk_nudge_label")} data-testid="backup-nudge" data-kind={due.kind}
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-gold-wash px-4 py-2.5 text-[13px] leading-snug text-ink min-[701px]:px-[var(--s7)]">
+          <p className="m-0 min-w-0 flex-1 basis-[24rem]" data-testid="backup-nudge-text">{text}</p>
+          <div className="flex gap-2">
+            <Button type="button" variant="primary" size="sm" className="max-[700px]:min-h-11" disabled={exporting} data-testid="backup-nudge-now" onClick={() => { void backUpNow(); }}>{t("backup_now")}</Button>
+            <Button type="button" variant="ghost" size="sm" className="max-[700px]:min-h-11" data-testid="backup-nudge-later" onClick={later}>{t("backup_later")}</Button>
+          </div>
+        </section>
+      )}
+    </div>
   );
 }

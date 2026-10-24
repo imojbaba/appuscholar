@@ -27,9 +27,3 @@ export function nudgeDue(i: { words: number; lastBackup: number; snoozedUntil: n
 
 /** v1 4471: the reminder is looked for this long after the page has loaded. */
 export const NUDGE_DELAY_MS = 4000;
-/**
- * How long the reminder stays on screen before it steps aside for the rest of this page load (not v1: v1's stayed until Later or a backup). It is a
- * note in a corner of every place, and a corner holds the lower end of some panel's controls, so it never stays in the way; it comes back the next
- * time the app loads if there is still no backup, and Later still snoozes it for three days. A pointer over it or focus in it holds it open.
- */
-export const NUDGE_SHOW_MS = 12_000;

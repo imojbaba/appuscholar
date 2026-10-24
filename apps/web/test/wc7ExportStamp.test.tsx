@@ -43,7 +43,8 @@ beforeEach(() => {
   h.me = { id: "u1", scratchProjectId: "s1" };
   h.api.mockReset(); h.download.mockReset(); h.toast.mockReset();
   h.vault.known.mockResolvedValue("off"); h.vault.ensureUnlocked.mockResolvedValue(true);
-  h.api.mockImplementation(async (path: string) => (path === "/projects?include=work" ? [] : undefined));
+  // The projects (none besides the scratch space) and each one's blob listing, which the export reads (also for the participant-list question).
+  h.api.mockImplementation(async (path: string) => (path === "/projects?include=work" || /\/blobs$/.test(path) ? [] : undefined));
 });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
 
@@ -60,7 +61,7 @@ describe("Export all my work stamps the backup (Task C7)", () => {
   });
 
   it("an export that fails stamps nothing", async () => {
-    h.api.mockImplementation(async (path: string) => { if (path === "/me/export-audit") throw new Error("down"); return path === "/projects?include=work" ? [] : undefined; });
+    h.api.mockImplementation(async (path: string) => { if (path === "/me/export-audit") throw new Error("down"); return path === "/projects?include=work" || /\/blobs$/.test(path) ? [] : undefined; });
     mount();
     await run();
     expect(h.download).not.toHaveBeenCalled();

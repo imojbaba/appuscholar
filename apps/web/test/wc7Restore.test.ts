@@ -7,7 +7,7 @@ vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api
 import { BackupError } from "../lib/help/backup/format";
 import { lockBackup } from "../lib/help/backup/lockedBackup";
 import { apiRestoreDeps, bodyOf, restoreBackup } from "../lib/help/backup/restore";
-import { BLOBS, CITES, DOCS, IDEA, PAPER, PREFS, apiError, fakeServer, fakeVault, fixtureZip, type Call } from "./wc7Support";
+import { BLOBS, CITES, DOCS, IDEA, PAPER, PREFS, apiError, damageEntry, fakeServer, fakeVault, fixtureZip, type Call } from "./wc7Support";
 
 const SUFFIX = "(restored)";
 const PASS = "a long enough passphrase";
@@ -186,6 +186,15 @@ describe("restoreBackup: a part that cannot be restored is reported, nothing is 
     expect(s.calls.some((c) => c.method === "DELETE")).toBe(false);
   });
 
+  it("an entry of the zip that is damaged is listed as not restored, before anything is written, and the rest is restored", async () => {
+    const s = serve();
+    const packed = await damageEntry(await fixtureZip(), "Sleep study/Draft two.html");
+    const r = (await restoreBackup(packed, undefined, deps()))!;
+    expect(r.failed).toEqual(["damaged:Sleep study/Draft two.html"]);
+    expect(r.projects.map((p) => [p.title, p.documents])).toEqual([["Sleep study (restored)", 1], ["Reading log (restored)", 1]]);
+    expect(s.calls.every((c) => c.method === "POST" || c.method === "PUT")).toBe(true);
+  });
+
   it("stage data that was unreadable when the backup was made is listed once, by project", async () => {
     serve();
     const r = (await restoreBackup(await fixtureZip({ badBlobText: "not json at all" }), undefined, deps()))!;
@@ -260,6 +269,13 @@ describe("restoreBackup: the vault", () => {
     expect(ids).toContain("blob:new-1:idea_intake");
     expect(ids).toContain("blob:new-2:shelf_paper:abc");
     expect(fv.sealed.map((x) => x.text)).toEqual(expect.arrayContaining(["Sleep study (restored)", "Draft one", DOCS[0]!.html, JSON.stringify(IDEA)]));
+  });
+
+  it("it asks the vault afresh whether there is one, so a vault set up in another tab is seen (else every write is refused)", async () => {
+    serve();
+    const fv = fakeVault({ known: "unlocked" });
+    await restoreBackup(await fixtureZip(), undefined, deps(fv.vault));
+    expect(fv.spies.known).toHaveBeenCalledWith(true);
   });
 
   it("a locked vault is asked to unlock first, before anything is written", async () => {

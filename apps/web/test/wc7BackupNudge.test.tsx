@@ -20,6 +20,7 @@ vi.mock("@/components/workspace/dialogs/Help", () => ({ useAccount: () => ({ exp
 import { NudgeSlot } from "../components/help/slots/NudgeSlot";
 import { ProjectProvider, type ProjectValue } from "../components/frame/ProjectContext";
 import { lastBackup, snoozedUntil, stampBackup } from "../lib/help/backup/stamp";
+import { nudgeVisit, resetNudgeVisit } from "../lib/help/backup/nudgeVisit";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = { ...en, ...wcEn } as Record<string, string>;
@@ -50,6 +51,7 @@ async function rerender(value: ProjectValue) {
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
   localStorage.clear();
+  resetNudgeVisit();
   h.popout = false; h.exporting = false;
   h.settings = { me: ME, settings: { seenWelcome: true } };
   h.api.mockReset(); h.api.mockResolvedValue(work(100, 60));
@@ -84,39 +86,100 @@ describe("the backup reminder (Task C7)", () => {
     expect(E.wc_bk_nudge_old).toMatch(/saved in your account/);
   });
 
-  it("is a note, not a dialog: it takes no focus and has no dialog role", async () => {
+  it("is a strip in the page, not a panel over it: no fixed position, no dialog role, no focus taken, announced politely", async () => {
     const outside = document.body.appendChild(document.createElement("button"));
     outside.focus();
     mount();
+    // The live region is there before anything is said, so a screen reader is already listening.
+    const live = document.body.querySelector<HTMLElement>('[role="status"]')!;
+    expect(live).not.toBeNull();
+    expect(live.getAttribute("aria-live")).toBe("polite");
+    expect(live.querySelector('[data-testid="backup-nudge"]')).toBeNull();
     await tick(4000);
-    expect(nudge()).not.toBeNull();
+    expect(live.contains(nudge())).toBe(true);
     expect(document.activeElement).toBe(outside);
     expect(document.body.querySelector("[role=dialog], [role=alertdialog]")).toBeNull();
-    expect(nudge()!.className).toContain("fixed");
+    for (const c of ["fixed", "absolute", "sticky"]) expect(nudge()!.className.split(/\s+/)).not.toContain(c);
   });
 
-  it("steps aside after 12 seconds for the rest of this load, without snoozing; focus inside it holds it open", async () => {
+  it("its buttons are 44 px tall on a phone (the QA layer's small-target rule)", async () => {
+    mount();
+    await tick(4000);
+    for (const id of ["backup-nudge-now", "backup-nudge-later"]) expect(nudge()!.querySelector(`[data-testid="${id}"]`)!.className).toContain("max-[700px]:min-h-11");
+  });
+
+  it("stays until it is answered: no time limit", async () => {
     mount();
     await tick(4000);
     expect(nudge()).not.toBeNull();
-    await tick(11_999);
+    await tick(10 * 60_000);
     expect(nudge()).not.toBeNull();
-    await tick(1);
-    expect(nudge()).toBeNull();
     expect(snoozedUntil("u1")).toBe(0);
+  });
+
+  it("is decided once per page load for each student: another shell mount neither asks the api again nor waits again, and a shown strip stays", async () => {
+    const first = mount();
+    await tick(4000);
+    expect(nudge()).not.toBeNull();
+    expect(h.api).toHaveBeenCalledTimes(1);
+    expect(nudgeVisit("u1")).toMatchObject({ checked: true, words: 160, shown: true });
+    // The list gives way to a project: a new shell, the same page load.
+    act(() => { first.unmount(); });
+    document.body.innerHTML = "";
+    mount();
+    expect(nudge()).not.toBeNull();
     await tick(60_000);
-    expect(nudge()).toBeNull();
-    // A student who is using it (focus is on its button) keeps it.
+    expect(h.api).toHaveBeenCalledTimes(1);
+    expect(nudge()).not.toBeNull();
+    // Another student on this computer is decided for herself.
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    h.settings = { me: { ...ME, id: "u2" }, settings: { seenWelcome: true } };
+    mount();
+    expect(nudge()).toBeNull();
+    await tick(4000);
+    expect(h.api).toHaveBeenCalledTimes(2);
+    expect(nudge()).not.toBeNull();
+  });
+
+  it("an answer from the api that arrives after the shell has gone is kept for the next one, which does not ask again", async () => {
+    let answer: (v: unknown) => void = () => {};
+    h.api.mockImplementation(() => new Promise((r) => { answer = r; }));
+    const first = mount();
+    await tick(4000);
+    expect(h.api).toHaveBeenCalledTimes(1);
+    act(() => { first.unmount(); });
+    answer(work(100, 60));
+    await tick(0);
+    expect(nudgeVisit("u1").words).toBe(160);
+    mount();
+    expect(h.api).toHaveBeenCalledTimes(1);
+    await tick(0);
+    expect(nudge()).not.toBeNull();
+  });
+
+  it("a shell that goes before its 4 seconds are up has not decided anything: the next one waits its own 4 seconds", async () => {
+    const first = mount();
+    await tick(3000);
+    act(() => { first.unmount(); });
+    expect(nudgeVisit("u1").checked).toBe(false);
+    mount();
+    await tick(3999);
+    expect(h.api).not.toHaveBeenCalled();
+    await tick(1);
+    expect(h.api).toHaveBeenCalledTimes(1);
+  });
+
+  it("a failed read is tried again by the next shell", async () => {
+    h.api.mockRejectedValueOnce(new Error("offline"));
+    const first = mount();
+    await tick(4000);
+    expect(nudge()).toBeNull();
+    expect(nudgeVisit("u1").checked).toBe(false);
+    act(() => { first.unmount(); });
     mount();
     await tick(4000);
-    const later = nudge()!.querySelector<HTMLElement>('[data-testid="backup-nudge-later"]')!;
-    act(() => { later.focus(); });
-    await tick(30_000);
+    expect(h.api).toHaveBeenCalledTimes(2);
     expect(nudge()).not.toBeNull();
-    act(() => { later.blur(); });
-    await tick(12_000);
-    expect(nudge()).toBeNull();
   });
 
   it("under 150 words shows nothing", async () => {
@@ -134,6 +197,7 @@ describe("the backup reminder (Task C7)", () => {
     expect(nudge()!.dataset.kind).toBe("old");
     expect(nudge()!.querySelector('[data-testid="backup-nudge-text"]')!.textContent).toBe(say("wc_bk_nudge_old", { n: 8 }));
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    resetNudgeVisit();
     h.api.mockClear();
     stampBackup("u1", NOW - 3 * DAY);
     mount();
@@ -188,6 +252,7 @@ describe("the backup reminder (Task C7)", () => {
     expect([...Object.keys(localStorage)].filter((k) => k.startsWith("appu_backup_snooze"))).toEqual(["appu_backup_snooze_u1"]);
     // The next load, a day later.
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    resetNudgeVisit();
     h.api.mockClear();
     vi.setSystemTime(NOW + DAY);
     mount();
@@ -196,12 +261,14 @@ describe("the backup reminder (Task C7)", () => {
     expect(h.api).not.toHaveBeenCalled();
     // Another student on this computer.
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    resetNudgeVisit();
     h.settings = { me: { ...ME, id: "u2" }, settings: { seenWelcome: true } };
     mount();
     await tick(4000);
     expect(nudge()).not.toBeNull();
     // After the three days the first student is asked again.
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    resetNudgeVisit();
     h.settings = { me: ME, settings: { seenWelcome: true } };
     vi.setSystemTime(NOW + 3 * DAY + 5000);
     mount();
@@ -227,12 +294,12 @@ describe("the backup reminder (Task C7)", () => {
     expect(nudge()).not.toBeNull();
   });
 
-  it("a backup made meanwhile, from Help, ends the reminder: it does not come back when Help closes", async () => {
+  it("a backup made meanwhile, from Help, ends the reminder once Help closes", async () => {
     mount();
     await tick(4000);
     expect(nudge()).not.toBeNull();
     await rerender(shell({ dialog: "help" }));
-    expect(nudge()).toBeNull();
+    expect(nudge()).not.toBeNull();
     stampBackup("u1", Date.now());
     await rerender(shell({ dialog: null }));
     expect(nudge()).toBeNull();
@@ -247,8 +314,9 @@ describe("the reminder waits for the student's attention to be free", () => {
     expect(nudge()).toBeNull();
     await rerender(shell({ dialog: null }));
     expect(nudge()).not.toBeNull();
+    // Once it is on screen a dialog opening over the page does not take it away (the page would jump); it only waited to appear.
     await rerender(shell({ dialog: "welcome" }));
-    expect(nudge()).toBeNull();
+    expect(nudge()).not.toBeNull();
   });
 
   it("not over the terms gate, nor before the welcome tour has been seen", async () => {
@@ -271,15 +339,19 @@ describe("the reminder waits for the student's attention to be free", () => {
     expect(nudge()).toBeNull();
     await act(async () => { recap.remove(); await Promise.resolve(); });
     expect(nudge()).not.toBeNull();
+  });
+
+  it("an alertdialog (a sign-out question) also holds it back", async () => {
     const ask = document.body.appendChild(document.createElement("div"));
     ask.setAttribute("role", "alertdialog");
-    await act(async () => { await Promise.resolve(); });
+    mount();
+    await tick(4000);
     expect(nudge()).toBeNull();
     await act(async () => { ask.remove(); await Promise.resolve(); });
     expect(nudge()).not.toBeNull();
   });
 
-  it("not while offline: the export needs the connection", async () => {
+  it("not while offline: the export needs the connection (it waits to appear; once there it stays)", async () => {
     const was = Object.getOwnPropertyDescriptor(Navigator.prototype, "onLine");
     Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
     try {

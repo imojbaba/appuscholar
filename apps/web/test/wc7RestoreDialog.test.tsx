@@ -15,7 +15,7 @@ vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratch
 
 import { BackupSlot } from "../components/help/slots/BackupSlot";
 import { lockBackup } from "../lib/help/backup/lockedBackup";
-import { apiError, fakeServer, fixtureZip } from "./wc7Support";
+import { apiError, damageEntry, fakeServer, fixtureZip } from "./wc7Support";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = { ...en, ...wcEn } as Record<string, string>;
@@ -215,6 +215,45 @@ describe("Restore from backup, in Help (Task C7)", () => {
     expect($("bk-restore-confirm")!.textContent).toContain(E.wc_bk_rs_problems);
     expect($("bk-restore-problems")!.textContent).toBe(say("wc_bk_prob_missing", { name: "Sleep study/Draft two.html" }));
     expect($("bk-restore-go")).not.toBeNull();
+  });
+
+  it("a missing Word copy or writing-process record is not held against the file: a restore never reads them", async () => {
+    serve();
+    await open();
+    const JSZip = (await import("jszip")).default;
+    const z = await JSZip.loadAsync(await fixtureZip());
+    z.remove("Sleep study/Draft two.doc");
+    z.remove("writing-process-record.txt");
+    await choose(new Uint8Array(await z.generateAsync({ type: "arraybuffer" })));
+    await click("bk-restore-read");
+    await until(() => !!$("bk-restore-go"));
+    expect($("bk-restore-problems")).toBeNull();
+    expect($("bk-restore-confirm")!.textContent).not.toContain(E.wc_bk_rs_problems);
+  });
+
+  it("a damaged entry is listed in the result in words, and says nothing about a connection", async () => {
+    serve();
+    await open();
+    await choose(await damageEntry(await fixtureZip(), "Sleep study/Draft two.html"));
+    await click("bk-restore-read");
+    await until(() => !!$("bk-restore-go"));
+    await click("bk-restore-go");
+    await until(() => !!$("bk-restore-result"));
+    expect([...$("bk-restore-failed")!.querySelectorAll("li")].map((li) => li.textContent)).toEqual([say("wc_bk_prob_damaged", { name: "Sleep study/Draft two.html" })]);
+    expect($("bk-restore-error")).toBeNull();
+    expect($("bk-restore-made")!.textContent).toContain(say("wc_bk_rs_made", { name: "Sleep study (restored)", n: 1 }));
+  });
+
+  it("the result says to reload the page if the project list is already open", async () => {
+    serve();
+    await open();
+    await choose(await fixtureZip());
+    await click("bk-restore-read");
+    await until(() => !!$("bk-restore-go"));
+    await click("bk-restore-go");
+    await until(() => !!$("bk-restore-result"));
+    expect($("bk-restore-result")!.textContent).toContain(E.wc_bk_rs_ok);
+    expect(E.wc_bk_rs_ok).toMatch(/reload the page/);
   });
 
   it("Choose another file goes back to the file box with nothing kept", async () => {

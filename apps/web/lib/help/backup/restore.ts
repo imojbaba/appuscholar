@@ -43,7 +43,7 @@ export type RestoredProject = { id: string; title: string; documents: number; st
 /**
  * `projects` are the new projects made (their titles carry the mark). `failed` are the parts of the file that were not restored, as codes the
  * dialog puts into words: "missing:<path>" (a file the index lists is not in the zip), "unreadable:<project>/<document>" and
- * "unreadable-stage:<project>" (could not be opened when the backup was made), "stage:<project>" (some stage data is not of a kind or shape this
+ * "unreadable-stage:<project>" (could not be opened when the backup was made), "damaged:<path>" (the file's own entry is damaged), "stage:<project>" (some stage data is not of a kind or shape this
  * version reads, or could not be saved; once per project), "project:<project>" (could not be created, so none of its parts were tried),
  * "document:<project>/<document>" (could not be saved), "rest:<project>" (made, but saving stopped before the rest of it) and
  * "skipped:<project>" (saving stopped before this one was started).
@@ -76,6 +76,10 @@ function restoredTitle(name: string, suffix: string): string {
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+/** An entry's text, or null when the zip's entry is damaged (reading it throws): that part is listed, the run goes on. */
+async function textOf(file: { async(type: "string"): Promise<string> }): Promise<string | null> {
+  try { return await file.async("string"); } catch { return null; }
+}
 
 /** Reads every file the index lists into memory, so what cannot be restored is known before anything is written. */
 async function plan(zip: JSZip, projects: unknown[]): Promise<Planned[]> {
@@ -88,7 +92,9 @@ async function plan(zip: JSZip, projects: unknown[]): Promise<Planned[]> {
       if (d?.unreadable) { lost.push("unreadable:" + name + "/" + title); continue; }
       const file = typeof d?.html === "string" ? zip.file(d.html) : null;
       if (!file) { lost.push("missing:" + (typeof d?.html === "string" ? d.html : name + "/" + title)); continue; }
-      docs.push({ title, kind: d.kind === "source" ? "source" : "draft", html: bodyOf(await file.async("string")) });
+      const text = await textOf(file);
+      if (text === null) { lost.push("damaged:" + str(d.html)); continue; }
+      docs.push({ title, kind: d.kind === "source" ? "source" : "draft", html: bodyOf(text) });
     }
     let unreadableStage = false, badStage = false;
     for (const s of (Array.isArray(p?.stageData) ? p.stageData : []) as BackupStage[]) {
@@ -96,7 +102,8 @@ async function plan(zip: JSZip, projects: unknown[]): Promise<Planned[]> {
       const file = typeof s?.file === "string" ? zip.file(s.file) : null;
       if (!file) { lost.push("missing:" + str(s?.file)); continue; }
       const kind = str(s.kind);
-      const text = await file.async("string");
+      const text = await textOf(file);
+      if (text === null) { lost.push("damaged:" + str(s.file)); continue; }
       // Written compact, as a panel saves it. A value a panel would report as broken is not written at all.
       if (!isBlobKind(kind) || parseBlob(kind, text) === null) { badStage = true; continue; }
       saved.push({ kind, json: JSON.stringify(JSON.parse(text)) });
@@ -135,7 +142,8 @@ export async function restoreBackup(file: Uint8Array, passphrase: string | undef
   const planned = await plan(zip, index.projects);
 
   const { vault } = deps;
-  const sealing = (await vault.known()) !== "off";
+  // Asked afresh: a vault set up in another tab since this one loaded must be seen, or every write would be refused.
+  const sealing = (await vault.known(true)) !== "off";
   if (sealing && !(await vault.ensureUnlocked())) return null;
   const encrypt = sealing ? vault.encryptBody : null;
 

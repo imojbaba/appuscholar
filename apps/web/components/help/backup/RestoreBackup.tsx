@@ -18,11 +18,17 @@ function failText(t: ReturnType<typeof useT>, code: string): string {
   const at = code.indexOf(":");
   const kind = code.slice(0, at), name = code.slice(at + 1);
   const key: Record<string, string> = {
-    missing: "wc_bk_prob_missing", unreadable: "wc_bk_prob_unreadable", "unreadable-stage": "wc_bk_prob_stage", stage: "wc_bk_rs_f_stage",
+    missing: "wc_bk_prob_missing", damaged: "wc_bk_prob_damaged", unreadable: "wc_bk_prob_unreadable", "unreadable-stage": "wc_bk_prob_stage", stage: "wc_bk_rs_f_stage",
     project: "wc_bk_rs_f_project", document: "wc_bk_rs_f_doc", rest: "wc_bk_rs_f_rest", skipped: "wc_bk_rs_f_skipped"
   };
   return t(key[kind] ?? "wc_bk_prob_missing", { name });
 }
+
+/**
+ * What the check found that a restore does not need: a document's Word copy (`.doc`) and the writing-process record are in the zip for the
+ * student's own use, a restore never reads them, so their absence is not a reason to hold anything back.
+ */
+const notNeeded = (problem: string) => /^missing:(.*\.doc|writing-process-record\.txt)$/.test(problem);
 
 /**
  * "Restore from backup" in Help (v1 backupRestoreFile). Unlike v1 it replaces nothing: the file is read here first and checked, the student
@@ -101,6 +107,7 @@ function RestoreDialog({ onClose }: { onClose: () => void }) {
     }
   }
 
+  const problems = (report?.problems ?? []).filter((p) => !notNeeded(p));
   const saved = report?.exportedAt ? localDay(new Date(report.exportedAt)) : "?";
   return (
     <Dialog open onOpenChange={(o) => { if (!o) close(); }}>
@@ -130,11 +137,11 @@ function RestoreDialog({ onClose }: { onClose: () => void }) {
             <div className="grid gap-2 text-sm" data-testid="bk-restore-confirm">
               <p className="m-0 font-semibold">{t("wc_bk_rs_confirm", { n: report.documents, w: report.words, d: saved, suffix })}</p>
               <p className="m-0 text-muted-foreground">{t("wc_bk_rs_note")}</p>
-              {report.problems.length > 0 && (
+              {problems.length > 0 && (
                 <>
                   <p className="m-0 font-semibold text-destructive">{t("wc_bk_rs_problems")}</p>
                   <ul className="m-0 grid gap-1 pl-5" data-testid="bk-restore-problems">
-                    {report.problems.map((p, i) => <li key={i + p}>{failText(t, p)}</li>)}
+                    {problems.map((p, i) => <li key={i + p}>{failText(t, p)}</li>)}
                   </ul>
                 </>
               )}
