@@ -59,9 +59,9 @@ export function adjustPixels(data: Uint8ClampedArray, brightness: number, contra
   const add = brightness * 2.55;
   const s = 1 + saturation / 100;
   for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
+    const r = data[i]!;
+    const g = data[i + 1]!;
+    const b = data[i + 2]!;
     const gr = 0.299 * r + 0.587 * g + 0.114 * b;
     data[i] = f * (gr + (r - gr) * s - 128) + 128 + add;
     data[i + 1] = f * (gr + (g - gr) * s - 128) + 128 + add;
@@ -107,18 +107,21 @@ export function maskNote(log: readonly string[], t: (key: string) => string): st
 }
 
 /**
- * The data URL a working canvas exports as, before the final shrink: a PNG if the opened picture was a PNG and the result is at most
- * 600000 characters, otherwise a JPEG at q0.92 (v1 ieApply / psExport).
+ * The data URL a working canvas is encoded as, before the final shrink: a PNG if the opened picture was a PNG and the result is at most
+ * 600000 characters, otherwise a JPEG at q0.92 (v1 ieApply 4519-4520, psExport).
  */
-export function exportDataUrl(canvas: Canvas, wasPng: boolean): string {
+export function encodeCanvas(canvas: Canvas, wasPng: boolean): string {
   let data = wasPng ? canvas.toDataURL("image/png") : "";
   if (!data || data.length > MAX_EXPORT_PNG_CHARS) data = canvas.toDataURL("image/jpeg", 0.92);
   return data;
 }
 
-/** exportDataUrl then the shrink step: long side back to 1600, white fill, EXIF gone, PNG kept only up to 400000 characters. */
-export async function exportPicture(canvas: Canvas, wasPng: boolean): Promise<string> {
-  return shrinkDataUrl(exportDataUrl(canvas, wasPng));
+/**
+ * What an edited picture goes back into the document as (both shells' Apply / Done, and the studio's Save a copy): encodeCanvas, then the
+ * shrink step (v1 imgShrinkDataUrl 4325): long side back to 1600, white fill, EXIF gone, PNG kept only up to 400000 characters.
+ */
+export async function exportDataUrl(canvas: Canvas, wasPng: boolean): Promise<string> {
+  return shrinkDataUrl(encodeCanvas(canvas, wasPng));
 }
 
 function makeCanvas(w: number, h: number): Canvas {
@@ -243,16 +246,16 @@ export function sharpenPixels(px: Uint8ClampedArray, w: number, h: number): Uint
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
       if (x === 0 || y === 0 || x === w - 1 || y === h - 1) {
-        out[i] = px[i];
-        out[i + 1] = px[i + 1];
-        out[i + 2] = px[i + 2];
+        out[i] = px[i]!;
+        out[i + 1] = px[i + 1]!;
+        out[i + 2] = px[i + 2]!;
         out[i + 3] = 255;
         continue;
       }
       for (let c = 0; c < 3; c++) {
         let v = 0;
         let n = 0;
-        for (let yy = -1; yy <= 1; yy++) for (let xx = -1; xx <= 1; xx++) v += px[((y + yy) * w + (x + xx)) * 4 + c] * sharpenKernel[n++];
+        for (let yy = -1; yy <= 1; yy++) for (let xx = -1; xx <= 1; xx++) v += px[((y + yy) * w + (x + xx)) * 4 + c]! * sharpenKernel[n++]!;
         out[i + c] = v;
       }
       out[i + 3] = 255;

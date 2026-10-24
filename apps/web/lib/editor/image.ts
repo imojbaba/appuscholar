@@ -51,7 +51,8 @@ export function shrinkDataUrl(src: string, max: number = MAX_IMAGE_SIDE, quality
 
 /**
  * Reads a picture file, redraws it on a canvas no larger than `max` on its longer side and returns it as a data URL: a JPEG for photos
- * (`image/jpeg`), a PNG for anything else. Redrawing drops EXIF (camera, place, time); the browser applies the EXIF rotation while decoding.
+ * (`image/jpeg`), a PNG for anything else, unless that PNG is longer than MAX_PNG_CHARS, when it is redrawn on white as a JPEG (v1
+ * imgShrinkDataUrl 4325). Redrawing drops EXIF (camera, place, time); the browser applies the EXIF rotation while decoding.
  */
 export async function resizeImage(file: File, max: number = MAX_IMAGE_SIDE): Promise<string> {
   const bitmap = await createImageBitmap(file);

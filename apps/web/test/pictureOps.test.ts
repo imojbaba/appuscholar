@@ -14,8 +14,8 @@ import {
   blurDivisor,
   contrastFactor,
   editsString,
+  encodeCanvas,
   exportDataUrl,
-  exportPicture,
   forceAspect,
   isArrowDrag,
   isDrag,
@@ -172,7 +172,7 @@ describe("maskNote and editsString", () => {
   });
 });
 
-describe("exportDataUrl", () => {
+describe("encodeCanvas", () => {
   function canvasWith(png: string, jpg = "data:image/jpeg;base64,JJ") {
     const c = fakeCanvas(10, 10);
     (c.toDataURL as unknown as ReturnType<typeof vi.fn>).mockImplementation((type: string) => (type === "image/png" ? png : jpg));
@@ -181,22 +181,22 @@ describe("exportDataUrl", () => {
   const pngOf = (n: number) => "data:image/png;base64," + "A".repeat(n - "data:image/png;base64,".length);
   it("keeps PNG when the source was PNG and it is 600000 chars or fewer", () => {
     const c = canvasWith(pngOf(600000));
-    expect(exportDataUrl(c, true)).toMatch(/^data:image\/png/);
+    expect(encodeCanvas(c, true)).toMatch(/^data:image\/png/);
     expect(c.toDataURL).not.toHaveBeenCalledWith("image/jpeg", expect.anything());
   });
   it("falls back to JPEG q0.92 above 600000 chars", () => {
     const c = canvasWith(pngOf(600001));
-    expect(exportDataUrl(c, true)).toBe("data:image/jpeg;base64,JJ");
+    expect(encodeCanvas(c, true)).toBe("data:image/jpeg;base64,JJ");
     expect(c.toDataURL).toHaveBeenCalledWith("image/jpeg", 0.92);
   });
   it("is JPEG when the source was not PNG, without asking for a PNG", () => {
     const c = canvasWith(pngOf(100));
-    expect(exportDataUrl(c, false)).toBe("data:image/jpeg;base64,JJ");
+    expect(encodeCanvas(c, false)).toBe("data:image/jpeg;base64,JJ");
     expect(c.toDataURL).not.toHaveBeenCalledWith("image/png");
   });
 });
 
-describe("exportPicture", () => {
+describe("exportDataUrl", () => {
   it("runs the export through the shrink step (1600 px, white fill)", async () => {
     const out = fakeCanvas(2000, 1000);
     (out.toDataURL as unknown as ReturnType<typeof vi.fn>).mockImplementation((t: string) => `data:${t};base64,OUT`);
@@ -215,7 +215,7 @@ describe("exportPicture", () => {
         }
       },
     );
-    const url = await exportPicture(out, true);
+    const url = await exportDataUrl(out, true);
     expect([small.width, small.height]).toEqual([1600, 800]);
     expect(url).toBe("data:image/png;base64,SHRUNK");
   });
@@ -228,7 +228,7 @@ describe("applyCrop", () => {
     const out = applyCrop(src, { x: 10, y: 20, w: 80.4, h: 40.6 });
     expect(out).not.toBe(src);
     expect([out.width, out.height]).toEqual([80, 41]);
-    expect(made[0].calls).toContainEqual(["drawImage", src, 10, 20, 80.4, 40.6, 0, 0, 80, 41]);
+    expect(made[0]!.calls).toContainEqual(["drawImage", src, 10, 20, 80.4, 40.6, 0, 0, 80, 41]);
   });
 });
 
@@ -252,9 +252,9 @@ describe("applyPixelate and applyBlur", () => {
     };
     const r = { x: 10, y: 10, w: 100, h: 60 };
     expect(applyPixelate(src, r)).toBe(src);
-    expect([made[0].width, made[0].height]).toEqual([10, 6]);
-    expect(made[0].calls).toContainEqual(["drawImage", src, 10, 10, 100, 60, 0, 0, 10, 6]);
-    expect(src.calls).toContainEqual(["drawImage", made[0], 0, 0, 10, 6, 10, 10, 100, 60]);
+    expect([made[0]!.width, made[0]!.height]).toEqual([10, 6]);
+    expect(made[0]!.calls).toContainEqual(["drawImage", src, 10, 10, 100, 60, 0, 0, 10, 6]);
+    expect(src.calls).toContainEqual(["drawImage", made[0]!, 0, 0, 10, 6, 10, 10, 100, 60]);
     expect(smoothingAtUpscale).toEqual([false]);
   });
   it("blur uses the blur divisor and leaves smoothing on", () => {
@@ -264,7 +264,7 @@ describe("applyPixelate and applyBlur", () => {
     src.ctx.drawImage = () => void smoothing.push(src.ctx.imageSmoothingEnabled);
     applyBlur(src, { x: 0, y: 0, w: 100, h: 60 });
     // divisor max(4, round(60/10)) = 6, so 100/6 and 60/6
-    expect([made[0].width, made[0].height]).toEqual([17, 10]);
+    expect([made[0]!.width, made[0]!.height]).toEqual([17, 10]);
     expect(smoothing).toEqual([true]);
   });
 });
@@ -276,7 +276,7 @@ describe("applyBackground", () => {
     const out = applyBackground(src, { x: 20, y: 10, w: 100, h: 60 }, "#d4d4d4", "oval");
     expect(out).not.toBe(src);
     expect([out.width, out.height]).toEqual([200, 100]);
-    const c = made[0];
+    const c = made[0]!;
     expect(c.ctx.fillStyle).toBe("#d4d4d4");
     expect(c.calls).toContainEqual(["fillRect", 0, 0, 200, 100]);
     expect(c.calls).toContainEqual(["ellipse", 70, 40, 50, 30, 0, 0, Math.PI * 2]);
@@ -286,8 +286,8 @@ describe("applyBackground", () => {
   it("uses a rectangle clip for the box shape", () => {
     const made = stubDocument();
     applyBackground(fakeCanvas(200, 100), { x: 20, y: 10, w: 100, h: 60 }, "#fff", "box");
-    expect(made[0].calls).toContainEqual(["rect", 20, 10, 100, 60]);
-    expect(made[0].calls.some((x) => x[0] === "ellipse")).toBe(false);
+    expect(made[0]!.calls).toContainEqual(["rect", 20, 10, 100, 60]);
+    expect(made[0]!.calls.some((x) => x[0] === "ellipse")).toBe(false);
   });
 });
 
@@ -297,14 +297,14 @@ describe("applyRotate", () => {
     const src = fakeCanvas(200, 100);
     const out = applyRotate(src, 1);
     expect([out.width, out.height]).toEqual([100, 200]);
-    expect(made[0].calls).toContainEqual(["translate", 50, 100]);
-    expect(made[0].calls).toContainEqual(["rotate", Math.PI / 2]);
-    expect(made[0].calls).toContainEqual(["drawImage", src, -100, -50]);
+    expect(made[0]!.calls).toContainEqual(["translate", 50, 100]);
+    expect(made[0]!.calls).toContainEqual(["rotate", Math.PI / 2]);
+    expect(made[0]!.calls).toContainEqual(["drawImage", src, -100, -50]);
   });
   it("turns the other way for -1", () => {
     const made = stubDocument();
     applyRotate(fakeCanvas(10, 20), -1);
-    expect(made[0].calls).toContainEqual(["rotate", -Math.PI / 2]);
+    expect(made[0]!.calls).toContainEqual(["rotate", -Math.PI / 2]);
   });
 });
 
@@ -313,14 +313,14 @@ describe("applyFlip", () => {
     const made = stubDocument();
     const out = applyFlip(fakeCanvas(200, 100), "h");
     expect([out.width, out.height]).toEqual([200, 100]);
-    expect(made[0].calls).toContainEqual(["translate", 200, 0]);
-    expect(made[0].calls).toContainEqual(["scale", -1, 1]);
+    expect(made[0]!.calls).toContainEqual(["translate", 200, 0]);
+    expect(made[0]!.calls).toContainEqual(["scale", -1, 1]);
   });
   it("up-down translates by the height and scales 1, -1", () => {
     const made = stubDocument();
     applyFlip(fakeCanvas(200, 100), "v");
-    expect(made[0].calls).toContainEqual(["translate", 0, 100]);
-    expect(made[0].calls).toContainEqual(["scale", 1, -1]);
+    expect(made[0]!.calls).toContainEqual(["translate", 0, 100]);
+    expect(made[0]!.calls).toContainEqual(["scale", 1, -1]);
   });
 });
 
@@ -359,9 +359,9 @@ describe("applyBorder", () => {
     const src = fakeCanvas(100, 50);
     const out = applyBorder(src, 6, "#e11d48");
     expect([out.width, out.height]).toEqual([112, 62]);
-    expect(made[0].ctx.fillStyle).toBe("#e11d48");
-    expect(made[0].calls).toContainEqual(["fillRect", 0, 0, 112, 62]);
-    expect(made[0].calls).toContainEqual(["drawImage", src, 6, 6]);
+    expect(made[0]!.ctx.fillStyle).toBe("#e11d48");
+    expect(made[0]!.calls).toContainEqual(["fillRect", 0, 0, 112, 62]);
+    expect(made[0]!.calls).toContainEqual(["drawImage", src, 6, 6]);
   });
   it("uses at least 2 px", () => {
     stubDocument();
