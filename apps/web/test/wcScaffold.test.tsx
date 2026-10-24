@@ -1,27 +1,21 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
-import { ChromeExtras } from "@/components/help/ChromeExtras";
-import { HelpButtons } from "@/components/help/HelpButtons";
-import { GUIDE } from "@/lib/help/guide/content";
+import { BackupSlot } from "@/components/help/slots/BackupSlot";
+import { ErrorSlot } from "@/components/help/slots/ErrorSlot";
+import { GuideSlot } from "@/components/help/slots/GuideSlot";
+import { InstallSlot } from "@/components/help/slots/InstallSlot";
+import { NudgeSlot } from "@/components/help/slots/NudgeSlot";
+import { OfflineSlot } from "@/components/help/slots/OfflineSlot";
+import { RecapSlot } from "@/components/help/slots/RecapSlot";
+import { ReportSlot } from "@/components/help/slots/ReportSlot";
 import { DICTS } from "@/lib/i18n";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-function draw(node: React.ReactNode): HTMLElement {
-  const host = document.createElement("div");
-  act(() => { createRoot(host).render(node); });
-  return host;
-}
-
+// Each feature task fills its own slot and tests what it draws there; this file only pins the frame they plug into (ruling R7).
 describe("wave C scaffold (Task C0)", () => {
-  it("the slots draw nothing until their feature fills them", () => {
-    expect(draw(<HelpButtons />).querySelector("[data-testid=help-wave-c]")?.children.length).toBe(0);
-    expect(draw(<ChromeExtras />).innerHTML).toBe("");
+  it("each slot file exports one component of its own name", () => {
+    for (const slot of [GuideSlot, ReportSlot, BackupSlot, InstallSlot, RecapSlot, NudgeSlot, OfflineSlot, ErrorSlot]) expect(typeof slot).toBe("function");
   });
-  it("the Guide starts empty and the 'page looks broken' FAQ entry has its text", () => {
-    expect(GUIDE).toEqual([]);
+  it("the 'page looks broken' FAQ entry has its text", () => {
     expect(DICTS.en.faq_q_broken).toMatch(/looks broken/);
     expect(DICTS.en.faq_a_broken).toMatch(/hard refresh/i);
   });

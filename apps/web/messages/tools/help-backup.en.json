@@ -1,1 +1,21 @@
-{}
+{
+  "wc_bk_locked_btn": "Download locked backup",
+  "wc_bk_check_btn": "Check a backup file",
+  "wc_bk_locked_intro": "Your work is saved in your account. This makes a second copy on your own computer: the same files as Export all my work, closed with a passphrase. Only the passphrase opens it, so the file is safe to keep in email or a cloud drive.",
+  "wc_bk_locked_busy": "Making your backup. This can take a moment.",
+  "wc_bk_need_unlock": "Unlock your vault first, then make the backup again.",
+  "wc_bk_nocrypto": "This browser cannot lock files here. Open the app at its https address, or use Export all my work.",
+  "wc_bk_fail": "Could not make the backup. Check your connection and try again.",
+  "wc_bk_done": "Locked backup downloaded. Keep the passphrase safe: it cannot be recovered.",
+  "wc_bk_check_h": "Check a backup file",
+  "wc_bk_check_intro": "Choose a locked backup, or the zip from Export all my work. It is read here in your browser: nothing is sent anywhere and nothing in your account is changed. Checking one proves you can get your work back.",
+  "wc_bk_file": "Backup file",
+  "wc_bk_check_go": "Check this file",
+  "wc_bk_check_ok_locked": "This locked backup opened with that passphrase and can be read: {n} document(s), about {w} words, saved {d}. Nothing in the app was changed.",
+  "wc_bk_check_bad": "This backup file opened, but it is not complete. It holds {n} document(s), about {w} words, saved {d}. The problems are listed below.",
+  "wc_bk_prob_missing": "Missing from the file: {name}",
+  "wc_bk_prob_unreadable": "Could not be opened when this backup was made, so the file holds no copy of it: {name}",
+  "wc_bk_check_v1": "This file is from the old single-page Appuscholar, and Check cannot read it. To bring its documents into your account, close this window and use Import a v1 backup.",
+  "wc_bk_read_fail": "Could not read that file.",
+  "wc_bk_prob_stage": "Some saved work of {name} could not be opened when this backup was made, so the file holds no copy of it."
+}
