@@ -407,7 +407,7 @@
   "cmp_ready": "The answer is ready below.",
   "cmp_remove_col": "Remove column {name}",
   "cmp_stage_aria": "{name} (from your walk-through)",
-  "cmp_stage_foot": "The walk-through columns can be read here. Write them in Analyse a paper.",
+  "cmp_stage_foot": "The walk-through columns can only be read here. Write them in Analyse a paper.",
   "cmp_stage_note": "From your walk-through",
   "cmp_sub": "Every cell is your own words, from reading and from paper cards. Click a cell to edit it.",
   "cmp_table_aria": "Table of your papers",

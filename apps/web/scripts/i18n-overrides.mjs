@@ -700,7 +700,7 @@ export const V2_STRINGS = {
   cmp_cols_refused: { en: "That choice cannot be saved. Tick one more column, or untick a different one.", hi: "यह चुनाव सहेजा नहीं जा सकता। एक और कॉलम पर निशान लगाएँ, या किसी दूसरे का निशान हटाएँ।" },
   cmp_stage_note: { en: "From your walk-through", hi: "आपके वॉक-थ्रू से" },
   cmp_stage_aria: { en: "{name} (from your walk-through)", hi: "{name} (आपके वॉक-थ्रू से)" },
-  cmp_stage_foot: { en: "The walk-through columns can be read here. Write them in Analyse a paper.", hi: "वॉक-थ्रू वाले कॉलम यहाँ सिर्फ़ पढ़े जा सकते हैं। उन्हें \"Analyse a paper\" में लिखें।" },
+  cmp_stage_foot: { en: "The walk-through columns can only be read here. Write them in Analyse a paper.", hi: "वॉक-थ्रू वाले कॉलम यहाँ सिर्फ़ पढ़े जा सकते हैं। उन्हें \"Analyse a paper\" में लिखें।" },
   cmp_remove_col: { en: "Remove column {name}", hi: "कॉलम {name} हटाएँ" },
   cmp_table_aria: { en: "Table of your papers", hi: "आपके शोध-पत्रों की तालिका" },
   cmp_foot: {

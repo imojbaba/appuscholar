@@ -414,7 +414,7 @@ describe("Compare: the walk-through answers side by side (ruling B2-R40)", () =>
     // Read-only everywhere, even for a paper that has an id, and a note about where to write them under the table.
     expect(tids("cmp-row").flatMap((r) => [...r.querySelectorAll("textarea")].slice(3, 7)).every((x) => x.readOnly)).toBe(true);
     expect(tids("cmp-row").flatMap((r) => [...r.querySelectorAll("textarea")].slice(0, 3)).every((x) => !x.readOnly)).toBe(true);
-    expect(tid("cmp-stage-foot")!.textContent).toBe("The walk-through columns can be read here. Write them in Analyse a paper.");
+    expect(tid("cmp-stage-foot")!.textContent).toBe("The walk-through columns can only be read here. Write them in Analyse a paper.");
   });
 
   it("typing in a walk-through box writes nothing", async () => {
