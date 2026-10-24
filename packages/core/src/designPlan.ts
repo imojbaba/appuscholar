@@ -3,10 +3,11 @@ import type { ProtoFields } from "./design";
 
 /*
  * The student's identification plan in the paperwork (spec 2026-10-24-participants §4, call C18). design.ts is v1's port, with golden tests, and is never edited; every function here
- * calls v1's and adds text, as aiuBuildV2 does for the AI-use statement. With no `idMode` in the plan each output is v1's, byte for byte, and a refusal from v1 passes through
- * unchanged. The added text is the builder's wording in plain English (some readers are children), for Dr. Sharma to review:
- *   consentMarkdownV2    "What we record about you" before "Voluntary participation"; with minors yes or unsure, "Parent or guardian permission" and "Young person's agreement" before "Consent"
- *                        (fixes walk observation O1; register D-S2-113)
+ * calls v1's and adds text, as aiuBuildV2 does for the AI-use statement. With no `idMode` in the plan each output is v1's, byte for byte, with one exception: the consent form's
+ * under-18 sections follow the under-18 answer alone (controller ruling R14: O1 is a defect in the paperwork itself, so they do not wait for the plan). A refusal from v1 passes
+ * through unchanged. The added text is the builder's wording in plain English (some readers are children), for Dr. Sharma to review:
+ *   consentMarkdownV2    "What we record about you" before "Voluntary participation" (only with an `idMode`); with minors yes or unsure, with or without an `idMode`, "Parent or
+ *                        guardian permission" and "Young person's agreement" before "Consent" (fixes walk observation O1; register D-S2-113)
  *   ethicsStatementV2    one sentence on how participants were identified, last (register D-S2-114)
  *   protocolMarkdownV2   "**How participants are identified:**" after the data management plan (register D-S2-114)
  *   ecMinorsNoteV2       v1's note with its last sentence replaced (C18; register D-S2-115)
@@ -119,22 +120,24 @@ const TEXT_KEYS = ["title", "pi", "what", "risks", "benefits", "contact"] as con
 const mark = (i: number): string => `${i}`;
 
 /**
- * v1's consent form, with the plan's sections added. With no `idMode` it is exactly `consentMarkdown(s)`. The two places to insert at are found in a copy of v1's form in which each
+ * v1's consent form, with the plan's sections added. "What we record about you" comes only with an `idMode`; the two under-18 sections come with `s.minors` of yes or unsure whether
+ * or not the plan is answered (R14). With no `idMode` and minors anything else it is exactly `consentMarkdown(s)`. The two places to insert at are found in a copy of v1's form in which each
  * text the student wrote is replaced by a short mark, so a student's own words ("## Consent" typed into the risks box) can never be taken for a heading; the marks are then put back
  * one piece at a time, so nothing the student typed (a `$&`, or the plan's own labels) is read as a pattern.
  */
 export function consentMarkdownV2(s: ConsentInput, plan: Plan): ReturnType<typeof consentMarkdown> {
   const v1 = consentMarkdown(s);
   const mode = modeOf(plan);
-  if (!mode || typeof v1 !== "string") return v1;
+  const minors = s.minors === "yes" || s.minors === "unsure" ? MINORS_SECTIONS : "";
+  if ((!mode && !minors) || typeof v1 !== "string") return v1;
   const marked: ConsentInput = { ...s };
   TEXT_KEYS.forEach((k, i) => { if (s[k]) marked[k] = mark(i); });
   const m = consentMarkdown(marked) as string;
   const voluntary = m.indexOf("\n\n## Voluntary participation\n") + 2;
   const consent = m.lastIndexOf("\n\n## Consent\n") + 2;
   const back = (t: string): string => t.replace(/(\d)/g, (_all, d: string) => s[TEXT_KEYS[Number(d)]!]);
-  const minors = s.minors === "yes" || s.minors === "unsure" ? MINORS_SECTIONS : "";
-  return back(m.slice(0, voluntary)) + "## What we record about you\n" + recordSection(mode, plan) + "\n\n" + back(m.slice(voluntary, consent)) + minors + back(m.slice(consent));
+  const record = mode ? "## What we record about you\n" + recordSection(mode, plan) + "\n\n" : "";
+  return back(m.slice(0, voluntary)) + record + back(m.slice(voluntary, consent)) + minors + back(m.slice(consent));
 }
 
 // ---- the ethics statement and the protocol ----
@@ -145,7 +148,10 @@ const ETHICS_SENTENCE: Record<IdMode, string> = {
   anonymous: "No names were recorded, so responses cannot be linked to participants.",
 };
 
-/** v1's ethics statement with one sentence on how participants were identified, last. A study that did not involve human participants has no participants to identify, so it is v1's. */
+/**
+ * v1's ethics statement with one sentence on how participants were identified, last. A study that did not involve human participants has no participants to identify, and "Each
+ * participant was given a code" would contradict v1's "The study did not involve human participants.", so that status is left as v1 wrote it (controller ruling R15).
+ */
 export function ethicsStatementV2(s: Parameters<typeof ethicsStatement>[0], plan: Plan): ReturnType<typeof ethicsStatement> {
   const r = ethicsStatement(s);
   const mode = modeOf(plan);

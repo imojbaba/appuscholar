@@ -82,10 +82,38 @@ describe("RECORD_FIELDS and needsCombinationWarning", () => {
   });
 });
 
-describe("with no idMode every output is v1's", () => {
-  it.each(CONSENT_INPUTS)("consentMarkdownV2, %s", (_n, s) => {
-    expect(consentMarkdownV2(s, {})).toBe(consentMarkdown(s));
-    expect(consentMarkdownV2(s, { record: ["name", "age"], recordOther: ["Hobbies"] })).toBe(consentMarkdown(s));
+/** v1's form with the two under-18 sections put in front of its `## Consent` section (the last one: only v1's fixed text follows it). */
+const v1WithMinors = (s: Consent): string => {
+  const v1 = str(consentMarkdown(s));
+  const at = v1.lastIndexOf("\n\n## Consent\n") + 2;
+  return v1.slice(0, at) + MINORS_SECTIONS + v1.slice(at);
+};
+const MINORS_SECTIONS =
+  `## Parent or guardian permission\nI am the parent or guardian of ${LINE} and I give permission for them to take part in this study.\n\nParent or guardian signature: ${LINE}  ${DATE}\n\n` +
+  `## Young person's agreement\nI have been told about this study in words I understand. I agree to take part. I know I can stop at any time, and nobody will be cross with me.\n\nYoung person's signature: ${LINE}  ${DATE}\n\n`;
+
+describe("with no idMode every output is v1's, except that the consent form follows the under-18 answer (R14)", () => {
+  it.each(CONSENT_INPUTS)("consentMarkdownV2, %s: v1, plus the two under-18 sections when minors is yes or unsure; never the record section", (_n, s) => {
+    const want = s.minors === "yes" || s.minors === "unsure" ? v1WithMinors(s) : str(consentMarkdown(s));
+    expect(consentMarkdownV2(s, {})).toBe(want);
+    expect(consentMarkdownV2(s, { record: ["name", "age"], recordOther: ["Hobbies"] })).toBe(want);
+    expect(str(consentMarkdownV2(s, {}))).not.toContain("What we record about you");
+  });
+  it("with no plan and minors no, empty or missing, the form is exactly v1's", () => {
+    for (const minors of ["no", "", undefined, "something else"]) {
+      const input: Consent = { ...CONSENT, minors };
+      expect(consentMarkdownV2(input, {})).toBe(consentMarkdown(input));
+    }
+  });
+  it("with no plan and minors yes or unsure, the two sections sit before Consent and nothing else changes", () => {
+    for (const minors of ["yes", "unsure"]) {
+      const md = str(consentMarkdownV2({ ...CONSENT, minors }, {}));
+      expect(md).toBe(v1WithMinors(CONSENT));
+      expect(md.indexOf("## Benefits\n")).toBeLessThan(md.indexOf("## Voluntary participation\n"));
+      expect(md.indexOf("## Questions or complaints\n")).toBeLessThan(md.indexOf("## Parent or guardian permission\n"));
+      expect(md.indexOf("## Young person's agreement\n")).toBeLessThan(md.indexOf("## Consent\n"));
+      expect(md).toContain(`Parent or guardian signature: ${LINE}  ${DATE}`);
+    }
   });
   it("consentMarkdownV2 passes v1's refusal through unchanged, for every mode", () => {
     for (const plan of [{}, ...MODES.map((idMode) => ({ idMode }))] as Plan[]) {
@@ -180,17 +208,18 @@ describe("consentMarkdownV2", () => {
     expect(withAbout).not.toContain("sealed");
   });
 
-  it("the guardian and young person sections come with minors yes or unsure, in every mode, and not otherwise", () => {
-    for (const idMode of MODES) {
+  it("the guardian and young person sections follow the under-18 answer alone: in every mode and with no mode, for yes or unsure, and not otherwise", () => {
+    for (const idMode of [undefined, ...MODES]) {
+      const plan: Plan = idMode ? { idMode } : {};
       for (const minors of ["yes", "unsure"]) {
-        const md = str(consentMarkdownV2({ ...CONSENT, minors }, { idMode }));
-        expect(md, `${idMode} ${minors}`).toContain("## Parent or guardian permission\n");
-        expect(md, `${idMode} ${minors}`).toContain("## Young person's agreement\n");
+        const md = str(consentMarkdownV2({ ...CONSENT, minors }, plan));
+        expect(md, `${String(idMode)} ${minors}`).toContain("## Parent or guardian permission\n");
+        expect(md, `${String(idMode)} ${minors}`).toContain("## Young person's agreement\n");
       }
       for (const minors of ["no", "", undefined]) {
-        const md = str(consentMarkdownV2({ ...CONSENT, minors }, { idMode }));
-        expect(md, `${idMode} ${String(minors)}`).not.toContain("Parent or guardian");
-        expect(md, `${idMode} ${String(minors)}`).not.toContain("Young person");
+        const md = str(consentMarkdownV2({ ...CONSENT, minors }, plan));
+        expect(md, `${String(idMode)} ${String(minors)}`).not.toContain("Parent or guardian");
+        expect(md, `${String(idMode)} ${String(minors)}`).not.toContain("Young person");
       }
     }
   });
