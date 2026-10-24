@@ -97,8 +97,8 @@ function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; ext
           list is a floor of 8rem and shrinks to it first, so it gets its own scroll only while there is room. Close stays on the screen. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto" data-testid="guide-scroll">
         <div className="flex flex-wrap items-center gap-2">
-          <Input type="search" className="min-w-[220px] flex-1 text-ellipsis" data-testid="guide-search" value={query} onChange={(e) => api.setQuery(e.target.value)} placeholder={t("wc_guide_search_ph")} aria-label={t("wc_guide_search_label")} />
-          <Button variant="ghost" data-testid="guide-print" onClick={print}><Printer weight="regular" aria-hidden="true" />{t("wc_guide_print")}</Button>
+          <Input type="search" className="min-w-[220px] flex-1 text-ellipsis max-[700px]:h-11" data-testid="guide-search" value={query} onChange={(e) => api.setQuery(e.target.value)} placeholder={t("wc_guide_search_ph")} aria-label={t("wc_guide_search_label")} />
+          <Button variant="ghost" className="max-[700px]:h-11" data-testid="guide-print" onClick={print}><Printer weight="regular" aria-hidden="true" />{t("wc_guide_print")}</Button>
         </div>
         {popupBlocked && <p className="m-0 text-sm text-destructive" role="status" data-testid="guide-print-note">{t("wc_guide_popup")}</p>}
         <GuideApiContext.Provider value={api}>{extra}</GuideApiContext.Provider>
@@ -134,7 +134,7 @@ function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; ext
         </div>
       </div>
       <div className="flex justify-end">
-        <Button variant="ghost" data-testid="guide-close" onClick={onClose}>{t("close_btn")}</Button>
+        <Button variant="ghost" className="max-[700px]:h-11" data-testid="guide-close" onClick={onClose}>{t("close_btn")}</Button>
       </div>
     </div>
   );

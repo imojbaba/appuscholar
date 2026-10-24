@@ -89,11 +89,11 @@ export function AskAppu() {
       <label htmlFor={id} className="text-[13.5px] font-bold">{t("wc_appu_label")}</label>
       <div className="mt-1 flex gap-2">
         <Input
-          id={id} type="text" className="flex-1" data-testid="appu-q" value={question} placeholder={t("wc_appu_ph")}
+          id={id} type="text" className="flex-1 max-[700px]:h-11" data-testid="appu-q" value={question} placeholder={t("wc_appu_ph")}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) void ask(); }}
         />
-        <Button variant="primary" disabled={busy || waiting} data-testid="appu-go" onClick={() => { void ask(); }}>{t("wc_appu_go")}</Button>
+        <Button variant="primary" className="max-[700px]:h-11" disabled={busy || waiting} data-testid="appu-go" onClick={() => { void ask(); }}>{t("wc_appu_go")}</Button>
       </div>
       <p className="mb-0 mt-1.5 text-[12.5px] text-muted-foreground" data-testid="appu-note">{t("wc_appu_note")}</p>
       <div aria-live="polite">
