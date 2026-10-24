@@ -76,6 +76,9 @@ export function workingCanvas(im: HTMLImageElement): Canvas {
   return c;
 }
 
+/** The pictures the document keeps (core's sanitiser lets through data:image png, jpeg, gif and webp, base64 only). */
+const KEPT_PICTURE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/]/i;
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const whole = (s: string) => Math.round(Number(s)) || 0;
 
@@ -324,7 +327,11 @@ export class StudioEngine {
     if (!b || !isBoxTool(this.tool)) return null;
     const x = whole(this.o.box.x);
     const y = whole(this.o.box.y);
-    const r = normalizeRect({ x, y }, { x: x + whole(this.o.box.w), y: y + whole(this.o.box.h) }, b.width, b.height);
+    const inside = (p: Point): Point => ({ x: clamp(p.x, 0, b.width), y: clamp(p.y, 0, b.height) });
+    const a = inside({ x, y });
+    const end = inside({ x: x + whole(this.o.box.w), y: y + whole(this.o.box.h) });
+    // A crop under a chosen shape takes its height from the width, as a drag does.
+    const r = normalizeRect(a, this.tool === "crop" ? aspectEnd(a, end, this.o.aspect, b.width, b.height) : end, b.width, b.height);
     if (!isDrag(r)) return "ps_rect_small";
     this.commitBox(r);
     this.emit();
@@ -478,6 +485,9 @@ export class StudioEngine {
     this.bake();
     this.emit();
     const edits = this.edits();
-    return { src: await exportDataUrl(this.base!, this.png), edits };
+    const src = await exportDataUrl(this.base!, this.png);
+    // A canvas too big to encode comes back as "data:,": not a picture the document keeps (its sanitiser drops any other kind).
+    if (!KEPT_PICTURE.test(src)) throw new Error("The picture could not be encoded");
+    return { src, edits };
   }
 }

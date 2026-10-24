@@ -722,7 +722,7 @@
 .ps-tools { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; width: 136px; padding: 8px; overflow: auto; border-right: 1px solid var(--line); background: var(--card); }
 .ps-tool { flex: none; justify-content: flex-start; text-align: left; }
 .ps-tool[aria-pressed="true"] { outline: 3px solid var(--purple-600); }
-.ps-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ps-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .ps-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; background: var(--card); border-bottom: 1px solid var(--line); }
 .ps-opts label, .ps-box label, .ps-side label { font-size: 12px; font-weight: 600; }
 .ps-hint { flex: 1; min-width: 220px; }
@@ -748,5 +748,9 @@
 @media (max-width: 760px) {
   .ps-body { flex-direction: column; }
   .ps-tools { flex-direction: row; width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
-  .ps-side { width: auto; max-height: 38vh; border-left: 0; border-top: 1px solid var(--line); }
+  .ps-side { width: auto; max-height: none; border-left: 0; border-top: 1px solid var(--line); }
+  /* One column that scrolls as a page, the picture's pane a fixed share of the screen: a pane that took its height from its content would be measured anew with each draw. */
+  .ps { overflow-y: auto; }
+  .ps-body, .ps-stage { flex: none; }
+  .ps-canvaswrap { flex: none; height: 60vh; }
 }

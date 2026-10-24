@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { downloadBlob } from "@/lib/export/download";
 import { maskNote, MIN_DRAG, type Point } from "@/lib/editor/pictureOps";
 import { plainText, useT } from "@/lib/i18n";
+import { sizeMessageKey } from "@/lib/editor/sizeBudget";
+import { holdPopout } from "@/lib/popout/mode";
 import { onPhotoMessage, photoChannel, postPhoto, studioIdFromHash, type PhotoSaved } from "@/lib/popout/photoChannel";
 import { dataUrlToBlob } from "@/lib/tools/stats/png";
 import { StudioEngine, workingCanvas } from "./photoStudio/engine";
@@ -34,7 +36,7 @@ const channelServer = () => true;
 
 /** Why the writing window did not place the picture, as the key of what to say (new here: v1 said only that it could not edit). */
 function refusal(m: PhotoSaved): string {
-  if (m.reason === "too-large") return "pic_too_big";
+  if (m.reason === "too-large") return sizeMessageKey;
   if (m.reason === "no-document") return "ps_nodoc";
   return "ie_fail";
 }
@@ -61,23 +63,41 @@ export function PhotoStudio() {
   // v1 psStudioInit 4800: "Appuscholar · " and the title without its emoji.
   useEffect(() => { document.title = "Appuscholar · " + plainText(t("ps_title")); }, [t]);
 
-  // The picture and the pane it sits in: the engine draws on every render and learns the pane's size (a resize changes it).
-  useLayoutEffect(() => {
+  // This is a pop-out window (v1 opened it as #popout=photo): lib/popout/mode.ts keeps the role while it is mounted, so nothing running in this window
+  // writes a document or a blob, and the vault does not start its migration here.
+  useEffect(() => {
+    holdPopout(true);
+    return () => holdPopout(false);
+  }, []);
+
+  // The engine draws the picture on every render. The pane it fits into is measured only when its size changes (the browser's ResizeObserver; the window's
+  // resize where there is none) and when a picture loads, never after a draw: a pane that took its size from the picture in it would otherwise be measured
+  // smaller after each draw, and the picture drawn smaller to fit it, until nothing was left.
+  const measure = useCallback(() => {
     const wrap = wrapRef.current;
     if (wrap) eng.setPane(wrap.clientWidth, wrap.clientHeight);
+  }, [eng]);
+  useLayoutEffect(() => {
+    measure();
+    const wrap = wrapRef.current;
+    if (wrap && typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(measure);
+      ro.observe(wrap);
+      return () => ro.disconnect();
+    }
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+  useLayoutEffect(() => {
     if (cvRef.current) eng.draw(cvRef.current);
   });
-  useEffect(() => {
-    const onResize = () => { if (wrapRef.current) eng.setPane(wrapRef.current.clientWidth, wrapRef.current.clientHeight); };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [eng]);
 
   /** Draws a picture the writing window sent, or a file (v1 psLoadSrc 4609). */
   const loadSrc = useCallback((src: string, capExists: boolean) => {
     const im = new Image();
     im.onload = () => {
       try {
+        measure();
         eng.load(workingCanvas(im), /^data:image\/png/.test(src), capExists);
         if (capExists) setCapOn(false);
         setStatus(null);
@@ -85,7 +105,7 @@ export function PhotoStudio() {
     };
     im.onerror = () => setStatus("ie_fail");
     im.src = src;
-  }, [eng]);
+  }, [eng, measure]);
 
   /** The writing window's answer to Done (v1 psStudioInit 4806). */
   const saved = useCallback((m: PhotoSaved) => {

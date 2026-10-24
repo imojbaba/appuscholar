@@ -23,6 +23,7 @@ import { PhotoStudio } from "../components/document/PhotoStudio";
 import { aspectEnd } from "../components/document/photoStudio/studioTools";
 import { LangProvider } from "../lib/i18n";
 import { setPhotoChannel } from "../lib/popout/photoChannel";
+import { isPopout } from "../lib/popout/mode";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -277,6 +278,18 @@ describe("Done", () => {
     await click("ps-done");
     expect(status()).toBe(E.ps_noparent);
     expect(ch.sent).toEqual([]);
+  });
+
+  it("a picture the browser could not encode (a canvas too big) is not sent: it says so, and Save a copy says so too", async () => {
+    await mount();
+    await load();
+    (HTMLCanvasElement.prototype.toDataURL as unknown as { mockImplementation(f: () => string): void }).mockImplementation(() => "data:,");
+    await click("ps-done");
+    expect(status()).toBe(E.ie_fail);
+    expect(doneMsgs()).toEqual([]);
+    await click("ps-save");
+    expect(status()).toBe(E.ie_fail);
+    expect(h.download).not.toHaveBeenCalled();
   });
 
   it("Close posts cancel, closes the window and says it may be closed", async () => {
@@ -649,6 +662,42 @@ describe("crop shape", () => {
   });
 });
 
+describe("crop shape, typed", () => {
+  it("a typed crop box takes the chosen shape too: the height comes from the width", async () => {
+    await mount();
+    await load();
+    await click("ps-tool-crop");
+    await setField(q("ps-aspect"), "1");
+    await boxApply("crop", 100, 100, 200, 50);
+    expect(val("ps-width")).toBe("200");
+    expect((q("ps-canvas") as HTMLCanvasElement).height).toBe(200);
+  });
+
+  it("and keeps the shape at the edge, as a drag does", async () => {
+    await mount();
+    await load();
+    await click("ps-tool-crop");
+    await setField(q("ps-aspect"), "1");
+    await boxApply("crop", 100, 500, 300, 50);
+    expect(val("ps-width")).toBe("100");
+    expect((q("ps-canvas") as HTMLCanvasElement).height).toBe(100);
+  });
+
+  it("with Free chosen the typed height stands, and the other tools are not forced either", async () => {
+    await mount();
+    await load();
+    await boxApply("crop", 100, 100, 200, 50);
+    expect(val("ps-width")).toBe("200");
+    expect((q("ps-canvas") as HTMLCanvasElement).height).toBe(50);
+    await click("ps-tool-crop");
+    await click("ps-tool-bar");
+    await setField(q("ps-box-w"), "40");
+    await setField(q("ps-box-h"), "10");
+    await click("ps-box-apply");
+    expect(callsOf("fillRect")).toContainEqual(["fillRect", 0, 0, 40, 10]);
+  });
+});
+
 describe("light and shape", () => {
   it("the sliders are baked before the next edit and logged as light, first", async () => {
     await mount();
@@ -742,6 +791,60 @@ describe("zoom", () => {
   });
 });
 
+describe("the pane", () => {
+  const size = (el: HTMLElement, dim: "width" | "height") => {
+    // A pane that nothing gives a size to (the phone layout gone wrong) is as big as the canvas in it plus its padding.
+    if (!el.classList.contains("ps-canvaswrap")) return dim === "width" ? 1000 : 800;
+    return (parseInt((el.querySelector("canvas") as HTMLCanvasElement).style[dim], 10) || (dim === "width" ? 600 : 400)) + 24;
+  };
+  const contentSized = () => {
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get(this: HTMLElement) { return size(this, "width"); } });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get(this: HTMLElement) { return size(this, "height"); } });
+  };
+  afterEach(() => { delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth; delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight; });
+
+  it("a pane sized by its content does not shrink the picture again and again: it is measured when it changes, not after each draw", async () => {
+    contentSized();
+    await mount();
+    await load();
+    expect(q("ps-zoom").textContent).toBe("66%");
+    for (const t of ["bar", "pix", "blur", "crop", "rect", "arrow", "pen", "text"]) await click("ps-tool-" + t);
+    await setField(q("ps-br"), "10");
+    await click("ps-rotr");
+    await click("ps-undo");
+    await click("ps-fit");
+    expect(q("ps-zoom").textContent).toBe("66%");
+  });
+
+  it("with a ResizeObserver the pane is measured when it reports a new size, and no longer once the window is gone", async () => {
+    const seen: { cb: () => void; el: Element; gone: boolean }[] = [];
+    vi.stubGlobal("ResizeObserver", class {
+      private rec?: { cb: () => void; el: Element; gone: boolean };
+      constructor(private cb: () => void) {}
+      observe(el: Element) { this.rec = { cb: this.cb, el, gone: false }; seen.push(this.rec); }
+      disconnect() { if (this.rec) this.rec.gone = true; }
+      unobserve() {}
+    });
+    let paneH = 800;
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get: () => 1000 });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get: () => paneH });
+    await mount();
+    await load();
+    expect(seen).toHaveLength(1);
+    expect((seen[0]!.el as HTMLElement).classList.contains("ps-canvaswrap")).toBe(true);
+    expect(q("ps-zoom").textContent).toBe("100%");
+    // Drawing and clicking around does not measure; the observer saying the pane is smaller does.
+    paneH = 400;
+    await click("ps-tool-bar");
+    expect(q("ps-zoom").textContent).toBe("100%");
+    await act(async () => { seen[0]!.cb(); });
+    expect(q("ps-zoom").textContent).toBe("62%");
+    const r = roots.pop()!;
+    await act(async () => { r.unmount(); });
+    expect(seen[0]!.gone).toBe(true);
+  });
+});
+
 describe("the page writes nothing", () => {
   it("a whole session touches no storage and makes no request", async () => {
     const set = vi.spyOn(Storage.prototype, "setItem");
@@ -758,6 +861,15 @@ describe("the page writes nothing", () => {
     expect(set).not.toHaveBeenCalled();
     expect(rm).not.toHaveBeenCalled();
     expect(f).not.toHaveBeenCalled();
+  });
+
+  it("is a pop-out window while it is open, so the vault migration and every blob write stay out of it", async () => {
+    expect(isPopout()).toBe(false);
+    await mount();
+    expect(isPopout()).toBe(true);
+    const r = roots.pop()!;
+    await act(async () => { r.unmount(); });
+    expect(isPopout()).toBe(false);
   });
 
   it("neither source file imports the project shell, a project load, autosave or the API client, or names any storage", () => {
