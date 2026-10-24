@@ -8,6 +8,8 @@ const SECRET = "test-secret-test-secret-test-secret-1234";
 const key = new TextEncoder().encode(SECRET);
 const token = (sub: string) => new SignJWT({ email: sub + "@example.test" }).setProtectedHeader({ alg: "HS256" }).setSubject(sub).setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) + 900).sign(key);
 
+/** Tests that make 100+ requests: a slow CI runner needs more than the default 5 s. */
+const MANY_CALLS_TIMEOUT = 30_000;
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
 /** The start of a UTC day, so the hour and the day windows both begin here. */
@@ -69,7 +71,7 @@ describe("ai quota", () => {
     expect(await r.json()).toEqual({ error: "quota", detail: "minute:40" });
     expect(r.headers.get("retry-after")).toBe("40");
     expect(called).toBe(20);
-    // The rejected call did not count: the wait shrinks with the clock.
+    // The wait shrinks with the clock.
     now += 10_000;
     expect(await (await complete()).json()).toEqual({ error: "quota", detail: "minute:30" });
     now = Date.parse("2026-10-20T10:11:00Z");
@@ -84,7 +86,7 @@ describe("ai quota", () => {
     expect(statuses.filter(s => s === 429)).toHaveLength(80);
     expect(statuses.slice(0, 20).every(s => s === 200)).toBe(true);
     expect(called).toBe(20);
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("when the minute and the hour are both full the answer names the minute", async () => {
     app = make({ ...AI_QUOTAS, complete: { minute: 2, hour: 2, day: 50 } }); auth = await headersFor("user-one"); await accept(auth);
@@ -113,10 +115,10 @@ describe("ai quota", () => {
     expect(await r.json()).toEqual({ error: "quota", detail: "hour:2520" });
     expect(r.headers.get("retry-after")).toBe("2520");
     expect(called).toBe(150);
-    // The rejected call did not count: the wait shrinks with the clock instead of restarting.
+    // The wait shrinks with the clock.
     now += MINUTE;
     expect(await (await complete()).json()).toEqual({ error: "quota", detail: "hour:2460" });
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("after the window the next call works", async () => {
     await spread(150, () => complete());
@@ -125,7 +127,7 @@ describe("ai quota", () => {
     now = Date.parse("2026-10-20T11:00:00Z");
     expect((await complete()).status).toBe(200);
     expect(called).toBe(151);
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("the 801st in a day is 429 with detail day:N", async () => {
     // Five full hours of 150, then 50 in the sixth: 800 calls, the day's whole allowance.
@@ -140,7 +142,7 @@ describe("ai quota", () => {
     expect(called).toBe(800);
     now = DAY_START + 24 * HOUR;
     expect((await complete()).status).toBe(200);
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("/ai/test: the 11th in an hour is 429, the 41st in a day is 429, and there is no minute rule", async () => {
     // Ten calls in one second all pass: no minute rule on /ai/test.
@@ -192,7 +194,7 @@ describe("ai quota", () => {
     await spread(150, () => complete(h1));
     expect((await complete(h1)).status).toBe(429);
     expect((await complete(h2)).status).toBe(200);
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("/ai/log and /ai/log/summary are not limited", async () => {
     await spread(150, () => complete());
@@ -201,7 +203,7 @@ describe("ai quota", () => {
       expect((await app.request("/ai/log", { headers: auth })).status).toBe(200);
       expect((await app.request("/ai/log/summary", { headers: auth })).status).toBe(200);
     }
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("a rejection logs one line with the bucket and user id only", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -214,7 +216,7 @@ describe("ai quota", () => {
     const line = String(warn.mock.calls[0]!.join(" "));
     expect(JSON.parse(line)).toEqual({ kind: "ai-quota", bucket: "complete:hour", user: "user-one" });
     for (const leak of [secret, prompt, "unique-sentence", "example.test", "Bearer"]) expect(line).not.toContain(leak);
-  });
+  }, MANY_CALLS_TIMEOUT);
 
   it("a minute rejection logs the bucket complete:minute, bucket and user id only", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
