@@ -25,12 +25,15 @@ import type { ParticipantsState } from "@/lib/tools/participants/useParticipants
  *   two people on the list ("Priya & Rahul") is shown apart, never added as a person, and starts at Keep; a listed cell with more in it than the name is warned about before it is swapped for one code.
  */
 
-/** What the box knows of the participant list: the list when it is read, the hook's state, and the identification plan's mode. */
-export type PdContext = { list: ParticipantList | null; state: ParticipantsState; mode: IdMode | null };
-export const NO_CONTEXT: PdContext = { list: null, state: "loading", mode: null };
+/**
+ * What the box knows of the participant list: the list when it is read, the hook's state, whether its last save failed (the list shown is then the student's held copy, not what is stored: R38),
+ * and the identification plan's mode.
+ */
+export type PdContext = { list: ParticipantList | null; state: ParticipantsState; mode: IdMode | null; saveFailed: boolean };
+export const NO_CONTEXT: PdContext = { list: null, state: "loading", mode: null, saveFailed: false };
 
-/** Why the list is not used: the vault is off or locked, the list is still being read or cannot be read, or nobody is on it. */
-export type NotUsed = "off" | "locked" | "loading" | "unreadable" | "empty";
+/** Why the list is not used: the vault is off or locked, the list is still being read or cannot be read, its last save failed, or nobody is on it. */
+export type NotUsed = "off" | "locked" | "loading" | "unreadable" | "unsaved" | "empty";
 export function listNotUsed(ctx: PdContext): NotUsed | null {
   switch (ctx.state) {
     case "off": return "off";
@@ -38,7 +41,7 @@ export function listNotUsed(ctx: PdContext): NotUsed | null {
     case "loading": return "loading";
     case "broken":
     case "error": return "unreadable";
-    case "ready": return ctx.list && ctx.list.people.length > 0 ? null : "empty";
+    case "ready": return ctx.saveFailed ? "unsaved" : ctx.list && ctx.list.people.length > 0 ? null : "empty";
   }
 }
 export const listInUse = (ctx: PdContext): boolean => listNotUsed(ctx) === null;
@@ -78,6 +81,15 @@ export function scanSetup(found: PdFound[], list: ParticipantList): { m: Matcher
   };
 }
 
+/** Who has each name and spelling of the list, in normal form, in list order: a name two people have is nobody's alone. */
+export function ownersOf(list: ParticipantList): Map<string, string[]> {
+  const owners = new Map<string, string[]>();
+  for (const p of list.people) {
+    for (const key of new Set([p.name, ...p.spellings].map(normName))) if (key) owners.set(key, [...(owners.get(key) ?? []), p.id]);
+  }
+  return owners;
+}
+
 // ---- The view ---------------------------------------------------------------------------------------------------------------------------------------
 
 /** A word that might be a name, asked about once for the column: an ask find (a person on the list, or an ordinary word) or a suggestion (not on the list). */
@@ -97,8 +109,8 @@ export type ColView = {
   multi: Array<{ key: string; value: string; codes: string[]; choice: "keep" | "codes" | "remove" }>;
   /** Listed cells that hold more than the name. */
   wide: string[];
-  /** Listed cells whose name more than one person on the list has: core codes them as the first of those people. */
-  shared: Array<{ value: string; codes: string[] }>;
+  /** Listed cells whose name more than one person on the list has ("Sam"): they are not coded as the first of those people (R36), they stay as written. `cells` counts them. */
+  shared: Array<{ value: string; codes: string[]; cells: number }>;
   withdrawn: Array<{ id: string; name: string; on: string; rows: number }>;
   keepNotes: Array<{ id: string; name: string; on: string }>;
   ask: Array<{ row: number; value: string; codes: string[]; choice: "remove" | "keep" }>;
@@ -136,6 +148,8 @@ export type ViewInput = {
   today: string;
 };
 
+/** Under an anonymous plan nobody is added to the list from a table: a choice made before the plan said so is Choose… again. */
+const noAddChoice = (choice: string, anonymous: boolean): string => (anonymous && choice === "add" ? "" : choice);
 const emptyColumn = (index: number): ColumnNames => ({ index, listed: [], unlisted: [], withdrawn: [], withdrawnAsk: [], inText: [], roll: [] });
 const distinct = (xs: string[]): string[] => [...new Set(xs)];
 
@@ -146,11 +160,7 @@ export function viewOf(input: ViewInput): PdView {
   const codeOf = (id: string): string => person.get(id)?.code ?? "";
   const foundAt = new Map(found.map((f) => [f.index, f]));
   const namesAt = new Map(names.map((n) => [n.index, n]));
-  // Who has each name and spelling, in normal form (a name two people have is not one person's).
-  const owners = new Map<string, string[]>();
-  for (const p of list.people) {
-    for (const key of new Set([p.name, ...p.spellings].map(normName))) if (key) owners.set(key, [...(owners.get(key) ?? []), p.id]);
-  }
+  const owners = ownersOf(list);
   const cols: ColView[] = [];
 
   data.headers.forEach((header, i) => {
@@ -187,7 +197,9 @@ export function viewOf(input: ViewInput): PdView {
     const askRows = new Map(col.withdrawnAsk.map((a) => [a.row, a.personIds]));
     const withdrawnRows = new Set(col.withdrawn.map((w) => w.row));
     const listedRows = new Set(col.listed.map((l) => l.row));
-    const live = col.listed.filter((l) => !withdrawnRows.has(l.row) && !askRows.has(l.row));
+    // A cell that is wholly a name two or more people have is nobody's to code (R36): it stays as written.
+    const sharedRows = new Set(col.listed.filter((l) => (owners.get(normName(cellAt(l.row)))?.length ?? 0) >= 2).map((l) => l.row));
+    const live = col.listed.filter((l) => !withdrawnRows.has(l.row) && !askRows.has(l.row) && !sharedRows.has(l.row));
     const codes = distinct(live.map((l) => codeOf(l.personId)).filter(Boolean));
 
     // Which of the unlisted values are cells that name several people on the list.
@@ -211,10 +223,11 @@ export function viewOf(input: ViewInput): PdView {
 
     const shared: ColView["shared"] = [];
     for (const l of col.listed) {
-      if (askRows.has(l.row)) continue;
+      if (askRows.has(l.row) || !sharedRows.has(l.row)) continue;
       const key = normName(cellAt(l.row));
-      const ids = owners.get(key);
-      if (ids && ids.length >= 2 && !shared.some((x) => normName(x.value) === key)) shared.push({ value: cellAt(l.row).trim(), codes: ids.map(codeOf) });
+      const had = shared.find((x) => normName(x.value) === key);
+      if (had) had.cells++;
+      else shared.push({ value: cellAt(l.row).trim(), codes: owners.get(key)!.map(codeOf), cells: 1 });
     }
 
     const withdrawn: ColView["withdrawn"] = [];
@@ -247,7 +260,7 @@ export function viewOf(input: ViewInput): PdView {
           continue;
         }
         let g = groups.get(key);
-        if (!g) groups.set(key, (g = { key, text: find.text, suggest: find.kind === "suggest", answers: 0, people: [], choice: choices.maybe[choiceKey(i, key)] ?? "" }));
+        if (!g) groups.set(key, (g = { key, text: find.text, suggest: find.kind === "suggest", answers: 0, people: [], choice: noAddChoice(choices.maybe[choiceKey(i, key)] ?? "", anonymous) }));
         if (!inThis.has(key)) { inThis.add(key); g.answers++; }
         for (const id of find.personIds) if (!g.people.some((x) => x.id === id)) g.people.push({ id, code: codeOf(id) });
       }
@@ -286,7 +299,7 @@ export function viewOf(input: ViewInput): PdView {
     if (c.role === "other" || c.role === "roll" || c.action === "remove") continue;
     if (c.action === "code" && c.unlistedChoice === "add" && !c.noAdd) c.unlisted.forEach(addName);
     for (const g of c.maybe) {
-      if (g.choice === "add") addName(g.text);
+      if (g.choice === "add" && !c.noAdd) addName(g.text);
       else if (g.choice === "keep" && g.suggest) notNames.push(g.text);
     }
   }
@@ -296,8 +309,8 @@ export function viewOf(input: ViewInput): PdView {
 
 // ---- Apply ------------------------------------------------------------------------------------------------------------------------------------------
 
-/** The table written back, and what was added (with the codes the saved list gave). `same`: nothing in the table changed. */
-export type PdOutcome = { headers: string[]; rows: string[][]; csv: string; coded: number; removed: number; removedRows: number; added: Array<{ name: string; code: string }>; same: boolean };
+/** The table written back, and what was added (with the codes the saved list gave). `same`: nothing in the table changed. `answers`: in how many answers a name was replaced. */
+export type PdOutcome = { headers: string[]; rows: string[][]; csv: string; coded: number; removed: number; removedRows: number; added: Array<{ name: string; code: string }>; answers: number; same: boolean };
 export type PdPlan = {
   /** The names to add to the list before the table is written (R35). */
   adds: string[];
@@ -317,12 +330,14 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
       const byName = new Map<string, string>();
       for (const p of saved.people) if (!byName.has(normName(p.name))) byName.set(normName(p.name), p.code);
       const byId = new Map(saved.people.map((p) => [p.id, p.code]));
+      const owners = ownersOf(saved);
       const codeOfName = (name: string): string => {
         const code = byName.get(normName(name));
         if (code === undefined) throw new Error("not on the list");
         return code;
       };
       const rows = data.rows.map((r) => r.slice());
+      let answers = 0;
       const scan: ColumnNames[] = [];
       const plans: ColumnPlan[] = [];
       for (const c of view.cols) {
@@ -343,8 +358,8 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
         const askChoice = new Map(c.ask.map((x) => [x.row, x.choice]));
         const askGone = n.withdrawnAsk.filter((a) => askChoice.get(a.row) === "remove");
         const withdrawn = [...(c.drop ? n.withdrawn : []), ...askGone.map((a) => ({ row: a.row, personId: a.personIds[0]! }))];
-        // A row that may be several people stays as typed unless it is removed: it is not coded as the first of them.
-        const listed = n.listed.filter((l) => !askChoice.has(l.row));
+        // A row that may be several people stays as typed unless it is removed: it is not coded as the first of them. Nor is a cell that is wholly a name several people have (R36).
+        const listed = n.listed.filter((l) => !askChoice.has(l.row) && (owners.get(normName(data.rows[l.row]?.[c.index] ?? ""))?.length ?? 0) < 2);
         const adding = action === "codes" && c.unlistedChoice === "add" && !c.noAdd;
         const inText = n.inText.filter((t) => {
           const key = cellKey(t.row);
@@ -363,10 +378,19 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
         const picks: ColumnPlan["picks"] = [];
         for (const g of c.maybe) {
           if (g.choice === "name") picks.push({ text: g.text, to: "[name]" });
-          else if (g.choice === "add") picks.push({ text: g.text, to: codeOfName(g.text) });
-          else if (g.choice !== "" && g.choice !== "keep") {
+          else if (g.choice === "add" && !c.noAdd) picks.push({ text: g.text, to: codeOfName(g.text) });
+          else if (g.choice !== "" && g.choice !== "keep" && g.choice !== "add") {
             const code = byId.get(g.choice);
             if (code !== undefined) picks.push({ text: g.text, to: code });
+          }
+        }
+        // The answers a name inside was replaced in: not the cells that are swapped whole, nor the rows that go.
+        if (action !== "remove") {
+          const gone = new Set(withdrawn.map((w) => w.row));
+          const whole = new Set<number>(action === "codes" ? [...listed.map((l) => l.row), ...(adding ? data.rows.map((_, ri) => ri).filter((ri) => singleKeys.has(cellKey(ri))) : [])] : []);
+          const picked = new Set(picks.map((k) => normName(k.text)));
+          for (const t of inText) {
+            if (!gone.has(t.row) && !whole.has(t.row) && t.finds.some((f) => picked.has(normName(f.text)) || (f.kind === "sure" && c.inText === "codes"))) answers++;
           }
         }
         scan.push({ index: c.index, listed, unlisted: adding ? c.unlisted : [], withdrawn, withdrawnAsk: [], inText, roll: [] });
@@ -375,7 +399,7 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
       const r = listTransform({ ...data, rows }, scan, plans, m, codeOfName);
       const same = !r.coded && !r.removed && !r.removedRows && r.headers.length === data.headers.length
         && r.rows.every((row, ri) => row.every((v, ci) => v === (data.rows[ri]?.[ci] ?? "")));
-      return { headers: r.headers, rows: r.rows, csv: r.csv, coded: r.coded, removed: r.removed, removedRows: r.removedRows, added: view.adds.map((a) => ({ name: a.name, code: codeOfName(a.name) })), same };
+      return { headers: r.headers, rows: r.rows, csv: r.csv, coded: r.coded, removed: r.removed, removedRows: r.removedRows, added: view.adds.map((a) => ({ name: a.name, code: codeOfName(a.name) })), answers, same };
     }
   };
 }

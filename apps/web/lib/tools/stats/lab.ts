@@ -5,7 +5,7 @@ import type { ParticipantList } from "@/lib/blobs/kinds/participants";
 import { addNotName, addPeople } from "@/lib/tools/participants/list";
 import type { ChartSpec } from "./resultChart";
 import { looksSemicolon, NO_SKIPPED, parseSliced, scanNamesSliced, scanSliced, semicolonsToTabs, skippedLines, type SliceOpts, type Skipped } from "./intake";
-import { listInUse, makePlan, NO_CHOICES, NO_CONTEXT, startChoice, viewOf, type ColAction, type ListChoices, type PdContext } from "./pdList";
+import { listNotUsed, makePlan, NO_CHOICES, NO_CONTEXT, startChoice, viewOf, type ColAction, type ListChoices, type PdContext } from "./pdList";
 
 /*
  * The Statistics lab's memory (ledger ruling R1): the pasted text, the dataset name, the parsed table, the personal-data scan and the student's
@@ -21,16 +21,17 @@ import { listInUse, makePlan, NO_CHOICES, NO_CONTEXT, startChoice, viewOf, type 
  */
 
 /** What the last action said, drawn by the Data tab as a quiet line (v1 toasted these; toasts are only "Saved" and "Inserted" now, register row D-S2-62). */
-export type LabStatus = { kind: "none" } | { kind: "empty" } | { kind: "parsed" } | { kind: "split" } | { kind: "read_failed" };
+export type LabStatus = { kind: "none" } | { kind: "empty" } | { kind: "parsed" } | { kind: "split" } | { kind: "read_failed" } | { kind: "adding" };
 /**
  * What "Apply" in the personal-data box did (v1 `_pdMsg`, 9498-9504): the sentence is drawn from these numbers. With the participant list, `list` says what the list did: the rows of people who
- * withdrew that were removed, the people added with the codes they were given, and whether names inside answers were replaced; no key file is made (the list is the key). `failed`: the people
- * could not be added to the list, so the table was not changed.
+ * withdrew that were removed, the people added with the codes they were given, and whether names inside answers were replaced; no key file is made (the list is the key). `failed`: the table
+ * was not changed, because the people could not be added to the list (`list`), the words answered "Not a name" could not be saved (`words`), the list could not be saved at all (`unsaved`), the
+ * table changed while the list was being saved (`changed`) or could not be written once it was (`table`); `added` says the people were added to the list before that.
  */
 export type PdResult =
   | { unchanged: true }
   | { removed: number; coded: number; keyed: boolean; list?: { rows: number; added: Array<{ name: string; code: string }>; answers: boolean } }
-  | { failed: "list" };
+  | { failed: "list" | "words" | "unsaved" | "changed" | "table"; added?: boolean };
 export type PdScanResult = { found: PdFound[]; freeText: string[] };
 /** What the participant list said about the table, and the list it was said against (a list that has changed since is scanned again). */
 export type PdNames = { list: ParticipantList; cols: ColumnNames[] };
@@ -179,7 +180,7 @@ export async function parse(projectId: string, opts: SliceOpts = {}): Promise<Pa
   // The participant list, when it can be used: what it says about each column (a scan that fails leaves the box with v1's flags alone).
   const ctx = getLab(projectId).ctx;
   let names: PdNames | null = null;
-  if (scan && listInUse(ctx)) {
+  if (scan && (listNotUsed(ctx) === null)) {
     let cols: ColumnNames[] | null;
     try { cols = await scanNamesSliced(data, scan.found, ctx.list!, o); } catch { cols = []; }
     if (cols === null || stale()) return null;
@@ -215,7 +216,7 @@ export async function rescanNames(projectId: string, opts: SliceOpts = {}): Prom
   const lab = getLab(projectId);
   if (!lab.data || !lab.scan) return;
   const ctx = lab.ctx;
-  if (!listInUse(ctx)) {
+  if (!(listNotUsed(ctx) === null)) {
     if (lab.names) patchLab(projectId, { names: null });
     return;
   }
@@ -236,7 +237,7 @@ export async function rescanNames(projectId: string, opts: SliceOpts = {}): Prom
  */
 export function setPdContext(projectId: string, next: PdContext): void {
   const prev = getLab(projectId).ctx;
-  if (prev.list === next.list && prev.state === next.state && prev.mode === next.mode) return;
+  if (prev.list === next.list && prev.state === next.state && prev.mode === next.mode && prev.saveFailed === next.saveFailed) return;
   patchLab(projectId, { ctx: next });
   const lab = getLab(projectId);
   const was = prev.mode === "anonymous";
@@ -264,7 +265,14 @@ export type ApplyIo = { saveNow(update: (prev: ParticipantList) => ParticipantLi
 export async function applyPd(projectId: string, opts: SliceOpts = {}, io?: ApplyIo): Promise<{ keyCsv: string } | null> {
   const lab = getLab(projectId);
   if (!lab.data || !lab.scan) return null;
-  if (lab.names && lab.names.list === lab.ctx.list && listInUse(lab.ctx)) return applyList(projectId, opts, io);
+  const why = listNotUsed(lab.ctx);
+  // A list whose last save failed is the student's held copy, not what is stored: nothing is coded against it, and nothing is made from v1's fresh codes in its place (R38).
+  if (why === "unsaved") return null;
+  if (why === null) {
+    // The list is in use: the table is scanned against the list that is in use, or Apply waits for that scan. It is never v1's fresh codes (R39a).
+    if (!lab.names || lab.names.list !== lab.ctx.list) return null;
+    return applyList(projectId, opts, io);
+  }
   const choices: Record<number, PdChoice> = {};
   for (const f of lab.scan.found) {
     const c = lab.choices[f.index] ?? "keep";
@@ -293,38 +301,49 @@ async function applyList(projectId: string, opts: SliceOpts, io: ApplyIo | undef
 
 async function applyListNow(projectId: string, opts: SliceOpts, io: ApplyIo | undefined): Promise<{ keyCsv: string } | null> {
   const lab = getLab(projectId);
-  const { data, scan, names, ctx } = lab;
+  const { data, scan, names, ctx, text, status } = lab;
   if (!data || !scan || !names || !ctx.list) return null;
+  const parsed = tickets.get(projectId);
   const input = { data, found: scan.found, names: names.cols, list: ctx.list, mode: ctx.mode, choices: lab.listChoices, v1: lab.choices, today: io?.today() ?? "" };
   const plan = makePlan(input, viewOf(input));
-  let list = ctx.list;
-  if (plan.adds.length || plan.notNames.length) {
+  const added = plan.adds.length > 0;
+  // The page is held while the list saves (R37): Parse, Upload, Clear and the box are off, and the status says so.
+  patchLab(projectId, { busy: true, status: { kind: "adding" } });
+  try {
+    // Always saved first (R38): what the table is coded against is the list the save answers with, never a copy the student's page was holding. Nobody to add: the list goes as it is.
     // The update may run again on a newer list: it makes the same change to any list it is given (a name already on it is skipped).
     const saved = io ? await io.saveNow((prev) => {
-      const added = plan.adds.length ? addPeople(prev, plan.adds.map((name) => ({ name, spellings: [] })), input.today).list : prev;
-      return plan.notNames.reduce((l, word) => addNotName(l, word), added);
+      const withPeople = added ? addPeople(prev, plan.adds.map((name) => ({ name, spellings: [] })), input.today).list : prev;
+      return plan.notNames.reduce((l, word) => addNotName(l, word), withPeople);
     }) : null;
     if (!saved) {
-      patchLab(projectId, { pdResult: { failed: "list" } });
+      patchLab(projectId, { pdResult: { failed: added ? "list" : plan.notNames.length ? "words" : "unsaved" } });
       return null;
     }
-    list = saved;
-    // The parse below scans the new table against the list as saved.
-    patchLab(projectId, { ctx: { ...ctx, list } });
-  }
-  let r;
-  try { r = plan.finish(list); } catch {
-    patchLab(projectId, { pdResult: { failed: "list" } });
-    return null;
-  }
-  if (r.same) {
+    // The people are on the list now. If the table is not the one the box was drawn for, it is not written over (R37).
+    const now = getLab(projectId);
+    if (now.data !== data || now.text !== text || tickets.get(projectId) !== parsed) {
+      patchLab(projectId, { pdResult: { failed: "changed", added } });
+      return null;
+    }
+    // The parse below scans the new table against the list as saved; the tab's own copy is left alone if it has moved on.
+    if (now.ctx.list === ctx.list) patchLab(projectId, { ctx: { ...now.ctx, list: saved } });
+    let r;
+    try { r = plan.finish(saved); } catch {
+      patchLab(projectId, { pdResult: { failed: "table", added } });
+      return null;
+    }
+    if (r.same) {
+      await parse(projectId, opts);
+      patchLab(projectId, { pdResult: { unchanged: true } });
+      return null;
+    }
+    patchLab(projectId, { text: r.csv });
     await parse(projectId, opts);
-    patchLab(projectId, { pdResult: { unchanged: true } });
-    return null;
+    patchLab(projectId, { pdResult: { removed: r.removed, coded: r.coded, keyed: false, list: { rows: r.removedRows, added: r.added, answers: r.answers > 0 } } });
+    return { keyCsv: "" };
+  } finally {
+    const end = getLab(projectId);
+    patchLab(projectId, { busy: false, ...(end.status.kind === "adding" ? { status } : {}) });
   }
-  patchLab(projectId, { text: r.csv });
-  await parse(projectId, opts);
-  const answers = !r.coded && !r.removed && !r.removedRows && !r.added.length;
-  patchLab(projectId, { pdResult: { removed: r.removed, coded: r.coded, keyed: false, list: { rows: r.removedRows, added: r.added, answers } } });
-  return { keyCsv: "" };
 }

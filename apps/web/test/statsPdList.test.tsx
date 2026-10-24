@@ -22,8 +22,11 @@ const h = vi.hoisted(() => ({
   loading: {} as Record<string, boolean>,
   /** The vault: "unlocked" reads the list; "off" and "locked" do not. */
   vault: "unlocked" as string,
-  /** What flush answers for the participants blob: false is a save the server did not take. */
+  /** What flush answers for the participants blob: false is a save the server did not take (the blob then reports an error, as the real one does). */
   flushOk: true,
+  /** While set, the participants flush waits for it: a save that takes a while. */
+  gate: null as Promise<void> | null,
+  error: {} as Record<string, boolean>,
   confirm: vi.fn(() => true),
   askPd: vi.fn(async (_sc: unknown) => "mask" as "send" | "mask" | "cancel"),
   prompts: [] as string[],
@@ -45,7 +48,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       const alive = useRef(true);
       useEffect(() => { alive.current = true; h.forces.add(force); return () => { alive.current = false; h.forces.delete(force); }; }, [force]);
       return {
-        value: h.store[kind] ?? null, loading: h.loading[kind] ?? false, locked: false, broken: false, error: false, readOnly: false, version: undefined,
+        value: h.store[kind] ?? null, loading: h.loading[kind] ?? false, locked: false, broken: false, error: h.error[kind] ?? false, readOnly: false, version: undefined,
         set: (next: unknown) => {
           if (!alive.current) return;
           const v = typeof next === "function" ? (next as (p: unknown) => unknown)(h.store[kind] ?? null) : next;
@@ -53,7 +56,13 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
           h.writes.push({ kind, json: JSON.stringify(v) });
           force();
         },
-        flush: async () => (kind === "participants" ? h.flushOk : true)
+        flush: async () => {
+          if (kind !== "participants") return true;
+          if (h.gate) await h.gate;
+          h.error.participants = !h.flushOk;
+          if (alive.current) force();
+          return h.flushOk;
+        }
       };
     }
   };
@@ -64,7 +73,7 @@ import type { Participant, ParticipantList } from "../lib/blobs/kinds/participan
 import { todayIso } from "../lib/tools/participants/dates";
 import { resetLists } from "../lib/tools/participants/store";
 import { Panel } from "../components/tools/stats/Panel";
-import { getData, getLab, resetLabs } from "../lib/tools/stats/lab";
+import { applyPd, getData, getLab, parse, resetLabs, setPdContext, setText } from "../lib/tools/stats/lab";
 import { codesFor, flaggedInText, listedMasks } from "../lib/tools/stats/explainGuard";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -143,6 +152,8 @@ const MOCK = [
 /** The walk's v1 table: names that the scan codes, phone numbers it removes. */
 const PEOPLE = ["name,phone,site,score", ...Array.from({ length: 6 }, (_, i) => `${["Asha Rao", "Ravi Kumar", "Meena Iyer", "John Paul", "Sita Devi", "Omar Khan"][i]},98765432${10 + i},ZXQ-SITE-${i},${10 + i}`)].join("\n");
 const savedList = () => h.store.participants as ParticipantList;
+/** How many people the list holds now. */
+const listPeople = () => savedList().people.length;
 
 beforeEach(() => {
   resetLabs();
@@ -150,7 +161,8 @@ beforeEach(() => {
   for (const k of Object.keys(h.store)) delete h.store[k];
   for (const k of Object.keys(h.loading)) delete h.loading[k];
   h.writes.length = 0; h.prompts.length = 0;
-  h.vault = "unlocked"; h.flushOk = true;
+  h.vault = "unlocked"; h.flushOk = true; h.gate = null;
+  for (const k of Object.keys(h.error)) delete h.error[k];
   h.toast.mockClear(); h.download.mockClear(); h.askPd.mockReset(); h.askPd.mockResolvedValue("mask");
   vi.spyOn(window, "confirm").mockImplementation(h.confirm);
 });
@@ -227,6 +239,8 @@ describe("the box against the list: the mockup's table (panel A)", () => {
     expect(said).toContain(fill(E.stats_pd_coded!, { n: 1 }));
     expect(said).toContain(fill(E.stats_pd_rows_removed!, { n: 1 }));
     expect(said).toContain(fill(E.stats_pd_added!, { names: "Sunita Devi (P006)" }));
+    // Rahul inside an answer was replaced too, and the sentence says so alongside the rest (R39c).
+    expect(said).toContain(E.stats_pd_cells);
     expect(said).not.toContain(E.stats_pd_keyed);
   });
 
@@ -236,7 +250,7 @@ describe("the box against the list: the mockup's table (panel A)", () => {
     expect(tid("pd-will-add")).toBeNull();
     await applyAndWait();
     expect((tid("stats-paste") as HTMLTextAreaElement).value).toContain("Sunita Devi,The morning walk was hard,10");
-    expect(h.writes.filter((w) => w.kind === "participants")).toEqual([]);
+    expect(listPeople()).toBe(5);
   });
 
   it("Remove these cells empties them", async () => {
@@ -245,7 +259,7 @@ describe("the box against the list: the mockup's table (panel A)", () => {
     await applyAndWait();
     expect((tid("stats-paste") as HTMLTextAreaElement).value).toContain(",The morning walk was hard,10");
     expect((tid("stats-paste") as HTMLTextAreaElement).value).not.toContain("Sunita");
-    expect(h.writes.filter((w) => w.kind === "participants")).toEqual([]);
+    expect(listPeople()).toBe(5);
   });
 
   it("a word that is a person's name and also an ordinary word is asked about, with that person's code to choose", async () => {
@@ -293,8 +307,8 @@ describe("the box against the list: the mockup's table (panel A)", () => {
     await until(() => tid("pd-result") !== null);
     expect(text("pd-result")).toBe(E.stats_pd_unchanged);
     expect((tid("stats-paste") as HTMLTextAreaElement).value).toBe(MOCK);
-    // Nothing to add was chosen, so the list was not written.
-    expect(h.writes.filter((w) => w.kind === "participants")).toEqual([]);
+    // Nothing to add was chosen: the list was sent as it is (Apply always saves first, R38), nobody was added.
+    expect(listPeople()).toBe(5);
   });
 
   it("when the list cannot take the new people, nothing is changed and the box says so", async () => {
@@ -374,7 +388,7 @@ describe("where each column starts", () => {
     await click("pd-apply");
     await until(() => tid("pd-result") !== null);
     expect(text("pd-result")).toBe(E.stats_pd_unchanged);
-    expect(h.writes.filter((w) => w.kind === "participants")).toEqual([]);
+    expect(listPeople()).toBe(5);
   });
 
   it("Not names is Keep as well", async () => {
@@ -464,7 +478,7 @@ describe("where each column starts", () => {
     expect(tid("pd-will-add")).toBeNull();
     await applyAndWait();
     expect(getData("p1")!.headers).toEqual(["notes", "score"]);
-    expect(h.writes.filter((w) => w.kind === "participants")).toEqual([]);
+    expect(listPeople()).toBe(5);
   });
 
   it("a person who withdrew and chose to keep what was collected gets a note, and their rows stay", async () => {
@@ -513,8 +527,7 @@ describe("cells that are not one person", () => {
     expect(tid("pd-will-add")).toBeNull();
     await applyAndWait();
     expect((tid("stats-paste") as HTMLTextAreaElement).value.split("\n")).toEqual(["ParticipantCode,score", "Priya & Rahul,5", "P003,6", "P005,7"]);
-    // Nobody was added, so the list was not written.
-    expect(h.writes.filter((w) => w.kind === "participants")).toEqual([]);
+    expect(listPeople()).toBe(5);
   });
 
   it("the student can replace the names in such a cell with their codes", async () => {
@@ -524,10 +537,29 @@ describe("cells that are not one person", () => {
     expect((tid("stats-paste") as HTMLTextAreaElement).value.split("\n")[1]).toBe("P001 & P002,5");
   });
 
-  it("a name that two people on the list share is warned about: it would become the first one's code", async () => {
-    h.store.participants = LIST([P(1, "Sam Rao", { spellings: ["Sam"] }), P(2, "Sam Iyer", { spellings: ["Sam"] }), P(3, "Kavya Nair")]);
+  const SAMS = () => LIST([P(1, "Sam Rao", { spellings: ["Sam"] }), P(2, "Sam Iyer", { spellings: ["Sam"] }), P(3, "Kavya Nair")]);
+
+  it("a name that two people on the list share is not coded as the first of them: the box says it stays as written", async () => {
+    h.store.participants = SAMS();
     await load("name,score\nSam,5\nKavya Nair,6\nSita Gupta,7");
-    expect(text("pd-shared-0")).toBe(fill(E.stats_pd_shared_one!, { value: "Sam", codes: "P001 P002", first: "P001" }));
+    expect(text("pd-shared-0")).toBe(fill(E.stats_pd_shared_one!, { value: "Sam", codes: "P001 P002" }));
+    // Only Kavya is a person the box can code.
+    expect(text("pd-list-0")).toContain(fill(E.stats_pd_on_list_one!, { codes: "P003" }));
+  });
+
+  it("Apply leaves every such cell as typed, and codes the others", async () => {
+    h.store.participants = SAMS();
+    await load("name,score\nSam,5\nKavya Nair,6\nSita Gupta,7\nSam,8");
+    expect(text("pd-shared-0")).toBe(fill(E.stats_pd_shared_many!, { n: 2, examples: "“Sam” (P001 P002)" }));
+    await applyAndWait();
+    expect((tid("stats-paste") as HTMLTextAreaElement).value.split("\n")).toEqual(["ParticipantCode,score", "Sam,5", "P003,6", "P004,7", "Sam,8"]);
+  });
+
+  it("and a column of nothing else is not offered codes", async () => {
+    h.store.participants = SAMS();
+    await load("name,score\nSam,5\nSam,6\nSam,7");
+    expect([...sel("pd-sel-0").options].map((o) => o.value)).toEqual(["remove", "keep"]);
+    expect(sel("pd-sel-0").value).toBe("keep");
   });
 
   it("a listed cell with other names in it is warned about before it is swapped for one code", async () => {
@@ -717,6 +749,199 @@ describe("what Explain masks a listed name as", () => {
     expect(codesFor(found).get("Priya Sharma")).toBe("[name 1]");
     expect(codesFor(found, listedMasks(null, false)).get("Priya Sharma")).toBe("[name 1]");
     expect(codesFor(found, listedMasks(LIST([]), false)).get("Priya Sharma")).toBe("[name 1]");
+  });
+});
+
+// ---- Apply waits for the list (R37), and only a saved list is coded against (R38) ---------------------------------------------------------------------
+
+describe("Apply waits for the list to save", () => {
+  beforeEach(() => { h.store.participants = MOCK_LIST(); h.store.design_ec = { idMode: "codes" }; });
+  /** A save that takes a while: the participants flush waits until the returned function is called. */
+  const gated = () => { let open!: () => void; h.gate = new Promise<void>((r) => { open = r; }); return () => open(); };
+
+  it("holds the page meanwhile: Parse, Upload, Clear and the box are off, and the status says what is happening", async () => {
+    await load(MOCK);
+    const release = gated();
+    await click("pd-apply");
+    expect(text("stats-status")).toBe(E.stats_data_adding);
+    for (const id of ["stats-parse", "stats-upload", "stats-clear", "pd-apply"]) expect((tid(id) as HTMLButtonElement).disabled, id).toBe(true);
+    // A select inside the box's disabled fieldset is disabled by it (the property only reflects its own attribute).
+    expect(sel("pd-sel-0").matches(":disabled")).toBe(true);
+    expect(sel("pd-maybe-sel-2-0").matches(":disabled")).toBe(true);
+    await act(async () => { release(); });
+    await until(() => tid("pd-result") !== null);
+    expect(text("stats-status")).toBe(E.stats_data_parsed);
+    expect((tid("stats-parse") as HTMLButtonElement).disabled).toBe(false);
+    expect(getLab("p1").busy).toBe(false);
+  });
+
+  it("a table parsed again meanwhile is kept: the people are added, the new table is not written over, and the box says so", async () => {
+    await load(MOCK);
+    const release = gated();
+    await click("pd-apply");
+    setText("p1", "a,b\n1,2");
+    await act(async () => { await parse("p1"); });
+    await act(async () => { release(); });
+    await until(() => tid("pd-result") !== null);
+    expect(text("pd-result")).toBe(E.stats_pd_changed_added);
+    expect(text("pd-result")).toBe("The people were added to your list. Your table changed meanwhile, so it was not changed.");
+    expect(getData("p1")!.rows).toEqual([["1", "2"]]);
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toBe("a,b\n1,2");
+    expect(savedList().people.map((p) => p.name)).toContain("Sunita Devi");
+    expect(h.download).not.toHaveBeenCalled();
+  });
+
+  it("text typed into the paste box meanwhile is not written over either", async () => {
+    await load(MOCK);
+    const release = gated();
+    await click("pd-apply");
+    await type("stats-paste", MOCK + "\nZed Zee,Kharghar,Fine,3");
+    await act(async () => { release(); });
+    await until(() => tid("pd-result") !== null);
+    expect(text("pd-result")).toBe(E.stats_pd_changed_added);
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toBe(MOCK + "\nZed Zee,Kharghar,Fine,3");
+  });
+
+  it("a project switch meanwhile writes nothing into the other project's lab", async () => {
+    const root = await mount();
+    await type("stats-paste", MOCK);
+    await click("stats-parse");
+    const release = gated();
+    await click("pd-apply");
+    await act(async () => { root.render(<Panel tab="data" projectId="p2" />); });
+    await act(async () => { release(); });
+    await until(() => getLab("p1").pdResult !== null);
+    const other = getLab("p2");
+    expect([other.text, other.data, other.pdResult, other.names, other.busy, other.status.kind]).toEqual(["", null, null, null, false, "none"]);
+    // Nor did the first project's lab take the list back: the tab that held it is gone.
+    expect(getLab("p1").ctx.list).toBeNull();
+  });
+});
+
+describe("only a saved list is coded against", () => {
+  beforeEach(() => { h.store.participants = MOCK_LIST(); h.store.design_ec = { idMode: "codes" }; });
+
+  it("after a save that failed the held list is not used: Apply said so, the box says the list has unsaved changes, and a second Apply changes nothing", async () => {
+    h.flushOk = false;
+    await load(MOCK);
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(text("pd-result")).toBe("Could not add them to your list, so nothing was changed.");
+    await until(() => tid("pd-apply") === null);
+    expect(text("pd-why")).toBe(E.stats_pd_why_unsaved);
+    expect(tid("pd-found")).toBeNull();
+    expect(await applyPd("p1")).toBeNull();
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toBe(MOCK);
+    expect(h.download).not.toHaveBeenCalled();
+  });
+
+  it("Try again saves it; the box is the list's again and codes against what was saved", async () => {
+    h.flushOk = false;
+    await load(MOCK);
+    await click("pd-apply");
+    await until(() => tid("pd-retry") !== null);
+    h.flushOk = true;
+    await click("pd-retry");
+    await until(() => tid("pd-apply") !== null);
+    expect(tid("pd-why")).toBeNull();
+    // Sunita is on the saved list now: listed, not added again.
+    expect(tid("pd-will-add")).toBeNull();
+    await applyAndWait();
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toContain("P006,The morning walk was hard,10");
+    expect(savedList().people.filter((p) => p.name === "Sunita Devi")).toHaveLength(1);
+  });
+
+  it("Apply saves the list first even when nobody is to be added, so what it codes against is what was saved", async () => {
+    await load(MOCK);
+    await choose("pd-unlisted-sel-0", "keep");
+    await applyAndWait();
+    expect(h.writes.filter((w) => w.kind === "participants")).toHaveLength(1);
+    expect(listPeople()).toBe(5);
+  });
+
+  it("and says what could not be saved: the words answered Not a name, or just the list", async () => {
+    h.flushOk = false;
+    await load(MOCK);
+    await choose("pd-unlisted-sel-0", "keep");
+    await choose("pd-maybe-sel-2-0", "keep");
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(text("pd-result")).toBe(E.stats_pd_not_words);
+  });
+
+  it("nothing to add and no words: the list could not be saved just now", async () => {
+    h.flushOk = false;
+    await load(MOCK);
+    await choose("pd-unlisted-sel-0", "keep");
+    await click("pd-apply");
+    await until(() => tid("pd-result") !== null);
+    expect(text("pd-result")).toBe(E.stats_pd_not_saved);
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toBe(MOCK);
+  });
+});
+
+describe("the lab with the list (R39)", () => {
+  const ready = () => ({ list: MOCK_LIST(), state: "ready" as const, mode: "codes" as const, saveFailed: false });
+  const today = () => "2026-10-24";
+
+  it("a list in use whose scan is of an older list is not v1's: Apply does nothing, no fresh codes", async () => {
+    const ctx = ready();
+    setPdContext("p1", ctx);
+    setText("p1", MOCK);
+    await parse("p1");
+    expect(getLab("p1").names).not.toBeNull();
+    // A newer list object arrives; its scan is not made yet.
+    setPdContext("p1", { ...ctx, list: { ...ctx.list } });
+    expect(await applyPd("p1", {}, { saveNow: async (u) => u(ctx.list), today })).toBeNull();
+    expect(getLab("p1").pdResult).toBeNull();
+    expect(getLab("p1").text).toBe(MOCK);
+  });
+
+  it("a table that cannot be written after the list took the people says so, and changes nothing", async () => {
+    const ctx = ready();
+    setPdContext("p1", ctx);
+    setText("p1", MOCK);
+    await parse("p1");
+    // A save that answers with the list as it was: Sunita is not on it, so the table cannot be coded.
+    expect(await applyPd("p1", {}, { saveNow: async () => ctx.list, today })).toBeNull();
+    expect(getLab("p1").pdResult).toEqual({ failed: "table", added: true });
+    expect(getLab("p1").text).toBe(MOCK);
+  });
+});
+
+describe("under an anonymous plan (R39)", () => {
+  beforeEach(() => { h.store.participants = MOCK_LIST(); });
+
+  it("no suggestion can add a person, even one chosen before the plan said so, and nothing says Apply will add", async () => {
+    h.store.design_ec = { idMode: "codes" };
+    await load(MOCK);
+    await choose("pd-maybe-sel-2-0", "add");
+    expect(text("pd-will-add")).toContain("Meena");
+    h.store.design_ec = { idMode: "anonymous" };
+    await rerender();
+    expect(tid("pd-will-add")).toBeNull();
+    expect([...sel("pd-maybe-sel-2-0").options].map((o) => o.value)).toEqual(["", "name", "keep"]);
+    expect(sel("pd-maybe-sel-2-0").value).toBe("");
+    await applyAndWait();
+    expect(listPeople()).toBe(5);
+    // She stays as typed: not replaced by a code of a person who was never added.
+    expect((tid("stats-paste") as HTMLTextAreaElement).value).toContain("Meena didi helped me a lot");
+    expect(savedList().people.map((p) => p.name)).not.toContain("Meena");
+  });
+
+  it("the line does not tell a student whose plan is anonymous to set up a vault or add participants", async () => {
+    h.vault = "off";
+    h.store.design_ec = { idMode: "anonymous" };
+    await load(PEOPLE);
+    expect(tid("pd-why")).toBeNull();
+    expect(sel("pd-sel-0").value).toBe("remove");
+  });
+
+  it("a locked list is still said, without advice about codes", async () => {
+    h.vault = "locked";
+    h.store.design_ec = { idMode: "anonymous" };
+    await load(PEOPLE);
+    expect(text("pd-why")).toBe(E.stats_pd_why_locked_anon);
   });
 });
 

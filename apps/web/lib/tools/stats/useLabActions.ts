@@ -44,8 +44,8 @@ export function useLabActions(projectId: string) {
   const ec = useProjectBlob("design_ec", pid);
   const mode = planOf(ec.value).mode;
   useEffect(() => {
-    setPdContext(projectId, { list: participants.list, state: participants.state, mode });
-  }, [projectId, participants.list, participants.state, mode]);
+    setPdContext(projectId, { list: participants.list, state: participants.state, mode, saveFailed: participants.saveFailed });
+  }, [projectId, participants.list, participants.state, participants.saveFailed, mode]);
   useEffect(() => () => setPdContext(projectId, NO_CONTEXT), [projectId]);
   const saveNowRef = useRef(participants.saveNow);
   useEffect(() => { saveNowRef.current = participants.saveNow; });
@@ -69,6 +69,9 @@ export function useLabActions(projectId: string) {
     if (r?.keyCsv) downloadBlob(KEY_FILE, new Blob(["\uFEFF" + r.keyCsv], { type: "text/csv;charset=utf-8" }));
   }, [projectId]);
 
+  /** Sends the list again after a save that did not land (the box says the list has changes not saved yet, R38). */
+  const retryList = useCallback(() => { void saveNowRef.current((prev) => prev); }, []);
+
   /** v1 statsUpload (9403): the file's text into the paste box, its name into an empty name box, then parse. */
   const upload = useCallback((file: File) => {
     const reader = new FileReader();
@@ -81,6 +84,6 @@ export function useLabActions(projectId: string) {
     reader.readAsText(file);
   }, [projectId, rename, parseNow]);
 
-  return { rename, parseNow, split, apply, upload, prefs };
+  return { rename, parseNow, split, apply, upload, retryList, prefs };
 }
 export type LabActions = ReturnType<typeof useLabActions>;

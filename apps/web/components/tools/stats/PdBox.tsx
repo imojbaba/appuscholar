@@ -13,7 +13,15 @@ type T = ReturnType<typeof useT>;
 
 /** v1's sentence after Apply (pdApply 9498-9504), from the counts: "Done." with the columns removed, the columns coded and the key file; with the list also the rows removed, the people added with their codes. */
 function resultText(t: T, r: PdResult): string {
-  if ("failed" in r) return t("stats_pd_not_added");
+  if ("failed" in r) {
+    switch (r.failed) {
+      case "list": return t("stats_pd_not_added");
+      case "words": return t("stats_pd_not_words");
+      case "unsaved": return t("stats_pd_not_saved");
+      case "changed": return t(r.added ? "stats_pd_changed_added" : "stats_pd_changed");
+      case "table": return t(r.added ? "stats_pd_table_added" : "stats_pd_table");
+    }
+  }
   if ("unchanged" in r) return t("stats_pd_unchanged");
   const l = r.list;
   return [
@@ -130,9 +138,9 @@ function ListColumn({ projectId, c }: { projectId: string; c: ColView }) {
         )}
         {c.shared.length > 0 && c.action === "code" && (
           <p className="ap-small" style={{ margin: "2px 0 6px" }} data-testid={`pd-shared-${i}`}>
-            {c.shared.length === 1
-              ? t("stats_pd_shared_one", { value: c.shared[0]!.value, codes: c.shared[0]!.codes.join(" "), first: c.shared[0]!.codes[0]! })
-              : t("stats_pd_shared_many", { n: c.shared.length, examples: shortList(t, c.shared.map((x) => `${x.value} (${x.codes.join(" ")})`), 3) })}
+            {c.shared.length === 1 && c.shared[0]!.cells === 1
+              ? t("stats_pd_shared_one", { value: c.shared[0]!.value, codes: c.shared[0]!.codes.join(" ") })
+              : t("stats_pd_shared_many", { n: c.shared.reduce((n, x) => n + x.cells, 0), examples: shortList(t, c.shared.map((x) => `“${x.value}” (${x.codes.join(" ")})`), 3) })}
           </p>
         )}
         {c.withdrawn.length > 0 && (
@@ -190,7 +198,12 @@ const hasWords = (c: ColView): boolean =>
 
 /** Why the box is v1's, in one line. */
 const WHY: Record<NotUsed, string> = {
-  off: "stats_pd_why_off", locked: "stats_pd_why_locked", loading: "stats_pd_why_loading", unreadable: "stats_pd_why_unreadable", empty: "stats_pd_why_empty"
+  off: "stats_pd_why_off", locked: "stats_pd_why_locked", loading: "stats_pd_why_loading", unreadable: "stats_pd_why_unreadable", unsaved: "stats_pd_why_unsaved", empty: "stats_pd_why_empty"
+};
+/** Under an anonymous plan no list is expected: the line says only what is wrong with a list that is there, and gives no advice about setting up a vault or adding participants (R39e). */
+const whyKey = (why: NotUsed, anonymous: boolean): string | null => {
+  if (!anonymous) return WHY[why];
+  return why === "locked" ? "stats_pd_why_locked_anon" : why === "unreadable" || why === "unsaved" ? WHY[why] : null;
 };
 
 /**
@@ -220,18 +233,25 @@ export function PdBox({ projectId, actions }: { projectId: string; actions: LabA
   const shown = view ? view.cols.filter(hasWords) : [];
   const flagged = view ? shown.length > 0 : found.length > 0;
   const checking = why === null && !view;
+  const line = why === null ? null : whyKey(why, anonymous);
   return (
     <div data-testid="pd-box" style={{ marginTop: 14 }}>
       {lab.pdResult && <p className="ap-box" role="status" data-testid="pd-result">{resultText(t, lab.pdResult)}</p>}
-      {checking ? (
+      {why === "unsaved" ? (
+        // The list the page holds has changes the server never took: nothing is coded against it (R38). The student can send it again.
+        <div className="ap-box" data-testid="pd-unsaved">
+          <p style={{ margin: "0 0 8px" }} data-testid="pd-why">{t(whyKey(why, anonymous)!)}</p>
+          <Button variant="ghost" size="sm" data-testid="pd-retry" disabled={lab.busy} onClick={() => actions.retryList()}>{t("stats_pd_retry")}</Button>
+        </div>
+      ) : checking ? (
         <p className="ap-box" data-testid="pd-checking">{t("stats_pd_checking")}</p>
       ) : !flagged ? (
         <p className="ap-box" data-testid="pd-none">{t("stats_pd_none")}</p>
       ) : (
-        <div className="ap-banner" data-testid="pd-found">
+        <fieldset className="ap-banner" data-testid="pd-found" disabled={lab.busy} style={{ minWidth: 0 }}>
           <b><Warning weight="fill" aria-hidden="true" style={{ verticalAlign: "-2px", marginRight: 4 }} />{t(view ? "stats_pd_title_list" : "stats_pd_title")}</b>
           <p style={{ margin: "6px 0 8px" }}>{t(view ? "stats_pd_intro_list" : "stats_pd_intro")}</p>
-          {why !== null && <p className="ap-small" style={{ margin: "0 0 8px" }} data-testid="pd-why">{t(WHY[why])}</p>}
+          {line !== null && <p className="ap-small" style={{ margin: "0 0 8px" }} data-testid="pd-why">{t(line)}</p>}
           {view
             ? shown.map((c) => (c.role === "other" && c.found
               ? <OtherRow key={c.index} projectId={projectId} c={c} f={c.found} />
@@ -249,7 +269,7 @@ export function PdBox({ projectId, actions }: { projectId: string; actions: LabA
           </div>
           {view && <p className="ap-small" style={{ margin: "8px 0 0" }} data-testid="pd-from-list">{t("stats_pd_from_list")}</p>}
           <p className="ap-small" style={{ margin: "8px 0 0" }}>{t(view ? "stats_pd_pseudo_list" : "stats_pd_pseudo")}</p>
-        </div>
+        </fieldset>
       )}
       <p className="ap-small" data-testid="pd-scope" style={{ margin: "6px 0 0" }}>
         {t("stats_pd_scope")}{view ? " " + t("stats_pd_scope_list") : ""}{freeText.length ? " " + t("stats_pd_long", { cols: freeText.join(", ") }) : ""}
