@@ -27,7 +27,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q1: The language button is announced differently from what it shows
 
-- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07
+- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07, and in S8-01, S8-02, S8-05 and S8-07 (the same scan on Review's Closeness, Viva and Make PPT)
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI (accessibility)
@@ -182,7 +182,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q15: On a phone, the project name in a place's top line is 20 px tall and the "Your question" strip's summary 32 px
 
-- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs) and S7-06 (the Writing place's four screens); it shows at the top of every place
+- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs), S7-06 (the Writing place's four screens) and S8-06 (Review's Closeness, Viva and Make PPT); it shows at the top of every place
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -325,6 +325,39 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: it is not. With the phrase selected in the open document, pressing Back shows the place and hides the document (`components/frame/DocumentBeside.tsx` line 37, `full = useMedia(PHONE_QUERY) && side`; lines 24 to 26). The selection is still held by the editor, so tapping the code does tag the phrase, but the tap then opens the document full screen over the place again (the tag goes through `requestInsert`, which opens a closed document first: `components/frame/ProjectShell.tsx` line 448, reached by `wrapSelection` in `lib/editor/docAccess.ts`), so the student ends on the document with the phrase shaded, and the code list and the line "Tagged as ..." are out of sight. Tagging works only for a student who selects, goes back, taps and comes back to look.
 - Evidence: the run of 2026-10-24 on 66d8ec3: case S6-06, the check "the passage to be tagged is on the screen when the code is tapped" (its message holds what was seen) and the check that follows it, which passes. Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S6-06"`.
 - Status: awaiting (OJ)
+
+### Q40: Dragging the words of a viva question onto the document puts them in it
+
+- Case: S8-01 (the step "a viva question from a selection", the check "dragging the question's words onto the document puts nothing in it")
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: Unexpected
+- Expected: the viva question is never added to the document: its label says "It is never added to your document", and the sheet says of the drag "Dragging the question does nothing. The document is word for word what it was; no gold AI text appears in it" (source: tools-e.md row 14; register D-S2-101; the plan's rule 4)
+- Happened: the question's words, selected and dragged onto the editor, are dropped into the draft where the pointer lets go (in the run, into the middle of the abstract: "... and six teWhy did you balance the two groups by age, course and gender, and what would an unbalanced sample have done to your result?achers were interviewed ..."), in bold with the panel's own inline styles, with no AI mark (`span.ai-ins`), so the draft counts them as typed; the autosave keeps them. A throwaway probe dropped the selected words of any plain paragraph and got the same. The live walk recorded "a mouse drag of its selected text onto the document changed nothing (a scripted drag may not start a real one)" and marked the drag SUPPORTED, not VERIFIED: a drag Playwright makes does start a real one. The cause is in two places: the editor's drop handler (`components/editor/Editor.tsx`, line 54) takes only dropped files and returns false for any other drop, so ProseMirror's own drop inserts the dragged text; and the question's paragraph (`components/tools/viva/VivaBody.tsx`, line 92, `data-testid="viva-q-text"`) can be selected and dragged.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S8-01, the failed check naming Q40 (its message holds the draft's html where the words fell). The case puts the draft back with Ctrl+Z after the drag so that its later checks are not about this one. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S8-01"`.
+- Status: known
+
+### Q41: On a phone, Closeness's source ticks and its "Your text with matches marked" fold are 20 px tall
+
+- Case: S8-06 (Closeness on a phone, in Hindi, with one other document listed and a result shown)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way (source: spec section 8, layout rules, O17; as Q15)
+- Happened: `input [close-source]: 317 × 20 px` (the tick of each paper on the Reading shelf and each of "your other documents": the browser's own box inside a 12.5 px label row) and `summary "मेल चिह्नित किया हुआ आपका पाठ" in [close-result]: 317 × 20 px` (the summary of the fold that holds the marked text). Files: `components/tools/close/Sources.tsx` (the `box` rows, lines 14 to 18) and `components/tools/close/Result.tsx` (the `<summary>`, line 31). With a shelf of papers there is one such row for each paper.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S8-06, the failed check "Closeness, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S8-06"`.
+- Status: known
+
+### Q42: On a Hindi page, Closeness names a pasted passage "Pasted passage" in English
+
+- Case: S8-06 (Closeness on a phone, in Hindi, with a passage pasted and a result shown)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens except what the register lists and the student's own text and paper titles (source: spec section 8, layout rules; tools-e.md row 18: "English only in the student's own text and paper titles")
+- Happened: `div "[1] Pasted passage (चिपकाया गया): 1 अंश…" in [close-by-source]` and `div "[1.1] 28 शब्द, Pasted passage के निकट…" [close-passage]`. The name of a pasted source is core's constant (`packages/core/src/closeness.ts`, line 122, `name:'Pasted passage'` in `clGather`) and the result shows it as it is (`components/tools/close/Result.tsx`, lines 43, 50 and 51 print `p.name` and `r.sources[x.src]!.name`); the kind beside it, "चिपकाया गया", is translated. The names of shelf papers and of documents are the student's own, so only this one shows. The report file keeps it too (`clReportText`, which the register keeps in English: D-S2-95).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S8-06, the failed check "Closeness, on a phone, in Hindi: no English on a Hindi screen". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S8-06"`.
+- Status: known
 
 ### Q50: When the AI grammar check could not read the text, the panel says "Nothing found by the rules or the AI"
 
