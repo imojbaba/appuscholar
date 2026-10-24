@@ -109,7 +109,7 @@ test("locked backup and check: make it, open it with the wrong passphrase and th
     await expect(page.getByTestId("bk-pass1")).toHaveCount(0);
     await expect(page.getByTestId("bk-lock-cancel")).toHaveText(T("close_btn"));
     // The stamp is this student's (appu_last_backup_<id>), never the old device-wide key.
-    const stored = await page.evaluate(() => ({ keys: Object.keys(localStorage).filter((k) => k.startsWith("appu_last_")), all: JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage }) }));
+    const stored = await page.evaluate(() => ({ keys: Object.keys(localStorage).filter((k) => k.startsWith("appu_last_backup")), all: JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage }) }));
     expect(stored.keys).toHaveLength(1);
     expect(stored.keys[0]).toMatch(/^appu_last_backup_.+/);
     expect(Number(await page.evaluate((k) => localStorage.getItem(k), stored.keys[0]!))).toBeGreaterThan(0);

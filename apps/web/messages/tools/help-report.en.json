@@ -1,1 +1,20 @@
-{}
+{
+  "wc_rep_btn": "Report a problem",
+  "wc_rep_h2": "Report a problem",
+  "wc_rep_desc": "Describe what you were doing and what went wrong. Do not type participant names or other personal details.",
+  "wc_rep_ph": "For example: I pasted my data, pressed Parse, and the page showed an error.",
+  "wc_rep_describe_label": "What went wrong",
+  "wc_rep_added_h": "What the app adds to the report.",
+  "wc_rep_added": "This is everything. Nothing from your documents, sources, data or keys is included.",
+  "wc_rep_usage_tick": "Also include how often I opened each tool (counts only, no text)",
+  "wc_rep_local_h": "On this device only.",
+  "wc_rep_local": "Which tools you used and where errors occurred. Nobody sees this unless you tick the box above.",
+  "wc_rep_mail": "Open an email to send",
+  "wc_rep_copy": "Copy the report",
+  "wc_rep_clear": "Clear the counts",
+  "wc_rep_closing": "The email opens in your own email app. You read it and press send yourself.",
+  "wc_rep_copied": "Report copied",
+  "wc_rep_copy_fail": "Could not copy. Select the text by hand.",
+  "wc_rep_cleared": "Counts cleared",
+  "wc_rep_long": "The report is long, so it was copied too. Paste it into the email if it looks cut off."
+}
