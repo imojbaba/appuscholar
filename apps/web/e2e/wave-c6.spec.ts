@@ -32,7 +32,7 @@ function RX(key: string, holes: Record<string, string>): RegExp {
   const parts = T(key).split(/(\{\w+\})/);
   return new RegExp("^" + parts.map((p) => { const m = /^\{(\w+)\}$/.exec(p); return m ? holes[m[1]!]! : p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("") + "$");
 }
-const FOUND = { p: "(\\d+)", n: "1", d: "\\d{4}-\\d{2}-\\d{2}" };
+const FOUND = { n: "1", w: "(\\d+)", d: "\\d{4}-\\d{2}-\\d{2}" };
 
 const PROJECT = "Sleep and memory study";
 const TOPIC = "Does a good night of sleep help first-year students remember what they read?";
@@ -55,7 +55,7 @@ test("locked backup and check: make it, open it with the wrong passphrase and th
   test.setTimeout(180_000);
   let lockedPath = "";
   let plainPath = "";
-  let lockedProjects = 0;
+  let lockedWords = -1;
 
   await test.step("1. sign in with a new account, save a project from first run, write one sentence", async () => {
     await signIn(page, { prefix: "c6", newAccount: true, ready: ["first-run"] });
@@ -151,11 +151,11 @@ test("locked backup and check: make it, open it with the wrong passphrase and th
     await expect(page.getByTestId("bk-check-summary")).toBeVisible();
     page.off("request", onRequest);
     const summary = (await page.getByTestId("bk-check-summary").innerText()).trim();
-    // The project, and the scratch space with it; one written document.
+    // One written document, about so many words (v1's sentence).
     const found = RX("wc_bk_check_ok_locked", FOUND).exec(summary);
     expect(found, summary).not.toBeNull();
-    lockedProjects = Number(found![1]);
-    expect(lockedProjects).toBeGreaterThanOrEqual(1);
+    lockedWords = Number(found![1]);
+    expect(lockedWords).toBeGreaterThanOrEqual(0);
     await expect(page.getByTestId("bk-check-error")).toHaveCount(0);
     await expect(page.getByTestId("bk-check-problems")).toHaveCount(0);
     await expect(page.getByTestId("bk-last-verify")).toHaveText(/Last time you checked a backup file: \d{4}-\d{2}-\d{2}\./);
@@ -171,9 +171,9 @@ test("locked backup and check: make it, open it with the wrong passphrase and th
     await expect(page.getByTestId("bk-check-pass")).toHaveCount(0);
     await page.getByTestId("bk-check-go").click();
     await expect(page.getByTestId("bk-check-summary")).toBeVisible();
-    const plain = RX("wc_bk_check_ok", FOUND).exec((await page.getByTestId("bk-check-summary").innerText()).trim());
+    const plain = RX("bk_verify_ok", FOUND).exec((await page.getByTestId("bk-check-summary").innerText()).trim());
     expect(plain).not.toBeNull();
-    expect(Number(plain![1])).toBe(lockedProjects);
+    expect(Number(plain![1])).toBe(lockedWords);
     await choose(page, { name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("just some words") });
     await page.getByTestId("bk-check-go").click();
     await expect(page.getByTestId("bk-check-error")).toHaveText(T("bk_verify_bad"));

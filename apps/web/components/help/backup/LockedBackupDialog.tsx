@@ -35,7 +35,7 @@ export function LockedBackupDialog({ open, onClose }: { open: boolean; onClose: 
   async function submit() {
     if (busy) return;
     if (!canLock()) { setVerdict({ key: "wc_bk_nocrypto", bad: true }); return; }
-    if ([...pass.normalize("NFC")].length < MIN_PASSPHRASE) { setVerdict({ key: "bk_err_short", bad: true }); return; }
+    if (pass.length < MIN_PASSPHRASE) { setVerdict({ key: "bk_err_short", bad: true }); return; }
     if (pass !== again) { setVerdict({ key: "bk_err_match", bad: true }); return; }
     setBusy(true);
     setVerdict(null);
@@ -82,7 +82,8 @@ export function LockedBackupDialog({ open, onClose }: { open: boolean; onClose: 
           {busy && <p role="status" className="m-0 text-sm text-muted-foreground" data-testid="bk-lock-busy">{t("wc_bk_locked_busy")}</p>}
           {verdict && <p role={verdict.bad ? "alert" : "status"} className={"m-0 text-sm font-semibold " + (verdict.bad ? "text-destructive" : "text-ink")} data-testid="bk-lock-verdict">{t(verdict.key)}</p>}
           <DialogFooter>
-            <Button type="button" variant="ghost" disabled={busy} data-testid="bk-lock-cancel" onClick={close}>{t(done ? "close_btn" : "bk_cancel")}</Button>
+            {/* Keyed, so once the file is made it mounts again as Close with the focus (the focused button it replaces is gone). */}
+            <Button key={done ? "close" : "cancel"} autoFocus={done} type="button" variant="ghost" disabled={busy} data-testid="bk-lock-cancel" onClick={close}>{t(done ? "close_btn" : "bk_cancel")}</Button>
             {!done && <Button type="submit" variant="primary" disabled={busy} data-testid="bk-lock-go">{t("bk_ok_create")}</Button>}
           </DialogFooter>
         </form>

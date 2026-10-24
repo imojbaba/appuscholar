@@ -60,8 +60,22 @@ describe("locked backup (Task C6)", () => {
     const locked = await lockBackup(zip(), PASS);
     const flip = (i: number) => { const c = locked.slice(); c[i] = c[i]! ^ 1; return c; };
     expect(await code(unlockBackup(flip(locked.length - 5), PASS))).toBe("wrong-passphrase");
-    // a byte inside the JSON header (the salt) fails too: the header is authenticated
-    expect(["wrong-passphrase", "not-a-backup"]).toContain(await code(unlockBackup(flip(40), PASS)));
+  });
+
+  it("the header is authenticated: the same header values written as other JSON, around the same ciphertext, fail as wrong-passphrase", async () => {
+    const locked = await lockBackup(zip(), PASS);
+    const n = new DataView(locked.buffer, locked.byteOffset + MAGIC.length, 4).getUint32(0);
+    const start = MAGIC.length + 4;
+    const header = JSON.parse(new TextDecoder().decode(locked.subarray(start, start + n))) as LockHeader;
+    const ct = locked.subarray(start + n);
+    // Same kdf, rounds, salt and iv, so the key and the iv are the same; only the clear prefix differs.
+    const reordered = packLocked({ iv: header.iv, salt: header.salt, iter: header.iter, kdf: header.kdf } as LockHeader, ct);
+    expect(reordered).not.toEqual(locked);
+    expect(await code(unlockBackup(reordered, PASS))).toBe("wrong-passphrase");
+    const extra = packLocked({ ...header, note: "x" } as LockHeader, ct);
+    expect(await code(unlockBackup(extra, PASS))).toBe("wrong-passphrase");
+    // and the untouched file still opens
+    expect(await unlockBackup(locked, PASS)).toEqual(zip());
   });
 
   it("a file that is not a locked backup is not-a-backup", async () => {

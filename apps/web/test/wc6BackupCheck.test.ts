@@ -54,6 +54,10 @@ describe("checkBackup (Task C6)", () => {
     expect(r.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
+  it("adds up the word counts index.json carries, as v1's \"about {w} words\" (3 documents of 3 words)", async () => {
+    expect((await checkBackup(await zipBytes())).words).toBe(9);
+  });
+
   it("opens a locked file with the right passphrase and reports the same counts, kind locked", async () => {
     const locked = await lockBackup(await zipBytes(), "a long enough passphrase");
     expect(await checkBackup(locked, "a long enough passphrase")).toMatchObject({ kind: "locked", ok: true, projects: 2, documents: 3, problems: [] });
@@ -87,11 +91,11 @@ describe("checkBackup (Task C6)", () => {
     expect(r.problems).toEqual(["unreadable:Sleep study/Draft two"]);
   });
 
-  it("lists stage data that was unreadable when the backup was made, the same way, and does not record a check", async () => {
+  it("lists stage data that was unreadable when the backup was made once per project, by project not by internal kind, and does not record a check", async () => {
     const r = await checkBackup(await zipBytes({ badBlob: true }), undefined, "u1");
     expect(r.ok).toBe(false);
     expect(r.documents).toBe(3);
-    expect(r.problems).toEqual(["unreadable:Sleep study/idea_intake", "unreadable:Reading log/idea_intake"]);
+    expect(r.problems).toEqual(["unreadable-stage:Sleep study", "unreadable-stage:Reading log"]);
     expect([...store.keys()].some((k) => k.startsWith("appu_last_verify"))).toBe(false);
   });
 

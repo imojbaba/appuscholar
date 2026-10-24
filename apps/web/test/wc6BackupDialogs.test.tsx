@@ -53,7 +53,7 @@ async function zipBlob(opts: { dropFile?: string } = {}): Promise<Blob> {
   z.file("Sleep study/Draft.html", "<p>An invented sentence.</p>");
   z.file("Sleep study/Draft.doc", "doc");
   z.file("writing-process-record.txt", "record");
-  z.file("index.json", JSON.stringify({ format: 2, exportedAt: "2026-10-20T10:00:00.000Z", projects: [{ title: "Sleep study", documents: [{ title: "Draft", html: "Sleep study/Draft.html", doc: "Sleep study/Draft.doc" }], stageData: [] }] }));
+  z.file("index.json", JSON.stringify({ format: 2, exportedAt: "2026-10-20T10:00:00.000Z", projects: [{ title: "Sleep study", documents: [{ title: "Draft", html: "Sleep study/Draft.html", doc: "Sleep study/Draft.doc", wordCount: 3 }], stageData: [] }] }));
   if (opts.dropFile) z.remove(opts.dropFile);
   // Node's Blob: jsdom's has no arrayBuffer().
   return new NodeBlob([await z.generateAsync({ type: "uint8array" })]) as unknown as Blob;
@@ -119,6 +119,7 @@ describe("Help's backup buttons: the locked backup (Task C6)", () => {
     expect($("bk-pass2")).toBeNull();
     expect($("bk-lock-go")).toBeNull();
     expect($("bk-lock-cancel")!.textContent).toBe(E.close_btn);
+    expect(document.activeElement).toBe($("bk-lock-cancel"));
     expect(document.body.innerHTML).not.toContain("a long enough pass");
     expect(apiSpy).not.toHaveBeenCalled();
     await click("bk-lock-cancel");
@@ -220,7 +221,7 @@ describe("Help's backup buttons: check a backup file (Task C6)", () => {
     expect($("bk-check-pass")).toBeNull();
     await click("bk-check-go");
     await until(() => !!$("bk-check-summary"));
-    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_ok", { p: 1, n: 1, d: "2026-10-20" }));
+    expect($("bk-check-summary")!.textContent).toBe(say("bk_verify_ok", { n: 1, w: 3, d: "2026-10-20" }));
     expect(lastVerify("u1")).toBeGreaterThan(0);
     expect(Object.keys(localStorage)).toEqual(["appu_last_verify_u1"]);
     expect($("bk-last-verify")!.textContent).toContain(E.bk_last_verify!.split("{d}")[0]!);
@@ -242,7 +243,7 @@ describe("Help's backup buttons: check a backup file (Task C6)", () => {
     await click("bk-check-go");
     await until(() => !!$("bk-check-problems"));
     expect($("bk-check-problems")!.textContent).toBe(say("wc_bk_prob_missing", { name: "Sleep study/Draft.html" }));
-    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_bad", { p: 1, n: 1, d: "2026-10-20" }));
+    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_bad", { n: 1, w: 3, d: "2026-10-20" }));
     expect(lastVerify("u1")).toBe(0);
   });
 
@@ -262,8 +263,10 @@ describe("Help's backup buttons: check a backup file (Task C6)", () => {
     await type("bk-check-pass", "a long enough pass");
     await click("bk-check-go");
     await until(() => !!$("bk-check-summary"));
-    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_ok_locked", { p: 1, n: 1, d: "2026-10-20" }));
+    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_ok_locked", { n: 1, w: 3, d: "2026-10-20" }));
     expect($("bk-check-error")).toBeNull();
+    // The passphrase is not kept once the file has opened.
+    expect(($("bk-check-pass") as HTMLInputElement).value).toBe("");
   });
 
   it("a file from the old app says where it goes, locked or not, and is not recorded as checked", async () => {

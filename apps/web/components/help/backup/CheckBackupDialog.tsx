@@ -14,7 +14,7 @@ import { SecretInput } from "@/components/ui/secret-input";
 function problemText(t: ReturnType<typeof useT>, code: string): string {
   const at = code.indexOf(":");
   const kind = code.slice(0, at), name = code.slice(at + 1);
-  return t(kind === "unreadable" ? "wc_bk_prob_unreadable" : "wc_bk_prob_missing", { name });
+  return t(kind === "unreadable" ? "wc_bk_prob_unreadable" : kind === "unreadable-stage" ? "wc_bk_prob_stage" : "wc_bk_prob_missing", { name });
 }
 
 /**
@@ -49,6 +49,8 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
     setBusy(true); setReport(null); setError(null);
     try {
       setReport(await checkBackup(bytes, locked ? pass : undefined, me?.id));
+      // Done with it: the passphrase is not kept once the file has opened.
+      setPass("");
     } catch (e) {
       const code = e instanceof BackupError ? e.code : null;
       // A file from the old app is a backup, only not one this check reads: say where it goes instead of calling it unreadable.
@@ -60,7 +62,8 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
 
   const last = open ? lastVerify(me?.id) : 0;
   const saved = report?.exportedAt ? localDay(new Date(report.exportedAt)) : "?";
-  const vars = { p: report?.projects ?? 0, n: report?.documents ?? 0, d: saved };
+  // v1's sentence: documents and about how many words, not projects (the file always holds the scratch space as one more).
+  const vars = { n: report?.documents ?? 0, w: report?.words ?? 0, d: saved };
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
       <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto" data-testid="check-backup-dialog">
@@ -74,7 +77,7 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
           </p>
           <label className="grid gap-1 text-sm font-medium">
             {t("wc_bk_file")}
-            <input type="file" accept=".locked,.zip,.json,application/zip,application/octet-stream,application/json" className="input" data-testid="bk-check-file" onChange={(e) => { void pick(e.target.files?.[0]); }} />
+            <input type="file" accept=".locked,.zip,.json,application/zip,application/octet-stream,application/json" className="input" disabled={busy} data-testid="bk-check-file" onChange={(e) => { void pick(e.target.files?.[0]); }} />
           </label>
           {locked && (
             <label className="grid gap-1 text-sm font-medium">
@@ -86,7 +89,7 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
           {report && (
             <div role="status" className="grid gap-1 text-sm" data-testid="bk-check-result">
               <p className={"m-0 font-semibold " + (report.ok ? "text-ink" : "text-destructive")} data-testid="bk-check-summary">
-                {t(report.ok ? (report.kind === "locked" ? "wc_bk_check_ok_locked" : "wc_bk_check_ok") : "wc_bk_check_bad", vars)}
+                {t(report.ok ? (report.kind === "locked" ? "wc_bk_check_ok_locked" : "bk_verify_ok") : "wc_bk_check_bad", vars)}
               </p>
               {report.problems.length > 0 && (
                 <ul className="m-0 grid gap-1 pl-5" data-testid="bk-check-problems">

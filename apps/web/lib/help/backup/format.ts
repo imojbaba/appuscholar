@@ -7,9 +7,9 @@ export const MAGIC = new TextEncoder().encode(MAGIC_TEXT);
 export const LOCKED_EXT = ".locked";
 /** v1 4010: PBKDF2-SHA-256, 600,000 rounds. */
 export const KDF_ROUNDS = 600_000;
-/** A reader accepts rounds in this range only (v1 clamps the same way), so a hostile header cannot make the browser spin. */
+/** A reader accepts rounds in this range only and refuses any other value (v1 clamped it into a range instead), so a hostile header cannot make the browser spin. */
 const ROUNDS_MIN = 100_000, ROUNDS_MAX = 5_000_000;
-/** v1's rule: at least 10 characters. */
+/** v1's rule: at least 10 characters, counted as v1 counts them (`p1.length`, before normalising). */
 export const MIN_PASSPHRASE = 10;
 /** The header sits in the clear after the magic: its length is 4 bytes, big-endian. */
 const LEN = 4;
