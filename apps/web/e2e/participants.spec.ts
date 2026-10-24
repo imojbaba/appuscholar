@@ -25,11 +25,16 @@
  *  17. at 375 px the table scrolls inside itself;
  *  18. Destroy the list (twice), matching stops, and the next code continues.
  * Where the words come from. Sentences the app shows are read from the dictionaries (T) or are core's own output (consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV2),
- * so a change of wording does not break this test. What is typed into the test, and so is only as right as the test: the names and tables above; "We will write down your name, other names you
- * use, your gender and your year or class." and "Each participant was given a code; the list linking codes to names was kept separately, sealed under the researcher's passphrase." (the two
- * sentences of the plan the walk is about, also checked against core's output); "Found: " (the dialog's lead word, then the dictionary's count); "Cancelled. Nothing was sent to the AI
- * provider." (callAI's apiMsg); the clipboard's Female/Class 11 and the CSV's headings; the toast words are the dictionary's. The names are made up. Nothing outside localhost is asked for (the
- * test fails if it is), no native dialog is raised, and (call C10) no listed name is found in any address, console line, toast or home row the walk causes.
+ * so a change of wording does not break this test. What is typed into the test, and so is only as right as the test: the names and tables above (and the transcript's lines the editor is
+ * read for, "Priya: Hard. My mother kept asking" and the like); the consent form's headings "# Informed Consent Form", "What we record about you", "Parent or guardian permission", "Young
+ * person's agreement", "Voluntary participation" and "Participant signature", and the sentence "We will write down your name, other names you use, your gender and your year or class."; the
+ * Ethics minors note's "does not collect children" (it must be absent when the answer is yes); "Each participant was given a code; the list linking codes to names was kept separately,
+ * sealed under the researcher's passphrase." (the two sentences of the plan the walk is about, also checked against core's output); the protocol's two texts "Exam anxiety is common in
+ * first-year students and sleep is a cause worth testing." and "Data are kept on the researcher's laptop."; "Found: " (the dialog's lead word, then the dictionary's count); "[name]" (what
+ * Mask writes for a name that is not on the list); "Cancelled. Nothing was sent to the AI provider." (callAI's apiMsg); "a fictional teaching paper" (the practice paper's heading);
+ * the clipboard's Female/Class 11 and the CSV's headings (`ParticipantCode,Name,Other spellings`); the toggle's "EN" and "हि"; the withdrawal date 15/10/2026; the toast words are the
+ * dictionary's. The names are made up. Nothing outside localhost is asked for (the test fails if it is), no native dialog is raised, and (call C10) no listed name is found in any
+ * address, console line, toast or home row the walk causes (as whole words, in any case).
  *
  * Run it with the recipe in e2e/support/pglite-postgres.mjs's header, for example on free ports:
  *   PGLITE_PORT=5471 node e2e/support/pglite-postgres.mjs &
@@ -102,7 +107,7 @@ const TRANSCRIPT = [
 ];
 const KIRAN = "Kiran Patel";
 /** Every name in this test, as whole words (the first names stand alone in the sentences): none may be found where the list's names must not go (call C10). */
-const NAME_WORDS = new RegExp(`(^|[^\\p{L}\\p{N}\\p{M}])(${["Priya", "Sharma", PRIYA_HINDI, "Rahul", "Verma", "Kavya", "Nair", "Imran", "Khan", "Ananya", "Rao", "Sunita", "Devi", "Farhan", "Ali", "Gita", "Menon", "Kiran", "Patel", "Sara", "Zainab", "Neha", "Meena", "Rohan", "Dutta"].join("|")})($|[^\\p{L}\\p{N}\\p{M}])`, "u");
+const NAME_WORDS = new RegExp(`(^|[^\\p{L}\\p{N}\\p{M}])(${["Priya", "Sharma", PRIYA_HINDI, "Rahul", "Verma", "Kavya", "Nair", "Imran", "Khan", "Ananya", "Rao", "Sunita", "Devi", "Farhan", "Ali", "Gita", "Menon", "Kiran", "Patel", "Sara", "Zainab", "Neha", "Meena", "Rohan", "Dutta"].join("|")})($|[^\\p{L}\\p{N}\\p{M}])`, "iu");
 const AI_REPLY = "Here is a tidier version of your sentence.";
 const ASK_REPLY = JSON.stringify({ in_paper: true, answer: "The paper does not say who read it first.", quotes: [] });
 
