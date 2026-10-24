@@ -1,1 +1,20 @@
-{}
+{
+  "wc_bk_locked_btn": "Locked backup",
+  "wc_bk_check_btn": "Check a backup file",
+  "wc_bk_locked_intro": "This is the same zip as Export all my work, closed with a passphrase. Only the passphrase opens it, so the file is safe to keep in email or a cloud drive.",
+  "wc_bk_locked_busy": "Making your backup",
+  "wc_bk_need_unlock": "Unlock your vault first, then make the backup again.",
+  "wc_bk_fail": "Could not make the backup. Check your connection and try again.",
+  "wc_bk_done": "Locked backup downloaded. Keep the passphrase safe: it cannot be recovered.",
+  "wc_bk_check_h": "Check a backup file",
+  "wc_bk_check_intro": "Choose a backup file, plain or locked. It is read in this browser and nothing in the app is changed. Checking one proves you can get your work back.",
+  "wc_bk_file": "Backup file",
+  "wc_bk_check_go": "Check this file",
+  "wc_bk_check_locked": "This file is locked. Type the passphrase you chose when you made it.",
+  "wc_bk_check_ok": "This backup file can be read. Projects: {p}. Documents: {n}. Saved {d}. Nothing in the app was changed.",
+  "wc_bk_check_ok_locked": "This locked backup opened with that passphrase and can be read. Projects: {p}. Documents: {n}. Saved {d}. Nothing in the app was changed.",
+  "wc_bk_check_bad": "This backup file has problems. Projects: {p}. Documents: {n}. Saved {d}.",
+  "wc_bk_prob_missing": "Missing from the file: {name}",
+  "wc_bk_prob_unreadable": "Could not be opened when the backup was made, so it has no files: {name}",
+  "wc_bk_read_fail": "Could not read that file."
+}
