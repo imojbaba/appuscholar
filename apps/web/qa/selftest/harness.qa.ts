@@ -16,8 +16,7 @@ test("harness: production build, test sign-in, version", { tag: ["@selftest", "@
     steps: ["sign in", "open the app", "ask for the api token", "accept the terms", "read the version"]
   });
 
-  // A new account has no vault yet, and the api says so with a 404 (GET /me/vault: "record or 404", apps/web/lib/vault/useVault.tsx). The watcher would call it an error.
-  qa.allow({ statuses: [404] });
+  // A new account has no vault yet, and the api says so with a 404 on GET /me/vault. That answer is on the watcher's built-in list of expected answers, with its reason.
 
   let uid = "";
   let email = "";

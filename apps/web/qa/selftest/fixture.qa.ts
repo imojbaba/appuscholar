@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { QA_API_ORIGIN, QA_PROVIDER_LOG, QA_WEB_ORIGIN } from "../support/origins";
+import type { Route } from "@playwright/test";
+import { createShimFetch } from "../provider-shim/core.mjs";
+import { QA_API_ORIGIN, QA_WEB_ORIGIN } from "../support/origins";
+import type { ShimLogEntry } from "../support/providerLog";
 import type { CaseMeta, CaseResult, CheckResult } from "../support/qa";
 import { expect, notChecked, test } from "../support/test";
 import { RULE_LABEL } from "../support/watcher";
@@ -16,6 +19,10 @@ const meta = (id: string, steps: string[]): CaseMeta => ({ story: "S0", id, goal
 /** A page nothing listens on, for pages that need a real address (a navigation, a response header, a status). Every request to it is answered by a route. */
 const NOWHERE = "http://localhost:1";
 const CORS = { "access-control-allow-origin": "*" };
+
+/** The fake provider's log for these selftests: their own, never the run's QA_PROVIDER_LOG (the other cases of the run are writing into that one). */
+const providerCalls: ShimLogEntry[] = [];
+test.use({ providerLog: { read: () => providerCalls } });
 
 const watcherFindings = (r: CaseResult): CheckResult[] => r.checks.filter((c) => c.kind === "watcher");
 const withLabel = (r: CaseResult, label: string): CheckResult[] => r.checks.filter((c) => c.label === label);
@@ -90,9 +97,23 @@ test("fixture: a step that throws ends the case there, and says where", TAGS, as
   // The stop is a failure of the case (an Error), not only a note: the marks are worked out from the checks.
   const failed = r.checks.filter((c) => c.ok === false);
   expect(failed).toHaveLength(1);
-  expect(failed[0]).toMatchObject({ kind: "watcher", fail: "error", step: "press" });
+  expect(failed[0]).toMatchObject({ kind: "step", fail: "error", step: "press", label: 'step "press" did not complete' });
   expect(failed[0]!.message).toContain("the Run button was not there");
   expect(r.blocked).toBeUndefined();
+  // Each step it did not reach is a NOT CHECKED, so the report reads the checks only.
+  const unreached = r.checks.filter((c) => c.ok === null);
+  expect(unreached).toEqual([expect.objectContaining({ kind: "step", label: "NOT CHECKED (stopped at step 2): read", step: "read", ok: null })]);
+  expect(unreached[0]!.fail).toBeUndefined();
+  expect(unreached[0]!.message).toContain("the Run button was not there");
+});
+
+test("fixture: a case that did not stop has no NOT CHECKED steps", TAGS, async ({ qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-03B", ["one", "two"]));
+  await qa.step("one", async () => {});
+  // The second step is not run, but the case did not stop: it simply ends. Nothing is invented for it.
+  expect(qa.result().checks).toEqual([]);
+  expect(qa.result().stoppedAt).toBeUndefined();
 });
 
 test("fixture: only the step that threw is recorded as the stop, however deep it was", TAGS, async ({ qa }) => {
@@ -216,11 +237,14 @@ test("fixture: a console error is a finding unless the case allows it; warnings 
   });
   expect(withLabel(qa.result(), RULE_LABEL.console).map((c) => c.message)).toEqual([expect.stringContaining("the save failed for real")]);
 
-  qa.allow({ consoleErrors: [/known noise: \d+/] });
+  qa.allow({ consoleErrors: [{ match: /known noise: \d+/, reason: "a library prints its retry count" }] });
   await page.evaluate(() => console.error("known noise: 42"));
+  await page.evaluate(() => console.error("known noise: 43"));
   expect(withLabel(qa.result(), RULE_LABEL.console)).toHaveLength(1);
   await page.evaluate(() => console.error("known noise: none"));
   expect(withLabel(qa.result(), RULE_LABEL.console)).toHaveLength(2);
+  // The allowance is in the result, with its reason and how often it excused something.
+  expect(qa.result().allowed).toEqual([{ kind: "console", what: "/known noise: \\d+/", reason: "a library prints its retry count", builtIn: false, count: 2 }]);
 });
 
 test("fixture: an answer of 500 or more from the web or the api is a finding; the browser's own echo of it is not a second one", TAGS, async ({ page, qa }) => {
@@ -241,25 +265,70 @@ test("fixture: an answer of 500 or more from the web or the api is a finding; th
   expect(watcherFindings(r)).toHaveLength(2);
 });
 
-test("fixture: a 4xx is a finding unless its status is allowed, and allowing a status allows its echo in the console too", TAGS, async ({ page, qa }) => {
+test("fixture: an expected answer is allowed by method, path and status with a reason, never by a bare status", TAGS, async ({ page, qa }) => {
   qa.selfTest = true;
   qa.begin(meta("SELF-14", ["ask"]));
-  await page.route(`${QA_WEB_ORIGIN}/**`, (route) => route.fulfill({ status: 404, headers: CORS, body: "{}" }));
-  await page.route(`${QA_API_ORIGIN}/**`, (route) => route.fulfill({ status: 401, headers: CORS, body: "{}" }));
+  const answer = (status: number) => (route: Route) => route.fulfill({ status, headers: CORS, body: "{}" });
+  await page.route(`${QA_WEB_ORIGIN}/**`, answer(404));
+  await page.route(`${QA_API_ORIGIN}/**`, answer(502));
   await page.setContent("<p>x</p>");
-  await page.evaluate((u) => fetch(u + "/missing").then(() => 0), QA_WEB_ORIGIN);
-  expect(withLabel(qa.result(), RULE_LABEL.status).map((c) => c.message)).toEqual([expect.stringMatching(/404.*GET.*\/missing/)]);
-  expect(watcherFindings(qa.result())).toHaveLength(1);
+  const ask = (origin: string, pathname: string, method = "GET") => page.evaluate(([o, p, m]) => fetch(o + p, { method: m }).then(() => 0), [origin, pathname, method] as const);
 
-  qa.allow({ statuses: [401] });
-  await page.evaluate((u) => fetch(u + "/me").then(() => 0), QA_API_ORIGIN);
-  expect(watcherFindings(qa.result())).toHaveLength(1);
+  // Before any allowance: a 4xx and a 5xx are findings, the browser's console line for each is not a second one.
+  await ask(QA_WEB_ORIGIN, "/missing");
+  await ask(QA_API_ORIGIN, "/ai/complete", "POST");
+  expect(withLabel(qa.result(), RULE_LABEL.status).map((c) => c.message)).toEqual([expect.stringMatching(/404.*GET.*\/missing/), expect.stringMatching(/502.*POST.*\/ai\/complete/)]);
+  expect(watcherFindings(qa.result())).toHaveLength(2);
 
-  // An allowed status can be a 5xx too: a case that makes the provider fail expects the api's 502.
-  await page.route(`${QA_API_ORIGIN}/ai/**`, (route) => route.fulfill({ status: 502, headers: CORS, body: "{}" }));
-  qa.allow({ statuses: [502] });
-  await page.evaluate((u) => fetch(u + "/ai/complete").then(() => 0), QA_API_ORIGIN);
-  expect(watcherFindings(qa.result())).toHaveLength(1);
+  qa.allow({ responses: [{ method: "post", path: /^\/ai\/complete$/, status: 502, reason: "the provider fails on purpose in this case" }] });
+  await ask(QA_API_ORIGIN, "/ai/complete", "POST"); // allowed: same method (any letter case), path and status
+  expect(watcherFindings(qa.result())).toHaveLength(2);
+  await ask(QA_API_ORIGIN, "/ai/complete", "GET"); // another method
+  await ask(QA_API_ORIGIN, "/ai/test", "POST"); // another path
+  await ask(QA_API_ORIGIN, "/ai/complete/extra", "POST"); // the pattern is anchored: another path
+  expect(withLabel(qa.result(), RULE_LABEL.status).map((c) => c.message)).toEqual([
+    expect.stringMatching(/404.*GET.*\/missing/),
+    expect.stringMatching(/502.*POST.*\/ai\/complete$/),
+    expect.stringMatching(/502.*GET.*\/ai\/complete$/),
+    expect.stringMatching(/502.*POST.*\/ai\/test$/),
+    expect.stringMatching(/502.*POST.*\/ai\/complete\/extra$/)
+  ]);
+  // The same method and path with another status is a finding as well.
+  await page.route(`${QA_API_ORIGIN}/ai/complete`, answer(500));
+  await ask(QA_API_ORIGIN, "/ai/complete", "POST");
+  expect(withLabel(qa.result(), RULE_LABEL.status)).toHaveLength(6);
+  expect(watcherFindings(qa.result())).toHaveLength(6);
+
+  // The result says what was excused, why, and how often.
+  expect(qa.result().allowed).toEqual([{ kind: "response", what: "POST /^\\/ai\\/complete$/ answered 502", reason: "the provider fails on purpose in this case", builtIn: false, count: 1 }]);
+});
+
+test("fixture: GET /me/vault answering 404 is on the built-in list; the same path with another status or method is not", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-14B", ["ask"]));
+  await page.route(`${QA_API_ORIGIN}/**`, (route) => route.fulfill({ status: 404, headers: CORS, body: "{}" }));
+  await page.setContent("<p>x</p>");
+  expect(qa.result().allowed).toBeUndefined(); // a built-in allowance that excused nothing is not listed
+  await page.evaluate((u) => fetch(u + "/me/vault").then(() => 0), QA_API_ORIGIN);
+  expect(watcherFindings(qa.result())).toEqual([]);
+  expect(qa.result().allowed).toEqual([expect.objectContaining({ kind: "response", what: expect.stringContaining("GET"), builtIn: true, count: 1, reason: expect.stringContaining("no vault") })]);
+  await page.evaluate((u) => fetch(u + "/me/vault", { method: "PUT" }).then(() => 0), QA_API_ORIGIN);
+  await page.route(`${QA_API_ORIGIN}/me/vault`, (route) => route.fulfill({ status: 500, headers: CORS, body: "{}" }));
+  await page.evaluate((u) => fetch(u + "/me/vault").then(() => 0), QA_API_ORIGIN);
+  await page.evaluate((u) => fetch(u + "/me/projects").then(() => 0), QA_API_ORIGIN);
+  expect(withLabel(qa.result(), RULE_LABEL.status).map((c) => c.message)).toEqual([
+    expect.stringMatching(/404.*PUT.*\/me\/vault$/),
+    expect.stringMatching(/500.*GET.*\/me\/vault$/),
+    expect.stringMatching(/404.*GET.*\/me\/projects$/)
+  ]);
+});
+
+test("fixture: an allowance needs a reason", TAGS, async ({ qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-14C", ["go"]));
+  expect(() => qa.allow({ consoleErrors: [{ match: /x/, reason: "" }] })).toThrow(/needs a reason/);
+  expect(() => qa.allow({ responses: [{ method: "GET", path: /^\/x$/, status: 404, reason: "  " }] })).toThrow(/needs a reason/);
+  expect(() => qa.allow({ responses: [{ method: "GET", path: /^\/x$/, status: 404 } as never] })).toThrow(/needs a reason/);
 });
 
 test("fixture: a security-policy violation is a finding, and window.__qaCsp keeps it", TAGS, async ({ page, qa }) => {
@@ -298,7 +367,15 @@ test("fixture: a refusal of eval, which libraries probe for and catch, is not co
   });
   expect(await page.evaluate(() => (window as unknown as { refused?: string }).refused)).toBe("EvalError");
   expect(await page.evaluate(() => (window as unknown as { __qaCsp: Array<{ blockedURI: string }> }).__qaCsp.map((v) => v.blockedURI))).toEqual(["eval"]);
-  expect(watcherFindings(qa.result())).toEqual([]);
+  const r = qa.result();
+  expect(watcherFindings(r)).toEqual([]);
+  expect(r.checks.filter((c) => c.ok === false)).toEqual([]);
+  // It is information, not nothing: the result keeps it, with a count, for the report to list once.
+  expect(r.notes).toEqual([{ kind: "csp-eval-probe", detail: expect.stringContaining("script-src"), count: 1 }]);
+  expect(r.notes![0]!.detail).toContain("refused eval");
+  // The same refusal again counts again.
+  await page.goto(`${NOWHERE}/probe`);
+  expect(qa.result().notes).toEqual([{ kind: "csp-eval-probe", detail: expect.any(String), count: 2 }]);
 });
 
 test("fixture: a page load the case did not ask for is a finding; goto, reload and setContent are asked for", TAGS, async ({ page, qa }) => {
@@ -430,30 +507,46 @@ test("fixture: a checkpoint takes a full-page screenshot, attached and listed", 
   expect(new Set(again.map((s) => s.path)).size).toBe(2);
 });
 
-test("fixture: the AI keys of the case are listed, and a provider request nobody could answer is a finding", TAGS, async ({ qa }) => {
+/** A request through the real fake provider (provider-shim/core.mjs); its log lines are the ones the shim really writes, and go to this selftest's log. */
+async function viaShim(key: string, prompt: string, host: "api.groq.com" | "generativelanguage.googleapis.com" = "api.groq.com"): Promise<void> {
+  const shim = createShimFetch(
+    async () => {
+      throw new Error("the fake provider passed a request on");
+    },
+    { replies: [{ match: "Summarise", reply: "A summary." }], log: (e) => providerCalls.push(e) }
+  );
+  const request =
+    host === "api.groq.com"
+      ? { url: "https://api.groq.com/openai/v1/chat/completions", body: { model: "m", messages: [{ role: "user", content: prompt }] } }
+      : { url: "https://generativelanguage.googleapis.com/v1beta/models/m:generateContent", body: { contents: [{ parts: [{ text: prompt }] }] } };
+  await shim(request.url, { method: "POST", headers: { authorization: `Bearer ${key}` }, body: JSON.stringify(request.body) }).catch(() => {}); // the nonet mode throws, as a dropped connection does
+}
+
+test("fixture: the AI keys of the case are listed, and a provider request that went wrong is a finding", TAGS, async ({ qa }) => {
   qa.selfTest = true;
   qa.begin(meta("SELF-27", ["go"]));
   const mine = `gsk_qa_ok_${randomUUID().slice(0, 8)}`;
   const theirs = `gsk_qa_ok_${randomUUID().slice(0, 8)}`;
-  const long = "Summarise the following interview transcript for the methods chapter. ".repeat(4);
-  const line = (key: string, mode: string, outcome: string, prompt: string, host = "api.groq.com") => JSON.stringify({ t: Date.now(), key, mode, host, kind: null, prompt, outcome }) + "\n";
-  mkdirSync(path.dirname(QA_PROVIDER_LOG), { recursive: true });
-  appendFileSync(
-    QA_PROVIDER_LOG,
-    [
-      line(mine, "ok", "answered", "an answered prompt"),
-      line(mine, "ok", "unknown", long),
-      line(mine, "ok", "refused", "a prompt for Gemini", "generativelanguage.googleapis.com"),
-      line("<not a QA key>", "invalid", "failed", "a prompt with a real-looking key"),
-      line(mine, "invalid", "failed", "a prompt with a key that is not a test key"),
-      line(mine, "fail429", "failed", "a prompt that was rate limited, as the key asked"),
-      line(theirs, "ok", "unknown", "someone else's prompt")
-    ].join("")
-  );
+  const bogus = `gsk_qa_bogus_${randomUUID().slice(0, 8)}`;
+  const rateLimited = `gsk_qa_fail429_${randomUUID().slice(0, 8)}`;
+  const long = "Describe the sea in a way that has no recorded reply, at some length, so that the prompt is longer than one hundred and twenty characters. ";
+  await viaShim(mine, "Summarise the abstract."); // answered
+  await viaShim(mine, long); // unknown: no recorded reply
+  await viaShim(mine, "A prompt for Gemini", "generativelanguage.googleapis.com"); // refused: not faked
+  await viaShim(bogus, "A prompt with a mode that does not exist"); // failed under the mode "bogus"
+  await viaShim(rateLimited, "A prompt that fails on purpose"); // failed under fail429: the case asked for it
+  await viaShim(theirs, "Someone else's prompt with no reply"); // unknown, but another case's key
+  // What the shim really wrote: the lines the rules are about.
+  expect(providerCalls.filter((e) => e.key === mine).map((e) => e.outcome)).toEqual(["answered", "unknown", "refused"]);
+  expect(providerCalls.filter((e) => e.key === bogus).map((e) => [e.mode, e.outcome])).toEqual([["bogus", "failed"]]);
+  expect(providerCalls.filter((e) => e.key === rateLimited).map((e) => [e.mode, e.outcome])).toEqual([["fail429", "failed"]]);
+
   qa.useKey(mine);
   qa.useKey(mine);
+  qa.useKey(bogus);
+  qa.useKey(rateLimited);
   const r = qa.result();
-  expect(r.keys).toEqual([mine]);
+  expect(r.keys).toEqual([mine, bogus, rateLimited]);
   const found = withLabel(r, RULE_LABEL.provider);
   expect(found).toHaveLength(3);
   for (const c of found) expect(c).toMatchObject({ kind: "watcher", ok: false, fail: "error" });
@@ -462,23 +555,211 @@ test("fixture: the AI keys of the case are listed, and a provider request nobody
   expect(text).toContain(long.slice(0, 120));
   expect(text).not.toContain(long.slice(0, 121));
   expect(text).toContain("generativelanguage.googleapis.com");
-  expect(text).toContain("a prompt for Gemini");
-  expect(text).toContain("a prompt with a key that is not a test key");
-  expect(text).not.toContain("answered prompt");
-  expect(text).not.toContain("rate limited");
-  expect(text).not.toContain("someone else");
-  expect(text).not.toContain("real-looking key"); // not this case's key
+  expect(text).toContain("A prompt for Gemini");
+  expect(text).toContain('key mode "bogus"');
+  expect(text).toContain("A prompt with a mode that does not exist");
+  expect(text).not.toContain("Summarise"); // answered
+  expect(text).not.toContain("fails on purpose"); // fail429 asked for it
+  expect(text).not.toContain("someone else"); // not this case's key
   // The key itself is not written into a finding.
-  expect(text).not.toContain(mine);
+  for (const k of [mine, bogus, rateLimited]) expect(text).not.toContain(k);
+});
+
+test("fixture: a request the fake provider could not take, under a key that is otherwise good, is a finding", TAGS, async ({ qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-27B", ["go"]));
+  const key = `gsk_qa_ok_${randomUUID().slice(0, 8)}`;
+  // A request the shim cannot take: not a chat completion with a prompt. It logs it as failed, under the mode of the key.
+  const shim = createShimFetch(async () => new Response("passed on"), { replies: [], log: (e) => providerCalls.push(e) });
+  await shim("https://api.groq.com/openai/v1/models", { method: "POST", headers: { authorization: `Bearer ${key}` }, body: JSON.stringify({ messages: [{ role: "user", content: "x" }] }) });
+  expect(providerCalls.filter((e) => e.key === key).map((e) => [e.mode, e.outcome])).toEqual([["ok", "failed"]]);
+  qa.useKey(key);
+  expect(withLabel(qa.result(), RULE_LABEL.provider)).toHaveLength(1);
+  expect(withLabel(qa.result(), RULE_LABEL.provider)[0]!.message).toContain('key mode "ok"');
 });
 
 test("fixture: a provider request nobody could answer fails the case", TAGS, async ({ qa }) => {
   test.fail();
   qa.begin(meta("SELF-28", ["go"]));
   const key = `gsk_qa_ok_${randomUUID().slice(0, 8)}`;
-  mkdirSync(path.dirname(QA_PROVIDER_LOG), { recursive: true });
-  appendFileSync(QA_PROVIDER_LOG, JSON.stringify({ t: Date.now(), key, mode: "ok", host: "api.groq.com", kind: null, prompt: "a prompt with no recorded reply", outcome: "unknown" }) + "\n");
+  await viaShim(key, "a prompt with no recorded reply");
   qa.useKey(key);
+});
+
+test("fixture: the selftests give the fixture a provider log of their own, not the run's", TAGS, async ({ qa, providerLog }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-29B", ["go"]));
+  expect(providerLog.read()).toBe(providerCalls);
+});
+
+/** The width and height in the header of a PNG file. */
+const pngSize = (file: string) => {
+  const b = readFileSync(file);
+  return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
+};
+
+test("fixture: a second browser context the case makes is watched once the case says so, page errors and all", TAGS, async ({ browser, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-31", ["act"]));
+  const unwatched = await browser.newContext();
+  const watched = await browser.newContext();
+  try {
+    await qa.watch(watched);
+    await qa.watch(watched); // again: nothing doubles
+    const [a, b] = [await watched.newPage(), await unwatched.newPage()];
+    await b.setContent("<script>throw new Error('boom in a context nobody watches')</script>");
+    expect(withLabel(qa.result(), RULE_LABEL.pageerror)).toEqual([]);
+    await a.setContent("<script>throw new Error('boom in the second browser')</script>");
+    await a.route("https://example.org/**", (route) => route.fulfill({ status: 200, headers: CORS, body: "{}" }));
+    await a.evaluate(() => fetch("https://example.org/x").then(() => 0));
+    await a.evaluate(() => confirm("sure?"));
+    const r = qa.result();
+    expect(withLabel(r, RULE_LABEL.pageerror).map((c) => c.message)).toEqual([expect.stringContaining("boom in the second browser")]);
+    expect(withLabel(r, RULE_LABEL.host)).toHaveLength(1);
+    expect(withLabel(r, RULE_LABEL.dialog)).toHaveLength(1);
+    // Its page opens and loads without a finding, and a load nobody asked for is one.
+    await a.route(`${NOWHERE}/**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<p>page</p>" }));
+    await a.goto(`${NOWHERE}/a`);
+    await a.reload();
+    expect(withLabel(qa.result(), RULE_LABEL.reload)).toEqual([]);
+    await Promise.all([a.waitForEvent("load"), a.evaluate(() => void setTimeout(() => location.reload(), 0))]);
+    expect(withLabel(qa.result(), RULE_LABEL.reload)).toHaveLength(1);
+  } finally {
+    await Promise.all([watched.close(), unwatched.close()]);
+  }
+});
+
+test("fixture: watching a page watches its whole context, and a page the app opens may load once", TAGS, async ({ browser, context, page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-32", ["act"]));
+  const other = await browser.newContext();
+  try {
+    const page2 = await other.newPage();
+    await qa.watch(page2); // a page that exists already: watched from here (its init script starts with its next navigation)
+    await page2.goto(`about:blank`);
+    await page2.setContent("<p>x</p><script>console.error('error in a page that was given to watch()')</script>");
+    expect(withLabel(qa.result(), RULE_LABEL.console)).toHaveLength(1);
+    // A pop-up the app opens: its first load is the page opening, not a reload.
+    await context.route(`${NOWHERE}/**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<p>popup</p>" }));
+    await page.setContent("<p>the app</p>");
+    const [popup] = await Promise.all([context.waitForEvent("page"), page.evaluate((u) => void window.open(u), `${NOWHERE}/pop`)]);
+    await popup.waitForLoadState("load");
+    expect(withLabel(qa.result(), RULE_LABEL.reload)).toEqual([]);
+    await Promise.all([popup.waitForEvent("load"), popup.evaluate(() => void setTimeout(() => location.reload(), 0))]);
+    expect(withLabel(qa.result(), RULE_LABEL.reload)).toHaveLength(1);
+  } finally {
+    await other.close();
+  }
+});
+
+test("fixture: a step or a check on another page is screenshotted, and a stop is addressed, from that page", TAGS, async ({ browser, page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-33", ["here", "there", "after"]));
+  const other = await browser.newContext({ viewport: { width: 500, height: 400 } });
+  try {
+    await qa.watch(other);
+    const second = await other.newPage();
+    await page.setContent("<h1>first browser</h1>");
+    await second.route(`${NOWHERE}/**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>second browser</h1>" }));
+    await second.goto(`${NOWHERE}/second`);
+    const mainSize = (await page.viewportSize())!;
+
+    await qa.step("here", async () => {
+      await qa.check("data", "fails on the first page", async () => expect(1).toBe(2));
+    });
+    await qa.check("data", "fails on the second page", async () => expect(1).toBe(2), { page: second });
+    await qa.step("there", async () => {
+      // A check in a step on the second page defaults to that page.
+      await qa.check("data", "fails inside the step", async () => expect(1).toBe(2));
+      throw new Error("the second browser did not answer");
+    }, { page: second }).catch(() => {});
+
+    const r = qa.result();
+    expect(pngSize(r.checks[0]!.screenshot!)).toEqual(mainSize);
+    expect(pngSize(r.checks[1]!.screenshot!)).toEqual({ width: 500, height: 400 });
+    expect(r.checks[2]).toMatchObject({ label: "fails inside the step", step: "there" });
+    expect(pngSize(r.checks[2]!.screenshot!)).toEqual({ width: 500, height: 400 });
+    expect(r.stoppedAt).toMatchObject({ step: "there", url: `${NOWHERE}/second`, reason: "the second browser did not answer" });
+    expect(pngSize(r.stoppedAt!.screenshot)).toEqual({ width: 500, height: 400 });
+    // And a checkpoint can be taken of that page.
+    await qa.checkpoint("second browser", { page: second });
+    expect(pngSize(qa.result().screenshots[0]!.path).width).toBe(500);
+  } finally {
+    await other.close();
+  }
+});
+
+test("fixture: a load a click really causes is announced, and one announced that never comes is NOT CHECKED", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-34", ["go"]));
+  await page.route(`${NOWHERE}/**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<p>page</p>" }));
+  await page.goto(`${NOWHERE}/a`);
+  const navigate = (to: string) => Promise.all([page.waitForEvent("load"), page.evaluate((u) => void setTimeout(() => (location.href = u), 0), to)]);
+
+  qa.expectLoad();
+  await navigate(`${NOWHERE}/b`);
+  expect(withLabel(qa.result(), RULE_LABEL.reload)).toEqual([]);
+  expect(qa.result().checks.filter((c) => c.ok === null)).toEqual([]);
+  await navigate(`${NOWHERE}/c`); // not announced
+  expect(withLabel(qa.result(), RULE_LABEL.reload)).toHaveLength(1);
+
+  qa.expectLoad();
+  const notChecked = qa.result().checks.filter((c) => c.ok === null);
+  expect(notChecked).toEqual([expect.objectContaining({ kind: "watcher", label: "NOT CHECKED: an announced page load did not come", ok: null })]);
+  expect(notChecked[0]!.fail).toBeUndefined();
+  expect(notChecked[0]!.message).toContain("/c");
+  // Once it comes, nothing is left over.
+  await navigate(`${NOWHERE}/d`);
+  expect(qa.result().checks.filter((c) => c.ok === null)).toEqual([]);
+  expect(withLabel(qa.result(), RULE_LABEL.reload)).toHaveLength(1);
+});
+
+test("fixture: expectLoad refuses a page nobody watches", TAGS, async ({ browser, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-34B", ["go"]));
+  const other = await browser.newContext();
+  try {
+    const page2 = await other.newPage();
+    expect(() => qa.expectLoad({ page: page2 })).toThrow(/qa\.watch/);
+  } finally {
+    await other.close();
+  }
+});
+
+test("fixture: a dialog announced that never comes is NOT CHECKED, and one that comes is not", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-35", ["go"]));
+  await page.setContent("<p>x</p>");
+  qa.expectDialog("prompt", true);
+  qa.expectDialog("confirm", false);
+  expect(qa.result().checks.filter((c) => c.ok === null).map((c) => c.label)).toEqual(["NOT CHECKED: an announced prompt() dialog did not come", "NOT CHECKED: an announced confirm() dialog did not come"]);
+  expect(await page.evaluate(() => confirm("now?"))).toBe(false);
+  const left = qa.result().checks.filter((c) => c.ok === null);
+  expect(left).toEqual([expect.objectContaining({ kind: "watcher", label: "NOT CHECKED: an announced prompt() dialog did not come", ok: null })]);
+  expect(left[0]!.fail).toBeUndefined();
+  expect(withLabel(qa.result(), RULE_LABEL.dialog)).toEqual([]);
+});
+
+test("fixture: a soft expectation that fails inside a check fails that check", TAGS, async ({ qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-36", ["go"]));
+  const info = test.info();
+  const before = info.errors.length;
+  const held = await qa.check("data", "a soft one", async () => {
+    expect.soft(1, "the soft one").toBe(2);
+  });
+  const soft = info.errors.length - before;
+  // Playwright has put the soft failure on the test; this test takes it back out after looking, as it is on purpose.
+  info.errors.splice(before, soft);
+  (info as { status: string | undefined }).status = "passed";
+  expect(soft).toBe(1);
+  expect(held).toBe(false);
+  const [c] = qa.result().checks;
+  expect(c).toMatchObject({ kind: "data", ok: false, fail: "unexpected" });
+  expect(c!.message).toContain("the soft one");
+  expect(qa.result().stoppedAt).toBeUndefined();
+  // A check whose soft expectation passes is ok.
+  expect(await qa.check("data", "a soft one that holds", async () => expect.soft(2).toBe(2))).toBe(true);
 });
 
 test.describe("blocked", () => {

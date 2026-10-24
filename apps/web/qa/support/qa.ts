@@ -3,7 +3,9 @@ import { test, type BrowserContext, type Page, type TestInfo } from "@playwright
 import type { ShimLogEntry } from "../provider-shim/core.mjs";
 import { failsCase, loadKnown, matchKnown, missingKnownIds, type KnownEntry } from "./known";
 import { readProviderLog } from "./providerLog";
-import { RULE_LABEL, Watcher, type Allow, type DialogType, type WatcherRule } from "./watcher";
+import { RULE_LABEL, Watcher, type Allow, type Allowance, type DialogType, type Note, type WatcherRule } from "./watcher";
+
+export type { Allow, Allowance, Note };
 
 export type StoryId = "S0" | "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | "S7" | "S8" | "S9" | "S10" | "S11" | "L";
 
@@ -24,11 +26,12 @@ export type CheckKind = "data" | "visual" | "conceptual";
 export type FailKind = "ui" | "error" | "unexpected" | "slow";
 
 /**
- * One result inside a case. `kind` is the kind of the check; "watcher" is a finding nobody looked for (and a step that did not complete), "time" a `timed`.
+ * One result inside a case. `kind` is the kind of the check; "watcher" is a finding nobody looked for, "time" a `timed`, and "step" is about the path itself:
+ * a step that did not complete (a failure, `fail: "error"`), and each step a stopped case did not reach (NOT CHECKED).
  * `ok: null` is NOT CHECKED: it measured nothing, and says why in `message`. `known` is the id the check names, which may be one known.json lacks (see CaseResult.missingKnown).
  */
 export type CheckResult = {
-  kind: CheckKind | "watcher" | "time";
+  kind: CheckKind | "watcher" | "time" | "step";
   label: string;
   ok: boolean | null;
   fail?: FailKind;
@@ -40,8 +43,11 @@ export type CheckResult = {
 };
 
 /**
- * Everything the report needs of one case. The steps not reached are `meta.steps` without `reached`. The screenshots are files in the test's output folder.
- * `missingKnown`: ids that checks name and known.json lacks (they count as no id; the reporter warns). `selfTest`: a case of the fixture's own tests, whose failures are on purpose.
+ * Everything the report needs of one case. The screenshots are files in the test's output folder.
+ * `missingKnown`: ids that checks name and known.json lacks (they count as no id; the reporter warns).
+ * `allowed`: what the case excused, with the reason and the number of times (every allowance the case made, and the built-in ones that excused something).
+ * `notes`: what the watcher saw and did not count as an Error (a library's refusal of eval), with counts.
+ * `selfTest`: a case of the fixture's own mechanics tests (`qa.selfTest = true`), whose failures are on purpose.
  */
 export type CaseResult = {
   meta: CaseMeta;
@@ -53,6 +59,8 @@ export type CaseResult = {
   keys: string[];
   durationMs: number;
   missingKnown?: string[];
+  allowed?: Allowance[];
+  notes?: Note[];
   selfTest?: boolean;
 };
 
@@ -63,28 +71,39 @@ export interface Qa {
   begin(meta: CaseMeta): void;
   /**
    * A named part of the path, one of `meta.steps`. When `fn` throws, the case ends here: `stoppedAt` holds the step, the page, a screenshot and the error, the steps after it
-   * are not reached, and the error goes on up (the test fails). A failed `check` inside a step does not end it.
+   * are not reached (each is a NOT CHECKED in the result), and the error goes on up (the test fails). A failed `check` inside a step does not end it.
+   * `page`: the page the step acts on, for the screenshot and the address of a stop (the fixture's page by default; give the other page in a second browser).
    */
-  step<T>(name: string, fn: () => Promise<T>): Promise<T>;
+  step<T>(name: string, fn: () => Promise<T>, o?: { page?: Page }): Promise<T>;
   /**
-   * One expected outcome. `fn` asserts (Playwright `expect` inside it); a failure is recorded with the kind's failure (data and conceptual: Unexpected, visual: UI), a screenshot
-   * and the message, and the case carries on. Returns whether it held. `fn` can call `notChecked(reason)` when it measured nothing: recorded as NOT CHECKED, and false is returned.
-   * `source` is the sheet row or rule the expectation comes from; `known` the id in known.json of a fault this check is waiting on.
+   * One expected outcome. `fn` asserts (Playwright `expect` inside it, soft or not); a failure is recorded with the kind's failure (data and conceptual: Unexpected, visual: UI),
+   * a screenshot of `page` (the step's page by default) and the message, and the case carries on. Returns whether it held. `fn` can call `notChecked(reason)` when it measured
+   * nothing: recorded as NOT CHECKED, and false is returned. `source` is the sheet row or rule the expectation comes from; `known` the id in known.json of a fault this check is waiting on.
    */
-  check(kind: CheckKind, label: string, fn: () => Promise<void>, o?: CheckOptions): Promise<boolean>;
+  check(kind: CheckKind, label: string, fn: () => Promise<void>, o?: CheckOptions & { page?: Page }): Promise<boolean>;
   /** Runs `fn` and records how long it took against `budgetMs` (budgets.ts). Over the budget is `FAIL: Slow`. What `fn` returns, or throws, goes on to the caller. */
   timed<T>(label: string, budgetMs: number, fn: () => Promise<T>, o?: CheckOptions): Promise<T>;
-  /** A full-page screenshot of the screen as it stands, attached and listed. The layout, accessibility and Hindi rules join it in Task 5. */
-  checkpoint(name: string, o?: { layout?: boolean; axe?: boolean; exempt?: string[] }): Promise<void>;
-  /** What this case expects the watcher to see, from now on: hosts it may reach, console errors it may print, statuses (4xx or 5xx) it may be answered with. */
+  /** A full-page screenshot of the screen (of `page`, the step's page by default) as it stands, attached and listed. The layout, accessibility and Hindi rules join it in Task 5. */
+  checkpoint(name: string, o?: { layout?: boolean; axe?: boolean; exempt?: string[]; page?: Page }): Promise<void>;
+  /**
+   * What this case expects the watcher to see, from now on: hosts it may reach; console errors it may print, each with a pattern and a reason; answers it expects from a
+   * server, each with method, path, status and a reason. Nothing is allowed by a bare status. The result lists every allowance with its reason and how often it excused something.
+   */
   allow(o: Allow): void;
-  /** The next dialog of this type is expected, and is accepted or dismissed. A dialog not announced is an Error. */
+  /** The next dialog of this type is expected, and is accepted or dismissed. A dialog not announced is an Error; one announced that never comes is NOT CHECKED. */
   expectDialog(type: DialogType, accept: boolean): void;
+  /** The next load of the page (the fixture's by default) is expected: a click that really navigates. An announced load that never comes is NOT CHECKED. */
+  expectLoad(o?: { page?: Page }): void;
+  /**
+   * Watches a browser context the case made (`browser.newContext()`), or the context of a page, and every page it has and opens: page errors, console, answers, hosts, dialogs, CSP
+   * and unexplained loads, as for the fixture's own page. Call it before the context opens its pages. The fixture's own context is watched from the start.
+   */
+  watch(target: Page | BrowserContext): Promise<void>;
   /** The AI key whose provider log belongs to this case (`newStudent` calls it). */
   useKey(key: string): void;
   /** The case cannot go on (an outside service is down, a wall in the way). It ends on the page that stopped it, as a skipped test: BLOCKED, not a failure. */
   blocked(reason: string): never;
-  /** Selftests set it: no throw at the end when checks failed. */
+  /** Set by the fixture's own mechanics tests only: no throw at the end when checks failed, and the result is marked as such. */
   selfTest: boolean;
   result(): CaseResult;
 }
@@ -104,19 +123,26 @@ export function notChecked(reason: string): never {
 
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 /** An error as text for the report: the message without the colours Playwright puts in it. */
-const errorText = (e: unknown, n: number): string => clip(stripVTControlCharacters(e instanceof Error ? e.message : String(e)).trim(), n);
+const plain = (message: string, n: number): string => clip(stripVTControlCharacters(message).trim(), n);
+const errorText = (e: unknown, n: number): string => plain(e instanceof Error ? e.message : String(e), n);
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "shot";
 const FAIL_OF: Record<CheckKind, FailKind> = { data: "unexpected", visual: "ui", conceptual: "unexpected" };
+/** The modes of a QA key that fail a request on purpose (provider-shim/core.mjs). A request the shim failed under any other mode (a mode that does not exist, `ok` or `slow<ms>` on a request it could not take) is a fault of the case. */
+const FAILING_MODES = new Set(["fail429", "fail401", "fail500", "nonet", "empty", "failonce"]);
 
 export class QaCase implements Qa {
   selfTest = false;
   private meta: CaseMeta | undefined;
   private readonly checks: CheckResult[] = [];
   private readonly reached: string[] = [];
-  /** The steps being run, the innermost last. */
-  private readonly active: string[] = [];
+  /** The steps being run, the innermost last, and the page each acts on. */
+  private readonly active: Array<{ name: string; page: Page }> = [];
+  /** The page of the step that ran last, for a stop that no step caught. */
+  private lastPage: Page | undefined;
   private readonly shots: Array<{ name: string; path: string }> = [];
   private readonly keys = new Set<string>();
+  /** The indexes in testInfo.errors that belong to a check (a soft expectation that failed inside it), which are not a stop. */
+  private readonly accounted = new Set<number>();
   private stopped: CaseResult["stoppedAt"];
   private blockedReason: string | undefined;
   private shotCount = 0;
@@ -127,16 +153,15 @@ export class QaCase implements Qa {
     private readonly page: Page,
     private readonly testInfo: TestInfo,
     private readonly known: KnownEntry[],
-    private readonly readLog: () => ShimLogEntry[],
-    context: BrowserContext
+    private readonly readLog: () => ShimLogEntry[]
   ) {
-    this.watcher = new Watcher({ context, page, step: () => this.active.at(-1) });
+    this.watcher = new Watcher({ step: () => this.active.at(-1)?.name });
   }
 
-  /** The case's `qa`: known.json loaded (a malformed file stops every case, not hides a fault) and the watcher listening. */
+  /** The case's `qa`: known.json loaded (a malformed file stops every case, not hides a fault) and the watcher listening on the fixture's context. */
   static async start(o: { page: Page; context: BrowserContext; testInfo: TestInfo; readLog?: () => ShimLogEntry[] }): Promise<QaCase> {
-    const qa = new QaCase(o.page, o.testInfo, loadKnown(), o.readLog ?? (() => readProviderLog()), o.context);
-    await qa.watcher.start();
+    const qa = new QaCase(o.page, o.testInfo, loadKnown(), o.readLog ?? (() => readProviderLog()));
+    await qa.watcher.watch(o.context);
     return qa;
   }
 
@@ -145,39 +170,53 @@ export class QaCase implements Qa {
     this.meta = meta;
   }
 
-  async step<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  async step<T>(name: string, fn: () => Promise<T>, o: { page?: Page } = {}): Promise<T> {
     const meta = this.needMeta("step");
     if (!meta.steps.includes(name)) throw new Error(`QA: step ${JSON.stringify(name)} of ${meta.id} was not announced in meta.steps (${meta.steps.map((s) => JSON.stringify(s)).join(", ")}).`);
     if (!this.reached.includes(name)) this.reached.push(name);
-    this.active.push(name);
+    const page = o.page ?? this.currentPage();
+    this.active.push({ name, page });
     try {
       return await test.step(name, fn);
     } catch (e) {
       // The first step to see the error is the one that stopped the case (steps can nest); a blocked case is not a failure.
-      if (!this.stopped) await this.recordStop(name, this.blockedReason ?? errorText(e, 600), this.blockedReason === undefined);
+      if (!this.stopped) await this.recordStop(name, this.blockedReason ?? errorText(e, 600), this.blockedReason === undefined, page);
       throw e;
     } finally {
       this.active.pop();
+      this.lastPage = page;
     }
   }
 
-  async check(kind: CheckKind, label: string, fn: () => Promise<void>, o: CheckOptions = {}): Promise<boolean> {
+  async check(kind: CheckKind, label: string, fn: () => Promise<void>, o: CheckOptions & { page?: Page } = {}): Promise<boolean> {
     this.needMeta("check");
     const base = { kind, label, ...this.tags(o) };
+    const errorsBefore = this.testInfo.errors.length;
+    let failure: string | undefined;
     try {
       await fn();
-      this.checks.push({ ...base, ok: true });
-      return true;
     } catch (e) {
       if (this.blockedReason !== undefined) throw e; // qa.blocked() inside the check: the case ends, this is not a failed check
       if (e instanceof NotChecked) {
         this.checks.push({ ...base, ok: null, message: e.message });
         return false;
       }
-      const screenshot = await this.shoot("failed-check", label, `failed check: ${label}`, { fullPage: false, strict: false });
-      this.checks.push({ ...base, ok: false, fail: FAIL_OF[kind], message: errorText(e, 2000), ...(screenshot ? { screenshot } : {}) });
-      return false;
+      failure = errorText(e, 2000);
     }
+    // expect.soft does not throw: it records the failure on the test. Those errors belong to this check. They fail it, and are not a stop that no step caught.
+    const soft: string[] = [];
+    for (let i = errorsBefore; i < this.testInfo.errors.length; i++) {
+      this.accounted.add(i);
+      soft.push(plain(this.testInfo.errors[i]!.message ?? "an expectation failed", 2000));
+    }
+    failure ??= soft.length ? clip(soft.join("\n\n"), 2000) : undefined;
+    if (failure === undefined) {
+      this.checks.push({ ...base, ok: true });
+      return true;
+    }
+    const screenshot = await this.shoot(o.page ?? this.currentPage(), "failed-check", label, `failed check: ${label}`, { fullPage: false, strict: false });
+    this.checks.push({ ...base, ok: false, fail: FAIL_OF[kind], message: failure, ...(screenshot ? { screenshot } : {}) });
+    return false;
   }
 
   async timed<T>(label: string, budgetMs: number, fn: () => Promise<T>, o: CheckOptions = {}): Promise<T> {
@@ -199,10 +238,10 @@ export class QaCase implements Qa {
     return value;
   }
 
-  async checkpoint(name: string, _o?: { layout?: boolean; axe?: boolean; exempt?: string[] }): Promise<void> {
-    void _o; // Task 5 measures the layout, accessibility and Hindi rules here; for now a checkpoint is its screenshot
+  async checkpoint(name: string, o?: { layout?: boolean; axe?: boolean; exempt?: string[]; page?: Page }): Promise<void> {
     this.needMeta("checkpoint");
-    const path = await this.shoot("checkpoint", name, `checkpoint: ${name}`, { fullPage: true, strict: true });
+    // Task 5 measures the layout, accessibility and Hindi rules here (o.layout, o.axe, o.exempt); for now a checkpoint is its screenshot
+    const path = await this.shoot(o?.page ?? this.currentPage(), "checkpoint", name, `checkpoint: ${name}`, { fullPage: true, strict: true });
     if (path) this.shots.push({ name, path });
   }
 
@@ -212,6 +251,14 @@ export class QaCase implements Qa {
 
   expectDialog(type: DialogType, accept: boolean): void {
     this.watcher.expectDialog(type, accept);
+  }
+
+  expectLoad(o: { page?: Page } = {}): void {
+    this.watcher.expectLoad(o.page ?? this.page);
+  }
+
+  async watch(target: Page | BrowserContext): Promise<void> {
+    await this.watcher.watch(target);
   }
 
   useKey(key: string): void {
@@ -228,8 +275,10 @@ export class QaCase implements Qa {
 
   result(): CaseResult {
     const meta = this.needMeta("result");
-    const checks = [...this.checks, ...this.watcherChecks(), ...this.providerChecks()];
+    const checks = [...this.checks, ...this.watcherChecks(), ...this.providerChecks(), ...this.unmetChecks(), ...this.unreachedChecks(meta)];
     const missingKnown = missingKnownIds(checks, this.known);
+    const allowed = this.watcher.allowances();
+    const notes = this.watcher.notes();
     return {
       meta,
       checks,
@@ -240,7 +289,9 @@ export class QaCase implements Qa {
       keys: [...this.keys],
       durationMs: Date.now() - this.startedAt,
       ...(missingKnown.length ? { missingKnown } : {}),
-      ...(this.selfTest || this.testInfo.tags.includes("@selftest") ? { selfTest: true } : {})
+      ...(allowed.length ? { allowed } : {}),
+      ...(notes.length ? { notes } : {}),
+      ...(this.selfTest ? { selfTest: true } : {})
     };
   }
 
@@ -275,17 +326,22 @@ export class QaCase implements Qa {
     return this.meta;
   }
 
+  /** The page a check, a checkpoint or a stop is about: the innermost step's, or else the page of the step that ran last, or the fixture's. */
+  private currentPage(): Page {
+    return this.active.at(-1)?.page ?? this.lastPage ?? this.page;
+  }
+
   private tags(o: CheckOptions): Pick<CheckResult, "source" | "known" | "step"> {
-    const step = this.active.at(-1);
+    const step = this.active.at(-1)?.name;
     return { ...(o.source ? { source: o.source } : {}), ...(o.known ? { known: o.known } : {}), ...(step ? { step } : {}) };
   }
 
-  /** The case ends here: the page it stopped on, as the student would see it, and why. A failure (not a block) is also recorded as an Error finding, so that the marks follow from the checks. */
-  private async recordStop(step: string, reason: string, failure: boolean): Promise<void> {
-    const screenshot = await this.shoot("stopped", step, `stopped at: ${step}`, { fullPage: false, strict: false });
-    this.stopped = { step, url: this.page.url(), screenshot: screenshot ?? "", reason };
+  /** The case ends here: the page it stopped on, as the student would see it, and why. A failure (not a block) is also recorded as a failed step, so that the marks follow from the checks. */
+  private async recordStop(step: string, reason: string, failure: boolean, page: Page): Promise<void> {
+    const screenshot = await this.shoot(page, "stopped", step, `stopped at: ${step}`, { fullPage: false, strict: false });
+    this.stopped = { step, url: page.url(), screenshot: screenshot ?? "", reason };
     if (failure) {
-      this.checks.push({ kind: "watcher", label: `step "${step}" did not complete`, ok: false, fail: "error", message: reason, step, ...(screenshot ? { screenshot } : {}) });
+      this.checks.push({ kind: "step", label: `step "${step}" did not complete`, ok: false, fail: "error", message: reason, step, ...(screenshot ? { screenshot } : {}) });
     }
   }
 
@@ -293,20 +349,22 @@ export class QaCase implements Qa {
   private async noteStopNobodyCaught(): Promise<void> {
     if (this.stopped) return;
     // A timeout leaves the step it interrupted running: that one is the step. Otherwise the case was between steps, and the last one it reached is named.
-    const inStep = this.active.at(-1);
+    const inStep = this.active.at(-1)?.name;
     const where = inStep ?? this.reached.at(-1) ?? "(before the first step)";
     const between = inStep ? "" : this.reached.length ? ` (between steps, after "${where}")` : " (before the first step)";
-    if (this.blockedReason !== undefined) return void (await this.recordStop(where, this.blockedReason, false));
-    if (this.testInfo.status === "timedOut") return void (await this.recordStop(where, `the test timed out after ${this.testInfo.timeout.toLocaleString("en-US")} ms${between}`, true));
-    const error = this.testInfo.errors[0];
-    if (error) await this.recordStop(where, errorText(error.message ?? error.value ?? "an error", 600) + between, true);
+    const page = this.currentPage();
+    if (this.blockedReason !== undefined) return void (await this.recordStop(where, this.blockedReason, false, page));
+    if (this.testInfo.status === "timedOut") return void (await this.recordStop(where, `the test timed out after ${this.testInfo.timeout.toLocaleString("en-US")} ms${between}`, true, page));
+    // The errors of soft expectations inside checks are the checks' own.
+    const error = this.testInfo.errors.find((_, i) => !this.accounted.has(i));
+    if (error) await this.recordStop(where, plain(error.message ?? error.value ?? "an error", 600) + between, true, page);
   }
 
   /** The screenshot's file, attached to the test; undefined when the page could not be captured (closed, crashed) and the caller can do without. */
-  private async shoot(prefix: string, name: string, attachAs: string, o: { fullPage: boolean; strict: boolean }): Promise<string | undefined> {
+  private async shoot(page: Page, prefix: string, name: string, attachAs: string, o: { fullPage: boolean; strict: boolean }): Promise<string | undefined> {
     const file = this.testInfo.outputPath(`${prefix}-${++this.shotCount}-${slug(name)}.png`);
     try {
-      await this.page.screenshot({ path: file, fullPage: o.fullPage, timeout: 15_000 });
+      await page.screenshot({ path: file, fullPage: o.fullPage, timeout: 15_000 });
     } catch (e) {
       if (o.strict) throw e;
       return undefined;
@@ -324,9 +382,26 @@ export class QaCase implements Qa {
     return this.watcher.findings().map((f) => this.finding(f.rule, f.message, f.step));
   }
 
+  /** What the case announced (a dialog, a load) and did not get: nothing was looked at, so it is NOT CHECKED. */
+  private unmetChecks(): CheckResult[] {
+    return this.watcher.unmet().map((u) => ({ kind: "watcher" as const, label: u.label, ok: null, message: u.message }));
+  }
+
+  /** When the case stopped, each step it did not reach is a NOT CHECKED (the case declares its steps, not its checks, so the step is the unit). */
+  private unreachedChecks(meta: CaseMeta): CheckResult[] {
+    const stop = this.stopped;
+    if (!stop) return [];
+    const at = meta.steps.indexOf(stop.step);
+    const when = at >= 0 ? `stopped at step ${at + 1}` : "stopped before the first step";
+    return meta.steps
+      .filter((s) => !this.reached.includes(s))
+      .map((s) => ({ kind: "step" as const, label: `NOT CHECKED (${when}): ${s}`, ok: null, message: `"${s}" was not reached: ${clip(stop.reason, 200)}`, step: s }));
+  }
+
   /**
    * The fake provider's log for this case's keys. A request it could not answer (no recorded reply: `unknown`), one for a provider it does not fake (`refused`: the QA key was
-   * kept from a real host) and one it could not take (`failed` with mode `invalid`, a key that is not a test key) mean the case or the fixtures are wrong, not that the app is.
+   * kept from a real host), and one it failed under a mode that does not fail on purpose (a mode that does not exist, or a request it could not take) mean the case or the
+   * fixtures are wrong, not that the app is. The key itself is never written into a finding.
    */
   private providerChecks(): CheckResult[] {
     if (this.keys.size === 0) return [];
@@ -336,7 +411,9 @@ export class QaCase implements Qa {
       const asked = `“${e.prompt.slice(0, 120)}”`;
       if (e.outcome === "unknown") out.push(this.finding("provider", `${e.host} had no recorded reply for the prompt ${asked}`));
       else if (e.outcome === "refused") out.push(this.finding("provider", `${e.host} is not faked, so the request was refused and the key went nowhere; the prompt was ${asked}`));
-      else if (e.outcome === "failed" && e.mode === "invalid") out.push(this.finding("provider", `${e.host} was reached with a key that is not a QA test key; the prompt was ${asked}`));
+      else if (e.outcome === "failed" && !FAILING_MODES.has(e.mode)) {
+        out.push(this.finding("provider", `${e.host} failed a request under the key mode "${e.mode}", which does not fail on purpose (a mode that does not exist, or a request the fake provider could not take); the prompt was ${asked}`));
+      }
     }
     return out;
   }
