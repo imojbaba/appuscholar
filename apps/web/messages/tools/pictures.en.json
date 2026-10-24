@@ -7,5 +7,6 @@
   "pic_rect_y": "Top (y)",
   "pic_rect_w": "Width",
   "pic_rect_h": "Height",
-  "pic_rect_apply": "Apply rectangle"
+  "pic_rect_apply": "Apply rectangle",
+  "pic_canvas": "The picture as it is now"
 }

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { hasCaptionAbove, insertCaption } from "@/lib/editor/captions";
+import { captionHtml, hasCaptionAbove, noteHtml, renumberCaptions, topLevelBlockPos } from "@/lib/editor/captions";
 import {
   BG_COLORS, HINT_KEY, NO_FIELDS, bake, commit, drawLoaded, freshWork, locateImage, reset, toggleMode, turn, typedRect, undo,
   type Mode, type RectFields, type Work,
@@ -48,6 +48,20 @@ function Loader({ editor, onClose, onOpenStudio }: Props) {
   const t = useT();
   const [target] = useState(() => readTarget(editor));
   const [loaded, setLoaded] = useState<{ base: Canvas; wasPng: boolean } | null>(null);
+  // Where the picture is now: the remembered place, followed from the moment the dialog opened (the load included) through every change to the document,
+  // the transactions a plugin appends too, both its ends mapped inwards so a deleted picture is -1 and an identical copy that slides into its place is not it.
+  const posRef = useRef(target?.pos ?? -1);
+  useEffect(() => {
+    const follow = ({ transaction, appendedTransactions }: { transaction: Transaction; appendedTransactions: Transaction[] }) => {
+      for (const tr of [transaction, ...appendedTransactions]) {
+        if (posRef.current < 0) return;
+        const from = tr.mapping.map(posRef.current, 1);
+        posRef.current = tr.mapping.map(posRef.current + 1, -1) - from === 1 ? from : -1;
+      }
+    };
+    editor.on("transaction", follow);
+    return () => { editor.off("transaction", follow); };
+  }, [editor]);
   const fail = useRef(() => {});
   useEffect(() => { fail.current = () => { toast(t("ie_fail")); onClose(); }; });
   useEffect(() => {
@@ -68,7 +82,7 @@ function Loader({ editor, onClose, onOpenStudio }: Props) {
         <DialogTitle className="text-xl font-semibold text-purple-800">{t("ie_h")}</DialogTitle>
         <DialogDescription>{t("ie_desc")}</DialogDescription>
       </DialogHeader>
-      {target && loaded && <Workbench editor={editor} target={target} loaded={loaded} onClose={onClose} onOpenStudio={onOpenStudio} />}
+      {target && loaded && <Workbench editor={editor} target={target} posRef={posRef} loaded={loaded} onClose={onClose} onOpenStudio={onOpenStudio} />}
     </>
   );
 }
@@ -76,7 +90,7 @@ function Loader({ editor, onClose, onOpenStudio }: Props) {
 const MODES: readonly (readonly [Exclude<Mode, "">, string])[] = [["crop", "ie_crop"], ["bar", "ie_bar"], ["pix", "ie_pix"], ["bg", "ie_bg"]];
 const FIELDS: readonly (readonly [keyof RectFields, string])[] = [["x", "pic_rect_x"], ["y", "pic_rect_y"], ["w", "pic_rect_w"], ["h", "pic_rect_h"]];
 
-function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { target: Target; loaded: { base: Canvas; wasPng: boolean } }) {
+function Workbench({ editor, target, posRef, loaded, onClose, onOpenStudio }: Props & { target: Target; posRef: { current: number }; loaded: { base: Canvas; wasPng: boolean } }) {
   const t = useT();
   const id = useId();
   const vaultOn = useVault().status !== "off";
@@ -86,13 +100,9 @@ function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { 
   const [tooBig, setTooBig] = useState(false);
   function put(w: Work) { workRef.current = w; setWork(w); setTooBig(false); }
 
-  // Where the picture is now: the remembered place, followed through every change to the document while the dialog is open.
-  const posRef = useRef(target.pos);
-  useEffect(() => {
-    const follow = ({ transaction }: { transaction: Transaction }) => { if (transaction.docChanged) posRef.current = transaction.mapping.map(posRef.current); };
-    editor.on("transaction", follow);
-    return () => { editor.off("transaction", follow); };
-  }, [editor]);
+  // Closed (Cancel, Esc, the studio button) while Apply was still exporting: nothing is written then.
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const cvRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<{ a: Point; b: Point } | null>(null);
@@ -160,8 +170,7 @@ function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { 
   const [capOn, setCapOn] = useState(false);
   const [capTitle, setCapTitle] = useState("");
   const [capNote, setCapNote] = useState("");
-  const [capExists] = useState(() => hasCaptionAbove(editor, target.pos));
-  const titleRef = useRef<HTMLInputElement>(null);
+  const [capExists] = useState(() => hasCaptionAbove(editor, locateImage(editor.state.doc, posRef.current, target.src) ?? target.pos));
   /** v1 ieCapToggle (4497): ticking fills an empty note with the sentence for each way the face was hidden. */
   function tick(on: boolean) {
     setCapOn(on);
@@ -172,32 +181,42 @@ function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { 
   const [applying, setApplying] = useState(false);
   /**
    * v1 ieApply (4517): bake the sliders, export, put the picture back, add the caption when asked, renumber, close. The size check comes before anything is
-   * written; over the limit, the message shows and nothing changes. The caption needs its title (v1 wrote a bare "Figure N" label when it was empty; the
-   * Caption dialog asks for one, and so does this, before anything is changed).
+   * written; over the limit, the message shows and nothing changes. An empty title gives the bare "Figure N" label, as v1's capBlocksHTML does (4529-4533),
+   * and leaves the alt alone; the photo studio's result does the same (lib/editor/photoStudioHost.ts).
    */
   async function use() {
     if (busy.current) return;
     const title = capTitle.trim();
+    // On one line, as the Caption dialog puts them (a typed line break would not survive a reload).
+    const note = capNote.replace(/\s+/g, " ").trim();
     const wantCaption = capOn && !capExists;
-    if (wantCaption && !title) { toast(t("cap_need_title")); titleRef.current?.focus(); return; }
     busy.current = true;
     setApplying(true);
     try {
       const w = bake(workRef.current);
       put(w);
       const src = await exportDataUrl(w.base, loaded.wasPng);
+      if (!alive.current) return;
       const pos = locateImage(editor.state.doc, posRef.current, target.src);
       if (pos === null) { toast(t("ie_fail")); onClose(); return; }
       const node = editor.state.doc.nodeAt(pos)!;
-      if (!fitsBudget(editor, src.length - String(node.attrs.src).length, vaultOn)) { setTooBig(true); return; }
+      const captionChars = wantCaption ? captionHtml("figure", title).length + noteHtml(note).length : 0;
+      if (!fitsBudget(editor, src.length - String(node.attrs.src).length + captionChars, vaultOn)) { setTooBig(true); return; }
       // v1 sets data-edits only when something was done; an earlier note stays as it was otherwise.
       const edits = editsString(w.log);
       editor.chain().command(({ tr }) => {
-        tr.setNodeMarkup(pos, undefined, { ...node.attrs, src, ...(edits ? { edits } : {}), ...(wantCaption ? { alt: title } : {}) });
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, src, ...(edits ? { edits } : {}), ...(wantCaption && title ? { alt: title } : {}) });
         tr.setSelection(NodeSelection.create(tr.doc, pos));
         return true;
       }).run();
-      if (wantCaption) insertCaption(editor, { kind: "figure", title, note: capNote });
+      if (wantCaption) {
+        // Above the picture's top-level block and the note below it (v1 ieBlockOf), the picture still selected; then the numbers are set again.
+        const block = topLevelBlockPos(editor, pos);
+        const chain = editor.chain();
+        if (note) chain.insertContentAt(block + editor.state.doc.nodeAt(block)!.nodeSize, noteHtml(note), { updateSelection: false });
+        chain.insertContentAt(block, captionHtml("figure", title), { updateSelection: false }).run();
+        renumberCaptions(editor);
+      }
       onClose();
       toast(t("ie_done"));
     } catch {
@@ -221,7 +240,7 @@ function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { 
         <Button type="button" variant="ghost" size="sm" data-testid="pe-undo" disabled={!hist.length} onClick={() => put(undo(workRef.current))}>{t("ie_undo")}</Button>
         <Button type="button" variant="ghost" size="sm" data-testid="pe-reset" onClick={() => put(reset(workRef.current))}>{t("ie_reset")}</Button>
       </div>
-      <p className="m-0 min-h-[2.6em] text-sm text-muted-foreground" aria-live="polite" data-testid="pe-hint">{t(HINT_KEY[mode])}</p>
+      <p id={id + "-hint"} className="m-0 min-h-[2.6em] text-sm text-muted-foreground" aria-live="polite" data-testid="pe-hint">{t(HINT_KEY[mode])}</p>
 
       {mode && (
         <div role="group" aria-labelledby={id + "-rect"} className="grid gap-2 rounded-md border border-line-strong p-2" data-testid="pe-rect">
@@ -239,7 +258,7 @@ function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { 
         </div>
       )}
 
-      <canvas ref={cvRef} width={300} height={200} data-testid="pe-canvas" className="mx-auto block max-w-full rounded-md border border-line-strong bg-white"
+      <canvas ref={cvRef} width={300} height={200} data-testid="pe-canvas" role="img" aria-label={t("pic_canvas")} aria-describedby={id + "-hint"} className="mx-auto block max-w-full rounded-md border border-line-strong bg-white"
         style={{ touchAction: "none", maxHeight: "55vh" }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDragBoth(null)} />
 
@@ -271,7 +290,7 @@ function Workbench({ editor, target, loaded, onClose, onOpenStudio }: Props & { 
           <>
             <div className="grid gap-1">
               <label htmlFor={id + "-title"} className="text-[13px] font-medium">{t("ie_cap_title")}</label>
-              <Input id={id + "-title"} ref={titleRef} value={capTitle} data-testid="pe-cap-title" onChange={(e) => setCapTitle(e.target.value)} />
+              <Input id={id + "-title"} value={capTitle} data-testid="pe-cap-title" onChange={(e) => setCapTitle(e.target.value)} />
             </div>
             <div className="grid gap-1">
               <label htmlFor={id + "-note"} className="text-[13px] font-medium">{t("ie_cap_note")}</label>

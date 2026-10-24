@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Editor } from "@tiptap/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,9 +54,15 @@ class FakeImage {
   onerror: (() => void) | null = null;
   naturalWidth = world.natural.w;
   naturalHeight = world.natural.h;
-  set src(_: string) { queueMicrotask(() => (world.imageFails ? this.onerror?.() : this.onload?.())); }
+  set src(_: string) {
+    const fire = () => (world.imageFails ? this.onerror?.() : this.onload?.());
+    // A held load (the dialog's picture, or the export's shrink step) waits until the test lets it go.
+    if (held.on) held.queue.push(fire); else queueMicrotask(fire);
+  }
 }
 
+const held = { on: false, queue: [] as (() => void)[] };
+async function release() { held.on = false; await act(async () => { for (const f of held.queue.splice(0)) f(); }); await flush(); }
 const roots: Root[] = [];
 const editors: Editor[] = [];
 function cleanup() {
@@ -128,6 +134,18 @@ async function mount(editor: Editor, lang: "en" | "hi" = "en") {
   });
   await flush();
   return { onOpenChange, onOpenStudio };
+}
+/** The dialog with a host that holds its open state, as FormatBar does: Cancel really closes it. */
+async function mountHeld(editor: Editor) {
+  const host = document.body.appendChild(document.createElement("div"));
+  const root = createRoot(host);
+  roots.push(root);
+  function Host() {
+    const [open, setOpen] = useState(true);
+    return <PictureEditor open={open} onOpenChange={setOpen} editor={editor} onOpenStudio={() => {}} />;
+  }
+  await act(async () => { root.render(<LangProvider lang="en" onChange={() => {}}><Host /></LangProvider>); });
+  await flush();
 }
 /** The canvas as the page shows it: `shown` is the size it is drawn at (a CSS size smaller than its pixels scales the pointer). */
 const canvas = () => tid("pe-canvas") as HTMLCanvasElement;
@@ -829,18 +847,18 @@ describe("PictureEditor: the caption box", () => {
     expect(outline(e).filter((x) => x.startsWith("figure"))).toEqual(["figure: Figure 1", "figure: Figure 2"]);
   });
 
-  it("ticked with an empty title: says cap_need_title, stays open, and changes nothing (v1 added a bare label; here the title is asked for, as the Caption dialog does)", async () => {
+  it("ticked with an empty title: the bare Figure N label above, the note below, and the alt left alone (v1 ieApply 4529-4533, as the studio's result)", async () => {
     const e = make();
     select(e);
-    const html = e.getHTML();
     const { onOpenChange } = await mount(e);
     await click(tid("pe-cap-on"));
     await type(tid("pe-cap-title"), "   ");
+    await type(tid("pe-cap-note"), "Taken\nin class");
     await apply();
-    expect(h.toast).toHaveBeenCalledWith(E.cap_need_title);
-    expect(e.getHTML()).toBe(html);
-    expect(onOpenChange).not.toHaveBeenCalled();
-    expect(world.exports).toEqual([]);
+    expect(outline(e)).toEqual(["text: before", "figure: Figure 1", "picture", "note: Note. Taken in class", "text: after"]);
+    expect(imageAttrs(e).alt).toBe("A photo");
+    expect(h.toast).toHaveBeenCalledWith(E.ie_done);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("an unticked box adds no caption, and a ticked one is ignored when a caption already sits above", async () => {
@@ -894,5 +912,50 @@ describe("the picture editor's strings", () => {
   });
   it("uses only strings v1 already has, through t(), for everything else (no new key shadows a v1 key)", () => {
     for (const k of keys) expect(k in (en as object) || k in (hi as object), k).toBe(false);
+  });
+});
+
+describe("the picture editor, review fixes (Task 6 review)", () => {
+  it("Cancel pressed while Apply is still exporting writes nothing and says nothing", async () => {
+    const e = make();
+    select(e);
+    const html = e.getHTML();
+    await mountHeld(e);
+    held.on = true;
+    await click(tid("pe-apply"));
+    await click(tid("pe-cancel"));
+    expect(tid("pe-canvas")).toBeNull();
+    await release();
+    expect(e.getHTML()).toBe(html);
+    expect(h.toast).not.toHaveBeenCalledWith(E.ie_done);
+  });
+
+  it("follows the picture from the moment the dialog opens: text put above it while it loads does not send the edit to an identical copy", async () => {
+    const e = make(`<p>a</p>${IMG}<p>b</p>${IMG}`);
+    select(e, 1);
+    held.on = true;
+    await mount(e);
+    // While the picture loads, a paragraph above moves the first copy to where the second one was.
+    e.commands.insertContentAt(0, "<p>abcd</p>");
+    await release();
+    await click(tid("pe-mode-bar"));
+    await type(tid("pe-rect-x"), "10");
+    await type(tid("pe-rect-y"), "10");
+    await type(tid("pe-rect-w"), "50");
+    await type(tid("pe-rect-h"), "50");
+    await click(tid("pe-rect-apply"));
+    await apply();
+    expect([imageAttrs(e, 0).edits, imageAttrs(e, 1).edits]).toEqual([null, "bar"]);
+  });
+
+  it("the canvas is named for assistive technology and described by the hint", async () => {
+    const e = make();
+    select(e);
+    await mount(e);
+    expect(canvas().getAttribute("role")).toBe("img");
+    expect(canvas().getAttribute("aria-label")).toBe((picturesEn as Record<string, string>).pic_canvas);
+    const hint = document.getElementById(canvas().getAttribute("aria-describedby")!);
+    expect(hint?.getAttribute("data-testid")).toBe("pe-hint");
+    expect((picturesHi as Record<string, string>).pic_canvas).toBeTruthy();
   });
 });
