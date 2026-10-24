@@ -40,6 +40,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 import { CitePanel } from "../components/tools/cite/CitePanel";
 import { filledForm, EMPTY_CITE_FORM, resetCiteForm } from "../lib/cite/form";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
+import { noPids } from "./support/noPids";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -331,8 +332,8 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
       author: "Bandura, Albert", year: "1977", title: "Social learning theory", source: "Prentice Hall", volume: "", issue: "", pages: "", doi: "", url: "",
       month: "", day: "", accessed: "", container: "", editors: "", number: "", degree: "", type: "Book", style: "apa", lang: "en"
     };
-    expect(up(null)).toEqual([saved]);
-    expect(up([MILLER])).toEqual([MILLER, saved]);
+    expect(noPids(up(null))).toEqual([saved]);
+    expect(noPids(up([MILLER]))).toEqual([MILLER, saved]);
     expect(toasts()).toEqual(["Saved to library ✓"]);
   });
 
@@ -363,7 +364,7 @@ describe("Citation Manager: + Library and Insert citation (citAdd 7507, citInser
     fill(BANDURA);
     await click("cite-add");
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
-    const stored = [{ ...BANDURA }];
+    const stored = [{ ...BANDURA, pid: "kstored01" }];
     expect(up(stored)).toHaveLength(2);
     expect(up(stored)[0]).toBe(stored[0]);
   });
@@ -517,7 +518,7 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[0]!;
     await act(async () => { del.click(); });
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
-    expect(up([BANDURA, MILLER])).toEqual([MILLER]);
+    expect(noPids(up([BANDURA, MILLER]))).toEqual([MILLER]);
     expect(up(null)).toEqual([]);
   });
 
@@ -528,18 +529,18 @@ describe("Citation Manager: the library (citRender 7819-7866)", () => {
     const del = document.body.querySelectorAll<HTMLElement>('[data-testid="cite-del"]')[1]!;
     await act(async () => { del.click(); });
     const up = h.blob.set.mock.calls[0]![0] as (prev: Lib | null) => Lib;
-    expect(up([BANDURA, MILLER])).toEqual([BANDURA]);
+    expect(noPids(up([BANDURA, MILLER]))).toEqual([BANDURA]);
     // A 409 replays the update onto what the other window saved: BANDURA gone, MILLER now first.
     expect(up([MILLER])).toEqual([]);
     // Another window added an entry before it: MILLER is still the one removed.
     const X: CitationEntry = { type: "Book", author: "Xu, Li", year: "2001", title: "Another book", source: "Press" };
-    expect(up([X, BANDURA, MILLER])).toEqual([X, BANDURA]);
+    expect(noPids(up([X, BANDURA, MILLER]))).toEqual([X, BANDURA]);
     // The same entry with its keys in another order (a parse elsewhere) is the same entry.
     const reordered = Object.fromEntries(Object.entries(MILLER).reverse()) as CitationEntry;
-    expect(up([BANDURA, reordered])).toEqual([BANDURA]);
+    expect(noPids(up([BANDURA, reordered]))).toEqual([BANDURA]);
     // Already removed elsewhere: nothing else goes.
-    expect(up([BANDURA, X])).toEqual([BANDURA, X]);
+    expect(noPids(up([BANDURA, X]))).toEqual([BANDURA, X]);
     // Two identical entries: one goes.
-    expect(up([MILLER, MILLER])).toEqual([MILLER]);
+    expect(noPids(up([MILLER, MILLER]))).toEqual([MILLER]);
   });
 });

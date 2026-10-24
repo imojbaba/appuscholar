@@ -87,7 +87,7 @@ function ShelfBody({ inline = false }: { inline?: boolean }) {
     lib: libRef.current,
     lookupDoi: (doi) => crLookupDoi((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SHELF_TITLE_TIMEOUT_MS) }), doi)
   });
-  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, setStatus, toast, now: () => new Date() };
+  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, library: () => libRef.current, setStatus, toast, now: () => new Date() };
   const known = !index.loading && !index.locked;
   // W8: while the index is read and opened the lists show the loading sign; a paper whose own blob is being read (not yet started counts) shows it in place of its pages.
   const opening = index.loading && !index.locked;

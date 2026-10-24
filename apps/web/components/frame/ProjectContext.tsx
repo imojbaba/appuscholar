@@ -6,6 +6,7 @@ import type { ExportPartId } from "@/lib/export/projectExport";
 import type { Place } from "@/lib/frame/places";
 import type { WrappedDek } from "@/lib/vault/useVault";
 import type { InsertMessage } from "@/lib/popout/channel";
+import type { PaperIdsState } from "@/lib/papers/migrate";
 
 /**
  * Wire shapes of the API (dates arrive as ISO strings). `title` is ciphertext when `titleKeyVersion` is 1 or more: it is shown through
@@ -71,6 +72,11 @@ export type ProjectValue = {
    * list) and until the first load has answered. Stage blobs shared across the project key on it.
    */
   projectId: string | null;
+  /**
+   * Where the paper-id migration is (wave B Task 17, ruling B2-R6): "running" until its first answer; then "done", "locked" (the vault is locked, so nothing ran), "broken" (a blob
+   * does not open), or "busy" (it could not finish now, or never starts: a place's own window). A Literature tab waits for "running" to end and renders for any answer.
+   */
+  paperIds: PaperIdsState;
   documents: DocumentSummary[];
   currentDoc: DocumentWithBody | null;
   /** Shows another document of this project, after the open one's autosave has stored its text. When that save fails the student is asked "Switch anyway?"; false means they stayed on the open document. */

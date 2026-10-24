@@ -1,5 +1,6 @@
 import type { CitationEntry } from "@appuscholar/core";
-import type { ApNote, ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
+import type { ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
+import { noteHasCard, noteHasWork, pidOfNote } from "@/lib/papers/ids";
 import type { StageBlobs, ToolFacts, ToolModule } from "@/lib/tools/registry";
 import { parseIdeaRead } from "./ideaRead";
 
@@ -12,16 +13,14 @@ export type HomeFacts = {
   kept: number; read: number; highlights: number; cards: number; draftWords: number;
 };
 
-const has = (s: string | undefined): boolean => !!s && s.trim() !== "";
-const noted = (n: ApNote): boolean => Object.values(n.stages).some((s) => has(s.mine) || s.res !== undefined) || Object.values(n.card).some((v) => typeof v === "string" && has(v));
-const carded = (n: ApNote): boolean => Object.values(n.card).some((v) => typeof v === "string" && has(v));
 const titleKey = (s: string): string => s.trim().toLowerCase();
 
 /**
  * The home's facts from the project's blobs. `field` is the project's field (R9). `highlightCounts` is each shelf paper's highlight count by its
  * shelf id (the highlights live in `shelf_paper:<id>`, not in the index); absent, no paper counts as highlighted.
- * kept = the library's length; read = shelf papers with a highlight and `ap_notes` entries with any stage or card text, a note whose title is a
- * highlighted shelf paper's counted once (until B2's paper id joins them); cards = notes with any card field.
+ * kept = the library's length; read = shelf papers with a highlight and `ap_notes` entries with any stage or card text, a note counted once with the shelf paper it
+ * belongs to: joined by pid (a note kept under `p:<pid>`, or carrying one, Task 17) and, for an old note with no pid, by title; cards = notes with any card field.
+ * A note the paper-id migration moved (`movedTo`) is the same paper as the note it moved to and is not counted again.
  */
 export function homeFacts(
   b: { idea: IdeaIntake | null; citations: CitationEntry[] | null; shelfIndex: ShelfIndex | null; apNotes: ApNotes | null },
@@ -32,8 +31,15 @@ export function homeFacts(
   const idea = b.idea;
   const highlighted = (b.shelfIndex ?? []).filter((p) => (highlightCounts[p.id] ?? 0) > 0);
   const readTitles = new Set(highlighted.map((p) => titleKey(p.title)));
-  const notes = Object.values(b.apNotes ?? {});
-  const notesRead = notes.filter((n) => noted(n) && !(n.title !== undefined && readTitles.has(titleKey(n.title))));
+  const readPids = new Set(highlighted.flatMap((p) => (p.pid ? [p.pid] : [])));
+  const live = Object.entries(b.apNotes ?? {}).filter(([, n]) => n.movedTo === undefined);
+  const notes = live.map(([, n]) => n);
+  const notesRead = live.filter(([key, n]) => {
+    if (!noteHasWork(n)) return false;
+    const pid = pidOfNote(key, n);
+    // A note that belongs to a paper (has its pid) is joined to that paper only; the title is for the notes that had no id.
+    return pid !== undefined ? !readPids.has(pid) : !(n.title !== undefined && readTitles.has(titleKey(n.title)));
+  });
   return {
     question: idea?.topic ?? "", people: idea?.resources ?? "", time: idea?.timeframe ?? "", limits: idea?.constraints ?? "", field,
     verdict: idea?.read ? parseIdeaRead(idea.read.text)?.verdict ?? null : null,
@@ -42,7 +48,7 @@ export function homeFacts(
     kept: b.citations?.length ?? 0,
     read: highlighted.length + notesRead.length,
     highlights: (b.shelfIndex ?? []).reduce((n, p) => n + Math.max(0, highlightCounts[p.id] ?? 0), 0),
-    cards: notes.filter(carded).length,
+    cards: notes.filter(noteHasCard).length,
     draftWords
   };
 }

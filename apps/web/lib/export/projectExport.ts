@@ -4,6 +4,7 @@ import {
   type AiuEntry, type ApNoteLike, type CitationEntry, type CitationStyle, type RsPaper
 } from "@appuscholar/core";
 import { acrossData, cardLabels, stageName } from "@/lib/analyse/cards";
+import { forLibraryFile, noteHasWork, pidOfNote } from "@/lib/papers/ids";
 import { parseBlob, shelfPaperKind, type BlobKind, type BlobShape, type Highlight } from "@/lib/blobs/kinds";
 import { backupShelf, downloadMatrix, type ShelfItem, type T } from "@/lib/shelf/actions";
 import { VaultError } from "@/lib/vault/crypto";
@@ -196,7 +197,8 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
   if (step("citations")) {
     const lib = await library();
     if (lib.length) {
-      zip.file("citations/library.json", exportLibrary(lib));
+      // The class-share file is v1's format: none of the fields a kept paper carries from wave B (ruling B2-R13).
+      zip.file("citations/library.json", exportLibrary(forLibraryFile(lib)));
       zip.file("citations/references.txt", referencesText(lib, o.style));
     }
   }
@@ -208,15 +210,25 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
   if (step("notes")) {
     const items = await shelf();
     const notes = await apNotes();
-    // One file per paper, by its id: two papers with the same title stay two files. A shelf paper and an Analyse note have no shared id yet
-    // (B2), so a note joins a shelf paper's file only when that title names exactly one of each; any other note is a file of its own.
+    // One file per paper, by its id: two papers with the same title stay two files. A note joins the reading-list paper that has its pid (the note kept under
+    // `p:<pid>`, Task 17). A note with no pid (one the migration has not reached) joins a shelf paper's file only when that title names exactly one of each; any other
+    // note is a file of its own. An old note that moved to `p:<pid>` is the same paper and is not written twice, and a note with no words or card (the migration makes
+    // one for every reading-list paper, to hold its cells) is no file.
     const papers = new Map<string, Paper>();
-    for (const x of items) if (x.paper?.notes.length) papers.set("shelf:" + x.id, { title: x.title, highlights: x.paper.notes });
-    const entries = Object.entries(notes).map(([id, n]) => ({ id, n, title: n.title || UNTITLED }));
-    for (const { id, n, title } of entries) {
-      const shelfPapers = [...papers.entries()].filter(([k, p]) => k.startsWith("shelf:") && p.title === title);
-      if (shelfPapers.length === 1 && entries.filter((e) => e.title === title).length === 1) shelfPapers[0]![1].note = n;
-      else papers.set("ap:" + id, { title, highlights: [], note: n });
+    const shelfOfPid = new Map<string, string>();
+    for (const x of items) {
+      if (x.paper?.notes.length) papers.set("shelf:" + x.id, { title: x.title, highlights: x.paper.notes });
+      if (x.pid && !shelfOfPid.has(x.pid)) shelfOfPid.set(x.pid, "shelf:" + x.id);
+    }
+    const entries = Object.entries(notes).filter(([, n]) => n.movedTo === undefined).map(([id, n]) => ({ id, n, title: n.title || UNTITLED, pid: pidOfNote(id, n) }));
+    for (const { id, n, title, pid } of entries) {
+      const own = pid !== undefined ? papers.get(shelfOfPid.get(pid) ?? "") : undefined;
+      if (own) { own.note = n; continue; }
+      if (pid === undefined) {
+        const shelfPapers = [...papers.entries()].filter(([k, p]) => k.startsWith("shelf:") && p.title === title);
+        if (shelfPapers.length === 1 && entries.filter((e) => e.title === title).length === 1) { shelfPapers[0]![1].note = n; continue; }
+      }
+      if (noteHasWork(n)) papers.set("ap:" + id, { title, highlights: [], note: n });
     }
     const used = new Set<string>();
     for (const p of papers.values()) zip.file(`notes/${unique(zipName(p.title), used)}.txt`, notesText(p, t));

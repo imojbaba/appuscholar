@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
 import { bookmarkletHref, bookmarkletHrefV2, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, PSYCH_STARTERS, type CitationEntry } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
+import { noPids } from "./support/noPids";
 import en from "../messages/en.json";
 
 /*
@@ -221,7 +222,7 @@ describe("Export and import (citExport 7991-7998, citImport 7999-8023)", () => {
       mount();
       await choose(new File([f.text], "library.json", { type: "application/json" }));
       expect(toasts()).toEqual([f.toast]);
-      if (f.toast.endsWith("merged into your library ✓")) expect(applied(CITLIB.lib)).toEqual(f.libAfter);
+      if (f.toast.endsWith("merged into your library ✓")) expect(noPids(applied(CITLIB.lib))).toEqual(f.libAfter);
       else expect(h.blob.set).not.toHaveBeenCalled();
       expect(($("#citImportFile") as HTMLInputElement).value).toBe("");
     });
@@ -247,7 +248,7 @@ describe("📖 Load classic psychology sources (psychLoadStarters 7983-7987)", (
       h.blob.value = s.lib;
       mount();
       await click("cite-loadclassics");
-      expect(applied(s.lib)).toEqual(s.libAfter);
+      expect(noPids(applied(s.lib))).toEqual(s.libAfter);
       expect(toasts()).toEqual([s.toast]);
     });
   }
@@ -255,8 +256,12 @@ describe("📖 Load classic psychology sources (psychLoadStarters 7983-7987)", (
     mount();
     await click("cite-loadclassics");
     const out = applied([]);
-    expect(out).toEqual(PSYCH_STARTERS);
+    expect(noPids(out)).toEqual(PSYCH_STARTERS);
     expect(out[0]).not.toBe(PSYCH_STARTERS[0]);
+    // Each source is a paper of the library like any other, with its own pid (wave B, Task 17).
+    const pids = out.map((e) => (e as { pid?: string }).pid);
+    expect(new Set(pids).size).toBe(PSYCH_STARTERS.length);
+    expect(pids.every((p) => /^k[0-9a-z]+$/.test(p ?? ""))).toBe(true);
   });
 });
 

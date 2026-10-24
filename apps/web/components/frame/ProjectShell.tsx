@@ -21,6 +21,7 @@ import { SuggestionProvider } from "@/lib/ai/suggestion";
 import { postInsert, useSyncReceiver, type InsertMessage } from "@/lib/popout/sync";
 import { WINDOW_PARAM, holdPopout, isPopout, usePopout, windowHref } from "@/lib/popout/mode";
 import { CiteLibraryProvider } from "@/lib/cite/useLibrary";
+import type { PaperIdsState } from "@/lib/papers/migrate";
 import { DocAccessHost } from "@/lib/editor/docAccess";
 import { documentLayers } from "@/lib/tools/registry";
 import { CaptureHash } from "@/lib/cite/capture";
@@ -31,6 +32,7 @@ import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
 import { ExportDialog, exportPartsFor } from "@/components/export/ExportDialog";
 import type { ExportPartId } from "@/lib/export/projectExport";
+import { PaperIdsRunner } from "./PaperIdsRunner";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
@@ -155,6 +157,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   // The export place's ticks while it is open (null: closed).
   const [exportParts, setExportParts] = useState<ExportPartId[] | null>(null);
+  // Where the paper-id migration is, tagged with the project it was told for (Task 17); PaperIdsRunner starts it and reports here.
+  const [paperIdsTold, setPaperIdsTold] = useState<{ projectId: string; state: PaperIdsState } | null>(null);
+  const reportPaperIds = useCallback((pid: string, state: PaperIdsState) => setPaperIdsTold((p) => (p && p.projectId === pid && p.state === state ? p : { projectId: pid, state })), []);
   useEffect(() => { projectIdRef.current = projectId; currentDocRef.current = currentDoc; readyRef.current = ready; }, [projectId, currentDoc, ready]);
   const docToken = useRef(0);
   /** True while selectDoc is fetching or decrypting the newest choice (its unlock prompt may be open). */
@@ -474,9 +479,11 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   // v1 popChan.onmessage (7604-7611): what a pop-out sends goes in at the open document's cursor, opening it first when it is closed here.
   useSyncReceiver(requestInsert);
 
+  // A place's own window never runs the migration and does not wait for it; a project not loaded yet is "running" (its places are not drawn before it loads).
+  const paperIds: PaperIdsState = popout || !inProject ? "busy" : paperIdsTold && paperIdsTold.projectId === projectId ? paperIdsTold.state : "running";
   const value: ProjectValue = {
     place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, docOpen, openDocument, closeDocument, requestInsert, registerEditor,
-    project, projectId, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
+    project, projectId, paperIds, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },
     openExport: (preselect) => setExportParts(exportPartsFor(preselect))
@@ -489,6 +496,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         <CiteLibraryProvider>
         {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
         {inProject && <CaptureHash />}
+        {/* The paper-id migration (Task 17): once per project per unlock per tab, when the vault is off or open, through this shared library; never in a place's own window. */}
+        {inProject && !popout && <PaperIdsRunner onState={reportPaperIds} />}
         {/* The tools' document access in a place's own window is answered here: snapshots of the open document and its requests (lib/editor/docAccess). */}
         {inProject && !popout && <DocAccessHost />}
         {/* What a built tool draws over the open document (ToolModule.DocumentLayer, ruling R33): once per module, in the writing window only, whatever place is open. */}

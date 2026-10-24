@@ -46,6 +46,7 @@ import { ResearchPanel } from "../components/tools/research/ResearchPanel";
 import { getResearch, resetResearch, setResearch, shownNow } from "../lib/research/useSearch";
 import { downloadCsv } from "../lib/research/extras";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
+import { noPids } from "./support/noPids";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -402,7 +403,7 @@ describe("Research part 2: the manual add (rsAddManual 8435-8454)", () => {
     const set = h.blobs.citations!.set;
     expect(set).toHaveBeenCalledTimes(1);
     const entry: CitationEntry = { author: "Rao, P.", year: "2024", title: "Hostel life and loneliness", source: "Indian J Psych", volume: "", issue: "", pages: "", doi: "10.1/abc", url: "", type: "Journal article", style: "apa" };
-    expect((set.mock.calls[0]![0] as (p: CitationEntry[] | null) => CitationEntry[])(null)).toEqual([entry]);
+    expect(noPids((set.mock.calls[0]![0] as (p: CitationEntry[] | null) => CitationEntry[])(null))).toEqual([entry]);
     expect(ids.map((id) => field(id).value)).toEqual(["", "", "", "", ""]);
     expect(toasts().at(-1)).toBe("Added to citation library ✓");
     h.blobs.citations = blob([entry]);

@@ -1,6 +1,7 @@
 import {
   bibliographyHtml, citIsNumbered, exportLibrary, LIBRARY_FILE_NAME, LIBRARY_IMPORT_MAX_BYTES, mergeLibrary, PSYCH_STARTERS, type CitationEntry, type CitationStyle
 } from "@appuscholar/core";
+import { forLibraryFile } from "@/lib/papers/ids";
 
 /*
  * The library block's buttons after the cards (v1 940-946) as pure orchestration: Insert reference list (citInsertBib 7871-7881), Load classic psychology
@@ -31,7 +32,8 @@ export async function citeInsertBib(d: { lib: CitationEntry[]; style: CitationSt
 /** citExport: nothing for an empty library; otherwise exportLibrary's text as psychology-class-library.json. */
 export function citeExport(d: { lib: CitationEntry[]; download(name: string, blob: Blob): void; toast(msg: string): void }): void {
   if (!d.lib.length) { d.toast(LIBRARY_EMPTY); return; }
-  d.download(LIBRARY_FILE_NAME, new Blob([exportLibrary(d.lib)], { type: "application/json" }));
+  // v1's class-share format: none of the fields a kept paper carries from wave B (ruling B2-R13).
+  d.download(LIBRARY_FILE_NAME, new Blob([exportLibrary(forLibraryFile(d.lib))], { type: "application/json" }));
   d.toast(LIBRARY_EXPORTED);
 }
 

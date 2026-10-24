@@ -26,6 +26,7 @@ vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import(".
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 
+import { noPids } from "./support/noPids";
 import { ApiError } from "../lib/api";
 import { VaultProvider } from "../lib/vault/useVault";
 import { ResearchPanel } from "../components/tools/research/ResearchPanel";
@@ -131,7 +132,7 @@ describe("Research with the vault locked after a reload (Review Focus 1)", () =>
     const put = puts.find((p) => p.path === "/projects/p2/blobs/citations")!;
     expect(put.body.keyVersion).toBe(1);
     expect(put.body.body).not.toContain("Smith");
-    expect(await open(put.body)).toEqual([SMITH, rsEntryFromResult(OA_PLAIN.merged[i] as never, "apa")]);
+    expect(noPids((await open(put.body)) as Array<{ title?: string }>)).toEqual([SMITH, rsEntryFromResult(OA_PLAIN.merged[i] as never, "apa")]);
     // and the retraction cache is seeded for its DOI, sealed too
     await until(() => puts.some((p) => p.path === "/projects/p2/blobs/retraction_cache"), 1500);
     const cache = (await open(puts.find((p) => p.path === "/projects/p2/blobs/retraction_cache")!.body)) as Record<string, { r: boolean }>;

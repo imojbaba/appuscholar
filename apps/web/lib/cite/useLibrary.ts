@@ -4,6 +4,8 @@ import type { CitationEntry, CitationStyle } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
+import type { StoredEntry } from "@/lib/blobs/kinds";
+import { withPids } from "@/lib/papers/ids";
 import { useVault } from "@/lib/vault/useVault";
 import { useProject } from "@/components/frame/ProjectContext";
 import type { AddResult } from "./actions";
@@ -23,13 +25,15 @@ function writeStyle(next: CitationStyle): void { style = next; for (const l of l
 export function resetCiteStyle(): void { writeStyle("apa"); }
 
 export type Library = {
-  /** The stored library (`[]` while it loads, is locked or cannot be opened). */
-  lib: CitationEntry[];
+  /** The stored library (`[]` while it loads, is locked or cannot be opened). Every entry has its `pid` once the paper-id migration has run, and any save gives one to an entry that lacks it (Task 17). */
+  lib: StoredEntry[];
   loading: boolean;
   /** The vault is locked and the library unread; an add still goes to the blob, which asks for the passphrase once and saves after the unlock. */
   locked: boolean;
   /** The stored library cannot be opened on this device; the first write over it asks first (ruling R16). */
   broken: boolean;
+  /** The last read or save failed (the network): `lib` may be `[]` for that reason and not because the library is empty. */
+  error: boolean;
   /** No project id yet (before /me answers): nothing can be saved. */
   ready: boolean;
   /** The project the library (and its check caches) belong to: the open project, else the scratch project; null before /me answers. */
@@ -46,8 +50,11 @@ export type Library = {
    * newer library after a conflict (D-S2-35), where another window removed or added an entry before it, still removes this one and no other.
    */
   remove(entry: CitationEntry): void;
-  /** Any other change of the whole library (Task 8: import, the classics), as an update; false when a broken library is kept. */
-  update(fn: (prev: CitationEntry[]) => CitationEntry[]): boolean;
+  /**
+   * Any other change of the whole library (Task 8: import, the classics), as an update; false when a broken library is kept. Whatever `fn` returns is saved with a pid on every
+   * entry that has none (withPids, Task 17): the Keep, the citation form, the capture, a library file import and the classic sources all come through here.
+   */
+  update(fn: (prev: StoredEntry[]) => StoredEntry[]): boolean;
   /**
    * Fix wave A (W1, W2): the first stored entry `match` finds gets the fields of `fill` that are empty there (fillEmptyIn), as an update, so it lands on the
    * stored library. False when nothing could be saved (no project yet, or a broken library kept); nothing is written when no entry matches.
@@ -104,20 +111,24 @@ function canonical(v: unknown): string {
   return JSON.stringify(v) ?? "null";
 }
 
+/** An entry without its pid, for telling an entry from the copy of it that was shown before the pid was given. */
+const withoutPid = (e: CitationEntry): CitationEntry => { const { pid: _pid, ...rest } = e as StoredEntry; return rest; };
+
 function useOwnLibrary(projectId: string | null): Library {
   const t = useT();
   const blob = useProjectBlob("citations", projectId);
   const current = useSyncExternalStore(subscribe, read, read);
   const { value, loading, locked, set, flush } = blob;
   const broken = !!blob.broken;
+  const error = !!blob.error;
   const ready = projectId !== null;
   const lib = useMemo(() => value ?? [], [value]);
 
   /** R16: a library that does not open is replaced only once the student says so. */
   const mayWrite = useCallback(() => !broken || window.confirm(t("vault_cite_broken_confirm")), [broken, t]);
-  const update = useCallback((fn: (prev: CitationEntry[]) => CitationEntry[]) => {
+  const update = useCallback((fn: (prev: StoredEntry[]) => StoredEntry[]) => {
     if (!ready || !mayWrite()) return false;
-    set((prev) => fn(prev ?? []));
+    set((prev) => withPids(fn(prev ?? [])));
     return true;
   }, [ready, mayWrite, set]);
   const add = useCallback((entry: CitationEntry): AddResult => {
@@ -127,12 +138,15 @@ function useOwnLibrary(projectId: string | null): Library {
   }, [ready, update]);
   const remove = useCallback((entry: CitationEntry) => {
     const key = canonical(entry);
+    const bare = canonical(withoutPid(entry));
     update((prev) => {
-      const i = prev.findIndex((e) => canonical(e) === key);
+      // A copy shown before the paper-id migration reached it has no pid: it still names the stored entry that has one.
+      let i = prev.findIndex((e) => canonical(e) === key);
+      if (i < 0 && !(entry as StoredEntry).pid) i = prev.findIndex((e) => canonical(withoutPid(e)) === bare);
       return i < 0 ? prev : [...prev.slice(0, i), ...prev.slice(i + 1)];
     });
   }, [update]);
   const fillEmpty = useCallback((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => update((prev) => fillEmptyIn(prev, match, fill)), [update]);
 
-  return { lib, loading, locked, broken, ready, projectId, add, remove, update, fillEmpty, flush, style: current, setStyle: writeStyle };
+  return { lib, loading, locked, broken, error, ready, projectId, add, remove, update, fillEmpty, flush, style: current, setStyle: writeStyle };
 }

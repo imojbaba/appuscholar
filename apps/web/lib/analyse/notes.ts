@@ -12,13 +12,35 @@ import type { ApNote, ApNotes } from "@/lib/blobs/kinds";
  * (ruling R16); the answer holds for that blob while the panel stays mounted, so typing does not ask at every key.
  */
 
-/** apNotePut (9895) as an update of the stored notes: the paper's note (made with empty stages and card when there is none), copied, its title set, then `fn` applied to the copy. */
+/**
+ * Where a note lives. An old note ('a' + the squashed title + the characters read) that the paper-id migration moved to `p:<pid>` says so in `movedTo` and stays as it was
+ * (Task 17); until B3 gives Analyse a paper the paper's id, it reads and writes the note it moved to, which is the one Compare reads (ruling B2-R10). A move that points at a note
+ * that is gone leads to that key all the same, so the old copy is never brought back to life beside it.
+ */
+function noteKeyOf(all: ApNotes, id: string): string {
+  let key = id;
+  // A few hops at most: a move is one hop, and a loop of moves must not hang the panel.
+  for (let hop = 0; hop < 4; hop++) {
+    const to = all[key]?.movedTo;
+    if (to === undefined) break;
+    key = to;
+  }
+  return key;
+}
+
+/** The note a paper's id leads to (following `movedTo`), or undefined. */
+export function noteAt(all: ApNotes, id: string): ApNote | undefined {
+  return all[noteKeyOf(all, id)];
+}
+
+/** apNotePut (9895) as an update of the stored notes: the paper's note (followed to where it moved; made with empty stages and card when there is none), copied, its title set, then `fn` applied to the copy. */
 export function notePut(prev: ApNotes | null, doc: { id: string; title: string }, fn: (n: ApNote) => void): ApNotes {
   const all: ApNotes = { ...(prev ?? {}) };
-  const cur = all[doc.id];
+  const key = noteKeyOf(all, doc.id);
+  const cur = all[key];
   const n: ApNote = { ...(cur ?? {}), stages: { ...(cur?.stages ?? {}) }, card: { ...(cur?.card ?? {}) }, title: doc.title };
   fn(n);
-  all[doc.id] = n;
+  all[key] = n;
   return all;
 }
 
@@ -44,7 +66,7 @@ export type ApNotesStore = {
   broken: boolean;
   /** The notes are read but never stored here: a pop-out (ap_notes is read-only there, v1 1964). The boxes are read-only and the panels say so (NOTES_POPOUT). */
   readOnly: boolean;
-  /** v1's apNoteGet without its write: the paper's note, or undefined. */
+  /** v1's apNoteGet without its write: the paper's note (the one it moved to, when the migration moved it), or undefined. */
   note(id: string): ApNote | undefined;
   /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (ap_notes is read-only there, v1 1964). */
   put(doc: { id: string; title: string }, fn: (n: ApNote) => void): boolean;
@@ -99,6 +121,6 @@ export function useApNotes(projectId: string | null): ApNotesStore {
     return true;
   }, [projectId, colsUnread, colsReadOnly, mayWrite, colsBroken, setCols]);
   const colList = useMemo(() => apAcrossCols(colsValue), [colsValue]);
-  const note = useCallback((id: string) => all[id], [all]);
+  const note = useCallback((id: string) => noteAt(all, id), [all]);
   return { all, unread: notesUnread, loading: (notes.loading && !notes.locked) || (cols.loading && !cols.locked), locked: notesUnread && notes.locked, broken: !!notesBroken, readOnly: notesReadOnly, note, put, remove, cols: colList, toggleCol };
 }

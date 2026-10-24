@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
 import { useApNotes } from "@/lib/analyse/notes";
@@ -12,6 +13,7 @@ import { CitePanel } from "@/components/tools/cite/CitePanel";
 import { ShelfDialog, ShelfMatrix } from "@/components/tools/shelf/ShelfDialog";
 import { PlaceHeader } from "@/components/frame/PlaceHeader";
 import { useProject } from "@/components/frame/ProjectContext";
+import { PanelLoading } from "@/components/tools/PanelLoading";
 
 /**
  * The Literature place (canvas Find): four tabs, each a link, in the order Find, Reading list ({n} kept papers on the shelf), Compare and Citations
@@ -24,7 +26,7 @@ export function LitPlace({ tab }: { tab: string }) {
     <>
       <PlaceHeader stage="lit" tab={tab} tabs={<LitTabs tab={tab} />} />
       <div className="place-body" data-testid={"place-lit-" + tab}>
-        <Content tab={tab} />
+        <PapersReady><Content tab={tab} /></PapersReady>
         <Next tab={tab} />
       </div>
     </>
@@ -54,6 +56,18 @@ function LitTabs({ tab }: { tab: string }) {
       })}
     </nav>
   );
+}
+
+/**
+ * A tab's body waits for the paper-id migration (wave B Task 17, ruling B2-R6): the shell starts it, and the panels read the library and the reading list after it, with the ids
+ * in them. It shows the loading sign while the migration is "running" and renders for every other answer (done, locked, broken, busy), so a tab is never kept waiting for good.
+ * A body that is showing stays: a later run (after a lock and an unlock) does not take the panel away from under the student.
+ */
+function PapersReady({ children }: { children: React.ReactNode }) {
+  const { paperIds } = useProject();
+  const [shown, setShown] = useState(paperIds !== "running");
+  if (!shown && paperIds !== "running") setShown(true);
+  return shown ? <>{children}</> : <PanelLoading />;
 }
 
 function Content({ tab }: { tab: string }) {

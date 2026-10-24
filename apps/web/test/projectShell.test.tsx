@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { encryptText, generateDek, generateKeypair, generateVaultKey, sealVaultCheck, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
@@ -59,8 +59,9 @@ import { ApiError } from "../lib/api";
 import { heldBlobs } from "../lib/blobs/held";
 import { VaultProvider } from "../lib/vault/useVault";
 import { ProjectShell } from "../components/frame/ProjectShell";
+import { resetPaperIdsRun } from "../components/frame/PaperIdsRunner";
 import PlacePage from "../app/(app)/p/[projectId]/[stage]/[[...tab]]/page";
-import type { ProjectValue } from "../components/frame/ProjectContext";
+import { useProject, type ProjectValue } from "../components/frame/ProjectContext";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const PASS = "right passphrase";
@@ -97,6 +98,12 @@ async function mount(projectId: string, children: React.ReactNode = null) {
   return host;
 }
 const ws = () => h.ws as ProjectValue;
+/** What a place sees of the shell: the context, kept where ws() reads it (a place's own window draws no document, so the document card never does). */
+function Probe() {
+  const project = useProject();
+  useEffect(() => { h.ws = project; });
+  return null;
+}
 const patches = () => h.api.mock.calls.filter(([p, i]) => p === "/me/active-project" && (i as { method?: string } | undefined)?.method === "PATCH");
 
 beforeEach(() => {
@@ -238,6 +245,29 @@ describe("ProjectShell", () => {
 });
 
 describe("ProjectShell document switching with the vault", () => {
+  it("starts the paper-id migration once the project has loaded, and tells the places when it is done (Task 17)", async () => {
+    resetPaperIdsRun();
+    plainApi();
+    await mount("p1");
+    await until(() => ws().paperIds === "done");
+    // Nothing is stored in this account, so there was nothing to write: no PUT, and the blobs it looked at are the library's, the reading list's and the notes'.
+    const sent = h.api.mock.calls.filter(([, i]) => (i as { method?: string } | undefined)?.method === "PUT").map(([p]) => p);
+    expect(sent).toEqual([]);
+    expect(h.api.mock.calls.some(([p]) => String(p).includes("rewrite"))).toBe(false);
+  });
+
+  it("a place's own window does not start the migration and does not wait for it", async () => {
+    resetPaperIdsRun();
+    plainApi();
+    window.history.replaceState(null, "", "/p/p1/lit/find?window=1");
+    try {
+      await mount("p1", <Probe />);
+      await until(() => h.ws !== null && ws().projectId === "p1");
+      expect(ws().paperIds).toBe("busy");
+      expect(h.api.mock.calls.some(([p]) => String(p).includes("/blobs/shelf_index"))).toBe(false);
+    } finally { window.history.replaceState(null, "", "/"); }
+  });
+
   it("cancel on A, select B, unlock: B is shown, not A", async () => {
     h.me = { ...h.me, activeProjectId: null };
     h.path = "/p/s1/writing";

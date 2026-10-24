@@ -45,6 +45,7 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => h.oaKey }));
 import { ResearchPanel } from "../components/tools/research/ResearchPanel";
 import { resetResearch } from "../lib/research/useSearch";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
+import { noPids } from "./support/noPids";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -453,7 +454,7 @@ describe("Research: + Citation library and Insert citation (8471-8491)", () => {
     // W2: every author (v1's entry kept the card's four), and no Crossref answer here, so the volume, issue and pages stay empty.
     const entry = v2Entry(c.merged[i]!);
     expect(entry.author).toBe(rsAuthorListToCit(oaAuthorList(c.merged[i]!.title)));
-    expect((set.mock.calls[0]![0] as (p: CitationEntry[] | null) => CitationEntry[])([])).toEqual([entry]);
+    expect(noPids((set.mock.calls[0]![0] as (p: CitationEntry[] | null) => CitationEntry[])([]))).toEqual([entry]);
     const retr = h.blobs.retraction_cache!.set;
     expect(retr).toHaveBeenCalledTimes(1);
     const seeded = (retr.mock.calls[0]![0] as (p: unknown) => Record<string, { r: boolean; t: number }>)({});
@@ -514,7 +515,7 @@ describe("Research: + Citation library and Insert citation (8471-8491)", () => {
     await until(() => h.blobs.citations!.set.mock.calls.length === 2);
     const entry = v2Entry(c.merged[i]!);
     // Only the empty fields are filled: the author from OpenAlex stays.
-    expect(libAfter()).toEqual([{ ...entry, volume: "12", issue: "3", pages: "45-67" }]);
+    expect(noPids(libAfter())).toEqual([{ ...entry, volume: "12", issue: "3", pages: "45-67" }]);
     // One request, carrying the DOI only, under a 4 s timeout.
     expect(seen.map((x) => x.url)).toEqual(["https://api.crossref.org/works/" + encodeURIComponent(String(c.merged[i]!.doi))]);
     expect(timeout).toHaveBeenCalledWith(4000);

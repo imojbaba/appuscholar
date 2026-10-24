@@ -435,6 +435,21 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       if (!holds()) return;
       const last = flush().then(() => { heldBlobs.put(o.id, leftover() as HeldOp[], send); });
       heldBlobs.track(o.id, last);
+    },
+    /**
+     * For a caller whose edit can be made again (the paper-id migration, Task 17): the client is disposed of and what it still holds unsent is forgotten, not kept in the
+     * held-blobs registry, so a write that did not go (the vault locked, the network, a conflict) is not sent later by itself and does not make leaving the page ask first.
+     * Call it when no save is under way (after flush() has answered), on a client that was never start()ed (its first read was a flush()): start() adopts what a panel left
+     * held, and that is the student's, never to be forgotten.
+     */
+    abandon() {
+      if (!active) return;
+      active = false;
+      heldBlobs.markDirty(self, false);
+      clearTimer();
+      pending = null;
+      ops = [];
+      sinceBase = [];
     }
   };
 }

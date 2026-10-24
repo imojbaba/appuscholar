@@ -43,6 +43,7 @@ import { RETRACT_TTL, rcRun, resetCheckBusy, retractionRefresh, type RcDeps, typ
 import { parseBlob, type RefCheckCache, type RetractionCache } from "../lib/blobs/kinds";
 import { resetCiteActive } from "../lib/cite/active";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
+import { noPids } from "./support/noPids";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
@@ -407,7 +408,7 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(confirm.mock.calls[0]![0]).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS + "\nIssue: 1\nPages: 13317" }));
     expect(confirm.mock.calls[0]![0]).toBe("Fill these from Crossref? Only empty fields change.\n\nAuthor: " + AUTHORS + "\nIssue: 1\nPages: 13317");
-    expect(applied(h.blobs.citations!, [AUTHORLESS, SMITH])).toEqual([{ ...AUTHORLESS, author: AUTHORS, issue: "1", pages: "13317" }, SMITH]);
+    expect(noPids(applied(h.blobs.citations!, [AUTHORLESS, SMITH]) as CitationEntry[])).toEqual([{ ...AUTHORLESS, author: AUTHORS, issue: "1", pages: "13317" }, SMITH]);
     expect((applied(h.blobs.citations!, [AUTHORLESS, SMITH]) as CitationEntry[])[0]!.volume).toBe("12");
     expect(toasts()).toEqual([E.rc_filled]);
   });
@@ -448,7 +449,7 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     // The cache is keyed by the same citKey; the entry already has issue and pages, so only the author is offered.
     await click(tid("cite-rc-fill")!);
     expect((vi.mocked(window.confirm).mock.calls[0]![0])).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS }));
-    expect(applied(h.blobs.citations!, [nowFull])).toEqual([{ ...nowFull, author: AUTHORS }]);
+    expect(noPids(applied(h.blobs.citations!, [nowFull]) as CitationEntry[])).toEqual([{ ...nowFull, author: AUTHORS }]);
     // Nothing left to fill: no question, no write.
     h.blobs.citations!.set.mockClear(); h.blobs.refcheck_cache!.set.mockClear(); vi.mocked(window.confirm).mockClear();
     act(() => { for (const r of roots.splice(0)) r.unmount(); });

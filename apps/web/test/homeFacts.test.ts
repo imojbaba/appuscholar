@@ -50,4 +50,40 @@ describe("homeFacts", () => {
     const f = homeFacts({ ...none, shelfIndex: [shelf("s1", "One")], apNotes: { aX: note({ card: { notes: "n" } }) } }, 0, "");
     expect(f).toMatchObject({ highlights: 0, read: 1, cards: 1 });
   });
+
+  it("a note kept under p:<pid> is the shelf paper with that pid, counted once; the old note that moved there is not counted again (Task 17)", () => {
+    const f = homeFacts({
+      ...none,
+      shelfIndex: [{ ...shelf("s1", "One"), pid: "kone" }, shelf("s2", "Two")],
+      apNotes: {
+        aOne: note({ title: "One", card: { strengths: "clear sample" }, movedTo: "p:kone" }),
+        "p:kone": note({ title: "One", pid: "kone", card: { strengths: "clear sample" } }),
+        aThree: note({ title: "Three", stages: { design: { mine: "a cohort" } }, movedTo: "p:kthree" }),
+        // A kept paper that is not on the reading list: its own note is one more paper read.
+        "p:kthree": note({ title: "Three", pid: "kthree", stages: { design: { mine: "a cohort" } } })
+      }
+    }, 0, "", { s1: 2 });
+    expect(f.read).toBe(2); // s1 once, and the note of the paper that is not on the list
+    expect(f.cards).toBe(1); // p:kone only: aOne moved there and is skipped
+    expect(f.highlights).toBe(2);
+  });
+
+  it("a note the migration made only to hold a paper's cells is neither read nor a card", () => {
+    const f = homeFacts({
+      ...none,
+      shelfIndex: [{ ...shelf("s1", "One"), pid: "kone" }],
+      apNotes: { "p:kone": note({ title: "One", pid: "kone", cells: { Sample: "40 students" } }) }
+    }, 0, "", {});
+    expect(f).toMatchObject({ read: 0, cards: 0 });
+  });
+
+  it("a note that carries a pid joins by pid and not by title: two papers with one title stay two", () => {
+    const f = homeFacts({
+      ...none,
+      shelfIndex: [{ ...shelf("s1", "Same title here"), pid: "kone" }, { ...shelf("s2", "Same title here"), pid: "ktwo" }],
+      apNotes: { "p:ktwo": note({ title: "Same title here", pid: "ktwo", stages: { design: { mine: "words" } } }) }
+    }, 0, "", { s1: 1 });
+    // Only s1 is highlighted; the note belongs to s2, so it is its own read.
+    expect(f.read).toBe(2);
+  });
 });

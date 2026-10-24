@@ -302,6 +302,70 @@ describe("exportProject", () => {
   });
 });
 
+describe("with paper ids (Task 17)", () => {
+  const blobsWith = (over: Record<string, unknown>) => (kind: string) => Promise.resolve(kind in { ...BLOBS, ...over } ? JSON.stringify({ ...BLOBS, ...over }[kind]) : null);
+  const MERGED = { title: "Sleep and exam anxiety", pid: "kone", stages: { design: { mine: "A survey of two classes.", res: { reading: "A cross-sectional survey; causation is not shown." } } }, card: { strengths: "Large sample", verdict: "Useful, with care" }, cells: { Sample: "120 students" } };
+
+  it("the library file carries none of pid, rl, abstract, oa or ack, and the reference list is the same", async () => {
+    const kept = LIB.map((e, i) => ({ ...e, pid: "k" + i, rl: true, abstract: "A long abstract.", oa: "https://example.org/a.pdf", ack: ["numbers"] }));
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith({ citations: kept }) }), ["citations"], opts()));
+    expect(await text(z, "citations/library.json")).toBe(exportLibrary(LIB));
+    const b = bibliography(LIB, "apa");
+    expect(await text(z, "citations/references.txt")).toBe(b.head + "\n\n" + b.items.map((x) => x.fmt.ref).join("\n\n") + "\n");
+  });
+
+  it("a note moved to p:<pid> is one file with its reading-list paper (joined by pid), and the old key is not a file of its own", async () => {
+    const blobs = {
+      shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }],
+      ap_notes: { a1: { ...AP_NOTES.a1, movedTo: "p:kone" }, "p:kone": MERGED }
+    };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["notes"], opts()));
+    expect(files(z)).toEqual(["notes/Sleep and exam anxiety.txt"]);
+    const n = await text(z, "notes/Sleep and exam anxiety.txt");
+    expect(n).toContain("Sleep fell by an hour");
+    expect(n.match(/A survey of two classes\./g)).toHaveLength(1);
+    expect(n.match(/Large sample/g)).toHaveLength(1);
+  });
+
+  it("two reading-list papers with one title stay two files, each with its own p:<pid> note", async () => {
+    const second = { ...SHELF_PAPER, notes: [{ id: "n2", page: 5, quote: "A second paper's line", note: "", at: "2026-10-02T10:00:00.000Z" }] };
+    const blobs = {
+      shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }, { ...SHELF_INDEX[0]!, id: "s2", file: "b.pdf", pid: "ktwo" }],
+      "shelf_paper:s2": second,
+      ap_notes: { "p:kone": MERGED, "p:ktwo": { title: "Sleep and exam anxiety", pid: "ktwo", stages: { design: { mine: "Another paper's design." } }, card: {} } }
+    };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["notes"], opts()));
+    const got = await Promise.all(files(z).map((n) => text(z, n)));
+    expect(got).toHaveLength(2);
+    expect(got.filter((g) => g.includes("Sleep fell by an hour") && g.includes("A survey of two classes."))).toHaveLength(1);
+    expect(got.filter((g) => g.includes("A second paper's line") && g.includes("Another paper's design."))).toHaveLength(1);
+  });
+
+  it("a note the migration made only for a paper's cells makes no file", async () => {
+    const blobs = {
+      shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }, { ...SHELF_INDEX[0]!, id: "s2", title: "No highlights here", pid: "ktwo" }],
+      "shelf_paper:s2": { pages: ["x"], notes: [], cells: {} },
+      ap_notes: { "p:kone": MERGED, "p:ktwo": { title: "No highlights here", pid: "ktwo", stages: {}, card: {}, cells: { Sample: "40" } }, "p:korphan": { title: "Not on the list", pid: "korphan", stages: {}, card: {}, cells: {} } }
+    };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["notes"], opts()));
+    expect(files(z)).toEqual(["notes/Sleep and exam anxiety.txt"]);
+  });
+
+  it("a note of a kept paper that is not on the reading list is a file of its own", async () => {
+    const blobs = { ap_notes: { "p:kbook": { title: "Why we sleep", pid: "kbook", stages: { gap: { mine: "Read as an abstract." } }, card: {} } } };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["notes"], opts()));
+    expect(files(z)).toContain("notes/Why we sleep.txt");
+  });
+
+  it("the cards file lists a paper once: the note that moved is left out and the one it moved to is in", async () => {
+    const notes = { a1: { ...AP_NOTES.a1, movedTo: "p:kone" }, "p:kone": MERGED };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith({ ap_notes: notes, shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }] }) }), ["compare"], opts()));
+    const cards = await text(z, "compare/paper-cards.csv");
+    expect(cards).toBe("﻿" + apAcrossCsv(acrossData(t, { "p:kone": MERGED }, ["design", "verdict"], false)));
+    expect(cards.split("\n").filter((l) => l.includes("Sleep and exam anxiety"))).toHaveLength(1);
+  });
+});
+
 describe("saveProjectExport", () => {
   it("one audit row per download", async () => {
     const audit = vi.fn(async () => {});

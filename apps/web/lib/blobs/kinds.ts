@@ -36,11 +36,16 @@ const num = z.number();
 
 /** Idea & Feasibility intake: the four fields of the form, and (wave B, Task 9) the AI read of them as it came, with when it was made (ISO). Optional, so an intake stored before it still parses. */
 const IdeaIntakeSchema = z.looseObject({ topic: str, resources: str, timeframe: str, constraints: str, read: z.looseObject({ text: str, at: str }).optional() });
-/** One source as v1 stores it (core's CitationEntry: every known value a string, all optional). */
+/**
+ * One source as v1 stores it (core's CitationEntry: every known value a string, all optional), and, from wave B (Task 17), the fields a kept paper carries:
+ * `pid` (its one stable id, lib/papers/ids), `rl` (on the reading list), `abstract` (up to 4,000 characters), `oa` (the open-access link) and `ack` (the attention
+ * items the student has dismissed). All optional, so an entry stored before them (or by an older tab) still parses.
+ */
 const CitationEntrySchema = z.looseObject({
   author: str.optional(), year: str.optional(), title: str.optional(), source: str.optional(), volume: str.optional(), issue: str.optional(),
   pages: str.optional(), doi: str.optional(), url: str.optional(), month: str.optional(), day: str.optional(), accessed: str.optional(),
-  container: str.optional(), editors: str.optional(), number: str.optional(), degree: str.optional(), type: str.optional(), style: str.optional(), lang: str.optional()
+  container: str.optional(), editors: str.optional(), number: str.optional(), degree: str.optional(), type: str.optional(), style: str.optional(), lang: str.optional(),
+  pid: str.optional(), rl: z.boolean().optional(), abstract: str.optional(), oa: str.optional(), ack: z.array(str).optional()
 });
 const CitationLibrarySchema = z.array(CitationEntrySchema);
 /** By normalised DOI: retracted or not (`r`), and when it was looked up (`t`, ms), as v1 7569 stores it: `c[d]={r:!!flag,t:Date.now()}`. */
@@ -60,8 +65,11 @@ const RcCheckSchema = z.looseObject({
 });
 const RefCheckCacheSchema = z.record(str, RcCheckSchema);
 /** The Reading shelf's list of papers; each paper's text is its own `shelf_paper:<id>` blob. `added` is v1's ISO date string. */
-/** Fix wave A (W15, register row D-S2-28): `doi` is the DOI printed on a new paper's first page, kept optional so an entry stored before it (or by build 6c38396) still parses. */
-const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num, doi: str.optional() }));
+/**
+ * Fix wave A (W15, register row D-S2-28): `doi` is the DOI printed on a new paper's first page, kept optional so an entry stored before it (or by build 6c38396) still parses.
+ * Wave B (Task 17): `pid` is the kept paper's stable id, the one its library entry and its notes carry (lib/papers/ids); optional, so an entry stored before it still parses.
+ */
+const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num, doi: str.optional(), pid: str.optional() }));
 /** A highlight or note on a shelf paper (v1 11681: id, page, quote, note, at). */
 const HighlightSchema = z.looseObject({ id: str, page: num, quote: str, note: str, at: str });
 const ShelfPaperSchema = z.looseObject({ pages: z.array(str), notes: z.array(HighlightSchema), cells: z.record(str, str) });
@@ -79,12 +87,24 @@ const ApWalkResSchema = z.looseObject({
  * Analyse a paper's notes, by v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), as v1's apNotePut (9895) writes appu_ap_notes: per stage key (AP_STAGES' k)
  * the student's own words (`mine`, apDraft 10118) and the reply (`res`, apWalkShow 10061), each written lazily so either may be missing; the card's fields (apCardField 10121: strengths,
  * weak, verdict, notes; the lesson adds verdict and reflection, 11190-11191); the paper's title. `chars` is never written by v1 (kept optional).
+ * Wave B (Task 17): a note kept under `p:<pid>` (one per paper) also carries `pid`, the student's `take` and the AI `summary` (Task 28), the kept `checks` of Check numbers
+ * (Task 30), the Compare table's `cells` (copied from the shelf paper's matrix once), and, on an old `a...` note that was merged into it, `movedTo`. All optional; `stages`
+ * and `card` stay required, so a note the migration writes always carries them (empty when it has nothing).
  */
 const ApNoteSchema = z.looseObject({
   stages: z.record(str, z.looseObject({ mine: str.optional(), res: ApWalkResSchema.optional() })),
   card: z.looseObject({ strengths: str.optional(), weak: str.optional(), verdict: str.optional(), notes: str.optional(), reflection: str.optional() }),
   title: str.optional(),
-  chars: num.optional()
+  chars: num.optional(),
+  pid: str.optional(),
+  take: str.optional(),
+  summary: z.looseObject({ text: str, at: str, partial: z.boolean() }).optional(),
+  checks: z.looseObject({
+    numbers: z.looseObject({ bad: num, total: num, at: str }).optional(),
+    refs: z.looseObject({ flagged: num, total: num, at: str }).optional()
+  }).optional(),
+  cells: z.record(str, str).optional(),
+  movedTo: str.optional()
 });
 const ApNotesSchema = z.record(str, ApNoteSchema);
 /** The columns of "📊 My paper cards side by side", AP_COLS keys in the order apAcrossColToggle stores them (v1 appu_ap_cols, 9939-9941; ruling R28: a list only, the AI-columns box is the tab's memory). */
@@ -95,7 +115,9 @@ const ShelfColsSchema = z.array(str);
 const RsPrefsSchema = z.looseObject({ rank: z.boolean() });
 
 export type IdeaIntake = z.infer<typeof IdeaIntakeSchema>;
-export type CitationLibrary = CitationEntry[];
+/** A library entry as this build stores it (ruling B2-R3): core's CitationEntry, a port type that is never edited, plus the fields of CitationEntrySchema above. */
+export type StoredEntry = CitationEntry & { pid?: string; rl?: boolean; abstract?: string; oa?: string; ack?: string[] };
+export type CitationLibrary = StoredEntry[];
 export type RetractionCache = z.infer<typeof RetractionCacheSchema>;
 export type RefCheckCache = Record<string, RcCheck>;
 export type ShelfIndex = z.infer<typeof ShelfIndexSchema>;

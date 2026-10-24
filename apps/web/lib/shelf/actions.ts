@@ -1,7 +1,8 @@
 import {
   shBackupBundle, shBackupFileName, shColsAdd, shColsDel, shColsOf, shMatrixCsv, shNoteId, shPaperId, shQuoteFind, shRestoreParse, shTitleGuess, type ShRecord
 } from "@appuscholar/core";
-import type { ShelfCols, ShelfIndex, ShelfPaper } from "@/lib/blobs/kinds";
+import type { ShelfCols, ShelfIndex, ShelfPaper, StoredEntry } from "@/lib/blobs/kinds";
+import { linkShelf } from "@/lib/papers/ids";
 import { PdfReaderUnavailable, type extractPdfPages } from "./extract";
 
 /** The copy (lib/i18n t). */
@@ -13,6 +14,11 @@ export type ShelfItem = ShelfEntry & { paper: ShelfPaper | null };
 /** What the shelf's orchestration touches, so it can be driven with fakes. The panels compute nothing; this composes v1's steps from core's functions and the sh2_* copy. */
 export type ShelfOps = {
   t: T;
+  /**
+   * The project's library as it is read now, for the pid a new reading-list paper takes from the library entry it is (linkShelf, Task 17). Absent: no library is known, and the
+   * paper gets a pid of its own. Called when the index entry is written, so it is the library as it is then.
+   */
+  library?(): StoredEntry[];
   /** False once the dialog that started a batch has closed (or another project is open): Add PDFs and a restore stop before storing another paper. */
   alive(): boolean;
   /** The papers as the index holds them now. */
@@ -73,7 +79,8 @@ export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
       // Once its text is stored the entry is always added, the dialog open or not (updateIndex writes it through a client of its own after a close).
       await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
       const entry: ShelfEntry = { id, title: named.title, ...(named.doi ? { doi: named.doi } : {}), file: f.name, size: f.size, added: now.toISOString(), total: r.total, kept: r.pages.length };
-      d.updateIndex((prev) => [...(prev ?? []), entry]);
+      // The pid comes with the entry (Task 17): the library entry's when it is the same paper (the DOI printed on page 1, then the title), else a new one.
+      d.updateIndex((prev) => linkShelf([...(prev ?? []), entry], d.library?.() ?? []));
       have.push(entry);
       const n = r.pages.length;
       // f.name+': added, '+n+' pages'+(r.total>n?' (first '+n+' of '+r.total+')':'') (11594)
@@ -163,6 +170,8 @@ const num = (v: unknown, fallback: number): number => (typeof v === "number" && 
  * "Restore a shelf backup" (shRestore 11714-11725): core's shRestoreParse decides ("That file is not a shelf backup."); each paper it keeps is stored as v1's shPut stores it, by id
  * (the same id replaces the paper on the shelf, another is added), then v1's count. Beyond v1, since the blob store needs them: a field the index requires and the record lacks is
  * made from what is there (the title from the file name, the counts from the pages), an id outside [A-Za-z0-9_-]{1,64} gets a new one, and the pages and notes are made strings.
+ * Task 17 (ruling B2-R12): a paper that replaces one keeps that entry's `pid` and `doi`; a new one takes its record's pid only when a library entry of this project has it,
+ * else linkShelf finds the library entry it is, or makes a pid.
  */
 export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
   const list = shRestoreParse(text);
@@ -188,7 +197,16 @@ export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
       else await d.createPaper(id, paper);
     } catch { continue; }
     onShelf.add(id);
-    d.updateIndex((prev) => { const cur = prev ?? []; return cur.some((e) => e.id === id) ? cur.map((e) => (e.id === id ? entry : e)) : [...cur, entry]; });
+    const library = (): StoredEntry[] => d.library?.() ?? [];
+    const recordPid = typeof p.pid === "string" && library().some((e) => e.pid === p.pid) ? p.pid : undefined;
+    d.updateIndex((prev) => {
+      const cur = prev ?? [];
+      const old = cur.find((e) => e.id === id);
+      const next: ShelfEntry = old
+        ? { ...entry, ...(old.pid ? { pid: old.pid } : recordPid ? { pid: recordPid } : {}), ...(old.doi ? { doi: old.doi } : {}) }
+        : { ...entry, ...(recordPid ? { pid: recordPid } : {}) };
+      return linkShelf(old ? cur.map((e) => (e.id === id ? next : e)) : [...cur, next], library());
+    });
     n += occurrences(p.id);
   }
   d.setStatus(d.t("sh2_restored_papers", { n }));

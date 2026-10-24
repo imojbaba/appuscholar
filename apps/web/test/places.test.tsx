@@ -19,7 +19,8 @@ const h = vi.hoisted(() => ({
   toast: vi.fn(),
   shelfIndex: null as null | Array<{ id: string }>,
   lib: [] as unknown[],
-  libLoading: false
+  libLoading: false,
+  paperIds: undefined as undefined | string
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1" }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -27,7 +28,7 @@ vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratch
 vi.mock("@/lib/vault/titles", () => ({ useTitle: () => ({ state: "open", text: "Sleep and exam anxiety" }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
   useProject: () => ({ project: { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0 }, projectId: "p1", go: h.go, pendingAnalyse: null, setPendingAnalyse: () => {},
-    docOpen: h.docOpen, openDocument: h.openDocument, requestInsert: async () => false })
+    docOpen: h.docOpen, openDocument: h.openDocument, requestInsert: async () => false, paperIds: h.paperIds })
 }));
 vi.mock("@/lib/shelf/useShelf", () => ({
   useShelf: () => ({ projectId: "p1", index: h.shelfIndex, loading: false, locked: false, broken: false, error: false, loadPaper: async () => null }),
@@ -85,6 +86,7 @@ beforeEach(() => {
   h.shelfIndex = [{ id: "a" }, { id: "b" }];
   h.lib = [{}, {}, {}];
   h.libLoading = false;
+  h.paperIds = undefined;
 });
 afterEach(unmountAll);
 
@@ -141,6 +143,45 @@ describe("Literature (Task 10)", () => {
     expect(tid("sh-close")).toBeNull();
     expect(tid("sh-tab-papers")).not.toBeNull();
     expect(tid("read-a-paper")!.textContent).toBe("Read a paper");
+  });
+});
+
+describe("Literature waits for the paper ids (wave B, Task 17, ruling B2-R6)", () => {
+  const rerender = (stage: StageKey, tab: string) => act(async () => { roots.at(-1)!.render(<StagePlace stage={stage} tab={tab} />); });
+
+  it("a tab's body shows the loading sign while the migration runs, and the tab itself is there", async () => {
+    h.paperIds = "running";
+    await mount("lit", "find");
+    expect(tid("panel-loading")).not.toBeNull();
+    expect(tid("panel-research")).toBeNull();
+    expect(tid("place-tabs")).not.toBeNull();
+    expect(tid("lit-next")).not.toBeNull();
+  });
+
+  it.each(["done", "busy", "broken", "locked"])("the body renders when the migration answers %s", async (answer) => {
+    h.paperIds = "running";
+    await mount("lit", "citations");
+    expect(tid("panel-cite")).toBeNull();
+    h.paperIds = answer;
+    await rerender("lit", "citations");
+    expect(tid("panel-cite")).not.toBeNull();
+    expect(tid("panel-loading")).toBeNull();
+  });
+
+  it("a body that is showing stays when the migration runs again (after a lock and an unlock)", async () => {
+    h.paperIds = "done";
+    await mount("lit", "find");
+    expect(tid("panel-research")).not.toBeNull();
+    h.paperIds = "running";
+    await rerender("lit", "find");
+    expect(tid("panel-research")).not.toBeNull();
+    expect(tid("panel-loading")).toBeNull();
+  });
+
+  it("a place whose context has no answer (older callers) renders at once", async () => {
+    h.paperIds = undefined;
+    await mount("lit", "find");
+    expect(tid("panel-research")).not.toBeNull();
   });
 });
 

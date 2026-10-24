@@ -32,7 +32,10 @@ const save = (name: string, text: string) => downloadBlob(name, new Blob(["﻿" 
 export function downloadCard(t: T, o: { title: string; note: ApNoteLike | undefined; refs: ApCardRefs }): void {
   save("paper-card.txt", apCardText({ ...o, stages: AP_STAGES.map((s) => ({ k: s.k, name: stageName(t, s.k) })), L: cardLabels(t) }));
 }
+/** The notes that have not moved: an old note the paper-id migration moved to `p:<pid>` (it says so in `movedTo`) is the same paper as the note it moved to, and is listed once, there. */
+const unmoved = (all: Record<string, ApNoteLike>): Record<string, ApNoteLike> =>
+  Object.fromEntries(Object.entries(all).filter(([, n]) => (n as { movedTo?: unknown }).movedTo === undefined));
 /** The table of the cards side by side (apAcrossData). */
-export const acrossData = (t: T, all: Record<string, ApNoteLike>, cols: string[], ai: boolean) => apAcrossData(all, cols, ai, acrossLabels(t));
+export const acrossData = (t: T, all: Record<string, ApNoteLike>, cols: string[], ai: boolean) => apAcrossData(unmoved(all), cols, ai, acrossLabels(t));
 /** apAcrossCsv (9977): the table as core's apAcrossCsv, saved as paper_cards.csv. */
 export function downloadAcross(d: { head: string[]; body: string[][] }): void { save("paper_cards.csv", apAcrossCsv(d)); }
