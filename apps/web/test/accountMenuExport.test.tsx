@@ -38,7 +38,12 @@ function mount(projectId: string | null) {
 }
 /** Radix opens a menu from its trigger on Enter. */
 async function openMenu(trigger = "account-menu-btn", menu = "account-menu") {
-  await act(async () => { tid(trigger)!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  // On a loaded machine Radix can still be settling the last menu's close when the next Enter arrives, and that Enter is lost: give the menu a moment,
+  // and press Enter again only while it is not open (a second press on an open menu would close it).
+  for (let i = 0; i < 5 && !tid(menu); i++) {
+    await act(async () => { tid(trigger)!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+    if (!tid(menu)) await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+  }
   expect(tid(menu)).not.toBeNull();
 }
 const pick = async (id: string) => { await act(async () => { tid(id)!.click(); }); };
