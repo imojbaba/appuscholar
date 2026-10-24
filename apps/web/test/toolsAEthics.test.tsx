@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EC_DOCS, ecMinorsNote } from "@appuscholar/core";
+import { EC_DOCS, ecMinorsNote, ecMinorsNoteV2 } from "@appuscholar/core";
 import en from "../messages/en.json";
 import designEn from "../messages/tools/design.en.json";
 import designHi from "../messages/tools/design.hi.json";
@@ -115,12 +115,13 @@ describe("Ethics and consent (Task A2)", () => {
   it("the minors note appears when v1's does", async () => {
     expect(GOLDEN.minors.map((c) => c.m)).toEqual(["yes", "unsure", "no", ""]);
     for (const c of GOLDEN.minors) {
-      // The core function is the source of the text: it returns text exactly where v1 showed the block.
+      // The core function is the source of the text: it returns text exactly where v1 showed the block. The tab shows the V2 note (C18, D-S2-115): v1's text with its last sentence replaced, and '' exactly where v1's is.
       expect(ecMinorsNote(c.m), c.m).toBe(c.text);
+      expect(ecMinorsNoteV2(c.m) === "", c.m).toBe(c.display !== "block");
       const root = await render();
       await set("minors", c.m);
       if (c.display === "block") {
-        expect(text("ec-minors-note"), c.m).toBe(c.text);
+        expect(text("ec-minors-note"), c.m).toBe(ecMinorsNoteV2(c.m));
         expect($(T("ec-minors-note"))!.getAttribute("role"), c.m).toBe("status");
       } else {
         expect($(T("ec-minors-note")), c.m).toBeNull();
@@ -133,7 +134,7 @@ describe("Ethics and consent (Task A2)", () => {
   it("a saved 'yes' or 'unsure' shows the note when the tab opens", async () => {
     h.store.set("design_ec", { minors: "unsure" });
     await render();
-    expect(text("ec-minors-note")).toBe(GOLDEN.minors.find((c) => c.m === "unsure")!.text);
+    expect(text("ec-minors-note")).toBe(ecMinorsNoteV2("unsure"));
   });
 
   it("the checklist has core's eight documents, and a tick is stored at once with done from ecDoneAfterToggle", async () => {

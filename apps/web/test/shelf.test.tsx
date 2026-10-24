@@ -628,7 +628,8 @@ describe("the Reading shelf dialog", () => {
     expect(saveSeenAtCall).toBe(true);
     expect(stored<ShelfPaper>("shelf_paper:pa")!.notes[0]).toMatchObject({ page: 0, quote: "", note: "My own summary before the AI: one two three four five six\nseven eight nine ten eleven twelve" });
     const [prompt, opts] = h.callAI.mock.calls[0] as [string, unknown];
-    expect(opts).toEqual({ temp: 0.2, max: 1000, noLang: true });
+    // v1's options and the one v2 adds: the paper is published text, so the request opts out of name suggestions (C13, Task 11).
+    expect(opts).toEqual({ temp: 0.2, max: 1000, noLang: true, literature: true });
     expect(prompt.startsWith("You are helping a student of education read a paper.")).toBe(true);
     expect(prompt).toContain("Contact: [author email removed]");
   });

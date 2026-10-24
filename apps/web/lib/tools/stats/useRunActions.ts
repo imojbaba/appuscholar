@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { fieldLabel } from "@appuscholar/core";
+import { fieldLabel, normName } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
@@ -11,8 +11,9 @@ import { askPd } from "@/lib/ai/pdDialog";
 import type { StatsRuns } from "@/lib/blobs/kinds/stats";
 import { toast } from "@/components/ui/toast";
 import { buildStatsExplainPrompt, statsExplainText } from "./explain";
-import { codesFor, flaggedCounts, flaggedInText, maskLabels } from "./explainGuard";
+import { codesFor, flaggedCounts, flaggedInText, listedMasks, maskLabels } from "./explainGuard";
 import { getLab, patchLab, useLab } from "./lab";
+import { listInUse } from "./pdList";
 import { addRun, newRunId, runRecord, sentenceHtml } from "./run";
 import { checkChoice, chooseDesign, requestRun, runNow, setExplain, setField, setTest, switchTest, tickColumn } from "./runLab";
 import { UNTITLED, type LabActions } from "./useLabActions";
@@ -101,13 +102,20 @@ export function useRunActions(projectId: string, labActions: LabActions) {
     const found = flaggedInText(lr.data, lab.scan, [tables, apa]);
     if (found.length) {
       const sig = found.map((f) => f.kind + f.value).join("||");
-      const answer = await askPd({ counts: flaggedCounts(found), total: found.length, sig });
+      const { answer } = await askPd({ counts: flaggedCounts(found), total: found.length, sig });
       if (answer === "cancel") { setExplain(projectId, forRun, { status: "cancelled", message: apiMsg("cancelled") }); return; }
-      if (answer === "mask") { const codes = codesFor(found); tables = maskLabels(tables, found, codes); apa = maskLabels(apa, found, codes); }
+      if (answer === "mask") {
+        // With the participant list open, a name on it is masked as that person's code (their made-up name in made-up names mode): the answer then reads against the study's codes.
+        const { ctx } = getLab(projectId);
+        const codes = codesFor(found, listInUse(ctx) ? listedMasks(ctx.list, ctx.mode === "pseudonyms") : undefined);
+        tables = maskLabels(tables, found, codes);
+        apa = maskLabels(apa, found, codes);
+      }
     }
     const built = buildStatsExplainPrompt(fieldLabel(live.current.field), tables, apa);
     try {
-      const text = await live.current.callAI(built.prompt, { temp: built.temp, max: built.max });
+      // The values asked about above are not asked about again by callAI's own check for names (on the list, or that might be names), whatever the answer was.
+      const text = await live.current.callAI(built.prompt, { temp: built.temp, max: built.max, ...(found.length ? { namesAsked: found.map((f) => normName(f.value)) } : {}) });
       setExplain(projectId, forRun, { status: "done", text: text.trim() });
     } catch (e) {
       if (e instanceof AiCallError && e.code === "cancelled") setExplain(projectId, forRun, { status: "cancelled", message: e.message });

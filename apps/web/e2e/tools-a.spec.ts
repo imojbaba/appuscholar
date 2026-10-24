@@ -14,7 +14,7 @@
  *      "Tick them, or change the dates" sentence; ticked, the statement is core's; Insert puts it in the document;
  *   7. after a reload the Overview still reads the number of ready items (the six blobs were saved and read again);
  *   8. at 375 px the tab row can be scrolled to the last tab, and the Budget and AI-use tabs fit with no sideways scroll on the page.
- * The texts asserted are core's own output (regPathway, REG_WARN, ecMinorsNote, ethicsStatement, protocolMarkdown, ctriMarkdown, piCvText, budgetRows and
+ * The texts asserted are core's own output (regPathway, REG_WARN, ecMinorsNoteV2, ethicsStatement, protocolMarkdown, ctriMarkdown, piCvText, budgetRows and
  * budgetTotalText, budgetMarkdown, aiuBuildV2) or the dictionaries' (T). What is typed here is only: the two toast words "Saved" and "Inserted" (the
  * only two toasts this place makes), the committee sentence of rule 9, and the file-name patterns. The AI is
  * never called: this group has no AI step, and the only network answer made up here is the AI-use log.
@@ -28,7 +28,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Locator, type Page, type Route } from "@playwright/test";
 import {
-  BUDGET_DEFAULTS, CTRI_FIELDS, PROVIDERS, REG_WARN, aiuBuildV2, budgetMarkdown, budgetRows, budgetTotalText, ctriMarkdown, ecMinorsNote, ethicsStatement, piCvText,
+  BUDGET_DEFAULTS, CTRI_FIELDS, PROVIDERS, REG_WARN, aiuBuildV2, budgetMarkdown, budgetRows, budgetTotalText, ctriMarkdown, ecMinorsNoteV2, ethicsStatement, piCvText,
   protocolMarkdown, regPathway, type AiuEntry
 } from "@appuscholar/core";
 import { signIn } from "./support/signin";
@@ -221,7 +221,7 @@ test("Design and ethics: eight tabs, the tools, the files, the AI-use statement,
     await page.getByTestId("ec-status").selectOption("approved");
     await page.getByTestId("ec-committee").fill("Institutional Ethics Committee, Department of Psychology");
     await page.getByTestId("ec-minors").selectOption("yes");
-    await expect(page.getByTestId("ec-minors-note")).toHaveText(ecMinorsNote("yes"));
+    await expect(page.getByTestId("ec-minors-note")).toHaveText(ecMinorsNoteV2("yes"));
     const st = ethicsStatement({ status: "approved", committee: "Institutional Ethics Committee, Department of Psychology", apprNo: "", apprDate: "", consentMode: "", minors: "yes" });
     if ("error" in st) throw new Error("core refused a statement with a status: " + st.error);
     await page.getByTestId("ec-statement").click();

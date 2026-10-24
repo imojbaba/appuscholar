@@ -417,7 +417,9 @@ describe("Analyse a paper: Ask (apAsk 10032-10047, apQuotesHTML 10018-10026, the
     await click(tid("ap-ask-btn"));
     await settle();
     expect(toasts()).toEqual(c.toasts);
-    expect(h.callAI.mock.calls.map((k) => k[1])).toEqual(c.opts);
+    // v1's options, and the one v2 adds: the paper is published text, so the request opts out of name suggestions (C13, Task 11).
+    expect(h.callAI.mock.calls.map((k) => Object.fromEntries(Object.entries(k[1] as object).filter(([key]) => key !== "literature")))).toEqual(c.opts);
+    for (const k of h.callAI.mock.calls) expect((k[1] as { literature?: boolean }).literature).toBe(true);
     if (c.opts.length) expect(h.callAI.mock.calls[0]![0]).toBe(buildAskPrompt(fieldLabel("psychology"), getAp().doc!, c.q).prompt);
     expect(($("#apQ") as HTMLTextAreaElement).value).toBe(c.qDraftAfter);
     const box = tid("ap-answer");
