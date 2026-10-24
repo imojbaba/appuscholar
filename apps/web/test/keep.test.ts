@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import * as core from "@appuscholar/core";
 import type { StoredEntry } from "../lib/blobs/kinds";
-import { CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryRead, resultEntry, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
+import { CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryKnown, libraryRead, resultEntry, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
 import { insertResult } from "../lib/research/library";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
@@ -34,6 +34,19 @@ describe("libraryRead", () => {
     expect(libraryRead(ok)).toBe(true);
     for (const k of ["loading", "locked", "broken", "error"] as const) expect(libraryRead({ ...ok, [k]: true }), k).toBe(false);
     expect(libraryRead({ ...ok, ready: false })).toBe(false);
+  });
+});
+
+describe("libraryKnown", () => {
+  it("is true while the stored library is known, even after a save failed (the keep is then held for a retry); false while loading, locked, broken or without a project", () => {
+    const ok = { ready: true, loading: false, locked: false, broken: false, error: false };
+    expect(libraryKnown(ok)).toBe(true);
+    // a failed save sets error, and the library is still the one that was read: Kept must not turn back into Keep
+    const failed = { ...ok, error: true };
+    expect(libraryKnown(failed)).toBe(true);
+    expect(libraryRead(failed)).toBe(false);
+    for (const k of ["loading", "locked", "broken"] as const) expect(libraryKnown({ ...ok, [k]: true }), k).toBe(false);
+    expect(libraryKnown({ ...ok, ready: false })).toBe(false);
   });
 });
 

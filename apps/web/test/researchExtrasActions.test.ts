@@ -1,19 +1,20 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildGapFinderPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, rsCorpusText, rsCsvText, type RsPaper, type RsQuick } from "@appuscholar/core";
+import { buildGapFinderPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, rsCorpusText, type RsPaper, type RsQuick } from "@appuscholar/core";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
-import { gapFinder, litReview, quickRead, quickReadTicked, type GeneratorDeps, type QuickDeps } from "../lib/ai/actions";
-import { analysePaper, downloadCsv, EXTERNAL, filterStat, openExternal } from "../lib/research/extras";
+import { gapFinder, litReview, quickRead, type GeneratorDeps, type QuickDeps } from "../lib/ai/actions";
+import { analysePaper, openExternal } from "../lib/research/extras";
 import { filterVals, FILTER_EMPTY, shownResults } from "../lib/research/useSearch";
 
 /*
- * Task 10's pure orchestration: the quick read (rsQuickP / rsQuickChecked 8171-8190), the two generators (researchLitReview / researchGapFinder
- * 8530-8551), the Analyse handoff (rsAnalyse 8407-8419), the external search buttons (rsOpenExternal
- * 8424-8434), the CSV (rsCsvDownload 8196) and the filters (rsFilterVals / rsApplySort 8332-8374). Replies come from the research golden fixture's
- * `quick` cases, so the expected RsQuick is the one v1's rsQuickCheck returned.
+ * Task 10's pure orchestration, as Find uses it: the quick read of one abstract (rsQuickP 8171-8182; "Read the abstract with AI" in More), the two generators
+ * (researchLitReview / researchGapFinder 8530-8551, which Compare brings back in Task 22), the Analyse handoff (rsAnalyse 8407-8419), the Scholar link
+ * (rsOpenExternal 8424-8434) and the filters (rsFilterVals / rsApplySort 8332-8374). The ticked papers' quick read, the CSV download and the filters' count sentence
+ * left with the Research panel (register row D-S2-123). Replies come from the research golden fixture's `quick` cases, so the expected RsQuick is the one v1's
+ * rsQuickCheck returned.
  */
 
 const E = en as Record<string, string>;
@@ -76,35 +77,6 @@ describe("quickRead (rsQuickP 8172-8182)", () => {
     expect(await quickRead({ ...papers()[0]!, abstract: bad.ab }, d)).toBe(false);
     expect(log.toasts).toEqual(["The AI reply could not be read. Try again.", "Your AI key was refused (401)."]);
     expect(log.applied).toEqual([]);
-  });
-});
-
-describe("quickReadTicked (rsQuickChecked 8183-8190)", () => {
-  it("nothing ticked: v1's toast", async () => {
-    const { d, log } = quickDeps(["{}"]);
-    await quickReadTicked([], d);
-    expect(log.toasts).toEqual(["Tick some papers first"]);
-    expect(log.ai).toEqual([]);
-  });
-
-  it("the first 10 ticked, quietly, one progress toast each, the results written once, then v1's count", async () => {
-    const c = FX.quick[0]!;
-    const ticked = Array.from({ length: 12 }, (_, i) => ({ ...papers()[0]!, title: "P" + i, abstract: i === 3 ? "short" : c.ab }));
-    const { d, log } = quickDeps([c.raw, c.raw, c.raw, "not json at all", c.raw, c.raw, c.raw, c.raw, c.raw]);
-    await quickReadTicked(ticked, d);
-    // the short abstract is skipped quietly (no AI call); one reply is unreadable, quietly
-    expect(log.ai).toHaveLength(9);
-    expect(log.toasts).toEqual([...Array.from({ length: 10 }, (_, i) => "Quick read " + (i + 1) + " of 10…"), "Quick read done for 8 of 10 (the first 10 ticked)"]);
-    expect(log.applied).toHaveLength(1);
-    expect(log.applied[0]!.map(([p]) => p.title)).toEqual(["P0", "P1", "P2", "P5", "P6", "P7", "P8", "P9"]);
-    for (const [, q] of log.applied[0]!) expect(q).toEqual(c.out);
-  });
-
-  it("10 or fewer ticked: no '(the first 10 ticked)'; a batch where nothing reads still re-renders once", async () => {
-    const { d, log } = quickDeps([new Error("down")]);
-    await quickReadTicked([{ ...papers()[0]!, abstract: longAb }, { ...papers()[1]!, abstract: longAb }], d);
-    expect(log.toasts).toEqual(["Quick read 1 of 2…", "Quick read 2 of 2…", "Quick read done for 0 of 2"]);
-    expect(log.applied).toEqual([[]]);
   });
 });
 
@@ -196,37 +168,17 @@ describe("analysePaper (rsAnalyse 8407-8419)", () => {
 });
 
 describe("openExternal (rsOpenExternal 8424-8434)", () => {
-  it("the four sites with the topic encoded, in a new tab; no topic toasts", () => {
+  it("Google Scholar, with the topic encoded, in a new tab; no topic toasts", () => {
     const opened: string[] = [];
     const toasts: string[] = [];
     const d = { t, open: (u: string) => { opened.push(u); }, toast: (m: string) => { toasts.push(m); } };
-    expect(EXTERNAL.map((x) => x.site)).toEqual(["scholar", "jstor", "sciencedirect", "base"]);
-    for (const x of EXTERNAL) openExternal(x.site, "  exam anxiety & sleep ", d);
-    const q = encodeURIComponent("exam anxiety & sleep");
-    expect(opened).toEqual([
-      "https://scholar.google.com/scholar?q=" + q, "https://www.jstor.org/action/doBasicSearch?Query=" + q,
-      "https://www.sciencedirect.com/search?qs=" + q, "https://www.base-search.net/Search/Results?lookfor=" + q
-    ]);
+    openExternal("scholar", "  exam anxiety & sleep ", d);
+    expect(opened).toEqual(["https://scholar.google.com/scholar?q=" + encodeURIComponent("exam anxiety & sleep")]);
     openExternal("scholar", "   ", d);
     expect(toasts).toEqual(["Type a search topic first"]);
-    expect(opened).toHaveLength(4);
-  });
-});
-
-describe("downloadCsv (rsCsvDownload 8196, pdDownload 9507)", () => {
-  it("nothing shown: v1's toast; else rsCsvText of the shown list as search-results.csv, with v1's BOM", async () => {
-    const files: Array<[string, Blob]> = [];
-    const toasts: string[] = [];
-    const d = { t, toast: (m: string) => { toasts.push(m); }, download: (n: string, b: Blob) => { files.push([n, b]); } };
-    downloadCsv([], d);
-    expect(toasts).toEqual(["Nothing to download yet"]);
-    const list = FX.papers.slice(0, 4);
-    downloadCsv(list, d);
-    expect(files).toHaveLength(1);
-    expect(files[0]![0]).toBe("search-results.csv");
-    expect(files[0]![1].type).toBe("text/csv;charset=utf-8");
-    const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(await files[0]![1].arrayBuffer());
-    expect(text).toBe("﻿" + rsCsvText(list));
+    // JSTOR, ScienceDirect and BASE have no button any more, so nothing opens for them
+    openExternal("jstor", "exam anxiety", d);
+    expect(opened).toHaveLength(1);
   });
 });
 
@@ -244,14 +196,6 @@ describe("the filters (rsFilterVals 8332-8335, rsApplySort 8354-8374)", () => {
     const unread = all.map((p) => ({ ...p, quick: undefined }));
     const q = shownResults(unread, "relevance", { ...FILTER_EMPTY, n: "10" });
     expect(q).toEqual({ list: [], needQ: all.length });
-  });
-  it("v1's sentence only while a filter is set", () => {
-    expect(filterStat(t, filterVals(FILTER_EMPTY), 3, 5, 0)).toBe("");
-    const F = filterVals({ ...FILTER_EMPTY, oa: true });
-    expect(filterStat(t, F, 3, 0, 0)).toBe("");
-    expect(filterStat(t, F, 3, 5, 0)).toBe("Showing 3 of 5 papers. 2 hidden by your filters, not deleted.");
-    expect(filterStat(t, F, 3, 5, 1)).toBe("Showing 3 of 5 papers. 2 hidden by your filters, not deleted. 1 of those are hidden only because they have no Quick read yet.");
-    expect(filterStat(t, F, 0, 5, 0)).toBe("Showing 0 of 5 papers. 5 hidden by your filters, not deleted. Clear a filter to see them again.");
   });
 });
 

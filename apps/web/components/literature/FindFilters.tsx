@@ -5,8 +5,8 @@ import { DESIGN_OPTIONS, setFilter, setResearch, type ResearchState } from "@/li
 /**
  * The aside "Narrow the results" (canvas Find), in the canvas's order: Kind of study, Published from, Free full text only, Hide retracted papers, Rank by fit to my question
  * (AI), then the sources and the Google Scholar link. Kind of study and Rank by fit shape the next search (v1's #rsDesign and #rsRank); the year, free full text and retracted
- * boxes filter the papers already found (v1's #rsFYear, #rsFOA and #rsFRet, core's rsFilterPass): they hide, never delete. The two filters that needed a Quick read (a
- * confirmed kind of study and sample) and the two source boxes are not in the canvas and are not offered. The AI cost of Rank by fit is said under its box, as v1's label said it.
+ * boxes filter the papers already found (v1's #rsFYear, #rsFOA and #rsFRet, core's rsFilterPass): they hide, never delete. The two filters that needed the abstract read with
+ * AI (a confirmed kind of study and sample) and the two source boxes are not in the canvas and are not offered. The AI cost of Rank by fit is said under its box, as v1's label said it.
  */
 export function FindFilters({ s, rank, rankLoading, onRank, onScholar }: {
   s: ResearchState; rank: boolean; /** W8: the stored rank choice is being read and opened. */ rankLoading: boolean; onRank(on: boolean): void; onScholar(): void;

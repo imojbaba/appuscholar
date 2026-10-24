@@ -10,7 +10,7 @@ import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import type { Library } from "@/lib/cite/useLibrary";
 import { retrCacheSet } from "@/lib/cite/checks";
 import { paperMatch } from "@/lib/papers/ids";
-import { keepResult, libraryRead, type KeepResult, type KeepResultDeps } from "@/lib/papers/keep";
+import { keepResult, libraryKnown, type KeepResult, type KeepResultDeps } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
 import { analysePaper, loadConnected, openExternal } from "@/lib/research/extras";
 import { insertResult } from "@/lib/research/library";
@@ -28,13 +28,23 @@ import { FindResult, type ResultActions } from "./FindResult";
 /** The newest "Papers connected to this one" request: an older one that answers later writes nothing (kept for the tab, as the box is). */
 let connectedGen = 0;
 
+type T = (key: string, vars?: Record<string, string | number>) => string;
+
+/** The count above the results. One paper, and one that matches, take their singular ("1 paper", "that matches"); none, or two or more, "that match". */
+function countLine(t: T, total: number, shown: number): string {
+  if (total === 1) return t(shown === 1 ? "find_count_one" : "find_count_one_none");
+  return t(shown === 1 ? "find_count_shown_one" : "find_count", { total, shown });
+}
+
 /**
  * Find (canvas Find; wave B Task 18, register row D-S2-123): the first tab of the Literature place. It replaces the Research panel: the same search, related terms, filters,
  * sort and Export (lib/research/*, unchanged), laid out as the canvas draws it. The topic box and its Search button, then the AI's related terms as chips; the filters
  * aside "Narrow the results" beside the results (above them on a phone); and above the results the count, the Sort select and Export together. Each result has one
  * primary action, Keep (the paper joins the library and the reading list, lib/papers/keep.ts), and a More menu for the rest. The results live in this tab's memory
  * (useSearch); the rank box is the project's `rs_prefs` blob; kept papers are the project's `citations` blob, sealed under the vault. A Keep made while the library is
- * loading or locked waits for it to be read (useKeep): the button is busy, and nothing is decided on a library that has not been read.
+ * loading or locked waits for it to be read (useKeep): the button is busy, and nothing is decided on a library that has not been read. A paper in the library reads Kept
+ * whenever the library is known, also after a save failed (the keep is held for a retry); a Keep that went through is said once, in a polite live region, since the button
+ * keeps focus and shows no toast.
  */
 export function FindTab() {
   const t = useT();
@@ -49,6 +59,8 @@ export function FindTab() {
   const target = useInsertTarget();
   // The papers whose Keep, or whose citation, is being done (waiting for the library to be read counts).
   const [busy, setBusy] = useState<ReadonlySet<RsPaper>>(new Set());
+  // What the live region says: "Kept: {title}" after a Keep went through.
+  const [announced, setAnnounced] = useState("");
   const mark = useCallback((p: RsPaper, on: boolean) => setBusy((prev) => { const next = new Set(prev); if (on) next.add(p); else next.delete(p); return next; }), []);
 
   // v1 stores the box at each search (8306). Stored only when it changed, and never while the vault is locked: a search asks for no passphrase.
@@ -92,6 +104,10 @@ export function FindTab() {
       return r;
     } finally { mark(p, false); }
   };
+  /** The Keep button: kept or already kept once the library has been read, and said aloud; nothing is said when nothing was kept. */
+  const pressKeep = (p: RsPaper) => {
+    void keep(p).then((r) => { if (r) setAnnounced(t("find_kept_announce", { title: p.title })); }).catch(failed);
+  };
   const connected = (p: RsPaper) => {
     const gen = ++connectedGen;
     const f: typeof fetch = (input, init) => fetch(input, init);
@@ -112,11 +128,11 @@ export function FindTab() {
       }).catch(failed);
     }
   });
-  const isKept = (p: RsPaper) => libraryRead(library) && library.lib.some((e) => paperMatch({ doi: p.doi, title: p.title, year: String(p.year ?? "") }, e));
+  const isKept = (p: RsPaper) => libraryKnown(library) && library.lib.some((e) => paperMatch({ doi: p.doi, title: p.title, year: String(p.year ?? "") }, e));
 
   const cards = results.map((p) => (
     <FindResult key={s.original.indexOf(p)} p={p} kept={isKept(p)} busy={busy.has(p)} keepOff={library.broken}
-      onKeep={() => { void keep(p).catch(failed); }} actions={actionsFor(p)} />
+      onKeep={() => { pressKeep(p); }} actions={actionsFor(p)} />
   ));
   const { terms } = s;
 
@@ -157,9 +173,11 @@ export function FindTab() {
           {library.locked && <p className="find-lib" role="status" data-testid="find-locked">{t("vault_cite_locked")}</p>}
           {library.broken && <p className="find-lib" role="status" data-testid="find-broken">{t("vault_cite_broken")}</p>}
           {library.error && !library.broken && <p className="find-lib" role="status" data-testid="find-error">{t("find_library_error")}</p>}
+          {/* One polite live region for every Keep (the buttons keep focus and the toast is gone): in the page before it speaks, empty until a Keep goes through. */}
+          <p className="sr-only" role="status" aria-live="polite" data-testid="find-announce">{announced}</p>
           {s.original.length > 0 && (
             <div className="find-head" id="rsSortRow" data-testid="rs-sort-row">
-              <p className="find-count" data-testid="find-papers">{t("find_count", { total: s.original.length, shown: results.length })}</p>
+              <p className="find-count" data-testid="find-papers">{countLine(t, s.original.length, results.length)}</p>
               <div className="find-head-tools">
                 <label htmlFor="rsSort">{t("find_sort")}</label>
                 <select className="input find-select" id="rsSort" value={s.sort} onChange={(e) => setResearch({ sort: e.target.value as SortMode })}>

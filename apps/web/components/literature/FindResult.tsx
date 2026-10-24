@@ -11,7 +11,7 @@ export type ResultActions = {
   cite(): void;
   /** Papers connected to this one (v1's rsConnected). */
   connected(): void;
-  /** Quick read (v1's rsQuick). */
+  /** Read the abstract with AI (v1's Quick read, rsQuick). */
   quick(): void;
   /** Read it now (replaces v1's Analyse this paper: keeps the paper, then opens the Reading list with its abstract loaded). */
   read(): void;
@@ -37,8 +37,12 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * One search result as the canvas Find draws it: the title; "Authors. Year. Journal. Cited n times."; the badges (Retracted, Free PDF, the kind of study and the sample
- * once a Quick read confirmed them, the fit when ranked); "Why it fits (AI): ..." with the gold edge when ranked; the Quick read's box once read; one primary button, Keep or
- * Kept; and More, which holds the rest. `busy`: a Keep is waiting for the library to be read. `keepOff`: the library cannot be read, so nothing can be kept.
+ * once the abstract has been read with AI and confirmed them, the fit when ranked); "Why it fits (AI): ..." with the gold edge when ranked; the AI's reading of the
+ * abstract once done (also with the gold edge); one primary button, Keep or Kept; and More, which holds the rest. `busy`: a Keep is waiting for the library to be read.
+ * `keepOff`: the library cannot be opened, so nothing can be kept: Keep, "Put a citation in my document" and "Read it now" (which keep the paper first) are off.
+ *
+ * Keep is `aria-disabled`, not `disabled`, while busy, once Kept or when off: a disabled button drops the keyboard focus, and the toast that used to say "added" is gone,
+ * so the focused button is how the student hears the result (FindTab's live region says "Kept: {title}"). A press on it is ignored then.
  */
 export function FindResult({ p, kept, busy, keepOff, onKeep, actions }: { p: RsPaper; kept: boolean; busy: boolean; keepOff: boolean; onKeep(): void; actions: ResultActions }) {
   const t = useT();
@@ -46,6 +50,7 @@ export function FindResult({ p, kept, busy, keepOff, onKeep, actions }: { p: RsP
   const oaId = (p as RsPaper & { oaId?: string }).oaId;
   const link = paperLink(p);
   const q = p.quick;
+  const inert = kept || busy || keepOff;
   return (
     <article className="find-result" data-testid="rs-card">
       <div className="find-result-main">
@@ -65,7 +70,7 @@ export function FindResult({ p, kept, busy, keepOff, onKeep, actions }: { p: RsP
       </div>
       <div className="find-result-acts">
         <button type="button" className="find-keep" data-testid="find-keep" data-kept={kept || undefined} aria-describedby={titleId}
-          disabled={kept || busy || keepOff} aria-busy={busy || undefined} onClick={onKeep}>
+          aria-disabled={inert || undefined} aria-busy={busy || undefined} onClick={() => { if (!inert) onKeep(); }}>
           {kept ? <><Check size={16} weight="bold" aria-hidden="true" />{t("find_kept")}</> : t("find_keep")}
         </button>
         <DropdownMenu modal={false}>
@@ -75,12 +80,12 @@ export function FindResult({ p, kept, busy, keepOff, onKeep, actions }: { p: RsP
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="find-menu" data-testid="find-menu">
-            <DropdownMenuItem data-testid="find-item-cite" onSelect={actions.cite}>{t("find_item_cite")}</DropdownMenuItem>
+            <DropdownMenuItem data-testid="find-item-cite" disabled={keepOff} onSelect={actions.cite}>{t("find_item_cite")}</DropdownMenuItem>
             {link && <DropdownMenuItem asChild><a href={link} target="_blank" rel="noopener noreferrer" data-testid="find-item-open">{t("find_item_open")}</a></DropdownMenuItem>}
             {p.oaUrl && <DropdownMenuItem asChild><a href={p.oaUrl} target="_blank" rel="noopener noreferrer" data-testid="find-item-pdf">{t("find_item_pdf")}</a></DropdownMenuItem>}
             {oaId && <DropdownMenuItem data-testid="find-item-connected" onSelect={actions.connected}>{t("find_item_connected")}</DropdownMenuItem>}
             <DropdownMenuItem data-testid="find-item-quick" onSelect={actions.quick}>{t("find_item_quick")}</DropdownMenuItem>
-            <DropdownMenuItem data-testid="find-item-read" onSelect={actions.read}>{t("find_item_read")}</DropdownMenuItem>
+            <DropdownMenuItem data-testid="find-item-read" disabled={keepOff} onSelect={actions.read}>{t("find_item_read")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

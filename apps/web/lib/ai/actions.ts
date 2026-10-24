@@ -247,46 +247,26 @@ export type QuickDeps = ResearchAiDeps & { toast(msg: string): void; apply(updat
 
 /**
  * rsQuickP (8172-8182) without its write: a trimmed abstract of at least QUICK_READ_MIN_CHARS characters once white space is removed, core's prompt
- * and options, the reply checked against that abstract by core's rsQuickCheck. Quiet, it toasts nothing (the ticked batch).
+ * and options, the reply checked against that abstract by core's rsQuickCheck. Each refusal toasts its v1 sentence.
  */
-async function quickOne(p: RsPaper, d: QuickDeps, quiet: boolean): Promise<RsQuick | null> {
+async function quickOne(p: RsPaper, d: QuickDeps): Promise<RsQuick | null> {
   const ab = String(p.abstract || "").trim();
-  if (ab.replace(/\s+/g, "").length < QUICK_READ_MIN_CHARS) { if (!quiet) d.toast(d.t("rs2_this_result_has_no")); return null; }
+  if (ab.replace(/\s+/g, "").length < QUICK_READ_MIN_CHARS) { d.toast(d.t("rs2_this_result_has_no")); return null; }
   try {
     const built = buildQuickReadPrompt(d.field, ab);
     const raw = await d.callAI(built.prompt, { temp: built.temp, max: built.max, noLang: built.noLang });
     const r = rsQuickCheck(raw, ab);
-    if (!r) { if (!quiet) d.toast(d.t("rs2_the_ai_reply_could")); return null; }
+    if (!r) { d.toast(d.t("rs2_the_ai_reply_could")); return null; }
     return r;
-  } catch (e) { if (!quiet) d.toast(aiMsg(e)); return null; }
+  } catch (e) { d.toast(aiMsg(e)); return null; }
 }
 
-/** A card's "⚡ Quick read" (rsQuick / rsQuickP 8171-8182): true once the paper carries its quick read. */
+/** A result's "Read the abstract with AI" (v1's card "⚡ Quick read", rsQuick / rsQuickP 8171-8182): true once the paper carries its reading. */
 export async function quickRead(p: RsPaper, d: QuickDeps): Promise<boolean> {
-  const r = await quickOne(p, d, false);
+  const r = await quickOne(p, d);
   if (!r) return false;
   d.apply([[p, r]]);
   return true;
-}
-
-/**
- * "⚡ Quick read the papers I ticked (up to 10)" (rsQuickChecked 8183-8190): the first 10 ticked papers one after another, quietly, with v1's
- * progress toast for each; the list is drawn again once at the end, then v1's count.
- */
-export async function quickReadTicked(ticked: RsPaper[], d: QuickDeps): Promise<void> {
-  if (!ticked.length) { d.toast(d.t("rs2_tick_some_papers_first")); return; }
-  const use = ticked.slice(0, 10);
-  let ok = 0;
-  const done: Array<readonly [RsPaper, RsQuick]> = [];
-  for (const [i, p] of use.entries()) {
-    // 'Quick read '+(use.indexOf(p)+1)+' of '+use.length+'…' (8187)
-    d.toast(d.t("rs2_quick_read_2") + " " + (i + 1) + " " + d.t("rs2_of", { useCount: use.length }));
-    const r = await quickOne(p, d, true);
-    if (r) { ok++; done.push([p, r]); }
-  }
-  d.apply(done);
-  // 'Quick read done for '+ok+' of '+use.length+(idx.length>10?' (the first 10 ticked)':'') (8189)
-  d.toast(d.t("rs2_quick_read_done_for", { ok }) + " " + use.length + (ticked.length > 10 ? " " + d.t("rs2_the_first_10_ticked") : ""));
 }
 
 /** What the literature review and the gap finder touch: the suggestion pane, the AI, the field and the copy. */
