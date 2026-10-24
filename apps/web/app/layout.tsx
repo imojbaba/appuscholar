@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Devanagari, Fraunces } from "next/font/google";
 import { getServerLang } from "@/lib/serverLang";
+import { ClientErrorListener } from "@/components/ClientErrorListener";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap" });
@@ -16,7 +17,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang} className={`${plex.variable} ${plexDev.variable} ${fraunces.variable}`}>
       <head>{nonce ? <meta property="csp-nonce" content={nonce} /> : null}</head>
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh"><ClientErrorListener />{children}</body>
     </html>
   );
 }

@@ -529,7 +529,10 @@ export const V2_STRINGS = {
   // Go-live Task 1: the per-user AI quota answer (hour: minutes to wait, rounded up; day: try tomorrow). DRAFT Hindi.
   ai_quota_day: { en: "You have used your AI calls for today. Try again tomorrow.", hi: "आपने आज के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। कल फिर कोशिश करें।" },
   ai_quota_hour: { en: "You have used your AI calls for this hour. Try again in {minutes} minutes.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। {minutes} मिनट बाद फिर कोशिश करें।" },
-  ai_quota_hour_one: { en: "You have used your AI calls for this hour. Try again in 1 minute.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। 1 मिनट बाद फिर कोशिश करें।" }
+  ai_quota_hour_one: { en: "You have used your AI calls for this hour. Try again in 1 minute.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। 1 मिनट बाद फिर कोशिश करें।" },
+  // Go-live Task 3: the panel shown when a page throws (app/global-error.tsx and app/(app)/error.tsx). DRAFT Hindi.
+  app_error_title: { en: "Something went wrong", hi: "कुछ गड़बड़ हो गई" },
+  app_error_retry: { en: "Try again", hi: "फिर कोशिश करें" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */
