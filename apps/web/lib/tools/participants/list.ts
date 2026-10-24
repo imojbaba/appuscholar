@@ -127,6 +127,56 @@ export function withdraw(l: ParticipantList, id: string, on: string, data: "remo
   return editPerson(l, id, { withdrawn: { on, data } });
 }
 
+/** Puts a person back as taking part: their withdrawal is removed altogether (no empty key is left behind). The code and everything else stay. A person who did not withdraw changes nothing. */
+export function unwithdraw(l: ParticipantList, id: string): ParticipantList {
+  if (!l.people.some((p) => p.id === id && p.withdrawn)) return l;
+  return {
+    ...l,
+    people: l.people.map((p) => {
+      if (p.id !== id) return p;
+      const { withdrawn: _gone, ...rest } = p;
+      return rest;
+    })
+  };
+}
+
+/** The who-they-are fields (and the made-up name) that can be cleared for everyone: the ones the plan can stop recording while values are still stored (C15). The name itself is the list's key and is not among them. */
+export type ClearableWho = "spellings" | "contact" | "roll" | "pseudonym";
+
+/**
+ * Clears one who-they-are field for everyone (C15 "Remove these values"): contact, roll and the made-up name are removed from each person; spellings are emptied, and so are the
+ * everyday marks that were only on a spelling (a mark on the name or on one of its words stays, since those are looked for as well). Nothing else changes, and `next` never does.
+ */
+export function clearWho(l: ParticipantList, field: ClearableWho): ParticipantList {
+  return {
+    ...l,
+    people: l.people.map((p) => {
+      if (field === "spellings") {
+        const own = new Set([normName(p.name), ...p.name.split(/\s+/).map(normName)]);
+        const spelt = new Set(p.spellings.map(normName));
+        return { ...p, spellings: [], everyday: p.everyday.filter((e) => own.has(normName(e)) || !spelt.has(normName(e))) };
+      }
+      if (!(field in p)) return p;
+      const rest: Participant = { ...p };
+      delete rest[field];
+      return rest;
+    })
+  };
+}
+
+/** Clears one about-them value for everyone (C15 "Remove these values"): `key` is a menu field's id or the label the student typed. Nothing else changes. */
+export function clearAbout(l: ParticipantList, key: string): ParticipantList {
+  return {
+    ...l,
+    people: l.people.map((p) => {
+      if (!p.about || !(key in p.about)) return p;
+      const about = { ...p.about };
+      delete about[key];
+      return { ...p, about };
+    })
+  };
+}
+
 /** Destroys the list (C7): nobody, no "not names", only the next code number (so a code is never used again) and the date. Anything else the list held is gone. */
 export function destroyList(l: ParticipantList, now: string): ParticipantList {
   return { v: 1, next: l.next, people: [], notNames: [], destroyedAt: now };

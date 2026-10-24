@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addPeople } from "../lib/tools/participants/list";
+import { addPeople, listCsv } from "../lib/tools/participants/list";
 import { emptyList } from "../lib/blobs/kinds/participants";
 import { parsePaste, pasteSummary } from "../lib/tools/participants/paste";
 import { DICTS, tFormat } from "../lib/i18n";
@@ -135,5 +135,54 @@ describe("pasteSummary: the sentence after Paste a list", () => {
     expect(pasteSummary(t, again.added, again.skipped, parsed)).toBe(
       "Nobody was added. Skipped 12 already on your list: PersonA, PersonB, PersonC, PersonD, PersonE, PersonF, PersonG, PersonH, PersonI, PersonJ and 2 more."
     );
+  });
+});
+
+// ---- Task 8 (R25a): the list's own CSV is read back with its other spellings -----------------------------------------------------------------------------
+
+describe("parsePaste: the list's own download (Download the list → Paste a list)", () => {
+  const TODAY = "2026-10-24";
+  const built = () => addPeople(emptyList(), [
+    { name: "Priya Sharma", spellings: ["Priya", "प्रिया"] },
+    { name: "Rahul Verma", spellings: [] },
+    { name: "Sharma, Asha", spellings: ["Asha", "Sharma, A.", 'Say "Ashu"'] },
+    { name: "Mohd. Imran", spellings: ["Imran"] }
+  ], TODAY).list;
+
+  it("reads the Other spellings column, joined with '; ', beside the code and the name", () => {
+    const csv = "ParticipantCode,Name,Other spellings,Joined\nP001,Priya Sharma,Priya; प्रिया,2026-10-02\nP002,Rahul Verma,,2026-10-02\n";
+    expect(parsePaste(csv)).toEqual([
+      { name: "Priya Sharma", spellings: ["Priya", "प्रिया"], code: "P001" },
+      { name: "Rahul Verma", spellings: [], code: "P002" }
+    ]);
+  });
+
+  it("finds the spellings column by its heading wherever it is, in any case, and reads a file with no such column as a key file (no spellings, as before)", () => {
+    expect(parsePaste("ParticipantCode,Name,Joined,OTHER SPELLINGS\nP005,Kiran Rao,2026-10-02,Kiran;K. Rao")).toEqual([{ name: "Kiran Rao", spellings: ["Kiran", "K. Rao"], code: "P005" }]);
+    expect(parsePaste("ParticipantCode,Name,Score\nP005,Kiran Rao,7")).toEqual([{ name: "Kiran Rao", spellings: [], code: "P005" }]);
+  });
+
+  it("round trip: download, paste into an empty list, and the codes, names and spellings are the same", () => {
+    const src = built();
+    const csv = listCsv(src, ["age"]);
+    const back = addPeople(emptyList(), parsePaste("\uFEFF" + csv), TODAY);
+    expect(back.skipped).toEqual([]);
+    expect(back.list.people.map((p) => p.code)).toEqual(src.people.map((p) => p.code));
+    expect(back.list.people.map((p) => p.name)).toEqual(src.people.map((p) => p.name));
+    expect(back.list.people.map((p) => p.spellings)).toEqual(src.people.map((p) => p.spellings));
+    expect(back.list.next).toBe(src.next);
+  });
+
+  it("round trip with the list's own tab/CRLF forms: the same text through a spreadsheet's line ends", () => {
+    const src = built();
+    const back = addPeople(emptyList(), parsePaste(listCsv(src, []).replace(/\n/g, "\r\n")), TODAY);
+    expect(back.list.people.map((p) => [p.code, p.name, p.spellings])).toEqual(src.people.map((p) => [p.code, p.name, p.spellings]));
+  });
+
+  it("pasting the download into the same list adds nobody: every name is already there", () => {
+    const src = built();
+    const r = addPeople(src, parsePaste(listCsv(src, [])), TODAY);
+    expect(r.added).toEqual([]);
+    expect(r.skipped).toHaveLength(4);
   });
 });

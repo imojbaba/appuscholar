@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { RECORD_FIELDS, codeOf, normName } from "@appuscholar/core";
 import { emptyList, type Participant, type ParticipantList } from "../lib/blobs/kinds/participants";
 import {
-  addNotName, addPeople, addPerson, characteristicsTable, consentComplete, destroyList, editPerson, isMinor, listCsv, nextCode, suggestedShortName, toMatchPeople, withdraw
+  addNotName, addPeople, addPerson, characteristicsTable, clearAbout, clearWho, consentComplete, destroyList, editPerson, isMinor, listCsv, nextCode, suggestedShortName, toMatchPeople,
+  unwithdraw, withdraw
 } from "../lib/tools/participants/list";
+import { listFileName } from "../lib/tools/participants/file";
+import { planDrift, planOf } from "../lib/tools/participants/plan";
 
 /*
  * Task 5: the participant list's pure operations (spec 2026-10-24-participants-design.md §5 and §6, calls C2, C7 and C16, rulings R6 and R17).
@@ -476,5 +479,131 @@ describe("the module's codes use core's codeOf", () => {
   it("P + three digits", () => {
     expect(codeOf(1)).toBe("P001");
     expect(add(emptyList(), "A B").person.code).toBe(codeOf(1));
+  });
+});
+
+// ---- Task 8: undo a withdrawal, clear a field for everyone, the plan's drift, the file's name ---------------------------------------------------------------
+
+describe("unwithdraw (a withdrawn person can be put back in Edit)", () => {
+  const base = withdraw(addPeople(emptyList(), [{ name: "Priya Sharma", spellings: ["Priya"] }, { name: "Imran Khan", spellings: [] }], TODAY).list, "x", "2026-10-20", "remove");
+  const l = withdraw(base, base.people[0]!.id, "2026-10-20", "keep");
+
+  it("removes the withdrawal altogether (no empty key is left), keeps the code and everything else, and touches nobody else", () => {
+    const back = unwithdraw(l, l.people[0]!.id);
+    expect(back.people[0]).toMatchObject({ code: "P001", name: "Priya Sharma", spellings: ["Priya"] });
+    expect("withdrawn" in back.people[0]!).toBe(false);
+    expect(back.people[1]).toBe(l.people[1]);
+    expect(back.next).toBe(l.next);
+  });
+
+  it("an id that is not on the list, or a person who did not withdraw, changes nothing", () => {
+    expect(unwithdraw(l, "nobody")).toBe(l);
+    expect(unwithdraw(l, l.people[1]!.id)).toBe(l);
+  });
+});
+
+describe("clearWho and clearAbout (Remove these values, C15)", () => {
+  const list = (): ParticipantList => {
+    let l = add(emptyList(), "Priya Sharma", { spellings: ["Priya", "Sharma"], everyday: ["Priya", "Asha"], contact: "p@example.org", roll: "17", pseudonym: "Meera", about: { age: "21", course: "MA" } }).list;
+    l = add(l, "Asha", { spellings: ["Ashu"], everyday: ["Asha"], contact: "98", about: { age: "30" } }).list;
+    l = add(l, "Imran Khan", { about: {} }).list;
+    return l;
+  };
+
+  it("clears contact, roll and the made-up name for everyone, and nothing else", () => {
+    for (const f of ["contact", "roll", "pseudonym"] as const) {
+      const c = clearWho(list(), f);
+      for (const p of c.people) expect(f in p, f + " " + p.code).toBe(false);
+      expect(c.people.map((p) => p.name)).toEqual(["Priya Sharma", "Asha", "Imran Khan"]);
+      expect(c.people[0]!.about).toEqual({ age: "21", course: "MA" });
+    }
+    expect(clearWho(list(), "contact").people[0]!.roll).toBe("17");
+    expect(clearWho(list(), "roll").people[0]!.contact).toBe("p@example.org");
+  });
+
+  it("clearing spellings empties them and drops the everyday marks that were only on a spelling (a mark on the name or one of its words stays)", () => {
+    const c = clearWho(list(), "spellings");
+    expect(c.people.map((p) => p.spellings)).toEqual([[], [], []]);
+    // Priya was a spelling and the first word of the name: it stays marked, as the name's word is looked for. Asha is the name of the second person. "Asha" was not on the first person's name or spellings.
+    expect(c.people[0]!.everyday).toEqual(["Priya", "Asha"]);
+    expect(c.people[1]!.everyday).toEqual(["Asha"]);
+  });
+
+  it("clears one about-them key, by id or by the student's label, and leaves the others", () => {
+    const c = clearAbout(list(), "age");
+    expect(c.people.map((p) => p.about)).toEqual([{ course: "MA" }, {}, {}]);
+    expect(clearAbout(list(), "course").people[0]!.about).toEqual({ age: "21" });
+  });
+
+  it("returns a new list and leaves the one it was given alone; the counter and the other fields are not touched", () => {
+    const l = list();
+    const before = JSON.stringify(l);
+    const c = clearWho(clearAbout(l, "age"), "contact");
+    expect(JSON.stringify(l)).toBe(before);
+    expect(c.next).toBe(l.next);
+    expect(c.people.map((p) => p.code)).toEqual(["P001", "P002", "P003"]);
+  });
+});
+
+describe("planDrift (C15: what is still stored that the plan no longer records)", () => {
+  const people = (): ParticipantList => {
+    let l = add(emptyList(), "Priya Sharma", { spellings: ["Priya"], contact: "98", roll: "17", pseudonym: "Meera", about: { age: "14", course: "MA", "Hostel block": "B" } }).list;
+    l = add(l, "Imran Khan", { contact: "97", about: { age: "15", course: "" } }).list;
+    l = add(l, "Asha Rao", { contact: "  ", about: { course: "BA" } }).list;
+    return l;
+  };
+  const codesPlan = (record: string[], recordOther: string[] = []) => planOf({ idMode: "codes", record, recordOther, minors: "no" });
+
+  it("one item for each field the plan does not tick that someone has a value in, with how many people", () => {
+    const d = planDrift(people(), codesPlan(["name", "spellings", "age"]));
+    expect(d).toEqual([
+      { kind: "who", id: "contact", n: 2 }, { kind: "who", id: "roll", n: 1 }, { kind: "who", id: "pseudonym", n: 1 },
+      { kind: "about", key: "course", n: 2 }, { kind: "about", key: "Hostel block", n: 1 }
+    ]);
+  });
+
+  it("a field the plan ticks is not drift, and neither are blank values", () => {
+    const d = planDrift(people(), codesPlan(["name", "spellings", "contact", "roll", "age", "course"], ["Hostel block"]));
+    expect(d).toEqual([{ kind: "who", id: "pseudonym", n: 1 }]);
+  });
+
+  it("spellings are drift when the plan does not tick them; the made-up name is not when the plan is made-up names", () => {
+    expect(planDrift(people(), codesPlan(["name", "contact", "roll", "age", "course"], ["Hostel block"]))).toEqual([{ kind: "who", id: "spellings", n: 1 }, { kind: "who", id: "pseudonym", n: 1 }]);
+    const made = planOf({ idMode: "pseudonyms", record: ["name", "spellings", "contact", "roll", "age", "course"], recordOther: ["Hostel block"], minors: "no" });
+    expect(planDrift(people(), made)).toEqual([]);
+  });
+
+  it("an unanswered plan, an unread one and an anonymous one have no drift lines (the anonymous note is its own)", () => {
+    expect(planDrift(people(), planOf(null))).toEqual([]);
+    expect(planDrift(people(), planOf({ record: ["name"] }))).toEqual([]);
+    expect(planDrift(people(), planOf(null, true))).toEqual([]);
+    expect(planDrift(people(), planOf({ idMode: "anonymous", record: ["age"] }))).toEqual([]);
+  });
+
+  it("nothing on an empty list", () => {
+    expect(planDrift(emptyList(), codesPlan(["name"]))).toEqual([]);
+  });
+});
+
+describe("listFileName (Download the list)", () => {
+  it("is participant-list-<the project's title>.csv", () => {
+    expect(listFileName("Class 9 study")).toBe("participant-list-Class 9 study.csv");
+    expect(listFileName("Sleep-and-exams 2026")).toBe("participant-list-Sleep-and-exams 2026.csv");
+  });
+
+  it("keeps letters (any script) and digits, spaces and hyphens, drops the rest, trims, and keeps one space between words", () => {
+    expect(listFileName('  Study: "pilot" / 2026?  ')).toBe("participant-list-Study pilot 2026.csv");
+    expect(listFileName("../../etc/passwd")).toBe("participant-list-etcpasswd.csv");
+    expect(listFileName("छात्र अध्ययन")).toBe("participant-list-छात्र अध्ययन.csv");
+    expect(listFileName("a_b.c")).toBe("participant-list-abc.csv");
+  });
+
+  it("an empty result is 'project'", () => {
+    expect(listFileName("")).toBe("participant-list-project.csv");
+    expect(listFileName("  ?*/\\: ")).toBe("participant-list-project.csv");
+  });
+
+  it("a very long title is cut", () => {
+    expect(listFileName("x".repeat(300)).length).toBeLessThan(120);
   });
 });

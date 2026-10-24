@@ -52,6 +52,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: h.status, ensureUnlocked: h.ensure }) }));
 vi.mock("@/components/workspace/dialogs/VaultSetup", () => ({ openVaultSetup: () => h.setup() }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1", title: "Class 9 study", titleKeyVersion: 0 }, projectId: "p1" }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1/collect/participants" }));
 
 import { Panel } from "../components/tools/participants/Panel";
@@ -202,7 +203,7 @@ describe("the mockup's five people", () => {
     expect(stored().people.map((p) => p.code)).toContain("P002");
   });
 
-  it("marks a spelling that is also an everyday word, and greys a withdrawn person's row with a tag instead of Edit", async () => {
+  it("marks a spelling that is also an everyday word, and greys a withdrawn person's row with a tag; the row keeps Edit (Withdraw and undoing it live in the form, Task 8)", async () => {
     seed(PLAN);
     await mount();
     expect($("pp-row-P003")!.textContent).toContain("Asha · also an everyday word: asked before replacing");
@@ -210,7 +211,7 @@ describe("the mockup's five people", () => {
     expect($("pp-row-P004")!.getAttribute("data-withdrawn")).toBe("true");
     expect($("pp-row-P001")!.getAttribute("data-withdrawn")).toBeNull();
     expect($("pp-row-P004")!.textContent).toContain("Withdrew 15/10/2026 · remove their data");
-    expect($("pp-edit-P004")).toBeNull();
+    expect($("pp-edit-P004")).not.toBeNull();
     expect($("pp-edit-P001")).not.toBeNull();
   });
 
@@ -713,8 +714,8 @@ describe("the vault and the other states", () => {
     expect(written()).toEqual([]);
   });
 
-  it("an anonymous plan: the whole tab is one line and the link; no list, no buttons", async () => {
-    seed({ idMode: "anonymous", record: ["age"], minors: "no" }, list());
+  it("an anonymous plan with nobody on the list: the whole tab is one line and the link; no list, no buttons (with people it shows the list, Task 8)", async () => {
+    seed({ idMode: "anonymous", record: ["age"], minors: "no" }, list([]));
     await mount();
     expect(text("pp-anonymous")).toBe("Your plan says this study is anonymous, so no list is kept. If that changes, change it in Design and ethics.");
     const link = $("pp-anonymous")!.querySelector("a")!;

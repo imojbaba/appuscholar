@@ -1,8 +1,8 @@
 import { RECORD_FIELDS, type IdMode } from "@appuscholar/core";
 import type { DesignEc } from "@/lib/blobs/kinds/design";
 import { placeHref } from "@/lib/frame/places";
-import type { Participant } from "@/lib/blobs/kinds/participants";
-import { isMinor, ageOf } from "./list";
+import type { Participant, ParticipantList } from "@/lib/blobs/kinds/participants";
+import { isMinor, ageOf, type ClearableWho } from "./list";
 
 /*
  * What the tab reads of the student's identification plan (spec 2026-10-24-participants-design.md §4 and §5, call C8), from the `design_ec` blob: how participants are known (`idMode`),
@@ -89,3 +89,41 @@ export function consentWarned(p: Participant, plan: ParticipantsPlan): boolean {
 
 /** The Ethics tab, where the plan is answered and changed (Design and ethics → Ethics). */
 export const ethicsHref = (projectId: string): string => placeHref(projectId, "design", "ethics");
+
+/** A field the plan no longer records that still has values on the list: a who-they-are field (or the made-up name), or an about-them key (a menu field's id, or a label the student typed). */
+export type DriftItem = ({ kind: "who"; id: ClearableWho } | { kind: "about"; key: string }) & {
+  /** How many people have a value in it. */
+  n: number;
+};
+/** The test id and the identity of a drift item: the field's id or the student's label. */
+export const driftKey = (d: DriftItem): string => (d.kind === "who" ? d.id : d.key);
+
+const filled = (v: string | undefined): boolean => (v ?? "").trim() !== "";
+
+/**
+ * What is still stored that the plan no longer records (C15: plan changes never delete): a who-they-are field the plan does not tick (other spellings, contact, roll), the made-up name when
+ * the plan is not made-up names, and an about-them value under a key the plan does not list, each with how many people hold it. Menu order first, then the student's own labels in the
+ * order they turn up. Only for a plan that was answered with codes or made-up names: an unanswered or unread plan has not said what it records, and an anonymous one has its own note, so
+ * none of them invites a clean-up. Blank values are not stored values.
+ */
+export function planDrift(l: ParticipantList, plan: ParticipantsPlan): DriftItem[] {
+  if (plan.unread || (plan.mode !== "codes" && plan.mode !== "pseudonyms")) return [];
+  const out: DriftItem[] = [];
+  const count = (has: (p: Participant) => boolean) => l.people.filter(has).length;
+  const who: Array<[ClearableWho, boolean, (p: Participant) => boolean]> = [
+    ["spellings", plan.spellings, (p) => p.spellings.some(filled)],
+    ["contact", plan.contact, (p) => filled(p.contact)],
+    ["roll", plan.roll, (p) => filled(p.roll)],
+    ["pseudonym", plan.pseudonyms, (p) => filled(p.pseudonym)]
+  ];
+  for (const [id, recorded, has] of who) {
+    const n = recorded ? 0 : count(has);
+    if (n > 0) out.push({ kind: "who", id, n });
+  }
+  const seen: string[] = [];
+  for (const p of l.people) for (const [k, v] of Object.entries(p.about ?? {})) if (filled(v) && !plan.aboutKeys.includes(k) && !seen.includes(k)) seen.push(k);
+  const arrival = [...seen];
+  const order = (k: string) => { const i = ABOUT_IDS.indexOf(k); return i < 0 ? ABOUT_IDS.length + arrival.indexOf(k) : i; };
+  for (const key of [...seen].sort((a, b) => order(a) - order(b))) out.push({ kind: "about", key, n: count((p) => filled(p.about?.[key])) });
+  return out;
+}

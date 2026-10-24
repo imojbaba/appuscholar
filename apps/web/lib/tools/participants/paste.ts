@@ -7,12 +7,17 @@ import type { PastedPerson, SkippedPerson } from "./list";
  * name or a code already used). One person per line; the first cell is the name and the cells after it are other spellings (so "the text after the first comma"), and a tab splits cells
  * as a comma does, so a list pasted from a spreadsheet reads the same. A key file is read with its codes kept: v1's key file (Statistics' appuscholar_key_keep_separate.csv) starts with
  * the heading ParticipantCode and each line after it is the code and then the name (its later cells are other coded columns of the data, not spellings, so they are not read); without
- * that heading, a line that starts with a code (P and one to six digits, any case) is read the same way, with the cells after the name as spellings. Blank lines are skipped, and so
- * is a line with no name. Quotes around a cell are removed and a comma inside quotes stays in the cell.
+ * that heading, a line that starts with a code (P and one to six digits, any case) is read the same way, with the cells after the name as spellings. The list's own download ("Download the
+ * list", list.ts listCsv, R25a) is such a file whose heading row also has an "Other spellings" column: the spellings in that column are read, joined with "; " as listCsv joins them, so
+ * the download pastes back with its codes, names and spellings (the rest of its columns are not read: a pasted person joins today, with consent left for the student). Blank lines are
+ * skipped, and so is a line with no name. Quotes around a cell are removed and a comma inside quotes stays in the cell.
  */
 
 /** A participant code as a line may start with it (the same shape list.ts keeps: P and one to six digits). */
 const CODE = /^P\d{1,6}$/i;
+/** The heading of the list's own spellings column (list.ts listCsv), and what joins the spellings in one cell. */
+const SPELLINGS_HEADING = "other spellings";
+const SPELLINGS_JOIN = ";";
 
 /** The cells of one line: split on commas and tabs outside double quotes, trimmed, the quotes around a cell removed (a doubled quote inside quotes is one quote). */
 function cellsOf(line: string): string[] {
@@ -37,13 +42,17 @@ function cellsOf(line: string): string[] {
 export function parsePaste(text: string): PastedPerson[] {
   const rows = text.replace(/^﻿/, "").split(/\r\n|\r|\n/).filter((l) => l.trim() !== "").map(cellsOf);
   const keyFile = rows.length > 0 && rows[0]![0]!.toLowerCase() === "participantcode";
+  // The list's own download names its spellings column; any other key file has none, and its later cells are not spellings.
+  const spellingsAt = keyFile ? rows[0]!.findIndex((c) => c.toLowerCase() === SPELLINGS_HEADING) : -1;
   const out: PastedPerson[] = [];
   rows.forEach((row, i) => {
     if (keyFile && i === 0) return;
     const coded = keyFile || CODE.test(row[0]!);
     const name = coded ? (row[1] ?? "") : row[0]!;
     if (!name) return;
-    const spellings = keyFile ? [] : row.slice(coded ? 2 : 1).filter(Boolean);
+    const spellings = keyFile
+      ? (spellingsAt > 1 ? (row[spellingsAt] ?? "").split(SPELLINGS_JOIN).map((w) => w.trim()).filter(Boolean) : [])
+      : row.slice(coded ? 2 : 1).filter(Boolean);
     const code = coded && row[0] ? row[0].toUpperCase() : undefined;
     out.push({ name, spellings, ...(code ? { code } : {}) });
   });

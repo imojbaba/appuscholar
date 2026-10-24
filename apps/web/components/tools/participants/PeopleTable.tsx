@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 /*
  * The list as a table (spec 2026-10-24-participants-design.md §5 item 4; the mockup participants-tab.html): Code, Name and other spellings (the spellings small under the name, a
  * spelling that is also an everyday word marked so), Joined; a Consent group (How, and when the minors answer is yes or unsure: Under 18, Parent's permission, Own agreement); Contact
- * and Roll when ticked; Made-up name in made-up names mode; an About-them group with only the ticked fields; and Edit, or a tag for a person who withdrew (their row is greyed). A person
+ * and Roll when ticked; Made-up name in made-up names mode; an About-them group with only the ticked fields; and Edit, with a tag for a person who withdrew (their row is greyed, and Edit
+ * stays: Withdraw, and undoing it, are in the Edit form, ruling R25b). A person
  * under 18 without the parent's permission or their own agreement shows the amber "consent not complete" in the last consent cell: it warns, it never blocks.
  * The table scrolls sideways inside its own box, so a phone's page never does. The box is `relative`: the screen-reader-only caption and heading are absolutely positioned, and one whose
  * containing block is outside the box escapes its clipping and widens the page (seen at 375 px).
@@ -113,13 +114,14 @@ export function PeopleTable({ people, plan, labels, onEdit }: {
                 {who.map((w, i) => <td key={w} className={TD + (i === 0 ? " " + lead : "")}>{w === "contact" ? p.contact : w === "roll" ? p.roll : p.pseudonym}</td>)}
                 {plan.aboutKeys.map((k, i) => <td key={k} className={TD + (i === 0 ? " " + lead : "")}>{p.about?.[k] ?? ""}</td>)}
                 <td className={TD + " " + lead}>
-                  {p.withdrawn ? (
-                    <span className="whitespace-nowrap rounded-md bg-chip px-1.5 py-px text-[11.5px] font-semibold text-muted-foreground">
-                      {t(p.withdrawn.data === "remove" ? "pp_withdrew_remove" : "pp_withdrew_keep", { date: dmy(p.withdrawn.on) })}
-                    </span>
-                  ) : (
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    {p.withdrawn && (
+                      <span className="whitespace-nowrap rounded-md bg-chip px-1.5 py-px text-[11.5px] font-semibold text-muted-foreground">
+                        {t(p.withdrawn.data === "remove" ? "pp_withdrew_remove" : "pp_withdrew_keep", { date: dmy(p.withdrawn.on) })}
+                      </span>
+                    )}
                     <Button type="button" variant="link" size="xs" className="h-auto p-0 text-accent-ink" data-testid={"pp-edit-" + p.code} aria-label={t("pp_edit_aria", { code: p.code })} onClick={() => onEdit(p.id)}>{t("pp_edit")}</Button>
-                  )}
+                  </div>
                 </td>
               </tr>
             );

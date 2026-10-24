@@ -5,8 +5,8 @@ import { Lock, Plus } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import type { Participant, ParticipantList } from "@/lib/blobs/kinds/participants";
 import { useDesign } from "@/lib/tools/design/useDesign";
-import { todayIso } from "@/lib/tools/participants/dates";
-import { addPeople, addPerson, editPerson, nextCode, type NewPerson } from "@/lib/tools/participants/list";
+import { dmy, todayIso } from "@/lib/tools/participants/dates";
+import { addPeople, addPerson, editPerson, nextCode, unwithdraw, withdraw, type NewPerson } from "@/lib/tools/participants/list";
 import { parsePaste, pasteSummary } from "@/lib/tools/participants/paste";
 import { consentWarned, ethicsHref, planOf, type ParticipantsPlan } from "@/lib/tools/participants/plan";
 import { useParticipants } from "@/lib/tools/participants/useParticipants";
@@ -14,19 +14,21 @@ import { useVault } from "@/lib/vault/useVault";
 import { openVaultSetup } from "@/components/workspace/dialogs/VaultSetup";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { Button } from "@/components/ui/button";
+import { Actions, PlanNotes } from "./Actions";
 import { PasteList } from "./PasteList";
 import { PeopleTable } from "./PeopleTable";
-import { PersonForm, type PersonValues } from "./PersonForm";
+import { PersonForm, type PersonValues, type Withdrawal } from "./PersonForm";
 
 /**
  * Collection and analysis → Participants (spec 2026-10-24-participants-design.md §5; the mockup participants-tab.html; calls C1, C2, C8 and C16; rulings R20, R21 and R24): the student's
  * sealed list of the people in the study. Top to bottom: the heading and the sealed pill, the plan line (read from the Ethics tab's `design_ec`; an unanswered plan says so and does not block,
- * C8), the count line (it warns, it never blocks), the table, and the buttons Add a person and Paste a list, with their form below. This task does the list, add, edit and paste; withdraw,
- * copy, download, destroy and the notes for a plan that has moved on come with Task 8, finding names in documents with Task 9.
+ * C8), the notes for a plan that has moved on (C15), the count line (it warns, it never blocks), the table, and the buttons Add a person and Paste a list, with their form below, then Copy,
+ * Download, Destroy and the highlight switch (Actions.tsx). Withdraw, and undoing it, are in the Edit form (R25b). Finding names in documents comes with Task 9.
  *
  * Only the list's own states draw anything else, and each draws its line and nothing from the list: the vault off ("Set up your vault first"), locked ("Unlock to see your participants";
  * the header's vault pill unlocks, as it does for every tab), a list that does not open on this device (R21: there is no way to replace it from here), a failed read (R20: Try again), and an
- * anonymous plan (one line and a link: no list is kept). A save that did not land keeps the list shown with "Not saved yet" (R24). The page's state is dropped when the vault locks: the
+ * anonymous plan with nobody on the list (one line and a link: no list is kept; with people on it the tab shows the list with a note to destroy it or change the plan back, C15, and Add and
+ * Paste are not offered). A save that did not land keeps the list shown with "Not saved yet" (R24). The page's state is dropped when the vault locks: the
  * names, a half-typed form and the pasted text go with it. Names are in the page for the student and nowhere else: no toast, no console line, no address, no browser dialog.
  */
 
@@ -72,7 +74,7 @@ function PlanLine({ plan, href }: { plan: ParticipantsPlan; href: string }) {
   return (
     <div className="my-3 rounded-[10px] border border-line bg-soft px-3 py-2.5 text-[13.5px]" data-testid="pp-plan">
       <b className="text-purple-800">{t("pp_plan_head")}</b> {t("pp_plan_src")}:{" "}
-      {plan.unread ? t("pp_plan_unread") : plan.mode === null ? t("pp_plan_unanswered") : (
+      {plan.unread ? t("pp_plan_unread") : plan.mode === null ? t("pp_plan_unanswered") : plan.mode === "anonymous" ? t("pp_plan_mode_anonymous") : (
         <>
           {t("pp_plan_mode_" + plan.mode)} {t("pp_plan_record", { who, about: about ? t("pp_plan_about", { fields: about }) : "" })}
           {plan.minorsOn ? " " + t("pp_plan_minors") : ""}
@@ -129,14 +131,17 @@ function Tab({ list, plan, href, saveFailed, readOnly, save }: {
   const openPaste = () => { setStatus(""); setPasteResult(""); setForm(null); setPasting(true); };
   const closeForm = (to: string) => { refocus.current = to; setForm(null); setFormError(""); };
 
-  const saveForm = (v: PersonValues) => {
+  /** `withdrawal`: absent leaves the person's withdrawal as it is (Save), an object records it (Withdraw), null removes it (Undo). The form's other fields are saved with it. */
+  const saveForm = (v: PersonValues, withdrawal?: Withdrawal | null) => {
     if (editing) {
       const id = editing.id;
       if (!save((prev) => {
         const cur = prev.people.find((p) => p.id === id);
-        return cur ? editPerson(prev, id, patchOf(v, cur)) : prev;
+        if (!cur) return prev;
+        const next = editPerson(prev, id, patchOf(v, cur));
+        return withdrawal === null ? unwithdraw(next, id) : withdrawal ? withdraw(next, id, withdrawal.on, withdrawal.data) : next;
       })) { setFormError(refused()); return; }
-      setStatus(t("pp_saved", { code: editing.code }));
+      setStatus(t(withdrawal === null ? "pp_unwithdraw_done" : withdrawal ? "pp_withdraw_done" : "pp_saved", { code: editing.code }));
       closeForm("pp-edit-" + editing.code);
       return;
     }
@@ -181,7 +186,11 @@ function Tab({ list, plan, href, saveFailed, readOnly, save }: {
         </span>
       </div>
       <PlanLine plan={plan} href={href} />
+      <PlanNotes list={list} plan={plan} save={save} refused={refused} onCleared={(m) => { setStatus(m); setPasteResult(""); }} />
       {saveFailed && <p className="ap-banner" role="status" data-testid="pp-save-failed">{t("pp_save_failed")}</p>}
+      {list.destroyedAt && people.length === 0 && (
+        <p className="note" role="status" data-testid="pp-destroyed">{t("pp_destroyed", { date: dmy(list.destroyedAt), code: nextCode(list) })}</p>
+      )}
       {people.length === 0 ? (
         <p className="desc" data-testid="pp-empty">{t("pp_empty")}</p>
       ) : (
@@ -193,10 +202,15 @@ function Tab({ list, plan, href, saveFailed, readOnly, save }: {
           {plan.aboutKeys.length > 0 && <p className="mb-0 mt-1.5 text-xs text-muted-foreground" data-testid="pp-about-note">{t("pp_about_note")}</p>}
         </>
       )}
-      <div className="my-3 flex flex-wrap gap-2">
-        <Button type="button" variant="primary" size="sm" data-testid="pp-add" onClick={openAdd}><Plus aria-hidden="true" />{t("pp_add")}</Button>
-        <Button type="button" variant="ghost" size="sm" data-testid="pp-paste" onClick={openPaste}>{t("pp_paste")}</Button>
-      </div>
+      {plan.mode !== "anonymous" && (
+        <div className="my-3 flex flex-wrap gap-2">
+          <Button type="button" variant="primary" size="sm" data-testid="pp-add" onClick={openAdd}><Plus aria-hidden="true" />{t("pp_add")}</Button>
+          <Button type="button" variant="ghost" size="sm" data-testid="pp-paste" onClick={openPaste}>{t("pp_paste")}</Button>
+        </div>
+      )}
+      {people.length > 0 && (
+        <Actions list={list} plan={plan} labels={labels} save={save} refused={refused} onDestroyed={() => { refocus.current = "pp-add"; setStatus(""); setPasteResult(""); setForm(null); setPasting(false); }} />
+      )}
       {form !== null && (editing !== null || form === "") && (
         <PersonForm
           key={form}
@@ -234,13 +248,17 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   let body: React.ReactNode;
   if (projectId === "") {
     body = <p className="note" role="status" data-testid="pp-no-project">{t("pp_no_project")}</p>;
-  } else if (plan.mode === "anonymous") {
-    // Spec §5: the whole tab is one line. (A list that is stored under an anonymous plan, C15, is Task 8's note.)
+  } else if (plan.mode === "anonymous" && (people.state === "off" || (people.state === "ready" && people.list !== null && people.list.people.length === 0))) {
+    // Spec §5: the whole tab is one line. A list that is still stored under an anonymous plan (people on it) shows as the tab, with the note (C15); a list that is still being read, that
+    // cannot be read or that does not open says so, as it does for any plan, and is not taken for an empty one.
     const [before, after] = t("pp_anonymous").split("{link}");
     body = (
-      <p className="note" data-testid="pp-anonymous">
-        {before}<Link href={href} className="text-accent-ink underline" data-testid="pp-anonymous-link">{t("pp_anonymous_link")}</Link>{after}
-      </p>
+      <>
+        <p className="note" data-testid="pp-anonymous">
+          {before}<Link href={href} className="text-accent-ink underline" data-testid="pp-anonymous-link">{t("pp_anonymous_link")}</Link>{after}
+        </p>
+        {people.list?.destroyedAt && <p className="note" role="status" data-testid="pp-destroyed">{t("pp_destroyed_short", { date: dmy(people.list.destroyedAt) })}</p>}
+      </>
     );
   } else if (people.state === "loading" || (people.state === "off" && ec.loading)) {
     body = <PanelLoading testId="pp-loading" />;

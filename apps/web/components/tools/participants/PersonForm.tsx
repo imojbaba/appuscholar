@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { isEverydayName, normName } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import type { Participant } from "@/lib/blobs/kinds/participants";
+import { dmy } from "@/lib/tools/participants/dates";
 import { suggestedShortName } from "@/lib/tools/participants/list";
 import type { ParticipantsPlan } from "@/lib/tools/participants/plan";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,10 @@ import { Button } from "@/components/ui/button";
  * types there, and each spelling can be marked "also an everyday word" (pre-marked when it is on the built-in list, §7.4). The form says nothing is saved; the tab saves what it gives.
  *
  * What the form gives back leaves out a field it did not show: absent is "leave as it is", "" is "shown and emptied", so an Edit never wipes a value of a field the plan no longer records (C15).
+ *
+ * Edit also holds the person's withdrawal (spec §5 "Withdraw", ruling R25b): a date that starts as today, "Remove their data" or "Keep what was collected" (the consent form says which the
+ * student may do, and the form says to check it), and, for a person who withdrew, a way to undo it. Withdraw, Save the withdrawal and Undo save what is in the form along with it, so nothing
+ * typed is lost; the tab does the saving, as it does for Save.
  */
 
 export type PersonValues = {
@@ -33,7 +38,11 @@ export type PersonValues = {
   about: Record<string, string>;
 };
 
+/** A withdrawal: the day (yyyy-mm-dd) and whether the person's data is removed or kept. */
+export type Withdrawal = { on: string; data: "remove" | "keep" };
+
 const HOWS = ["written", "online", "verbal", "waived"] as const;
+const DATA = ["remove", "keep"] as const;
 const same = (a: string, b: string) => normName(a) === normName(b);
 
 /** The words typed in the spellings box: split on commas, trimmed, none blank, each once. */
@@ -58,7 +67,8 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
   today: string;
   /** A line the tab asks the form to show (the save did not go through). */
   error: string;
-  onSave(v: PersonValues): void;
+  /** `withdrawal` is absent for Save (the person's withdrawal stays as it is), a withdrawal for Withdraw, and null for Undo. */
+  onSave(v: PersonValues, withdrawal?: Withdrawal | null): void;
   onCancel(): void;
 }) {
   const t = useT();
@@ -79,6 +89,8 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
   // The student's own ticks of "also an everyday word", by the spelling's normal form; a spelling not ticked or unticked here follows the default.
   const [marks, setMarks] = useState<Record<string, boolean>>({});
   const [missing, setMissing] = useState(false);
+  const [wOn, setWOn] = useState(person?.withdrawn?.on ?? today);
+  const [wData, setWData] = useState<"remove" | "keep">(person?.withdrawn?.data ?? "remove");
 
   useEffect(() => { nameRef.current?.focus(); }, []);
 
@@ -99,9 +111,10 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
   const wasListed = (w: string) => person !== null && (same(person.name, w) || person.spellings.some((s) => same(s, w)));
   const isMarked = (w: string) => marks[normName(w)] ?? (wasListed(w) ? person!.everyday.some((e) => same(e, w)) : isEverydayName(w));
 
-  const submit = () => {
+  /** What the form holds, or null (and the name box marked and focused) when there is no name. */
+  const collect = (): PersonValues | null => {
     const nm = name.trim();
-    if (!nm) { setMissing(true); nameRef.current?.focus(); return; }
+    if (!nm) { setMissing(true); nameRef.current?.focus(); return null; }
     const v: PersonValues = {
       name: nm,
       spellings: spelled,
@@ -118,8 +131,11 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
     if (plan.contact) v.contact = contact.trim();
     if (plan.roll) v.roll = roll.trim();
     if (plan.pseudonyms) v.pseudonym = pseudonym.trim();
-    onSave(v);
+    return v;
   };
+  const submit = () => { const v = collect(); if (v) onSave(v); };
+  const withdrawNow = () => { const v = collect(); if (v) onSave(v, { on: wOn || today, data: wData }); };
+  const undoNow = () => { const v = collect(); if (v) onSave(v, null); };
 
   const field = (id: string, label: string, control: React.ReactNode) => (
     <div key={id} className="flex min-w-0 flex-col gap-1">
@@ -199,6 +215,31 @@ export function PersonForm({ plan, labels, person, nextCode, today, error, onSav
         </div>
       )}
       <p className="mb-0 mt-1.5 text-xs text-muted-foreground">{t("pp_form_hindi")}</p>
+      {person && (
+        <fieldset className="mx-0 mb-0 mt-3 rounded-[10px] border border-line px-3 pb-3 pt-1.5" data-testid="pp-withdraw-box">
+          <legend className="px-1 text-[13px] font-semibold text-purple-800">{t("pp_withdraw_h")}</legend>
+          {person.withdrawn && (
+            <p className="m-0 mb-2 text-[13px] font-semibold text-muted-foreground">
+              {t(person.withdrawn.data === "remove" ? "pp_withdrew_remove" : "pp_withdrew_keep", { date: dmy(person.withdrawn.on) })}
+            </p>
+          )}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {field("pp-withdraw-date", t("pp_withdraw_date"), (
+              <input id="pp-withdraw-date" type="date" className="input" data-testid="pp-withdraw-date" value={wOn} onChange={(e) => setWOn(e.target.value)} />
+            ))}
+            {field("pp-withdraw-data", t("pp_withdraw_data"), (
+              <select id="pp-withdraw-data" className="input" data-testid="pp-withdraw-data" value={wData} onChange={(e) => setWData(e.target.value === "keep" ? "keep" : "remove")}>
+                {DATA.map((d) => <option key={d} value={d}>{t("pp_withdraw_" + d)}</option>)}
+              </select>
+            ))}
+          </div>
+          <p className="mb-0 mt-1.5 text-xs text-muted-foreground">{t("pp_withdraw_check")}</p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" size="sm" data-testid="pp-withdraw" onClick={withdrawNow}>{t(person.withdrawn ? "pp_withdraw_change" : "pp_withdraw_btn")}</Button>
+            {person.withdrawn && <Button type="button" variant="ghost" size="sm" data-testid="pp-unwithdraw" onClick={undoNow}>{t("pp_unwithdraw_btn")}</Button>}
+          </div>
+        </fieldset>
+      )}
       {(missing || error) && <p className="mb-0 mt-2 text-[13px] text-danger-ink" role="alert" data-testid="pp-form-error">{missing ? t("pp_form_name_missing") : error}</p>}
       <div className="mt-3 flex flex-wrap gap-2">
         <Button type="submit" variant="primary" size="sm" data-testid="pp-form-save">{person ? t("pp_form_save_edit") : t("pp_form_save_add", { code: nextCode })}</Button>
