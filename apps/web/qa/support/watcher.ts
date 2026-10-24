@@ -60,6 +60,12 @@ const BUILT_IN_RESPONSES: ResponseAllowance[] = [
     path: /^\/me\/vault$/,
     status: 404,
     reason: "an account with no vault yet: the api answers GET /me/vault with a 404 (\"record or 404\", apps/web/lib/vault/useVault.tsx)"
+  },
+  {
+    method: "GET",
+    path: /^\/projects\/[0-9a-f-]+\/blobs\/[A-Za-z0-9_.%-]+$/,
+    status: 404,
+    reason: "stage data the student has not saved yet: the api answers GET /projects/:id/blobs/:kind with a 404 for a blob that does not exist (apps/api/src/routes/blobs.ts). A project's home reads every kind to show the six stages, and each place reads its own"
   }
 ];
 

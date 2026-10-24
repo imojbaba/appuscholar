@@ -323,6 +323,33 @@ test("fixture: GET /me/vault answering 404 is on the built-in list; the same pat
   ]);
 });
 
+test("fixture: GET /projects/:id/blobs/:kind answering 404 is on the built-in list; another method, path or status is not", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-14D", ["ask"]));
+  const project = "0a1b2c3d-0000-4000-8000-000000000000";
+  const answer = (status: number) => (route: Route) => route.fulfill({ status, headers: CORS, body: "{}" });
+  await page.route(`${QA_API_ORIGIN}/**`, answer(404));
+  await page.setContent("<p>x</p>");
+  const ask = (path: string, method = "GET") => page.evaluate(({ u, m }) => fetch(u, { method: m }).then(() => 0), { u: QA_API_ORIGIN + path, m: method });
+  // A blob nobody has saved yet, by a plain kind and by a kind with a colon (the shelf's papers).
+  await ask(`/projects/${project}/blobs/idea_intake`);
+  await ask(`/projects/${project}/blobs/shelf_paper%3A${project}`);
+  expect(watcherFindings(qa.result())).toEqual([]);
+  expect(qa.result().allowed).toEqual([expect.objectContaining({ kind: "response", builtIn: true, count: 2, reason: expect.stringContaining("not saved yet") })]);
+  // Another method, a document, the project itself, and the same blob answering something else, are findings.
+  await ask(`/projects/${project}/blobs/idea_intake`, "PUT");
+  await ask(`/projects/${project}/documents/abc`);
+  await ask(`/projects/${project}`);
+  await page.route(`${QA_API_ORIGIN}/projects/${project}/blobs/citations`, answer(500));
+  await ask(`/projects/${project}/blobs/citations`);
+  expect(withLabel(qa.result(), RULE_LABEL.status).map((c) => c.message)).toEqual([
+    expect.stringMatching(/404.*PUT.*\/blobs\/idea_intake$/),
+    expect.stringMatching(/404.*GET.*\/documents\/abc$/),
+    expect.stringMatching(/404.*GET.*\/projects\/[0-9a-f-]+$/),
+    expect.stringMatching(/500.*GET.*\/blobs\/citations$/)
+  ]);
+});
+
 test("fixture: an allowance needs a reason", TAGS, async ({ qa }) => {
   qa.selfTest = true;
   qa.begin(meta("SELF-14C", ["go"]));
