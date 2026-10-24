@@ -9,6 +9,8 @@ import { MemoryStore } from "../src/store/memory";
 import { DrizzleStore } from "../src/store/drizzle";
 
 const SECRET = "test-secret-test-secret-test-secret-1234";
+/** A pglite built in the test (and migrated) takes seconds on a slow runner; the default 5 s is too tight. */
+const PGLITE_TIMEOUT = 30_000;
 const make = (store = new MemoryStore()) => ({ store, app: createApp({ store, jwtSecret: SECRET }) });
 
 describe("health", () => {
@@ -120,7 +122,7 @@ describe("health", () => {
     const logged = JSON.stringify(spy.mock.calls);
     expect(logged).not.toContain("select 1");
     expect(logged).not.toContain("postgres://");
-  });
+  }, PGLITE_TIMEOUT);
 
   it("the Drizzle store pings pglite", async () => {
     const d = drizzle(new PGlite(), { schema });
@@ -130,5 +132,5 @@ describe("health", () => {
     const res = await app.request("/health/db");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
-  });
+  }, PGLITE_TIMEOUT);
 });
