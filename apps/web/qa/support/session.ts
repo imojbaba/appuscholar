@@ -20,10 +20,12 @@ function database(): Db {
  * JWTs (apps/web/auth.ts), and the session callback reads `token.uid`. The cookie is encrypted with the web server's AUTH_SECRET.
  *
  * Every call makes a new account (`qa-<uuid8>@qa.test`). With `email` it signs in as that address, and as the existing account if the address is already there
- * (a second device of the same student).
+ * (a second device of the same student). The address must end with `@qa.test`: anything else is refused.
  */
 export async function signInAs(context: BrowserContext, o: { email?: string } = {}): Promise<{ uid: string; email: string }> {
   const email = o.email ?? `qa-${randomUUID().slice(0, 8)}@qa.test`;
+  // A QA run writes this account into the database and never removes it, so it must be an address no real person has.
+  if (!email.endsWith("@qa.test")) throw new Error(`QA signInAs: ${JSON.stringify(email)} is not a QA address. Test accounts end with @qa.test.`);
   const name = "QA student";
   // The upsert returns the row either way, as the e2e provider's does (apps/web/auth.ts), so a known address gives its existing uid.
   const [row] = await database().insert(users).values({ email, name }).onConflictDoUpdate({ target: users.email, set: { name } }).returning({ id: users.id });

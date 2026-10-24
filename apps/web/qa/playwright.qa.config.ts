@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "@playwright/test";
-import { QA_API_ORIGIN, QA_API_PORT, QA_AUTH_SECRET, QA_DATABASE_URL, QA_JWT_SECRET, QA_WEB_ORIGIN, QA_WEB_PORT } from "./support/origins";
+import { QA_API_ORIGIN, QA_API_PORT, QA_AUTH_SECRET, QA_DATABASE_URL, QA_JWT_SECRET, QA_PROVIDER_LOG, QA_WEB_ORIGIN, QA_WEB_PORT } from "./support/origins";
 
 /**
  * The QA layer's Playwright config: the PRODUCTION builds (`pnpm --filter @appuscholar/web qa:build`), not `next dev`, on their own ports, on one database.
@@ -13,11 +13,12 @@ import { QA_API_ORIGIN, QA_API_PORT, QA_AUTH_SECRET, QA_DATABASE_URL, QA_JWT_SEC
 const WEB_DIR = path.resolve(__dirname, "..");
 // QA_LIVE_AI=1 runs the api against the real providers (live-ai project, Task 17): no fake provider, so the shim is not loaded.
 const LIVE_AI = process.env.QA_LIVE_AI === "1";
-// The fake provider (Task 2) is loaded into the api with `node --import`; until that file exists the api starts without it.
+// The fake provider is loaded into the api with `node --import`. Always, except under QA_LIVE_AI=1: an api that started without it would send the test keys
+// (gsk_qa_*) to the real providers, so a missing file stops the run here rather than falling back to starting the api without it.
 const SHIM = "./qa/provider-shim/shim.mjs";
-const useShim = !LIVE_AI && existsSync(path.join(WEB_DIR, SHIM));
-// Where the fake provider logs the calls it answered. Not a folder Playwright clears while the api is running: the shim opens the file per write.
-const PROVIDER_LOG = process.env.QA_PROVIDER_LOG || path.join(WEB_DIR, "qa-results", "provider-calls.jsonl");
+if (!LIVE_AI && !existsSync(path.join(WEB_DIR, SHIM))) {
+  throw new Error(`QA: the fake AI provider is missing (${path.join(WEB_DIR, SHIM)}). Without it the api would send the test keys to the real providers. Restore the file, or set QA_LIVE_AI=1 to run against the real ones.`);
+}
 
 export default defineConfig({
   testDir: ".",
@@ -38,12 +39,12 @@ export default defineConfig({
   // QA_NO_SERVERS: the servers are already running (started by hand, on these ports, from the same builds).
   webServer: process.env.QA_NO_SERVERS ? undefined : [
     {
-      command: `node ${useShim ? `--import ${SHIM} ` : ""}../api/dist/index.js`,
+      command: `node ${LIVE_AI ? "" : `--import ${SHIM} `}../api/dist/index.js`,
       cwd: WEB_DIR,
       url: `${QA_API_ORIGIN}/health`,
       reuseExistingServer: false,
       timeout: 120_000,
-      env: { NODE_ENV: "production", PORT: String(QA_API_PORT), DATABASE_URL: QA_DATABASE_URL, API_JWT_SECRET: QA_JWT_SECRET, WEB_ORIGIN: QA_WEB_ORIGIN, QA_PROVIDER_LOG: PROVIDER_LOG }
+      env: { NODE_ENV: "production", PORT: String(QA_API_PORT), DATABASE_URL: QA_DATABASE_URL, API_JWT_SECRET: QA_JWT_SECRET, WEB_ORIGIN: QA_WEB_ORIGIN, QA_PROVIDER_LOG }
     },
     {
       command: `pnpm exec next start -p ${QA_WEB_PORT}`,
