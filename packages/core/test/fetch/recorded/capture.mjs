@@ -5,10 +5,12 @@
 // never edited by hand (a mismatch with v1 is a port bug or a register row). No API key and no mailto are sent. Between live calls the script waits
 // 250 ms (OpenAlex, Crossref) or 400 ms (NCBI E-utilities, whose keyless limit is 3 requests a second).
 //
-// `--only a,b` records just the named cases and deletes nothing (it also refuses to overwrite a file that exists): node capture.mjs --only pm-v2-terms,pm-v2-rct.
-// The v2 recordings (pm-*-v2-*) are also listed in v2-manifest.json (file, url, status, sha256 of the body), which save() writes or updates for each of them: the golden
+// `--only a,b` records just the named cases and deletes nothing. It refuses to overwrite a file that exists, and it refuses before it fetches, so a mistaken name costs
+// the live API no request (ruling B2-R19): node capture.mjs --only pm-v2-terms,pm-v2-rct.
+// The v2 recordings (pm-*-v2-*, paste-*, epmc-*) are also listed in v2-manifest.json (file, url, status, sha256 of the body), which save() writes or updates for each of them: the golden
 // fixture (test/golden/fetch/cases.json) is v1's and is never edited, so test/fetch/openalex.test.ts checks these files against the manifest instead.
-// Case names: oa-<name> (OA_SEARCHES), pm-<name> (PM_SEARCHES and PM_V2_SEARCHES), oa-connected, oa-retractions, cr-doi, cr-title3, cr-title1, pm-pmid.
+// Case names: oa-<name> (OA_SEARCHES), pm-<name> (PM_SEARCHES and PM_V2_SEARCHES), oa-connected, oa-retractions, cr-doi, cr-title3, cr-title1, pm-pmid, and the cases of
+// LOOKUP_CASES, which are not v1's: paste-* (Task 19, the by-id lookups of "paste a link, DOI or PubMed number") and epmc-* (Task 21, Europe PMC's open-access full text).
 //
 // The URLs are built here as v1 builds them (index.html build 2026.10.13a): rsFetchOpenAlex 8061, rsFetchPubmed 8103 and rsPubmedAbstracts 8088,
 // rsConnected 8498, retrFetchBatch 7571, apRefCheck 11245, rcCheckOne 7750, citPmidToDoi 7920 and citLookup 7944, with rsBuildQuery 8273 and
@@ -136,6 +138,39 @@ function citLastName(a) {
 const crTitle3Url = (e) => "https://api.crossref.org/works?rows=3&query.bibliographic=" + encodeURIComponent(((e.title || "") + " " + citLastName(e.author)).slice(0, 300));
 const crTitle1Url = (q) => "https://api.crossref.org/works?rows=1&query.bibliographic=" + encodeURIComponent(q.slice(0, 300));
 
+// ---- Not v1's: the by-id lookups (Task 19) and Europe PMC (Task 21) ----------------------------------------------------------------------------------
+
+/**
+ * The requests behind "paste a link, DOI or PubMed number" (src/paste.ts: oaWorkByRef, pmPaperById, pmcidToIds and crLookupDoiV2) and behind Europe PMC's open-access full
+ * text (src/fetch/europepmc.ts), each case as [case name, [[file name, URL, the status the corpus means to record], ...]]. The URLs are built as those fetchers build them (v1
+ * has no such requests, so the golden capture does not replay these files; test/fetch/lookup-by-id.test.ts, paste.test.ts and europepmc.test.ts do, by exact URL). Public
+ * bibliographic data only; the DOI, PMID and PMCID are the walk sheet's paper (Schaefer et al. 2019, Scientific Reports) and a few others named below.
+ */
+const WALK_DOI = "10.1038/s41598-019-49466-6"; // PMID 31527670, PMCID PMC6746734, OpenAlex W2972990769
+const ARXIV_DOI = "10.48550/arxiv.2101.00001"; // arXiv 2101.00001: DataCite's DOI, which Crossref does not hold
+const OA_WORK_SELECT = OA_SELECT.slice("&select=".length) + ",biblio"; // rsFetchOpenAlex's select plus biblio (ruling B2-R17)
+const oaWorkUrl = (ref) => "https://api.openalex.org/works/" + ref + "?select=" + OA_WORK_SELECT;
+const EPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/";
+/** A DOI of plain characters is sent as it is; any other is quoted and percent-encoded (the slash kept), as epmcFullText sends it (an unquoted "(" gives no hit). */
+const epmcSearchUrl = (doi) => EPMC + "search?query=DOI:" + (/^[A-Za-z0-9._/-]+$/.test(doi) ? doi : encodeURIComponent('"' + doi + '"').replace(/%2F/g, "/")) + "&format=json&resultType=lite";
+const epmcFullTextUrl = (pmcid) => EPMC + pmcid + "/fullTextXML";
+export const LOOKUP_CASES = [
+  ["paste-cr-doi", [["paste-cr-doi", crDoiUrl(WALK_DOI), 200]]], // Crossref lists the 13317 as article-number, with no page
+  ["paste-cr-arxiv", [["paste-cr-arxiv", crDoiUrl(ARXIV_DOI), 404]]], // not a Crossref DOI: the lookup then asks OpenAlex
+  ["paste-oa-doi", [["paste-oa-doi", oaWorkUrl("doi:" + WALK_DOI), 200]]],
+  ["paste-oa-arxiv", [["paste-oa-arxiv", oaWorkUrl("doi:" + ARXIV_DOI), 200]]], // an arXiv id is found as its DOI
+  ["paste-oa-pmcid", [["paste-oa-pmcid", oaWorkUrl("pmcid:PMC6746734"), 404]]], // OpenAlex holds no PMC numbers (has_pmcid:true counted 0 works on 2026-10-24)
+  ["paste-oa-work", [["paste-oa-work", oaWorkUrl("W2972990769"), 200]]],
+  ["paste-oa-nf", [["paste-oa-nf", oaWorkUrl("doi:10.9999/appuscholar-no-such-doi-2026"), 404]]],
+  ["paste-pmc-esummary", [["paste-pmc-esummary", EUTILS + "esummary.fcgi?db=pmc&retmode=json&id=6746734", 200]]], // PubMed Central's PMID and DOI for the PMC number
+  ["paste-pm-nf", [["paste-pm-nf", pmidUrl("99999999"), 200]]], // esummary answers 200 with an error item for an id it does not know
+  ["epmc-oa", [["epmc-search-oa", epmcSearchUrl(WALK_DOI), 200], ["epmc-fulltext-oa", epmcFullTextUrl("PMC6746734"), 200]]], // open access, in Europe PMC: JATS XML
+  ["epmc-nopmc", [["epmc-search-nopmc", epmcSearchUrl("10.1037/0003-066x.55.1.68"), 200]]], // Europe PMC has no record of it: no hit
+  ["epmc-nopmcid", [["epmc-search-nopmcid", epmcSearchUrl("10.1016/s0140-6736(97)11096-0"), 200]]], // a record with no PMCID (and a DOI that needs quoting)
+  ["epmc-notoa", [["epmc-search-notoa", epmcSearchUrl("10.4022/jafib.1335"), 200]]], // a PMCID, in Europe PMC, but isOpenAccess N
+  ["epmc-unknown", [["epmc-fulltext-unknown", epmcFullTextUrl("PMC99999999"), 500]]], // an unknown PMCID answers 500 JSON, not 404
+];
+
 // ---- Recording ---------------------------------------------------------------------------------------------------------------------------------------
 
 const argv = process.argv.slice(2);
@@ -156,12 +191,18 @@ function listInManifest(file, record) {
   writeFileSync(MANIFEST, JSON.stringify(manifest, null, 1) + "\n");
 }
 
+/** `--only` never overwrites a recording. Called before the live request (record), so a file that exists costs no call, and again by save(). */
+function refuseOverwrite(file) {
+  if (ONLY && readdirSync(DIR).includes(file)) throw new Error(`--only: ${file} already exists and is not overwritten`);
+}
+
 function save(file, record) {
   if (written.has(record.url)) return;
   written.set(record.url, file);
-  if (ONLY && readdirSync(DIR).includes(file)) throw new Error(`--only: ${file} already exists and is not overwritten`);
+  refuseOverwrite(file);
   writeFileSync(DIR + file, JSON.stringify(record, null, 1) + "\n");
-  if (/^pm-(esearch|esummary|efetch)-v2-/.test(file)) listInManifest(file, record);
+  // The v2 recordings reach the manifest: pm-*-v2-* (wave A), paste-* (Task 19) and epmc-* (Task 21). v1's files (cr-doi-*, oa-search-*, pm-esummary-<name>, ...) are in the golden fixture.
+  if (/^(pm-(esearch|esummary|efetch)-v2-|paste-|epmc-)/.test(file)) listInManifest(file, record);
   console.log(`${file} ${record.status} ${record.body.length} chars`);
 }
 
@@ -169,11 +210,13 @@ function save(file, record) {
 async function record(name, url, expect = 200) {
   const done = written.get(url);
   if (done) return JSON.parse(readFileSync(DIR + done, "utf8")).body;
+  const file = `${name}-${short(url)}.json`;
+  refuseOverwrite(file); // before the live request: a recording that exists is not fetched again
   await sleep(url.startsWith(EUTILS) ? 400 : 250);
   const r = await fetch(url);
   const body = await r.text();
   if (r.status !== expect) throw new Error(`${name}: ${url} answered ${r.status}, the corpus expects ${expect}; nothing about this file is kept`);
-  save(`${name}-${short(url)}.json`, { url, status: r.status, headers: { "content-type": r.headers.get("content-type") }, body });
+  save(file, { url, status: r.status, headers: { "content-type": r.headers.get("content-type") }, body });
   return body;
 }
 
@@ -183,6 +226,7 @@ async function main() {
   const known = new Set(["oa-connected", "oa-retractions", "cr-doi", "cr-title3", "cr-title1", "pm-pmid"]);
   for (const s of OA_SEARCHES) known.add("oa-" + s.name);
   for (const s of [...PM_SEARCHES, ...PM_V2_SEARCHES]) known.add("pm-" + s.name);
+  for (const [name] of LOOKUP_CASES) known.add(name);
   for (const n of ONLY || []) if (!known.has(n)) throw new Error(`--only: unknown case "${n}"; the cases are ${[...known].join(", ")}`);
 
   const oaBodies = {};
@@ -225,6 +269,7 @@ async function main() {
   if (want("cr-title3")) for (const [i, e] of CR_TITLE_SEARCHES.entries()) await record(`cr-title3-${i + 1}`, crTitle3Url(e));
   if (want("cr-title1")) for (const [i, q] of CR_FIRST_SEARCHES.entries()) await record(`cr-title1-${i + 1}`, crTitle1Url(q));
   if (want("pm-pmid")) for (const pmid of PMIDS) await record(`pm-pmid-${pmid}`, pmidUrl(pmid));
+  for (const [name, requests] of LOOKUP_CASES) if (want(name)) for (const [file, url, expect] of requests) await record(file, url, expect);
 
   console.log(`${written.size} files`);
 }
