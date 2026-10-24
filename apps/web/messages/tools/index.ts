@@ -14,6 +14,20 @@ import vivaEn from "./viva.en.json";
 import vivaHi from "./viva.hi.json";
 import wordsEn from "./words.en.json";
 import wordsHi from "./words.hi.json";
+import dictationEn from "./dictation.en.json";
+import dictationHi from "./dictation.hi.json";
+import aipillEn from "./aipill.en.json";
+import aipillHi from "./aipill.hi.json";
+import samplesEn from "./samples.en.json";
+import samplesHi from "./samples.hi.json";
+import picturesEn from "./pictures.en.json";
+import picturesHi from "./pictures.hi.json";
+import captionsEn from "./captions.en.json";
+import captionsHi from "./captions.hi.json";
+import studioEn from "./studio.en.json";
+import studioHi from "./studio.hi.json";
+import dockEn from "./dock.en.json";
+import dockHi from "./dock.hi.json";
 
 /**
  * Every tool's own copy (Task G4, rulings R13 and R14), by file name: `<tool>.en.json` and `<tool>.hi.json` for the eight tool modules of
@@ -29,5 +43,12 @@ export const TOOL_MESSAGE_FILES: Readonly<Record<string, Record<string, string>>
   "stats.en.json": statsEn, "stats.hi.json": statsHi,
   "style.en.json": styleEn, "style.hi.json": styleHi,
   "viva.en.json": vivaEn, "viva.hi.json": vivaHi,
-  "words.en.json": wordsEn, "words.hi.json": wordsHi
+  "words.en.json": wordsEn, "words.hi.json": wordsHi,
+  "dictation.en.json": dictationEn, "dictation.hi.json": dictationHi,
+  "aipill.en.json": aipillEn, "aipill.hi.json": aipillHi,
+  "samples.en.json": samplesEn, "samples.hi.json": samplesHi,
+  "pictures.en.json": picturesEn, "pictures.hi.json": picturesHi,
+  "captions.en.json": captionsEn, "captions.hi.json": captionsHi,
+  "studio.en.json": studioEn, "studio.hi.json": studioHi,
+  "dock.en.json": dockEn, "dock.hi.json": dockHi
 };

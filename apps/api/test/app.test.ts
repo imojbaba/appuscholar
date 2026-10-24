@@ -328,6 +328,15 @@ describe("api routes", () => {
     expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { sheetPct: 62 } });
   });
 
+  it("settings accept pack and writingSampleCapture; an unknown pack is 400", async () => {
+    await app.request("/me", { headers: auth });
+    const patch = (body: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify(body) });
+    expect(await (await patch({ pack: "general" })).json()).toEqual({ pack: "general" });
+    expect(await (await patch({ pack: "psychology", writingSampleCapture: true })).json()).toEqual({ pack: "psychology", writingSampleCapture: true });
+    for (const bad of [{ pack: "x" }, { pack: 1 }, { writingSampleCapture: "yes" }]) expect((await patch(bad)).status, JSON.stringify(bad)).toBe(400);
+    expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { pack: "psychology", writingSampleCapture: true } });
+  });
+
   it("settings accept docBeside and docW from 360 to 900; 359 is 400", async () => {
     await app.request("/me", { headers: auth });
     const patch = (body: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify(body) });

@@ -5,13 +5,14 @@ import type { Store, WrappedDek } from "../store/types";
 /**
  * The stage panels' blob kinds, one blob per kind per project. The web client mirrors this list (apps/web/lib/blobs/kinds.ts, the same order);
  * keep the strings as they are. `shelf_cols` is the Reading shelf's matrix columns (ruling R14). After them, the stage 3 to 6 tools' kinds (Task
- * G3, ruling R8), one per v1 key group: Design and ethics, statistics, coding, my style, words, closeness and the viva. The api stores each
+ * G3, ruling R8), one per v1 key group: Design and ethics, statistics, coding, my style, words, closeness and the viva; then wave D's `writing_samples`. The api stores each
  * body as given (sealed or plain JSON) and never reads it, so a kind's shape is the web client's only.
  */
 export const BLOB_KINDS = [
   "idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols",
   "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
-  "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log"
+  "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log",
+  "writing_samples"
 ] as const;
 export type FixedBlobKind = (typeof BLOB_KINDS)[number];
 /** One shelf paper's extracted text: `shelf_paper:<id>`, the id 1 to 64 characters of [A-Za-z0-9_-]. */

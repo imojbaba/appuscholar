@@ -14,7 +14,8 @@ const MAX = 64 * 1024;
 /** Task G3: the stage 3 to 6 tools' kinds, one per v1 key group, in the web client's order. */
 const NEW_KINDS = [
   "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
-  "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log"
+  "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log",
+  "writing_samples"
 ];
 
 async function token(sub: string) {
