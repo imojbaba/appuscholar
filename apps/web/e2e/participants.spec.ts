@@ -24,7 +24,12 @@
  *  16. Hindi on the tab (हि);
  *  17. at 375 px the table scrolls inside itself;
  *  18. Destroy the list (twice), matching stops, and the next code continues.
- * Every sentence asserted is the dictionaries' or core's own output; the names are made up. Nothing outside localhost is asked for (the test fails if it is).
+ * Where the words come from. Sentences the app shows are read from the dictionaries (T) or are core's own output (consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV2),
+ * so a change of wording does not break this test. What is typed into the test, and so is only as right as the test: the names and tables above; "We will write down your name, other names you
+ * use, your gender and your year or class." and "Each participant was given a code; the list linking codes to names was kept separately, sealed under the researcher's passphrase." (the two
+ * sentences of the plan the walk is about, also checked against core's output); "Found: " (the dialog's lead word, then the dictionary's count); "Cancelled. Nothing was sent to the AI
+ * provider." (callAI's apiMsg); the clipboard's Female/Class 11 and the CSV's headings; the toast words are the dictionary's. The names are made up. Nothing outside localhost is asked for (the
+ * test fails if it is), no native dialog is raised, and (call C10) no listed name is found in any address, console line, toast or home row the walk causes.
  *
  * Run it with the recipe in e2e/support/pglite-postgres.mjs's header, for example on free ports:
  *   PGLITE_PORT=5471 node e2e/support/pglite-postgres.mjs &
@@ -36,6 +41,7 @@ import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV2, needsCombinationWarning, type Plan } from "@appuscholar/core";
 import { signIn } from "./support/signin";
+import { recordToasts } from "./support/toasts";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 
 // ---- Copy: every sentence asserted is read from the dictionaries (or is core's own output) --------------------------------------------------------------
@@ -95,6 +101,8 @@ const TRANSCRIPT = [
   `Priya: Meena didi did. And Kiran came on Thursday. ${PRIYA_HINDI} की माँ ने भी पूछा।`
 ];
 const KIRAN = "Kiran Patel";
+/** Every name in this test, as whole words (the first names stand alone in the sentences): none may be found where the list's names must not go (call C10). */
+const NAME_WORDS = new RegExp(`(^|[^\\p{L}\\p{N}\\p{M}])(${["Priya", "Sharma", PRIYA_HINDI, "Rahul", "Verma", "Kavya", "Nair", "Imran", "Khan", "Ananya", "Rao", "Sunita", "Devi", "Farhan", "Ali", "Gita", "Menon", "Kiran", "Patel", "Sara", "Zainab", "Neha", "Meena", "Rohan", "Dutta"].join("|")})($|[^\\p{L}\\p{N}\\p{M}])`, "u");
 const AI_REPLY = "Here is a tidier version of your sentence.";
 const ASK_REPLY = JSON.stringify({ in_paper: true, answer: "The paper does not say who read it first.", quotes: [] });
 
@@ -308,9 +316,22 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
   });
   const net = await stubNetwork(page);
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: WEB_ORIGIN });
-  // The files the walk makes (the list, the export), and every write of the participants blob (a plaintext one would be a sealing failure).
-  const downloads: Array<{ name: string; body: string }> = [];
-  page.on("download", (d) => { void d.path().then((p) => downloads.push({ name: d.suggestedFilename(), body: readFileSync(p!, "utf8") })); });
+  // The files the walk makes (the list, the export). A download is counted when it starts, so "no file" cannot pass before a slow one lands; its text is read when it has been saved
+  // (`body` is null when it could not be read, which fails the check that wanted it, not the whole run).
+  let downloadEvents = 0;
+  const downloads: Array<{ name: string; body: string | null }> = [];
+  page.on("download", (d) => {
+    downloadEvents++;
+    void d.path().then((p) => downloads.push({ name: d.suggestedFilename(), body: p ? readFileSync(p, "utf8") : null }), () => downloads.push({ name: d.suggestedFilename(), body: null }));
+  });
+  // Call C10: no name leaves the list except by the two files above. Everything the walk makes that could carry one outside the page's own text is kept and read at the end: every address
+  // asked for, every page address, every console line and error, every toast.
+  const seen = { addresses: [] as string[], console: [] as string[], toasts: [] as string[] };
+  page.on("request", (r) => { seen.addresses.push(r.url()); });
+  page.on("framenavigated", (f) => { seen.addresses.push(f.url()); });
+  page.on("console", (m) => { seen.console.push(m.text()); });
+  page.on("pageerror", (e) => { seen.console.push(e.message); });
+  // Every write of the participants blob (a plaintext one would be a sealing failure).
   const sealedWrites: Array<{ keyVersion: number; body: string }> = [];
   page.on("request", (r) => {
     if (r.method() === "PUT" && /\/blobs\/participants$/.test(r.url()) && r.url().startsWith(API_ORIGIN)) {
@@ -334,6 +355,8 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
 
   const projectId = await newProject(page);
   await setUpVault(page);
+  let readToasts = await recordToasts(page);
+  const keepToasts = async () => { seen.toasts.push(...(await readToasts())); };
 
   // ---- 1. the plan ------------------------------------------------------------------------------------------------------------------------------
   await test.step("1. Ethics: the plan question, its three answers, the menu, the sensitive note, the combination line, the minors note", async () => {
@@ -557,12 +580,19 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     // The file holds the names, and the line beside the button says to keep it apart.
     await expect(page.getByTestId("pp-download-note")).toHaveText(T("pp_download_note"));
     const before = downloads.length;
+    const events = downloadEvents;
     const [d] = await Promise.all([page.waitForEvent("download"), page.getByTestId("pp-download").click()]);
     expect(d.suggestedFilename()).toMatch(/^participant-list-.+\.csv$/);
+    expect(downloadEvents).toBe(events + 1);
     await expect.poll(() => downloads.length).toBe(before + 1);
     const csv = downloads[before]!.body;
+    if (csv === null) throw new Error("the downloaded list could not be read");
     expect(csv.startsWith("\uFEFFParticipantCode,Name,Other spellings")).toBe(true);
-    for (const w of ["P001", PRIYA, `Priya; ${PRIYA_HINDI}`, RAHUL, "Imran Khan", "15"]) expect(csv, w).toContain(w);
+    for (const w of ["P001", PRIYA, `Priya; ${PRIYA_HINDI}`, RAHUL, "Imran Khan"]) expect(csv, w).toContain(w);
+    // Imran's withdrawal, in the file's own columns: the day (yyyy-mm-dd, as typed in step 5) and what happens to his data are its last two cells.
+    const imran = csv.split(/\r?\n/).find((l) => l.startsWith("P004,"));
+    expect(imran, "Imran's row").toBeDefined();
+    expect(imran!.endsWith(",2026-10-15,remove"), imran).toBe(true);
   });
 
   // ---- 7. Statistics ----------------------------------------------------------------------------------------------------------------------------
@@ -594,7 +624,7 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     await expect(page.getByTestId("pd-from-list")).toHaveText(T("stats_pd_from_list"));
 
     // Apply: the list gets Sunita first, the table gets the list's codes, and no key file is downloaded.
-    const files = downloads.length;
+    const files = downloadEvents;
     const saved = listSaved();
     await page.getByTestId("pd-apply").click();
     await expect(page.getByTestId("pd-result")).toContainText(T("stats_pd_done"));
@@ -610,7 +640,7 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
       "P006,The morning walk was hard,10"
     ].join("\n"));
     await page.waitForTimeout(1_000);
-    expect(downloads.length, "no key file: the list is the key").toBe(files);
+    expect(downloadEvents, "no key file: the list is the key").toBe(files);
   });
 
   // ---- 8. F1 ------------------------------------------------------------------------------------------------------------------------------------
@@ -684,6 +714,9 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
 
   // ---- 11. Find names ---------------------------------------------------------------------------------------------------------------------------
   await test.step("11. Find names in my documents: Replace all, Check each, Not a name, and the line about earlier versions", async () => {
+    // The highlights are there before anything is replaced (so that their going, at the end, is a change and not an absence): four purple, two amber.
+    await expect.poll(async () => (await painted(page, "pp-sure"))?.slice().sort(), { timeout: 15_000 }).toEqual(["Priya", "Priya", "Rahul", PRIYA_HINDI].sort());
+    await expect.poll(async () => (await painted(page, "pp-maybe"))?.slice().sort(), { timeout: 15_000 }).toEqual(["Kiran", "Meena"]);
     await page.getByTestId("pp-find").click();
     const card = page.locator('[data-testid^="pp-find-doc-"]').filter({ hasText: T("pp_find_doc", { title: DOC_2 }) });
     await expect(card).toHaveCount(1);
@@ -721,8 +754,10 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     await expect(editor(page)).toContainText("P001: Meena didi did.");
     await page.getByTestId("pp-find-close").click();
     await expect(page.getByTestId("pp-find-results")).toHaveCount(0);
-    // The replaced names are no longer highlighted; Meena is not asked about again.
-    await expect.poll(async () => (await painted(page, "pp-maybe")) ?? []).toEqual([]);
+    // The replaced names are no longer highlighted and Meena is not asked about again: the layer is still painting (the list has people) and has nothing left to paint.
+    await expect(editor(page)).toBeVisible();
+    await expect.poll(() => painted(page, "pp-sure"), { timeout: 15_000 }).toEqual([]);
+    await expect.poll(() => painted(page, "pp-maybe"), { timeout: 15_000 }).toEqual([]);
   });
 
   // ---- 12. an AI request ------------------------------------------------------------------------------------------------------------------------
@@ -810,6 +845,11 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
 
   // ---- 14. Export all ---------------------------------------------------------------------------------------------------------------------------
   await test.step("14. Export this project has no part for the list; Export all my work asks first when a list exists, and Cancel makes no file", async () => {
+    // The home's row for Collection says how many people are on the list and no name (call C10).
+    await page.getByTestId("place-home").click();
+    const facts = page.getByTestId("home-detail-collect");
+    await expect(facts).toContainText(T("pp_facts", { n: 11 }));
+    expect(await facts.innerText()).not.toMatch(NAME_WORDS);
     // The project's own export (one project's zip) has no part for the list: the list leaves only by Download the list, and by Export all my work.
     await page.getByTestId("account-menu-btn").click();
     await page.getByTestId("acct-export-project").click();
@@ -817,7 +857,7 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     expect(await page.getByTestId("export-dialog").innerText()).not.toMatch(/participant/i);
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("export-dialog")).toBeHidden();
-    const files = downloads.length;
+    const files = downloadEvents;
     await page.getByTestId("account-menu-btn").click();
     await page.getByTestId("acct-export").click();
     await expect(page.getByTestId("export-names-dialog")).toBeVisible();
@@ -825,13 +865,15 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     await page.getByTestId("export-names-cancel").click();
     await expect(page.getByTestId("export-names-dialog")).toBeHidden();
     await page.waitForTimeout(800);
-    expect(downloads.length, "Cancel made no file").toBe(files);
+    expect(downloadEvents, "Cancel made no file").toBe(files);
   });
 
   // ---- 15. a locked vault -----------------------------------------------------------------------------------------------------------------------
   await test.step("15. a reload locks the vault: the tab says unlock, an AI request says the list was not checked, and the passphrase opens both", async () => {
+    await keepToasts();
     await page.goto(`/p/${projectId}/collect/participants`);
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_locked"));
+    readToasts = await recordToasts(page);
     // The open document and the list each ask for the passphrase: Cancel answers each in turn until the tab shows it is locked.
     const ask = page.getByTestId("pass-dialog");
     await expect(async () => {
@@ -923,6 +965,11 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
 
   // ---- 18. destroy ------------------------------------------------------------------------------------------------------------------------------
   await test.step("18. Destroy the list asks twice; the people are gone, matching stops, and the next code continues", async () => {
+    // The document with the sentence step 12 left in it is open (at 375 px the phone closed it), and its name on the list is painted: so that Destroy's stopping it is seen.
+    await openDoc(page);
+    await page.locator("#doc-select").selectOption({ label: DOC_2 });
+    await expect(editor(page)).toContainText("Priya Sharma was right about the routine");
+    await expect.poll(async () => (await painted(page, "pp-sure")) ?? [], { timeout: 15_000 }).toContain(PRIYA);
     await page.getByTestId("pp-destroy").scrollIntoViewIfNeeded();
     await page.getByTestId("pp-destroy").click();
     const dialog = page.getByTestId("pp-destroy-dialog");
@@ -945,8 +992,10 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     await expect(page.locator('[data-testid^="pp-row-"]')).toHaveCount(0);
     await expect(page.getByTestId("pp-find")).toHaveCount(0);
     await expect(page.getByTestId("pp-actions")).toHaveCount(0);
-    // Matching stops: the names left in the document are no longer painted.
-    await expect.poll(async () => (await painted(page, "pp-sure")) ?? []).toEqual([]);
+    // Matching stops: the name is still in the open document and is no longer painted.
+    await expect(editor(page)).toBeVisible();
+    await expect(editor(page)).toContainText("Priya Sharma was right about the routine");
+    await expect.poll(async () => (await painted(page, "pp-sure")) ?? [], { timeout: 15_000 }).toEqual([]);
     // Codes are never used twice: the next person is P025.
     await addPerson(page, { name: "Zainab Ali" });
     await expect(page.getByTestId("pp-form")).toContainText(T("pp_form_next", { code: "P025" }));
@@ -966,5 +1015,18 @@ test("the participant list: plan, paperwork, list, Statistics, documents, AI req
     }
     expect(net.unexpected, "nothing outside localhost was asked for").toEqual([]);
     expect(native, "no native dialog").toEqual([]);
+  });
+
+  // ---- call C10: no listed name in an address, a console line or a toast ------------------------------------------------------------------------------
+  await test.step("no listed name is in any address, console line, error or toast the walk caused", async () => {
+    await keepToasts();
+    seen.addresses.push(page.url());
+    expect(seen.addresses.length, "addresses were recorded").toBeGreaterThan(100);
+    expect(seen.toasts.length, "toasts were recorded").toBeGreaterThan(0);
+    // The framework's own files carry hashes in their names; what the walk asked for is everything else.
+    const asked = seen.addresses.filter((u) => !u.includes("/_next/") && !u.startsWith("data:")).flatMap((u) => { try { return [u, decodeURIComponent(u)]; } catch { return [u]; } });
+    for (const [what, list] of [["address", asked], ["console line", seen.console], ["toast", seen.toasts]] as const) {
+      for (const x of list) expect(x, `a ${what}`).not.toMatch(NAME_WORDS);
+    }
   });
 });
