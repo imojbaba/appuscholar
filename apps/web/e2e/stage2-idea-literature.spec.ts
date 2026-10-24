@@ -725,21 +725,23 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
 
   await test.step("7. build the reading list: Reading list, add PDFs (a scanned one is refused), read, highlight a passage, two lines of my own, then Summarise with AI; Compare's table and its CSV; sealed", async () => {
     await litTab(page, "reading");
-    const shelf = page.getByTestId("shelf-inline");
-    await expect(shelf).toBeVisible();
-    await expect(shelf).toContainText(T("sh2_intro"));
-    await expect(page.getByTestId("sh-empty")).toHaveText(T("sh2_the_shelf_is_empty"));
+    // Wave B Task 21a: the Reading list is the kept papers, each without a PDF until one is added, and the practice paper last.
+    const list = page.getByTestId("reading-list");
+    await expect(list).toBeVisible();
+    await expect(list).toContainText(T("rl_intro"));
+    await expect(page.getByTestId("rl-row")).toHaveCount(4);
+    await expect(page.getByTestId("rl-practice")).toBeVisible();
     const index = sealedSave(page, "shelf_index", [SHELF_TITLE, "shelf-paper.pdf"], async () => {
       await sealedSave(page, /\/blobs\/shelf_paper%3A[A-Za-z0-9_-]+$/, ["Forty students", "Morning light"], () =>
-        page.getByTestId("sh-file").setInputFiles([path.join(__dirname, "fixtures/sample-paper.pdf"), path.join(__dirname, "fixtures/shelf-paper.pdf")]));
+        page.getByTestId("rl-file").setInputFiles([path.join(__dirname, "fixtures/sample-paper.pdf"), path.join(__dirname, "fixtures/shelf-paper.pdf")]));
     });
     await index;
-    await expect(page.getByTestId("sh-status")).toHaveText("sample-paper.pdf" + T("sh2_no_readable_text_it") + " | shelf-paper.pdf" + T("sh2_added_pages", { pagesCount: 2 }));
-    await expect(page.getByTestId("sh-paper")).toHaveCount(1);
-    await expect(page.getByTestId("sh-title")).toHaveValue(SHELF_TITLE);
-    await expect(page.getByTestId("sh-paper-meta")).toHaveText("shelf-paper.pdf " + T("sh2_pages_highlights", { pagesCount: 2, notesCount: 0 }));
+    await expect(page.getByTestId("rl-add-status")).toHaveText(T("rl_add_no_text", { name: "sample-paper.pdf" }) + " " + T("rl_add_plain", { name: "shelf-paper.pdf" }));
+    await expect(page.getByTestId("rl-row")).toHaveCount(5);
+    const shelfRow = page.getByTestId("rl-row").filter({ hasText: SHELF_TITLE });
+    await expect(shelfRow.getByTestId("rl-status")).toHaveText(T("rl_status_unread"));
 
-    await page.getByTestId("sh-read").click();
+    await shelfRow.getByTestId("rl-read").click();
     await expect(page.getByTestId("sh-reader-title")).toHaveText(SHELF_TITLE);
     await expect(page.getByTestId("sh-text")).toContainText(HIGHLIGHT);
     await expect(page.getByTestId("sh-hl")).toHaveCount(0);
@@ -770,8 +772,8 @@ test("the stage-2 journey: idea, search, harvest, triage, collect, shelf, read, 
     const mx = await exportFrom(page, page.getByTestId("sh-csv"), "compare");
     expect(await mx.file("compare/table.csv")!.async("string")).toContain(MATRIX_CELL);
     await litTab(page, "reading");
-    await expect(page.getByTestId("place-tab-reading")).toHaveText(T("tab_name_count", { name: T("tab_name_reading"), n: 1 }));
-    await expect(page.getByTestId("sh-paper-meta")).toHaveText("shelf-paper.pdf " + T("sh2_pages_highlights", { pagesCount: 2, notesCount: 2 }));
+    await expect(page.getByTestId("place-tab-reading")).toHaveText(T("tab_name_count", { name: T("tab_name_reading"), n: 5 }));
+    await expect(page.getByTestId("rl-row").filter({ hasText: SHELF_TITLE }).getByTestId("rl-status")).toHaveText(T("rl_status_reading_1"));
     quiet();
   });
 

@@ -11,9 +11,10 @@ import en from "../messages/en.json";
 /*
  * The Reading shelf (v1 11513-11725, the dialog 1247-1254). The orchestration (lib/shelf/actions.ts, shelfSummarise) is driven with fakes and checked against what v1 did with the same
  * inputs (packages/core/test/golden/shelf/cases.json, `golden:capture shelf`): shAddFiles' status line and records, shSaveHL's quotes and toasts, shRestore's checks and count,
- * shBackup's bundle, shMatrixCsv's text, shColAdd/shColDel, and shSummarise's note, prompt, options and summary box. The dialog is then mounted with the real store
- * (lib/shelf/useShelf.ts, useProjectBlob) over a fake blob api: papers added, renamed and removed (a second press, the paper's blob deleted), search and passages, highlights
- * saved to the paper's blob, the matrix columns in shelf_cols, the summary gate, backup and restore, and R16's confirm over a blob that does not open.
+ * shBackup's bundle, shMatrixCsv's text, shColAdd/shColDel, and shSummarise's note, prompt, options and summary box. The Reading list (wave B Task 21a, which replaced the
+ * shelf's dialog) is then mounted with the real store (lib/shelf/useShelf.ts, useProjectBlob) over a fake blob api: PDFs added, papers renamed and removed (after the question,
+ * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the matrix columns in shelf_cols (Compare's table until Task 22), the summary gate, backup
+ * and restore, and R16's confirm over a blob that does not open.
  */
 
 type Spec = { pages?: Array<Array<{ str: string; hasEOL?: boolean }>>; numPages?: number; error?: string };
@@ -70,7 +71,8 @@ import {
   addColumn, addFiles, backupShelf, deleteColumn, downloadMatrix, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, type ShelfEntry, type ShelfItem, type ShelfOps
 } from "../lib/shelf/actions";
 import { PdfReaderUnavailable, type PdfDoc } from "../lib/shelf/extract";
-import { ShelfDialog } from "../components/tools/shelf/ShelfDialog";
+import { ReadingList } from "../components/literature/ReadingList";
+import { ShelfMatrix } from "../components/tools/shelf/ShelfMatrix";
 import { exportProject } from "../lib/export/projectExport";
 import { useShelf, writeIndexDetached } from "../lib/shelf/useShelf";
 import { blobId } from "../lib/blobs/kinds";
@@ -265,7 +267,7 @@ describe("a new shelf paper takes its real title (W15, register row D-S2-28)", (
     expect(resolveTitle).toHaveBeenCalledTimes(1);
     expect(st.index.at(-1)!.title).toBe("From the backup");
   });
-  it("the dialog asks Crossref for the DOI printed on page 1 and names the paper by the title it gives, when that title is on the page", async () => {
+  it("the Reading list asks Crossref once for the DOI printed on page 1 and names the paper by the title it gives, when that title is on the page; the paper is kept with that record", async () => {
     const title = "Daily screen time and sleep quality in adolescents";
     const seen: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
@@ -275,23 +277,27 @@ describe("a new shelf paper takes its real title (W15, register row D-S2-28)", (
     h.extract.mockImplementation(async () => ({ pages: PAGES, total: 1 }));
     try {
       await mount();
-      await pick(tid("sh-file")!, [fileOf("scirep.pdf", 5)]);
-      await until(() => puts("shelf_index").length > 0, "the index save");
+      await pick(tid("rl-file")!, [fileOf("scirep.pdf", 5)]);
+      await until(() => puts("shelf_index").length > 0 && puts("citations").length > 0, "the index and library saves");
       const e = stored<ShelfIndex>("shelf_index")![0]!;
       expect(e.title).toBe(title);
       expect(e.doi).toBe("10.1038/s41598-019-49731-x");
+      // One request for the DOI: the title lookup's answer is the record the paper is kept with.
       expect(seen).toHaveLength(1);
       expect(seen[0]).toContain("api.crossref.org/works/10.1038");
+      expect(stored<StoredEntry[]>("citations")).toEqual([expect.objectContaining({ title, doi: "10.1038/s41598-019-49731-x", rl: true, pid: e.pid })]);
     } finally { vi.unstubAllGlobals(); }
   });
-  it("a Crossref title that is not on page 1 is not used by the dialog (Review Focus 3)", async () => {
+  it("a Crossref title that is not on page 1 is not used by the Reading list (Review Focus 3): the paper is not kept from it", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ message: { title: ["A completely different paper about reading comprehension"], DOI: "10.1038/s41598-019-49731-x" } }), { status: 200 })));
     h.extract.mockImplementation(async () => ({ pages: PAGES, total: 1 }));
     try {
       await mount();
-      await pick(tid("sh-file")!, [fileOf("scirep.pdf", 5)]);
+      await pick(tid("rl-file")!, [fileOf("scirep.pdf", 5)]);
       await until(() => puts("shelf_index").length > 0, "the index save");
       expect(stored<ShelfIndex>("shelf_index")![0]!.title).toBe(shTitleGuess(PAGES, "scirep"));
+      expect(stored<ShelfIndex>("shelf_index")![0]).not.toHaveProperty("doi");
+      expect(puts("citations")).toHaveLength(0);
     } finally { vi.unstubAllGlobals(); }
   });
 });
@@ -494,15 +500,22 @@ async function until(pred: () => boolean, what = "condition") {
   for (let i = 0; i < 400; i++) { if (pred()) return; await settle(10); }
   throw new Error(what + " not reached");
 }
-/** Mounts the dialog open; the answer closes it as Close, Escape or the overlay does (the parent sets open to false, which unmounts its body). */
-async function mount() {
+/** Mounts the Reading list (or `ui`); the answer takes it away, as leaving the place does. */
+async function mount(ui: React.ReactNode = <ReadingList />) {
   const el = document.createElement("div");
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<ShelfDialog open onOpenChange={() => {}} />); });
+  await act(async () => { root.render(ui); });
   await settle(20);
-  return { close: async () => { await act(async () => { root.render(<ShelfDialog open={false} onOpenChange={() => {}} />); }); } };
+  return { close: async () => { await act(async () => { root.render(null); }); } };
+}
+/** Opens "Search your PDFs, back up and restore", as the click on its summary does. */
+async function openTools() { const d = tid("rl-tools") as HTMLDetailsElement; await act(async () => { d.open = true; d.dispatchEvent(new Event("toggle")); }); }
+/** Opens a row's More menu, as the keyboard does. */
+async function openMore(row: HTMLElement) {
+  await act(async () => { row.querySelector('[data-testid="rl-more"]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  expect($('[role="menu"]')).not.toBeNull();
 }
 /** Holds the n-th PUT of a shelf paper until `release()`; `reached` once it has been made. */
 function holdPaperPut(n: number) {
@@ -547,28 +560,29 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("the Reading shelf dialog", () => {
-  it("opens on Papers: the heading, v1's sentence, the four tabs in v1's order, the empty shelf, the backup note and Close; no storage line", async () => {
+describe("the Reading list (wave B Task 21a)", () => {
+  it("opens on its sentence and the empty list: the way to add a PDF, the practice paper as the last row, the tools closed; no storage line", async () => {
     await mount();
-    const dlg = tid("shelf-dialog")!;
-    expect(dlg.querySelector("h2")!.textContent).toBe("📚 Reading shelf");
-    expect(dlg.textContent).toContain(E.sh2_intro);
-    expect($$("#shTabs button").map((b) => b.textContent)).toEqual(["Papers", "Search", "Find passages for a sentence", "Matrix"]);
-    expect(tid("sh-tab-papers")!.getAttribute("aria-selected")).toBe("true");
-    expect(tid("sh-empty")!.textContent).toBe("The shelf is empty. Add a PDF to start.");
-    expect(dlg.textContent).toContain("The shelf is kept apart from the normal backup. Press Back up the shelf now and then. Clearing your browser data erases the shelf.");
-    expect(dlg.textContent).not.toContain(E.sh2_mb_used_of_about);
-    expect(tid("sh-close")!.textContent).toBe("Close");
-    expect(tid("sh-add")!.textContent).toBe("➕ Add PDFs");
+    const list = tid("reading-list")!;
+    expect(tid("rl-intro")!.textContent).toBe(E.rl_intro_off);
+    expect(tid("rl-empty")!.textContent).toBe(E.rl_empty);
+    expect(tid("rl-add")!.textContent).toBe("Add your own PDF");
+    expect(tids("rl-row")).toHaveLength(0);
+    expect($$("[data-testid=rl-list] > li")).toHaveLength(1);
+    expect(tid("rl-practice")!.textContent).toContain("Practice paper (fictional)");
+    expect($$("[data-testid=rl-list] > li").at(-1)).toBe(tid("rl-practice"));
+    expect((tid("rl-tools") as HTMLDetailsElement).open).toBe(false);
+    expect(list.textContent).not.toContain(E.sh2_mb_used_of_about);
+    expect(list.textContent).not.toMatch(/shelf/i);
   });
 
-  it("adds PDFs with v1's per-file sentences, storing the text of a readable one (its blob, then the index) and nothing for a scanned one, with no console error", async () => {
+  it("adds PDFs with a sentence per file, storing the text of a readable one (its blob, then the index) and nothing for a scanned one, with no console error", async () => {
     const err = vi.spyOn(console, "error");
     h.extract.mockImplementation(async (f: File) => (f.name === "scan.pdf" ? "no-text" : { pages: ["Sleep and Memory in Adolescents\n" + "word ".repeat(60)], total: 1 }));
     await mount();
-    await pick(tid("sh-file")!, [fileOf("paper.pdf", 5), fileOf("scan.pdf", 6), fileOf("notes.txt", 7)]);
-    await until(() => tid("sh-status")?.textContent?.includes("|") ?? false, "the status line");
-    expect(tid("sh-status")!.textContent).toBe("paper.pdf: added, 1 pages | scan.pdf: no readable text (it looks scanned). Not added. | notes.txt: not a PDF");
+    await pick(tid("rl-file")!, [fileOf("paper.pdf", 5), fileOf("scan.pdf", 6), fileOf("notes.txt", 7)]);
+    await until(() => tid("rl-add-status")?.textContent?.includes("notes.txt") ?? false, "the status line");
+    expect(tid("rl-add-status")!.textContent).toBe("paper.pdf: added to your reading list. scan.pdf: no readable text, so it looks scanned. It was not added. notes.txt: not a PDF.");
     const paperPuts = server.calls.filter((c) => c.method === "PUT" && c.path.includes("shelf_paper"));
     expect(paperPuts).toHaveLength(1);
     await until(() => puts("shelf_index").length > 0, "the index save");
@@ -577,8 +591,9 @@ describe("the Reading shelf dialog", () => {
     expect(decodeURIComponent(paperPuts[0]!.path)).toBe(`/projects/p1/blobs/shelf_paper:${index[0]!.id}`);
     expect(JSON.parse(paperPuts[0]!.body!.body)).toEqual({ pages: ["Sleep and Memory in Adolescents\n" + "word ".repeat(60)], notes: [], cells: {} });
     expect(server.calls.findIndex((c) => c.method === "PUT" && c.path.includes("shelf_paper"))).toBeLessThan(server.calls.findIndex((c) => c.method === "PUT" && c.path.endsWith("shelf_index")));
-    await until(() => tids("sh-paper").length === 1, "the paper's row");
-    await until(() => tid("sh-paper-meta")!.textContent === "paper.pdf · 1 pages · 0 highlights", "the paper's line");
+    await until(() => tids("rl-row").length === 1, "the paper's row");
+    expect(tid("rl-short")!.textContent).toBe("Sleep and Memory in Adolescents");
+    await until(() => tid("rl-status")?.textContent === "Not read yet", "the paper's status");
     expect(err).not.toHaveBeenCalled();
   });
 
@@ -587,8 +602,8 @@ describe("the Reading shelf dialog", () => {
     h.extract.mockImplementation(async () => ({ pages: ["Circadian rhythm and study habits\n" + "word ".repeat(60)], total: 1 }));
     h.api.mockImplementation(async (path: string, init: RequestInit = {}) => (/\/blobs\/citations$/.test(path) ? Promise.reject(new ApiError(500, "server")) : fakeApi(path, init)));
     await mount();
-    await until(() => tids("sh-paper").length === 4, "the papers");
-    await pick(tid("sh-file")!, [fileOf("new.pdf", 5)]);
+    await until(() => tids("rl-row").length === 4, "the papers");
+    await pick(tid("rl-file")!, [fileOf("new.pdf", 5)]);
     await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 5, "the index save");
     // No pid anywhere: they would not match the library's entries, and linkShelf leaves a paper that has one as it is, for good.
     expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.pid)).toEqual([undefined, undefined, undefined, undefined, undefined]);
@@ -598,40 +613,53 @@ describe("the Reading shelf dialog", () => {
     seedCorpus();
     h.extract.mockImplementation(async () => ({ pages: ["Circadian rhythm and study habits\n" + "word ".repeat(60)], total: 1 }));
     await mount();
-    await until(() => tids("sh-paper").length === 4, "the papers");
-    await pick(tid("sh-file")!, [fileOf("new.pdf", 5)]);
+    await until(() => tids("rl-row").length === 4, "the papers");
+    await pick(tid("rl-file")!, [fileOf("new.pdf", 5)]);
     await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 5, "the index save");
     const pids = stored<ShelfIndex>("shelf_index")!.map((e) => e.pid);
     expect(pids.every((p) => /^k[0-9a-z]+$/.test(p ?? ""))).toBe(true);
     expect(new Set(pids).size).toBe(5);
   });
 
-  it("renames inline, and removes a paper only on the second press, deleting its blob and its entry", async () => {
+  it("renames a paper only the reading list has from More, and removes it only after the question is answered, deleting its blob and its entry", async () => {
     seedCorpus();
     await mount();
-    await until(() => tids("sh-paper").length === 4, "the papers");
-    expect(tids("sh-title").map((x) => (x as HTMLInputElement).value)).toEqual(FX.papers.map((p) => p.title));
-    await blurWith(tids("sh-title")[0]!, "  Renamed paper  ");
+    await until(() => tids("rl-row").length === 4, "the papers");
+    expect(tids("rl-short").map((x) => x.textContent)).toEqual(FX.papers.map((p) => p.title));
+    await openMore(tids("rl-row")[0]!);
+    await click($('[data-testid="rl-item-rename"]'));
+    const box = tid("rl-title") as HTMLInputElement;
+    expect(box.value).toBe(FX.papers[0]!.title);
+    typeIn(box, "  Renamed paper  ");
+    await click(tid("rl-rename-save"));
     await until(() => stored<ShelfIndex>("shelf_index")![0]!.title === "Renamed paper", "the rename");
-    const remove = tids("sh-remove")[1]!;
-    expect(remove.textContent).toBe("Remove from shelf");
-    await click(remove);
-    expect(remove.textContent).toBe("Press again to remove it and its highlights");
+    expect(tids("rl-short")[0]!.textContent).toBe("Renamed paper");
+    await openMore(tids("rl-row")[1]!);
+    expect($('[data-testid="rl-item-remove"]')!.textContent).toBe("Remove from reading list");
+    await click($('[data-testid="rl-item-remove"]'));
+    expect(tid("rl-confirm")!.textContent).toContain(E.rl_remove_ask_paper);
     expect(server.calls.some((c) => c.method === "DELETE")).toBe(false);
-    await click(remove);
+    // Keeping it closes the question and removes nothing.
+    await click(tid("rl-remove-no"));
+    expect(tid("rl-confirm")).toBeNull();
+    expect(server.calls.some((c) => c.method === "DELETE")).toBe(false);
+    await openMore(tids("rl-row")[1]!);
+    await click($('[data-testid="rl-item-remove"]'));
+    await click(tid("rl-remove-yes"));
     await until(() => server.calls.some((c) => c.method === "DELETE"), "the delete");
     expect(decodeURIComponent(server.calls.find((c) => c.method === "DELETE")!.path)).toBe("/projects/p1/blobs/shelf_paper:pb");
     await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 3, "the entry removed");
     expect(server.blobs.some((b) => b.kind === "shelf_paper:pb")).toBe(false);
     expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.id)).toEqual(["pa", "pc", "pd"]);
+    await until(() => tids("rl-row").length === 3, "the row gone");
   });
 
   it("Search shows v1's pages and marked snippets, with the AND-to-OR note; Find passages starts from the editor's selection and shows the closest sentence", async () => {
     seedCorpus();
     h.editor = { isDestroyed: false, state: { selection: { from: 1, to: 9, empty: false }, doc: { textBetween: () => "  Sleep improves\n memory in adolescents.  " } } };
     await mount();
-    await until(() => tids("sh-read").every((b) => !(b as HTMLButtonElement).disabled) && tids("sh-read").length === 4, "the papers read");
-    await click(tid("sh-tab-search"));
+    await until(() => tids("rl-read").length === 4 && tids("rl-read").every((b) => !(b as HTMLButtonElement).disabled), "the papers read");
+    await openTools();
     for (const c of FX.search.filter((x) => ["memory screens", "Sleep memory", "xyzzy", "the and of"].includes(x.q))) {
       typeIn(tid("sh-q")!, c.q);
       await click(tid("sh-search-run"));
@@ -665,13 +693,13 @@ describe("the Reading shelf dialog", () => {
     expect((tid("sh-pg") as HTMLInputElement).value).toBe(String(f.cards[0]!.page));
   });
 
-  it("the reader pages through the text and saves a selected passage as a highlight on the paper's blob, marked on the page", async () => {
+  it("the reader pages through the text and saves a selected passage as a highlight on the paper's blob, marked on the page; the row says how many highlights", async () => {
     seedCorpus();
     await mount();
-    await until(() => tids("sh-read").length === 4 && !(tids("sh-read")[0] as HTMLButtonElement).disabled, "the papers read");
-    await click(tids("sh-read")[0]!);
+    await until(() => tids("rl-read").length === 4 && !(tids("rl-read")[0] as HTMLButtonElement).disabled, "the papers read");
+    await click(tids("rl-read")[0]!);
     expect(tid("sh-text")!.textContent).toBe(FX.papers[0]!.pages[0]);
-    expect(tid("shelf-dialog")!.textContent).toContain(E.sh2_this_is_the_text);
+    expect(tid("reading-list")!.textContent).toContain(E.sh2_this_is_the_text);
     await click(tid("sh-next"));
     expect((tid("sh-pg") as HTMLInputElement).value).toBe("2");
     await click(tid("sh-next"));
@@ -699,17 +727,19 @@ describe("the Reading shelf dialog", () => {
     window.getSelection()!.removeAllRanges();
     await click(tid("sh-save-hl"));
     expect(h.toast).toHaveBeenLastCalledWith("Select some text on the page first");
+    await click(tid("sh-back"));
+    expect(tids("rl-row")).toHaveLength(4);
+    expect(tids("rl-status")[0]!.textContent).toBe("Reading. 1 highlight");
+    await click(tids("rl-read")[0]!);
     await click(tid("sh-hl-del"));
     await until(() => stored<ShelfPaper>("shelf_paper:pa")!.notes.length === 0, "the highlight deleted");
-    await click(tid("sh-back"));
-    expect(tids("sh-paper")).toHaveLength(4);
   });
 
   it("Summarise with AI stays disabled, its reason under it, until two lines and twelve words; then the lines are saved first and the summary lands in the reader", async () => {
     seedCorpus();
     await mount();
-    await until(() => tids("sh-read").length === 4 && !(tids("sh-read")[0] as HTMLButtonElement).disabled, "the papers read");
-    await click(tids("sh-read")[0]!);
+    await until(() => tids("rl-read").length === 4 && !(tids("rl-read")[0] as HTMLButtonElement).disabled, "the papers read");
+    await click(tids("rl-read")[0]!);
     const btn = tid("sh-ai") as HTMLButtonElement;
     expect(btn.textContent).toBe("Summarise with AI");
     expect(btn.disabled).toBe(true);
@@ -733,12 +763,11 @@ describe("the Reading shelf dialog", () => {
     expect(prompt).toContain("Contact: [author email removed]");
   });
 
-  it("the matrix shows the default columns, stores added and removed columns in shelf_cols and cells on the paper; Export opens the export place, whose table is reading_matrix.csv", async () => {
+  it("Compare's table (ShelfMatrix, until Task 22) shows the default columns, stores added and removed columns in shelf_cols and cells on the paper; Export opens the export place, whose table is reading_matrix.csv", async () => {
     seedCorpus();
-    await mount();
-    await until(() => tids("sh-read").length === 4 && !(tids("sh-read")[3] as HTMLButtonElement).disabled, "the papers read");
-    await click(tid("sh-tab-matrix"));
-    expect(tid("shelf-dialog")!.textContent).toContain("The cells are yours, not the AI's.");
+    await mount(<ShelfMatrix />);
+    await until(() => tids("sh-matrix-row").length === 4 && !(tids("sh-cell")[0] as HTMLTextAreaElement).readOnly && !(tids("sh-cell")[9] as HTMLTextAreaElement).readOnly, "the papers read");
+    expect(tid("shelf-matrix")!.textContent).toContain("The cells are yours, not the AI's.");
     expect(tids("sh-col-head").map((x) => x.firstChild!.textContent!.trim())).toEqual(DEFAULTS);
     expect(tids("sh-matrix-row")).toHaveLength(4);
     typeIn(tid("sh-col")!, "  Sample size ");
@@ -769,40 +798,41 @@ describe("the Reading shelf dialog", () => {
     expect(table.split("\n")[1]).toBe("Sleep and memory in adolescents,survey,,");
   });
 
-  it("backs up the shelf and restores a backup: a file that is not one says so; one that is adds its papers", async () => {
+  it("backs up the reading list and restores a backup: a file that is not one says so; one that is adds its papers", async () => {
     await mount();
     await click(tid("sh-backup"));
     expect(h.download.mock.calls[0]![0]).toMatch(/^appuscholar-shelf-\d{4}-\d{2}-\d{2}\.json$/);
-    expect(tid("sh-status")!.textContent).toBe("Shelf backed up: 0 papers.");
+    expect(tid("rl-add-status")!.textContent).toBe("Papers backed up: 0.");
     await pick(tid("sh-rest")!, [new File(['{"app":"other","papers":[]}'], "b.json")]);
-    await until(() => tid("sh-status")!.textContent === "That file is not a shelf backup.", "the refusal");
+    await until(() => tid("rl-add-status")!.textContent === "That file is not a reading list backup.", "the refusal");
     const text = JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: [{ id: "p9", title: "Restored", file: "r.pdf", size: 3, added: "2026-03-01T00:00:00.000Z", pages: ["Restored text"], total: 1, notes: [], cells: { Sample: "12" } }] });
     await pick(tid("sh-rest")!, [new File([text], "b.json")]);
-    await until(() => tid("sh-status")!.textContent === "Restored 1 papers.", "the restore");
+    await until(() => tid("rl-add-status")!.textContent === "Papers restored: 1.", "the restore");
     expect(stored<ShelfPaper>("shelf_paper:p9")).toEqual({ pages: ["Restored text"], notes: [], cells: { Sample: "12" } });
     await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 1, "the index save");
     // The restored paper is on the list with a pid of its own (wave B, Task 17): the library holds nothing it could be.
     expect(stored<ShelfIndex>("shelf_index")![0]).toEqual({ id: "p9", title: "Restored", file: "r.pdf", size: 3, added: "2026-03-01T00:00:00.000Z", total: 1, kept: 1, pid: expect.stringMatching(/^k[0-9a-z]+$/) });
   });
 
-  it("closing the dialog during Add PDFs: the paper being stored still gets its index entry, and no other paper is stored after the close", async () => {
+  it("leaving the list during Add PDFs: the paper being stored still gets its index entry, and no other paper is stored after it", async () => {
     const held = holdPaperPut(2);
     h.extract.mockImplementation(async (f: File) => ({ pages: [f.name + " " + "word ".repeat(60)], total: 1 }));
     const d = await mount();
-    await pick(tid("sh-file")!, [fileOf("a.pdf", 1), fileOf("b.pdf", 2), fileOf("c.pdf", 3)]);
+    await pick(tid("rl-file")!, [fileOf("a.pdf", 1), fileOf("b.pdf", 2), fileOf("c.pdf", 3)]);
     await until(() => held.reached, "b's text being stored");
     await d.close();
-    expect(tid("shelf-dialog")).toBeNull();
+    expect(tid("reading-list")).toBeNull();
     held.release();
     await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 2, "both entries");
     await settle(1000);
     const index = stored<ShelfIndex>("shelf_index")!;
     expect(index.map((e) => e.file)).toEqual(["a.pdf", "b.pdf"]);
     expect(paperIds()).toEqual(index.map((e) => e.id).sort());
-    expect(h.extract).toHaveBeenCalledTimes(2);
+    // The three are read together (three at a time), so c was read before the list was left; it was not stored.
+    expect(h.extract).toHaveBeenCalledTimes(3);
   });
 
-  it("closing the dialog during a restore: the same", async () => {
+  it("leaving the list during a restore: the same", async () => {
     const held = holdPaperPut(2);
     const d = await mount();
     const text = JSON.stringify({ app: "appuscholar-shelf", v: 1, papers: ["p1", "p2", "p3"].map((id) => ({ id, title: id, file: id + ".pdf", size: 1, added: "2026-03-01T00:00:00.000Z", pages: ["t"], total: 1 })) });
@@ -816,7 +846,7 @@ describe("the Reading shelf dialog", () => {
     expect(paperIds()).toEqual(["p1", "p2"]);
   });
 
-  it("reopened while the closed dialog's index entry is still being written: the new dialog waits for that write and lists the paper", async () => {
+  it("reopened while the closed list's index entry is still being written: the new list waits for that write and lists the paper", async () => {
     let releasePaper!: () => void, releaseIndex!: () => void;
     const paperGate = new Promise<void>((r) => { releasePaper = r; }), indexGate = new Promise<void>((r) => { releaseIndex = r; });
     const box = { paper: false, index: false };
@@ -828,21 +858,21 @@ describe("the Reading shelf dialog", () => {
     });
     h.extract.mockImplementation(async (f: File) => ({ pages: [f.name + " " + "word ".repeat(60)], total: 1 }));
     const d = await mount();
-    await pick(tid("sh-file")!, [fileOf("a.pdf", 1)]);
+    await pick(tid("rl-file")!, [fileOf("a.pdf", 1)]);
     await until(() => box.paper, "a's text being stored");
     await d.close();
     releasePaper();
-    // The entry goes through a detached client (the dialog is gone); its PUT is out when the dialog opens again.
+    // The entry goes through a detached client (the list is gone); its PUT is out when the list opens again.
     await until(() => box.index, "the detached index write");
     await mount();
     await settle(50);
     releaseIndex();
-    await until(() => tids("sh-paper").length === 1, "a's row in the reopened dialog");
+    await until(() => tids("rl-row").length === 1, "a's row in the reopened list");
     await settle(1000);
     expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.file)).toEqual(["a.pdf"]);
   }, 15000);
 
-  it("a detached index write never asks for the passphrase (the dialog is gone): with the vault locked its entry is held for the blob", async () => {
+  it("a detached index write never asks for the passphrase (the list is gone): with the vault locked its entry is held for the blob", async () => {
     server.blobs.push({ projectId: "p1", kind: "shelf_index", body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1 });
     const locked = () => Promise.reject(new Error("vault-locked"));
     const ensureUnlocked = vi.fn(async () => true);
@@ -854,9 +884,9 @@ describe("the Reading shelf dialog", () => {
     expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
   });
 
-  it("Shelf shows the loading sign, not its empty state, until its data is read (W8)", async () => {
+  it("the list shows one loading sign, not its empty state or its rows, until its data is read (W8; one status region, wave A LATER T18)", async () => {
     seedCorpus();
-    // The index's read is held: the shelf is not known to be empty, nor its papers' pages known.
+    // The index's read is held: the list is not known to be empty, nor its papers' pages known.
     let release!: () => void;
     const gate = new Promise<void>((r) => { release = r; });
     h.api.mockImplementation(async (path: string, init: RequestInit = {}) => {
@@ -864,23 +894,19 @@ describe("the Reading shelf dialog", () => {
       return fakeApi(path, init);
     });
     await mount();
-    expect(tid("sh-body")!.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
-    expect(tid("sh-empty")).toBeNull();
-    expect(tids("sh-paper")).toHaveLength(0);
-    await click(tid("sh-tab-matrix"));
-    expect(tid("sh-body")!.querySelector('[data-testid="panel-loading"]')).not.toBeNull();
-    expect(tid("sh-body")!.textContent).not.toContain(E.sh2_the_shelf_is_empty_2);
-    expect(tids("sh-matrix")).toHaveLength(0);
+    const list = tid("reading-list")!;
+    expect(list.querySelector('[data-testid="panel-loading"]')!.textContent).toBe(E.blob_loading);
+    expect(list.querySelectorAll('[role="status"]')).toHaveLength(1);
+    expect(tid("rl-empty")).toBeNull();
+    expect(tids("rl-row")).toHaveLength(0);
+    expect(tid("rl-add")).toBeNull();
     release();
-    await until(() => tids("sh-matrix-row").length === 4, "the matrix");
+    await until(() => tids("rl-row").length === 4, "the papers");
     expect(tid("panel-loading")).toBeNull();
-    await click(tid("sh-tab-papers"));
-    await until(() => tids("sh-paper").length === 4, "the papers");
-    expect(tid("panel-loading")).toBeNull();
-    expect(tid("sh-empty")).toBeNull();
+    expect(tid("rl-empty")).toBeNull();
   });
 
-  it("a paper row shows the loading sign, not 'pages only', while that paper's text is read (W8)", async () => {
+  it("a paper's row shows a bar, not a wrong status, while that paper's text is read (W8)", async () => {
     seedCorpus();
     let release!: () => void;
     const gate = new Promise<void>((r) => { release = r; });
@@ -889,30 +915,33 @@ describe("the Reading shelf dialog", () => {
       return fakeApi(path, init);
     });
     await mount();
-    await until(() => tids("sh-paper").length === 4, "the papers");
-    await until(() => tids("sh-paper-meta").length === 3, "the other papers' lines");
-    expect(tid("sh-paper-loading")!.textContent).toBe(E.blob_loading);
-    expect(tids("sh-paper")[0]!.textContent).not.toContain("pages only");
-    expect(tids("sh-paper")[0]!.textContent).not.toMatch(/\d+ pages/);
-    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pb.pdf · 2 pages · 0 highlights");
+    await until(() => tids("rl-row").length === 4 && tids("rl-status").length === 3, "the other papers' lines");
+    const first = tids("rl-row")[0]!;
+    expect(first.querySelector('[data-testid="rl-status-wait"]')).not.toBeNull();
+    expect(first.querySelector('[data-testid="rl-status"]')).toBeNull();
+    expect((first.querySelector('[data-testid="rl-read"]') as HTMLButtonElement).disabled).toBe(true);
+    // The bar is not a status region: the list still has none while its rows load.
+    expect(tid("reading-list")!.querySelectorAll('[role="status"]')).toHaveLength(0);
     release();
-    await until(() => tids("sh-paper-meta").length === 4 && !tid("sh-paper-loading"), "the first paper's line");
-    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pa.pdf · 3 pages · 0 highlights");
+    await until(() => !first.querySelector('[data-testid="rl-status-wait"]'), "the first paper's line");
+    expect(first.querySelector('[data-testid="rl-status"]')!.textContent).toBe("Not read yet");
+    expect((first.querySelector('[data-testid="rl-read"]') as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("a removal the server refuses says so and keeps the paper; a paper whose blob is not read shows its pages only", async () => {
+  it("a removal the server refuses says so and keeps the paper; a paper whose blob does not open cannot be read", async () => {
     seedCorpus();
     server.blobs = server.blobs.map((b) => (b.kind === "shelf_paper:pc" ? { ...b, body: "AAAAAAAAAAAAAAAA.sealed", keyVersion: 1 } : b));
     h.api.mockImplementation(async (path: string, init: RequestInit = {}) => (init.method === "DELETE" ? Promise.reject(new ApiError(500, "server")) : fakeApi(path, init)));
     await mount();
-    await until(() => tids("sh-paper").length === 4 && !(tids("sh-read")[0] as HTMLButtonElement).disabled, "the papers");
-    expect(tids("sh-paper-meta")[2]!.textContent).toBe("pc.pdf · 2 pages");
-    expect(tids("sh-paper-meta")[0]!.textContent).toBe("pa.pdf · 3 pages · 0 highlights");
-    await click(tids("sh-remove")[0]!);
-    await click(tids("sh-remove")[0]!);
-    await until(() => tid("sh-status")?.textContent === E.shelf_remove_fail, "the failure");
-    expect(tid("sh-status")!.textContent).toBe("That paper could not be removed. Check your connection and try again.");
-    expect(tids("sh-paper")).toHaveLength(4);
+    await until(() => tids("rl-row").length === 4 && !(tids("rl-read")[0] as HTMLButtonElement).disabled, "the papers");
+    expect((tids("rl-read")[2] as HTMLButtonElement).disabled).toBe(true);
+    expect(tid("rl-broken")!.textContent).toBe(E.rl_broken);
+    await openMore(tids("rl-row")[0]!);
+    await click($('[data-testid="rl-item-remove"]'));
+    await click(tid("rl-remove-yes"));
+    await until(() => tid("rl-remove-fail")?.textContent === E.shelf_remove_fail, "the failure");
+    expect(tid("rl-remove-fail")!.textContent).toBe("That paper could not be removed. Check your connection and try again.");
+    expect(tids("rl-row")).toHaveLength(4);
     expect(server.blobs.some((b) => b.kind === "shelf_paper:pa")).toBe(true);
   });
 
@@ -921,14 +950,14 @@ describe("the Reading shelf dialog", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     h.extract.mockImplementation(async () => ({ pages: ["x".repeat(300)], total: 1 }));
     await mount();
-    await until(() => !!tid("sh-broken"), "the broken note");
-    expect(tid("sh-broken")!.textContent).toBe(E.vault_shelf_broken);
-    await pick(tid("sh-file")!, [fileOf("paper.pdf", 5)]);
-    expect(confirm).toHaveBeenCalledWith(E.vault_shelf_broken_confirm);
+    await until(() => !!tid("rl-broken"), "the broken note");
+    expect(tid("rl-broken")!.textContent).toBe(E.rl_broken);
+    await pick(tid("rl-file")!, [fileOf("paper.pdf", 5)]);
+    expect(confirm).toHaveBeenCalledWith(E.rl_broken_confirm);
     await settle(900);
     expect(server.calls.filter((c) => c.method === "PUT")).toEqual([]);
     confirm.mockReturnValue(true);
-    await pick(tid("sh-file")!, [fileOf("paper.pdf", 5)]);
+    await pick(tid("rl-file")!, [fileOf("paper.pdf", 5)]);
     await until(() => puts("shelf_index").length > 0, "the index replaced");
     expect(confirm).toHaveBeenCalledTimes(2);
     expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.file)).toEqual(["paper.pdf"]);

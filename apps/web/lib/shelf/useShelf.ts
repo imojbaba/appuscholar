@@ -71,9 +71,9 @@ export async function readPaperOnce(projectId: string, paperId: string, vault: B
 }
 
 /**
- * An update of a project's shelf_index made after the dialog that started it went away (closed, or another project opened): a headless client of its own (no passphrase
- * prompt: the dialog is gone) reads the index (after any last save of the dialog's client, and any held value), applies the update, sends it, and is disposed of; what it
- * cannot send is held and sent later, as any blob value is (held.ts). The run is tracked under the blob's id, so a dialog opened meanwhile waits for it before its first read.
+ * An update of a project's shelf_index made after the Reading list that started it went away (left, or another project opened): a headless client of its own (no passphrase
+ * prompt: the list is gone) reads the index (after any last save of the list's client, and any held value), applies the update, sends it, and is disposed of; what it
+ * cannot send is held and sent later, as any blob value is (held.ts). The run is tracked under the blob's id, so a list opened meanwhile waits for it before its first read.
  */
 export function writeIndexDetached(projectId: string, u: (prev: ShelfIndex | null) => ShelfIndex, vault: () => BlobVault): void {
   const id = blobId(projectId, "shelf_index");
@@ -110,7 +110,7 @@ export function useShelf(): { projectId: string | null; index: ShelfIndex | null
 /** New V2 copy (register row D-S2-17; ruling R15: an English constant): a pop-out of another stage than Literature does not store the matrix's columns (D-S2-43). */
 export const COLS_POPOUT = "Columns can be changed only in the writing window.";
 
-/** What the dialog holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */
+/** What the Reading list holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */
 export type ShelfStore = {
   projectId: string | null;
   index: ProjectBlob<ShelfIndex>;
@@ -124,8 +124,8 @@ export type ShelfStore = {
 };
 
 /**
- * The dialog's shelf: `shelf_index` and `shelf_cols` through useProjectBlob, and one blob client per paper of the index (created as the index lists it, so every paper is read when
- * the dialog opens, as v1's shAll reads every record), disposed of when the paper leaves the index, the project changes or the dialog closes. A write over a blob that does not open
+ * The Reading list's store: `shelf_index` and `shelf_cols` through useProjectBlob, and one blob client per paper of the index (created as the index lists it, so every paper is read when
+ * the list opens, as v1's shAll reads every record), disposed of when the paper leaves the index, the project changes or the list is left. A write over a blob that does not open
  * on this device asks first, once per blob (R16).
  */
 export function useShelfStore(): ShelfStore {
@@ -158,11 +158,18 @@ export function useShelfStore(): ShelfStore {
     return () => { for (const c of mine.values()) c.dispose(); mine.clear(); };
   }, [projectId]);
 
-  /** The paper's client, made and started when there is none. */
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
+
+  /**
+   * The paper's client, made and started when there is none. Its save that loses the race to another window three times, and its edit that finds the paper deleted in another window,
+   * each say so once (wave A LATER T5, wave B Task 21), as the hook's clients do; the client says nothing once it is disposed of (the list is closed or the paper is gone).
+   */
   const ensureClient = useCallback((id: string) => {
     if (!projectId || clients.current.has(id)) return;
     const c = projectBlobClient(shelfPaperKind(id), projectId, () => vaultRef.current, (s) =>
-      setPapers((prev) => { const map = new Map(prev.projectId === projectId ? prev.map : []); map.set(id, s); return { projectId, map }; }));
+      setPapers((prev) => { const map = new Map(prev.projectId === projectId ? prev.map : []); map.set(id, s); return { projectId, map }; }),
+      { onConflict: () => toast(tRef.current("blob_conflict")), onDeleted: () => toast(tRef.current("blob_deleted_elsewhere")) });
     clients.current.set(id, c);
     void c.start();
   }, [projectId]);
@@ -177,10 +184,10 @@ export function useShelfStore(): ShelfStore {
   const open = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => { if (open) for (const c of clients.current.values()) c.resume(); }, [open]);
 
-  /** R16: the first write over a blob that does not open on this device asks; the answer holds for that blob while the dialog is open. */
+  /** R16: the first write over a blob that does not open on this device asks; the answer holds for that blob while the list is open. */
   const mayWrite = useCallback((key: string, broken: boolean | undefined) => {
     if (!broken || confirmed.current.has(key)) return true;
-    if (!window.confirm(t("vault_shelf_broken_confirm"))) return false;
+    if (!window.confirm(t("rl_broken_confirm"))) return false;
     confirmed.current.add(key);
     return true;
   }, [t]);

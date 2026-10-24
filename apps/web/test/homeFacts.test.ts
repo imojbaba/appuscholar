@@ -25,8 +25,13 @@ describe("homeFacts", () => {
     expect(homeFacts({ ...none, idea: { ...idea, read: { text: "Looks fine.", at: "x" } } }, 0, "")).toMatchObject({ verdict: null, checked: true, readText: "Looks fine." });
   });
 
-  it("kept is the library's length", () => {
+  it("kept is the Reading list's length: the library's entries on the reading list, and the PDFs no kept paper took (ruling B2-R23)", () => {
     expect(homeFacts({ ...none, citations: [{ title: "a" }, { title: "b" }, {}] }, 0, "").kept).toBe(3);
+    const lib = [{ title: "a", pid: "ka" }, { title: "b", pid: "kb", rl: false }, { title: "c", pid: "kc", rl: true }];
+    // b is in the library only; a has a PDF; one more PDF is no kept paper's; a second PDF of a is a row of its own.
+    const index = [shelf("s1", "A pdf"), shelf("s2", "Loose pdf"), shelf("s3", "A again")].map((e, i) => ({ ...e, pid: ["ka", "kz", "ka"][i]! }));
+    expect(homeFacts({ ...none, citations: lib, shelfIndex: index }, 0, "").kept).toBe(4);
+    expect(homeFacts({ ...none, citations: lib }, 0, "").kept).toBe(2);
   });
 
   it("read counts shelf papers with highlights and notes with stage or card text; highlights sums the counts; cards counts notes with a card field", () => {

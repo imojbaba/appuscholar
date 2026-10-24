@@ -33,7 +33,8 @@ export type BlobUpdate<T> = T | ((prev: T | null) => T);
 export type ProjectBlob<T> = ProjectBlobState<T> & {
   /**
    * Shows the result at once and saves it BLOB_SAVE_DEBOUNCE_MS later (sealed under the blob's key unless the vault is off). Set while
-   * the stored value is not known yet (loading, locked, a failed read), it is queued and replayed onto the value once it is read.
+   * the stored value is not known yet (loading, locked, a failed read), it is queued and replayed onto the value once it is read; if that read finds a blob that does not
+   * open, the replayed value is held and shown with `broken` and nothing is sent over the blob until the panel sets again (R16: the panel asks first), as after a conflict.
    * Panels holding a collection (citations, caches, ap_notes, shelf_index, ap_cols) must use the update form, so an entry added before
    * the read lands on top of the stored ones instead of replacing them.
    */
@@ -69,8 +70,10 @@ type ClientDeps<T> = {
   unguarded?: boolean;
   /** Called after each save the server accepted (the pop-out sync's announce). */
   onSaved?: () => void;
-  /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). */
+  /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). Not called once the client is disposed of: the panel is gone. */
   onConflict?: () => void;
+  /** A save found the blob deleted in another window and dropped the edits made here (the hook's toast, `blob_deleted_elsewhere`). Not called once the client is disposed of. */
+  onDeleted?: () => void;
 };
 
 /** PUTs one save makes while another window keeps saving first; after the last conflict the value is held. */
@@ -179,9 +182,18 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     // The sets queued while the value was unknown are the edits made here since this base.
     sinceBase = [...ops];
     if (ops.length) {
-      value = applyOps(ops, value);
+      const made = applyOps(ops, value);
       ops = [];
-      if (value !== null) pending = { value };
+      if (broken) {
+        // Wave B Task 21 (wave A LATER T5, R16): the sets were made before this window knew the stored blob does not open, so no panel asked the student. They are held and shown,
+        // not sent over the blob: a guarded panel asks on its next set (which goes on from the held value), and an unguarded kind keeps them held, as after a conflict.
+        brokenHeld = true;
+        value = null;
+        if (made !== null) pending = { value: made };
+      } else {
+        value = made;
+        if (value !== null) pending = { value };
+      }
     }
   }
 
@@ -258,7 +270,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
           if (outcomeUnknown) { markUnsure(json, carried); throw e; }
           if (!isVersionConflict(e)) throw e;
           // Another window saved first. After the last attempt the value is held and goes with the next edit (or flush, unlock, mount).
-          if (++conflicts >= BLOB_CONFLICT_ATTEMPTS) { hold(v); error = true; o.onConflict?.(); return false; }
+          if (++conflicts >= BLOB_CONFLICT_ATTEMPTS) { hold(v); error = true; if (active) o.onConflict?.(); return false; }
           // Read the newer value (no prompt beyond the usual rules) and replay every edit made here since the base onto it.
           const fresh = await o.get();
           const opened = fresh ? await openWire(fresh) : { value: null };
@@ -283,6 +295,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
             sinceBase = [];
             broken = false;
             error = false;
+            if (active) o.onDeleted?.();
             return true;
           }
           deks = fresh?.deks ?? [];
@@ -343,7 +356,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /** For the registry: a client with no panel, sending `held` the way this one would. */
   const send = async (held: HeldOp[]): Promise<HeldOp[]> => {
     // No panel to tell: a value still conflicting stays held for the next drain or mount.
-    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true, onConflict: undefined });
+    const c = createBlobClient<T>({ ...o, delayMs: 0, onState: () => {}, headless: true, onConflict: undefined, onDeleted: undefined });
     c.adopt(held as HeldOp<T>[]);
     await c.flush();
     return c.leftover() as HeldOp[];
@@ -461,7 +474,7 @@ export const blobPath = (projectId: string, kind: BlobKind): string => `/project
  * A client of one project's blob of `kind`, as useProjectBlob makes it (its routes, its parse, the debounce): the Reading shelf makes one per paper, outside a hook,
  * since the number of papers changes. The caller starts it and disposes of it.
  */
-export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean; onConflict?: () => void } = {}) {
+export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, onState: (s: ProjectBlobState<BlobShape<K>>) => void, opts: ProjectBlobOptions & { headless?: boolean; onConflict?: () => void; onDeleted?: () => void } = {}) {
   const path = blobPath(projectId, kind);
   const id = blobId(projectId, kind);
   return createBlobClient<BlobShape<K>>({
@@ -480,6 +493,7 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     put: (body, ifMatch) => apiFetch<BlobWire>(path, { method: "PUT", body: JSON.stringify(body), ...(typeof ifMatch === "number" ? { headers: { "if-match": `"${ifMatch}"` } } : {}) }),
     vault,
     onConflict: opts.onConflict,
+    onDeleted: opts.onDeleted,
     delayMs: BLOB_SAVE_DEBOUNCE_MS,
     onState,
     headless: opts.headless
@@ -520,7 +534,9 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
   const readOnly = (opts.readOnly ?? false) || !blobWritable(kind);
   useEffect(() => {
     if (projectId === null || key === null) return;
-    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), { readOnly, onConflict: () => toast(tRef.current("blob_conflict")) });
+    const c = projectBlobClient(kind, projectId, () => vaultRef.current, (s) => setTagged({ key, s }), {
+      readOnly, onConflict: () => toast(tRef.current("blob_conflict")), onDeleted: () => toast(tRef.current("blob_deleted_elsewhere"))
+    });
     client.current = c;
     void c.start();
     const stop = syncedKind(kind) ? onBlobAnnounced(blobId(projectId, kind), () => c.refresh()) : () => {};

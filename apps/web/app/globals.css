@@ -512,6 +512,48 @@
 .sh-matrix td { vertical-align: top; padding: 4px; }
 .sh-matrix td textarea { width: 100%; min-width: 130px; }
 .sh-matrix .sh-matrix-title { font-weight: 700; min-width: 140px; }
+/* The Reading list (wave B Task 21a; canvas Read): one row per kept paper, the way to add a PDF, the practice paper last. The reader, search and backup inside it are the shelf's own (.sh-*) until B3. */
+.rl { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s5) var(--s6); }
+.rl-intro { margin: 0; max-width: 80ch; font-size: 15px; color: var(--muted); }
+.rl-note { margin: 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--flag-ink); background: var(--flag-bg); color: var(--flag-ink); border-radius: var(--r-ctl); font-size: 14px; }
+.rl-empty { margin: 0; font-size: 15px; color: var(--muted); }
+.rl-bar { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.rl-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px dashed var(--dashed); border-radius: var(--r-ctl); background: none; color: var(--purple-800); font: inherit; font-weight: 600; cursor: pointer; }
+.rl-add:hover:not(:disabled) { background: var(--soft); }
+.rl-add:disabled { opacity: 0.6; cursor: progress; }
+.rl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.rl-row { display: flex; flex-wrap: wrap; gap: var(--s3); padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.rl-practice { border-style: dashed; background: var(--soft); }
+.rl-main { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.rl .rl-short { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 600; color: var(--ink); }
+.rl-status { margin: 0; font-size: 13px; color: var(--muted); }
+.rl-status-wait { height: 14px; width: 40%; max-width: 220px; }
+.rl-free { margin: 0; font-size: 13px; }
+.rl-free a { color: var(--purple-800); font-weight: 600; }
+.rl-free span { color: var(--muted); }
+.rl-acts { display: flex; align-items: flex-start; gap: var(--s2); }
+.rl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
+.rl-btn:hover:not(:disabled) { background: var(--soft); }
+.rl-btn:disabled { opacity: 0.6; cursor: default; }
+.rl-btn-primary { border-color: var(--purple-800); background: var(--purple-800); color: var(--primary-foreground); font-weight: 700; }
+.rl-btn-primary:hover:not(:disabled) { background: var(--purple-600); border-color: var(--purple-600); }
+.rl-btn-danger { border-color: var(--danger-ink); color: var(--danger-ink); }
+.rl-btn:focus-visible, .rl-add:focus-visible, .rl-free a:focus-visible, .rl-tools > summary:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.rl-confirm { padding: var(--s2) var(--s3); border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--soft); font-size: 14px; }
+.rl-confirm p { margin: 0 0 var(--s2); }
+.rl-confirm-acts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.rl-rename { display: flex; flex-direction: column; gap: 6px; max-width: 520px; font-size: 14px; }
+.rl-fail { color: var(--danger-ink); }
+.rl-tools > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--purple-800); font-weight: 600; font-size: 14px; }
+.rl-tools [role="tab"][aria-selected="true"] { border-color: var(--purple-800); color: var(--purple-800); font-weight: 700; }
+.rl-menu { min-width: 14rem; }
+@media (max-width: 700px) {
+  .rl { padding: var(--s4); }
+  .rl-add { width: 100%; }
+  .rl-acts { width: 100%; }
+  .rl-acts .rl-btn { flex: 1 1 0; }
+  .rl-free a { display: inline-flex; align-items: center; min-height: 44px; }
+}
 
 /* Analyse a paper (v1 743: .ap-box, .ap-q, .ap-bad, .ap-warn, .ap-ok, .ap-banner), in the design system's tokens. */
 .ap-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }

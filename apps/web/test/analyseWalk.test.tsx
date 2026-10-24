@@ -60,7 +60,7 @@ import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
 import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 import { apWalkShow } from "../lib/analyse/walk";
-import { NOTES_POPOUT, notePut } from "../lib/analyse/notes";
+import { NOTES_POPOUT, notePut, resetBrokenAnswers } from "../lib/analyse/notes";
 import { acrossData, downloadCard } from "../lib/analyse/cards";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -186,6 +186,7 @@ beforeEach(() => {
   h.toast.mockReset(); h.download.mockReset(); h.openExport.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
   h.blobs = {}; h.sets = []; h.projectId = "p-1";
+  resetBrokenAnswers();
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 afterEach(() => {
@@ -496,6 +497,51 @@ describe("a stored note that does not open on this device (ruling R16)", () => {
     typeIn($("#apTry") as HTMLTextAreaElement, "abcd");
     expect(confirm.mock.calls).toEqual([[E.vault_ap_broken_confirm]]);
     expect(notes()![getAp().doc!.id]!.stages.gap).toEqual({ mine: "abcd" });
+  });
+
+  it("R16 is asked per blob, not per panel: a yes given in one panel holds for the other panel of the same project (wave B Task 21)", async () => {
+    h.blobs.ap_notes = { value: null, broken: true };
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await mount();
+    load("sample@apSample");
+    await openTab("walk");
+    typeIn($("#apTry") as HTMLTextAreaElement, "a");
+    expect(confirm.mock.calls).toEqual([[E.vault_ap_broken_confirm]]);
+    // A second panel on the same project and blob (Compare reads the notes too): the blob is still shown as broken to it, and it asks nothing.
+    h.blobs.ap_notes = { value: null, broken: true };
+    await act(async () => { for (const l of h.listeners) l(); });
+    await mount();
+    await openTab("walk");
+    typeIn($$("#apTry").at(-1) as HTMLTextAreaElement, "ab");
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(h.sets.filter((x) => x.kind === "ap_notes")).toHaveLength(2);
+  });
+
+  it("a no is the panel's own: the next panel asks again; another project's blob is another question", async () => {
+    h.blobs.ap_notes = { value: null, broken: true };
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    await mount();
+    load("sample@apSample");
+    await openTab("walk");
+    typeIn($("#apTry") as HTMLTextAreaElement, "a");
+    typeIn($("#apTry") as HTMLTextAreaElement, "ab");
+    expect(confirm).toHaveBeenCalledTimes(1);
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    confirm.mockReturnValue(true);
+    await mount();
+    await openTab("walk");
+    typeIn($("#apTry") as HTMLTextAreaElement, "abc");
+    expect(confirm).toHaveBeenCalledTimes(2);
+    // The same blob kind of another project is asked about on its own.
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    document.body.innerHTML = "";
+    h.projectId = "p-2";
+    h.blobs.ap_notes = { value: null, broken: true };
+    await mount();
+    await openTab("walk");
+    typeIn($("#apTry") as HTMLTextAreaElement, "abcd");
+    expect(confirm).toHaveBeenCalledTimes(3);
   });
 
   it("a broken column list reads as the defaults and asks before the first toggle replaces it", async () => {

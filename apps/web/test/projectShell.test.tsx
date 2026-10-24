@@ -42,7 +42,8 @@ vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-tes
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div data-testid="panel-analyse" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
-vi.mock("@/components/tools/shelf/ShelfDialog", () => ({ ShelfDialog: h.stub, ShelfMatrix: () => <div data-testid="shelf-matrix" /> }));
+vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: h.stub }));
+vi.mock("@/components/tools/shelf/ShelfMatrix", () => ({ ShelfMatrix: () => <div data-testid="shelf-matrix" /> }));
 vi.mock("@/components/document/DocumentCard", async () => {
   const { useProject } = await import("../components/frame/ProjectContext");
   return {

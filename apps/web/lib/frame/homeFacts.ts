@@ -1,6 +1,6 @@
-import type { CitationEntry } from "@appuscholar/core";
-import type { ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
+import type { ApNotes, IdeaIntake, ShelfIndex, StoredEntry } from "@/lib/blobs/kinds";
 import { noteHasCard, noteHasWork, pidOfNote } from "@/lib/papers/ids";
+import { papersOf } from "@/lib/papers/list";
 import type { StageBlobs, ToolFacts, ToolModule } from "@/lib/tools/registry";
 import { parseIdeaRead } from "./ideaRead";
 
@@ -18,12 +18,12 @@ const titleKey = (s: string): string => s.trim().toLowerCase();
 /**
  * The home's facts from the project's blobs. `field` is the project's field (R9). `highlightCounts` is each shelf paper's highlight count by its
  * shelf id (the highlights live in `shelf_paper:<id>`, not in the index); absent, no paper counts as highlighted.
- * kept = the library's length; read = shelf papers with a highlight and `ap_notes` entries with any stage or card text, a note counted once with the shelf paper it
+ * kept = the Reading list's length (ruling B2-R23, lib/papers/list papersOf: the library's entries on the reading list, and the PDFs no kept paper took); read = shelf papers with a highlight and `ap_notes` entries with any stage or card text, a note counted once with the shelf paper it
  * belongs to: joined by pid (a note kept under `p:<pid>`, or carrying one, Task 17) and, for an old note with no pid, by title; cards = notes with any card field.
  * A note the paper-id migration moved (`movedTo`) is the same paper as the note it moved to and is not counted again.
  */
 export function homeFacts(
-  b: { idea: IdeaIntake | null; citations: CitationEntry[] | null; shelfIndex: ShelfIndex | null; apNotes: ApNotes | null },
+  b: { idea: IdeaIntake | null; citations: StoredEntry[] | null; shelfIndex: ShelfIndex | null; apNotes: ApNotes | null },
   draftWords: number,
   field: string,
   highlightCounts: Record<string, number> = {}
@@ -45,7 +45,7 @@ export function homeFacts(
     verdict: idea?.read ? parseIdeaRead(idea.read.text)?.verdict ?? null : null,
     checked: !!idea?.read,
     readText: idea?.read?.text ?? "",
-    kept: b.citations?.length ?? 0,
+    kept: papersOf(b.citations ?? [], b.shelfIndex ?? [], b.apNotes).length,
     read: highlighted.length + notesRead.length,
     highlights: (b.shelfIndex ?? []).reduce((n, p) => n + Math.max(0, highlightCounts[p.id] ?? 0), 0),
     cards: notes.filter(noteHasCard).length,

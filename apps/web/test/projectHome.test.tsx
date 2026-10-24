@@ -71,8 +71,8 @@ beforeEach(() => {
     marks: {}, keyVersion: 0, workFails: 0, blobFails: {},
     blobs: {
       idea_intake: { value: { topic: "Does a fixed bedtime lower exam anxiety?", resources: "About 60 volunteers", timeframe: "One semester", constraints: "No trackers", read: { text: READ, at: "2026-10-05T00:00:00Z" } }, updatedAt: "2026-10-05T00:00:00Z" },
-      citations: { value: [{ title: "A" }, { title: "B" }, { title: "C" }, { title: "D" }], updatedAt: "2026-10-20T10:00:00Z" },
-      shelf_index: { value: [{ id: "sp1", title: "Schaefer 2019", file: "s.pdf", size: 1, added: "2026-10-06", total: 3, kept: 3 }], updatedAt: "2026-10-06T00:00:00Z" },
+      citations: { value: [{ title: "A", pid: "ka" }, { title: "B", pid: "kb" }, { title: "C", pid: "kc" }, { title: "D", pid: "kd" }], updatedAt: "2026-10-20T10:00:00Z" },
+      shelf_index: { value: [{ id: "sp1", title: "Schaefer 2019", file: "s.pdf", size: 1, added: "2026-10-06", total: 3, kept: 3, pid: "ka" }], updatedAt: "2026-10-06T00:00:00Z" },
       "shelf_paper:sp1": { value: { pages: ["p"], notes: [{ id: "n1", page: 1, quote: "q", note: "", at: "x" }, { id: "n2", page: 2, quote: "r", note: "", at: "y" }], cells: {} }, updatedAt: "2026-10-06T00:00:00Z" }
     }
   };
@@ -250,7 +250,7 @@ describe("the project home", () => {
   });
 
   it("highlight counts are read once per paper version: a repeat visit reads none, a changed version re-reads only that paper", async () => {
-    server.blobs.shelf_index!.value = [...(server.blobs.shelf_index!.value as unknown[]), { id: "sp2", title: "Lee 2021", file: "l.pdf", size: 1, added: "2026-10-07", total: 2, kept: 2 }];
+    server.blobs.shelf_index!.value = [...(server.blobs.shelf_index!.value as unknown[]), { id: "sp2", title: "Lee 2021", file: "l.pdf", size: 1, added: "2026-10-07", total: 2, kept: 2, pid: "kb" }];
     server.blobs["shelf_paper:sp2"] = { value: { pages: ["p"], notes: [{ id: "m1", page: 1, quote: "q", note: "", at: "x" }], cells: {} }, updatedAt: "2026-10-07T00:00:00Z", version: 4 };
     const paperReads = () => h.api.mock.calls.map(([u]) => u as string).filter((u) => u.includes("/blobs/shelf_paper"));
     let r = mount();

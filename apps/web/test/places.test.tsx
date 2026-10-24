@@ -43,6 +43,7 @@ vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) 
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
+vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: () => <div data-testid="reading-list" /> }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], ask: () => {} }), ChatPanel: () => <div data-testid="chat-panel" /> }));
@@ -83,8 +84,9 @@ function unmountAll() { act(() => { for (const r of roots.splice(0)) r.unmount()
 beforeEach(() => {
   resetAp();
   h.go.mockClear(); h.toast.mockReset(); h.openDocument.mockClear(); h.docOpen = false;
-  h.shelfIndex = [{ id: "a" }, { id: "b" }];
-  h.lib = [{}, {}, {}];
+  // Four kept papers: the library's k1 (with a PDF) and k2, and two PDFs no kept paper took; k3 is in the library only (rl false) and is not on the reading list.
+  h.shelfIndex = [{ id: "a", pid: "k1" }, { id: "b", pid: "k8" }, { id: "c", pid: "k9" }];
+  h.lib = [{ pid: "k1" }, { pid: "k2" }, { pid: "k3", rl: false }];
   h.libLoading = false;
   h.paperIds = undefined;
 });
@@ -102,8 +104,8 @@ describe("Literature (Task 10)", () => {
     await mount("lit", "reading");
     const list = $('[role="tablist"]')!;
     const tabs = [...list.querySelectorAll<HTMLAnchorElement>('[role="tab"]')];
-    // Reading list counts the shelf's papers, Citations the library's entries.
-    expect(tabs.map((a) => a.textContent)).toEqual(["Find", "Reading list (2)", "Compare", "Citations (3)"]);
+    // Reading list counts the kept papers (ruling B2-R23: papersOf), Citations the library's entries.
+    expect(tabs.map((a) => a.textContent)).toEqual(["Find", "Reading list (4)", "Compare", "Citations (3)"]);
     expect(tabs.every((a) => a.tagName === "A")).toBe(true);
     expect(tabs.map((a) => a.getAttribute("href"))).toEqual(["/p/p1/lit/find", "/p/p1/lit/reading", "/p/p1/lit/compare", "/p/p1/lit/citations"]);
     expect(tabs.map((a) => a.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
@@ -118,7 +120,7 @@ describe("Literature (Task 10)", () => {
   it("each Literature tab ends with its suggested next line", async () => {
     const content: Record<string, string[]> = {
       find: ["panel-find"],
-      reading: ["sh-body", "read-a-paper", "panel-analyse"],
+      reading: ["reading-list", "read-a-paper", "panel-analyse"],
       compare: ["shelf-matrix", "ap-across"],
       citations: ["panel-cite"]
     };
@@ -136,12 +138,11 @@ describe("Literature (Task 10)", () => {
     }
   });
 
-  it("the Reading list shows the shelf inline, not as a dialog, with Analyse a paper under Read a paper", async () => {
+  it("the Reading list is the page's own list, not a dialog, with Analyse a paper under Read a paper", async () => {
     await mount("lit", "reading");
     expect($('[role="dialog"]')).toBeNull();
     expect(tid("shelf-dialog")).toBeNull();
-    expect(tid("sh-close")).toBeNull();
-    expect(tid("sh-tab-papers")).not.toBeNull();
+    expect(tid("reading-list")).not.toBeNull();
     expect(tid("read-a-paper")!.textContent).toBe("Read a paper");
   });
 });

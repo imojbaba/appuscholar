@@ -1076,6 +1076,117 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
     expect(server.blobs).toEqual([]);
   });
 
+  it("says so once when a save finds the blob deleted in another window, and never re-creates it (wave B Task 21)", async () => {
+    const kind = shelfPaperKind("x1");
+    const PAPER = { pages: ["Page one."], notes: [], cells: {} };
+    server.blobs = [{ projectId: "p1", kind, body: JSON.stringify(PAPER), keyVersion: 0, deks: [], version: 3 }];
+    const s = await mount(kind, "p1");
+    await until(() => !s.b.loading);
+    server.blobs = [];
+    act(() => { s.b.set((p: typeof PAPER | null) => ({ ...(p ?? PAPER), cells: { Sample: "40" } })); });
+    await act(async () => { await s.b.flush(); });
+    expect(h.toast).toHaveBeenCalledTimes(1);
+    expect(h.toast).toHaveBeenCalledWith(en.blob_deleted_elsewhere);
+    expect(en.blob_deleted_elsewhere).toBe("This was deleted in another window, so your change to it was not saved.");
+    expect(server.blobs).toEqual([]);
+  });
+
+  it("a conflict or a deletion found after the panel went away shows no toast (the save goes on without the panel)", async () => {
+    server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+    let n = 0;
+    h.api.mockImplementation((path: string, init?: RequestInit) => {
+      if (init?.method === "PUT" && path.endsWith("/citations")) { n++; elsewhere("p1", "citations", [...(JSON.parse(blobOf("p1", "citations").body) as unknown[]), { author: `W${n}` }]); }
+      return fakeApi(path, init);
+    });
+    const s = await mount("citations", "p1");
+    await until(() => !s.b.loading);
+    act(() => { s.b.set(add(Y)); });
+    s.unmount();
+    await until(() => n === 3);
+    await settle(50);
+    expect(putsTo("p1", "citations")).toHaveLength(3);
+    expect(h.toast).not.toHaveBeenCalled();
+    // The same for a paper deleted elsewhere.
+    h.api.mockImplementation(fakeApi);
+    const kind = shelfPaperKind("x2");
+    const PAPER = { pages: ["Page one."], notes: [], cells: {} };
+    server.blobs = [{ projectId: "p1", kind, body: JSON.stringify(PAPER), keyVersion: 0, deks: [], version: 2 }];
+    const t = await mount(kind, "p1");
+    await until(() => !t.b.loading);
+    server.blobs = [];
+    act(() => { t.b.set((p: typeof PAPER | null) => ({ ...(p ?? PAPER), cells: { Sample: "1" } })); });
+    t.unmount();
+    await until(() => putsTo("p1", kind).length === 1);
+    await settle(50);
+    expect(h.toast).not.toHaveBeenCalled();
+  });
+
+  describe("a set made before the first read of a blob that does not open (wave A LATER T5, ruling R16)", () => {
+    /** The first read of `kind` is held until `release()`. */
+    function holdFirstRead(kind: string) {
+      let release!: () => void;
+      const gate = new Promise<void>((r) => { release = r; });
+      h.api.mockImplementation(async (path: string, init?: RequestInit) => {
+        if ((init?.method ?? "GET") === "GET" && path.endsWith("/" + encodeURIComponent(kind))) await gate;
+        return fakeApi(path, init);
+      });
+      return () => release();
+    }
+
+    it("is held and shown, not written over the blob; the panel's next set (its R16 ask answered) goes on from it", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: "{not json", keyVersion: 0, deks: [] }];
+      const release = holdFirstRead("citations");
+      const s = await mount("citations", "p1");
+      expect(s.b.loading).toBe(true);
+      act(() => { s.b.set(add(Y)); });
+      release();
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: [Y], broken: true });
+      await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+      expect(putsTo("p1", "citations")).toHaveLength(0);
+      expect(blobOf("p1", "citations").body).toBe("{not json");
+      // Leaving now asks first: the value is not on the server.
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // The student answered the panel's question: the next set replaces the stored blob, with the held value in it.
+      const Z = { author: "Ok, Z." };
+      act(() => { s.b.set(add(Z)); });
+      await act(async () => { await s.b.flush(); });
+      expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([Y, Z]);
+      expect(s.b).toMatchObject({ value: [Y, Z], broken: false });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    });
+
+    it("a kind with no ask (the preferences) keeps the value held for good, and the drain does not send it either", async () => {
+      server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: "{not json", keyVersion: 0, deks: [] }];
+      const release = holdFirstRead("rs_prefs");
+      const s = await mount("rs_prefs", "p1");
+      act(() => { s.b.set({ rank: true }); });
+      release();
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: { rank: true }, broken: true });
+      act(() => { s.b.set({ rank: false }); });
+      await act(async () => { await s.b.flush(); });
+      expect(s.b).toMatchObject({ value: { rank: false }, broken: true });
+      s.unmount();
+      await settle(50);
+      await act(async () => { await heldBlobs.drain(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(0);
+      expect(blobOf("p1", "rs_prefs").body).toBe("{not json");
+    });
+
+    it("a blob that opens takes the queued set as before", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      const release = holdFirstRead("citations");
+      const s = await mount("citations", "p1");
+      act(() => { s.b.set(add(Y)); });
+      release();
+      await until(() => !s.b.loading);
+      await act(async () => { await s.b.flush(); });
+      expect(JSON.parse(blobOf("p1", "citations").body)).toEqual([A, Y]);
+      expect(s.b.broken).toBe(false);
+    });
+  });
+
   it("an api without versions gets no If-Match", async () => {
     server.versionless = true;
     server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
