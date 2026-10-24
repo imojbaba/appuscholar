@@ -47,3 +47,14 @@ describe("wordCount", () => {
     expect(wordCount("")).toBe(0);
   });
 });
+
+describe("sanitizeHtml captions and picture edits", () => {
+  // v1's caption blocks (capBlocksHTML 4501, capNoteHTML 4505) and the picture editor's audit trail (ieApply 4517-4537).
+  const HTML = '<p data-cap="figure"><strong>Figure 1</strong></p><p data-cap-title="1"><em>T</em></p><p><img src="data:image/png;base64,AAAA" data-edits="cropped, bar"></p><p data-cap-note="1"><em>Note.</em> n</p>';
+  it("keeps data-cap, data-cap-title, data-cap-note and data-edits", () => {
+    expect(sanitizeHtml(HTML)).toBe(HTML);
+  });
+  it("still strips what is not allowed beside them", () => {
+    expect(sanitizeHtml('<p data-cap="figure" onclick="x()">a</p>')).toBe('<p data-cap="figure">a</p>');
+  });
+});
