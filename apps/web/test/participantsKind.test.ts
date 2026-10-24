@@ -51,6 +51,12 @@ describe("the participants blob kind", () => {
     expect(parseBlob("participants", "{not json")).toBeNull();
   });
 
+  it("`next` is a whole number of at least 1: a list with next 0, a fraction or a negative number does not parse (a code is never made from it)", () => {
+    for (const next of [0, 1.5, -1, 2.0000001]) expect(parseBlob("participants", JSON.stringify({ ...SAMPLE, next })), `next ${next}`).toBeNull();
+    expect(parseBlob("participants", JSON.stringify({ ...SAMPLE, next: "3" }))).toBeNull();
+    for (const next of [1, 3, 1000, 123456]) expect(parseBlob("participants", JSON.stringify({ ...SAMPLE, next }))?.next, `next ${next}`).toBe(next);
+  });
+
   it("emptyList is a fresh list at P001 with nobody on it each time", () => {
     expect(emptyList()).toEqual({ v: 1, next: 1, people: [], notNames: [] });
     expect(emptyList()).not.toBe(emptyList());

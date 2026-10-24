@@ -9,7 +9,6 @@ import { z } from "zod";
  */
 
 const str = z.string();
-const num = z.number();
 
 /** One person on the list. `id` is random and stable and never shown; `code` is what the study's data carries (P001); `joined` is yyyy-mm-dd. */
 export const ParticipantSchema = z.looseObject({
@@ -39,7 +38,8 @@ export const ParticipantSchema = z.looseObject({
 /** The list. `next` is the next code's number and never goes down; `notNames` holds the normalised words answered "Not a name"; `highlight` absent means on; `destroyedAt` is when the list was destroyed. */
 export const ParticipantListSchema = z.looseObject({
   v: z.literal(1),
-  next: num,
+  /** A whole number of at least 1: codes are made from it, so a fraction or 0 would make "P0.5" or a code that was never meant to be. */
+  next: z.number().int().min(1),
   people: z.array(ParticipantSchema),
   notNames: z.array(str),
   highlight: z.boolean().optional(),
