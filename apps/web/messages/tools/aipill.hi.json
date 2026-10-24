@@ -2,7 +2,7 @@
   "$draft": "DRAFT: Hindi for Dr. Sharma's review, reviewed by: (pending)",
   "aipill_title": "AI प्रदाता बदलें",
   "aipill_now": "अब {name} का उपयोग हो रहा है। आपका अगला AI अनुरोध {short} को जाएगा।",
-  "aipill_paste": "इसे चालू करने के लिए अपनी {short} कुंजी पेस्ट करें।",
+  "aipill_paste": "इसे चालू करने के लिए अपनी {short} कुंजी पेस्ट करें",
   "aipill_key_saved": "कुंजी सहेजी है, उपयोग के लिए क्लिक करें",
   "aipill_no_key": "अभी कोई कुंजी नहीं है, जोड़ने के लिए क्लिक करें"
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { CaretDown, Check, List, Question, UserCircle } from "@phosphor-icons/react";
+import { CaretDown, List, Question, UserCircle } from "@phosphor-icons/react";
 import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useLang, useT } from "@/lib/i18n";
@@ -51,7 +51,7 @@ export function AppHeader() {
       <VaultPill />
       {phone ? <PhoneMenu account={account} lang={lang} switchLang={switchLang} /> : (
         <>
-          <AiPill onOpen={() => openSettings()} onAdd={openSettings} />
+          <AiPill onOpen={() => openSettings()} />
           <button type="button" className="app-hbtn app-desk" aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
             {lang === "en" ? "हि" : "EN"}
           </button>
@@ -108,7 +108,8 @@ function PhoneMenu({ account, lang, switchLang }: { account: Account; lang: stri
  * Beside the pill a caret opens the quick switch (v1 toggleProvMenu 5154, switchProv 5165): the six providers in v1's order, a dot for the ones with a
  * key; one with a key becomes the chosen provider, one without opens the key dialog on it. The caret is not part of the pill, so its text stays the same.
  */
-function AiPill({ onOpen, onAdd }: { onOpen(): void; onAdd(provider: ProviderId): void }) {
+function AiPill({ onOpen }: { onOpen(): void }) {
+  const { openSettings } = useProject();
   const t = useT();
   const { settings, update } = useSettings();
   const { hasKey } = useKeys();
@@ -116,7 +117,7 @@ function AiPill({ onOpen, onAdd }: { onOpen(): void; onAdd(provider: ProviderId)
   const choose = (p: ProviderId) => {
     const { name, short } = PROVIDERS[p];
     if (hasKey(p)) { void update({ provider: p }); toast(t("aipill_now", { name, short })); }
-    else { onAdd(p); toast(t("aipill_paste", { short })); }
+    else { openSettings(p); toast(t("aipill_paste", { short })); }
   };
   return (
     <span className="app-ai app-desk">

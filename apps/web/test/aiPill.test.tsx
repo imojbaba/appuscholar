@@ -132,7 +132,7 @@ describe("the AI pill's provider switch", () => {
     expect(h.openSettings.mock.calls[0]).toEqual(["claude"]);
     expect(h.update).not.toHaveBeenCalled();
     expect(h.toast).toHaveBeenCalledTimes(1);
-    expect(h.toast).toHaveBeenCalledWith("Paste your Claude key to enable it.");
+    expect(h.toast).toHaveBeenCalledWith("Paste your Claude key to enable it");
   });
 
   it("its new strings are plain words: no emoji, no dashes, no placeholder left over", () => {
