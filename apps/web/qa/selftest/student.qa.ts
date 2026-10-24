@@ -23,8 +23,9 @@ const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
 const CIPHERTEXT = /^[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]+$/;
 const PROJECT = { name: "Sleep and exam anxiety", idea: "Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?" };
 
-// A stuck step fails in seconds with its own message instead of taking the whole test timeout (the QA config sets none).
-test.use({ actionTimeout: 20_000, navigationTimeout: 45_000 });
+/** A recording of the outside services by the start of its file name (apps/web/e2e/fixtures/recorded). */
+const RECORDED = path.join(__dirname, "../../e2e/fixtures/recorded");
+const recording = (prefix: string) => JSON.parse(readFileSync(path.join(RECORDED, readdirSync(RECORDED).find((f) => f.startsWith(prefix))!), "utf8")) as { url: string; status: number; body: string };
 
 const isDocPut = (r: Response) => r.request().method() === "PUT" && /\/documents\/[0-9a-f-]+$/.test(r.url()) && r.ok();
 
@@ -80,10 +81,11 @@ test("student: a new student with the vault on; locked and unlocked; off and on 
   });
 
   await qa.step("lock and unlock", async () => {
-    await lockByReload(page, s);
-    await qa.check("data", "after a reload the pill reads locked", async () => {
+    const cancelled = await lockByReload(page, s);
+    await qa.check("data", "after a reload the pill reads locked, and lockByReload counted the windows it cancelled (the Idea place opens at least one)", async () => {
       await expect(pill).toHaveText(T("vault_pill_locked"));
       await expect(page.getByTestId("pass-dialog")).toBeHidden();
+      expect(cancelled).toBeGreaterThanOrEqual(1);
     }, { source: "e2e: phase3a-vault step 4c" });
     await unlock(page, s);
     await qa.check("data", "after unlock the pill reads unlocked", async () => {
@@ -180,7 +182,10 @@ test("student: remembered on this computer, then forgotten", TAGS, async ({ page
   });
 
   await qa.step("remember", async () => {
-    await lockByReload(page, s);
+    const cancelled = await lockByReload(page, s);
+    await qa.check("data", "first run does not ask for the passphrase, so lockByReload cancels nothing", async () => {
+      expect(cancelled).toBe(0);
+    });
     await unlock(page, s, { remember: true });
     await qa.check("data", "the vault is remembered, and a reload opens it without the passphrase", async () => {
       expect(await vaultRemembered(page, s.uid)).toBe(true);
@@ -305,6 +310,7 @@ test("student: a second browser on the same account is watched, and asks for the
     situation: { vault: "locked" },
     steps: ["new student", "open the second browser", "the second browser"]
   });
+  qa.allow({ hosts: SERVICE_HOSTS });
   let s!: Student;
 
   await qa.step("new student", async () => {
@@ -320,6 +326,11 @@ test("student: a second browser on the same account is watched, and asks for the
       await expect(page.getByTestId("vault-pill"), "the first browser keeps its vault open").toHaveText(T("vault_pill_yours"));
       await unlock(other.page, s);
       await expect(pill).toHaveText(T("vault_pill_yours"));
+      // The second browser cannot reach a real service: its outside requests are routed as the first browser's would be.
+      const rec = recording("oa-retractions-quiet");
+      expect(await other.page.evaluate(async (u) => { const r = await fetch(u); return { status: r.status, body: await r.text() }; }, rec.url)).toEqual({ status: rec.status, body: rec.body });
+      expect(other.services?.asked).toEqual([rec.url]);
+      expect(other.services?.refused).toEqual([]);
       expect(qa.result().checks.filter((c) => c.kind === "watcher")).toEqual([]);
       await other.page.evaluate(() => console.error("QA probe: an error in the second browser"));
       await expect.poll(() => qa.result().checks.filter((c) => c.kind === "watcher" && c.label === RULE_LABEL.console && /QA probe/.test(c.message ?? "")).length).toBe(1);
@@ -338,8 +349,6 @@ test("student: routeServices answers from recordings, refuses what nobody record
     steps: ["recorded answers", "a request nobody recorded", "a service that is down", "the api is left alone"]
   });
   qa.allow({ hosts: SERVICE_HOSTS });
-  const recorded = path.join(__dirname, "../../e2e/fixtures/recorded");
-  const recording = (prefix: string) => JSON.parse(readFileSync(path.join(recorded, readdirSync(recorded).find((f) => f.startsWith(prefix))!), "utf8")) as { url: string; status: number; body: string };
   const golden = (JSON.parse(readFileSync(path.join(__dirname, "../../../../packages/core/test/golden/words/cases.json"), "utf8")) as { dict: { fetch: Array<{ word: string; status: number; payload: unknown }> } }).dict.fetch;
 
   // An unsigned-in page of the app, so that the production policy (connect-src) is the one the services are asked under.
@@ -357,8 +366,8 @@ test("student: routeServices answers from recordings, refuses what nobody record
 
   const { asked, refused } = await routeServices(context);
 
+  const oa = recording("oa-retractions-quiet");
   await qa.step("recorded answers", async () => {
-    const oa = recording("oa-retractions-quiet");
     const cr = recording("cr-doi-mu");
     await qa.check("data", "OpenAlex and Crossref are answered with the recordings", async () => {
       expect(await get(oa.url)).toEqual({ status: oa.status, body: oa.body });
@@ -387,11 +396,13 @@ test("student: routeServices answers from recordings, refuses what nobody record
     });
   });
 
+  // The second router, made in the next step, takes over from the first (Playwright runs the latest route first): from then on `down` is the one that sees requests.
+  let down!: Awaited<ReturnType<typeof routeServices>>;
+
   await qa.step("a service that is down", async () => {
     qa.allow({ consoleErrors: [SERVICE_DOWN_CONSOLE] });
-    const down = await routeServices(context, { fail: ["pubmed"] });
+    down = await routeServices(context, { fail: ["pubmed"] });
     const url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=qa";
-    const oa = recording("oa-retractions-quiet");
     await qa.check("data", "the page's request to it fails, as when a service is down, and the other services still answer", async () => {
       const got = await get(url);
       expect("failed" in got).toBe(true);
@@ -405,22 +416,26 @@ test("student: routeServices answers from recordings, refuses what nobody record
   });
 
   await qa.step("the api is left alone", async () => {
-    const before = asked.length;
-    await qa.check("data", "a request to the api and one to the web app never reach the router", async () => {
+    await qa.check("data", "a request to the api and one to the web app never reach the router, and one to a service does", async () => {
+      const before = down.asked.length;
       // no-cors: the answer is opaque, but it is the api's (a router answer would have been the same, so what is checked is that the router never saw it).
       await page.evaluate(async (api) => { await fetch(`${api}/health`, { mode: "no-cors" }); await fetch("/api/auth/providers"); }, QA_API_ORIGIN);
-      expect(asked.length).toBe(before);
+      expect(down.asked.length).toBe(before);
+      // The same router does see an outside request, so the count above could have changed.
+      expect(await get(oa.url)).toEqual({ status: oa.status, body: oa.body });
+      expect(down.asked).toHaveLength(before + 1);
+      expect(down.asked.at(-1)).toBe(oa.url);
     });
   });
 });
 
-test("student: on a phone in Hindi, a new student moves between places and back to English", { tag: ["@selftest", "@slice", "@phone"] }, async ({ page, qa }) => {
+test("student: on a phone in Hindi, a new student moves between places and back to English", { tag: ["@selftest", "@slice", "@phone"] }, async ({ page, browser, qa }) => {
   qa.begin({
     story: "S0",
     id: "SELF-STUDENT-PHONE",
     goal: "The helpers work through the phone's Menu and the phone's places, in Hindi",
     situation: { screen: "phone", lang: "hi" },
-    steps: ["new student in Hindi", "places", "back to English"]
+    steps: ["new student in Hindi", "places", "back to English", "open a second phone", "the second phone"]
   });
   let s!: Student;
 
@@ -445,6 +460,60 @@ test("student: on a phone in Hindi, a new student moves between places and back 
     await qa.check("data", "the phone's Menu switched the language back", async () => {
       await expect(page.locator("html")).toHaveAttribute("lang", "en");
       await expect(page.getByTestId("place-name")).toHaveText(T("stage_name_collect"));
+    });
+  });
+
+  // The same account on a second browser is a phone too: the window, the touch screen and the phone's header (its Menu holds the language, and the desktop's button is not shown).
+  const other = await qa.step("open a second phone", () => sameAccountElsewhere(browser, page, qa));
+  try {
+    await qa.step("the second phone", async () => {
+      await other.page.goto("/");
+      await qa.check("data", "the second browser is 375 px wide, has a touch screen, and shows the phone's header", async () => {
+        await expect(other.page.getByTestId("project-home")).toBeVisible();
+        expect(await other.page.evaluate(() => ({ width: window.innerWidth, touch: navigator.maxTouchPoints > 0 }))).toEqual({ width: 375, touch: true });
+        await expect(other.page.getByTestId("phone-menu")).toBeVisible();
+        await expect(other.page.getByTestId("lang-toggle")).toBeHidden();
+      });
+      await qa.check("data", "its outside services are routed too", async () => {
+        expect(other.services).toEqual({ asked: [], refused: [] });
+      });
+    }, { page: other.page });
+  } finally {
+    await other.context.close();
+  }
+});
+
+test("student: lockByReload says at once when the page asks 'Leave site?', and counts what it cancels", TAGS, async ({ page, qa }) => {
+  qa.begin({
+    story: "S0",
+    id: "SELF-STUDENT-LEAVE",
+    goal: "A reload the page answers with 'Leave site?' fails the helper at once, naming it, and the helper works again once the page lets go",
+    situation: { vault: "locked" },
+    steps: ["new student", "leave site", "lock"]
+  });
+  let s!: Student;
+
+  await qa.step("new student", async () => {
+    s = await newStudent(page, qa, { key: "none", vault: "on", project: false });
+  });
+
+  await qa.step("leave site", async () => {
+    // The page holds changes it has not saved: the watcher dismisses the dialog (announced, so it is not a finding), and the reload would never finish.
+    qa.expectDialog("beforeunload", false);
+    await page.evaluate(() => { window.onbeforeunload = (e) => { e.preventDefault(); return ""; }; });
+    const started = Date.now();
+    await qa.check("data", "lockByReload fails within seconds, and names the beforeunload dialog", async () => {
+      await expect(lockByReload(page, s)).rejects.toThrow(/beforeunload.*not saved yet/s);
+      expect(Date.now() - started).toBeLessThan(10_000);
+    });
+    await page.evaluate(() => { window.onbeforeunload = null; });
+  });
+
+  await qa.step("lock", async () => {
+    const cancelled = await lockByReload(page, s);
+    await qa.check("data", "once the page lets go the vault is locked by the reload, and a page that does not ask costs no Cancel", async () => {
+      await expect(page.getByTestId("vault-pill")).toHaveAttribute("data-status", "locked");
+      expect(cancelled).toBe(0);
     });
   });
 });

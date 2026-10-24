@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { expect, type Browser, type BrowserContext, type BrowserContextOptions, type Page, type Route } from "@playwright/test";
+import { expect, test, type Browser, type BrowserContext, type BrowserContextOptions, type Dialog, type Page, type Route } from "@playwright/test";
 import JSZip from "jszip";
 import { FAILURE_MODES } from "../provider-shim/core.mjs";
 import { T, type Lang } from "./dict";
@@ -8,6 +8,7 @@ import { QA_API_ORIGIN, QA_WEB_ORIGIN } from "./origins";
 import { readProviderLog, type ShimLogEntry } from "./providerLog";
 import type { Qa } from "./qa";
 import { signInAs } from "./session";
+import { routeServices, type RouteServicesOptions } from "./services";
 import type { ConsoleAllowance } from "./watcher";
 
 /**
@@ -187,34 +188,64 @@ export async function vaultRemembered(page: Page, uid: string): Promise<boolean>
   }, uid);
 }
 
+/** The page has made the reads it makes as it loads: no request for half a second. A page that polls never goes quiet, so the wait is bounded and then ends. */
+async function settled(page: Page, ms = 5_000): Promise<void> {
+  await page.waitForLoadState("networkidle", { timeout: ms }).catch(() => {});
+}
+
+/**
+ * Reloads the page and fails at once, saying so, if the page asks "Leave site?" (a beforeunload dialog): it holds changes it has not saved yet. The watcher dismisses a dialog
+ * nobody announced, and a reload that was dismissed never finishes, so without this the case would wait for its whole timeout.
+ */
+async function reloadUnlessLeaveSiteAsked(page: Page): Promise<void> {
+  let onDialog!: (dialog: Dialog) => void;
+  const leaveSite = new Promise<never>((_, reject) => {
+    onDialog = (dialog) => {
+      if (dialog.type() === "beforeunload") {
+        reject(
+          new Error(
+            "QA lockByReload: the page asked 'Leave site?' (a beforeunload dialog) when it was reloaded, so it holds changes that are not saved yet. Wait for the save first. To leave with unsaved changes on purpose, announce the dialog with qa.expectDialog('beforeunload', true) and reload with page.reload(): lockByReload does not accept it."
+          )
+        );
+      }
+    };
+    page.on("dialog", onDialog);
+  });
+  const reload = page.reload({ timeout: 30_000 });
+  reload.catch(() => {}); // when the dialog wins, the reload's own timeout later is not an unhandled rejection
+  try {
+    await Promise.race([reload, leaveSite]);
+  } finally {
+    page.off("dialog", onDialog);
+  }
+}
+
 /**
  * Reloads the page, so that the vault is locked again (nothing is kept in memory across a reload), and leaves it locked: the pill reads locked, and if the page asked for the
- * passphrase by itself (a page that opens a document does) the ask is cancelled. This is how the spec makes "locked" (section 6). A vault this browser remembers opens again by
- * itself on the reload, so the pill never reads locked: the helper fails saying so (forget it first with forgetOnThisComputer).
+ * passphrase by itself (a page that opens a sealed document does) the ask is cancelled. This is how the spec makes "locked" (section 6). A vault this browser remembers opens again
+ * by itself on the reload, so the pill never reads locked: the helper fails saying so (forget it first with forgetOnThisComputer). A page that asks for the passphrase again after
+ * a Cancel (O18) is cancelled again until it has been quiet for a second, at most ten times.
+ * Returns how many passphrase windows it cancelled, so that a case about asking at most once (S10-04) can count them: 0 for a page that does not ask.
  */
-export async function lockByReload(page: Page, s: Student): Promise<void> {
+export async function lockByReload(page: Page, s: Student): Promise<number> {
   if (!s.passphrase) throw new Error("QA lockByReload: this student has no vault to lock (newStudent was not given vault: on).");
-  // A page that holds changes it has not saved yet asks "Leave site?" (beforeunload); the watcher dismisses a dialog nobody announced, and the reload then never finishes.
-  await page.reload({ timeout: 30_000 }).catch((e: unknown) => {
-    throw new Error(
-      "QA lockByReload: the page did not reload within 30 s. If it asked 'Leave site?' (a beforeunload dialog the watcher dismissed) it holds changes that are not saved yet: wait for the save first, or announce the dialog with qa.expectDialog('beforeunload', true).",
-      { cause: e }
-    );
-  });
+  await reloadUnlessLeaveSiteAsked(page);
   await expect(vaultPill(page), "the vault did not read locked after the reload (is it remembered on this computer? forgetOnThisComputer first)").toHaveAttribute("data-status", "locked");
-  // Pages that open sealed things ask for the passphrase as they load, a moment after the pill reads locked, and some ask again after a cancel (O18); a page that does not ask has
-  // nothing to cancel. Each ask is cancelled until none comes for a second.
+  // The page asks a moment after the pill reads locked, once its reads are done: let them finish first, so that a slow runner's late ask is not taken for none.
+  await settled(page);
   const dialog = page.getByTestId("pass-dialog");
-  let wait = 2_500;
-  for (let cancelled = 0; ; cancelled++) {
+  let cancelled = 0;
+  let wait = 2_000;
+  for (;;) {
     const asked = await dialog.waitFor({ state: "visible", timeout: wait }).then(() => true, () => false);
     if (!asked) break;
     if (cancelled === 10) throw new Error("QA lockByReload: the page asked for the passphrase again after each of ten cancels.");
-    // A window that is already closing (its exit animation) has no Cancel left to press: that is not a failure, and the next wait sees it gone.
-    await page.getByTestId("pass-cancel").click({ timeout: 2_000 }).catch(() => {});
+    // A window that is already closing (its exit animation) has no Cancel left to press: that is not a failure, nor an ask, and the next wait sees it gone.
+    await page.getByTestId("pass-cancel").click({ timeout: 2_000 }).then(() => void cancelled++, () => {});
     wait = 1_000;
   }
   await expect(vaultPill(page)).toHaveAttribute("data-status", "locked");
+  return cancelled;
 }
 
 /**
@@ -225,8 +256,12 @@ export async function unlock(page: Page, s: Student, o: { remember?: boolean } =
   if (!s.passphrase) throw new Error("QA unlock: this student has no vault (newStudent was not given vault: on).");
   const lang = await pageLang(page);
   const dialog = page.getByTestId("pass-dialog");
-  // A page that has just loaded sealed things asks by itself a moment after the pill reads locked: that window is the one to answer.
-  const asked = await dialog.waitFor({ state: "visible", timeout: 1_000 }).then(() => true, () => false);
+  // A page that has just loaded sealed things asks by itself a moment after the pill reads locked, once its reads are done: that window is the one to answer.
+  let asked = await dialog.isVisible();
+  if (!asked) {
+    await settled(page);
+    asked = await dialog.waitFor({ state: "visible", timeout: 1_000 }).then(() => true, () => false);
+  }
   if (!asked) {
     await expect(vaultPill(page)).toHaveAttribute("data-status", "locked");
     // The page may ask while the pill is pressed; its window then covers the pill, and is the window wanted.
@@ -295,17 +330,33 @@ export async function slowApi(context: BrowserContext, ms: number): Promise<() =
 
 /**
  * The same account in another browser: a new browser context signed in with this one's session cookie (and nothing else, so it remembers nothing and a vault is locked there),
- * watched by the case from before it opens a page (`qa.watch`), with one page open. The case closes the context when it is done. `o` are context options; the web address and the
- * window size of `from` are the default.
+ * watched by the case from before it opens a page (`qa.watch`), with one page open. The case closes the context when it is done.
+ *
+ *  - The second browser is the first one's kind of device: the window size, user agent and touch of the first page, and the project's `isMobile`, `hasTouch` and
+ *    `deviceScaleFactor` (a phone case's second browser is a phone). `o.context` are context options that replace any of that; the web address is the default base.
+ *  - The outside services are routed there too, as `routeServices` does for the first browser (`o.services` are its options): the second browser cannot reach a real service
+ *    unrouted. `services: false` routes nothing (a case that did not route the first browser either). The router's `asked` and `refused` come back as `services`.
  */
-export async function sameAccountElsewhere(browser: Browser, from: Page | BrowserContext, qa: Qa, o: BrowserContextOptions = {}): Promise<{ context: BrowserContext; page: Page }> {
+export async function sameAccountElsewhere(
+  browser: Browser,
+  from: Page | BrowserContext,
+  qa: Qa,
+  o: { context?: BrowserContextOptions; services?: RouteServicesOptions | false } = {}
+): Promise<{ context: BrowserContext; page: Page; services?: { asked: string[]; refused: string[] } }> {
   const source = "newPage" in from ? from : from.context();
   const open = "newPage" in from ? from.pages()[0] : from;
-  const viewport = open?.viewportSize() ?? undefined;
+  const project = test.info().project.use;
+  const device: BrowserContextOptions = {
+    ...(open ? { viewport: open.viewportSize() ?? undefined, userAgent: await open.evaluate(() => navigator.userAgent) } : {}),
+    ...(project.isMobile !== undefined ? { isMobile: project.isMobile } : {}),
+    ...(project.hasTouch !== undefined ? { hasTouch: project.hasTouch } : {}),
+    ...(project.deviceScaleFactor !== undefined ? { deviceScaleFactor: project.deviceScaleFactor } : {})
+  };
   const { cookies } = await source.storageState();
-  const context = await browser.newContext({ baseURL: QA_WEB_ORIGIN, ...(viewport ? { viewport } : {}), ...o, storageState: { cookies, origins: [] } });
+  const context = await browser.newContext({ baseURL: QA_WEB_ORIGIN, ...device, ...o.context, storageState: { cookies, origins: [] } });
   await qa.watch(context);
-  return { context, page: await context.newPage() };
+  const services = o.services === false ? undefined : await routeServices(context, o.services);
+  return { context, page: await context.newPage(), ...(services ? { services } : {}) };
 }
 
 // ---- Places and language --------------------------------------------------------------------------------------------------------------------------------

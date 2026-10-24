@@ -25,6 +25,7 @@ import type { ConsoleAllowance } from "./watcher";
  *    (`qa.allow({ responses })`), as for the dictionary's "zzyzx".
  */
 export type Service = "openalex" | "pubmed" | "crossref" | "dictionary";
+export type RouteServicesOptions = { fail?: Service[]; allowLive?: boolean };
 
 const SERVICE_OF = new Map<string, Service>([
   ["api.openalex.org", "openalex"],
@@ -94,7 +95,7 @@ const PREFLIGHT = { ...CORS, "access-control-allow-headers": "*", "access-contro
  *  - `refused`: the ones answered 599 because no recording fits.
  * `fail`: services that are down (see above). `allowLive`: the four services go to the real ones (the live-services check), the rest is still refused; a service in `fail` still fails.
  */
-export async function routeServices(context: BrowserContext, o: { fail?: Service[]; allowLive?: boolean } = {}): Promise<{ asked: string[]; refused: string[] }> {
+export async function routeServices(context: BrowserContext, o: RouteServicesOptions = {}): Promise<{ asked: string[]; refused: string[] }> {
   const all = loadRecordings();
   const down = new Set<Service>(o.fail ?? []);
   const asked: string[] = [];

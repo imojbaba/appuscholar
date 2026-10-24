@@ -348,6 +348,26 @@ test("fixture: GET /projects/:id/blobs/:kind answering 404 is on the built-in li
     expect.stringMatching(/404.*GET.*\/projects\/[0-9a-f-]+$/),
     expect.stringMatching(/500.*GET.*\/blobs\/citations$/)
   ]);
+
+  // A blob this case saved and that then answers 404 is data lost, not "not saved yet": the built-in stops excusing that address until a DELETE of it answers ok.
+  const kept = `/projects/${project}/blobs/shelf_index`;
+  await page.route(`${QA_API_ORIGIN}${kept}`, (route) => {
+    const method = route.request().method();
+    return route.fulfill({ status: method === "PUT" ? 200 : method === "DELETE" ? 204 : 404, headers: CORS, body: method === "DELETE" ? "" : "{}" });
+  });
+  await ask(kept); // not saved yet: excused
+  expect(withLabel(qa.result(), RULE_LABEL.status)).toHaveLength(4);
+  await ask(kept, "PUT"); // saved
+  await ask(kept); // and now gone: a finding
+  expect(withLabel(qa.result(), RULE_LABEL.status).map((c) => c.message).slice(4)).toEqual([expect.stringMatching(/404.*GET.*\/blobs\/shelf_index \(a PUT to this address answered ok earlier/)]);
+  await ask(kept, "DELETE"); // deleted on purpose: not saved any more
+  await ask(kept); // excused again
+  expect(withLabel(qa.result(), RULE_LABEL.status)).toHaveLength(5);
+  // Another address the case saved does not matter to this one.
+  await page.route(`${QA_API_ORIGIN}/projects/${project}/blobs/ap_notes`, answer(200));
+  await ask(`/projects/${project}/blobs/ap_notes`, "PUT");
+  await ask(`/projects/${project}/blobs/style_meta`);
+  expect(withLabel(qa.result(), RULE_LABEL.status).filter((c) => /style_meta/.test(c.message ?? ""))).toHaveLength(0);
 });
 
 test("fixture: an allowance needs a reason", TAGS, async ({ qa }) => {

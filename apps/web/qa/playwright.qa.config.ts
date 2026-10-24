@@ -30,7 +30,8 @@ export default defineConfig({
   timeout: 600_000,
   expect: { timeout: 20_000 },
   reporter: [["list"]],
-  use: { baseURL: QA_WEB_ORIGIN, trace: "retain-on-failure" },
+  // A stuck click or navigation fails in seconds with its own message instead of taking the whole test timeout (Playwright's default for both is none): ruling R16.
+  use: { baseURL: QA_WEB_ORIGIN, trace: "retain-on-failure", actionTimeout: 20_000, navigationTimeout: 45_000 },
   projects: [
     { name: "desktop", grepInvert: /@phone/, use: { viewport: { width: 1440, height: 900 } } },
     // Phone cases (tagged @phone) run in Hindi at 375 x 812 on a touch device. The live-ai project is added with Task 17.

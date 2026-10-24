@@ -12,7 +12,8 @@ import { QA_API_ORIGIN, QA_WEB_ORIGIN } from "./origins";
  *                resource ("Failed to load resource: the server responded with a status of 404") and for a security-policy violation is the echo of a finding another rule owns.
  *  - status      an answer of 500 or more from the web app or the API, or a 4xx from anywhere, unless an allowed response fits it: `allow({ responses })` names the method, the path,
  *                the status and the reason, and nothing broader (a bare status would hide a real 404 or 500 elsewhere). A short built-in list holds the answers every case meets.
- *                A 5xx from another address is the case's own doing (an outside service it made fail) and is not looked at.
+ *                A 5xx from another address is the case's own doing (an outside service it made fail) and is not looked at. The built-in 404 for a stage blob that is not saved yet
+ *                stops excusing an address once a PUT to it answered ok in this case (until a DELETE of it does): a saved blob that answers 404 is data lost.
  *  - host        a request to any host except localhost and `allow({ hosts })`.
  *  - dialog      an alert, confirm, prompt or "Leave site?" that `expectDialog` did not announce. It is dismissed. An announced dialog is answered as announced, once;
  *                one that never comes is NOT CHECKED in the result.
@@ -54,7 +55,7 @@ export type Note = { kind: "csp-eval-probe"; detail: string; count: number };
 export type Unmet = { label: string; message: string };
 
 /** The answers every case meets, with the reason for each. Add one only when a real case meets it. */
-const BUILT_IN_RESPONSES: ResponseAllowance[] = [
+const BUILT_IN_RESPONSES: Array<ResponseAllowance & { notAfterWrite?: true }> = [
   {
     method: "GET",
     path: /^\/me\/vault$/,
@@ -65,7 +66,9 @@ const BUILT_IN_RESPONSES: ResponseAllowance[] = [
     method: "GET",
     path: /^\/projects\/[0-9a-f-]+\/blobs\/[A-Za-z0-9_.%-]+$/,
     status: 404,
-    reason: "stage data the student has not saved yet: the api answers GET /projects/:id/blobs/:kind with a 404 for a blob that does not exist (apps/api/src/routes/blobs.ts). A project's home reads every kind to show the six stages, and each place reads its own"
+    reason: "stage data the student has not saved yet: the api answers GET /projects/:id/blobs/:kind with a 404 for a blob that does not exist (apps/api/src/routes/blobs.ts). A project's home reads every kind to show the six stages, and each place reads its own",
+    // A blob this case saved (a PUT to the same path answered 2xx) and that then answers 404 is data lost, not data not saved yet (until a DELETE of it answers 2xx).
+    notAfterWrite: true
   }
 ];
 
@@ -106,7 +109,9 @@ export class Watcher {
   private readonly found: Finding[] = [];
   private readonly hosts = new Map<string, Allowance>();
   private readonly consoleAllowed: Array<{ match: RegExp; entry: Allowance }> = [];
-  private readonly responsesAllowed: Array<{ method: string; path: RegExp; status: number; entry: Allowance }> = [];
+  private readonly responsesAllowed: Array<{ method: string; path: RegExp; status: number; notAfterWrite: boolean; entry: Allowance }> = [];
+  /** The addresses a PUT answered 2xx for in this case (and no 2xx DELETE has taken away since): what an allowance marked `notAfterWrite` does not excuse. */
+  private readonly written = new Set<string>();
   private readonly dialogs: Array<{ type: DialogType; accept: boolean }> = [];
   private readonly noted = new Map<string, Note>();
   /** The status of the last response to each address, to tell the console's echo of an error response from a console error of the page's own. */
@@ -192,11 +197,11 @@ export class Watcher {
     return [...this.noted.values()].map((n) => ({ ...n }));
   }
 
-  private addResponse(r: ResponseAllowance, builtIn: boolean): void {
+  private addResponse(r: ResponseAllowance & { notAfterWrite?: true }, builtIn: boolean): void {
     const method = r.method.toUpperCase();
     const what = `${method} ${r.path} answered ${r.status}`;
     const entry: Allowance = { kind: "response", what, reason: needReason(what, r.reason), builtIn, count: 0 };
-    this.responsesAllowed.push({ method, path: withoutStateFlags(r.path), status: r.status, entry });
+    this.responsesAllowed.push({ method, path: withoutStateFlags(r.path), status: r.status, notAfterWrite: r.notAfterWrite === true, entry });
   }
 
   private add(rule: WatcherRule, message: string): void {
@@ -242,17 +247,23 @@ export class Watcher {
       const status = res.status();
       this.statusOf.set(res.url(), status);
       const u = parse(res.url());
-      if (status < 400 || !u || !NETWORK_PROTOCOLS.has(u.protocol)) return;
+      if (!u || !NETWORK_PROTOCOLS.has(u.protocol)) return;
+      const method = res.request().method();
+      const address = u.origin + u.pathname;
+      // What this case has saved, for the allowances that do not excuse a 404 for it.
+      if (status < 300 && method === "PUT") this.written.add(address);
+      if (status < 300 && method === "DELETE") this.written.delete(address);
+      if (status < 400) return;
       const ours = u.origin === web || u.origin === api;
       if (status >= 500 && !ours) return;
-      const method = res.request().method();
-      const allowed = this.responsesAllowed.find((r) => r.method === method && r.status === status && r.path.test(u.pathname));
+      const saved = this.written.has(address);
+      const allowed = this.responsesAllowed.find((r) => r.method === method && r.status === status && r.path.test(u.pathname) && !(r.notAfterWrite && saved));
       if (allowed) {
         allowed.entry.count++;
         return;
       }
       const who = u.origin === api ? "the API" : u.origin === web ? "the web app" : u.host;
-      this.add("status", `${status} from ${who}: ${method} ${u.pathname}`);
+      this.add("status", `${status} from ${who}: ${method} ${u.pathname}${saved ? " (a PUT to this address answered ok earlier in this case: what was saved is gone)" : ""}`);
     });
 
     context.on("request", (req) => {
