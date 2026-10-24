@@ -135,7 +135,7 @@ describe("per-tool message files (Task G4, rulings R13 and R14)", () => {
   const E = en as Record<string, string>;
   const H = hi as Record<string, string>;
   const DIR = join(__dirname, "../messages/tools");
-  const TOOLS = ["design", "stats", "qual", "style", "words", "close", "slides", "viva", "help-guide", "help-report", "help-recap", "help-backup", "help-install", "help-theme"];
+  const TOOLS = ["design", "participants", "stats", "qual", "style", "words", "close", "slides", "viva", "help-guide", "help-report", "help-recap", "help-backup", "help-install", "help-theme"];
 
   it("a tool message file merges into t(); a duplicate key throws", () => {
     const files = {

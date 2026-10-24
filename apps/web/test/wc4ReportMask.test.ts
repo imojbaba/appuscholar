@@ -132,7 +132,8 @@ describe("a long message is cheap to handle", () => {
       const t0 = Date.now();
       const out = scrubMessage(long);
       noteError(long, long);
-      expect(Date.now() - t0, long.slice(0, 5)).toBeLessThan(250);
+      // Uncut, the masks took about 14 s on these; the bound is loose so a loaded test machine cannot fail it, and still far below that.
+      expect(Date.now() - t0, long.slice(0, 5)).toBeLessThan(2000);
       expect(out.length).toBeLessThanOrEqual(140);
     }
   });

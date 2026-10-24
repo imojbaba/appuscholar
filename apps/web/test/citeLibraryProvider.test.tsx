@@ -46,6 +46,7 @@ import { ProjectShell } from "../components/frame/ProjectShell";
 
 // Every tool module is pinned to its unbuilt stub (no Panel, no DocumentLayer), so a tool session's real module never adds its own reads or listeners here (session C, 2026-10-21).
 vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/participants", () => ({ built: false }));
 vi.mock("@/components/tools/stats", () => ({ built: false }));
 vi.mock("@/components/tools/qual", () => ({ built: false }));
 vi.mock("@/components/tools/style", () => ({ built: false }));
