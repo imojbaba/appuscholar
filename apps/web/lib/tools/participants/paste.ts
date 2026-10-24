@@ -1,6 +1,6 @@
 import { codeOf } from "@appuscholar/core";
 import type { Participant } from "@/lib/blobs/kinds/participants";
-import type { PastedPerson, SkippedPerson } from "./list";
+import type { PastedPerson, ReissuedCode, SkippedPerson } from "./list";
 
 /*
  * Paste a list (spec 2026-10-24-participants-design.md §5 and call C16). The text is read into people for list.ts addPeople, which does the rest (the next codes, joined = today, skipping a
@@ -82,12 +82,15 @@ function storedCode(code: string): string {
 
 /**
  * The plain sentence after Paste a list, built from what addPeople did ("Added 2 people (P006–P007). Skipped 1 already on your list: Priya Sharma."). It sits in the page, where the
- * student can read the names; it is never a toast. A skip for a code already used names the code the line gave ("P003 Rahul Verma"), from `parsed`.
+ * student can read the names; it is never a toast. A skip for a code already used names the code the line gave ("P003 Rahul Verma"), from `parsed`. A person who got a new code because
+ * the one the file gave was used before is named with both ("Kavya Rao (P003, not P001)").
  */
-export function pasteSummary(t: Translate, added: Participant[], skipped: SkippedPerson[], parsed: PastedPerson[]): string {
+export function pasteSummary(t: Translate, added: Participant[], skipped: SkippedPerson[], parsed: PastedPerson[], reissued: ReissuedCode[] = []): string {
   const parts: string[] = [];
   const codes = codesText(added.map((p) => p.code));
   parts.push(added.length === 0 ? t("pp_paste_none") : added.length === 1 ? t("pp_paste_added_one", { codes }) : t("pp_paste_added_many", { n: added.length, codes }));
+  // A code that was used before is not given again (R52): the person is added, with the next code, and the sentence says which code was refused.
+  if (reissued.length) parts.push(t(reissued.length === 1 ? "pp_paste_reissued_one" : "pp_paste_reissued_many", { n: reissued.length, names: namesText(t, reissued.map((r) => t("pp_paste_reissued_name", { name: r.name, code: r.code, was: r.was }))) }));
   const already = skipped.filter((s) => s.why === "already").map((s) => s.name.trim());
   const used = skipped.filter((s) => s.why === "code-taken").map((s) => {
     const code = parsed.find((p) => p.name === s.name && p.code)?.code;

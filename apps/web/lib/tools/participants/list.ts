@@ -17,6 +17,8 @@ export type NewPerson = Pick<Participant, "name" | "spellings" | "joined">
 /** One line of a pasted list: the name, the other spellings after the first comma, and the code a key file gives (C16). */
 export type PastedPerson = { name: string; spellings: string[]; code?: string };
 export type SkippedPerson = { name: string; why: "already" | "code-taken" };
+/** A person added with a new code because the one the key file gave was used before (R52): `was` is the code as the list stores it, `code` the one the person got. */
+export type ReissuedCode = { name: string; was: string; code: string };
 
 /** The distinct strings (by normal form), trimmed, in order, with nothing blank in them. */
 function distinct(strings: string[]): string[] {
@@ -83,27 +85,36 @@ export function addPerson(l: ParticipantList, p: NewPerson): { list: Participant
 /**
  * Adds the people of a pasted list (Paste a list, C16), each with the next code, joined `today`, consent left for the student. A given code (a key file's) is kept and `next`
  * becomes the highest kept plus one. A name equal (normName) to one already listed, or pasted before in the same list, is skipped as `already`; a code another name holds,
- * as `code-taken`. A blank name is ignored. Nothing added returns the list as it was.
+ * as `code-taken`. A given code below the counter the list had when the paste began, which nobody holds now, was used before (a person since gone, or a destroyed list: R52): it is
+ * refused, as a code that is taken is, but the person is still added, with the next code, and `reissued` says so, so the sentence can. A blank name is ignored. Nothing added
+ * returns the list as it was.
  */
-export function addPeople(l: ParticipantList, names: PastedPerson[], today: string): { list: ParticipantList; added: Participant[]; skipped: SkippedPerson[] } {
+export function addPeople(l: ParticipantList, names: PastedPerson[], today: string): { list: ParticipantList; added: Participant[]; skipped: SkippedPerson[]; reissued: ReissuedCode[] } {
   const listed = new Set(l.people.map((p) => normName(p.name)));
   const taken = new Set(l.people.map((p) => p.code));
   const people = [...l.people];
   const added: Participant[] = [];
   const skipped: SkippedPerson[] = [];
+  const reissued: ReissuedCode[] = [];
   let next = l.next;
   for (const line of names) {
     const name = line.name.trim();
     if (!name) continue;
     if (listed.has(normName(name))) { skipped.push({ name: line.name, why: "already" }); continue; }
     const given = codeNumber(line.code);
-    let code: string;
+    let code: string | null = null;
+    let was: string | null = null;
     if (given !== null) {
-      code = codeOf(given);
-      if (taken.has(code)) { skipped.push({ name: line.name, why: "code-taken" }); continue; }
-    } else {
+      const wanted = codeOf(given);
+      if (taken.has(wanted)) { skipped.push({ name: line.name, why: "code-taken" }); continue; }
+      // The counter of the list as it was given, not the one this paste has moved on: a key file's codes come in any order.
+      if (given < l.next) was = wanted;
+      else code = wanted;
+    }
+    if (code === null) {
       while (taken.has(codeOf(next))) next++;
       code = codeOf(next);
+      if (was !== null) reissued.push({ name, was, code });
     }
     const spellings = distinct(line.spellings);
     const person: Participant = { id: crypto.randomUUID(), code, name, spellings, everyday: everydayOf(name, spellings), joined: today, about: {} };
@@ -111,9 +122,9 @@ export function addPeople(l: ParticipantList, names: PastedPerson[], today: stri
     taken.add(code);
     people.push(person);
     added.push(person);
-    next = Math.max(next, (given ?? Number(code.slice(1))) + 1);
+    next = Math.max(next, Number(code.slice(1)) + 1);
   }
-  return { list: added.length ? withPeople(l, people, next) : l, added, skipped };
+  return { list: added.length ? withPeople(l, people, next) : l, added, skipped, reissued };
 }
 
 /** Changes what `patch` names on one person. Never the code or the id. An id not on the list changes nothing. */

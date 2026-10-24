@@ -166,7 +166,7 @@ function Tab({ list, plan, href, saveFailed, readOnly, save, onDestroyedAnonymou
     const made: { r?: ReturnType<typeof addPeople> } = {};
     if (!save((prev) => { const r = addPeople(prev, parsed, today); made.r ??= r; return r.list; })) { setPasteResult(refused()); return false; }
     const r = made.r ?? preview;
-    setPasteResult(pasteSummary(t, r.added, r.skipped, parsed));
+    setPasteResult(pasteSummary(t, r.added, r.skipped, parsed, r.reissued));
     return true;
   };
 

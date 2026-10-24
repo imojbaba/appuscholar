@@ -120,11 +120,44 @@ describe("addPeople (Paste a list)", () => {
     expect(only.list.next).toBe(8);
   });
 
-  it("a kept code below next leaves next where it is; one above moves it", () => {
+  it("a given code at next or above is kept and moves next past it; a code that was used before is not (R52)", () => {
     const l = { ...emptyList(), next: 8 };
-    expect(addPeople(l, [{ name: "Old Friend", spellings: [], code: "P002" }], TODAY).list.next).toBe(8);
+    expect(addPeople(l, [{ name: "At Next", spellings: [], code: "P008" }], TODAY).list.next).toBe(9);
     expect(addPeople(l, [{ name: "Far Ahead", spellings: [], code: "P020" }], TODAY).list.next).toBe(21);
     expect(addPeople(l, [{ name: "Big", spellings: [], code: "P1500" }], TODAY).added[0]!.code).toBe("P1500");
+    // P002 is below the counter and nobody holds it now: it was used before, by somebody the list no longer has. It is refused and the person takes the next code.
+    const old = addPeople(l, [{ name: "Old Friend", spellings: [], code: "P002" }], TODAY);
+    expect(old.added.map((p) => [p.code, p.name])).toEqual([["P008", "Old Friend"]]);
+    expect(old.list.next).toBe(9);
+    expect(old.skipped).toEqual([]);
+    expect(old.reissued).toEqual([{ name: "Old Friend", was: "P002", code: "P008" }]);
+  });
+
+  it("after Destroy the counter is kept, so a key file's old codes are not given again: P001 and P002 are used, the two people get P003 and P004 (R52)", () => {
+    const before = addPeople(emptyList(), [{ name: "Priya Sharma", spellings: [] }, { name: "Rahul Verma", spellings: [] }], TODAY).list;
+    const destroyed = destroyList(before, "2026-11-02");
+    expect(destroyed.next).toBe(3);
+    const r = addPeople(destroyed, [{ name: "Kavya Rao", spellings: [], code: "P001" }, { name: "Imran Khan", spellings: [], code: "P002" }], TODAY);
+    expect(r.added.map((p) => [p.code, p.name])).toEqual([["P003", "Kavya Rao"], ["P004", "Imran Khan"]]);
+    expect(r.list.next).toBe(5);
+    expect(r.skipped).toEqual([]);
+    expect(r.reissued).toEqual([{ name: "Kavya Rao", was: "P001", code: "P003" }, { name: "Imran Khan", was: "P002", code: "P004" }]);
+    // Nobody is reissued in an ordinary paste: a code at or above next is the key file's own.
+    expect(addPeople(destroyed, [{ name: "Kavya Rao", spellings: [], code: "P003" }], TODAY).reissued).toEqual([]);
+  });
+
+  it("the counter is the list's when the paste began: a key file in any order keeps its own codes on a list that never held them", () => {
+    const r = addPeople(emptyList(), [{ name: "Asha Kumari", spellings: [], code: "P007" }, { name: "Imran Khan", spellings: [], code: "P003" }], TODAY);
+    expect(r.added.map((p) => [p.code, p.name])).toEqual([["P007", "Asha Kumari"], ["P003", "Imran Khan"]]);
+    expect(r.reissued).toEqual([]);
+  });
+
+  it("a code another person holds now is still code-taken: the name is skipped, not given a new code", () => {
+    const l = addPeople(emptyList(), [{ name: "Asha Kumari", spellings: [] }, { name: "Priya Sharma", spellings: [] }], TODAY).list;
+    const r = addPeople(l, [{ name: "Imran Khan", spellings: [], code: "P001" }], TODAY);
+    expect(r.skipped).toEqual([{ name: "Imran Khan", why: "code-taken" }]);
+    expect(r.added).toEqual([]);
+    expect(r.reissued).toEqual([]);
   });
 
   it("skips a name already on the list (any case, spacing or dots) as `already`, and the one pasted twice", () => {

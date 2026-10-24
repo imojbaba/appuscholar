@@ -641,6 +641,21 @@ describe("Paste a list", () => {
     expect(l.next).toBe(11);
   });
 
+  it("after Destroy, a key file's old codes are not given again: the status line says they were used before (R52)", async () => {
+    seed(PLAN, { v: 1, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02" });
+    await mount();
+    await click("pp-paste");
+    await type("pp-paste-box", "ParticipantCode,Name\nP001,Kavya Rao\nP002,Imran Khan");
+    await click("pp-paste-go");
+    expect(text("pp-paste-result")).toBe(
+      "Added 2 people (P003\u2013P004). 2 codes were used before and cannot be used again, so those people got new ones: Kavya Rao (P003, not P001), Imran Khan (P004, not P002).",
+    );
+    const l = lastWritten()!;
+    expect(l.people.map((p) => [p.code, p.name])).toEqual([["P003", "Kavya Rao"], ["P004", "Imran Khan"]]);
+    expect(l.next).toBe(5);
+    expect(l.destroyedAt).toBeUndefined();
+  });
+
   it("a line that starts with a code is read as code, name even without the heading", async () => {
     seed(PLAN);
     await mount();

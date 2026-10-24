@@ -124,6 +124,18 @@ describe("pasteSummary: the sentence after Paste a list", () => {
     expect(sentence("P002,Meena Gupta\nP009,Neha Singh")).toBe("Added 1 person (P009). Skipped 1 whose code is already used: P002 Meena Gupta.");
   });
 
+  it("a code that was used before gets the person a new one, and the sentence says which (R52)", () => {
+    const t0 = (key: string, vars?: Record<string, string | number>) => tFormat(DICTS.en, DICTS.hi, key, "en", vars);
+    const destroyed = { v: 1 as const, next: 3, people: [], notNames: [], destroyedAt: "2026-11-02" };
+    const parsed = parsePaste("ParticipantCode,Name\nP001,Kavya Rao\nP002,Imran Khan");
+    const r = addPeople(destroyed, parsed, "2026-11-03");
+    expect(pasteSummary(t0, r.added, r.skipped, parsed, r.reissued)).toBe(
+      "Added 2 people (P003\u2013P004). 2 codes were used before and cannot be used again, so those people got new ones: Kavya Rao (P003, not P001), Imran Khan (P004, not P002).",
+    );
+    const one = addPeople(destroyed, parsePaste("P002,Imran Khan"), "2026-11-03");
+    expect(pasteSummary(t0, one.added, one.skipped, [], one.reissued)).toBe("Added 1 person (P003). 1 code was used before and cannot be used again, so that person got a new one: Imran Khan (P003, not P002).");
+  });
+
   it("a code is shown as it is stored: P0003 is P003", () => {
     expect(sentence("P0003,Meena Gupta\np009,Neha Singh")).toBe("Added 1 person (P009). Skipped 1 whose code is already used: P003 Meena Gupta.");
   });
