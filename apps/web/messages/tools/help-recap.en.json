@@ -1,1 +1,9 @@
-{}
+{
+  "wc_recap_h": "Welcome back",
+  "wc_recap_ai": "{n} AI help request(s) logged",
+  "wc_recap_tests": "{n} test result(s) inserted",
+  "wc_recap_nothing": "Nothing was found to count since your last visit.",
+  "wc_recap_prev": "Your answer to the first question last time ({d}):",
+  "wc_recap_intro": "Answer in your own words. Nobody grades these, and the app does not read them. They are saved on this device only, so you can see how your thinking moved.",
+  "wc_recap_saved": "Saved"
+}
