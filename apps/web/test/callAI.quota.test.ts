@@ -18,7 +18,7 @@ const mockFetch = vi.mocked(apiFetch);
 function ctx(over: Partial<CallCtx> = {}): CallCtx {
   return {
     provider: "gemini", blobs: {}, fallbackOn: true, contentLang: "en", projectId: null,
-    askPassphrase: vi.fn(async () => null), askPd: vi.fn(async () => "cancel" as const),
+    askPassphrase: vi.fn(async () => null), askPd: vi.fn(async () => ({ answer: "cancel" as const, leave: [] })),
     openSettings: vi.fn(), onFailover: vi.fn(), ...over
   };
 }
