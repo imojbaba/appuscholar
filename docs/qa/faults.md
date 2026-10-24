@@ -27,7 +27,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q1: The language button is announced differently from what it shows
 
-- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"); it will show at every desktop screen with no window open
+- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI (accessibility)
@@ -182,7 +182,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q15: On a phone, the project name in a place's top line is 20 px tall and the "Your question" strip's summary 32 px
 
-- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi); it shows at the top of every place
+- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), and S6-06 (the Coding tab, its passages view, its name field and its delete question); it shows at the top of every place
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -204,18 +204,18 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q17: On a phone, the document toolbar's five formatting buttons are 32 to 35.5 px wide
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), and S6-06 (the interview full screen, before and after the tap that tags a passage)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
 - Expected: as Q15 (source: spec section 8, layout rules, O17)
-- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px. File: `components/document/FormatBar.tsx`. This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
+- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag, in S6-06), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx`. This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q15.
 - Status: known
 
 ### Q18: On a Hindi page, the document toolbar's more-formatting button shows Hindi but is named in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), and S6-06 (the interview full screen, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -226,13 +226,24 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q19: On a Hindi page, the document bar and toolbar are in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), and S6-06 (the interview full screen, in Hindi)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (Hindi)
 - Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name the toolbar; the walk's O9 notes it: "the document toolbar stays English in Hindi mode (Paragraph, Image, Table, Find, Dictate)")
 - Happened: `select "My first document" [doc-select]` (the title the app gives a project's first document, an English literal in `lib/frame/firstDocument.ts`) and `select "Paragraph style" [fmt-paragraph]`: "Paragraph B I U ≡• ↶ ↷ 🖼 Image ⊞ Table 🔍 Find 🎤 Dictate English (India)" (the toolbar's labels, written into `components/document/FormatBar.tsx`). The rule reads the toolbar as one run of English; the Hindi wording of the Budget page that O9 also names is for Dr. Sharma and is not what this entry is about.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: no English on a Hindi screen". Re-run as Q15.
+- Status: known
+
+### Q30: On a phone, the Coding tab's own controls are under 44 px
+
+- Case: S6-06 (the Coding tab, its passages view, its name field and its delete question, on a phone, in Hindi: the case's own check "every control of a code row is at least 44 px each way", and the touch-target rule at each checkpoint)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way; the sheet's row 10 asks that on a code row "the colour dot, the name, +, the eye, the pencil and the bin are all on screen and can be pressed" (source: spec section 8, layout rules, O17; as Q3; `tools-c.md` row 10)
+- Happened: all of them are on the screen and can be pressed, but they are narrow. On a code row: `button [qual-swatch-<id>]` (the colour dot, tags the selected passage) 14 × 44 px, and `[qual-add-sub-<id>]`, `[qual-passages-<id>]`, `[qual-rename-<id>]`, `[qual-delete-<id>]` 24 × 44 px each, with the name button between them wide enough. The 44 px height comes from the phone rule `.place-body button { min-height: 44px }` (`app/globals.css`, line 453); nothing sets a width: the dot is `size-3.5` (`components/tools/qual/CodeTree.tsx`, line 64) and the four icon buttons are `size="icon-xs"`, which is `size-6` (`CodeTree.tsx`, lines 86 to 89; `components/ui/button.tsx`, line 35). The tick row of "Show code colors in the document" is `input [qual-show-colors]` 317 × 20 px (`components/tools/qual/Panel.tsx`, lines 121 to 125: a `<label>` around a `size-[17px]` box, which the `button` rule does not reach), and the name field's box is `input [qual-name-input]` 204 × 30 px (`components/tools/qual/NameField.tsx`, line 26, `h-[30px]`). A student in Hindi with a long code name meets the same widths: the four icons sit side by side at the right end of the row, 24 px apart.
+- Evidence: the run of 2026-10-24 on aa23121: case S6-06, the failed checks "every control of a code row is at least 44 px each way" and "... every control at least 44 px each way" at the Coding tab, the passages view, the name field and the delete question. Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S6-06"`.
 - Status: known
 
 ### Q96: While the vault is locked, an amount typed into Budget is dropped
@@ -244,4 +255,3 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: with the vault locked, an amount typed into Budget is kept (it stays in the box and is saved once the vault is unlocked), or the box cannot be typed in; nothing a student types is lost without a sign (source: spec section 6, S3: "each tab says locked, nothing typed is lost"; the same rule as O7, "kept, or the boxes cannot be typed in yet")
 - Happened: the seven amount boxes are open (not read-only, not disabled) under the locked note. Typing "800" into line 4 leaves the box empty (`Expected: "800"`, `Received: ""`) and the total at `Total: ₹0`: nothing is kept, nothing is saved after the unlock, and nothing at the box says the key was refused. Cause: `Budget.tsx` (the amount `<input type="number" value={r.amount} onChange=...>`, line 55) calls `budget.save(...)` on every key, and `useDesign.save` returns false without setting anything while the blob is unread or locked (`lib/tools/design/useDesign.ts` line 57: `if (id === null || waiting || readOnly) return false`; `waiting` is `unread(blob)`, line 53, true for `locked && value === null`, line 30); the controlled input then goes back to the stored (empty) value. The same line drops the keystrokes of O7 (typed while the tab opens, 1 to 2 s); this entry is the locked state, which does not pass by itself, and a fix for the opening window (holding the keys until the read is done) would not necessarily cover it, so it has its own id.
 - Evidence: the run of 2026-10-24 on 07acf1e: case S3-05, the failed check "an amount typed into Budget while the vault is locked is kept (it stays in the box), or the box cannot be typed in". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S3-05"`.
-- Status: known
