@@ -106,6 +106,15 @@ export function useLibrary(opts: { passive?: boolean } = {}): Library {
   return shared?.library ?? own;
 }
 
+/**
+ * The library of the project `projectId`, with no workspace around it (wave B Task 20): the adding screen keeps into the project the student chooses, in a tab that has no
+ * ProjectShell and so no project in context. It is the hook's own library (useOwnLibrary), the same blob client a Keep in Find uses, so a paper kept from here is in the
+ * `citations` blob the workspace reads. `null` reads nothing and saves nothing.
+ */
+export function useProjectLibrary(projectId: string | null): Library {
+  return useOwnLibrary(projectId);
+}
+
 /** An entry as JSON with its keys sorted, so the same entry parsed elsewhere (another key order) compares equal. */
 function canonical(v: unknown): string {
   if (Array.isArray(v)) return "[" + v.map(canonical).join(",") + "]";

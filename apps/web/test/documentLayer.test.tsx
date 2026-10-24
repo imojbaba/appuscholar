@@ -26,7 +26,6 @@ vi.mock("@/components/workspace/dialogs/ImportOrigin", () => ({ ImportOrigin: h.
 vi.mock("@/components/workspace/dialogs/MyWriting", () => ({ MyWriting: h.stub }));
 vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog: h.stub }));
 vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children, useLibrary: () => ({ lib: [], loading: false, locked: false }) }));
-vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/document/DocumentCard", () => ({ DocumentCard: h.stub }));
 vi.mock("@/components/tools/stats", () => ({

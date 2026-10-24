@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import * as core from "@appuscholar/core";
 import type { StoredEntry } from "../lib/blobs/kinds";
-import { CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryKnown, libraryRead, resultEntry, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
+import { ABSTRACT_MAX, CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryKnown, libraryRead, pastedEntry, resultEntry, undoKeep, undoKeepSettled, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
 import { insertResult } from "../lib/research/library";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
@@ -220,6 +220,135 @@ describe("keepResult", () => {
     keepResult({ ...OA, title: "A paper that already has all its pages", doi: "10.1/full", volume: "1", issue: "2", pages: "3-4" }, result([], { fetch: spy as unknown as typeof fetch }).d);
     await new Promise((r) => setTimeout(r, 10));
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("keepResult: Crossref's fill reads the article number (Task 19)", () => {
+  it("an OpenAlex paper with no pages gets Crossref's article number as its pages when Crossref lists no page range (crLookupDoiV2, as the paste box)", async () => {
+    const OA: core.RsPaper = { source: "OpenAlex", title: "Open-label placebos reduce test anxiety and improve self-management skills", authors: "Michael Schaefer", authorList: ["Michael Schaefer"], year: "2019", venue: "Scientific Reports", doi: "10.1038/s41598-019-49466-6", url: "", retracted: false, citationCount: 0 };
+    const m = make();
+    const fills: Array<Partial<core.CitationEntry>> = [];
+    const crossref = (async () => new Response(JSON.stringify({ status: "ok", message: { title: ["x"], author: [{ family: "Schaefer", given: "Michael" }], volume: "9", issue: "1", "article-number": "13317", type: "journal-article" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
+    keepResult(OA, { ...m.d, style: "apa", fetch: crossref, fillEmpty: (_match, fill) => { fills.push(fill); return true; }, seedRetraction: () => {} });
+    await vi.waitFor(() => expect(fills).toHaveLength(1));
+    expect(fills[0]).toMatchObject({ volume: "9", issue: "1", pages: "13317" });
+  });
+});
+
+describe("pastedEntry: what Keep stores for a pasted paper", () => {
+  const PASTED: core.CitationEntry = { author: "Schaefer, Michael; Denke, Claudia", year: "2019", title: "Open-label placebos reduce test anxiety", source: "Scientific Reports", volume: "9", issue: "1", pages: "13317", doi: "10.1038/s41598-019-49466-6", url: "", type: "Journal article" };
+  it("is the entry as looked up, with the abstract and the open-access link when the lookup brought them, and nothing else added", () => {
+    expect(pastedEntry({ result: "ok", entry: PASTED })).toEqual(PASTED);
+    expect(pastedEntry({ result: "ok", entry: PASTED, abstract: "About test anxiety.", oa: "https://example.org/a.pdf" })).toEqual({ ...PASTED, abstract: "About test anxiety.", oa: "https://example.org/a.pdf" });
+  });
+  it("keeps at most 4,000 characters of the abstract, as keepResult does, and leaves out a blank one", () => {
+    expect(pastedEntry({ result: "ok", entry: PASTED, abstract: "x".repeat(4500) }).abstract).toHaveLength(ABSTRACT_MAX);
+    expect("abstract" in pastedEntry({ result: "ok", entry: PASTED, abstract: "   " })).toBe(false);
+  });
+});
+
+describe("undoKeep: Undo of a keep", () => {
+  const added: StoredEntry = { ...SLEEP, pid: "kundo001", rl: true, abstract: "About sleep.", oa: "https://example.org/s.pdf" };
+  it("removes the entry with that pid when it is as it was kept, and only that entry", () => {
+    const other: StoredEntry = { ...SLEEP, pid: "kother01", doi: "", rl: true };
+    const { d, log } = make([other, added]);
+    expect(undoKeep(added, d)).toBe("removed");
+    expect(log.lib).toEqual([other]);
+  });
+  it("leaves it when any citation field, the reading-list mark, the abstract or the link differs; an empty field and an absent one are the same", () => {
+    for (const change of [{ pages: "1-9" }, { author: "Smith, John" }, { title: "Another title altogether" }, { rl: false }, { abstract: "Changed." }, { oa: "" }, { month: "5" }] as Array<Partial<StoredEntry>>) {
+      const { d, log } = make([{ ...added, ...change }]);
+      expect(undoKeep(added, d), JSON.stringify(change)).toBe("changed");
+      expect(log.updates, JSON.stringify(change)).toBe(0);
+      expect(log.lib).toEqual([{ ...added, ...change }]);
+    }
+    const blank = make([{ ...added, month: "", ack: undefined }]);
+    expect(undoKeep(added, blank.d)).toBe("removed");
+  });
+  it("is not stopped by a field the app writes in the background, or by a note or an acknowledgement", () => {
+    const { d, log } = make([{ ...added, ack: ["no-pdf"], textTried: "none" } as StoredEntry]);
+    expect(undoKeep(added, d)).toBe("removed");
+    expect(log.lib).toEqual([]);
+  });
+  it("reads the stored entries when it writes: an entry changed in another window since the shown copy was read is left, and one already taken out is gone", () => {
+    // the shown copy is as kept, the stored one has changed (the shown copy is behind)
+    const stale = make([added]);
+    stale.log.lib = [{ ...added, volume: "3" }];
+    expect(undoKeep(added, stale.d)).toBe("changed");
+    expect(stale.log.lib).toEqual([{ ...added, volume: "3" }]);
+    const gone = make([added]);
+    gone.log.lib = [];
+    expect(undoKeep(added, gone.d)).toBe("gone");
+    expect(gone.log.lib).toEqual([]);
+    // not shown at all: gone, and nothing is written
+    const none = make([]);
+    expect(undoKeep(added, none.d)).toBe("gone");
+    expect(none.log.updates).toBe(0);
+  });
+  it("needs a library that has been read, and fails when the library does not take the change", () => {
+    expect(() => undoKeep(added, make([added], { locked: true }).d)).toThrow(/read/);
+    expect(() => undoKeep(added, make([added], { update: () => false }).d)).toThrow(/did not take/);
+  });
+  it("leaves the paper when it is in the library under another id (another window kept it first and this keep's id was never stored): changed, not gone, and nothing is written", () => {
+    const theirs: StoredEntry = { ...added, pid: "kother99" };
+    const shownOnly = make([theirs]);
+    expect(undoKeep(added, shownOnly.d)).toBe("changed");
+    expect(shownOnly.log.updates).toBe(0);
+    // by the stored entries too: the shown copy still has the entry, the stored library has the other window's copy of the paper
+    const stale = make([added]);
+    stale.log.lib = [theirs];
+    expect(undoKeep(added, stale.d)).toBe("changed");
+    expect(stale.log.lib).toEqual([theirs]);
+    // a different paper under another id is no reason to keep anything: still gone
+    const unrelated = make([{ ...SLEEP, pid: "kelse001", doi: "10.1000/else", title: "Something else entirely about learning" }]);
+    expect(undoKeep(added, unrelated.d)).toBe("gone");
+  });
+});
+
+describe("undoKeepSettled: Undo, once the save has gone", () => {
+  const added: StoredEntry = { ...SLEEP, pid: "kundo002", rl: true };
+  /** A library that saves on flush(): its updates are kept, and a flush that finds another window's library (`theirs`) replays them onto it, as the blob client does after a 409. */
+  function saving(start: StoredEntry[], theirs?: StoredEntry[]) {
+    const log = { lib: start, ops: [] as Array<(p: StoredEntry[]) => StoredEntry[]>, flushes: 0, order: [] as string[] };
+    const d: KeepDeps & { flush(): Promise<boolean> } = {
+      lib: start, ready: true, loading: false, locked: false, broken: false, error: false,
+      update: (fn) => { log.ops.push(fn); log.lib = fn(log.lib); log.order.push("update"); return true; },
+      flush: async () => {
+        log.flushes++;
+        log.order.push("flush");
+        if (theirs) log.lib = log.ops.reduce((acc, fn) => fn(acc), theirs);
+        return true;
+      }
+    };
+    return { d, log };
+  }
+  it("says removed when the save went through, after the save", async () => {
+    const { d, log } = saving([added]);
+    expect(await undoKeepSettled(added, d)).toBe("removed");
+    expect(log.lib).toEqual([]);
+    expect(log.order).toEqual(["update", "flush"]);
+  });
+  it("says changed when the save was refused because another window edited the entry: the replay found it changed and kept it", async () => {
+    const edited: StoredEntry = { ...added, pages: "13317-1" };
+    const { d, log } = saving([added], [edited]);
+    expect(undoKeep(added, saving([added]).d)).toBe("removed"); // the first, local pass would have said removed
+    expect(await undoKeepSettled(added, d)).toBe("changed");
+    expect(log.lib).toEqual([edited]);
+  });
+  it("says changed when the replay finds the paper kept under another id, and gone when the other window took it out", async () => {
+    const theirCopy: StoredEntry = { ...added, pid: "kother98" };
+    expect(await undoKeepSettled(added, saving([added], [theirCopy]).d)).toBe("changed");
+    expect(await undoKeepSettled(added, saving([added], []).d)).toBe("gone");
+  });
+  it("answers at once, with no save, when the first pass found it changed or gone", async () => {
+    const changed = saving([{ ...added, volume: "3" }]);
+    expect(await undoKeepSettled(added, changed.d)).toBe("changed");
+    const gone = saving([]);
+    expect(await undoKeepSettled(added, gone.d)).toBe("gone");
+    expect(changed.log.flushes + gone.log.flushes).toBe(0);
+  });
+  it("needs a library that has been read, like undoKeep", async () => {
+    await expect(undoKeepSettled(added, { ...saving([added]).d, locked: true })).rejects.toThrow(/read/);
   });
 });
 

@@ -35,7 +35,6 @@ vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog
 vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children, useLibrary: () => ({ lib: [], loading: false, locked: false }) }));
 // Literature's tab counts (Task 10).
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ index: null }) }));
-vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
