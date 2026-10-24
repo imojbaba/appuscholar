@@ -45,7 +45,7 @@ vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-tes
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: () => <div data-testid="reading-list" /> }));
 vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
-vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
+vi.mock("@/components/literature/CompareTab", () => ({ CompareTab: () => <div data-testid="compare-tab" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], ask: () => {} }), ChatPanel: () => <div data-testid="chat-panel" /> }));
 vi.mock("@/components/tools/HelpersPanel", () => ({ HelpersPanel: () => <div data-testid="panel-psych" /> }));
 
@@ -121,7 +121,7 @@ describe("Literature (Task 10)", () => {
     const content: Record<string, string[]> = {
       find: ["panel-find"],
       reading: ["reading-list", "read-a-paper", "panel-analyse"],
-      compare: ["shelf-matrix", "ap-across"],
+      compare: ["compare-tab"],
       citations: ["panel-citations"]
     };
     for (const tab of PLACE_TABS.lit) {

@@ -1,13 +1,13 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { apAcrossColToggle, apAcrossCols } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { blobId, type ApNote, type ApNotes } from "@/lib/blobs/kinds";
 
 /*
  * Analyse a paper's stored notes: v1's appu_ap_notes (apNotes, apNotesSave, apNoteGet, apNotePut 9892-9895) and appu_ap_cols (9939-9941), here the open project's `ap_notes` and `ap_cols`
- * blobs, sealed under the vault. AnalysePanel holds the one client of each and hands this store to the walk-through, the paper card and the cards side by side. Every write is an update of
+ * blobs, sealed under the vault. AnalysePanel holds the one client of each and hands this store to the walk-through and the paper card; Compare (wave B Task 22) reads the same two blobs
+ * for its table (the cards side by side left Analyse a paper with it). Every write is an update of
  * the stored value (a write made before the blob is read lands on top of what is stored). A stored blob that does not open on this device is asked about before the first write replaces it
  * (ruling R16); a "yes" holds for that blob, whichever panel asked (below), and a "no" while the panel stays mounted, so typing does not ask at every key.
  */
@@ -56,7 +56,7 @@ export type ApNotesStore = {
    */
   unread: boolean;
   /**
-   * W8 (register row D-S2-34): the notes or the column choice are being read and opened (not locked, which says so itself). The cards side by side show the loading sign meanwhile;
+   * W8 (register row D-S2-34): the notes or the column choice are being read and opened (not locked, which says so itself). Compare shows the loading sign meanwhile;
    * the walk-through and the card keep their read-only boxes.
    */
   loading: boolean;
@@ -70,12 +70,10 @@ export type ApNotesStore = {
   note(id: string): ApNote | undefined;
   /** apNotePut: false when no project is open, the student kept a broken blob, or this is a pop-out (ap_notes is read-only there, v1 1964). */
   put(doc: { id: string; title: string }, fn: (n: ApNote) => void): boolean;
-  /** apAcrossDel's delete (9981). */
-  remove(id: string): boolean;
-  /** apAcrossCols over the stored list. */
-  cols: string[];
-  /** apAcrossColToggle, stored. */
-  toggleCol(k: string, on: boolean): boolean;
+  /** The stored `ap_cols` list as it is, null when none is stored: Compare's card columns are read from it (lib/papers/compare cardColsOf, ruling B2-R25). */
+  cols: string[] | null;
+  /** An update of the stored `ap_cols`; false when no project is open, the list is not read, the student kept a broken blob, or this is a pop-out. */
+  setCols(update: (prev: string[] | null) => string[]): boolean;
 };
 
 /**
@@ -120,17 +118,11 @@ export function useApNotes(projectId: string | null): ApNotesStore {
     setNotes((prev) => notePut(prev, doc, fn));
     return true;
   }, [projectId, notesUnread, notesReadOnly, mayWrite, notesBroken, setNotes]);
-  const remove = useCallback((id: string) => {
-    if (!projectId || notesUnread || notesReadOnly || !mayWrite("ap_notes", notesBroken)) return false;
-    setNotes((prev) => { const next = { ...(prev ?? {}) }; delete next[id]; return next; });
-    return true;
-  }, [projectId, notesUnread, notesReadOnly, mayWrite, notesBroken, setNotes]);
-  const toggleCol = useCallback((k: string, on: boolean) => {
+  const updateCols = useCallback((update: (prev: string[] | null) => string[]) => {
     if (!projectId || colsUnread || colsReadOnly || !mayWrite("ap_cols", colsBroken)) return false;
-    setCols((prev) => apAcrossColToggle(apAcrossCols(prev), k, on));
+    setCols((prev) => update(prev));
     return true;
   }, [projectId, colsUnread, colsReadOnly, mayWrite, colsBroken, setCols]);
-  const colList = useMemo(() => apAcrossCols(colsValue), [colsValue]);
   const note = useCallback((id: string) => noteAt(all, id), [all]);
-  return { all, unread: notesUnread, loading: (notes.loading && !notes.locked) || (cols.loading && !cols.locked), locked: notesUnread && notes.locked, broken: !!notesBroken, readOnly: notesReadOnly, note, put, remove, cols: colList, toggleCol };
+  return { all, unread: notesUnread, loading: (notes.loading && !notes.locked) || (cols.loading && !cols.locked), locked: notesUnread && notes.locked, broken: !!notesBroken, readOnly: notesReadOnly, note, put, cols: colsValue, setCols: updateCols };
 }

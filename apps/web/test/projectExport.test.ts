@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
-import { AIU_V1_BRACKET, AIU_V2_BRACKET, aiuBuildV2, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shMatrixCsv, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
+import { AIU_V1_BRACKET, AIU_V2_BRACKET, aiuBuildV2, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, type AiuEntry, type CitationEntry, type RsPaper } from "@appuscholar/core";
 import { acrossData } from "../lib/analyse/cards";
 import { DEFAULT_EXPORT_PARTS, EXPORT_PARTS, exportProject, keptPapers, projectExportFileName, saveProjectExport, type ExportPart, type ProjectExportDeps } from "../lib/export/projectExport";
 import { VaultError } from "../lib/vault/crypto";
@@ -102,7 +102,7 @@ describe("exportProject", () => {
     expect(files(z)).toEqual([
       "ai-use-statement.txt",
       "citations/library.json", "citations/references.txt",
-      "compare/paper-cards.csv", "compare/table.csv",
+      "compare/paper-cards.csv",
       "documents/Draft.doc", "documents/Draft.html", "documents/sources/Source paper.doc", "documents/sources/Source paper.html",
       "notes/Sleep and exam anxiety.txt",
       "question.txt",
@@ -115,7 +115,8 @@ describe("exportProject", () => {
     expect(await text(z, "citations/library.json")).toBe(exportLibrary(LIB));
     expect(await text(z, "search/kept-papers.csv")).toBe("﻿" + rsCsvText(keptPapers(LIB)));
     expect(await text(z, "search/last-search.csv")).toBe("﻿" + rsCsvText(SEARCH));
-    expect(await text(z, "compare/table.csv")).toBe("﻿" + shMatrixCsv("sh2_paper", [...SHELF_DEFAULT_COLS], [{ title: SHELF_INDEX[0]!.title, cells: SHELF_PAPER.cells }]));
+    // Compare's table (ruling B2-R27) comes from each paper's note by its id: these notes hold no cells and no card field of a paper with an id, so there is no table.
+    expect(z.file("compare/table.csv")).toBeNull();
     expect(await text(z, "compare/paper-cards.csv")).toBe("﻿" + apAcrossCsv(acrossData(t, AP_NOTES, ["design", "verdict"], false)));
     const q = await text(z, "question.txt");
     expect(q).toContain("idea_topic_label\nSleep and exam anxiety");
@@ -355,6 +356,17 @@ describe("with paper ids (Task 17)", () => {
     const blobs = { ap_notes: { "p:kbook": { title: "Why we sleep", pid: "kbook", stages: { gap: { mine: "Read as an abstract." } }, card: {} } } };
     const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["notes"], opts()));
     expect(files(z)).toContain("notes/Why we sleep.txt");
+  });
+
+  it("compare/table.csv is Compare's table, by paper id: the cells of the note p:<pid> and the card fields chosen, for the papers that have words in them (ruling B2-R27)", async () => {
+    const blobs = {
+      shelf_index: [{ ...SHELF_INDEX[0]!, pid: "kone" }, { ...SHELF_INDEX[0]!, id: "s2", title: "No words yet", pid: "ktwo" }],
+      ap_notes: { "p:kone": MERGED, "p:ktwo": { title: "No words yet", pid: "ktwo", stages: {}, card: {}, cells: {} }, a1: { ...AP_NOTES.a1, movedTo: "p:kone" } },
+      shelf_cols: ["Sample", "Design"], ap_cols: ["verdict", "weak"]
+    };
+    const z = await unzip(await exportProject(deps({ readBlob: blobsWith(blobs) }), ["compare"], opts()));
+    // The columns of the screen: Paper, the matrix columns by their stored names, the card fields chosen in the card's order. The two library entries with no id and the second paper have no words, so no row.
+    expect(await text(z, "compare/table.csv")).toBe("\uFEFFsh2_paper,Sample,Design,cmp_col_weak,ap2_my_verdict\nSleep and exam anxiety,120 students,,,\"Useful, with care\"");
   });
 
   it("the cards file lists a paper once: the note that moved is left out and the one it moved to is in", async () => {

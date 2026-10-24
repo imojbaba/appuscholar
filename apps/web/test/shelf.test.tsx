@@ -2,7 +2,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act } from "react";
-import JSZip from "jszip";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildShelfSummaryPromptV2, fieldLabel, shTitleGuess, shBackupFileName, shColsOf, shSnippetParts, shTokens, type ShRecord } from "@appuscholar/core";
@@ -13,7 +12,7 @@ import en from "../messages/en.json";
  * inputs (packages/core/test/golden/shelf/cases.json, `golden:capture shelf`): shAddFiles' status line and records, shSaveHL's quotes and toasts, shRestore's checks and count,
  * shBackup's bundle, shMatrixCsv's text, shColAdd/shColDel, and shSummarise's note, prompt, options and summary box. The Reading list (wave B Task 21a, which replaced the
  * shelf's dialog) is then mounted with the real store (lib/shelf/useShelf.ts, useProjectBlob) over a fake blob api: PDFs added, papers renamed and removed (after the question,
- * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the matrix columns in shelf_cols (Compare's table until Task 22), the summary gate, backup
+ * the paper's blob deleted), search and passages, highlights saved to the paper's blob, the summary gate, backup
  * and restore, and R16's confirm over a blob that does not open.
  */
 
@@ -72,8 +71,6 @@ import {
 } from "../lib/shelf/actions";
 import { PdfReaderUnavailable, type PdfDoc } from "../lib/shelf/extract";
 import { ReadingList } from "../components/literature/ReadingList";
-import { ShelfMatrix } from "../components/tools/shelf/ShelfMatrix";
-import { exportProject } from "../lib/export/projectExport";
 import { useShelf, writeIndexDetached } from "../lib/shelf/useShelf";
 import { blobId } from "../lib/blobs/kinds";
 import type { BlobVault } from "../lib/blobs/useProjectBlob";
@@ -535,10 +532,6 @@ function typeIn(el: HTMLElement, value: string) {
   const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   act(() => { Object.getOwnPropertyDescriptor(proto, "value")!.set!.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); });
 }
-async function blurWith(el: HTMLElement, value: string) {
-  (el as HTMLInputElement).value = value;
-  await act(async () => { el.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-}
 async function pick(input: HTMLElement, files: File[]) {
   Object.defineProperty(input, "files", { value: files, configurable: true });
   await act(async () => { input.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -761,41 +754,6 @@ describe("the Reading list (wave B Task 21a)", () => {
     expect(opts).toEqual({ temp: 0.2, max: 1000, noLang: true });
     expect(prompt.startsWith("You are helping a student of education read a paper.")).toBe(true);
     expect(prompt).toContain("Contact: [author email removed]");
-  });
-
-  it("Compare's table (ShelfMatrix, until Task 22) shows the default columns, stores added and removed columns in shelf_cols and cells on the paper; Export opens the export place, whose table is reading_matrix.csv", async () => {
-    seedCorpus();
-    await mount(<ShelfMatrix />);
-    await until(() => tids("sh-matrix-row").length === 4 && !(tids("sh-cell")[0] as HTMLTextAreaElement).readOnly && !(tids("sh-cell")[9] as HTMLTextAreaElement).readOnly, "the papers read");
-    expect(tid("shelf-matrix")!.textContent).toContain("The cells are yours, not the AI's.");
-    expect(tids("sh-col-head").map((x) => x.firstChild!.textContent!.trim())).toEqual(DEFAULTS);
-    expect(tids("sh-matrix-row")).toHaveLength(4);
-    typeIn(tid("sh-col")!, "  Sample size ");
-    await click(tid("sh-col-add"));
-    await until(() => stored<string[]>("shelf_cols") !== null, "the columns' save");
-    expect(stored<string[]>("shelf_cols")).toEqual([...DEFAULTS, "Sample size"]);
-    await click(tids("sh-col-del")[0]!);
-    await until(() => stored<string[]>("shelf_cols")!.length === 3, "the column removed");
-    expect(stored<string[]>("shelf_cols")).toEqual(["Method", "Key finding", "Sample size"]);
-    await blurWith(tids("sh-cell")[0]!, "survey");
-    await until(() => stored<ShelfPaper>("shelf_paper:pa")?.cells.Method === "survey", "the cell's save");
-    // Wave B Task 12 (D-S2-42): v1's "Download as CSV" is now Export, with the comparison ticked; the zip's compare/table.csv is v1's file, from what is stored.
-    await click(tid("sh-csv"));
-    expect(h.openExport).toHaveBeenCalledWith("compare");
-    expect(h.download).not.toHaveBeenCalled();
-    // jsdom's Blob has no arrayBuffer(), which the export reads a tool's file with in the browser: one through FileReader, for this test.
-    const readBytes = (b: Blob) => new Promise<ArrayBuffer>((done) => { const r = new FileReader(); r.onload = () => done(r.result as ArrayBuffer); r.readAsArrayBuffer(b); });
-    const had = Blob.prototype.arrayBuffer;
-    Blob.prototype.arrayBuffer = function (this: Blob) { return readBytes(this); };
-    const zip = await exportProject({
-      project: { id: "p1", title: "P", titleKeyVersion: 0, deks: [] }, t: (k) => tFormat(en, en, k, "en"),
-      listDocuments: async () => [], getDocument: async () => { throw new Error("none"); }, decrypt: async () => "", openTitle: async () => ({ state: "unreadable" }),
-      readBlob: async (kind) => { const v = stored<unknown>(kind); return v === null ? null : JSON.stringify(v); },
-      writingRecord: async () => { throw new Error("none"); }, aiUseLog: async () => []
-    }, ["compare"], { style: "apa", now: new Date(), lastSearch: null }).finally(() => { Blob.prototype.arrayBuffer = had; });
-    const table = new TextDecoder("utf-8", { ignoreBOM: true }).decode(await (await JSZip.loadAsync(await readBytes(zip))).file("compare/table.csv")!.async("uint8array"));
-    expect(table.split("\n")[0]).toBe("﻿Paper,Method,Key finding,Sample size");
-    expect(table.split("\n")[1]).toBe("Sleep and memory in adolescents,survey,,");
   });
 
   it("backs up the reading list and restores a backup: a file that is not one says so; one that is adds its papers", async () => {
