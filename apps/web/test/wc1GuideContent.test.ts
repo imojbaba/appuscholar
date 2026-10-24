@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { sanitizeHtml } from "@appuscholar/core";
 import { GUIDE } from "@/lib/help/guide/content";
@@ -79,6 +81,18 @@ const UNTRUE_IN_V2 = [
   "Statistics & Charts",
   "Statistics panel",
   "Research panel",
+  // Sentences the register rows rewrite (D-C-2, 5, 11, 12, 21, 23, 27, 33, 34, 38), so none can come back unnoticed.
+  "Open the guide again",
+  "on the left",
+  "The saved copy is used only when that fails",
+  "in Help, or use the browser menu.",
+  "belongs to another project",
+  "Statistics Lab panel",
+  "The Statistics Lab flags",
+  "Open the Statistics Lab",
+  "Coding works across all your documents",
+  "A picture becomes its own slide",
+  "Your Heading 1 and Heading 2 styles",
   // Statements v2 cannot make true.
   "Drafts the cover note",
   "such as a two-way ANOVA or multiple regression, needs another program"
@@ -157,13 +171,23 @@ describe("the Guide's content (Task C1)", () => {
       ["stats", "Statistics", "tab_name_data"], ["stats", "Sample size", "tab_name_power"],
       ["scales", "Scales", "tab_name_scales"], ["numcheck", "Check numbers", "tab_name_check"], ["numcheck", "Check the numbers in my document", "stats_check_nc_run"],
       ["charts", "Charts", "tab_name_charts"], ["qual", "Coding", "tab_name_coding"], ["style", "My style", "tab_name_style"], ["cite", "Citations", "tab_name_citations"],
-      ["chat", "Chat", "writing_chat"], ["chat", "Insert into document", "chat_panel_desc"],
+      ["chat", "Chat", "writing_chat"],
       ["slides", "Make PPT", "tab_name_slides"], ["slides", "Generate slide preview", "slides_generate_btn"],
       ["habits", "Export all my work", "acct_export"], ["faq", "Export all my work", "acct_export"]
     ];
     for (const [id, label, key] of LABELS) {
       expect(GUIDE.find((s) => s.id === id)!.html, `${id}: <b>${label}`).toContain("<b>" + label);
       expect(plainText(DICTS.en[key] ?? ""), `${key} holds "${label}"`).toContain(label);
+    }
+    // The chat's insert button is written in its component, not in a message file.
+    expect(GUIDE.find((s) => s.id === "chat")!.html).toContain("<b>Insert into document");
+    expect(readFileSync(path.join(__dirname, "../components/tools/ChatPanel.tsx"), "utf8")).toContain("+ Insert into document");
+  });
+
+  it("says \"on this device\" only in the install button's own name (work is in the account; per-device things are named where they are true)", () => {
+    for (const s of GUIDE) {
+      const rest = text(s.html).replace(/Install Appuscholar on this device/g, "");
+      expect(rest.toLowerCase().includes("on this device"), s.id).toBe(false);
     }
   });
 

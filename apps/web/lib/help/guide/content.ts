@@ -1,7 +1,7 @@
 import type { GuideSection } from "./types";
 
 /**
- * The Guide's sections: v1's 26 in v1's order, ids, groups and titles (index.html build 2026.10.24a, `GUIDE` 10591-10785), as HTML that `sanitizeHtml` keeps
+ * The Guide's sections: v1's 26 in v1's order, ids, groups and titles (index.html build 2026.10.24a, `GUIDE` 10591-10783), as HTML that `sanitizeHtml` keeps
  * unchanged (no `dl`, `dt` or `dd`). The text is v1's, word for word, except where v1 said work, keys, backups, the AI-use log, offline use or installation
  * were on "this browser" or "this computer" (v2 saves work in the student's account, sealed by the vault when it is on), or named a button, menu or place v2
  * does not have. Each change is a row in the wave C register (docs/superpowers/specs/wave-c-rows/c1.md, D-C-1 onward). Copy here is English only, as the Guide is.
@@ -33,7 +33,7 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     group: "Begin",
     title: "The six stages",
     keywords: "stages order idea literature design ethics analysis writing publish menu sidebar home tabs",
-    html: `<p>The project home lists the stages in the order most projects take, and each stage has its own tabs. You can open any stage at any time. The stages are a suggestion.</p>
+    html: `<p>The project home lists the stages in the order most projects take, and most stages have their own tabs. You can open any stage at any time. The stages are a suggestion.</p>
 <ul>
 <li><b>Idea.</b> Decide what to study and whether you can finish it.</li>
 <li><b>Literature.</b> Find papers, read them, compare them, and draft the review from what you found. Your citations are kept here too.</li>
@@ -100,8 +100,8 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     id: "offline",
     group: "Help",
     title: "Using Appuscholar offline and installing it",
-    keywords: "offline install phone home screen app connection internet service worker cache bar account connection",
-    html: `<p>Appuscholar needs a connection to work. Your documents and everything else you make are saved in your account, not on your device, so saving, the AI buttons, paper search and any new page all go online. After your first visit, Appuscholar keeps a small copy of its own files on your device, so that it can show a short offline page instead of your browser's error page. It does not keep your documents.</p>
+    keywords: "offline install phone home screen app connection internet service worker cache bar account",
+    html: `<p>Appuscholar needs a connection to work. Your documents and your project work are saved in your account, not on your device, so saving, the AI buttons, paper search and any new page all go online. After your first visit, Appuscholar keeps a small copy of its own files on your device, so that it can show a short offline page instead of your browser's error page. It does not keep your documents.</p>
 <p>When the connection drops, a bar at the bottom says: <i>You are offline. Your last page is on screen, but saving, AI, paper search and new pages need a connection.</i> The page you had open stays on screen, but nothing new is saved until you are back online. Keep the tab open, and if the page warns that your document is not being saved, download it. Nothing you already saved is lost.</p>
 <p>When you are online, the app always asks the website for the latest page first. The offline page is shown only when that fails. A new version therefore reaches you at the next load.</p>
 <p><strong>To install it.</strong> In Chrome or Edge on a computer or an Android phone, press <b>Install Appuscholar on this device</b> in Help when it appears, or use the browser menu: <b>Install app</b>, or <b>Add to Home Screen</b>. On an iPhone, open the Share menu in Safari and choose Add to Home Screen. Your work is saved in your account, so the installed copy and the browser tab show the same projects once you are signed in. On some devices the installed copy keeps its own sign-in and its own AI key, so you may need to sign in or paste your key again.</p>
@@ -148,7 +148,7 @@ B,8</pre>Then find <b>Which test fits my data?</b> further down, press <b>Open t
     html: `<p>Universities and journals now ask you to say where AI helped. Appuscholar keeps a private log of this in your account, for each project. It records the date, the AI provider, the model and the kind of help, such as grammar and polish or practice viva questions. It never stores what you typed or what the AI replied.</p>
 <p>Open the <b>AI-use statement</b> tab in Design and ethics. Choose the dates for this piece of work, untick any help that belongs to another piece of work, add AI tools you used elsewhere, and tick only what you really did yourself. Press <b>Build the statement</b>. Edit the text until it is true, then copy it, insert it into your document, or download it.</p>
 <p>The log knows only about Appuscholar, and the statement is built from the open project's log, so AI you used with no project open is not in it. If you used AI outside Appuscholar, or with <b>Keep the AI-use log</b> switched off, add that yourself. If the log shows requests and you try to write that no AI was used, Appuscholar stops you. Your institution or the journal decides what you must disclose. AI cannot be an author.</p>
-<p><b>Erase the log</b>, on the same tab, erases the log for all your projects in this account, not only the open one. It cannot be undone. A statement you have already built stays in its box.</p>`
+<p><b>Erase the log</b>, on the same tab, erases the whole AI-use log in your account: all your projects, and AI you used with no project open. It cannot be undone. A statement you have already built stays in its box.</p>`
   },
   {
     id: "stats",
