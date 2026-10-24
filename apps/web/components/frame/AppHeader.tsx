@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { CaretDown, List, Question, UserCircle } from "@phosphor-icons/react";
-import { PROVIDERS, type ProviderId } from "@appuscholar/core";
+import { CaretDown, Check, List, Question, UserCircle } from "@phosphor-icons/react";
+import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { useLang, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -10,7 +10,7 @@ import { useKeys } from "@/lib/ai/useKeys";
 import { useTitle } from "@/lib/vault/titles";
 import { PHONE_QUERY, useMedia } from "@/lib/useMedia";
 import { toast } from "@/components/ui/toast";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { VaultPill } from "@/components/workspace/VaultPill";
 import { useAccount } from "@/components/workspace/dialogs/Help";
 import { useProject, type Project } from "./ProjectContext";
@@ -51,7 +51,7 @@ export function AppHeader() {
       <VaultPill />
       {phone ? <PhoneMenu account={account} lang={lang} switchLang={switchLang} /> : (
         <>
-          <AiPill onOpen={() => openSettings()} />
+          <AiPill onOpen={() => openSettings()} onAdd={openSettings} />
           <button type="button" className="app-hbtn app-desk" aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
             {lang === "en" ? "हि" : "EN"}
           </button>
@@ -103,16 +103,46 @@ function PhoneMenu({ account, lang, switchLang }: { account: Account; lang: stri
   );
 }
 
-/** "AI: Gemini, your key" when a key for the chosen provider is usable or saved; "AI: add your key" otherwise. Both open the key dialog. */
-function AiPill({ onOpen }: { onOpen(): void }) {
+/**
+ * "AI: Gemini, your key" when a key for the chosen provider is usable or saved; "AI: add your key" otherwise. Both open the key dialog (ruling P6).
+ * Beside the pill a caret opens the quick switch (v1 toggleProvMenu 5154, switchProv 5165): the six providers in v1's order, a dot for the ones with a
+ * key; one with a key becomes the chosen provider, one without opens the key dialog on it. The caret is not part of the pill, so its text stays the same.
+ */
+function AiPill({ onOpen, onAdd }: { onOpen(): void; onAdd(provider: ProviderId): void }) {
   const t = useT();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const { hasKey } = useKeys();
   const current: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+  const choose = (p: ProviderId) => {
+    const { name, short } = PROVIDERS[p];
+    if (hasKey(p)) { void update({ provider: p }); toast(t("aipill_now", { name, short })); }
+    else { onAdd(p); toast(t("aipill_paste", { short })); }
+  };
   return (
-    <button type="button" className="app-ai-pill app-desk" data-testid="ai-pill" onClick={onOpen}>
-      {hasKey(current) ? t("ai_pill_key", { provider: PROVIDERS[current].short }) : t("ai_pill_nokey")}
-    </button>
+    <span className="app-ai app-desk">
+      <button type="button" className="app-ai-pill" data-testid="ai-pill" onClick={onOpen}>
+        {hasKey(current) ? t("ai_pill_key", { provider: PROVIDERS[current].short }) : t("ai_pill_nokey")}
+      </button>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className="app-ai-pill app-ai-caret" aria-label={t("aipill_title")} title={t("aipill_title")} data-testid="ai-pill-menu">
+            <CaretDown size={14} aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[220px]" data-testid="ai-pill-list">
+          {PROV_ORDER.map((p) => {
+            const saved = hasKey(p);
+            return (
+              <DropdownMenuCheckboxItem key={p} checked={p === current} className={ITEM + (p === current ? " font-semibold" : "")} data-testid={`ai-switch-${p}`}
+                title={saved ? t("aipill_key_saved") : t("aipill_no_key")} onSelect={() => choose(p)}>
+                <span className={"size-2 rounded-full " + (saved ? "bg-green-600" : "bg-muted-foreground/40")} data-key={saved ? "saved" : "none"} aria-hidden="true" />
+                {PROVIDERS[p].name}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </span>
   );
 }
 

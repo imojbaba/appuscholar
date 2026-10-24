@@ -252,6 +252,9 @@
 .app-acct { padding: 0; border-radius: 999px; background: var(--purple-100); color: var(--purple-800); }
 .app-ai-pill { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border: 1px solid var(--gold); border-radius: 999px; background: var(--card); color: #7a5412; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .app-ai-pill:hover { background: var(--gold-wash); }
+/* The AI pill and its caret (the quick provider switch, wave D Task 10): two controls side by side, so the pill keeps its text and its click. */
+.app-ai { display: inline-flex; align-items: center; gap: 4px; }
+.app-ai-caret { justify-content: center; width: 34px; padding: 0; }
 .app-word:focus-visible, .app-switch:focus-visible, .app-hbtn:focus-visible, .app-ai-pill:focus-visible, .place-hdr a:focus-visible, .place-q summary:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 
 .frame { padding-bottom: var(--s7); }
