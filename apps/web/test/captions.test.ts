@@ -94,7 +94,7 @@ describe("renumberCaptions", () => {
     renumberCaptions(e);
     expect(e.getHTML()).toBe('<p data-cap="figure"><strong>Figure 1</strong>. Extra words</p>');
   });
-  it("creates the bold number when the paragraph has none, in front of the text (v1 4511)", () => {
+  it("creates the bold number when the paragraph has none, in front of the text (v1 4510)", () => {
     const e = make('<p data-cap="table">Means</p>' + TABLE);
     renumberCaptions(e);
     expect(e.getHTML()).toMatch(/^<p data-cap="table"><strong>Table 1<\/strong>Means<\/p>/);
@@ -292,6 +292,16 @@ describe("insertCaption", () => {
     expect(outline(e)).toContain("paragraph[title]:Means");
     expect(outline(e)).toContain("paragraph[note]:Note. n");
   });
+  it("puts a title or note typed over several lines on one line, so the document reads the same after a reload", () => {
+    const e = make(TABLE);
+    cursorIn(e, "a");
+    insertCaption(e, { kind: "table", title: "Group\n  means\tby age", note: "a\nb" });
+    expect(outline(e)).toContain("paragraph[title]:Group means by age");
+    expect(outline(e)).toContain("paragraph[note]:Note. a b");
+    // Tiptap keeps the whitespace of an insert but not of a load; collapsing it first makes the two the same.
+    const html = e.getHTML();
+    expect(make(html).getHTML()).toBe(html);
+  });
   it("escapes the title: <b>x</b> reads as text, with no bold node", () => {
     const e = make(TABLE);
     cursorIn(e, "a");
@@ -368,6 +378,16 @@ describe("Enter and Backspace around a caption", () => {
     const e = make('<p data-cap="figure"><strong>Fig. 3</strong> the chart</p>');
     renumberCaptions(e);
     expect(e.getHTML()).toBe('<p data-cap="figure"><strong>Figure 1</strong> the chart</p>');
+  });
+  it("fixes a label written without its space in one press: Table1 and Figure2 do not become Table 11 and Figure 12", () => {
+    const t = make('<p data-cap="table"><strong>Table1</strong></p>');
+    renumberCaptions(t);
+    expect(t.getHTML()).toBe('<p data-cap="table"><strong>Table 1</strong></p>');
+    expect(dispatches(t, () => renumberCaptions(t))).toBe(0);
+    const f = make('<p data-cap="figure"><strong>Figure2</strong></p><p data-cap="figure"><strong>Figure 9</strong></p>');
+    renumberCaptions(f);
+    expect(f.getHTML()).toBe('<p data-cap="figure"><strong>Figure 1</strong></p><p data-cap="figure"><strong>Figure 2</strong></p>');
+    expect(dispatches(f, () => renumberCaptions(f))).toBe(0);
   });
   it("completes a label whose number was deleted", () => {
     const e = make('<p data-cap="table"><strong>Table</strong>: means</p>');

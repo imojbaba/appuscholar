@@ -13,8 +13,14 @@ export type CaptionKind = "figure" | "table";
 
 /** The labels are document text, English in every UI language as v1 writes them (the dialog is what Hindi translates), so they are not t() keys. */
 const LABEL: Record<CaptionKind, string> = { figure: "Figure", table: "Table" };
-/** What a caption's bold run starts with: the word and its number, or the word alone (its number deleted). */
-const LABEL_START = /^(?:Figure|Table)(?:\s+\d+)?/;
+/** What a caption's bold run starts with: the word and its number, with or without the space between, or the word alone (its number deleted). */
+const LABEL_START = /^(?:Figure|Table)(?:\s*\d+)?/;
+
+/**
+ * A title or note on one line, as v1's editor showed it (its HTML collapsed the line breaks to a space). Tiptap keeps whitespace as typed when content is
+ * inserted but not when a document is loaded, so a note typed over two lines would show on two lines now and on one after a reload.
+ */
+function oneLine(s: string): string { return s.replace(/\s+/g, " ").trim(); }
 
 /** v1 vzEsc (3646). */
 function esc(s: string): string {
@@ -87,7 +93,7 @@ export function renumberCaptions(editor: Editor): { f: number; t: number } {
   return { f, t };
 }
 
-/** The start of the top-level (depth 1) block that holds `pos` (v1 ieBlockOf 4521: climb to the child of the editor); a position between blocks is already that. */
+/** The start of the top-level (depth 1) block that holds `pos` (v1 ieBlockOf 4516: climb to the child of the editor); a position between blocks is already that. */
 export function topLevelBlockPos(editor: Editor, pos: number): number {
   const { doc } = editor.state;
   const $pos = doc.resolve(Math.max(0, Math.min(pos, doc.content.size)));
@@ -109,7 +115,7 @@ export function hasCaptionAbove(editor: Editor, pos: number): boolean {
 
 /**
  * v1 `_nearestTable` (4826): the table around the selection, as the position of its TOP-LEVEL block, so a table inside a quote still gets its caption above
- * the whole quote. A selected table counts. Null when the selection is not in a table.
+ * the whole quote. A selected table counts. Null when the selection is not in a table. It is the position of that top-level block, not of the table node.
  */
 export function nearestTablePos(editor: Editor): number | null {
   const { selection } = editor.state;
@@ -136,7 +142,7 @@ function selectedImagePos(editor: Editor): number | null {
 }
 
 /**
- * v1 capInsert (4545-4557). The title is trimmed; empty gives "need-title" and changes nothing. A table caption goes above the top-level block of the
+ * v1 capInsert (4545-4557). The title and the note are put on one line and trimmed; an empty title gives "need-title" and changes nothing. A table caption goes above the top-level block of the
  * nearest table, a figure caption above the top-level block of the selected picture (so a picture inside a table cell is captioned above the whole table),
  * and the note below it either way. With no table or picture to anchor to the caption and note go in as they are at the cursor, with no picture.
  * Deviation from v1: that insert goes after a selected passage instead of over it (v1's insertHTML replaced it), so a student's words are not lost.
@@ -145,10 +151,10 @@ function selectedImagePos(editor: Editor): number | null {
  * The note goes in first: it sits after the target, so the caption's position above is not moved by it.
  */
 export function insertCaption(editor: Editor, o: { kind: CaptionKind; title: string; note: string }): "inserted" | "need-title" {
-  const title = o.title.trim();
+  const title = oneLine(o.title);
   if (!title) return "need-title";
   const caption = captionHtml(o.kind, title);
-  const note = noteHtml(o.note.trim());
+  const note = noteHtml(oneLine(o.note));
   let target: number | null = null;
   if (o.kind === "table") target = nearestTablePos(editor);
   else {
