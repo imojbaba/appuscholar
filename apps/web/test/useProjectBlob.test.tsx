@@ -15,7 +15,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 import { ApiError } from "../lib/api";
 import { useVault, VaultProvider, type VaultValue, type WrappedDek } from "../lib/vault/useVault";
 import { BLOB_SAVE_DEBOUNCE_MS, projectBlobClient, useProjectBlob, type BlobVault, type ProjectBlob, type ProjectBlobState } from "../lib/blobs/useProjectBlob";
-import { heldBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
+import { heldBlobs, heldOnlyOverBrokenBlobs, shouldWarnOnUnloadBlobs } from "../lib/blobs/held";
 import { BLOB_KINDS, blobId, isBlobKind, parseBlob, shelfPaperKind, type BlobKind, type IdeaIntake } from "../lib/blobs/kinds";
 import { setSyncChannel } from "../lib/popout/channel";
 import { blobWritable } from "../lib/popout/mode";
@@ -1136,7 +1136,7 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
       expect(heldBlobs.size).toBe(0);
     });
 
-    it("a value held over a broken blob when the panel goes away is kept by the held-blobs registry (the 409 re-read case), and so is an unguarded kind's", async () => {
+    it("a value held over a broken blob when the panel goes away is kept by the held-blobs registry (the 409 re-read case), and so is an unguarded kind's, which the next panel then saves with its next set", async () => {
       server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }, { projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
       const s = await mount("citations", "p1");
       const p = await mount("rs_prefs", "p1");
@@ -1152,12 +1152,124 @@ describe("blob save versions: a save that lost a race re-reads and replays its o
       expect(heldBlobs.has("blob:p1:citations") && heldBlobs.has("blob:p1:rs_prefs")).toBe(true);
       expect(putsTo("p1", "citations")).toHaveLength(1);
       expect(putsTo("p1", "rs_prefs")).toHaveLength(1);
-      // An unguarded kind's panel shows the held value again and still sends nothing.
+      // An unguarded kind's panel shows the held value again and sends nothing by itself.
       const q = await mount("rs_prefs", "p1");
       await until(() => !q.b.loading);
       expect(q.b).toMatchObject({ value: { rank: true }, broken: true });
       await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
       expect(putsTo("p1", "rs_prefs")).toHaveLength(1);
+      // Nothing asks the student here, so the held value does not hold the panel: the next toggle goes through, from the held value, and replaces the blob.
+      act(() => { q.b.set({ rank: false }); });
+      expect(q.b).toMatchObject({ value: { rank: false }, broken: false });
+      await act(async () => { await q.b.flush(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(2);
+      expect(JSON.parse(blobOf("p1", "rs_prefs").body)).toEqual({ rank: false });
+      expect(heldBlobs.size).toBe(1);
+      expect(heldBlobs.has("blob:p1:citations")).toBe(true);
+    });
+
+    it("what is held is told apart by why: over a blob that does not open (in a mounted panel, kept after it went away, after a drain) or waiting for the passphrase (the line the project switch shows)", async () => {
+      server.blobs = [{ projectId: "p1", kind: "citations", body: JSON.stringify([A]), keyVersion: 0, deks: [] }];
+      const { v, vault } = lockableVault(false);
+      const c = projectBlobClient("citations", "p1", () => vault, () => {});
+      await c.start();
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+      // An edit the locked vault cannot seal waits for the passphrase: not a broken blob.
+      v.locked = true;
+      c.set(add(Y) as never);
+      await act(async () => { await c.flush(); });
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+      // The vault opens, but the stored blob no longer opens on this device: the same edit now waits on that.
+      server.blobs = [{ ...blobOf("p1", "citations"), body: "{not json", version: 2 }];
+      v.locked = false;
+      await act(async () => { await c.flush(); });
+      expect(putsTo("p1", "citations")).toHaveLength(1);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // Kept for the next panel when this one goes away, and still told apart after a drain that has nobody to ask.
+      c.dispose();
+      await heldBlobs.idle("blob:p1:citations");
+      expect(heldBlobs.has("blob:p1:citations")).toBe(true);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      await act(async () => { await heldBlobs.drain(); });
+      expect(heldBlobs.has("blob:p1:citations")).toBe(true);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // Anything else held for another reason (here: for the passphrase) makes the line the general one.
+      heldBlobs.put("blob:p1:ap_cols", [{ value: ["x"] }], async (ops) => ops);
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+      heldBlobs.take("blob:p1:ap_cols");
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // Taken by the next panel (which shows it and asks): it is a mounted client's now, and still a broken blob's.
+      const s = await mount("citations", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b.broken).toBe(true);
+      expect(heldBlobs.size).toBe(0);
+      expect(heldOnlyOverBrokenBlobs()).toBe(true);
+      // The student says yes and it is saved: nothing is held, so there is nothing to tell.
+      act(() => { s.b.set(add({ author: "Ok, Z." })); });
+      await act(async () => { await s.b.flush(); });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+      expect(heldOnlyOverBrokenBlobs()).toBe(false);
+    });
+
+    it("an unguarded kind: a toggle made while the vault was locked, over a blob that turns out not to open, is held and kept; the next panel adopts it and the student's next toggle saves, once, and clears the warning", async () => {
+      server.blobs = [{ projectId: "p1", kind: "rs_prefs", body: JSON.stringify({ rank: false }), keyVersion: 0, deks: [] }];
+      const { v, vault } = lockableVault(true);
+      const c = projectBlobClient("rs_prefs", "p1", () => vault, () => {});
+      void c.start();
+      await settle();
+      c.set({ rank: true });
+      server.blobs = [{ ...blobOf("p1", "rs_prefs"), body: "{not json", version: 2 }];
+      v.locked = false;
+      await act(async () => { c.resume(); await c.flush(); });
+      c.dispose();
+      await heldBlobs.idle("blob:p1:rs_prefs");
+      expect(heldBlobs.ops("blob:p1:rs_prefs")).toHaveLength(1);
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(0);
+      // The next mount adopts the toggle and shows it with the blob reported broken; it sends nothing by itself.
+      const s = await mount("rs_prefs", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: { rank: true }, broken: true });
+      await settle(BLOB_SAVE_DEBOUNCE_MS + 100);
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(0);
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // The student toggles again, twice: both land, and the last one replaces the blob in one save (it is not held for good).
+      act(() => { s.b.set({ rank: false }); s.b.set({ rank: true }); });
+      expect(s.b).toMatchObject({ value: { rank: true }, broken: false });
+      await act(async () => { await s.b.flush(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(1);
+      expect(JSON.parse(blobOf("p1", "rs_prefs").body)).toEqual({ rank: true });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+      expect(heldBlobs.size).toBe(0);
+      // And the toggles after that save as any others do.
+      act(() => { s.b.set({ rank: false }); });
+      await act(async () => { await s.b.flush(); });
+      expect(putsTo("p1", "rs_prefs")).toHaveLength(2);
+      expect(JSON.parse(blobOf("p1", "rs_prefs").body)).toEqual({ rank: false });
+    });
+
+    it("every unguarded kind adopts a held value the same way: the idea intake and the tools' prefs show it, send nothing by themselves, and save with the student's next set", async () => {
+      const kinds: [BlobKind, unknown, unknown][] = [
+        ["idea_intake", NEXT, NEXT2], ["stats_prefs", { gen_first: true }, { gen_first: false }], ["qual_prefs", { showcolors: true }, { showcolors: false }],
+        ["words_prefs", { spell: "us" }, { spell: "uk" }], ["close_prefs", { k: 8 }, { k: 6 }]
+      ];
+      for (const [kind, held, next] of kinds) {
+        heldBlobs.clear();
+        server.calls = [];
+        server.blobs = [{ projectId: "p1", kind, body: "{not json", keyVersion: 0, deks: [] }];
+        heldBlobs.put(blobId("p1", kind), [{ value: held }], async (ops) => ops);
+        const s = await mount(kind, "p1");
+        await until(() => !s.b.loading);
+        expect(s.b, kind).toMatchObject({ value: held, broken: true });
+        await settle(BLOB_SAVE_DEBOUNCE_MS + 50);
+        expect(putsTo("p1", kind), kind).toHaveLength(0);
+        act(() => { s.b.set(next as never); });
+        await act(async () => { await s.b.flush(); });
+        expect(putsTo("p1", kind), kind).toHaveLength(1);
+        expect(JSON.parse(blobOf("p1", kind).body), kind).toEqual(next);
+        expect(s.b.broken, kind).toBe(false);
+        s.unmount();
+      }
     });
 
     it("a save that loses a race and finds the vault locked at its re-read holds the value as locked, keeps the leave-page warning, and sends it merged once the vault opens", async () => {

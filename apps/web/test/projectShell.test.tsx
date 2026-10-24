@@ -172,6 +172,30 @@ describe("ProjectShell", () => {
     expect(h.push).toHaveBeenCalledWith("/p/p2");
   });
 
+  it("switching project with a value held over a blob that does not open says that, not that it waits for the passphrase", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    heldBlobs.put("p1:rs_prefs", [{ value: { rank: true } }], async (ops) => ops, true);
+    await act(async () => { await ws().openProject("p2"); });
+    expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held_broken);
+    expect(h.toast).not.toHaveBeenCalledWith(en.blob_switch_held);
+    expect(en.blob_switch_held_broken).not.toMatch(/passphrase/i);
+    expect(heldBlobs.has("p1:rs_prefs")).toBe(true);
+    expect(h.push).toHaveBeenCalledWith("/p/p2");
+  });
+
+  it("switching project with one value held for the passphrase and another over a blob that does not open keeps the general line", async () => {
+    plainApi();
+    await mount("p1");
+    await until(() => ws()?.currentDoc?.id === "Dp1");
+    heldBlobs.put("p1:rs_prefs", [{ value: { rank: true } }], async (ops) => ops, true);
+    heldBlobs.put("p1:idea_intake", [{ value: { topic: "Sleep" } }], async (ops) => ops);
+    await act(async () => { await ws().openProject("p2"); });
+    expect(h.toast).toHaveBeenCalledWith(en.blob_switch_held);
+    expect(h.toast).not.toHaveBeenCalledWith(en.blob_switch_held_broken);
+  });
+
   it("the wordmark with an unsaved document asks Switch anyway?; Stay keeps the address", async () => {
     plainApi();
     h.header = true;
