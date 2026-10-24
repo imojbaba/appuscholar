@@ -72,10 +72,7 @@ const PLAIN: Record<string, string> = {
 };
 const OTHER_MAX = 5;
 
-/** A label the student typed starts with a lower-case letter in the middle of a sentence, unless it starts with an initial or an acronym ("IQ score", "A level"). */
-const midSentence = (label: string): string => label.replace(/^\p{Lu}(?=\p{Ll})/u, (c) => c.toLowerCase());
-
-/** The plain names of what the plan records: the ticked menu fields in the menu's order, then the student's own labels. Anonymous plans list the about-group only. */
+/** The plain names of what the plan records: the ticked menu fields in the menu's order, then the student's own labels exactly as typed (trimmed). Anonymous plans list the about-group only. */
 function recordedPlain(plan: Plan, anonymous: boolean): string[] {
   const ticked = new Set(Array.isArray(plan.record) ? plan.record : []);
   const menu = RECORD_FIELDS.filter((f) => ticked.has(f.id) && (!anonymous || f.group === "about")).map((f) => PLAIN[f.id]!);
@@ -83,8 +80,7 @@ function recordedPlain(plan: Plan, anonymous: boolean): string[] {
     .filter((l): l is string => typeof l === "string")
     .map((l) => l.trim())
     .filter(Boolean)
-    .slice(0, OTHER_MAX)
-    .map(midSentence);
+    .slice(0, OTHER_MAX);
   return [...menu, ...other];
 }
 
@@ -100,8 +96,9 @@ const NOT_RECORDED = "We will not write down your name. Your answers cannot be l
 /** The body of "What we record about you". */
 function recordSection(mode: IdMode, plan: Plan): string {
   const list = joinPlain(recordedPlain(plan, mode === "anonymous"));
-  if (mode === "anonymous") return NOT_RECORDED + (list ? ` We will write down ${list}, but not your name.` : "");
-  return (list ? `We will write down ${list}. ` : "") + (mode === "codes" ? keptSealed("a code (such as P001)", "your code") : keptSealed("a made-up name", "your made-up name"));
+  const fields = list ? `We will write down ${list}. ` : "";
+  if (mode === "anonymous") return fields + NOT_RECORDED;
+  return fields + (mode === "codes" ? keptSealed("a code (such as P001)", "your code") : keptSealed("a made-up name", "your made-up name"));
 }
 
 // The signature lines are v1's own (consentMarkdown): 22 underscores, two spaces, "Date: " and 10 underscores.
@@ -117,7 +114,8 @@ const MINORS_SECTIONS =
 
 type ConsentInput = Parameters<typeof consentMarkdown>[0] & { minors?: string };
 const TEXT_KEYS = ["title", "pi", "what", "risks", "benefits", "contact"] as const;
-const mark = (i: number): string => `${i}`;
+// A mark is a pair of private-use characters (U+E000, U+E001) around a digit; both are written as escapes because they do not render in an editor or a diff.
+const mark = (i: number): string => `\uE000${i}\uE001`;
 
 /**
  * v1's consent form, with the plan's sections added. "What we record about you" comes only with an `idMode`; the two under-18 sections come with `s.minors` of yes or unsure whether
@@ -135,7 +133,7 @@ export function consentMarkdownV2(s: ConsentInput, plan: Plan): ReturnType<typeo
   const m = consentMarkdown(marked) as string;
   const voluntary = m.indexOf("\n\n## Voluntary participation\n") + 2;
   const consent = m.lastIndexOf("\n\n## Consent\n") + 2;
-  const back = (t: string): string => t.replace(/(\d)/g, (_all, d: string) => s[TEXT_KEYS[Number(d)]!]);
+  const back = (t: string): string => t.replace(/\uE000(\d)\uE001/g, (_all, d: string) => s[TEXT_KEYS[Number(d)]!]);
   const record = mode ? "## What we record about you\n" + recordSection(mode, plan) + "\n\n" : "";
   return back(m.slice(0, voluntary)) + record + back(m.slice(voluntary, consent)) + minors + back(m.slice(consent));
 }
@@ -149,13 +147,17 @@ const ETHICS_SENTENCE: Record<IdMode, string> = {
 };
 
 /**
- * v1's ethics statement with one sentence on how participants were identified, last. A study that did not involve human participants has no participants to identify, and "Each
- * participant was given a code" would contradict v1's "The study did not involve human participants.", so that status is left as v1 wrote it (controller ruling R15).
+ * v1's ethics statement with one sentence on how participants were identified, last. The sentence is added only to the three statements that describe a study that went to a
+ * committee (approved, applied, noreview). A study with no human participants has no participants to identify ("Each participant was given a code" would contradict v1's "The study
+ * did not involve human participants."; controller ruling R15), and a study not yet sent to a committee ("none", or any status this build does not know, which v1 writes as that
+ * placeholder) has not identified anyone yet; both are left as v1 wrote them (R16).
  */
+const WITH_SENTENCE: readonly string[] = ["approved", "applied", "noreview"];
+
 export function ethicsStatementV2(s: Parameters<typeof ethicsStatement>[0], plan: Plan): ReturnType<typeof ethicsStatement> {
   const r = ethicsStatement(s);
   const mode = modeOf(plan);
-  if (!mode || "error" in r || s.status === "nohuman") return r;
+  if (!mode || "error" in r || !WITH_SENTENCE.includes(s.status)) return r;
   return { heading: r.heading, text: r.text + " " + ETHICS_SENTENCE[mode] };
 }
 

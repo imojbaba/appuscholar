@@ -28,7 +28,11 @@ const CONSENT_INPUTS: Array<[string, Consent]> = [["full, minors no", CONSENT], 
 const ETHICS = (over: Partial<EcState>): Parameters<typeof ethicsStatement>[0] => ({ status: "approved", committee: "Example IEC", apprNo: "IEC/12", apprDate: "2026-03-04", consentMode: "written", minors: "no", ...over });
 const ETHICS_INPUTS: Array<[string, Parameters<typeof ethicsStatement>[0]]> = [
   ["approved", ETHICS({})], ["applied, minors yes", ETHICS({ status: "applied", minors: "yes", consentMode: "online" })], ["noreview, unsure", ETHICS({ status: "noreview", minors: "unsure", consentMode: "" })],
-  ["not yet sent", ETHICS({ status: "notyet" })],
+];
+/** v1 writes no committee outcome for these, so a sentence about how participants were identified does not belong in them. */
+const ETHICS_NO_SENTENCE: Array<[string, Parameters<typeof ethicsStatement>[0]]> = [
+  ["no human participants", ETHICS({ status: "nohuman" })], ["not yet sent to a committee", ETHICS({ status: "none" })], ["no human participants, minors yes", ETHICS({ status: "nohuman", minors: "yes" })],
+  ["not yet sent, minors unsure", ETHICS({ status: "none", minors: "unsure" })], ["a status this build does not know", ETHICS({ status: "somethingnew" })],
 ];
 const PROTO: ProtoFields = { bg: "bg", obj: "obj", design: "design", part: "part", sample: "sample", proc: "proc", risk: "risk", dmp: "Data stay on one laptop." };
 const PROTO_EMPTY_DMP: ProtoFields = { ...PROTO, dmp: "" };
@@ -121,6 +125,15 @@ describe("with no idMode every output is v1's, except that the consent form foll
       expect(consentMarkdownV2({ ...CONSENT, pi: "" }, plan)).toEqual(consentMarkdown({ ...CONSENT, pi: "" }));
     }
   });
+  it("consentMarkdownV2 passes v1's refusal through unchanged with minors yes or unsure and no idMode", () => {
+    for (const minors of ["yes", "unsure"]) {
+      for (const bad of [{ title: "" }, { pi: "" }, { title: "", pi: "" }]) {
+        const input: Consent = { ...CONSENT, ...bad, minors };
+        expect(consentMarkdownV2(input, {})).toEqual({ error: "Fill in at least the study title and PI/institution first" });
+        expect(consentMarkdownV2(input, {})).toEqual(consentMarkdown(input));
+      }
+    }
+  });
   it.each(ETHICS_INPUTS)("ethicsStatementV2, %s", (_n, s) => {
     expect(ethicsStatementV2(s, {})).toEqual(ethicsStatement(s));
     expect(ethicsStatementV2(s, { record: ["name"] })).toEqual(ethicsStatement(s));
@@ -136,12 +149,6 @@ describe("with no idMode every output is v1's, except that the consent form foll
   it("protocolMarkdownV2 gives null for an empty protocol, for every mode", () => {
     const empty: ProtoFields = { bg: "", obj: "", design: "", part: "", sample: "", proc: "", risk: "", dmp: "" };
     for (const plan of [{}, ...MODES.map((idMode) => ({ idMode }))] as Plan[]) expect(protocolMarkdownV2(empty, plan)).toBeNull();
-  });
-  it("ecMinorsNoteV2 gives '' where v1 gives ''", () => {
-    for (const m of ["", "no", "anything else"]) {
-      expect(ecMinorsNote(m)).toBe("");
-      expect(ecMinorsNoteV2(m)).toBe("");
-    }
   });
 });
 
@@ -188,12 +195,12 @@ describe("consentMarkdownV2", () => {
     expect(section(str(consentMarkdownV2(CONSENT, { idMode: "pseudonyms" })), "What we record about you")).toBe(PSEUDO_SENTENCE);
   });
 
-  it("adds the student's own labels after the menu fields: trimmed, blanks dropped, five at most, a leading capital lower-cased only before a lower-case letter", () => {
+  it("adds the student's own labels after the menu fields, exactly as typed: trimmed, blanks dropped, five at most", () => {
     const rec = (record: string[], recordOther: string[]) => section(str(consentMarkdownV2(CONSENT, { idMode: "codes", record, recordOther })), "What we record about you")!.split(". ")[0] + ".";
     expect(rec(["age"], ["Hobbies", "  IQ score ", "", "   ", "A level", "Father's occupation", "Sixth", "Seventh"])).toBe(
-      "We will write down your age, hobbies, IQ score, A level, father's occupation and sixth.");
-    expect(rec([], ["Hobbies and sports"])).toBe("We will write down hobbies and sports.");
-    expect(rec([], ["Pocket money $&"])).toBe("We will write down pocket money $&.");
+      "We will write down your age, Hobbies, IQ score, A level, Father's occupation and Sixth.");
+    expect(rec([], ["Hobbies and sports"])).toBe("We will write down Hobbies and sports.");
+    expect(rec([], ["pocket money $&"])).toBe("We will write down pocket money $&.");
   });
 
   it("anonymous: no name is recorded, and only the about fields are listed", () => {
@@ -201,7 +208,7 @@ describe("consentMarkdownV2", () => {
     expect(section(md, "What we record about you")).toBe(ANON_SENTENCE);
     expect(md).not.toContain("Parent or guardian permission");
     const withAbout = section(str(consentMarkdownV2(CONSENT, { idMode: "anonymous", record: ["name", "spellings", "contact", "roll", "age", "gender"], recordOther: ["Hobbies"] })), "What we record about you")!;
-    expect(withAbout).toBe(ANON_SENTENCE + " We will write down your age, your gender and hobbies, but not your name.");
+    expect(withAbout).toBe("We will write down your age, your gender and Hobbies. " + ANON_SENTENCE);
     expect(withAbout).not.toContain("other names you use");
     expect(withAbout).not.toContain("phone number");
     expect(withAbout).not.toContain("code");
@@ -262,7 +269,7 @@ describe("consentMarkdownV2", () => {
   });
 
   it("a recordOther label that looks like a placeholder is written as typed", () => {
-    const label = "" + "0" + "";
+    const label = "\uE000" + "0" + "\uE001";
     const md = str(consentMarkdownV2(CONSENT, { idMode: "codes", recordOther: [label] }));
     expect(md).toContain("We will write down " + label + ".");
     expect(md).toContain("**Study title:** " + CONSENT.title + "\n");
@@ -284,8 +291,13 @@ describe("ethicsStatementV2", () => {
       expect(r.text.endsWith(SENTENCES[idMode])).toBe(true);
     }
   });
-  it("a study with no human participants gets no sentence about identifying participants", () => {
-    for (const idMode of MODES) expect(ethicsStatementV2(ETHICS({ status: "nohuman" }), { idMode })).toEqual(ethicsStatement(ETHICS({ status: "nohuman" })));
+  it.each(ETHICS_NO_SENTENCE)("no sentence about identifying participants, and v1's text exactly: %s", (_n, s) => {
+    for (const idMode of MODES) expect(ethicsStatementV2(s, { idMode, record: ["name"] })).toEqual(ethicsStatement(s));
+  });
+  it("the sentence goes with the three statuses that describe a committee's outcome, and with nothing else", () => {
+    for (const status of ["approved", "applied", "noreview"]) {
+      expect((ethicsStatementV2(ETHICS({ status }), { idMode: "codes" }) as { text: string }).text.endsWith(SENTENCES.codes), status).toBe(true);
+    }
   });
 });
 
@@ -312,6 +324,12 @@ describe("protocolMarkdownV2", () => {
 });
 
 describe("ecMinorsNoteV2", () => {
+  it("gives '' where v1 gives ''", () => {
+    for (const m of ["", "no", "anything else"]) {
+      expect(ecMinorsNote(m)).toBe("");
+      expect(ecMinorsNoteV2(m)).toBe("");
+    }
+  });
   const NEW = "If you list people under 18, only you can open the list. You still need a parent's permission and their own agreement before you record anything about them.";
   it("replaces v1's last sentence and keeps the rest", () => {
     for (const m of ["yes", "unsure"]) {
