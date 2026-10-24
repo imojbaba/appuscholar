@@ -50,6 +50,13 @@
       "when": 1792545898909,
       "tag": "0006_frame",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792860177742,
+      "tag": "0007_rate_counters",
+      "breakpoints": true
     }
   ]
 }

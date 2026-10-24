@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Devanagari, Fraunces } from "next/font/google";
 import { getServerLang } from "@/lib/serverLang";
 import { THEME_SCRIPT } from "@/lib/help/theme";
+import { ClientErrorListener } from "@/components/ClientErrorListener";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap" });
@@ -21,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Task C9: sets data-theme from this device's choice before the first paint (light unless dark was chosen); the nonce lets the CSP run it. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh"><ClientErrorListener />{children}</body>
     </html>
   );
 }

@@ -2,10 +2,11 @@ import { PROV_ORDER, maskText, scanText, type ProviderId } from "@appuscholar/co
 import { ApiError, apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { keyStore, unlockKeyBlob } from "./keys";
+import { DICTS, tFormat } from "@/lib/i18n";
 import { maskNames, scanNames, type NamesChecked, type NamesCtx } from "./names";
 
 /** The gateway's error classes (apps/api/src/ai/types.ts). */
-export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms";
+export type AiErrorCode = "personal-data" | "blocked" | "truncated" | "empty" | "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "terms" | "quota";
 /**
  * What the personal-data check found. `names` is there when the request was checked for names (the open project's, spec 2026-10-24-participants-design.md §8.3): how many names on the
  * participant list, the words that might be names (suggestions, and listed words the list asks about), and whether the list is locked so names on it were not checked.
@@ -56,6 +57,20 @@ export type CallCtx = {
   onRateLimit?(): void;
 };
 
+/**
+ * The sentence for a per-user quota answer. `detail` is "minute:<seconds>", "hour:<seconds to wait>" or "day:<seconds>": the minute says to wait a
+ * moment (the wait is under a minute), the hour says how long to wait in whole minutes (rounded up), the day says to come back tomorrow.
+ * In Hindi (a draft for the Hindi reader) when the page language is hi.
+ */
+function quotaMessage(detail?: string): string {
+  const lang = typeof document !== "undefined" && document.documentElement.lang === "hi" ? "hi" : "en";
+  if (/^minute:\d+$/.test(detail ?? "")) return tFormat(DICTS.en, DICTS.hi, "ai_quota_minute", lang);
+  const m = /^hour:(\d+)$/.exec(detail ?? "");
+  if (!m) return tFormat(DICTS.en, DICTS.hi, "ai_quota_day", lang);
+  const minutes = Math.max(1, Math.ceil(Number(m[1]) / 60));
+  return minutes === 1 ? tFormat(DICTS.en, DICTS.hi, "ai_quota_hour_one", lang) : tFormat(DICTS.en, DICTS.hi, "ai_quota_hour", lang, { minutes });
+}
+
 /** v1 apiMsg (index.html:5253-5266), keyed by the gateway's error class instead of by pattern-matching text. */
 export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: string): string {
   switch (code) {
@@ -70,6 +85,7 @@ export function apiMsg(code: AiErrorCode | "cancelled" | "bad-pass", detail?: st
     case "network": return "Could not reach the AI provider. Check your connection and try again, or switch provider using the tabs at the top.";
     case "truncated": return "The answer was cut off. Select a smaller piece of text and try again.";
     case "empty": return "The AI returned an empty answer. Try again.";
+    case "quota": return quotaMessage(detail);
     case "terms": return "Accept the terms first (open ❓ Help → Terms and where your data goes).";
   }
 }
@@ -79,7 +95,7 @@ export class AiCallError extends Error {
   constructor(public code: AiErrorCode | "cancelled" | "bad-pass" | "unknown", message: string) { super(message); }
 }
 
-const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms"];
+const AI_CODES: readonly string[] = ["personal-data", "blocked", "truncated", "empty", "no-key", "key-rejected", "model-gone", "rate-limit", "provider-error", "network", "terms", "quota"];
 /** Errors worth trying another provider for: v1 aiRetriable (429, 5xx, 401/403, 404, network). */
 const RETRIABLE: readonly string[] = ["rate-limit", "provider-error", "key-rejected", "model-gone", "network"];
 
@@ -181,7 +197,12 @@ export async function callAI(prompt: string, opts: CallOpts, ctx: CallCtx): Prom
           const text = await request(p2, k2, prompt, opts, ctx, pdAccepted);
           ctx.onFailover(ctx.provider, p2);
           return text;
-        } catch { /* try the next one */ }
+        } catch (e2) {
+          // A quota answer is about the student, not the provider: say so instead of hiding it behind the first provider's error.
+          const e2c = toCallError(e2);
+          if (e2c.code === "quota") throw e2c;
+          /* otherwise try the next one */
+        }
       }
     }
     if (first.code === "rate-limit") ctx.onRateLimit?.();
