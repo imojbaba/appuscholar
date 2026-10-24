@@ -8,7 +8,9 @@ const h = vi.hoisted(() => ({
   api: vi.fn(), toast: vi.fn(), go: vi.fn(async () => true), openExport: vi.fn(),
   vault: null as unknown,
   me: { id: "u1", activeProjectId: "p1", scratchProjectId: "s1" },
-  designBuilt: false, designFacts: undefined as unknown
+  designBuilt: false, designFacts: undefined as unknown,
+  /** Where the paper-id migration is (the shell tells the home through the project context). */
+  paperIds: "done" as string
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me, settings: {}, update: async () => undefined, reload: async () => undefined }) }));
@@ -19,7 +21,7 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 // Task G3: the Design module, built or not per test, with the facts it declares (getters: the home reads it while drawing).
 vi.mock("@/components/tools/design", () => ({ get built() { return h.designBuilt; }, get facts() { return h.designFacts; } }));
 const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0, deks: [], field: "Psychology", stage: "idea", status: "active", contentLang: "en", kind: "research" };
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport, paperIds: h.paperIds }) }));
 
 import { ProjectHome, highlightCache } from "../components/frame/ProjectHome";
 import { heldBlobs } from "../lib/blobs/held";
@@ -65,6 +67,7 @@ const work = () => [{
 beforeEach(() => {
   h.vault = vaultOff;
   h.designBuilt = false; h.designFacts = undefined;
+  h.paperIds = "done";
   h.go.mockClear();
   h.toast.mockClear();
   server = {
@@ -173,7 +176,8 @@ describe("the project home", () => {
       expect(text("home-state-" + s)).toBe(en.state_not_started);
       expect(text("home-open-" + s)).toBe(en.home_act_open);
     }
-    expect(document.body.textContent).not.toMatch(/Needs your attention|Recent work/);
+    // "Recent work" is not built (nothing records activity).
+    expect(document.body.textContent).not.toMatch(/Recent work/);
   });
 
   it("a built module's facts give its stage's line, from the stage's blobs; no stage whose module is not built reads anything (ruling R6)", async () => {
@@ -238,6 +242,8 @@ describe("the project home", () => {
     expect(q("home-question")).toBeNull();
     expect(q("home-stages")).toBeNull();
     expect(q("home-next")).toBeNull();
+    // A locked vault shows no card either (its sources cannot be read).
+    expect(q("home-attention")).toBeNull();
     const before = ensureUnlocked.mock.calls.length;
     passphrase = true;
     await act(async () => { q("home-unlock")!.click(); });
@@ -247,6 +253,8 @@ describe("the project home", () => {
     await until(() => text("home-q-text") === "Does a fixed bedtime lower exam anxiety?");
     expect(q("home-locked")).toBeNull();
     await until(() => text("home-detail-lit").includes("Highlights: 2"));
+    // Once the passphrase is in, the card reads the sources like the rest of the home.
+    await until(() => !!q("home-attention"));
   });
 
   it("highlight counts are read once per paper version: a repeat visit reads none, a changed version re-reads only that paper", async () => {
@@ -360,6 +368,113 @@ describe("the project home", () => {
       expect(text("home-export")).toBe(en.home_out_btn);
       await act(async () => { q("home-export")!.click(); });
       expect(h.openExport).toHaveBeenCalledTimes(1);
+    } finally { window.matchMedia = was; }
+  });
+});
+
+describe("Needs your attention on the home (Task 24, register row D-S2-130)", () => {
+  const COHEN = { pid: "kcohen", type: "Book", author: "Cohen, J.", year: "1988", title: "Statistical power analysis for the behavioral sciences", doi: "10.4324/9780203771587" };
+  const OMEGA = { pid: "komega", type: "Journal article", author: "", year: "2011", title: "Omega-3 supplementation lowers inflammation and anxiety in medical students", doi: "10.1016/j.bbi.2011.07.229" };
+  const SCHAEFER = { pid: "kschaefer", type: "Journal article", author: "Schaefer, M.; Denke, C.", year: "2019", title: "Open-label placebos reduce test anxiety and improve self-management skills", volume: "9", issue: "1", pages: "13317" };
+  const key = (e: { author: string; year: string; title: string }) => (e.author.split(",")[0]!.split(";")[0]!.trim() || "Author") + "|" + e.year + "|" + e.title.toLowerCase();
+  const answered = (e: { author: string; year: string; title: string }, c: Record<string, unknown> = { s: "ok", m: [], t: 1 }) => ({ [key(e)]: c });
+  const stored = (value: unknown) => ({ value, updatedAt: "2026-10-20T10:00:00Z" });
+  const items = () => [...document.body.querySelectorAll<HTMLElement>('[data-testid="home-attention"] [data-testid="attention-item"]')];
+  const texts = () => items().map((i) => i.querySelector('[data-testid="attention-text"]')!.textContent);
+
+  it("lists what is wrong with the sources, in the plan's order and words, each with its fix; the finished sources are not listed", async () => {
+    server.blobs.citations = stored([COHEN, OMEGA, SCHAEFER]);
+    server.blobs.refcheck_cache = stored({
+      ...answered(COHEN, { s: "diff", m: [{ k: "year", v: "2013" }], f: { title: "x", year: 2013, author: "Cohen", doi: "" }, t: 1 }),
+      ...answered(OMEGA, { s: "diff", m: [{ k: "author", v: "Kiecolt-Glaser" }], miss: ["author"], f: { title: "x", year: 2011, author: "Kiecolt-Glaser", doi: "", authors: "Kiecolt-Glaser, Janice K.; Belury, Martha A." }, t: 1 }),
+      ...answered(SCHAEFER)
+    });
+    mount();
+    await until(() => !!q("home-attention"));
+    expect(text("home-attention")).toContain(en.attn_h);
+    expect(texts()).toEqual([
+      "2011: omega-3 supplementation lowers inflammation has no authors. Crossref lists Kiecolt-Glaser and Belury.",
+      "Cohen, 1988: statistical power analysis for: the year differs from Crossref (2013)."
+    ]);
+    expect(items().map((i) => i.querySelector("button")!.textContent)).toEqual(["Use Crossref details", "Keep 1988"]);
+    expect(q("attention-all")).toBeNull();
+  });
+
+  it("no items, no card", async () => {
+    server.blobs.citations = stored([COHEN, SCHAEFER]);
+    server.blobs.refcheck_cache = stored({ ...answered(COHEN), ...answered(SCHAEFER) });
+    mount();
+    await until(() => text("home-detail-lit").includes("Highlights: 2"));
+    await act(async () => { await new Promise((r) => setTimeout(r, 40)); });
+    expect(q("home-attention")).toBeNull();
+    expect(document.body.textContent).not.toContain(en.attn_h);
+  });
+
+  it("the home lists at most 5 items, then See all in Citations, which opens the Citations tab", async () => {
+    const many = Array.from({ length: 7 }, (_, i) => ({ pid: "kp" + i, type: "Journal article", author: "", year: "20" + String(10 + i), title: "A long enough title for paper number " + i, volume: "1", issue: "1", pages: "1" }));
+    server.blobs.citations = stored(many);
+    server.blobs.refcheck_cache = stored(Object.assign({}, ...many.map((e) => answered(e))));
+    mount();
+    await until(() => !!q("home-attention"));
+    expect(items()).toHaveLength(5);
+    expect(texts()[0]).toBe("2010: a long enough title has no authors. Check the paper and add them.");
+    expect(text("attention-all")).toBe("See all in Citations");
+    act(() => { q("attention-all")!.click(); });
+    expect(h.go).toHaveBeenLastCalledWith("/p/p1/lit/citations");
+  });
+
+  it("five items show them all and no link", async () => {
+    const five = Array.from({ length: 5 }, (_, i) => ({ pid: "kq" + i, type: "Journal article", author: "", year: "20" + String(10 + i), title: "Another long enough title for paper " + i, volume: "1", issue: "1", pages: "1" }));
+    server.blobs.citations = stored(five);
+    server.blobs.refcheck_cache = stored(Object.assign({}, ...five.map((e) => answered(e))));
+    mount();
+    await until(() => !!q("home-attention"));
+    expect(items()).toHaveLength(5);
+    expect(q("attention-all")).toBeNull();
+  });
+
+  it("the card waits for the paper-id migration and then reads the sources itself: the ids it gave are the items' ids", async () => {
+    // Before the migration the home reads sources that have no pid yet.
+    server.blobs.citations = stored([{ ...OMEGA, pid: undefined }, { ...COHEN, pid: undefined }]);
+    server.blobs.refcheck_cache = stored({ ...answered(OMEGA), ...answered(COHEN) });
+    h.paperIds = "running";
+    const r = mount();
+    await until(() => text("home-detail-lit").includes("Highlights: 2"));
+    await act(async () => { await new Promise((res) => setTimeout(res, 40)); });
+    expect(q("home-attention")).toBeNull();
+    // Nothing about the sources' checks was read while it waited.
+    expect(h.api.mock.calls.map(([u]) => u as string).filter((u) => /refcheck_cache|retraction_cache/.test(u))).toEqual([]);
+    // The migration finishes: the sources have their pids now, and the card reads them (the home's own copy of the library is the old one).
+    server.blobs.citations = stored([OMEGA, COHEN]);
+    h.paperIds = "done";
+    act(() => { r.render(<ProjectHome />); });
+    await until(() => !!q("home-attention"));
+    expect(texts()).toEqual(["2011: omega-3 supplementation lowers inflammation has no authors. Check the paper and add them."]);
+  });
+
+  it("a migration that did not finish ('busy', 'broken') does not keep the card away", async () => {
+    for (const state of ["busy", "broken", "locked"]) {
+      h.paperIds = state;
+      server.blobs.citations = stored([OMEGA]);
+      server.blobs.refcheck_cache = stored(answered(OMEGA));
+      const r = mount();
+      await until(() => !!q("home-attention"));
+      act(() => { r.unmount(); });
+      document.body.innerHTML = "";
+      heldBlobs.clear();
+    }
+  });
+
+  it("on a phone the card is between the stages and Export project", async () => {
+    const was = window.matchMedia;
+    window.matchMedia = ((m: string) => ({ matches: m === "(max-width: 700px)", media: m, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      server.blobs.citations = stored([OMEGA]);
+      server.blobs.refcheck_cache = stored(answered(OMEGA));
+      mount();
+      await until(() => !!q("home-attention"));
+      const order = [...q("home-phone")!.querySelectorAll("[data-testid]")].map((e) => e.getAttribute("data-testid")).filter((id) => ["home-stages", "home-attention", "home-export"].includes(id!));
+      expect(order).toEqual(["home-stages", "home-attention", "home-export"]);
     } finally { window.matchMedia = was; }
   });
 });

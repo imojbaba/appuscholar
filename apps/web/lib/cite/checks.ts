@@ -4,7 +4,7 @@ import { citKey, oaRetractions, pace, rcCheckOneV2, rcFillPatch, retrNormDoi, re
 import type { CitationEntry, RcCheck } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
-import type { RefCheckCache, RetractionCache } from "@/lib/blobs/kinds";
+import type { RefCheckCache, RetractionCache, StoredEntry } from "@/lib/blobs/kinds";
 import { toast } from "@/components/ui/toast";
 import type { Library } from "./useLibrary";
 
@@ -15,6 +15,8 @@ import type { Library } from "./useLibrary";
  * - the source reality check, rcRun 7772-7790 (Crossref through core's rcCheckOneV2, v1's rcCheckOne plus the empty author, volume, issue and pages, with a 200 ms pause after each lookup, cached per citKey in
  *   the `refcheck_cache` blob, v1's appu_refcheck), with the summary 7842-7846 and rcLine 7792-7797.
  * The Citations tab (wave B Task 23) reads both caches as one word per source: `sourceStatus`, from the stored Crossref answer as it stands now (`rcCurrent`) and the retraction answer.
+ * "Needs your attention" (Task 24, lib/attention) reads the same two caches as the list of what is wrong, and a check's result goes there, not to a toast: the finished checks say
+ * nothing (the rows and the attention items change), and a check that could not reach its service keeps v1's error toast.
  */
 
 /** v1 7564: RETRACT_TTL, a week. */
@@ -81,7 +83,6 @@ export async function retractionRefresh(force: boolean, deps: RetractionDeps): P
       for (const [d, r] of Object.entries(batch)) add[d] = { r: !!r, t: now };
       deps.save((prev) => ({ ...(prev ?? {}), ...add }));
     });
-    if (force) deps.toast(deps.t("retr_done"));
   } catch { if (force) deps.toast(deps.t("retr_failed")); }
   finally { retrBusy = false; }
 }
@@ -90,14 +91,17 @@ export async function retractionRefresh(force: boolean, deps: RetractionDeps): P
  * A stored Crossref answer as it reads now (wave A LATER T11): a field the source has been given since the check no longer counts as missing. The check says "no author" (`m` holds
  * { k: "author" } together with "author" in `miss`) when the entry had none; once the entry has an author that line goes, and so does any other field in `miss` the entry now has. What
  * is left is the same answer, or a match when nothing is left. An author difference the check found with an author saved (no "author" in `miss`) stays, and so does an answer that is
- * not a difference. The answer itself is returned when nothing changes.
+ * not a difference. A difference the student kept (Task 24's "Keep 1988": the field's kind is in the entry's `ack`) is left out as well, for good. The answer itself is returned when
+ * nothing changes.
  */
-export function rcCurrent(d: CitationEntry, c: RcCheck | undefined): RcCheck | undefined {
-  if (!c || c.s !== "diff" || !c.miss || !c.miss.length) return c;
+export function rcCurrent(d: StoredEntry, c: RcCheck | undefined): RcCheck | undefined {
+  if (!c || c.s !== "diff") return c;
   const has = (k: keyof CitationEntry) => !!String(d[k] ?? "").trim();
-  const miss = c.miss.filter((k) => !has(k));
-  if (miss.length === c.miss.length) return c;
-  const m = (c.m ?? []).filter((x) => !(x.k === "author" && c.miss!.includes("author") && has("author")));
+  const kept = d.ack ?? [];
+  const was = c.miss ?? [];
+  const miss = was.filter((k) => !has(k));
+  const m = (c.m ?? []).filter((x) => !kept.includes(x.k) && !(x.k === "author" && was.includes("author") && has("author")));
+  if (miss.length === was.length && m.length === (c.m ?? []).length) return c;
   const { miss: _miss, m: _m, ...rest } = c;
   return { ...rest, s: m.length || miss.length ? "diff" : "ok", m, ...(miss.length ? { miss } : {}) };
 }
@@ -152,14 +156,13 @@ export async function rcRun(force: boolean, deps: RcDeps): Promise<void> {
       await wait();
     }
     deps.save((prev) => ({ ...(prev ?? {}), ...done }));
-    deps.toast(errs && !net ? deps.t("rc_fail") : deps.t("rc_done"));
+    // The result is in the rows and in "Needs your attention" (Task 24); only a check that reached nothing says so here, as v1 does.
+    if (errs && !net) deps.toast(deps.t("rc_fail"));
   } finally { rcBusy = false; }
 }
 
-/** The field names the missing-fields line and the Fill question use, in the order Crossref's `miss` lists them. */
+/** The field names the Fill question uses, in the order Crossref's `miss` lists them. */
 const MISS_LABEL: Record<NonNullable<RcCheck["miss"]>[number], string> = { author: "rc_fld_author", volume: "cite_vol_label", issue: "cite_issue_label", pages: "cite_pages_label" };
-/** rc_missing's {fields}: the missing fields' names, lower case, joined by commas. */
-export function rcMissingFields(miss: NonNullable<RcCheck["miss"]>, t: T): string { return miss.map((k) => t(MISS_LABEL[k]).toLowerCase()).join(", "); }
 /** rc_fill_confirm's {list}: one line per field the fill would write, "Author: Schaefer, Ellen M.; Gonzalez, ...". */
 export function rcFillList(patch: Partial<CitationEntry>, t: T): string {
   return (["author", "volume", "issue", "pages"] as const).filter((k) => patch[k]).map((k) => t(MISS_LABEL[k]) + ": " + patch[k]).join("\n");
@@ -168,13 +171,27 @@ export function rcFillList(patch: Partial<CitationEntry>, t: T): string {
 export type CiteChecks = {
   retraction: RetractionStatus;
   rc: RefCheckCache;
+  /**
+   * The two caches as the attention list reads them (Task 24): null while they are not known, so an unread cache is never taken for an empty one (everything would read "not checked").
+   * Loading, locked, failed to read, or stored but not openable here is null; a project with no cache stored yet is `{}`.
+   */
+  refcheckCache: RefCheckCache | null;
+  retractionCache: RetractionCache | null;
   /** The Crossref cache cannot be written here (the pop-out): the line says what is missing and offers no Fill. */
   rcReadOnly: boolean;
   /**
    * Fix wave A (W27, W28): "Fill from Crossref" for one source. Asks (window.confirm) with each field and its value, then writes only the fields that are empty
-   * (the library's fillEmpty), moves the source's cached answer to its new key as a match, and says so. Cancel changes nothing.
+   * (the library's fillEmpty), moves the source's cached answer to its new key as a match, and says so. Cancel changes nothing. True when the fields were written (Task 24: the
+   * fix that fills several sources one by one stops at the first that is not).
    */
-  fillFromCrossref(d: CitationEntry): void;
+  fillFromCrossref(d: CitationEntry): boolean;
+  /** Either cache is still being read (the attention list waits for both: an unread cache is not an empty one). */
+  loading: boolean;
+  /**
+   * An update of the Crossref cache (Task 24's merge moves and drops answers with the entries), saved now: true once nothing is left unsent. An update that returns what it was given
+   * writes nothing; nothing is written where the cache is read-only (false).
+   */
+  updateRefcheck(fn: (prev: RefCheckCache) => RefCheckCache): Promise<boolean>;
   refreshRetractions(force: boolean): Promise<void>;
   runRefCheck(force: boolean): Promise<void>;
 };
@@ -182,9 +199,10 @@ export type CiteChecks = {
 /**
  * The two caches of the open project and their checks. The quiet retraction refresh runs once the Cite tab is open and the library and the cache
  * are read (v1 2636: showTool('cite') calls citRetractionRefresh(false)). A cache that does not open is replaced only once the student says so
- * (ruling R16): the quiet refresh leaves it alone, a forced check asks first.
+ * (ruling R16): the quiet refresh leaves it alone, a forced check asks first. `refresh: false` (the home and the Reading list, which only read the caches and fix what they find) does not
+ * start the quiet refresh.
  */
-export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): CiteChecks {
+export function useCiteChecks(library: Library, opts: { oaKey?: string; refresh?: boolean } = {}): CiteChecks {
   const t = useT();
   const retr = useProjectBlob("retraction_cache", library.projectId);
   const rcBlob = useProjectBlob("refcheck_cache", library.projectId);
@@ -209,29 +227,43 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
   }, [f, mayWrite, t]);
 
   const { fillEmpty } = library;
-  const fillFromCrossref = useCallback((d: CitationEntry) => {
+  const fillFromCrossref = useCallback((d: CitationEntry): boolean => {
     const old = citKey(d), c = live.current.rcBlob.value?.[old];
     const patch = c ? rcFillPatch(d, c) : null;
-    if (!c || !patch) return;
-    if (!window.confirm(t("rc_fill_confirm", { list: rcFillList(patch, t) }))) return;
+    if (!c || !patch) return false;
+    if (!window.confirm(t("rc_fill_confirm", { list: rcFillList(patch, t) }))) return false;
     // False when no stored source has the key the answer is under (another window changed it since this row was drawn): nothing is written and nothing moves (wave A LATER T11).
-    if (!fillEmpty((e) => citKey(e) === old, patch)) return;
+    if (!fillEmpty((e) => citKey(e) === old, patch)) return false;
     const filled = { ...d, ...patch };
     const next = citKey(filled);
     // The answer moves with the source (its key holds the surname): what the fill settles leaves it (rcCurrent), any other difference stays.
     const moved = rcCurrent(filled, c) ?? c;
     live.current.rcBlob.set((prev) => { const n = { ...(prev ?? {}) }; delete n[old]; n[next] = moved; return n; });
     toast(t("rc_filled"));
+    return true;
   }, [fillEmpty, t]);
+  const updateRefcheck = useCallback(async (fn: (prev: RefCheckCache) => RefCheckCache): Promise<boolean> => {
+    const b = live.current.rcBlob;
+    if (b.readOnly) return false;
+    const prev = b.value ?? {};
+    if (fn(prev) === prev) return true;
+    b.set((p) => fn(p ?? {}));
+    return b.flush();
+  }, []);
 
   const ready = !library.loading && !library.locked && !retr.loading && !retr.locked && library.projectId !== null;
   /** The project the quiet refresh last ran for: a project switch with the tab open refreshes for the new one. */
   const ranFor = useRef<string | null>(null);
+  const refresh = opts.refresh !== false;
   useEffect(() => {
-    if (!ready || ranFor.current === library.projectId) return;
+    if (!refresh || !ready || ranFor.current === library.projectId) return;
     ranFor.current = library.projectId;
     void refreshRetractions(false);
-  }, [ready, library.projectId, refreshRetractions]);
+  }, [refresh, ready, library.projectId, refreshRetractions]);
 
-  return { retraction, rc, rcReadOnly: rcBlob.readOnly === true, fillFromCrossref, refreshRetractions, runRefCheck };
+  const rcKnown = !rcBlob.loading && !rcBlob.locked && !rcBlob.error && !rcBlob.broken;
+  const retrKnown = !retr.loading && !retr.locked && !retr.error && !retr.broken;
+  const refcheckCache = useMemo(() => (rcKnown ? rcBlob.value ?? {} : null), [rcKnown, rcBlob.value]);
+  const retractionCache = useMemo(() => (retrKnown ? retr.value ?? {} : null), [retrKnown, retr.value]);
+  return { retraction, rc, refcheckCache, retractionCache, loading: retr.loading || rcBlob.loading, rcReadOnly: rcBlob.readOnly === true, fillFromCrossref, updateRefcheck, refreshRetractions, runRefCheck };
 }

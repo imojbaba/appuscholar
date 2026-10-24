@@ -15,10 +15,11 @@ const safeLink = (u: string | undefined): string => (u && /^https?:\/\//i.test(u
  * paper only the reading list has, and Remove (the PDF text and its highlights; or, for a paper only the reading list has, the paper), which asks first, in the row.
  * `loading`: the paper's text is still being read, so its highlights are not known and its status is drawn as a bar, not a wrong "Not read yet".
  * `textState`: a line under the status for the automatic full text (Task 21b); nothing here.
+ * `attention`: what needs attention for this paper (Task 24), the items with their fixes, under the status; nothing when there are none.
  */
-export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemove, onAddRefs, textState }: {
+export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemove, onAddRefs, textState, attention }: {
   paper: Paper; loading: boolean; canWrite: boolean;
-  onRead(): void; onRename(title: string): void; onRemove(): Promise<boolean>; onAddRefs(): void; textState?: ReactNode;
+  onRead(): void; onRename(title: string): void; onRemove(): Promise<boolean>; onAddRefs(): void; textState?: ReactNode; attention?: ReactNode;
 }) {
   const t = useT();
   const nameId = useId();
@@ -65,6 +66,7 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
           </p>
         )}
         {textState}
+        {attention}
         {mode === "rename" && shelf && (
           <form className="rl-rename" data-testid="rl-rename" onSubmit={(e) => {
             e.preventDefault();

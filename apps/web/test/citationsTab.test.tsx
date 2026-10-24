@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
 import { citFmt, citKey, sanitizeHtml, type CitationEntry, type RcCheck } from "@appuscholar/core";
+import type { StoredEntry } from "../lib/blobs/kinds";
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 
@@ -485,7 +486,8 @@ describe("Check again", () => {
     f.mockClear();
     await click(tid("cite-retract-btn")!);
     expect(f).toHaveBeenCalledTimes(1);
-    expect(toasts()).toContain(E.retr_done);
+    // A finished check says nothing: the rows and the attention list change (Task 24).
+    expect(toasts()).toEqual([]);
     const stored = applied(h.blobs.retraction_cache!, {}) as Record<string, { r: boolean }>;
     expect(Object.keys(stored).sort()).toEqual(["10.1016/j.bbi.2011.07.229", "10.1038/s41598-019-49466-6", "10.4324/9780203771587"]);
   });
@@ -498,6 +500,7 @@ describe("Check again", () => {
     await settle();
     await click(tid("cite-rc-btn")!);
     await settle(250);
+    // The check that reached nothing keeps v1's error toast.
     expect(toasts()).toEqual([E.rc_busy, E.rc_fail]);
     expect(Object.keys(applied(h.blobs.refcheck_cache!, {}) as object)).toEqual([citKey(PUTWAIN)]);
   });
@@ -517,27 +520,32 @@ describe("Check again", () => {
   });
 });
 
-describe("Use Crossref details (the fix a row offers until Needs your attention takes it over)", () => {
+describe("Needs your attention in a row (Task 24, register row D-S2-130): the items that name the paper, with their fixes", () => {
   const TITLE = "Sleep timing and attention in adolescents", DOI = "10.1038/s41598-024-0001-x";
   const AUTHORS = "Schaefer, Ellen M.; Gonzalez, Carlos B.; Lee, Kim";
-  const AUTHORLESS: CitationEntry = { author: "", year: "2019", title: TITLE, doi: DOI, volume: "12" };
+  const AUTHORLESS: StoredEntry = { pid: "kauth", author: "", year: "2019", title: TITLE, doi: DOI, volume: "12" };
+  const SHORT = "2019: sleep timing and attention";
   const answer = (over: Partial<RcCheck> = {}): RcCheck => ({
     s: "diff", m: [{ k: "author", v: "Schaefer" }], miss: ["author", "issue", "pages"],
     f: { title: TITLE, year: 2019, author: "Schaefer", doi: DOI, authors: AUTHORS, volume: "9", issue: "1", pages: "13317" }, t: 1, ...over
   });
   const stubConfirm = (yes: boolean) => vi.spyOn(window, "confirm").mockReturnValue(yes);
+  const slotOf = (i = 0) => rows()[i]!.querySelector('[data-cite-slot="cite-attention"]')!;
+  const says = (i = 0) => [...slotOf(i).querySelectorAll('[data-testid="attention-text"]')].map((x) => x.textContent);
 
-  it("the row names what is missing and offers the fix; a source that is not missing anything has no fix", async () => {
-    h.blobs.citations = blob([AUTHORLESS, PUTWAIN]);
+  it("the row says what is wrong with its paper and offers the fix; a source that is not missing anything has none", async () => {
+    h.blobs.citations = blob([AUTHORLESS, { ...PUTWAIN, pid: "kputwain" }]);
     h.blobs.refcheck_cache = blob({ ...rcOf(AUTHORLESS, answer()), ...rcOf(PUTWAIN, ok()) });
     mount();
     await settle();
-    const slot = rows()[0]!.querySelector('[data-cite-slot="cite-attention"]')!;
-    expect(slot.textContent).toContain(t("rc_author") + " Schaefer");
-    expect(tid("cite-rc-missing")!.textContent).toBe(t("rc_missing", { fields: "author, issue, pages" }));
-    expect(slot.querySelector('[data-testid="source-fix"]')!.textContent).toBe("Use Crossref details");
-    expect(rows()[1]!.querySelector('[data-testid="source-fix"]')).toBeNull();
-    expect(rows()[1]!.querySelector('[data-cite-slot="cite-attention"]')!.textContent).toBe("");
+    expect(says(0)).toEqual([
+      t("attn_noauthors_crossref", { short: SHORT, names: "Schaefer, Gonzalez and Lee" }),
+      t("attn_missing_row", { short: SHORT, fields: "issue and pages" })
+    ]);
+    expect([...slotOf(0).querySelectorAll('[data-testid="attention-fix"]')].map((b) => b.textContent)).toEqual(["Use Crossref details", "Use Crossref details"]);
+    expect(says(1)).toEqual([]);
+    expect(rows()[1]!.querySelector('[data-testid="attention-fix"]')).toBeNull();
+    expect(slotOf(1).textContent).toBe("");
   });
 
   it("Use Crossref details fills only empty fields and the source then reads Checked", async () => {
@@ -548,15 +556,16 @@ describe("Use Crossref details (the fix a row offers until Needs your attention 
     mount();
     await settle();
     expect(rows()[0]!.querySelector('[data-testid="source-status"]')!.textContent).toBe("Needs a fix");
-    await click(tid("source-fix")!);
+    await click(tid("attention-fix")!);
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(confirm.mock.calls[0]![0]).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS + "\nIssue: 1\nPages: 13317" }));
     const lib = applied(h.blobs.citations!, [AUTHORLESS, COHEN]) as CitationEntry[];
-    expect(noPids(lib)).toEqual([{ ...AUTHORLESS, author: AUTHORS, issue: "1", pages: "13317" }, COHEN]);
+    expect(noPids(lib)).toEqual([{ ...noPids([AUTHORLESS])[0], author: AUTHORS, issue: "1", pages: "13317" }, COHEN]);
     // The volume the student wrote is kept, not Crossref's.
     expect(lib[0]!.volume).toBe("12");
+    // The fix says it in a toast (what it does to the document's citations), and the finished fix is the item leaving.
     expect(toasts()).toEqual([E.rc_filled]);
-    // The answer moved with the source (its key holds the surname): the tab, remounted over what was written, reads Checked.
+    // The answer moved with the source (its key holds the surname): the tab, remounted over what was written, reads Checked and lists nothing.
     const next = applied(h.blobs.refcheck_cache!, cache) as Record<string, RcCheck>;
     expect(Object.keys(next)).toEqual([citKey(lib[0]!)]);
     unmountAll();
@@ -565,35 +574,61 @@ describe("Use Crossref details (the fix a row offers until Needs your attention 
     mount();
     await settle();
     expect(rows()[0]!.querySelector('[data-testid="source-status"]')!.textContent).toBe("Checked");
-    expect(tid("source-fix")).toBeNull();
-    expect(rows()[0]!.querySelector('[data-cite-slot="cite-attention"]')!.textContent).toBe("");
+    expect(tid("attention-fix")).toBeNull();
+    expect(slotOf(0).textContent).toBe("");
   });
 
-  it("Cancel changes nothing; a window that cannot write the check cache shows the line without the button", async () => {
+  it("Cancel changes nothing; a window that cannot write the check cache shows the items without the buttons", async () => {
     const confirm = stubConfirm(false);
     h.blobs.citations = blob([AUTHORLESS]);
     h.blobs.refcheck_cache = blob(rcOf(AUTHORLESS, answer()));
     mount();
     await settle();
-    await click(tid("source-fix")!);
+    await click(tid("attention-fix")!);
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(h.blobs.citations.set).not.toHaveBeenCalled();
     expect(h.blobs.refcheck_cache.set).not.toHaveBeenCalled();
+    // The button is free again after a "no".
+    expect((tid("attention-fix") as HTMLButtonElement).disabled).toBe(false);
     unmountAll();
     h.blobs.refcheck_cache = { ...blob(rcOf(AUTHORLESS, answer())), readOnly: true };
     mount();
     await settle();
-    expect(tid("cite-rc-missing")).not.toBeNull();
-    expect(tid("source-fix")).toBeNull();
+    expect(says(0)).toHaveLength(2);
+    expect(tid("attention-fix")).toBeNull();
   });
 
-  it("a Retracted source says why, in the same slot", async () => {
-    h.blobs.citations = blob([SCHAEFER]);
+  it("a Retracted source says why, in the same slot, in the danger colours, and has no fix", async () => {
+    h.blobs.citations = blob([{ ...SCHAEFER, pid: "kschaefer" }]);
     h.blobs.refcheck_cache = blob(rcOf(SCHAEFER, ok()));
     h.blobs.retraction_cache = blob({ "10.1038/s41598-019-49466-6": { r: true, t: NOW } });
     mount();
     await settle();
-    expect(rows()[0]!.querySelector('[data-cite-slot="cite-attention"]')!.textContent).toBe(E.retr_lib_warn);
+    expect(says(0)).toEqual([t("attn_retracted", { short: "Schaefer et al., 2019: open-label placebos reduce test" })]);
+    expect(slotOf(0).querySelector(".attn-item-retracted")).not.toBeNull();
+    expect(tid("attention-fix")).toBeNull();
+  });
+
+  it("a year that differs from Crossref: Keep 1988 keeps it, writes the kind into the entry's ack, and the row reads Checked again", async () => {
+    const cohen: StoredEntry = { ...COHEN, pid: "kcohen" };
+    h.blobs.citations = blob([cohen]);
+    h.blobs.refcheck_cache = blob(rcOf(cohen, { s: "diff", m: [{ k: "year", v: "2013" }], f: { title: "x", year: 2013, author: "Cohen", doi: "10.4324/9780203771587" }, t: 1 }));
+    mount();
+    await settle();
+    expect(rows()[0]!.querySelector('[data-testid="source-status"]')!.textContent).toBe("Year differs from Crossref");
+    expect(says(0)).toEqual([t("attn_differs_year", { short: "Cohen, 1988: statistical power analysis for", value: "2013" })]);
+    expect(tid("attention-fix")!.textContent).toBe("Keep 1988");
+    await click(tid("attention-fix")!);
+    const lib = applied(h.blobs.citations!, [cohen]) as StoredEntry[];
+    expect(lib).toEqual([{ ...cohen, ack: ["year"] }]);
+    expect(h.blobs.citations.flush).toHaveBeenCalled();
+    // Remounted over what was written: nothing to attend to, and the status no longer holds it against the source.
+    unmountAll();
+    h.blobs.citations = blob(lib);
+    mount();
+    await settle();
+    expect(rows()[0]!.querySelector('[data-testid="source-status"]')!.textContent).toBe("Checked");
+    expect(slotOf(0).textContent).toBe("");
   });
 });
 

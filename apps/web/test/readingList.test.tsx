@@ -671,3 +671,68 @@ describe("a row's status hears the student's own words (Task 21a fix round)", ()
     } finally { Object.assign(vault, was); }
   });
 });
+
+describe("Needs your attention beside a paper (Task 24, register row D-S2-130)", () => {
+  const key = (e: StoredEntry) => (e.author ?? "").split(",")[0]!.split(";")[0]!.trim() || "Author";
+  const rcKey = (e: StoredEntry) => key(e) + "|" + e.year + "|" + (e.title ?? "").toLowerCase();
+  const OKAY = { s: "ok", m: [], t: 1 };
+  const lines = (row: HTMLElement) => [...row.querySelectorAll('[data-testid="attention-text"]')].map((x) => x.textContent);
+
+  it("each row lists the items that name its paper, with their fixes; the others have none", async () => {
+    put("citations", [SCHAEFER, PUTWAIN, KIECOLT]);
+    put("retraction_cache", { [SCHAEFER.doi!]: { r: true, t: Date.now() } });
+    put("refcheck_cache", {
+      [rcKey(SCHAEFER)]: OKAY, [rcKey(PUTWAIN)]: { s: "nf", t: 1 },
+      [rcKey(KIECOLT)]: { s: "diff", m: [{ k: "author", v: "Kiecolt-Glaser" }], miss: ["author"], f: { title: "x", year: 2011, author: "Kiecolt-Glaser", doi: "", authors: "Kiecolt-Glaser, Janice K.; Belury, Martha A." }, t: 1 }
+    });
+    await mount();
+    await until(() => tids("rl-row").length === 3 && tids("attention-item").length === 3, "the items");
+    expect(lines(rowOf("Schaefer"))).toEqual(["Schaefer et al., 2019: open-label placebos reduce test has been retracted. Check before you cite it."]);
+    expect(lines(rowOf("Putwain"))).toEqual(["Crossref has no record of Putwain, 2008: examination stress and test. Check its title and DOI."]);
+    expect(lines(rowOf("2011"))).toEqual(["2011: omega-3 supplementation lowers inflammation has no authors. Crossref lists Kiecolt-Glaser and Belury."]);
+    expect(rowOf("2011").querySelector('[data-testid="attention-fix"]')!.textContent).toBe("Use Crossref details");
+    expect(rowOf("Schaefer").querySelector('[data-testid="attention-fix"]')).toBeNull();
+    expect(lines(tid("rl-practice")!)).toEqual([]);
+  });
+
+  it("a row's fix works from the Reading list: Use Crossref details fills the author, and the item leaves", async () => {
+    put("citations", [KIECOLT]);
+    put("refcheck_cache", { [rcKey(KIECOLT)]: { s: "diff", m: [{ k: "author", v: "Kiecolt-Glaser" }], miss: ["author"], f: { title: "x", year: 2011, author: "Kiecolt-Glaser", doi: "", authors: "Kiecolt-Glaser, Janice K." }, t: 1 } });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await mount();
+    await until(() => tids("attention-item").length === 1, "the item");
+    await click(tid("attention-fix"));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    await until(() => tids("attention-item").length === 0, "the item leaving");
+    await until(() => puts("citations").length > 0, "the library save");
+    expect(stored<StoredEntry[]>("citations")![0]!.author).toBe("Kiecolt-Glaser, Janice K.");
+    // The answer moved to the key the filled author gives.
+    await until(() => puts("refcheck_cache").length > 0, "the answer saved");
+    expect(Object.keys(stored<Record<string, unknown>>("refcheck_cache")!)).toEqual(["Kiecolt-Glaser|2011|" + KIECOLT.title!.toLowerCase()]);
+  });
+
+  it("two copies of one paper: both rows say so; Merge the two leaves one row, with its PDF and its notes", async () => {
+    const copy: StoredEntry = { ...SCHAEFER, pid: "kz", title: SCHAEFER.title + " (second edition)", author: "Schaefer, C." };
+    put("citations", [SCHAEFER, copy]);
+    put("shelf_index", [shelfEntry("sz", { title: "copy.pdf", pid: "kz" })]);
+    put("shelf_paper:sz", paperOf(1));
+    const notes: ApNotes = { "p:kz": { pid: "kz", title: "copy", stages: { design: { mine: "My words on the copy." } }, card: {} } };
+    put("ap_notes", notes);
+    put("refcheck_cache", { [rcKey(SCHAEFER)]: OKAY, [rcKey(copy)]: OKAY });
+    await mount();
+    await until(() => tids("rl-row").length === 2 && tids("attention-item").length === 2, "the two rows' items");
+    const twice = "Schaefer et al., 2019: open-label placebos reduce test is in your library twice.";
+    expect(tids("attention-item").map((x) => x.querySelector('[data-testid="attention-text"]')!.textContent)).toEqual([twice, twice]);
+    await click(tids("attention-fix")[0]!);
+    // The list is opened again over what the merge wrote: one paper, the PDF on it.
+    await until(() => tids("rl-row").length === 1 && tids("attention-item").length === 0, "the list opened again");
+    const index = stored<ShelfIndex>("shelf_index")!;
+    expect(index.map((x) => x.pid)).toEqual(["ka"]);
+    expect(stored<StoredEntry[]>("citations")!.map((e) => e.pid)).toEqual(["ka"]);
+    const merged = stored<ApNotes>("ap_notes")!;
+    expect(merged["p:ka"]!.stages.design!.mine).toBe("My words on the copy.");
+    expect(merged["p:kz"]!.movedTo).toBe("p:ka");
+    expect(Object.keys(stored<Record<string, unknown>>("refcheck_cache")!)).toEqual([rcKey(SCHAEFER)]);
+    expect(rowOf("Schaefer").querySelector('[data-testid="rl-read"]')).not.toBeNull();
+  });
+});

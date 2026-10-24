@@ -22,6 +22,7 @@ import { QuestionCard, QuestionFold } from "./QuestionCard";
 import { Switcher } from "./AppHeader";
 import { StageRows } from "./StageRows";
 import { SuggestedNext } from "./SuggestedNext";
+import { AttentionCard } from "./AttentionCard";
 
 const NO_WORK: StageWork = { blobs: [], draftWords: 0, draftEditedAt: null, stageMarks: {} };
 
@@ -117,8 +118,9 @@ function StageFactsReader({ stage, projectId, mine, onFacts }: { stage: StageKey
 /**
  * The project's home (canvas Main): the question, a suggested next step, the six stages with their states, and the way to take the work out.
  * Every stage's state comes from one `GET /projects?include=work`; the facts from the project's idea, library, shelf and notes. A failed load says
- * so with Retry (which reads it all again), never an empty card. Not here yet: "Needs your attention" (Task 24) and "Recent work" (nothing records activity).
- * On a phone (canvas Phone) it is one column: the project button, the question closed, the suggestion, the stages, Export project.
+ * so with Retry (which reads it all again), never an empty card. "Needs your attention" (Task 24) waits for the paper-id migration (Task 17) to settle and then reads the sources
+ * itself, so its items are by pid; a merge there makes the home read everything again, since it changes the reading list and the notes. Not here yet: "Recent work" (nothing records activity).
+ * On a phone (canvas Phone) it is one column: the project button, the question closed, the suggestion, the stages, what needs attention, Export project.
  */
 export function ProjectHome() {
   const [attempt, setAttempt] = useState(0);
@@ -175,30 +177,34 @@ function HomeLoad({ retry }: { retry(): void }) {
       ) : loading ? (
         <PanelLoading testId="home-loading" />
       ) : (
-        <HomeBody pv={pv} facts={facts} toolFacts={stageFacts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} />
+        <HomeBody pv={pv} facts={facts} toolFacts={stageFacts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} reread={retry} />
       )}
     </section>
   );
 }
 
-function HomeBody({ pv, facts, toolFacts: stageFacts, states, open, mark }: {
+function HomeBody({ pv, facts, toolFacts: stageFacts, states, open, mark, reread }: {
   pv: ProjectValue;
   facts: ReturnType<typeof homeFacts>;
   toolFacts: Partial<Record<StageKey, ToolFacts[]>>;
   states: ReturnType<typeof stageStates>;
   open(stage: StageKey, tab?: string): void;
   mark(stage: StageKey, ready: boolean): Promise<void>;
+  /** Reads the home again from the start (the Retry of a failed load). */
+  reread(): void;
 }) {
   const t = useT();
   const phone = useMedia(PHONE_QUERY);
   const next = suggestNext(facts);
+  // The sources' items are by pid, so they wait for the migration that gives every source its pid (a run that is "busy", "broken" or "locked" has settled too).
+  const attention = pv.paperIds === "running" ? null : <AttentionCard onSeeAll={() => open("lit", "citations")} onMerged={reread} />;
   if (phone) return (
     <div className="home-phone" data-testid="home-phone">
       <Switcher home />
       <QuestionFold facts={facts} onEdit={() => open("idea")} />
       <SuggestedNext next={next} facts={facts} onOpen={() => open(next.to.stage, next.to.tab)} />
       <StageRows compact states={states} facts={facts} toolFacts={stageFacts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
-      {/* "Needs your attention" comes here with Task 24. */}
+      {attention}
       <button type="button" className="home-btn home-export" onClick={() => pv.openExport()} data-testid="home-export">{t("home_out_btn")}</button>
     </div>
   );
@@ -216,6 +222,7 @@ function HomeBody({ pv, facts, toolFacts: stageFacts, states, open, mark }: {
       <div className="home-main">
         <SuggestedNext next={next} facts={facts} onOpen={() => open(next.to.stage, next.to.tab)} />
         <StageRows states={states} facts={facts} toolFacts={stageFacts} onOpen={(s) => open(s)} onMark={(s, r) => { void mark(s, r); }} />
+        {attention}
       </div>
     </div>
   );

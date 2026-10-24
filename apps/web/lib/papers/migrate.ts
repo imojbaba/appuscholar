@@ -48,8 +48,8 @@ export type PaperMigrateDeps = {
   stage?: LitStage;
 };
 
-/** The vault that never asks: the run starts only when it is open, and a lock meanwhile is an answer ("locked"), not a prompt. */
-const quiet = (v: BlobVault): BlobVault => ({
+/** The vault that never asks: the run starts only when it is open, and a lock meanwhile is an answer ("locked"), not a prompt. Task 24's merge uses it too. */
+export const quiet = (v: BlobVault): BlobVault => ({
   known: (recheck) => v.known(recheck),
   ensureUnlocked: async () => false,
   encryptBody: (doc, html) => v.encryptBody(doc, html),
@@ -61,7 +61,7 @@ const quiet = (v: BlobVault): BlobVault => ({
  * and abandon() (when the run is over) forgets what is still unsent, so a write that did not go is never kept to be sent by itself. A blob that is only read (a reading-list paper)
  * uses start() as every reader does and is disposed of.
  */
-function ownBlob<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, readOnly = false): MigrationBlob<BlobShape<K>> {
+export function ownBlob<K extends BlobKind>(kind: K, projectId: string, vault: () => BlobVault, readOnly = false): MigrationBlob<BlobShape<K>> {
   type T = BlobShape<K>;
   const seen: { s: ProjectBlobState<T> | null } = { s: null };
   const c = projectBlobClient(kind, projectId, vault, (s) => { seen.s = s; }, { readOnly });

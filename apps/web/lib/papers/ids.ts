@@ -151,6 +151,39 @@ export function rekeyNotes(notes: ApNotes, papers: Array<{ pid: string; title: s
 }
 
 /**
+ * Moves the notes of the paper `from` to the paper `to` when the two are merged (Task 24's "Merge the two"; rulings B2-R9, R10, R11, R31). The student's words of both are joined as
+ * rekeyNotes joins the notes of one paper (distinct texts of a stage and of a card field, in order, with a blank line between; the `take` the same way); the AI reading, the kept
+ * checks and the matrix cells of the kept paper win where both have them. `from`'s note stays, whole, with `movedTo` (so nothing is lost and no reader counts it twice), and every
+ * note that had moved to it is pointed at `to`, so no move leads through two keys. A note always has its stages and its card. Nothing happens, and the same object comes back, when
+ * `from` has no note or its note has moved already.
+ */
+export function mergePaperNotes(notes: ApNotes, from: string, to: string): ApNotes {
+  if (from === to) return notes;
+  const fromKey = noteKey(from), toKey = noteKey(to);
+  let out = notes;
+  const src = notes[fromKey];
+  if (src && src.movedTo === undefined) {
+    const dst = notes[toKey];
+    const take = joinDistinct([dst?.take, src.take]);
+    const merged = dst ? mergeNotes([dst, src]) : { stages: src.stages, card: src.card };
+    const checks = dst?.checks || src.checks ? { ...src.checks, ...dst?.checks } : undefined;
+    const cells = dst?.cells || src.cells ? { ...src.cells, ...dst?.cells } : undefined;
+    out = { ...notes };
+    out[toKey] = {
+      ...src, ...dst, ...merged, pid: to, title: dst?.title ?? src.title,
+      ...(take !== undefined ? { take } : {}), ...(checks ? { checks } : {}), ...(cells ? { cells } : {})
+    };
+    out[fromKey] = { ...src, movedTo: toKey };
+  }
+  for (const [key, n] of Object.entries(out)) {
+    if (n.movedTo !== fromKey) continue;
+    if (out === notes) out = { ...notes };
+    out[key] = { ...n, movedTo: toKey };
+  }
+  return out;
+}
+
+/**
  * Copies a reading-list paper's matrix cells to its note, where the note has none (`{}` counts as having them, so a paper whose cells were empty is not read again). A paper
  * with no note gets one with empty stages and card (an `ap_notes` note without them breaks the whole blob). The shelf's copy is not touched. The same object when nothing is added.
  */

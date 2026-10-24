@@ -62,8 +62,8 @@ export type SourceRowProps = {
   /** The caret chip points at this source: the row is lit (citMarkActive 7697-7702). */
   lit: boolean;
   /**
-   * The seam for "Needs your attention" (wave B Task 24): the problem sentence and its fix button for this source. The row draws it under the status in a strip of its own,
-   * and nothing when it is empty. Until Task 24 the tab fills it with the Crossref sentences and "Use Crossref details" that the Citation Manager showed.
+   * What is wrong with this source (wave B Task 24): its "Needs your attention" items with their fix buttons (components/frame/AttentionCard), then the notes that are information, not
+   * problems ("DOI found: ..."). The row draws it under the status in a strip of its own, and nothing when it is empty.
    */
   problem?: ReactNode;
   onOpenDoc(id: string): void;
@@ -75,7 +75,7 @@ export type SourceRowProps = {
 
 /**
  * One source in the Citations tab (canvas Citations): its reference in the chosen style, then its status ("Checked", "Needs a fix", "Year differs from Crossref", "Retracted", "Not checked yet")
- * and its use in the project's documents beside it; the problem and its fix under them; and a More menu with the two things only the Citation Manager panel carried (ruling B2-R28), Insert
+ * and its use in the project's documents beside it; what needs attention, with its fixes, under them; and a More menu with the two things only the Citation Manager panel carried (ruling B2-R28), Insert
  * citation at the cursor and Remove. The row the caret chip points at is lit and comes into view (the tab does that by `data-cite-index`).
  */
 export function SourceRow({ index, entry, html, cite, status, use, documents, lit, problem, onOpenDoc, onInsert, onRemove }: SourceRowProps) {

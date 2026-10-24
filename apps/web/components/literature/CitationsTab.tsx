@@ -7,15 +7,17 @@ import { useInsertTarget, usePopout } from "@/lib/popout/sync";
 import { useOpenAlexKey } from "@/lib/research/oaKey";
 import { citeUseLib, type CiteDeps } from "@/lib/cite/actions";
 import { setCiteActive, useCiteActive, useCitePanelShown } from "@/lib/cite/active";
-import { rcCurrent, rcMissingFields, sourceStatus, useCiteChecks, type RetractionStatus } from "@/lib/cite/checks";
+import { rcCurrent, sourceStatus, useCiteChecks, type RetractionStatus } from "@/lib/cite/checks";
 import { CITE_STYLE_OPTIONS } from "@/lib/cite/form";
 import { citeImport, citeInsertBib, citeLoadClassics } from "@/lib/cite/share";
 import { missingLabel, sourceUse, useCitationUsage } from "@/lib/cite/usage";
 import { useLibrary, type Library } from "@/lib/cite/useLibrary";
+import { useAttention } from "@/lib/useAttention";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { ExportLink } from "@/components/export/ExportLink";
+import { AttentionItems } from "@/components/frame/AttentionCard";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { CiteForm } from "@/components/tools/cite/CiteForm";
 import { CiteQuote } from "@/components/tools/cite/CiteQuote";
@@ -28,6 +30,8 @@ import { SourceRow } from "./SourceRow";
  * nothing, and the Style select; then one row per source (SourceRow): its reference in the chosen style, its status, its use and its problem; then "Add a source by hand" (today's form,
  * with the quote box) and More (Import a library file, Add the classic psychology sources). The aside has "In your document" (Insert reference list) and "Check again" (the three
  * checks). The library is the project's `citations` blob, shared with the caret chip and Find (useLibrary); the two caches are the project's `retraction_cache` and `refcheck_cache`.
+ * What is wrong with a source is "Needs your attention" (Task 24, register row D-S2-130): each row lists the items that name its paper, with their fixes, and a finished check says nothing
+ * of its own (the rows change). The same items, and the same fixes, are on the project home and in the Reading list.
  * The library file's export is in the export place (the Export link here opens it with the citations ticked, Task 12). Inserts go through the shell (a closed document opens first),
  * or to the writing window from a pop-out.
  *
@@ -48,6 +52,7 @@ export function CitationsTab() {
   const usage = useCitationUsage(lib, style);
   const oaKey = useOpenAlexKey();
   const checks = useCiteChecks(library, { oaKey: oaKey ?? undefined });
+  const attention = useAttention(library, checks);
   useCitePanelShown();
   const active = useCiteActive();
   const box = useRef<HTMLDivElement>(null);
@@ -111,7 +116,7 @@ export function CitationsTab() {
               return (
                 <SourceRow key={i} index={i} entry={d} html={html} cite={cite} documents={documents} lit={i === active.index}
                   status={sourceStatus(d, checks.rc[citKey(d)], retr)} use={sourceUse(usage.usage[i] ?? [])}
-                  problem={<SourceProblem check={check} retracted={!!retr && retr.r} onFill={checks.rcReadOnly ? undefined : () => checks.fillFromCrossref(d)} />}
+                  problem={<>{d.pid && <AttentionItems items={attention.forPaper(d.pid)} attention={attention} pid={d.pid} />}<SourceNote check={check} /></>}
                   onOpenDoc={(id) => { void selectDoc(id); }} onInsert={() => void citeUseLib(i, deps())}
                   onRemove={() => { setCiteActive(-1); library.remove(d); }} />
               );
@@ -189,34 +194,18 @@ function RetractionLine({ sources, checks, lang }: { sources: number; checks: Re
 }
 
 /**
- * What is wrong with a source, in the row's problem seam (SourceRow): OpenAlex's retraction warning, then Crossref's answer in the Citation Manager's sentences (rcLine 7792-7797; fix wave A's
- * missing fields), with the one fix that was there, "Use Crossref details" (fix wave A W27, W28: only the empty fields change). "Needs your attention" (Task 24) takes this seam over with
- * its own sentences and fixes. An error or no answer says nothing here; the status word beside the reference says it, and so does a match, except one Crossref made by the title for a
- * source with no DOI: that one adds the DOI it found ("DOI found: 10...", v1's rcLine 7794), which v1 showed on the same line.
+ * What the row says besides its attention items: the DOI Crossref found for a source that had none ("DOI found: 10...", v1's rcLine 7794, which showed it on the same line as the match).
+ * It is information, not a problem, so it is not an item and has no fix. A difference Crossref made by the title for a source with no DOI says the DOI it found as well ("No DOI saved.
+ * The match below came from a title search: ..."), after the items that name the differences. An error or no answer says nothing here; the status word beside the reference says it.
  */
-function SourceProblem({ check, retracted, onFill }: { check: RcCheck | undefined; retracted: boolean; onFill?: () => void }) {
+function SourceNote({ check }: { check: RcCheck | undefined }) {
   const t = useT();
-  const diff = check && check.s === "diff" ? check : null;
-  const miss = diff && diff.miss && diff.miss.length ? diff.miss : null;
-  const says = diff ? (diff.m ?? []).map((x) => t("rc_" + x.k) + " " + x.v) : [];
   const found = check && check.s === "ok" && check.viaTitle && check.f && check.f.doi ? check.f.doi : null;
+  const diff = check && check.s === "diff" && check.viaTitle ? check : null;
   return (
     <>
-      {retracted && <div className="cit-problem cit-problem-retracted" data-testid="cite-retr-warn">{t("retr_lib_warn")}</div>}
-      {check && check.s === "nf" && <div className="cit-problem">{t("rc_nf")}</div>}
       {found && <div className="cit-problem cit-problem-found" data-testid="cite-rc-doi">{t("rc_doi_found")} {found}</div>}
-      {diff && (says.length > 0 || diff.viaTitle || miss) ? (
-        <div className="cit-problem">
-          {says.join("  ·  ")}
-          {diff.viaTitle ? <><br /><span className="cit-sub">{t("rc_doi_missing")}{diff.f && diff.f.doi ? " " + diff.f.doi : ""}</span></> : null}
-          {miss ? (
-            <>
-              {says.length || diff.viaTitle ? <br /> : null}<span className="cit-sub" data-testid="cite-rc-missing">{t("rc_missing", { fields: rcMissingFields(miss, t) })}</span>
-              {onFill ? <> <Button variant="ghost" size="sm" className="cit-fix" data-testid="source-fix" onClick={onFill}>{t("cit_fix_crossref")}</Button></> : null}
-            </>
-          ) : null}
-        </div>
-      ) : null}
+      {diff && <div className="cit-problem" data-testid="cite-rc-doi-missing"><span className="cit-sub">{t("rc_doi_missing")}{diff.f && diff.f.doi ? " " + diff.f.doi : ""}</span></div>}
     </>
   );
 }

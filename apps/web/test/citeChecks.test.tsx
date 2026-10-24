@@ -40,18 +40,17 @@ vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 
 import { CitationsTab } from "../components/literature/CitationsTab";
 import { RETRACT_TTL, rcCurrent, rcRun, resetCheckBusy, retractionRefresh, useCiteChecks, type CiteChecks, type RcDeps, type RetractionDeps } from "../lib/cite/checks";
-import { parseBlob, type RefCheckCache, type RetractionCache } from "../lib/blobs/kinds";
+import { parseBlob, type RefCheckCache, type RetractionCache, type StoredEntry } from "../lib/blobs/kinds";
 import { resetCiteActive } from "../lib/cite/active";
 import { resetCiteStyle, useLibrary, type Library } from "../lib/cite/useLibrary";
-import { noPids } from "./support/noPids";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
 const t = (k: string, vars?: Record<string, string | number>) => (E[k] ?? k).replace(/\{(\w+)\}/g, (m, x: string) => (vars && x in vars ? String(vars[x]) : m));
 
-const SMITH: CitationEntry = { author: "Smith, John", year: "2020", title: "Sleep and memory", doi: "10.1000/smith" };
-const LEE: CitationEntry = { author: "Lee, Kim", year: "2018", title: "Homework helps little", doi: "https://doi.org/10.1000/LEE" };
-const RAO: CitationEntry = { author: "Rao, Kavita", year: "2015", title: "No identifier here" };
+const SMITH: StoredEntry = { pid: "ksmith", author: "Smith, John", year: "2020", title: "Sleep and memory", doi: "10.1000/smith" };
+const LEE: StoredEntry = { pid: "klee", author: "Lee, Kim", year: "2018", title: "Homework helps little", doi: "https://doi.org/10.1000/LEE" };
+const RAO: StoredEntry = { pid: "krao", author: "Rao, Kavita", year: "2015", title: "No identifier here" };
 
 const oaUrl = (dois: string[]) => "https://api.openalex.org/works?filter=doi:" + dois.map((d) => encodeURIComponent("https://doi.org/" + d)).join("|") + "&per-page=50&select=doi,is_retracted";
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -171,12 +170,12 @@ describe("the retraction check (v1 citRetractionRefresh 7579-7600)", () => {
     expect((saved[1] as Record<string, { r: boolean }>)["10.1000/x7"]!.r).toBe(true);
   });
 
-  it("forced: every DOI again and retr_done; a failure: retr_failed when forced, nothing when quiet; no DOI: retr_nodoi when forced only", async () => {
+  it("forced: every DOI again, and no toast (the answer is in the Citations tab); a failure: retr_failed when forced, nothing when quiet; no DOI: retr_nodoi when forced only", async () => {
     const fetchFn = openAlex([]);
     const forced = deps({ fetch: fetchFn as unknown as typeof fetch, cache: { "10.1000/smith": { r: false, t: NOW }, "10.1000/lee": { r: false, t: NOW } } });
     await retractionRefresh(true, forced.d);
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    expect(forced.d.toast.mock.calls).toEqual([[E.retr_done]]);
+    expect(forced.d.toast).not.toHaveBeenCalled();
     const failing = vi.fn(async () => json({}, 503)) as unknown as typeof fetch;
     const f1 = deps({ fetch: failing });
     await retractionRefresh(true, f1.d);
@@ -191,7 +190,7 @@ describe("the retraction check (v1 citRetractionRefresh 7579-7600)", () => {
     expect(none.d.toast.mock.calls).toEqual([[E.retr_nodoi]]);
   });
 
-  it("opening the Cite tab refreshes quietly (no toast); the button forces it and toasts retr_done", async () => {
+  it("opening the Cite tab refreshes quietly (no toast); the button forces it, and the finished check says nothing (Task 24: the answer is in the rows)", async () => {
     const fetchFn = openAlex(["10.1000/lee"]);
     vi.stubGlobal("fetch", fetchFn);
     mount();
@@ -203,19 +202,19 @@ describe("the retraction check (v1 citRetractionRefresh 7579-7600)", () => {
     await click(tid("cite-retract-btn")!);
     expect(tid("cite-retract-btn")!.textContent).toBe("Check for retractions");
     expect(fetchFn).toHaveBeenCalledTimes(2);
-    expect(toasts()).toEqual([E.retr_done]);
+    expect(toasts()).toEqual([]);
   });
 
-  it("a flagged paper: the line under the heading is retr_summary_fmt (bold), and the row says Retracted with retr_lib_warn", async () => {
+  it("a flagged paper: the line under the heading is retr_summary_fmt (bold), and the row says Retracted and names the paper in its attention item", async () => {
     h.blobs.retraction_cache = blob({ "10.1000/smith": { r: false, t: Date.now() }, "10.1000/lee": { r: true, t: Date.now() } });
     mount();
     await settle();
     expect(tid("cit-checked")!.textContent).toBe(t("retr_summary_fmt", { c: 2, r: 1, n: 1 }));
     expect(tid("cit-checked")!.classList.contains("cite-flagged")).toBe(true);
     const cards = all("source-row");
-    expect(cards.map((c) => c.querySelector('[data-cite-slot="cite-attention"]')!.textContent)).toEqual(["", E.retr_lib_warn, ""]);
+    expect(cards.map((c) => c.querySelector('[data-cite-slot="cite-attention"]')!.textContent)).toEqual(["", t("attn_retracted", { short: "Lee, 2018: homework helps little" }), ""]);
     expect(cards.map((c) => c.querySelector('[data-testid="source-status"]')!.textContent)).toEqual(["Not checked yet", "Retracted", "Not checked yet"]);
-    expect(cards[1]!.querySelector(".cit-problem-retracted")).not.toBeNull();
+    expect(cards[1]!.querySelector(".attn-item-retracted")).not.toBeNull();
   });
 
   it("a cache that does not open (R16): the quiet refresh leaves it alone; the button asks first, and Cancel checks nothing", async () => {
@@ -233,7 +232,7 @@ describe("the retraction check (v1 citRetractionRefresh 7579-7600)", () => {
     confirm.mockReturnValue(true);
     await click(tid("cite-retract-btn")!);
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    expect(toasts()).toEqual([E.retr_done]);
+    expect(toasts()).toEqual([]);
   });
 
   it("a broken cache with nothing to look up asks nothing: the forced check toasts retr_nodoi", async () => {
@@ -287,7 +286,7 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     return { d: { lib: [SMITH, LEE, RAO], cache: {}, fetch: fetchFn as typeof fetch, t, ...over, save, toast }, saved };
   };
 
-  it("one Crossref call per entry with a 200 ms pause after each (fake timers); rc_busy first, rc_done after; the cache keyed by citKey", async () => {
+  it("one Crossref call per entry with a 200 ms pause after each (fake timers); rc_busy first and no toast after (Task 24: the answers are in the rows and the attention list); the cache keyed by citKey", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const fetchFn = crossref();
     const { d, saved } = rdeps(fetchFn);
@@ -303,7 +302,7 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     expect(fetchFn).toHaveBeenCalledTimes(3);
     await vi.advanceTimersByTimeAsync(200);
     await run;
-    expect(d.toast.mock.calls.map((c) => c[0])).toEqual([E.rc_busy, E.rc_done]);
+    expect(d.toast.mock.calls.map((c) => c[0])).toEqual([E.rc_busy]);
     const cache = saved.at(-1) as Record<string, RcCheck>;
     expect(Object.keys(cache)).toEqual([citKey(SMITH), citKey(LEE), citKey(RAO)]);
     expect(citKey(SMITH)).toBe("Smith|2020|sleep and memory");
@@ -336,7 +335,7 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     await click(tid("cite-rc-btn")!);
     await settle(250);
     expect(panelFetch.mock.calls.map((c) => String(c[0]))).toEqual(["https://api.crossref.org/works/" + encodeURIComponent("10.1000/smith")]);
-    expect(toasts()).toEqual([E.rc_busy, E.rc_done]);
+    expect(toasts()).toEqual([E.rc_busy]);
   });
 
   it("rc_empty with no library (the button); rc_fail when every lookup failed", async () => {
@@ -351,9 +350,9 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     expect((failing.saved.at(-1) as Record<string, RcCheck>)[citKey(SMITH)]!.s).toBe("err");
   });
 
-  it("each row's Crossref sentence per state: a difference, a source Crossref does not know, the DOI a title match found; a match by DOI and a failed lookup say nothing there", async () => {
-    const LIN: CitationEntry = { author: "Lin, May", year: "2011", title: "Title search" };
-    const ERR: CitationEntry = { author: "Err, Ann", year: "2001", title: "Could not check" };
+  it("each row's attention items per state: a difference, a source Crossref does not know; the DOI a title match found is a note, not an item; a match by DOI and a failed lookup say nothing there", async () => {
+    const LIN: StoredEntry = { pid: "klin", author: "Lin, May", year: "2011", title: "Title search" };
+    const ERR: StoredEntry = { pid: "kerr", author: "Err, Ann", year: "2001", title: "Could not check" };
     h.blobs.citations = blob([SMITH, LEE, RAO, LIN, ERR]);
     h.blobs.refcheck_cache = blob({
       [citKey(SMITH)]: { s: "ok", m: [], f: { title: "Sleep and memory", year: 2020, author: "Smith", doi: "10.1000/smith" }, t: 1 },
@@ -366,14 +365,20 @@ describe("the reference check (v1 rcRun 7772-7790, rcLine 7792-7797)", () => {
     await settle();
     const rows = all("source-row");
     expect(rows.map((c) => c.querySelector('[data-testid="source-status"]')!.textContent)).toEqual(["Checked", "Needs a fix", "Needs a fix", "Checked", "Not checked yet"]);
-    expect(rows.map((c) => c.querySelector('[data-cite-slot="cite-attention"]')!.textContent)).toEqual([
-      "",
-      E.rc_title + " Other  ·  " + E.rc_year + " 2012" + E.rc_doi_missing + " 10.9/x",
-      E.rc_nf,
-      E.rc_doi_found + " 10.5/lin",
-      ""
+    const says = (r: HTMLElement) => [...r.querySelectorAll('[data-testid="attention-text"]')].map((x) => x.textContent);
+    const LEE_SHORT = "Lee, 2018: homework helps little";
+    expect(rows.map(says)).toEqual([
+      [],
+      [t("attn_differs_title", { short: LEE_SHORT, value: "Other" }), t("attn_differs_year", { short: LEE_SHORT, value: "2012" })],
+      [t("attn_not_found", { short: "Rao, 2015: no identifier here" })],
+      [],
+      []
     ]);
-    expect(rows[1]!.querySelector('[data-cite-slot="cite-attention"] br')).not.toBeNull();
+    expect(rows[1]!.querySelector('[data-testid="cite-rc-doi-missing"]')!.textContent).toBe(E.rc_doi_missing + " 10.9/x");
+    expect(rows[3]!.querySelector('[data-testid="cite-rc-doi"]')!.textContent).toBe(E.rc_doi_found + " 10.5/lin");
+    // Nothing else is said in a row that has nothing to say.
+    expect(rows[0]!.querySelector('[data-cite-slot="cite-attention"]')!.textContent).toBe("");
+    expect(rows[4]!.querySelector('[data-cite-slot="cite-attention"]')!.textContent).toBe("");
   });
 
   it("nothing checked: every row reads Not checked yet and has nothing in its Crossref slot", async () => {
@@ -389,10 +394,14 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
   const AUTHORS = "Schaefer, Ellen M.; Gonzalez, Carlos B.; Lee, Kim";
   const WORK = { title: [TITLE], DOI, issued: { "date-parts": [[2019]] }, volume: "9", issue: "1", page: "13317", type: "journal-article", author: [{ family: "Schaefer", given: "Ellen M." }, { family: "Gonzalez", given: "Carlos B." }, { family: "Lee", given: "Kim" }] };
   const crFetch = (async () => json({ message: WORK })) as unknown as typeof fetch;
-  const AUTHORLESS: CitationEntry = { author: "", year: "2019", title: TITLE, doi: DOI, volume: "12" };
+  const AUTHORLESS: StoredEntry = { pid: "kauth", author: "", year: "2019", title: TITLE, doi: DOI, volume: "12" };
   /** The Crossref check of the authorless entry, as rcRun stores it. */
-  async function checked(d: CitationEntry = AUTHORLESS) { return { [citKey(d)]: await rcCheckOneV2(crFetch, d) } as RefCheckCache; }
+  async function checked(d: StoredEntry = AUTHORLESS) { return { [citKey(d)]: await rcCheckOneV2(crFetch, d) } as RefCheckCache; }
   const lineOf = () => all("source-row")[0]!.querySelector('[data-cite-slot="cite-attention"]')!;
+  /** The sentences and the buttons of the first row's attention items. */
+  const SHORT = "2019: sleep timing and attention";
+  const sayings = () => [...lineOf().querySelectorAll('[data-testid="attention-text"]')].map((x) => x.textContent);
+  const buttons = () => [...lineOf().querySelectorAll('[data-testid="attention-fix"]')].map((x) => x.textContent);
   const stubConfirm = (answer: boolean) => vi.spyOn(window, "confirm").mockReturnValue(answer);
 
   it("rcRun stores the empty author and the missing fields (an authorless capture is no longer a full match)", async () => {
@@ -404,14 +413,16 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     expect(c.m).toContainEqual({ k: "author", v: "Schaefer" });
   });
 
-  it("the row names the missing fields and offers Use Crossref details", async () => {
+  it("the row says there is no author (and who Crossref lists) and what else is missing, and offers Use Crossref details for each", async () => {
     h.blobs.citations = blob([AUTHORLESS]);
     h.blobs.refcheck_cache = blob(await checked());
     mount();
     await settle();
-    expect(lineOf().textContent).toContain(E.rc_author + " Schaefer");
-    expect(tid("cite-rc-missing")!.textContent).toBe(t("rc_missing", { fields: "author, issue, pages" }));
-    expect(tid("source-fix")!.textContent).toBe("Use Crossref details");
+    expect(sayings()).toEqual([
+      t("attn_noauthors_crossref", { short: SHORT, names: "Schaefer, Gonzalez and Lee" }),
+      t("attn_missing_row", { short: SHORT, fields: "issue and pages" })
+    ]);
+    expect(buttons()).toEqual(["Use Crossref details", "Use Crossref details"]);
   });
 
   it("Use Crossref details asks with each field and its value, then fills only the empty fields", async () => {
@@ -420,11 +431,11 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     h.blobs.refcheck_cache = blob(await checked());
     mount();
     await settle();
-    await click(tid("source-fix")!);
+    await click(tid("attention-fix")!);
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(confirm.mock.calls[0]![0]).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS + "\nIssue: 1\nPages: 13317" }));
     expect(confirm.mock.calls[0]![0]).toBe("Fill these from Crossref? Only empty fields change.\n\nAuthor: " + AUTHORS + "\nIssue: 1\nPages: 13317");
-    expect(noPids(applied(h.blobs.citations!, [AUTHORLESS, SMITH]) as CitationEntry[])).toEqual([{ ...AUTHORLESS, author: AUTHORS, issue: "1", pages: "13317" }, SMITH]);
+    expect(applied(h.blobs.citations!, [AUTHORLESS, SMITH]) as CitationEntry[]).toEqual([{ ...AUTHORLESS, author: AUTHORS, issue: "1", pages: "13317" }, SMITH]);
     expect((applied(h.blobs.citations!, [AUTHORLESS, SMITH]) as CitationEntry[])[0]!.volume).toBe("12");
     expect(toasts()).toEqual([E.rc_filled]);
   });
@@ -436,7 +447,7 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     h.blobs.refcheck_cache = blob(cache);
     mount();
     await settle();
-    await click(tid("source-fix")!);
+    await click(tid("attention-fix")!);
     const lib = applied(h.blobs.citations!, [AUTHORLESS]) as CitationEntry[];
     const next = applied(h.blobs.refcheck_cache!, cache) as RefCheckCache;
     expect(Object.keys(next)).toEqual([citKey(lib[0]!)]);
@@ -451,33 +462,33 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     await settle();
     expect(all("source-status")[0]!.textContent).toBe("Checked");
     expect(lineOf().textContent).toBe("");
-    expect(tid("source-fix")).toBeNull();
+    expect(tid("attention-fix")).toBeNull();
   });
 
   it("Fill never overwrites a field that has a value: a volume written after the check stays, and a fill of nothing writes nothing", async () => {
     stubConfirm(true);
     const cache = await checked();
-    const nowFull: CitationEntry = { ...AUTHORLESS, issue: "7", pages: "1-9" };
+    const nowFull: StoredEntry = { ...AUTHORLESS, issue: "7", pages: "1-9" };
     h.blobs.citations = blob([nowFull]);
     h.blobs.refcheck_cache = blob(cache);
     mount();
     await settle();
     // The cache is keyed by the same citKey; the entry already has issue and pages, so only the author is offered.
-    await click(tid("source-fix")!);
+    await click(tid("attention-fix")!);
     expect((vi.mocked(window.confirm).mock.calls[0]![0])).toBe(t("rc_fill_confirm", { list: "Author: " + AUTHORS }));
-    expect(noPids(applied(h.blobs.citations!, [nowFull]) as CitationEntry[])).toEqual([{ ...nowFull, author: AUTHORS }]);
+    expect(applied(h.blobs.citations!, [nowFull]) as CitationEntry[]).toEqual([{ ...nowFull, author: AUTHORS }]);
     // Nothing left to fill: no question, no write.
     h.blobs.citations!.set.mockClear(); h.blobs.refcheck_cache!.set.mockClear(); vi.mocked(window.confirm).mockClear();
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     document.body.innerHTML = "";
-    const done: CitationEntry = { ...nowFull, author: "Mine, A." };
+    const done: StoredEntry = { ...nowFull, author: "Mine, A." };
     h.blobs.citations = blob([done]);
     h.blobs.refcheck_cache = blob({ [citKey(done)]: { ...cache[citKey(AUTHORLESS)]! } });
     mount();
     await settle();
     // The answer still says "no author", but the source has one now (wave A LATER T11): the row reads Checked and offers nothing.
     expect(all("source-status")[0]!.textContent).toBe("Checked");
-    expect(tid("source-fix")).toBeNull();
+    expect(tid("attention-fix")).toBeNull();
     expect(lineOf().textContent).toBe("");
     // And a fill asked for anyway has nothing to write: no question, no write.
     const out: HookProbe = {};
@@ -494,7 +505,7 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     h.blobs.refcheck_cache = blob(await checked());
     mount();
     await settle();
-    await click(tid("source-fix")!);
+    await click(tid("attention-fix")!);
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(h.blobs.citations.set).not.toHaveBeenCalled();
     expect(h.blobs.refcheck_cache.set).not.toHaveBeenCalled();
@@ -505,8 +516,8 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     h.blobs.refcheck_cache = { ...blob(await checked()), readOnly: true } as Blob;
     mount();
     await settle();
-    expect(tid("cite-rc-missing")!.textContent).toBe(t("rc_missing", { fields: "author, issue, pages" }));
-    expect(tid("source-fix")).toBeNull();
+    expect(sayings()).toHaveLength(2);
+    expect(tid("attention-fix")).toBeNull();
   });
 
   it("fillEmpty with no matching entry returns false and writes nothing (wave A LATER T11)", () => {
@@ -517,7 +528,7 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     expect(h.blobs.citations.set).not.toHaveBeenCalled();
     // An entry that matches is filled, as before.
     expect(out.library!.fillEmpty((e) => e.title === SMITH.title, { volume: "9" })).toBe(true);
-    expect(noPids(applied(h.blobs.citations, [SMITH]) as CitationEntry[])).toEqual([{ ...SMITH, volume: "9" }]);
+    expect(applied(h.blobs.citations, [SMITH]) as CitationEntry[]).toEqual([{ ...SMITH, volume: "9" }]);
   });
 
   it("fillEmpty asks the library as it stands now, not as it was when the function was handed out; a library still being read queues the fill", () => {

@@ -726,6 +726,27 @@
   .cit-card { padding: var(--s4); }
   .cit-menu [role="menuitem"] { min-height: 44px; }
 }
+/* Wave B Task 24: "Needs your attention", on the project home and beside a paper in Citations and the Reading list. A line is the sentence and its fix; a retraction is in the danger colours. */
+.attn-card { padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s3); }
+.home-card.attn-card h2 { font-size: 16px; font-weight: 700; color: var(--ink); }
+.attn-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--s2); }
+.attn-item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); padding: 10px 12px; border-radius: var(--r-ctl); background: var(--flag-bg); color: var(--flag-ink); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.attn-item-retracted { background: var(--danger-bg); color: var(--danger-ink); }
+.attn-list-home .attn-item { padding: 0; background: none; }
+.attn-list-home .attn-item-retracted { background: none; }
+.attn-text { flex: 1 1 260px; min-width: 0; }
+.attn-fix { min-height: 40px; padding: 0 14px; border: 1px solid var(--purple-800); border-radius: var(--r-ctl); background: var(--card); color: var(--purple-800); font: inherit; font-weight: 600; cursor: pointer; }
+.attn-fix:hover:not(:disabled) { background: var(--soft); }
+.attn-fix:disabled { border-color: var(--line-strong); color: var(--muted); cursor: default; }
+.attn-fix:focus-visible, .attn-all:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.attn-card:focus, .attn-list:focus, .cit-row:focus, .rl-row:focus { outline: none; }
+.attn-fail { flex: 1 1 100%; margin: 0; font-size: 13px; color: var(--danger-ink); }
+.attn-all { align-self: flex-start; }
+.rl-main .attn-list { margin-top: var(--s1); }
+@media (max-width: 700px) {
+  .attn-card { padding: var(--s4); }
+  .attn-fix, .attn-all { min-height: 44px; }
+}
 /* end Citations tab */
 
 /* Adding this paper (wave B Task 20, register row D-S2-125, canvas Find): the page the bookmark opens, with no workspace around it, and the bookmark's section in Find ("Add from any journal page").

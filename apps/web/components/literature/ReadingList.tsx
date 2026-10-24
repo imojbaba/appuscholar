@@ -10,6 +10,7 @@ import { fromSample, nextIntake } from "@/lib/analyse/intake";
 import { useApNotes, type ApNotesStore } from "@/lib/analyse/notes";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
+import { useCiteChecks } from "@/lib/cite/checks";
 import { keepEntry } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
 import { papersOf, type Paper } from "@/lib/papers/list";
@@ -18,8 +19,10 @@ import {
 } from "@/lib/shelf/actions";
 import { extractPdfPages } from "@/lib/shelf/extract";
 import { useShelfStore } from "@/lib/shelf/useShelf";
+import { useAttention } from "@/lib/useAttention";
 import { useVault } from "@/lib/vault/useVault";
 import { toast } from "@/components/ui/toast";
+import { AttentionItems } from "@/components/frame/AttentionCard";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { Passages } from "@/components/tools/shelf/Passages";
 import { Reader } from "@/components/tools/shelf/Reader";
@@ -45,11 +48,20 @@ type Tool = "search" | "find";
  * `textState`: a line for a paper's automatic full text under its status, for Task 21b's runner.
  * `notes`: the project's notes store (lib/analyse/notes). The Reading tab makes one and gives it to this list and to Analyse a paper under it, so a note the student writes there changes the
  * row's status at once: two stores in one window do not hear each other's writes (the sync channel never echoes to its own window). Without it the list reads the notes itself.
+ * Beside a paper are the items of "Needs your attention" that name it, with their fixes (Task 24, register row D-S2-130). A merge of two copies of one paper changes the reading list and
+ * the notes through clients of its own, which the open stores do not hear, so the list is opened again afterwards.
  */
-export function ReadingList({ textState, notes: shared }: { textState?(p: Paper): ReactNode; notes?: ApNotesStore }) {
+export function ReadingList(props: { textState?(p: Paper): ReactNode; notes?: ApNotesStore }) {
+  const [opened, setOpened] = useState(0);
+  return <ReadingListBody key={opened} {...props} onMerged={() => setOpened((n) => n + 1)} />;
+}
+
+function ReadingListBody({ textState, notes: shared, onMerged }: { textState?(p: Paper): ReactNode; notes?: ApNotesStore; onMerged(): void }) {
   const t = useT();
   const store = useShelfStore();
   const { library, keepWhenRead } = useKeep();
+  const checks = useCiteChecks(library, { refresh: false });
+  const attention = useAttention(library, checks, { onMerged });
   const ownNotes = useApNotes(shared ? null : store.projectId);
   const notes = shared ?? ownNotes;
   const vault = useVault();
@@ -135,7 +147,8 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
                 onRename={(title) => renamePaper(p.shelf!.id, title, ops)}
                 onRemove={async () => { const ok = await removePaper(p.shelf!.id, ops); if (ok) setReading(null); return ok; }}
                 onAddRefs={() => { if (!addToReferences(p.shelf!, library)) toast(t("list_action_fail")); }}
-                textState={textState?.(p)} />
+                textState={textState?.(p)}
+                attention={p.pid && p.entry ? <AttentionItems items={attention.forPaper(p.pid)} attention={attention} pid={p.pid} /> : undefined} />
             ))}
             <li className="rl-row rl-practice" data-testid="rl-practice">
               <div className="rl-main">
