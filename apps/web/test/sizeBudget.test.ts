@@ -31,6 +31,13 @@ describe("fitsBudget", () => {
     expect(fitsBudget(e, BODY_LIMIT_SEALED, true)).toBe(false);
     expect(fitsBudget(e, BODY_LIMIT_PLAIN, false)).toBe(false);
   });
+  it("with the vault on counts UTF-8 bytes, which the sealed body grows from: a long Hindi document reaches the limit sooner", () => {
+    const e = { getHTML: () => "<p>" + "अ".repeat(150_000) + "</p>" + "A".repeat(1_900_000) } as unknown as Editor;
+    expect(fitsBudget(e, 0, true)).toBe(false);
+    expect(fitsBudget(e, 0, false)).toBe(true);
+    const ascii = stub(2_049_999);
+    expect(fitsBudget(ascii, 0, true)).toBe(true);
+  });
   it("fits exactly at the limit and not one character over, for both vault states", () => {
     const e = stub(1_000_000);
     expect(fitsBudget(e, BODY_LIMIT_SEALED - 1_000_000, true)).toBe(true);

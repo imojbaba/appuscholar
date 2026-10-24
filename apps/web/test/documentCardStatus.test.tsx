@@ -34,6 +34,8 @@ import { DocumentCard } from "../components/document/DocumentCard";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = en as Record<string, string>;
 const TOO_LARGE = TOOL_MESSAGE_FILES["pictures.en.json"]!.doc_too_large!;
+// The badge is short so it fits a phone's card head; the toast says what to do.
+const TOO_LARGE_BADGE = TOOL_MESSAGE_FILES["pictures.en.json"]!.doc_too_large_badge!;
 let root: Root;
 let box: HTMLElement;
 const badge = () => box.querySelector('[data-testid="save-status"]')!.textContent;
@@ -52,13 +54,13 @@ describe("the document card's save badge", () => {
   it("says the document is too large to save, not AUTO-SAVE OFF, with one toast, until a save succeeds", () => {
     expect(badge()).toBe(E.autosave_on);
     report("too-large");
-    expect(badge()).toBe(TOO_LARGE);
+    expect(badge()).toBe(TOO_LARGE_BADGE);
     expect(badge()).not.toBe(AUTOSAVE_OFF_BADGE);
     expect(h.toast).toHaveBeenCalledTimes(1);
     expect(h.toast).toHaveBeenCalledWith(TOO_LARGE);
     // The student types (dirty), the save is refused again: still the same badge, no second toast.
     report("dirty"); report("saving"); report("too-large");
-    expect(badge()).toBe(TOO_LARGE);
+    expect(badge()).toBe(TOO_LARGE_BADGE);
     expect(h.toast).toHaveBeenCalledTimes(1);
     // A save that fits turns it green and arms the toast again.
     report("saved");
@@ -72,7 +74,7 @@ describe("the document card's save badge", () => {
     expect(h.toast).toHaveBeenCalledWith(AUTOSAVE_STOPPED_TOAST);
     // The same document then turns out to be over the limit: the badge follows the newest cause.
     report("too-large");
-    expect(badge()).toBe(TOO_LARGE);
+    expect(badge()).toBe(TOO_LARGE_BADGE);
     report("error");
     expect(badge()).toBe(AUTOSAVE_OFF_BADGE);
     report("saved");

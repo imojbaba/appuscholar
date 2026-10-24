@@ -87,7 +87,7 @@ export function DocumentCard() {
           {held
             ? <Badge variant="flag" data-testid="save-status" role="status">{t("vault_save_locked")}</Badge>
             : failed
-            ? <Badge variant="danger" data-testid="save-status" role="status">{failed === "too-large" ? t("doc_too_large") : AUTOSAVE_OFF_BADGE}</Badge>
+            ? <Badge variant="danger" data-testid="save-status" role="status">{failed === "too-large" ? t("doc_too_large_badge") : AUTOSAVE_OFF_BADGE}</Badge>
             : <Badge variant="ok" data-testid="save-status" role="status">{t("autosave_on")}</Badge>}
           {hasKey(provider) && <Badge variant="gold" data-testid="provider-badge">{PROVIDERS[provider].short}</Badge>}
           <div className="right">

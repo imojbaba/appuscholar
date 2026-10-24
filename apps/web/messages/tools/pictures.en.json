@@ -1,4 +1,5 @@
 {
   "pic_too_big": "This document is too large to hold this picture. Make a picture smaller or remove one, then try again.",
-  "doc_too_large": "This document is too large to save. Make a picture smaller or remove one."
+  "doc_too_large": "This document is too large to save. Make a picture smaller or remove one.",
+  "doc_too_large_badge": "Too large to save"
 }
