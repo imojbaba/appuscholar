@@ -29,11 +29,11 @@ export function isPopout(): boolean {
 /**
  * The adding screen (`/add`, wave B Task 20, ruling B2-R16): the tab the bookmark opens to keep one paper. It is not a pop-out (it writes the project's library, which a pop-out
  * of another stage may not), but it is not a place to start the vault's one-off migrations either: its tab is closed straight after the keep. An old bookmark opens `/#capture=...`
- * and `/` sends it on to `/add` only once the app has loaded, so a `#capture=` hash counts as the adding screen wherever it is: the hop through `/` must not start a migration either.
+ * and `/` sends it on to `/add` only once the app has loaded, so a `#capture=` hash on `/` counts as the adding screen too: the hop through `/` must not start a migration either (on any other page such a hash, which nothing in the app makes, changes nothing).
  */
 export function isAddingScreen(): boolean {
   if (typeof window === "undefined") return false;
-  return /^\/add\/?$/.test(window.location.pathname) || isCaptureHash(window.location.hash);
+  return /^\/add\/?$/.test(window.location.pathname) || (window.location.pathname === "/" && isCaptureHash(window.location.hash));
 }
 
 /**

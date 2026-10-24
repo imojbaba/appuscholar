@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { landingPath, landingTarget } from "@/lib/frame/landing";
-import { addingAddress, carriedCapture, isCaptureHash } from "@/lib/cite/captureHash";
+import { addingAddress, carriedCapture, CARRY_MAX, isCaptureHash } from "@/lib/cite/captureHash";
 
 describe("what opens", () => {
   it("landingPath: a new student goes to first run, a returning one to the active project's home, otherwise the list", () => {
@@ -37,6 +37,12 @@ describe("a #capture= hash is told apart from every other hash (the adding scree
     expect(addingAddress("")).toBeNull();
   });
 
+  it("carriedCapture: a capture longer than a sign-in cookie can hold goes to / rather than failing the sign-in", () => {
+    const at = "#capture=" + "A".repeat(CARRY_MAX - "#capture=".length);
+    expect(carriedCapture(at)).toBe("/add" + at);
+    expect(carriedCapture(at + "A")).toBe("/");
+    expect(carriedCapture("/add" + at + "A")).toBe("/");
+  });
   it("carriedCapture (the sign-in forms' redirectTo): a capture hash goes to /add and nothing else is ever a target", () => {
     expect(carriedCapture("#capture=eyJ0aXRsZSI6IlQifQ%3D%3D")).toBe("/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");
     expect(carriedCapture("/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D")).toBe("/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");

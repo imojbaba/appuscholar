@@ -13,6 +13,9 @@ export const isCaptureHash = (hash: string): boolean => hash.startsWith(CAPTURE_
 /** The adding screen with `hash` carried as it is, percent-escapes and all; null when `hash` is not a capture. */
 export const addingAddress = (hash: string): string | null => (isCaptureHash(hash) ? "/add" + hash : null);
 
+/** The longest carried capture: Auth.js keeps a Google sign-in's callback address in a cookie, and a browser refuses one over about 4 KB; a longer capture goes to `/` instead of failing the sign-in. */
+export const CARRY_MAX = 3000;
+
 /** What the bookmark's payload is made of: base64 of a UTF-8 JSON after encodeURIComponent, so letters, digits and percent-escapes; the raw base64 characters and the unreserved ones are let through too. */
 const PAYLOAD = /^[A-Za-z0-9%+/=_.~-]*$/;
 
@@ -25,6 +28,6 @@ const PAYLOAD = /^[A-Za-z0-9%+/=_.~-]*$/;
 export function carriedCapture(value: unknown): string {
   if (typeof value !== "string") return "/";
   const hash = value.startsWith("/add") ? value.slice("/add".length) : value;
-  if (!isCaptureHash(hash) || !PAYLOAD.test(hash.slice(CAPTURE_PREFIX.length))) return "/";
+  if (!isCaptureHash(hash) || hash.length > CARRY_MAX || !PAYLOAD.test(hash.slice(CAPTURE_PREFIX.length))) return "/";
   return "/add" + hash;
 }
