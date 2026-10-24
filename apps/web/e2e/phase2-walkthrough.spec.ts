@@ -68,19 +68,30 @@ async function cursorToEnd(page: Page) {
   });
 }
 
-/** Selects the whole block of the editor that contains `text`. */
+/**
+ * Selects the whole block of the editor that contains `text`, and waits for the selection bubble. The caret is put in the block first and given a moment, so that the selection really
+ * changes: a second selection of the same block straight after the first (the step that cancels a request and asks again) is no change to the editor and raises no bubble, and the
+ * `scrollIntoView` of the second one can fire a scroll event that hides a bubble the editor had just shown again (the selection bubble hides on any scroll). Retried until the bubble shows.
+ */
 async function selectBlockWith(page: Page, text: string) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate((needle) => {
-    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle));
+  const place = (collapse: boolean) => page.evaluate(([needle, collapse]) => {
+    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle as string));
     if (!block) throw new Error("block not found in the editor: " + needle);
     block.scrollIntoView({ block: "center" });
     const range = document.createRange();
     range.selectNodeContents(block);
+    if (collapse) range.collapse(false);
     const sel = window.getSelection()!;
     sel.removeAllRanges();
     sel.addRange(range);
-  }, text);
+  }, [text, collapse] as const);
+  await expect(async () => {
+    await page.locator(".ProseMirror").focus();
+    await place(true);
+    await page.waitForTimeout(200);
+    await place(false);
+    await expect(page.getByTestId("sel-bubble")).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 // A stuck step fails in seconds with its own message instead of eating the whole test timeout.
