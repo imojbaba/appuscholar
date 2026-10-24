@@ -8,3 +8,5 @@ dist/
 .turbo/
 .superpowers/
 *.tsbuildinfo
+apps/web/qa-report/
+apps/web/qa-results/
