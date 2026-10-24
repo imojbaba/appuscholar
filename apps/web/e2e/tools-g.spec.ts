@@ -35,7 +35,7 @@ function T(key: string): string {
 type StageId = "design" | "collect" | "writing" | "review";
 const PLACES: Array<{ stage: StageId; tabs: string[] }> = [
   { stage: "design", tabs: ["overview", "pathway", "protocol", "ethics", "registration", "investigator", "budget", "aiuse"] },
-  { stage: "collect", tabs: ["data", "power", "charts", "check", "scales", "coding"] },
+  { stage: "collect", tabs: ["participants", "data", "power", "charts", "check", "scales", "coding"] },
   { stage: "writing", tabs: ["document", "style", "words"] },
   { stage: "review", tabs: ["closeness", "viva", "slides"] }
 ];
@@ -118,7 +118,7 @@ test("the stage 3 to 6 places, their tabs, and Not built yet", async ({ page }) 
     const bar = page.getByTestId("place-tabs");
     await expect(bar).toBeVisible();
     expect(await bar.evaluate((el) => getComputedStyle(el).overflowX), stage).toBe("auto");
-    // Design (eight tabs) and Collection (six) are wider than the screen; Writing and Review (three) may fit.
+    // Design (eight tabs) and Collection (seven) are wider than the screen; Writing and Review (three) may fit.
     if (stage === "design" || stage === "collect") {
       expect(await bar.evaluate((el) => el.scrollWidth > el.clientWidth), stage).toBe(true);
     }

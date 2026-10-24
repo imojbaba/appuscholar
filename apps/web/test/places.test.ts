@@ -8,11 +8,20 @@ describe("places", () => {
       idea: [],
       lit: ["find", "reading", "compare", "citations"],
       design: ["overview", "pathway", "protocol", "ethics", "registration", "investigator", "budget", "aiuse"],
-      collect: ["data", "power", "charts", "check", "scales", "coding"],
+      collect: ["participants", "data", "power", "charts", "check", "scales", "coding"],
       writing: ["document", "style", "words"],
       review: ["closeness", "viva", "slides"]
     });
     expect(Object.keys(PLACE_TABS)).toEqual(STAGE_ORDER);
+  });
+
+  it("Collection and analysis opens on Participants; Statistics has its own address, /collect/data", () => {
+    expect(parsePlace("collect", undefined)).toEqual({ stage: "collect", tab: "participants", rest: [] });
+    expect(parsePlace("collect", [])).toEqual({ stage: "collect", tab: "participants", rest: [] });
+    expect(parsePlace("collect", ["participants"])).toEqual({ stage: "collect", tab: "participants", rest: [] });
+    expect(parsePlace("collect", ["data"])).toEqual({ stage: "collect", tab: "data", rest: [] });
+    expect(placeHref("p1", "collect", "participants")).toBe("/p/p1/collect/participants");
+    expect(placeHref("p1", "collect", "data")).toBe("/p/p1/collect/data");
   });
 
   it("a project's home and its places have one address each", () => {
