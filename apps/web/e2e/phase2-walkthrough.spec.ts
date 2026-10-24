@@ -57,8 +57,8 @@ async function selectInEditor(page: Page, text: string) {
 // Set in the editor's own state (support/editor.ts says why a DOM range placed after focus can be lost).
 /** Puts the cursor at the very end of the document. */
 const cursorToEnd = (page: Page) => editorAt.cursorToEnd(page.locator(".ProseMirror"));
-/** Selects the whole block of the editor that contains `text`. */
-const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockWith(page.locator(".ProseMirror"), text);
+/** Selects the whole block of the editor that contains `text`, and waits for the selection bubble (again after a Cancel: R45). */
+const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockForBubble(page.locator(".ProseMirror"), text);
 
 // A stuck step fails in seconds with its own message instead of eating the whole test timeout.
 test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });

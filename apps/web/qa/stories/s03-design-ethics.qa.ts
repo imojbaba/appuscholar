@@ -1,6 +1,6 @@
 import type { Page, Response } from "@playwright/test";
 import {
-  BUDGET_DEFAULTS, CTRI_FIELDS, PROVIDERS, REG_WARN, aiuBuildV2, aiuDate, budgetMarkdown, budgetRows, budgetTotalText, consentMarkdown, ctriMarkdown, ecMinorsNote, ethicsStatement,
+  BUDGET_DEFAULTS, CTRI_FIELDS, PROVIDERS, REG_WARN, aiuBuildV2, aiuDate, budgetMarkdown, budgetRows, budgetTotalText, consentMarkdown, ctriMarkdown, consentMarkdownV2, ecMinorsNoteV2, ethicsStatement,
   piCvText, protocolMarkdown, regPathway, type AiuEntry
 } from "@appuscholar/core";
 import { ACTION_MS } from "../support/budgets";
@@ -547,7 +547,7 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
     await page.getByTestId("ec-committee").fill(FILL.ec.committee);
     await page.getByTestId("ec-minors").selectOption(FILL.ec.minors);
     await qa.check("data", "as soon as I choose \"Yes, some are under 18\" a note says under-18s usually need a parent or guardian's written permission, plus their own agreement, and a committee that has approved this", async () => {
-      await expect(page.getByTestId("ec-minors-note")).toHaveText(ecMinorsNote("yes"));
+      await expect(page.getByTestId("ec-minors-note")).toHaveText(ecMinorsNoteV2("yes"));
       await expect(page.getByTestId("ec-minors-note")).toContainText(/parent or guardian/);
       await expect(page.getByTestId("ec-minors-note")).toContainText(/own agreement/);
     }, { source: `${SHEET} row 4; ${E2E} step 4` });
@@ -589,7 +589,8 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
     await page.getByTestId("ec-pi").fill(FILL.ec.pi);
     await toastGoes(); // the ethics statement's "Inserted" has gone, so the toast the check sees is the consent form's
     await page.getByTestId("consent-generate").click();
-    const form = consentMarkdown({ title: FILL.ec.title, pi: FILL.ec.pi, what: "", risks: "", benefits: "", contact: "" });
+    // The form follows the under-18 answer this case gave (FILL.ec.minors): the parent's permission and the young person's agreement are in it (register D-S2-113, ruling R14).
+    const form = consentMarkdownV2({ title: FILL.ec.title, pi: FILL.ec.pi, what: "", risks: "", benefits: "", contact: "", minors: FILL.ec.minors }, {});
     if (typeof form !== "string") throw new Error("core refused a consent form with a title and an investigator: " + form.error);
     await qa.check("data", "with both filled an \"Inserted\" message appears and the document ends with the consent form: its heading, my title and investigator, the sections, \"[describe]\" where I left one empty, and two signature lines last", async () => {
       await expect(page.getByTestId("toast"), "the toast of this insert").toContainText(T("design_inserted"));
@@ -935,7 +936,7 @@ test("S3-02 [O1] the consent form for under-18s holds a parent's permission and 
   await qa.step("answer that some are under 18", async () => {
     await page.getByTestId("ec-minors").selectOption("yes");
     await qa.check("data", "the note about under-18s appears as soon as I choose \"Yes, some are under 18\"", async () => {
-      await expect(page.getByTestId("ec-minors-note")).toHaveText(ecMinorsNote("yes"));
+      await expect(page.getByTestId("ec-minors-note")).toHaveText(ecMinorsNoteV2("yes"));
     }, { source: `${SHEET} row 4` });
   });
 

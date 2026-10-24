@@ -78,3 +78,18 @@ export const cursorInParagraph = (editor: Locator, needle: string, offset: numbe
 export const cursorToEnd = (editor: Locator) => place(editor, { kind: "end" });
 /** Selects from the start of `from` to the end of `to`, the first of each in the document, the way a drag would. */
 export const selectText = (editor: Locator, from: string, to: string = from) => place(editor, { kind: "range", from, to });
+
+/**
+ * Selects the paragraph holding `text` and waits for the selection bubble (components/document/SelectionBubble.tsx). The cursor goes into the paragraph first and is given a moment, so
+ * the selection really changes: selecting the same paragraph again straight after (a step that cancels a request and asks again) is no change to the editor and raises no bubble, and
+ * the scroll into view can hide a bubble the editor had just shown again (the bubble hides on any scroll). Retried until the bubble shows.
+ */
+export async function selectBlockForBubble(editor: Locator, text: string): Promise<void> {
+  const page = editor.page();
+  await expect(async () => {
+    await cursorInParagraph(editor, text, 0);
+    await page.waitForTimeout(200);
+    await selectBlockWith(editor, text);
+    await expect(page.getByTestId("sel-bubble")).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 30_000 });
+}

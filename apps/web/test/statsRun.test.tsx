@@ -28,7 +28,9 @@ const h = vi.hoisted(() => ({
   confirm: vi.fn(() => true),
   insert: vi.fn(async (_html: string, _o?: unknown) => true),
   api: vi.fn(),
-  askPd: vi.fn(async (_sc: unknown) => "send" as "send" | "mask" | "cancel"),
+  /** The project's names for callAI's own check (Task 11); null: none, as for a window with no project. */
+  names: null as null | { list: unknown; mode: "codes" | "pseudonyms" | "anonymous" | null; locked: boolean },
+  askPd: vi.fn(async (_sc: unknown) => ({ answer: "send", leave: [] as string[] }) as { answer: "send" | "mask" | "cancel"; leave: string[] }),
   calls: [] as string[],
   /** Re-draws every blob hook of the mounted tab (a read that finished, a vault that opened). */
   forces: new Set<() => void>()
@@ -48,12 +50,15 @@ vi.mock("@/lib/ai/useCallAI", async () => {
   return {
     useCallAI: () => (prompt: string, opts: { temp?: number; max?: number } = {}) => callAI(prompt, opts, {
       provider: "gemini", blobs: {}, fallbackOn: false, contentLang: "en", projectId: "p1",
-      askPassphrase: async () => null, askPd: async (sc) => { h.calls.push("askPd"); return h.askPd(sc); }, openSettings: () => {}, onFailover: () => {}
+      askPassphrase: async () => null, askPd: async (sc) => { h.calls.push("askPd"); return h.askPd(sc); }, openSettings: () => {}, onFailover: () => {},
+      ...(h.names ? { names: async () => h.names as unknown as import("../lib/ai/names").NamesCtx } : {})
     })
   };
 });
 // The Run area's own personal-data question (names written in the request), answered by the test like callAI's.
 vi.mock("@/lib/ai/pdDialog", () => ({ askPd: async (sc: unknown) => { h.calls.push("askPd"); return h.askPd(sc); } }));
+// The Data tab reads the participant list (Task 10), which needs the vault's state. These tests have no vault, so no list is used and the personal-details box is v1's.
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useReducer, useRef, useEffect } = await import("react");
   return {
@@ -150,10 +155,10 @@ beforeEach(() => {
   resetPdMemo();
   for (const k of Object.keys(h.store)) delete h.store[k];
   for (const o of [h.broken, h.loading, h.locked, h.error]) for (const k of Object.keys(o)) delete o[k];
-  h.writes.length = 0; h.calls.length = 0;
+  h.writes.length = 0; h.calls.length = 0; h.names = null;
   h.toast.mockClear(); h.insert.mockReset(); h.insert.mockResolvedValue(true);
   h.confirm.mockReset(); h.confirm.mockReturnValue(true);
-  h.api.mockReset(); h.askPd.mockReset(); h.askPd.mockResolvedValue("send");
+  h.api.mockReset(); h.askPd.mockReset(); h.askPd.mockResolvedValue({ answer: "send", leave: [] });
   vi.stubGlobal("confirm", h.confirm);
   window.confirm = h.confirm as typeof window.confirm;
   keyStore.setSession("gemini", "AIza-test");
@@ -546,7 +551,7 @@ describe("Explain in plain language", () => {
   }
 
   it("explain scans first and the blob holds no row", async () => {
-    let answer!: (v: "mask" | "send" | "cancel") => void;
+    let answer!: (v: { answer: "mask" | "send" | "cancel"; leave: string[] }) => void;
     h.askPd.mockImplementation(() => new Promise((res) => { answer = res; }));
     h.api.mockResolvedValue({ text: "  The groups differ.  ", model: "m" });
     await ready();
@@ -562,7 +567,7 @@ describe("Explain in plain language", () => {
     expect(tid("stats-explain-busy")).not.toBeNull();
 
     // 2. cancel: nothing is ever sent, and the student is told
-    await act(async () => { answer("cancel"); });
+    await act(async () => { answer({ answer: "cancel", leave: [] }); });
     await settle();
     expect(h.api).not.toHaveBeenCalled();
     expect(text("stats-explain-cancelled")).toBe("Cancelled. Nothing was sent to the AI provider.");
@@ -575,7 +580,7 @@ describe("Explain in plain language", () => {
     await settle();
     expect(h.askPd).toHaveBeenCalledTimes(2);
     expect(h.api).not.toHaveBeenCalled();
-    await act(async () => { answer("mask"); });
+    await act(async () => { answer({ answer: "mask", leave: [] }); });
     await settle();
     expect(h.calls).toEqual(["askPd", "askPd", "api"]);
     expect(h.api).toHaveBeenCalledTimes(1);
@@ -608,7 +613,7 @@ describe("Explain in plain language", () => {
 
   it("send as it is: one request, flagged as accepted; the request still carries no row", async () => {
     h.api.mockResolvedValue({ text: "It differs.", model: "m" });
-    h.askPd.mockResolvedValue("send");
+    h.askPd.mockResolvedValue({ answer: "send", leave: [] });
     await ready();
     await click("stats-explain");
     await settle();
@@ -649,7 +654,7 @@ describe("Explain: a participant's name in the request (rule 2, Review Focus 2)"
   const bodyOf = () => JSON.parse((h.api.mock.calls[0]![1] as { body: string }).body) as { prompt: string };
 
   it("the dialog shows before any request; cancel sends nothing", async () => {
-    let answer!: (v: "mask" | "send" | "cancel") => void;
+    let answer!: (v: { answer: "mask" | "send" | "cancel"; leave: string[] }) => void;
     h.askPd.mockImplementation(() => new Promise((res) => { answer = res; }));
     await readyNamed();
     await click("stats-explain");
@@ -657,7 +662,7 @@ describe("Explain: a participant's name in the request (rule 2, Review Focus 2)"
     expect(h.calls).toEqual(["askPd"]);
     expect(h.api).not.toHaveBeenCalled();
     expect(h.askPd.mock.calls[0]![0]).toMatchObject({ counts: { name: 3 }, total: 3 });
-    await act(async () => { answer("cancel"); });
+    await act(async () => { answer({ answer: "cancel", leave: [] }); });
     await settle();
     expect(h.api).not.toHaveBeenCalled();
     expect(h.calls).toEqual(["askPd"]);
@@ -666,7 +671,7 @@ describe("Explain: a participant's name in the request (rule 2, Review Focus 2)"
   });
 
   it("mask: the request has no name, carries the same code for the same name in the tables, and the answer comes back", async () => {
-    h.askPd.mockResolvedValue("mask");
+    h.askPd.mockResolvedValue({ answer: "mask", leave: [] });
     h.api.mockResolvedValue({ text: "[name 1] scored lower.", model: "m" });
     await readyNamed();
     await click("stats-explain");
@@ -684,13 +689,29 @@ describe("Explain: a participant's name in the request (rule 2, Review Focus 2)"
   });
 
   it("send as it is: one request with the names in it", async () => {
-    h.askPd.mockResolvedValue("send");
+    h.askPd.mockResolvedValue({ answer: "send", leave: [] });
     h.api.mockResolvedValue({ text: "ok", model: "m" });
     await readyNamed();
     await click("stats-explain");
     await settle();
     expect(h.api).toHaveBeenCalledTimes(1);
     expect(h.askPd).toHaveBeenCalledTimes(1);
+    expect(bodyOf().prompt).toContain("Priya Nair");
+  });
+
+  it("with the participant list open, send as it is is asked once: callAI's own check for names skips the names this step asked about (Task 11)", async () => {
+    const { emptyList } = await import("../lib/blobs/kinds/participants");
+    const { addPerson } = await import("../lib/tools/participants/list");
+    // Priya Nair and Amit Rao are on the list; Sara Khan is not (her first name would be a suggestion). All three are group labels in the table, so all three were asked about.
+    const list = ["Priya Nair", "Amit Rao"].reduce((l, name) => addPerson(l, { name, spellings: [], joined: "2026-10-01" }).list, emptyList());
+    h.names = { list, mode: "codes", locked: false };
+    h.askPd.mockResolvedValue({ answer: "send", leave: [] });
+    h.api.mockResolvedValue({ text: "ok", model: "m" });
+    await readyNamed();
+    await click("stats-explain");
+    await settle();
+    expect(h.askPd).toHaveBeenCalledTimes(1);
+    expect(h.calls).toEqual(["askPd", "api"]);
     expect(bodyOf().prompt).toContain("Priya Nair");
   });
 

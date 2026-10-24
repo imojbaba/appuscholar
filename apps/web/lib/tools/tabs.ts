@@ -17,6 +17,7 @@ const tab = (stage: StageKey, id: string, tool: ToolTab["tool"]): ToolTab => ({ 
  */
 export const TOOL_TABS: ToolTab[] = [
   ...["overview", "pathway", "protocol", "ethics", "registration", "investigator", "budget", "aiuse"].map((id) => tab("design", id, "design")),
+  tab("collect", "participants", "participants"),
   ...["data", "power", "charts", "check", "scales"].map((id) => tab("collect", id, "stats")),
   tab("collect", "coding", "qual"),
   tab("writing", "style", "style"),

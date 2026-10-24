@@ -38,6 +38,7 @@ import type { HomeFacts } from "../lib/frame/homeFacts";
 // Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
 // what this file sees (session C, 2026-10-21).
 vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/participants", () => ({ built: false }));
 vi.mock("@/components/tools/qual", () => ({ built: false }));
 vi.mock("@/components/tools/style", () => ({ built: false }));
 vi.mock("@/components/tools/words", () => ({ built: false }));
@@ -61,7 +62,7 @@ afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); 
 describe("the tool registry (Task G2)", () => {
   it("turning one module's built on shows its Panel and leaves the others Not built", async () => {
     expect(toolModule("stats").built).toBe(true);
-    for (const tool of ["design", "qual", "style", "words", "close", "slides", "viva"] as const) expect(toolModule(tool).built, tool).toBe(false);
+    for (const tool of ["design", "participants", "qual", "style", "words", "close", "slides", "viva"] as const) expect(toolModule(tool).built, tool).toBe(false);
     for (const { stage, tab, tool, nextKey } of TOOL_TABS) {
       await render(<StagedPlace stage={stage} tab={tab} />);
       const where = stage + "/" + tab;
@@ -81,6 +82,11 @@ describe("the tool registry (Task G2)", () => {
     }
     // Statistics' five tabs show its Panel; Coding (qual) stays Not built in the same place.
     expect(TOOL_TABS.filter((x) => x.tool === "stats").map((x) => x.tab)).toEqual(["data", "power", "charts", "check", "scales"]);
+    // The participant list is Collection and analysis' first tab, its own module (Task 5), Not built until its panel ships (Task 6).
+    expect(TOOL_TABS.filter((x) => x.stage === "collect").map((x) => x.tab + ":" + x.tool)).toEqual([
+      "participants:participants", "data:stats", "power:stats", "charts:stats", "check:stats", "scales:stats", "coding:qual"
+    ]);
+    expect(TOOL_TABS.find((x) => x.tab === "participants")).toMatchObject({ stage: "collect", tool: "participants", labelKey: "tab_name_participants", nextKey: "collect_next_participants" });
   });
 
   it("BUILT_IN and the home's built stages follow the registry", async () => {

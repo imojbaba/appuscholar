@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from "vitest";
  */
 
 const WEB = join(__dirname, "..");
-const TOOLS = ["design", "stats", "qual", "style", "words", "close", "slides", "viva"];
+const TOOLS = ["design", "participants", "stats", "qual", "style", "words", "close", "slides", "viva"];
 const REGISTRY = join(WEB, "lib/tools/registry");
 
 /** Every .ts and .tsx file under a directory (none when it does not exist). */
@@ -43,6 +43,7 @@ function registryValueImports(file: string, src: string): string[] {
 vi.mock("@/components/tools/qual", () => vi.importActual("./fixtures/probe-tool/index"));
 // The other tool modules are pinned to their unbuilt stub, so a tool session turning its own module on never changes BUILT_IN here (session B, 2026-10-21).
 vi.mock("@/components/tools/design", () => ({ built: false }));
+vi.mock("@/components/tools/participants", () => ({ built: false }));
 vi.mock("@/components/tools/stats", () => ({ built: false }));
 vi.mock("@/components/tools/style", () => ({ built: false }));
 vi.mock("@/components/tools/words", () => ({ built: false }));
@@ -58,7 +59,7 @@ describe("the tool registry's load order (Task G2)", () => {
     expect(typeof probe.Panel).toBe("function");
     const { placeHref, PLACE_TABS } = await import("@/lib/frame/places");
     expect(placeHref("p1", "collect", "coding")).toBe("/p/p1/collect/coding");
-    expect(PLACE_TABS.collect).toEqual(["data", "power", "charts", "check", "scales", "coding"]);
+    expect(PLACE_TABS.collect).toEqual(["participants", "data", "power", "charts", "check", "scales", "coding"]);
     const registry = await import("@/lib/tools/registry");
     expect(registry.toolModule("qual").Panel).toBe(probe.Panel);
     expect([...registry.BUILT_IN].sort()).toEqual(["analyse", "chat", "cite", "idea", "psych", "research"]);

@@ -57,6 +57,8 @@ vi.mock("@/lib/editor/docAccess", () => ({
     }
   })
 }));
+// The Data tab reads the participant list (Task 10), which needs the vault's state. These tests have no vault, so no list is used and the personal-details box is v1's.
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
   const { useReducer, useRef, useEffect } = await import("react");
   return {
