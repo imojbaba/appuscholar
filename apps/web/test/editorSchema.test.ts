@@ -1,4 +1,6 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
+import { Editor } from "@tiptap/core";
 import { generateJSON, generateHTML } from "@tiptap/html";
 import { sanitizeHtml } from "@appuscholar/core";
 import { JSDOM } from "jsdom";
@@ -91,5 +93,50 @@ describe("editor schema keeps the Citation Manager's markup (Task 8b)", () => {
   it("keeps no class or padding on other paragraphs, and no title on spans that had none", () => {
     const out = roundTrip(sanitizeHtml('<p class="other" style="padding-left:2em">x</p><p><span class="ai-ins" data-h="h1">y</span></p>'));
     expect(out).toBe('<p>x</p><p><span class="ai-ins" data-h="h1">y</span></p>');
+  });
+});
+
+describe("editor schema keeps caption paragraphs and picture edits (wave D, Task 2)", () => {
+  // v1's own markup: capBlocksHTML 4501, capNoteHTML 4505, and the picture editor's data-edits (ieApply 4517-4537).
+  const CAP = '<p data-cap="figure"><strong>Figure 1</strong></p>';
+  const TABLE_CAP = '<p data-cap="table"><strong>Table 2</strong></p>';
+  const TITLE = '<p data-cap-title="1"><em>T</em></p>';
+  const NOTE = '<p data-cap-note="1"><em>Note.</em> n</p>';
+  const IMG = '<p><img src="data:image/png;base64,AAAA" data-edits="cropped, bar"></p>';
+  const ALL = CAP + TITLE + IMG + NOTE + TABLE_CAP;
+
+  it("keeps each caption paragraph attribute through the sanitiser and the schema, unchanged", () => {
+    for (const html of [CAP, TABLE_CAP, TITLE, NOTE]) {
+      expect(roundTrip(sanitizeHtml(html))).toBe(html);
+      expect(sanitizeHtml(html)).toBe(html);
+    }
+  });
+  it("keeps a picture's data-edits", () => {
+    expect(sanitizeHtml(IMG)).toBe(IMG);
+    expect(roundTrip(sanitizeHtml(IMG))).toBe(IMG);
+  });
+  it("keeps a picture's edits next to its width", () => {
+    const out = roundTrip(sanitizeHtml('<p><img src="data:image/png;base64,AAAA" style="width: 640px" data-edits="turned"></p>'));
+    expect(out).toMatch(/<img [^>]*style="width: 640px;?"/);
+    expect(out).toMatch(/<img [^>]*data-edits="turned"/);
+  });
+  it("is stable: a second round trip changes nothing", () => {
+    const out = roundTrip(sanitizeHtml(ALL));
+    expect(out).toBe(ALL);
+    expect(roundTrip(sanitizeHtml(out))).toBe(out);
+  });
+  it("gives a caption paragraph no attribute when it had none, and ignores an unknown cap value", () => {
+    expect(roundTrip(sanitizeHtml('<p data-cap="chart"><strong>Figure 1</strong></p><p><strong>Figure 2</strong></p>'))).toBe('<p><strong>Figure 1</strong></p><p><strong>Figure 2</strong></p>');
+  });
+  it("a v1-imported document keeps its caption marks and edits after the editor loads it and saves it back", () => {
+    const e = new Editor({ extensions: editorExtensions, content: sanitizeHtml(ALL) });
+    try {
+      expect(e.getHTML()).toBe(ALL);
+      const caps: unknown[] = [];
+      e.state.doc.descendants((n) => { if (n.type.name === "paragraph") caps.push([n.attrs.cap, n.attrs.capTitle, n.attrs.capNote]); });
+      expect(caps[0]).toEqual(["figure", false, false]);
+      expect(caps[1]).toEqual([null, true, false]);
+      expect(caps[3]).toEqual([null, false, true]);
+    } finally { e.destroy(); }
   });
 });
