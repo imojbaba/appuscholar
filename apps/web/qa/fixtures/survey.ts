@@ -1,14 +1,16 @@
 import { MARK, pick, seeded } from "./common";
 
 /**
- * The invented class survey (spec section 11): 120 pupils of eight invented villages, with their ages, five Likert items, a score and an open answer. Every name, village and
- * answer is made up; nothing in it is a real person or place. The file is the same from one call to the next apart from the MARK.
+ * The invented class survey (spec section 11): 120 pupils of eight villages, with their ages, five Likert items, a score and an open answer. The people and the answers are
+ * invented (the names are common ones, put together by a formula); the village names are coined, though a coined name may match a place that exists. The file is the same from
+ * one call to the next apart from the MARK.
  *
  * Its shapes are the ones the walk sheets name (docs/walkthroughs/tools-b.md rows 1 to 4, notes/2026-10-23-tools-walk.md F1):
  *  - `sep: ";"` writes the file as Excel saves it where a comma is the decimal mark: no quotes round a comma, and one `score` is written with a decimal comma. The Statistics
  *    tab reads such a file as one column and offers "Split on semicolons"; after the split the decimal comma makes `score` a text column (register row F17).
- *  - `openAnswersWithCommas: false` writes every open answer in plain words (letters, spaces, apostrophes, full stops: no comma, no digit). That is the shape v1's name rule
- *    mistakes for a column of names (F1). The default mixes both shapes, the commas of most answers inside quotes, and the scan finds long text there.
+ *  - `openAnswersWithCommas: false` writes every open answer in plain words (letters, spaces, apostrophes, full stops: no comma, no digit). That is the shape that v1's name rule
+ *    takes for a column of names (F1); what the scan does with it is for the F1 story case to assert, this file only has the shape. The default mixes both shapes, the commas
+ *    of most answers inside quotes (the walk sheet's "long text" case).
  *  - five open answers are in Devanagari; some answers hold straight double quotes (a quoted cell with doubled quotes).
  *  - one row (line `raggedLine`, counting the header as line 1) has one value too many, so the app's parser leaves it out and says which line it was.
  *

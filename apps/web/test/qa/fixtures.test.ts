@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  clCompare, clGather, clHtmlToText, clTok, pdScan, pdTestVal, sanitizeHtml, SH_MIN_CHARS, shChars, shPageText, shTitleGuess, statsParseText, wordCount, type ClShelfPaper, type ShTextItem
+  clCompare, clGather, clHtmlToText, clTok, sanitizeHtml, SH_MIN_CHARS, shChars, shPageText, shTitleGuess, statsParseText, wordCount, type ClShelfPaper, type ShTextItem
 } from "@appuscholar/core";
 import { looksSemicolon, parseSliced, semicolonsToTabs, skippedLines } from "@/lib/tools/stats/intake";
 import { MARK } from "../../qa/fixtures/common";
@@ -11,18 +11,30 @@ import { survey } from "../../qa/fixtures/survey";
 import { thesisDraft } from "../../qa/fixtures/thesis";
 
 /**
- * The QA layer's invented test data (qa/fixtures/*.ts, spec section 11). The data is held to what the app does with it: the survey to the app's own parser and
- * personal-data scan (core's statsParseText and pdScan, the Statistics tab's semicolon split), the PDFs to pdf.js and the shelf's rules, the thesis and the huge text to the
- * Closeness engine, the HTML to the document sanitiser. Each file carries the run's MARK, so that a later check can look for it in what the server stored.
+ * The QA layer's invented test data (qa/fixtures/*.ts, spec section 11). The data is held to what the app reads: the survey to the app's own parser and its semicolon split
+ * (core's statsParseText, the Statistics tab's intake), the PDFs to pdf.js and the shelf's rules, the thesis and the huge text to the Closeness engine, the HTML to the document
+ * sanitiser. Each file carries the run's MARK, so that a later check can look for it in what the server stored.
+ *
+ * These tests pin the SHAPE of the data and never what a product rule decides about it. In particular the personal-data scan's verdict on the open answers (the F1 fault: plain
+ * answers are called names) is not asserted here: the unit suite would go red the day Participants fixes F1. That belongs to the F1 story case, which carries known: "F1".
  */
 
 const DEVANAGARI = /[ऀ-ॿ]/;
 const wordsOf = (s: string): string[] => s.split(/\s+/).filter(Boolean);
 
 describe("MARK", () => {
-  it("is QAMK and six random letters, the same all through one run", () => {
+  it("is QAMK and six random letters, and every fixture carries that same one", async () => {
     expect(MARK).toMatch(/^QAMK[A-Za-z]{6}$/);
     expect(survey().csv).toContain(MARK);
+    expect(survey({ sep: ";", openAnswersWithCommas: false }).csv).toContain(MARK);
+    for (const d of interviews()) {
+      expect(d.title).toContain(MARK);
+      expect(d.html).toContain(MARK);
+    }
+    expect(thesisDraft("A sentence.")).toContain(MARK);
+    expect(hugeRows()).toContain(MARK);
+    expect(hugeWords(100)).toContain(MARK);
+    for (const p of await shelfPdfs(3)) expect(p.bytes.toString("latin1"), p.name).toContain(MARK);
   });
 });
 
@@ -77,7 +89,7 @@ describe("survey()", () => {
     expect(parsed.rows.map((r) => r[9])).toEqual(kept(s.openAnswers));
   });
 
-  it("the semicolon file is one column to the parser, offers the split, and reads as the same table after it (one score with a decimal comma is text)", () => {
+  it("the semicolon file is one column to the parser, offers the split, and reads as the same table after it (one score is written with a decimal comma)", () => {
     const s = survey({ sep: ";" });
     expect(s.openAnswers).toEqual(survey({ sep: "," }).openAnswers);
     expect(s.csv.split("\n")[0]).toBe("student name;village;age;q1;q2;q3;q4;q5;score;notes");
@@ -94,9 +106,8 @@ describe("survey()", () => {
     const scores = parsed.rows.map((r) => r[8]!);
     expect(scores.filter((v) => v.includes(","))).toHaveLength(1);
     expect(scores.filter((v) => /^\d{2}\.\d{3}$/.test(v))).toHaveLength(118);
-    // One value written with a decimal comma makes the whole column text (register row F17): the parser's rule, not ours.
-    expect(parsed.cols[8]!.type).toBe("categorical");
-    expect(parsed.cols[2]!.type).toBe("numeric");
+    // The one decimal comma is on the line the file says (line 24: row 22 of the data), and nowhere else.
+    expect(scores[22]).toMatch(/^\d{2},\d{3}$/);
   });
 
   it("the comma file has no decimal comma: score is numeric", () => {
@@ -116,7 +127,7 @@ describe("survey()", () => {
     expect(a).toBe(b);
   });
 
-  it("openAnswersWithCommas: false gives notes without commas or digits (F1's shape): the personal-data scan calls them names", () => {
+  it("openAnswersWithCommas: false gives notes in plain words, with no comma and no digit (F1's shape)", () => {
     const s = survey({ openAnswersWithCommas: false });
     const latin = s.openAnswers.filter((a) => !DEVANAGARI.test(a));
     expect(latin).toHaveLength(115);
@@ -124,28 +135,31 @@ describe("survey()", () => {
       expect(a).not.toMatch(/,/);
       expect(a).not.toMatch(/\d/);
     }
-    for (const a of latin) expect(pdTestVal("name", a), a).toBe(true);
-    const scan = pdScan(statsParseText(s.csv)!);
-    expect(scan.found.map((f) => [f.name, f.kind, f.why])).toEqual([["student name", "name", "heading"], ["village", "address", "heading"], ["notes", "name", "values"]]);
-    expect(scan.freeText).toEqual([]);
+    // Letters, apostrophes, spaces and full stops only, and more than one word: the shape of a column that looks like names, whatever a scan decides about it.
+    for (const a of latin) {
+      expect(a).toMatch(/^[\p{L}' .]+$/u);
+      expect(a).toMatch(/\s/);
+    }
+    expect(new Set(s.openAnswers).size).toBe(120);
     expect(s.csv.split("\n").every((l) => !l.includes('"'))).toBe(true);
   });
 
-  it("by default the open answers hold commas and digits, so the scan finds long text and not names, as the walk sheet expects", () => {
+  it("by default most open answers hold a comma or a digit (the commas inside quotes), some are plain, and they are long", () => {
     const s = survey();
-    expect(s.openAnswers.some((a) => a.includes(","))).toBe(true);
-    expect(s.openAnswers.some((a) => /\d/.test(a))).toBe(true);
-    expect(s.openAnswers.some((a) => !a.includes(",") && !/\d/.test(a) && !DEVANAGARI.test(a))).toBe(true);
-    const scan = pdScan(statsParseText(s.csv)!);
-    expect(scan.found.map((f) => f.name)).toEqual(["student name", "village"]);
-    expect(scan.freeText).toEqual(["notes"]);
+    const latin = s.openAnswers.filter((a) => !DEVANAGARI.test(a));
+    const rich = latin.filter((a) => /[,\d]/.test(a));
+    expect(rich.length).toBeGreaterThan(latin.length / 2);
+    expect(rich.some((a) => a.includes(","))).toBe(true);
+    expect(rich.some((a) => /\d/.test(a))).toBe(true);
+    expect(latin.length - rich.length).toBeGreaterThanOrEqual(20);
+    expect(s.openAnswers.reduce((n, a) => n + a.length, 0) / s.openAnswers.length).toBeGreaterThan(40);
   });
 
-  it("the same two things hold for the semicolon file once it is split", () => {
-    const comma = pdScan(statsParseText(semicolonsToTabs(survey({ sep: ";", openAnswersWithCommas: true }).csv))!);
-    expect(comma.freeText).toEqual(["notes"]);
-    const plain = pdScan(statsParseText(semicolonsToTabs(survey({ sep: ";", openAnswersWithCommas: false }).csv))!);
-    expect(plain.found.map((f) => f.name)).toContain("notes");
+  it("the semicolon file has the same open answers: with commas by default, in plain words with openAnswersWithCommas: false", () => {
+    expect(survey({ sep: ";" }).openAnswers).toEqual(survey({ sep: "," }).openAnswers);
+    expect(survey({ sep: ";", openAnswersWithCommas: false }).openAnswers).toEqual(survey({ sep: ",", openAnswersWithCommas: false }).openAnswers);
+    expect(survey({ sep: ";" }).openAnswers.some((a) => a.includes(","))).toBe(true);
+    expect(survey({ sep: ";", openAnswersWithCommas: false }).openAnswers.some((a) => a.includes(","))).toBe(false);
   });
 
   it("puts the MARK in the answers, so a leaked row can be found, and in no name", () => {
@@ -281,6 +295,10 @@ describe("hugeRows()", () => {
     expect(await parseSliced(text)).toEqual(statsParseText(text));
   });
 
+  it("is the same text from one call to the next", () => {
+    expect(hugeRows()).toBe(hugeRows());
+  });
+
   it("takes the number of rows asked for", () => {
     expect(hugeRows(6_000).split("\n")).toHaveLength(6_001);
   });
@@ -292,6 +310,11 @@ describe("hugeWords()", () => {
     expect(Math.abs(wordsOf(text).length - 50_000)).toBeLessThanOrEqual(10);
     expect(text).toContain(MARK);
     expect(wordsOf(hugeWords(1_000))).toHaveLength(1_000);
+  });
+
+  it("is the same text from one call to the next", () => {
+    expect(hugeWords()).toBe(hugeWords());
+    expect(hugeWords(5_000, PAPER07_PARAGRAPH)).toBe(hugeWords(5_000, PAPER07_PARAGRAPH));
   });
 
   it("holds the text it is given once, in the middle", () => {

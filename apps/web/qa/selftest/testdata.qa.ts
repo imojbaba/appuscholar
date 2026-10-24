@@ -39,6 +39,8 @@ test("testdata: a generated PDF is added to the Reading shelf as two pages, and 
         page.waitForResponse((r) => r.request().method() === "PUT" && blob.test(r.url()) && r.ok(), { timeout: 30_000 })
       )
     );
+    // If the add throws first, `saved` is never awaited: a branch with a catch of its own keeps its rejection from going unhandled (the await below still sees it).
+    saved.catch(() => undefined);
     await page.getByTestId("sh-file").setInputFiles({ name: paper.name, mimeType: "application/pdf", buffer: paper.bytes });
     await qa.check("data", "the status reads \"<file>: added, 2 pages\"", async () => {
       await expect(page.getByTestId("sh-status")).toHaveText(paper.name + T("sh2_added_pages", { pagesCount: 2 }));
@@ -54,7 +56,7 @@ test("testdata: a generated PDF is added to the Reading shelf as two pages, and 
       await expect(page.getByTestId("sh-text")).toContainText(MARK);
       await page.getByTestId("sh-next").click();
       await expect(page.getByTestId("sh-text")).toContainText(PAPER07_PARAGRAPH.slice(0, 60));
-    });
+    }, { source: "e2e: stage2-idea-literature step 7" });
     await saved;
   });
 
