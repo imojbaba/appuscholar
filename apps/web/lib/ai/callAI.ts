@@ -58,11 +58,13 @@ export type CallCtx = {
 };
 
 /**
- * The sentence for a per-user quota answer. `detail` is "hour:<seconds to wait>" or "day:<seconds>": the hour says how long to wait in whole
- * minutes (rounded up), the day says to come back tomorrow. In Hindi (a draft for the Hindi reader) when the page language is hi.
+ * The sentence for a per-user quota answer. `detail` is "minute:<seconds>", "hour:<seconds to wait>" or "day:<seconds>": the minute says to wait a
+ * moment (the wait is under a minute), the hour says how long to wait in whole minutes (rounded up), the day says to come back tomorrow.
+ * In Hindi (a draft for the Hindi reader) when the page language is hi.
  */
 function quotaMessage(detail?: string): string {
   const lang = typeof document !== "undefined" && document.documentElement.lang === "hi" ? "hi" : "en";
+  if (/^minute:\d+$/.test(detail ?? "")) return tFormat(DICTS.en, DICTS.hi, "ai_quota_minute", lang);
   const m = /^hour:(\d+)$/.exec(detail ?? "");
   if (!m) return tFormat(DICTS.en, DICTS.hi, "ai_quota_day", lang);
   const minutes = Math.max(1, Math.ceil(Number(m[1]) / 60));

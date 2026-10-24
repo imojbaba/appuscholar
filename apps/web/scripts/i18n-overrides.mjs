@@ -528,7 +528,8 @@ export const V2_STRINGS = {
   // The Menu's language item names the other language in itself: Hindi in the English interface, English in the Hindi one.
   menu_lang_other: { en: "हिन्दी", hi: "English" },
   doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" },
-  // Go-live Task 1: the per-user AI quota answer (hour: minutes to wait, rounded up; day: try tomorrow). DRAFT Hindi.
+  // Go-live Task 1: the per-user AI quota answer (minute: wait a moment; hour: minutes to wait, rounded up; day: try tomorrow). DRAFT Hindi.
+  ai_quota_minute: { en: "Too many AI requests in a minute. Wait a moment and try again.", hi: "एक मिनट में AI के बहुत ज़्यादा अनुरोध हो गए हैं। थोड़ा रुकें और फिर कोशिश करें।" },
   ai_quota_day: { en: "You have used your AI calls for today. Try again tomorrow.", hi: "आपने आज के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। कल फिर कोशिश करें।" },
   ai_quota_hour: { en: "You have used your AI calls for this hour. Try again in {minutes} minutes.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। {minutes} मिनट बाद फिर कोशिश करें।" },
   ai_quota_hour_one: { en: "You have used your AI calls for this hour. Try again in 1 minute.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। 1 मिनट बाद फिर कोशिश करें।" },
