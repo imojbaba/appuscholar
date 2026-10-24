@@ -26,7 +26,7 @@ function walk(dir: string, ext: (p: string) => boolean = p => p.endsWith(".tsx")
 const STAGE2_TS_KNOWN = [
   'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "Book"', 'lib/cite/form.ts "Website"', 'lib/cite/form.ts "Book chapter"',
   'lib/cite/form.ts "Report"', 'lib/cite/form.ts "Conference paper"', 'lib/cite/form.ts "Journal article"', 'lib/cite/form.ts "year"',
-  'lib/research/library.ts "Journal article"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "PubMed"',
+  'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "year"', 'lib/research/useSearch.ts "PubMed"',
   'lib/blobs/kinds.ts "year"',
   'lib/ai/callAI.ts "Wrong passphrase — nothing was unlocked. Try again."',
 ];

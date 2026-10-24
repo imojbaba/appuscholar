@@ -1,18 +1,17 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildGapFinderPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, rsCorpusText, rsCsvText, type CitationEntry, type RsPaper, type RsQuick } from "@appuscholar/core";
+import { buildGapFinderPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, rsCorpusText, rsCsvText, type RsPaper, type RsQuick } from "@appuscholar/core";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
 import { gapFinder, litReview, quickRead, quickReadTicked, type GeneratorDeps, type QuickDeps } from "../lib/ai/actions";
-import { addManual, type ManualDeps } from "../lib/research/library";
 import { analysePaper, downloadCsv, EXTERNAL, filterStat, openExternal } from "../lib/research/extras";
 import { filterVals, FILTER_EMPTY, shownResults } from "../lib/research/useSearch";
 
 /*
  * Task 10's pure orchestration: the quick read (rsQuickP / rsQuickChecked 8171-8190), the two generators (researchLitReview / researchGapFinder
- * 8530-8551), the manual add (rsAddManual 8435-8454), the Analyse handoff (rsAnalyse 8407-8419), the external search buttons (rsOpenExternal
+ * 8530-8551), the Analyse handoff (rsAnalyse 8407-8419), the external search buttons (rsOpenExternal
  * 8424-8434), the CSV (rsCsvDownload 8196) and the filters (rsFilterVals / rsApplySort 8332-8374). Replies come from the research golden fixture's
  * `quick` cases, so the expected RsQuick is the one v1's rsQuickCheck returned.
  */
@@ -162,82 +161,6 @@ describe("the literature review and the research gap (researchLitReview / resear
       expect(g.log.toasts).toEqual([]);
     });
   }
-});
-
-function manualDeps(lib: CitationEntry[] = [], known = true) {
-  const log = { toasts: [] as string[], updates: [] as Array<(prev: CitationEntry[]) => CitationEntry[]>, cleared: 0 };
-  let release: (ok: boolean) => void = () => {};
-  const d: ManualDeps = {
-    lib, known, t,
-    update: (fn) => { log.updates.push(fn); return true; },
-    whenRead: () => new Promise<boolean>((r) => { release = r; }),
-    toast: (m) => { log.toasts.push(m); },
-    clear: () => { log.cleared++; }
-  };
-  return { d, log, release: (ok: boolean) => release(ok) };
-}
-const FIELDS = { title: "  Peer support in hostels ", author: " Rao, P. ", year: " 2024 ", source: " Indian J Psych ", doi: " 10.1/x " };
-
-describe("addManual (rsAddManual 8435-8454)", () => {
-  it("a title is required", () => {
-    const { d, log } = manualDeps();
-    addManual({ ...FIELDS, title: "   " }, d);
-    expect(log.toasts).toEqual(["Enter a title first"]);
-    expect(log.updates).toEqual([]);
-    expect(log.cleared).toBe(0);
-  });
-
-  it("v1's record, trimmed, as an update; the five fields cleared; v1's toast", () => {
-    const { d, log } = manualDeps();
-    addManual(FIELDS, d);
-    const entry = { author: "Rao, P.", year: "2024", title: "Peer support in hostels", source: "Indian J Psych", volume: "", issue: "", pages: "", doi: "10.1/x", url: "", type: "Journal article", style: "apa" };
-    expect(log.updates).toHaveLength(1);
-    expect(log.updates[0]!([])).toEqual([entry]);
-    expect(Object.keys(log.updates[0]!([])[0]!)).toEqual(Object.keys(entry));
-    expect(log.cleared).toBe(1);
-    expect(log.toasts).toEqual(["Added to citation library ✓"]);
-  });
-
-  it("the duplicate rule is title and author (8448): the same title by another author is added", () => {
-    const same = { title: "Peer support in hostels", author: "Rao, P." };
-    const { d, log } = manualDeps([same]);
-    addManual(FIELDS, d);
-    expect(log.toasts).toEqual(["Already in your library"]);
-    expect(log.updates).toEqual([]);
-    expect(log.cleared).toBe(0);
-    const other = manualDeps([{ ...same, author: "Iyer, S." }]);
-    addManual(FIELDS, other.d);
-    expect(other.log.toasts).toEqual(["Added to citation library ✓"]);
-    expect(other.log.updates[0]!([{ ...same, author: "Iyer, S." }])).toHaveLength(2);
-  });
-
-  it("while the library is unread: the update re-checks the stored entries, and the toast and the clearing wait for the read", async () => {
-    const m = manualDeps([], false);
-    addManual(FIELDS, m.d);
-    expect(m.log.toasts).toEqual([]);
-    expect(m.log.cleared).toBe(0);
-    const stored = [{ title: "Peer support in hostels", author: "Rao, P." }];
-    expect(m.log.updates[0]!(stored)).toBe(stored);
-    m.release(true);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(m.log.toasts).toEqual(["Already in your library"]);
-    expect(m.log.cleared).toBe(0);
-
-    const n = manualDeps([], false);
-    addManual(FIELDS, n.d);
-    expect(n.log.updates[0]!([])).toHaveLength(1);
-    n.release(true);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(n.log.toasts).toEqual(["Added to citation library ✓"]);
-    expect(n.log.cleared).toBe(1);
-
-    const declined = manualDeps([], false);
-    addManual(FIELDS, declined.d);
-    declined.release(false);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(declined.log.toasts).toEqual([]);
-    expect(declined.log.cleared).toBe(0);
-  });
 });
 
 describe("analysePaper (rsAnalyse 8407-8419)", () => {

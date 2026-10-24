@@ -15,13 +15,12 @@ vi.mock("@appuscholar/core", async (orig) => {
 import { pickedTerms, rankPapers, suggestTerms } from "../lib/ai/actions";
 import { runSearch, sortedResults, type SearchDeps, type SearchInput } from "../lib/research/useSearch";
 import { rankNote, statusLine } from "../lib/research/status";
-import { addResult, insertResult, type AddDeps } from "../lib/research/library";
 
 /*
  * runSearch (v1 researchSearch 8283-8330) as pure orchestration: the refusals, the fetchers' inputs, the merge and the de-duplication over the
  * responses Task 4 recorded live (packages/core/test/fetch/recorded), and the status line, byte-equal to v1's #rsStatus for the same runs
- * (packages/core/test/golden/fetch/cases.json, captured by running v1 over the same recordings). Also the rank batches, the related terms and the
- * result-to-library rules (rsAddToLibrary 8471-8483, rsInsertCitation 8486-8491).
+ * (packages/core/test/golden/fetch/cases.json, captured by running v1 over the same recordings). Also the rank batches and the related terms. A result into the
+ * library (v1 rsAddToLibrary 8471-8483, rsInsertCitation 8486-8491) is Keep now: test/keep.test.ts.
  */
 
 const E = en as Record<string, string>;
@@ -269,100 +268,6 @@ describe("Suggest related terms (rsSuggestTerms 8251-8263)", () => {
     const s = { base: "exam anxiety", terms: ["a b", "c d", "e f"], picked: [true, false, true] };
     expect(pickedTerms(s, "exam anxiety")).toEqual(["a b", "e f"]);
     expect(pickedTerms(s, "exam anxiety and sleep")).toEqual([]);
-  });
-});
-
-describe("a result into the library (rsAddToLibrary 8471-8483, rsInsertCitation 8486-8491)", () => {
-  // Wave A (W2): addResult then asks Crossref for an OpenAlex paper's volume, issue and pages; here Crossref is offline, so nothing is filled (research.test.tsx covers the fill).
-  const offline = (async () => { throw new TypeError("Failed to fetch"); }) as typeof fetch;
-  const noFill = () => true;
-  const oaPaper = { source: "OpenAlex", title: "Growth mindset and grades", authors: "Carol S. Dweck, David Yeager, et al.", year: "2019", venue: "Nature", doi: "10.1038/S41586-019-1466-Y", url: "https://doi.org/10.1038/s41586-019-1466-y", retracted: false, citationCount: 3 };
-  function make(lib: core.CitationEntry[] = [], updateOk = true) {
-    const log = { toasts: [] as string[], seeds: [] as Array<[string, boolean]>, next: null as core.CitationEntry[] | null, inserted: [] as core.Formatted[] };
-    const d: AddDeps & { insert(f: core.Formatted): Promise<boolean> } = {
-      lib, style: "apa", t, known: true, whenRead: async () => true, fetch: offline, fillEmpty: noFill,
-      update: (fn) => { if (!updateOk) return false; log.next = fn(lib); return true; },
-      seedRetraction: (doi, flag) => { log.seeds.push([doi, flag]); },
-      toast: (m) => { log.toasts.push(m); },
-      insert: async (f) => { log.inserted.push(f); return true; }
-    };
-    return { d, log };
-  }
-  it("+ Citation library: core's entry appended, the retraction cache seeded, v1's toast", () => {
-    const { d, log } = make();
-    const r = addResult(oaPaper, d);
-    expect(r!.entry).toEqual(core.rsEntryFromResult(oaPaper, "apa"));
-    expect(log.next).toEqual([core.rsEntryFromResult(oaPaper, "apa")]);
-    expect(log.seeds).toEqual([["10.1038/S41586-019-1466-Y", false]]);
-    expect(log.toasts).toEqual(["Added to citation library ✓ — check author formatting before you submit"]);
-  });
-  it("a retracted result toasts retr_added_warn; a PubMed result seeds nothing", () => {
-    const a = make();
-    addResult({ ...oaPaper, retracted: true }, a.d);
-    expect(a.log.toasts).toEqual([E.retr_added_warn]);
-    expect(a.log.seeds).toEqual([["10.1038/S41586-019-1466-Y", true]]);
-    const b = make();
-    addResult({ ...oaPaper, source: "PubMed", doi: "" }, b.d);
-    expect(b.log.seeds).toEqual([]);
-  });
-  it("the same title already in the library: 'Already in your library', nothing added (8475, the title only)", () => {
-    const { d, log } = make([{ author: "Someone, Else", title: "Growth mindset and grades", year: "2001" }]);
-    addResult(oaPaper, d);
-    expect(log.toasts).toEqual(["Already in your library"]);
-    expect(log.next).toBeNull();
-    expect(log.seeds).toEqual([]);
-  });
-  it("added while the library is unread, a title the stored library holds is not added twice: once read, 'Already in your library', no seed", async () => {
-    const stored = [{ author: "X, Y", title: "Growth mindset and grades" }];
-    const log = { next: null as core.CitationEntry[] | null, toasts: [] as string[], seeds: 0 };
-    let read!: (ok: boolean) => void;
-    const whenRead = () => new Promise<boolean>((r) => { read = r; });
-    // the blob applies the update to a stand-in while unread, then to the stored library once it is read
-    let apply!: () => void;
-    addResult(oaPaper, { lib: [], style: "apa", t, known: false, whenRead, fetch: offline, fillEmpty: noFill, toast: (m) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; },
-      update: (fn) => { fn([]); apply = () => { log.next = fn(stored); }; return true; } });
-    expect(log.toasts).toEqual([]);
-    apply();
-    read(true);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(log.next).toEqual(stored);
-    expect(log.toasts).toEqual(["Already in your library"]);
-    expect(log.seeds).toBe(0);
-  });
-  it("added while unread and new: once read, the seed and v1's toast; a read still declined says nothing", async () => {
-    const log = { toasts: [] as string[], seeds: 0 };
-    const base = { lib: [], style: "apa" as const, t, known: false, fetch: offline, fillEmpty: noFill, toast: (m: string) => { log.toasts.push(m); }, seedRetraction: () => { log.seeds++; }, update: (fn: (p: core.CitationEntry[]) => core.CitationEntry[]) => { fn([]); return true; } };
-    addResult(oaPaper, { ...base, whenRead: async () => true });
-    await new Promise((r) => setTimeout(r, 0));
-    expect(log.toasts).toEqual(["Added to citation library ✓ — check author formatting before you submit"]);
-    expect(log.seeds).toBe(1);
-    addResult(oaPaper, { ...base, whenRead: async () => false });
-    await new Promise((r) => setTimeout(r, 0));
-    expect(log.toasts).toHaveLength(1);
-    expect(log.seeds).toBe(1);
-  });
-  it("Insert citation saves quietly, then inserts with the library's number and toasts rs_inserted", async () => {
-    const { d, log } = make([{ author: "A, B", title: "Other", year: "2000" }]);
-    d.style = "vancouver";
-    await insertResult(oaPaper, d);
-    expect(log.next).toHaveLength(2);
-    expect(log.inserted).toEqual([core.citFmt(core.rsEntryFromResult(oaPaper, "vancouver"), 2, "vancouver")]);
-    expect(log.toasts).toEqual([E.rs_inserted]);
-  });
-  it("Insert citation of a saved title inserts the saved entry, adds nothing", async () => {
-    const saved = { author: "Dweck, C.", title: "Growth mindset and grades", year: "2019" };
-    const { d, log } = make([saved]);
-    await insertResult({ ...oaPaper, retracted: true }, d);
-    expect(log.next).toBeNull();
-    expect(log.inserted).toEqual([core.citFmt(saved, 0, "apa")]);
-    expect(log.toasts).toEqual([E.retr_added_warn]);
-  });
-  it("Insert citation whose document did not open still saves the paper and claims no insert (Task 11)", async () => {
-    const { d, log } = make();
-    d.insert = async () => false;
-    await insertResult(oaPaper, d);
-    expect(log.next).toEqual([core.rsEntryFromResult(oaPaper, "apa")]);
-    expect(log.toasts).toEqual([]);
   });
 });
 

@@ -525,7 +525,52 @@ export const V2_STRINGS = {
   hdr_menu: { en: "Menu", hi: "मेन्यू" },
   // The Menu's language item names the other language in itself: Hindi in the English interface, English in the Hindi one.
   menu_lang_other: { en: "हिन्दी", hi: "English" },
-  doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" }
+  doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" },
+  // Wave B Task 18 (register D-S2-123): Find, with one Keep per paper (canvas Find). The search, its AI terms, the filters beside the results, the count, the sort,
+  // the result and its More menu. DRAFT Hindi throughout, in the register of the keys above (AI and the sources' names kept in Latin).
+  find_searching_on: { en: "Searching for papers on", hi: "शोध-पत्र खोजने का विषय" },
+  find_topic_ph: { en: "e.g. social media use and adolescent anxiety", hi: "जैसे: सोशल मीडिया का उपयोग और किशोरों की चिंता" },
+  find_search_btn: { en: "Search", hi: "खोजें" },
+  find_suggest_terms: { en: "Suggest related terms", hi: "संबंधित शब्द सुझाएँ" },
+  find_terms_label: { en: "Also searching, suggested by AI from your question:", hi: "इन्हें भी खोज रहे हैं, आपके प्रश्न से AI के सुझाए हुए:" },
+  find_terms_thinking: { en: "Thinking of other ways to say this…", hi: "इसे कहने के दूसरे तरीके सोचे जा रहे हैं…" },
+  find_terms_none: { en: "No useful related terms came back. Search with your own words, or try again.", hi: "कोई उपयोगी संबंधित शब्द नहीं मिला। अपने शब्दों से खोजें, या फिर कोशिश करें।" },
+  find_filters_h: { en: "Narrow the results", hi: "परिणाम सीमित करें" },
+  find_kind_label: { en: "Kind of study", hi: "अध्ययन का प्रकार" },
+  find_design_hint: { en: "Used the next time you search.", hi: "अगली बार खोजने पर लागू होगा।" },
+  find_year_label: { en: "Published from", hi: "इस वर्ष से प्रकाशित" },
+  find_year_ph: { en: "Any year", hi: "कोई भी वर्ष" },
+  find_free_only: { en: "Free full text only", hi: "केवल निःशुल्क पूरा पाठ" },
+  find_hide_retracted: { en: "Hide retracted papers", hi: "वापस लिए गए शोध-पत्र छिपाएँ" },
+  find_rank_label: { en: "Rank by fit to my question (AI)", hi: "मेरे प्रश्न से मेल के अनुसार क्रम (AI)" },
+  find_rank_hint: {
+    en: "Fetches about 40 papers, then your AI reads their titles and abstracts (roughly 5,000 to 10,000 words sent) and rates each from 0 to 3. Ratings are suggestions; nothing is hidden or deleted.",
+    hi: "लगभग 40 शोध-पत्र लाता है, फिर आपका AI उनके शीर्षक और सार पढ़कर (लगभग 5,000 से 10,000 शब्द भेजे जाते हैं) हर एक को 0 से 3 तक आँकता है। ये आकलन सुझाव हैं; कुछ भी छिपाया या मिटाया नहीं जाता।"
+  },
+  find_sources: { en: "Sources: OpenAlex and PubMed. Not finding it?", hi: "स्रोत: OpenAlex और PubMed। नहीं मिल रहा?" },
+  find_scholar: { en: "Search Google Scholar", hi: "Google Scholar पर खोजें" },
+  find_count: { en: "{total} papers. Showing {shown} that match your filters.", hi: "{total} शोध-पत्र। आपके फ़िल्टर से मेल खाने वाले {shown} दिखाए जा रहे हैं।" },
+  find_sort: { en: "Sort", hi: "क्रम" },
+  find_cited: { en: "Cited {n} times.", hi: "{n} बार उद्धृत।" },
+  find_cited_one: { en: "Cited 1 time.", hi: "1 बार उद्धृत।" },
+  find_badge_free: { en: "Free PDF", hi: "निःशुल्क PDF" },
+  find_badge_retracted: { en: "Retracted", hi: "वापस लिया गया" },
+  find_badge_sample: { en: "Sample: {n}", hi: "नमूना: {n}" },
+  find_fit: { en: "Fit {n} of 3", hi: "मेल 3 में से {n}" },
+  find_why: { en: "Why it fits (AI): {reason}", hi: "यह क्यों मेल खाता है (AI): {reason}" },
+  find_why_title: { en: "Why it fits (AI): {reason} Rated from the title only.", hi: "यह क्यों मेल खाता है (AI): {reason} केवल शीर्षक से आँका गया।" },
+  find_keep: { en: "Keep", hi: "रखें" },
+  find_kept: { en: "Kept", hi: "रखा गया" },
+  find_more: { en: "More", hi: "और" },
+  find_more_aria: { en: "More actions for {title}", hi: "{title} के लिए और विकल्प" },
+  find_item_cite: { en: "Put a citation in my document", hi: "मेरे दस्तावेज़ में उद्धरण डालें" },
+  find_item_open: { en: "Open the paper", hi: "शोध-पत्र खोलें" },
+  find_item_pdf: { en: "Get the free PDF", hi: "निःशुल्क PDF पाएँ" },
+  find_item_connected: { en: "Papers connected to this one", hi: "इससे जुड़े शोध-पत्र" },
+  find_item_quick: { en: "Quick read", hi: "त्वरित समीक्षा" },
+  find_item_read: { en: "Read it now", hi: "अभी पढ़ें" },
+  find_fold: { en: "{n} probably not relevant (fit 0 or 1). Nothing is deleted.", hi: "{n} शायद प्रासंगिक नहीं (मेल 0 या 1)। कुछ भी मिटाया नहीं गया।" },
+  find_library_error: { en: "Your saved papers could not be reached. Check your connection, then press Keep again.", hi: "आपके सहेजे हुए शोध-पत्र तक पहुँचा नहीं जा सका। अपना कनेक्शन जाँचें, फिर 'रखें' दोबारा दबाएँ।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

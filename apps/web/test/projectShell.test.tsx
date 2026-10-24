@@ -37,7 +37,7 @@ vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { 
 vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ index: null }) }));
 vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
-vi.mock("@/components/tools/research/ResearchPanel", () => ({ ResearchPanel: () => <div data-testid="panel-research" /> }));
+vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div data-testid="panel-analyse" /> }));
@@ -117,7 +117,7 @@ describe("ProjectShell", () => {
     h.path = "/p/p1/lit/find";
     const page = await PlacePage({ params: Promise.resolve({ projectId: "p1", stage: "lit", tab: ["find"] }) });
     const host = await mount("p1", page);
-    await until(() => !!host.querySelector('[data-testid="panel-research"]'));
+    await until(() => !!host.querySelector('[data-testid="panel-find"]'));
     expect(ws().place).toEqual({ stage: "lit", tab: "find" });
     expect(ws().projectId).toBe("p1");
     // The place keeps its address: nothing navigates away on load.

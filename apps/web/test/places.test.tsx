@@ -42,7 +42,7 @@ vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => vi.fn() }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
-vi.mock("@/components/tools/research/ResearchPanel", () => ({ ResearchPanel: () => <div data-testid="panel-research" /> }));
+vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], ask: () => {} }), ChatPanel: () => <div data-testid="chat-panel" /> }));
@@ -117,7 +117,7 @@ describe("Literature (Task 10)", () => {
 
   it("each Literature tab ends with its suggested next line", async () => {
     const content: Record<string, string[]> = {
-      find: ["panel-research"],
+      find: ["panel-find"],
       reading: ["sh-body", "read-a-paper", "panel-analyse"],
       compare: ["shelf-matrix", "ap-across"],
       citations: ["panel-cite"]
@@ -153,7 +153,7 @@ describe("Literature waits for the paper ids (wave B, Task 17, ruling B2-R6)", (
     h.paperIds = "running";
     await mount("lit", "find");
     expect(tid("panel-loading")).not.toBeNull();
-    expect(tid("panel-research")).toBeNull();
+    expect(tid("panel-find")).toBeNull();
     expect(tid("place-tabs")).not.toBeNull();
     expect(tid("lit-next")).not.toBeNull();
   });
@@ -171,17 +171,17 @@ describe("Literature waits for the paper ids (wave B, Task 17, ruling B2-R6)", (
   it("a body that is showing stays when the migration runs again (after a lock and an unlock)", async () => {
     h.paperIds = "done";
     await mount("lit", "find");
-    expect(tid("panel-research")).not.toBeNull();
+    expect(tid("panel-find")).not.toBeNull();
     h.paperIds = "running";
     await rerender("lit", "find");
-    expect(tid("panel-research")).not.toBeNull();
+    expect(tid("panel-find")).not.toBeNull();
     expect(tid("panel-loading")).toBeNull();
   });
 
   it("a place whose context has no answer (older callers) renders at once", async () => {
     h.paperIds = undefined;
     await mount("lit", "find");
-    expect(tid("panel-research")).not.toBeNull();
+    expect(tid("panel-find")).not.toBeNull();
   });
 });
 

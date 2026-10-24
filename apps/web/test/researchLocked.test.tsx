@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rsEntryFromResult } from "@appuscholar/core";
+import type { RsPaper } from "@appuscholar/core";
 import { decryptText, encryptText, generateDek, generateKeypair, generateVaultKey, sealVaultCheck, unwrapKey, wrapKey, wrapPrivateKey, wrapWithPassphrase, wrapWithRecovery } from "../lib/vault/crypto";
 
 /*
- * Review Focus 1, at the panel: after a reload with the vault locked, the Research search works (it stores nothing), and "+ Citation library" asks
- * for the passphrase once and then saves the paper on top of the stored library, sealed. The panel runs with the real blob hook and vault
- * (useProjectBlob, VaultProvider), the API mocked and the passphrase dialog driven by a mock.
+ * Review Focus 1, at the Find tab: after a reload with the vault locked, the search works (it stores nothing), and Keep asks for the passphrase once and then
+ * keeps the paper on top of the stored library, sealed. The tab runs with the real blob hook and vault (useProjectBlob, VaultProvider), the API mocked and the
+ * passphrase dialog driven by a mock. Every request must have a recording (wave A LATER T10).
  */
 
 const h = vi.hoisted(() => ({ api: vi.fn(), ask: vi.fn(), toast: vi.fn() }));
@@ -29,19 +29,15 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 import { noPids } from "./support/noPids";
 import { ApiError } from "../lib/api";
 import { VaultProvider } from "../lib/vault/useVault";
-import { ResearchPanel } from "../components/tools/research/ResearchPanel";
-import { resetResearch } from "../lib/research/useSearch";
+import { FindTab } from "../components/literature/FindTab";
+import { resetResearch, setResearch } from "../lib/research/useSearch";
+import { assertAllRecorded, crossrefNotFound, recordedFetch } from "./support/recordedFetch";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const PASS = "right passphrase";
 const SMITH = { author: "Smith, John", year: "2020", title: "Sleep and memory" };
 
 const CORE_TEST = join(__dirname, "../../../packages/core/test");
-type Rec = { url: string; status: number; headers: Record<string, string | null>; body: string };
-const RECS = new Map<string, Rec>(readdirSync(join(CORE_TEST, "fetch/recorded")).filter((f) => f.endsWith(".json") && f !== "v2-manifest.json").map((f) => {
-  const r = JSON.parse(readFileSync(join(CORE_TEST, "fetch/recorded", f), "utf8")) as Rec;
-  return [r.url, r];
-}));
 type Case = { name: string; in: { topic: string }; merged: Array<Record<string, unknown> & { title: string }>; status: string };
 const OA_PLAIN = (JSON.parse(readFileSync(join(CORE_TEST, "golden/fetch/cases.json"), "utf8")) as { searches: Case[] }).searches.find((c) => c.name === "oa-plain")!;
 
@@ -76,14 +72,7 @@ async function open(w: Wire): Promise<unknown> {
   return JSON.parse(await decryptText(w.body, dek));
 }
 
-let requested: string[] = [];
-const fakeFetch = vi.fn(async (input: RequestInfo | URL) => {
-  const url = String(input);
-  requested.push(url);
-  const r = RECS.get(url);
-  if (!r) throw new TypeError("Failed to fetch");
-  return new Response(r.body, { status: r.status, headers: r.headers["content-type"] ? { "content-type": r.headers["content-type"] } : {} });
-});
+const rf = recordedFetch();
 
 const roots: Root[] = [];
 const $ = (sel: string) => document.body.querySelector<HTMLElement>(sel);
@@ -93,18 +82,18 @@ async function until(pred: () => boolean, n = 800) {
 }
 async function settle(ms = 100) { await act(async () => { await new Promise((r) => setTimeout(r, ms)); }); }
 
-beforeEach(() => { h.api.mockReset(); h.ask.mockReset(); h.toast.mockReset(); puts.length = 0; requested = []; vi.stubGlobal("fetch", fakeFetch); resetResearch(); });
-afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; vi.unstubAllGlobals(); });
+beforeEach(() => { h.api.mockReset(); h.ask.mockReset(); h.toast.mockReset(); puts.length = 0; rf.reset(); vi.stubGlobal("fetch", rf.fetch); resetResearch(); });
+afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; vi.unstubAllGlobals(); assertAllRecorded(rf); });
 
-describe("Research with the vault locked after a reload (Review Focus 1)", () => {
-  it("the search works and stores nothing; + Citation library asks once, then saves on top of the stored library", async () => {
+describe("Find with the vault locked after a reload (Review Focus 1)", () => {
+  it("the search works and stores nothing; Keep asks once, then keeps the paper on top of the stored library", async () => {
     await setup();
     // The panel's own read on mount asks (ruling R21's contract); the student cancels it.
     h.ask.mockResolvedValue(null);
     const host = document.body.appendChild(document.createElement("div"));
     const root = createRoot(host);
     roots.push(root);
-    await act(async () => { root.render(<VaultProvider><ResearchPanel /></VaultProvider>); });
+    await act(async () => { root.render(<VaultProvider><FindTab /></VaultProvider>); });
     await settle(300);
     const mountAsks = h.ask.mock.calls.length;
     expect(mountAsks).toBeLessThanOrEqual(1);
@@ -114,8 +103,8 @@ describe("Research with the vault locked after a reload (Review Focus 1)", () =>
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(topic, OA_PLAIN.in.topic);
       topic.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    const pm = $("#rsSrcPubmed") as HTMLInputElement;
-    act(() => { pm.click(); });
+    setResearch({ pm: false });
+    rf.standIn(...OA_PLAIN.merged.filter((p) => p.doi).map((p) => crossrefNotFound(String(p.doi))));
     await act(async () => { $('[data-testid="rs-find"]')!.click(); });
     await until(() => $('[data-testid="rs-status"]')!.textContent === OA_PLAIN.status);
     expect(document.body.querySelectorAll('[data-testid="rs-card"]')).toHaveLength(8);
@@ -123,16 +112,21 @@ describe("Research with the vault locked after a reload (Review Focus 1)", () =>
     expect(puts).toEqual([]);
     expect(h.ask.mock.calls.length).toBe(mountAsks);
 
-    // + Citation library: one ask, then the library is read, the paper added on top of it and the whole sealed again.
+    // Keep: one ask, then the library is read, the paper added on top of it and the whole sealed again.
     h.ask.mockReset().mockResolvedValue(PASS);
     const i = OA_PLAIN.merged.findIndex((p) => p.doi);
-    await act(async () => { (document.body.querySelectorAll('[data-testid="rs-add"]')[i] as HTMLElement).click(); });
+    await act(async () => { (document.body.querySelectorAll('[data-testid="find-keep"]')[i] as HTMLElement).click(); });
     await until(() => puts.some((p) => p.path === "/projects/p2/blobs/citations"), 1500);
     expect(h.ask).toHaveBeenCalledTimes(1);
     const put = puts.find((p) => p.path === "/projects/p2/blobs/citations")!;
     expect(put.body.keyVersion).toBe(1);
     expect(put.body.body).not.toContain("Smith");
-    expect(noPids((await open(put.body)) as Array<{ title?: string }>)).toEqual([SMITH, rsEntryFromResult(OA_PLAIN.merged[i] as never, "apa")]);
+    const p = OA_PLAIN.merged[i] as unknown as RsPaper;
+    const sealed = noPids((await open(put.body)) as Array<{ title?: string }>);
+    // the entry is the result's, with the reading list, the abstract and the free link (its authors are held to the recorded body in research.test.tsx)
+    expect(sealed[0]).toEqual(SMITH);
+    expect(sealed[1]).toMatchObject({ title: p.title, doi: p.doi, url: "", rl: true, ...(p.abstract ? { abstract: p.abstract } : {}), ...(p.oaUrl ? { oa: p.oaUrl } : {}) });
+    expect(sealed).toHaveLength(2);
     // and the retraction cache is seeded for its DOI, sealed too
     await until(() => puts.some((p) => p.path === "/projects/p2/blobs/retraction_cache"), 1500);
     const cache = (await open(puts.find((p) => p.path === "/projects/p2/blobs/retraction_cache")!.body)) as Record<string, { r: boolean }>;

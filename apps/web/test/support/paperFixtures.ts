@@ -4,12 +4,11 @@ import { apBuild, captureRecordV2, rsEntryFromResultV2, type CitationEntry, type
 import type { ApNotes, ShelfIndex, ShelfPaper, StoredEntry } from "../../lib/blobs/kinds";
 import { EMPTY_CITE_FORM, readForm } from "../../lib/cite/form";
 import { citeImport, loadClassics } from "../../lib/cite/share";
-import { addManual } from "../../lib/research/library";
 
 /*
  * The stored data of a project as it is today, before any paper has an id (Task 17), built through the code that writes it: a search result
- * kept from Research, the one-click capture, a manual add, the citation form, the classic sources and a v1 library file (the golden file
- * captured from v1 running, imported through the panel's own import). Names and DOIs are made up or are DOIs already in the repo's recordings.
+ * kept from Research, the one-click capture, the citation form, the classic sources and a v1 library file (the golden file captured from v1
+ * running, imported through the panel's own import); and a manual add, whose form left Find in Task 18, as a record of the shape it stored. Names and DOIs are made up or are DOIs already in the repo's recordings.
  */
 
 const GOLDEN = join(__dirname, "../../../../packages/core/test/golden");
@@ -23,14 +22,9 @@ export const THESIS_TITLE = "An unpublished thesis chapter on sleep hygiene";
 /** A search result as Research keeps it (OpenAlex). */
 const MU: RsPaper = { title: MU_TITLE, authors: "Mu, X., Li, Y.", authorList: ["Xin Mu", "Yan Li"], year: 2022, venue: "Frontiers in Psychology", doi: "10.3389/fpsyg.2022.91000", source: "OpenAlex" };
 
-/** What addManual stores: it is called with the real function, so the entry has the shape the Research panel writes. */
+/** What v1's manual add ("Add a paper you found elsewhere") stored, and what is still in a library that used it: its five boxes in v1's record. */
 function manualEntry(f: { title: string; author: string; year: string; source: string; doi: string }): CitationEntry {
-  let got: CitationEntry | undefined;
-  addManual(f, {
-    lib: [], known: true, whenRead: async () => true, toast: () => {}, t: (k) => k, clear: () => {},
-    update: (fn) => { got = fn([])[0]; return true; }
-  });
-  return got!;
+  return { author: f.author, year: f.year, title: f.title, source: f.source, volume: "", issue: "", pages: "", doi: f.doi, url: "", type: "Journal article", style: "apa" };
 }
 
 /** The golden v1 library file (v1's own export), imported through the Citation Manager's import. */
