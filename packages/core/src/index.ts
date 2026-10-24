@@ -146,3 +146,7 @@ export {
 export type { MatchPerson, NameFind, Matcher } from "./participants";
 export { pdScanV2, listTableScan, listTransform } from "./participantsTable";
 export type { ColumnNames, ColumnPlan } from "./participantsTable";
+export {
+  RECORD_FIELDS, needsCombinationWarning, consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV2,
+} from "./designPlan";
+export type { IdMode, RecordField, Plan } from "./designPlan";
