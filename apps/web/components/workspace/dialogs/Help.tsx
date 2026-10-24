@@ -21,10 +21,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
+import { HelpButtons } from "@/components/help/HelpButtons";
 import { ChangePassphrase } from "./ChangePassphrase";
 import { EraseAccount } from "./EraseAccount";
 
-const FAQ = ["lost", "hindi", "key"];
+const FAQ = ["lost", "hindi", "key", "broken"];
 // The app never sends mail (rule 12): the button opens the student's own mail app.
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 /**
@@ -165,6 +166,7 @@ export function Help() {
             <p className="m-0 text-muted-foreground" data-testid="help-contact-unset">{t("help_contact_unset")}</p>
           )}
         </div>
+        <HelpButtons />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" data-testid="help-tour" onClick={openWelcome}>{t("help_tour_btn")}</Button>
           <Button variant="ghost" data-testid="help-terms" onClick={openTerms}>{t("terms_reopen_btn")}</Button>

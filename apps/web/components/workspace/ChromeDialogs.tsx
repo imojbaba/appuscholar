@@ -2,6 +2,7 @@
 import { PdHost } from "@/lib/ai/pdDialog";
 import { useSettings } from "@/lib/settings";
 import { toast } from "@/components/ui/toast";
+import { ChromeExtras } from "@/components/help/ChromeExtras";
 import { Help } from "./dialogs/Help";
 import { Terms } from "./dialogs/Terms";
 import { Welcome } from "./dialogs/Welcome";
@@ -17,6 +18,7 @@ export function ChromeDialogs() {
   return (
     <>
       <Help />
+      <ChromeExtras />
       <Terms />
       <Welcome />
       <ProviderKey />

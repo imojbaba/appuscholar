@@ -1,3 +1,15 @@
+import helpGuideEn from "./help-guide.en.json";
+import helpGuideHi from "./help-guide.hi.json";
+import helpReportEn from "./help-report.en.json";
+import helpReportHi from "./help-report.hi.json";
+import helpRecapEn from "./help-recap.en.json";
+import helpRecapHi from "./help-recap.hi.json";
+import helpBackupEn from "./help-backup.en.json";
+import helpBackupHi from "./help-backup.hi.json";
+import helpInstallEn from "./help-install.en.json";
+import helpInstallHi from "./help-install.hi.json";
+import helpThemeEn from "./help-theme.en.json";
+import helpThemeHi from "./help-theme.hi.json";
 import closeEn from "./close.en.json";
 import closeHi from "./close.hi.json";
 import designEn from "./design.en.json";
@@ -22,6 +34,12 @@ import wordsHi from "./words.hi.json";
  * checks that every file in this folder is listed here.
  */
 export const TOOL_MESSAGE_FILES: Readonly<Record<string, Record<string, string>>> = {
+  "help-guide.en.json": helpGuideEn, "help-guide.hi.json": helpGuideHi,
+  "help-report.en.json": helpReportEn, "help-report.hi.json": helpReportHi,
+  "help-recap.en.json": helpRecapEn, "help-recap.hi.json": helpRecapHi,
+  "help-backup.en.json": helpBackupEn, "help-backup.hi.json": helpBackupHi,
+  "help-install.en.json": helpInstallEn, "help-install.hi.json": helpInstallHi,
+  "help-theme.en.json": helpThemeEn, "help-theme.hi.json": helpThemeHi,
   "close.en.json": closeEn, "close.hi.json": closeHi,
   "design.en.json": designEn, "design.hi.json": designHi,
   "qual.en.json": qualEn, "qual.hi.json": qualHi,
