@@ -1,7 +1,8 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator, Page, Request } from "@playwright/test";
 import { BUDGET_DEFAULTS, QUAL_PALETTE, budgetMarkdown, budgetRows, budgetTotalText, ctriMarkdown, piCvText, qualBuildMarkdown, type AiuEntry } from "@appuscholar/core";
 import { MARK } from "../fixtures/common";
 import { dictionary, T } from "../support/dict";
+import { QA_API_ORIGIN } from "../support/origins";
 import type { Qa } from "../support/qa";
 import { SERVICE_HOSTS, routeServices } from "../support/services";
 import { apiGet, catchDownload, docText, lockByReload, newStudent, providerCalls, selectInDoc, toPlace, typeInDoc, unlock, type Downloaded, type Student } from "../support/student";
@@ -104,11 +105,12 @@ const LABEL: Record<ToolKey, string> = {
 
 /** The blob kinds project A holds and project B must not: the six pieces of Design, Closeness' settings, the viva answers, the codes and the citations. */
 const A_KINDS = ["design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "close_prefs", "viva_log", "qual_codes", "citations"] as const;
-/** The kinds whose version must not move while project B is made and used: the ones a panel could write over by mistake. */
-const STABLE_KINDS = ["design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "close_prefs", "viva_log", "qual_codes"] as const;
 
-/** A's own words: any of them on a page of B is a leak. The marker is in every free text A has; the others are typed without it. */
-const LEAK_WORDS = [MARK, PROJECT_A.name, CODE_NAME, DORDI.title];
+/**
+ * A's own words: any of them on a page of B is a leak. The marker is in most of the free text A has; the others are A's free text typed without it (its idea, the protocol's
+ * objective, the ethics title and the investigator line), its project name, the code's name and the paper's title.
+ */
+const LEAK_WORDS = [MARK, PROJECT_A.name, PROJECT_A.idea, CODE_NAME, DORDI.title, FILL.obj, FILL.ec.title, FILL.ec.pi];
 // A word the app itself prints could not tell a leak from the app's own sentence: stop at once if one does.
 for (const w of LEAK_WORDS) {
   for (const lang of ["en", "hi"] as const) {
@@ -179,6 +181,33 @@ async function toHome(page: Page, id: string): Promise<void> {
 }
 
 /**
+ * Waits until the page's requests to the api have gone quiet (none in flight for half a second), for the tools that show no sign while they read their saved work (Viva, Coding's
+ * tree): a tool read before its blob answers would read as empty. Bounded (a page that polls never goes quiet); the listeners are put on the page the first time it is asked.
+ */
+const apiWatchers = new WeakMap<Page, () => Promise<void>>();
+function apiQuiet(page: Page): Promise<void> {
+  let quiet = apiWatchers.get(page);
+  if (!quiet) {
+    let inFlight = 0;
+    let lastEnd = Date.now();
+    page.on("request", (r: Request) => { if (r.url().startsWith(QA_API_ORIGIN)) inFlight++; });
+    const ended = (r: Request) => {
+      if (r.url().startsWith(QA_API_ORIGIN)) {
+        inFlight--;
+        lastEnd = Date.now();
+      }
+    };
+    page.on("requestfinished", ended);
+    page.on("requestfailed", ended);
+    quiet = async () => {
+      await expect.poll(() => inFlight <= 0 && Date.now() - lastEnd >= 500, { timeout: 8_000, intervals: [100] }).toBe(true).catch(() => undefined);
+    };
+    apiWatchers.set(page, quiet);
+  }
+  return quiet();
+}
+
+/**
  * Opens one tool of the project and waits until its panel is drawn and has read its saved work. The tools that sit beside the document open it (Coding, Closeness, Viva), so
  * that A's tools before any work and B's are read in the same way.
  */
@@ -207,6 +236,7 @@ async function openTool(page: Page, id: string, key: ToolKey): Promise<Locator> 
   }
   const panel = page.getByTestId(PANEL[key]);
   await expect(panel).toBeVisible();
+  await apiQuiet(page);
   return panel;
 }
 
@@ -261,6 +291,28 @@ function differences(fresh: Snap, now: Snap): string[] {
   return out;
 }
 
+/**
+ * What each tool of A reads once it holds A's work, as a box or a line of its snapshot (the very work the case did): for the check that the comparison with a new project can tell the two
+ * apart, tool by tool. `requests`: the AI requests A made, which the AI-use tab counts.
+ */
+function holdsOf(requests: number): Array<[ToolKey, string, (s: Snap) => boolean]> {
+  const line = (text: string) => (s: Snap) => s.lines.some((l) => l.includes(text));
+  return [
+    ["design:overview", `the line "${READY(6)}"`, line(READY(6))],
+    ["design:pathway", `the answers "${FILL.reg.type}" and "${FILL.reg.pop}"`, (s) => s.fields["reg-type"] === FILL.reg.type && s.fields["reg-pop"] === FILL.reg.pop],
+    ["design:protocol", "the background as typed", (s) => s.fields["proto-bg"] === FILL.bg],
+    ["design:ethics", "the committee as typed", (s) => s.fields["ec-committee"] === FILL.ec.committee],
+    ["design:registration", "the first CTRI field ticked", (s) => s.fields["ctri-field-0"] === "ticked"],
+    ["design:investigator", "the CV as typed", (s) => s.fields["pi-cv"] === FILL.cv],
+    ["design:budget", "the first amount as typed", (s) => s.fields["budget-amount-0"] === FILL.amounts[0]],
+    ["design:aiuse", "the count of A's requests", line(T("design_aiu_count", { all: requests, n: requests }))],
+    ["coding", `the code "${CODE_NAME}"`, line(CODE_NAME)],
+    ["closeness", "the word group 8 and the passage length 15", (s) => s.fields["close-k"] === "8" && s.fields["close-min"] === "15"],
+    ["viva", "the line of one saved answer", line(T("viva_count", { n: 1 }))],
+    ["citations", "the paper's title", line(DORDI.title)]
+  ];
+}
+
 /** What a page shows: its visible text and what is typed into its boxes, selects' options and placeholders. */
 async function pageWords(page: Page): Promise<string> {
   return page.evaluate(() => {
@@ -298,6 +350,38 @@ async function stableHome(page: Page): Promise<Awaited<ReturnType<typeof homeRea
 // ---- Project A's work ------------------------------------------------------------------------------------------------------------------------------
 
 const card = (page: Page, title: string) => page.getByTestId("rs-card").filter({ has: page.locator("h4", { hasText: title }) });
+
+/**
+ * Opens every abstract with its "Show more / less": a result card shows four lines of its abstract and cuts the rest off on purpose, so the layout rule (no text cut off inside its box)
+ * would report every card. What the rule stands for is checked on its own (`abstractsCanBeRead`); the checkpoint then measures the abstracts open (S2 does the same).
+ */
+async function openAbstracts(page: Page): Promise<void> {
+  const cards = page.getByTestId("rs-card");
+  for (let i = 0, n = await cards.count(); i < n; i++) {
+    const more = cards.nth(i).getByTestId("rs-more");
+    if ((await more.count()) && !(await cards.nth(i).locator(".abs").evaluate((el) => el.classList.contains("open")))) await more.click();
+  }
+}
+
+/** A cut-off abstract has a way to read all of it: every card whose abstract is longer than its box has "Show more / less", and it opens the abstract in full (as S2 checks it). */
+async function abstractsCanBeRead(page: Page): Promise<void> {
+  const cards = page.getByTestId("rs-card");
+  const n = await cards.count();
+  let cut = 0;
+  for (let i = 0; i < n; i++) {
+    const abs = cards.nth(i).locator(".abs");
+    if ((await abs.count()) === 0) continue;
+    const isCut = await abs.evaluate((el) => !el.classList.contains("open") && el.scrollHeight > el.clientHeight + 1);
+    if (!isCut) continue;
+    cut++;
+    const more = cards.nth(i).getByTestId("rs-more");
+    expect(await more.count(), `card ${i + 1} cuts its abstract off and has no "Show more / less"`).toBe(1);
+    await more.click();
+    expect(await abs.evaluate((el) => el.scrollHeight <= el.clientHeight + 1), `card ${i + 1}: the abstract is still cut off after "Show more / less"`).toBe(true);
+    await more.click();
+  }
+  if (cut === 0) notChecked("no abstract on the page was longer than its box, so nothing was cut off to read");
+}
 
 /** The recorded search, and "+ Citation library" on one result; ends when the library holds it, filled in from Crossref, and saved. */
 async function searchAndKeep(page: Page): Promise<void> {
@@ -432,6 +516,9 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
   await qa.step("A's citation", async () => {
     await toPlace(page, idA, "literature", "find");
     await searchAndKeep(page);
+    await qa.check("visual", "a result card cuts its abstract off on purpose, and every cut-off abstract has \"Show more / less\" which opens it in full: no text of a result is lost", async () => {
+      await abstractsCanBeRead(page);
+    }, { source: "spec section 8, layout rules (no text cut off inside its box: a preview that opens is not lost text); S2's check of the same card" });
     await openTool(page, idA, "citations");
     await expect(page.getByTestId("cite-card")).toHaveCount(1);
     await expect(page.getByTestId("cite-card").first().getByTestId("cite-ref")).toContainText(DORDI.ref);
@@ -454,9 +541,14 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
     await page.getByTestId("qual-name-submit").click();
     await expect(page.getByTestId("qual-status")).toHaveText(T("qual_status_added", { name: CODE_NAME }));
     codeIdA = await codeId(page, CODE_NAME);
-    await selectInDoc(page, PHRASE);
-    await page.getByTestId("qual-name-" + codeIdA).click();
-    await expect(page.getByTestId("qual-status")).toHaveText(T("qual_status_tagged", { name: CODE_NAME }));
+    // The typed words (1.5 s) and the new code (0.8 s) are saved a moment after they are made, and the document is drawn again with the saved codes: a selection made before that can be
+    // lost. The selection is made once they are saved, and made again if the code still finds none (one run in three found none under load).
+    await allSaved(page, "after the paragraph is typed and the code is added");
+    await expect(async () => {
+      await selectInDoc(page, PHRASE);
+      await page.getByTestId("qual-name-" + codeIdA).click();
+      await expect(page.getByTestId("qual-status")).toHaveText(T("qual_status_tagged", { name: CODE_NAME }), { timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
     await allSaved(page, "after the code is tagged");
   });
 
@@ -565,7 +657,6 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
   /** Opens B's tool, reads it, and records its words for the search for A's. `explicit`: the empty state's own words. */
   const readB = async (key: ToolKey, explicit: (panel: Locator) => Promise<void>, o: { known?: string; leaks?: boolean } = {}): Promise<Locator> => {
     const panel = await openTool(page, idB, key);
-    if (o.leaks !== false) seenInB.set(LABEL[key], await pageWords(page));
     await qa.check("data", `B's ${LABEL[key]} reads as a new project's, with none of A's work`, async () => {
       await explicit(panel);
       const now = await stableSnap(panel);
@@ -573,6 +664,8 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
       if (!was) notChecked(`the tool ${key} was not read in project A before any work, so there is no new project to compare with`);
       expect(differences(was, now), `how B's ${LABEL[key]} differs from a new project's`).toEqual([]);
     }, { source: `${ROW5}; ${SHEET_A} row 12 and ${SHEET_E} rows 6 and 16 (the work belongs to the project)`, ...(o.known ? { known: o.known } : {}) });
+    // The page's words are taken after the tool has been read (it has stopped changing), never from a page still opening its saved work.
+    if (o.leaks !== false) seenInB.set(LABEL[key], await pageWords(page));
     return panel;
   };
 
@@ -652,12 +745,13 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
       const shown = { topic: await page.getByTestId("rs-topic").inputValue(), papers: await page.getByTestId("rs-card").count(), relatedTerms: await page.getByTestId("rs-term").count() };
       expect(shown, "B's Find: the topic box, the papers listed and the related terms").toEqual({ topic: "", papers: 0, relatedTerms: 0 });
     }, { known: "Q80", leaks: false });
+    await openAbstracts(page);
     await look(page, qa, "B's Find tab");
     await qa.check("conceptual", "B's Find tab shows none of A's search: not its topic, not its related terms and not one of its ten papers", async () => {
       expect(leaksIn(await pageWords(page)), "A's words on B's Find tab").toEqual([]);
       const topic = await page.getByTestId("rs-topic").inputValue();
       expect(topic, "the search topic in B's box").not.toBe(SEARCH_TOPIC);
-    }, { source: `${ROW5}; ${SHEET} row 10 ("Find is today's Research search": nothing of the search is stored, it is the page's memory)`, known: "Q80" });
+    }, { source: `spec section 5, S11 ("nothing of the first shows in it"); ${ROW5}`, known: "Q80" });
   });
 
   await qa.step("B's export", async () => {
@@ -695,7 +789,7 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
     await qa.check("data", "B's zip holds no list of A's last search (search/last-search.csv)", async () => {
       if (filesB.size === 0) notChecked("B's zip has no entries, so nothing was searched");
       expect([...filesB.keys()].filter((n) => n === "search/last-search.csv"), "search/last-search.csv").toEqual([]);
-    }, { source: `${SHEET} row 12 ("search/last-search.csv after a search in this session": B ran none); ${ROW5}`, known: "Q80" });
+    }, { source: `spec section 5, S11 ("nothing of the first shows in it"); ${ROW5}; ${SHEET} row 12 names last-search.csv "after a search in this session", which is ambiguous here (B ran none)`, known: "Q80" });
   });
 
   await qa.step("back in A", async () => {
@@ -715,22 +809,24 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
       const kindsB = (await blobsOf(page, idB)).map((b) => b.kind);
       expect(kindsB.filter((k) => (A_KINDS as readonly string[]).includes(k)), "A's kinds in B").toEqual([]);
       const after = await blobsOf(page, idA);
-      const versions = (list: typeof after) => Object.fromEntries(STABLE_KINDS.map((k) => [k, list.find((b) => b.kind === k)?.version ?? null]));
-      expect(versions(blobsBefore)).not.toEqual(Object.fromEntries(STABLE_KINDS.map((k) => [k, null])));
+      const versions = (list: typeof after) => Object.fromEntries(A_KINDS.map((k) => [k, list.find((b) => b.kind === k)?.version ?? null]));
+      expect(versions(blobsBefore)).not.toEqual(Object.fromEntries(A_KINDS.map((k) => [k, null])));
       expect(versions(after), "A's blob versions now").toEqual(versions(blobsBefore));
       expect(after.map((b) => b.kind).filter((k) => (A_KINDS as readonly string[]).includes(k)).sort(), "A's kinds now").toEqual([...A_KINDS].sort());
     }, { source: `${ROW5}; spec section 3 (Data: the server's copies)` });
 
-    // The comparison B was held to can tell A's work from a new project: each tool that holds A's work reads differently from the new project's. (Find is left out: its search is
-    // the page's memory, not stored work.)
-    const stored = TOOLS.filter((k) => k !== "find");
-    const differing: string[] = [];
-    for (const key of stored) {
-      const panel = await openTool(page, idA, key);
-      if (differences(fresh.get(key)!, await stableSnap(panel)).length > 0) differing.push(LABEL[key]);
-    }
-    await qa.check("data", "the comparison could tell: every tool of A that holds work reads differently from a new project's", async () => {
-      expect(stored.map((k) => LABEL[k]).filter((l) => !differing.includes(l)), "tools of A that read the same as a new project's").toEqual([]);
+    // The comparison B was held to can tell A's work from a new project: each tool that holds A's work shows the very field or line of that work, which the same tool in a new project
+    // does not. (Find is left out: its search is the page's memory, not stored work.)
+    const holds = holdsOf(aLog.length);
+    const aNow = new Map<ToolKey, Snap>();
+    for (const [key] of holds) aNow.set(key, await stableSnap(await openTool(page, idA, key)));
+    await qa.check("data", "the comparison could tell: every tool of A shows its own work (its box, tick or line), which a new project's same tool does not show", async () => {
+      const wrong = holds.flatMap(([key, what, has]) => {
+        const now = aNow.get(key)!;
+        const was = fresh.get(key)!;
+        return [...(has(now) ? [] : [`${LABEL[key]}: A's tool lacks ${what}`]), ...(has(was) ? [`${LABEL[key]}: a new project's tool already has ${what}`] : [])];
+      });
+      expect(wrong, "tools where the comparison could not tell A from a new project").toEqual([]);
     }, { source: "spec section 3, Review Focus 2 (a check that measured nothing must not pass)" });
 
     // Everything of A, as its tools show it.

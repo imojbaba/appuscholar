@@ -431,43 +431,32 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Date: 2026-10-24
 - Commit: 74806ed
 - Kind: Unexpected (data and conceptual)
-- Expected: a project made after another starts as a new project does in every tool, and its export holds only its own work (source: `wave-b1.md` row 5, "the second project" starts empty while the first keeps its work; row 12, `search/last-search.csv` is written "after a search in this session", and project B ran none; `tools-a.md` row 12 and `tools-e.md` rows 6 and 16, "the work belongs to the project"; spec section 5, S11: "nothing of the first shows in it")
+- Expected: a project made after another starts as a new project does in every tool, and its export holds only what was done in it (source: spec section 5, S11, "a second project: nothing of the first shows in it"; `wave-b1.md` row 5, "the second project" starts at "Not started" while the first keeps its work; `tools-a.md` row 12 and `tools-e.md` rows 6 and 16, "the work belongs to the project". Row 12 of `wave-b1.md` says `search/last-search.csv` is written "after a search in this session", which is ambiguous here: it literally describes today's behaviour, a search made in A in this session, but the zip it is in is B's, and B ran none)
 - Happened: project A is searched for "exam anxiety" (the related terms "test anxiety" and "evaluation anxiety", ten papers) and one paper is kept. Project B is then made through All projects and New project (no reload of the page). B's Find tab reads: the topic box "exam anxiety", the two related terms ticked and the ten papers of A's search, each with its tick box and its "+ Citation library" and "Insert citation" buttons (`{ topic: "exam anxiety", papers: 10, relatedTerms: 2 }` against `{ topic: "", papers: 0, relatedTerms: 0 }` in a new project). B's export zip holds `search/last-search.csv` with A's ten papers, in a zip whose other parts (documents, ai-use-statement.txt, writing-record.txt) are B's own. B's Citations tab, Design tabs, Coding, Closeness and Viva, B's home and the server's blobs for B hold nothing of A's: only the Research search is shared.
-- Cause (read, and reproduced by the case): the search's topic, related terms, status, results, ticks and filters are one variable of the page, `let state` in `lib/research/useSearch.ts` line 167, "held for the tab's life outside React" and never tied to a project. Nothing sets it back when the project changes: `resetResearch` (line 206) is called only by the unit tests. The Find tab reads it (`useResearchState`), and the project export asks it for the last search (`shownNow`, line 179; `components/export/ExportDialog.tsx` line 121, `lastSearch: shownNow()`), whichever project is open. Read, not run: "+ Citation library" on one of those papers in B would add A's search result to B's library.
+- Cause (read, and reproduced by the case): the search's topic, related terms, status, results, ticks and filters are one variable of the page, `let state` in `lib/research/useSearch.ts` line 167, "held for the tab's life outside React" and never tied to a project. Nothing sets it back when the project changes: `resetResearch` (line 206) is called only by the unit tests. The Find tab reads it (`useResearchState`), and the project export asks it for the last search (`shownNow`, line 179; `components/export/ExportDialog.tsx` line 121, `lastSearch: shownNow()`), whichever project is open. Read, not run: "+ Citation library" on one of those leaked papers in B adds it to B's own library (the card's `add` calls `addResult` with the open project's library: `components/tools/research/ResearchPanel.tsx` line 102, `lib/cite/useLibrary.ts` lines 91 to 94), so A's search can end up in B's citations. Signing out does not reset it either: `signOut` in `components/workspace/dialogs/Help.tsx` lines 48 to 56 forgets the keys, locks the vault and resets the personal-details memo, not the Research state (read, not run).
 - Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed checks named above. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`. The case's other checks (B's Citations, Design, Coding, Closeness, Viva, home and the rest of B's zip) pass, so this entry is about the Research search only.
 - Status: known
 
 ### Q81: The tick box beside each search result has no label
 
-- Case: S11-01 (the checkpoint "B's Find tab", which shows A's search while Q80 stands; the Find results are S2's too)
+- Case: S11-01 (the checkpoint "B's Find tab", which shows A's search while Q80 stands; the Find results are S2's too); S2-01, S2-03, S2-05, S2-07 (Find with results) and S2-08 (the same on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: 74806ed
 - Kind: UI (accessibility)
 - Expected: every form element has a label, so that a person using a screen reader knows what a tick box is for (source: spec section 8, the axe scan: any serious or critical finding)
 - Happened: `#rsChk0` to `#rsChk9` (one per result): label (critical): Form elements must have labels. `<input type="checkbox" id="rsChk<i>">` sits in a `div` beside the paper's `h4` and has no `<label>`, `aria-label` or `aria-labelledby` (`components/tools/research/ResultCard.tsx` line 45). The match lists the ten targets of the recorded search's ten results; a longer result list has more.
-- Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed check "B's Find tab: no serious or critical accessibility finding (axe)" (10 found). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`. Any case that shows a result list meets it (S2).
+- Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed check "B's Find tab: no serious or critical accessibility finding (axe)" (10 found). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`. Any case that shows a result list meets it: S2-01 ("Find, the results of the first search"), S2-03 ("Find, the drafted paragraph and the document beside it"), S2-05, S2-07, S2-08 (4, 7 and 10 results). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S2-01"`.
 - Status: known
-
-### Q82: The abstract under each search result is clipped to three lines
-
-- Case: S11-01 (the checkpoint "B's Find tab", which shows A's search while Q80 stands; the Find results are S2's too)
-- Date: 2026-10-24
-- Commit: 74806ed
-- Kind: UI; a decision about the rule, not yet a fault
-- Expected: OJ's call. The layout rule "no text cut off inside its box" reads an element with `overflow: hidden` whose text is taller than its box as cut off. The abstract is clipped on purpose: `.paper-card .abs { max-height: 4.6em; overflow: hidden }` (`app/globals.css` line 485), with "Show more / less" under it opening it (`.abs.open`, line 486; `ResultCard.tsx` lines 60 to 61) (source: spec section 8, layout rules)
-- Happened: `div "This study presents theoretical and pra…" in [rs-card]: holds 775 × 155 px in a 775 × 58 px box`, and the same for the other abstracts (9 found; the longest holds 388 px in the 58 px box). Nothing is lost: the text is one press away. Whether a preview that opens counts as cut-off is the decision; if it does not, the rule needs to know a box with an opening control, and this entry closes.
-- Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed check "B's Find tab: no text cut off inside its box". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`. Any case that shows a result list meets it (S2).
-- Status: awaiting (OJ)
 
 ### Q83: "Not used in any document" under a source on Citations is too pale to read
 
-- Case: S11-01 (the checkpoint "project A's Citations, after B"; any source not used in a document, so S2's Citations too)
+- Case: S11-01 (the checkpoint "project A's Citations, after B"; any source not used in a document, so S2's Citations too); S2-01, S2-03 (twice: Citations after the Crossref check, and the window of its own) and S2-08 (Citations on a phone, in Hindi)
 - Date: 2026-10-24
 - Commit: 74806ed
 - Kind: UI (accessibility)
 - Expected: text of 13 px has a contrast of at least 4.5 to 1 with what is behind it (source: spec section 8, the axe scan: any serious or critical finding)
 - Happened: `.cite-used`: color-contrast (serious). The line is `<div class="desc cite-used cite-not-used">` (`components/tools/cite/CiteChecks.tsx` line 44): `.panel .desc` sets the muted grey `#6b6579` (`app/globals.css` line 128, 5.6 to 1 on the white card), and `.cit-item .cite-not-used { opacity: .75 }` (line 149) fades it to about `#908c9a`, which is about 3.3 to 1 on `#ffffff` (calculated from the colours, not measured in the page).
-- Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed check "project A's Citations, after B: no serious or critical accessibility finding (axe)". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`.
+- Evidence: the run of 2026-10-24 on 74806ed: case S11-01, the failed check "project A's Citations, after B: no serious or critical accessibility finding (axe)". With several sources on the page axe names each line by its card (`div[data-cite-index="0"] > div[data-cite-slot="cite-used"] > .cite-not-used.cite-used.desc`), which the known match also lists (S2-01: 3 of 4 cards, S2-03: 3 of 4); the run of 2026-10-24 on 70e65ef, S2-01, S2-03 and S2-08. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S11-01"`.
 - Status: known
 
 ### Q96: While the vault is locked, an amount typed into Budget is dropped
