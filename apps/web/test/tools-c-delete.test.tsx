@@ -34,6 +34,7 @@ vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog
 vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children }));
 // The paper-id migration (wave B, Task 17) needs the real library provider; this file stands the provider in, and is about something else.
 vi.mock("@/components/frame/PaperIdsRunner", () => ({ PaperIdsRunner: () => null }));
+vi.mock("@/components/frame/FullTextRunner", () => ({ FullTextRunner: () => null }));
 vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/blobs/useProjectBlob", async (orig) => {
   const real = await orig<typeof import("../lib/blobs/useProjectBlob")>();

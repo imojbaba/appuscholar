@@ -1011,6 +1011,8 @@
   "rl_status_reading_1": "Reading. 1 highlight",
   "rl_status_reading_n": "Reading. {n} highlights",
   "rl_status_unread": "Not read yet",
+  "rl_text_epmc": "Full text from Europe PMC (open access).",
+  "rl_text_getting": "Getting the free full text…",
   "rl_tools": "Search your PDFs, back up and restore",
   "rl_untitled": "Untitled paper",
   "rs2_abstract_loaded_this_is": "Abstract loaded. This is a shallow read; load the full paper for a real analysis.",

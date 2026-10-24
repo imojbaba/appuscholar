@@ -29,6 +29,7 @@ vi.mock("@/components/workspace/dialogs/ImportV1Dialog", () => ({ ImportV1Dialog
 vi.mock("@/lib/cite/useLibrary", () => ({ CiteLibraryProvider: ({ children }: { children: React.ReactNode }) => children }));
 // The paper-id migration (wave B, Task 17) needs the real library provider; this file stands the provider in, and is about something else.
 vi.mock("@/components/frame/PaperIdsRunner", () => ({ PaperIdsRunner: () => null }));
+vi.mock("@/components/frame/FullTextRunner", () => ({ FullTextRunner: () => null }));
 vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 // The suggestion provider is the real one. The document card is a stand-in with a real editor on the open document, registered as the card registers it.
 vi.mock("@/components/document/DocumentCard", async () => {

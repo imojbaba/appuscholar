@@ -497,6 +497,7 @@
 .rl-free { margin: 0; font-size: 13px; }
 .rl-free a { color: var(--purple-800); font-weight: 600; }
 .rl-free span { color: var(--muted); }
+.rl-text-wait { margin: 0; font-size: 13px; color: var(--muted); }
 .rl-acts { display: flex; align-items: flex-start; gap: var(--s2); }
 .rl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
 .rl-btn:hover:not(:disabled) { background: var(--soft); }

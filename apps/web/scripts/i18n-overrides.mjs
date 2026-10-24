@@ -648,6 +648,10 @@ export const V2_STRINGS = {
   rl_practice_status: { en: "Made up for practice. Not a real study.", hi: "अभ्यास के लिए बनाया गया। असली अध्ययन नहीं।" },
   rl_practice_btn: { en: "Try a practice paper", hi: "अभ्यास शोध-पत्र आज़माएँ" },
   rl_practice_loaded: { en: "It is open below, under Read a paper.", hi: "यह नीचे \"कोई पेपर पढ़ें\" में खुला है।" },
+  // Wave B Task 21b (register row D-S2-127): open-access full text from Europe PMC comes in by itself. The quiet line under a row while it is on its way, and the line under the reader's title
+  // for a text that came from there (B3's reader shows it as well). DRAFT Hindi for Dr. Sharma.
+  rl_text_getting: { en: "Getting the free full text…", hi: "निःशुल्क पूरा पाठ लाया जा रहा है…" },
+  rl_text_epmc: { en: "Full text from Europe PMC (open access).", hi: "पूरा पाठ Europe PMC से (ओपन एक्सेस)।" },
   // Wave B Task 23 (register row D-S2-129): Literature's Citations tab (canvas Citations). The heading with its count and the day the retraction check last ran, the Style select, one
   // row per source (its reference, status, use and a More menu), "In your document", "Check again", "Add a source by hand" and More. DRAFT Hindi throughout, in the register of the keys above.
   cit_head: { en: "{n} sources, {c} cited in your document", hi: "{n} स्रोत, {c} आपके दस्तावेज़ में उद्धृत" },

@@ -39,13 +39,16 @@ const IdeaIntakeSchema = z.looseObject({ topic: str, resources: str, timeframe: 
 /**
  * One source as v1 stores it (core's CitationEntry: every known value a string, all optional), and, from wave B (Task 17), the fields a kept paper carries:
  * `pid` (its one stable id, lib/papers/ids), `rl` (on the reading list), `abstract` (up to 4,000 characters), `oa` (the open-access link) and `ack` (the attention
- * items the student has dismissed). All optional, so an entry stored before them (or by an older tab) still parses.
+ * items the student has dismissed); and, from Task 21b, `ft` (what is remembered of the open-access full text, lib/papers/fullText: `none` is the DOI or PMC number Europe PMC was asked for
+ * and had no text for, or whose text the student removed) and `pmcid` (a PMC number, if an entry carries one: it is asked for instead of the DOI; nothing writes one yet). All optional, so an entry stored before them
+ * (or by an older tab) still parses.
  */
 const CitationEntrySchema = z.looseObject({
   author: str.optional(), year: str.optional(), title: str.optional(), source: str.optional(), volume: str.optional(), issue: str.optional(),
   pages: str.optional(), doi: str.optional(), url: str.optional(), month: str.optional(), day: str.optional(), accessed: str.optional(),
   container: str.optional(), editors: str.optional(), number: str.optional(), degree: str.optional(), type: str.optional(), style: str.optional(), lang: str.optional(),
-  pid: str.optional(), rl: z.boolean().optional(), abstract: str.optional(), oa: str.optional(), ack: z.array(str).optional()
+  pid: str.optional(), rl: z.boolean().optional(), abstract: str.optional(), oa: str.optional(), ack: z.array(str).optional(),
+  ft: z.looseObject({ none: str.optional() }).optional(), pmcid: str.optional()
 });
 const CitationLibrarySchema = z.array(CitationEntrySchema);
 /** By normalised DOI: retracted or not (`r`), and when it was looked up (`t`, ms), as v1 7569 stores it: `c[d]={r:!!flag,t:Date.now()}`. */
@@ -68,8 +71,9 @@ const RefCheckCacheSchema = z.record(str, RcCheckSchema);
 /**
  * Fix wave A (W15, register row D-S2-28): `doi` is the DOI printed on a new paper's first page, kept optional so an entry stored before it (or by build 6c38396) still parses.
  * Wave B (Task 17): `pid` is the kept paper's stable id, the one its library entry and its notes carry (lib/papers/ids); optional, so an entry stored before it still parses.
+ * Wave B (Task 21b): `src` is where the text came from when it is not a PDF the student added: "epmc", the open-access full text Europe PMC sent (lib/papers/fullText); the reader says so under the title.
  */
-const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num, doi: str.optional(), pid: str.optional() }));
+const ShelfIndexSchema = z.array(z.looseObject({ id: str, title: str, file: str, size: num, added: str, total: num, kept: num, doi: str.optional(), pid: str.optional(), src: str.optional() }));
 /** A highlight or note on a shelf paper (v1 11681: id, page, quote, note, at). */
 const HighlightSchema = z.looseObject({ id: str, page: num, quote: str, note: str, at: str });
 const ShelfPaperSchema = z.looseObject({ pages: z.array(str), notes: z.array(HighlightSchema), cells: z.record(str, str) });
@@ -116,7 +120,7 @@ const RsPrefsSchema = z.looseObject({ rank: z.boolean() });
 
 export type IdeaIntake = z.infer<typeof IdeaIntakeSchema>;
 /** A library entry as this build stores it (ruling B2-R3): core's CitationEntry, a port type that is never edited, plus the fields of CitationEntrySchema above. */
-export type StoredEntry = CitationEntry & { pid?: string; rl?: boolean; abstract?: string; oa?: string; ack?: string[] };
+export type StoredEntry = CitationEntry & { pid?: string; rl?: boolean; abstract?: string; oa?: string; ack?: string[]; ft?: { none?: string }; pmcid?: string };
 export type CitationLibrary = StoredEntry[];
 export type RetractionCache = z.infer<typeof RetractionCacheSchema>;
 export type RefCheckCache = Record<string, RcCheck>;

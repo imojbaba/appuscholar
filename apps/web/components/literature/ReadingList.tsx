@@ -10,6 +10,7 @@ import { fromSample, nextIntake } from "@/lib/analyse/intake";
 import { useApNotes, type ApNotesStore } from "@/lib/analyse/notes";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
+import { fullText } from "@/lib/papers/fullText";
 import { keepEntry } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
 import { papersOf, type Paper } from "@/lib/papers/list";
@@ -42,7 +43,8 @@ type Tool = "search" | "find";
  * Until the reader comes in B3 (ruling B2-R22) what the shelf could do stays reachable from here: Read on a row opens the shelf's reader (pages, highlights, Summarise with AI); under
  * "Search your PDFs, back up and restore" are Search, Find passages for a sentence, the backup and the restore; More on a row has Rename and Remove. "Read it now" in Find opens this
  * list with the abstract loaded in Analyse a paper, below (ruling B2-R14).
- * `textState`: a line for a paper's automatic full text under its status, for Task 21b's runner.
+ * `textState`: a line for a paper's automatic full text under its status (Task 21b: useFullTextLine gives "Getting the free full text…" while Europe PMC's text for it is on its way). A paper whose text
+ * Europe PMC brought and the student removes is not brought back (fullText.removed), and a paper that Add your own PDF keeps is not asked for text: a PDF is coming for it (fullText.hold).
  * `notes`: the project's notes store (lib/analyse/notes). The Reading tab makes one and gives it to this list and to Analyse a paper under it, so a note the student writes there changes the
  * row's status at once: two stores in one window do not hear each other's writes (the sync channel never echoes to its own window). Without it the list reads the notes itself.
  */
@@ -87,7 +89,14 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
     ...store.ops, t: (k, v) => t(OWN_WORDS[k] ?? k, v), extract: (f) => extractPdfPages(f), library: readLibrary, setStatus, toast, now: () => new Date(),
     resolveTitle: (pages, stem) => resolveShelfTitle(pages, stem, { lib: libRef.current.lib, lookupDoi })
   };
-  const own: OwnPdfOps = { ...ops, t, lookupDoi, keep: (entry) => keepWhenRead((l) => keepEntry(entry, l)) };
+  const own: OwnPdfOps = {
+    ...ops, t, lookupDoi,
+    keep: (entry) => keepWhenRead((l) => {
+      const r = keepEntry(entry, l);
+      if (r.state === "kept") fullText.hold(r.pid);
+      return r;
+    })
+  };
 
   // A row's status reads the student's own notes, so the list waits for them too: a status drawn before they are read would say "Not read yet" for a paper the student has written about.
   const opening = (index.loading && !index.locked) || (library.loading && !library.locked) || notes.loading;
@@ -133,7 +142,14 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
               <ReadingRow key={p.pid ? p.pid + ":" + (p.shelf?.id ?? "") : "i" + i} paper={p} loading={paperReading(p)} canWrite={known}
                 onRead={() => setReading({ id: p.shelf!.id, page: 1 })}
                 onRename={(title) => renamePaper(p.shelf!.id, title, ops)}
-                onRemove={async () => { const ok = await removePaper(p.shelf!.id, ops); if (ok) setReading(null); return ok; }}
+                onRemove={async () => {
+                  const ok = await removePaper(p.shelf!.id, ops);
+                  if (ok) {
+                    setReading(null);
+                    if (p.shelf!.src === "epmc" && p.entry) fullText.removed(p.entry);
+                  }
+                  return ok;
+                }}
                 onAddRefs={() => { if (!addToReferences(p.shelf!, library)) toast(t("list_action_fail")); }}
                 textState={textState?.(p)} />
             ))}

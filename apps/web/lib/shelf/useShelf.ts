@@ -51,7 +51,7 @@ export async function putNewPaper(projectId: string, paperId: string, paper: She
 }
 
 /** DELETE /projects/:id/blobs/shelf_paper:<id>: true when the blob is gone (404 counts: there was none). */
-async function deletePaperBlob(projectId: string, paperId: string): Promise<boolean> {
+export async function deletePaperBlob(projectId: string, paperId: string): Promise<boolean> {
   if (!blobWritable(shelfPaperKind(paperId))) return false;
   try { await apiFetch(blobPath(projectId, shelfPaperKind(paperId)), { method: "DELETE" }); return true; } catch (e) { return e instanceof ApiError && e.status === 404; }
 }
@@ -68,6 +68,17 @@ export async function readPaperOnce(projectId: string, paperId: string, vault: B
     try { text = await vault.decryptBody(doc); } catch { return null; }
   }
   return parseBlob(kind, text);
+}
+
+/**
+ * One read of a project's reading-list index, as stored (decrypted in the browser; it never asks for the passphrase, so a locked vault gives null): the list, `[]` when the project has no index
+ * yet, and null when the read failed, the index does not open on this device or is not an index. The full-text runner (Task 21b) asks before it stores a paper's text, and what it reads is
+ * the truth on the server, not a copy on screen.
+ */
+export async function readIndexOnce(projectId: string, vault: BlobVault): Promise<ShelfIndex | null> {
+  let w: BlobWire;
+  try { w = await apiFetch<BlobWire>(blobPath(projectId, "shelf_index")); } catch (e) { return e instanceof ApiError && e.status === 404 ? [] : null; }
+  try { return parseBlob("shelf_index", await vault.decryptBody({ id: blobId(projectId, "shelf_index"), deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion })); } catch { return null; }
 }
 
 /**
@@ -113,6 +124,17 @@ export function useShelf(): { projectId: string | null; index: ShelfIndex | null
 
 /** New V2 copy (register row D-S2-17; ruling R15: an English constant): a pop-out of another stage than Literature does not store the matrix's columns (D-S2-43). */
 export const COLS_POPOUT = "Columns can be changed only in the writing window.";
+
+/**
+ * The write operations of the Reading list stores that are mounted now (one per store, newest last). Two clients of one blob in one window do not hear each other's saves (the sync channel never
+ * echoes to its own window), so the full-text runner (Task 21b) writes a paper's place on the list through the open list's own store, which then shows it, and through a headless client only when
+ * no store is open.
+ */
+const mountedStores: Array<{ projectId: string; ops: Pick<ShelfStore["ops"], "updateIndex" | "deletePaper"> }> = [];
+export function mountedShelfOps(projectId: string): Pick<ShelfStore["ops"], "updateIndex" | "deletePaper"> | null {
+  for (let i = mountedStores.length - 1; i >= 0; i--) if (mountedStores[i]!.projectId === projectId) return mountedStores[i]!.ops;
+  return null;
+}
 
 /** What the Reading list holds: the index, the matrix columns, each paper's blob as it is read, and the store operations of actions.ts. */
 export type ShelfStore = {
@@ -240,6 +262,16 @@ export function useShelfStore(): ShelfStore {
     paper: (id) => current.current.papers.get(id)?.value ?? null
     };
   }, [projectId, mayWrite, t, ensureClient]);
+
+  // The list is open: the full-text runner's writes to the index go through this store (see mountedStores).
+  const opsRef = useRef(ops);
+  useEffect(() => { opsRef.current = ops; });
+  useEffect(() => {
+    if (!projectId) return;
+    const mine = { projectId, ops: { updateIndex: (u: (prev: ShelfIndex | null) => ShelfIndex) => opsRef.current.updateIndex(u), deletePaper: (id: string) => opsRef.current.deletePaper(id) } };
+    mountedStores.push(mine);
+    return () => { mountedStores.splice(mountedStores.indexOf(mine), 1); };
+  }, [projectId]);
 
   const setCols = useCallback((u: (prev: ShelfCols | null) => ShelfCols) => {
     // v1's pop-out refuses appu_shelf_cols silently (LS.set, 1967); here the student is told (register row D-S2-17).

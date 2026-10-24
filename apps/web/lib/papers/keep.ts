@@ -1,12 +1,14 @@
 import { crLookupDoiV2, rsEntryFromResultV2, type CitationEntry, type CitationStyle, type PasteResult, type RsPaper } from "@appuscholar/core";
 import type { StoredEntry } from "@/lib/blobs/kinds";
 import type { Library } from "@/lib/cite/useLibrary";
+import { fullText } from "./fullText";
 import { newPid, paperMatch } from "./ids";
 
 /*
  * Keep (wave B Task 18, register row D-S2-123): the one door through which a paper joins the project's library and its reading list. The paste box (Task 19, D-S2-124) and the
  * bookmark (Task 20) keep through keepEntry too, and the paste box's Undo takes a paper it just kept out again (undoKeep, undoKeepSettled). A kept paper is a library entry with a `pid` (lib/papers/ids) and `rl: true`; whether it is kept already is decided
- * by paperMatch (the DOI when both have one, else the same long title and year), never by position or by title alone.
+ * by paperMatch (the DOI when both have one, else the same long title and year), never by position or by title alone. A paper kept now is put in the full-text queue (lib/papers/fullText: its
+ * open-access text is asked for at once, if it has a DOI), and an Undo that takes it out again takes the fetch, or the text it stored, out too (Task 21b).
  */
 
 export type KeepResult = { state: "kept" | "already"; pid: string };
@@ -39,7 +41,7 @@ export function libraryRead(l: Pick<Library, "ready" | "loading" | "locked" | "b
  * Keeps `e`: "already" with the pid of the library entry that is the same paper (nothing added; a stored entry that has no pid yet is given one), else the entry is added
  * with a new pid and `rl: true`. The library must have been read (libraryRead; useKeep waits for it), or this throws before it changes anything, since an update made
  * on an unread library is queued and lands on whatever is stored later. The check against the stored entries is made again inside the update, so a paper another
- * window kept since `lib` was read is not added twice.
+ * window kept since `lib` was read is not added twice. A paper that is kept (not "already") is handed to the full-text queue by its pid.
  */
 export function keepEntry(e: CitationEntry, d: KeepDeps): KeepResult {
   if (!libraryRead(d)) throw new Error("Keep needs a library that has been read.");
@@ -55,7 +57,9 @@ export function keepEntry(e: CitationEntry, d: KeepDeps): KeepResult {
   });
   if (!took) throw new Error("The library did not take the paper.");
   const had = seen.stored ?? shown;
-  return had ? { state: "already", pid: had.pid ?? mine } : { state: "kept", pid: mine };
+  if (had) return { state: "already", pid: had.pid ?? mine };
+  fullText.kept(mine);
+  return { state: "kept", pid: mine };
 }
 
 /**
@@ -171,5 +175,8 @@ export async function undoKeepSettled(added: StoredEntry, d: KeepDeps & Pick<Lib
   const u = startUndo(added, d);
   if (u.first !== "removed") return u.first;
   await d.flush();
-  return u.last();
+  const r = u.last();
+  // The paper is out: its open-access text is not fetched, and the text a fetch already stored for it goes too (Task 21b).
+  if (r === "removed" && added.pid) void fullText.undone(added.pid);
+  return r;
 }

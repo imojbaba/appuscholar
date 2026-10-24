@@ -10,6 +10,7 @@ import { PLACE_TABS, placeHref } from "@/lib/frame/places";
 import { CitationsTab } from "@/components/literature/CitationsTab";
 import { FindTab } from "@/components/literature/FindTab";
 import { ReadingList } from "@/components/literature/ReadingList";
+import { useFullTextLine } from "@/components/literature/useFullTextLine";
 import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
 import { Across } from "@/components/tools/analyse/Across";
 import { ShelfMatrix } from "@/components/tools/shelf/ShelfMatrix";
@@ -87,9 +88,11 @@ function Reading() {
   const { projectId } = useProject();
   // One store of the project's notes for the list and for Analyse a paper: each row's status reads the notes that Analyse writes, and two stores in a window do not hear each other.
   const notes = useApNotes(projectId);
+  // The list shown is the moment the older papers' open-access text is asked for (Task 21b); each row says so while it is on its way.
+  const textState = useFullTextLine();
   return (
     <>
-      <ReadingList notes={notes} />
+      <ReadingList notes={notes} textState={textState} />
       <h2 className="place-h2" data-testid="read-a-paper">{t("lit_read_a_paper")}</h2>
       <AnalysePanel notes={notes} />
     </>

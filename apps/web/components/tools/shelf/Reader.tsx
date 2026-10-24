@@ -50,6 +50,7 @@ export function Reader({ item, page, onBack, onPage, onSaveHighlight, onDeleteHi
         </span>
         <Button variant="ghost" size="sm" data-testid="sh-next" aria-label="›" onClick={() => go(page + 1)}>›</Button>
       </div>
+      {item.src === "epmc" && <p className="sh-small sh-muted" data-testid="sh-src">{t("rl_text_epmc")}</p>}
       <div id="shText" className="sh-page" data-testid="sh-text" ref={textRef}><Parts parts={shMarkedParts(p.pages[page - 1] || "", p.notes, page)} /></div>
       <p className="sh-small sh-muted">{t("sh2_this_is_the_text")}</p>
       <textarea className="input sh-wide" id="shNote" data-testid="sh-note" rows={2} value={note} placeholder={t("sh2_note_placeholder")} aria-label={t("sh2_note_placeholder")} onChange={(e) => setNote(e.target.value)} />

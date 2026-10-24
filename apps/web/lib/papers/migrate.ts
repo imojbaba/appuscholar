@@ -49,7 +49,7 @@ export type PaperMigrateDeps = {
 };
 
 /** The vault that never asks: the run starts only when it is open, and a lock meanwhile is an answer ("locked"), not a prompt. */
-const quiet = (v: BlobVault): BlobVault => ({
+export const quiet = (v: BlobVault): BlobVault => ({
   known: (recheck) => v.known(recheck),
   ensureUnlocked: async () => false,
   encryptBody: (doc, html) => v.encryptBody(doc, html),

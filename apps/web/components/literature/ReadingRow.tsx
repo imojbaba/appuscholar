@@ -14,7 +14,8 @@ const safeLink = (u: string | undefined): string => (u && /^https?:\/\//i.test(u
  * open-access link and no PDF yet), and the actions: Read (until B3 the reader of today's shelf), and More. More holds what is left of the shelf: Rename and Add to my references for a
  * paper only the reading list has, and Remove (the PDF text and its highlights; or, for a paper only the reading list has, the paper), which asks first, in the row.
  * `loading`: the paper's text is still being read, so its highlights are not known and its status is drawn as a bar, not a wrong "Not read yet".
- * `textState`: a line under the status for the automatic full text (Task 21b); nothing here.
+ * `textState`: the quiet line under the status while the paper's open-access full text is on its way (Task 21b: "Getting the free full text…"). While it shows, the "Get the free PDF" link
+ * waits: the text comes in by itself, and the link is there again if Europe PMC has none or could not be asked.
  */
 export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemove, onAddRefs, textState }: {
   paper: Paper; loading: boolean; canWrite: boolean;
@@ -58,7 +59,7 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
         {loading
           ? <Skeleton className="rl-status-wait" data-testid="rl-status-wait" aria-hidden="true" />
           : <p className="rl-status" data-testid="rl-status">{paperStatus(paper, t)}</p>}
-        {free && (
+        {free && !textState && (
           <p className="rl-free" data-testid="rl-free">
             <a href={free} target="_blank" rel="noopener noreferrer" data-testid="rl-free-pdf">{t("rl_free_pdf")}</a>{" "}
             <span>{t("rl_free_pdf_line")}</span>

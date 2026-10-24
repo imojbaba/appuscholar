@@ -78,6 +78,12 @@ export function createBlobServer(projectId = "p1") {
       const cur = s.blobs.find((b) => b.projectId === pid && b.kind === kind);
       const wire = (b: SBlob) => ({ kind: b.kind, body: b.body, keyVersion: b.keyVersion, deks: [...b.deks], updatedAt: b.updatedAt, version: b.version });
       if (method === "GET") { if (!cur) throw new ApiError(404, "not-found"); return wire(cur); }
+      // A shelf paper is deleted with its blob (the Reading list's Remove): a blob that is not there is 404.
+      if (method === "DELETE") {
+        if (!cur) throw new ApiError(404, "not-found");
+        s.blobs = s.blobs.filter((b) => b !== cur);
+        return null;
+      }
       if (method !== "PUT") throw new ApiError(405, "method");
       await s.onPut?.(kind);
       const now = s.blobs.find((b) => b.projectId === pid && b.kind === kind);

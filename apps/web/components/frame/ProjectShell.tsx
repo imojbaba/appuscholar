@@ -32,6 +32,7 @@ import { ImportV1Dialog } from "@/components/workspace/dialogs/ImportV1Dialog";
 import { ChromeDialogs } from "@/components/workspace/ChromeDialogs";
 import { ExportDialog, exportPartsFor } from "@/components/export/ExportDialog";
 import type { ExportPartId } from "@/lib/export/projectExport";
+import { FullTextRunner } from "./FullTextRunner";
 import { PaperIdsRunner } from "./PaperIdsRunner";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
@@ -498,6 +499,8 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
         {inProject && <CaptureHash />}
         {/* The paper-id migration (Task 17): once per project per unlock per tab, when the vault is off or open, through this shared library; never in a place's own window. */}
         {inProject && !popout && <PaperIdsRunner onState={reportPaperIds} />}
+        {/* Open-access full text from Europe PMC for kept papers (Task 21b): one at a time, only while the vault is off or open; never in a place's own window. */}
+        {inProject && !popout && <FullTextRunner />}
         {/* The tools' document access in a place's own window is answered here: snapshots of the open document and its requests (lib/editor/docAccess). */}
         {inProject && !popout && <DocAccessHost />}
         {/* What a built tool draws over the open document (ToolModule.DocumentLayer, ruling R33): once per module, in the writing window only, whatever place is open. */}

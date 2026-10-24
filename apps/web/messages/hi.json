@@ -1011,6 +1011,8 @@
   "rl_status_reading_1": "पढ़ रहे हैं। 1 हाइलाइट",
   "rl_status_reading_n": "पढ़ रहे हैं। {n} हाइलाइट",
   "rl_status_unread": "अभी पढ़ा नहीं",
+  "rl_text_epmc": "पूरा पाठ Europe PMC से (ओपन एक्सेस)।",
+  "rl_text_getting": "निःशुल्क पूरा पाठ लाया जा रहा है…",
   "rl_tools": "अपने PDF में खोजें, बैकअप लें और वापस लाएँ",
   "rl_untitled": "बिना शीर्षक का शोध-पत्र",
   "rs2_abstract_loaded_this_is": "Abstract loaded. This is a shallow read; load the full paper for a real analysis.",

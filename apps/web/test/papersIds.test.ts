@@ -246,8 +246,8 @@ describe("cellsToNotes", () => {
 });
 
 describe("forLibraryFile", () => {
-  it("leaves out pid, rl, abstract, oa and ack, which the class-share file never carried, and keeps every other field", () => {
-    const lib: StoredEntry[] = [{ author: "Lee, K.", title: "A paper", year: "2024", doi: "10.1/x", pid: "kone", rl: true, abstract: "Long text", oa: "https://example.org/a.pdf", ack: ["numbers"], type: "Journal article", style: "apa" }];
+  it("leaves out pid, rl, abstract, oa, ack, ft and pmcid, which the class-share file never carried, and keeps every other field", () => {
+    const lib: StoredEntry[] = [{ author: "Lee, K.", title: "A paper", year: "2024", doi: "10.1/x", pid: "kone", rl: true, abstract: "Long text", oa: "https://example.org/a.pdf", ack: ["numbers"], ft: { none: "10.1/x" }, pmcid: "PMC1", type: "Journal article", style: "apa" }];
     const file = JSON.parse(exportLibrary(forLibraryFile(lib))) as Array<Record<string, unknown>>;
     expect(file).toEqual([{ author: "Lee, K.", title: "A paper", year: "2024", doi: "10.1/x", type: "Journal article", style: "apa" }]);
   });

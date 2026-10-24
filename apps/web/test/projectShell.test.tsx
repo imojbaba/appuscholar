@@ -61,6 +61,7 @@ import { heldBlobs } from "../lib/blobs/held";
 import { VaultProvider } from "../lib/vault/useVault";
 import { ProjectShell } from "../components/frame/ProjectShell";
 import { resetPaperIdsRun } from "../components/frame/PaperIdsRunner";
+import { fullText } from "../lib/papers/fullText";
 import PlacePage from "../app/(app)/p/[projectId]/[stage]/[[...tab]]/page";
 import { useProject, type ProjectValue } from "../components/frame/ProjectContext";
 
@@ -267,6 +268,29 @@ describe("ProjectShell document switching with the vault", () => {
       expect(ws().paperIds).toBe("busy");
       expect(h.api.mock.calls.some(([p]) => String(p).includes("/blobs/shelf_index"))).toBe(false);
     } finally { window.history.replaceState(null, "", "/"); }
+  });
+
+  it("hands the project to the full-text queue once it has loaded (Task 21b)", async () => {
+    resetPaperIdsRun();
+    plainApi();
+    const attach = vi.spyOn(fullText, "attach");
+    try {
+      await mount("p1");
+      await until(() => attach.mock.calls.length > 0);
+      expect(attach.mock.calls.every(([d]) => d.projectId === "p1")).toBe(true);
+    } finally { attach.mockRestore(); fullText.reset(); }
+  });
+
+  it("a place's own window does not hand it to the full-text queue", async () => {
+    resetPaperIdsRun();
+    plainApi();
+    window.history.replaceState(null, "", "/p/p1/lit/reading?window=1");
+    const attach = vi.spyOn(fullText, "attach");
+    try {
+      await mount("p1", <Probe />);
+      await until(() => h.ws !== null && ws().projectId === "p1");
+      expect(attach).not.toHaveBeenCalled();
+    } finally { attach.mockRestore(); window.history.replaceState(null, "", "/"); }
   });
 
   it("cancel on A, select B, unlock: B is shown, not A", async () => {

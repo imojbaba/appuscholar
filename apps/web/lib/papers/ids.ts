@@ -169,7 +169,7 @@ export function cellsToNotes(notes: ApNotes, papers: Array<{ pid: string; title:
 /** The library as the class-share file holds it (ruling B2-R13): v1's fields only, without the fields of wave B. */
 export function forLibraryFile(lib: StoredEntry[]): CitationEntry[] {
   return lib.map((e) => {
-    const { pid: _pid, rl: _rl, abstract: _abstract, oa: _oa, ack: _ack, ...rest } = e;
+    const { pid: _pid, rl: _rl, abstract: _abstract, oa: _oa, ack: _ack, ft: _ft, pmcid: _pmcid, ...rest } = e;
     return rest;
   });
 }
