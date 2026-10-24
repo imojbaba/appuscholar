@@ -1,11 +1,11 @@
-import { crLookupDoi, rsEntryFromResultV2, type CitationEntry, type CitationStyle, type RsPaper } from "@appuscholar/core";
+import { crLookupDoiV2, rsEntryFromResultV2, type CitationEntry, type CitationStyle, type PasteResult, type RsPaper } from "@appuscholar/core";
 import type { StoredEntry } from "@/lib/blobs/kinds";
 import type { Library } from "@/lib/cite/useLibrary";
 import { newPid, paperMatch } from "./ids";
 
 /*
- * Keep (wave B Task 18, register row D-S2-123): the one door through which a paper joins the project's library and its reading list. The paste box (Task 19) and the
- * bookmark (Task 20) keep through keepEntry too. A kept paper is a library entry with a `pid` (lib/papers/ids) and `rl: true`; whether it is kept already is decided
+ * Keep (wave B Task 18, register row D-S2-123): the one door through which a paper joins the project's library and its reading list. The paste box (Task 19, D-S2-124) and the
+ * bookmark (Task 20) keep through keepEntry too, and the paste box's Undo takes a paper it just kept out again (undoKeep, undoKeepSettled). A kept paper is a library entry with a `pid` (lib/papers/ids) and `rl: true`; whether it is kept already is decided
  * by paperMatch (the DOI when both have one, else the same long title and year), never by position or by title alone.
  */
 
@@ -76,13 +76,13 @@ export type KeepResultDeps = KeepDeps & Pick<Library, "style" | "fillEmpty"> & {
 };
 
 /**
- * W2: an OpenAlex paper kept with a DOI and an empty volume, issue or pages is filled from Crossref's record of that DOI (and its author, only when empty), onto the entry
- * with this pid. The request carries the DOI only and is aborted after CROSSREF_FILL_TIMEOUT_MS; any failure (offline, HTTP error, not in Crossref, the timeout) is swallowed.
+ * W2: an OpenAlex paper kept with a DOI and an empty volume, issue or pages is filled from Crossref's record of that DOI (crLookupDoiV2, so Crossref's article number is the
+ * pages when it lists no page range, as a pasted paper has it; Task 19), and its author, only when empty, onto the entry with this pid. The request carries the DOI only and is aborted after CROSSREF_FILL_TIMEOUT_MS; any failure (offline, HTTP error, not in Crossref, the timeout) is swallowed.
  */
 function fillFromCrossref(p: RsPaper, entry: CitationEntry, pid: string, d: Pick<KeepResultDeps, "fetch" | "fillEmpty">): void {
   if (p.source !== "OpenAlex" || !entry.doi || (entry.volume && entry.issue && entry.pages)) return;
   const f: typeof fetch = (input, init) => d.fetch(input, { ...init, signal: AbortSignal.timeout(CROSSREF_FILL_TIMEOUT_MS) });
-  void crLookupDoi(f, entry.doi).then((cr) => {
+  void crLookupDoiV2(f, entry.doi).then((cr) => {
     if (!cr) return;
     d.fillEmpty((e) => (e as StoredEntry).pid === pid, { volume: cr.volume ?? "", issue: cr.issue ?? "", pages: cr.pages ?? "", author: cr.author ?? "" });
   }, () => {});
@@ -100,4 +100,76 @@ export function keepResult(p: RsPaper, d: KeepResultDeps): KeepResult {
     fillFromCrossref(p, entry, r.pid, d);
   }
   return r;
+}
+
+/**
+ * A pasted paper (pasteLookup's "ok") as the entry Keep stores: the entry as looked up, with the abstract (up to 4,000 characters, as resultEntry cuts it) and the open-access link
+ * when the lookup brought them. Only OpenAlex brings either. It sets no citation style, as core's lookup does not: the page's own choice stays the library's.
+ */
+export function pastedEntry(r: Extract<PasteResult, { result: "ok" }>): StoredEntry {
+  const abstract = (r.abstract ?? "").trim() ? r.abstract!.slice(0, ABSTRACT_MAX) : "";
+  return { ...r.entry, ...(abstract ? { abstract } : {}), ...(r.oa ? { oa: r.oa } : {}) };
+}
+
+/** What a kept paper is made of for Undo: the citation's fields, the reading-list mark, the abstract and the link. Anything else on an entry is the app's own bookkeeping. */
+const KEPT_FIELDS: ReadonlyArray<keyof StoredEntry> = [
+  "author", "year", "title", "source", "volume", "issue", "pages", "doi", "url", "month", "day", "accessed", "container", "editors", "number", "degree", "type", "style", "lang",
+  "rl", "abstract", "oa"
+];
+/** Whether two entries are the same kept paper in every field the student sees or edits (an empty field and an absent one are the same). */
+const sameKept = (a: StoredEntry, b: StoredEntry): boolean => KEPT_FIELDS.every((k) => (a[k] ?? "") === (b[k] ?? ""));
+
+/** What Undo found: the entry taken out, left as it is (changed, or the paper is in the library under another id), or already not there. */
+export type UndoResult = "removed" | "changed" | "gone";
+
+/**
+ * Whether `prev` holds the paper `added` under another id: nothing has `added`'s pid, yet an entry is the same paper (paperMatch). That is a keep that lost to another window's keep
+ * of the same paper: keepEntry's check inside the update found it and stored nothing, so the pid keepEntry answered was never stored, and the copy that stays is the other window's.
+ */
+const keptElsewhere = (prev: StoredEntry[], added: StoredEntry): boolean => prev.some((l) => paperMatch(added, l));
+/** "gone" unless the paper is there under another id, which Undo must not call removed. */
+const absent = (prev: StoredEntry[], added: StoredEntry): UndoResult => (keptElsewhere(prev, added) ? "changed" : "gone");
+
+/** Undo's first pass, with the way to read what the update found when it was run again (see undoKeepSettled). */
+function startUndo(added: StoredEntry, d: KeepDeps): { first: UndoResult; last(): UndoResult } {
+  if (!libraryRead(d)) throw new Error("Undo needs a library that has been read.");
+  const shown = d.lib.find((l) => l.pid === added.pid);
+  const fixed = (r: UndoResult) => ({ first: r, last: () => r });
+  if (!shown) return fixed(absent(d.lib, added));
+  if (!sameKept(shown, added)) return fixed("changed");
+  const seen: { state?: UndoResult } = {};
+  const took = d.update((prev) => {
+    const at = prev.find((l) => l.pid === added.pid);
+    if (!at) { seen.state = absent(prev, added); return prev; }
+    if (!sameKept(at, added)) { seen.state = "changed"; return prev; }
+    seen.state = "removed";
+    return prev.filter((l) => l !== at);
+  });
+  if (!took) throw new Error("The library did not take the change.");
+  const first = seen.state ?? "removed";
+  return { first, last: () => seen.state ?? first };
+}
+
+/**
+ * Undo of a keep (the paste box's "Kept: {title}" line): takes the entry `added`, as keepEntry stored it with its pid, out of the library, but only while the library still holds
+ * exactly that entry (sameKept). "changed": the entry is there and is not as it was kept (the student edited it, or another window did), so it stays; so does a paper that is in the
+ * library under another id (the keep lost to another window's keep of the same paper, so `added`'s pid was never stored). "gone": the paper is not in the library any more, so
+ * there is nothing to remove. A field the app adds to an entry later in the background does not count as a change. The copy shown is checked first, so a "changed" or "gone" writes
+ * nothing; the stored entries are checked again inside the update. Like keepEntry it needs a library that has been read, or it throws. This is the answer of the first, local pass:
+ * the save is not sent yet and may still be refused (undoKeepSettled).
+ */
+export function undoKeep(added: StoredEntry, d: KeepDeps): UndoResult {
+  return startUndo(added, d).first;
+}
+
+/**
+ * undoKeep, then the save: a "removed" is only said once the library has sent it (flush). Another window may have saved first; the save is then refused and the library reads its
+ * newer entries and runs this update again on them, where the entry may have been edited since (it stays: "changed"), or the paper kept under another id. The answer is what the
+ * update found on its last run, so "removed" is never said for an entry that is still in the library.
+ */
+export async function undoKeepSettled(added: StoredEntry, d: KeepDeps & Pick<Library, "flush">): Promise<UndoResult> {
+  const u = startUndo(added, d);
+  if (u.first !== "removed") return u.first;
+  await d.flush();
+  return u.last();
 }

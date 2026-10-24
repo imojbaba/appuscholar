@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useRef } from "react";
 import { citFmt, citKey, citIsNumbered, sanitizeHtml, type CitationStyle, type RcCheck } from "@appuscholar/core";
 import { useLang, useT } from "@/lib/i18n";
 import { useSuggestion } from "@/lib/ai/suggestion";
-import { useInsertTarget } from "@/lib/popout/sync";
+import { useInsertTarget, usePopout } from "@/lib/popout/sync";
 import { useOpenAlexKey } from "@/lib/research/oaKey";
 import { citeUseLib, type CiteDeps } from "@/lib/cite/actions";
 import { setCiteActive, useCiteActive, useCitePanelShown } from "@/lib/cite/active";
@@ -30,6 +30,9 @@ import { SourceRow } from "./SourceRow";
  * checks). The library is the project's `citations` blob, shared with the caret chip and Find (useLibrary); the two caches are the project's `retraction_cache` and `refcheck_cache`.
  * The library file's export is in the export place (the Export link here opens it with the citations ticked, Task 12). Inserts go through the shell (a closed document opens first),
  * or to the writing window from a pop-out.
+ *
+ * A library that has not been read (still loading, locked, failed to read, or one that does not open) is never shown as an empty one: no count, no "No sources yet", and the three
+ * buttons that act on the whole library (Insert reference list, Check for retractions, Check details against Crossref) are off, each pointing at the line that says why.
  */
 export function CitationsTab() {
   const t = useT();
@@ -40,6 +43,8 @@ export function CitationsTab() {
   const { editor } = useSuggestion();
   // The open document's editor, or the writing window when this is a pop-out.
   const target = useInsertTarget();
+  // A pop-out has no document (Task 13): the cross-check hint then sends the student to the writing window.
+  const popout = usePopout();
   const usage = useCitationUsage(lib, style);
   const oaKey = useOpenAlexKey();
   const checks = useCiteChecks(library, { oaKey: oaKey ?? undefined });
@@ -48,10 +53,17 @@ export function CitationsTab() {
   const box = useRef<HTMLDivElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const hintId = useId();
+  const whyId = useId();
   const deps = (): CiteDeps => ({ lib, style, toast, t, insert: (f) => target.citation(f) });
   // W8: while the saved library is read and opened there is neither a count nor "no sources" (a locked vault says so in its own sentence).
   const opening = library.loading && !library.locked;
-  const counted = !opening && !library.locked;
+  // A failed read (`error`) and a blob that does not open (`broken`) give `lib` of [] as well: that is not an empty library, so neither a count nor "no sources" is claimed over it.
+  const unread = library.error || library.broken;
+  const counted = !opening && !library.locked && !unread;
+  // The one line that says why the library is not shown, which the buttons that are off point at.
+  const why = library.locked ? "locked" : library.broken ? "broken" : library.error ? "error" : null;
+  const whyFor = (k: string) => (why === k ? whyId : undefined);
+  const offBecause = !counted && why ? whyId : undefined;
   const open = editor && !editor.isDestroyed ? editor : null;
 
   // The lit row comes into view: to the middle after the chip's click, only as far as needed as the caret moves (citMarkActive 7701).
@@ -73,8 +85,9 @@ export function CitationsTab() {
 
   return (
     <div className="cit" data-testid="panel-citations">
-      {library.locked && <p className="cit-note" role="status" data-testid="cite-locked">{t("vault_cite_locked")}</p>}
-      {library.broken && <p className="cit-note" role="status" data-testid="cite-broken">{t("vault_cite_broken")}</p>}
+      {library.locked && <p className="cit-note" role="status" id={whyFor("locked")} data-testid="cite-locked">{t("vault_cite_locked")}</p>}
+      {library.broken && <p className="cit-note" role="status" id={whyFor("broken")} data-testid="cite-broken">{t("vault_cite_broken")}</p>}
+      {library.error && !library.broken && <p className="cit-note" role="status" id={whyFor("error")} data-testid="cit-library-error">{t("cit_library_error")}</p>}
       <div className="cit-grid">
         <div className="cit-main">
           <div className="cit-top">
@@ -92,7 +105,7 @@ export function CitationsTab() {
           <p className="cit-note" data-testid="cite-style-note">{citIsNumbered(style) ? t("cite_note_numbered") : t("cite_note_check")}</p>
           {usage.missing.length > 0 && <p className="cit-note cit-note-strong" data-testid="cite-num-missing">{t("num_missing_fmt", { n: missingLabel(usage.missing) })}</p>}
           <div className="cit-list" data-testid="cite-lib" ref={box}>
-            {opening ? <PanelLoading /> : library.locked ? null : rows.length === 0 ? <p className="cit-empty">{t("cit_empty")}</p> : rows.map(({ d, html, cite }, i) => {
+            {opening ? <PanelLoading /> : library.locked ? null : rows.length === 0 ? (unread ? null : <p className="cit-empty">{t("cit_empty")}</p>) : rows.map(({ d, html, cite }, i) => {
               const check = rcCurrent(d, checks.rc[citKey(d)]);
               const retr = checks.retraction.status[i] ?? null;
               return (
@@ -128,15 +141,15 @@ export function CitationsTab() {
         <aside className="cit-aside">
           <section className="cit-card" data-testid="cit-doc">
             <h2>{t("cit_doc_h")}</h2>
-            <InsertReferenceList library={library} />
+            <InsertReferenceList library={library} disabled={!counted} describedBy={offBecause} />
             <p className="cit-note" data-testid="cit-cite-hint">{t("cit_cite_hint")}</p>
           </section>
           <section className="cit-card" data-testid="cit-check">
             <h2>{t("cit_check_h")}</h2>
-            <Button variant="ghost" className="cit-btn" data-testid="cite-retract-btn" onClick={() => void checks.refreshRetractions(true)}>{t("cit_check_retr")}</Button>
-            <Button variant="ghost" className="cit-btn" data-testid="cite-rc-btn" onClick={() => void checks.runRefCheck(true)}>{t("cit_check_rc")}</Button>
+            <Button variant="ghost" className="cit-btn" data-testid="cite-retract-btn" disabled={!counted} aria-describedby={offBecause} onClick={() => void checks.refreshRetractions(true)}>{t("cit_check_retr")}</Button>
+            <Button variant="ghost" className="cit-btn" data-testid="cite-rc-btn" disabled={!counted} aria-describedby={offBecause} onClick={() => void checks.runRefCheck(true)}>{t("cit_check_rc")}</Button>
             <CrossCheckDialog editor={open} lib={lib} style={style} label={t("cit_check_cc")} className="cit-btn" describedBy={open ? undefined : hintId} />
-            {!open && <p className="cit-note" id={hintId} data-testid="cit-cc-hint">{t("cit_cc_hint")}</p>}
+            {!open && <p className="cit-note" id={hintId} data-testid="cit-cc-hint">{t(popout ? "cit_cc_hint_window" : "cit_cc_hint")}</p>}
           </section>
         </aside>
       </div>
@@ -146,13 +159,13 @@ export function CitationsTab() {
 
 /**
  * "Insert reference list" (v1 citInsertBib 7871-7881): core's block for the whole library, in the chosen style, at the open document's cursor (a closed document opens first), or sent to the
- * writing window from a pop-out. An empty library says so and inserts nothing.
+ * writing window from a pop-out. An empty library says so and inserts nothing. `disabled`: the library has not been read (the tab says why, `describedBy`), so "empty" would be false.
  */
-export function InsertReferenceList({ library }: { library: Pick<Library, "lib" | "style"> }) {
+export function InsertReferenceList({ library, disabled, describedBy }: { library: Pick<Library, "lib" | "style">; disabled?: boolean; describedBy?: string }) {
   const t = useT();
   const target = useInsertTarget();
   return (
-    <Button variant="primary" className="cit-btn" data-testid="cite-insertbib" onClick={() => void citeInsertBib({ lib: library.lib, style: library.style, toast, t, insert: (html) => target.block(html) })}>
+    <Button variant="primary" className="cit-btn" data-testid="cite-insertbib" disabled={disabled} aria-describedby={describedBy} onClick={() => void citeInsertBib({ lib: library.lib, style: library.style, toast, t, insert: (html) => target.block(html) })}>
       {t("cite_insertbib_btn")}
     </Button>
   );
@@ -178,17 +191,20 @@ function RetractionLine({ sources, checks, lang }: { sources: number; checks: Re
 /**
  * What is wrong with a source, in the row's problem seam (SourceRow): OpenAlex's retraction warning, then Crossref's answer in the Citation Manager's sentences (rcLine 7792-7797; fix wave A's
  * missing fields), with the one fix that was there, "Use Crossref details" (fix wave A W27, W28: only the empty fields change). "Needs your attention" (Task 24) takes this seam over with
- * its own sentences and fixes. A match, an error or no answer says nothing here; the status word beside the reference says it.
+ * its own sentences and fixes. An error or no answer says nothing here; the status word beside the reference says it, and so does a match, except one Crossref made by the title for a
+ * source with no DOI: that one adds the DOI it found ("DOI found: 10...", v1's rcLine 7794), which v1 showed on the same line.
  */
 function SourceProblem({ check, retracted, onFill }: { check: RcCheck | undefined; retracted: boolean; onFill?: () => void }) {
   const t = useT();
   const diff = check && check.s === "diff" ? check : null;
   const miss = diff && diff.miss && diff.miss.length ? diff.miss : null;
   const says = diff ? (diff.m ?? []).map((x) => t("rc_" + x.k) + " " + x.v) : [];
+  const found = check && check.s === "ok" && check.viaTitle && check.f && check.f.doi ? check.f.doi : null;
   return (
     <>
       {retracted && <div className="cit-problem cit-problem-retracted" data-testid="cite-retr-warn">{t("retr_lib_warn")}</div>}
       {check && check.s === "nf" && <div className="cit-problem">{t("rc_nf")}</div>}
+      {found && <div className="cit-problem cit-problem-found" data-testid="cite-rc-doi">{t("rc_doi_found")} {found}</div>}
       {diff && (says.length > 0 || diff.viaTitle || miss) ? (
         <div className="cit-problem">
           {says.join("  ·  ")}

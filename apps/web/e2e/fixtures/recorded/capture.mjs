@@ -6,9 +6,10 @@
 // never edited by hand. No API key and no mailto are sent; 250 ms between calls. What is sent is what the app itself would send: DOIs and OpenAlex ids.
 //
 // The URLs are the ones the journey's browser asks for (run the spec with E2E_LOG_UNRECORDED=1 to see any it asks for that are not recorded); they are
-// `--only a,b` records just the named cases (the first element of each URLS entry) and deletes nothing; it refuses to overwrite a file that exists.
-//
 // built by core's own fetchers (packages/core/src/fetch: oaConnected, oaRetractions, rcCheckOne), so they are listed here exactly as those build them.
+//
+// `--only a,b` records just the named cases (the first element of each URLS entry) and deletes nothing. It refuses to overwrite a file that exists, and it refuses
+// before it fetches (every named case is checked first), so a mistaken name costs the live API no request (ruling B2-R19).
 
 import { existsSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -37,6 +38,7 @@ export const URLS = [
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const short = (url) => createHash("sha256").update(url).digest("hex").slice(0, 8);
+const fileOf = (name, url) => `${name}-${short(url)}.json`;
 
 async function main() {
   const argv = process.argv.slice(2);
@@ -45,6 +47,8 @@ async function main() {
   if (only) {
     if (!only.size) throw new Error("--only needs a comma-separated list of case names");
     for (const n of only) if (!URLS.some(([name]) => name === n)) throw new Error(`--only: unknown case "${n}"; the cases are ${URLS.map(([name]) => name).join(", ")}`);
+    // Before any request: a recording that exists is not fetched again (a failure after the first fetch would leave the run half done).
+    for (const [name, url] of URLS) if (only.has(name) && existsSync(DIR + fileOf(name, url))) throw new Error(`--only: ${fileOf(name, url)} already exists and is not overwritten`);
   } else for (const f of readdirSync(DIR).filter((x) => x.endsWith(".json"))) unlinkSync(DIR + f);
   for (const [name, url] of URLS) {
     if (only && !only.has(name)) continue;
@@ -52,9 +56,7 @@ async function main() {
     const r = await fetch(url);
     const body = await r.text();
     if (r.status !== 200) throw new Error(name + ": HTTP " + r.status);
-    const file = `${name}-${short(url)}.json`;
-    if (only && existsSync(DIR + file)) throw new Error(`--only: ${file} already exists and is not overwritten`);
-    writeFileSync(DIR + file, JSON.stringify({ url, status: r.status, headers: { "content-type": r.headers.get("content-type") }, body }, null, 1) + "\n");
+    writeFileSync(DIR + fileOf(name, url), JSON.stringify({ url, status: r.status, headers: { "content-type": r.headers.get("content-type") }, body }, null, 1) + "\n");
     console.log("recorded", name, r.status, body.length);
   }
 }

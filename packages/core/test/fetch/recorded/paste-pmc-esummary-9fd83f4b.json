@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pmc&retmode=json&id=6746734",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esummary\",\"version\":\"0.3\"},\"result\":{\"uids\":[\"6746734\"],\"6746734\":{\"uid\":\"6746734\",\"pubdate\":\"2019 Sep 16\",\"epubdate\":\"2019 Sep 16\",\"printpubdate\":\"\",\"source\":\"Sci Rep\",\"authors\":[{\"name\":\"Schaefer M\",\"authtype\":\"Author\"},{\"name\":\"Denke C\",\"authtype\":\"Author\"},{\"name\":\"Harke R\",\"authtype\":\"Author\"},{\"name\":\"Olk N\",\"authtype\":\"Author\"},{\"name\":\"Erkovan M\",\"authtype\":\"Author\"},{\"name\":\"Enge S\",\"authtype\":\"Author\"}],\"title\":\"Open-label placebos reduce test anxiety and improve self-management skills: A randomized-controlled trial.\",\"volume\":\"9\",\"issue\":\"1\",\"pages\":\"13317\",\"articleids\":[{\"idtype\":\"pmid\",\"value\":\"31527670\"},{\"idtype\":\"pmcid\",\"value\":\"PMC6746734\"},{\"idtype\":\"doi\",\"value\":\"10.1038/s41598-019-49466-6\"},{\"idtype\":\"pii\",\"value\":\"10.1038/s41598-019-49466-6\"}],\"fulljournalname\":\"Scientific reports\",\"sortdate\":\"2019/09/16 00:00\",\"pmclivedate\":\"2019/09/27\"}}}\n"
+}

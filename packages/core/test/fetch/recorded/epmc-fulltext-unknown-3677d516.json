@@ -1,0 +1,8 @@
+{
+ "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC99999999/fullTextXML",
+ "status": 500,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": "{\"timestamp\":\"2026-10-24T16:50:03.335+00:00\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/europepmc/webservices/rest/PMC99999999/fullTextXML\"}"
+}

@@ -593,7 +593,7 @@ export const V2_STRINGS = {
   cit_status_unchecked: { en: "Not checked yet", hi: "अभी जाँचा नहीं गया" },
   cit_use_none: { en: "Not cited yet", hi: "अभी उद्धृत नहीं" },
   cit_use_once: { en: "Cited once in {document}", hi: "{document} में एक बार उद्धृत" },
-  cit_use_many: { en: "Cited {n} times", hi: "{n} बार उद्धृत" },
+  cit_use_many: { en: "Cited {n} times: {documents}", hi: "{n} बार उद्धृत: {documents}" },
   cit_more: { en: "More", hi: "और" },
   cit_more_aria: { en: "More actions for {source}", hi: "{source} के लिए और विकल्प" },
   cit_item_insert: { en: "Insert citation {cite}", hi: "उद्धरण डालें {cite}" },
@@ -606,6 +606,8 @@ export const V2_STRINGS = {
   cit_check_rc: { en: "Check details against Crossref", hi: "Crossref से विवरण जाँचें" },
   cit_check_cc: { en: "Cross-check citations in my document", hi: "मेरे दस्तावेज़ के उद्धरणों का मिलान करें" },
   cit_cc_hint: { en: "Open your document first, then cross-check it.", hi: "पहले अपना दस्तावेज़ खोलें, फिर मिलान करें।" },
+  cit_cc_hint_window: { en: "Open the document in the main window first, then cross-check it there.", hi: "पहले मुख्य विंडो में दस्तावेज़ खोलें, फिर वहीं मिलान करें।" },
+  cit_library_error: { en: "Your sources could not be reached. Check your connection, then reload this page.", hi: "आपके स्रोतों तक पहुँचा नहीं जा सका। अपना कनेक्शन जाँचें, फिर यह पृष्ठ दोबारा लोड करें।" },
   cit_hand: { en: "Add a source by hand", hi: "स्रोत हाथ से जोड़ें" },
   cit_import: { en: "Import a library file", hi: "लाइब्रेरी फ़ाइल आयात करें" },
   cit_classics: { en: "Add the classic psychology sources", hi: "मनोविज्ञान के क्लासिक स्रोत जोड़ें" },
@@ -637,6 +639,23 @@ export const V2_STRINGS = {
   add_none: { en: "There is no paper to add here. Open a paper's page and click Keep in Appuscholar in your bookmarks bar.", hi: "यहाँ जोड़ने के लिए कोई शोध-पत्र नहीं है। किसी शोध-पत्र का पृष्ठ खोलें और अपने बुकमार्क बार में \"Appuscholar में रखें\" दबाएँ।" },
   add_unreadable: { en: "This paper's details could not be read. Open the paper's page and click the bookmark again.", hi: "इस शोध-पत्र का विवरण पढ़ा नहीं जा सका। शोध-पत्र का पृष्ठ खोलें और बुकमार्क फिर से दबाएँ।" },
   add_home: { en: "Go to my projects", hi: "मेरे प्रोजेक्ट देखें" },
+  // Wave B Task 19 (register D-S2-124): the paste box in Find, "Already have a paper? Paste a link, DOI or PubMed number" (canvas Find). The plan's four messages (link, text, nf, fail) are word for word;
+  // the empty box, Undo, its two answers and "not kept" are the build's own. DRAFT Hindi (DOI, PubMed, Crossref and OpenAlex kept in Latin letters as in the keys above).
+  find_paste_summary: { en: "Already have a paper? Paste a link, DOI or PubMed number", hi: "पहले से कोई शोध-पत्र है? लिंक, DOI या PubMed नंबर चिपकाएँ" },
+  find_paste_label: { en: "Link, DOI or PubMed number", hi: "लिंक, DOI या PubMed नंबर" },
+  find_paste_btn: { en: "Look it up and keep", hi: "खोजें और रखें" },
+  find_paste_busy: { en: "Looking it up…", hi: "खोजा जा रहा है…" },
+  find_paste_kept: { en: "Kept: {title}", hi: "रखा गया: {title}" },
+  find_paste_already: { en: "Already in your reading list: {title}", hi: "आपकी पढ़ने की सूची में पहले से है: {title}" },
+  find_paste_undo: { en: "Undo", hi: "वापस करें" },
+  find_paste_removed: { en: "Removed: {title}", hi: "हटाया गया: {title}" },
+  find_paste_changed: { en: "Not removed: {title} has changed since you kept it. You can still remove it in Citations.", hi: "हटाया नहीं गया: रखने के बाद {title} बदल गया है। आप इसे अब भी 'उद्धरण' में हटा सकते हैं।" },
+  find_paste_link: { en: "This link has no DOI or PubMed number in it. Open the paper's page, copy its DOI and paste that.", hi: "इस लिंक में कोई DOI या PubMed नंबर नहीं है। शोध-पत्र का पेज खोलें, उसका DOI कॉपी करें और वही चिपकाएँ।" },
+  find_paste_text: { en: "That looks like a title. Search for it above.", hi: "यह शीर्षक जैसा लगता है। ऊपर खोज में इसे खोजें।" },
+  find_paste_nf: { en: "No paper found for {ref}. Check it and try again.", hi: "{ref} के लिए कोई शोध-पत्र नहीं मिला। उसे जाँचें और फिर कोशिश करें।" },
+  find_paste_fail: { en: "Could not reach Crossref, PubMed or OpenAlex. Try again in a minute.", hi: "Crossref, PubMed या OpenAlex तक पहुँचा नहीं जा सका। एक मिनट बाद फिर कोशिश करें।" },
+  find_paste_empty: { en: "Paste a link, DOI or PubMed number first.", hi: "पहले कोई लिंक, DOI या PubMed नंबर चिपकाएँ।" },
+  find_paste_not_kept: { en: "The paper was not kept: your saved papers could not be reached. Check your connection and try again.", hi: "शोध-पत्र रखा नहीं गया: आपके सहेजे हुए शोध-पत्र तक पहुँचा नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

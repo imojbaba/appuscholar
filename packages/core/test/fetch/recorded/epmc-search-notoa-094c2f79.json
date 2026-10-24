@@ -1,0 +1,8 @@
+{
+ "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.4022/jafib.1335&format=json&resultType=lite",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json;charset=UTF-8"
+ },
+ "body": "{\"version\":\"6.9\",\"hitCount\":1,\"request\":{\"queryString\":\"DOI:10.4022/jafib.1335\",\"resultType\":\"lite\",\"cursorMark\":\"*\",\"pageSize\":25,\"sort\":\"\",\"synonym\":false},\"resultList\":{\"result\":[{\"id\":\"27957233\",\"source\":\"MED\",\"pmid\":\"27957233\",\"pmcid\":\"PMC5135192\",\"fullTextIdList\":{\"fullTextId\":[\"PMC5135192\"]},\"doi\":\"10.4022/jafib.1335\",\"title\":\"Who Needs Catheter Ablation And Which Approach?\",\"authorString\":\"Kocyigit D, Canpolat U, Aytemir K.\",\"journalTitle\":\"J Atr Fibrillation\",\"issue\":\"4\",\"journalVolume\":\"8\",\"pubYear\":\"2015\",\"journalIssn\":\"1941-6911\",\"pageInfo\":\"1335\",\"pubType\":\"review-article; review; journal article\",\"isOpenAccess\":\"N\",\"inEPMC\":\"Y\",\"inPMC\":\"Y\",\"citedByCount\":2,\"hasReferences\":\"Y\",\"hasTextMinedTerms\":\"Y\",\"hasDbCrossReferences\":\"N\",\"hasPDF\":\"Y\",\"hasBook\":\"N\",\"hasSuppl\":\"N\",\"hasLabsLinks\":\"N\",\"hasTMAccessionNumbers\":\"N\",\"firstPublicationDate\":\"2015-12-31\",\"firstIndexDate\":\"2016-12-20\"}]}}"
+}

@@ -411,7 +411,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await popup.getByTestId("pass-input").fill(PASS);
     await popup.getByTestId("pass-ok").click();
     await expect(popup.getByTestId("window-where")).toHaveText(PROJECT + " / Literature");
-    // The library is empty: the heading counts none (it is shown once the library is read, so with the vault open here).
+    // The library is empty: an empty library is a 404, which reads without the vault (nothing to decrypt), so the heading counts none here before the unlock too.
     await expect(popup.getByTestId("cit-head")).toHaveText("0 sources, 0 cited in your document");
     await expect(popup.getByTestId("project-switcher")).toHaveCount(0);
     await expect(popup.locator(".ProseMirror")).toHaveCount(0);

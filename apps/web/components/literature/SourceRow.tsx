@@ -16,19 +16,30 @@ const STATUS_ICON: Record<SourceStatus, typeof CheckCircle> = {
 /** Stands in for the document's name while the sentence is cut in two around it (the name is a button; the words around it are the dictionary's, in either language's order). */
 const NAME = "\u0001";
 
-/** "Not cited yet", "Cited once in {document}" (the name opens that document) or "Cited {n} times". */
+/**
+ * "Not cited yet", "Cited once in {document}" (the name opens that document) or "Cited {n} times: {documents}": each document that mentions the source is a link that opens it, in the
+ * project's order, with its own count where it has more than one mention (v1's "Cited in: A (2x), B", citRender 7851-7854).
+ */
 function UseLine({ use, documents, onOpenDoc }: { use: SourceUse; documents: Titled[]; onOpenDoc(id: string): void }) {
   const t = useT();
   if (use.kind === "none") return <>{t("cit_use_none")}</>;
-  if (use.kind === "many") return <>{t("cit_use_many", { n: use.n })}</>;
-  const [before = "", after = ""] = t("cit_use_once", { document: NAME }).split(NAME);
-  return (
-    <>
-      {before}
-      <button type="button" className="cit-use-link" onClick={() => onOpenDoc(use.doc.id)}><DocName doc={documents.find((d) => d.id === use.doc.id) ?? null} /></button>
-      {after}
-    </>
+  const link = (id: string) => (
+    <button type="button" className="cit-use-link" onClick={() => onOpenDoc(id)}><DocName doc={documents.find((d) => d.id === id) ?? null} /></button>
   );
+  if (use.kind === "many") {
+    const [before = "", after = ""] = t("cit_use_many", { n: use.n, documents: NAME }).split(NAME);
+    return (
+      <>
+        {before}
+        {use.docs.map((d, i) => (
+          <span key={d.id}>{i > 0 ? ", " : ""}{link(d.id)}{d.n > 1 ? " (" + d.n + "×)" : ""}</span>
+        ))}
+        {after}
+      </>
+    );
+  }
+  const [before = "", after = ""] = t("cit_use_once", { document: NAME }).split(NAME);
+  return <>{before}{link(use.doc.id)}{after}</>;
 }
 
 /** A document's name as the student reads it: opened under a vault, "Locked title" while it is locked. */
