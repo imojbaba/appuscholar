@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CaretDown } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n";
 import { paperShort, paperStatus, type Paper } from "@/lib/papers/list";
+import { textKindOf } from "@/lib/reader/load";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -11,7 +12,7 @@ const safeLink = (u: string | undefined): string => (u && /^https?:\/\//i.test(u
 
 /**
  * One kept paper of the Reading list (canvas Read): its short name and its status, "Get the free PDF" with the line that tells the student what to do with it (when the paper has an
- * open-access link and no PDF yet), and the actions: Read (until B3 the reader of today's shelf), and More. More holds what is left of the shelf: Rename and Add to my references for a
+ * open-access link and no PDF yet), and the actions: Read (it opens the reader), and More. More holds what is left of the shelf: Rename and Add to my references for a
  * paper only the reading list has, and Remove (the PDF text and its highlights; or, for a paper only the reading list has, the paper), which asks first, in the row.
  * `loading`: the paper's text is still being read, so its highlights are not known and its status is drawn as a bar, not a wrong "Not read yet".
  * `textState`: a line under the status for the automatic full text (Task 21b); nothing here.
@@ -42,7 +43,8 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
   const { entry, shelf } = paper;
   const only = entry === null;
   const free = !shelf ? safeLink(entry?.oa) : "";
-  const canRead = !!shelf?.paper;
+  // Read opens the reader (Task 27): on the PDF's text once it has been read, or, for a paper with no PDF, on the abstract Keep stored (the reader says that it is only the abstract).
+  const canRead = shelf ? !!shelf.paper : !!paper.pid && textKindOf(paper) === "abstract";
   const menu = !!shelf && canWrite;
   const fullTitle = (entry?.title ?? shelf?.title ?? "").trim();
 
@@ -91,7 +93,7 @@ export function ReadingRow({ paper, loading, canWrite, onRead, onRename, onRemov
           </div>
         )}
       </div>
-      {shelf && (
+      {(shelf || canRead) && (
         <div className="rl-acts">
           <button type="button" className="rl-btn rl-btn-primary" data-testid="rl-read" disabled={!canRead} aria-label={t("rl_read_aria", { title: short })} onClick={onRead}>{t("rl_read")}</button>
           {menu && (

@@ -43,7 +43,8 @@ const h = vi.hoisted(() => ({
   callAI: vi.fn(async (..._a: unknown[]) => "OK"),
   extract: vi.fn(),
   editor: null as unknown,
-  openExport: vi.fn()
+  openExport: vi.fn(),
+  go: vi.fn(async (_href: string) => true)
 }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 // The vault is off: bodies are plaintext JSON (keyVersion 0); a body stored with a key version does not open here (it is "broken").
@@ -53,7 +54,7 @@ const vault = {
   decryptBody: async (d: { bodyHtml: string; keyVersion: number }) => { if (d.keyVersion > 0) throw new Error("corrupt"); return d.bodyHtml; }
 };
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => vault }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", openExport: h.openExport }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", go: h.go, openExport: h.openExport }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch" }, settings: { field: "education" } }) }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
@@ -476,8 +477,9 @@ function fakeApi(path: string, init: RequestInit = {}) {
 const stored = <T,>(kind: string): T | null => { const b = server.blobs.find((x) => x.kind === kind); return b ? (JSON.parse(b.body) as T) : null; };
 const puts = (kind: string) => server.calls.filter((c) => c.method === "PUT" && decodeURIComponent(c.path).endsWith("/blobs/" + kind));
 /** The four papers of the golden corpus, on the shelf in order. */
-function seedCorpus() {
-  const index: ShelfIndex = FX.papers.map((p, i) => ({ id: p.id, title: p.title, file: p.id + ".pdf", size: 10 + i, added: `2026-01-0${i + 1}T00:00:00.000Z`, total: p.pages.length, kept: p.pages.length }));
+/** The corpus on the reading list; `pids` gives each paper the id the migration gives it (a hit of Search opens the reader by it). */
+function seedCorpus(pids = false) {
+  const index: ShelfIndex = FX.papers.map((p, i) => ({ id: p.id, title: p.title, file: p.id + ".pdf", size: 10 + i, added: `2026-01-0${i + 1}T00:00:00.000Z`, total: p.pages.length, kept: p.pages.length, ...(pids ? { pid: "k" + p.id } : {}) }));
   server.blobs.push({ projectId: "p1", kind: "shelf_index", body: JSON.stringify(index), keyVersion: 0 });
   for (const p of FX.papers) server.blobs.push({ projectId: "p1", kind: "shelf_paper:" + p.id, body: JSON.stringify({ pages: p.pages, notes: [], cells: {} }), keyVersion: 0 });
 }
@@ -643,7 +645,7 @@ describe("the Reading list (wave B Task 21a)", () => {
   });
 
   it("Search shows v1's pages and marked snippets, with the AND-to-OR note; Find passages starts from the editor's selection and shows the closest sentence", async () => {
-    seedCorpus();
+    seedCorpus(true);
     h.editor = { isDestroyed: false, state: { selection: { from: 1, to: 9, empty: false }, doc: { textBetween: () => "  Sleep improves\n memory in adolescents.  " } } };
     await mount();
     await until(() => tids("rl-read").length === 4 && tids("rl-read").every((b) => !(b as HTMLButtonElement).disabled), "the papers read");
@@ -673,82 +675,12 @@ describe("the Reading list (wave B Task 21a)", () => {
     typeIn(tid("sh-sent")!, "Anxiety is common.");
     await click(tid("sh-find-run"));
     expect(tid("sh-res")!.textContent).toBe("No page shares enough words with that sentence.");
-    // "Open this page" opens the reader on it.
+    // "Open this page" opens the reader (wave B Task 27) on that paper, at that page.
     typeIn(tid("sh-sent")!, "Sleep improves memory in adolescents.");
     await click(tid("sh-find-run"));
     await click(tids("sh-open-page")[0]!);
-    expect(tid("sh-reader-title")!.textContent).toBe(FX.papers.find((p) => p.id === f.cards[0]!.id)!.title);
-    expect((tid("sh-pg") as HTMLInputElement).value).toBe(String(f.cards[0]!.page));
-  });
-
-  it("the reader pages through the text and saves a selected passage as a highlight on the paper's blob, marked on the page; the row says how many highlights", async () => {
-    seedCorpus();
-    await mount();
-    await until(() => tids("rl-read").length === 4 && !(tids("rl-read")[0] as HTMLButtonElement).disabled, "the papers read");
-    await click(tids("rl-read")[0]!);
-    expect(tid("sh-text")!.textContent).toBe(FX.papers[0]!.pages[0]);
-    expect(tid("reading-list")!.textContent).toContain(E.sh2_this_is_the_text);
-    await click(tid("sh-next"));
-    expect((tid("sh-pg") as HTMLInputElement).value).toBe("2");
-    await click(tid("sh-next"));
-    await click(tid("sh-next"));
-    expect((tid("sh-pg") as HTMLInputElement).value).toBe("3");
-    await click(tid("sh-prev"));
-    expect(tid("sh-text")!.textContent).toBe(FX.papers[0]!.pages[1]);
-    // Select "word lists" in the page's text.
-    const node = tid("sh-text")!.querySelector("span")!.firstChild as Text;
-    const at = node.data.indexOf("word lists");
-    const range = document.createRange();
-    range.setStart(node, at);
-    range.setEnd(node, at + "word lists".length);
-    window.getSelection()!.removeAllRanges();
-    window.getSelection()!.addRange(range);
-    typeIn(tid("sh-note")!, "  the task  ");
-    await click(tid("sh-save-hl"));
-    expect(h.toast).toHaveBeenCalledWith("Highlight saved");
-    await until(() => puts("shelf_paper:pa").length > 0, "the paper's save");
-    expect(stored<ShelfPaper>("shelf_paper:pa")!.notes).toEqual([expect.objectContaining({ page: 2, quote: "word lists", note: "the task" })]);
-    expect(Array.from(tid("sh-text")!.querySelectorAll("mark")).map((m) => m.textContent)).toEqual(["word lists"]);
-    expect(tid("sh-hl")!.textContent).toContain("p. 2 “word lists”");
-    expect((tid("sh-note") as HTMLTextAreaElement).value).toBe("");
-    // A selection outside the page text is "Select some text on the page first".
-    window.getSelection()!.removeAllRanges();
-    await click(tid("sh-save-hl"));
-    expect(h.toast).toHaveBeenLastCalledWith("Select some text on the page first");
-    await click(tid("sh-back"));
-    expect(tids("rl-row")).toHaveLength(4);
-    expect(tids("rl-status")[0]!.textContent).toBe("Reading. 1 highlight");
-    await click(tids("rl-read")[0]!);
-    await click(tid("sh-hl-del"));
-    await until(() => stored<ShelfPaper>("shelf_paper:pa")!.notes.length === 0, "the highlight deleted");
-  });
-
-  it("Summarise with AI stays disabled, its reason under it, until two lines and twelve words; then the lines are saved first and the summary lands in the reader", async () => {
-    seedCorpus();
-    await mount();
-    await until(() => tids("rl-read").length === 4 && !(tids("rl-read")[0] as HTMLButtonElement).disabled, "the papers read");
-    await click(tids("rl-read")[0]!);
-    const btn = tid("sh-ai") as HTMLButtonElement;
-    expect(btn.textContent).toBe("Summarise with AI");
-    expect(btn.disabled).toBe(true);
-    expect(tid("sh-ai-why")!.textContent).toBe(E.sh2_in_your_own_words);
-    expect(btn.getAttribute("aria-describedby")).toBe("shAiWhy");
-    typeIn(tid("sh-mine")!, "one two three four five six\nseven eight nine ten eleven");
-    expect(btn.disabled).toBe(true);
-    let saveSeenAtCall = false;
-    h.callAI.mockImplementation(async () => { saveSeenAtCall = (stored<ShelfPaper>("shelf_paper:pa")?.notes.length ?? 0) === 1; return "Aim: sleep."; });
-    typeIn(tid("sh-mine")!, "one two three four five six\nseven eight nine ten eleven twelve");
-    expect(btn.disabled).toBe(false);
-    expect(tid("sh-ai-why")).toBeNull();
-    await click(btn);
-    await until(() => tid("sh-ai-out")!.textContent!.startsWith("Aim"), "the summary");
-    expect(tid("sh-ai-out")!.textContent).toBe("Aim: sleep.\n\nCompare this with your own two lines. The AI can be wrong or miss a limitation.");
-    expect(saveSeenAtCall).toBe(true);
-    expect(stored<ShelfPaper>("shelf_paper:pa")!.notes[0]).toMatchObject({ page: 0, quote: "", note: "My own summary before the AI: one two three four five six\nseven eight nine ten eleven twelve" });
-    const [prompt, opts] = h.callAI.mock.calls[0] as [string, unknown];
-    expect(opts).toEqual({ temp: 0.2, max: 1000, noLang: true });
-    expect(prompt.startsWith("You are helping a student of education read a paper.")).toBe(true);
-    expect(prompt).toContain("Contact: [author email removed]");
+    const at = f.cards[0]!;
+    expect(h.go).toHaveBeenLastCalledWith("/p/p1/lit/reading/k" + at.id + (at.page > 1 ? "?page=" + at.page : ""));
   });
 
   it("backs up the reading list and restores a backup: a file that is not one says so; one that is adds its papers", async () => {

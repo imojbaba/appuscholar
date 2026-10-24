@@ -9,7 +9,7 @@ import en from "../messages/en.json";
 import { withPanelFixes } from "../scripts/i18n-overrides.mjs";
 
 /*
- * Analyse a paper, part 2 (v1 apWalkShow 10048-10064, apDraft/apReveal/apSetStage 10114-10122, apCardText/apCardDownload 10124-10136, apRender's walk and card
+ * The reader's engines, part 2 (it was Analyse a paper before wave B Task 27; v1 apWalkShow 10048-10064, apDraft/apReveal/apSetStage 10114-10122, apCardText/apCardDownload 10124-10136, apRender's walk and card
  * 11300-11332). The expected text is v1's own, read from core's golden fixture test/golden/appanel/cases.json (`golden:capture appanel`): what v1 drew (textContent),
  * stored in appu_ap_notes, asked in its confirm, and wrote into paper-card.txt, for the same inputs. (v1's cards side by side, apAcross* 9936-9985, are Compare's now: test/compare.test.tsx.)
  */
@@ -24,6 +24,7 @@ const h = vi.hoisted(() => ({
   listeners: new Set<() => void>(),
   projectId: "p-1" as string | null,
   openExport: vi.fn(),
+  query: "",
 }));
 const EMPTY: BlobState = { value: null };
 vi.mock("@/lib/blobs/useProjectBlob", async () => {
@@ -48,16 +49,17 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
     },
   };
 });
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(h.query), useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p-1/lit/reading/pasted" }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.projectId ? { id: h.projectId } : null, projectId: h.projectId, pendingAnalyse: null, setPendingAnalyse: () => {}, openExport: h.openExport }) }));
-vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ projectId: "p-1", index: [], loading: false, locked: false, broken: false, error: false, loadPaper: async () => null }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: h.projectId ? { id: h.projectId } : null, projectId: h.projectId, go: vi.fn(), openExport: h.openExport }) }));
 vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import("../lib/export/download")>()), downloadBlob: h.download }));
 
-import { AnalysePanel } from "../components/tools/analyse/AnalysePanel";
-import { getAp, resetAp, setAp } from "../lib/analyse/useApDoc";
+import { Reader } from "../components/reader/Reader";
+import { useApNotes } from "../lib/analyse/notes";
+import { getAp, resetAp, setAp, useApState } from "../lib/analyse/useApDoc";
 import { loadPaper } from "../lib/analyse/intake";
 import { apWalkShow } from "../lib/analyse/walk";
 import { NOTES_POPOUT, notePut, resetBrokenAnswers } from "../lib/analyse/notes";
@@ -101,12 +103,24 @@ async function until(pred: () => boolean) {
   for (let i = 0; i < 300; i++) { if (pred()) return; await settle(5); }
   throw new Error("condition not reached");
 }
+/**
+ * The reader over the Reading tab's store of notes, on whichever paper the page state holds: the practice paper is `sample`, any other paper loaded with `load` is shown as the pasted text
+ * (`pasted`), as the address would name them. The open tab is `?tab=`, set by openTab.
+ */
+function Harness() {
+  const s = useApState();
+  const notes = useApNotes(h.projectId);
+  return <Reader pid={s.doc?.sample ? "sample" : "pasted"} notes={notes} />;
+}
+let mounted: Root | null = null;
 async function mount() {
+  h.query = "";
   const el = document.createElement("div");
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<AnalysePanel />); });
+  mounted = root;
+  await act(async () => { root.render(<Harness />); });
 }
 async function click(el: HTMLElement | null) { await act(async () => { el!.click(); await new Promise((r) => setTimeout(r, 0)); }); }
 function typeIn(el: HTMLTextAreaElement, value: string) {
@@ -119,7 +133,12 @@ const toasts = () => h.toast.mock.calls.map((c) => c[0] as string);
 const quiet = { toast: () => {}, t: (k: string, v?: Record<string, string | number>) => (v ? E[k]!.replace(/\{(\w+)\}/g, (m, x: string) => (x in v ? String(v[x]) : m)) : E[k]!) };
 const load = (id: string) => { const p = paperOf(id); act(() => { expect(loadPaper(p.title, p.pages, p.src, p.sample, quiet)).toBe(true); }); };
 const notes = () => (h.blobs.ap_notes?.value ?? null) as Record<string, Note> | null;
-async function openTab(k: "walk" | "card") { await click(tid("ap-tab-" + k)); }
+/** Opens a tab as a click on its link does: the address's `?tab=` changes and the reader draws again. */
+async function openTab(k: "walk" | "card") {
+  h.query = "tab=" + k;
+  await act(async () => { mounted!.render(<Harness />); });
+  expect(tid("reader-tab-" + k)!.getAttribute("aria-selected")).toBe("true");
+}
 /**
  * An element's textContent with each textarea's text as the student sees it (its value): v1 draws a box again with the typed words inside the <textarea> (escHTML(AP.chkDraft[k]), 11316), so
  * its textContent holds them; React sets a controlled textarea's value, which textContent does not show.
@@ -182,15 +201,14 @@ afterEach(() => {
 describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", () => {
   it("the tab opens (no toast any more); the Lesson is not offered (W23)", async () => {
     await mount();
-    await click(tid("ap-sample-btn"));
+    load("sample@apSample");
     await openTab("walk");
-    expect(getAp().mode).toBe("walk");
     expect(tid("ap-walk")).not.toBeNull();
     await openTab("card");
-    expect(getAp().mode).toBe("card");
-    expect(tid("ap-tab-lesson")).toBeNull();
+    expect(tid("ap-card")).not.toBeNull();
+    expect(tid("ap-walk")).toBeNull();
+    expect(tid("reader-tab-lesson")).toBeNull();
     expect(toasts()).toEqual([]);
-    expect(getAp().mode).toBe("card");
   });
 
   it.each(FX.walks.map((w) => [w.id, w] as const))("%s: the stage drawn, the call, the toasts, the reply's sections and the stored note are v1's", async (_id, w) => {
@@ -274,10 +292,9 @@ describe("Walk me through it (apWalkShow 10048-10064, apRender 11300-11320)", ()
   it("an abstract keeps the walk-through closed", async () => {
     await mount();
     load("abstract-only");
-    const walk = tid("ap-tab-walk") as HTMLButtonElement;
-    expect(walk.disabled).toBe(true);
-    await click(walk);
-    act(() => { setAp({ mode: "walk" }); });
+    // The tab is there; its body says the walk-through needs the full paper (apRender 11277) and draws no walk-through.
+    await openTab("walk");
+    expect(tid("reader-walk-closed")!.textContent).toBe(E.reader_walk_needs_pdf);
     expect(tid("ap-walk")).toBeNull();
   });
 

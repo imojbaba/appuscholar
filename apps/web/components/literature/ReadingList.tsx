@@ -1,30 +1,28 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { crLookupDoiV2, fieldLabel, resolveShelfTitle, retrNormDoi, SHELF_TITLE_TIMEOUT_MS, type CitationEntry } from "@appuscholar/core";
+import { CaretDown } from "@phosphor-icons/react";
+import { crLookupDoiV2, resolveShelfTitle, retrNormDoi, SHELF_TITLE_TIMEOUT_MS, type CitationEntry } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
-import { useSettings } from "@/lib/settings";
-import { shelfSummarise } from "@/lib/ai/actions";
-import { useCallAI } from "@/lib/ai/useCallAI";
 import { useSuggestion } from "@/lib/ai/suggestion";
-import { fromSample, nextIntake } from "@/lib/analyse/intake";
 import { useApNotes, type ApNotesStore } from "@/lib/analyse/notes";
 import { selectionText } from "@/lib/editor/insert";
 import { downloadBlob } from "@/lib/export/download";
 import { keepEntry } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
 import { papersOf, type Paper } from "@/lib/papers/list";
-import {
-  addOwnPdf, addToReferences, backupShelf, deleteHighlight, readFileText, removePaper, renamePaper, restoreShelf, saveHighlight, type OwnPdfOps, type ShelfOps
-} from "@/lib/shelf/actions";
+import { addOwnPdf, addToReferences, backupShelf, readFileText, removePaper, renamePaper, restoreShelf, type OwnPdfOps, type ShelfOps } from "@/lib/shelf/actions";
+import { PASTED_PID, PRACTICE_PID, readerHref } from "@/lib/reader/load";
 import { extractPdfPages } from "@/lib/shelf/extract";
 import { useShelfStore } from "@/lib/shelf/useShelf";
 import { useVault } from "@/lib/vault/useVault";
 import { toast } from "@/components/ui/toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "@/components/tools/PanelLoading";
 import { Passages } from "@/components/tools/shelf/Passages";
-import { Reader } from "@/components/tools/shelf/Reader";
 import { Search } from "@/components/tools/shelf/Search";
 import { AddPdf } from "./AddPdf";
+import { PasteText } from "./PasteText";
 import { ReadingRow } from "./ReadingRow";
 
 /** The sentences of the shelf's backup and restore (v1's, in lib/shelf/actions) that the Reading list says in its own words: "shelf" is not a word the student uses. */
@@ -39,9 +37,9 @@ type Tool = "search" | "find";
  * already have, and "Try a practice paper" as the last row. It replaces the Reading shelf's dialog. A PDF is read in the browser and only its text is kept, in the project's blobs
  * sealed under the vault; the sentence at the top says that, and says "Set a passphrase to lock it" when the vault is off. While the list is read it shows one loading sign.
  *
- * Until the reader comes in B3 (ruling B2-R22) what the shelf could do stays reachable from here: Read on a row opens the shelf's reader (pages, highlights, Summarise with AI); under
- * "Search your PDFs, back up and restore" are Search, Find passages for a sentence, the backup and the restore; More on a row has Rename and Remove. "Read it now" in Find opens this
- * list with the abstract loaded in Analyse a paper, below (ruling B2-R14).
+ * Read on a row opens the reader on that paper (wave B Task 27: `reading/<pid>`; it has the shelf reader's pages, highlights and Summarise, and Analyse a paper's modes, in its tabs); so does "Try a practice
+ * paper", the last row, and a Search or Find passages hit, at its page. Under "Search your PDFs, back up and restore" are Search, Find passages for a sentence, the backup and the restore; More on a row has
+ * Rename and Remove. The list's own More, next to Add your own PDF, has "Read pasted text" (v1's paste intake, kept): the text opens in the reader and is not added to the list.
  * `textState`: a line for a paper's automatic full text under its status, for Task 21b's runner.
  * `notes`: the project's notes store (lib/analyse/notes). The Reading tab makes one and gives it to this list and to Analyse a paper under it, so a note the student writes there changes the
  * row's status at once: two stores in one window do not hear each other's writes (the sync channel never echoes to its own window). Without it the list reads the notes itself.
@@ -53,14 +51,12 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
   const ownNotes = useApNotes(shared ? null : store.projectId);
   const notes = shared ?? ownNotes;
   const vault = useVault();
-  const { settings } = useSettings();
-  const callAI = useCallAI();
+  const { projectId, go } = useProject();
   const { editor } = useSuggestion();
-  const [reading, setReading] = useState<{ id: string; page: number } | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [tool, setTool] = useState<Tool>("search");
-  const [practice, setPractice] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   // Find passages starts from the editor's selection, white space collapsed (selText2 7627).
   const [prefill] = useState(() => (editor && !editor.isDestroyed ? selectionText(editor).replace(/\s+/g, " ").trim() : ""));
@@ -98,23 +94,12 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
   const paperReading = (p: Paper): boolean => { if (!p.shelf) return false; const st = store.papers.get(p.shelf.id); return !st || (st.loading && !st.locked); };
 
   const run = async (job: () => Promise<void>) => { setBusy(true); try { await job(); } finally { setBusy(false); } };
-  const open = reading ? items.find((x) => x.id === reading.id && x.paper) : undefined;
-  const page = reading?.page ?? 1;
-
-  if (open && reading) {
-    return (
-      <section className="panel rl" data-testid="reading-list">
-        <Reader item={open as typeof open & { paper: NonNullable<typeof open.paper> }} page={page}
-          onBack={() => setReading(null)} onPage={(n) => setReading({ id: open.id, page: n })}
-          onSaveHighlight={(sel, note) => saveHighlight(open.id, page, sel, note, ops)}
-          onDeleteHighlight={(noteId) => deleteHighlight(open.id, noteId, ops)}
-          onSummarise={(mine, setOut) => shelfSummarise({
-            callAI, field: fieldLabel(settings.field), t, mine, pages: open.paper!.pages, setOut,
-            saveNote: async (n) => ops.updatePaper(open.id, (p) => ({ ...p, notes: [...p.notes, n] })) && ops.flushPaper(open.id)
-          })} />
-      </section>
-    );
-  }
+  /** Opens the reader on a paper (at a page, from a search hit). A paper that has no id yet cannot be addressed: the paper-id migration has not reached it. */
+  const read = (pid: string, page?: number) => {
+    if (!pid) { toast(t("rl_read_wait")); return; }
+    void go(readerHref(projectId ?? "", pid, { page }));
+  };
+  const openPage = (shelfId: string, page: number) => read(items.find((x) => x.id === shelfId)?.pid ?? "", page);
 
   return (
     <section className="panel rl" data-testid="reading-list">
@@ -125,15 +110,24 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
           {broken && <p className="rl-note" role="status" data-testid="rl-broken">{t("rl_broken")}</p>}
           <div className="rl-bar">
             <AddPdf disabled={busy || !known} onAdd={(files) => { void run(() => addOwnPdf(files, own)); }} />
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="rl-btn rl-list-more" data-testid="rl-list-more" aria-label={t("rl_list_more_aria")}>{t("rl_more")}<CaretDown size={14} aria-hidden="true" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="rl-menu" data-testid="rl-list-menu">
+                <DropdownMenuItem data-testid="rl-item-paste" onSelect={() => setPasteOpen(true)}>{t("rl_item_paste")}</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+          {pasteOpen && <PasteText onRead={() => { void go(readerHref(projectId ?? "", PASTED_PID)); }} />}
           {status && <p className="rl-note" role="status" data-testid="rl-add-status">{status}</p>}
           {!papers.length && !locked && <p className="rl-empty" data-testid="rl-empty">{t("rl_empty")}</p>}
           <ul className="rl-list" aria-label={t("rl_list_aria")} data-testid="rl-list">
             {papers.map((p, i) => (
               <ReadingRow key={p.pid ? p.pid + ":" + (p.shelf?.id ?? "") : "i" + i} paper={p} loading={paperReading(p)} canWrite={known}
-                onRead={() => setReading({ id: p.shelf!.id, page: 1 })}
+                onRead={() => read(p.pid)}
                 onRename={(title) => renamePaper(p.shelf!.id, title, ops)}
-                onRemove={async () => { const ok = await removePaper(p.shelf!.id, ops); if (ok) setReading(null); return ok; }}
+                onRemove={() => removePaper(p.shelf!.id, ops)}
                 onAddRefs={() => { if (!addToReferences(p.shelf!, library)) toast(t("list_action_fail")); }}
                 textState={textState?.(p)} />
             ))}
@@ -141,10 +135,9 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
               <div className="rl-main">
                 <h3 className="rl-short">{t("rl_practice_short")}</h3>
                 <p className="rl-status">{t("rl_practice_status")}</p>
-                {practice && <p className="rl-free" data-testid="rl-practice-loaded">{t("rl_practice_loaded")}</p>}
               </div>
               <div className="rl-acts">
-                <button type="button" className="rl-btn" data-testid="rl-practice-btn" onClick={() => { if (fromSample(nextIntake(), { toast, t })) setPractice(true); }}>{t("rl_practice_btn")}</button>
+                <button type="button" className="rl-btn" data-testid="rl-practice-btn" onClick={() => read(PRACTICE_PID)}>{t("rl_practice_btn")}</button>
               </div>
             </li>
           </ul>
@@ -157,8 +150,8 @@ export function ReadingList({ textState, notes: shared }: { textState?(p: Paper)
                   <button type="button" role="tab" className="rl-btn" aria-selected={tool === "find"} data-testid="sh-tab-find" onClick={() => setTool("find")}>{t("sh2_find_passages_for_a")}</button>
                 </div>
                 {tool === "search"
-                  ? <Search items={items} onOpen={(id, pg) => setReading({ id, page: pg })} />
-                  : <Passages items={items} prefill={prefill} onOpen={(id, pg) => setReading({ id, page: pg })} />}
+                  ? <Search items={items} onOpen={openPage} />
+                  : <Passages items={items} prefill={prefill} onOpen={openPage} />}
               </>
             )}
             <div className="sh-row sh-wrap">

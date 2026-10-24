@@ -5,10 +5,9 @@ import { tHtml, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useCallAI } from "@/lib/ai/useCallAI";
 import { apAsk } from "@/lib/analyse/ask";
-import { runNumbers, setAp, useApState, type ApAskItem, type ApQuote } from "@/lib/analyse/useApDoc";
+import { setAp, useApState, type ApAskItem, type ApQuote } from "@/lib/analyse/useApDoc";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { Numbers } from "./Numbers";
 
 /** The five chips (11288), in v1's order. */
 const CHIPS = ["ap2_what_was_the_research", "ap2_why_did_the_authors", "ap2_who_were_the_participants", "ap2_which_statistical_test_was", "ap2_what_are_the_limitations"] as const;
@@ -50,7 +49,7 @@ function Answer({ it }: { it: ApAskItem }) {
   );
 }
 
-/** The Ask tab (11287-11305): the question box, the chips, "Ask" and "🔢 Check the paper's numbers", the numbers check, and the log, newest first. */
+/** The Ask tab (11287-11305): the question box, the chips, "Ask", and the log, newest first. v1's "🔢 Check the paper's numbers" and its box are the reader's Check numbers tab now (wave B Task 27). */
 export function Ask() {
   const t = useT();
   const s = useApState();
@@ -70,9 +69,7 @@ export function Ask() {
       </div>
       <div className="ap-row">
         <Button variant="primary" size="sm" id="apAskBtn" data-testid="ap-ask-btn" disabled={s.busy} onClick={ask}>{t("ap2_ask")}</Button>
-        <Button variant="ghost" size="sm" id="apNumBtn" data-testid="ap-num-btn" onClick={runNumbers}>{t("ap2_num_btn")}</Button>
       </div>
-      <Numbers list={s.numbers} />
       {s.log.slice().reverse().map((it, i) => <Answer key={s.log.length - i} it={it} />)}
     </div>
   );

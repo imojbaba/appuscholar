@@ -89,6 +89,16 @@ function fillFromCrossref(p: RsPaper, entry: CitationEntry, pid: string, d: Pick
 }
 
 /**
+ * "Read it now" on a paper that was kept before (or by a way that stores no abstract: the citation form, the bookmark): the result in hand has the abstract, so the kept entry takes it, only
+ * when it has none, as an update, cut at ABSTRACT_MAX as Keep cuts it. The reader opens on the stored abstract, so it needs one there. False when the library took nothing.
+ */
+export function fillAbstract(pid: string, abstract: string, d: Pick<KeepDeps, "update">): boolean {
+  const text = abstract.trim().slice(0, ABSTRACT_MAX);
+  if (!text) return false;
+  return d.update((prev) => prev.map((e) => (e.pid === pid && !(e.abstract ?? "").trim() ? { ...e, abstract: text } : e)));
+}
+
+/**
  * Keeps a search result (keepEntry of resultEntry). A paper kept now has its retraction flag put in the retraction cache (an OpenAlex paper with a DOI) and, if
  * OpenAlex sent no volume, issue or pages, Crossref asked for them. A paper already kept is left as it is.
  */

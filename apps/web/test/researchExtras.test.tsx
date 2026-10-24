@@ -22,7 +22,6 @@ const h = vi.hoisted(() => ({
   callAI: vi.fn(async (..._a: unknown[]) => ""),
   oaKey: null as string | null,
   go: vi.fn(),
-  setPendingAnalyse: vi.fn(),
   openExport: vi.fn(),
   download: vi.fn()
 }));
@@ -33,7 +32,7 @@ vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import(".
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, pendingAnalyse: null, setPendingAnalyse: h.setPendingAnalyse, go: h.go, requestInsert: async () => false, openExport: h.openExport })
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, go: h.go, requestInsert: async () => false, openExport: h.openExport })
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off" }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
@@ -97,7 +96,7 @@ async function moreItem(card: HTMLElement, item: string) {
 
 beforeEach(() => {
   h.blobs = { citations: blob([]), retraction_cache: blob({}), rs_prefs: blob(null) };
-  for (const f of [h.toast, h.go, h.setPendingAnalyse, h.openExport, h.download]) f.mockReset();
+  for (const f of [h.toast, h.go, h.openExport, h.download]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
   h.oaKey = null;
   rf.reset();

@@ -1,11 +1,14 @@
-import { AP_SAMPLE, apDocxText, apFileKind, apFileStem, apLoadRefusal, apShelfLabel, apTitleOf, shTitleGuess } from "@appuscholar/core";
-import type { ShelfIndex } from "@/lib/blobs/kinds";
+import { AP_SAMPLE, apDocxText, apFileKind, apFileStem, apLoadRefusal, apTitleOf, shTitleGuess } from "@appuscholar/core";
+import type { ShelfIndex, StoredEntry } from "@/lib/blobs/kinds";
+import { noteKey } from "@/lib/papers/ids";
+import { papersOf, type Paper } from "@/lib/papers/list";
 import { extractPdfPages, PdfReaderUnavailable } from "@/lib/shelf/extract";
 import { loadDoc } from "./useApDoc";
 
 /*
- * The four ways a paper reaches Analyse a paper (v1 9882-9932): a file, pasted text, a paper of the Reading shelf and the practice paper, and Research's "📄 Analyse this paper" (an abstract,
- * kept as the workspace's pendingAnalyse). The rules and titles are core's (analyse-page.ts, golden `appanel`); the sentences are v1's, through t().
+ * The ways a paper reaches the reader (v1 9882-9932, wave B Task 27): a kept paper of the Reading list (its text, else its abstract), pasted text, a Word or text file, and the practice paper. v1's
+ * dropdown of the Reading shelf and Research's "📄 Analyse this paper" (an abstract handed over through the workspace) are the Reading list's Read and Find's "Read it now" now: both open
+ * `fromKept` by the paper's id. The rules and titles are core's (analyse-page.ts, golden `appanel`); the sentences are v1's, through t().
  */
 type T = (key: string, vars?: Record<string, string | number>) => string;
 export type IntakeDeps = {
@@ -27,10 +30,10 @@ export const nextIntake = (): number => ++intakeCount;
 export const isCurrentIntake = (n: number): boolean => n === intakeCount;
 
 /** apLoad (9882-9891): v1's two refusals (an abstract under 150 characters that are not white space, any other paper under 500), else the paper is loaded. */
-export function loadPaper(title: string, pages: string[], src: string, isSample: boolean, d: Pick<IntakeDeps, "toast" | "t">): boolean {
+export function loadPaper(title: string, pages: string[], src: string, isSample: boolean, d: Pick<IntakeDeps, "toast" | "t">, idOverride?: string): boolean {
   const r = apLoadRefusal(pages, src);
   if (r) { d.toast(r === "abstract" ? d.t("ap2_this_search_result_has") : d.t("ap2_this_file_has_too")); return false; }
-  loadDoc(title, pages, src, isSample);
+  loadDoc(title, pages, src, isSample, idOverride);
   return true;
 }
 
@@ -91,39 +94,55 @@ export function fromPaste(ticket: number, text: string, d: Pick<IntakeDeps, "toa
 }
 
 /**
- * apShelfFill (9917-9922): the dropdown's first line and one line per paper of the shelf. `unread` is useShelf's loading, locked, broken or error, or no project: while the index is not read the first line is
- * "Choose a paper from your Reading shelf" (register D-S2-15); a read shelf with no index yet (null: no paper was ever added) or an empty one is "Your Reading shelf is empty", as v1.
+ * What a kept paper's reader needs to find the paper and read its text: the library and the reading list (`papersOf` joins them by the paper's id), and one read of a reading-list
+ * paper's text (lib/shelf/useShelf's readPaperOnce, which asks for the passphrase once when the vault is locked). `lib` and `index` are the library and the reading list as they were read;
+ * a library or list that has not been read is the caller's to wait for, not an empty one.
  */
-export function shelfOptions(index: ShelfIndex | null, unread: boolean, t: T): { empty: string; items: Array<{ id: string; label: string }> } {
-  if (index === null && unread) return { empty: t("ap2_choose_a_paper_from"), items: [] };
-  const list = index ?? [];
-  return { empty: list.length ? t("ap2_choose_a_paper_from") : t("ap2_your_reading_shelf_is"), items: list.map((p) => ({ id: p.id, label: apShelfLabel(p, t("ap2_paper")) })) };
-}
+export type KeptDeps = Pick<IntakeDeps, "toast" | "t"> & {
+  lib: StoredEntry[];
+  index: ShelfIndex | null;
+  read(shelfId: string): Promise<{ pages: string[] } | null>;
+};
 
 /**
- * apFromShelf (9923-9927): the paper chosen ("Choose a paper first" when none), loaded as a PDF under its title, else its file name. Its text is the shelf's own blob, read once (`loadPaper`, Task 11):
- * a paper whose text cannot be read on this device (locked and not unlocked, or broken) is reported with the shelf's own words, where v1's records always have their text.
+ * v1's abstract-only load of Research's "Analyse this paper" (rsAnalyse 8407-8419) from a kept paper's entry: the title, its authors with the year and journal, the line "Abstract", and the
+ * stored abstract, as the one page v1 builds ('Abstract' is the head's last line, a literal of v1's script, kept in English as v1 does in every language). Empty when the entry has no abstract.
  */
-/** A paper of the shelf's list is chosen: the Use-this-paper button checks it before it takes a ticket, so a click with nothing chosen does not cancel a paper still being read. */
-export const shelfChosen = (index: ShelfIndex | null, id: string): boolean => (index ?? []).some((x) => x.id === id);
+export function keptAbstractPages(e: StoredEntry | null): string[] {
+  const ab = (e?.abstract ?? "").trim();
+  if (!e || !ab) return [];
+  const head = (e.title ?? "") + "\n" + (e.author ?? "") + (e.year ? " (" + e.year + ")" : "") + (e.source ? ". " + e.source : "") + "\nAbstract\n";
+  return [head + ab];
+}
 
-export async function fromShelf(ticket: number, id: string, d: Pick<IntakeDeps, "toast" | "t"> & { index: ShelfIndex | null; read(id: string): Promise<{ pages: string[] } | null> }): Promise<boolean> {
-  const p = (d.index ?? []).find((x) => x.id === id);
-  if (!p) { d.toast(d.t("ap2_choose_a_paper_first")); return false; }
-  const paper = await d.read(p.id);
+/** The title a kept paper is read under: the library's, else the reading list's, else its file name. */
+export const keptTitle = (p: Paper): string => (p.entry?.title ?? "").trim() || (p.shelf?.title ?? "").trim() || (p.shelf?.file ?? "");
+
+/**
+ * The reader's intake (wave B Task 27; it replaces apFromShelf 9923-9927 and rsAnalyse's hand-over): the kept paper `pid` is found in the library and the reading list (`papersOf`); when a PDF's
+ * text (or Europe PMC's, Task 21b) is attached to it, that text is read once and loaded as a PDF under the paper's title; else the abstract Keep stored is loaded abstract-only (`src: "abstract"`,
+ * v1's apLoad refusal for one under 150 characters stands). Either way the paper's notes are kept under `p:<pid>` (loadDoc's idOverride), the key Compare reads. A paper whose text cannot be read on
+ * this device (locked and not unlocked, or broken) is not replaced by its abstract: it loads nothing, so the answer is false and the reader says the paper could not be read. A paper that is not
+ * on the list loads nothing. A ticket that another choice has superseded while the text was being read loads nothing and says nothing (fix wave A Task 16, W20).
+ */
+export async function fromKept(ticket: number, pid: string, d: KeptDeps): Promise<boolean> {
   if (!isCurrentIntake(ticket)) return false;
-  if (!paper) { d.toast((p.title || p.file) + " " + d.t("sh2_could_not_be_read")); return false; }
-  return loadPaper(p.title || p.file, paper.pages || [], "pdf", false, d);
+  const paper = papersOf(d.lib, d.index ?? [], null).find((p) => p.pid === pid);
+  if (!paper) return false;
+  const title = keptTitle(paper);
+  if (paper.shelf) {
+    const text = await d.read(paper.shelf.id);
+    if (!isCurrentIntake(ticket)) return false;
+    if (!text || !text.pages?.length) return false;
+    return loadPaper(title, text.pages, "pdf", false, d, noteKey(pid));
+  }
+  const pages = keptAbstractPages(paper.entry);
+  if (!pages.length) return false;
+  return loadPaper(title, pages, "abstract", false, d, noteKey(pid));
 }
 
 /** apSample (9932): v1's fictional practice paper, its title the first line of its first page; no tick needed. */
 export function fromSample(ticket: number, d: Pick<IntakeDeps, "toast" | "t">): boolean {
   if (!isCurrentIntake(ticket)) return false;
   return loadPaper(AP_SAMPLE[0]!.split("\n")[0]!, AP_SAMPLE.slice(), "pdf", true, d);
-}
-
-/** Research's "📄 Analyse this paper" (rsAnalyse 8407-8419, apLoad(title, [head+abstract], 'abstract', false)): the abstract the workspace kept (ruling R7), loaded abstract-only. */
-export function fromPending(ticket: number, p: { title: string; pages: string[]; src: "abstract" }, d: Pick<IntakeDeps, "toast" | "t">): boolean {
-  if (!isCurrentIntake(ticket)) return false;
-  return loadPaper(p.title, p.pages.slice(), p.src, false, d);
 }

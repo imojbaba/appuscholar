@@ -3,11 +3,12 @@ import { useSyncExternalStore } from "react";
 import { apBuild, apNumbers, type ApDoc, type ApNumber, type ApRefs, type ApWalkRes, type apCheckQuote } from "@appuscholar/core";
 
 /*
- * The paper Analyse a paper has loaded, and what the panel shows of it: v1's page state `AP` (9838), one paper per tab, kept in this tab's memory only, as v1 keeps `AP.doc` (never stored:
- * the chapter's "Never stored: the full text of the loaded paper and the Ask Q&A log"). The panel reads it with useApState(); the actions (intake.ts, ask.ts, refcheck.ts) write it.
+ * The paper the reader has loaded (it was Analyse a paper before wave B Task 27), and what the reader shows of it: v1's page state `AP` (9838), one paper per tab, kept in this tab's memory only, as v1 keeps `AP.doc` (never stored:
+ * the chapter's "Never stored: the full text of the loaded paper and the Ask Q&A log"). The reader reads it with useApState(); the actions (intake.ts, ask.ts, refcheck.ts) write it.
  *
- * For the walk-through, the paper card and the cards side by side (Task 13): `doc.id` is v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880), the key of `ap_notes`; `gen` changes with each
- * paper loaded (a reply for an earlier paper is dropped); `mode` is the tab; `refs` holds the last reference check (`finished` once it ran to the end),
+ * For the walk-through, the paper card and the cards side by side (Task 13): `doc.id` is the key of `ap_notes`: v1's docId ('a' + the squashed title cut at 24 + the characters read, apBuild 9880) for a pasted text
+ * and the practice paper, "p:" + the paper's id for a kept paper (wave B Task 27); `gen` changes with each
+ * paper loaded (a reply for an earlier paper is dropped); `refs` holds the last reference check (`finished` once it ran to the end),
  * which v1's card text includes (apCardText 10127); `busy` is v1's AP.busy, shared by Ask and the walk-through.
  * The walk-through's page state is v1's too (9838, reset by apLoad 9887): the stage shown (AP.stage), the words typed in "Try first." (AP.tryDraft) and in "Check yourself." (AP.chkDraft, never
  * stored), which suggested answers are shown (AP.shown) and the replies of this visit (AP.res). The stored notes (the ap_notes blob, lib/analyse/notes.ts) stand in for a stage this visit has
@@ -21,11 +22,9 @@ export type ApAskItem = { q: string; title: string; partial: boolean; n: number;
 export type ApWalkReply = ApWalkRes & { title?: string };
 /** AP.refs as apRefCheck (11236-11252) leaves it: one of its two `none` boxes, or the check's result (core's ApRefs; `done` 0 while it runs). */
 export type ApRefState = { none: "no reference list" | "no DOIs" } | ApRefs;
-export type ApMode = "ask" | "walk" | "card" | "lesson";
 export type ApState = {
   doc: ApLoaded | null;
   gen: number;
-  mode: ApMode;
   log: ApAskItem[];
   /** The question box (AP.qDraft). */
   qDraft: string;
@@ -47,7 +46,7 @@ export type ApState = {
 };
 
 const INITIAL: ApState = {
-  doc: null, gen: 0, mode: "ask", log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false,
+  doc: null, gen: 0, log: [], qDraft: "", paste: "", ok: false, busy: false, numbers: null, refs: null, refBusy: false,
   stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {}, cardDraft: {}
 };
 let state: ApState = INITIAL;
@@ -63,11 +62,17 @@ export const getAp = (): ApState => state;
 export function resetAp(): void { state = INITIAL; for (const l of listeners) l(); }
 export function useApState(): ApState { return useSyncExternalStore(subscribe, read, read); }
 
-/** apLoad after its refusals (9886-9887): AP.doc = apBuild(title, pages, src) with `sample` and `abstractOnly`, the log, the numbers, the reference check and the walk-through's state cleared (the first stage), the Ask tab shown. AP.busy stays as it is, as in v1. */
-export function loadDoc(title: string, pages: string[], src: string, isSample: boolean): ApLoaded {
-  const doc: ApLoaded = { ...apBuild(title, pages, src), abstractOnly: src === "abstract" };
+/**
+ * apLoad after its refusals (9886-9887): AP.doc = apBuild(title, pages, src) with `sample` and `abstractOnly`, the log, the numbers, the reference check and the walk-through's state cleared (the
+ * first stage). AP.busy stays as it is, as in v1. v1's `mode` (the tab shown, set to Ask here) is the reader's `?tab=` now (wave B Task 27). `idOverride` is the key the paper's notes are kept under:
+ * a kept paper's reader passes "p:" + its pid (Task 27), so Ask, the walk-through and the card write the note Compare reads; without it the doc keeps v1's docId ('a' + the squashed title + the
+ * characters read), the key of a pasted text's and the practice paper's notes.
+ */
+export function loadDoc(title: string, pages: string[], src: string, isSample: boolean, idOverride?: string): ApLoaded {
+  const built = apBuild(title, pages, src);
+  const doc: ApLoaded = { ...built, ...(idOverride !== undefined ? { id: idOverride } : {}), abstractOnly: src === "abstract" };
   doc.sample = !!isSample;
-  setAp((s) => ({ doc, gen: s.gen + 1, log: [], qDraft: "", numbers: null, refs: null, refBusy: false, mode: "ask", stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {} }));
+  setAp((s) => ({ doc, gen: s.gen + 1, log: [], qDraft: "", numbers: null, refs: null, refBusy: false, stage: 0, tryDraft: {}, chkDraft: {}, shown: {}, res: {} }));
   return doc;
 }
 

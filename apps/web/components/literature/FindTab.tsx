@@ -10,13 +10,13 @@ import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import type { Library } from "@/lib/cite/useLibrary";
 import { retrCacheSet } from "@/lib/cite/checks";
 import { paperMatch } from "@/lib/papers/ids";
-import { keepResult, libraryKnown, type KeepResult, type KeepResultDeps } from "@/lib/papers/keep";
+import { fillAbstract, keepResult, libraryKnown, type KeepResult, type KeepResultDeps } from "@/lib/papers/keep";
 import { useKeep } from "@/lib/papers/useKeep";
-import { analysePaper, loadConnected, openExternal } from "@/lib/research/extras";
+import { loadConnected, openExternal, readNow } from "@/lib/research/extras";
 import { insertResult } from "@/lib/research/library";
 import { useInsertTarget } from "@/lib/popout/sync";
 import { applyQuick, getResearch, setResearch, shownResults, SORT_OPTIONS, useSearch, type SortMode } from "@/lib/research/useSearch";
-import { placeHref } from "@/lib/frame/places";
+import { readerHref } from "@/lib/reader/load";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/components/frame/ProjectContext";
@@ -50,7 +50,7 @@ function countLine(t: T, total: number, shown: number): string {
  */
 export function FindTab() {
   const t = useT();
-  const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go } = useProject();
+  const { project, pendingSearch, setPendingSearch, go } = useProject();
   const { me, settings } = useSettings();
   const callAI = useCallAI();
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
@@ -123,10 +123,17 @@ export function FindTab() {
     },
     connected: () => connected(p),
     quick: () => { void quickRead(p, quickDeps()); },
-    // The reader comes in B3 (ruling B2-R14): until then the abstract goes to Analyse a paper, as "Analyse this paper" sent it, once the paper is kept.
+    // Read it now (replaces v1's Analyse this paper): the paper is kept first, then the reader opens on it, on the abstract Keep stored. A paper kept before, with no abstract stored, takes the one in hand.
     read: () => {
       void keep(p).then((r) => {
-        if (r) analysePaper(p, { keep: setPendingAnalyse, showTool: () => { void go(placeHref(projectId ?? "", "lit", "reading")); }, toast, t });
+        if (!r) return;
+        readNow(p, {
+          open: () => {
+            if (r.state === "already") void keepWhenRead((l) => fillAbstract(r.pid, p.abstract ?? "", l)).catch(() => {});
+            void go(readerHref(projectId ?? "", r.pid));
+          },
+          toast, t
+        });
       }).catch(failed);
     }
   });

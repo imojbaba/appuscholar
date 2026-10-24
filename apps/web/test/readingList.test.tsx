@@ -12,7 +12,7 @@ import en from "../messages/en.json";
  */
 
 type SBlob = { projectId: string; kind: string; body: string; keyVersion: number; version: number };
-const h = vi.hoisted(() => ({ api: vi.fn(), toast: vi.fn(), extract: vi.fn(), download: vi.fn(), callAI: vi.fn(async (..._a: unknown[]) => "OK") }));
+const h = vi.hoisted(() => ({ api: vi.fn(), toast: vi.fn(), extract: vi.fn(), download: vi.fn(), callAI: vi.fn(async (..._a: unknown[]) => "OK"), go: vi.fn(async (_href: string) => true) }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
 const vault = {
   status: "off", known: async () => "off", ensureUnlocked: async () => true,
@@ -20,7 +20,7 @@ const vault = {
   decryptBody: async (d: { bodyHtml: string; keyVersion: number }) => { if (d.keyVersion > 0) throw new Error("corrupt"); return d.bodyHtml; }
 };
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => vault }));
-vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", openExport: vi.fn() }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", go: h.go, openExport: vi.fn() }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch" }, settings: { field: "education" } }) }));
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => h.callAI }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
@@ -111,6 +111,7 @@ beforeEach(() => {
   server = { blobs: [], calls: [] };
   h.api.mockReset().mockImplementation(fakeApi);
   h.toast.mockReset();
+  h.go.mockClear();
   h.download.mockReset();
   h.extract.mockReset();
   heldBlobs.clear();
@@ -173,12 +174,11 @@ describe("the list of kept papers", () => {
     expect(rowOf("2011").querySelector("a")).toBeNull();
   });
 
-  it("Try a practice paper loads the fictional paper into Analyse a paper and says where it is", async () => {
+  it("Try a practice paper opens the fictional paper in the reader (wave B Task 27)", async () => {
     await mount();
-    expect(tid("rl-practice-loaded")).toBeNull();
     await click(tid("rl-practice-btn"));
-    expect(getAp().doc?.sample).toBe(true);
-    expect(tid("rl-practice-loaded")!.textContent).toBe(E.rl_practice_loaded);
+    expect(h.go).toHaveBeenCalledWith("/p/p1/lit/reading/sample");
+    expect(tid("rl-practice-loaded")).toBeNull();
   });
 
   it("a line for a paper's automatic full text can be put under its status (the seam for Europe PMC)", async () => {

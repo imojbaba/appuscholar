@@ -43,8 +43,13 @@ describe("places", () => {
     expect(parsePlace("review", ["data"])).toBeNull();
   });
 
-  it("only Literature takes segments after its tab; any other stage's address with one is not found", () => {
+  it("only Literature's Reading list takes a segment after its tab, one paper (the reader, Task 27); any other address with one is not found", () => {
     expect(parsePlace("lit", ["reading", "paper-1"])).toEqual({ stage: "lit", tab: "reading", rest: ["paper-1"] });
+    expect(parsePlace("lit", ["reading", "sample"])).toEqual({ stage: "lit", tab: "reading", rest: ["sample"] });
+    expect(parsePlace("lit", ["reading", "a", "b"])).toBeNull();
+    expect(parsePlace("lit", ["find", "paper-1"])).toBeNull();
+    expect(parsePlace("lit", ["compare", "paper-1"])).toBeNull();
+    expect(parsePlace("lit", ["citations", "paper-1"])).toBeNull();
     expect(parsePlace("design", ["overview", "anything"])).toBeNull();
     expect(parsePlace("writing", ["document", "x"])).toBeNull();
     expect(parsePlace("review", ["slides", "a", "b"])).toBeNull();

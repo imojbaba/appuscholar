@@ -35,7 +35,7 @@ import { PaperIdsRunner } from "./PaperIdsRunner";
 import { AppHeader } from "./AppHeader";
 import { WindowHeader } from "./WindowHeader";
 import { DocumentBeside } from "./DocumentBeside";
-import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type PendingAnalyse, type Project, type ProjectValue } from "./ProjectContext";
+import { ProjectProvider, type DocumentSummary, type DocumentWithBody, type Project, type ProjectValue } from "./ProjectContext";
 
 /** Whether this tab has run the title-sealing pass since its last unlock (module scope: it outlives a project switch). */
 let sealPassRan = false;
@@ -153,7 +153,6 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [importWaiting, setImportWaiting] = useState<File[]>([]);
   const importing = useRef(false);
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
-  const [pendingAnalyse, setPendingAnalyse] = useState<PendingAnalyse | null>(null);
   // The export place's ticks while it is open (null: closed).
   const [exportParts, setExportParts] = useState<ExportPartId[] | null>(null);
   // Where the paper-id migration is, tagged with the project it was told for (Task 17); PaperIdsRunner starts it and reports here.
@@ -482,7 +481,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   // A place's own window never runs the migration and does not wait for it; a project not loaded yet is "running" (its places are not drawn before it loads).
   const paperIds: PaperIdsState = popout || !inProject ? "busy" : paperIdsTold && paperIdsTold.projectId === projectId ? paperIdsTold.state : "running";
   const value: ProjectValue = {
-    place, go, openProject, pendingSearch, setPendingSearch, pendingAnalyse, setPendingAnalyse, docOpen, openDocument, closeDocument, requestInsert, registerEditor,
+    place, go, openProject, pendingSearch, setPendingSearch, docOpen, openDocument, closeDocument, requestInsert, registerEditor,
     project, projectId, paperIds, documents, currentDoc, selectDoc, reloadDocs, patchDoc, restoreDocument, registerFlush, flushOpen,
     wordCount: live && currentDoc && live.docId === currentDoc.id ? live.words : null, setWordCount, reloadProject,
     dialog, startImport, importNames: importWaiting.map((f) => f.name), runImport, openHelp: () => setDialog("help"), openImportV1: () => setDialog("importV1"), openTerms: () => setDialog("terms"), openWelcome: () => setDialog("welcome"), openMyWriting: () => setDialog("myWriting"), openSettings: (provider) => { setSettingsProvider(provider ?? null); setDialog("settings"); }, settingsProvider, closeDialog: () => { setDialog(null); setImportWaiting([]); },

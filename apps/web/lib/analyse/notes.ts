@@ -5,17 +5,17 @@ import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { blobId, type ApNote, type ApNotes } from "@/lib/blobs/kinds";
 
 /*
- * Analyse a paper's stored notes: v1's appu_ap_notes (apNotes, apNotesSave, apNoteGet, apNotePut 9892-9895) and appu_ap_cols (9939-9941), here the open project's `ap_notes` and `ap_cols`
- * blobs, sealed under the vault. AnalysePanel holds the one client of each (or, in the Reading tab, takes the one store the tab shares with the Reading list: LitPlace) and hands
- * this store to the walk-through and the paper card; Compare (wave B Task 22) reads the same two blobs for its table (the cards side by side left Analyse a paper with it). Every write is an update of
+ * The reader's stored notes (it was Analyse a paper before wave B Task 27): v1's appu_ap_notes (apNotes, apNotesSave, apNoteGet, apNotePut 9892-9895) and appu_ap_cols (9939-9941), here the open project's `ap_notes` and `ap_cols`
+ * blobs, sealed under the vault. The Reading tab holds the one store (LitPlace) and shares it with the Reading list and the reader, which hands it to the walk-through and the paper card; Compare (wave B Task 22) reads the same two blobs for its table (the cards side by side left Analyse a paper with it). Every write is an update of
  * the stored value (a write made before the blob is read lands on top of what is stored). A stored blob that does not open on this device is asked about before the first write replaces it
  * (ruling R16); a "yes" holds for that blob, whichever panel asked (below), and a "no" while the panel stays mounted, so typing does not ask at every key.
  */
 
 /**
- * Where a note lives. An old note ('a' + the squashed title + the characters read) that the paper-id migration moved to `p:<pid>` says so in `movedTo` and stays as it was
- * (Task 17); until B3 gives Analyse a paper the paper's id, it reads and writes the note it moved to, which is the one Compare reads (ruling B2-R10). A move that points at a note
- * that is gone leads to that key all the same, so the old copy is never brought back to life beside it.
+ * Where a note lives. A kept paper's note is `p:<pid>` (the reader loads the paper under that id, wave B Task 27), so it is read and written where it is. An old note ('a' + the squashed title +
+ * the characters read) that the paper-id migration moved to `p:<pid>` says so in `movedTo` and stays as it was (Task 17); a pasted text still has an id of that kind (v1's), and when its note was
+ * moved the paper it belongs to is the one that holds its words now, so it reads and writes the note it moved to, the one Compare reads (ruling B2-R10, kept for the pasted text). A move that
+ * points at a note that is gone leads to that key all the same, so the old copy is never brought back to life beside it.
  */
 function noteKeyOf(all: ApNotes, id: string): string {
   let key = id;

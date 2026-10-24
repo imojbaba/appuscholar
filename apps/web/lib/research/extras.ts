@@ -1,9 +1,8 @@
 import { oaConnected, QUICK_READ_MIN_CHARS, type RsPaper } from "@appuscholar/core";
-import type { PendingAnalyse } from "@/components/frame/ProjectContext";
 import type { ConnectedBox } from "./useSearch";
 
 /*
- * The Find tab's smaller steps (v1 index.html): "Read it now" hands the abstract to Analyse a paper as "📄 Analyse this paper" did (rsAnalyse 8407-8419), the Google
+ * The Find tab's smaller steps (v1 index.html): "Read it now" opens the reader on the kept paper's abstract, as "📄 Analyse this paper" did in Analyse a paper (rsAnalyse 8407-8419), the Google
  * Scholar link (rsOpenExternal 8424-8434) and connected papers (rsConnected 8498-8523, the requests and their parsing are core's oaConnected). Orchestration and
  * v1's sentences only: the lists are core's oaConnected. The list's CSV is the export place's (Task 12). The CSV download, the filters' count sentence and the
  * buttons of JSTOR, ScienceDirect and BASE left with the Research panel (register row D-S2-123): only Scholar has a button, so only it has an address here.
@@ -12,18 +11,14 @@ import type { ConnectedBox } from "./useSearch";
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
 /**
- * rsAnalyse (8407-8419): the abstract with v1's head (title, authors, year, venue, then "Abstract") is kept for Analyse a paper as an
- * abstract-only load (v1's apLoad(title, [head+ab], 'abstract', false)); the tool opens and v1's toast says what kind of read it is. With no
- * abstract, one of v1's two sentences (a free PDF or not) and nothing is kept.
+ * rsAnalyse (8407-8419), its refusal: a result with no abstract to read (under QUICK_READ_MIN_CHARS characters that are not white space) gets one of v1's two sentences (a free PDF or not) and nothing
+ * opens. Otherwise `open` is called: since wave B Task 27 the paper has been kept first and the reader opens on its stored abstract (v1 handed the abstract to Analyse a paper and toasted "Abstract
+ * loaded"; the reader says "Only the abstract is here" on the page instead, and v1's head of the abstract, title, authors, year, venue and "Abstract", is built from the kept entry: lib/analyse/intake.ts keptAbstractPages).
  */
-export function analysePaper(p: RsPaper, d: { keep(v: PendingAnalyse): void; showTool(id: "analyse"): void; toast(msg: string): void; t: T }): boolean {
+export function readNow(p: RsPaper, d: { open(): void; toast(msg: string): void; t: T }): boolean {
   const ab = String(p.abstract || "").trim();
   if (ab.replace(/\s+/g, "").length < QUICK_READ_MIN_CHARS) { d.toast(p.oaUrl ? d.t("rs2_no_abstract_came_with") : d.t("rs2_no_abstract_came_with_2")); return false; }
-  // v1 8411, as written: 'Abstract' is the head's last line (a literal of v1's script, kept in English as v1 does in every language).
-  const head = p.title + "\n" + (p.authors || "") + (p.year ? " (" + p.year + ")" : "") + (p.venue ? ". " + p.venue : "") + "\nAbstract\n";
-  d.keep({ title: p.title, pages: [head + ab], src: "abstract" });
-  d.showTool("analyse");
-  d.toast(d.t("rs2_abstract_loaded_this_is"));
+  d.open();
   return true;
 }
 

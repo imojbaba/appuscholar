@@ -23,7 +23,6 @@ const h = vi.hoisted(() => ({
   callAI: vi.fn(async (..._a: unknown[]) => ""),
   editor: null as unknown,
   go: vi.fn(),
-  setPendingAnalyse: vi.fn(),
   openExport: vi.fn()
 }));
 vi.mock("@/lib/blobs/useProjectBlob", () => ({
@@ -33,7 +32,7 @@ vi.mock("@/lib/ai/useCallAI", async (orig) => ({ ...(await orig<typeof import(".
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: h.editor }) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "scratch-1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, go: h.go, setPendingAnalyse: h.setPendingAnalyse,
+  useProject: () => ({ project: { id: "p-1" }, projectId: "p-1", documents: [], currentDoc: null, pendingSearch: null, setPendingSearch: () => {}, go: h.go,
     openExport: h.openExport,
     requestInsert: async (run: (e: never) => void) => { const e = h.editor as { isDestroyed?: boolean } | null; if (!e || e.isDestroyed) return false; run(e as never); return true; } })
 }));
@@ -113,7 +112,7 @@ const libAfter = (start: CitationEntry[] = []) => h.blobs.citations!.set.mock.ca
 
 beforeEach(() => {
   h.blobs = { citations: blob([]), retraction_cache: blob({}), rs_prefs: blob(null) };
-  for (const f of [h.toast, h.go, h.setPendingAnalyse, h.openExport]) f.mockReset();
+  for (const f of [h.toast, h.go, h.openExport]) f.mockReset();
   h.callAI.mockReset().mockResolvedValue("");
   h.editor = null;
   rf.reset();
@@ -601,7 +600,7 @@ describe("Find: More", () => {
     expect(toasts()).toEqual([E.rs_inserted]);
   });
 
-  it("Read it now keeps the paper, loads its abstract into Analyse a paper and opens the Reading list here", async () => {
+  it("Read it now keeps the paper and opens the reader on it, on the abstract Keep stored (Task 27; ruling B2-R14's interim is gone)", async () => {
     await mount();
     const c = run("oa-plain");
     await search(c);
@@ -610,12 +609,16 @@ describe("Find: More", () => {
     await openMore(cards()[i]!);
     await click(tid("find-item-read"));
     expect(h.blobs.citations!.set).toHaveBeenCalledTimes(1);
-    expect(h.setPendingAnalyse).toHaveBeenCalledWith({ title: p.title, pages: [p.title + "\n" + p.authors + " (" + p.year + ")" + ". " + p.venue + "\nAbstract\n" + String(p.abstract).trim()], src: "abstract" });
-    expect(h.go).toHaveBeenCalledWith("/p/p-1/lit/reading");
-    expect(toasts()).toEqual(["Abstract loaded. This is a shallow read; load the full paper for a real analysis."]);
+    const [kept] = libAfter() as Array<CitationEntry & { pid: string; abstract: string }>;
+    expect(kept!.abstract).toBe(String(p.abstract).trim().slice(0, 4000));
+    expect(kept!.pid).toMatch(/^k/);
+    // The reader names the paper by its id; the abstract goes to the reader from the library, not through the workspace, and v1's "Abstract loaded" toast is the reader's own line now.
+    expect(h.go).toHaveBeenCalledTimes(1);
+    expect(h.go).toHaveBeenCalledWith("/p/p-1/lit/reading/" + kept!.pid);
+    expect(toasts()).toEqual([]);
   });
 
-  it("Read it now on a paper already kept keeps nothing again, and still opens the Reading list", async () => {
+  it("Read it now on a paper already kept keeps nothing again, gives the kept entry the abstract it lacks, and opens the reader on its id", async () => {
     const c = run("oa-plain");
     const i = c.merged.findIndex((p) => p.doi && String(p.abstract ?? "").replace(/\s+/g, "").length >= 150);
     h.blobs.citations = blob([{ title: "Elsewhere", doi: c.merged[i]!.doi, pid: "kearly01" }]);
@@ -623,9 +626,27 @@ describe("Find: More", () => {
     await search(c);
     await openMore(cards()[i]!);
     await click(tid("find-item-read"));
-    expect(h.blobs.citations!.set).not.toHaveBeenCalled();
-    expect(h.setPendingAnalyse).toHaveBeenCalledTimes(1);
-    expect(h.go).toHaveBeenCalledWith("/p/p-1/lit/reading");
+    // One update, and it adds no entry: the same paper, with the abstract the result has.
+    expect(h.blobs.citations!.set).toHaveBeenCalledTimes(1);
+    const doi = String(c.merged[i]!.doi);
+    const lib = libAfter([{ title: "Elsewhere", doi, pid: "kearly01" } as CitationEntry]);
+    expect(lib).toEqual([{ title: "Elsewhere", doi, pid: "kearly01", abstract: String(c.merged[i]!.abstract).trim().slice(0, 4000) }]);
+    expect(h.go).toHaveBeenCalledTimes(1);
+    expect(h.go).toHaveBeenCalledWith("/p/p-1/lit/reading/kearly01");
+  });
+
+  it("Read it now on a paper already kept with its abstract stored writes nothing at all", async () => {
+    const c = run("oa-plain");
+    const i = c.merged.findIndex((p) => p.doi && String(p.abstract ?? "").replace(/\s+/g, "").length >= 150);
+    const doi = String(c.merged[i]!.doi);
+    const entry = { title: "Elsewhere", doi, pid: "kearly01", abstract: "Stored before. ".repeat(20) };
+    h.blobs.citations = blob([entry]);
+    await mount();
+    await search(c);
+    await openMore(cards()[i]!);
+    await click(tid("find-item-read"));
+    expect(libAfter([entry as CitationEntry])).toEqual([entry]);
+    expect(h.go).toHaveBeenCalledWith("/p/p-1/lit/reading/kearly01");
   });
 
   it("Read it now on a paper with no abstract still keeps the paper, says there is nothing to read, and stays on Find", async () => {
@@ -634,7 +655,6 @@ describe("Find: More", () => {
     await openMore(cards()[0]!);
     await click(tid("find-item-read"));
     expect(h.blobs.citations!.set).toHaveBeenCalledTimes(1);
-    expect(h.setPendingAnalyse).not.toHaveBeenCalled();
     expect(h.go).not.toHaveBeenCalled();
     expect(toasts()).toEqual([E.rs2_no_abstract_came_with_2]);
   });
@@ -660,7 +680,6 @@ describe("Find: More", () => {
     await click(tid("find-item-read"));
     expect(h.blobs.citations!.set).not.toHaveBeenCalled();
     expect(ed.getText()).toBe(before);
-    expect(h.setPendingAnalyse).not.toHaveBeenCalled();
     expect(h.go).not.toHaveBeenCalled();
     expect(toasts()).toEqual([]);
   });
@@ -679,7 +698,6 @@ describe("Find: More", () => {
     await search(run("oa-plain"));
     await openMore(cards()[0]!);
     await click(tid("find-item-read"));
-    expect(h.setPendingAnalyse).not.toHaveBeenCalled();
     expect(h.go).not.toHaveBeenCalled();
   });
 });

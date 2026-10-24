@@ -45,14 +45,19 @@ export function papersOf(lib: StoredEntry[], index: ListedShelf[], notes: ApNote
 
 const WORDS = 4;
 
+/** The authors as a row names them: "{Surname}", "{A} and {B}" or "{A} et al."; empty when the paper has no author (the reader's line under the title uses the same words). */
+export function paperWho(p: Paper, t: T): string {
+  const last = citNames(p.entry?.author).map((n) => n.last).filter(Boolean);
+  return last.length === 0 ? "" : last.length === 1 ? last[0]! : last.length === 2 ? t("rl_names_two", { a: last[0]!, b: last[1]! }) : t("rl_names_many", { a: last[0]! });
+}
+
 /**
  * A row's first line (canvas Read): "{Surname}, {year}: {the first four words of the title, in lower case}"; with two authors "{A} and {B}, {year}: ...", with three or more
  * "{A} et al., {year}: ...". What the paper does not have is left out; a paper with no author and no year is its title, and one with no title is "Untitled paper".
  */
 export function paperShort(p: Paper, t: T): string {
   const title = (p.entry?.title ?? p.shelf?.title ?? "").trim();
-  const last = citNames(p.entry?.author).map((n) => n.last).filter(Boolean);
-  const who = last.length === 0 ? "" : last.length === 1 ? last[0]! : last.length === 2 ? t("rl_names_two", { a: last[0]!, b: last[1]! }) : t("rl_names_many", { a: last[0]! });
+  const who = paperWho(p, t);
   const head = [who, (p.entry?.year ?? "").trim()].filter(Boolean).join(", ");
   if (!head) return title || t("rl_untitled");
   const words = title.split(/\s+/).filter(Boolean).slice(0, WORDS).join(" ").toLowerCase().replace(/[,;:.]+$/, "");

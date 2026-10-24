@@ -21,16 +21,17 @@ const h = vi.hoisted(() => ({
   lib: [] as unknown[],
   libLoading: false,
   paperIds: undefined as undefined | string,
-  /** The notes store the Reading tab gave the list, and the one it gave Analyse a paper (Task 21a fix round). */
+  /** The notes store the Reading tab gave the list, and the one it gave the reader, and the paper the reader was opened on (Task 21a fix round, Task 27). */
   readingNotes: undefined as unknown,
-  analyseNotes: undefined as unknown
+  readerNotes: undefined as unknown,
+  readerPid: undefined as unknown
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1", useSearchParams: () => new URLSearchParams("") }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "s1" }, settings: { field: "psychology" } }) }));
 vi.mock("@/lib/vault/titles", () => ({ useTitle: () => ({ state: "open", text: "Sleep and exam anxiety" }) }));
 vi.mock("@/components/frame/ProjectContext", () => ({
-  useProject: () => ({ project: { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0 }, projectId: "p1", go: h.go, pendingAnalyse: null, setPendingAnalyse: () => {},
+  useProject: () => ({ project: { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0 }, projectId: "p1", go: h.go,
     docOpen: h.docOpen, openDocument: h.openDocument, requestInsert: async () => false, paperIds: h.paperIds })
 }));
 vi.mock("@/lib/shelf/useShelf", () => ({
@@ -47,10 +48,10 @@ vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: (p: { notes?: unknown }) => { h.readingNotes = p.notes; return <div data-testid="reading-list" />; } }));
-// The real Analyse a paper, seen through the store the tab gives it.
-vi.mock("@/components/tools/analyse/AnalysePanel", async (orig) => {
-  const m = await orig<typeof import("../components/tools/analyse/AnalysePanel")>();
-  return { ...m, AnalysePanel: (p: { notes?: unknown }) => { h.analyseNotes = p.notes; return <m.AnalysePanel {...(p as object)} />; } };
+// The reader, seen through the paper and the store the tab gives it: the real one on the practice paper (it needs no stored data), a stub on a kept paper (the reader's own tests are test/reader.test.tsx).
+vi.mock("@/components/reader/Reader", async (orig) => {
+  const m = await orig<typeof import("../components/reader/Reader")>();
+  return { ...m, Reader: (p: { pid: string; notes?: unknown }) => { h.readerPid = p.pid; h.readerNotes = p.notes; return p.pid === "sample" ? <m.Reader {...(p as never)} /> : <div data-testid="reader-stub" />; } };
 });
 vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
 vi.mock("@/components/literature/CompareTab", () => ({ CompareTab: () => <div data-testid="compare-tab" /> }));
@@ -58,7 +59,6 @@ vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], a
 vi.mock("@/components/tools/HelpersPanel", () => ({ HelpersPanel: () => <div data-testid="panel-psych" /> }));
 
 import { StagePlace } from "../components/frame/StagePlace";
-import { loadPaper } from "../lib/analyse/intake";
 import { resetAp } from "../lib/analyse/useApDoc";
 import { STAGE_ORDER, type StageKey } from "../lib/tools";
 import { PLACE_TABS, parsePlace } from "../lib/frame/places";
@@ -80,12 +80,12 @@ const E = en as Record<string, string>;
 const roots: Root[] = [];
 const $ = (sel: string) => document.body.querySelector<HTMLElement>(sel);
 const tid = (id: string) => $(`[data-testid="${id}"]`);
-async function mount(stage: StageKey, tab: string | null = null) {
+async function mount(stage: StageKey, tab: string | null = null, paper?: string) {
   const el = document.createElement("div");
   document.body.appendChild(el);
   const root = createRoot(el);
   roots.push(root);
-  await act(async () => { root.render(<StagePlace stage={stage} tab={tab} />); });
+  await act(async () => { root.render(<StagePlace stage={stage} tab={tab} paper={paper} />); });
 }
 function unmountAll() { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; }
 
@@ -128,7 +128,7 @@ describe("Literature (Task 10)", () => {
   it("each Literature tab ends with its suggested next line", async () => {
     const content: Record<string, string[]> = {
       find: ["panel-find"],
-      reading: ["reading-list", "read-a-paper", "panel-analyse"],
+      reading: ["reading-list"],
       compare: ["compare-tab"],
       citations: ["panel-citations"]
     };
@@ -146,19 +146,35 @@ describe("Literature (Task 10)", () => {
     }
   });
 
-  it("the Reading list is the page's own list, not a dialog, with Analyse a paper under Read a paper", async () => {
+  it("the Reading list is the page's own list, not a dialog, and Analyse a paper is not under it any more", async () => {
     await mount("lit", "reading");
     expect($('[role="dialog"]')).toBeNull();
     expect(tid("shelf-dialog")).toBeNull();
     expect(tid("reading-list")).not.toBeNull();
-    expect(tid("read-a-paper")!.textContent).toBe("Read a paper");
+    expect(tid("read-a-paper")).toBeNull();
+    expect(tid("panel-analyse")).toBeNull();
+    expect(tid("reader")).toBeNull();
   });
 
-  it("the Reading tab gives the list and Analyse a paper one store of the project's notes, so a note written in one is heard by the other", async () => {
-    h.readingNotes = undefined; h.analyseNotes = undefined;
+  it("a paper named after the Reading tab opens the reader on it in place of the list, with the store of notes the list would have had", async () => {
+    h.readingNotes = undefined; h.readerNotes = undefined; h.readerPid = undefined;
     await mount("lit", "reading");
     expect(h.readingNotes).toMatchObject({ all: {}, unread: false, loading: false });
-    expect(h.analyseNotes).toBe(h.readingNotes);
+    expect(h.readerPid).toBeUndefined();
+    unmountAll();
+    await mount("lit", "reading", "ka");
+    expect(h.readerPid).toBe("ka");
+    expect(h.readerNotes).toMatchObject({ all: {}, unread: false, loading: false });
+    expect(tid("reading-list")).toBeNull();
+    // The Reading list tab stays the open one, and the place's suggested next line is still last.
+    expect(tid("place-tab-reading")!.getAttribute("aria-selected")).toBe("true");
+    expect(tid("place-lit-reading")!.lastElementChild).toBe(tid("lit-next"));
+  });
+
+  it("the practice paper is the pid sample", async () => {
+    await mount("lit", "reading", "sample");
+    expect(h.readerPid).toBe("sample");
+    expect(tid("reader-title")!.textContent).toBe(AP_SAMPLE[0]!.split("\n")[0]);
   });
 });
 
@@ -251,9 +267,7 @@ describe("Writing and the stages not built (Task 10)", () => {
   });
 
   it("no lecture, lesson, backup or stub tool is rendered in any place (W23)", async () => {
-    // The practice paper is open, so Analyse a paper shows its mode tabs (v1 offered the lesson for the practice paper only).
-    const sample = AP_SAMPLE[0]!.split("\n")[0]!;
-    act(() => { expect(loadPaper(sample, [...AP_SAMPLE], "pdf", true, { toast: () => {}, t: (k: string) => E[k] ?? k })).toBe(true); });
+    // The practice paper is open, so the reader shows its tabs (v1 offered the lesson for the practice paper only).
     const stubs = ["style", "words", "design", "stats", "qual", "close", "slides"];
     const banned = [E.ap2_lib_open_btn!, E.ap2_lesson_on_this_paper!, E.ap2_short_talks_on_reading!, E.backup_btn!, "All lectures", "Lesson on this paper", "arrive in a later phase", "This tool arrives in a later phase"];
     const places: Array<[StageKey, string | null]> = STAGE_ORDER.flatMap((s) => (PLACE_TABS[s].length ? PLACE_TABS[s].map((x) => [s, x] as [StageKey, string]) : [[s, null] as [StageKey, null]]));
@@ -270,10 +284,12 @@ describe("Writing and the stages not built (Task 10)", () => {
       for (const b of banned) expect(document.body.textContent, where).not.toContain(b);
       unmountAll();
     }
-    // The reading list did draw Analyse a paper's mode tabs, without the lesson.
-    await mount("lit", "reading");
-    expect(tid("ap-tabs")).not.toBeNull();
-    expect(tid("ap-tab-card")).not.toBeNull();
+    // The reader on the practice paper draws its tabs, without the lesson.
+    await mount("lit", "reading", "sample");
+    expect(tid("reader-tabs")).not.toBeNull();
+    expect(tid("reader-tab-card")).not.toBeNull();
+    expect(tid("reader-tab-lesson")).toBeNull();
+    for (const b of banned) expect(document.body.textContent).not.toContain(b);
   });
 });
 

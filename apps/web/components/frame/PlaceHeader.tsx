@@ -16,9 +16,10 @@ import { useProject } from "./ProjectContext";
  * The top of a place (canvas Find): "{project title} / {stage name}", the title linking home; the place's tabs, each a link; and the question as
  * a strip, closed by default, that opens to the topic with Edit (to the Idea place); "Open in a new window" (NewWindow); and "Open my document"
  * (Task 11) while the document is not beside the place (Writing always shows it; a place's own window never has one). The feasibility verdict (the stored read, Task 9) joins it
- * later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`.
+ * later. A place that draws its own tabs (Literature, with its counts) passes them as `tabs`. `paper`: the paper the reader is open on (Literature's Reading tab, Task 27), so
+ * "Open in a new window" opens that paper and not the list.
  */
-export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: string | null; tabs?: ReactNode }) {
+export function PlaceHeader({ stage, tab, tabs: own, paper }: { stage: StageKey; tab: string | null; tabs?: ReactNode; paper?: string }) {
   const t = useT();
   const { me } = useSettings();
   const { project, projectId, docOpen, openDocument } = useProject();
@@ -47,7 +48,7 @@ export function PlaceHeader({ stage, tab, tabs: own }: { stage: StageKey; tab: s
           ))}
         </nav>
       ))}
-      <NewWindow stage={stage} href={placeHref(id, stage, tab ?? undefined)} />
+      <NewWindow stage={stage} href={placeHref(id, stage, tab ?? undefined) + (paper ? "/" + encodeURIComponent(paper) : "")} />
       {stage !== "idea" && <QuestionStrip />}
     </div>
   );

@@ -39,7 +39,7 @@ vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { chi
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
-vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div data-testid="panel-analyse" /> }));
+vi.mock("@/components/reader/Reader", () => ({ Reader: () => <div data-testid="reader" /> }));
 vi.mock("@/components/literature/ReadingList", () => ({ ReadingList: h.stub }));
 vi.mock("@/components/literature/CompareTab", () => ({ CompareTab: () => <div data-testid="compare-tab" /> }));
 vi.mock("@/components/document/DocumentCard", async () => {

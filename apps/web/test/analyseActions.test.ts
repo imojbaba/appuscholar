@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AP_SAMPLE, apNumbers } from "@appuscholar/core";
+import { AP_SAMPLE, apBuild, apNumbers } from "@appuscholar/core";
 import en from "../messages/en.json";
 import { apAsk } from "../lib/analyse/ask";
-import { fromFile, fromPaste, fromSample, fromShelf, isCurrentIntake, loadPaper, nextIntake } from "../lib/analyse/intake";
+import { fromFile, fromKept, fromPaste, fromSample, isCurrentIntake, loadPaper, nextIntake } from "../lib/analyse/intake";
 import { runRefCheck } from "../lib/analyse/refcheck";
 import { apOk, getAp, loadDoc, resetAp, runNumbers, setAp } from "../lib/analyse/useApDoc";
 import { extractPdfPages, PdfReaderUnavailable, type ReadPdf } from "../lib/shelf/extract";
 
-/* The pure orchestration of Analyse a paper (lib/analyse): v1's apLoad, apOk, apAsk, apNumbersRun and apRefCheck driven with fakes. The panel's rendering is test/analyse.test.tsx. */
+/* The pure orchestration of the reader's engines (lib/analyse; it was Analyse a paper): v1's apLoad, apOk, apAsk, apNumbersRun and apRefCheck driven with fakes. The reader's rendering is test/reader.test.tsx and test/analyse.test.tsx. */
 
 const E = en as Record<string, string>;
 const t = (k: string, v?: Record<string, string | number>) => (v ? E[k]!.replace(/\{(\w+)\}/g, (m, x: string) => (x in v ? String(v[x]) : m)) : E[k]!);
@@ -18,14 +18,22 @@ const toast = (m: string) => { toasts.push(m); };
 beforeEach(() => { resetAp(); toasts = []; });
 
 describe("apLoad and apOk", () => {
-  it("a new paper clears the log, the numbers and the reference check and shows Ask; busy stays as v1 leaves it", () => {
+  it("a new paper clears the log, the numbers and the reference check; busy stays as v1 leaves it", () => {
     loadDoc(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true);
-    setAp({ log: [{ q: "x", title: "T", partial: false, n: 1, of: 1, quotes: [] }], numbers: [], refs: { none: "no DOIs" }, refBusy: true, busy: true, qDraft: "q", mode: "card" });
+    setAp({ log: [{ q: "x", title: "T", partial: false, n: 1, of: 1, quotes: [] }], numbers: [], refs: { none: "no DOIs" }, refBusy: true, busy: true, qDraft: "q" });
     const g = getAp().gen;
     expect(loadPaper("Pasted", [PASTED], "paste", false, { toast, t })).toBe(true);
     const s = getAp();
-    expect([s.log, s.numbers, s.refs, s.refBusy, s.busy, s.qDraft, s.mode, s.gen]).toEqual([[], null, null, false, true, "", "ask", g + 1]);
+    expect([s.log, s.numbers, s.refs, s.refBusy, s.busy, s.qDraft, s.gen]).toEqual([[], null, null, false, true, "", g + 1]);
     expect([s.doc!.sample, s.doc!.abstractOnly, s.doc!.src]).toEqual([false, false, "paste"]);
+  });
+  it("a paper's notes are kept under the id it is loaded with: v1's docId, else the one it is given (the reader's p:<pid>)", () => {
+    loadDoc("Pasted", [PASTED], "paste", false);
+    expect(getAp().doc!.id).toBe(apBuild("Pasted", [PASTED], "paste").id);
+    loadDoc("Pasted", [PASTED], "paste", false, "p:k1");
+    expect(getAp().doc!.id).toBe("p:k1");
+    expect(loadPaper("Kept", [PASTED], "paste", false, { toast, t }, "p:k2")).toBe(true);
+    expect(getAp().doc!.id).toBe("p:k2");
   });
   it("apOk: the sample and an abstract need no tick; any other paper needs the box", () => {
     loadDoc(SAMPLE_TITLE, [...AP_SAMPLE], "pdf", true);
@@ -70,27 +78,34 @@ describe("the PDF intake through Task 11's extractor", () => {
 });
 
 describe("a later choice of a paper wins (fix wave A, Task 16; W20)", () => {
-  const SHELF = [{ id: "sh1", title: "Slow shelf paper", file: "s.pdf", size: 1, added: "", total: 2, kept: 2 }];
+  const LIB = [{ author: "Slow, S.", year: "2020", title: "Slow kept paper", pid: "k1", rl: true }];
+  const SHELF = [{ id: "sh1", title: "Slow kept paper", file: "s.pdf", size: 1, added: "", total: 2, kept: 2, pid: "k1" }];
   it("a ticket is current until the next one is taken", () => {
     const a = nextIntake();
     expect(isCurrentIntake(a)).toBe(true);
     const b = nextIntake();
     expect([isCurrentIntake(a), isCurrentIntake(b)]).toEqual([false, true]);
   });
-  it("a shelf read that finishes after the practice paper loaded loads nothing and says nothing", async () => {
+  it("a kept paper's read that finishes after the practice paper loaded loads nothing and says nothing", async () => {
     let done: (v: { pages: string[] }) => void = () => {};
-    const slow = fromShelf(nextIntake(), "sh1", { toast, t, index: SHELF, read: () => new Promise((r) => { done = r; }) });
+    const slow = fromKept(nextIntake(), "k1", { toast, t, lib: LIB, index: SHELF, read: () => new Promise((r) => { done = r; }) });
     expect(fromSample(nextIntake(), { toast, t })).toBe(true);
-    done({ pages: ["Slow shelf paper\n" + "text ".repeat(200)] });
+    done({ pages: ["Slow kept paper\n" + "text ".repeat(200)] });
     expect(await slow).toBe(false);
     expect(getAp().doc!.title).toBe(SAMPLE_TITLE);
     expect(toasts).toEqual([]);
   });
-  it("a shelf paper that could not be read is not reported once another paper was chosen", async () => {
-    const slow = fromShelf(nextIntake(), "sh1", { toast, t, index: SHELF, read: async () => null });
+  it("a kept paper that could not be read is not reported once another paper was chosen", async () => {
+    const slow = fromKept(nextIntake(), "k1", { toast, t, lib: LIB, index: SHELF, read: async () => null });
     fromSample(nextIntake(), { toast, t });
     expect(await slow).toBe(false);
     expect(toasts).toEqual([]);
+  });
+  it("a kept paper chosen with a ticket that is already old loads nothing", async () => {
+    const old = nextIntake();
+    nextIntake();
+    expect(await fromKept(old, "k1", { toast, t, lib: LIB, index: SHELF, read: async () => ({ pages: ["x ".repeat(400)] }) })).toBe(false);
+    expect(getAp().doc).toBeNull();
   });
   it("a PDF read that finishes after a paste loaded loads nothing and says nothing more (a failing read too)", async () => {
     let done: (v: { pages: string[]; total: number }) => void = () => {};

@@ -300,12 +300,17 @@ describe("a place in its own window (register row D-S2-43)", () => {
   it("Open in a new window opens the place with ?window=1; a pop-out and the Writing place have none", async () => {
     const open = vi.spyOn(window, "open").mockReturnValue({ focus: () => {} } as unknown as Window);
     const value = { project: P1, projectId: "p1" } as unknown as ProjectValue;
-    const header = (stage: "lit" | "idea" | "writing", tab: string | null) => render(<ProjectProvider value={value}><PlaceHeader stage={stage} tab={tab} /></ProjectProvider>);
+    const header = (stage: "lit" | "idea" | "writing", tab: string | null, paper?: string) => render(<ProjectProvider value={value}><PlaceHeader stage={stage} tab={tab} paper={paper} /></ProjectProvider>);
     at("/p/p1/lit/compare");
     header("lit", "compare");
     expect(tid("place-new-window")!.textContent).toBe(E.place_new_window);
     act(() => { tid("place-new-window")!.click(); });
     expect(open).toHaveBeenCalledWith("/p/p1/lit/compare?window=1", "appu_pop_lit", "popup=yes,width=540,height=820");
+    act(() => { for (const r of roots.splice(0)) r.unmount(); });
+    // The reader (Task 27) opens its paper in the new window, not the list.
+    header("lit", "reading", "ka");
+    act(() => { tid("place-new-window")!.click(); });
+    expect(open).toHaveBeenLastCalledWith("/p/p1/lit/reading/ka?window=1", "appu_pop_lit", "popup=yes,width=540,height=820");
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     header("idea", null);
     act(() => { tid("place-new-window")!.click(); });

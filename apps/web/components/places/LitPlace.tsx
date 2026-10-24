@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
 import { useApNotes } from "@/lib/analyse/notes";
@@ -11,7 +11,7 @@ import { CitationsTab } from "@/components/literature/CitationsTab";
 import { CompareTab } from "@/components/literature/CompareTab";
 import { FindTab } from "@/components/literature/FindTab";
 import { ReadingList } from "@/components/literature/ReadingList";
-import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
+import { Reader } from "@/components/reader/Reader";
 import { PlaceHeader } from "@/components/frame/PlaceHeader";
 import { useProject } from "@/components/frame/ProjectContext";
 import { PanelLoading } from "@/components/tools/PanelLoading";
@@ -19,15 +19,15 @@ import { PanelLoading } from "@/components/tools/PanelLoading";
 /**
  * The Literature place (canvas Find): four tabs, each a link, in the order Find, Reading list ({n} kept papers), Compare and Citations
  * ({n} library entries); a count not known yet (read, locked) is left out. Find is the canvas's Find (wave B Task 18: search, Keep and More). Reading list is the canvas's list of kept
- * papers (Task 21a), with today's Analyse a paper under "Read a paper" until B3 replaces it. Citations is the canvas's Citations (Task 23: every source with its status, its use and
+ * papers (Task 21a); `reading/<pid>` opens the reader (Task 27) on that paper in its place. Citations is the canvas's Citations (Task 23: every source with its status, its use and
  * its fix). Compare is the canvas's Compare (Task 22: one table of the kept papers, and writing from them beside it). The tab's suggested next line comes last, drawn here so it stays when the content is replaced.
  */
-export function LitPlace({ tab }: { tab: string }) {
+export function LitPlace({ tab, paper }: { tab: string; paper?: string }) {
   return (
     <>
-      <PlaceHeader stage="lit" tab={tab} tabs={<LitTabs tab={tab} />} />
+      <PlaceHeader stage="lit" tab={tab} paper={paper} tabs={<LitTabs tab={tab} />} />
       <div className="place-body" data-testid={"place-lit-" + tab}>
-        <PapersReady><Content tab={tab} /></PapersReady>
+        <PapersReady><Content tab={tab} paper={paper} /></PapersReady>
         <Next tab={tab} />
       </div>
     </>
@@ -74,25 +74,22 @@ function PapersReady({ children }: { children: React.ReactNode }) {
   return shown ? <>{children}</> : <PanelLoading />;
 }
 
-function Content({ tab }: { tab: string }) {
-  if (tab === "reading") return <Reading />;
+function Content({ tab, paper }: { tab: string; paper?: string }) {
+  if (tab === "reading") return <Reading paper={paper} />;
   if (tab === "compare") return <CompareTab />;
   if (tab === "citations") return <CitationsTab />;
   return <FindTab />;
 }
 
-function Reading() {
-  const t = useT();
+/**
+ * The Reading tab: the list of kept papers, or, at `reading/<pid>`, the reader on one of them. One store of the project's notes serves the list (each row's status reads the notes the reader
+ * writes) and the reader, and two stores in a window do not hear each other. The reader's `?tab=` and `?page=` are read with useSearchParams, which needs the boundary around it.
+ */
+function Reading({ paper }: { paper?: string }) {
   const { projectId } = useProject();
-  // One store of the project's notes for the list and for Analyse a paper: each row's status reads the notes that Analyse writes, and two stores in a window do not hear each other.
   const notes = useApNotes(projectId);
-  return (
-    <>
-      <ReadingList notes={notes} />
-      <h2 className="place-h2" data-testid="read-a-paper">{t("lit_read_a_paper")}</h2>
-      <AnalysePanel notes={notes} />
-    </>
-  );
+  if (paper) return <Suspense fallback={<PanelLoading />}><Reader key={paper} pid={paper} notes={notes} /></Suspense>;
+  return <ReadingList notes={notes} />;
 }
 
 function Next({ tab }: { tab: string }) {

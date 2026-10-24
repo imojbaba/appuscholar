@@ -13,7 +13,7 @@ export type ResultActions = {
   connected(): void;
   /** Read the abstract with AI (v1's Quick read, rsQuick). */
   quick(): void;
-  /** Read it now (replaces v1's Analyse this paper: keeps the paper, then opens the Reading list with its abstract loaded). */
+  /** Read it now (replaces v1's Analyse this paper: keeps the paper, then opens the reader on it, on the abstract Keep stored). */
   read(): void;
 };
 

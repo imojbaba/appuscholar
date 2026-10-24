@@ -6,7 +6,7 @@ import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
 import { gapFinder, litReview, quickRead, type GeneratorDeps, type QuickDeps } from "../lib/ai/actions";
-import { analysePaper, openExternal } from "../lib/research/extras";
+import { openExternal, readNow } from "../lib/research/extras";
 import { filterVals, FILTER_EMPTY, shownResults } from "../lib/research/useSearch";
 
 /*
@@ -135,35 +135,32 @@ describe("the literature review and the research gap (researchLitReview / resear
   }
 });
 
-describe("analysePaper (rsAnalyse 8407-8419)", () => {
+describe("readNow (rsAnalyse 8407-8419, its refusal; the reader opens on the kept paper, wave B Task 27)", () => {
   const deps = () => {
-    const log = { toasts: [] as string[], kept: [] as unknown[], tools: [] as string[] };
-    return { log, d: { t, toast: (m: string) => { log.toasts.push(m); }, keep: (v: unknown) => { log.kept.push(v); }, showTool: (id: string) => { log.tools.push(id); } } };
+    const log = { toasts: [] as string[], opened: 0 };
+    return { log, d: { t, toast: (m: string) => { log.toasts.push(m); }, open: () => { log.opened++; } } };
   };
-  it("the abstract with v1's head goes to Analyse a paper as an abstract-only load, the tool opens, v1's toast", () => {
+  it("an abstract long enough to read opens the reader and says nothing (the reader says it is only the abstract)", () => {
     const { d, log } = deps();
-    const p = { ...papers()[0]!, abstract: "  " + longAb + " " };
-    analysePaper(p, d);
-    const head = p.title + "\n" + p.authors + " (" + p.year + ")" + ". " + p.venue + "\nAbstract\n";
-    expect(log.kept).toEqual([{ title: p.title, pages: [head + longAb], src: "abstract" }]);
-    expect(log.tools).toEqual(["analyse"]);
-    expect(log.toasts).toEqual(["Abstract loaded. This is a shallow read; load the full paper for a real analysis."]);
+    expect(readNow({ ...papers()[0]!, abstract: "  " + longAb + " " }, d)).toBe(true);
+    expect(log.opened).toBe(1);
+    expect(log.toasts).toEqual([]);
   });
-  it("no year and no venue leave their parts out", () => {
+  it("no abstract: v1's two toasts (free PDF or not), nothing opens", () => {
     const { d, log } = deps();
-    analysePaper({ ...papers()[0]!, abstract: longAb, year: "", venue: "", authors: "" }, d);
-    expect((log.kept[0] as { pages: string[] }).pages[0]).toBe(papers()[0]!.title + "\n\nAbstract\n" + longAb);
-  });
-  it("no abstract: v1's two toasts (free PDF or not), nothing kept", () => {
-    const { d, log } = deps();
-    analysePaper({ ...papers()[0]!, abstract: "too short", oaUrl: "https://x.org/a.pdf" }, d);
-    analysePaper({ ...papers()[0]!, abstract: "", oaUrl: "" }, d);
+    expect(readNow({ ...papers()[0]!, abstract: "too short", oaUrl: "https://x.org/a.pdf" }, d)).toBe(false);
+    expect(readNow({ ...papers()[0]!, abstract: "", oaUrl: "" }, d)).toBe(false);
     expect(log.toasts).toEqual([
       "No abstract came with this result. Use the free PDF button, download the paper and load it in Analyse a paper.",
       "No abstract came with this result (PubMed results often have none here). Open the source and paste the text into Analyse a paper."
     ]);
-    expect(log.kept).toEqual([]);
-    expect(log.tools).toEqual([]);
+    expect(log.opened).toBe(0);
+  });
+  it("150 characters that are not white space are the line, as QUICK_READ_MIN_CHARS says", () => {
+    const { d, log } = deps();
+    expect(readNow({ ...papers()[0]!, abstract: "x ".repeat(149) }, d)).toBe(false);
+    expect(readNow({ ...papers()[0]!, abstract: "x ".repeat(150) }, d)).toBe(true);
+    expect(log.opened).toBe(1);
   });
 });
 

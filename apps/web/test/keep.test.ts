@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import * as core from "@appuscholar/core";
 import type { StoredEntry } from "../lib/blobs/kinds";
-import { ABSTRACT_MAX, CROSSREF_FILL_TIMEOUT_MS, keepEntry, keepResult, libraryKnown, libraryRead, pastedEntry, resultEntry, undoKeep, undoKeepSettled, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
+import { ABSTRACT_MAX, CROSSREF_FILL_TIMEOUT_MS, fillAbstract, keepEntry, keepResult, libraryKnown, libraryRead, pastedEntry, resultEntry, undoKeep, undoKeepSettled, type KeepDeps, type KeepResultDeps } from "../lib/papers/keep";
 import { insertResult } from "../lib/research/library";
 import { tFormat } from "../lib/i18n";
 import en from "../messages/en.json";
@@ -390,5 +390,24 @@ describe("insertResult: Put a citation in my document", () => {
     await insertResult(oaPaper, d);
     expect(log.lib).toHaveLength(1);
     expect(log.toasts).toEqual([]);
+  });
+});
+
+describe("fillAbstract (Read it now on a paper kept without an abstract, Task 27)", () => {
+  const kept: StoredEntry = { author: "Dweck, C.", title: "Growth mindset and grades in secondary school", year: "2019", pid: "k1", rl: true };
+  it("gives the entry with that pid the abstract it lacks, cut as Keep cuts it, and touches no other entry", () => {
+    const other: StoredEntry = { title: "Another paper", pid: "k2" };
+    const { d, log } = make([kept, other]);
+    expect(fillAbstract("k1", "  " + "x".repeat(ABSTRACT_MAX + 50) + "  ", d)).toBe(true);
+    expect(log.lib[0]).toEqual({ ...kept, abstract: "x".repeat(ABSTRACT_MAX) });
+    expect(log.lib[1]).toBe(other);
+  });
+  it("never replaces an abstract that is stored, and an empty one is not written", () => {
+    const { d, log } = make([{ ...kept, abstract: "Stored." }]);
+    fillAbstract("k1", "A different abstract.", d);
+    expect(log.lib[0]!.abstract).toBe("Stored.");
+    const none = make([kept]);
+    expect(fillAbstract("k1", "   ", none.d)).toBe(false);
+    expect(none.log.updates).toBe(0);
   });
 });

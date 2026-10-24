@@ -456,7 +456,6 @@
 .sh-body { max-height: 64vh; overflow: auto; padding-right: 4px; }
 .sh-row { display: flex; gap: 6px; margin-top: 6px; }
 .sh-row.sh-wrap { flex-wrap: wrap; }
-.sh-row.sh-center { align-items: center; }
 .sh-grow { flex: 1; }
 .sh-wide { width: 100%; }
 .sh-text { font-size: 13.5px; }
@@ -467,8 +466,6 @@
 .sh-card-head { font-weight: 700; font-size: 13.5px; }
 .sh-card-head .sh-muted { font-weight: 400; }
 .sh-snippet { font-size: 13px; line-height: 1.55; margin: 4px 0; }
-.sh-page { white-space: pre-wrap; font-size: 14px; line-height: 1.65; border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin: 8px 0; user-select: text; }
-.sh-pg { width: 64px; display: inline-block; }
 .sh-h3 { margin: 12px 0 4px; font-size: 14px; }
 .sh-hl { border-left: 3px solid #d97706; padding: 2px 8px; margin: 6px 0; font-size: 13px; }
 .sh-ai { margin-top: 8px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
@@ -514,6 +511,56 @@
   .rl-acts .rl-btn { flex: 1 1 0; }
   .rl-free a { display: inline-flex; align-items: center; min-height: 44px; }
 }
+
+.rl-list-more { align-self: stretch; }
+.rl-paste { display: flex; flex-direction: column; gap: var(--s3); max-width: 720px; padding: var(--s4); border: 1px solid var(--line-strong); border-radius: var(--r-card); background: var(--soft); }
+.rl-paste-go { display: flex; }
+.rl-paste-note { margin: 0; font-size: 13px; color: var(--muted); }
+@media (max-width: 700px) {
+  .rl-list-more { flex: 1 1 100%; }
+  .rl-paste-go .rl-btn { flex: 1 1 100%; }
+}
+
+/* The reader (wave B Task 27; canvas Read): the paper's text on the left, its tabs on the right; under the text on a phone. The tab bar wraps on a wide screen and scrolls sideways inside itself on a phone. */
+.rd { display: flex; flex-wrap: wrap; gap: var(--s5); align-items: flex-start; }
+.rd-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--s4); padding: var(--s6) var(--s7); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.rd-head { display: flex; flex-direction: column; gap: 6px; }
+.rd-back { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; min-height: 44px; color: var(--purple-800); font-weight: 600; text-decoration: none; }
+.rd-back:hover { text-decoration: underline; }
+.rd-title { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; }
+.rd-by { margin: 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.rd-by a { display: inline-flex; align-items: center; min-height: 44px; color: var(--purple-800); font-weight: 600; }
+.rd-source, .rd-quiet { margin: 0; font-size: 14px; color: var(--muted); }
+.rd-note { margin: 0; padding: var(--s2) var(--s3); border-left: 3px solid var(--flag-ink); background: var(--flag-bg); color: var(--flag-ink); border-radius: var(--r-ctl); font-size: 14px; }
+.rd-text { display: flex; flex-direction: column; gap: var(--s3); }
+.rd-page { max-width: 68ch; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.7; user-select: text; }
+.rd-page mark { background: var(--purple-100); color: var(--ink); padding: 1px 2px; }
+.rd-pager { display: flex; justify-content: space-between; gap: var(--s2); }
+.rd-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
+.rd-btn:hover:not(:disabled) { background: var(--soft); }
+.rd-btn:disabled { opacity: 0.5; cursor: default; }
+.rd-btn:focus-visible, .rd-back:focus-visible, .rd-by a:focus-visible, .rd-tabs a:focus-visible, .rd-away a:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.rd-caveat { margin: 0; font-size: 12.5px; color: var(--muted); }
+.rd-read { margin: 0; }
+.rd-read pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.rd-side { flex: 1 1 340px; max-width: 420px; min-width: 0; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.rd-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); }
+.rd-tabs a { flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-bottom: 3px solid transparent; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.rd-tabs a[aria-selected="true"] { border-bottom-color: var(--purple-800); color: var(--purple-800); font-weight: 700; }
+.rd-panel { min-width: 0; padding: var(--s5); }
+.rd-panel .ap-box, .rd-panel .sh-hl { overflow-wrap: anywhere; }
+.rd-away { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s5); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.rd-away p { margin: 0; font-size: 15px; }
+.rd-away a { display: inline-flex; align-items: center; min-height: 44px; color: var(--purple-800); font-weight: 600; }
+@media (max-width: 700px) {
+  .rd { gap: var(--s4); }
+  .rd-main { flex-basis: 100%; padding: var(--s4); }
+  .rd-side { flex-basis: 100%; max-width: none; }
+  .rd-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .rd-panel { padding: var(--s4); }
+  .rd-pager .rd-btn { flex: 1 1 0; }
+}
+/* end reader */
 
 /* Analyse a paper (v1 743: .ap-box, .ap-q, .ap-bad, .ap-warn, .ap-ok, .ap-banner), in the design system's tokens. */
 .ap-row { display: flex; gap: 6px; margin: 6px 0; align-items: center; }

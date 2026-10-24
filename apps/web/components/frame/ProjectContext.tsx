@@ -20,9 +20,6 @@ export type DocumentSummary = { id: string; projectId: string; title: string; ti
  */
 export type DocumentWithBody = DocumentSummary & { bodyHtml: string; keyVersion: number; deks: WrappedDek[]; unreadable?: "locked" | "broken" };
 
-/** v1's apLoad(title, [head+ab], 'abstract', false) (8412): the title, the pages (one: the head and the abstract) and the source kind, for apBuild(title, pages, "abstract"). */
-export type PendingAnalyse = { title: string; pages: string[]; src: "abstract" };
-
 export type ProjectValue = {
   /** The place the address names (`/p/<id>/<stage>/<tab>`), or null on the project's home and outside a project. */
   place: Place | null;
@@ -41,9 +38,6 @@ export type ProjectValue = {
   /** The text the selection bubble's Find papers kept for the Research tool (up to 200 characters), or null. */
   pendingSearch: string | null;
   setPendingSearch(text: string | null): void;
-  /** The paper Research's "📄 Analyse this paper" kept for Analyse a paper (v1 rsAnalyse 8407-8419), or null; Task 12's intake loads it abstract-only. */
-  pendingAnalyse: PendingAnalyse | null;
-  setPendingAnalyse(v: PendingAnalyse | null): void;
   /**
    * The document is open beside the place (every place but Writing, which always shows it). Remembered in the settings (`docBeside`). Closed,
    * the editor stays mounted out of sight, so nothing typed is lost and an insert still has somewhere to go.
