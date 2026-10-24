@@ -28,6 +28,20 @@ Good to know:
 - A selftest of the fixture that must fail on purpose, or pin a mark, and so cannot set `qa.selfTest`, carries the tag `@mechanics`; the report leaves it out of the marks.
 - Only test values are used: generated passphrases, `@qa.test` addresses, keys that look like `gsk_qa_<mode>_<random>`. The AI provider is faked behind our own API; nothing leaves the machine except what a case announces.
 
+## On CI
+
+`.github/workflows/qa.yml` runs the layer on GitHub Actions, on the same production builds and a Postgres service container:
+
+| Job | When | What it runs | Where the report is |
+| --- | --- | --- | --- |
+| `qa-slice` | every pull request into `phase-3a-vault` | `qa -g @slice`: each story's plain run and every F/O regression (about 3 minutes of cases, plus the build) | the run's page (the summary) and its artifact `qa-report-slice` |
+| `qa-full` and `qa-report` | every push to `phase-3a-vault` (a merge), and the **Run workflow** button | the full grid in 4 shards, joined into one report by `playwright merge-reports --reporter ./qa/reporter.ts` | the `qa-report` job's page and its artifact `qa-report-full` |
+
+- A pull request is tested as its merge with `phase-3a-vault`, so a pull request opened before the layer merged still runs the layer's cases. The report's commit is the pull request's head.
+- The slice is green on the current build because every fault the runs know about is marked in `apps/web/qa/known.json`. It turns red only on a FAIL that no known id explains, or on a known fault marked `fixed` that fails again.
+- Whether the slice blocks merging (a required check) is OJ's call (spec section 16, question 2).
+- The live-AI and live-site runs (plan Task 17) are not in the workflow yet. The live-AI run needs a test key with a small spending cap, saved by OJ as the repository secret `QA_LIVE_AI_KEY`; until it exists those cases are NOT RUN. The key is never written in a file, a log or the report.
+
 ## Where the report is
 
 After a run, `apps/web/qa-report/` holds:

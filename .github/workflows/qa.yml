@@ -1,0 +1,131 @@
+name: qa
+# The QA layer (apps/web/qa/, docs/qa/README.md): a robot student runs whole stories on the PRODUCTION builds (`next build` + `next start`, the api's tsup bundle) against a test
+# database, and writes a report by story (qa-report/: index.html, summary.md, fix-brief.md, results.json). It never signs in to the live site.
+#   qa-slice   every pull request into phase-3a-vault: each story's plain run and every F/O regression (`-g @slice`), about 15 min. Known faults are marked in
+#              apps/web/qa/known.json, so the slice is green on the current build and turns red only on a FAIL that no known id explains.
+#   qa-full    every push to phase-3a-vault (a merge) and the Run workflow button: the full grid in 4 shards, joined by qa-report into one report.
+# The live-AI and live-site runs (plan Task 17) are added when their cases are built; the live-AI key is a GitHub Actions secret OJ creates, never a value in this file.
+on:
+  pull_request:
+    branches: [phase-3a-vault]
+  push:
+    branches: [phase-3a-vault]
+  workflow_dispatch:
+# A newer push to the same pull request cancels the run for the older commit; runs on phase-3a-vault are never cancelled (each merge gets its full report).
+concurrency:
+  group: qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
+env:
+  # The job's Postgres service, on localhost (qa/support/origins.ts refuses any other host: a QA run writes test accounts). The servers' secrets are the QA layer's
+  # own test values (origins.ts, the same dummies as ci.yml's e2e job); never put a real secret here.
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+jobs:
+  qa-slice:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      # The default checkout of a pull request is its merge with phase-3a-vault, so a PR opened before the QA layer merged is still tested with the layer's cases.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @appuscholar/db db:migrate
+      - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
+      # The build carries the PR's head commit (Help's version, the report's header), as the pull request's checks are listed under it.
+      - name: Build the api and the web app as production builds them
+        run: GITHUB_SHA=${{ github.event.pull_request.head.sha }} pnpm --filter @appuscholar/web qa:build
+      - name: Run the slice
+        run: GITHUB_SHA=${{ github.event.pull_request.head.sha }} QA_RUN_KIND=slice pnpm --filter @appuscholar/web qa -g @slice
+      - name: Upload the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with: { name: qa-report-slice, path: apps/web/qa-report, retention-days: 14, if-no-files-found: warn }
+      - name: Write the summary
+        if: ${{ !cancelled() }}
+        run: |
+          echo "Built from the merge of ${{ github.event.pull_request.head.sha }} into ${{ github.base_ref }}. The full report, screenshots and replays: the run's artifact qa-report-slice." >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the Run the slice step's log." >> "$GITHUB_STEP_SUMMARY"; fi
+
+  qa-full:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @appuscholar/db db:migrate
+      - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
+      - name: Build the api and the web app as production builds them
+        run: pnpm --filter @appuscholar/web qa:build
+      # QA_SHARD adds Playwright's blob reporter (playwright.qa.config.ts): the qa-report job joins the four blob reports into one report.
+      - name: Run shard ${{ matrix.shard }} of 4
+        run: QA_SHARD=${{ matrix.shard }} QA_RUN_KIND=full pnpm --filter @appuscholar/web qa --shard=${{ matrix.shard }}/4
+      - name: Upload the blob report and the fake provider's log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-blob-${{ matrix.shard }}
+          path: |
+            apps/web/blob-report
+            apps/web/qa-results/provider-calls.jsonl
+          retention-days: 3
+          if-no-files-found: warn
+
+  qa-report:
+    needs: qa-full
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with: { pattern: qa-blob-*, path: shards }
+      # One folder of the four blob reports, and one provider log of the four shards' requests, so the joined report checks every request the fake provider took.
+      - name: Gather the shards
+        run: |
+          mkdir -p apps/web/all-blob-reports
+          find shards -path '*/blob-report/*.zip' -exec cp {} apps/web/all-blob-reports/ \;
+          find shards -name provider-calls.jsonl -exec cat {} + > "$RUNNER_TEMP/provider-calls.jsonl" || true
+          ls -la apps/web/all-blob-reports
+      - name: Join the shards into one report
+        working-directory: apps/web
+        run: QA_RUN_KIND=full QA_PROVIDER_LOG="$RUNNER_TEMP/provider-calls.jsonl" pnpm exec playwright merge-reports --reporter ./qa/reporter.ts ./all-blob-reports
+      - name: Upload the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with: { name: qa-report-full, path: apps/web/qa-report, retention-days: 30, if-no-files-found: warn }
+      - name: Write the summary
+        if: ${{ !cancelled() }}
+        run: |
+          echo "The full grid on ${{ github.sha }}, in 4 shards. The full report, screenshots and replays: the run's artifact qa-report-full." >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          if [ -f apps/web/qa-report/summary.md ]; then cat apps/web/qa-report/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "No report was written: see the Join step's log." >> "$GITHUB_STEP_SUMMARY"; fi
