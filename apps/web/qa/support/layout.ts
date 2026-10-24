@@ -66,6 +66,7 @@ export type LayoutMeasure = {
  */
 export const HINDI_NAMES: readonly string[] = [
   "Appuscholar", "OpenAlex", "PubMed", "Crossref", "CTRI", "ICMR", "APA", "DOI", "PDF", "CSV", "PPT", "AI",
+  "Excel", "SPSS", "Google Sheets", // the programs a table is pasted from (the Data tab's privacy line, stats_data_privacy), named in Latin in a Hindi sentence (S5)
   "Groq", "OpenAI", "ChatGPT", "Gemini", "Claude", "DeepSeek", "OpenRouter", "Google Scholar", "Wiktionary", "LaTeX"
 ];
 

@@ -27,7 +27,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q1: The language button is announced differently from what it shows
 
-- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open
+- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints)
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI (accessibility)
@@ -182,7 +182,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q15: On a phone, the project name in a place's top line is 20 px tall and the "Your question" strip's summary 32 px
 
-- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), and S6-06 (the Coding tab, its passages view, its name field and its delete question); it shows at the top of every place
+- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question) and S5-07 (the Data and Charts tabs); it shows at the top of every place
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -204,18 +204,18 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q17: On a phone, the document toolbar's five formatting buttons are 32 to 35.5 px wide
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), and S6-06 (the interview full screen, before and after the tap that tags a passage)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage) and S5-07 (the document after a figure is inserted, the same screen, where Undo shows too)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
 - Expected: as Q15 (source: spec section 8, layout rules, O17)
-- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag, in S6-06), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx`. This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
+- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag in S6-06, after a figure in S5-07), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx` (the `Fmt` buttons, line 24). This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q15.
 - Status: known
 
 ### Q18: On a Hindi page, the document toolbar's more-formatting button shows Hindi but is named in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), and S6-06 (the interview full screen, in Hindi)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi) and S5-07 (the same screen after a figure is inserted)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -226,13 +226,68 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q19: On a Hindi page, the document bar and toolbar are in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), and S6-06 (the interview full screen, in Hindi)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi) and S5-07 (the same screen after a figure is inserted)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (Hindi)
 - Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name the toolbar; the walk's O9 notes it: "the document toolbar stays English in Hindi mode (Paragraph, Image, Table, Find, Dictate)")
 - Happened: `select "My first document" [doc-select]` (the title the app gives a project's first document, an English literal in `lib/frame/firstDocument.ts`) and `select "Paragraph style" [fmt-paragraph]`: "Paragraph B I U ≡• ↶ ↷ 🖼 Image ⊞ Table 🔍 Find 🎤 Dictate English (India)" (the toolbar's labels, written into `components/document/FormatBar.tsx`). The rule reads the toolbar as one run of English; the Hindi wording of the Budget page that O9 also names is for Dr. Sharma and is not what this entry is about.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: no English on a Hindi screen". Re-run as Q15.
+- Status: known
+
+### Q20: While the vault is locked, the Data tab never says so, and Insert only says the document "did not open"
+
+- Case: S5-04 (the Data tab with the vault locked)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: Unexpected (conceptual)
+- Expected: with the vault locked the Data tab says that the vault is locked, in words (here or in the refusal to insert), so that an empty dataset-name box, where the project has a saved name, is not taken for nothing saved (source: the Collection and analysis row of spec section 6, "the data tab ... while locked"; spec section 4, a locked vault is called locked; the F5 principle of `tools-walk.md`)
+- Happened: the locked project's Data tab holds the introduction, an empty "Name of this dataset" box (the saved name does not show), the paste box, Parse data, Upload .csv, the guide button and "Parse your data first. The tests appear here once there is a table.": nothing on it says locked or unlock (only the header pill does). Typing in the name box raised the passphrase window with no word of why, and so did Insert into document after a test was run; after Cancel the toast read "Your document did not open, so nothing was inserted." After the unlock nothing was lost: the saved name came back, the pasted table stayed and the document held the sentence once. Causes: `apps/web/lib/tools/stats/useLabActions.ts:27` (the effect that fills the remembered name returns without a word while `stats_prefs` is locked) and `:42-45` (`rename` writes `stats_prefs` at every change, which raises the unlock window); `apps/web/components/frame/ProjectShell.tsx:469` (`toast(t("insert_doc_closed"))`, `messages/en.json:593`, the one sentence for every reason a document does not open, a cancelled unlock included).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-04, the failed checks "the Data tab says the vault is locked ..." and "the refusal names the lock ...". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S5-04"`.
+- Status: known
+
+### Q21: Check numbers' numbers check says "No statistics found" about a locked document, and keeps saying it after the unlock
+
+- Case: S5-04 (Check numbers with the vault locked, then unlocked)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: Unexpected (conceptual)
+- Expected: the numbers check, pressed while the document is locked, says that the document is locked and was not read (as Results and data, the other half of the same tab, says "Your vault is locked. Unlock it to compare results with your data."), and a verdict made from a locked document is not left standing once the document can be read (source: spec section 4, a locked vault is called locked, not empty; `tools-walk.md` F5 (Closeness said "Write at least about 30 words first" of a locked document); `parity-deviations.md` D-S2-79, "a locked vault ... said in a line instead of an empty list")
+- Happened: with the vault locked and the document holding "t(3.45) = 3.48, p = .032", pressing "Check the numbers in my document" shows "No statistics found. This check reads the APA pattern, for example "t(21) = 2.15, p = .043"."; after the unlock the same verdict stays on the page (the button now reads "Scan again") until it is pressed again, when it finds the statistic. Cause: `apps/web/components/tools/stats/NumbersCheck.tsx:29` runs `numbersView(access.text())`; `access.text()` is "" while the document's editor is not usable (`apps/web/lib/editor/docAccess.ts:218`), and no text has no statistics (`nc_none`); the verdict is the component's `view` state (`:26`), which nothing clears when the document opens.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-04, the failed checks "the numbers check does not say "No statistics found" about a document it cannot read ..." and "the numbers check's verdict from the locked document is not left on the page once the document can be read ...". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S5-04"`.
+- Status: known
+
+### Q22: On a phone, the tick rows of the Data tab's practice mode and of Chart Studio's options are under 44 px
+
+- Case: S5-07 (the Data tab with a result, and the Charts tab with a figure, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way; a tick box is pressed through its label, so the larger of the two is its target (source: spec section 8, layout rules, O17; as Q3)
+- Happened: `input [stats-gen]: 317 × 40 px` (the line "Practice mode: commit to my design before the test runs", `apps/web/components/tools/stats/RunTest.tsx:108-111`), and Chart Studio's `input [chart-pts]: 117.8 × 20 px`, `input [chart-n]: 146.7 × 20 px` and `input [chart-titlein]: 149 × 20 px` (its three option ticks, the `check()` of `apps/web/components/tools/stats/ChartStudio.tsx:96-101`, used at `:168-170`; `[chart-pts]` shows for the box and bar charts only). The buttons of both tabs are 44 px or more.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-07, the failed checks "the Data tab with a result, on a phone, in Hindi: every control at least 44 px each way" and the same for "the Charts tab with a figure". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S5-07"`.
+- Status: known
+
+### Q23: On a Hindi page the quick chart's title box shows an English example
+
+- Case: S5-07 (the Charts tab, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens, including the example text in a box (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name this box)
+- Happened: `input "Attachment style distribution" [quick-title]`: the placeholder of "Chart title" is the English example "Attachment style distribution". The Hindi dictionary holds the English text for it (`apps/web/messages/tools/stats.hi.json:244`, `stats_ch_q_title_ph`, drawn by `apps/web/components/tools/stats/QuickChart.tsx:76`); every other label of the tab is Hindi (the case's own check passes).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-07, the failed check "the Charts tab with a figure, on a phone, in Hindi: no English on a Hindi screen". Re-run as Q22.
+- Status: known
+
+### Q24: On a phone, a result table wider than the screen scrolls inside its box, but the keyboard cannot reach the box
+
+- Case: S5-07 (Chart Studio's nine-column summary table, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI (accessibility)
+- Expected: a box that scrolls can be scrolled from the keyboard: it takes focus, or holds something that does (source: spec section 8, the axe scan: any serious or critical finding; WCAG 2.1.1, keyboard; as Q6)
+- Happened: `table`: scrollable-region-focusable (serious): Scrollable region must have keyboard access. The summary table under Chart Studio's picture (Group, n, M, SD, Mdn, Q1, Q3, Min, Max) is drawn as a scroll box (`display: block; overflow-x: auto`, `apps/web/components/tools/stats/ChartStudio.tsx:19`; the markup is core's block set in at `:195`, with no tabindex), so a student without a mouse or a touch screen cannot scroll to Min and Max. The same style is in `Results.tsx:12`, `Guide.tsx:13` and `PowerTab.tsx:15`: a result table wider than the screen has the same fault (the case saw it on the Charts tab only; the Welch tables fit in 317 px).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S5-07, the failed check "the Charts tab with a figure, on a phone, in Hindi: no serious or critical accessibility finding (axe)". Re-run as Q22.
 - Status: known
 
 ### Q30: On a phone, the Coding tab's own controls are under 44 px
