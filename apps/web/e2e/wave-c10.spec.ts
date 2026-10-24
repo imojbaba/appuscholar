@@ -3,12 +3,14 @@
  *
  * One sign-in, one project, one test. GET /ai/log is answered in the browser with two rows of invented sample log (the only network answer made up
  * here); DELETE /ai/log goes to the real api (the account's log is empty there, so it answers 204), and once it has answered the made-up GET answers
- * an empty list, as the api would. The steps:
+ * an empty list, as the api would; the made-up answer is then taken away, so what follows is the real api's. The steps:
  *   1. the AI-use tab lists the two rows; a statement is built into the box;
- *   2. Erase the log opens a confirm that says "all your projects"; Cancel sends nothing and the rows stay;
+ *   2. Erase the log opens a confirm that says "all your projects" and "no project open"; Cancel sends nothing and the rows stay;
  *   3. Erase the log, then the confirm's button: exactly one DELETE /ai/log, the tab shows the empty-log message and the erased line, the statement
  *      built in step 1 is still in its box;
- *   4. a reload reads the log again and it is empty.
+ *   4. a reload reads the log from the real api and it is empty;
+ *   5. Erase the log again: the whole log (GET /ai/log with no projectId, the real api's) is empty, so the tab says "The log is already empty." and
+ *      opens no confirm and sends no second DELETE (v1 aiuClear).
  * The texts asserted are the dictionaries' (T). The AI is never called.
  *
  * Run it on its own ports (task 10), as e2e/support/pglite-postgres.mjs describes:
@@ -57,18 +59,26 @@ async function newProject(page: Page): Promise<string> {
 test("AI-use tab: Erase the log asks first, erases once, shows the empty log and keeps the statement", async ({ page }) => {
   const id = await newProject(page);
 
-  // The log: made up while it has not been erased, empty after the api has answered the DELETE.
+  // The log: made up while it has not been erased, empty after the api has answered the DELETE. Every DELETE the page sends is counted when it is
+  // sent (a request event), and its answer is noted when it comes (a response event).
   let erased = false;
-  const deletes: string[] = [];
-  await page.route((url) => url.origin === API_ORIGIN && url.pathname === "/ai/log", async (route: Route) => {
+  const sent: string[] = [];
+  const answers: string[] = [];
+  const isLog = (url: URL) => url.origin === API_ORIGIN && url.pathname === "/ai/log";
+  const madeUpLog = async (route: Route) => {
     const method = route.request().method();
     if (method === "OPTIONS") return route.fulfill({ status: 204, headers: CORS_APP });
     if (method === "DELETE") return route.continue();
     return route.fulfill({ status: 200, contentType: "application/json", headers: CORS_APP, body: JSON.stringify(erased ? [] : LOG) });
-  });
+  };
+  await page.route(isLog, madeUpLog);
+  page.on("request", (r) => { if (r.method() === "DELETE" && isLog(new URL(r.url()))) sent.push(r.url()); });
   page.on("response", (r) => {
-    if (r.request().method() === "DELETE" && new URL(r.url()).pathname === "/ai/log") { deletes.push(String(r.status())); if (r.status() === 204) erased = true; }
+    if (r.request().method() === "DELETE" && isLog(new URL(r.url()))) { answers.push(String(r.status())); if (r.status() === 204) erased = true; }
   });
+  // The whole-log reads (no projectId) the page makes, for step 5.
+  const wholeReads: string[] = [];
+  page.on("request", (r) => { const u = new URL(r.url()); if (r.method() === "GET" && isLog(u) && !u.searchParams.has("projectId")) wholeReads.push(r.url()); });
 
   await page.getByTestId("home-open-design").click();
   await page.getByTestId("place-tab-aiuse").click();
@@ -88,10 +98,11 @@ test("AI-use tab: Erase the log asks first, erases once, shows the empty log and
     const box = page.getByTestId("aiu-erase-confirm");
     await expect(box).toBeVisible();
     await expect(box).toContainText("all your projects");
-    await expect(box).toContainText(T("design_aiu_erase_desc"));
+    await expect(box).toContainText(T("wc_aiu_erase_desc"));
+    await expect(box).toContainText("no project open");
     await page.getByTestId("aiu-erase-cancel").click();
     await expect(box).toBeHidden();
-    expect(deletes).toEqual([]);
+    expect(sent).toEqual([]);
     await expect(page.getByTestId("aiu-rows").locator("input")).toHaveCount(2);
   });
 
@@ -99,17 +110,30 @@ test("AI-use tab: Erase the log asks first, erases once, shows the empty log and
     await page.getByTestId("aiu-erase").click();
     await page.getByTestId("aiu-erase-yes").click();
     await expect(page.getByTestId("aiu-erase-confirm")).toBeHidden();
-    await expect(page.getByTestId("aiu-erase-msg")).toHaveText(T("design_aiu_erased"));
+    await expect(page.getByTestId("aiu-erase-msg")).toHaveText(T("wc_aiu_erased"));
     await expect(page.getByTestId("aiu-count")).toHaveText(T("design_aiu_empty"));
     await expect(page.getByTestId("aiu-rows").locator("input")).toHaveCount(0);
-    expect(deletes).toEqual(["204"]);
+    expect(sent).toHaveLength(1);
+    expect(answers).toEqual(["204"]);
     await expect(page.getByTestId("aiu-out")).toHaveValue(built);
+    // This project had rows, so the press needed no read of the whole log.
+    expect(wholeReads).toEqual([]);
   });
 
-  await test.step("4. after a reload the log is read again and is empty", async () => {
+  await test.step("4. after a reload the real api's log is read and is empty", async () => {
+    // From here the api answers for itself: the account really has no rows.
+    await page.unroute(isLog, madeUpLog);
     await page.reload();
     await expect(page.getByTestId("panel-design-aiuse")).toBeVisible();
     await expect(page.getByTestId("aiu-count")).toHaveText(T("design_aiu_empty"));
     await expect(page.getByTestId("aiu-erase-msg")).toHaveText("");
+  });
+
+  await test.step("5. Erase the log on an empty log says it is empty, opens no confirm and sends no delete", async () => {
+    await page.getByTestId("aiu-erase").click();
+    await expect(page.getByTestId("aiu-erase-msg")).toHaveText(T("wc_aiu_erase_empty"));
+    await expect(page.getByTestId("aiu-erase-confirm")).toBeHidden();
+    expect(wholeReads).toHaveLength(1);
+    expect(sent).toHaveLength(1);
   });
 });
