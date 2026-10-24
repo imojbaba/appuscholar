@@ -207,6 +207,13 @@ describe("ready, then load", () => {
     expect(ch.sent).toEqual([{ t: "load", id, src: OLD, capExists: true }]);
   });
 
+  it("a picture that is not a data:image one (an https picture) loads the studio empty: the studio takes only data:image", async () => {
+    const e = make(`<p>${img("https://example.org/p.png")}</p>`);
+    const { id } = await studioFor(e, images(e)[0]!.pos);
+    act(() => ch.deliver({ t: "ready", id }));
+    expect(ch.sent).toEqual([{ t: "load", id, src: "", capExists: false }]);
+  });
+
   it("is answered again if the window asks again (a reload of the studio)", async () => {
     const e = make(DOC);
     const { id } = await studioFor(e, images(e)[0]!.pos);
@@ -252,6 +259,15 @@ describe("done, the picture is still there", () => {
     const { id } = await studioFor(e, images(e)[0]!.pos);
     act(() => ch.deliver(done(id, { edits: "" })));
     expect(images(e)[0]).toMatchObject({ src: NEW, edits: "turned" });
+  });
+
+  it("a picture whose width the student changes while the studio is open is still the one replaced (its markup is replaced in place)", async () => {
+    const e = make(`<p>${img(OLD, ' alt="first"')}</p><p>${img(OLD, ' alt="second"')}</p>`);
+    const { id } = await studioFor(e, images(e)[1]!.pos);
+    select(e, images(e)[1]!.pos);
+    e.commands.updateAttributes("image", { width: 640 });
+    act(() => ch.deliver(done(id)));
+    expect(images(e).map((i) => [i.alt, i.src, i.width])).toEqual([["first", OLD, null], ["second", NEW, 640]]);
   });
 
   it("two identical pictures: the one at the remembered position changes", async () => {
@@ -307,6 +323,38 @@ describe("done, the picture is still there", () => {
 });
 
 describe("done, the picture is gone or the studio opened empty", () => {
+  it("two identical pictures, the remembered one deleted: the other is not overwritten, the result goes in new (Task 7 review)", async () => {
+    const e = make(`<p>${img(OLD, ' alt="first"')}</p><p>${img(OLD, ' alt="second"')}</p>`);
+    const { id } = await studioFor(e, images(e)[1]!.pos);
+    const p = images(e)[1]!.pos;
+    e.commands.deleteRange({ from: p, to: p + 1 });
+    act(() => ch.deliver(done(id)));
+    expect(images(e).filter((i) => i.alt === "first").map((i) => i.src)).toEqual([OLD]);
+    expect(images(e).filter((i) => i.src === NEW)).toHaveLength(1);
+  });
+
+  it("two identical pictures side by side, the remembered first one deleted: the copy that slides into its place is not taken for it", async () => {
+    const e = make(`<p>${img(OLD, ' alt="first"')}${img(OLD, ' alt="second"')}</p>`);
+    const { id } = await studioFor(e, images(e)[0]!.pos);
+    const p = images(e)[0]!.pos;
+    e.commands.deleteRange({ from: p, to: p + 1 });
+    act(() => ch.deliver(done(id)));
+    expect(images(e).filter((i) => i.alt === "second").map((i) => i.src)).toEqual([OLD]);
+    expect(images(e).filter((i) => i.src === NEW)).toHaveLength(1);
+  });
+
+  it("two identical pictures, the remembered one deleted then put back by Undo: neither copy is guessed at, the result goes in new", async () => {
+    const e = make(`<p>${img(OLD, ' alt="first"')}</p><p>${img(OLD, ' alt="second"')}</p>`);
+    const { id } = await studioFor(e, images(e)[1]!.pos);
+    const p = images(e)[1]!.pos;
+    e.commands.deleteRange({ from: p, to: p + 1 });
+    e.commands.undo();
+    expect(images(e).map((i) => i.alt)).toEqual(["first", "second"]);
+    act(() => ch.deliver(done(id)));
+    expect(images(e).filter((i) => i.src === OLD).map((i) => i.alt)).toEqual(["first", "second"]);
+    expect(images(e).filter((i) => i.src === NEW)).toHaveLength(1);
+  });
+
   it("a picture deleted since: the result goes in as a new picture at the cursor, 360 px wide, with its edits", async () => {
     const e = make(DOC);
     const { id } = await studioFor(e, images(e)[0]!.pos);
@@ -373,6 +421,18 @@ describe("the caption", () => {
     act(() => ch.deliver(done(id, { capOn: true, title: "Second", note: "" })));
     const caps = outline(e).filter((s) => s.includes("[figure]"));
     expect(caps).toEqual(["paragraph[figure]:Figure 1", "paragraph[figure]:Figure 2"]);
+  });
+
+  it("leaves the student's cursor where it was: a captioned result never selects the picture (Task 7 review; v1 never moved it)", async () => {
+    const e = make(DOC);
+    const { id } = await studioFor(e, images(e)[0]!.pos);
+    e.commands.setTextSelection(e.state.doc.content.size - 1);
+    const before = e.state.doc.textBetween(0, e.state.selection.from);
+    act(() => ch.deliver(done(id, { capOn: true, title: "T", note: "N" })));
+    expect(e.state.selection.empty).toBe(true);
+    expect(e.state.selection.constructor.name).toBe("TextSelection");
+    expect(e.state.doc.textBetween(0, e.state.selection.from).endsWith(before.slice(-3))).toBe(true);
+    expect(e.state.doc.nodeAt(e.state.selection.from)?.type.name).not.toBe("image");
   });
 
   it("capOn when a caption already sits above adds none and leaves alt alone", async () => {
@@ -467,6 +527,9 @@ describe("nothing is written", () => {
     expect(ch.sent).toEqual([{ t: "saved", id, ok: false, reason: "no-document" }]);
     expect(e.getHTML()).toBe(html);
     expect(h.toast).not.toHaveBeenCalledWith(E.ie_done);
+    // It can never succeed, so the record is let go: a second try gets no answer.
+    act(() => ch.deliver(done(id)));
+    expect(ch.sent).toHaveLength(1);
   });
 
   it("another document's editor (a document switch) is the same: the result is not put in the wrong document", async () => {

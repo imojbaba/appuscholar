@@ -57,6 +57,8 @@ export function studioIdFromHash(hash: string): string | null {
 }
 
 const SRC = /^data:image\//;
+/** What a result may be: the pictures the sanitizer keeps in a document (core ALLOWED_URI); an SVG or a non-base64 one would vanish on save. */
+const RESULT_SRC = /^data:image\/(?:png|jpe?g|gif|webp);base64,/i;
 const REASONS: readonly string[] = ["too-large", "no-document"];
 /**
  * Whether `m` is a message of this protocol with every field of the right kind. A window that posts anything else is ignored, so the writing window never
@@ -73,7 +75,7 @@ export function isPhotoMessage(m: unknown): m is PhotoMessage {
     case "load":
       return typeof o.src === "string" && (o.src === "" || SRC.test(o.src)) && typeof o.capExists === "boolean";
     case "done":
-      return typeof o.src === "string" && SRC.test(o.src) && typeof o.edits === "string" && typeof o.capOn === "boolean" && typeof o.title === "string" && typeof o.note === "string";
+      return typeof o.src === "string" && RESULT_SRC.test(o.src) && typeof o.edits === "string" && typeof o.capOn === "boolean" && typeof o.title === "string" && typeof o.note === "string";
     case "saved":
       return typeof o.ok === "boolean" && (o.reason === undefined || (typeof o.reason === "string" && REASONS.includes(o.reason)));
     default:

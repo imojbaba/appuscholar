@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { Editor } from "@tiptap/core";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { NodeSelection, Selection, type Transaction } from "@tiptap/pm/state";
+import { Selection, type Transaction } from "@tiptap/pm/state";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/lib/i18n";
-import { captionHtml, hasCaptionAbove, insertCaption, noteHtml, renumberCaptions, topLevelBlockPos } from "@/lib/editor/captions";
+import { captionHtml, hasCaptionAbove, noteHtml, renumberCaptions, topLevelBlockPos } from "@/lib/editor/captions";
 import { cursorPlaced, markCursorPlaced } from "@/lib/editor/insert";
 import { fitsBudget, sizeMessageKey } from "@/lib/editor/sizeBudget";
 import { newStudioId, onPhotoMessage, photoChannel, postPhoto, studioHref, type PhotoDone, type SavedReason } from "@/lib/popout/photoChannel";
@@ -30,23 +30,41 @@ type Rec = {
   pos: number | null;
   /** The picture's src when the window opened: what the position is checked against, and what is looked for if the position cannot be followed. */
   src: string;
+  /** How many pictures had that src when the window opened: the src is looked for only when it named one picture, so a copy is never taken for it. */
+  copies: number;
   /** Stops following the editor. */
   stop(): void;
 };
 
-/** The position of the picture a record stands for, or null if it is gone: where it was followed to, else the first picture with the same src. */
+/** The pictures of a document whose src is `src`, by position. */
+function withSrc(doc: PMNode, src: string): number[] {
+  const out: number[] = [];
+  doc.descendants((n, pos) => { if (n.type.name === "image" && n.attrs.src === src) out.push(pos); return true; });
+  return out;
+}
+
+/**
+ * Where the picture at `pos` (a one-token node) is after `tr`, both its ends mapped inwards: moved with what was put in or taken out around it, kept when
+ * its markup was set (its width or alt: a leaf replaced in place maps onto itself), null once it was deleted, so a copy that slides into its place is never
+ * taken for it.
+ */
+function followed(tr: Transaction, pos: number): number | null {
+  const from = tr.mapping.map(pos, 1);
+  return tr.mapping.map(pos + 1, -1) - from === 1 ? from : null;
+}
+
+/**
+ * The position of the picture a record stands for, or null if it is gone (the result then goes in new, v1 picInsertNew): where it was followed to, else,
+ * when the document was rewritten under it, the one picture with its src, only if it was and is the only one (two identical pictures are never guessed at).
+ */
 function locate(rec: Rec): number | null {
   const doc = rec.editor?.state.doc;
-  if (!doc || rec.pos === null) return null;
+  if (!doc || !rec.src) return null;
   const same = (n: PMNode | null) => n?.type.name === "image" && n.attrs.src === rec.src;
-  if (rec.pos < doc.content.size && same(doc.nodeAt(rec.pos))) return rec.pos;
-  let found: number | null = null;
-  doc.descendants((n, pos) => {
-    if (found === null && same(n)) found = pos;
-    return found === null;
-  });
-  if (found !== null) rec.pos = found;
-  return found;
+  if (rec.pos !== null && rec.pos < doc.content.size && same(doc.nodeAt(rec.pos))) return rec.pos;
+  const now = withSrc(doc, rec.src);
+  rec.pos = rec.copies === 1 && now.length === 1 ? now[0]! : null;
+  return rec.pos;
 }
 
 /**
@@ -84,17 +102,16 @@ function putPicture(editor: Editor, pos: number | null, m: PhotoDone): void {
         return image < 0;
       });
     }
-    if (caption && image >= 0) tr.setSelection(NodeSelection.create(tr.doc, image));
     return true;
   }).run();
   if (pos === null) markCursorPlaced(editor);
   if (!caption || image < 0) return;
-  if (insertCaption(editor, { kind: "figure", title, note }) !== "need-title") return;
-  // v1's capBlocksHTML takes an empty title too: the label alone (the Caption dialog is the one that wants a title, v1 capInsert).
+  // Above the picture's block and the note below, as the Caption dialog does, but the student's cursor stays where it is (v1 never moved it). v1's
+  // capBlocksHTML takes an empty title too: the label alone (it is the Caption dialog that wants a title, v1 capInsert).
   const block = topLevelBlockPos(editor, image);
   const chain = editor.chain();
   if (note) chain.insertContentAt(block + (editor.state.doc.nodeAt(block)?.nodeSize ?? 0), noteHtml(note), { updateSelection: false });
-  chain.insertContentAt(block, captionHtml("figure", ""), { updateSelection: false }).run();
+  chain.insertContentAt(block, captionHtml("figure", title), { updateSelection: false }).run();
   renumberCaptions(editor);
 }
 
@@ -129,12 +146,15 @@ export function usePhotoStudioHost(editor: Editor | null): { openStudio(pos: num
       const open = rec.editor !== null && rec.editor === now.editor && !rec.editor.isDestroyed;
       if (m.t === "ready") {
         const pos = open ? locate(rec) : null;
-        postPhoto({ t: "load", id: m.id, src: pos === null ? "" : rec.src, capExists: pos === null ? false : hasCaptionAbove(rec.editor!, pos) });
+        // The studio takes only a data:image picture; any other (an https one) opens it empty, for the student to open from a file.
+        const src = pos === null || !rec.src.startsWith("data:image/") ? "" : rec.src;
+        postPhoto({ t: "load", id: m.id, src, capExists: src ? hasCaptionAbove(rec.editor!, pos!) : false });
       } else if (m.t === "cancel") {
         drop(m.id);
       } else if (m.t === "done") {
         const refuse = (reason: SavedReason) => postPhoto({ t: "saved", id: m.id, ok: false, reason });
-        if (!open) { refuse("no-document"); return; }
+        // It can never succeed, so the record (and its picture) is let go.
+        if (!open) { refuse("no-document"); drop(m.id); return; }
         const editor = rec.editor!;
         const pos = locate(rec);
         // What the write adds to the body: the whole picture put in new, the difference when one is replaced.
@@ -168,12 +188,12 @@ export function usePhotoStudioHost(editor: Editor | null): { openStudio(pos: num
     const ed = ref.current.editor;
     const node = ed !== null && pos !== null && 0 <= pos && pos < ed.state.doc.content.size ? ed.state.doc.nodeAt(pos) : null;
     const isImage = node?.type.name === "image";
-    const rec: Rec = { editor: ed, pos: isImage ? pos : null, src: isImage ? String(node!.attrs.src ?? "") : "", stop: () => {} };
+    const src = isImage ? String(node!.attrs.src ?? "") : "";
+    const rec: Rec = { editor: ed, pos: isImage ? pos : null, src, copies: ed && src ? withSrc(ed.state.doc, src).length : 0, stop: () => {} };
     if (ed && rec.pos !== null) {
       // Every transaction since the window opened moves the picture's position, and so do the ones a plugin appends to it.
       const follow = ({ transaction, appendedTransactions }: { transaction: Transaction; appendedTransactions: Transaction[] }) => {
-        if (rec.pos === null) return;
-        for (const tr of [transaction, ...appendedTransactions]) rec.pos = tr.mapping.map(rec.pos);
+        for (const tr of [transaction, ...appendedTransactions]) if (rec.pos !== null) rec.pos = followed(tr, rec.pos);
       };
       ed.on("transaction", follow);
       rec.stop = () => ed.off("transaction", follow);

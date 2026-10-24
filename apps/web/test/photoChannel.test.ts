@@ -80,6 +80,9 @@ describe("isPhotoMessage", () => {
     ["a done with an empty src", { ...base, src: "" }],
     ["a done with a script address", { ...base, src: "javascript:alert(1)" }],
     ["a done with a non-image data address", { ...base, src: "data:text/html;base64,AAAA" }],
+    // The sanitizer keeps only png, jpeg, gif and webp base64 pictures in a document: anything else would vanish on save (Task 7 review).
+    ["a done with an SVG picture", { ...base, src: "data:image/svg+xml;base64,PHN2Zz4=" }],
+    ["a done with a picture that is not base64", { ...base, src: "data:image/png,AAAA" }],
     ["a done whose src is not a string", { ...base, src: 5 }],
     ["a done whose edits is not a string", { ...base, edits: ["bar"] }],
     ["a done whose capOn is not a boolean", { ...base, capOn: "yes" }],
