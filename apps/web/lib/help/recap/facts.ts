@@ -2,9 +2,10 @@ import { daysAway } from "./gap";
 
 /*
  * What the welcome-back recap can say, from what v2 keeps in the account (v1 retStats counted an activity log kept in the browser; v2 has none).
- * Counted: new documents (their `createdAt`), AI help logged (GET /ai/log?from=), test results inserted (the times in the `stats_runs` record).
- * Not countable, so never shown, not even as zero: sources added and passages coded (nothing in v2 stores when either happened).
- * Document text is read only through `lastDoc`, and only when the vault is open; locked, it is never asked for.
+ * Counted for the open project: new documents (their `createdAt`), AI help logged (GET /ai/log?from=&projectId=), test results inserted (the times in
+ * the `stats_runs` record). Not countable, so never shown, not even as zero: sources added and passages coded (nothing in v2 stores when either
+ * happened). A count whose read failed or cannot be made (a locked record, no project open) is left out, so "nothing was found" is said only when
+ * every count was read. Document text is read only through `lastDoc`, and only when the vault is open; locked, it is never asked for.
  */
 
 export type RecapDoc = { createdAt: string; updatedAt: string };
@@ -14,15 +15,18 @@ export type RecapApi = {
   /** The last visit in ms, and now. */
   since: number;
   now: number;
-  /** The student turned the AI log off: then it holds nothing to count. */
-  aiLogOff: boolean;
+  /** When this page loaded: a document made after it (the shell makes a first document in an empty project on load) is not new since the last visit. A device clock a few seconds off the server's can still let that one through. */
+  loadedAt: number;
+  /** The AI log can be counted for this project: not switched off, and a project is open (in the scratch space the log is not kept by project). */
+  aiCountable: boolean;
   /** The vault is off or unlocked. Locked, no document text is read. */
   vaultOpen: boolean;
   /** `name` is null while the title is locked or cannot be opened. */
-  project: { name: string | null; stage: string } | null;
+  project: { name: string | null } | null;
   openDoc: { title: string | null; words: number } | null;
-  documents: RecapDoc[];
-  /** GET /ai/log?from=<day>: the rows of that day and after. */
+  /** The open project's documents, or null when they have not been read (then no count is made over them). */
+  documents: RecapDoc[] | null;
+  /** GET /ai/log?from=<day>&projectId=<id>: this project's rows of that day and after. */
   aiRows(fromDay: string): Promise<unknown[]>;
   /** The times (ms) of the stored test results, or null when that record cannot be read (locked, broken, failed). */
   testTimes(): Promise<number[] | null>;
@@ -35,7 +39,7 @@ export type RecapApi = {
 export type RecapCounts = { docs?: number; ai?: number; tests?: number };
 export type RecapFacts = {
   days: number;
-  project: { name: string | null; stage: string } | null;
+  project: { name: string | null } | null;
   doc: { title: string | null; words: number } | null;
   /** A key is present only when that count was read; its value may be zero (the dialog shows only counts above zero). */
   counts: RecapCounts;
@@ -63,8 +67,8 @@ export function firstWords(html: string, n: number): string {
 
 export async function recapFacts(api: RecapApi): Promise<RecapFacts> {
   const counts: RecapCounts = {};
-  counts.docs = api.documents.filter((d) => Date.parse(d.createdAt) > api.since).length;
-  if (!api.aiLogOff) {
+  if (api.documents) counts.docs = api.documents.filter((d) => { const at = Date.parse(d.createdAt); return at > api.since && at <= api.loadedAt; }).length;
+  if (api.aiCountable) {
     try { counts.ai = (await api.aiRows(dayAfter(api.since))).length; } catch { /* not readable: left out */ }
   }
   try {

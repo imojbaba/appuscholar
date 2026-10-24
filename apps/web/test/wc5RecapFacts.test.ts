@@ -8,8 +8,8 @@ const SINCE = NOW - 8 * DAY;
 
 function api(over: Partial<RecapApi> = {}): RecapApi {
   return {
-    since: SINCE, now: NOW, aiLogOff: false, vaultOpen: true,
-    project: { name: "Sleep and exams", stage: "writing" },
+    since: SINCE, now: NOW, loadedAt: NOW - 3000, aiCountable: true, vaultOpen: true,
+    project: { name: "Sleep and exams" },
     openDoc: { title: "Draft one", words: 420 },
     documents: [{ createdAt: new Date(SINCE - DAY).toISOString(), updatedAt: new Date(SINCE - DAY).toISOString() }],
     aiRows: async () => [],
@@ -21,10 +21,10 @@ function api(over: Partial<RecapApi> = {}): RecapApi {
 }
 
 describe("recap facts: what v2 can state from the account", () => {
-  it("days away, project and stage, and the open document with its words", async () => {
+  it("days away, the project, and the open document with its words", async () => {
     const f = await recapFacts(api());
     expect(f.days).toBe(8);
-    expect(f.project).toEqual({ name: "Sleep and exams", stage: "writing" });
+    expect(f.project).toEqual({ name: "Sleep and exams" });
     expect(f.doc).toEqual({ title: "Draft one", words: 420 });
   });
 
@@ -37,6 +37,24 @@ describe("recap facts: what v2 can state from the account", () => {
       ]
     }));
     expect(f.counts.docs).toBe(2);
+  });
+
+  it("does not count a document made after this page loaded (the shell makes a first document on load)", async () => {
+    const f = await recapFacts(api({
+      loadedAt: NOW - 3000,
+      documents: [
+        { createdAt: new Date(NOW - 3000).toISOString(), updatedAt: new Date(NOW).toISOString() },
+        { createdAt: new Date(NOW - 2900).toISOString(), updatedAt: new Date(NOW).toISOString() },
+        { createdAt: new Date(NOW).toISOString(), updatedAt: new Date(NOW).toISOString() }
+      ]
+    }));
+    expect(f.counts.docs).toBe(1);
+  });
+
+  it("a document list that was not read leaves the count out, so 'nothing was found' is never said over a failed load", async () => {
+    const f = await recapFacts(api({ documents: null }));
+    expect("docs" in f.counts).toBe(false);
+    expect(f.nothingCounted).toBe(false);
   });
 
   it("counts AI requests from the log, asking only from the day after the last visit's day, and test runs by their times", async () => {
@@ -52,14 +70,15 @@ describe("recap facts: what v2 can state from the account", () => {
     expect(dayAfter(new Date(2026, 11, 31, 8, 0).getTime())).toBe("2027-01-01");
   });
 
-  it("omits what it cannot count, never a zero: a read that fails, a locked stats record, a log that is switched off", async () => {
+  it("omits what it cannot count, never a zero: a read that fails, a locked stats record, a log that is switched off or not about this project", async () => {
     const f = await recapFacts(api({ aiRows: async () => { throw new Error("down"); }, testTimes: async () => null, documents: [] }));
     expect(f.counts).toEqual({ docs: 0 });
     expect("ai" in f.counts).toBe(false);
     expect("tests" in f.counts).toBe(false);
     expect(f.nothingCounted).toBe(false);
-    const off = await recapFacts(api({ aiLogOff: true }));
+    const off = await recapFacts(api({ aiCountable: false }));
     expect("ai" in off.counts).toBe(false);
+    expect(off.nothingCounted).toBe(false);
   });
 
   it("nothingCounted is true only when every count was read and each is zero", async () => {
@@ -74,7 +93,7 @@ describe("recap facts: what v2 can state from the account", () => {
 
   it("with the vault locked, no document text is read and none is returned; titles stay null", async () => {
     const lastDoc = vi.fn(async () => ({ at: NOW, text: "Private words about participants" }));
-    const f = await recapFacts(api({ vaultOpen: false, lastDoc, project: { name: null, stage: "idea" }, openDoc: { title: null, words: 12 } }));
+    const f = await recapFacts(api({ vaultOpen: false, lastDoc, project: { name: null }, openDoc: { title: null, words: 12 } }));
     expect(lastDoc).not.toHaveBeenCalled();
     expect(f.wrote).toBeNull();
     expect(f.project?.name).toBeNull();
