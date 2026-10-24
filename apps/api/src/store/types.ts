@@ -206,6 +206,9 @@ export interface Store {
    */
   consumeQuota(userId: string, rules: QuotaRule[], now: Date): Promise<QuotaResult>;
 
+  /** Asks the database one trivial question; resolves when it answers, rejects when it cannot. Used by GET /health/db. */
+  ping(): Promise<void>;
+
   appendAudit(userId: string, action: AuditAction, target?: string): Promise<void>;
   /** Oldest first. */
   listAudit(userId: string): Promise<AuditEntry[]>;

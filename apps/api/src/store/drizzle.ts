@@ -439,6 +439,9 @@ export class DrizzleStore implements Store {
     const rows = await this.d.select({ action: auditLog.action, target: auditLog.target, at: auditLog.at }).from(auditLog).where(eq(auditLog.userId, userId)).orderBy(asc(auditLog.at));
     return rows.map(r => ({ action: r.action as AuditAction, target: r.target, at: r.at }));
   }
+  async ping(): Promise<void> {
+    await this.d.execute(sql`select 1`);
+  }
   async consumeQuota(userId: string, rules: QuotaRule[], now: Date): Promise<QuotaResult> {
     const ms = now.getTime();
     // No interactive transaction on the Neon HTTP driver, so each rule is one atomic statement: insert the window's row at 1, or add 1 only

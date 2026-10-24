@@ -24,6 +24,19 @@ export function createApp(o: AppOptions) {
   const maxBodyBytes = o.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
   app.use("*", cors({ origin: o.corsOrigin ?? "*", allowHeaders: ["authorization", "content-type", "if-match"] }));
   app.get("/health", (c) => c.json({ ok: true }));
+  // No auth, no store data: one `select 1`. The answer and the log carry only the error's name and code, never its message (it may print a connection string).
+  app.get("/health/db", async (c) => {
+    try {
+      await o.store.ping();
+      return c.json({ ok: true });
+    } catch (e) {
+      const err = e as { name?: unknown; code?: unknown } | null;
+      const name = typeof err?.name === "string" ? err.name : "unknown";
+      const code = typeof err?.code === "string" ? err.code : "none";
+      console.error("health/db failed", name, code);
+      return c.json({ ok: false }, 503);
+    }
+  });
   app.use("/projects/*", apiAuth(o.jwtSecret, o.store));
   app.use("/projects", apiAuth(o.jwtSecret, o.store));
   app.use("/documents/*", apiAuth(o.jwtSecret, o.store));

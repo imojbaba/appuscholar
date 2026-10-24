@@ -355,6 +355,12 @@ export class MemoryStore implements Store {
     return { ok: true };
   }
 
+  /** Test hook: when set, ping() rejects with it. */
+  failPing: Error | null = null;
+  async ping(): Promise<void> {
+    if (this.failPing) throw this.failPing;
+  }
+
   async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {
     this.audit.push({ userId, action, target: target ?? null, at: new Date() });
   }
