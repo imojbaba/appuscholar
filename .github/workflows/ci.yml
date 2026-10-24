@@ -64,6 +64,10 @@ jobs:
       - run: pnpm --filter @appuscholar/web exec playwright install --with-deps chromium
       # playwright.config.ts starts the api and the web server, both on the job's DATABASE_URL (one database, as in production).
       - run: pnpm --filter @appuscholar/web e2e
+      # A failing run keeps its traces and page snapshots (playwright.config.ts: trace retain-on-failure), so a CI-only failure can be read afterwards.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: e2e-test-results, path: apps/web/test-results, retention-days: 7 }
   golden-exact:
     # The golden comparer is exact (Object.is) only on the platform that captured the fixtures, Node 26 on darwin arm64 (register row D-W1-16); the checks job above runs on
     # Node 22 linux x64 and so compares computed probabilities within 1e-12. This job runs the same golden suite on a GitHub-hosted Apple Silicon runner with Node 26, where the
