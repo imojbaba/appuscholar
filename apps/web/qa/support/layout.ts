@@ -51,18 +51,21 @@ export type LayoutMeasure = {
   findings: LayoutFinding[];
   /** How many things each rule looked at (see the list above). A rule that was not asked for, or does not apply here (small-target off a phone, english-in-hindi in English), is 0. */
   measured: Record<LayoutRule, number>;
-  /** A rule that could not run at all, and why (axe failing to start): it counts as NOT CHECKED with this reason. */
+  /** A rule that could not run because the page moved under it (a navigation during the axe scan), and why: it counts as NOT CHECKED with this reason. */
   unable: Partial<Record<LayoutRule, string>>;
+  /** A rule that broke (axe throwing for any other reason): the layer that checks the screen is itself failing, so it is an Error finding, not a quiet gap. */
+  errors: Partial<Record<LayoutRule, string>>;
 };
 
 // ---- What the register keeps in English, and the names that are English everywhere ---------------------------------------------------------------------
 
 /**
  * Names that stay as they are in Hindi: products, services, bodies and file types. The rule ignores them (they are neither English nor a break in a run of English).
+ * The brief's 21 names, and LaTeX (a file type, like PDF and CSV; ruling R20).
  */
 export const HINDI_NAMES: readonly string[] = [
   "Appuscholar", "OpenAlex", "PubMed", "Crossref", "CTRI", "ICMR", "APA", "DOI", "PDF", "CSV", "PPT", "AI",
-  "Groq", "OpenAI", "ChatGPT", "Gemini", "Claude", "DeepSeek", "OpenRouter", "Google Scholar", "Wiktionary"
+  "Groq", "OpenAI", "ChatGPT", "Gemini", "Claude", "DeepSeek", "OpenRouter", "Google Scholar", "Wiktionary", "LaTeX"
 ];
 
 /**
@@ -71,6 +74,19 @@ export const HINDI_NAMES: readonly string[] = [
  * A case adds its own boxes with `exempt` (a library list, a transcript).
  */
 export const STUDENT_TEXT_IDS: readonly string[] = ["project-switcher", "place-home", "home-project-btn", "home-q-text"];
+
+/**
+ * The app's own sentences that stand where the student's text would, inside those boxes: the question's "No question yet." (QuestionCard.tsx), the switcher's "All projects" and
+ * "Documents not in a project" (AppHeader.tsx), and the titles it cannot show, "Locked title" and "This title cannot be opened" (lib/vault/titles.ts). A box whose whole text is
+ * one of these, in either language, is the app speaking, so it is read like any other text (an exempt box is skipped only for what the student wrote).
+ */
+const APP_FALLBACK_KEYS = ["place_question_none", "switcher_all", "scratch_name", "title_locked", "title_unreadable"] as const;
+function appFallbacks(): string[] {
+  const out = new Set<string>();
+  for (const lang of ["en", "hi"] as const) for (const key of APP_FALLBACK_KEYS) out.add(plainSentence(dictionary(lang)[key] ?? ""));
+  out.delete("");
+  return [...out];
+}
 
 /** The sentences of the dictionaries under a key prefix whose Hindi is the English text (or is missing): what the register keeps in English until Dr. Sharma gives Hindi. */
 function keptEnglish(prefix: string): string[] {
@@ -82,8 +98,10 @@ function keptEnglish(prefix: string): string[] {
 }
 
 /**
- * D-S2-18 (parity-deviations.md): the English constants that stage 2 builds in code, with no dictionary key and no Hindi (ruling R15): the toasts and status lines of the files the
- * row names. `{n}` stands for a number or a title the code puts in. (The row names lib/analyse/later.ts; there is no such file in the tree, so nothing comes from it.)
+ * D-S2-18 (docs/superpowers/specs/parity-deviations.md): the English constants that stage 2 builds in code, with no dictionary key and no Hindi (the stage-2 port's ruling R15,
+ * quoted in that row; not this QA ledger's R15): the toasts, status lines and button labels of the files the row names. `{n}` stands for a number or a title the code puts in.
+ * (The row names lib/analyse/later.ts; there is no such file in the tree, so nothing comes from it.) test/qa/layout.test.ts imports the modules' exported constants and fails
+ * when one is not covered here, so this hand copy cannot fall behind the code.
  */
 const D_S2_18_CONSTANTS: readonly string[] = [
   // lib/cite/actions.ts
@@ -91,6 +109,7 @@ const D_S2_18_CONSTANTS: readonly string[] = [
   "Citation inserted ✓",
   "Saved to library ✓",
   "Form cleared",
+  "Insert {intext}", // insertLabel: a library card's button, "Insert (Smith, 2020)" or "Insert ¹ (3)". (REMOVE_TITLE, "Remove", is a tooltip and an aria-label: not read.)
   // lib/cite/share.ts
   "Library is empty — add a source first",
   "Library exported ✓ — share the file with your class",
@@ -121,6 +140,7 @@ const D_S2_18_CONSTANTS: readonly string[] = [
   "Ready — press Tab to replace your selection",
   "Describe your working idea first",
   "💜 Thinking this through…",
+  "💜 Thinking…",
   "Write or select some text first, then tap the tool",
   "Long document — analyzing the first 12,000 characters. Select a section for a sharper answer."
 ];
@@ -151,31 +171,39 @@ function plainSentence(s: string): string {
 }
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const PLACEHOLDER = /\{[A-Za-z0-9_]+\}/;
-const LONG_LATIN_WORD = /\p{Script=Latin}{3,}/gu;
+
+/** What `exceptionMatcher` makes of the register: whole texts, and patterns for the texts that have a `{name}` in them. */
+export type ExceptionMatcher = { exact: string[]; patterns: string[] };
 
 /**
- * Each sentence as something to find in the page's text: a regular expression (`src`) in which a `{name}` is any short stretch, and `head`, its first words, to skip the expression
- * when the page does not hold them. A sentence without two English words has no run for the rule to find, so it is left out; a placeholder at either end is dropped (it would
- * swallow the words beside it).
+ * The register's sentences as something to compare a whole piece of the page's text with (ruling R20: a piece whose whole text is an exception is excused, wherever else the same
+ * words stand in a longer sentence they are not). A sentence with a tag in it is also taken apart at the tags, because the page shows it as several pieces
+ * (`<b>Check yourself.</b> Each ...`). A `{name}` stands for whatever the code put there. A text with no Latin letter outside its placeholders is not English and is left out; a
+ * one-word sentence is kept (the shelf's "Papers" and "Search" are two).
  */
-export function exceptionPatterns(sentences: readonly string[]): Array<{ head: string; src: string }> {
-  const seen = new Set<string>();
-  const out: Array<{ head: string; src: string }> = [];
+export function exceptionMatcher(sentences: readonly string[]): ExceptionMatcher {
+  const exact = new Set<string>();
+  const patterns = new Set<string>();
   for (const sentence of sentences) {
-    const parts = plainSentence(sentence).split(PLACEHOLDER).map((p) => p.trim());
-    while (parts.length && parts[0] === "") parts.shift();
-    while (parts.length && parts[parts.length - 1] === "") parts.pop();
-    if (!parts.length || (parts.join(" ").match(LONG_LATIN_WORD) ?? []).length < 2) continue;
-    const src = parts.map((p) => escapeRe(p).replace(/\s+/g, "\\s+")).join(".{0,80}?");
-    if (seen.has(src)) continue;
-    seen.add(src);
-    out.push({ head: parts[0]!.slice(0, 24), src });
+    const texts = new Set([plainSentence(sentence)]);
+    if (/<[^>]*>/.test(sentence)) for (const part of sentence.split(/<[^>]*>/)) texts.add(plainSentence(part));
+    for (const text of texts) {
+      const literal = text.split(PLACEHOLDER).join(" ");
+      if (!/\p{Script=Latin}/u.test(literal)) continue;
+      if (!PLACEHOLDER.test(text)) exact.add(text);
+      else patterns.add("^" + text.split(PLACEHOLDER).map((p) => escapeRe(p).replace(/\s+/g, "\\s+")).join(".{0,200}?") + "$");
+    }
   }
-  return out;
+  return { exact: [...exact], patterns: [...patterns] };
 }
 
-let patterns: Array<{ head: string; src: string }> | undefined;
-const registerPatterns = () => (patterns ??= exceptionPatterns(HINDI_EXCEPTIONS));
+/** Whether a whole piece of text is one the matcher excuses (what the page does with each piece, in `inPage`). */
+export function isExcused(text: string, m: ExceptionMatcher): boolean {
+  return m.exact.includes(text) || m.patterns.some((p) => new RegExp(p).test(text));
+}
+
+let register: ExceptionMatcher | undefined;
+const registerMatcher = () => (register ??= exceptionMatcher(HINDI_EXCEPTIONS));
 
 const namesSource = (): string => {
   const names = [...HINDI_NAMES].sort((a, b) => b.length - a.length).map((n) => escapeRe(n).replace(/\s+/g, "\\s+"));
@@ -191,7 +219,10 @@ type InPageArgs = {
   /** A CSS selector for the boxes the Hindi rule does not read: the editor and the exempt test ids. */
   skipSelector: string;
   namesSrc: string;
-  exceptions: Array<{ head: string; src: string }>;
+  /** The register's texts (see `exceptionMatcher`), and the app's own fallback sentences that an exempt box may hold. */
+  exact: string[];
+  patterns: string[];
+  fallbacks: string[];
 };
 type InPageResult = { findings: LayoutFinding[]; measured: Record<LayoutRule, number>; visible: number };
 
@@ -199,7 +230,8 @@ type InPageResult = { findings: LayoutFinding[]; measured: Record<LayoutRule, nu
  * Runs in the page (Playwright serialises it: it uses nothing from this file). Every rule except axe.
  * Visible: it has a box wider and taller than 1 px (so a clipped 1 px "screen reader only" box is not one) and `checkVisibility` says it is shown (not display:none, not
  * visibility:hidden, not opacity:0). A control is also enabled (not disabled, not aria-disabled), not inert or aria-hidden (what a modal dialog does to the page behind it), and not
- * covered at its centre by something that is not a control (a backdrop, a header scrolled over it).
+ * covered at its centre by a layer: something that is not a control and is inside an open modal (aria-modal, dialog[open]) or in a fixed box as wide as the window (a backdrop,
+ * a header scrolled under). A plain box over a control's centre (a group's padding) does not take the control out: the collision it makes with another control is still one.
  */
 async function inPage(a: InPageArgs): Promise<InPageResult> {
   type Box = { el: Element; r: DOMRect };
@@ -291,6 +323,11 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     'button, a[href], input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="checkbox"], [role="radio"], [role="switch"], [role="option"], [role="combobox"], [role="slider"], [role="treeitem"]';
   const controls: Box[] = [];
   if (want.has("overlap") || want.has("small-target")) {
+    const layer = (top: Element): boolean => {
+      if (top.closest('[aria-modal="true"], dialog[open]')) return true;
+      for (let p: Element | null = top; p && p !== document.body; p = p.parentElement) if (style(p).position === "fixed" && p.getBoundingClientRect().width >= W - 1) return true;
+      return false;
+    };
     for (const box of shown) {
       const { el, r } = box;
       if (!el.matches(CONTROL) || el.matches(":disabled") || el.getAttribute("aria-disabled") === "true" || el.closest("[inert], [aria-hidden='true']")) continue;
@@ -298,7 +335,7 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
       const y = r.top + r.height / 2;
       if (x >= 0 && y >= 0 && x < W && y < window.innerHeight) {
         const top = document.elementFromPoint(x, y);
-        if (top && !el.contains(top) && !top.contains(el) && !top.closest(CONTROL)) continue;
+        if (top && !el.contains(top) && !top.contains(el) && !top.closest(CONTROL) && layer(top)) continue;
       }
       controls.push(box);
     }
@@ -338,10 +375,11 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     }
   }
 
-  // English in Hindi: the visible text, in the order of the page, read as one stream (so a toolbar of buttons that each hold one English word is one run: O9). A run of two or
-  // more consecutive words of three or more letters in Latin script is English left on the screen; a shorter word, a number or a word in another script ends a run.
-  // Read besides the text: an empty field's placeholder, the label a select shows, a button-type input's value (the app's words). Not read: the editor and the exempt boxes
-  // (the student's own text), what was typed into a field, scripts and styles, the text inside a chart (svg). Each of those is a break in the run, not a join.
+  // English in Hindi: the visible text, in the order of the page, read as one stream (so a toolbar of buttons that each hold one English word is one run: O9). A run is Latin
+  // words next to each other, short ones included; it is English left on the screen when it holds two or more words of three or more letters (ruling R20). A number or a word in
+  // another script ends a run; so does a piece that is a sentence of the register (excused whole, piece by piece), and so does what is not read: the editor and the exempt
+  // boxes (the student's own text), what was typed into a field, a part of the page in another language (`lang` set and not Hindi), scripts and styles, the text inside a chart.
+  // Read besides the text: an empty field's placeholder, the label a select shows, a button-type input's value (the app's words).
   if (want.has("english-in-hindi") && a.lang === "hi") {
     const hostShown = new Map<Element, boolean>();
     const hostOf = (el: Element): Element | null => {
@@ -357,14 +395,24 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     };
     const NOT_TEXT_FIELD = /^(checkbox|radio|range|color|file|hidden|image)$/;
     const BREAK = "\u0001";
+    const norm = (t: string) => t.replace(/\s+/g, " ").trim();
+    const fallbacks = new Set(a.fallbacks);
     const pieces: Array<{ text: string; el: Element }> = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       acceptNode: (node) => {
         if (node.nodeType !== Node.ELEMENT_NODE) return NodeFilter.FILTER_ACCEPT;
         const el = node as Element;
-        // The editor and the exempt boxes are not read, and the words either side of one are not a run: a mark in the stream stands for them.
-        if (el.matches(a.skipSelector)) pieces.push({ text: BREAK, el });
-        return SKIP.has(el.tagName) || el.namespaceURI === SVG || el.matches(a.skipSelector) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+        let skip = SKIP.has(el.tagName) || el.namespaceURI === SVG;
+        if (!skip && el.matches(a.skipSelector)) {
+          // The editor and the exempt boxes are the student's, unless the app is speaking in one (the sentence it shows where the student's text is missing).
+          skip = el.matches(".ProseMirror") || !fallbacks.has(norm(el.textContent ?? ""));
+        }
+        // Another language is not Hindi's to answer for (the language switch names the other one in itself).
+        const lang = el.getAttribute("lang");
+        if (!skip && lang && !/^hi(-|$)/i.test(lang)) skip = true;
+        // The words either side of what is not read are not one run: a mark in the stream stands for it.
+        if (skip && !SKIP.has(el.tagName)) pieces.push({ text: BREAK, el });
+        return skip ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
       }
     });
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -392,17 +440,19 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     }
     measured["english-in-hindi"] = pieces.filter((p) => /\p{L}/u.test(p.text)).length;
 
+    // A piece that is, whole, a sentence of the register is the register's (a break in the run, whatever stands beside it); the same words inside a longer text are not.
+    const exact = new Set(a.exact);
+    const patterns = a.patterns.map((src) => new RegExp(src));
+    for (const p of pieces) if (p.text !== BREAK && (exact.has(p.text) || patterns.some((re) => re.test(p.text)))) p.text = BREAK;
+
     const starts: number[] = [];
-    let stream = "";
+    let original = "";
     for (const p of pieces) {
-      starts.push(stream.length);
-      stream += p.text + " ";
+      starts.push(original.length);
+      original += p.text + " ";
     }
-    // The register's sentences become a break in the run (they are whole sentences); the names are removed as if they were not there.
-    for (const ex of a.exceptions) {
-      if (stream.includes(ex.head)) stream = stream.replace(new RegExp(ex.src, "g"), (m) => "\u0001".repeat(m.length));
-    }
-    stream = stream.replace(new RegExp(a.namesSrc, "g"), (m) => " ".repeat(m.length));
+    // The names are removed as if they were not there (same length, so a finding can quote the page's own words).
+    const stream = original.replace(new RegExp(a.namesSrc, "g"), (m) => " ".repeat(m.length));
 
     const NUMBER = /\p{N}/u;
     const LETTER = /\p{L}/u;
@@ -426,7 +476,7 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
       if (run && words >= 2) {
         let i = starts.length - 1;
         while (i > 0 && starts[i]! > run.from) i--;
-        found("english-in-hindi", label(pieces[i]!.el), shorten(stream.slice(run.from, run.to).replace(/\s+/g, " ").trim(), 100));
+        found("english-in-hindi", label(pieces[i]!.el), shorten(original.slice(run.from, run.to).replace(/\s+/g, " ").trim(), 100));
       }
       run = undefined;
       words = 0;
@@ -435,10 +485,13 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
     for (let m = chunkRe.exec(stream); m; m = chunkRe.exec(stream)) {
       const n = lettersOf(m[0]);
       if (n === 0) continue;
-      if (n >= 3) {
-        run = { from: run ? run.from : m.index, to: m.index + m[0].length };
-        words++;
-      } else end();
+      if (n < 0) {
+        end();
+        continue;
+      }
+      // A word of one or two letters joins the run without counting ("Add to library" is English: Add, library).
+      run = { from: run ? run.from : m.index, to: m.index + m[0].length };
+      if (n >= 3) words++;
     }
     end();
   }
@@ -470,41 +523,50 @@ export async function measureLayout(
 ): Promise<LayoutMeasure> {
   const rules = [...(o.rules ?? LAYOUT_RULES)];
   const skipSelector = [".ProseMirror", ...[...STUDENT_TEXT_IDS, ...(o.exempt ?? [])].map((id) => `[data-testid="${id.replace(/["\\]/g, "\\$&")}"]`)].join(", ");
-  const args: InPageArgs = { rules, phone: o.phone, lang: o.lang, skipSelector, namesSrc: namesSource(), exceptions: registerPatterns() };
+  const args: InPageArgs = { rules, phone: o.phone, lang: o.lang, skipSelector, namesSrc: namesSource(), exact: registerMatcher().exact, patterns: registerMatcher().patterns, fallbacks: appFallbacks() };
   const inside = await page.evaluate(inPage, args);
   const measured = inside.measured;
   const findings = [...inside.findings];
   const unable: LayoutMeasure["unable"] = {};
+  const errors: LayoutMeasure["errors"] = {};
   if (rules.includes("axe") && inside.visible > 0) {
     try {
       const axe = await scan(page);
       measured.axe = axe.examined;
       findings.push(...axe.findings);
     } catch (e) {
-      unable.axe = `axe could not run: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`;
+      const why = `axe could not run: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`;
+      if (movedUnderTheScan(e)) unable.axe = why + " (the page navigated during the scan)";
+      else errors.axe = why;
     }
   }
-  return { findings, measured, unable };
+  return { findings, measured, unable, errors };
+}
+
+/** Playwright's words for a page that went somewhere else while a script ran in it. */
+export function movedUnderTheScan(e: unknown): boolean {
+  return /execution context was destroyed|frame was detached|navigat/i.test(e instanceof Error ? e.message : String(e));
 }
 
 /** What the page says it is: its language (<html lang>), and whether it is a phone (a coarse pointer on a narrow window: the `phone` project). */
-export async function readScreen(page: Page): Promise<{ htmlLang: string; lang: "en" | "hi"; phone: boolean }> {
-  const s = await page.evaluate(() => ({
-    htmlLang: document.documentElement.lang,
-    phone: matchMedia("(pointer: coarse)").matches && (document.documentElement.clientWidth || window.innerWidth) <= 600
-  }));
+export async function readScreen(page: Page): Promise<{ htmlLang: string; lang: "en" | "hi"; phone: boolean; coarse: boolean; width: number }> {
+  const s = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth || window.innerWidth;
+    const coarse = matchMedia("(pointer: coarse)").matches;
+    return { htmlLang: document.documentElement.lang, coarse, width, phone: coarse && width <= 600 };
+  });
   return { ...s, lang: s.htmlLang.toLowerCase().split("-")[0] === "hi" ? "hi" : "en" };
 }
 
 // ---- Checks -------------------------------------------------------------------------------------------------------------------------------------------
 
 /** One visual check to record: it holds, it measured nothing, or it found something (`known`: the id of the known fault the finding is). */
-export type RulePlan = { rule: LayoutRule; label: string; known?: string; outcome: { pass: true } | { notChecked: string } | { fail: string } };
+export type RulePlan = { rule: LayoutRule; label: string; known?: string; outcome: { pass: true } | { notChecked: string } | { fail: string } | { error: string } };
 
 const SHOWN_FINDINGS = 8;
 
 /**
- * One visual check per rule asked for (`rules`), in the order of LAYOUT_RULES. A rule that measured nothing is NOT CHECKED with the reason; a rule that found nothing passes; one that
+ * One visual check per rule asked for (`rules`), in the order of LAYOUT_RULES. A rule that broke is an Error finding; a rule that measured nothing is NOT CHECKED with the reason; a rule that found nothing passes; one that
  * found something fails as UI, once for the findings no known fault explains and once for each known fault they fit (`matchKnown` on the rule and on "<target> <detail>"), so a known
  * fault keeps CI green and a new one does not.
  */
@@ -513,6 +575,11 @@ export function planChecks(m: LayoutMeasure, o: { name: string; rules: readonly 
   for (const rule of LAYOUT_RULES) {
     if (!o.rules.includes(rule)) continue;
     const label = `${o.name}: ${LAYOUT_LABEL[rule]}`;
+    const broke = m.errors[rule];
+    if (broke !== undefined) {
+      plans.push({ rule, label, outcome: { error: broke } });
+      continue;
+    }
     const unable = m.unable[rule];
     if (unable !== undefined) {
       plans.push({ rule, label, outcome: { notChecked: unable } });

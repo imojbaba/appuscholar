@@ -91,8 +91,8 @@ test("layout: a control under 44 px on a phone is a small target, and only on a 
   const small = rulesOf(phone, "small-target");
   expect(small).toHaveLength(1);
   expect(small[0]!.detail).toContain("30");
-  // The 44 px button, the checkbox (its label is the target) and the link inside a sentence are measured, and are fine.
-  expect(phone.measured["small-target"]).toBeGreaterThanOrEqual(3);
+  // The 44 px button and the checkbox (its label is the target) are measured, and are fine. The link inside a sentence is not measured at all (WCAG 2.5.8; ruling R19).
+  expect(phone.measured["small-target"]).toBe(3);
   const desktop = await measure(page, body, { phone: false });
   expect(desktop.findings.filter((f) => f.rule === "small-target")).toEqual([]);
   expect(desktop.measured["small-target"]).toBe(0);
@@ -133,6 +133,13 @@ test("layout: two controls on top of each other overlap, side by side they do no
   expect(rulesOf(sliver, "overlap")).toEqual([]);
   const unpressable = await measure(page, abs(10, "One") + abs(90, "Two", "display:none") + abs(60, "Three", "top:10px").replace("<button", "<button disabled"));
   expect(rulesOf(unpressable, "overlap")).toEqual([]);
+  // A plain box over a control's centre (a group's padding) does not take the control out of the page: the two buttons still collide.
+  const padded = await measure(page, `${abs(10, "One")}${abs(90, "Two")}<div style="position:absolute;left:0;top:0;width:70px;height:60px"></div>`);
+  expect(rulesOf(padded, "overlap")).toHaveLength(1);
+  // A header fixed across the window does cover what is scrolled under it.
+  const header = `<div style="position:fixed;left:0;right:0;top:0;height:80px;background:#fff">${abs(90, "Menu", "top:20px")}</div>`;
+  const underHeader = await measure(page, `${abs(10, "Under", "top:30px")}${header}`);
+  expect(rulesOf(underHeader, "overlap")).toEqual([]);
   // A control inside another is nesting, not a collision.
   const nested = await measure(page, `<a href="#x" style="display:block;width:200px;height:60px"><button style="width:80px;height:40px">Inner</button></a>`);
   expect(rulesOf(nested, "overlap")).toEqual([]);
@@ -191,7 +198,7 @@ test("layout: a name on the allow-list, Hindi, numbers, the editor, form fields 
   measuring(qa, "SELF-LAYOUT-M09");
   const quiet = await measure(
     page,
-    `<button>OpenAlex</button><p>Powered by OpenAlex and Crossref</p><p>अपना काम सहेजें</p><p>Step 2 of 5</p><p>Google Scholar</p><p>2 DOIs, 3 PDF</p>` +
+    `<button>OpenAlex</button><p>OpenAlex, Crossref and PubMed</p><p>अपना काम सहेजें</p><p>Step 2 of 5</p><p>Google Scholar</p><p>2 DOIs, 3 PDF</p>` +
       `<div class="ProseMirror" contenteditable="true">The student wrote this sentence in English</div>` +
       `<input value="Some typed words here"><textarea>More typed words here</textarea>` +
       `<div data-testid="library-list">Attention is all you need</div>`,
@@ -199,6 +206,14 @@ test("layout: a name on the allow-list, Hindi, numbers, the editor, form fields 
   );
   expect(rulesOf(quiet, "english-in-hindi")).toEqual([]);
   expect(quiet.measured["english-in-hindi"]).toBeGreaterThan(0);
+
+  // A name is ignored, not a licence for the words around it: "Powered" and "and" are English (ruling R20).
+  const around = await measure(page, `<p>Powered by OpenAlex and Crossref</p>`, { lang: "hi" });
+  expect(rulesOf(around, "english-in-hindi").map((f) => f.detail)).toEqual(["Powered by OpenAlex and"]);
+
+  // The download buttons name their formats in brackets: Word and LaTeX are not a run of English (LaTeX is on the list; "Word" is one word).
+  const formats = await measure(page, `<button>⬇ डाउनलोड (Word)</button><button>⬇ LaTeX फ़ाइल</button>`, { lang: "hi" });
+  expect(rulesOf(formats, "english-in-hindi")).toEqual([]);
 
   // The same box without the exemption is English on the screen.
   const loud = await measure(page, `<div data-testid="library-list">Attention is all you need</div>`, { lang: "hi" });
@@ -208,6 +223,49 @@ test("layout: a name on the allow-list, Hindi, numbers, the editor, form fields 
   const mine = await measure(page, `<header><span data-testid="project-switcher">Sleep and exam anxiety</span></header><p data-testid="home-q-text">Does a fixed bedtime routine lower anxiety?</p><p>अपना काम सहेजें</p>`, { lang: "hi" });
   expect(rulesOf(mine, "english-in-hindi")).toEqual([]);
   expect(mine.measured["english-in-hindi"]).toBe(1);
+});
+
+test("layout: a short word joins a run of English without counting, so a label of small words is English", TAGS, async ({ page, qa }) => {
+  measuring(qa, "SELF-LAYOUT-M16");
+  const labels = await measure(page, `<button>Add to library</button><p>नमस्ते</p><button>Back to project</button><p>नमस्ते</p><p>Sign in to continue</p>`, { lang: "hi" });
+  expect(rulesOf(labels, "english-in-hindi").map((f) => f.detail)).toEqual(["Add to library", "Back to project", "Sign in to continue"]);
+  // Two words of three letters are the least a run needs; "Sign in", "Go to" and "OK" hold one, or none.
+  const small = await measure(page, `<button>Sign in</button><p>नमस्ते</p><button>Go to</button><p>नमस्ते</p><button>OK</button><p>नमस्ते</p><p>Step 2 of 5</p><p>n = 12, p &lt; 0.05</p>`, { lang: "hi" });
+  expect(rulesOf(small, "english-in-hindi")).toEqual([]);
+});
+
+test("layout: the register excuses a piece that is, whole, one of its sentences, and nothing else", TAGS, async ({ page, qa }) => {
+  measuring(qa, "SELF-LAYOUT-M17");
+  // The shelf's tabs and the matrix header: kept English, one word a piece, side by side (Papers + Search form a run unless each piece is excused).
+  expect(T("sh2_papers")).toBe("Papers");
+  expect(HINDI_EXCEPTIONS).toEqual(expect.arrayContaining(["Papers", "Search", "Paper", "Sample", "Method", "Key finding"]));
+  const shelf = await measure(
+    page,
+    `<div role="tablist"><button role="tab">${T("sh2_papers")}</button><button role="tab">${T("sh2_search")}</button><button role="tab">${T("sh2_find_passages_for_a")}</button><button role="tab">${T("sh2_matrix")}</button></div>` +
+      `<table><thead><tr><th>${T("sh2_paper")}</th><th>${T("sh2_sample")}</th><th>${T("sh2_method")}</th><th>${T("sh2_key_finding")}</th></tr></thead></table>` +
+      `<button>Insert (Smith, 2020)</button><button>Insert ¹ (3)</button><div role="status">Something went wrong. Try again.</div>`,
+    { lang: "hi" }
+  );
+  expect(rulesOf(shelf, "english-in-hindi")).toEqual([]);
+  // The same words inside a longer text, or beside a word that is not the register's, are English on the screen.
+  const elsewhere = await measure(page, `<div role="status">Error: Something went wrong. Try again.</div><p>नमस्ते</p><button>Papers</button><button>Remove</button><button>Archive</button>`, { lang: "hi" });
+  expect(rulesOf(elsewhere, "english-in-hindi").map((f) => f.detail)).toEqual(["Error: Something went wrong. Try again.", "Remove Archive"]);
+});
+
+test("layout: an exempt box is read when the app is speaking in it, and a part of the page in another language is not read", TAGS, async ({ page, qa }) => {
+  measuring(qa, "SELF-LAYOUT-M18");
+  // The sentences the app shows where the student's text is missing (QuestionCard, the switcher, the vault's titles), in either language.
+  const english = await measure(page, `<header><span data-testid="project-switcher">All projects</span></header><p>नमस्ते</p><p data-testid="home-q-text">No question yet.</p><p>नमस्ते</p>`, { lang: "hi" });
+  expect(rulesOf(english, "english-in-hindi").map((f) => f.detail)).toEqual(["All projects", "No question yet."]);
+  const hindi = await measure(page, `<header><span data-testid="project-switcher">${T("switcher_all", {}, "hi")}</span></header><p data-testid="home-q-text">${T("place_question_none", {}, "hi")}</p>`, { lang: "hi" });
+  expect(rulesOf(hindi, "english-in-hindi")).toEqual([]);
+  expect(hindi.measured["english-in-hindi"]).toBe(2);
+  // Whatever else is in the box is the student's, as before.
+  const theirs = await measure(page, `<header><span data-testid="project-switcher">All projects of mine, and a long one</span></header><p>नमस्ते</p>`, { lang: "hi" });
+  expect(rulesOf(theirs, "english-in-hindi")).toEqual([]);
+  // The language switch names the other language in itself (lang="en" on the item); a part in Hindi is still read.
+  const switchItem = await measure(page, `<button lang="en">Switch to English</button><p>नमस्ते</p><button lang="hi-IN">Save your work</button>`, { lang: "hi" });
+  expect(rulesOf(switchItem, "english-in-hindi").map((f) => f.detail)).toEqual(["Save your work"]);
 });
 
 test("layout: the register's kept English is not a finding, and the same page's other English is", TAGS, async ({ page, qa }) => {
@@ -382,4 +440,52 @@ test("layout: on a real phone an empty page is NOT CHECKED in all seven rules", 
   const visual = qa.result().checks.filter((c) => c.kind === "visual");
   expect(visual).toHaveLength(7);
   for (const c of visual) expect(c, c.label).toMatchObject({ ok: null });
+});
+
+test("layout: a case on a phone, at a page that does not read as one, has its touch targets NOT CHECKED, not skipped", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin({ story: "S0", id: "SELF-LAYOUT-7", goal: "Check the layout rules", situation: { screen: "phone" }, steps: ["look"] });
+  await page.setContent(doc(`<button style="display:block;width:30px;height:30px;margin:8px">x</button><button style="display:block;width:44px;height:44px;margin:8px">OK</button>`));
+  await qa.step("look", async () => {
+    await qa.checkpoint("wide window");
+  });
+  const c = labelled(qa.result().checks, "every control at least 44 px each way");
+  expect(c).toMatchObject({ ok: null });
+  expect(c.fail).toBeUndefined();
+  expect(c.message).toContain("does not read as one");
+  expect(c.message).toContain("coarse pointer: false");
+});
+
+test("layout: axe failing is an Error finding, unless the page moved under the scan", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-LAYOUT-8", ["broken", "moved"]));
+  await page.setContent(doc(`<h1>Home</h1><p>Some words</p>`));
+  const context = page.context();
+  const original = context.newPage.bind(context);
+  try {
+    // axe opens a blank page of its own to put its results together; take that away.
+    context.newPage = async () => {
+      throw new Error("browserContext.newPage: boom");
+    };
+    await qa.step("broken", async () => {
+      await qa.checkpoint("scan", { layout: false });
+    });
+    context.newPage = async () => {
+      throw new Error("page.evaluate: Execution context was destroyed, most likely because of a navigation");
+    };
+    await qa.step("moved", async () => {
+      await qa.checkpoint("scan again", { layout: false });
+    });
+  } finally {
+    context.newPage = original;
+  }
+  const checks = qa.result().checks.filter((x) => x.kind === "visual");
+  expect(checks).toHaveLength(2);
+  expect(checks[0]).toMatchObject({ ok: false, fail: "error", step: "broken" });
+  expect(checks[0]!.message).toContain("axe could not run");
+  expect(checks[0]!.message).toContain("boom");
+  expect(checks[0]!.screenshot).toBeTruthy();
+  expect(checks[1]).toMatchObject({ ok: null, step: "moved" });
+  expect(checks[1]!.fail).toBeUndefined();
+  expect(checks[1]!.message).toContain("navigated during the scan");
 });

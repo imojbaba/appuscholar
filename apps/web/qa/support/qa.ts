@@ -266,6 +266,14 @@ export class QaCase implements Qa {
       // Measured before the screenshot: it waits for what is moving to stop, so the picture is of the screen the rules saw.
       const measure = await measureLayout(page, { phone: screen.phone, lang: screen.lang, exempt: o?.exempt, rules });
       plans.push(...planChecks(measure, { name, rules, known: this.known }));
+      if (o?.layout !== false && (meta.situation.screen === "phone" || this.testInfo.project.use.isMobile === true) && !screen.phone) {
+        // The case runs on a phone and the page does not read as one: touch targets measured on it would be a desktop's. Say that none were, rather than skip them.
+        plans.push({
+          rule: "small-target",
+          label: `${name}: ${LAYOUT_LABEL["small-target"]}`,
+          outcome: { notChecked: `the case runs on a phone, but the page does not read as one (coarse pointer: ${screen.coarse}, window ${screen.width} px wide), so touch targets were not measured` }
+        });
+      }
       if (o?.layout !== false && meta.situation.lang === "hi" && screen.lang !== "hi") {
         // The case is in Hindi and the page is not: the language did not switch (or was switched back). Reading English as English would pass; say that nothing was read.
         plans.push({
@@ -279,6 +287,12 @@ export class QaCase implements Qa {
     if (path) this.shots.push({ name, path });
     for (const plan of plans) {
       const source = plan.rule === "axe" ? "spec section 8: the axe scan" : "spec section 8: layout rules";
+      if ("error" in plan.outcome) {
+        // The check of the screen itself broke: an Error finding (not a UI one), and the case is red.
+        const screenshot = await this.shoot(page, "failed-check", plan.label, `failed check: ${plan.label}`, { fullPage: false, strict: false });
+        this.checks.push({ kind: "visual", label: plan.label, ok: false, fail: "error", message: plain(plan.outcome.error, 2000), source, ...this.tags({}), ...(screenshot ? { screenshot } : {}) });
+        continue;
+      }
       await this.check(
         "visual",
         plan.label,
