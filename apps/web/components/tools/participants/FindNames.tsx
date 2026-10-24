@@ -164,8 +164,9 @@ function Results({ list, plan, save, refused, onClose }: {
    * read as the editor holds it at that moment), the open document's replacement is worked out, and then, back to back, the editor's text is compared with the text that was read and the document
    * is rewritten: if the student typed in between, nothing is written for it (a rewrite would put the old text back over theirs) and the page says the text has changed. What still holds: between
    * that comparison and the editor taking the new content there is one asynchronous step (the shell's requestInsert, which may open the document or ask for the passphrase first), and a
-   * keystroke inside it would be overwritten; a change of formatting alone (no text) is not seen by the comparison; in a pop-out the comparison is with the writing window's last snapshot, up to
-   * 300 ms old. Another document's text is sealed and written as a new revision, which an editor of this tab cannot be typing into.
+   * keystroke inside it would be overwritten; a change of formatting alone (no text) is not seen by the comparison. In a pop-out there is no comparison at all: the pop-out does not know which
+   * document is open in the writing window (`openRef` is null there, so no document is "the open one"), and a rewrite of the document that is open in the writing window is not guarded
+   * against text typed there meanwhile. Another document's text is sealed and written as a new revision, which an editor of this tab cannot be typing into.
    */
   async function replaceIn(targets: Array<{ doc: ProjectDocument; pick: (f: DocFind) => string | null }>): Promise<void> {
     if (busy) return;
