@@ -681,7 +681,51 @@ export const V2_STRINGS = {
   cit_hand: { en: "Add a source by hand", hi: "स्रोत हाथ से जोड़ें" },
   cit_import: { en: "Import a library file", hi: "लाइब्रेरी फ़ाइल आयात करें" },
   cit_classics: { en: "Add the classic psychology sources", hi: "मनोविज्ञान के क्लासिक स्रोत जोड़ें" },
-  cit_share_note: { en: "Class sharing: export your library from the export place and share the file with classmates, then import theirs to build one shared collection. Your documents and writing style stay on your own device.", hi: "कक्षा के साथ साझा करना: निर्यात स्थान से अपनी लाइब्रेरी निर्यात करें और फ़ाइल सहपाठियों को दें, फिर उनकी फ़ाइल आयात करके एक साझा संग्रह बनाएँ। आपके दस्तावेज़ और लेखन शैली आपके अपने उपकरण पर ही रहते हैं।" }
+  cit_share_note: { en: "Class sharing: export your library from the export place and share the file with classmates, then import theirs to build one shared collection. Your documents and writing style stay on your own device.", hi: "कक्षा के साथ साझा करना: निर्यात स्थान से अपनी लाइब्रेरी निर्यात करें और फ़ाइल सहपाठियों को दें, फिर उनकी फ़ाइल आयात करके एक साझा संग्रह बनाएँ। आपके दस्तावेज़ और लेखन शैली आपके अपने उपकरण पर ही रहते हैं।" },
+  // Wave B Task 20 (register row D-S2-125, walk faults W5, W6, W13): the bookmark as an extra in Find, and the focused screen it opens, "Adding this paper". DRAFT Hindi throughout, in the
+  // register of the Find keys above ("शोध-पत्र" for a paper, "पासफ़्रेज़" for the passphrase). The fill sentence of a paper already kept is wave A's cap_filled.
+  addpage_h: { en: "Add from any journal page", hi: "किसी भी शोध-पत्रिका के पृष्ठ से जोड़ें" },
+  addpage_line: { en: "Drag this button to your bookmarks bar. On a paper's page, click it to keep that paper here.", hi: "इस बटन को अपने बुकमार्क बार में खींचकर रखें। किसी शोध-पत्र के पृष्ठ पर इसे दबाएँ, वह शोध-पत्र यहाँ रख लिया जाएगा।" },
+  addpage_btn: { en: "Keep in Appuscholar", hi: "Appuscholar में रखें" },
+  add_h: { en: "Adding this paper", hi: "यह शोध-पत्र जोड़ा जा रहा है" },
+  add_authors: { en: "Authors", hi: "लेखक" },
+  add_year: { en: "Year", hi: "वर्ष" },
+  add_journal: { en: "Journal", hi: "पत्रिका" },
+  add_not_found: { en: "Not found on that page", hi: "उस पृष्ठ पर नहीं मिला" },
+  add_keep: { en: "Keep it", hi: "इसे रखें" },
+  add_locked: { en: "Your passphrase is needed to keep this paper. Press Keep it to try again.", hi: "इस शोध-पत्र को रखने के लिए आपका पासफ़्रेज़ चाहिए। फिर से कोशिश करने के लिए \"इसे रखें\" दबाएँ।" },
+  add_choose_h: { en: "Choose a project", hi: "प्रोजेक्ट चुनें" },
+  add_current: { en: "Current project", hi: "वर्तमान प्रोजेक्ट" },
+  add_projects_loading: { en: "Loading your projects…", hi: "आपके प्रोजेक्ट लोड हो रहे हैं…" },
+  add_projects_fail: { en: "Your projects could not be loaded. Check your connection, then try again.", hi: "आपके प्रोजेक्ट लोड नहीं हो सके। अपना कनेक्शन जाँचें, फिर फिर से कोशिश करें।" },
+  add_retry: { en: "Try again", hi: "फिर से कोशिश करें" },
+  add_keeping: { en: "Keeping this paper in {project}…", hi: "यह शोध-पत्र {project} में रखा जा रहा है…" },
+  add_kept: { en: "Kept in {project}.", hi: "{project} में रखा गया।" },
+  add_already: { en: "This paper is already kept in {project}.", hi: "यह शोध-पत्र {project} में पहले से रखा है।" },
+  add_back: { en: "Back to my project", hi: "मेरे प्रोजेक्ट पर वापस" },
+  add_close: { en: "You can close this tab.", hi: "आप इस टैब को बंद कर सकते हैं।" },
+  add_unsaved: { en: "The paper is kept here, but it is not saved to your account yet. Check your connection, then try again.", hi: "शोध-पत्र यहाँ रखा गया है, पर आपके खाते में अभी सहेजा नहीं गया। अपना कनेक्शन जाँचें, फिर फिर से कोशिश करें।" },
+  add_keep_fail: { en: "This paper could not be kept. Check your connection, then try again.", hi: "यह शोध-पत्र रखा नहीं जा सका। अपना कनेक्शन जाँचें, फिर फिर से कोशिश करें।" },
+  add_none: { en: "There is no paper to add here. Open a paper's page and click Keep in Appuscholar in your bookmarks bar.", hi: "यहाँ जोड़ने के लिए कोई शोध-पत्र नहीं है। किसी शोध-पत्र का पृष्ठ खोलें और अपने बुकमार्क बार में \"Appuscholar में रखें\" दबाएँ।" },
+  add_unreadable: { en: "This paper's details could not be read. Open the paper's page and click the bookmark again.", hi: "इस शोध-पत्र का विवरण पढ़ा नहीं जा सका। शोध-पत्र का पृष्ठ खोलें और बुकमार्क फिर से दबाएँ।" },
+  add_home: { en: "Go to my projects", hi: "मेरे प्रोजेक्ट देखें" },
+  // Wave B Task 19 (register D-S2-124): the paste box in Find, "Already have a paper? Paste a link, DOI or PubMed number" (canvas Find). The plan's four messages (link, text, nf, fail) are word for word;
+  // the empty box, Undo, its two answers and "not kept" are the build's own. DRAFT Hindi (DOI, PubMed, Crossref and OpenAlex kept in Latin letters as in the keys above).
+  find_paste_summary: { en: "Already have a paper? Paste a link, DOI or PubMed number", hi: "पहले से कोई शोध-पत्र है? लिंक, DOI या PubMed नंबर चिपकाएँ" },
+  find_paste_label: { en: "Link, DOI or PubMed number", hi: "लिंक, DOI या PubMed नंबर" },
+  find_paste_btn: { en: "Look it up and keep", hi: "खोजें और रखें" },
+  find_paste_busy: { en: "Looking it up…", hi: "खोजा जा रहा है…" },
+  find_paste_kept: { en: "Kept: {title}", hi: "रखा गया: {title}" },
+  find_paste_already: { en: "Already in your reading list: {title}", hi: "आपकी पढ़ने की सूची में पहले से है: {title}" },
+  find_paste_undo: { en: "Undo", hi: "वापस करें" },
+  find_paste_removed: { en: "Removed: {title}", hi: "हटाया गया: {title}" },
+  find_paste_changed: { en: "Not removed: {title} has changed since you kept it. You can still remove it in Citations.", hi: "हटाया नहीं गया: रखने के बाद {title} बदल गया है। आप इसे अब भी 'उद्धरण' में हटा सकते हैं।" },
+  find_paste_link: { en: "This link has no DOI or PubMed number in it. Open the paper's page, copy its DOI and paste that.", hi: "इस लिंक में कोई DOI या PubMed नंबर नहीं है। शोध-पत्र का पेज खोलें, उसका DOI कॉपी करें और वही चिपकाएँ।" },
+  find_paste_text: { en: "That looks like a title. Search for it above.", hi: "यह शीर्षक जैसा लगता है। ऊपर खोज में इसे खोजें।" },
+  find_paste_nf: { en: "No paper found for {ref}. Check it and try again.", hi: "{ref} के लिए कोई शोध-पत्र नहीं मिला। उसे जाँचें और फिर कोशिश करें।" },
+  find_paste_fail: { en: "Could not reach Crossref, PubMed or OpenAlex. Try again in a minute.", hi: "Crossref, PubMed या OpenAlex तक पहुँचा नहीं जा सका। एक मिनट बाद फिर कोशिश करें।" },
+  find_paste_empty: { en: "Paste a link, DOI or PubMed number first.", hi: "पहले कोई लिंक, DOI या PubMed नंबर चिपकाएँ।" },
+  find_paste_not_kept: { en: "The paper was not kept: your saved papers could not be reached. Check your connection and try again.", hi: "शोध-पत्र रखा नहीं गया: आपके सहेजे हुए शोध-पत्र तक पहुँचा नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

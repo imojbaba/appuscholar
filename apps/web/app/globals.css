@@ -728,6 +728,55 @@
 }
 /* end Citations tab */
 
+/* Adding this paper (wave B Task 20, register row D-S2-125, canvas Find): the page the bookmark opens, with no workspace around it, and the bookmark's section in Find ("Add from any journal page").
+   Tokens only; the screen is one column that grows and shrinks with the window, and every control on it is a 44px target. Placed before the Find block, which the Find layout test reads to the end of the file. */
+.addpaper { max-width: 640px; margin: 0 auto; padding: var(--s7) var(--s4); display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.addpaper-brand { margin: 0; font-family: var(--font-display), Georgia, serif; font-size: 22px; font-weight: 600; color: var(--purple-800); }
+.addpaper-h { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 700; }
+.addpaper-h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.addpaper-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+.addpaper-title { margin: 0; font-size: 18px; line-height: 1.4; font-weight: 600; overflow-wrap: anywhere; }
+.addpaper-facts { margin: 0; display: flex; flex-direction: column; gap: var(--s2); font-size: 15px; }
+.addpaper-fact { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); }
+.addpaper-fact dt { flex: 0 0 5.5rem; color: var(--muted); }
+.addpaper-fact dd { margin: 0; flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
+.addpaper-status { display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+.addpaper-status:empty { display: none; }
+.addpaper-note, .addpaper-none { margin: 0; color: var(--muted); font-size: 15px; }
+.addpaper-ok { margin: 0; padding: var(--s3) var(--s4); border-radius: var(--r-ctl); background: var(--ok-bg); color: var(--ok-ink); font-weight: 600; }
+.addpaper-result { display: flex; flex-direction: column; gap: var(--s3); align-items: flex-start; }
+.addpaper-keep, .addpaper-btn { min-height: 44px; padding: 0 var(--s6); align-self: flex-start; }
+.addpaper-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--purple-800); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.addpaper-step { display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+.addpaper-choices { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.addpaper-choice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2) var(--s3); width: 100%; min-height: 44px; padding: var(--s3) var(--s4); border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.addpaper-choice:hover:not([aria-disabled="true"]) { background: var(--soft); border-color: var(--purple-800); }
+.addpaper-choice[aria-disabled="true"] { color: var(--muted); cursor: default; }
+.addpaper-choice-name { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.addpaper-tag { padding: 2px var(--s2); border-radius: 6px; background: var(--purple-100); color: var(--purple-800); font-size: 13px; font-weight: 600; }
+.addpaper-keep:focus-visible, .addpaper-btn:focus-visible, .addpaper-link:focus-visible, .addpaper-choice:focus-visible, .addvia-btn:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.addvia { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4) var(--s6); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); min-width: 0; }
+.addvia-h { margin: 0; font-size: 15px; font-weight: 700; }
+.addvia-line { margin: 0; font-size: 14px; color: var(--muted); }
+.addvia-btn { min-height: 44px; padding: 0 var(--s4); cursor: grab; }
+/* The terms in place (fix round, D-S2-125): the workspace dialog's text and form in a card under the paper; its ticks and buttons are 44px targets, and its buttons wrap rather than overflow. */
+.addpaper-terms { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+.addpaper-terms label { align-items: center; min-height: 44px; }
+.addpaper-terms [data-testid="terms-actions"] { flex-wrap: wrap; }
+.addpaper-terms button { min-height: 44px; }
+.addpaper-h2:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+@media (max-width: 700px) {
+  .addpaper { padding: var(--s6) 16px; }
+  .addpaper-h { font-size: 24px; }
+  .addpaper-card { padding: var(--s4); }
+  .addpaper-fact dt { flex-basis: 100%; }
+  .addpaper-keep, .addpaper-btn { align-self: stretch; }
+  .addvia { padding: var(--s4); }
+  .addvia-btn { align-self: stretch; justify-content: center; }
+  .addpaper-terms { padding: var(--s4); }
+}
+/* end Adding this paper */
+
 /* Find (wave B Task 18, canvas Find): the search box and its AI terms, the filters aside beside the results, the count with Sort and Export, and one result with a Keep and
    a More menu. Colours are the tokens above. Up to 700px the aside goes above the results, the controls are 44px targets and nothing runs past the 16px gutters. */
 .find { display: flex; flex-direction: column; gap: var(--s5); min-width: 0; }
@@ -743,6 +792,20 @@
 .find-chip:not([data-picked]) { border-color: var(--line-strong); background: var(--card); color: var(--muted); text-decoration: line-through; }
 .find-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .find-chip:focus-within { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+/* The paste box under the search (wave B Task 19, D-S2-124): "Already have a paper? Paste a link, DOI or PubMed number", one box and a button, and under them the line that says what was kept. */
+.find-paste { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s2) var(--s6); font-size: 14px; }
+.find-paste > summary { display: flex; align-items: center; min-height: 40px; cursor: pointer; color: var(--purple-800); font-weight: 600; }
+.find-paste > summary:focus-visible, .find-paste-go:focus-visible, .find-paste-undo:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.find-paste-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--s2); }
+.find-paste-input { flex: 1 1 360px; min-width: 0; min-height: 44px; padding: 0 14px; }
+.find-paste-go { min-height: 44px; padding: 0 16px; font-weight: 600; }
+.find-paste-go[aria-disabled="true"], .find-paste-undo[aria-disabled="true"] { opacity: 0.6; cursor: default; }
+.find-paste-go[aria-busy="true"], .find-paste-undo[aria-busy="true"] { cursor: progress; }
+.find-paste-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin: var(--s3) 0 var(--s2); padding: var(--s2) var(--s3); border-left: 3px solid var(--ok-ink); border-radius: var(--r-ctl); background: var(--ok-bg); color: var(--ok-ink); overflow-wrap: anywhere; }
+.find-paste-line:empty { display: none; }
+.find-paste-line[data-kind="msg"], .find-paste-line[data-kind="changed"] { border-left-color: var(--flag-ink); background: var(--flag-bg); color: var(--flag-ink); }
+.find-paste-line[data-kind="busy"], .find-paste-line[data-kind="removed"] { border-left-color: var(--line-strong); background: var(--soft); color: var(--muted); }
+.find-paste-undo { min-height: 36px; padding: 0 12px; }
 .find-grid { display: flex; flex-wrap: wrap; gap: var(--s6); align-items: flex-start; }
 .find-filters { flex: 1 1 220px; max-width: 260px; display: flex; flex-direction: column; gap: var(--s4); padding: var(--s5); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); font-size: 14px; }
 .find-filters h2 { margin: 0; font-size: 15px; font-weight: 700; }
@@ -788,6 +851,10 @@
 @media (max-width: 700px) {
   .find { gap: var(--s4); }
   .find-search { padding: var(--s4); }
+  .find-paste { padding: var(--s1) var(--s4); }
+  .find-paste > summary { min-height: 44px; }
+  .find-paste-row > * { flex: 1 1 100%; }
+  .find-paste-input, .find-paste-go, .find-paste-undo { min-height: 44px; }
   .find-grid { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s4); }
   .find-filters { flex: none; max-width: none; padding: var(--s4); }
   .find-main { flex: none; }
