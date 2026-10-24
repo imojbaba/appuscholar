@@ -1,10 +1,10 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { FullConfig, FullResult, Suite, TestCase, TestResult } from "@playwright/test/reporter";
 import JSZip from "jszip";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import QaReporter, { grepOf, zipHoldsSecret } from "../../qa/reporter";
+import QaReporter, { grepOf, selectionOf, zipHoldsSecret } from "../../qa/reporter";
 import type { CaseResult, CheckResult } from "../../qa/support/qa";
 
 const root = mkdtempSync(path.join(tmpdir(), "qa-reporter-"));
@@ -34,9 +34,9 @@ const caseResult = (id: string, checks: CheckResult[], over: Partial<CaseResult>
 type Att = { name: string; contentType: string; path?: string; body?: Buffer };
 const qaAttachment = (r: CaseResult): Att => ({ name: "qa-result", contentType: "application/json", body: Buffer.from(JSON.stringify(r)) });
 const attempt = (o: { status?: TestResult["status"]; retry?: number; attachments?: Att[]; error?: string } = {}): TestResult =>
-  ({ status: o.status ?? "passed", retry: o.retry ?? 0, attachments: o.attachments ?? [], ...(o.error ? { error: { message: o.error } } : {}) }) as unknown as TestResult;
-const testCase = (title: string, results: TestResult[], o: { outcome?: ReturnType<TestCase["outcome"]>; expectedStatus?: TestCase["expectedStatus"] } = {}): TestCase =>
-  ({ results, expectedStatus: o.expectedStatus ?? "passed", outcome: () => o.outcome ?? "expected", titlePath: () => ["", "desktop", "qa/stories/x.qa.ts", title] }) as unknown as TestCase;
+  ({ status: o.status ?? "passed", retry: o.retry ?? 0, attachments: o.attachments ?? [], ...(o.error ? { error: { message: o.error }, errors: [{ message: o.error }] } : {}) }) as unknown as TestResult;
+const testCase = (title: string, results: TestResult[], o: { outcome?: ReturnType<TestCase["outcome"]>; expectedStatus?: TestCase["expectedStatus"]; tags?: string[] } = {}): TestCase =>
+  ({ results, expectedStatus: o.expectedStatus ?? "passed", tags: o.tags ?? ["@selftest", "@slice"], outcome: () => o.outcome ?? "expected", titlePath: () => ["", "desktop", "qa/stories/x.qa.ts", title] }) as unknown as TestCase;
 const suiteOf = (tests: TestCase[]): Suite => ({ allTests: () => tests }) as unknown as Suite;
 const config = (): FullConfig => ({ grep: /.*/ }) as unknown as FullConfig;
 const done = (status: FullResult["status"] = "passed"): FullResult => ({ status, startTime: new Date("2026-10-24T09:30:00Z"), duration: 61_000 });
@@ -47,7 +47,7 @@ async function run(tests: TestCase[], o: { providerLog?: string; argv?: string[]
   reporter.onBegin(config(), suiteOf(tests));
   const verdict = await reporter.onEnd(done(o.status));
   const read = (f: string) => readFileSync(path.join(outputDir, f), "utf8");
-  return { outputDir, verdict, read, json: () => JSON.parse(read("results.json")) as { cases: Array<{ id: string; mark: string; status: string; retries: number; trace?: string; screenshots: Array<{ path: string }> }>; harnessSelftests: { ran: number }; runErrors: string[]; run: { kind: string; sha: string; filter?: string; date: string; durationMs: number } } };
+  return { outputDir, verdict, read, json: () => JSON.parse(read("results.json")) as { cases: Array<{ id: string; mark: string; status: string; retries: number; trace?: string; screenshots: Array<{ path: string }> }>; harnessSelftests: { ran: number }; runErrors: string[]; run: { kind: string; sha: string; selection?: string; date: string; durationMs: number }; providerLog?: { entries: number; strays: number; unreadable?: boolean } } };
 }
 
 /** A screenshot file and the attachment Playwright keeps of it. */
@@ -80,12 +80,17 @@ describe("the reporter writes the four files", () => {
   it("names what ran from the run: the -g filter, the date and the duration", async () => {
     const t = testCase("S5-01 survey", [attempt({ attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })]);
     const slice = await run([t], { argv: ["node", "playwright", "test", "-c", "qa/playwright.qa.config.ts", "-g", "@slice"] });
-    expect(slice.json().run).toMatchObject({ kind: "slice", filter: "@slice", date: "2026-10-24 09:30 UTC" });
+    expect(slice.json().run).toMatchObject({ kind: "slice", selection: "-g @slice", date: "2026-10-24 09:30 UTC" });
+    expect(slice.read("summary.md")).toContain("What ran: slice (each story's plain run and every regression), selected with -g @slice");
     const all = await run([t]);
     expect(all.json().run.kind).toBe("full");
-    expect(all.json().run.filter).toBeUndefined();
+    expect(all.json().run.selection).toBeUndefined();
     expect(all.json().run.durationMs).toBe(61_000);
-    expect((await run([t], { argv: ["playwright", "test", "-g", "S5-01"] })).json().run).toMatchObject({ kind: "full", filter: "S5-01" });
+    expect(all.read("summary.md")).toContain("What ran: full grid");
+    const one = await run([t], { argv: ["playwright", "test", "-g", "S5-01"] });
+    expect(one.json().run).toMatchObject({ kind: "full", selection: "-g S5-01" });
+    expect(one.read("summary.md")).toContain("What ran: part of the grid, selected with -g S5-01");
+    expect((await run([t], { argv: ["playwright", "test", "-g", "@slice", "--project=phone"] })).read("summary.md")).toContain("What ran: part of the slice, selected with -g @slice --project=phone");
     vi.stubEnv("QA_RUN_KIND", "release");
     expect((await run([t])).json().run.kind).toBe("release");
     vi.stubEnv("GITHUB_SHA", "feedface00");
@@ -115,6 +120,29 @@ describe("grepOf", () => {
   });
 });
 
+describe("selectionOf", () => {
+  const at = (...rest: string[]) => ["node", "/x/playwright/cli.js", "test", ...rest];
+
+  it("reads what narrowed the run, as typed", () => {
+    expect(selectionOf(at("-c", "qa/playwright.qa.config.ts", "-g", "@slice"))).toBe("-g @slice");
+    expect(selectionOf(at("-g", "S5-01", "--project=phone"))).toBe("-g S5-01 --project=phone");
+    expect(selectionOf(at("--project", "desktop", "--grep-invert", "@slow"))).toBe("--project desktop --grep-invert @slow");
+    expect(selectionOf(at("-gv", "@slow"))).toBe("-gv @slow");
+    expect(selectionOf(at("stories/s05.qa.ts", "--last-failed"))).toBe("stories/s05.qa.ts --last-failed");
+    expect(selectionOf(at("--shard=2/4", "--tag", "@phone"))).toBe("--shard=2/4 --tag @phone");
+    expect(selectionOf(at("--only-changed"))).toBe("--only-changed");
+  });
+
+  it("does not count what only sets how the run goes", () => {
+    expect(selectionOf(at("-c", "qa/playwright.qa.config.ts", "--workers=2", "-j", "4", "--retries", "1", "--reporter=list", "--repeat-each", "3", "--headed"))).toBeUndefined();
+    expect(selectionOf(at())).toBeUndefined();
+  });
+
+  it("says nothing for another command, such as merge-reports, whose argument is a folder", () => {
+    expect(selectionOf(["node", "/x/playwright/cli.js", "merge-reports", "--reporter", "./qa/reporter.ts", "blob-report"])).toBeUndefined();
+  });
+});
+
 describe("screenshots and traces", () => {
   it("copies each screenshot beside the report and links it by a path relative to the report", async () => {
     const src = fresh();
@@ -127,13 +155,14 @@ describe("screenshots and traces", () => {
     });
     const r = await run([testCase("S5-01", [attempt({ status: "failed", attachments: [qaAttachment(result)] })], { outcome: "unexpected" })]);
     const c = r.json().cases[0]!;
-    expect(c.screenshots[0]!.path).toBe("screens/S5-01/1-checkpoint-home.png");
-    for (const rel of ["screens/S5-01/1-checkpoint-home.png", "screens/S5-01/2-failed-check-the-t-test-sentence-matches-core.png", "screens/S5-01/3-stopped-at-run.png"]) {
+    // Named by number and kind only: a label may hold a key, and names are never redacted.
+    expect(c.screenshots[0]!.path).toBe("screens/S5-01/1-checkpoint.png");
+    for (const rel of ["screens/S5-01/1-checkpoint.png", "screens/S5-01/2-failed-check.png", "screens/S5-01/3-stopped.png"]) {
       expect(existsSync(path.join(r.outputDir, rel)), rel).toBe(true);
       expect(r.read("index.html"), rel).toContain(`src="${rel}"`);
     }
     // The stop's picture is one file, whether the check or stoppedAt refers to it.
-    expect(r.read("results.json").split("screens/S5-01/3-stopped-at-run.png").length - 1).toBe(2);
+    expect(r.read("results.json").split("screens/S5-01/3-stopped.png").length - 1).toBe(2);
     expect(r.read("index.html")).not.toContain(src);
     expect(r.read("results.json")).not.toContain(src);
   });
@@ -182,11 +211,11 @@ describe("screenshots and traces", () => {
 });
 
 describe("what is left out of the marks", () => {
-  it("leaves out the fixture's own cases: selfTest, the numbered ones, and the SELF- ones that are expected to fail", async () => {
+  it("leaves out the fixture's own cases: selfTest, the @mechanics tag, and the SELF- ones that Playwright expects to fail", async () => {
     const att = (id: string, over: Partial<CaseResult> = {}) => [qaAttachment(caseResult(id, [bad()], { meta: { story: "S0", id, goal: "Check the fixture", situation: {}, steps: [] }, ...over }))];
     const tests = [
       testCase("SELF-01", [attempt({ attachments: att("SELF-01", { selfTest: true }) })]),
-      testCase("SELF-19", [attempt({ attachments: att("SELF-19") })]),
+      testCase("SELF-19", [attempt({ attachments: att("SELF-19") })], { tags: ["@selftest", "@slice", "@mechanics"] }),
       testCase("SELF-22", [attempt({ status: "failed", attachments: att("SELF-22") })], { outcome: "expected", expectedStatus: "failed" }),
       testCase("SELF-HARNESS", [attempt({ attachments: att("SELF-HARNESS") })]),
       testCase("S5-01", [attempt({ attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })])
@@ -194,6 +223,15 @@ describe("what is left out of the marks", () => {
     const r = await run(tests);
     expect(r.json().cases.map((c) => c.id)).toEqual(["S5-01", "SELF-HARNESS"]);
     expect(r.json().harnessSelftests.ran).toBe(3);
+  });
+
+  it("reads the tag, not the id: a numbered SELF- case without the tag is a case of its own, in the Harness row", async () => {
+    const result = caseResult("SELF-19", [bad({ known: "F1" })], { meta: { story: "S0", id: "SELF-19", goal: "Check the fixture", situation: {}, steps: [] } });
+    const untagged = await run([testCase("SELF-19", [attempt({ attachments: [qaAttachment(result)] })])]);
+    expect(untagged.json().cases.map((c) => [c.id, c.mark])).toEqual([["SELF-19", "KNOWN FAULT"]]);
+    expect(untagged.read("summary.md")).toContain("### Harness.");
+    const tagged = await run([testCase("SELF-19", [attempt({ attachments: [qaAttachment(result)] })], { tags: ["@selftest", "@slice", "@mechanics"] })]);
+    expect(tagged.json().cases).toEqual([]);
   });
 
   it("counts a test that Playwright expected to fail, and did, as passed", async () => {
@@ -205,6 +243,12 @@ describe("what is left out of the marks", () => {
 });
 
 describe("retries", () => {
+  const failedFirst = (src: string) => {
+    const shotPath = shot(src, "first-failed-check-1.png");
+    const trace = path.join(src, "first-trace.zip");
+    return { shotPath, trace };
+  };
+
   it("lists a case that failed and then passed under Passed only on a second try, with what failed", async () => {
     const first = attempt({ status: "failed", attachments: [qaAttachment(caseResult("S5-01", [bad({ label: "the list has 3 rows", message: "expect(received).toBe(expected)\n\nExpected: 3\nReceived: 2" })]))] });
     const second = attempt({ retry: 1, attachments: [qaAttachment(caseResult("S5-01", [ok()]))] });
@@ -216,11 +260,55 @@ describe("retries", () => {
     expect(section).toContain("the list has 3 rows: expect(received).toBe(expected) / Expected: 3 / Received: 2");
   });
 
-  it("says that an attempt which failed with no result failed", async () => {
+  it("keeps the first try for the fix brief: its mark, failed checks, pictures and replay (ruling R22)", async () => {
+    const src = fresh();
+    const { shotPath, trace } = failedFirst(src);
+    writeFileSync(trace, await new JSZip().file("trace.trace", "{}").generateAsync({ type: "nodebuffer" }));
+    const known1 = bad({ label: "a known one", message: "the known message", known: "F1" });
+    const first = attempt({
+      status: "failed",
+      attachments: [
+        qaAttachment(caseResult("S5-01", [bad({ label: "the list has 3 rows", message: "Expected: 3\nReceived: 2", source: "wave-b1 row 10", screenshot: shotPath }), known1])),
+        { name: "trace", contentType: "application/zip", path: trace }
+      ]
+    });
+    const second = attempt({ retry: 1, attachments: [qaAttachment(caseResult("S5-01", [ok()]))] });
+    const r = await run([testCase("S5-01", [first, second], { outcome: "flaky" })]);
+    const json = JSON.parse(r.read("results.json")) as { cases: Array<{ shown: string; firstTry?: { mark: string; trace?: string; failed: Array<{ title: string; screenshot?: string }> } }> };
+    const c = json.cases[0]!;
+    expect(c.shown).toBe("PASS on retry (first try FAIL: Unexpected)");
+    expect(c.firstTry!.failed.map((k) => k.title)).toEqual(["the list has 3 rows"]);
+    expect(c.firstTry!.failed[0]!.screenshot).toBe("screens/S5-01/first-try/1-failed-check.png");
+    expect(c.firstTry!.trace).toBe("traces/S5-01-first-try.zip");
+    expect(existsSync(path.join(r.outputDir, "screens/S5-01/first-try/1-failed-check.png"))).toBe(true);
+    expect(existsSync(path.join(r.outputDir, "traces/S5-01-first-try.zip"))).toBe(true);
+    const brief = r.read("fix-brief.md");
+    expect(brief).toContain("## Entry 1: S5-01 — PASS on retry (first try FAIL: Unexpected)");
+    expect(brief).toContain("the list has 3 rows");
+    expect(brief).toContain("wave-b1 row 10");
+    expect(brief).toContain("screens/S5-01/first-try/1-failed-check.png");
+    expect(brief).toContain("traces/S5-01-first-try.zip");
+    expect(brief).not.toContain("a known one");
+    expect(r.read("index.html")).toContain('<span class="mark retry">PASS on retry (first try FAIL: Unexpected)</span>');
+  });
+
+  it("says that an attempt which failed with no result failed, and gives it a brief entry", async () => {
     const first = attempt({ status: "timedOut", error: "Test timeout of 600000ms exceeded." });
     const second = attempt({ retry: 1, attachments: [qaAttachment(caseResult("S5-01", [ok()]))] });
     const r = await run([testCase("S5-01", [first, second], { outcome: "flaky" })]);
-    expect(r.read("summary.md")).toContain("the attempt timedOut: Test timeout of 600000ms exceeded.");
+    expect(r.read("summary.md")).toContain("PASS on retry (first try FAIL: Error)");
+    expect(r.read("summary.md")).toContain("Test timeout of 600000ms exceeded.");
+    expect(r.read("fix-brief.md")).toContain("Entry 1: S5-01");
+  });
+});
+
+describe("a case Playwright failed after its result was attached", () => {
+  it("is FAIL: Error, with Playwright's own message, and is in the fix brief", async () => {
+    const t = testCase("S5-01", [attempt({ status: "failed", error: "Error: the fixture teardown threw", attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })], { outcome: "unexpected" });
+    const r = await run([t], { status: "failed" });
+    expect(r.json().cases[0]).toMatchObject({ id: "S5-01", mark: "FAIL: Error", status: "failed" });
+    expect(r.read("fix-brief.md")).toContain("Entry 1: S5-01 — FAIL: Error");
+    expect(r.read("fix-brief.md")).toContain("Error: the fixture teardown threw");
   });
 });
 
@@ -263,12 +351,23 @@ describe("a non-test key in the provider log (ruling R13)", () => {
     expect(r.read("fix-brief.md")).toMatch(/non-test key reached the provider path/i);
   });
 
-  it("is quiet when the log holds only test keys, or is not there", async () => {
+  it("is quiet when the log holds only test keys, and says how many requests it read", async () => {
     const log = path.join(fresh(), "calls.jsonl");
-    writeFileSync(log, entry("gsk_qa_ok_aaaa"));
+    writeFileSync(log, entry("gsk_qa_ok_aaaa") + entry("gsk_qa_ok_bbbb"));
     const t = testCase("S5-01", [attempt({ attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })]);
-    expect((await run([t], { providerLog: log })).verdict).toBeUndefined();
-    expect((await run([t])).json().runErrors).toEqual([]);
+    const r = await run([t], { providerLog: log });
+    expect(r.verdict).toBeUndefined();
+    expect(r.json().providerLog).toEqual({ entries: 2, strays: 0 });
+    expect(r.read("summary.md")).toContain("Fake provider log: 2 requests read; none carried a key that is not a test key.");
+  });
+
+  it("says not checked when there is no log here (a merged report), rather than reading as clean", async () => {
+    const t = testCase("S5-01", [attempt({ attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })]);
+    const r = await run([t]);
+    expect(r.json().runErrors).toEqual([]);
+    expect(r.json().providerLog).toEqual({ entries: 0, strays: 0 });
+    expect(r.read("summary.md")).toContain("Fake provider log: not checked: no provider log here (0 requests read).");
+    expect(r.read("index.html")).toContain("not checked: no provider log here");
   });
 
   it("says when the log cannot be read", async () => {
@@ -276,6 +375,8 @@ describe("a non-test key in the provider log (ruling R13)", () => {
     writeFileSync(log, "{ not json\n");
     const r = await run([testCase("S5-01", [attempt({ attachments: [qaAttachment(caseResult("S5-01", [ok()]))] })])], { providerLog: log });
     expect(r.json().runErrors.join(" ")).toMatch(/log could not be read/);
+    expect(r.json().providerLog).toEqual({ entries: 0, strays: 0, unreadable: true });
+    expect(r.read("summary.md")).toContain("Fake provider log: not checked: the log could not be read.");
   });
 });
 
@@ -288,6 +389,53 @@ describe("the live-AI key", () => {
       expect(r.read(f), f).not.toContain(key);
     }
     expect(r.read("summary.md")).toContain("[redacted]");
+  });
+
+  it("is in no file name and no output, whole or as a prefix, when it is in a label with a screenshot (the name of a copied file)", async () => {
+    vi.stubEnv("QA_LIVE_AI_KEY", key);
+    const src = fresh();
+    const label = `the request for ${key} was refused`;
+    const result = caseResult("S5-01", [bad({ label, message: `refused ${key}`, screenshot: shot(src, `failed-check-1-${label.replace(/ /g, "-")}.png`) })], {
+      screenshots: [{ name: `home of ${key}`, path: shot(src, `checkpoint-1-home-of-${key}.png`) }]
+    });
+    const r = await run([testCase("S5-01", [attempt({ status: "failed", attachments: [qaAttachment(result)] })], { outcome: "unexpected" })]);
+    const files = (dir: string): string[] => readdirSync(dir, { withFileTypes: true, recursive: true }).map((e) => path.join(e.parentPath ?? "", e.name));
+    const names = files(r.outputDir);
+    expect(names.some((n) => n.endsWith(".png"))).toBe(true);
+    const prefix = key.slice(0, 12);
+    for (const n of names) {
+      expect(n, n).not.toContain(key);
+      expect(n, n).not.toContain(prefix);
+    }
+    for (const f of ["index.html", "summary.md", "fix-brief.md", "results.json"]) {
+      expect(r.read(f), f).not.toContain(key);
+      expect(r.read(f), f).not.toContain(prefix);
+    }
+  });
+
+  it("is removed from an earlier attempt's message before it is cut short (the key at character 290 of 300)", async () => {
+    vi.stubEnv("QA_LIVE_AI_KEY", key);
+    const message = "x".repeat(289) + ` ${key} ` + "y".repeat(80);
+    const first = attempt({ status: "failed", attachments: [qaAttachment(caseResult("S5-01", [bad({ label: "the request", message })]))] });
+    const second = attempt({ retry: 1, attachments: [qaAttachment(caseResult("S5-01", [ok()]))] });
+    const r = await run([testCase("S5-01", [first, second], { outcome: "flaky" })]);
+    const prefix = key.slice(0, 12);
+    expect(r.read("summary.md")).toContain("[redacted]");
+    for (const f of ["index.html", "summary.md", "fix-brief.md", "results.json"]) {
+      expect(r.read(f), f).not.toContain(key);
+      expect(r.read(f), f).not.toContain(prefix);
+      expect(r.read(f), f).not.toContain("gsk_live");
+    }
+  });
+
+  it("is removed from the first try's error text, and from an error with no result", async () => {
+    vi.stubEnv("QA_LIVE_AI_KEY", key);
+    const first = attempt({ status: "failed", error: `request failed with ${key}` });
+    const second = attempt({ retry: 1, attachments: [qaAttachment(caseResult("S5-01", [ok()]))] });
+    const r = await run([testCase("S5-01", [first, second], { outcome: "flaky" })]);
+    for (const f of ["index.html", "summary.md", "fix-brief.md", "results.json"]) expect(r.read(f), f).not.toContain(key);
+    const dead = await run([testCase("S5-02 dead", [attempt({ status: "failed", error: `boom ${key}` })], { outcome: "unexpected" })], { status: "failed" });
+    for (const f of ["index.html", "summary.md", "fix-brief.md", "results.json"]) expect(dead.read(f), f).not.toContain(key);
   });
 
   it("is not kept in a trace that holds it: the trace is not copied", async () => {

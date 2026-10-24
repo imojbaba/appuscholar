@@ -11,7 +11,7 @@ import path from "node:path";
 import { stripVTControlCharacters } from "node:util";
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult } from "@playwright/test/reporter";
 import JSZip from "jszip";
-import { buildReport, isFixtureMechanics, secretForms, type ReportCase, type RunInfo, type Unreported } from "./report/build";
+import { buildReport, secretForms, type FirstTry, type ProviderLogInfo, type ReportCase, type RunInfo, type Unreported } from "./report/build";
 import { loadKnown } from "./support/known";
 import { readProviderLog } from "./support/providerLog";
 import type { CaseResult } from "./support/qa";
@@ -21,10 +21,12 @@ export type QaReporterOptions = {
   outputDir?: string;
   /** The fake provider's log (a test gives its own). By default the run's QA_PROVIDER_LOG. */
   providerLog?: string;
-  /** The command line of the run, to read the `-g` filter from (Playwright keeps it out of the config it hands a reporter). By default process.argv. */
+  /** The command line of the run, to say what narrowed it: `-g`, `--project`, a file ... (Playwright keeps these out of the config it hands a reporter). By default process.argv. */
   argv?: string[];
 };
 
+/** The tag of the fixture's mechanics tests (selftest/fixture.qa.ts): tests that need the teardown to throw or to pin a mark, so they cannot set `qa.selfTest`. */
+const MECHANICS_TAG = "@mechanics";
 /** The key the fake provider writes for a key that is not a `gsk_qa_<mode>_<random>` test key (provider-shim/core.mjs). */
 const NOT_A_QA_KEY = "<not a QA key>";
 /** Entries of a trace that are pictures or fonts: not read for a secret. */
@@ -91,58 +93,88 @@ export default class QaReporter implements Reporter {
       }
       const parsed = readResult(final);
       if (parsed === undefined || parsed instanceof Error) {
-        const error = parsed instanceof Error ? parsed.message : final.error?.message;
-        unreported.push({ title, status, ...(error ? { error: stripVTControlCharacters(error) } : {}) });
+        const error = parsed instanceof Error ? parsed.message : errorText(final);
+        unreported.push({ title, status, ...(error ? { error } : {}) });
         continue;
       }
       const n = (usedIds.get(parsed.meta.id) ?? 0) + 1;
       usedIds.set(parsed.meta.id, n);
       const dir = n === 1 ? slug(parsed.meta.id) : `${slug(parsed.meta.id)}-${n}`;
-      if (parsed.selfTest !== true && isFixtureMechanics(parsed.meta.id, test.expectedStatus === "failed")) parsed.selfTest = true;
-      const trace = parsed.selfTest ? undefined : await copyTrace(final, status, path.join(out, "traces"), `${dir}.zip`, redact);
-      const earlier = test.results.slice(0, -1).flatMap((r) => failuresOf(r));
+      // The fixture's own mechanics tests (they fail on purpose, and cannot set `selfTest` because the teardown must throw) say so with the tag @mechanics; a SELF- test that
+      // Playwright expects to fail (`test.fail()`) is one too.
+      if (parsed.selfTest !== true && (test.tags.includes(MECHANICS_TAG) || (test.expectedStatus === "failed" && parsed.meta.id.startsWith("SELF-")))) parsed.selfTest = true;
+      if (parsed.selfTest) {
+        // Left out of the report's marks, so nothing of theirs is copied.
+        cases.push({ ...parsed, retries: final.retry, status });
+        continue;
+      }
+      const traces = path.join(out, "traces");
+      const trace = await copyTrace(final, status, traces, `${dir}.zip`, redact);
+      const error = status === "failed" ? errorText(final) : "";
+      // A case that failed a try and passed on a retry keeps its first try (ruling R22): its failed checks, pictures and replay.
+      const failedTry = status === "passed" && final.retry > 0 ? test.results.slice(0, -1).find((r) => r.status !== "passed" && r.status !== "skipped") : undefined;
+      let firstTry: FirstTry | undefined;
+      if (failedTry) {
+        const earlier = readResult(failedTry);
+        const firstTrace = await copyTrace(failedTry, "failed", traces, `${dir}-first-try.zip`, redact);
+        firstTry = {
+          status: failedTry.status,
+          ...(earlier && !(earlier instanceof Error) ? { result: copyScreens(earlier, failedTry, out, `${dir}/first-try`) } : {}),
+          ...(earlier instanceof Error ? { error: earlier.message } : errorText(failedTry) ? { error: errorText(failedTry) } : {}),
+          ...(firstTrace ? { trace: `traces/${dir}-first-try.zip` } : {})
+        };
+      }
       cases.push({
-        // The fixture's own cases are left out of the report, so their pictures are not copied.
-        ...(parsed.selfTest ? parsed : copyScreens(parsed, final, out, dir)),
+        ...copyScreens(parsed, final, out, dir),
         retries: final.retry,
         status,
-        ...(earlier.length ? { earlierFailures: earlier } : {}),
+        ...(error ? { error } : {}),
+        ...(firstTry ? { firstTry } : {}),
         ...(trace ? { trace: `traces/${dir}.zip` } : {})
       });
     }
 
-    const runErrors = this.providerErrors();
-    const { summaryMd, fixBriefMd, html, json } = buildReport(cases, known, this.runInfo(result), { redact, runErrors, unreported });
+    const provider = this.providerCheck();
+    const { summaryMd, fixBriefMd, html, json } = buildReport(cases, known, this.runInfo(result), { redact, runErrors: provider.errors, unreported, providerLog: provider.info });
     writeFileSync(path.join(out, "summary.md"), summaryMd);
     writeFileSync(path.join(out, "fix-brief.md"), fixBriefMd);
     writeFileSync(path.join(out, "index.html"), html);
     writeFileSync(path.join(out, "results.json"), json);
     console.log(`QA report: ${path.join(out, "index.html")}`);
-    return { runErrors };
+    return { runErrors: provider.errors };
   }
 
-  /** Spec ruling R13: any request the fake provider took with a key that is not a test key is an Error of the run. */
-  private providerErrors(): string[] {
+  /**
+   * Spec ruling R13: any request the fake provider took with a key that is not a test key is an Error of the run. Also says how much of the log was read (none: no log here, as in a
+   * merged report), so that a clean line is never read as more than it is.
+   */
+  private providerCheck(): { errors: string[]; info: ProviderLogInfo } {
     try {
-      const strays = readProviderLog(this.options.providerLog).filter((e) => e.key === NOT_A_QA_KEY);
-      if (strays.length === 0) return [];
+      const entries = readProviderLog(this.options.providerLog);
+      const strays = entries.filter((e) => e.key === NOT_A_QA_KEY);
+      const info = { entries: entries.length, strays: strays.length };
+      if (strays.length === 0) return { errors: [], info };
       const hosts = [...new Set(strays.map((e) => e.host))].join(", ");
-      return [`A non-test key reached the provider path: ${strays.length} request${strays.length === 1 ? "" : "s"} to ${hosts} carried a key that is not a gsk_qa_ test key. The key itself is never written down.`];
+      return { errors: [`A non-test key reached the provider path: ${strays.length} request${strays.length === 1 ? "" : "s"} to ${hosts} carried a key that is not a gsk_qa_ test key. The key itself is never written down.`], info };
     } catch (e) {
-      return [`The fake provider's log could not be read, so a non-test key reaching the provider path would not be seen: ${e instanceof Error ? e.message : String(e)}`];
+      return {
+        errors: [`The fake provider's log could not be read, so a non-test key reaching the provider path would not be seen: ${e instanceof Error ? e.message : String(e)}`],
+        info: { entries: 0, strays: 0, unreadable: true }
+      };
     }
   }
 
   private runInfo(result: FullResult): RunInfo {
-    const filter = grepOf(this.options.argv ?? process.argv);
+    const argv = this.options.argv ?? process.argv;
+    const selection = selectionOf(argv);
     const asked = process.env.QA_RUN_KIND;
-    const kind: RunInfo["kind"] = asked === "slice" || asked === "full" || asked === "release" ? asked : filter?.includes("@slice") ? "slice" : "full";
+    const kind: RunInfo["kind"] = asked === "slice" || asked === "full" || asked === "release" ? asked : grepOf(argv)?.includes("@slice") ? "slice" : "full";
     return {
       sha: process.env.GITHUB_SHA || gitSha() || "unknown",
       date: `${result.startTime.toISOString().slice(0, 16).replace("T", " ")} UTC`,
       kind,
       durationMs: Math.round(result.duration),
-      ...(filter ? { filter } : {})
+      ...(selection ? { selection } : {})
     };
   }
 }
@@ -155,6 +187,36 @@ export function grepOf(argv: string[]): string | undefined {
     if (a.startsWith("--grep=")) return a.slice("--grep=".length);
   }
   return undefined;
+}
+
+/** Options of `playwright test` that take a value and do not choose which tests run: skipped, with their value. */
+const OPTIONS_WITH_A_VALUE = new Set(["-c", "--config", "-j", "--workers", "--retries", "--timeout", "--reporter", "--output", "--global-timeout", "--max-failures", "--trace", "--repeat-each", "--tsconfig", "--ui-host", "--ui-port", "--update-snapshots", "--pass-with-no-tests"]);
+/** Options that take a value and choose which tests run. */
+const SELECTING_WITH_A_VALUE = new Set(["-g", "--grep", "-gv", "--grep-invert", "--project", "--shard", "--tag"]);
+/** Options without a value that choose which tests run. */
+const SELECTING = new Set(["--last-failed", "--only-changed"]);
+
+/**
+ * What narrowed a `playwright test` run, as it was typed: `-g`, `--grep-invert`, `--project`, `--shard`, `--tag`, `--last-failed`, `--only-changed` and file arguments.
+ * undefined when nothing did, and for any other command (`merge-reports`: the shards' selections are not known to it).
+ */
+export function selectionOf(argv: string[]): string | undefined {
+  const at = argv.indexOf("test");
+  if (at < 0) return undefined;
+  const parts: string[] = [];
+  for (let i = at + 1; i < argv.length; i++) {
+    const a = argv[i]!;
+    if (a.startsWith("-")) {
+      const [name] = a.split("=");
+      const inline = a.includes("=");
+      if (SELECTING_WITH_A_VALUE.has(name!)) {
+        parts.push(inline ? a : `${a} ${argv[i + 1] ?? ""}`.trim());
+        if (!inline) i++;
+      } else if (SELECTING.has(name!)) parts.push(a);
+      else if (OPTIONS_WITH_A_VALUE.has(name!) && !inline) i++;
+    } else parts.push(a);
+  }
+  return parts.length ? parts.join(" ") : undefined;
 }
 
 function gitSha(): string | undefined {
@@ -184,21 +246,14 @@ function readResult(r: TestResult): CaseResult | Error | undefined {
   }
 }
 
-/** What failed on an attempt, one line per failed check: for a case that passed only on a retry. */
-function failuresOf(r: TestResult): string[] {
-  const parsed = readResult(r);
-  if (parsed && !(parsed instanceof Error)) {
-    const lines = parsed.checks.filter((c) => c.ok === false).map((c) => `${c.label}: ${gist(c.message ?? "")}`);
-    if (lines.length) return lines;
-  }
-  return r.status === "passed" || r.status === "skipped" ? [] : [`the attempt ${r.status}${r.error?.message ? `: ${gist(r.error.message)}` : ""}`];
-}
-
-/** The first lines of a failure message that say something, as one line: "expect(received).toBe(expected) / Expected: 3 / Received: 2". */
-function gist(s: string): string {
-  const lines = stripVTControlCharacters(s).split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 3);
-  const text = lines.join(" / ");
-  return text.length > 300 ? text.slice(0, 299) + "…" : text;
+/** Playwright's own error for an attempt, as text without colours: how a case is failed that its checks do not explain. */
+function errorText(r: TestResult): string {
+  const text = (r.errors ?? [])
+    .map((e) => e.message ?? "")
+    .filter(Boolean)
+    .join("\n\n");
+  const one = text || r.error?.message || "";
+  return stripVTControlCharacters(one).slice(0, 2000);
 }
 
 /**
@@ -211,7 +266,8 @@ function copyScreens(c: CaseResult, r: TestResult, out: string, dir: string): Ca
   const taken = new Set<unknown>();
   const done = new Map<string, string | undefined>();
   let count = 0;
-  const bring = (orig: string | undefined, attachName: string): string | undefined => {
+  // Files are named by number and kind only: a label is the student's or the case's words and may hold a key, and names are not redacted.
+  const bring = (orig: string | undefined, attachName: string, kind: "checkpoint" | "failed-check" | "stopped"): string | undefined => {
     if (!orig) return undefined;
     if (done.has(orig)) return done.get(orig);
     let from = existsSync(orig) ? orig : undefined;
@@ -225,7 +281,7 @@ function copyScreens(c: CaseResult, r: TestResult, out: string, dir: string): Ca
     let rel: string | undefined;
     if (from) {
       mkdirSync(dest, { recursive: true });
-      const name = `${++count}-${slug(attachName)}.png`;
+      const name = `${++count}-${kind}.png`;
       copyFileSync(from, path.join(dest, name));
       rel = `screens/${dir}/${name}`;
     }
@@ -233,18 +289,19 @@ function copyScreens(c: CaseResult, r: TestResult, out: string, dir: string): Ca
     return rel;
   };
   const screenshots = c.screenshots.flatMap((s) => {
-    const p = bring(s.path, `checkpoint: ${s.name}`);
+    const p = bring(s.path, `checkpoint: ${s.name}`, "checkpoint");
     return p ? [{ name: s.name, path: p }] : [];
   });
   const checks = c.checks.map((k) => {
     if (!k.screenshot) return k;
     const { screenshot: _drop, ...rest } = k;
-    const p = bring(k.screenshot, k.kind === "step" && k.ok === false ? `stopped at: ${k.step ?? ""}` : `failed check: ${k.label}`);
+    const stop = k.kind === "step" && k.ok === false;
+    const p = bring(k.screenshot, stop ? `stopped at: ${k.step ?? ""}` : `failed check: ${k.label}`, stop ? "stopped" : "failed-check");
     return p ? { ...rest, screenshot: p } : rest;
   });
   let stoppedAt = c.stoppedAt;
   if (stoppedAt) {
-    const p = bring(stoppedAt.screenshot, `stopped at: ${stoppedAt.step}`);
+    const p = bring(stoppedAt.screenshot, `stopped at: ${stoppedAt.step}`, "stopped");
     stoppedAt = { ...stoppedAt, screenshot: p ?? "" };
   }
   return { ...c, screenshots, checks, ...(stoppedAt ? { stoppedAt } : {}) };

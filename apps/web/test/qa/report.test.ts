@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildReport,
-  isFixtureMechanics,
   markOf,
   rerunCommand,
   situationWords,
   STORIES,
+  type FirstTry,
   type Mark,
   type ReportCase
 } from "../../qa/report/build";
@@ -40,7 +40,7 @@ const nothing = (over: Partial<CheckResult> = {}): CheckResult => ({ kind: "data
 const result = (checks: CheckResult[], over: Partial<CaseResult> = {}): CaseResult => ({ meta: meta(), checks, reached: [], screenshots: [], keys: [], durationMs: 12_300, ...over });
 const kase = (checks: CheckResult[], over: Partial<ReportCase> = {}): ReportCase => ({ ...result(checks), retries: 0, status: "passed", ...over });
 const RUN = { sha: "abc1234def", date: "2026-10-24 09:30 UTC", kind: "slice" as const, durationMs: 754_000 };
-const parse = (json: string) => JSON.parse(json) as { stories: Array<{ id: string; cases: number; run: boolean; counts: Record<string, number>; secondTry: number }>; cases: Array<{ id: string; mark: Mark }> } & Record<string, any>;
+const parse = (json: string) => JSON.parse(json) as { stories: Array<{ id: string; cases: number; run: boolean; counts: Record<string, number>; secondTry: number }>; cases: Array<{ id: string; mark: Mark; shown: string }> } & Record<string, any>;
 
 describe("markOf, in the order of the spec", () => {
   it("1. a failed check no fault explains is a FAIL, of the most severe kind: Error, Unexpected, UI, Slow", () => {
@@ -336,7 +336,13 @@ describe("the fix brief", () => {
 });
 
 describe("a pass on retry is listed apart", () => {
-  const flaky = kase([ok()], { retries: 1, status: "passed", meta: meta({ id: "S2-03", story: "S2", goal: "Find a paper" }), earlierFailures: ["the list has 3 rows: Expected 3, Received 2"] });
+  const firstTry = (checks: CheckResult[], over: Partial<CaseResult> = {}, extra: Partial<FirstTry> = {}): FirstTry => ({
+    status: "failed",
+    result: result(checks, { meta: meta({ id: "S2-03", story: "S2", goal: "Find a paper" }), ...over }),
+    ...extra
+  });
+  const first = firstTry([bad("unexpected", { label: "the list has 3 rows", message: "expect(received).toBe(expected)\n\nExpected: 3\nReceived: 2", source: "wave-b1 row 10", step: "run the test", screenshot: "screens/S2-03/first-try/1-failed-check.png" })], {}, { trace: "traces/S2-03-first-try.zip" });
+  const flaky = kase([ok()], { retries: 1, status: "passed", meta: meta({ id: "S2-03", story: "S2", goal: "Find a paper" }), firstTry: first });
   const clean = kase([ok()], { meta: meta({ id: "S2-01", story: "S2", goal: "Read a paper" }) });
 
   it("never counts it as a clean PASS, and lists it with what failed the first time", () => {
@@ -344,7 +350,7 @@ describe("a pass on retry is listed apart", () => {
     for (const text of [out.summaryMd, out.html]) {
       expect(text).toMatch(/Passed only on a second try/);
       expect(text).toContain("S2-03");
-      expect(text).toContain("Expected 3, Received 2");
+      expect(text).toContain("the list has 3 rows: expect(received).toBe(expected) / Expected: 3 / Received: 2");
     }
     const section = out.summaryMd.slice(out.summaryMd.indexOf("Passed only on a second try"));
     expect(section.slice(0, section.indexOf("Not covered"))).toContain("S2-03");
@@ -352,6 +358,68 @@ describe("a pass on retry is listed apart", () => {
     expect(parse(out.json).stories.find((s) => s.id === "S2")!.secondTry).toBe(1);
     const row = out.summaryMd.split("\n").find((l) => l.startsWith("| S2 "))!;
     expect(row).toMatch(/2nd try/);
+  });
+
+  it("shows the case as PASS on retry with its first try's mark, never as a plain PASS (md and html)", () => {
+    const out = buildReport([flaky], known, RUN);
+    expect(out.summaryMd).toContain("#### PASS on retry (first try FAIL: Unexpected) — S2-03 Find a paper");
+    expect(out.summaryMd).not.toMatch(/^- PASS S2-03/m);
+    expect(out.html).toContain('<span class="mark retry">PASS on retry (first try FAIL: Unexpected)</span>');
+    expect(out.html).not.toContain('<span class="mark pass">PASS</span>');
+    expect(parse(out.json).cases[0]!.shown).toBe("PASS on retry (first try FAIL: Unexpected)");
+    expect(parse(out.json).cases[0]!.mark).toBe("PASS");
+  });
+
+  it("gives it a fix-brief entry from the first try, with the first try's failed checks, evidence and the section 13 fields", () => {
+    const { fixBriefMd } = buildReport([flaky], known, RUN);
+    expect(fixBriefMd).toContain("## Entry 1: S2-03 — PASS on retry (first try FAIL: Unexpected)");
+    expect(fixBriefMd).toContain("passed on a retry");
+    expect(fixBriefMd).toContain('qa:local -g "S2-03"');
+    expect(fixBriefMd).toContain("the list has 3 rows");
+    expect(fixBriefMd).toContain("Expected: 3");
+    expect(fixBriefMd).toContain("wave-b1 row 10");
+    expect(fixBriefMd).toContain("screens/S2-03/first-try/1-failed-check.png");
+    expect(fixBriefMd).toContain("traces/S2-03-first-try.zip");
+    expect(fixBriefMd).toContain("1. open the data");
+    expect(fixBriefMd).not.toMatch(/nothing to fix/i);
+  });
+
+  it("lists only the first try's checks that failed the case, not its known-fault checks", () => {
+    const both = firstTry([bad("unexpected", { label: "a plain failure", message: "boom" }), bad("unexpected", { label: "a known one", message: "the known message", known: "F1" })]);
+    const out = buildReport([kase([ok()], { retries: 1, meta: meta({ id: "S2-04", story: "S2" }), firstTry: both })], known, RUN);
+    expect(out.fixBriefMd).toContain("a plain failure");
+    expect(out.fixBriefMd).not.toContain("a known one");
+    expect(out.fixBriefMd).not.toContain("the known message");
+    const section = out.summaryMd.slice(out.summaryMd.indexOf("Passed only on a second try"));
+    expect(section.slice(0, section.indexOf("Not covered"))).not.toContain("a known one");
+  });
+
+  it("marks a first try that Playwright failed for no reason its checks give as FAIL: Error, and one that ended with no result the same", () => {
+    const knownOnly = firstTry([bad("unexpected", { label: "a known one", message: "the known message", known: "F1" })], {}, { error: "Error: the teardown threw" });
+    const a = buildReport([kase([ok()], { retries: 1, meta: meta({ id: "S2-05", story: "S2" }), firstTry: knownOnly })], known, RUN);
+    expect(a.summaryMd).toContain("PASS on retry (first try FAIL: Error)");
+    expect(a.fixBriefMd).toContain("none of its checks says why");
+    expect(a.fixBriefMd).toContain("Error: the teardown threw");
+    expect(a.fixBriefMd).not.toContain("the known message");
+    const crashed: FirstTry = { status: "timedOut", error: "Test timeout of 600000ms exceeded." };
+    const b = buildReport([kase([ok()], { retries: 1, meta: meta({ id: "S2-06", story: "S2" }), firstTry: crashed })], known, RUN);
+    expect(b.summaryMd).toContain("PASS on retry (first try FAIL: Error)");
+    expect(b.fixBriefMd).toContain("Entry 1: S2-06");
+    expect(b.fixBriefMd).toContain("Test timeout of 600000ms exceeded.");
+  });
+
+  it("flags a retry in the column of the mark the case ended with, never under PASS for a KNOWN FAULT", () => {
+    const kf = kase([bad("unexpected", { known: "F1" })], { retries: 1, meta: meta({ id: "S2-07", story: "S2" }) });
+    const out = buildReport([kf, clean], known, RUN);
+    const s2 = parse(out.json).stories.find((s) => s.id === "S2")! as unknown as { secondTryByMark: Record<string, number> };
+    expect(s2.secondTryByMark["KNOWN FAULT"]).toBe(1);
+    expect(s2.secondTryByMark["PASS"]).toBe(0);
+    const row = out.summaryMd.split("\n").find((l) => l.startsWith("| S2 "))!;
+    const cells = row.split("|").map((c) => c.trim());
+    // | story | cases | PASS | UI | Error | Unexpected | Slow | KNOWN FAULT | ...
+    expect(cells[3]).toBe("1");
+    expect(cells[8]).toBe("1 (1 on a 2nd try)");
+    expect(out.html).toContain("<td>1 (1 on a 2nd try)</td>");
   });
 
   it("says nothing of retries when none was needed", () => {
@@ -490,17 +558,6 @@ describe("harness selftests, blocked and skipped cases, information", () => {
     expect(parse(out.json).harnessSelftests.failed).toBe(1);
   });
 
-  it("recognises the fixture's own cases by their ids, and the cases that are real checks", () => {
-    expect(isFixtureMechanics("SELF-19", false)).toBe(true);
-    expect(isFixtureMechanics("SELF-14B", false)).toBe(true);
-    expect(isFixtureMechanics("SELF-22", true)).toBe(true);
-    expect(isFixtureMechanics("SELF-HARNESS", true)).toBe(true);
-    expect(isFixtureMechanics("SELF-HARNESS", false)).toBe(false);
-    expect(isFixtureMechanics("SELF-STUDENT", false)).toBe(false);
-    expect(isFixtureMechanics("SELF-LAYOUT-1", false)).toBe(false);
-    expect(isFixtureMechanics("S5-01", true)).toBe(false);
-  });
-
   it("shows a blocked case as BLOCKED, with the reason and the page it stopped on", () => {
     const blocked = kase([ok()], {
       status: "skipped",
@@ -540,10 +597,25 @@ describe("harness selftests, blocked and skipped cases, information", () => {
     expect(parse(out.json).warnings.join(" ")).toContain("ZZ99");
   });
 
-  it("warns when Playwright failed a case that its checks do not explain", () => {
-    const odd = kase([ok()], { status: "failed" });
+  it("marks a case FAIL: Error when Playwright failed it after its result was attached and no check says why", () => {
+    const odd = kase([ok()], { status: "failed", error: "Error: fixture teardown failed: the context was closed" });
     const out = buildReport([odd], known, RUN);
-    expect(parse(out.json).warnings.join(" ")).toMatch(/S5-01.*failed/);
+    expect(parse(out.json).cases[0]!.mark).toBe("FAIL: Error");
+    expect(parse(out.json).stories.find((s) => s.id === "S5")!.counts["FAIL: Error"]).toBe(1);
+    for (const text of [out.summaryMd, out.html]) {
+      expect(text).toContain("Playwright ended the case as failed, and none of its checks says why");
+      expect(text).toContain("fixture teardown failed: the context was closed");
+    }
+    expect(out.fixBriefMd).toContain("Entry 1: S5-01 — FAIL: Error");
+    expect(out.fixBriefMd).toContain("fixture teardown failed: the context was closed");
+    expect(out.summaryMd).not.toContain("S5-01 goal PASS");
+  });
+
+  it("does not add that failure to a case that already fails by its checks", () => {
+    const failing = kase([bad("ui")], { status: "failed", error: "the teardown threw: 1 check failed" });
+    const out = buildReport([failing], known, RUN);
+    expect(out.summaryMd).not.toContain("none of its checks says why");
+    expect(parse(out.json).cases[0]!.mark).toBe("FAIL: UI");
   });
 
   it("writes an allowance with no reason (a host) without empty brackets", () => {
@@ -555,12 +627,23 @@ describe("harness selftests, blocked and skipped cases, information", () => {
 
   it("says part of the full grid when a full run was narrowed with -g", () => {
     const c = kase([ok()]);
-    const narrowed = buildReport([c], known, { ...RUN, kind: "full", filter: "S5-01" });
-    expect(narrowed.summaryMd).toContain("What ran: part of the full grid, selected with -g S5-01");
-    expect(narrowed.html).toContain("part of the full grid");
-    expect(narrowed.fixBriefMd).toContain("part of the full grid");
+    const narrowed = buildReport([c], known, { ...RUN, kind: "full", selection: "-g S5-01" });
+    expect(narrowed.summaryMd).toContain("What ran: part of the grid, selected with -g S5-01");
+    expect(narrowed.html).toContain("part of the grid, selected with -g S5-01");
+    expect(narrowed.fixBriefMd).toContain("part of the grid, selected with -g S5-01");
+    expect(narrowed.summaryMd).not.toContain("full grid");
     expect(buildReport([c], known, { ...RUN, kind: "full" }).summaryMd).toContain("What ran: full grid");
-    expect(buildReport([c], known, { ...RUN, kind: "slice", filter: "@slice" }).summaryMd).toContain("What ran: slice (each story's plain run and every regression), selected with -g @slice");
+    expect(buildReport([c], known, { ...RUN, kind: "slice", selection: "-g @slice" }).summaryMd).toContain("What ran: slice (each story's plain run and every regression), selected with -g @slice");
+  });
+
+  it("says any other narrowing is only part of the grid or of the slice: a project, a file, --last-failed, --grep-invert", () => {
+    const c = kase([ok()]);
+    for (const selection of ["--project=phone", "s05 -g S5-01", "--last-failed", "-gv @slow"]) {
+      const md = buildReport([c], known, { ...RUN, kind: "full", selection }).summaryMd;
+      expect(md).toContain(`What ran: part of the grid, selected with ${selection}`);
+    }
+    expect(buildReport([c], known, { ...RUN, kind: "release", selection: "--project=live-ai" }).summaryMd).toContain("part of the grid, selected with --project=live-ai");
+    expect(buildReport([c], known, { ...RUN, kind: "slice", selection: "-g @slice --project=phone" }).summaryMd).toContain("What ran: part of the slice, selected with -g @slice --project=phone");
   });
 
   it("lists what a case excused on purpose, and the default allowances once", () => {
@@ -649,5 +732,134 @@ describe("situationWords", () => {
 
   it("says so when the case states no situation", () => {
     expect(situationWords({})).toBe("situation not stated");
+  });
+});
+
+describe("a case waiting for OJ's decision", () => {
+  const awaiting = kase(
+    [
+      bad("unexpected", { kind: "conceptual", label: "the statement says where the requests go", message: "Expected: server\nReceived: browser", known: "O4", source: "wave-b1 row 12", step: "insert the result" }),
+      ok({ kind: "conceptual", label: "the statement counts the Explain request", known: "O4" }),
+      nothing({ label: "never measured", known: "O4" })
+    ],
+    { meta: meta({ id: "S9-03", story: "S9", goal: "AI-use statement" }) }
+  );
+
+  it("lists each awaiting check with its id, owner, label, whether it held and what happened", () => {
+    const out = buildReport([awaiting], known, RUN);
+    for (const text of [out.summaryMd, out.html]) {
+      expect(text).toContain("O4");
+      expect(text).toContain("OJ");
+      expect(text).toContain("The AI-use statement says the browser sends the requests");
+      expect(text).toContain("the statement says where the requests go");
+      expect(text).toContain("the statement counts the Explain request");
+      expect(text).toContain("Received: browser");
+      expect(text).toContain("wave-b1 row 12");
+    }
+    expect(out.summaryMd).toContain("not as expected");
+    expect(out.summaryMd).toContain("as expected");
+    expect(out.summaryMd).toMatch(/#### AWAITING DECISION — S9-03/);
+    expect(out.summaryMd).not.toMatch(/- PASS S9-03/);
+    expect(parse(out.json).cases[0]!.mark).toBe("AWAITING DECISION");
+    expect((parse(out.json).cases[0] as unknown as { awaiting: unknown[] }).awaiting).toHaveLength(2);
+  });
+
+  it("does not list the check that measured nothing as a decision, and is not in the fix brief", () => {
+    const out = buildReport([awaiting], known, RUN);
+    expect(out.summaryMd.split("**Waiting for a decision").length - 1).toBe(2);
+    expect(out.fixBriefMd).not.toContain("S9-03");
+  });
+});
+
+describe("a fault marked fixed that has come back", () => {
+  it("shows its id as the fault id in the fix brief, not none yet", () => {
+    const back = kase([bad("unexpected", { known: "F2", label: "after the network returns the pill stays unlocked", message: "the pill said locked" })], { status: "failed", meta: meta({ id: "S10-04", story: "S10", goal: "The pill" }) });
+    const { fixBriefMd } = buildReport([back], known, RUN);
+    expect(fixBriefMd).toMatch(/Fault id: F2 \(marked fixed in known\.json: this is a regression/);
+    expect(fixBriefMd).not.toContain("Fault id: none yet");
+    expect(fixBriefMd).toContain("F2: The vault shows locked after the network returns (marked fixed: it has come back)");
+  });
+
+  it("still says none yet for a fault nobody has an id for", () => {
+    const { fixBriefMd } = buildReport([kase([bad("ui")], { status: "failed" })], known, RUN);
+    expect(fixBriefMd).toContain("Fault id: none yet");
+  });
+});
+
+describe("the fix brief says where its evidence is", () => {
+  it("says paths are relative to qa-report, and names the CI artifacts", () => {
+    const { fixBriefMd, html } = buildReport([kase([bad("ui")], { status: "failed" })], known, RUN);
+    expect(fixBriefMd).toMatch(/relative to the qa-report folder/);
+    expect(fixBriefMd).toContain("qa-report-slice");
+    expect(fixBriefMd).toContain("qa-report-full");
+    expect(html).toContain("qa-report-slice");
+  });
+
+  it("says it even when there is nothing to fix", () => {
+    expect(buildReport([kase([ok()])], known, RUN).fixBriefMd).toContain("qa-report-full");
+  });
+});
+
+describe("the fake provider's log, as the report states it", () => {
+  const c = kase([ok()]);
+
+  it("says how many requests were read, and that none carried a stray key", () => {
+    const out = buildReport([c], known, RUN, { providerLog: { entries: 24, strays: 0 } });
+    for (const text of [out.summaryMd, out.html]) expect(text).toContain("Fake provider log: 24 requests read; none carried a key that is not a test key.");
+    expect(parse(out.json).providerLog).toEqual({ entries: 24, strays: 0 });
+  });
+
+  it("says not checked when there was no log, so a merged report does not read as clean", () => {
+    const out = buildReport([c], known, RUN, { providerLog: { entries: 0, strays: 0 } });
+    for (const text of [out.summaryMd, out.html]) expect(text).toContain("Fake provider log: not checked: no provider log here (0 requests read).");
+    expect(out.summaryMd).not.toContain("none carried a key");
+  });
+
+  it("says when the log could not be read, and counts the strays when there are some", () => {
+    expect(buildReport([c], known, RUN, { providerLog: { entries: 0, strays: 0, unreadable: true } }).summaryMd).toContain("Fake provider log: not checked: the log could not be read.");
+    expect(buildReport([c], known, RUN, { providerLog: { entries: 5, strays: 2 } }).summaryMd).toContain("5 requests read; 2 carried a key that is not a test key (see Run-level errors).");
+  });
+
+  it("says nothing when the caller did not read a log", () => {
+    expect(buildReport([c], known, RUN).summaryMd).not.toContain("Fake provider log");
+  });
+});
+
+describe("the Harness row and the story labels", () => {
+  const harness = (id: string, over: Partial<ReportCase> = {}) => kase([ok()], { meta: meta({ id, story: "S0", goal: `harness ${id}` }), ...over });
+
+  it("puts the harness's own real checks in a Harness row of their own, not under S0", () => {
+    const real = kase([ok()], { meta: meta({ id: "S0-01", story: "S0", goal: "The whole journey" }) });
+    const out = buildReport([real, harness("SELF-HARNESS"), harness("SELF-STUDENT-DOC"), harness("SELF-SERVICES"), harness("SELF-LAYOUT-1")], known, RUN);
+    const r = parse(out.json);
+    expect(r.stories.map((s) => s.id).slice(-2)).toEqual(["L", "Harness"]);
+    expect(r.stories.find((s) => s.id === "S0")).toMatchObject({ cases: 1, run: true });
+    expect(r.stories.find((s) => s.id === "Harness")).toMatchObject({ cases: 4, run: true });
+    expect(out.summaryMd.split("\n").find((l) => l.startsWith("| S0 "))).toMatch(/\| 1 \| 1 \|/);
+    const row = out.summaryMd.split("\n").find((l) => l.startsWith("| Harness "))!;
+    expect(row).toContain("| 4 |");
+    expect(out.summaryMd).toMatch(/### Harness\. The QA harness's own checks/);
+    const s0 = out.summaryMd.slice(out.summaryMd.indexOf("### S0."), out.summaryMd.indexOf("### Harness."));
+    expect(s0).toContain("S0-01");
+    expect(s0).not.toContain("SELF-HARNESS");
+    expect(out.html).toContain('id="story-Harness"');
+  });
+
+  it("has no Harness row when there is no harness case, and a failing harness case is a FAIL there", () => {
+    const none = parse(buildReport([kase([ok()])], known, RUN).json);
+    expect(none.stories.map((s) => s.id)).not.toContain("Harness");
+    const failing = buildReport([kase([bad("error")], { status: "failed", meta: meta({ id: "SELF-HARNESS", story: "S0" }) })], known, RUN);
+    expect(parse(failing.json).stories.find((s) => s.id === "Harness")!.counts["FAIL: Error"]).toBe(1);
+    expect(parse(failing.json).stories.find((s) => s.id === "S0")!.counts["FAIL: Error"]).toBe(0);
+    expect(failing.fixBriefMd).toContain("SELF-HARNESS");
+  });
+
+  it("shows each story's goal beside its id in the summary table, in markdown and html", () => {
+    const out = buildReport([kase([ok()])], known, RUN);
+    const row = out.summaryMd.split("\n").find((l) => l.startsWith("| S5 "))!;
+    expect(row.startsWith("| S5 — I analyse my survey and report the result in my thesis. |")).toBe(true);
+    expect(out.summaryMd.split("\n").find((l) => l.startsWith("| S4 "))!.startsWith("| S4 — I list my participants and keep their names out of my data. |")).toBe(true);
+    expect(out.html).toContain('<a href="#story-S5">S5</a> — I analyse my survey and report the result in my thesis.');
+    expect(out.html).not.toContain("<th>Goal</th>");
   });
 });

@@ -15,6 +15,8 @@ import { RULE_LABEL } from "../support/watcher";
  * (or use `test.fail()`) pin what the teardown does: which failed checks turn the case red.
  */
 const TAGS = { tag: ["@selftest", "@slice"] };
+/** The tests that cannot set `qa.selfTest` (they pin what the teardown does, or need it to throw): the report reads this tag and leaves them out of the marks (ruling R21). */
+const MECHANICS = { tag: ["@selftest", "@slice", "@mechanics"] };
 const meta = (id: string, steps: string[]): CaseMeta => ({ story: "S0", id, goal: "Check the fixture", situation: {}, steps });
 /** A page nothing listens on, for pages that need a real address (a navigation, a response header, a status). Every request to it is answered by a route. */
 const NOWHERE = "http://localhost:1";
@@ -482,7 +484,7 @@ test("fixture: a timed function that throws measured nothing, and the error goes
   expect(c!.message).toContain("no export button");
 });
 
-test("fixture: a failing check with a known id is recorded with it, and does not fail the case", TAGS, async ({ qa }) => {
+test("fixture: a failing check with a known id is recorded with it, and does not fail the case", MECHANICS, async ({ qa }) => {
   // No selfTest here: the teardown runs as it does in a real case, and this test passes only if it does not throw.
   qa.begin(meta("SELF-19", ["go"]));
   const ok = await qa.check("data", "open answers are not called names", async () => expect("looks like names").toBe("no flag"), { source: "tools-b row 4", known: "F1" });
@@ -499,25 +501,25 @@ test("fixture: the same check passing is recorded ok with its known id (the repo
   expect(qa.result().checks[0]).toMatchObject({ kind: "data", ok: true, known: "F1" });
 });
 
-test("fixture: a failing check awaiting a decision does not fail the case either", TAGS, async ({ qa }) => {
+test("fixture: a failing check awaiting a decision does not fail the case either", MECHANICS, async ({ qa }) => {
   qa.begin(meta("SELF-21", ["go"]));
   await qa.check("conceptual", "the statement says where the requests go", async () => expect("browser").toBe("server"), { known: "O4" });
   expect(qa.result().checks[0]).toMatchObject({ ok: false, known: "O4" });
 });
 
-test("fixture: a failing check with no known id fails the case", TAGS, async ({ qa }) => {
+test("fixture: a failing check with no known id fails the case", MECHANICS, async ({ qa }) => {
   test.fail();
   qa.begin(meta("SELF-22", ["go"]));
   await qa.check("data", "a plain failure", async () => expect(1).toBe(2));
 });
 
-test("fixture: a failing check whose known entry is fixed fails the case", TAGS, async ({ qa }) => {
+test("fixture: a failing check whose known entry is fixed fails the case", MECHANICS, async ({ qa }) => {
   test.fail();
   qa.begin(meta("SELF-23", ["go"]));
   await qa.check("data", "F2 came back", async () => expect(1).toBe(2), { known: "F2" });
 });
 
-test("fixture: a failing check naming an id that known.json lacks fails the case, and the result notes the id", TAGS, async ({ qa }) => {
+test("fixture: a failing check naming an id that known.json lacks fails the case, and the result notes the id", MECHANICS, async ({ qa }) => {
   test.fail();
   qa.begin(meta("SELF-24", ["go"]));
   await qa.check("data", "an unknown id", async () => expect(1).toBe(2), { known: "ZZ99" });
@@ -625,7 +627,7 @@ test("fixture: a request the fake provider could not take, under a key that is o
   expect(withLabel(qa.result(), RULE_LABEL.provider)[0]!.message).toContain('key mode "ok"');
 });
 
-test("fixture: a provider request nobody could answer fails the case", TAGS, async ({ qa }) => {
+test("fixture: a provider request nobody could answer fails the case", MECHANICS, async ({ qa }) => {
   test.fail();
   qa.begin(meta("SELF-28", ["go"]));
   const key = `gsk_qa_ok_${randomUUID().slice(0, 8)}`;

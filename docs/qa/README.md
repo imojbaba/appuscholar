@@ -24,6 +24,8 @@ Good to know:
 - It uses its own ports (web 3010, API 8798, database 5443), so it never touches a server another checkout is running. If one of those ports is taken, the run **refuses to start** and says which, because a server left over from another run would answer in place of the new build and the run would test old code. Stop what holds the port (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), or choose other ports with `QA_API_PORT`, `QA_WEB_PORT` and `QA_PG_PORT`.
 - The first run on a machine needs the browser: `pnpm --filter @appuscholar/web exec playwright install chromium`.
 - `QA_WORKERS` sets how many cases run at once (default 2).
+- The header of the report says what ran. Anything that narrows the run (`-g`, `--project`, a file name, `--last-failed`, `--grep-invert`) makes it "part of the grid, selected with ...", never "full grid".
+- A selftest of the fixture that must fail on purpose, or pin a mark, and so cannot set `qa.selfTest`, carries the tag `@mechanics`; the report leaves it out of the marks.
 - Only test values are used: generated passphrases, `@qa.test` addresses, keys that look like `gsk_qa_<mode>_<random>`. The AI provider is faked behind our own API; nothing leaves the machine except what a case announces.
 
 ## Where the report is
@@ -69,16 +71,18 @@ CI turns red only on a FAIL. When one case has several results, the mark is the 
 
 1. **Header:** the commit, the date, what ran (slice, full or release), and how long it took.
 2. **Run-level errors** (only when there are some): problems of the whole run, such as a key that is not a test key reaching the fake provider, or a test that ended with no case result. The run is red until they are cleared.
-3. **Summary by story:** one row per story with the number of cases at each mark. A story with no cases shows NOT RUN. A pass that needed a retry is counted but flagged ("on a 2nd try"). The line under the table counts the layer's own selftests, which are kept out of the marks.
+3. **Summary by story:** one row per story, with its goal beside its id, and the number of cases at each mark. A story with no cases shows NOT RUN. The harness's own real checks (sign-in on the production build, the outside services, the student helpers, the layout rules) have a row called Harness, not a place under S0. A case that needed a retry is counted under the mark it ended with and flagged ("on a 2nd try"). The lines under the table count the layer's own selftests, which are kept out of the marks, and say how many requests of the fake provider's log were read (0 reads "not checked: no provider log here", as in a merged report).
 4. **Cases by story:** the story's goal in the student's words, then each case: its situation in words, its mark, and for every failed check what was expected, what happened, the kind of failure, where the expectation comes from, the step and the screenshot. A case that stopped names the page it stopped on and the steps it could not reach.
 5. **Screens:** the screenshot strip of each case, for a person to glance at. The checks cannot judge how a screen reads.
-6. **Passed only on a second try:** every case that failed first and passed on its retry, with what failed the first time. It is never shown as a clean PASS.
+6. **Passed only on a second try:** every case that failed first and passed on its retry, with what failed the first time. It is never shown as a clean PASS: it reads "PASS on retry (first try FAIL: Unexpected)", and the first try's failed checks, screenshots and replay are kept.
 7. **Not covered:** what this run did not check: what the layer never checks (field-by-field values, the engines' numbers, prose, the real live site), stories not run, cases that did not run, and every NOT CHECKED check. A green report never reads as more than it is.
 8. **For information:** things that are not failures: the library probes of `eval` that the security policy refuses, the answers every case expects, and anything a case excused on purpose with its reason.
 
 ## The fix brief
 
-`fix-brief.md` has one entry per FAIL and per FIXED?. Each entry stands on its own so that a fresh developer session can act on it: the case, story and situation; the steps to reproduce as a student does them; what was expected and where that comes from; what happened and the kind of failure; the evidence; the command that re-runs only that case; and the code the case touches.
+`fix-brief.md` has one entry per FAIL and per FIXED?, and one for each case that failed its first try and passed on a retry (a fault that comes and goes reaches the brief too). A case that Playwright failed after its checks had ended is a FAIL: Error. Each entry stands on its own so that a fresh developer session can act on it: the case, story and situation; the steps to reproduce as a student does them; what was expected and where that comes from; what happened and the kind of failure; the evidence; the command that re-runs only that case; and the code the case touches.
+
+Screenshot and replay paths in the brief are relative to the `qa-report/` folder; on CI that folder is the run's artifact (`qa-report-slice` for a pull request, `qa-report-full` for a full run).
 
 **Nothing in it goes to a developer session until OJ says so.** OJ reads the report and the brief, and may choose which entries go and in what order. A developer session then fixes the fault in its own pull request, adds the unit test that pins it, re-runs the case with the command in the entry, and moves the fault in `apps/web/qa/known.json` to fixed. The QA branch never changes product code.
 
