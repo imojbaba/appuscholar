@@ -79,26 +79,73 @@ export function noteHasWork(n: ApNote): boolean {
 /** Whether a note has any card field filled in. */
 export const noteHasCard = (n: ApNote): boolean => Object.values(n.card).some(filled);
 
-/** One merged note from the notes of one paper, in order: per stage the one with the student's words wins, else the first; per card field the filled one wins, the first on a tie. */
+/**
+ * The distinct filled texts of one field across the notes of one paper, in note order, joined with a blank line between (ruling B2-R31): the same text twice is one. A single
+ * text comes back exactly as it is; undefined when none is filled.
+ */
+function joinDistinct(values: unknown[]): string | undefined {
+  const seen = new Set<string>();
+  const texts: string[] = [];
+  for (const v of values) {
+    if (!filled(v)) continue;
+    const text = (v as string).trim();
+    if (!seen.has(text)) { seen.add(text); texts.push(v as string); }
+  }
+  return texts.length <= 1 ? texts[0] : texts.map((x) => x.trim()).join("\n\n");
+}
+
+/**
+ * One merged note from the notes of one paper, in order (ruling B2-R31: nothing the student wrote leaves the view): per stage, the student's words of every note that has some,
+ * each distinct text once, in note order with a blank line between; the AI reading and the rest of the stage are those of the first note with words, else the first note that
+ * has the stage. Per card field, every distinct filled value the same way; a field no note has filled keeps the first note's value.
+ */
 function mergeNotes(notes: ApNote[]): Pick<ApNote, "stages" | "card"> {
   const stages: ApNote["stages"] = {};
   for (const k of new Set(notes.flatMap((n) => Object.keys(n.stages)))) {
     const have = notes.filter((n) => n.stages[k] !== undefined);
-    stages[k] = (have.find((n) => filled(n.stages[k]!.mine)) ?? have[0]!).stages[k]!;
+    const base = (have.find((n) => filled(n.stages[k]!.mine)) ?? have[0]!).stages[k]!;
+    const mine = joinDistinct(have.map((n) => n.stages[k]!.mine));
+    stages[k] = mine !== undefined && mine !== base.mine ? { ...base, mine } : base;
   }
   const card: ApNote["card"] = {};
   for (const k of new Set(notes.flatMap((n) => Object.keys(n.card)))) {
     const have = notes.filter((n) => n.card[k] !== undefined);
-    card[k] = (have.find((n) => filled(n.card[k])) ?? have[0]!).card[k];
+    card[k] = joinDistinct(have.map((n) => n.card[k])) ?? have[0]!.card[k];
   }
   return { stages, card };
 }
 
 /**
+ * What a note that moved earlier now holds and its target lacks (ruling B2-R33): a tab on the previous build can still write to the old key. A stage the target does not have
+ * (with words or a reading), the words of a stage the target has none for, and a card field the target has empty are copied; nothing the target has is written over. The same
+ * note when it lacks nothing.
+ */
+function fillFrom(target: ApNote, moved: ApNote): ApNote {
+  let stages = target.stages, card = target.card;
+  for (const [k, s] of Object.entries(moved.stages)) {
+    const cur = target.stages[k];
+    if (cur === undefined && (filled(s.mine) || s.res !== undefined)) {
+      if (stages === target.stages) stages = { ...stages };
+      stages[k] = s;
+    } else if (cur !== undefined && !filled(cur.mine) && filled(s.mine)) {
+      if (stages === target.stages) stages = { ...stages };
+      stages[k] = { ...cur, mine: s.mine };
+    }
+  }
+  for (const [k, v] of Object.entries(moved.card)) {
+    if (!filled(v) || filled(target.card[k])) continue;
+    if (card === target.card) card = { ...card };
+    card[k] = v;
+  }
+  return stages === target.stages && card === target.card ? target : { ...target, stages, card };
+}
+
+/**
  * Moves each old note ('a' + the squashed title + the characters read) to `p:<pid>` of the paper whose title it has (apSquash equal). A title that two different pids
- * share is left alone, and so is a note with no title. The notes of one paper are merged with a note already kept under its `p:<pid>` first (mergeNotes); the old
- * keys stay, whole, with `movedTo`, so nothing is lost and a build that does not know the move still reads them. A note that already moved is not touched, so a second run
- * changes nothing and gives back the same object. `papers` may name a paper twice (the library and the reading list), and in different words.
+ * share is left alone, and so is a note with no title. The notes of one paper are merged with a note already kept under its `p:<pid>` first (mergeNotes: the distinct texts of
+ * the student, joined); the old keys stay, whole, with `movedTo`, so nothing is lost and a build that does not know the move still reads them. A note that moved on an earlier run
+ * gives the note it moved to whatever that lacks (fillFrom). A second run changes nothing and gives back the same object. `papers` may name a paper twice (the library and the
+ * reading list), and in different words.
  */
 export function rekeyNotes(notes: ApNotes, papers: Array<{ pid: string; title: string }>): ApNotes {
   const byTitle = new Map<string, string | null>();
@@ -116,14 +163,24 @@ export function rekeyNotes(notes: ApNotes, papers: Array<{ pid: string; title: s
     const pid = byTitle.get(apSquash(n.title));
     if (pid) moving.set(pid, [...(moving.get(pid) ?? []), key]);
   }
-  if (moving.size === 0) return notes;
-  const out: ApNotes = { ...notes };
+  let out = notes;
   for (const [pid, keys] of moving) {
+    if (out === notes) out = { ...notes };
     const target = noteKey(pid);
     const kept = notes[target];
     const merged = mergeNotes([...(kept ? [kept] : []), ...keys.map((k) => notes[k]!)]);
     out[target] = { ...(kept ?? {}), ...merged, title: kept?.title ?? titleOf.get(pid) ?? notes[keys[0]!]!.title, pid };
     for (const k of keys) out[k] = { ...notes[k]!, movedTo: target };
+  }
+  // Notes that moved on an earlier run: what an old build wrote to the old key since is carried to the note it moved to (only while that note exists).
+  for (const n of Object.values(notes)) {
+    const to = n.movedTo;
+    const target = to === undefined || !to.startsWith("p:") ? undefined : out[to];
+    if (to === undefined || target === undefined) continue;
+    const filledIn = fillFrom(target, n);
+    if (filledIn === target) continue;
+    if (out === notes) out = { ...notes };
+    out[to] = filledIn;
   }
   return out;
 }

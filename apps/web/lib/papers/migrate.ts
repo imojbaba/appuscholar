@@ -115,7 +115,8 @@ const running = new Map<string, Promise<PaperIdsResult>>();
 /**
  * Gives every library entry and reading-list paper of the project its pid and moves the old notes and the matrix cells to `p:<pid>`, in that order, each step a write of its
  * own blob. Answers "done" when nothing is left to do; "locked" when the vault is locked (nothing is read, nothing asked) or locks meanwhile; "broken" when a blob does not
- * open or is not of its shape (it, and every blob after it, is left unwritten); "busy" when it could not finish now. Two calls for one project at once are one run. Never in a
+ * open or is not of its shape (it, and every blob after it, is left unwritten; a reading-list paper that does not open is the one exception: it is skipped, its note gets no
+ * cells so a later run tries it again, the rest is done, and the answer is "broken"); "busy" when it could not finish now. Two calls for one project at once are one run. Never in a
  * place's own window.
  */
 export function ensurePaperIds(projectId: string, d: PaperMigrateDeps): Promise<PaperIdsResult> {
@@ -138,16 +139,18 @@ async function migrate(projectId: string, d: PaperMigrateDeps): Promise<PaperIds
     opened.push(b);
     return b;
   };
-  /** Whether Literature was Ready (and not reopened) before the run's first write, asked once, and whether the run wrote. */
+  /** Whether Literature was Ready (and not reopened) before the run's first write, asked once. */
   let wasReady: boolean | null = null;
-  let wrote = false;
   const write = async <T,>(b: MigrationBlob<T>, u: (prev: T | null) => T) => {
     if (wasReady === null) {
       // Before the first write moves the blob's time: a stage that cannot be asked about is not written over.
       try { wasReady = await stage.isReady(projectId); } catch { return { out: "busy" } as const; }
     }
-    wrote = true;
-    return b.write(u);
+    const w = await b.write(u);
+    // The migration's writes are not the student's work: a stage that was Ready stays Ready, stamped again with the server's clock (never this device's) right after each write
+    // that went (ruling B2-R32), so a tab closed between two steps leaves nothing reopened. A write that was refused or failed is not stamped for.
+    if (w.out === "ok" && wasReady) await stage.markReady(projectId).catch(() => undefined);
+    return w;
   };
   try {
     // 1. The library: every entry gets its pid.
@@ -181,13 +184,16 @@ async function migrate(projectId: string, d: PaperMigrateDeps): Promise<PaperIds
     const moved = rekeyNotes(stored, papers);
     const cells: Array<{ pid: string; title: string; cells: Record<string, string> }> = [];
     const asked = new Set<string>();
+    let unreadable = false;
     for (const e of index) {
       if (!e.pid || asked.has(e.pid) || moved[noteKey(e.pid)]?.cells !== undefined) continue;
       asked.add(e.pid);
-      // One reading-list paper at a time. A paper whose blob is gone has no cells; one that does not open stops the run before the notes are written.
+      // One reading-list paper at a time. A paper whose blob is gone has no cells. One that does not open is skipped (ruling B2-R32): its note gets no cells, so a later run tries it
+      // again, and the other papers go on; the answer is then "broken". One that is locked or cannot be read now stops the run.
       const paper = own(shelfPaperKind(e.id), true);
       const r = await paper.read();
       paper.close();
+      if (r.out === "broken") { unreadable = true; continue; }
       if (r.out !== "ok") return r.out;
       cells.push({ pid: e.pid, title: e.title, cells: r.value?.cells ?? {} });
     }
@@ -195,10 +201,8 @@ async function migrate(projectId: string, d: PaperMigrateDeps): Promise<PaperIds
       const w = await write(notes, (prev) => cellsToNotes(rekeyNotes(prev ?? {}, papers), cells));
       if (w.out !== "ok") return w.out;
     }
-    return "done";
+    return unreadable ? "broken" : "done";
   } finally {
     for (const b of opened) b.close();
-    // The migration's writes are not the student's work: a stage that was Ready stays Ready, stamped again with the server's clock (never this device's).
-    if (wrote && wasReady) await stage.markReady(projectId).catch(() => undefined);
   }
 }

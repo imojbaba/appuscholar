@@ -97,12 +97,12 @@ const blobText = (b: Blob) => new Promise<string>((done, fail) => {
 });
 
 /** ShelfOps over plain arrays, recording what was stored and in what order. */
-function fakeOps(init: { library?: StoredEntry[]; entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; resolveTitle?: ShelfOps["resolveTitle"]; canWrite?: boolean; create?: ShelfOps["createPaper"]; alive?: () => boolean } = {}) {
+function fakeOps(init: { library?: StoredEntry[] | null; entries?: ShelfEntry[]; papers?: Record<string, ShelfPaper>; extract?: ShelfOps["extract"]; resolveTitle?: ShelfOps["resolveTitle"]; canWrite?: boolean; create?: ShelfOps["createPaper"]; alive?: () => boolean } = {}) {
   const st = { index: init.entries ?? [] as ShelfIndex, papers: { ...(init.papers ?? {}) } as Record<string, ShelfPaper>, status: [] as string[], toasts: [] as string[], log: [] as string[], created: [] as Array<[string, ShelfPaper]> };
   const ops: ShelfOps = {
     t,
     alive: init.alive ?? (() => true),
-    library: () => init.library ?? [],
+    library: () => (init.library === undefined ? [] : init.library),
     entries: () => st.index,
     canWriteIndex: () => init.canWrite ?? true,
     updateIndex: (u) => { st.index = u(st.index); st.log.push("index"); return true; },
@@ -185,6 +185,24 @@ describe("a reading-list paper gets its pid when it is added or restored (wave B
     await addFiles([fileOf("n.pdf", 1)], ops);
     expect(st.index[0]!.pid).toBe("klibrary02");
     expect(st.index[1]!.pid).toMatch(/^k/);
+  });
+
+  it("with the library not read (null) nothing is linked and no pid is made: a new paper has none, and the papers already on the list stay as they are", async () => {
+    const entries = [old("p0", { title: "Another kept paper about study habits" }), old("p1", { pid: "kkeep01" })];
+    const { st, ops } = fakeOps({ library: null, entries, extract: async (f) => page(f.name), resolveTitle: async () => ({ title: "A new one on circadian rhythm" }) });
+    await addFiles([fileOf("n.pdf", 1)], ops);
+    expect(st.index).toHaveLength(3);
+    expect(st.index.map((e) => e.pid)).toEqual([undefined, "kkeep01", undefined]);
+    expect(st.index[2]).toMatchObject({ title: "A new one on circadian rhythm", file: "n.pdf" });
+  });
+
+  it("a restore with the library not read makes no pid either, but a replaced paper keeps its own pid and DOI", async () => {
+    const { st, ops } = fakeOps({ library: null, entries: [old("p1", { pid: "kkeep", doi: "10.1/kept" }), old("p2")], papers: { p1: { pages: ["old"], notes: [], cells: {} } } });
+    const papers = [{ id: "p1", title: "Restored", file: "r.pdf", pages: ["new"] }, { id: "p3", title: "Another kept paper about study habits", pid: "klibrary02", pages: ["c"] }];
+    await restoreShelf(JSON.stringify({ app: "appuscholar-shelf", v: 1, papers }), ops);
+    expect(st.index.find((e) => e.id === "p1")).toMatchObject({ title: "Restored", pid: "kkeep", doi: "10.1/kept" });
+    expect(st.index.find((e) => e.id === "p2")!.pid).toBeUndefined();
+    expect(st.index.find((e) => e.id === "p3")!.pid).toBeUndefined();
   });
 
   it("a restore keeps a replaced paper's pid and DOI, whatever the backup file says", async () => {
@@ -562,6 +580,30 @@ describe("the Reading shelf dialog", () => {
     await until(() => tids("sh-paper").length === 1, "the paper's row");
     await until(() => tid("sh-paper-meta")!.textContent === "paper.pdf · 1 pages · 0 highlights", "the paper's line");
     expect(err).not.toHaveBeenCalled();
+  });
+
+  it("adding a PDF while the library cannot be read gives no pid to the new paper or to the papers already on the list; once the library is read it does (Task 17)", async () => {
+    seedCorpus();
+    h.extract.mockImplementation(async () => ({ pages: ["Circadian rhythm and study habits\n" + "word ".repeat(60)], total: 1 }));
+    h.api.mockImplementation(async (path: string, init: RequestInit = {}) => (/\/blobs\/citations$/.test(path) ? Promise.reject(new ApiError(500, "server")) : fakeApi(path, init)));
+    await mount();
+    await until(() => tids("sh-paper").length === 4, "the papers");
+    await pick(tid("sh-file")!, [fileOf("new.pdf", 5)]);
+    await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 5, "the index save");
+    // No pid anywhere: they would not match the library's entries, and linkShelf leaves a paper that has one as it is, for good.
+    expect(stored<ShelfIndex>("shelf_index")!.map((e) => e.pid)).toEqual([undefined, undefined, undefined, undefined, undefined]);
+  });
+
+  it("adding a PDF to a library that was read gives the new paper and the papers without a pid theirs", async () => {
+    seedCorpus();
+    h.extract.mockImplementation(async () => ({ pages: ["Circadian rhythm and study habits\n" + "word ".repeat(60)], total: 1 }));
+    await mount();
+    await until(() => tids("sh-paper").length === 4, "the papers");
+    await pick(tid("sh-file")!, [fileOf("new.pdf", 5)]);
+    await until(() => (stored<ShelfIndex>("shelf_index") ?? []).length === 5, "the index save");
+    const pids = stored<ShelfIndex>("shelf_index")!.map((e) => e.pid);
+    expect(pids.every((p) => /^k[0-9a-z]+$/.test(p ?? ""))).toBe(true);
+    expect(new Set(pids).size).toBe(5);
   });
 
   it("renames inline, and removes a paper only on the second press, deleting its blob and its entry", async () => {

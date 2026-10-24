@@ -180,6 +180,47 @@ describe("ensurePaperIds with the vault off", () => {
     expect(after.aextranewreading!.movedTo).toBe("p:" + sdt);
   });
 
+  it("two readings of one paper that both have the student's words: both texts, and both card values, are in the paper's note (B2-R31)", async () => {
+    const vault = await vaultOff();
+    const s = await seed(null);
+    // The Ryan and Deci paper was read once more as a PDF; the student wrote about the same stage and judged it again.
+    server.putPlain("ap_notes", {
+      ...s.notes,
+      athirdreadingofryandeci9999: { title: SDT_TITLE, stages: { design: { mine: "Read again: it is a review, so there is no design to judge." } }, card: { verdict: "Cite it for the definitions only." } }
+    });
+    expect(await run(vault)).toBe("done");
+    const index = (await server.value<ShelfIndex>("shelf_index"))!;
+    const notes = (await server.value<ApNotes>("ap_notes"))!;
+    const merged = notes["p:" + index[0]!.pid]!;
+    expect(merged.stages.design!.mine).toBe("A review of the theory, not an experiment.\n\nRead again: it is a review, so there is no design to judge.");
+    expect(merged.card.verdict).toBe("Worth citing\n\nCite it for the definitions only.");
+    // Nothing is shown twice, and a second run adds nothing.
+    const before = server.puts().length;
+    expect(await run(vault)).toBe("done");
+    expect(server.puts().length).toBe(before);
+  });
+
+  it("a stage text an old build wrote to a key that already moved is copied to the paper's note once, never over what it has (B2-R33)", async () => {
+    const vault = await vaultOff();
+    const s = await seed(null);
+    expect(await run(vault)).toBe("done");
+    const notes = (await server.value<ApNotes>("ap_notes"))!;
+    const sdt = (await server.value<ShelfIndex>("shelf_index"))![0]!.pid!;
+    // A tab still on the previous build, reading the same paper, writes a new text to the old key, and rewrites a text the new note already has.
+    const old = notes[s.keys.sdtPdf]!;
+    server.putPlain("ap_notes", { ...notes, [s.keys.sdtPdf]: { ...old, stages: { ...old.stages, limits: { mine: "Written in the previous build." }, design: { mine: "Rewritten in the previous build." } } } });
+    const puts = server.puts("ap_notes").length;
+    expect(await run(vault)).toBe("done");
+    expect(server.puts("ap_notes")).toHaveLength(puts + 1);
+    const after = (await server.value<ApNotes>("ap_notes"))!;
+    expect(after["p:" + sdt]!.stages.limits).toEqual({ mine: "Written in the previous build." });
+    expect(after["p:" + sdt]!.stages.design).toEqual(notes["p:" + sdt]!.stages.design);
+    expect(after[s.keys.sdtPdf]!.movedTo).toBe("p:" + sdt);
+    // Once: the next run sends nothing.
+    expect(await run(vault)).toBe("done");
+    expect(server.puts("ap_notes")).toHaveLength(puts + 1);
+  });
+
   it("two runs at once are one run", async () => {
     await seed(null);
     const vault = await vaultOff();
@@ -320,17 +361,37 @@ describe("a blob that does not open", () => {
     expect(server.find("ap_notes")!.version).toBe(version);
   });
 
-  it("a reading-list paper that does not open is broken, and the notes are not written without its cells", async () => {
+  it("one reading-list paper that does not open is skipped: the run goes on with the others, answers broken, and gives that paper's note no cells so the next run tries it again (B2-R32)", async () => {
     const vault = await vaultOff();
     const s = await seed(null);
     server.putPlain("shelf_paper:pmgq3g4h5i", { pages: "not a list" });
     expect(await run(vault)).toBe("broken");
-    expect(putKinds()).toEqual(["citations", "shelf_index"]);
-    expect(await server.value("ap_notes")).toEqual(s.notes);
-    // Once it opens again the run finishes.
+    // The notes were written: the old ones moved, and the papers that opened have their cells.
+    expect(putKinds().sort()).toEqual(["ap_notes", "citations", "shelf_index"]);
+    const notes = (await server.value<ApNotes>("ap_notes"))!;
+    const index = (await server.value<ShelfIndex>("shelf_index"))!;
+    expect(notes[s.keys.sdtPdf]!.movedTo).toBe("p:" + index[0]!.pid);
+    expect(notes["p:" + index[0]!.pid]!.cells).toEqual({ Sample: "Not applicable", Method: "Review" });
+    expect(notes["p:" + index[1]!.pid]!.cells).toEqual({});
+    // The paper that did not open has no note with cells, so nothing says it is done.
+    expect(notes["p:" + index[2]!.pid]).toBeUndefined();
+    // Once it opens again the next run finishes it, and then a run sends nothing.
     server.putPlain("shelf_paper:pmgq3g4h5i", s.papers.pmgq3g4h5i);
     expect(await run(vault)).toBe("done");
-    expect(((await server.value<ApNotes>("ap_notes"))!)[s.keys.sdtPdf]!.movedTo).toMatch(/^p:k/);
+    expect(((await server.value<ApNotes>("ap_notes"))!)["p:" + index[2]!.pid]).toMatchObject({ title: THESIS_TITLE, cells: { Sample: "40 students, one college" } });
+    const before = server.puts().length;
+    expect(await run(vault)).toBe("done");
+    expect(server.puts().length).toBe(before);
+  });
+
+  it("a reading-list paper that is locked, not damaged, stops the run", async () => {
+    const vault = await unlocked();
+    await seed(vault);
+    // The vault locks as the first reading-list paper is read.
+    const real = vault.decryptBody;
+    vault.decryptBody = async (doc) => { if (doc.id.includes("shelf_paper:")) vault.lock(); return real(doc); };
+    expect(await run(vault)).toBe("locked");
+    expect(putKinds()).toEqual(["citations", "shelf_index"]);
   });
 
   it("a blob that cannot be read at all (the network) is busy, not broken, and writes nothing after it", async () => {
@@ -450,10 +511,41 @@ describe("Literature's Ready mark", () => {
     expect(litState()).toBe("ready");
     expect(await run(vault)).toBe("done");
     expect(litState()).toBe("ready");
+    // Stamped again after each of the three writes (the library, the reading list, the notes), so no step leaves the stage reopened for the next.
     const posts = server.calls.filter((c) => c.method === "POST");
-    expect(posts.map((c) => c.path)).toEqual([`/projects/${P}/stages/lit/ready`]);
+    expect(posts.map((c) => c.path)).toEqual(Array(3).fill(`/projects/${P}/stages/lit/ready`));
     // The time is the server's, never sent by this device.
-    expect(posts[0]!.body).toBeUndefined();
+    expect(posts.every((c) => c.body === undefined)).toBe(true);
+    // Each stamp came right after its write.
+    const order = server.calls.filter((c) => c.method === "POST" || c.method === "PUT").map((c) => (c.method === "POST" ? "stamp" : decodeURIComponent(c.path.split("/blobs/")[1]!)));
+    expect(order).toEqual(["citations", "stamp", "shelf_index", "stamp", "ap_notes", "stamp"]);
+  });
+
+  it("a tab closed between two steps leaves Literature Ready: the stamp follows each write, it does not wait for the end of the run (B2-R32)", async () => {
+    // Its own project, since the run below never ends and a run is one per project.
+    server = createBlobServer("pclosed");
+    h.api.mockImplementation(server.api);
+    await seed(null);
+    markReady();
+    expect(litState()).toBe("ready");
+    // The reading-list write never answers: the tab is gone before the run can reach its end.
+    server.onPut = (kind) => (kind === "shelf_index" ? new Promise<void>(() => {}) : undefined);
+    const vault = await vaultOff();
+    void ensurePaperIds("pclosed", { vault: () => vault });
+    for (let i = 0; i < 400 && !server.puts("shelf_index").length; i++) await new Promise((r) => setTimeout(r, 5));
+    expect(server.puts("shelf_index")).toHaveLength(1);
+    expect(server.puts("citations")).toHaveLength(1);
+    expect(server.calls.filter((c) => c.method === "POST")).toHaveLength(1);
+    expect(litState()).toBe("ready");
+  });
+
+  it("a write that was refused is not stamped for", async () => {
+    const vault = await vaultOff();
+    await seed(null);
+    markReady();
+    server.onPut = (kind) => { if (kind === "citations") throw new ApiError(413, "too-large"); };
+    expect(await run(vault)).toBe("busy");
+    expect(server.calls.filter((c) => c.method === "POST")).toEqual([]);
   });
 
   it("a stage already reopened by the student's own work stays reopened", async () => {

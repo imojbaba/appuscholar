@@ -80,14 +80,16 @@ function ShelfBody({ inline = false }: { inline?: boolean }) {
   const defaults = SHELF_DEFAULT_COLS;
   const cols = shColsOf(store.cols.value, defaults);
   // W15: a new paper's title comes from the DOI on its first page (the library, then Crossref: the DOI only, 4 s at most), v1's first line as the fallback. The library is read as it is when the PDF has been read.
-  const { lib } = useLibrary({ passive: true });
-  const libRef = useRef(lib);
-  useEffect(() => { libRef.current = lib; }, [lib]);
+  const library = useLibrary({ passive: true });
+  const libRef = useRef(library);
+  useEffect(() => { libRef.current = library; }, [library]);
   const resolveTitle: ShelfOps["resolveTitle"] = (pages, stem) => resolveShelfTitle(pages, stem, {
-    lib: libRef.current,
+    lib: libRef.current.lib,
     lookupDoi: (doi) => crLookupDoi((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SHELF_TITLE_TIMEOUT_MS) }), doi)
   });
-  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, library: () => libRef.current, setStatus, toast, now: () => new Date() };
+  // The pid a new paper takes from the library (Task 17) is looked for only in a library that has been read: not while it loads, is locked or broken, or after a failed read.
+  const readLibrary = () => { const l = libRef.current; return l.loading || l.locked || l.broken || l.error ? null : l.lib; };
+  const ops: ShelfOps = { ...store.ops, t, extract: (f) => extractPdfPages(f), resolveTitle, library: readLibrary, setStatus, toast, now: () => new Date() };
   const known = !index.loading && !index.locked;
   // W8: while the index is read and opened the lists show the loading sign; a paper whose own blob is being read (not yet started counts) shows it in place of its pages.
   const opening = index.loading && !index.locked;

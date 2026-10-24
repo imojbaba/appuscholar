@@ -15,10 +15,12 @@ export type ShelfItem = ShelfEntry & { paper: ShelfPaper | null };
 export type ShelfOps = {
   t: T;
   /**
-   * The project's library as it is read now, for the pid a new reading-list paper takes from the library entry it is (linkShelf, Task 17). Absent: no library is known, and the
-   * paper gets a pid of its own. Called when the index entry is written, so it is the library as it is then.
+   * The project's library as it is read now, for the pid a new reading-list paper takes from the library entry it is (linkShelf, Task 17). Null (or absent) unless the library has
+   * been read: still loading, locked, broken or a failed read all give null, since `[]` would be taken for an empty library and every paper without a pid would be given a new
+   * one that the library's entry for it never shares. With null nothing is linked and no pid is made; the paper-id migration, which runs again, links it. Called when the index
+   * entry is written, so it is the library as it is then.
    */
-  library?(): StoredEntry[];
+  library?(): StoredEntry[] | null;
   /** False once the dialog that started a batch has closed (or another project is open): Add PDFs and a restore stop before storing another paper. */
   alive(): boolean;
   /** The papers as the index holds them now. */
@@ -79,8 +81,9 @@ export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
       // Once its text is stored the entry is always added, the dialog open or not (updateIndex writes it through a client of its own after a close).
       await d.createPaper(id, { pages: r.pages, notes: [], cells: {} });
       const entry: ShelfEntry = { id, title: named.title, ...(named.doi ? { doi: named.doi } : {}), file: f.name, size: f.size, added: now.toISOString(), total: r.total, kept: r.pages.length };
-      // The pid comes with the entry (Task 17): the library entry's when it is the same paper (the DOI printed on page 1, then the title), else a new one.
-      d.updateIndex((prev) => linkShelf([...(prev ?? []), entry], d.library?.() ?? []));
+      // The pid comes with the entry (Task 17): the library entry's when it is the same paper (the DOI printed on page 1, then the title), else a new one. With the library not
+      // read, no pid is made for this paper or any other: the migration's next run links them all against the library.
+      d.updateIndex((prev) => linkWith([...(prev ?? []), entry], d.library?.() ?? null));
       have.push(entry);
       const n = r.pages.length;
       // f.name+': added, '+n+' pages'+(r.total>n?' (first '+n+' of '+r.total+')':'') (11594)
@@ -92,6 +95,9 @@ export async function addFiles(files: File[], d: ShelfOps): Promise<void> {
   }
   d.setStatus(msgs.join(" | "));
 }
+
+/** linkShelf over `lib`, or the index as it is when the library has not been read (null). */
+const linkWith = (index: ShelfIndex, lib: StoredEntry[] | null): ShelfIndex => (lib === null ? index : linkShelf(index, lib));
 
 /** The title box (shRename 11621): the trimmed title, or the file name when that leaves nothing. */
 export function renamePaper(id: string, value: string, d: Pick<ShelfOps, "updateIndex">): void {
@@ -197,15 +203,15 @@ export async function restoreShelf(text: string, d: ShelfOps): Promise<void> {
       else await d.createPaper(id, paper);
     } catch { continue; }
     onShelf.add(id);
-    const library = (): StoredEntry[] => d.library?.() ?? [];
-    const recordPid = typeof p.pid === "string" && library().some((e) => e.pid === p.pid) ? p.pid : undefined;
+    const library = (): StoredEntry[] | null => d.library?.() ?? null;
+    const recordPid = typeof p.pid === "string" && (library() ?? []).some((e) => e.pid === p.pid) ? p.pid : undefined;
     d.updateIndex((prev) => {
       const cur = prev ?? [];
       const old = cur.find((e) => e.id === id);
       const next: ShelfEntry = old
         ? { ...entry, ...(old.pid ? { pid: old.pid } : recordPid ? { pid: recordPid } : {}), ...(old.doi ? { doi: old.doi } : {}) }
         : { ...entry, ...(recordPid ? { pid: recordPid } : {}) };
-      return linkShelf(old ? cur.map((e) => (e.id === id ? next : e)) : [...cur, next], library());
+      return linkWith(old ? cur.map((e) => (e.id === id ? next : e)) : [...cur, next], library());
     });
     n += occurrences(p.id);
   }

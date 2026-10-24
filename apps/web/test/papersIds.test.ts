@@ -156,23 +156,42 @@ describe("rekeyNotes", () => {
     expect(merged.title).toBe(SDT_TITLE);
   });
 
-  it("per stage the one with the student's own words wins, else the first; per card field the non-empty one wins, the first on a tie", () => {
-    const a: ApNote = { title: SDT_TITLE, stages: { gap: { res: { reading: "first reading" } }, design: { mine: "words one", res: { reading: "r1" } } }, card: { strengths: "", weak: "first weak", verdict: "first verdict" } };
-    const b: ApNote = { title: SDT_TITLE, stages: { gap: { mine: "my words", res: { reading: "second reading" } }, design: { mine: "words two" }, stats: { res: { reading: "only here" } } }, card: { strengths: "second strengths", weak: "second weak", notes: "second notes" } };
+  it("the student's words of every reading are kept: distinct texts of one stage, and distinct values of one card field, are joined in note order with a blank line; the same text is there once (B2-R31)", () => {
+    const a: ApNote = { title: SDT_TITLE, stages: { gap: { res: { reading: "first reading" } }, design: { mine: "words one", res: { reading: "r1" } }, stats: { mine: "same words" } }, card: { strengths: "", weak: "first weak", verdict: "same verdict" } };
+    const b: ApNote = { title: SDT_TITLE, stages: { gap: { mine: "my words", res: { reading: "second reading" } }, design: { mine: "words two" }, stats: { mine: "same words" }, limits: { res: { reading: "only here" } } }, card: { strengths: "second strengths", weak: "second weak", verdict: "same verdict", notes: "second notes" } };
     const out = rekeyNotes({ a1: a, a2: b }, papers);
     const m = out["p:ksdt"]!;
+    // Words in only one reading are that reading's, with its AI reading.
     expect(m.stages.gap).toEqual(b.stages.gap);
-    expect(m.stages.design).toEqual(a.stages.design);
-    expect(m.stages.stats).toEqual(b.stages.stats);
-    expect(m.card).toEqual({ strengths: "second strengths", weak: "first weak", verdict: "first verdict", notes: "second notes" });
+    expect(m.stages.limits).toEqual(b.stages.limits);
+    // Words in both: both are there, the first reading's first; the AI reading is the first note with words'.
+    expect(m.stages.design).toEqual({ mine: "words one\n\nwords two", res: { reading: "r1" } });
+    // The same text in both readings is there once.
+    expect(m.stages.stats).toEqual({ mine: "same words" });
+    expect(m.card).toEqual({ strengths: "second strengths", weak: "first weak\n\nsecond weak", verdict: "same verdict", notes: "second notes" });
+    // Every text either reading held is in the merged note.
+    for (const text of ["words one", "words two", "first weak", "second weak"]) expect(JSON.stringify(m)).toContain(text);
+    // The inputs are not changed.
+    expect(a.stages.design!.mine).toBe("words one");
+  });
+
+  it("texts that differ only in the white space around them are the same text", () => {
+    const out = rekeyNotes({
+      a1: { title: SDT_TITLE, stages: { gap: { mine: "It joins them." } }, card: { verdict: "Good" } },
+      a2: { title: SDT_TITLE, stages: { gap: { mine: "  It joins them.\n" } }, card: { verdict: "Good " } }
+    }, papers);
+    expect(out["p:ksdt"]!.stages.gap).toEqual({ mine: "It joins them." });
+    expect(out["p:ksdt"]!.card.verdict).toBe("Good");
   });
 
   it("a note already kept under p:<pid> comes first, and an old note for the same paper joins it later", () => {
     const kept: ApNote = { title: SDT_TITLE, pid: "ksdt", stages: { gap: { mine: "kept words" } }, card: { verdict: "kept verdict" }, cells: { Sample: "n=1" }, take: "my take" };
     const late: ApNote = { title: SDT_TITLE, stages: { gap: { mine: "late words" }, design: { mine: "late design" } }, card: { verdict: "late verdict", notes: "late notes" } };
     const out = rekeyNotes({ "p:ksdt": kept, a9: late }, papers);
-    expect(out["p:ksdt"]).toMatchObject({ pid: "ksdt", cells: { Sample: "n=1" }, take: "my take", stages: { gap: { mine: "kept words" }, design: { mine: "late design" } }, card: { verdict: "kept verdict", notes: "late notes" } });
+    expect(out["p:ksdt"]).toMatchObject({ pid: "ksdt", cells: { Sample: "n=1" }, take: "my take", stages: { gap: { mine: "kept words\n\nlate words" }, design: { mine: "late design" } }, card: { verdict: "kept verdict\n\nlate verdict", notes: "late notes" } });
     expect(out.a9!.movedTo).toBe("p:ksdt");
+    // And that is the end of it: the second run adds nothing.
+    expect(rekeyNotes(out, papers)).toBe(out);
   });
 
   it("a second run changes nothing, and the same object comes back", () => {
@@ -198,6 +217,54 @@ describe("rekeyNotes", () => {
     expect(id).toMatch(/^a/);
     const out = rekeyNotes({ [id]: { title: THESIS_TITLE, stages: {}, card: { weak: "w" } } }, [{ pid: "kthesis", title: THESIS_TITLE }]);
     expect(out[id]!.movedTo).toBe("p:kthesis");
+  });
+});
+
+describe("rekeyNotes: what an old build writes to a key that already moved (B2-R33)", () => {
+  const papers = [{ pid: "ksdt", title: SDT_TITLE }];
+  const moved = (): ApNotes => rekeyNotes({
+    a1: { title: SDT_TITLE, stages: { design: { mine: "A survey." } }, card: { verdict: "Useful" } }
+  }, papers);
+
+  it("a stage text and a card field the old key got since are copied to the note it moved to, once", () => {
+    const first = moved();
+    // A tab on the previous build writes to the old key: it knows nothing of the move, so movedTo stays as the note had it.
+    const edited: ApNotes = { ...first, a1: { ...first.a1!, stages: { ...first.a1!.stages, limits: { mine: "Small sample." } }, card: { ...first.a1!.card, weak: "Self-report only." } } };
+    const out = rekeyNotes(edited, papers);
+    expect(out["p:ksdt"]!.stages.limits).toEqual({ mine: "Small sample." });
+    expect(out["p:ksdt"]!.card).toEqual({ verdict: "Useful", weak: "Self-report only." });
+    expect(out.a1).toBe(edited.a1);
+    // Once: the run after finds nothing to copy.
+    expect(rekeyNotes(out, papers)).toBe(out);
+  });
+
+  it("never writes over what the target has: a text it has stays, a card field it has stays", () => {
+    const first = moved();
+    const edited: ApNotes = { ...first, a1: { ...first.a1!, stages: { design: { mine: "Rewritten in the old build." } }, card: { verdict: "Changed in the old build" } } };
+    expect(rekeyNotes(edited, papers)).toBe(edited);
+  });
+
+  it("words for a stage the target has only a reading for are added to that stage, keeping its reading", () => {
+    const base: ApNotes = {
+      a1: { title: SDT_TITLE, stages: { gap: { mine: "" } }, card: {} }
+    };
+    const first = rekeyNotes(base, papers);
+    const target: ApNotes = { ...first, "p:ksdt": { ...first["p:ksdt"]!, stages: { gap: { res: { reading: "AI reading" } } } }, a1: { ...first.a1!, stages: { gap: { mine: "My words, written in the old build." } } } };
+    const out = rekeyNotes(target, papers);
+    expect(out["p:ksdt"]!.stages.gap).toEqual({ res: { reading: "AI reading" }, mine: "My words, written in the old build." });
+  });
+
+  it("nothing is copied to a note that is gone (a deleted card does not come back), or from a stage with nothing in it", () => {
+    const first = moved();
+    const { "p:ksdt": _gone, ...withoutTarget } = first;
+    expect(rekeyNotes(withoutTarget, papers)).toBe(withoutTarget);
+    const emptyStage: ApNotes = { ...first, a1: { ...first.a1!, stages: { ...first.a1!.stages, stats: {}, results: { mine: "  " } }, card: { ...first.a1!.card, notes: "" } } };
+    expect(rekeyNotes(emptyStage, papers)).toBe(emptyStage);
+  });
+
+  it("a move that points at something that is not a p: note is left alone", () => {
+    const odd: ApNotes = { a1: { title: SDT_TITLE, stages: { gap: { mine: "x" } }, card: {}, movedTo: "aother" }, aother: { stages: {}, card: {} } };
+    expect(rekeyNotes(odd, papers)).toBe(odd);
   });
 });
 
