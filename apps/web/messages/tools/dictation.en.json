@@ -1,1 +1,16 @@
-{}
+{
+  "dict_notice_title": "Before you dictate",
+  "dict_notice_1": "Dictation uses your browser's own speech service. In Chrome the audio goes to Google, and in Edge to Microsoft, to be turned into text. Appuscholar never receives it.",
+  "dict_notice_2": "Do not dictate participant names, interviews or anything that identifies a person.",
+  "dict_unsupported": "Dictation works in Chrome and Edge. This browser does not offer it.",
+  "dict_btn_title": "Speak to type. Works in Chrome and Edge. Your voice goes to the browser's speech service.",
+  "dict_listening": "Listening…",
+  "dict_stop": "Stop",
+  "dict_err_not_allowed": "The microphone is blocked. Allow it in the address bar, then try again.",
+  "dict_err_service": "The browser will not let this page use speech recognition.",
+  "dict_err_network": "Dictation needs an internet connection.",
+  "dict_err_audio": "No microphone was found.",
+  "dict_err_lang": "This browser cannot recognise that language.",
+  "dict_err_other": "Dictation stopped ({code}).",
+  "dict_give_up": "Dictation keeps stopping. Check your microphone and try again."
+}
