@@ -253,6 +253,7 @@
   "blob_deleted_elsewhere": "This was deleted in another window, so your change to it was not saved.",
   "blob_loading": "Opening your saved work…",
   "blob_switch_held": "Some changes are waiting for your passphrase. They are kept and saved once you unlock.",
+  "blob_switch_held_broken": "A change is waiting: what is saved here cannot be opened on this device. Open the place it belongs to and choose whether to replace it.",
   "cap_btn": "🏷 Caption",
   "cap_desc": "Adds \"Figure 1\" or \"Table 1\" with a title above the picture or table, in APA 7 style. Click a picture or a table, or put the cursor where the caption should go. Numbers update by themselves.",
   "cap_fig": "Figure",

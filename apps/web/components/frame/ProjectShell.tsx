@@ -13,7 +13,7 @@ import { allPdf, importFiles } from "@/lib/import/run";
 import { useVault, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
-import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
+import { heldOnlyOverBrokenBlobs, shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
 import { homeHref, parsePlace, placeHref, type Place } from "@/lib/frame/places";
 import { listOrSeed } from "@/lib/frame/firstDocument";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -315,8 +315,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const confirmExit = useCallback(async (): Promise<boolean> => {
     if (!(await confirmLeave())) return false;
     // A stage's value that has not reached the server (the vault is locked, or another window won the save) stays held for this tab and goes once
-    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual).
-    if (shouldWarnOnUnloadBlobs()) toast(t("blob_switch_held"));
+    // it can (lib/blobs/held); the student is told rather than finding it later (wave A residual). When all of it waits on a saved copy that does not open on this
+    // device, the line says that: the passphrase is not what it waits for (Task 21a, fix round 2).
+    if (shouldWarnOnUnloadBlobs()) toast(t(heldOnlyOverBrokenBlobs() ? "blob_switch_held_broken" : "blob_switch_held"));
     return true;
   }, [confirmLeave, t]);
 
