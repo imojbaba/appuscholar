@@ -10,17 +10,19 @@ describe("what opens", () => {
   });
 
   it("/?import=1 opens the v1 import on the project list", () => {
-    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", scratchProjectId: "s", search: "?import=1", hash: "" })).toBe("/projects?import=1");
-    expect(landingTarget({ projectIds: [], activeProjectId: null, scratchProjectId: "s", search: "?import=1", hash: "" })).toBe("/projects?import=1");
+    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", search: "?import=1", hash: "" })).toBe("/projects?import=1");
+    expect(landingTarget({ projectIds: [], activeProjectId: null, search: "?import=1", hash: "" })).toBe("/projects?import=1");
   });
 
-  it("a #capture= hash goes where its citation can be saved: the active project's home, else the scratch space", () => {
-    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", scratchProjectId: "s", search: "", hash: "#capture=xyz" })).toBe("/p/a#capture=xyz");
-    expect(landingTarget({ projectIds: ["a"], activeProjectId: null, scratchProjectId: "s", search: "", hash: "#capture=xyz" })).toBe("/p/s/writing#capture=xyz");
-    expect(landingTarget({ projectIds: [], activeProjectId: null, scratchProjectId: "s", search: "", hash: "#capture=xyz" })).toBe("/p/s/writing#capture=xyz");
+  it("an old bookmark's /#capture= lands on the adding screen with its hash, whatever the student has (W5, W13)", () => {
+    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", search: "", hash: "#capture=xyz" })).toBe("/add#capture=xyz");
+    expect(landingTarget({ projectIds: ["a"], activeProjectId: null, search: "", hash: "#capture=xyz" })).toBe("/add#capture=xyz");
+    expect(landingTarget({ projectIds: [], activeProjectId: null, search: "", hash: "#capture=xyz" })).toBe("/add#capture=xyz");
+    // The payload is carried as it is, percent-escapes and all.
+    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", search: "?x=1", hash: "#capture=eyJ0%2B%3D" })).toBe("/add#capture=eyJ0%2B%3D");
   });
 
   it("any other address lands by landingPath; another hash is not carried", () => {
-    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", scratchProjectId: "s", search: "", hash: "#top" })).toBe("/p/a");
+    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", search: "", hash: "#top" })).toBe("/p/a");
   });
 });

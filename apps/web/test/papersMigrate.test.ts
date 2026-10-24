@@ -591,6 +591,14 @@ describe("where it does not run", () => {
     expect(await run(await vaultOff())).toBe("busy");
     expect(server.calls).toEqual([]);
   });
+
+  it("never on the adding screen: its tab is closed straight after the keep (B2-R16)", async () => {
+    await seed(null);
+    server.calls.length = 0;
+    window.history.replaceState(null, "", "/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");
+    expect(await run(await vaultOff())).toBe("busy");
+    expect(server.calls).toEqual([]);
+  });
 });
 
 describe("the citations step through the shell's library", () => {

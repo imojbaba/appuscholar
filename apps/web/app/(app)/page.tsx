@@ -20,7 +20,7 @@ export default function Landing() {
     apiFetch<Array<{ id: string }>>("/projects").then((list) => {
       if (!live) return;
       const { search, hash } = window.location;
-      router.replace(landingTarget({ projectIds: list.map((p) => p.id), activeProjectId, scratchProjectId, search, hash }));
+      router.replace(landingTarget({ projectIds: list.map((p) => p.id), activeProjectId, search, hash }));
     }, () => { if (live) setError(true); });
     return () => { live = false; };
   }, [userId, activeProjectId, scratchProjectId, router]);

@@ -799,6 +799,24 @@ describe("useVault", () => {
       expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 0))).toBe(true);
     }, 30_000);
 
+    it("does not run on the adding screen (/add): the tab the bookmark opens is closed straight after the keep (B2-R16)", async () => {
+      seed();
+      server.vault = await vaultWith("right");
+      window.history.replaceState(null, "", "/add#capture=eyJ0aXRsZSI6IlQifQ%3D%3D");
+      try {
+        const s = await mount();
+        await until(() => s.v.status === "locked");
+        await act(async () => { await s.v.unlock("right", false); });
+        await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+        expect(s.v.status).toBe("unlocked");
+        expect(s.v.complete).toBe(false);
+        expect(s.seen).not.toContain("migrating");
+        expect(server.calls.some((c) => c.path === "/projects" || c.path.endsWith("/rewrite") || c.path === "/me/vault/complete")).toBe(false);
+        expect(server.docs.every((d) => d.revs.every((r) => r.keyVersion === 0))).toBe(true);
+        expect(h.toast).not.toHaveBeenCalledWith(en.vault_migrated);
+      } finally { window.history.replaceState(null, "", "/"); }
+    }, 30_000);
+
     it("seals every plaintext blob of every project, the scratch project's included, under its own key; complete waits for them", async () => {
       seed();
       server.blobs = [

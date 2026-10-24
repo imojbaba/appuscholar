@@ -697,6 +697,22 @@ describe("Find: the test double", () => {
   });
 });
 
+describe("Find: Add from any journal page (Task 20, W6)", () => {
+  it("the bookmark's section sits under the search, before the filters and the results, with the heading, the line and the button", async () => {
+    await mount();
+    const section = tid("add-from-page")!;
+    expect(section.querySelector("h2")!.textContent).toBe("Add from any journal page");
+    expect(section.querySelector("p")!.textContent).toBe("Drag this button to your bookmarks bar. On a paper's page, click it to keep that paper here.");
+    const btn = section.querySelector<HTMLAnchorElement>('[data-testid="add-bookmark"]')!;
+    expect(btn.textContent).toBe("Keep in Appuscholar");
+    expect(decodeURIComponent(btn.getAttribute("href")!)).toContain(window.location.origin + "/add#capture=");
+    const find = tid("panel-find")!;
+    const order = [...find.children];
+    expect(order.indexOf(section)).toBeGreaterThan(order.indexOf(find.querySelector(".find-search")!));
+    expect(order.indexOf(section)).toBeLessThan(order.indexOf(find.querySelector(".find-grid")!));
+  });
+});
+
 describe("Find: the layout rules (375 px wide, tokens only)", () => {
   const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1]!.trim(), body: m[2]!.trim(), at: m.index ?? 0 }));

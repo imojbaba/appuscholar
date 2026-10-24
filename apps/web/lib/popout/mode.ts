@@ -25,6 +25,21 @@ export function isPopout(): boolean {
   return held || new URLSearchParams(window.location.search).get(WINDOW_PARAM) === "1";
 }
 
+/**
+ * The adding screen (`/add`, wave B Task 20, ruling B2-R16): the tab the bookmark opens to keep one paper. It is not a pop-out (it writes the project's library, which a pop-out
+ * of another stage may not), but it is not a place to start the vault's one-off migrations either: its tab is closed straight after the keep.
+ */
+export function isAddingScreen(): boolean {
+  return typeof window !== "undefined" && /^\/add\/?$/.test(window.location.pathname);
+}
+
+/**
+ * Whether this tab may start the one-off migrations, those that rewrite the student's data in the browser: the vault's sealing of plaintext revisions and blobs (useVault), the
+ * sealing of plaintext titles (ProjectShell) and the paper-id migration (lib/papers/migrate). Not in a pop-out (D-S2-43: the writing window runs them) and not on the adding screen
+ * (B2-R16: a migration cut off by the tab closing would only have to be resumed; the next workspace tab runs it).
+ */
+export function mayMigrate(): boolean { return !isPopout() && !isAddingScreen(); }
+
 /** The stage of the place a pop-out shows, from its path (`/p/<id>/<stage>…`); null outside a pop-out, on the project's home and outside a project. */
 export function popoutStage(): StageKey | null {
   if (!isPopout()) return null;
