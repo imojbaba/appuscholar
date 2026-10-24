@@ -1,5 +1,5 @@
-/* Wave B2 (Task 19, register row D-S2-124; rulings B2-R17, B2-R18, B2-R20 and B2-R36): "Already have a paper? Paste a link, DOI or PubMed number". v1's Citation Manager reads a DOI,
-   a doi.org or PubMed link, a PubMed number or a title (citLookup 7931-7961, fetch/crossref.ts); this reads what a student pastes into Find's box as one of five ids (a DOI, a PubMed
+/* Wave B2 (Task 19, register row D-S2-124; rulings B2-R17, B2-R18, B2-R20 and B2-R36, and its fix round): "Already have a paper? Paste a link, DOI or PubMed number". v1's Citation Manager
+   reads a DOI, a doi.org or PubMed link, a PubMed number or a title (citLookup 7931-7961, fetch/crossref.ts); this reads what a student pastes into Find's box as one of five ids (a DOI, a PubMed
    number, a PMC number, an arXiv id, an OpenAlex id) and looks the paper up as a library entry. A link with no id in it and a title are told apart so the panel can say what to do; neither
    is looked up. citLookup, citExtractDoi and citExtractPmid are v1's and unchanged; the lookups here are named beside them.
    Every request goes to OpenAlex, PubMed E-utilities or Crossref, the hosts connect-src already holds; a request carries only the id. */
@@ -17,16 +17,39 @@ export type PastedRef =
   | { k: "text"; v: string }
   | { k: "empty" };
 
+/** Where citExtractDoi finds a DOI in a text (its pattern, v1's), to see what comes before it. */
+const DOI_AT=/10\.\d{4,9}\/[^\s"<>]+/;
+
 /**
- * Reads a pasted string, the first match winning: blank is empty; a DOI (citExtractDoi, which reads doi.org links and publisher links that carry a `10.` DOI; lower case, and from a link the
- * DOI stops at a `?` or `#` and loses a closing `/`); an arXiv id (an arxiv.org abs or pdf link, `arXiv:` or a bare id, the version dropped); a PMC number (any case, upper-cased); a PubMed
- * number (citExtractPmid); an OpenAlex id (an openalex.org link, with or without `works/`, or a bare `W…`); any other `https?://` is a link; anything else is a title.
+ * The DOI of a pasted link without what the address adds after it. citExtractDoi runs on to the next space, so a publisher's address leaves junk on the DOI's end. In order: it stops at
+ * a `?` or `#`; when the DOI sits in a query string (a `?` comes before it) it stops at the next `&` (PLOS: `article/file?id=<doi>&type=printable`); closing slashes, a closing `.pdf`
+ * (Springer: `content/pdf/<doi>.pdf`) and a closing `/full`, `/abstract`, `/epdf` or `/pdf` (Wiley: `doi/<doi>/full`) go; then percent escapes are decoded (an old Wiley DOI is written
+ * `%28SICI%29...`), and a bad escape leaves the DOI as it was. The cuts come before the decoding, so an encoded `?`, `#` or `&` stays part of the DOI. Only for a DOI read from a
+ * link: a DOI that is typed or pasted bare is the student's own and keeps what it has.
+ */
+function doiFromLink(t: string,doi: string): string{
+  let d=doi.replace(/[?#].*$/,"");
+  const at=DOI_AT.exec(t);
+  if(at&&t.slice(0,at.index).includes("?"))d=d.replace(/&.*$/,"");
+  for(let prev="";prev!==d;){
+    prev=d;
+    d=d.replace(/\/+$/,"").replace(/\.pdf$/,"").replace(/\/(?:full|abstract|epdf|pdf)$/,"");
+  }
+  try{d=decodeURIComponent(d)}catch{/* a bad escape: the DOI as it was */}
+  return d;
+}
+
+/**
+ * Reads a pasted string, the first match winning: blank is empty; a DOI (citExtractDoi, which reads doi.org links and publisher links that carry a `10.` DOI; lower case; from a link
+ * the DOI is cleaned by doiFromLink: it stops at a `?`, a `#` or, in a query string, an `&`, loses a closing `/`, `.pdf`, `/full`, `/abstract`, `/epdf` or `/pdf`, and is percent-decoded);
+ * an arXiv id (an arxiv.org abs or pdf link, `arXiv:` or a bare id, the version dropped); a PMC number (any case, upper-cased); a PubMed number (citExtractPmid); an OpenAlex id (an
+ * openalex.org link, with or without `works/`, or a bare `W…`); any other `https?://` is a link; anything else is a title.
  */
 export function parsePasted(s: string): PastedRef{
   const t=String(s??"").trim();
   if(!t)return{k:"empty"};
   let doi=citExtractDoi(t);
-  if(doi&&/^https?:\/\//i.test(t))doi=doi.replace(/[?#].*$/,"").replace(/\/+$/,"");
+  if(doi&&/^https?:\/\//i.test(t))doi=doiFromLink(t,doi);
   if(doi)return{k:"doi",v:doi};
   const ax=/arxiv\.org\/(?:abs|pdf)\/(\d{4}\.\d{4,5})/i.exec(t)||/arXiv:\s*(\d{4}\.\d{4,5})/i.exec(t)||/^(\d{4}\.\d{4,5})(?:v\d+)?$/.exec(t);
   if(ax)return{k:"arxiv",v:ax[1]!};
@@ -82,7 +105,8 @@ async function byPubmed(f: typeof fetch,pmid: string): Promise<PasteResult | nul
  * - doi: Crossref (crLookupDoiV2), else OpenAlex by `doi:<doi>`;
  * - pmid: the DOI PubMed lists (pmidToDoi) then Crossref's entry for it, else PubMed's own record of the paper (pmPaperById);
  * - pmcid: OpenAlex by `pmcid:<PMC number>`, else (it holds no PMC numbers; the recorded request answers 404) PubMed Central names the paper's DOI and PMID (pmcidToIds), and the DOI
- *   goes the doi route and the PMID, when the DOI finds nothing, the PubMed route;
+ *   goes the doi route and the PMID, when the DOI finds nothing, the PubMed route. An OpenAlex error here (a 429 when the free budget is spent, a 5xx, a thrown fetch) is the same as
+ *   its 404: the route goes on to PubMed Central, and the paste is "fail" only if the later requests fail too;
  * - arxiv: OpenAlex by `doi:10.48550/arxiv.<id>` (an arXiv id is a DataCite DOI);
  * - openalex: OpenAlex by the id.
  * A link, a title and nothing send no request. A thrown fetch or an HTTP error from a source is "fail", never a half answer. `key` is the OpenAlex key, as everywhere.
@@ -97,7 +121,8 @@ export async function pasteLookup(f: typeof fetch,r: PastedRef,key?: string): Pr
       const e=doi?await crLookupDoiV2(f,doi):null;
       out=e?{result:"ok",entry:e}:await byPubmed(f,r.v);
     }else if(r.k==="pmcid"){
-      const w=await oaWorkByRef(f,"pmcid:"+r.v,key);
+      let w: OaWork | null=null;
+      try{w=await oaWorkByRef(f,"pmcid:"+r.v,key)}catch{/* OpenAlex is out: PubMed Central and Crossref can still answer */}
       if(w)out=fromWork(w);
       else{
         const ids=await pmcidToIds(f,r.v);

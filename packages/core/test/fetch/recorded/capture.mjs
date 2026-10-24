@@ -6,7 +6,8 @@
 // 250 ms (OpenAlex, Crossref) or 400 ms (NCBI E-utilities, whose keyless limit is 3 requests a second).
 //
 // `--only a,b` records just the named cases and deletes nothing. It refuses to overwrite a file that exists, and it refuses before it fetches, so a mistaken name costs
-// the live API no request (ruling B2-R19): node capture.mjs --only pm-v2-terms,pm-v2-rct.
+// the live API no request (ruling B2-R19): node capture.mjs --only pm-v2-terms,pm-v2-rct. Every named case is checked before the first request is made (filesOfCase), so a list that
+// holds a recorded case records none of the others.
 // The v2 recordings (pm-*-v2-*, paste-*, epmc-*) are also listed in v2-manifest.json (file, url, status, sha256 of the body), which save() writes or updates for each of them: the golden
 // fixture (test/golden/fetch/cases.json) is v1's and is never edited, so test/fetch/openalex.test.ts checks these files against the manifest instead.
 // Case names: oa-<name> (OA_SEARCHES), pm-<name> (PM_SEARCHES and PM_V2_SEARCHES), oa-connected, oa-retractions, cr-doi, cr-title3, cr-title1, pm-pmid, and the cases of
@@ -181,6 +182,38 @@ const want = (name) => !ONLY || ONLY.has(name);
 const written = new Map(); // url → file
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const short = (url) => createHash("sha256").update(url).digest("hex").slice(0, 8);
+const fileOf = (name, url) => `${name}-${short(url)}.json`;
+
+/** The names `--only` takes: v1's cases and the cases of LOOKUP_CASES. */
+export function caseNames() {
+  const known = new Set(["oa-connected", "oa-retractions", "cr-doi", "cr-title3", "cr-title1", "pm-pmid"]);
+  for (const s of OA_SEARCHES) known.add("oa-" + s.name);
+  for (const s of [...PM_SEARCHES, ...PM_V2_SEARCHES]) known.add("pm-" + s.name);
+  for (const [name] of LOOKUP_CASES) known.add(name);
+  return known;
+}
+
+/**
+ * The recording files a case would write, known before any request, for the check that refuses before the first fetch: `files` are exact names (the name and the hash of the URL, as
+ * record() makes them); `prefixes` stand for files named for URLs that a body decides (oa-connected's cites and cited-by requests). A PubMed search is checked by its esearch file,
+ * which every run of it writes; its esummary and efetch files exist only when the search found ids. test/fetch/capture.test.ts holds these names to the corpus.
+ */
+export function filesOfCase(name) {
+  const files = [];
+  const prefixes = [];
+  const oa = OA_SEARCHES.find((s) => "oa-" + s.name === name);
+  const pm = [...PM_SEARCHES, ...PM_V2_SEARCHES].find((s) => "pm-" + s.name === name);
+  if (oa) files.push(fileOf(`oa-search-${oa.name}`, oaSearchUrl(oa)));
+  else if (pm) files.push(fileOf(`pm-esearch-${pm.name}`, esearchUrl(pm)));
+  else if (name === "oa-connected") prefixes.push("oa-connected-");
+  else if (name === "oa-retractions") files.push(fileOf("oa-retractions", retrUrl(RETRACTION_DOIS)), fileOf("oa-refcheck", apRefUrl(RETRACTION_DOIS)));
+  else if (name === "cr-doi") CR_DOIS.forEach((doi, i) => files.push(fileOf(`cr-doi-${String(i + 1).padStart(2, "0")}`, crDoiUrl(doi))));
+  else if (name === "cr-title3") CR_TITLE_SEARCHES.forEach((e, i) => files.push(fileOf(`cr-title3-${i + 1}`, crTitle3Url(e))));
+  else if (name === "cr-title1") CR_FIRST_SEARCHES.forEach((q, i) => files.push(fileOf(`cr-title1-${i + 1}`, crTitle1Url(q))));
+  else if (name === "pm-pmid") PMIDS.forEach((pmid) => files.push(fileOf(`pm-pmid-${pmid}`, pmidUrl(pmid))));
+  else for (const [n, requests] of LOOKUP_CASES) if (n === name) for (const [file, url] of requests) files.push(fileOf(file, url));
+  return { files, prefixes };
+}
 
 const MANIFEST = DIR + "v2-manifest.json";
 function listInManifest(file, record) {
@@ -210,7 +243,7 @@ function save(file, record) {
 async function record(name, url, expect = 200) {
   const done = written.get(url);
   if (done) return JSON.parse(readFileSync(DIR + done, "utf8")).body;
-  const file = `${name}-${short(url)}.json`;
+  const file = fileOf(name, url);
   refuseOverwrite(file); // before the live request: a recording that exists is not fetched again
   await sleep(url.startsWith(EUTILS) ? 400 : 250);
   const r = await fetch(url);
@@ -223,20 +256,24 @@ async function record(name, url, expect = 200) {
 async function main() {
   if (!ONLY) for (const f of readdirSync(DIR)) if (f.endsWith(".json")) unlinkSync(DIR + f);
 
-  const known = new Set(["oa-connected", "oa-retractions", "cr-doi", "cr-title3", "cr-title1", "pm-pmid"]);
-  for (const s of OA_SEARCHES) known.add("oa-" + s.name);
-  for (const s of [...PM_SEARCHES, ...PM_V2_SEARCHES]) known.add("pm-" + s.name);
-  for (const [name] of LOOKUP_CASES) known.add(name);
+  const known = caseNames();
   for (const n of ONLY || []) if (!known.has(n)) throw new Error(`--only: unknown case "${n}"; the cases are ${[...known].join(", ")}`);
+  // Before any request: every named case is checked, so a list that holds a recorded case records none of the others (a failure after the first fetch would leave the run half done).
+  if (ONLY) {
+    const have = readdirSync(DIR);
+    for (const n of ONLY) {
+      const { files, prefixes } = filesOfCase(n);
+      const hit = files.find((f) => have.includes(f)) || have.find((f) => prefixes.some((p) => f.startsWith(p)));
+      if (hit) throw new Error(`--only: ${hit} already exists and is not overwritten`);
+    }
+  }
 
   const oaBodies = {};
   for (const s of OA_SEARCHES) {
     // oa-connected reads the CONNECTED_FROM search; under --only that search is fetched without being saved when it is not itself named.
     if (want("oa-" + s.name)) oaBodies[s.name] = JSON.parse(await record(`oa-search-${s.name}`, oaSearchUrl(s)));
     else if (ONLY && s.name === CONNECTED_FROM && want("oa-connected")) {
-      // The cites and cited-by files are named for URLs that this search's body decides, so they cannot be named before it is fetched: refuse on the case's prefix instead.
-      const have = readdirSync(DIR).find((f) => f.startsWith("oa-connected-"));
-      if (have) throw new Error(`--only: ${have} already exists and is not overwritten`);
+      // The cites and cited-by files are named for URLs that this search's body decides, so filesOfCase checks them by the case's prefix, before any request.
       await sleep(250);
       oaBodies[s.name] = await (await fetch(oaSearchUrl(s))).json();
     }

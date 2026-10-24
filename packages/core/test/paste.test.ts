@@ -47,6 +47,32 @@ describe("parsePasted", () => {
     expect(parsePasted("https://doi.org/10.1038/s41598-019-49466-6/")).toEqual({ k: "doi", v: "10.1038/s41598-019-49466-6" });
     expect(parsePasted("doi:10.1002/(sici)1097-4679(199801)54:1#x")).toEqual({ k: "doi", v: "10.1002/(sici)1097-4679(199801)54:1#x" });
   });
+  it("a DOI read from a link loses what the address adds after it: other query parameters, a closing .pdf, a /full, /abstract, /epdf or /pdf part", () => {
+    // The first four are the reviewer's cases, each read wrongly before this fix (the junk stayed on the DOI, and Crossref and OpenAlex then found no paper).
+    expect(parsePasted("https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0228405&type=printable")).toEqual({ k: "doi", v: "10.1371/journal.pone.0228405" });
+    expect(parsePasted("https://link.springer.com/content/pdf/10.1007/s10608-019-10045-8.pdf")).toEqual({ k: "doi", v: "10.1007/s10608-019-10045-8" });
+    expect(parsePasted("https://onlinelibrary.wiley.com/doi/10.1111/jcpp.12345/full")).toEqual({ k: "doi", v: "10.1111/jcpp.12345" });
+    expect(parsePasted("https://doi.org/10.1002/%28SICI%291097-4679%28199901%2955%3A1%3C1%3A%3AAID-JCLP1%3E3.0.CO%3B2-%23")).toEqual({ k: "doi", v: "10.1002/(sici)1097-4679(199901)55:1<1::aid-jclp1>3.0.co;2-#" });
+    for (const part of ["abstract", "epdf", "pdf", "full"]) {
+      expect(parsePasted("https://onlinelibrary.wiley.com/doi/10.1111/jcpp.12345/" + part), part).toEqual({ k: "doi", v: "10.1111/jcpp.12345" });
+      expect(parsePasted("https://onlinelibrary.wiley.com/doi/10.1111/jcpp.12345/" + part + "/"), part + "/").toEqual({ k: "doi", v: "10.1111/jcpp.12345" });
+    }
+    expect(parsePasted("https://onlinelibrary.wiley.com/doi/10.1111/jcpp.12345/full?af=R#top")).toEqual({ k: "doi", v: "10.1111/jcpp.12345" });
+    expect(parsePasted("https://example.org/view?lang=en&doi=10.1007/s10608-019-10045-8.pdf&mode=x")).toEqual({ k: "doi", v: "10.1007/s10608-019-10045-8" });
+    expect(parsePasted("HTTPS://LINK.SPRINGER.COM/CONTENT/PDF/10.1007/S10608-019-10045-8.PDF")).toEqual({ k: "doi", v: "10.1007/s10608-019-10045-8" });
+  });
+  it("what is cut from a link's DOI is cut only from a link: a bare DOI, and an & that is part of a DOI in a path, are kept", () => {
+    expect(parsePasted("10.1007/s10608-019-10045-8.pdf")).toEqual({ k: "doi", v: "10.1007/s10608-019-10045-8.pdf" });
+    expect(parsePasted("doi:10.1111/jcpp.12345/full")).toEqual({ k: "doi", v: "10.1111/jcpp.12345/full" });
+    expect(parsePasted("10.1002/a&b%28c")).toEqual({ k: "doi", v: "10.1002/a&b%28c" });
+    expect(parsePasted("https://example.org/doi/10.1002/a&b")).toEqual({ k: "doi", v: "10.1002/a&b" });
+  });
+  it("a link's percent escapes are decoded; a bad escape leaves the DOI as it was; an encoded & or # is not a cut", () => {
+    expect(parsePasted("https://doi.org/10.1000/abc%E0%A4%A")).toEqual({ k: "doi", v: "10.1000/abc%e0%a4%a" });
+    expect(parsePasted("https://example.org/x/10.1000/100%")).toEqual({ k: "doi", v: "10.1000/100%" });
+    expect(parsePasted("https://doi.org/10.1000/a%26b%23c")).toEqual({ k: "doi", v: "10.1000/a&b#c" });
+    expect(parsePasted("https://doi.org/10.1002/%28sici%29x")).toEqual({ k: "doi", v: "10.1002/(sici)x" });
+  });
   it("an arXiv DOI is a DOI (first match wins); an arXiv id is read from abs and pdf links, 'arXiv:' and a bare id, the version dropped", () => {
     expect(parsePasted("https://doi.org/10.48550/arXiv.2101.00001")).toEqual({ k: "doi", v: "10.48550/arxiv.2101.00001" });
     expect(parsePasted("https://arxiv.org/pdf/2101.00001v3")).toEqual({ k: "arxiv", v: "2101.00001" });
@@ -232,6 +258,48 @@ describe("pasteLookup: a PMC number", () => {
     const neither = viaPmc(pmcItem("1234567", [["pmcid", "PMC1234567"]]));
     expect(await pasteLookup(neither.f, { k: "pmcid", v: "PMC1234567" })).toEqual({ result: "nf" });
     expect(neither.rec.requested).toEqual([]);
+  });
+});
+
+describe("pasteLookup: an OpenAlex error does not stop the PMC route", () => {
+  // OpenAlex holds no PMC numbers anyway (the recorded request answers 404), so a 429 (the free budget spent) or a 5xx from it must not fail a paste that PubMed Central and Crossref answer.
+  const openAlexOut = (how: "thrown" | number, rec = replay()) => {
+    const f = (async (u: RequestInfo | URL) => {
+      if (String(u).includes("api.openalex.org/works/pmcid:")) {
+        rec.requested.push(String(u));
+        if (how === "thrown") throw new TypeError("Failed to fetch");
+        return new Response("", { status: how });
+      }
+      return rec.f(u);
+    }) as typeof fetch;
+    return { f, rec };
+  };
+  it("OpenAlex throws, answers 429 or answers 5xx: PubMed Central names the DOI and Crossref gives the entry, as when OpenAlex answers 404", async () => {
+    const want = await pasteLookup(replay().f, { k: "pmcid", v: "PMC6746734" });
+    expect(want.result).toBe("ok");
+    for (const how of ["thrown", 429, 500, 502, 503] as const) {
+      const t = openAlexOut(how);
+      expect(await pasteLookup(t.f, { k: "pmcid", v: "PMC6746734" }), String(how)).toEqual(want);
+      expect(t.rec.requested, String(how)).toEqual([OA("pmcid:PMC6746734"), PMC_ESUMMARY("6746734"), CR(WALK_DOI)]);
+      expect(t.rec.unknown).toEqual([]);
+    }
+  });
+  it("it is a fail only when the later routes fail too: PubMed Central down, or Crossref down for the DOI it names", async () => {
+    const pmcDown = openAlexOut(429, replay([PMC_ESUMMARY("6746734")]));
+    expect(await pasteLookup(pmcDown.f, { k: "pmcid", v: "PMC6746734" })).toEqual({ result: "fail" });
+    expect(pmcDown.rec.requested).toEqual([OA("pmcid:PMC6746734"), PMC_ESUMMARY("6746734")]);
+    const crDown = openAlexOut("thrown", replay([CR(WALK_DOI)]));
+    expect(await pasteLookup(crDown.f, { k: "pmcid", v: "PMC6746734" })).toEqual({ result: "fail" });
+  });
+  it("OpenAlex out and a PMC number PubMed Central does not know is not found: PubMed Central is the one that knows PMC numbers", async () => {
+    const f = (async (u: RequestInfo | URL) => String(u).includes("api.openalex.org") ? new Response("", { status: 429 })
+      : new Response('{"result":{"uids":["99999999"],"99999999":{"uid":"99999999","error":"cannot get document summary"}}}', { status: 200 })) as typeof fetch;
+    expect(await pasteLookup(f, { k: "pmcid", v: "PMC99999999" })).toEqual({ result: "nf" });
+  });
+  it("only the PMC route asks OpenAlex first: an OpenAlex error on a DOI, an arXiv id or an OpenAlex id is still a fail", async () => {
+    const down = (async () => new Response("", { status: 429 })) as typeof fetch;
+    expect(await pasteLookup(down, { k: "arxiv", v: "2101.00001" })).toEqual({ result: "fail" });
+    expect(await pasteLookup(down, { k: "openalex", v: "W2972990769" })).toEqual({ result: "fail" });
   });
 });
 
