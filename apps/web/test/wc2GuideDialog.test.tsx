@@ -4,7 +4,10 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GuideDialog } from "@/components/help/guide/GuideDialog";
+import { HelpButtons } from "@/components/help/HelpButtons";
 import { GuideSlot } from "@/components/help/slots/GuideSlot";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { GUIDE } from "@/lib/help/guide/content";
 import { DICTS } from "@/lib/i18n";
 import type { GuideSection } from "@/lib/help/guide/types";
 
@@ -56,6 +59,11 @@ describe("GuideDialog", () => {
     expect(q("guide-group-Begin")!.querySelectorAll("[data-testid^=guide-section-]").length).toBe(2);
     expect(sections().every((d) => !(d as HTMLDetailsElement).open)).toBe(true);
   });
+  it("without a sections prop it lists the Guide's own sections", () => {
+    draw(<GuideDialog open onClose={() => {}} />);
+    expect(sections().length).toBe(GUIDE.length);
+    expect(q("guide-count")!.textContent).toBe(`${GUIDE.length} sections`);
+  });
   it("typing narrows the list, changes the counter, opens one to three matches", () => {
     draw(<GuideDialog open onClose={() => {}} sections={FIX} />);
     type(q("guide-search") as HTMLInputElement, "alpha");
@@ -97,7 +105,7 @@ describe("GuideDialog", () => {
     type(q("guide-search") as HTMLInputElement, "alpha");
     act(() => { q("guide-print")!.click(); });
     expect(open).toHaveBeenCalledWith("", "_blank");
-    const written = w.document.write.mock.calls[0][0] as string;
+    const [written] = w.document.write.mock.calls[0] as [string];
     for (const s of FIX) expect(written).toContain(s.title);
     expect(written).toMatch(/Printed from the app\. Build \w+\./);
     expect(written).not.toMatch(/<script|onerror/i);
@@ -124,6 +132,17 @@ describe("GuideDialog", () => {
 });
 
 describe("GuideSlot", () => {
+  it("draws the Guide button in the row Help renders (HelpButtons), with its icon and no dialog until pressed", () => {
+    draw(<HelpButtons />);
+    const btn = document.querySelector("[data-testid=help-wave-c] [data-testid=help-guide]") as HTMLElement | null;
+    expect(btn).not.toBeNull();
+    expect(btn!.textContent).toBe("Guide");
+    expect(btn!.querySelector("svg")).not.toBeNull();
+    expect(btn!.querySelector("svg")!.getAttribute("aria-hidden")).toBe("true");
+    expect(q("guide-dialog")).toBeNull();
+    act(() => { btn!.click(); });
+    expect(q("guide-dialog")).not.toBeNull();
+  });
   it("is a Guide button that opens the dialog", () => {
     draw(<GuideSlot />);
     expect(q("guide-dialog")).toBeNull();
@@ -136,11 +155,57 @@ describe("GuideSlot", () => {
   });
 });
 
+describe("the Guide over another dialog (as it opens from Help)", () => {
+  const escape = () => act(() => { document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+  function drawHelpLike(): { closed: () => number } {
+    let closed = 0;
+    draw(
+      <Dialog open onOpenChange={(o) => { if (!o) closed++; }}>
+        <DialogContent data-testid="help-like">
+          <DialogTitle>Help</DialogTitle>
+          <DialogDescription>Help text</DialogDescription>
+          <GuideSlot />
+        </DialogContent>
+      </Dialog>
+    );
+    return { closed: () => closed };
+  }
+  it("Escape closes only the Guide; the dialog under it stays open and gets its button's focus back", async () => {
+    const help = drawHelpLike();
+    const btn = q("help-guide")!;
+    act(() => { btn.focus(); btn.click(); });
+    expect(q("guide-dialog")).not.toBeNull();
+    escape();
+    expect(q("guide-dialog")).toBeNull();
+    expect(q("help-like")).not.toBeNull();
+    expect(help.closed()).toBe(0);
+    // Radix hands focus back on the next tick.
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(document.activeElement).toBe(btn);
+  });
+  it("the Close button also ends only the Guide", () => {
+    const help = drawHelpLike();
+    act(() => { q("help-guide")!.click(); });
+    act(() => { q("guide-close")!.click(); });
+    expect(q("guide-dialog")).toBeNull();
+    expect(q("help-like")).not.toBeNull();
+    expect(help.closed()).toBe(0);
+  });
+  it("opening it again starts with an empty search", () => {
+    drawHelpLike();
+    act(() => { q("help-guide")!.click(); });
+    type(q("guide-search") as HTMLInputElement, "alpha");
+    act(() => { q("guide-close")!.click(); });
+    act(() => { q("help-guide")!.click(); });
+    expect((q("guide-search") as HTMLInputElement).value).toBe("");
+  });
+});
+
 describe("messages", () => {
   it("every key the dialog uses is in the English dictionary and Hindi has the same keys", () => {
     const keys = Object.keys(DICTS.en).filter((k) => k.startsWith("wc_guide_"));
     expect(keys.length).toBeGreaterThan(10);
     for (const k of keys) expect(DICTS.hi[k], k).toBeTruthy();
-    for (const k of keys) expect(DICTS.en[k], k).not.toMatch(/—|[\u{1F300}-\u{1FAFF}]/u);
+    for (const k of keys) expect(DICTS.en[k], k).not.toMatch(/\u2014|[\u{1F300}-\u{1FAFF}]/u);
   });
 });

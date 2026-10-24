@@ -2,11 +2,11 @@ import { sanitizeHtml } from "@appuscholar/core";
 import type { GuideSection } from "./types";
 
 /**
- * The Guide's search, print document and counter (Task C2). v1 is the spec: guideStrip 9755, guideFilter 9759-9766, guidePrint 9821-9826.
+ * The Guide's search, print document and counter (Task C2). v1 is the spec (build 2026.10.24a): `guideStrip`, `guideFilter` and `guidePrint`.
  * Pure functions, so the dialog and the tests share them.
  */
 
-/** v1 guideStrip: a section's HTML as plain lower-case text (tags become spaces, &amp; becomes &, white space collapses). */
+/** v1 `guideStrip`: a section's HTML as plain lower-case text (tags become spaces, &amp; becomes &, white space collapses). */
 export function guideStrip(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").toLowerCase();
 }
@@ -17,7 +17,7 @@ export function guideWords(query: string): string[] {
 }
 
 /**
- * v1 guideFilter: every query word must appear (as a substring, no stemming: only Appu's retrieval stems) in the title, keywords and stripped
+ * v1 `guideFilter`: every query word must appear (as a substring, no stemming: only Appu's retrieval stems) in the title, keywords and stripped
  * body together. An empty query lists every section, closed; one to three matches come back open.
  */
 export function searchGuide(query: string, sections: GuideSection[]): { id: string; open: boolean }[] {
@@ -40,7 +40,7 @@ function escapeText(s: string): string {
 }
 
 /**
- * v1 guidePrint's page: every section (not only the matches) under its title, then "Printed from the app. Build {version}." The titles are
+ * v1 `guidePrint`'s page: every section (not only the matches) under its title, then "Printed from the app. Build {version}." The titles are
  * escaped and each body goes through sanitizeHtml, so the new window gets no script and no handler; the opener calls print() itself.
  */
 export function buildGuidePrintDocument(sections: GuideSection[], version: string): string {

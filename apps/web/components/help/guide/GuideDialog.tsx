@@ -8,37 +8,40 @@ import { Input } from "@/components/ui/input";
 import { GUIDE } from "@/lib/help/guide/content";
 import { buildGuidePrintDocument, guideCount, guideWords, searchGuide } from "@/lib/help/guide/search";
 import type { GuideSection } from "@/lib/help/guide/types";
-import { DICTS, useT } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import { APP_VERSION } from "@/lib/version";
 
-const GROUP_KEY = "wc_guide_group_";
-/** The contents' groups in v1's order, read from the order of the `wc_guide_group_*` keys in help-guide.en.json (the names themselves are those keys' suffixes). */
-const GROUPS = Object.keys(DICTS.en).filter((k) => k.startsWith(GROUP_KEY)).map((k) => k.slice(GROUP_KEY.length)) as GuideSection["group"][];
+/** The contents' headings in v1's order, as message keys; what follows the prefix is the `group` a section names. */
+const GROUP_PREFIX = "wc_guide_group_";
+const GROUP_KEYS = ["wc_guide_group_Begin", "wc_guide_group_Tools", "wc_guide_group_Practice", "wc_guide_group_Help"];
 
 /** What a section's body looks like: the tags the sanitiser keeps, given the spacing v1's guide gave them. */
-const BODY = "mt-2 text-[13.5px] leading-relaxed [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_h4]:mt-3 [&_h4]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_table]:my-2 [&_td]:border [&_td]:px-2 [&_th]:border [&_th]:px-2 [&_a]:underline";
+const BODY = "mt-2 break-words text-[13.5px] leading-relaxed [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_h4]:mt-3 [&_h4]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_table]:my-2 [&_td]:border [&_td]:px-2 [&_th]:border [&_th]:px-2 [&_a]:underline";
 
 /**
- * The Guide (Task C2; v1 guideDlg 1272-1288 and guideFilter/guideRender/guidePrint 9755-9826): a search box, a count, the contents grouped
+ * The Guide (Task C2; v1 `guideDlg`, `guideFilter`, `guideRender`, `guidePrint`, build 2026.10.24a): a search box, a count, the contents grouped
  * Begin, Tools, Practice, Help, each section a details element, and "Print or save as PDF". Every section's HTML goes through sanitizeHtml.
  * `extra` is drawn between the search row and the count (Task C3 puts Ask Appu there). The query lives inside the open dialog, so it starts empty each time.
+ * Opened from Help, it is a second dialog over it: Escape or Close ends only the Guide.
  */
 export function GuideDialog({ open, onClose, sections = GUIDE, extra }: { open: boolean; onClose: () => void; sections?: GuideSection[]; extra?: ReactNode }) {
   const t = useT();
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-h-[90vh] grid-rows-[auto_1fr] overflow-hidden sm:max-w-3xl" data-testid="guide-dialog">
+      {/* A column that is at most 90% of the screen's height: the header and the buttons stay, only the contents scroll. */}
+      <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden sm:max-w-3xl" data-testid="guide-dialog">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-purple-800">{t("wc_guide_title")}</DialogTitle>
           <DialogDescription>{t("wc_guide_english_only")}</DialogDescription>
         </DialogHeader>
-        <GuideBody t={t} sections={sections} extra={extra} onClose={onClose} />
+        <GuideBody sections={sections} extra={extra} onClose={onClose} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function GuideBody({ t, sections, extra, onClose }: { t: ReturnType<typeof useT>; sections: GuideSection[]; extra?: ReactNode; onClose: () => void }) {
+function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; extra?: ReactNode; onClose: () => void }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [popupBlocked, setPopupBlocked] = useState(false);
   const hits = useMemo(() => searchGuide(query, sections), [query, sections]);
@@ -58,30 +61,31 @@ function GuideBody({ t, sections, extra, onClose }: { t: ReturnType<typeof useT>
   };
 
   return (
-    <div className="grid min-h-0 gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="search" className="min-w-[220px] flex-1" data-testid="guide-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("wc_guide_search_ph")} aria-label={t("wc_guide_search_label")} />
+        <Input type="search" className="min-w-[220px] flex-1 text-ellipsis" data-testid="guide-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("wc_guide_search_ph")} aria-label={t("wc_guide_search_label")} />
         <Button variant="ghost" data-testid="guide-print" onClick={print}><Printer weight="regular" aria-hidden="true" />{t("wc_guide_print")}</Button>
       </div>
       {popupBlocked && <p className="m-0 text-sm text-destructive" role="status" data-testid="guide-print-note">{t("wc_guide_popup")}</p>}
       {extra}
       <p className="m-0 text-[12.5px] text-muted-foreground" aria-live="polite" data-testid="guide-count">{t(count.key, count.vars)}</p>
-      <div className="min-h-0 overflow-y-auto pr-1" data-testid="guide-list" role="region" aria-label={t("wc_guide_contents")}>
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1" data-testid="guide-list" role="region" aria-label={t("wc_guide_contents")}>
         {hits.length === 0 ? (
           <p className="m-0 text-[13.5px]" data-testid="guide-empty">{t("wc_guide_empty")}</p>
         ) : (
-          GROUPS.map((g) => {
+          GROUP_KEYS.map((key) => {
+            const g = key.slice(GROUP_PREFIX.length);
             const inGroup = hits.filter((h) => byId.get(h.id)?.group === g);
             if (!inGroup.length) return null;
             return (
               <section key={g} data-testid={"guide-group-" + g}>
-                <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(GROUP_KEY + g)}</h3>
+                <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(key)}</h3>
                 {inGroup.map((h) => {
                   const s = byId.get(h.id)!;
                   return (
                     // Keyed by whether the search opens it, so a new search re-opens or closes it while a click on the summary is kept until then.
-                    <details key={s.id + (h.open ? "-open" : "")} open={h.open} className="my-2 rounded-lg border border-line px-3 py-2" data-testid={"guide-section-" + s.id}>
-                      <summary className="cursor-pointer text-sm font-semibold text-purple-800">{s.title}</summary>
+                    <details key={s.id + (h.open ? "-open" : "")} open={h.open} className="my-2 rounded-lg border border-line px-3" data-testid={"guide-section-" + s.id}>
+                      <summary className="cursor-pointer py-3 text-sm font-semibold text-purple-800">{s.title}</summary>
                       <div className={BODY} dangerouslySetInnerHTML={{ __html: bodies.get(s.id) ?? "" }} />
                     </details>
                   );

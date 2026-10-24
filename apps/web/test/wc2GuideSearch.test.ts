@@ -10,13 +10,13 @@ const FIX: GuideSection[] = [
   { id: "tags", group: "Practice", title: "Tag soup", keywords: "", html: "<p>The word hidden<span>inside</span> is split.</p>" }
 ];
 
-describe("guideStrip (v1 guideStrip 9755)", () => {
+describe("guideStrip (v1 guideStrip)", () => {
   it("drops tags to spaces, turns &amp; into &, collapses white space and lower-cases", () => {
     expect(guideStrip("<p>One&amp;Two</p>\n<p>  THREE </p>")).toBe(" one&two three ");
   });
 });
 
-describe("searchGuide (v1 guideFilter 9759)", () => {
+describe("searchGuide (v1 guideFilter)", () => {
   it("an empty or blank query lists every section, none opened", () => {
     expect(searchGuide("", FIX)).toEqual(FIX.map((s) => ({ id: s.id, open: false })));
     expect(searchGuide("   ", FIX).length).toBe(4);
@@ -34,6 +34,11 @@ describe("searchGuide (v1 guideFilter 9759)", () => {
   it("reads the body without its tags and decodes &amp;", () => {
     expect(searchGuide("form & keeps", FIX).map((h) => h.id)).toEqual(["consent"]);
     expect(searchGuide("p>", FIX)).toEqual([]);
+  });
+  it("does not look inside tags: an address in a link is not searchable text", () => {
+    const linked: GuideSection[] = [{ id: "l", group: "Help", title: "Links", keywords: "", html: '<p><a href="https://example.test/hidden-page">the manual</a></p>' }];
+    expect(searchGuide("manual", linked).length).toBe(1);
+    expect(searchGuide("hidden-page", linked)).toEqual([]);
   });
   it("one to three matches come back open, four or more do not, none is empty", () => {
     expect(searchGuide("a", FIX).length).toBe(4);
@@ -54,7 +59,7 @@ describe("searchGuide (v1 guideFilter 9759)", () => {
   });
 });
 
-describe("guideCount (v1 guideFilter 9764)", () => {
+describe("guideCount (v1 guideFilter's counter line)", () => {
   it("with no query words it names the total; with words it says how many match", () => {
     expect(guideCount(0, 26, 26)).toEqual({ key: "wc_guide_count_all", vars: { total: 26 } });
     expect(guideCount(2, 3, 26)).toEqual({ key: "wc_guide_count_match", vars: { h: 3, total: 26 } });
@@ -62,7 +67,7 @@ describe("guideCount (v1 guideFilter 9764)", () => {
   });
 });
 
-describe("buildGuidePrintDocument (v1 guidePrint 9821)", () => {
+describe("buildGuidePrintDocument (v1 guidePrint)", () => {
   const doc = buildGuidePrintDocument(FIX, "abc1234");
   it("holds every section's title and the build id", () => {
     for (const s of FIX) expect(doc).toContain(s.title);
