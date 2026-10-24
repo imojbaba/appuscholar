@@ -27,6 +27,8 @@ const h = vi.hoisted(() => ({
   sets: [] as Array<{ kind: string; value: unknown }>,
   inserts: [] as Array<{ html: string; opts: unknown }>,
   insertResult: true,
+  /** The state of one blob kind, for the tests that need a kind loading, locked, not opening or failing to read (the rest are ready). */
+  flags: {} as Record<string, { loading?: boolean; locked?: boolean; broken?: boolean; error?: boolean }>,
   toast: vi.fn()
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/p/p1/design/ethics" }));
@@ -43,7 +45,7 @@ vi.mock("@/lib/blobs/useProjectBlob", async () => {
       useSyncExternalStore((cb) => { h.listeners.add(cb); return () => { h.listeners.delete(cb); }; }, () => h.version);
       return {
         value: h.store.has(kind) ? h.store.get(kind) : null,
-        loading: false, locked: false, broken: false, error: false, readOnly: false,
+        loading: h.flags[kind]?.loading ?? false, locked: h.flags[kind]?.locked ?? false, broken: h.flags[kind]?.broken ?? false, error: h.flags[kind]?.error ?? false, readOnly: false,
         set: (next: unknown) => {
           const prev = h.store.has(kind) ? h.store.get(kind) : null;
           const value = typeof next === "function" ? (next as (p: unknown) => unknown)(prev) : next;
@@ -90,6 +92,11 @@ async function set(id: string, value: string) {
   });
 }
 const click = async (id: string) => { expect($(T(id)), id).not.toBeNull(); await act(async () => { $(T(id))!.click(); }); };
+/** The text of the element a control's aria-describedby points at ("" when it points at nothing). */
+const describedBy = (id: string): string => {
+  const ref = $(T(id))!.getAttribute("aria-describedby");
+  return ref ? (document.getElementById(ref)?.textContent ?? "") : "";
+};
 const checked = (id: string) => ($(T(id)) as HTMLInputElement).checked;
 const ec = () => h.store.get("design_ec") as Record<string, unknown> | undefined;
 
@@ -120,6 +127,7 @@ const texts = (p: Partial<Record<(typeof TEXT_KEYS)[number], string>>) => Object
 const asEthics = (f: ReturnType<typeof texts>) => f as Parameters<typeof ethicsStatement>[0];
 
 beforeEach(() => {
+  h.flags = {};
   h.store.clear(); h.sets.length = 0; h.inserts.length = 0; h.version = 0; h.insertResult = true;
   h.toast.mockClear();
 });
@@ -305,21 +313,41 @@ describe("what will you record about each person: the menu", () => {
     await set("ec-idmode", "codes");
     const plan = $(T("ec-plan"))!.textContent!;
     for (const [id, line] of Object.entries(LINE)) {
-      const row = $(T("ec-rec-" + id))!.closest("label")!;
-      expect(row.textContent, id).toContain(LABEL[id]);
-      expect(row.textContent, id).toContain(line);
+      // The tick's label is its name only; the line sits beside it, outside the label, and the tick points at it.
+      expect($(T("ec-rec-" + id))!.closest("label")!.textContent, id).toBe(LABEL[id]);
+      expect($(T("ec-rec-row-" + id))!.textContent, id).toContain(line);
+      expect(describedBy("ec-rec-" + id), id).toBe(line);
     }
-    for (const id of ["course", "language"]) expect($(T("ec-rec-" + id))!.closest("label")!.textContent, id).toBe(LABEL[id]);
+    for (const id of ["course", "language"]) {
+      expect($(T("ec-rec-" + id))!.closest("label")!.textContent, id).toBe(LABEL[id]);
+      expect($(T("ec-rec-row-" + id))!.textContent, id).toBe(LABEL[id]);
+      expect($(T("ec-rec-" + id))!.getAttribute("aria-describedby"), id).toBeNull();
+    }
     expect(plan).not.toContain("undefined");
+  });
+
+  it("the menu is a fieldset whose legend is 'What will you record about each person?'", async () => {
+    await render();
+    await set("ec-idmode", "codes");
+    const menu = $(T("ec-rec-menu"))!;
+    expect(menu.tagName).toBe("FIELDSET");
+    expect(menu.querySelector("legend")!.textContent).toBe("What will you record about each person?");
+    expect(menu.contains($(T("ec-rec-name")))).toBe(true);
+    expect(menu.contains($(T("ec-rec-other")))).toBe(true);
   });
 
   it("the four sensitive fields show 'Sensitive: your committee will ask why you need it', and no other does", async () => {
     await render();
     await set("ec-idmode", "pseudonyms");
     for (const id of IDS) {
-      const row = $(T("ec-rec-" + id))!.closest("label")!;
-      if (SENSITIVE.includes(id)) expect(row.textContent, id).toContain(SENSITIVE_NOTE);
-      else expect(row.textContent, id).not.toContain("Sensitive");
+      expect($(T("ec-rec-" + id))!.closest("label")!.textContent, id).toBe(LABEL[id]);
+      const row = $(T("ec-rec-row-" + id))!;
+      if (SENSITIVE.includes(id)) {
+        expect(row.textContent, id).toContain(SENSITIVE_NOTE);
+        expect(describedBy("ec-rec-" + id), id).toBe(SENSITIVE_NOTE);
+      } else {
+        expect(row.textContent, id).not.toContain("Sensitive");
+      }
     }
   });
 
@@ -550,7 +578,7 @@ describe("the consent form, the ethics statement and the protocol carry the plan
     expect(h.inserts[0]!.html).not.toContain("How participants are identified");
   });
 
-  it("with no answer to the question every inserted text is v1's: statement, consent form (minors no or unanswered), protocol", async () => {
+  it("with no answer to the question the ethics statement and the consent form (minors no or unanswered) are v1's, whatever else the blob holds", async () => {
     for (const minors of ["", "no"]) {
       h.store.clear(); h.inserts.length = 0;
       h.store.set("design_ec", { title: "T", pi: "P", status: "approved", committee: "IEC", minors, record: ["age"], recordOther: ["x"] });
@@ -567,11 +595,94 @@ describe("the consent form, the ethics statement and the protocol carry the plan
   });
 });
 
+describe("the protocol waits for the Ethics record (R30)", () => {
+  const WAIT = "Waiting for your Ethics record…";
+  const BROKEN = "Your Ethics record does not open here, so the protocol cannot say how participants are identified.";
+  const typeBg = async (v: string) => {
+    const box = $(T("proto-bg")) as HTMLTextAreaElement;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(box, v);
+      box.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  };
+  const o = (bg: string): ProtoFields => ({ bg, obj: "", design: "", part: "", sample: "", proc: "", risk: "", dmp: "" });
+  const bump = async () => { await act(async () => { h.version++; for (const l of h.listeners) l(); }); };
+  const generate = () => ($(T("proto-generate")) as HTMLButtonElement);
+
+  it("with no answer to the question, even a record that holds ticks, the protocol is v1's", async () => {
+    h.store.set("design_ec", { title: "T", record: ["age", "gender"], recordOther: ["Hobby"] });
+    await mount(<Protocol projectId="p1" />);
+    await typeBg("Sleep and exams");
+    await click("proto-generate");
+    expect(h.inserts).toHaveLength(1);
+    expect(h.inserts[0]!.html).toBe(escaped(protocolMarkdown(o("Sleep and exams"))!));
+    expect(h.inserts[0]!.html).not.toContain("How participants are identified");
+    expect(text("proto-plan-note")).toBe("");
+  });
+
+  it("while the Ethics record is still opening Generate is off, a status line says why, and nothing is inserted; when it has opened the line is in", async () => {
+    h.flags = { design_ec: { loading: true } };
+    await mount(<Protocol projectId="p1" />);
+    await typeBg("Sleep and exams");
+    expect(generate().disabled).toBe(true);
+    expect(text("proto-plan-note")).toBe(WAIT);
+    expect($(T("proto-plan-note"))!.getAttribute("role")).toBe("status");
+    await click("proto-generate");
+    expect(h.inserts).toHaveLength(0);
+    expect(h.sets).toHaveLength(0);
+    // The record opens: it holds the plan, the wait is gone and the protocol carries the line.
+    h.flags = {};
+    h.store.set("design_ec", { idMode: "codes" });
+    await bump();
+    expect(generate().disabled).toBe(false);
+    expect(text("proto-plan-note")).toBe("");
+    await click("proto-generate");
+    expect(h.inserts).toHaveLength(1);
+    expect(h.inserts[0]!.html).toBe(escaped(protocolMarkdownV2(o("Sleep and exams"), { idMode: "codes" })!));
+    expect(h.inserts[0]!.html).toContain("How participants are identified");
+  });
+
+  it("while the vault holds the Ethics record locked (nothing read) Generate waits too", async () => {
+    h.flags = { design_ec: { locked: true } };
+    await mount(<Protocol projectId="p1" />);
+    await typeBg("x");
+    expect(generate().disabled).toBe(true);
+    expect(text("proto-plan-note")).toBe(WAIT);
+    await click("proto-generate");
+    expect(h.inserts).toHaveLength(0);
+  });
+
+  it("an Ethics record that does not open, or could not be read, is said in a note and Generate still makes v1's protocol", async () => {
+    for (const flags of [{ broken: true }, { error: true }]) {
+      h.flags = { design_ec: flags };
+      h.inserts.length = 0; h.sets.length = 0; h.store.clear();
+      const root = await mount(<Protocol projectId="p1" />);
+      await typeBg("Sleep and exams");
+      expect(generate().disabled, JSON.stringify(flags)).toBe(false);
+      expect(text("proto-plan-note"), JSON.stringify(flags)).toBe(BROKEN);
+      await click("proto-generate");
+      expect(h.inserts, JSON.stringify(flags)).toHaveLength(1);
+      expect(h.inserts[0]!.html, JSON.stringify(flags)).toBe(escaped(protocolMarkdown(o("Sleep and exams"))!));
+      expect(h.sets.map((x) => x.kind), JSON.stringify(flags)).toEqual(["design_proto"]);
+      await act(async () => { root.unmount(); });
+      document.body.innerHTML = "";
+    }
+  });
+
+  it("when the Ethics record is ready there is no note", async () => {
+    h.store.set("design_ec", { idMode: "anonymous" });
+    await mount(<Protocol projectId="p1" />);
+    expect(text("proto-plan-note")).toBe("");
+    expect(generate().disabled).toBe(false);
+  });
+});
+
 describe("words and register", () => {
   const KEYS = [
     "design_rec_h", "design_rec_desc", "design_ec_idmode", "design_ec_idmode_codes", "design_ec_idmode_pseudonyms", "design_ec_idmode_anonymous", "design_rec_menu_h",
     "design_rec_who_h", "design_rec_about_h", "design_rec_always", "design_rec_code", "design_rec_code_why", "design_rec_consent", "design_rec_consent_why",
     "design_rec_sensitive", "design_rec_combo", "design_rec_other", "design_rec_other_ph", "design_rec_other_n",
+    "design_proto_plan_wait", "design_proto_plan_broken",
     ...IDS.map((id) => "design_rec_" + id),
     ...IDS.filter((id) => !SENSITIVE.includes(id) && id !== "course" && id !== "language").map((id) => "design_rec_" + id + "_why")
   ];

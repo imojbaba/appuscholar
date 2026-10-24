@@ -194,5 +194,7 @@
   "design_rec_combo": "In a small group, these together can point to one person even without a name. Report them in groups (for example 18–20) in your write-up.",
   "design_rec_other": "Add another detail",
   "design_rec_other_ph": "e.g. Hobby",
-  "design_rec_other_n": "Another detail {n}"
+  "design_rec_other_n": "Another detail {n}",
+  "design_proto_plan_wait": "Waiting for your Ethics record…",
+  "design_proto_plan_broken": "Your Ethics record does not open here, so the protocol cannot say how participants are identified."
 }

@@ -48,7 +48,7 @@ type PlanEdit = { idMode?: string; record?: string[]; recordOther?: string[] };
  * New, between the approval record and the consent form (spec §4, controller ruling R29): "How participants are identified". The question (`ec-idmode`, three answers) and, for
  * codes and made-up names only, the menu of what is recorded about each person (`ec-rec-<id>`, starting with the name and the spellings ticked; the code and the consent record
  * are always kept, shown as text), a line beside each field, a note on the four sensitive ones, the combination line (`ec-rec-combo`) and "Add another detail" (`ec-rec-other`, up to
- * five labels). Its values join the record's: either Save, and both generators, store `idMode`, `record` and `recordOther` with the twelve texts. With the question unanswered none of the
+ * five labels). Its values join the record's: any of the three Saves (the record's, the plan's and the consent form's), and both generators, store `idMode`, `record` and `recordOther` with the twelve texts. With the question unanswered none of the
  * three is written and every inserted text is v1's. The plan the generators are given is what the page shows: the menu is hidden for anonymous, so its stored ticks are not passed on.
  * Aadhaar, PAN and other government ID numbers are not offered (call C5).
  */
@@ -143,17 +143,24 @@ export function Ethics({ projectId }: { projectId: string }) {
     <textarea className="input" rows={2} data-testid={ID[k]} value={now[k]} placeholder={t(PH[k]!)} onChange={(e) => change(k, e.target.value)} />
   );
   const label = "flex flex-col gap-1 text-[13.5px] text-ink";
-  /** One menu field: a tick, its label, and the line from §4's table under it (none for course and language; the four sensitive ones show the note, in the warning colour). */
+  /**
+   * One menu field: a tick with its name as the label, and the line from §4's table under it (none for course and language; the four sensitive ones show the note, in the warning colour).
+   * The line is outside the label, so the tick's name is the name alone, and the tick points at the line with aria-describedby (read after the name).
+   */
   const field = (f: RecordField) => {
     const why = f.sensitive ? t("design_rec_sensitive") : NO_LINE.includes(f.id) ? "" : t(`design_rec_${f.id}_why`);
+    const whyId = "ec-rec-why-" + f.id;
     return (
-      <label key={f.id} className="flex cursor-pointer items-start gap-2 text-[13.5px] text-ink">
-        <input type="checkbox" className="mt-0.5 size-[17px] shrink-0 accent-purple-600" data-testid={"ec-rec-" + f.id} checked={record.includes(f.id)} onChange={(e) => tick(f.id, e.target.checked)} />
-        <span className="flex flex-col">
-          <span>{t(`design_rec_${f.id}`)}</span>
-          {why !== "" && <span className={"text-[12.5px] leading-[17px] " + (f.sensitive ? "text-flag-ink" : "text-muted-foreground")}>{why}</span>}
-        </span>
-      </label>
+      <div key={f.id} className="flex flex-col" data-testid={"ec-rec-row-" + f.id}>
+        <label className="flex cursor-pointer items-start gap-2 text-[13.5px] text-ink">
+          <input
+            type="checkbox" className="mt-0.5 size-[17px] shrink-0 accent-purple-600" data-testid={"ec-rec-" + f.id} aria-describedby={why !== "" ? whyId : undefined}
+            checked={record.includes(f.id)} onChange={(e) => tick(f.id, e.target.checked)}
+          />
+          {t(`design_rec_${f.id}`)}
+        </label>
+        {why !== "" && <span id={whyId} className={"pl-[25px] text-[12.5px] leading-[17px] " + (f.sensitive ? "text-flag-ink" : "text-muted-foreground")}>{why}</span>}
+      </div>
     );
   };
   /** A row that is always kept (the code, the consent record): text with "Always", no tick. */
@@ -224,8 +231,8 @@ export function Ethics({ projectId }: { projectId: string }) {
             <select className="input" data-testid="ec-idmode" value={idMode} onChange={(e) => changePlan({ idMode: e.target.value })}>{options("idmode", IDMODES, idMode)}</select>
           </label>
           {menu && (
-            <div className="flex flex-col gap-3" data-testid="ec-rec-menu">
-              <p className="m-0 text-[13.5px] font-semibold text-ink">{t("design_rec_menu_h")}</p>
+            <fieldset className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" data-testid="ec-rec-menu">
+              <legend className="mb-2 p-0 text-[13.5px] font-semibold text-ink">{t("design_rec_menu_h")}</legend>
               <div className="flex flex-col gap-2" role="group" aria-label={t("design_rec_who_h")} data-testid="ec-rec-group-who">
                 <p className="m-0 text-[12.5px] font-semibold text-muted-foreground">{t("design_rec_who_h")}</p>
                 {always("code")}
@@ -250,7 +257,7 @@ export function Ethics({ projectId }: { projectId: string }) {
                   </p>
                 )}
               </div>
-            </div>
+            </fieldset>
           )}
           <div className="place-row" style={{ marginBottom: 0 }}>
             <Button variant="primary" data-testid="ec-plan-save" onClick={save}>{t("design_save")}</Button>
