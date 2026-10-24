@@ -65,7 +65,7 @@ const SizedImage = Image.extend({
         },
         renderHTML: (a) => (a.width ? { style: `width: ${a.width}px` } : {})
       },
-      // The picture editor's audit trail (v1 ieApply 4517-4537): the operations done, de-duplicated and joined ", ". It is how the picture's note and the writing record can say a face was covered.
+      // The picture editor's audit trail (v1 ieApply 4526, picApplyResult 4574): the operations done, de-duplicated and joined ", ". v1 writes it and never reads it back; it stays so a reader of the HTML can see a picture was changed.
       edits: {
         default: null,
         parseHTML: (el) => (el as HTMLElement).getAttribute("data-edits") || null,
@@ -111,25 +111,51 @@ export const RefParagraph = Extension.create({
  * text, keep working and a v1-imported document's captions stay live:
  * `<p data-cap="figure|table"><strong>Figure 1</strong></p>`, `<p data-cap-title="1"><em>Title</em></p>`, `<p data-cap-note="1"><em>Note.</em> text</p>`.
  * `cap` is "figure" or "table" (anything else is read as no caption); `capTitle` and `capNote` are booleans, written back as "1".
+ * Enter never makes a second caption (v1 does: its contenteditable copies the attribute, and Renumber all would then write "Figure n" over the
+ * student's next line): the attributes are not kept on split, and Enter at the start or in the middle of a top-level caption paragraph leaves
+ * the mark on the caption's own text only. The priority runs this before the core keymap's Enter.
  */
+const CAPTION_OFF = { cap: null, capTitle: false, capNote: false };
 export const CaptionParagraph = Extension.create({
   name: "captionParagraph",
+  priority: 1000,
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        const { $from, empty } = editor.state.selection;
+        const a = $from.parent.attrs;
+        if (!empty || $from.depth !== 1 || $from.parent.type.name !== "paragraph" || (!a.cap && !a.capTitle && !a.capNote)) return false;
+        // At the start of a caption with text the new empty line is the one above; anywhere else it is the half after the cursor.
+        const above = $from.parentOffset === 0 && $from.parent.content.size > 0;
+        return editor.chain().splitBlock().command(({ tr }) => {
+          const after = tr.selection.$from.before();
+          const pos = above ? tr.doc.resolve(after - 1).before() : after;
+          const node = tr.doc.nodeAt(pos);
+          if (node) tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...CAPTION_OFF });
+          return true;
+        }).run();
+      }
+    };
+  },
   addGlobalAttributes() {
     return [{
       types: ["paragraph"],
       attributes: {
         cap: {
           default: null,
+          keepOnSplit: false,
           parseHTML: (el) => { const c = el.getAttribute("data-cap"); return c === "figure" || c === "table" ? c : null; },
           renderHTML: (a) => (a.cap === "figure" || a.cap === "table" ? { "data-cap": a.cap as string } : {})
         },
         capTitle: {
           default: false,
+          keepOnSplit: false,
           parseHTML: (el) => el.hasAttribute("data-cap-title"),
           renderHTML: (a) => (a.capTitle ? { "data-cap-title": "1" } : {})
         },
         capNote: {
           default: false,
+          keepOnSplit: false,
           parseHTML: (el) => el.hasAttribute("data-cap-note"),
           renderHTML: (a) => (a.capNote ? { "data-cap-note": "1" } : {})
         }

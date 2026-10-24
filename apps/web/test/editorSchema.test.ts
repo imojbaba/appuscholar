@@ -140,3 +140,31 @@ describe("editor schema keeps caption paragraphs and picture edits (wave D, Task
     } finally { e.destroy(); }
   });
 });
+
+describe("Enter never makes a second caption (wave D, Task 2 review)", () => {
+  const CAP = '<p data-cap="figure"><strong>Figure 1</strong></p>';
+  // A real keydown, as the student presses it: the keymaps run in priority order.
+  function enterAt(html: string, pos: number): string {
+    const e = new Editor({ extensions: editorExtensions, content: html });
+    try {
+      e.commands.setTextSelection(pos);
+      e.view.dom.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      return e.getHTML();
+    } finally { e.destroy(); }
+  }
+  it("at the end of a caption, title or note the new line is a plain paragraph", () => {
+    expect(enterAt(CAP, 9)).toBe(CAP + "<p></p>");
+    expect(enterAt('<p data-cap-title="1"><em>T</em></p>', 2)).toBe('<p data-cap-title="1"><em>T</em></p><p></p>');
+    expect(enterAt('<p data-cap-note="1"><em>Note.</em> n</p>', 9)).toBe('<p data-cap-note="1"><em>Note.</em> n</p><p></p>');
+  });
+  it("at the start of a caption the empty line above is plain and the caption keeps its mark", () => {
+    expect(enterAt(CAP, 1)).toBe("<p></p>" + CAP);
+  });
+  it("in the middle of a caption only the first half stays a caption", () => {
+    expect(enterAt(CAP, 4)).toBe('<p data-cap="figure"><strong>Fig</strong></p><p><strong>ure 1</strong></p>');
+  });
+  it("a plain paragraph and a caption's alignment split as before", () => {
+    expect(enterAt("<p>ab</p>", 2)).toBe("<p>a</p><p>b</p>");
+    expect(enterAt('<p style="text-align: center" data-cap="table"><strong>Table 1</strong></p>', 8)).toBe('<p data-cap="table" style="text-align: center;"><strong>Table 1</strong></p><p style="text-align: center;"></p>');
+  });
+});
