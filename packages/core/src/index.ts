@@ -10,6 +10,7 @@ export { provHash, originCount, originShare } from "./origin";
 export type { OriginStats } from "./origin";
 export { classifyAiUse } from "./aiuse";
 export type { AiUseGroup } from "./aiuse";
+export { classifyAiUseV2 } from "./aiuse-v2";
 export { PLAIN_OUT, contentLangInstruction, fieldLabel, buildWritingPrompt, buildDraftFirstPrompt, buildChatPrompt } from "./prompts";
 export type { WritingKind, Built } from "./prompts";
 export { PROVIDERS, PROV_ORDER } from "./providers";

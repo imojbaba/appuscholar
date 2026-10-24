@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PROVIDERS, aiuBuildV2, aiuInRange, classifyAiUse, buildIdeaPromptV2, type AiuEntry } from "@appuscholar/core";
+import { PROVIDERS, AP_STAGES, aiuBuildV2, aiuInRange, apBuild, buildAskPrompt, buildHelperPrompt, buildIdeaPromptV2, buildLessonAskPrompt, buildWalkPrompt, classifyAiUse, classifyAiUseV2, type AiuEntry } from "@appuscholar/core";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
 import designEn from "../messages/tools/design.en.json";
@@ -149,6 +149,29 @@ describe("AI-use statement (Task A4): the log", () => {
     await set("aiu-from", "2026-11-01");
     expect(rows()).toEqual([]);
     expect(text("aiu-none")).toBe("The log has no requests in these dates.");
+  });
+
+  it("the four kinds Task Q3 labels (D-S2-136) are rows and are in the statement like any other kind, in English whatever the screen's language", async () => {
+    const doc = apBuild("Practice paper", ["Abstract\nWe studied 120 students."], "pdf");
+    const step = { k: "procedure", title: "Consent", said: "Participants consented.", flaw: "No consent form is shown." };
+    const prompts = [
+      buildAskPrompt("psychology", doc, "What was the sample?").prompt, buildAskPrompt("psychology", doc, "How was anxiety measured?").prompt,
+      buildWalkPrompt("psychology", doc, AP_STAGES[0]!, "my first try").prompt,
+      buildHelperPrompt("stats", "psychology", "t(58) = 2.36, p = .022").prompt,
+      buildLessonAskPrompt({ teacher: "dev", field: "psychology", lang: "hi", step, doc, question: "why does this matter?" }).prompt
+    ];
+    const list = prompts.map((p, i) => { const k = classifyAiUseV2(p)!; return e(`2026-10-0${i + 1}`, k.k, k.g); });
+    h.log = list;
+    await render();
+    expect(rows()).toEqual(["asking questions about a paper", "working through a paper section by section", "explaining statistics", "a guided lesson on a paper"]);
+    expect($$('[data-testid^="aiu-row-"]').map((r) => r.closest("label")!.textContent)).toEqual([
+      "Asking questions about a paper (2)", "Working through a paper section by section (1)", "Explaining statistics (1)", "A guided lesson on a paper (1)"
+    ]);
+    await click("aiu-build");
+    const want = (aiuBuildV2({ list, keep: ALL(list), other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string }).text;
+    expect(out()).toBe(want);
+    expect(out()).toContain("The AI explained or summarised material for me: asking questions about a paper (2 requests), explaining statistics (1 request) and a guided lesson on a paper (1 request).");
+    expect(out()).toContain("The AI commented on my work or ideas without writing them: working through a paper section by section (1 request).");
   });
 
   it("changing the dates ticks every kind again, as v1 redraws the rows", async () => {

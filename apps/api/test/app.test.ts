@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SignJWT } from "jose";
 import { createApp } from "../src/app";
 import { MemoryStore } from "../src/store/memory";
+import { AP_STAGES, apBuild, buildAskPrompt, buildHelperPrompt, buildLessonAskPrompt, buildWalkPrompt } from "@appuscholar/core";
 
 const SECRET = "test-secret-test-secret-test-secret-1234";
 const key = new TextEncoder().encode(SECRET);
@@ -392,6 +393,38 @@ describe("ai routes", () => {
     expect(await projectLog()).toEqual([]);
     expect(await (await post(`/projects/${created.id}/ai-use/claim`, { secondsAgo: 70 })).json()).toEqual({ claimed: 1 });
     expect(await projectLog()).toEqual([{ d: "2026-10-21", p: "groq", m: "openai/gpt-oss-120b", k: "checking whether my project idea is realistic", g: "feedback" }]);
+  });
+
+  it("logs the four kinds Task Q3 labels (OJ's yes, decision 7): a question about a paper, a walk-through stage, the statistics helper and a lesson question", async () => {
+    const doc = apBuild("Practice paper", ["Abstract\nWe studied 120 students.\n\nMethod\nSurvey of students in Delhi.\n\nResults\nSleep predicted recall."], "pdf");
+    const step = { k: "procedure", title: "Consent", said: "Participants consented.", flaw: "No consent form is shown." };
+    const prompts = [
+      buildAskPrompt("psychology", doc, "What was the sample?").prompt,
+      buildWalkPrompt("psychology", doc, AP_STAGES[0]!, "my first try").prompt,
+      buildHelperPrompt("stats", "psychology", "t(58) = 2.36, p = .022").prompt,
+      buildLessonAskPrompt({ teacher: "tara", field: "psychology", lang: "en", step, doc, question: "why does this matter?" }).prompt,
+      "Improve this text"
+    ];
+    for (const prompt of prompts) expect((await post("/ai/complete", { provider: "groq", apiKey: "gsk_x", prompt, day: "2026-10-22" })).status).toBe(200);
+    const log = await (await app.request("/ai/log", { headers: auth })).json() as Array<{ k: string; g: string }>;
+    expect(log.map((x) => [x.k, x.g])).toEqual([
+      ["asking questions about a paper", "explain"],
+      ["working through a paper section by section", "feedback"],
+      ["explaining statistics", "explain"],
+      ["a guided lesson on a paper", "explain"],
+      ["grammar and polish", "text"]
+    ]);
+    expect(JSON.stringify(log)).not.toContain("What was the sample");
+  });
+
+  it("an entry logged before Task Q3 keeps the label it was stored with; nothing rewrites the log", async () => {
+    await app.request("/me", { headers: auth });
+    const me = await (await app.request("/me", { headers: auth })).json() as { id: string };
+    await store.appendAiUse(me.id, null, { d: "2026-10-01", p: "groq", m: "openai/gpt-oss-120b", k: "other help", g: "other" });
+    const doc = apBuild("Practice paper", ["Abstract\nWe studied 120 students."], "pdf");
+    await post("/ai/complete", { provider: "groq", apiKey: "gsk_x", prompt: buildAskPrompt("psychology", doc, "What was the sample?").prompt, day: "2026-10-22" });
+    const log = await (await app.request("/ai/log", { headers: auth })).json() as Array<{ d: string; k: string }>;
+    expect(log.map((x) => [x.d, x.k])).toEqual([["2026-10-01", "other help"], ["2026-10-22", "asking questions about a paper"]]);
   });
 
   it("POST /ai/complete refuses unmasked personal data unless pdAccepted, logs provider, model and kind only", async () => {

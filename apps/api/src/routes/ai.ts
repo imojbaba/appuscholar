@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { classifyAiUse, contentLangInstruction, scanText } from "@appuscholar/core";
+import { classifyAiUseV2, contentLangInstruction, scanText } from "@appuscholar/core";
 import type { AiUseEntry, Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 import { complete, type GatewayDeps } from "../ai/gateway";
@@ -79,7 +79,7 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
       const prompt = b.noLang ? b.prompt : b.prompt + contentLangInstruction(b.contentLang);
       const out = await complete({ provider: b.provider, apiKey: b.apiKey, prompt, temperature: b.temperature, maxTokens: b.maxTokens }, deps);
       const userId = c.get("userId");
-      const kind = classifyAiUse(b.prompt);
+      const kind = classifyAiUseV2(b.prompt);
       const user = await store.getUser(userId);
       if (kind && !user?.settings.aiLogOff) {
         const projectId = b.projectId && (await store.getProject(userId, b.projectId)) ? b.projectId : null;

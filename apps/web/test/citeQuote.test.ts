@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import { classifyAiUse } from "@appuscholar/core";
+import { classifyAiUse, classifyAiUseV2 } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { insertHtmlBlock, insertTextAtCursor } from "../lib/editor/insert";
 import { AiCallError, apiMsg } from "../lib/ai/callAI";
@@ -58,6 +58,8 @@ describe("citeInsertQuote equals v1's citInsertQuote", () => {
   });
   it("the AI-use log files the call as v1 does (5419): translating a quotation into Hindi", () => {
     expect(classifyAiUse(quotePrompt("x"))).toEqual({ k: "translating a quotation into Hindi", g: "text" });
+    // The route logs classifyAiUseV2 (Task Q3, D-S2-136); its four new rules do not touch this prompt.
+    expect(classifyAiUseV2(quotePrompt("x"))).toEqual({ k: "translating a quotation into Hindi", g: "text" });
   });
   it("a translation whose document then does not open inserts nothing, keeps the quote in the box and claims no success", async () => {
     const toasts: string[] = [], clear = vi.fn();

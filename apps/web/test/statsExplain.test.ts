@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { classifyAiUse, fieldLabel, PLAIN_OUT, statsParseText, type StatsBlock } from "@appuscholar/core";
+import { classifyAiUse, classifyAiUseV2, fieldLabel, PLAIN_OUT, statsParseText, type StatsBlock } from "@appuscholar/core";
 import { buildStatsExplainPrompt, EXPLAIN_MAX, EXPLAIN_TEMP, statsExplainText } from "../lib/tools/stats/explain";
 import { blocksToHtml } from "../lib/tools/stats/results";
 import { defaultForm } from "../lib/tools/stats/form";
@@ -39,6 +39,8 @@ describe("the explain request", () => {
   it("is a 'statistics tutor' request as core's AI-use log rule reads it, so the log says what it was", () => {
     const k = classifyAiUse(buildStatsExplainPrompt(field, "t", "a").prompt);
     expect(k).toEqual({ k: "explaining statistics output in plain words", g: "explain" });
+    // The route logs classifyAiUseV2 (Task Q3, D-S2-136); its four new rules do not touch this prompt.
+    expect(classifyAiUseV2(buildStatsExplainPrompt(field, "t", "a").prompt)).toEqual(k);
   });
 });
 
