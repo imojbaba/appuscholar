@@ -53,6 +53,7 @@ import { resetAp } from "../lib/analyse/useApDoc";
 import { STAGE_ORDER, type StageKey } from "../lib/tools";
 import { PLACE_TABS, parsePlace } from "../lib/frame/places";
 import { TOOL_TABS } from "../lib/tools/registry";
+import * as settingsModule from "../lib/settings";
 
 // Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
 // what this file sees (session C, 2026-10-21).
@@ -217,6 +218,42 @@ describe("Writing and the stages not built (Task 10)", () => {
     await mount("lit", "reading");
     expect(tid("ap-tabs")).not.toBeNull();
     expect(tid("ap-tab-card")).not.toBeNull();
+  });
+});
+
+describe("the specialty pack in Writing (Task 11)", () => {
+  let spy: { mockRestore(): void } | null = null;
+  /** The Writing aside's fold labels, with every fold opened. */
+  async function folds(pack: "general" | "psychology" | undefined) {
+    // Same mocked settings as the rest of this file (one account, field psychology), plus the pack when one was chosen.
+    spy?.mockRestore();
+    spy = vi.spyOn(settingsModule, "useSettings").mockReturnValue({ me: { id: "u1" }, settings: { field: "psychology", ...(pack ? { pack } : {}) }, update: async () => {}, reload: async () => {} } as ReturnType<typeof settingsModule.useSettings>);
+    await mount("writing");
+    const aside = tid("writing-aside")!;
+    for (const d of aside.querySelectorAll("details")) act(() => { d.open = true; d.dispatchEvent(new Event("toggle")); });
+    return { summaries: [...aside.querySelectorAll("summary")].map((s) => s.textContent), psych: aside.querySelector('[data-testid="panel-psych"]'), chat: aside.querySelector('[data-testid="chat-panel"]') };
+  }
+  afterEach(() => { spy?.mockRestore(); spy = null; });
+
+  it("no pack chosen yet shows the Research helpers fold, as psychology does", async () => {
+    const r = await folds(undefined);
+    expect(r.summaries).toEqual(["Chat", "Research helpers"]);
+    expect(r.psych).not.toBeNull();
+    unmountAll();
+    const p = await folds("psychology");
+    expect(p.summaries).toEqual(["Chat", "Research helpers"]);
+    expect(p.psych).not.toBeNull();
+  });
+
+  it("the general pack hides the Research helpers fold: the fold list is only Chat", async () => {
+    const g = await folds("general");
+    expect(g.summaries).toEqual(["Chat"]);
+    expect(g.chat).not.toBeNull();
+    expect(g.psych).toBeNull();
+    expect(document.body.textContent).not.toContain(E.writing_helpers);
+    // The aside and its Document tab stay; only the helpers go.
+    expect(tid("writing-aside")).not.toBeNull();
+    expect(tid("place-tab-document")!.getAttribute("aria-current")).toBe("true");
   });
 });
 
