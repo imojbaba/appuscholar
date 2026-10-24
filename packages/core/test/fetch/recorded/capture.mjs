@@ -234,6 +234,9 @@ async function main() {
     // oa-connected reads the CONNECTED_FROM search; under --only that search is fetched without being saved when it is not itself named.
     if (want("oa-" + s.name)) oaBodies[s.name] = JSON.parse(await record(`oa-search-${s.name}`, oaSearchUrl(s)));
     else if (ONLY && s.name === CONNECTED_FROM && want("oa-connected")) {
+      // The cites and cited-by files are named for URLs that this search's body decides, so they cannot be named before it is fetched: refuse on the case's prefix instead.
+      const have = readdirSync(DIR).find((f) => f.startsWith("oa-connected-"));
+      if (have) throw new Error(`--only: ${have} already exists and is not overwritten`);
       await sleep(250);
       oaBodies[s.name] = await (await fetch(oaSearchUrl(s))).json();
     }

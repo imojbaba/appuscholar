@@ -49,10 +49,10 @@ describe("oaWorkByRef", () => {
       else expect(w).not.toBeNull();
     }
   });
-  it("a DOI with characters a path cannot hold is percent-encoded, the colon and slashes kept", async () => {
+  it("a DOI with characters a path cannot hold is percent-encoded; colons (a path may hold them) and slashes are kept", async () => {
     const seen: string[] = [];
     await oaWorkByRef((async (u: RequestInfo | URL) => { seen.push(String(u)); return new Response("", { status: 404 }); }) as typeof fetch, "doi:10.1002/(sici)1097-4679(199801)54:1<1::aid-jclp1>3.0.co;2-x#a?b");
-    expect(seen[0]!.split("?select=")[0]).toBe("https://api.openalex.org/works/doi:10.1002/(sici)1097-4679(199801)54%3A1%3C1%3A%3Aaid-jclp1%3E3.0.co%3B2-x%23a%3Fb");
+    expect(seen[0]!.split("?select=")[0]).toBe("https://api.openalex.org/works/doi:10.1002/(sici)1097-4679(199801)54:1%3C1::aid-jclp1%3E3.0.co%3B2-x%23a%3Fb");
   });
   it("a 404 is null; another HTTP error rejects (\"429\" for the spent budget); a throw rejects", async () => {
     const answer = (status: number) => (async () => new Response("", { status })) as typeof fetch;
@@ -130,7 +130,9 @@ describe("pmPaperById", () => {
       // The recorded search holds six ids in one esummary; serve one id's item as the one-id answer.
       const one = JSON.stringify({ result: { uids: [p.pmid], [p.pmid]: esummary.result[p.pmid] } });
       const got = await pmPaperById((async () => new Response(one)) as typeof fetch, p.pmid);
-      const { abstract: _a, doi: _d, ...rest } = p;
+      const rest: Partial<typeof p> = { ...p };
+      delete rest.abstract; // the port fetches abstracts with efetch; the by-id read does not
+      delete rest.doi; // the port leaves it empty; the by-id read gives PubMed's
       expect(got, p.pmid).toMatchObject(rest);
       expect(got!.abstract).toBe("");
     }
@@ -160,7 +162,11 @@ describe("pmcidToIds", () => {
   it("an article without a DOI or a PMID gives null for it; an unknown PMC id (an error item) gives null", async () => {
     const one = '{"result":{"uids":["5"],"5":{"uid":"5","articleids":[{"idtype":"pmcid","value":"PMC5"}]}}}';
     expect(await pmcidToIds((async () => new Response(one)) as typeof fetch, "PMC5")).toEqual({ pmid: null, doi: null });
-    expect(await pmcidToIds(replay().f, "PMC99999999")).toBeNull();
+    // An unknown number: esummary answers 200 with an item that holds an `error`, as db=pubmed does for an unknown PMID (recorded: paste-pm-nf). No db=pmc recording of that exists, so this
+    // body is written here by analogy and is BELIEVED, not recorded.
+    const unknown = '{"result":{"uids":["99999999"],"99999999":{"uid":"99999999","error":"cannot get document summary"}}}';
+    expect(await pmcidToIds((async () => new Response(unknown)) as typeof fetch, "PMC99999999")).toBeNull();
+    expect(await pmcidToIds((async () => new Response('{"result":{"uids":[]}}')) as typeof fetch, "PMC99999999")).toBeNull();
   });
   it("an HTTP error rejects", async () => {
     await expect(pmcidToIds((async () => new Response("", { status: 503 })) as typeof fetch, "PMC1")).rejects.toThrow("HTTP 503");

@@ -44,6 +44,15 @@ export type { ApRefs } from "./fetch/openalex";
 export { rsPubmedAbstracts, rsFetchPubmed, pmSearch, pmSearchV2, pmidToDoi, pmFullPages } from "./fetch/pubmed";
 export { rcWords, rcSim, rcCompare, rcCheckOne, rcCheckOneV2, rcFillPatch, citExtractDoi, citExtractPmid, crToEntry, crLookupDoi, crFirstByTitle, crLookupTitle, citLookup } from "./fetch/crossref";
 export type { CrWork, RcCheck } from "./fetch/crossref";
+// Wave B2, Task 19 (D-S2-124): paste a link, DOI or PubMed number; Task 21b (D-S2-127): Europe PMC full text
+export { OA_WORK_SELECT, oaWorkByRef, oaWorkToEntry } from "./fetch/openalex";
+export type { OaWork } from "./fetch/openalex";
+export { pmPaperById, pmcidToIds } from "./fetch/pubmed";
+export { crLookupDoiV2 } from "./fetch/crossref";
+export { epmcFullText } from "./fetch/europepmc";
+export type { EpmcResult } from "./fetch/europepmc";
+export { parsePasted, pasteLookup } from "./paste";
+export type { PastedRef, PasteResult } from "./paste";
 // Stage 2: Citation Manager checks (Task 8a)
 export { citMissingNumbers, citCaretEntry } from "./citlib";
 // Stage 2: Citation Manager classic sources (Task 8b), generated from v1 by the golden harness

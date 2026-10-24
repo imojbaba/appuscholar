@@ -41,6 +41,12 @@ describe("parsePasted", () => {
     expect(parsePasted("Wakefield AJ et al. Lancet 1998;351:637-41. doi:10.1016/S0140-6736(97)11096-0).")).toEqual({ k: "doi", v: "10.1016/s0140-6736(97)11096-0" });
     expect(parsePasted("  DOI 10.1037/0003-066X.55.1.68.  ")).toEqual({ k: "doi", v: "10.1037/0003-066x.55.1.68" });
   });
+  it("from a link the DOI stops at a query or a fragment and loses a closing slash; a DOI that is not in a link keeps them", () => {
+    expect(parsePasted("https://onlinelibrary.wiley.com/doi/10.1111/jcpp.12345?af=R")).toEqual({ k: "doi", v: "10.1111/jcpp.12345" });
+    expect(parsePasted("https://link.springer.com/article/10.1007/s11199-020-01142-2#citeas")).toEqual({ k: "doi", v: "10.1007/s11199-020-01142-2" });
+    expect(parsePasted("https://doi.org/10.1038/s41598-019-49466-6/")).toEqual({ k: "doi", v: "10.1038/s41598-019-49466-6" });
+    expect(parsePasted("doi:10.1002/(sici)1097-4679(199801)54:1#x")).toEqual({ k: "doi", v: "10.1002/(sici)1097-4679(199801)54:1#x" });
+  });
   it("an arXiv DOI is a DOI (first match wins); an arXiv id is read from abs and pdf links, 'arXiv:' and a bare id, the version dropped", () => {
     expect(parsePasted("https://doi.org/10.48550/arXiv.2101.00001")).toEqual({ k: "doi", v: "10.48550/arxiv.2101.00001" });
     expect(parsePasted("https://arxiv.org/pdf/2101.00001v3")).toEqual({ k: "arxiv", v: "2101.00001" });
@@ -53,6 +59,11 @@ describe("parsePasted", () => {
     expect(parsePasted("PMC6746734")).toEqual({ k: "pmcid", v: "PMC6746734" });
     expect(parsePasted("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6746734/")).toEqual({ k: "pmcid", v: "PMC6746734" });
     expect(parsePasted("https://pmc.ncbi.nlm.nih.gov/articles/pmc6746734/")).toEqual({ k: "pmcid", v: "PMC6746734" });
+  });
+  it("a PMC number is a whole token: letters or more digits around it make it something else", () => {
+    expect(parsePasted("PMC12345678901")).toEqual({ k: "text", v: "PMC12345678901" });
+    expect(parsePasted("XPMC6746734")).toEqual({ k: "text", v: "XPMC6746734" });
+    expect(parsePasted("PMC123")).toEqual({ k: "text", v: "PMC123" });
   });
   it("a PubMed number is read from PMID:, both PubMed link forms and a bare 6 to 9 digit number", () => {
     expect(parsePasted("PMID: 9500320")).toEqual({ k: "pmid", v: "9500320" });
@@ -150,6 +161,15 @@ describe("pasteLookup: a PubMed number", () => {
     expect(out.entry.author).not.toMatch(/et al/);
     expect(out.entry.style).toBeUndefined();
   });
+  it("a PubMed number whose DOI Crossref does not hold keeps the paper from PubMed, with PubMed's DOI", async () => {
+    const nosuch = "10.9999/appuscholar-no-such-doi-2026"; // the recorded Crossref 404
+    const body = JSON.stringify({ result: { uids: ["7"], "7": { uid: "7", title: "A paper Crossref lacks.", authors: [{ name: "Doe J" }], pubdate: "2001 May", fulljournalname: "Some Journal", volume: "3", issue: "2", pages: "10-9", articleids: [{ idtype: "pubmed", value: "7" }, { idtype: "doi", value: nosuch.toUpperCase() }] } } });
+    const rec = replay();
+    const f = (async (u: RequestInfo | URL) => (String(u) === ESUMMARY("7") ? new Response(body) : rec.f(u))) as typeof fetch;
+    const out = await pasteLookup(f, { k: "pmid", v: "7" });
+    expect(rec.requested).toEqual([CR(nosuch)]);
+    expect(out).toEqual({ result: "ok", entry: { title: "A paper Crossref lacks.", author: "Doe, J", year: "2001", source: "Some Journal", volume: "3", issue: "2", pages: "10-19", doi: nosuch, url: "", type: "Journal article" } });
+  });
   it("a PubMed number PubMed does not know is not found", async () => {
     const r = replay();
     expect(await pasteLookup(r.f, { k: "pmid", v: "99999999" })).toEqual({ result: "nf" });
@@ -167,7 +187,7 @@ describe("pasteLookup: a PMC number", () => {
     const viaDoi = await pasteLookup(replay().f, { k: "doi", v: WALK_DOI });
     expect(out).toEqual(viaDoi);
   });
-  it("OpenAlex's answer is used when it has the paper (its own PMC lookup, as the brief says)", async () => {
+  it("OpenAlex's answer is used when it does hold the paper under its PMC number (the recorded work served for the pmcid request)", async () => {
     const work = JSON.parse(RECORDINGS.get(OA("doi:" + WALK_DOI))!.body) as object;
     const urls: string[] = [];
     const f = (async (u: RequestInfo | URL) => { urls.push(String(u)); return new Response(JSON.stringify(work), { status: 200 }); }) as typeof fetch;
@@ -185,13 +205,33 @@ describe("pasteLookup: a PMC number", () => {
     expect(await pasteLookup(f, { k: "pmcid", v: "PMC99999999" })).toEqual({ result: "nf" });
     expect(urls).toEqual([OA("pmcid:PMC99999999"), PMC_ESUMMARY("99999999")]);
   });
-  it("a PMC paper Crossref does not list but PubMed does is kept from PubMed", async () => {
-    const pmc = '{"result":{"uids":["14907713"],"14907713":{"uid":"14907713","articleids":[{"idtype":"pmid","value":"14907713"},{"idtype":"pmcid","value":"PMC1234567"}]}}}';
+  // PubMed Central's esummary for a number, written here (the one recording, paste-pmc-esummary, is the walk paper's); OpenAlex's 404 for `pmcid:` is the recorded answer.
+  const pmcItem = (num: string, ids: Array<[string, string]>) => `{"result":{"uids":["${num}"],"${num}":{"uid":"${num}","articleids":[${ids.map(([t, v]) => `{"idtype":"${t}","value":"${v}"}`).join(",")}]}}}`;
+  const viaPmc = (body: string) => {
     const rec = replay();
-    const f = (async (u: RequestInfo | URL) => (String(u).includes("api.openalex.org") ? new Response("", { status: 404 }) : String(u).includes("db=pmc") ? new Response(pmc) : rec.f(u))) as typeof fetch;
-    const out = await pasteLookup(f, { k: "pmcid", v: "PMC1234567" });
+    const f = (async (u: RequestInfo | URL) => (String(u).includes("api.openalex.org/works/pmcid:") ? new Response("", { status: 404 }) : String(u).includes("db=pmc") ? new Response(body) : rec.f(u))) as typeof fetch;
+    return { f, rec };
+  };
+  it("a PMC paper that lists a PMID and no DOI is kept from PubMed by that PMID", async () => {
+    const t = viaPmc(pmcItem("1234567", [["pmid", "14907713"], ["pmcid", "PMC1234567"]]));
+    const out = await pasteLookup(t.f, { k: "pmcid", v: "PMC1234567" });
+    expect(t.rec.unknown).toEqual([]);
+    expect(t.rec.requested).toEqual([ESUMMARY("14907713")]);
     expect(out.result).toBe("ok");
-    if (out.result === "ok") expect(out.entry.url).toBe("https://pubmed.ncbi.nlm.nih.gov/14907713/");
+    if (out.result === "ok") expect(out.entry).toMatchObject({ url: "https://pubmed.ncbi.nlm.nih.gov/14907713/", year: "1951", doi: "", type: "Journal article" });
+  });
+  it("a PMC paper whose DOI neither Crossref nor OpenAlex holds falls back to its PMID, and a DOI with no PMID is not found", async () => {
+    const nosuch = "10.9999/appuscholar-no-such-doi-2026"; // Crossref 404 and OpenAlex 404 are recorded
+    const both = viaPmc(pmcItem("1234567", [["pmid", "14907713"], ["doi", nosuch]]));
+    const out = await pasteLookup(both.f, { k: "pmcid", v: "PMC1234567" });
+    expect(both.rec.requested).toEqual([CR(nosuch), OA("doi:" + nosuch), ESUMMARY("14907713")]);
+    expect(out.result).toBe("ok");
+    const doiOnly = viaPmc(pmcItem("1234567", [["doi", nosuch]]));
+    expect(await pasteLookup(doiOnly.f, { k: "pmcid", v: "PMC1234567" })).toEqual({ result: "nf" });
+    expect(doiOnly.rec.requested).toEqual([CR(nosuch), OA("doi:" + nosuch)]);
+    const neither = viaPmc(pmcItem("1234567", [["pmcid", "PMC1234567"]]));
+    expect(await pasteLookup(neither.f, { k: "pmcid", v: "PMC1234567" })).toEqual({ result: "nf" });
+    expect(neither.rec.requested).toEqual([]);
   });
 });
 
