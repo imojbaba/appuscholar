@@ -17,7 +17,9 @@ function draw(node: React.ReactNode): HTMLElement {
 
 describe("wave C scaffold (Task C0)", () => {
   it("the slots draw nothing until their feature fills them", () => {
-    expect(draw(<HelpButtons />).querySelector("[data-testid=help-wave-c]")?.children.length).toBe(0);
+    // Task C2 filled GuideSlot (its one button); the report, backup and install slots still draw nothing.
+    const row = draw(<HelpButtons />).querySelector("[data-testid=help-wave-c]");
+    expect(Array.from(row?.children ?? []).map((c) => c.getAttribute("data-testid"))).toEqual(["help-guide"]);
     expect(draw(<ChromeExtras />).innerHTML).toBe("");
   });
   it("the Guide starts empty and the 'page looks broken' FAQ entry has its text", () => {
