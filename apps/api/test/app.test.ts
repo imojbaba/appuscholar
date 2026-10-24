@@ -2,15 +2,12 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SignJWT } from "jose";
 import { createApp } from "../src/app";
 import { MemoryStore } from "../src/store/memory";
-import { readFileSync } from "node:fs";
-import { parseV1Backup } from "@appuscholar/core";
 
 const SECRET = "test-secret-test-secret-test-secret-1234";
 const key = new TextEncoder().encode(SECRET);
 async function token(sub: string, ttl = 900) {
   return new SignJWT({ email: sub + "@x.org" }).setProtectedHeader({ alg: "HS256" }).setSubject(sub).setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) + ttl).sign(key);
 }
-const v1fixture = readFileSync(new URL("../../../packages/core/test/fixtures/v1-backup-small.json", import.meta.url), "utf8");
 
 describe("api routes", () => {
   let app: ReturnType<typeof createApp>;
@@ -24,6 +21,13 @@ describe("api routes", () => {
     const r = await app.request("/health");
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ ok: true });
+  });
+
+  it("CORS preflight allows If-Match", async () => {
+    const r = await app.request("/projects/p/blobs/citations", { method: "OPTIONS", headers: { origin: "https://app.example", "access-control-request-method": "PUT", "access-control-request-headers": "authorization, content-type, if-match" } });
+    expect(r.status).toBe(204);
+    const allowed = (r.headers.get("access-control-allow-headers") ?? "").toLowerCase().split(",").map((h) => h.trim());
+    expect(allowed).toEqual(expect.arrayContaining(["authorization", "content-type", "if-match"]));
   });
 
   it("rejects missing and expired tokens with 401", async () => {
@@ -116,7 +120,7 @@ describe("api routes", () => {
     const rec = await (await app.request(`/projects/${p.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; title: string; kind: string; stats: unknown }[]; sources: { title: string; words: number }[]; weekly: { weekStart: string; typed: number; ai: number }[]; aiLog: unknown };
     expect(rec.docs).toHaveLength(1);
     expect(rec.docs[0]).toMatchObject({ id: d.id, title: "Draft", kind: "draft", stats: { typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 } });
-    expect(rec.sources).toEqual([{ title: "Paper", words: 4 }]);
+    expect(rec.sources).toEqual([{ id: src.id, title: "Paper", titleKeyVersion: 0, deks: [], words: 4 }]);
     expect(rec.weekly).toHaveLength(1);
     expect(rec.weekly[0]).toMatchObject({ typed: 1, ai: 2 });
     expect(rec.weekly[0]?.weekStart).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -132,13 +136,13 @@ describe("api routes", () => {
     const store = new MemoryStore();
     const legacyApp = createApp({ store, jwtSecret: SECRET, maxBodyBytes: 2 * 1024 * 1024 });
     const proj = await store.createProject("u1", "Old");
-    const doc = await store.createDocument("u1", proj.id, "Legacy", "draft", { bodyHtml: "<p>one two three</p>", authorKind: "web", authorLabel: "x", wordCount: 3 });
+    const doc = await store.createDocument("u1", proj.id, "Legacy", "draft", { bodyHtml: "<p>one two three</p>", authorKind: "web", authorLabel: "x", wordCount: 3, keyVersion: 0 });
     const rec = await (await legacyApp.request(`/projects/${proj.id}/writing-record`, { headers: auth })).json() as { docs: { id: string; stats: { typed: number } }[]; weekly: { typed: number }[] };
     expect(rec.docs[0]).toMatchObject({ id: doc!.id, stats: { typed: 3, ai: 0 } });
     expect(rec.weekly).toMatchObject([{ typed: 3, ai: 0 }]);
   });
 
-  it("every revision writer stores originStats: restore, v1 import and a new empty document", async () => {
+  it("every revision writer stores originStats: restore and a new empty document", async () => {
     const { d } = await makeDoc();
     const put = (bodyHtml: string) => app.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml }) });
     const stats = async (docId: string, seq: number) => ((await (await app.request(`/documents/${docId}/revisions/${seq}`, { headers: auth })).json()) as { originStats: unknown }).originStats;
@@ -148,9 +152,6 @@ describe("api routes", () => {
     const restored = await (await app.request(`/documents/${d.id}/restore/2`, { method: "POST", headers: auth })).json() as { revision: { seq: number; originStats: unknown } };
     expect(restored.revision.originStats).toEqual({ typed: 1, ai: 2, passages: 1, kept: 0, edited: 1, unknown: 0 });
     expect(await stats(d.id, restored.revision.seq)).toEqual(restored.revision.originStats);
-    const imp = await (await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ exported: "2026-10-01T00:00:00Z", projectTitle: "Imported", documents: [{ title: "Old", bodyHtml: "<p>one two three</p>" }] }) })).json() as { projectId: string };
-    const [od] = await (await app.request(`/projects/${imp.projectId}/documents`, { headers: auth })).json() as { id: string }[];
-    expect(await stats(od!.id, 1)).toMatchObject({ typed: 3, ai: 0 });
   });
 
   it("rejects bodies over the limit with 413 and keeps the last revision", async () => {
@@ -181,68 +182,76 @@ describe("api routes", () => {
     expect((await app.request(`/documents/${d.id}`, { headers: other })).status).toBe(404);
   });
 
-  function importBody(bundleText: string, extra: Record<string, unknown> = {}) {
-    const parsed = parseV1Backup(bundleText);
-    if (!parsed.ok) throw new Error(parsed.reason);
-    return JSON.stringify({ exported: parsed.backup.exported, projectTitle: "Sleep and memory (imported from v1)", documents: parsed.backup.documents.map(d => ({ title: d.title, bodyHtml: d.bodyHtml })), ...extra });
-  }
-
-  it("imports parsed v1 documents into a new project", async () => {
-    const r = await app.request("/import/v1", { method: "POST", headers: auth, body: importBody(v1fixture) });
-    expect(r.status).toBe(201);
-    const { projectId, imported } = await r.json() as { projectId: string; imported: number };
-    expect(imported).toBe(2);
-    const projects = await (await app.request("/projects", { headers: auth })).json() as { id: string; title: string }[];
-    expect(projects.find(p => p.id === projectId)?.title).toBe("Sleep and memory (imported from v1)");
-    const docs = await (await app.request(`/projects/${projectId}/documents`, { headers: auth })).json() as { id: string; title: string }[];
-    expect(docs.map(x => x.title).sort()).toEqual(["Literature review", "Plain notes"]);
-    const revs = await (await app.request(`/documents/${docs[0]!.id}/revisions`, { headers: auth })).json() as { authorKind: string; authorLabel: string }[];
-    expect(revs[0]).toMatchObject({ authorKind: "import", authorLabel: "v1 backup 2026-10-12" });
-  });
-
-  it("rejects malformed import bodies, including the old bundleText shape", async () => {
-    for (const body of ["nope", JSON.stringify({ bundleText: v1fixture }), JSON.stringify({ exported: "", projectTitle: "x", documents: [] })]) {
-      const bad = await app.request("/import/v1", { method: "POST", headers: auth, body });
-      expect(bad.status).toBe(400);
-      expect(await bad.json()).toEqual({ error: "invalid" });
+  it("has no server-side v1 import: the backup is parsed and encrypted in the browser", async () => {
+    for (const path of ["/import/v1", "/import"]) {
+      const r = await app.request(path, { method: "POST", headers: auth, body: JSON.stringify({ exported: "2026-10-01T00:00:00Z", projectTitle: "Imported", documents: [{ title: "Old", bodyHtml: "<p>one</p>" }] }) });
+      expect(r.status).toBe(404);
     }
+    expect(await (await app.request("/projects", { headers: auth })).json()).toEqual([]);
   });
 
-  it("adds later batches to the project created by the first, and only to my own project", async () => {
-    const one = (title: string) => JSON.stringify({ exported: "2026-10-12T09:30:00.000Z", projectTitle: "Batch", documents: [{ title, bodyHtml: `<p>${title}</p>` }] });
-    const first = await (await app.request("/import/v1", { method: "POST", headers: auth, body: one("A") })).json() as { projectId: string };
-    const second = await app.request("/import/v1", { method: "POST", headers: auth, body: JSON.stringify({ ...JSON.parse(one("B")), projectId: first.projectId }) });
-    expect(second.status).toBe(201);
-    expect(await second.json()).toEqual({ projectId: first.projectId, imported: 1 });
-    expect((await (await app.request("/projects", { headers: auth })).json() as unknown[]).length).toBe(1);
-    const docs = await (await app.request(`/projects/${first.projectId}/documents`, { headers: auth })).json() as { title: string }[];
-    expect(docs.map(d => d.title).sort()).toEqual(["A", "B"]);
-    const other = { authorization: "Bearer " + (await token("u2")), "content-type": "application/json" };
-    const stolen = await app.request("/import/v1", { method: "POST", headers: other, body: JSON.stringify({ ...JSON.parse(one("C")), projectId: first.projectId }) });
-    expect(stolen.status).toBe(404);
-    expect((await (await app.request(`/projects/${first.projectId}/documents`, { headers: auth })).json() as unknown[]).length).toBe(2);
+  describe("who a created document names as its author", () => {
+    const create = async (extra: Record<string, unknown>) => {
+      const proj = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "P" }) })).json() as { id: string };
+      const r = await app.request(`/projects/${proj.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Old", bodyHtml: "<p>one two three</p>", ...extra }) });
+      const d = r.status === 201 ? await r.json() as { id: string } : null;
+      const revs = d ? await (await app.request(`/documents/${d.id}/revisions`, { headers: auth })).json() as { authorKind: string; authorLabel: string; originStats: unknown }[] : [];
+      return { status: r.status, revs, projectId: proj.id };
+    };
+
+    it("an import names itself: authorKind import and the label the client gives (default 'v1 backup')", async () => {
+      const a = await create({ authorKind: "import", authorLabel: "v1 backup 2026-10-12" });
+      expect(a.status).toBe(201);
+      expect(a.revs[0]).toMatchObject({ authorKind: "import", authorLabel: "v1 backup 2026-10-12", originStats: { typed: 3, ai: 0 } });
+      const b = await create({ authorKind: "import" });
+      expect(b.revs[0]).toMatchObject({ authorKind: "import", authorLabel: "v1 backup" });
+    });
+
+    it("without authorKind the author is the web user's email; a label alone changes nothing", async () => {
+      const a = await create({});
+      expect(a.revs[0]).toMatchObject({ authorKind: "web", authorLabel: "u1@x.org" });
+      const b = await create({ authorLabel: "spoofed" });
+      expect(b.revs[0]).toMatchObject({ authorKind: "web", authorLabel: "u1@x.org" });
+    });
+
+    it("a client cannot set any other authorKind (copilot, restore, web): 400 and nothing created", async () => {
+      for (const authorKind of ["copilot", "restore", "web", "ai"]) {
+        const r = await create({ authorKind, authorLabel: "x" });
+        expect(r.status).toBe(400);
+        expect(await (await app.request(`/projects/${r.projectId}/documents`, { headers: auth })).json()).toEqual([]);
+      }
+    });
   });
 
-  it("rejects an import request above the size limit with 413", async () => {
-    const small = createApp({ store: new MemoryStore(), jwtSecret: SECRET, maxImportBytes: 1024 });
-    const body = JSON.stringify({ exported: "", projectTitle: "Big", documents: [{ title: "x", bodyHtml: "<p>" + "x".repeat(2048) + "</p>" }] });
-    const r = await small.request("/import/v1", { method: "POST", headers: auth, body });
-    expect(r.status).toBe(413);
-    expect(await r.json()).toEqual({ error: "too-large" });
-    expect(await (await small.request("/projects", { headers: auth })).json()).toEqual([]);
-  });
+  describe("document body limit (2.8 MB by default: ciphertext is 4/3 the HTML, Vercel stops at 4.5 MB)", () => {
+    const MB = 1024 * 1024;
+    it("accepts a 2.5 MB body on PUT and on create, and refuses above 2.8 MB with 413 on both, storing nothing", async () => {
+      const dflt = createApp({ store: new MemoryStore(), jwtSecret: SECRET });
+      const proj = await (await dflt.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "P" }) })).json() as { id: string };
+      const fits = JSON.stringify({ title: "Fits", bodyHtml: "<p>" + "x".repeat(2.5 * MB) + "</p>" });
+      const made = await dflt.request(`/projects/${proj.id}/documents`, { method: "POST", headers: auth, body: fits });
+      expect(made.status).toBe(201);
+      const d = await made.json() as { id: string };
+      const put = await dflt.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml: "<p>" + "y".repeat(2.5 * MB) + "</p>" }) });
+      expect(put.status).toBe(200);
 
-  it("sanitises imported bodies", async () => {
-    const body = JSON.stringify({ exported: "2026-10-01T00:00:00.000Z", projectTitle: "Hostile", documents: [{ title: "Hostile", bodyHtml: '<p>ok</p><img src="x" onerror="fetch(1)"><script>alert(1)</script>' }] });
-    const r = await app.request("/import/v1", { method: "POST", headers: auth, body });
-    expect(r.status).toBe(201);
-    const { projectId } = await r.json() as { projectId: string };
-    const docs = await (await app.request(`/projects/${projectId}/documents`, { headers: auth })).json() as { id: string }[];
-    expect(docs).toHaveLength(1);
-    const doc = await (await app.request(`/documents/${docs[0]!.id}`, { headers: auth })).json() as { bodyHtml: string };
-    expect(doc.bodyHtml).toContain("<p>ok</p>");
-    expect(doc.bodyHtml).not.toContain("onerror");
-    expect(doc.bodyHtml).not.toContain("<script");
+      const big = "<p>" + "x".repeat(2.8 * MB + 10) + "</p>";
+      const refusedCreate = await dflt.request(`/projects/${proj.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "Big", bodyHtml: big }) });
+      expect(refusedCreate.status).toBe(413);
+      expect(await refusedCreate.json()).toEqual({ error: "too-large" });
+      const refusedPut = await dflt.request(`/documents/${d.id}`, { method: "PUT", headers: auth, body: JSON.stringify({ bodyHtml: big }) });
+      expect(refusedPut.status).toBe(413);
+      const docs = await (await dflt.request(`/projects/${proj.id}/documents`, { headers: auth })).json() as { title: string }[];
+      expect(docs.map((x) => x.title)).toEqual(["Fits"]);
+    });
+
+    it("applies the configured limit to document creation too, and a non-JSON create body is still 400", async () => {
+      const small = createApp({ store: new MemoryStore(), jwtSecret: SECRET, maxBodyBytes: 1024 });
+      const proj = await (await small.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "P" }) })).json() as { id: string };
+      const r = await small.request(`/projects/${proj.id}/documents`, { method: "POST", headers: auth, body: JSON.stringify({ title: "T", bodyHtml: "<p>" + "x".repeat(2048) + "</p>" }) });
+      expect(r.status).toBe(413);
+      expect((await small.request(`/projects/${proj.id}/documents`, { method: "POST", headers: auth, body: "nope" })).status).toBe(400);
+    });
   });
 
   it("lists projects with documentCount and lastEditedAt", async () => {
@@ -319,6 +328,15 @@ describe("api routes", () => {
     expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { sheetPct: 62 } });
   });
 
+  it("settings accept docBeside and docW from 360 to 900; 359 is 400", async () => {
+    await app.request("/me", { headers: auth });
+    const patch = (body: unknown) => app.request("/me/settings", { method: "PATCH", headers: auth, body: JSON.stringify(body) });
+    expect(await (await patch({ docBeside: true, docW: 360 })).json()).toEqual({ docBeside: true, docW: 360 });
+    expect(await (await patch({ docW: 900 })).json()).toEqual({ docBeside: true, docW: 900 });
+    for (const bad of [{ docW: 359 }, { docW: 901 }, { docW: 520.5 }, { docBeside: "yes" }]) expect((await patch(bad)).status, JSON.stringify(bad)).toBe(400);
+    expect(await (await app.request("/me", { headers: auth })).json()).toMatchObject({ settings: { docBeside: true, docW: 900 } });
+  });
+
   it("credentials accept only the blob shape and never return to another user", async () => {
     await app.request("/me", { headers: auth });
     expect((await app.request("/me/credentials/gemini", { method: "PUT", headers: auth, body: JSON.stringify({ encryptedKey: "plain-key" }) })).status).toBe(400);
@@ -364,6 +382,16 @@ describe("ai routes", () => {
     app = createApp({ store, jwtSecret: SECRET, ai: { fetch: fakeFetch } });
     auth = { authorization: "Bearer " + (await token("u1")), "content-type": "application/json" };
     await acceptTerms(auth);
+  });
+
+  it("first run's idea check, logged with no project, is in the project's log once its save claims it (B1 walk row 12)", async () => {
+    const check = await post("/ai/complete", { provider: "groq", apiKey: "gsk_x", prompt: "You are an experienced research-methods advisor. Please judge whether a project idea is realistic.", day: "2026-10-21" });
+    expect(check.status).toBe(200);
+    const created = await (await post("/projects", { title: "Sleep" })).json() as { id: string };
+    const projectLog = async () => (await app.request(`/ai/log?projectId=${created.id}`, { headers: auth })).json();
+    expect(await projectLog()).toEqual([]);
+    expect(await (await post(`/projects/${created.id}/ai-use/claim`, { secondsAgo: 70 })).json()).toEqual({ claimed: 1 });
+    expect(await projectLog()).toEqual([{ d: "2026-10-21", p: "groq", m: "openai/gpt-oss-120b", k: "checking whether my project idea is realistic", g: "feedback" }]);
   });
 
   it("POST /ai/complete refuses unmasked personal data unless pdAccepted, logs provider, model and kind only", async () => {
@@ -456,6 +484,19 @@ describe("ai routes", () => {
     expect((await app.request("/ai/log?from=bad", { headers: auth })).status).toBe(400);
     expect((await app.request("/ai/log", { method: "DELETE", headers: auth })).status).toBe(204);
     expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+  });
+
+  it("serves one project's log with ?projectId and the whole log without it", async () => {
+    const p = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Sleep" }) })).json() as { id: string };
+    const q = await (await app.request("/projects", { method: "POST", headers: auth, body: JSON.stringify({ title: "Diet" }) })).json() as { id: string };
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-14", projectId: p.id });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Continue this writing", day: "2026-10-15", projectId: q.id });
+    await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day: "2026-10-16" });
+    const mine = await (await app.request(`/ai/log?projectId=${p.id}`, { headers: auth })).json() as Array<{ d: string; k: string }>;
+    expect(mine.map((e) => [e.d, e.k])).toEqual([["2026-10-14", "grammar and polish"]]);
+    expect(await (await app.request(`/ai/log?projectId=${q.id}&from=2026-10-16`, { headers: auth })).json()).toEqual([]);
+    expect(((await (await app.request("/ai/log", { headers: auth })).json()) as unknown[])).toHaveLength(3);
+    expect((await app.request("/ai/log?projectId=", { headers: auth })).status).toBe(400);
   });
 
   it("keeps one student's log out of another's", async () => {

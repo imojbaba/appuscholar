@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(social%20media%20loneliness)%20AND%20(survey*%5Btiab%5D%20OR%20questionnaire*%5Btiab%5D%20OR%20%22cross-sectional%22%5Btiab%5D)",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"456\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42835077\",\"42832983\",\"42827730\",\"42792270\",\"42783108\",\"42782714\"],\"translationset\":[{\"from\":\"social media\",\"to\":\"\\\"social media\\\"[MeSH Terms] OR (\\\"social\\\"[All Fields] AND \\\"media\\\"[All Fields]) OR \\\"social media\\\"[All Fields]\"},{\"from\":\"loneliness\",\"to\":\"\\\"lonelier\\\"[All Fields] OR \\\"loneliness\\\"[MeSH Terms] OR \\\"loneliness\\\"[All Fields]\"}],\"querytranslation\":\"(\\\"social media\\\"[MeSH Terms] OR (\\\"social\\\"[All Fields] AND \\\"media\\\"[All Fields]) OR \\\"social media\\\"[All Fields]) AND (\\\"lonelier\\\"[All Fields] OR \\\"loneliness\\\"[MeSH Terms] OR \\\"loneliness\\\"[All Fields]) AND (\\\"survey*\\\"[Title/Abstract] OR \\\"questionnaire*\\\"[Title/Abstract] OR \\\"cross-sectional\\\"[Title/Abstract])\"}}\n"
+}

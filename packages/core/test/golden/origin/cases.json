@@ -1,0 +1,184 @@
+{
+ "engine": "origin",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "hashes": [
+  {
+   "s": "",
+   "out": "45h"
+  },
+  {
+   "s": "abc",
+   "out": "3772q3"
+  },
+  {
+   "s": "a b c",
+   "out": "3772q3"
+  },
+  {
+   "s": "one two",
+   "out": "57qlc1"
+  },
+  {
+   "s": "a&b",
+   "out": "377172"
+  },
+  {
+   "s": "  Hello,\n\tworld.  ",
+   "out": "prgxrv"
+  },
+  {
+   "s": "अध्ययन का उद्देश्य",
+   "out": "preugi"
+  },
+  {
+   "s": "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. 😀",
+   "out": "1060rbu"
+  }
+ ],
+ "docs": [
+  {
+   "id": "passages-kept-edited-unknown",
+   "html": "<p>mine here <span class=\"ai-ins\" data-h=\"57qlc1\">one two</span></p><p><span class=\"ai-ins\" data-h=\"zzz\">three four five</span> tail</p><p><span class=\"ai-ins\">old</span></p>",
+   "count": {
+    "typed": 3,
+    "ai": 6,
+    "passages": 3,
+    "kept": 1,
+    "edited": 1,
+    "unknown": 1
+   },
+   "share": {
+    "total": 40,
+    "ai": 25,
+    "studentPct": 38
+   }
+  },
+  {
+   "id": "nested-inline-and-br",
+   "html": "<p><span class=\"ai-ins\" data-h=\"x\">a <b>b</b><br>c</span> d</p>",
+   "count": {
+    "typed": 1,
+    "ai": 3,
+    "passages": 1,
+    "kept": 0,
+    "edited": 1,
+    "unknown": 0
+   },
+   "share": {
+    "total": 6,
+    "ai": 4,
+    "studentPct": 33
+   }
+  },
+  {
+   "id": "hash-of-decoded-text",
+   "html": "<p><span class=\"ai-ins\" data-h=\"377172\">a<b>&amp;</b><br>b</span></p>",
+   "count": {
+    "typed": 0,
+    "ai": 3,
+    "passages": 1,
+    "kept": 1,
+    "edited": 0,
+    "unknown": 0
+   },
+   "share": {
+    "total": 3,
+    "ai": 3,
+    "studentPct": 0
+   }
+  },
+  {
+   "id": "character-share",
+   "html": "<p>abcd<span class=\"ai-ins\" data-h=\"x\">efgh</span></p>",
+   "count": {
+    "typed": 1,
+    "ai": 1,
+    "passages": 1,
+    "kept": 0,
+    "edited": 1,
+    "unknown": 0
+   },
+   "share": {
+    "total": 8,
+    "ai": 4,
+    "studentPct": 50
+   }
+  },
+  {
+   "id": "empty",
+   "html": "",
+   "count": {
+    "typed": 0,
+    "ai": 0,
+    "passages": 0,
+    "kept": 0,
+    "edited": 0,
+    "unknown": 0
+   },
+   "share": {
+    "total": 0,
+    "ai": 0,
+    "studentPct": 100
+   }
+  },
+  {
+   "id": "link-title-gt",
+   "html": "<p>Smith argued <a href=\"https://example.org/rao\" title=\"x > (Rao, 2019)\">the study</a> held.</p>",
+   "count": {
+    "typed": 5,
+    "ai": 0,
+    "passages": 0,
+    "kept": 0,
+    "edited": 0,
+    "unknown": 0
+   },
+   "share": {
+    "total": 28,
+    "ai": 0,
+    "studentPct": 100
+   }
+  },
+  {
+   "id": "img-alt-gt",
+   "html": "<p>The effect was <img src=\"fig1.png\" alt=\"p > .05\"> as shown above.</p>",
+   "count": {
+    "typed": 6,
+    "ai": 0,
+    "passages": 0,
+    "kept": 0,
+    "edited": 0,
+    "unknown": 0
+   },
+   "share": {
+    "total": 31,
+    "ai": 0,
+    "studentPct": 100
+   }
+  },
+  {
+   "id": "ai-ins-title-gt",
+   "html": "<p>Typed words <span class=\"ai-ins\" data-h=\"molt21\" title=\"a > b\">one two three</span> tail.</p>",
+   "count": {
+    "typed": 3,
+    "ai": 3,
+    "passages": 1,
+    "kept": 1,
+    "edited": 0,
+    "unknown": 0
+   },
+   "share": {
+    "total": 31,
+    "ai": 13,
+    "studentPct": 58
+   }
+  }
+ ]
+}

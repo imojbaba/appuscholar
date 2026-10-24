@@ -1,0 +1,41 @@
+{
+ "note": "The v2 recordings (not v1 requests, so not in test/golden/fetch/cases.json, which is v1's and never edited). Written by capture.mjs.",
+ "recorded": [
+  {
+   "file": "pm-efetch-v2-rct-e370471d.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=42537418,42316780,42289435,42043979,41814471,41803820",
+   "status": 200,
+   "sha256": "ccbd7e6e0254b1429ade4d06c28749921d3c00b5bf5cbc5cec946c251ea01f12"
+  },
+  {
+   "file": "pm-efetch-v2-terms-8083765c.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=42896789,42894634,42894485,42893823,42886298,42885438",
+   "status": 200,
+   "sha256": "2e865fe1308c4fc2fadaf4b5455179c37d740c593fa88e3bf5a37d5de2f67754"
+  },
+  {
+   "file": "pm-esearch-v2-rct-8b16fc57.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(exam%5Btiab%5D%20AND%20anxiety%5Btiab%5D)%20AND%20%22Randomized%20Controlled%20Trial%22%5Bpt%5D",
+   "status": 200,
+   "sha256": "ed29e21faf6c1fb3a358c5b0ca6b70db3baa7c81e7b74459b20e4bcef343d613"
+  },
+  {
+   "file": "pm-esearch-v2-terms-3eec4bcb.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(exam%5Btiab%5D%20AND%20anxiety%5Btiab%5D)%20OR%20%22test%20anxiety%22%5Btiab%5D%20OR%20%22evaluation%20anxiety%22%5Btiab%5D",
+   "status": 200,
+   "sha256": "e92725eb87426c7178e87e813672c6fc4a30e8508b35d96bb3bc14aae55c9d97"
+  },
+  {
+   "file": "pm-esummary-v2-rct-7e080d11.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42537418,42316780,42289435,42043979,41814471,41803820",
+   "status": 200,
+   "sha256": "1206281ac562d2d8f351675d32a49d377e11cb7e17c318a5f4c8a638a5685df8"
+  },
+  {
+   "file": "pm-esummary-v2-terms-df3546d4.json",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42896789,42894634,42894485,42893823,42886298,42885438",
+   "status": 200,
+   "sha256": "72af286dd8738812fc2e06e0502e0db3602156157dcdf0aca85f2fd9c9913e52"
+  }
+ ]
+}

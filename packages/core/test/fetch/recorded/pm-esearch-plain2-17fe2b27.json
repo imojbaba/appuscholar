@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=loneliness%20older%20adults%20intervention",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"7194\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42891023\",\"42887426\",\"42887010\",\"42881603\",\"42880901\",\"42879168\"],\"translationset\":[{\"from\":\"loneliness\",\"to\":\"\\\"lonelier\\\"[All Fields] OR \\\"loneliness\\\"[MeSH Terms] OR \\\"loneliness\\\"[All Fields]\"},{\"from\":\"older adults\",\"to\":\"\\\"aged\\\"[MeSH Terms] OR \\\"aged\\\"[All Fields] OR (\\\"older\\\"[All Fields] AND \\\"adults\\\"[All Fields]) OR \\\"older adults\\\"[All Fields]\"},{\"from\":\"intervention\",\"to\":\"\\\"intervention's\\\"[All Fields] OR \\\"interventions\\\"[All Fields] OR \\\"interventive\\\"[All Fields] OR \\\"methods\\\"[MeSH Terms] OR \\\"methods\\\"[All Fields] OR \\\"intervention\\\"[All Fields] OR \\\"interventional\\\"[All Fields]\"}],\"querytranslation\":\"(\\\"lonelier\\\"[All Fields] OR \\\"loneliness\\\"[MeSH Terms] OR \\\"loneliness\\\"[All Fields]) AND (\\\"aged\\\"[MeSH Terms] OR \\\"aged\\\"[All Fields] OR (\\\"older\\\"[All Fields] AND \\\"adults\\\"[All Fields]) OR \\\"older adults\\\"[All Fields]) AND (\\\"intervention s\\\"[All Fields] OR \\\"interventions\\\"[All Fields] OR \\\"interventive\\\"[All Fields] OR \\\"methods\\\"[MeSH Terms] OR \\\"methods\\\"[All Fields] OR \\\"intervention\\\"[All Fields] OR \\\"interventional\\\"[All Fields])\"}}\n"
+}

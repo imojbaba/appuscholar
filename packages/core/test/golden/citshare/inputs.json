@@ -1,0 +1,36 @@
+{
+  "starterLibs": [
+    { "id": "empty", "lib": [] },
+    { "id": "one-other", "lib": [{ "author": "Smith, John", "year": "2020", "title": "Sleep and memory consolidation", "source": "Journal of Sleep Research", "type": "Journal article", "style": "apa" }] },
+    { "id": "miller-present", "lib": [{ "author": "Miller, George A.", "year": "1956", "title": "The magical number seven, plus or minus two: Some limits on our capacity for processing information", "type": "Journal article", "style": "apa" }] },
+    { "id": "miller-other-author", "lib": [{ "author": "Miller, G. A.", "year": "1956", "title": "The magical number seven, plus or minus two: Some limits on our capacity for processing information", "type": "Journal article", "style": "apa" }] },
+    { "id": "bandura-other-case", "lib": [{ "author": "Bandura, Albert", "year": "1977", "title": "Social Learning Theory", "type": "Book", "style": "apa" }] }
+  ],
+  "quotes": [
+    { "id": "empty", "quote": "", "srcLang": "en", "contentLang": "en" },
+    { "id": "blank", "quote": "   \n  ", "srcLang": "en", "contentLang": "hi" },
+    { "id": "en-en", "quote": "  Memory is limited to about seven items.  ", "srcLang": "en", "contentLang": "en" },
+    { "id": "hi-hi", "quote": "स्मृति की क्षमता सीमित है।", "srcLang": "hi", "contentLang": "hi" },
+    { "id": "hi-en", "quote": "स्मृति की क्षमता सीमित है।", "srcLang": "hi", "contentLang": "en" },
+    { "id": "en-hi", "quote": "The span of absolute judgment is limited.", "srcLang": "en", "contentLang": "hi", "reply": "  निरपेक्ष निर्णय का विस्तार सीमित है।\n" },
+    { "id": "en-hi-marks", "quote": "He said \"less <is> more\" & left.\nSecond line.", "srcLang": "en", "contentLang": "hi", "reply": "उन्होंने कहा \"कम <ही> अधिक\" & चले गए।" },
+    { "id": "en-hi-error", "quote": "The span of absolute judgment is limited.", "srcLang": "en", "contentLang": "hi", "error": "key" }
+  ],
+  "pages": [
+    { "id": "journal", "url": "https://journals.example.org/article/10.1037/h0043158", "title": "The magical number seven | Psychological Review", "meta": [["citation_title", "The magical number seven, plus or minus two"], ["citation_author", "Miller, George A."], ["citation_author", "Smith, Jane B."], ["citation_publication_date", "1956/03/01"], ["citation_journal_title", "Psychological Review"], ["citation_doi", "10.1037/h0043158"]] },
+    { "id": "no-doi", "url": "https://pubmed.example.gov/9500320/?from=search", "title": "PubMed record", "meta": [["citation_title", "Sleep and memory"], ["citation_author", "Walker, Matthew P."], ["citation_date", "2009-01"], ["citation_journal_title", "Annals of the New York Academy of Sciences"]] },
+    { "id": "conference", "url": "https://arxiv.example.org/abs/1706.03762", "title": "arXiv", "meta": [["citation_title", "Attention is all you need"], ["citation_author", "Vaswani, Ashish"], ["citation_year", "2017"], ["citation_conference_title", "Advances in Neural Information Processing Systems"]] },
+    { "id": "devanagari", "url": "https://patrika.example.in/lekh/12", "title": "पत्रिका", "meta": [["citation_title", "किशोरों में परीक्षा की चिंता"], ["citation_author", "शर्मा, ओजस्व"], ["citation_publication_date", "2021"], ["citation_journal_title", "भारतीय मनोविज्ञान पत्रिका"]] },
+    { "id": "title-only", "url": "https://news.example.com/story?id=5&x=a+b", "title": "A news story with no citation tags", "meta": [] },
+    { "id": "nothing", "url": "https://blank.example.com/", "title": "", "meta": [] }
+  ],
+  "libBefore": [{ "author": "Smith, John", "year": "2020", "title": "Sleep and memory consolidation", "source": "Journal of Sleep Research", "type": "Journal article", "style": "apa" }],
+  "badHashes": [
+    { "id": "not-base64", "hash": "#capture=%%%" },
+    { "id": "not-json", "base64Of": "not json at all" },
+    { "id": "no-title", "base64Of": "{\"author\":\"Miller, George A.\",\"year\":\"1956\"}" },
+    { "id": "json-null", "base64Of": "null" },
+    { "id": "other-hash", "hash": "#section-2" },
+    { "id": "empty-capture", "hash": "#capture=" }
+  ]
+}

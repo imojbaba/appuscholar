@@ -27,6 +27,30 @@ describe("parseV1Backup", () => {
     expect(lit?.bodyHtml).not.toContain("onerror");
     expect(notes?.bodyHtml).toBe("<p>line one<br>line two</p>");
   });
+  // D-W0-4, approved by OJ 2026-10-19: v1 marks a paper the student imported to read with origin "source" and keeps its file name in src
+  // (index.html 3230); the import keeps both, as v1 stored them, so the web importer can save the paper as a source.
+  it("keeps v1's source mark: origin and src come through as v1 stored them, and a document without them gets neither", () => {
+    const docs = [
+      { id: "d1", title: "Walker 2017", body: "<p>someone else's words</p>", updated: 1, origin: "source", src: "Walker 2017.pdf" },
+      { id: "d2", title: "My chapter", body: "<p>mine</p>", updated: 2 }
+    ];
+    const r = parseV1Backup(JSON.stringify({ app: "appuscholar", v: 1, data: { appu_docs: JSON.stringify(docs) } }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const [paper, own] = r.backup.documents;
+    expect(paper).toMatchObject({ id: "d1", title: "Walker 2017", origin: "source", src: "Walker 2017.pdf" });
+    expect(own).not.toHaveProperty("origin");
+    expect(own).not.toHaveProperty("src");
+  });
+  it("a malformed origin or src is left out, never the whole document", () => {
+    const docs = [{ id: "d1", title: "Odd", body: "<p>x</p>", updated: 1, origin: 7, src: { name: "x" } }];
+    const r = parseV1Backup(JSON.stringify({ app: "appuscholar", v: 1, data: { appu_docs: JSON.stringify(docs) } }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.documents).toHaveLength(1);
+    expect(r.backup.documents[0]).not.toHaveProperty("origin");
+    expect(r.backup.documents[0]).not.toHaveProperty("src");
+  });
 });
 
 describe("chunkV1Documents", () => {

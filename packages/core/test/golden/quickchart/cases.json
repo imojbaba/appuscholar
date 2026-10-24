@@ -1,0 +1,388 @@
+{
+ "engine": "quickchart",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "parse": [
+  {
+   "id": "placeholder",
+   "text": "Anxious,14\nAvoidant,9\nSecure,22\nDisorganized,5",
+   "rows": [
+    {
+     "label": "Anxious",
+     "val": 14
+    },
+    {
+     "label": "Avoidant",
+     "val": 9
+    },
+    {
+     "label": "Secure",
+     "val": 22
+    },
+    {
+     "label": "Disorganized",
+     "val": 5
+    }
+   ]
+  },
+  {
+   "id": "no-comma-line-dropped",
+   "text": "no comma here\nA,3",
+   "rows": [
+    {
+     "label": "A",
+     "val": 3
+    }
+   ]
+  },
+  {
+   "id": "last-comma-splits",
+   "text": "a,b,1\nx,y,2.5\n,,3",
+   "rows": [
+    {
+     "label": "a,b",
+     "val": 1
+    },
+    {
+     "label": "x,y",
+     "val": 2.5
+    },
+    {
+     "label": ",",
+     "val": 3
+    }
+   ]
+  },
+  {
+   "id": "value-not-a-number-dropped",
+   "text": "x,abc\ny,3\nz,NaN",
+   "rows": [
+    {
+     "label": "y",
+     "val": 3
+    }
+   ]
+  },
+  {
+   "id": "blank-lines",
+   "text": "\n\nA,1\n\n   \nB,2\n",
+   "rows": [
+    {
+     "label": "A",
+     "val": 1
+    },
+    {
+     "label": "B",
+     "val": 2
+    }
+   ]
+  },
+  {
+   "id": "spaces-and-tabs",
+   "text": "  Spaced label  ,  7  \n tab\t, 8\t",
+   "rows": [
+    {
+     "label": "Spaced label",
+     "val": 7
+    },
+    {
+     "label": "tab",
+     "val": 8
+    }
+   ]
+  },
+  {
+   "id": "parseFloat-forms",
+   "text": "A,1e3\nB,-2\nC,.5\nD,3abc\nE,\nF,Infinity\nG,-0",
+   "rows": [
+    {
+     "label": "A",
+     "val": 1000
+    },
+    {
+     "label": "B",
+     "val": -2
+    },
+    {
+     "label": "C",
+     "val": 0.5
+    },
+    {
+     "label": "D",
+     "val": 3
+    },
+    {
+     "label": "F",
+     "val": {
+      "$n": "Infinity"
+     }
+    },
+    {
+     "label": "G",
+     "val": {
+      "$n": "-0"
+     }
+    }
+   ]
+  },
+  {
+   "id": "empty",
+   "text": "",
+   "rows": []
+  },
+  {
+   "id": "crlf",
+   "text": "A,1\nB,2\n",
+   "rows": [
+    {
+     "label": "A",
+     "val": 1
+    },
+    {
+     "label": "B",
+     "val": 2
+    }
+   ]
+  },
+  {
+   "id": "empty-label",
+   "text": ",5\nlabel only,",
+   "rows": [
+    {
+     "label": "",
+     "val": 5
+    }
+   ]
+  }
+ ],
+ "venn": [
+  {
+   "id": "two-sets",
+   "input": {
+    "a": "Anxiety",
+    "aSize": "18",
+    "b": "Depression",
+    "bSize": "12",
+    "c": "",
+    "cSize": "",
+    "ab": "7",
+    "ac": "",
+    "bc": "",
+    "abc": "",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">18</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">12</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">7</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">Anxiety</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">Depression</text></svg>"
+  },
+  {
+   "id": "two-sets-title",
+   "input": {
+    "a": "Anxiety",
+    "aSize": "18",
+    "b": "Depression",
+    "bSize": "12",
+    "c": "",
+    "cSize": "",
+    "ab": "7",
+    "ac": "",
+    "bc": "",
+    "abc": "",
+    "title": "  Comorbidity overlap  "
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><text x=\"210\" y=\"24\" text-anchor=\"middle\" font-size=\"16\" fill=\"#3b0764\" font-weight=\"bold\">Comorbidity overlap</text><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">18</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">12</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">7</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">Anxiety</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">Depression</text></svg>"
+  },
+  {
+   "id": "two-sets-c-counts-ignored",
+   "input": {
+    "a": "Anxiety",
+    "aSize": "18",
+    "b": "Depression",
+    "bSize": "12",
+    "c": "   ",
+    "cSize": "10",
+    "ab": "7",
+    "ac": "4",
+    "bc": "3",
+    "abc": "2",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">18</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">12</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">7</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">Anxiety</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">Depression</text></svg>"
+  },
+  {
+   "id": "three-sets",
+   "input": {
+    "a": "Anxiety",
+    "aSize": "18",
+    "b": "Depression",
+    "bSize": "12",
+    "c": "Insomnia",
+    "cSize": "10",
+    "ab": "7",
+    "ac": "4",
+    "bc": "3",
+    "abc": "2",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"170\" cy=\"150\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.5\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"250\" cy=\"150\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.5\" stroke=\"#b45309\" stroke-width=\"2\"/><circle cx=\"210\" cy=\"220\" r=\"95\" fill=\"#34d399\" fill-opacity=\"0.5\" stroke=\"#065f46\" stroke-width=\"2\"/><text x=\"130\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">18</text><text x=\"290\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">12</text><text x=\"210\" y=\"270\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">10</text><text x=\"210\" y=\"105\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">7</text><text x=\"155\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">4</text><text x=\"265\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">3</text><text x=\"210\" y=\"175\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">2</text><text x=\"95\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#3b0764\" font-weight=\"bold\">Anxiety</text><text x=\"325\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#7c2d12\" font-weight=\"bold\">Depression</text><text x=\"210\" y=\"310\" text-anchor=\"middle\" font-size=\"14\" fill=\"#065f46\" font-weight=\"bold\">Insomnia</text></svg>"
+  },
+  {
+   "id": "three-sets-title",
+   "input": {
+    "a": "Anxiety",
+    "aSize": "18",
+    "b": "Depression",
+    "bSize": "12",
+    "c": "Insomnia",
+    "cSize": "10",
+    "ab": "7",
+    "ac": "4",
+    "bc": "3",
+    "abc": "2",
+    "title": "Comorbidity overlap"
+   },
+   "svg": "<svg viewBox=\"0 0 420 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><text x=\"210\" y=\"24\" text-anchor=\"middle\" font-size=\"16\" fill=\"#3b0764\" font-weight=\"bold\">Comorbidity overlap</text><circle cx=\"170\" cy=\"150\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.5\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"250\" cy=\"150\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.5\" stroke=\"#b45309\" stroke-width=\"2\"/><circle cx=\"210\" cy=\"220\" r=\"95\" fill=\"#34d399\" fill-opacity=\"0.5\" stroke=\"#065f46\" stroke-width=\"2\"/><text x=\"130\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">18</text><text x=\"290\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">12</text><text x=\"210\" y=\"270\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">10</text><text x=\"210\" y=\"105\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">7</text><text x=\"155\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">4</text><text x=\"265\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">3</text><text x=\"210\" y=\"175\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">2</text><text x=\"95\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#3b0764\" font-weight=\"bold\">Anxiety</text><text x=\"325\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#7c2d12\" font-weight=\"bold\">Depression</text><text x=\"210\" y=\"310\" text-anchor=\"middle\" font-size=\"14\" fill=\"#065f46\" font-weight=\"bold\">Insomnia</text></svg>"
+  },
+  {
+   "id": "negative-and-text-counts-are-0",
+   "input": {
+    "a": "A1",
+    "aSize": "-3",
+    "b": "B1",
+    "bSize": "abc",
+    "c": "",
+    "cSize": "",
+    "ab": "",
+    "ac": "",
+    "bc": "",
+    "abc": "",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">0</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">0</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">0</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">A1</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">B1</text></svg>"
+  },
+  {
+   "id": "three-sets-negative-and-text",
+   "input": {
+    "a": "A1",
+    "aSize": "5",
+    "b": "B1",
+    "bSize": "-1",
+    "c": "C1",
+    "cSize": "x",
+    "ab": "-0.5",
+    "ac": "",
+    "bc": "2",
+    "abc": "-7",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"170\" cy=\"150\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.5\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"250\" cy=\"150\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.5\" stroke=\"#b45309\" stroke-width=\"2\"/><circle cx=\"210\" cy=\"220\" r=\"95\" fill=\"#34d399\" fill-opacity=\"0.5\" stroke=\"#065f46\" stroke-width=\"2\"/><text x=\"130\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">5</text><text x=\"290\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0</text><text x=\"210\" y=\"270\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0</text><text x=\"210\" y=\"105\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0</text><text x=\"155\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0</text><text x=\"265\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">2</text><text x=\"210\" y=\"175\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0</text><text x=\"95\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#3b0764\" font-weight=\"bold\">A1</text><text x=\"325\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#7c2d12\" font-weight=\"bold\">B1</text><text x=\"210\" y=\"310\" text-anchor=\"middle\" font-size=\"14\" fill=\"#065f46\" font-weight=\"bold\">C1</text></svg>"
+  },
+  {
+   "id": "empty-names-two-sets",
+   "input": {
+    "a": "",
+    "aSize": "1",
+    "b": "  ",
+    "bSize": "2",
+    "c": "",
+    "cSize": "",
+    "ab": "3",
+    "ac": "",
+    "bc": "",
+    "abc": "",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">1</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">2</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">3</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">A</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">B</text></svg>"
+  },
+  {
+   "id": "empty-names-three-sets",
+   "input": {
+    "a": " ",
+    "aSize": "1",
+    "b": "",
+    "bSize": "2",
+    "c": " Z ",
+    "cSize": "3",
+    "ab": "4",
+    "ac": "5",
+    "bc": "6",
+    "abc": "7",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"170\" cy=\"150\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.5\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"250\" cy=\"150\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.5\" stroke=\"#b45309\" stroke-width=\"2\"/><circle cx=\"210\" cy=\"220\" r=\"95\" fill=\"#34d399\" fill-opacity=\"0.5\" stroke=\"#065f46\" stroke-width=\"2\"/><text x=\"130\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">1</text><text x=\"290\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">2</text><text x=\"210\" y=\"270\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">3</text><text x=\"210\" y=\"105\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">4</text><text x=\"155\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">5</text><text x=\"265\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">6</text><text x=\"210\" y=\"175\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">7</text><text x=\"95\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#3b0764\" font-weight=\"bold\">A</text><text x=\"325\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#7c2d12\" font-weight=\"bold\">B</text><text x=\"210\" y=\"310\" text-anchor=\"middle\" font-size=\"14\" fill=\"#065f46\" font-weight=\"bold\">Z</text></svg>"
+  },
+  {
+   "id": "escaped-names-and-title",
+   "input": {
+    "a": "<b>Tom & \"Jerry\"</b>",
+    "aSize": "1",
+    "b": "Kids' <set>",
+    "bSize": "2",
+    "c": "",
+    "cSize": "",
+    "ab": "0",
+    "ac": "",
+    "bc": "",
+    "abc": "",
+    "title": "A < B & 'C'"
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><text x=\"210\" y=\"24\" text-anchor=\"middle\" font-size=\"16\" fill=\"#3b0764\" font-weight=\"bold\">A &lt; B &amp; &#39;C&#39;</text><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">1</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">2</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">0</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">&lt;b&gt;Tom &amp; &quot;Jerry&quot;&lt;/b&gt;</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">Kids&#39; &lt;set&gt;</text></svg>"
+  },
+  {
+   "id": "escaped-three-sets",
+   "input": {
+    "a": "a<1",
+    "aSize": "1",
+    "b": "b>2",
+    "bSize": "2",
+    "c": "c&\"3\"",
+    "cSize": "3",
+    "ab": "4",
+    "ac": "5",
+    "bc": "6",
+    "abc": "7",
+    "title": "<script>x</script>"
+   },
+   "svg": "<svg viewBox=\"0 0 420 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><text x=\"210\" y=\"24\" text-anchor=\"middle\" font-size=\"16\" fill=\"#3b0764\" font-weight=\"bold\">&lt;script&gt;x&lt;/script&gt;</text><circle cx=\"170\" cy=\"150\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.5\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"250\" cy=\"150\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.5\" stroke=\"#b45309\" stroke-width=\"2\"/><circle cx=\"210\" cy=\"220\" r=\"95\" fill=\"#34d399\" fill-opacity=\"0.5\" stroke=\"#065f46\" stroke-width=\"2\"/><text x=\"130\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">1</text><text x=\"290\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">2</text><text x=\"210\" y=\"270\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">3</text><text x=\"210\" y=\"105\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">4</text><text x=\"155\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">5</text><text x=\"265\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">6</text><text x=\"210\" y=\"175\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">7</text><text x=\"95\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#3b0764\" font-weight=\"bold\">a&lt;1</text><text x=\"325\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#7c2d12\" font-weight=\"bold\">b&gt;2</text><text x=\"210\" y=\"310\" text-anchor=\"middle\" font-size=\"14\" fill=\"#065f46\" font-weight=\"bold\">c&amp;&quot;3&quot;</text></svg>"
+  },
+  {
+   "id": "decimal-and-parseFloat-forms",
+   "input": {
+    "a": "A",
+    "aSize": "1.5",
+    "b": "B",
+    "bSize": "2.50",
+    "c": "C",
+    "cSize": " 7 ",
+    "ab": "1e2",
+    "ac": "7abc",
+    "bc": "-0",
+    "abc": ".25",
+    "title": ""
+   },
+   "svg": "<svg viewBox=\"0 0 420 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><circle cx=\"170\" cy=\"150\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.5\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"250\" cy=\"150\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.5\" stroke=\"#b45309\" stroke-width=\"2\"/><circle cx=\"210\" cy=\"220\" r=\"95\" fill=\"#34d399\" fill-opacity=\"0.5\" stroke=\"#065f46\" stroke-width=\"2\"/><text x=\"130\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">1.5</text><text x=\"290\" y=\"120\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">2.5</text><text x=\"210\" y=\"270\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">7</text><text x=\"210\" y=\"105\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">100</text><text x=\"155\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">7</text><text x=\"265\" y=\"200\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0</text><text x=\"210\" y=\"175\" text-anchor=\"middle\" font-size=\"17\" fill=\"#1e1b2e\">0.25</text><text x=\"95\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#3b0764\" font-weight=\"bold\">A</text><text x=\"325\" y=\"55\" text-anchor=\"middle\" font-size=\"14\" fill=\"#7c2d12\" font-weight=\"bold\">B</text><text x=\"210\" y=\"310\" text-anchor=\"middle\" font-size=\"14\" fill=\"#065f46\" font-weight=\"bold\">C</text></svg>"
+  },
+  {
+   "id": "hindi-names",
+   "input": {
+    "a": "चिंता",
+    "aSize": "18",
+    "b": "अवसाद",
+    "bSize": "12",
+    "c": "",
+    "cSize": "",
+    "ab": "7",
+    "ac": "",
+    "bc": "",
+    "abc": "",
+    "title": "सह-रुग्णता"
+   },
+   "svg": "<svg viewBox=\"0 0 420 260\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Georgia,serif\"><text x=\"210\" y=\"24\" text-anchor=\"middle\" font-size=\"16\" fill=\"#3b0764\" font-weight=\"bold\">सह-रुग्णता</text><circle cx=\"165\" cy=\"140\" r=\"95\" fill=\"#a78bfa\" fill-opacity=\"0.55\" stroke=\"#5b21b6\" stroke-width=\"2\"/><circle cx=\"255\" cy=\"140\" r=\"95\" fill=\"#fbbf24\" fill-opacity=\"0.55\" stroke=\"#b45309\" stroke-width=\"2\"/><text x=\"110\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">18</text><text x=\"310\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">12</text><text x=\"210\" y=\"140\" text-anchor=\"middle\" font-size=\"20\" fill=\"#1e1b2e\">7</text><text x=\"90\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#3b0764\" font-weight=\"bold\">चिंता</text><text x=\"330\" y=\"70\" text-anchor=\"middle\" font-size=\"15\" fill=\"#7c2d12\" font-weight=\"bold\">अवसाद</text></svg>"
+  }
+ ]
+}

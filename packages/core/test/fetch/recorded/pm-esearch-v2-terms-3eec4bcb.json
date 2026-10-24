@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(exam%5Btiab%5D%20AND%20anxiety%5Btiab%5D)%20OR%20%22test%20anxiety%22%5Btiab%5D%20OR%20%22evaluation%20anxiety%22%5Btiab%5D",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"2247\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42896789\",\"42894634\",\"42894485\",\"42893823\",\"42886298\",\"42885438\"],\"translationset\":[],\"querytranslation\":\"(\\\"exam\\\"[Title/Abstract] AND \\\"anxiety\\\"[Title/Abstract]) OR \\\"test anxiety\\\"[Title/Abstract] OR \\\"evaluation anxiety\\\"[Title/Abstract]\"}}\n"
+}

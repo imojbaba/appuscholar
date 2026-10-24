@@ -1,0 +1,106 @@
+{
+  "terms": [
+    {
+      "id": "plain",
+      "topic": "exam anxiety",
+      "reply": "{\"terms\":[\"test anxiety\",\"evaluation anxiety\",\"exam stress\"]}"
+    },
+    {
+      "id": "fenced-and-cleaned",
+      "topic": "exam anxiety",
+      "reply": "Here you go:\n```json\n{\"terms\":[\"Exam Anxiety\",\"test-anxiety\",\"\\\"quoted\\\" term\",\"(bracketed) words\",\"stress AND worry\",\"one two three four five six\",\"x\",\"“curly” quotes\",\"[square] brackets\"]}\n```\nHope this helps."
+    },
+    {
+      "id": "over-eight",
+      "topic": "working memory",
+      "reply": "{\"terms\":[\"short-term memory\",\"executive function\",\"cognitive load\",\"attention control\",\"n-back training\",\"digit span\",\"fluid intelligence\",\"central executive\",\"phonological loop\",\"visuospatial sketchpad\"]}"
+    },
+    {
+      "id": "case-duplicates",
+      "topic": "burnout",
+      "reply": "{\"terms\":[\"Teacher Burnout\",\"teacher burnout\",\"TEACHER BURNOUT\",\"emotional exhaustion\",\"Emotional exhaustion\",\"burnout\",\"  Burnout  \"]}"
+    },
+    {
+      "id": "mixed-types",
+      "topic": "sleep quality",
+      "reply": "{\"terms\":[1,null,\"sleep hygiene\",{\"a\":1},true,\"\",\"insomnia\"]}"
+    },
+    {
+      "id": "too-long",
+      "topic": "loneliness",
+      "reply": "{\"terms\":[\"a phrase that is far longer than forty characters in all\",\"social isolation\",\"ab\",\"a\"]}"
+    },
+    {
+      "id": "not-an-array",
+      "topic": "screen time",
+      "reply": "{\"terms\":\"digital media use\"}"
+    },
+    {
+      "id": "no-json",
+      "topic": "screen time",
+      "reply": "digital media use, smartphone use, technology use"
+    },
+    {
+      "id": "empty",
+      "topic": "screen time",
+      "reply": ""
+    },
+    {
+      "id": "all-cleaned-away",
+      "topic": "mindfulness",
+      "reply": "{\"terms\":[\"mindfulness\",\" MINDFULNESS \",\"AND\",\"()\"]}"
+    },
+    {
+      "id": "topic-trimmed",
+      "topic": "  growth mindset  ",
+      "reply": "{\"terms\":[\"growth mindset\",\"implicit theories of intelligence\",\"fixed mindset\"]}"
+    }
+  ],
+  "sortLists": [
+    [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    [
+      9,
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1,
+      0
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      3,
+      5,
+      8
+    ],
+    [
+      4,
+      0,
+      2,
+      1
+    ]
+  ],
+  "sortModes": [
+    "relevance",
+    "citations",
+    "year",
+    "fit"
+  ]
+}

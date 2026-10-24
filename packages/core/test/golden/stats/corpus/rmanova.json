@@ -1,0 +1,179 @@
+[
+ {
+  "id": "rmanova-three-conditions",
+  "csv": "pre,post,followup\n18.2,21.5,20.5\n22.6,26.0,22.8\n16.9,25.0,19.6\n16.2,20.7,21.6\n19.1,28.8,26.3\n19.8,24.6,26.1\n21.9,30.6,29.0\n23.6,25.4,22.8\n11.5,14.8,12.3\n21.7,27.1,25.3\n19.7,20.0,19.2\n14.9,12.5,21.8",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "pre",
+    "post",
+    "followup"
+   ]
+  },
+  "why": "three conditions, 12 people, significant: the pairwise table with the factor 3"
+ },
+ {
+  "id": "rmanova-four-conditions-gg",
+  "csv": "t1,t2,t3,t4\n9.2,9.7,13.4,16.8\n9.2,12.0,9.0,13.9\n10.9,11.1,12.6,20.6\n9.3,12.9,10.3,21.7\n8.8,10.4,12.0,15.3\n9.3,10.0,11.1,23.0\n8.0,8.1,11.8,10.9\n10.3,10.6,12.4,0.8\n10.4,12.2,11.9,29.2\n9.0,10.5,13.3,8.3\n10.1,10.9,18.8,22.6\n10.9,11.5,11.1,17.9\n9.8,11.4,14.2,14.8\n9.5,11.9,14.1,12.5\n11.4,12.3,9.1,14.8",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3",
+    "t4"
+   ]
+  },
+  "why": "spread growing over time (noise SD .5, 1, 3, 8): Greenhouse-Geisser epsilon below .75, the Greenhouse-Geisser rows"
+ },
+ {
+  "id": "rmanova-hf",
+  "csv": "t1,t2,t3,t4\n10.9,11.1,11.0,11.1\n6.0,8.1,7.4,7.8\n8.8,8.8,12.4,11.6\n18.8,18.6,22.2,19.4\n12.5,12.6,19.5,17.2\n12.0,10.2,11.3,11.3\n13.1,15.3,19.3,19.5\n16.6,14.7,18.0,17.2\n17.4,17.8,19.4,18.7\n17.8,25.3,24.6,20.4\n9.8,9.8,9.1,12.3\n12.6,15.9,17.4,16.3\n11.0,11.7,13.3,11.1\n10.8,10.3,12.5,16.3\n5.6,11.3,13.8,8.6",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3",
+    "t4"
+   ]
+  },
+  "why": "a person effect plus equal noise (compound symmetry): epsilon at least .75, the Huynh-Feldt rows"
+ },
+ {
+  "id": "rmanova-non-significant",
+  "csv": "a,b,c\n17.2,20.7,21.6\n17.1,16.9,16.0\n19.4,22.1,18.1\n16.1,16.5,15.8\n20.8,17.7,20.0\n21.5,19.2,19.9\n27.0,20.5,22.0\n25.5,26.2,25.9\n20.3,20.1,19.5\n7.1,10.9,11.2\n11.2,9.5,9.1\n17.7,19.4,18.4",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "no condition effect: the 'not significant' note, no pairwise table"
+ },
+ {
+  "id": "rmanova-pair-no-spread",
+  "csv": "s1,s2,s3\n15,18,25\n21,24,18\n19,22,26\n28,31,28\n20,23,30\n24,27,28\n20,23,19\n16,19,25\n23,26,30\n21,24,29\n16,19,23\n24,27,24",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "s1",
+    "s2",
+    "s3"
+   ]
+  },
+  "why": "whole numbers, s2 is s1 + 3 for everyone: the s1 − s2 pair has no spread (the '—' row)"
+ },
+ {
+  "id": "rmanova-pair-decimal-diffs",
+  "csv": "s1,s2,s3\n14.6,17.6,19.8\n21.4,24.4,12.9\n19.5,22.5,21.2\n27.7,30.7,23.4\n19.9,22.9,25.4\n24.0,27.0,22.7\n20.4,23.4,14.2\n16.3,19.3,19.9\n22.6,25.6,24.8\n20.9,23.9,23.9\n15.6,18.6,18.4\n23.7,26.7,19.5",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "s1",
+    "s2",
+    "s3"
+   ]
+  },
+  "why": "one decimal, s2 is s1 + 3 on paper: the parsed differences are not all the same double, so the s1 − s2 pair gets a huge t instead of the '—' row; the near-singular covariance makes Mauchly's test incalculable"
+ },
+ {
+  "id": "rmanova-n-le-k",
+  "csv": "a,b,c\n1,2,4\n2,4,3\n3,3,6",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "3 people, 3 conditions: the 'more people than conditions' toast"
+ },
+ {
+  "id": "rmanova-n2",
+  "csv": "a,b,c\n1,2,4\n2,4,3",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "2 people: the 'at least 3 people' toast"
+ },
+ {
+  "id": "rmanova-same-change",
+  "csv": "a,b,c\n1,2,4\n2,3,5\n5,6,8\n3,4,6\n7,8,10",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "why": "everyone changes by +1 then +2: no error variance, the toast"
+ },
+ {
+  "id": "rmanova-two-columns",
+  "csv": "a,b,c\n1,2,4\n2,3,5\n5,6,8\n3,4,6",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "a",
+    "b"
+   ]
+  },
+  "why": "two columns ticked: the 'at least 3 columns' toast"
+ },
+ {
+  "id": "rmanova-missing-row",
+  "csv": "pre,post,followup\n22.4,22.2,22.0\n17.3,22.7,24.7\n17.5,29.6,23.9\n14.8,23.2,23.1\n29.4,37.0,29.7\n22.6,,21.9\n13.0,21.6,19.9\n9.9,20.6,17.0\n31.4,33.2,31.2\n13.1,22.4,22.1\n14.8,18.0,19.4\n18.0,22.1,22.1",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "pre",
+    "post",
+    "followup"
+   ]
+  },
+  "why": "one person has an empty cell: the row is left out and counted (1 entry that is not a number was left out)"
+ },
+ {
+  "id": "rmanova-nine-columns",
+  "csv": "c1,c2,c3,c4,c5,c6,c7,c8,c9\n-1.7,0.1,2.1,1.1,2.7,3.5,4.9,5.0,7.2\n-1.4,-0.1,-0.1,2.4,3.3,3.5,5.5,5.6,6.9\n5.5,5.5,5.2,6.4,7.8,9.6,9.7,12.2,10.5\n1.7,1.7,3.6,5.3,8.1,8.8,6.8,8.6,8.9\n4.7,3.2,4.0,5.8,6.9,9.0,6.9,9.1,10.4\n1.6,1.7,3.5,2.8,3.5,4.8,6.9,8.0,9.5\n-0.7,0.7,-0.5,1.5,2.8,4.0,5.1,4.3,6.4\n2.7,2.9,3.9,6.1,5.5,8.6,9.4,9.2,10.1\n2.9,4.2,5.0,6.4,8.0,7.4,9.3,12.2,13.2\n0.8,3.6,4.5,3.4,5.1,5.8,5.1,8.2,9.4",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6",
+    "c7",
+    "c8",
+    "c9"
+   ]
+  },
+  "why": "nine columns: the 'up to 8 conditions' toast"
+ },
+ {
+  "id": "rmanova-evidence-05",
+  "csv": "t1,t2,t3,t4\n8,9,13,10\n7,8,11,9\n9,11,14,10\n6,9,10,8\n10,10,15,12\n8,12,12,9\n7,7,12,11\n9,10,13,9\n5,8,11,7\n8,11,14,10",
+  "test": "rmanova",
+  "ticked": {
+   "items": [
+    "t1",
+    "t2",
+    "t3",
+    "t4"
+   ]
+  },
+  "why": "the rmanova rows of port-audit-evidence 05 (10 people, 4 conditions)"
+ }
+]

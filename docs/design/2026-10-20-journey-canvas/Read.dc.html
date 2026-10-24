@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Read a paper</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4c1d95}a:hover{color:#3b0764}
+</style>
+</helmet>
+<div style="min-height: 1060px; background: #fbfaf9; color: #2a2438; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<a href="Main.dc.html" style="font-family: 'Source Serif 4', serif; font-size: 22px; font-weight: 600; color: #4c1d95; text-decoration: none">Appuscholar</a>
+<span style="color: #6b6579">Sleep and exam anxiety</span>
+<span style="color: #ddd9e4">/</span>
+<span style="font-weight: 600">Literature</span>
+<div style="flex: 1 1 0"></div>
+<div style="display: flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px; background: #ecfdf3; color: #166534; font-size: 13px; font-weight: 600">Locked to you</div>
+</header>
+
+<nav aria-label="Literature" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 0 32px; background: #ffffff; border-bottom: 1px solid #ece8f2">
+<a href="Find.dc.html" style="padding: 14px; color: #2a2438; text-decoration: none">Find</a>
+<a href="#" aria-current="page" style="padding: 14px 14px 12px; border-bottom: 3px solid #4c1d95; color: #4c1d95; font-weight: 700; text-decoration: none">Reading list (4)</a>
+<a href="#" style="padding: 14px; color: #2a2438; text-decoration: none">Compare</a>
+<a href="#" style="padding: 14px; color: #2a2438; text-decoration: none">Citations (4)</a>
+</nav>
+
+<div style="max-width: 1400px; margin: 0 auto; padding: 24px 32px; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<aside aria-label="Reading list" style="flex: 1 1 220px; max-width: 260px; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{list}}" as="r" hint-placeholder-count="4">
+<a href="#" style="{{r.style}}">
+<span style="font-weight: 600; line-height: 1.3">{{r.short}}</span>
+<span style="font-size: 13px; color: #6b6579">{{r.status}}</span>
+</a>
+</sc-for>
+<button style="margin-top: 6px; height: 40px; border: 1px dashed #ddd9e4; border-radius: 8px; background: none; color: #4c1d95; font: inherit; font-weight: 600">Add your own PDF</button>
+</aside>
+
+<main style="flex: 999 1 520px; min-width: 0; background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; padding: 28px 36px; display: flex; flex-direction: column; gap: 14px">
+<div>
+<h1 style="margin: 0; font-size: 22px; line-height: 1.3">Open-label placebos reduce test anxiety and improve self-management skills</h1>
+<p style="margin: 6px 0 0; font-size: 14px; color: #6b6579">Schaefer and colleagues, 2019, Scientific Reports. Page 1 of 6. <a href="#">Open the original PDF</a></p>
+</div>
+<div style="font-family: 'Source Serif 4', serif; font-size: 17px; line-height: 1.7; max-width: 68ch; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; color: #6b6579">[Paper text, page 1, opening paragraph]</p>
+<p style="margin: 0">[Text before the selection] <mark style="background: #ede9fe; color: #2a2438; padding: 1px 2px">It affects up to 40 percent of all students.</mark> [Text after the selection]</p>
+<div role="group" aria-label="Save a highlight" style="font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px; border: 1px solid #ddd9e4; border-radius: 12px; background: #ffffff; box-shadow: 0 8px 24px rgba(76, 29, 149, 0.12); max-width: 560px">
+<span style="font-weight: 600">Selected passage held</span>
+<input aria-label="Your note on this passage" value="Prevalence figure for my introduction" style="flex: 1 1 220px; height: 40px; padding: 0 10px; border: 1px solid #ddd9e4; border-radius: 8px; font: inherit">
+<button style="height: 40px; padding: 0 14px; border: none; border-radius: 8px; background: #4c1d95; color: #ffffff; font: inherit; font-weight: 700">Save highlight</button>
+</div>
+<p style="margin: 0; color: #6b6579">[Paper text, page 1, methods paragraph]</p>
+</div>
+</main>
+
+<aside aria-label="Work on this paper" style="flex: 1 1 360px; max-width: 420px; background: #ffffff; border: 1px solid #ece8f2; border-radius: 12px; display: flex; flex-direction: column">
+<div role="tablist" aria-label="Paper tools" style="display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid #ece8f2">
+<button role="tab" aria-selected="true" style="height: 40px; padding: 0 12px; border: none; border-bottom: 3px solid #4c1d95; background: none; color: #4c1d95; font: inherit; font-weight: 700">Your take first</button>
+<button role="tab" aria-selected="false" style="height: 40px; padding: 0 12px; border: none; background: none; color: #2a2438; font: inherit">Ask</button>
+<button role="tab" aria-selected="false" style="height: 40px; padding: 0 12px; border: none; background: none; color: #2a2438; font: inherit">Check numbers</button>
+<button role="tab" aria-selected="false" style="height: 40px; padding: 0 12px; border: none; background: none; color: #2a2438; font: inherit">Highlights (2)</button>
+</div>
+<div style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="own" style="font-weight: 600">In two lines, what does this paper say?</label>
+<textarea id="own" rows="3" style="padding: 10px 12px; border: 1px solid #ddd9e4; border-radius: 8px; font: inherit; resize: vertical">Students given open-label placebo pills felt less test anxiety. The pills worked even though students knew they were placebos.</textarea>
+<span style="font-size: 13px; color: #166534">Done. The AI summary is unlocked.</span>
+</div>
+<section style="border: 1px solid #c9932e; border-radius: 12px; padding: 16px; background: #fffdf8; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+<div style="font-size: 13px; font-weight: 600; color: #7a5412">AI summary from the whole paper. Compare it with your two lines.</div>
+<div><strong>Aim.</strong> Test whether open-label placebos lower test anxiety and improve self-management, against no pills.</div>
+<div><strong>Method.</strong> Randomised trial, 58 students, two weeks before an exam, questionnaires before and after.</div>
+<div><strong>Key findings.</strong> Less test anxiety and better self-management in the placebo group.</div>
+<div><strong>Limitations.</strong> [Read from the paper's discussion section, quoted with its page]</div>
+<div style="color: #6b6579">Every quotation is checked against the paper and marked with its page.</div>
+</section>
+<a href="Main.dc.html" style="align-self: flex-start; color: #4c1d95; font-weight: 600">Next: add this paper to your comparison</a>
+</div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const base = 'display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;text-decoration:none;color:#2a2438;';
+    const on = base + 'background:#ffffff;border:1px solid #4c1d95';
+    const off = base + 'background:#ffffff;border:1px solid #ece8f2';
+    return {
+      list: [
+        { short: 'Schaefer et al., 2019: open-label placebos', status: 'Reading. 2 highlights', style: on },
+        { short: 'Putwain, 2008: examination stress', status: 'Not read yet. No PDF', style: off },
+        { short: 'Kiecolt-Glaser et al., 2011: omega-3 trial', status: 'Not read yet. Authors missing', style: off },
+        { short: 'Cohen, 1988: power analysis', status: 'Book. Reference only', style: off }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

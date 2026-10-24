@@ -1,6 +1,18 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { wordDocument } from "../lib/export/word";
+import { VaultError } from "../lib/vault/crypto";
+import { fileTitle, openTitle } from "../lib/vault/titles";
+
+/** A vault stand-in for titles: "ct:<text>" opens under the document's own id; anything else does not; `locked` refuses as a locked vault does. */
+const titleVault = (locked = false) => ({
+  decryptBody: async (d: { id: string; bodyHtml: string }) => {
+    if (locked) throw new Error("vault-locked");
+    if (d.bodyHtml === "ct:" + d.id + ":Sleep and exam anxiety") return "Sleep and exam anxiety";
+    throw new VaultError("corrupt");
+  }
+});
+const sealedDoc = (title: string) => ({ id: "d1", title, titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }] });
 
 describe("wordDocument", () => {
   it("builds v1's Word-namespaced .doc", async () => {
@@ -19,5 +31,11 @@ describe("wordDocument", () => {
   it("falls back to a default name and escapes the title", () => {
     expect(wordDocument("///", "").filename).toBe("appuscholar-document.doc");
     expect(wordDocument("", "").filename).toBe("appuscholar-document.doc");
+  });
+  it("the Word file name comes from the opened title; a locked or unopenable one is untitled", async () => {
+    const name = async (title: string, locked = false) => fileTitle(await openTitle(titleVault(locked), sealedDoc(title), "d1"));
+    expect(wordDocument(await name("ct:d1:Sleep and exam anxiety"), "<p>x</p>").filename).toBe("Sleep and exam anxiety.doc");
+    expect(wordDocument(await name("ct:d1:Sleep and exam anxiety", true), "<p>x</p>").filename).toBe("untitled.doc");
+    expect(wordDocument(await name("ct:other:Sleep and exam anxiety"), "<p>x</p>").filename).toBe("untitled.doc");
   });
 });

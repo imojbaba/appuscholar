@@ -5,11 +5,14 @@ import { editorExtensionsWith, setEditorPlaceholder } from "@/lib/editorExtensio
 import { plainText, useLang, useT } from "@/lib/i18n";
 import { useAutosave, type SaveStatus } from "@/lib/useAutosave";
 import { isImportable } from "@/lib/import/parse";
+import type { WrappedDek } from "@/lib/vault/useVault";
 
 function words(text: string): number { const t = text.trim(); return t ? t.split(/\s+/).length : 0; }
 
-export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onStatus, onCount, onEditor, onFiles, onTab, highlightAi = false }: {
+export function Editor({ docId, initialHtml, initialSeq, deks, onSaved, onReady, onStatus, onCount, onEditor, onFiles, onTab, highlightAi = false }: {
   docId: string; initialHtml: string; initialSeq: number;
+  /** The document's keys as loaded; autosave encrypts under the newest (or makes the first) when a vault exists. */
+  deks: WrappedDek[];
   onSaved?: (seq: number) => void;
   onReady?: (api: { flushNow: () => Promise<boolean> }) => void;
   /** The autosave state and the revision it last stored; the document card shows it as the Auto-save badge. */
@@ -29,7 +32,8 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   const { lang } = useLang();
   // Created once with the hint of the language on screen; the effect below swaps the hint on a language switch without recreating the editor.
   const [extensions] = useState(() => editorExtensionsWith(t("editor_placeholder")));
-  const { status, currentSeq, onChange, flushNow } = useAutosave(docId, initialHtml, initialSeq);
+  // `restored`: text this tab held after the document's editor last went away unsaved; the editor opens with it and autosave saves it.
+  const { status, currentSeq, onChange, flushNow, restored } = useAutosave(docId, initialHtml, initialSeq, { deks });
   // The handlers below are created with the editor, so they read the newest callback from here.
   const onFilesRef = useRef(onFiles);
   useEffect(() => { onFilesRef.current = onFiles; }, [onFiles]);
@@ -37,7 +41,7 @@ export function Editor({ docId, initialHtml, initialSeq, onSaved, onReady, onSta
   useEffect(() => { onTabRef.current = onTab; }, [onTab]);
   const editor = useEditor({
     extensions,
-    content: initialHtml,
+    content: restored ?? initialHtml,
     immediatelyRender: false,
     editorProps: {
       // The text box needs a name for a screen reader; the effect below keeps it in the language on screen.

@@ -16,6 +16,9 @@ export type CallCtx = {
   contentLang: "en" | "hi";
   projectId: string | null;
   askPassphrase(p: ProviderId): Promise<string | null>;
+  /** When given, opens a server-held key instead of askPassphrase + the legacy unlock: useKeys().getUnlocked, which also reads keys
+   *  locked under the vault and re-wraps legacy ones. Null when cancelled; throws when the passphrase was wrong. */
+  unlockKey?(p: ProviderId): Promise<string | null>;
   askPd(sc: ScanResult): Promise<"mask" | "send" | "cancel">;
   openSettings(): void;
   onFailover(from: ProviderId, to: ProviderId): void;
@@ -91,6 +94,13 @@ async function ensureKey(ctx: CallCtx): Promise<string> {
   if (have) return have;
   const blob = ctx.blobs[p];
   if (!blob) { ctx.openSettings(); throw new AiCallError("no-key", apiMsg("no-key")); }
+  if (ctx.unlockKey) {
+    let got: string | null;
+    try { got = await ctx.unlockKey(p); } catch { throw new AiCallError("bad-pass", apiMsg("bad-pass")); }
+    if (!got) throw new AiCallError("no-key", apiMsg("no-key"));
+    toast("Key unlocked for this session ✓");
+    return got;
+  }
   const pass = await ctx.askPassphrase(p);
   if (!pass) throw new AiCallError("no-key", apiMsg("no-key"));
   let plain: string;

@@ -1,0 +1,1151 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "moderate-significant",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n46.0,2.57,22.5\n52.6,5.63,19.9\n56.1,5.20,22.6\n40.3,4.07,23.8\n57.7,4.01,19.1\n52.6,2.19,18.7\n57.8,8.41,22.6\n52.7,9.70,20.1\n61.6,8.17,27.4\n40.6,4.42,19.2\n67.8,5.57,17.3\n62.0,5.75,22.1\n44.0,3.37,24.8\n56.6,4.48,18.7\n54.4,6.07,23.3\n32.5,4.16,23.7\n56.0,1.48,13.8\n44.1,2.46,23.2\n47.5,5.51,19.5\n44.0,4.33,22.7\n45.7,4.40,12.0\n50.7,7.71,22.8\n51.0,5.17,22.2\n34.4,3.57,20.6\n47.3,4.87,23.3\n36.6,9.32,10.8\n37.3,2.75,24.8\n46.5,8.57,20.7\n58.6,7.88,27.7\n56.3,4.68,20.2\n44.0,4.33,22.7\n42.9,7.84,18.3\n41.7,5.49,17.2\n51.4,3.94,24.7\n59.4,8.65,27.5\n50.2,5.35,20.5\n56.9,5.66,23.9\n53.2,5.08,21.7\n65.0,4.40,17.0\n29.9,5.25,22.3\n28.7,4.26,22.6\n48.0,6.02,21.6\n56.4,7.11,24.9\n45.9,7.17,21.6\n54.3,7.38,27.2\n38.3,7.99,15.4\n37.4,6.52,16.7\n42.8,3.79,19.2\n58.4,6.92,20.6\n57.0,1.70,18.6\n42.9,3.57,22.9\n51.8,5.58,17.7\n43.5,1.64,21.5\n50.2,7.94,18.9\n38.9,2.97,28.2\n49.5,2.00,17.5\n42.6,3.48,22.9\n49.6,3.47,15.3\n43.5,4.95,19.5\n41.8,4.68,24.7\n51.1,7.06,16.7\n46.6,4.67,23.7\n50.2,5.35,14.5\n45.8,3.02,21.5\n56.1,5.99,17.7\n41.8,3.45,22.0\n57.7,1.10,14.9\n63.3,7.61,27.8\n47.3,2.89,21.8\n67.5,2.82,14.9\n70.3,3.25,13.2\n54.4,6.30,22.3\n36.4,1.95,23.9\n33.8,4.20,20.1\n48.2,6.15,17.9\n67.8,8.79,31.9\n55.7,4.42,26.4\n57.6,5.11,20.0\n47.5,3.27,26.5\n42.6,8.96,12.6\n53.7,4.72,18.2\n38.9,4.87,21.9\n48.0,5.29,21.9\n55.1,3.17,21.0\n50.4,4.98,24.8\n55.2,2.48,17.5\n45.5,7.98,21.4\n56.0,4.70,20.6\n54.0,4.67,11.5\n33.5,7.34,11.4\n39.6,2.57,22.4\n42.8,7.80,17.4\n56.6,8.04,24.7\n53.0,3.46,18.6\n52.8,6.38,24.7\n51.7,4.80,17.2\n56.4,6.77,21.8\n59.5,5.08,23.0\n44.5,3.20,18.3\n34.1,6.26,20.9\n56.7,4.56,22.6\n47.9,5.36,19.5\n50.5,6.95,20.3\n48.3,7.43,19.2\n38.9,6.26,18.1\n34.9,2.16,30.3\n59.6,6.39,23.7\n60.9,4.40,15.0\n59.3,7.14,18.5\n52.1,4.61,21.8\n52.7,7.85,13.4\n45.8,6.03,14.8\n50.7,5.00,18.3\n46.0,5.59,19.7\n44.6,1.47,27.0\n52.1,6.15,21.0\n67.0,5.23,31.2\n31.2,2.81,26.9\n56.0,5.81,23.4\n56.8,5.64,23.8",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.17, SE = 0.02, t(116) = 10.46, p < .001, ΔR² = .485. The simple slope of anxiety was -0.29 (p < .001), 0.04 (p = .264), 0.36 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: wellbeing predicted from anxiety, support and their product. N = 120. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "F",
+       "df",
+       "p",
+       "ΔR² for the interaction",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       ".487",
+       "36.63",
+       "3, 116",
+       "&lt; .001",
+       ".485",
+       "109.49",
+       "1, 116",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Term",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI for b"
+      ],
+      [
+       "Intercept",
+       "20.374",
+       "0.280",
+       "72.88",
+       "&lt; .001",
+       "[19.820, 20.927]"
+      ],
+      [
+       "anxiety (centred)",
+       "0.036",
+       "0.032",
+       "1.12",
+       ".264",
+       "[-0.027, 0.099]"
+      ],
+      [
+       "support (centred)",
+       "-0.060",
+       "0.144",
+       "-0.42",
+       ".677",
+       "[-0.345, 0.225]"
+      ],
+      [
+       "anxiety × support",
+       "0.167",
+       "0.016",
+       "10.46",
+       "&lt; .001",
+       "[0.136, 0.199]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level of the moderator",
+       "Slope of X",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "Low (support = mean − 1 SD) = 3.21",
+       "-0.291",
+       "0.043",
+       "-6.71",
+       "&lt; .001",
+       "[-0.377, -0.205]"
+      ],
+      [
+       "Average (support = mean) = 5.16",
+       "0.036",
+       "0.032",
+       "1.12",
+       ".264",
+       "[-0.027, 0.099]"
+      ],
+      [
+       "High (support = mean + 1 SD) = 7.11",
+       "0.363",
+       "0.046",
+       "7.89",
+       "&lt; .001",
+       "[0.272, 0.454]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The effect of anxiety on wellbeing is significant where support is at or below 4.56 and from 5.33 upward, and not significant elsewhere in the observed range (1.10 to 9.70). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "120",
+       "0.978",
+       ".046"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures."
+    }
+   ],
+   "resultsText": "ResultsModel: wellbeing predicted from anxiety, support and their product. N = 120. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.R²FdfpΔR² for the interactionF changedfp.48736.633, 116< .001.485109.491, 116< .001TermbSEtp95% CI for bIntercept20.3740.28072.88< .001[19.820, 20.927]anxiety (centred)0.0360.0321.12.264[-0.027, 0.099]support (centred)-0.0600.144-0.42.677[-0.345, 0.225]anxiety × support0.1670.01610.46< .001[0.136, 0.199]Simple slopes: the effect of anxiety on wellbeing at three levels of support.Level of the moderatorSlope of XSEtp95% CILow (support = mean − 1 SD) = 3.21-0.2910.043-6.71< .001[-0.377, -0.205]Average (support = mean) = 5.160.0360.0321.12.264[-0.027, 0.099]High (support = mean + 1 SD) = 7.110.3630.0467.89< .001[0.272, 0.454]The effect of anxiety on wellbeing is significant where support is at or below 4.56 and from 5.33 upward, and not significant elsewhere in the observed range (1.10 to 9.70). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.Assumption checksVariableNShapiro-Wilk WpResiduals1200.978.046At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures.A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.17, SE = 0.02, t(116) = 10.46, p < .001, ΔR² = .485. The simple slope of anxiety was -0.29 (p < .001), 0.04 (p = .264), 0.36 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: wellbeing predicted from anxiety, support and their product. N = 120. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>F</th><th>df</th><th>p</th><th>ΔR² for the interaction</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>.487</td><td>36.63</td><td>3, 116</td><td>&lt; .001</td><td>.485</td><td>109.49</td><td>1, 116</td><td>&lt; .001</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI for b</th></tr><tr><td>Intercept</td><td>20.374</td><td>0.280</td><td>72.88</td><td>&lt; .001</td><td>[19.820, 20.927]</td></tr><tr><td>anxiety (centred)</td><td>0.036</td><td>0.032</td><td>1.12</td><td>.264</td><td>[-0.027, 0.099]</td></tr><tr><td>support (centred)</td><td>-0.060</td><td>0.144</td><td>-0.42</td><td>.677</td><td>[-0.345, 0.225]</td></tr><tr><td>anxiety × support</td><td>0.167</td><td>0.016</td><td>10.46</td><td>&lt; .001</td><td>[0.136, 0.199]</td></tr></tbody></table><p class=\"desc\"><b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support.</p><table class=\"stats-table\"><tbody><tr><th>Level of the moderator</th><th>Slope of X</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>Low (support = mean − 1 SD) = 3.21</td><td>-0.291</td><td>0.043</td><td>-6.71</td><td>&lt; .001</td><td>[-0.377, -0.205]</td></tr><tr><td>Average (support = mean) = 5.16</td><td>0.036</td><td>0.032</td><td>1.12</td><td>.264</td><td>[-0.027, 0.099]</td></tr><tr><td>High (support = mean + 1 SD) = 7.11</td><td>0.363</td><td>0.046</td><td>7.89</td><td>&lt; .001</td><td>[0.272, 0.454]</td></tr></tbody></table><p class=\"desc\">The effect of anxiety on wellbeing is significant where support is at or below 4.56 and from 5.33 upward, and not significant elsewhere in the observed range (1.10 to 9.70). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>120</td><td>0.978</td><td>.046</td></tr></tbody></table><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures.</p></div><div id=\"statsSentence\">A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.17, SE = 0.02, t(116) = 10.46, p &lt; .001, ΔR² = .485. The simple slope of anxiety was -0.29 (p &lt; .001), 0.04 (p = .264), 0.36 (p &lt; .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "moderate-everywhere-significant",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n59.1,4.22,25.2\n57.5,3.22,20.9\n49.7,1.66,21.2\n56.5,3.56,22.6\n43.5,7.74,17.0\n31.7,3.67,19.3\n66.8,7.02,36.4\n54.8,3.96,21.7\n29.3,7.03,3.4\n39.4,3.85,14.2\n43.8,5.69,13.7\n53.4,6.22,23.2\n63.3,6.16,29.5\n53.1,3.06,24.0\n45.7,4.26,17.8\n54.7,3.21,18.8\n47.8,4.69,18.6\n51.8,4.31,21.6\n43.3,4.46,17.1\n37.9,6.19,16.4\n62.8,2.88,24.4\n46.8,3.38,18.0\n51.2,3.81,19.2\n44.0,4.49,14.2\n44.6,3.37,19.1\n46.5,6.00,16.2\n56.6,2.81,29.7\n62.2,8.53,20.9\n55.4,5.09,28.0\n44.5,7.35,15.9\n78.0,2.84,32.1\n58.4,4.38,25.7\n59.4,5.28,26.3\n44.5,8.56,19.5\n47.6,5.25,22.5\n56.1,8.02,21.9\n32.6,3.64,10.2\n42.3,8.07,16.1\n54.0,3.71,23.1\n74.2,1.51,32.0\n54.2,1.11,26.5\n39.6,5.47,14.8\n37.8,4.62,9.0\n59.8,5.55,27.0\n41.9,4.91,14.6\n46.6,6.03,17.2\n69.6,8.31,35.8\n50.6,4.65,22.5\n46.4,5.62,18.9\n42.2,4.28,16.9\n63.2,1.60,29.8\n63.2,4.51,26.1\n43.3,8.08,16.0\n35.8,3.44,15.9\n48.8,9.69,17.5\n63.8,6.22,27.4\n54.6,6.02,21.1\n37.9,6.99,15.5\n53.3,5.15,20.7\n57.7,5.21,28.0\n49.7,7.80,18.7\n51.7,3.69,21.7\n50.0,4.85,21.1\n45.0,2.77,15.7\n43.4,5.36,13.1\n36.3,11.25,13.0\n38.0,7.53,11.1\n32.6,3.27,11.8\n54.4,1.61,24.4\n54.8,6.27,18.7\n50.5,6.55,24.1\n54.2,3.93,22.9\n50.4,7.83,19.4\n42.2,6.00,14.1\n51.7,6.60,19.7\n46.5,6.70,18.6\n47.7,7.39,24.8\n28.8,4.30,7.4\n44.3,3.79,13.5\n53.9,7.92,21.8",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A moderation analysis showed that support did not significantly moderate the effect of anxiety on wellbeing, b = 0.03, SE = 0.01, t(76) = 1.78, p = .078, ΔR² = .008. The simple slope of anxiety was 0.51 (p < .001), 0.56 (p < .001), 0.61 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: wellbeing predicted from anxiety, support and their product. N = 80. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "F",
+       "df",
+       "p",
+       "ΔR² for the interaction",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       ".806",
+       "105.00",
+       "3, 76",
+       "&lt; .001",
+       ".008",
+       "3.19",
+       "1, 76",
+       ".078"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Term",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI for b"
+      ],
+      [
+       "Intercept",
+       "20.261",
+       "0.312",
+       "64.85",
+       "&lt; .001",
+       "[19.639, 20.883]"
+      ],
+      [
+       "anxiety (centred)",
+       "0.563",
+       "0.032",
+       "17.38",
+       "&lt; .001",
+       "[0.498, 0.627]"
+      ],
+      [
+       "support (centred)",
+       "-0.121",
+       "0.156",
+       "-0.78",
+       ".438",
+       "[-0.431, 0.189]"
+      ],
+      [
+       "anxiety × support",
+       "0.025",
+       "0.014",
+       "1.78",
+       ".078",
+       "[-0.003, 0.053]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level of the moderator",
+       "Slope of X",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "Low (support = mean − 1 SD) = 3.17",
+       "0.512",
+       "0.040",
+       "12.77",
+       "&lt; .001",
+       "[0.432, 0.592]"
+      ],
+      [
+       "Average (support = mean) = 5.20",
+       "0.563",
+       "0.032",
+       "17.38",
+       "&lt; .001",
+       "[0.498, 0.627]"
+      ],
+      [
+       "High (support = mean + 1 SD) = 7.23",
+       "0.614",
+       "0.046",
+       "13.28",
+       "&lt; .001",
+       "[0.522, 0.706]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The effect of anxiety on wellbeing is significant at every value of support in your data (1.11 to 11.25). The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "80",
+       "0.980",
+       ".250"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsModel: wellbeing predicted from anxiety, support and their product. N = 80. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.R²FdfpΔR² for the interactionF changedfp.806105.003, 76< .001.0083.191, 76.078TermbSEtp95% CI for bIntercept20.2610.31264.85< .001[19.639, 20.883]anxiety (centred)0.5630.03217.38< .001[0.498, 0.627]support (centred)-0.1210.156-0.78.438[-0.431, 0.189]anxiety × support0.0250.0141.78.078[-0.003, 0.053]Simple slopes: the effect of anxiety on wellbeing at three levels of support.Level of the moderatorSlope of XSEtp95% CILow (support = mean − 1 SD) = 3.170.5120.04012.77< .001[0.432, 0.592]Average (support = mean) = 5.200.5630.03217.38< .001[0.498, 0.627]High (support = mean + 1 SD) = 7.230.6140.04613.28< .001[0.522, 0.706]The effect of anxiety on wellbeing is significant at every value of support in your data (1.11 to 11.25). The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.Assumption checksVariableNShapiro-Wilk WpResiduals800.980.250No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A moderation analysis showed that support did not significantly moderate the effect of anxiety on wellbeing, b = 0.03, SE = 0.01, t(76) = 1.78, p = .078, ΔR² = .008. The simple slope of anxiety was 0.51 (p < .001), 0.56 (p < .001), 0.61 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: wellbeing predicted from anxiety, support and their product. N = 80. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>F</th><th>df</th><th>p</th><th>ΔR² for the interaction</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>.806</td><td>105.00</td><td>3, 76</td><td>&lt; .001</td><td>.008</td><td>3.19</td><td>1, 76</td><td>.078</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI for b</th></tr><tr><td>Intercept</td><td>20.261</td><td>0.312</td><td>64.85</td><td>&lt; .001</td><td>[19.639, 20.883]</td></tr><tr><td>anxiety (centred)</td><td>0.563</td><td>0.032</td><td>17.38</td><td>&lt; .001</td><td>[0.498, 0.627]</td></tr><tr><td>support (centred)</td><td>-0.121</td><td>0.156</td><td>-0.78</td><td>.438</td><td>[-0.431, 0.189]</td></tr><tr><td>anxiety × support</td><td>0.025</td><td>0.014</td><td>1.78</td><td>.078</td><td>[-0.003, 0.053]</td></tr></tbody></table><p class=\"desc\"><b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support.</p><table class=\"stats-table\"><tbody><tr><th>Level of the moderator</th><th>Slope of X</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>Low (support = mean − 1 SD) = 3.17</td><td>0.512</td><td>0.040</td><td>12.77</td><td>&lt; .001</td><td>[0.432, 0.592]</td></tr><tr><td>Average (support = mean) = 5.20</td><td>0.563</td><td>0.032</td><td>17.38</td><td>&lt; .001</td><td>[0.498, 0.627]</td></tr><tr><td>High (support = mean + 1 SD) = 7.23</td><td>0.614</td><td>0.046</td><td>13.28</td><td>&lt; .001</td><td>[0.522, 0.706]</td></tr></tbody></table><p class=\"desc\">The effect of anxiety on wellbeing is significant at every value of support in your data (1.11 to 11.25). The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>80</td><td>0.980</td><td>.250</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A moderation analysis showed that support did not significantly moderate the effect of anxiety on wellbeing, b = 0.03, SE = 0.01, t(76) = 1.78, p = .078, ΔR² = .008. The simple slope of anxiety was 0.51 (p &lt; .001), 0.56 (p &lt; .001), 0.61 (p &lt; .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "moderate-nowhere-significant",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n54.0,2.89,19.5\n44.4,3.10,17.4\n55.9,7.67,20.7\n50.4,2.90,17.6\n34.3,7.15,18.0\n60.0,3.39,13.9\n49.0,5.53,15.0\n56.2,7.33,20.5\n68.4,4.88,22.2\n52.7,2.71,15.0\n39.3,4.03,20.4\n43.2,7.28,20.5\n60.2,5.39,29.1\n35.4,6.42,17.0\n52.6,5.18,17.9\n53.8,5.58,16.8\n38.5,4.63,22.4\n51.7,2.97,23.1\n55.6,6.09,19.1\n42.3,5.37,24.5\n45.2,1.04,26.2\n55.4,5.02,18.5\n37.0,6.95,21.6\n41.2,8.87,19.4\n59.5,2.30,18.0\n50.9,5.23,18.6\n35.8,6.12,19.2\n50.1,6.52,16.1\n69.4,3.61,19.7\n34.9,6.03,22.4\n58.2,4.17,17.1\n57.6,4.92,18.4\n48.2,3.94,17.2\n56.1,5.62,21.1\n43.3,4.23,19.7\n65.4,5.61,22.8\n67.2,4.84,19.0\n41.2,6.84,15.6\n47.9,8.37,21.7\n51.3,4.85,19.1\n43.7,3.54,23.4\n53.5,4.55,22.1\n39.6,3.94,12.1\n55.8,1.69,14.1\n47.0,5.06,20.1\n49.5,4.02,17.7\n54.7,6.81,13.2\n59.3,4.75,18.4\n40.2,6.86,23.8\n57.9,6.54,21.9\n58.8,4.01,17.3\n48.8,4.35,20.8\n65.4,3.95,23.0\n42.4,4.10,19.4\n44.5,6.64,25.3\n53.8,3.96,17.8\n43.2,4.16,26.3\n63.9,3.39,24.6\n52.0,7.80,21.5\n67.2,4.27,20.7",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A moderation analysis showed that support did not significantly moderate the effect of anxiety on wellbeing, b = 0.03, SE = 0.04, t(56) = 0.87, p = .388, ΔR² = .013. The simple slope of anxiety was -0.04 (p = .582), 0.01 (p = .875), 0.06 (p = .435) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: wellbeing predicted from anxiety, support and their product. N = 60. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "F",
+       "df",
+       "p",
+       "ΔR² for the interaction",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       ".020",
+       "0.39",
+       "3, 56",
+       ".761",
+       ".013",
+       "0.76",
+       "1, 56",
+       ".388"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Term",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI for b"
+      ],
+      [
+       "Intercept",
+       "19.882",
+       "0.465",
+       "42.77",
+       "&lt; .001",
+       "[18.951, 20.813]"
+      ],
+      [
+       "anxiety (centred)",
+       "0.008",
+       "0.051",
+       "0.16",
+       ".875",
+       "[-0.093, 0.109]"
+      ],
+      [
+       "support (centred)",
+       "0.234",
+       "0.286",
+       "0.82",
+       ".417",
+       "[-0.339, 0.808]"
+      ],
+      [
+       "anxiety × support",
+       "0.032",
+       "0.037",
+       "0.87",
+       ".388",
+       "[-0.041, 0.105]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level of the moderator",
+       "Slope of X",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "Low (support = mean − 1 SD) = 3.34",
+       "-0.045",
+       "0.081",
+       "-0.55",
+       ".582",
+       "[-0.206, 0.117]"
+      ],
+      [
+       "Average (support = mean) = 5.00",
+       "0.008",
+       "0.051",
+       "0.16",
+       ".875",
+       "[-0.093, 0.109]"
+      ],
+      [
+       "High (support = mean + 1 SD) = 6.65",
+       "0.061",
+       "0.077",
+       "0.79",
+       ".435",
+       "[-0.094, 0.215]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The effect of anxiety on wellbeing is not significant at any value of support in your data (1.04 to 8.87). The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "60",
+       "0.988",
+       ".839"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsModel: wellbeing predicted from anxiety, support and their product. N = 60. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.R²FdfpΔR² for the interactionF changedfp.0200.393, 56.761.0130.761, 56.388TermbSEtp95% CI for bIntercept19.8820.46542.77< .001[18.951, 20.813]anxiety (centred)0.0080.0510.16.875[-0.093, 0.109]support (centred)0.2340.2860.82.417[-0.339, 0.808]anxiety × support0.0320.0370.87.388[-0.041, 0.105]Simple slopes: the effect of anxiety on wellbeing at three levels of support.Level of the moderatorSlope of XSEtp95% CILow (support = mean − 1 SD) = 3.34-0.0450.081-0.55.582[-0.206, 0.117]Average (support = mean) = 5.000.0080.0510.16.875[-0.093, 0.109]High (support = mean + 1 SD) = 6.650.0610.0770.79.435[-0.094, 0.215]The effect of anxiety on wellbeing is not significant at any value of support in your data (1.04 to 8.87). The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.Assumption checksVariableNShapiro-Wilk WpResiduals600.988.839No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A moderation analysis showed that support did not significantly moderate the effect of anxiety on wellbeing, b = 0.03, SE = 0.04, t(56) = 0.87, p = .388, ΔR² = .013. The simple slope of anxiety was -0.04 (p = .582), 0.01 (p = .875), 0.06 (p = .435) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: wellbeing predicted from anxiety, support and their product. N = 60. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>F</th><th>df</th><th>p</th><th>ΔR² for the interaction</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>.020</td><td>0.39</td><td>3, 56</td><td>.761</td><td>.013</td><td>0.76</td><td>1, 56</td><td>.388</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI for b</th></tr><tr><td>Intercept</td><td>19.882</td><td>0.465</td><td>42.77</td><td>&lt; .001</td><td>[18.951, 20.813]</td></tr><tr><td>anxiety (centred)</td><td>0.008</td><td>0.051</td><td>0.16</td><td>.875</td><td>[-0.093, 0.109]</td></tr><tr><td>support (centred)</td><td>0.234</td><td>0.286</td><td>0.82</td><td>.417</td><td>[-0.339, 0.808]</td></tr><tr><td>anxiety × support</td><td>0.032</td><td>0.037</td><td>0.87</td><td>.388</td><td>[-0.041, 0.105]</td></tr></tbody></table><p class=\"desc\"><b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support.</p><table class=\"stats-table\"><tbody><tr><th>Level of the moderator</th><th>Slope of X</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>Low (support = mean − 1 SD) = 3.34</td><td>-0.045</td><td>0.081</td><td>-0.55</td><td>.582</td><td>[-0.206, 0.117]</td></tr><tr><td>Average (support = mean) = 5.00</td><td>0.008</td><td>0.051</td><td>0.16</td><td>.875</td><td>[-0.093, 0.109]</td></tr><tr><td>High (support = mean + 1 SD) = 6.65</td><td>0.061</td><td>0.077</td><td>0.79</td><td>.435</td><td>[-0.094, 0.215]</td></tr></tbody></table><p class=\"desc\">The effect of anxiety on wellbeing is not significant at any value of support in your data (1.04 to 8.87). The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>60</td><td>0.988</td><td>.839</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A moderation analysis showed that support did not significantly moderate the effect of anxiety on wellbeing, b = 0.03, SE = 0.04, t(56) = 0.87, p = .388, ΔR² = .013. The simple slope of anxiety was -0.04 (p = .582), 0.01 (p = .875), 0.06 (p = .435) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "moderate-one-root",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n49.6,4.13,19.4\n37.4,4.71,9.3\n75.7,3.34,21.9\n54.8,5.41,13.7\n56.4,9.23,21.1\n47.9,8.78,13.7\n50.6,7.33,11.9\n53.4,6.87,23.3\n52.0,1.97,19.5\n43.9,5.38,19.8\n56.1,9.86,14.0\n54.9,1.82,24.9\n48.8,2.90,27.0\n42.8,6.90,13.3\n41.2,4.69,9.1\n39.9,7.04,3.8\n52.8,5.26,25.3\n46.5,0.15,18.8\n58.7,1.07,22.1\n41.1,3.93,15.6\n57.3,8.44,15.9\n50.3,4.83,16.7\n44.3,3.02,17.5\n60.4,7.61,21.3\n51.5,3.26,21.0\n57.9,5.49,19.0\n60.9,6.97,29.9\n54.9,5.40,11.4\n45.1,5.52,19.2\n51.9,9.59,20.7\n60.0,9.66,31.6\n43.8,9.28,21.4\n55.5,6.18,25.1\n48.0,0.26,20.7\n45.2,3.52,15.1\n44.4,9.25,20.7\n39.2,8.45,12.7\n47.4,0.39,21.6\n53.8,4.78,20.7\n30.2,1.00,19.0\n46.0,9.03,13.5\n52.1,0.11,32.6\n46.0,7.61,18.4\n57.4,2.20,19.2\n41.9,2.33,16.2\n57.0,6.55,25.3\n57.9,6.43,21.7\n53.7,9.30,26.5\n42.5,9.64,14.4\n67.4,5.26,28.7\n47.3,1.99,25.1\n54.9,9.52,25.3\n40.1,7.70,16.0\n42.8,1.33,22.0\n53.6,5.92,28.6\n36.0,0.18,19.4\n54.2,0.02,26.1\n67.1,2.76,27.5\n35.7,2.97,19.1\n46.9,8.52,11.8\n58.1,5.05,24.2\n46.2,2.10,12.4\n57.9,3.99,19.5\n51.4,4.92,19.1\n33.0,6.37,8.8\n24.0,5.80,1.2\n47.1,3.94,23.6\n58.7,7.23,23.8\n41.2,9.06,20.2\n61.8,8.60,28.0\n33.7,6.56,2.3\n56.0,5.82,29.8\n47.7,7.22,23.3\n48.4,1.21,28.1\n46.0,2.45,17.5\n43.0,8.74,4.6\n48.7,2.58,20.2\n38.5,7.93,7.1\n58.7,6.40,19.8\n37.9,5.91,8.6",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.07, SE = 0.02, t(76) = 2.98, p = .004, ΔR² = .058. The simple slope of anxiety was 0.29 (p = .002), 0.50 (p < .001), 0.71 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: wellbeing predicted from anxiety, support and their product. N = 80. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "F",
+       "df",
+       "p",
+       "ΔR² for the interaction",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       ".508",
+       "26.20",
+       "3, 76",
+       "&lt; .001",
+       ".058",
+       "8.89",
+       "1, 76",
+       ".004"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Term",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI for b"
+      ],
+      [
+       "Intercept",
+       "19.011",
+       "0.543",
+       "35.00",
+       "&lt; .001",
+       "[17.930, 20.093]"
+      ],
+      [
+       "anxiety (centred)",
+       "0.502",
+       "0.062",
+       "8.16",
+       "&lt; .001",
+       "[0.380, 0.625]"
+      ],
+      [
+       "support (centred)",
+       "-0.510",
+       "0.191",
+       "-2.68",
+       ".009",
+       "[-0.890, -0.131]"
+      ],
+      [
+       "anxiety × support",
+       "0.074",
+       "0.025",
+       "2.98",
+       ".004",
+       "[0.024, 0.123]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level of the moderator",
+       "Slope of X",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "Low (support = mean − 1 SD) = 2.44",
+       "0.290",
+       "0.091",
+       "3.20",
+       ".002",
+       "[0.110, 0.471]"
+      ],
+      [
+       "Average (support = mean) = 5.31",
+       "0.502",
+       "0.062",
+       "8.16",
+       "&lt; .001",
+       "[0.380, 0.625]"
+      ],
+      [
+       "High (support = mean + 1 SD) = 8.18",
+       "0.714",
+       "0.097",
+       "7.35",
+       "&lt; .001",
+       "[0.520, 0.907]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The effect of anxiety on wellbeing is significant where support is from 1.46 upward, and not significant elsewhere in the observed range (0.02 to 9.86). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "80",
+       "0.987",
+       ".611"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsModel: wellbeing predicted from anxiety, support and their product. N = 80. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.R²FdfpΔR² for the interactionF changedfp.50826.203, 76< .001.0588.891, 76.004TermbSEtp95% CI for bIntercept19.0110.54335.00< .001[17.930, 20.093]anxiety (centred)0.5020.0628.16< .001[0.380, 0.625]support (centred)-0.5100.191-2.68.009[-0.890, -0.131]anxiety × support0.0740.0252.98.004[0.024, 0.123]Simple slopes: the effect of anxiety on wellbeing at three levels of support.Level of the moderatorSlope of XSEtp95% CILow (support = mean − 1 SD) = 2.440.2900.0913.20.002[0.110, 0.471]Average (support = mean) = 5.310.5020.0628.16< .001[0.380, 0.625]High (support = mean + 1 SD) = 8.180.7140.0977.35< .001[0.520, 0.907]The effect of anxiety on wellbeing is significant where support is from 1.46 upward, and not significant elsewhere in the observed range (0.02 to 9.86). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.Assumption checksVariableNShapiro-Wilk WpResiduals800.987.611No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.07, SE = 0.02, t(76) = 2.98, p = .004, ΔR² = .058. The simple slope of anxiety was 0.29 (p = .002), 0.50 (p < .001), 0.71 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: wellbeing predicted from anxiety, support and their product. N = 80. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>F</th><th>df</th><th>p</th><th>ΔR² for the interaction</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>.508</td><td>26.20</td><td>3, 76</td><td>&lt; .001</td><td>.058</td><td>8.89</td><td>1, 76</td><td>.004</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI for b</th></tr><tr><td>Intercept</td><td>19.011</td><td>0.543</td><td>35.00</td><td>&lt; .001</td><td>[17.930, 20.093]</td></tr><tr><td>anxiety (centred)</td><td>0.502</td><td>0.062</td><td>8.16</td><td>&lt; .001</td><td>[0.380, 0.625]</td></tr><tr><td>support (centred)</td><td>-0.510</td><td>0.191</td><td>-2.68</td><td>.009</td><td>[-0.890, -0.131]</td></tr><tr><td>anxiety × support</td><td>0.074</td><td>0.025</td><td>2.98</td><td>.004</td><td>[0.024, 0.123]</td></tr></tbody></table><p class=\"desc\"><b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support.</p><table class=\"stats-table\"><tbody><tr><th>Level of the moderator</th><th>Slope of X</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>Low (support = mean − 1 SD) = 2.44</td><td>0.290</td><td>0.091</td><td>3.20</td><td>.002</td><td>[0.110, 0.471]</td></tr><tr><td>Average (support = mean) = 5.31</td><td>0.502</td><td>0.062</td><td>8.16</td><td>&lt; .001</td><td>[0.380, 0.625]</td></tr><tr><td>High (support = mean + 1 SD) = 8.18</td><td>0.714</td><td>0.097</td><td>7.35</td><td>&lt; .001</td><td>[0.520, 0.907]</td></tr></tbody></table><p class=\"desc\">The effect of anxiety on wellbeing is significant where support is from 1.46 upward, and not significant elsewhere in the observed range (0.02 to 9.86). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>80</td><td>0.987</td><td>.611</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.07, SE = 0.02, t(76) = 2.98, p = .004, ΔR² = .058. The simple slope of anxiety was 0.29 (p = .002), 0.50 (p &lt; .001), 0.71 (p &lt; .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "moderate-n9",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n38.6,5.83,16.7\n57.7,3.80,20.6\n61.5,0.88,21.7\n57.4,9.19,23.1\n64.5,4.99,24.0\n50.0,5.93,17.5\n35.8,3.72,13.4\n49.4,3.35,14.5\n54.8,6.29,29.2",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 10 people with all three values; there are 9"
+   ]
+  },
+  {
+   "id": "moderate-same-columns",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n38.9,7.10,17.4\n47.1,6.55,16.3\n47.4,5.54,20.4\n47.6,7.29,17.1\n61.2,4.14,26.4\n51.3,4.79,23.6\n53.6,4.56,19.4\n50.1,6.72,19.8\n41.0,3.48,17.5\n51.7,4.07,24.1\n57.3,8.16,27.8\n51.2,4.05,19.1\n44.5,1.37,15.4\n37.8,6.46,12.5\n66.2,6.91,32.2\n42.1,3.19,19.9\n42.1,3.19,12.9\n36.9,3.78,8.7\n53.1,5.15,19.9\n51.1,7.37,21.6\n42.4,6.92,19.1\n48.2,2.34,17.0\n51.9,7.90,20.7\n46.0,3.48,21.4\n39.8,5.53,12.4\n47.1,4.87,21.1\n52.1,4.27,25.7\n40.2,2.74,19.5\n44.1,9.20,21.2\n55.9,4.97,22.2",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "anxiety"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Choose three different columns for Y, X and W"
+   ]
+  },
+  {
+   "id": "moderate-no-spread-w",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n59.0,5.00,24.1\n45.4,5.00,22.2\n36.9,5.00,15.6\n56.6,5.00,29.3\n59.6,5.00,21.8\n55.2,5.00,23.2\n24.4,5.00,5.6\n34.6,5.00,13.5\n56.1,5.00,24.4\n64.9,5.00,22.0\n35.1,5.00,17.2\n59.7,5.00,23.2\n61.2,5.00,24.7\n50.2,5.00,20.9\n36.6,5.00,12.8\n43.6,5.00,11.6\n46.4,5.00,17.0\n56.9,5.00,17.2\n59.0,5.00,22.9\n40.1,5.00,17.8\n49.0,5.00,20.9\n49.7,5.00,16.4\n48.3,5.00,12.6\n59.5,5.00,26.9\n47.3,5.00,20.0\n49.3,5.00,19.5\n35.2,5.00,10.0\n51.5,5.00,20.8\n40.6,5.00,15.4\n68.9,5.00,28.0",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "X and W each need some variation (not every person the same)"
+   ]
+  },
+  {
+   "id": "moderate-w-copy-of-x",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n64.5,64.5,25.1\n51.4,51.4,21.5\n52.7,52.7,20.8\n58.7,58.7,24.1\n54.5,54.5,22.7\n65.3,65.3,21.4\n38.4,38.4,7.7\n59.0,59.0,17.2\n50.9,50.9,23.9\n63.0,63.0,26.2\n62.7,62.7,23.9\n59.0,59.0,26.2\n44.7,44.7,15.7\n44.9,44.9,14.1\n51.8,51.8,19.8\n45.2,45.2,17.0\n31.2,31.2,6.2\n35.7,35.7,9.9\n53.5,53.5,22.0\n39.5,39.5,22.7\n46.8,46.8,17.2\n49.7,49.7,23.6\n35.8,35.8,16.9\n45.6,45.6,16.7\n62.9,62.9,19.5\n63.4,63.4,26.4\n54.6,54.6,22.9\n54.8,54.8,25.9\n47.3,47.3,18.3\n50.1,50.1,18.1",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "The interaction cannot be calculated: X, W and their product carry the same information (for example, W is a copy of X)."
+   ]
+  },
+  {
+   "id": "moderate-exact-fit",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n69,9,708\n50,5,310\n39,2,121\n51,6,369\n60,4,308\n35,9,368\n42,4,218\n42,8,394\n61,4,313\n53,2,163\n45,2,139\n61,8,565\n68,8,628\n36,3,150\n65,6,467\n39,3,162\n55,6,397\n67,4,343\n46,7,382\n56,7,462\n44,2,136\n60,8,556\n49,8,457\n56,7,462\n45,3,186\n38,5,238\n55,3,226\n39,2,121\n41,5,256\n38,4,198",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "The model fits Y exactly, so standard errors cannot be calculated"
+   ]
+  },
+  {
+   "id": "moderate-n-under-50",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n38.6,5.48,13.6\n39.3,6.44,14.1\n42.4,2.74,15.4\n57.7,0.34,19.8\n39.6,4.46,12.4\n39.7,7.05,12.4\n46.1,3.62,21.6\n63.9,6.26,24.3\n40.8,5.66,16.2\n43.0,6.38,11.6\n51.9,3.72,21.4\n51.4,4.30,15.2\n53.9,8.22,19.7\n44.3,6.38,11.8\n40.6,-0.01,21.6\n36.6,7.52,8.2\n53.3,9.02,20.9\n47.9,4.46,20.0\n54.3,6.64,25.1\n50.5,3.30,21.8\n63.9,5.10,25.0\n55.8,5.17,26.8\n51.7,3.75,23.0\n50.4,6.82,19.8\n44.9,6.09,23.0\n46.1,6.28,15.1\n46.8,6.81,17.7\n65.2,0.65,23.4\n48.1,5.70,21.3\n44.0,1.80,21.0",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.09, SE = 0.03, t(26) = 3.31, p = .003, ΔR² = .128. The simple slope of anxiety was 0.27 (p = .003), 0.47 (p < .001), 0.67 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: wellbeing predicted from anxiety, support and their product. N = 30. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "F",
+       "df",
+       "p",
+       "ΔR² for the interaction",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       ".696",
+       "19.88",
+       "3, 26",
+       "&lt; .001",
+       ".128",
+       "10.95",
+       "1, 26",
+       ".003"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Term",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI for b"
+      ],
+      [
+       "Intercept",
+       "18.997",
+       "0.515",
+       "36.87",
+       "&lt; .001",
+       "[17.938, 20.056]"
+      ],
+      [
+       "anxiety (centred)",
+       "0.471",
+       "0.068",
+       "6.89",
+       "&lt; .001",
+       "[0.330, 0.612]"
+      ],
+      [
+       "support (centred)",
+       "-0.520",
+       "0.237",
+       "-2.20",
+       ".037",
+       "[-1.007, -0.033]"
+      ],
+      [
+       "anxiety × support",
+       "0.088",
+       "0.027",
+       "3.31",
+       ".003",
+       "[0.033, 0.143]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level of the moderator",
+       "Slope of X",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "Low (support = mean − 1 SD) = 2.75",
+       "0.272",
+       "0.084",
+       "3.22",
+       ".003",
+       "[0.098, 0.445]"
+      ],
+      [
+       "Average (support = mean) = 5.00",
+       "0.471",
+       "0.068",
+       "6.89",
+       "&lt; .001",
+       "[0.330, 0.612]"
+      ],
+      [
+       "High (support = mean + 1 SD) = 7.26",
+       "0.670",
+       "0.098",
+       "6.87",
+       "&lt; .001",
+       "[0.470, 0.871]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The effect of anxiety on wellbeing is significant where support is from 1.96 upward, and not significant elsewhere in the observed range (-0.01 to 9.02). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change. With fewer than 50 people the test of an interaction has very little power, so a non-significant result says little."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "30",
+       "0.983",
+       ".890"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsModel: wellbeing predicted from anxiety, support and their product. N = 30. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.R²FdfpΔR² for the interactionF changedfp.69619.883, 26< .001.12810.951, 26.003TermbSEtp95% CI for bIntercept18.9970.51536.87< .001[17.938, 20.056]anxiety (centred)0.4710.0686.89< .001[0.330, 0.612]support (centred)-0.5200.237-2.20.037[-1.007, -0.033]anxiety × support0.0880.0273.31.003[0.033, 0.143]Simple slopes: the effect of anxiety on wellbeing at three levels of support.Level of the moderatorSlope of XSEtp95% CILow (support = mean − 1 SD) = 2.750.2720.0843.22.003[0.098, 0.445]Average (support = mean) = 5.000.4710.0686.89< .001[0.330, 0.612]High (support = mean + 1 SD) = 7.260.6700.0986.87< .001[0.470, 0.871]The effect of anxiety on wellbeing is significant where support is from 1.96 upward, and not significant elsewhere in the observed range (-0.01 to 9.02). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change. With fewer than 50 people the test of an interaction has very little power, so a non-significant result says little.Assumption checksVariableNShapiro-Wilk WpResiduals300.983.890No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.09, SE = 0.03, t(26) = 3.31, p = .003, ΔR² = .128. The simple slope of anxiety was 0.27 (p = .003), 0.47 (p < .001), 0.67 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: wellbeing predicted from anxiety, support and their product. N = 30. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>F</th><th>df</th><th>p</th><th>ΔR² for the interaction</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>.696</td><td>19.88</td><td>3, 26</td><td>&lt; .001</td><td>.128</td><td>10.95</td><td>1, 26</td><td>.003</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI for b</th></tr><tr><td>Intercept</td><td>18.997</td><td>0.515</td><td>36.87</td><td>&lt; .001</td><td>[17.938, 20.056]</td></tr><tr><td>anxiety (centred)</td><td>0.471</td><td>0.068</td><td>6.89</td><td>&lt; .001</td><td>[0.330, 0.612]</td></tr><tr><td>support (centred)</td><td>-0.520</td><td>0.237</td><td>-2.20</td><td>.037</td><td>[-1.007, -0.033]</td></tr><tr><td>anxiety × support</td><td>0.088</td><td>0.027</td><td>3.31</td><td>.003</td><td>[0.033, 0.143]</td></tr></tbody></table><p class=\"desc\"><b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support.</p><table class=\"stats-table\"><tbody><tr><th>Level of the moderator</th><th>Slope of X</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>Low (support = mean − 1 SD) = 2.75</td><td>0.272</td><td>0.084</td><td>3.22</td><td>.003</td><td>[0.098, 0.445]</td></tr><tr><td>Average (support = mean) = 5.00</td><td>0.471</td><td>0.068</td><td>6.89</td><td>&lt; .001</td><td>[0.330, 0.612]</td></tr><tr><td>High (support = mean + 1 SD) = 7.26</td><td>0.670</td><td>0.098</td><td>6.87</td><td>&lt; .001</td><td>[0.470, 0.871]</td></tr></tbody></table><p class=\"desc\">The effect of anxiety on wellbeing is significant where support is from 1.96 upward, and not significant elsewhere in the observed range (-0.01 to 9.02). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change. With fewer than 50 people the test of an interaction has very little power, so a non-significant result says little.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>30</td><td>0.983</td><td>.890</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.09, SE = 0.03, t(26) = 3.31, p = .003, ΔR² = .128. The simple slope of anxiety was 0.27 (p = .003), 0.47 (p &lt; .001), 0.67 (p &lt; .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "moderate-missing-rows",
+   "test": "moderate",
+   "csv": "anxiety,support,wellbeing\n37.7,5.88,11.7\n52.7,5.99,25.6\n49.9,4.57,18.5\n,4.15,16.7\n36.7,7.30,14.6\n61.1,6.71,27.7\n50.9,7.87,16.7\n38.3,7.02,10.8\n36.4,5.52,17.3\n36.9,4.10,14.3\n42.8,,15.6\n61.9,3.81,21.8\n58.9,5.13,27.2\n44.6,5.42,12.3\n44.5,7.33,17.1\n69.3,7.70,32.7\n59.0,4.96,24.4\n42.0,5.78,17.7\n48.5,2.65,19.2\n45.7,3.64,20.0\n51.5,2.83,\n58.8,5.25,27.3\n47.3,3.92,12.0\n53.7,3.45,20.0\n55.7,4.94,22.0\n57.8,1.25,15.8\n43.7,4.80,21.3\n47.8,5.91,20.1\n69.7,7.47,27.5\n48.1,2.64,18.6\n50.3,4.13,21.9\n54.4,0.88,20.0\n44.2,7.64,13.8\n46.1,4.58,20.2\n66.8,5.43,28.2\n63.0,1.92,18.4\n39.0,4.45,15.4\n50.7,3.73,23.9\n37.1,2.51,21.4\n34.7,2.58,14.7\n50.0,3.03,18.1\n65.2,3.18,27.4\n49.2,1.40,21.6\n64.7,7.55,29.7\n39.4,4.84,15.0\n51.4,5.12,21.1\n50.8,5.09,23.0\n50.9,4.34,13.4\n59.9,4.63,26.1\n55.7,5.85,20.1\n44.5,4.21,14.4\n36.5,7.28,9.6\n44.5,4.31,15.0\n49.8,7.04,16.9\n44.5,2.93,19.1\n34.7,5.31,12.2\n32.4,6.11,13.9\n58.1,7.36,20.6\n52.6,7.41,24.0\n44.1,2.82,15.4",
+   "values": {
+    "dv": "wellbeing",
+    "x": "anxiety",
+    "w": "support"
+   },
+   "form": {
+    "values": {
+     "dv": "2",
+     "x": "0",
+     "w": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.08, SE = 0.02, t(53) = 3.64, p < .001, ΔR² = .073. The simple slope of anxiety was 0.25 (p < .001), 0.40 (p < .001), 0.55 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.",
+   "blocks": [
+    {
+     "kind": "note",
+     "html": "Model: wellbeing predicted from anxiety, support and their product. N = 57. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "R²",
+       "F",
+       "df",
+       "p",
+       "ΔR² for the interaction",
+       "F change",
+       "df",
+       "p"
+      ],
+      [
+       ".705",
+       "42.29",
+       "3, 53",
+       "&lt; .001",
+       ".073",
+       "13.21",
+       "1, 53",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Term",
+       "b",
+       "SE",
+       "t",
+       "p",
+       "95% CI for b"
+      ],
+      [
+       "Intercept",
+       "19.396",
+       "0.392",
+       "49.42",
+       "&lt; .001",
+       "[18.609, 20.184]"
+      ],
+      [
+       "anxiety (centred)",
+       "0.398",
+       "0.043",
+       "9.17",
+       "&lt; .001",
+       "[0.311, 0.485]"
+      ],
+      [
+       "support (centred)",
+       "-0.007",
+       "0.223",
+       "-0.03",
+       ".975",
+       "[-0.454, 0.440]"
+      ],
+      [
+       "anxiety × support",
+       "0.084",
+       "0.023",
+       "3.64",
+       "&lt; .001",
+       "[0.038, 0.131]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "<b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Level of the moderator",
+       "Slope of X",
+       "SE",
+       "t",
+       "p",
+       "95% CI"
+      ],
+      [
+       "Low (support = mean − 1 SD) = 3.08",
+       "0.246",
+       "0.068",
+       "3.59",
+       "&lt; .001",
+       "[0.109, 0.383]"
+      ],
+      [
+       "Average (support = mean) = 4.89",
+       "0.398",
+       "0.043",
+       "9.17",
+       "&lt; .001",
+       "[0.311, 0.485]"
+      ],
+      [
+       "High (support = mean + 1 SD) = 6.70",
+       "0.551",
+       "0.051",
+       "10.74",
+       "&lt; .001",
+       "[0.448, 0.654]"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "The effect of anxiety on wellbeing is significant where support is from 2.19 upward, and not significant elsewhere in the observed range (0.88 to 7.87). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change. 3 rows were left out because a value was missing."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Residuals",
+       "57",
+       "0.972",
+       ".205"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    },
+    {
+     "kind": "note",
+     "html": "3 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsModel: wellbeing predicted from anxiety, support and their product. N = 57. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.R²FdfpΔR² for the interactionF changedfp.70542.293, 53< .001.07313.211, 53< .001TermbSEtp95% CI for bIntercept19.3960.39249.42< .001[18.609, 20.184]anxiety (centred)0.3980.0439.17< .001[0.311, 0.485]support (centred)-0.0070.223-0.03.975[-0.454, 0.440]anxiety × support0.0840.0233.64< .001[0.038, 0.131]Simple slopes: the effect of anxiety on wellbeing at three levels of support.Level of the moderatorSlope of XSEtp95% CILow (support = mean − 1 SD) = 3.080.2460.0683.59< .001[0.109, 0.383]Average (support = mean) = 4.890.3980.0439.17< .001[0.311, 0.485]High (support = mean + 1 SD) = 6.700.5510.05110.74< .001[0.448, 0.654]The effect of anxiety on wellbeing is significant where support is from 2.19 upward, and not significant elsewhere in the observed range (0.88 to 7.87). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change. 3 rows were left out because a value was missing.Assumption checksVariableNShapiro-Wilk WpResiduals570.972.205No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.3 entries that are not a number were left out.A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.08, SE = 0.02, t(53) = 3.64, p < .001, ΔR² = .073. The simple slope of anxiety was 0.25 (p < .001), 0.40 (p < .001), 0.55 (p < .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><p class=\"desc\">Model: wellbeing predicted from anxiety, support and their product. N = 57. anxiety and support are centred on their means, so the coefficient for each of them is its effect at the average of the other.</p><table class=\"stats-table\"><tbody><tr><th>R²</th><th>F</th><th>df</th><th>p</th><th>ΔR² for the interaction</th><th>F change</th><th>df</th><th>p</th></tr><tr><td>.705</td><td>42.29</td><td>3, 53</td><td>&lt; .001</td><td>.073</td><td>13.21</td><td>1, 53</td><td>&lt; .001</td></tr></tbody></table><table class=\"stats-table\" style=\"margin-top:10px\"><tbody><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI for b</th></tr><tr><td>Intercept</td><td>19.396</td><td>0.392</td><td>49.42</td><td>&lt; .001</td><td>[18.609, 20.184]</td></tr><tr><td>anxiety (centred)</td><td>0.398</td><td>0.043</td><td>9.17</td><td>&lt; .001</td><td>[0.311, 0.485]</td></tr><tr><td>support (centred)</td><td>-0.007</td><td>0.223</td><td>-0.03</td><td>.975</td><td>[-0.454, 0.440]</td></tr><tr><td>anxiety × support</td><td>0.084</td><td>0.023</td><td>3.64</td><td>&lt; .001</td><td>[0.038, 0.131]</td></tr></tbody></table><p class=\"desc\"><b>Simple slopes</b>: the effect of anxiety on wellbeing at three levels of support.</p><table class=\"stats-table\"><tbody><tr><th>Level of the moderator</th><th>Slope of X</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr><tr><td>Low (support = mean − 1 SD) = 3.08</td><td>0.246</td><td>0.068</td><td>3.59</td><td>&lt; .001</td><td>[0.109, 0.383]</td></tr><tr><td>Average (support = mean) = 4.89</td><td>0.398</td><td>0.043</td><td>9.17</td><td>&lt; .001</td><td>[0.311, 0.485]</td></tr><tr><td>High (support = mean + 1 SD) = 6.70</td><td>0.551</td><td>0.051</td><td>10.74</td><td>&lt; .001</td><td>[0.448, 0.654]</td></tr></tbody></table><p class=\"desc\">The effect of anxiety on wellbeing is significant where support is from 2.19 upward, and not significant elsewhere in the observed range (0.88 to 7.87). These cut-offs are the Johnson-Neyman points. The interaction p-value is the test of whether the slope changes with support; the simple slopes describe the shape. A significant interaction does not show that support causes the change. 3 rows were left out because a value was missing.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Residuals</td><td>57</td><td>0.972</td><td>.205</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><p class=\"desc\">3 entries that are not a number were left out.</p><div id=\"statsSentence\">A moderation analysis showed that support significantly moderated the effect of anxiety on wellbeing, b = 0.08, SE = 0.02, t(53) = 3.64, p &lt; .001, ΔR² = .073. The simple slope of anxiety was 0.25 (p &lt; .001), 0.40 (p &lt; .001), 0.55 (p &lt; .001) at low, average and high support (mean − 1 SD, mean, mean + 1 SD). Predictors were mean-centred.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

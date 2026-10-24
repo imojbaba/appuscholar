@@ -1,0 +1,432 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "mannwhitney-demo",
+   "test": "mannwhitney",
+   "csv": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3",
+   "values": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "A",
+       "10",
+       "4.00"
+      ],
+      [
+       "B",
+       "10",
+       "3.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedianA104.00B103.00U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>10</td><td>4.00</td></tr><tr><td>B</td><td>10</td><td>3.00</td></tr></tbody></table><p class=\"desc\">U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-integer-labels",
+   "test": "mannwhitney",
+   "csv": "group,score\n10,15\n10,17\n10,19\n10,21\n10,22\n2,11\n2,12\n2,13\n2,14\n2,16\nx,",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that score differed significantly between 2 (Mdn = 13.00) and 10 (Mdn = 19.00), U = 1.0, p = .016 (exact).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "2",
+       "5",
+       "13.00"
+      ],
+      [
+       "10",
+       "5",
+       "19.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 1.0, p = .016, rank-biserial r = -.92 (positive: 2 tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedian2513.0010519.00U = 1.0, p = .016, rank-biserial r = -.92 (positive: 2 tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.A Mann-Whitney U test showed that score differed significantly between 2 (Mdn = 13.00) and 10 (Mdn = 19.00), U = 1.0, p = .016 (exact).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>2</td><td>5</td><td>13.00</td></tr><tr><td>10</td><td>5</td><td>19.00</td></tr></tbody></table><p class=\"desc\">U = 1.0, p = .016, rank-biserial r = -.92 (positive: 2 tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that score differed significantly between 2 (Mdn = 13.00) and 10 (Mdn = 19.00), U = 1.0, p = .016 (exact).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-decimal-ties",
+   "test": "mannwhitney",
+   "csv": "group,score\nA,1.1\nA,2.2\nA,3.3\nA,4.4\nB,1.0\nB,2.1\nB,3.2\nB,4.3\nB,0.3",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that score did not differ significantly between A (Mdn = 2.75) and B (Mdn = 2.10), U = 6.0, p = .413 (exact).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "A",
+       "4",
+       "2.75"
+      ],
+      [
+       "B",
+       "5",
+       "2.10"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 6.0, p = .413, rank-biserial r = .40 (positive: A tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedianA42.75B52.10U = 6.0, p = .413, rank-biserial r = .40 (positive: A tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.A Mann-Whitney U test showed that score did not differ significantly between A (Mdn = 2.75) and B (Mdn = 2.10), U = 6.0, p = .413 (exact).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>4</td><td>2.75</td></tr><tr><td>B</td><td>5</td><td>2.10</td></tr></tbody></table><p class=\"desc\">U = 6.0, p = .413, rank-biserial r = .40 (positive: A tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that score did not differ significantly between A (Mdn = 2.75) and B (Mdn = 2.10), U = 6.0, p = .413 (exact).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-ties",
+   "test": "mannwhitney",
+   "csv": "group,score\nA,3\nA,5\nA,5\nA,6\nA,7\nA,8\nB,1\nB,2\nB,3\nB,3\nB,5\nB,4",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that score differed significantly between A (Mdn = 5.50) and B (Mdn = 3.00), U = 4.0, z = -2.19, p = .028.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "A",
+       "6",
+       "5.50"
+      ],
+      [
+       "B",
+       "6",
+       "3.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 4.0, z = -2.19, p = .028, rank-biserial r = .78 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedianA65.50B63.00U = 4.0, z = -2.19, p = .028, rank-biserial r = .78 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.A Mann-Whitney U test showed that score differed significantly between A (Mdn = 5.50) and B (Mdn = 3.00), U = 4.0, z = -2.19, p = .028.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>6</td><td>5.50</td></tr><tr><td>B</td><td>6</td><td>3.00</td></tr></tbody></table><p class=\"desc\">U = 4.0, z = -2.19, p = .028, rank-biserial r = .78 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that score differed significantly between A (Mdn = 5.50) and B (Mdn = 3.00), U = 4.0, z = -2.19, p = .028.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-n50",
+   "test": "mannwhitney",
+   "csv": "group,score\nA,2\nA,4\nA,6\nA,8\nA,10\nA,12\nA,14\nA,16\nA,18\nA,20\nA,22\nA,24\nA,26\nA,28\nA,30\nA,32\nA,34\nA,36\nA,38\nA,40\nA,42\nA,44\nA,46\nA,48\nA,50\nA,52\nA,54\nA,56\nA,58\nA,60\nA,62\nA,64\nA,66\nA,68\nA,70\nA,72\nA,74\nA,76\nA,78\nA,80\nA,82\nA,84\nA,86\nA,88\nA,90\nA,92\nA,94\nA,96\nA,98\nA,100\nB,21\nB,23\nB,25\nB,27\nB,29\nB,31\nB,33\nB,35\nB,37\nB,39\nB,41\nB,43",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that score differed significantly between A (Mdn = 51.00) and B (Mdn = 32.00), U = 186.0, z = -2.02, p = .043.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "A",
+       "50",
+       "51.00"
+      ],
+      [
+       "B",
+       "12",
+       "32.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 186.0, z = -2.02, p = .043, rank-biserial r = .38 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedianA5051.00B1232.00U = 186.0, z = -2.02, p = .043, rank-biserial r = .38 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.A Mann-Whitney U test showed that score differed significantly between A (Mdn = 51.00) and B (Mdn = 32.00), U = 186.0, z = -2.02, p = .043.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>50</td><td>51.00</td></tr><tr><td>B</td><td>12</td><td>32.00</td></tr></tbody></table><p class=\"desc\">U = 186.0, z = -2.02, p = .043, rank-biserial r = .38 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that score differed significantly between A (Mdn = 51.00) and B (Mdn = 32.00), U = 186.0, z = -2.02, p = .043.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-all-same",
+   "test": "mannwhitney",
+   "csv": "group,score\nA,4\nA,4\nA,4\nB,4\nB,4\nB,4",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "All scores are identical, so they cannot be ranked and the test cannot be calculated."
+   ]
+  },
+  {
+   "id": "mannwhitney-three-groups",
+   "test": "mannwhitney",
+   "csv": "group,score\nA,1\nA,2\nA,3\nB,4\nB,5\nB,6\nC,7\nC,8\nC,9",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This grouping variable needs exactly 2 groups — it has 3"
+   ]
+  },
+  {
+   "id": "mannwhitney-text-in-numeric",
+   "test": "mannwhitney",
+   "csv": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3\nA,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nB,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "rating",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "A",
+       "10",
+       "4.00"
+      ],
+      [
+       "B",
+       "10",
+       "3.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more."
+    },
+    {
+     "kind": "note",
+     "html": "2 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedianA104.00B103.00U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.2 entries that are not a number were left out.A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>10</td><td>4.00</td></tr><tr><td>B</td><td>10</td><td>3.00</td></tr></tbody></table><p class=\"desc\">U = 9.0, z = -3.17, p = .002, rank-biserial r = .82 (positive: A tends to score higher). Normal approximation with continuity and tie corrections, the same as R. Used because some scores are tied or a group has 50 or more.</p><p class=\"desc\">2 entries that are not a number were left out.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that rating differed significantly between A (Mdn = 4.00) and B (Mdn = 3.00), U = 9.0, z = -3.17, p = .002.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-non-significant",
+   "test": "mannwhitney",
+   "csv": "group,score\nA,10\nA,13\nA,11\nA,16\nA,12\nB,14\nB,9\nB,15\nB,17\nB,8",
+   "values": {
+    "dv": "score",
+    "iv": "group"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that score did not differ significantly between A (Mdn = 12.00) and B (Mdn = 14.00), U = 12.0, p = 1.000 (exact).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "A",
+       "5",
+       "12.00"
+      ],
+      [
+       "B",
+       "5",
+       "14.00"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 12.0, p = 1.000, rank-biserial r = -.04 (positive: A tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedianA512.00B514.00U = 12.0, p = 1.000, rank-biserial r = -.04 (positive: A tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.A Mann-Whitney U test showed that score did not differ significantly between A (Mdn = 12.00) and B (Mdn = 14.00), U = 12.0, p = 1.000 (exact).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>A</td><td>5</td><td>12.00</td></tr><tr><td>B</td><td>5</td><td>14.00</td></tr></tbody></table><p class=\"desc\">U = 12.0, p = 1.000, rank-biserial r = -.04 (positive: A tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that score did not differ significantly between A (Mdn = 12.00) and B (Mdn = 14.00), U = 12.0, p = 1.000 (exact).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "mannwhitney-name-needs-escaping",
+   "test": "mannwhitney",
+   "csv": "team,Tom's <score> & more\n<ctl>,3\n<ctl>,5\n<ctl>,4\n<ctl>,1\nA&B,7\nA&B,6\nA&B,8\nA&B,9",
+   "values": {
+    "dv": "Tom's <score> & more",
+    "iv": "team"
+   },
+   "form": {
+    "values": {
+     "dv": "1",
+     "iv": "0"
+    },
+    "ticked": {}
+   },
+   "apa": "A Mann-Whitney U test showed that Tom's <score> & more differed significantly between <ctl> (Mdn = 3.50) and A&B (Mdn = 7.50), U = 0.0, p = .029 (exact).",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Group",
+       "N",
+       "Median"
+      ],
+      [
+       "&lt;ctl&gt;",
+       "4",
+       "3.50"
+      ],
+      [
+       "A&amp;B",
+       "4",
+       "7.50"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "U = 0.0, p = .029, rank-biserial r = -1.00 (positive: &lt;ctl&gt; tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50."
+    }
+   ],
+   "resultsText": "ResultsGroupNMedian<ctl>43.50A&B47.50U = 0.0, p = .029, rank-biserial r = -1.00 (positive: <ctl> tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.A Mann-Whitney U test showed that Tom's <score> & more differed significantly between <ctl> (Mdn = 3.50) and A&B (Mdn = 7.50), U = 0.0, p = .029 (exact).Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Group</th><th>N</th><th>Median</th></tr><tr><td>&lt;ctl&gt;</td><td>4</td><td>3.50</td></tr><tr><td>A&amp;B</td><td>4</td><td>7.50</td></tr></tbody></table><p class=\"desc\">U = 0.0, p = .029, rank-biserial r = -1.00 (positive: &lt;ctl&gt; tends to score higher). Exact p-value, because no scores are tied and each group has fewer than 50.</p><div id=\"statsSentence\">A Mann-Whitney U test showed that Tom's &lt;score&gt; &amp; more differed significantly between &lt;ctl&gt; (Mdn = 3.50) and A&amp;B (Mdn = 7.50), U = 0.0, p = .029 (exact).</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

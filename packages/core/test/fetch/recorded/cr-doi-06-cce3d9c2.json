@@ -1,0 +1,8 @@
+{
+ "url": "https://api.crossref.org/works/10.1349%2Fddlp.2889",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json"
+ },
+ "body": "{\"status\":\"ok\",\"message-type\":\"work\",\"message-version\":\"1.0.0\",\"message\":{\"institution\":[{\"name\":\"Dartmouth College\"}],\"indexed\":{\"date-parts\":[[2022,4,3]],\"date-time\":\"2022-04-03T12:16:36Z\",\"timestamp\":1648988196030},\"reference-count\":0,\"publisher\":\"Dartmouth College Library Press\",\"content-domain\":{\"domain\":[],\"crossmark-restriction\":false},\"short-container-title\":[],\"DOI\":\"10.1349\\/ddlp.2889\",\"type\":\"dissertation\",\"created\":{\"date-parts\":[[2020,11,19]],\"date-time\":\"2020-11-19T00:58:05Z\",\"timestamp\":1605747485000},\"approved\":{\"date-parts\":[[1978]]},\"source\":\"Crossref\",\"is-referenced-by-count\":0,\"title\":[\"The effect of estradiol-17\\u00df and insulin on protein synthesis in primary monocultures of amphibian hepatocytes.\"],\"prefix\":\"10.1349\",\"author\":[{\"given\":\"James E.\",\"family\":\"Stanchfield\",\"sequence\":\"first\",\"affiliation\":[],\"role\":[{\"role\":\"author\",\"vocabulary\":\"crossref\"}]}],\"member\":\"69\",\"container-title\":[],\"original-title\":[],\"deposited\":{\"date-parts\":[[2020,11,19]],\"date-time\":\"2020-11-19T01:10:59Z\",\"timestamp\":1605748259000},\"score\":1,\"degree\":[\"Ph.D.\"],\"resource\":{\"primary\":{\"URL\":\"https:\\/\\/collections.dartmouth.edu\\/archive\\/object\\/dcdis\\/dcdis-stanchfield1978\"}},\"subtitle\":[],\"short-title\":[],\"issued\":{\"date-parts\":[[null]]},\"references-count\":0,\"URL\":\"https:\\/\\/doi.org\\/10.1349\\/ddlp.2889\",\"relation\":{},\"subject\":[]}}"
+}

@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=(exam%5Btiab%5D%20AND%20anxiety%5Btiab%5D)%20AND%20%22Randomized%20Controlled%20Trial%22%5Bpt%5D",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"76\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42537418\",\"42316780\",\"42289435\",\"42043979\",\"41814471\",\"41803820\"],\"translationset\":[],\"querytranslation\":\"\\\"exam\\\"[Title/Abstract] AND \\\"anxiety\\\"[Title/Abstract] AND \\\"Randomized Controlled Trial\\\"[Publication Type]\"}}\n"
+}

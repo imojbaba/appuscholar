@@ -1,4 +1,4 @@
-import { Mark, Node, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Extension, Mark, Node, mergeAttributes, type Extensions } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
@@ -11,6 +11,7 @@ import { Placeholder } from "@tiptap/extensions";
 import type { Editor } from "@tiptap/core";
 import { FindDecorations } from "./editor/findDecorations";
 import { Indent } from "./editor/indent";
+import { markCursorPlaced } from "./editor/insert";
 
 function dataAttributes(el: HTMLElement): Record<string, string> {
   const out: Record<string, string> = {};
@@ -19,19 +20,25 @@ function dataAttributes(el: HTMLElement): Record<string, string> {
 }
 
 /**
- * Keeps v1's semantic spans (`<span class="ai-ins" data-h="…">`, `<span class="img-wrap">`, …) intact.
+ * Keeps v1's semantic spans (`<span class="ai-ins" data-h="…">`, `<span class="img-wrap">`, `<span class="translated-quote" title="…">`, …) intact.
+ * `title` is kept for the translated quote, whose title holds the original (citInsertQuote 7898: a hover shows it). Every `data-*` attribute is
+ * kept, so the tools' tags survive a load and a save too (ruling R11): `<span class="stat-tag" data-run="…">` (v1 4204) and
+ * `<span class="qual-tag" data-qcode="…" title="…">` (v1 6254), written by useDocAccess (lib/editor/docAccess.ts).
  * Without it ProseMirror drops the span and its attributes, and the next autosave persists the loss.
  * Not inclusive: text typed right after an AI insertion is the student's own, not part of the span.
+ * Priority 1001, above every formatting mark (the default 100, TextStyle 101, Link 1000): the span is the outer element, so a tag over words
+ * that are partly bold or linked stays one span with the formatting inside it, as v1 wrote it (ruling R30). Lower, the span split around them.
  */
 export const ClassSpan = Mark.create({
   name: "classSpan",
   inclusive: false,
   excludes: "",
-  priority: 51,
+  priority: 1001,
   addAttributes() {
     return {
       class: { default: null, parseHTML: (el) => el.getAttribute("class"), renderHTML: (a) => (a.class ? { class: a.class } : {}) },
-      data: { default: {}, parseHTML: (el) => dataAttributes(el), renderHTML: (a) => (a.data ?? {}) as Record<string, string> }
+      data: { default: {}, parseHTML: (el) => dataAttributes(el), renderHTML: (a) => (a.data ?? {}) as Record<string, string> },
+      title: { default: null, parseHTML: (el) => el.getAttribute("title"), renderHTML: (a) => (a.title != null ? { title: String(a.title) } : {}) }
     };
   },
   parseHTML() {
@@ -62,6 +69,37 @@ const SizedImage = Image.extend({
   }
 });
 
+/** The paragraphs of v1's reference list (citInsertBib 7877-7878, core's bibliographyHtml). */
+const REF_CLASSES = ["ref-head", "ref-item"];
+const REF_STYLE = /^(padding-left|text-indent|margin)\s*:/i;
+/**
+ * Keeps v1's reference list as v1 writes it: `<p class="ref-head" style="text-align:center;margin:14px 0 8px">` and
+ * `<p class="ref-item" style="padding-left:2em;text-indent:-2em;margin:0 0 6px">` (the hanging indent). The class and the padding, indent and margin are
+ * kept on those two paragraphs only; `text-align` is TextAlign's, as on any paragraph.
+ */
+export const RefParagraph = Extension.create({
+  name: "refParagraph",
+  addGlobalAttributes() {
+    const refClass = (el: HTMLElement) => { const c = el.getAttribute("class"); return c && REF_CLASSES.includes(c) ? c : null; };
+    return [{
+      types: ["paragraph"],
+      attributes: {
+        refClass: { default: null, parseHTML: (el) => refClass(el), renderHTML: (a) => (a.refClass ? { class: String(a.refClass) } : {}) },
+        refStyle: {
+          default: null,
+          // The declarations as written (v1's own text), the three kept in their order.
+          parseHTML: (el) => {
+            if (!refClass(el)) return null;
+            const kept = (el.getAttribute("style") ?? "").split(";").map((d) => d.trim()).filter((d) => REF_STYLE.test(d));
+            return kept.length ? kept.join(";") : null;
+          },
+          renderHTML: (a) => (a.refStyle ? { style: String(a.refStyle) } : {})
+        }
+      }
+    }];
+  }
+});
+
 /** A manual page break: `<div class="page-break" data-page-break>`. The sanitiser drops the data attribute, so the class alone is read back too. */
 export const PageBreak = Node.create({
   name: "pageBreak",
@@ -89,13 +127,20 @@ const schemaExtensions: Extensions = [
   TextStyleKit,
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   Indent,
+  RefParagraph,
   PageBreak,
   ClassSpan,
   FindDecorations
 ];
 
+/** Remembers that the student has been in this document (its first focus), so a citation goes at the cursor rather than at the end (insertCitation). Not part of the schema. */
+export const CursorPlaced = Extension.create({
+  name: "cursorPlaced",
+  onFocus() { markCursorPlaced(this.editor); }
+});
+
 /** The single editor schema. Shared by the editor and by the schema round-trip test, so they cannot drift. The placeholder is not a node, so it never changes what a document round-trips to. */
-export const editorExtensions: Extensions = [...schemaExtensions, Placeholder.configure({ placeholder: "" })];
+export const editorExtensions: Extensions = [...schemaExtensions, Placeholder.configure({ placeholder: "" }), CursorPlaced];
 
 /** The hint is read through a function that also carries a setter: the extension's plugin keeps its own copy of the options, so replacing an option on a live editor never reaches it, but a function it already holds can answer differently. */
 type Hint = (() => string) & { set(text: string): void };
@@ -106,7 +151,7 @@ function hintOf(text: string): Hint {
 
 /** The same extensions with the editor's empty-document hint (v1 `editor_placeholder`). */
 export function editorExtensionsWith(placeholder: string): Extensions {
-  return [...schemaExtensions, Placeholder.configure({ placeholder: hintOf(placeholder) })];
+  return [...schemaExtensions, Placeholder.configure({ placeholder: hintOf(placeholder) }), CursorPlaced];
 }
 
 /** Changes the empty-document hint of a live editor (the language switch) without recreating it; an empty transaction makes the view rebuild the hint decoration. */

@@ -1,0 +1,666 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "friedman-four-conditions",
+   "test": "friedman",
+   "csv": "week1,week2,week3,week4\n24.7,24.0,26.8,27.0\n26.0,26.2,29.9,29.2\n22.9,25.3,28.5,27.2\n18.0,21.4,26.8,21.9\n21.2,27.5,29.3,26.0\n21.7,22.5,27.9,26.8\n27.8,25.7,31.5,27.7\n23.1,26.3,29.8,25.9\n19.2,27.1,25.6,24.5\n12.4,16.5,22.4,20.3\n19.9,27.3,25.2,23.5\n19.8,25.1,29.3,25.5",
+   "ticked": {
+    "items": [
+     "week1",
+     "week2",
+     "week3",
+     "week4"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A Friedman test showed a significant difference across the 4 conditions (week1, week2, week3, week4), χ²(3, N = 12) = 22.90, p < .001, Kendall's W = .64.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Median",
+       "Mean rank"
+      ],
+      [
+       "week1",
+       "12",
+       "21.45",
+       "1.25"
+      ],
+      [
+       "week2",
+       "12",
+       "25.50",
+       "2.33"
+      ],
+      [
+       "week3",
+       "12",
+       "28.20",
+       "3.75"
+      ],
+      [
+       "week4",
+       "12",
+       "25.95",
+       "2.67"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "χ²",
+       "df",
+       "p",
+       "Kendall's W"
+      ],
+      [
+       "12",
+       "22.90",
+       "3",
+       "&lt; .001",
+       ".636"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean rank diff",
+       "z",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "week1 − week2",
+       "-1.08",
+       "-2.06",
+       ".040",
+       ".239"
+      ],
+      [
+       "week1 − week3",
+       "-2.50",
+       "-4.74",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "week1 − week4",
+       "-1.42",
+       "-2.69",
+       ".007",
+       ".043"
+      ],
+      [
+       "week2 − week3",
+       "-1.42",
+       "-2.69",
+       ".007",
+       ".043"
+      ],
+      [
+       "week2 − week4",
+       "-0.33",
+       "-0.63",
+       ".527",
+       "1.000"
+      ],
+      [
+       "week3 − week4",
+       "1.08",
+       "2.06",
+       ".040",
+       ".239"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMedianMean rankweek11221.451.25week21225.502.33week31228.203.75week41225.952.67N peopleχ²dfpKendall's W1222.903< .001.636Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large.Pairwise follow-ups (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairMean rank diffzpp (Bonferroni)week1 − week2-1.08-2.06.040.239week1 − week3-2.50-4.74< .001< .001week1 − week4-1.42-2.69.007.043week2 − week3-1.42-2.69.007.043week2 − week4-0.33-0.63.5271.000week3 − week41.082.06.040.239A Friedman test showed a significant difference across the 4 conditions (week1, week2, week3, week4), χ²(3, N = 12) = 22.90, p < .001, Kendall's W = .64.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Median</th><th>Mean rank</th></tr><tr><td>week1</td><td>12</td><td>21.45</td><td>1.25</td></tr><tr><td>week2</td><td>12</td><td>25.50</td><td>2.33</td></tr><tr><td>week3</td><td>12</td><td>28.20</td><td>3.75</td></tr><tr><td>week4</td><td>12</td><td>25.95</td><td>2.67</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>χ²</th><th>df</th><th>p</th><th>Kendall's W</th></tr><tr><td>12</td><td>22.90</td><td>3</td><td>&lt; .001</td><td>.636</td></tr></tbody></table><p class=\"desc\">Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean rank diff</th><th>z</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>week1 − week2</td><td>-1.08</td><td>-2.06</td><td>.040</td><td>.239</td></tr><tr><td>week1 − week3</td><td>-2.50</td><td>-4.74</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>week1 − week4</td><td>-1.42</td><td>-2.69</td><td>.007</td><td>.043</td></tr><tr><td>week2 − week3</td><td>-1.42</td><td>-2.69</td><td>.007</td><td>.043</td></tr><tr><td>week2 − week4</td><td>-0.33</td><td>-0.63</td><td>.527</td><td>1.000</td></tr><tr><td>week3 − week4</td><td>1.08</td><td>2.06</td><td>.040</td><td>.239</td></tr></tbody></table><div id=\"statsSentence\">A Friedman test showed a significant difference across the 4 conditions (week1, week2, week3, week4), χ²(3, N = 12) = 22.90, p &lt; .001, Kendall's W = .64.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "friedman-ties",
+   "test": "friedman",
+   "csv": "c1,c2,c3,c4\n3,4,4,6\n4,4,4,5\n2,3,3,5\n6,5,6,7\n3,3,2,5\n2,3,3,5\n3,5,3,4\n3,3,5,4",
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3",
+     "c4"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A Friedman test showed a significant difference across the 4 conditions (c1, c2, c3, c4), χ²(3, N = 8) = 13.35, p = .004, Kendall's W = .56.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Median",
+       "Mean rank"
+      ],
+      [
+       "c1",
+       "8",
+       "3.00",
+       "1.63"
+      ],
+      [
+       "c2",
+       "8",
+       "3.50",
+       "2.31"
+      ],
+      [
+       "c3",
+       "8",
+       "3.50",
+       "2.31"
+      ],
+      [
+       "c4",
+       "8",
+       "5.00",
+       "3.75"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "χ²",
+       "df",
+       "p",
+       "Kendall's W"
+      ],
+      [
+       "8",
+       "13.35",
+       "3",
+       ".004",
+       ".556"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large. Tied scores are present and the χ² includes the usual correction for them. With fewer than 10 people the χ² approximation is rough; read the p value with care."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean rank diff",
+       "z",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "c1 − c2",
+       "-0.69",
+       "-1.07",
+       ".287",
+       "1.000"
+      ],
+      [
+       "c1 − c3",
+       "-0.69",
+       "-1.07",
+       ".287",
+       "1.000"
+      ],
+      [
+       "c1 − c4",
+       "-2.13",
+       "-3.29",
+       "&lt; .001",
+       ".006"
+      ],
+      [
+       "c2 − c3",
+       "0.00",
+       "0.00",
+       "1.000",
+       "1.000"
+      ],
+      [
+       "c2 − c4",
+       "-1.44",
+       "-2.23",
+       ".026",
+       ".156"
+      ],
+      [
+       "c3 − c4",
+       "-1.44",
+       "-2.23",
+       ".026",
+       ".156"
+      ]
+     ]
+    }
+   ],
+   "resultsText": "ResultsConditionNMedianMean rankc183.001.63c283.502.31c383.502.31c485.003.75N peopleχ²dfpKendall's W813.353.004.556Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large. Tied scores are present and the χ² includes the usual correction for them. With fewer than 10 people the χ² approximation is rough; read the p value with care.Pairwise follow-ups (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairMean rank diffzpp (Bonferroni)c1 − c2-0.69-1.07.2871.000c1 − c3-0.69-1.07.2871.000c1 − c4-2.13-3.29< .001.006c2 − c30.000.001.0001.000c2 − c4-1.44-2.23.026.156c3 − c4-1.44-2.23.026.156A Friedman test showed a significant difference across the 4 conditions (c1, c2, c3, c4), χ²(3, N = 8) = 13.35, p = .004, Kendall's W = .56.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Median</th><th>Mean rank</th></tr><tr><td>c1</td><td>8</td><td>3.00</td><td>1.63</td></tr><tr><td>c2</td><td>8</td><td>3.50</td><td>2.31</td></tr><tr><td>c3</td><td>8</td><td>3.50</td><td>2.31</td></tr><tr><td>c4</td><td>8</td><td>5.00</td><td>3.75</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>χ²</th><th>df</th><th>p</th><th>Kendall's W</th></tr><tr><td>8</td><td>13.35</td><td>3</td><td>.004</td><td>.556</td></tr></tbody></table><p class=\"desc\">Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large. Tied scores are present and the χ² includes the usual correction for them. With fewer than 10 people the χ² approximation is rough; read the p value with care.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean rank diff</th><th>z</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>c1 − c2</td><td>-0.69</td><td>-1.07</td><td>.287</td><td>1.000</td></tr><tr><td>c1 − c3</td><td>-0.69</td><td>-1.07</td><td>.287</td><td>1.000</td></tr><tr><td>c1 − c4</td><td>-2.13</td><td>-3.29</td><td>&lt; .001</td><td>.006</td></tr><tr><td>c2 − c3</td><td>0.00</td><td>0.00</td><td>1.000</td><td>1.000</td></tr><tr><td>c2 − c4</td><td>-1.44</td><td>-2.23</td><td>.026</td><td>.156</td></tr><tr><td>c3 − c4</td><td>-1.44</td><td>-2.23</td><td>.026</td><td>.156</td></tr></tbody></table><div id=\"statsSentence\">A Friedman test showed a significant difference across the 4 conditions (c1, c2, c3, c4), χ²(3, N = 8) = 13.35, p = .004, Kendall's W = .56.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "friedman-non-significant",
+   "test": "friedman",
+   "csv": "morning,noon,evening\n3,5,5\n7,8,7\n2,4,3\n3,4,4\n6,2,5\n1,1,3\n7,5,5\n4,4,5\n6,5,7\n5,4,6",
+   "ticked": {
+    "items": [
+     "morning",
+     "noon",
+     "evening"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": "A Friedman test showed no significant difference across the 3 conditions (morning, noon, evening), χ²(2, N = 10) = 2.88, p = .237, Kendall's W = .14.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Median",
+       "Mean rank"
+      ],
+      [
+       "morning",
+       "10",
+       "4.50",
+       "1.75"
+      ],
+      [
+       "noon",
+       "10",
+       "4.00",
+       "1.85"
+      ],
+      [
+       "evening",
+       "10",
+       "5.00",
+       "2.40"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "χ²",
+       "df",
+       "p",
+       "Kendall's W"
+      ],
+      [
+       "10",
+       "2.88",
+       "2",
+       ".237",
+       ".144"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large. Tied scores are present and the χ² includes the usual correction for them."
+    },
+    {
+     "kind": "note",
+     "html": "The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives."
+    }
+   ],
+   "resultsText": "ResultsConditionNMedianMean rankmorning104.501.75noon104.001.85evening105.002.40N peopleχ²dfpKendall's W102.882.237.144Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large. Tied scores are present and the χ² includes the usual correction for them.The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives.A Friedman test showed no significant difference across the 3 conditions (morning, noon, evening), χ²(2, N = 10) = 2.88, p = .237, Kendall's W = .14.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Median</th><th>Mean rank</th></tr><tr><td>morning</td><td>10</td><td>4.50</td><td>1.75</td></tr><tr><td>noon</td><td>10</td><td>4.00</td><td>1.85</td></tr><tr><td>evening</td><td>10</td><td>5.00</td><td>2.40</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>χ²</th><th>df</th><th>p</th><th>Kendall's W</th></tr><tr><td>10</td><td>2.88</td><td>2</td><td>.237</td><td>.144</td></tr></tbody></table><p class=\"desc\">Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large. Tied scores are present and the χ² includes the usual correction for them.</p><p class=\"desc\">The overall test is not significant, so pairwise follow-ups are not shown. Looking for a significant pair after a non-significant overall test inflates false positives.</p><div id=\"statsSentence\">A Friedman test showed no significant difference across the 3 conditions (morning, noon, evening), χ²(2, N = 10) = 2.88, p = .237, Kendall's W = .14.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "friedman-all-same",
+   "test": "friedman",
+   "csv": "c1,c2,c3\n3,3,3\n5,5,5\n2,2,2\n4,4,4",
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every person gives the same score in every condition, so the test cannot be calculated."
+   ]
+  },
+  {
+   "id": "friedman-n2",
+   "test": "friedman",
+   "csv": "c1,c2,c3\n1,2,3\n2,3,1",
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 3 people who have a score in every ticked column."
+   ]
+  },
+  {
+   "id": "friedman-two-columns",
+   "test": "friedman",
+   "csv": "week1,week2,week3,week4\n24.7,24.0,26.8,27.0\n26.0,26.2,29.9,29.2\n22.9,25.3,28.5,27.2\n18.0,21.4,26.8,21.9\n21.2,27.5,29.3,26.0\n21.7,22.5,27.9,26.8\n27.8,25.7,31.5,27.7\n23.1,26.3,29.8,25.9\n19.2,27.1,25.6,24.5\n12.4,16.5,22.4,20.3\n19.9,27.3,25.2,23.5\n19.8,25.1,29.3,25.5",
+   "ticked": {
+    "items": [
+     "week1",
+     "week2"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Tick at least 3 columns, one for each time point or condition. For two, use the Wilcoxon signed-rank test."
+   ]
+  },
+  {
+   "id": "friedman-nine-columns",
+   "test": "friedman",
+   "csv": "c1,c2,c3,c4,c5,c6,c7,c8,c9\n0,3,6,9,2,5,8,1,4\n7,0,3,6,9,2,5,8,1\n4,7,0,3,6,9,2,5,8\n1,4,7,0,3,6,9,2,5\n8,1,4,7,0,3,6,9,2",
+   "ticked": {
+    "items": [
+     "c1",
+     "c2",
+     "c3",
+     "c4",
+     "c5",
+     "c6",
+     "c7",
+     "c8",
+     "c9"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ]
+    }
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "This test handles up to 8 conditions."
+   ]
+  },
+  {
+   "id": "friedman-missing-row",
+   "test": "friedman",
+   "csv": "week1,week2,week3,week4\n24.7,24.0,26.8,27.0\n26.0,26.2,29.9,29.2\n22.9,25.3,28.5,27.2\n18.0,21.4,26.8,21.9\n21.2,27.5,29.3,26.0\n21.7,22.5,27.9,26.8\n27.8,25.7,31.5,27.7\n23.1,26.3,29.8,25.9\n19.2,27.1,25.6,24.5\n12.4,16.5,22.4,20.3\n19.9,27.3,25.2,23.5\n19.8,25.1,29.3,25.5\n21,,25,23",
+   "ticked": {
+    "items": [
+     "week1",
+     "week2",
+     "week3",
+     "week4"
+    ]
+   },
+   "form": {
+    "values": {},
+    "ticked": {
+     "items": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "apa": "A Friedman test showed a significant difference across the 4 conditions (week1, week2, week3, week4), χ²(3, N = 12) = 22.90, p < .001, Kendall's W = .64.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Condition",
+       "N",
+       "Median",
+       "Mean rank"
+      ],
+      [
+       "week1",
+       "12",
+       "21.45",
+       "1.25"
+      ],
+      [
+       "week2",
+       "12",
+       "25.50",
+       "2.33"
+      ],
+      [
+       "week3",
+       "12",
+       "28.20",
+       "3.75"
+      ],
+      [
+       "week4",
+       "12",
+       "25.95",
+       "2.67"
+      ]
+     ]
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "N people",
+       "χ²",
+       "df",
+       "p",
+       "Kendall's W"
+      ],
+      [
+       "12",
+       "22.90",
+       "3",
+       "&lt; .001",
+       ".636"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large."
+    },
+    {
+     "kind": "note",
+     "html": "<b>Pairwise follow-ups</b> (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant."
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Pair",
+       "Mean rank diff",
+       "z",
+       "p",
+       "p (Bonferroni)"
+      ],
+      [
+       "week1 − week2",
+       "-1.08",
+       "-2.06",
+       ".040",
+       ".239"
+      ],
+      [
+       "week1 − week3",
+       "-2.50",
+       "-4.74",
+       "&lt; .001",
+       "&lt; .001"
+      ],
+      [
+       "week1 − week4",
+       "-1.42",
+       "-2.69",
+       ".007",
+       ".043"
+      ],
+      [
+       "week2 − week3",
+       "-1.42",
+       "-2.69",
+       ".007",
+       ".043"
+      ],
+      [
+       "week2 − week4",
+       "-0.33",
+       "-0.63",
+       ".527",
+       "1.000"
+      ],
+      [
+       "week3 − week4",
+       "1.08",
+       "2.06",
+       ".040",
+       ".239"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "1 entry that is not a number was left out."
+    }
+   ],
+   "resultsText": "ResultsConditionNMedianMean rankweek11221.451.25week21225.502.33week31228.203.75week41225.952.67N peopleχ²dfpKendall's W1222.903< .001.636Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large.Pairwise follow-ups (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.PairMean rank diffzpp (Bonferroni)week1 − week2-1.08-2.06.040.239week1 − week3-2.50-4.74< .001< .001week1 − week4-1.42-2.69.007.043week2 − week3-1.42-2.69.007.043week2 − week4-0.33-0.63.5271.000week3 − week41.082.06.040.2391 entry that is not a number was left out.A Friedman test showed a significant difference across the 4 conditions (week1, week2, week3, week4), χ²(3, N = 12) = 22.90, p < .001, Kendall's W = .64.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>Condition</th><th>N</th><th>Median</th><th>Mean rank</th></tr><tr><td>week1</td><td>12</td><td>21.45</td><td>1.25</td></tr><tr><td>week2</td><td>12</td><td>25.50</td><td>2.33</td></tr><tr><td>week3</td><td>12</td><td>28.20</td><td>3.75</td></tr><tr><td>week4</td><td>12</td><td>25.95</td><td>2.67</td></tr></tbody></table><table class=\"stats-table\"><tbody><tr><th>N people</th><th>χ²</th><th>df</th><th>p</th><th>Kendall's W</th></tr><tr><td>12</td><td>22.90</td><td>3</td><td>&lt; .001</td><td>.636</td></tr></tbody></table><p class=\"desc\">Each person's scores are ranked from lowest to highest, ties share the average rank, and the test asks whether the mean ranks differ more than chance allows. Kendall's W runs from 0 (no agreement across people) to 1 (everyone orders the conditions identically); about .1 is small, .3 moderate, .5 large.</p><p class=\"desc\"><b>Pairwise follow-ups</b> (differences in mean rank, normal approximation, p multiplied by 6 for the Bonferroni correction). Read these only because the overall test is significant.</p><table class=\"stats-table\"><tbody><tr><th>Pair</th><th>Mean rank diff</th><th>z</th><th>p</th><th>p (Bonferroni)</th></tr><tr><td>week1 − week2</td><td>-1.08</td><td>-2.06</td><td>.040</td><td>.239</td></tr><tr><td>week1 − week3</td><td>-2.50</td><td>-4.74</td><td>&lt; .001</td><td>&lt; .001</td></tr><tr><td>week1 − week4</td><td>-1.42</td><td>-2.69</td><td>.007</td><td>.043</td></tr><tr><td>week2 − week3</td><td>-1.42</td><td>-2.69</td><td>.007</td><td>.043</td></tr><tr><td>week2 − week4</td><td>-0.33</td><td>-0.63</td><td>.527</td><td>1.000</td></tr><tr><td>week3 − week4</td><td>1.08</td><td>2.06</td><td>.040</td><td>.239</td></tr></tbody></table><p class=\"desc\">1 entry that is not a number was left out.</p><div id=\"statsSentence\">A Friedman test showed a significant difference across the 4 conditions (week1, week2, week3, week4), χ²(3, N = 12) = 22.90, p &lt; .001, Kendall's W = .64.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

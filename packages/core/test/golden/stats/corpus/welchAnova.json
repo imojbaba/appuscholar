@@ -1,0 +1,92 @@
+[
+ {
+  "id": "welchAnova-demo",
+  "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "TG_DEMO's anova1 demo, which TG_DEMO runs as welchAnova: significant, so the Games-Howell table"
+ },
+ {
+  "id": "welchAnova-non-significant",
+  "csv": "group,score\nA,10\nA,12\nA,11\nA,13\nB,11\nB,13\nB,12\nB,10\nC,12\nC,11\nC,14\nC,10",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "not significant: no Games-Howell table, the 'no pairwise comparisons' note"
+ },
+ {
+  "id": "welchAnova-constant-group",
+  "csv": "group,score\nA,5\nA,5\nA,5\nB,7\nB,9\nB,8\nC,10\nC,12\nC,11",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "A has no spread: stkWelchAnova returns null, the toast"
+ },
+ {
+  "id": "welchAnova-two-groups",
+  "csv": "group,score\nA,4\nA,6\nA,5\nB,7\nB,9\nB,8",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "two groups: the toast"
+ },
+ {
+  "id": "welchAnova-one-value-group",
+  "csv": "group,score\nA,4\nA,6\nA,5\nB,7\nB,9\nB,8\nC,10",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "C has one value: the toast"
+ },
+ {
+  "id": "welchAnova-text-in-numeric",
+  "csv": "arm,score\nCBT,12\nCBT,14\nCBT,11\nCBT,13\nCBT,15\nCBT,12\nCBT,14\nCBT,13\nMindful,16\nMindful,18\nMindful,17\nMindful,15\nMindful,19\nMindful,17\nMindful,18\nMindful,16\nWaitlist,22\nWaitlist,25\nWaitlist,21\nWaitlist,27\nWaitlist,23\nWaitlist,24\nWaitlist,26\nWaitlist,20\nCBT,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nWaitlist,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "arm"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). statsGroupBy drops both, and the assumption pass calls statsGroupBy again, so the note says 4 (D-W2-4)."
+ },
+ {
+  "id": "welchAnova-hindi-labels",
+  "csv": "समूह,अंक\nनियंत्रण,12\nनियंत्रण,14\nनियंत्रण,11\nनियंत्रण,13\nध्यान,15\nध्यान,17\nध्यान,16\nध्यान,18\nव्यायाम,13\nव्यायाम,15\nव्यायाम,14\nव्यायाम,12",
+  "test": "welchAnova",
+  "values": {
+   "dv": "अंक",
+   "iv": "समूह"
+  },
+  "why": "Devanagari group labels and column names"
+ },
+ {
+  "id": "welchAnova-integer-labels",
+  "csv": "group,score\n10,20\n10,22\n10,21\n10,24\n10,23\n2,1\n2,3\n2,2\n2,4\n2,5\n3,10\n3,12\n3,11\n3,13\n3,15\nx,",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "groups 10, 2 and 3 come out 2, 3, 10 (F4); the row x with an empty score makes the column categorical; significant, so Games-Howell pairs in that order"
+ },
+ {
+  "id": "welchAnova-f5-exact-zero",
+  "csv": "group,score\nA,100\nA,100.1\nB,200\nB,200.3\nC,300\nC,300.2",
+  "test": "welchAnova",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "register row F5 at 9264: three groups of two with unequal spread, means 100 apart, so each Games-Howell df is between 1 and 2 (1.22, 1.47, 1.74), where stkPtukey's quadrature (hi widened by 4 below df 5) reaches 1: every p (adjusted) is exactly 0, the cell prints &lt; .001 and the sentence p < .001"
+ }
+]

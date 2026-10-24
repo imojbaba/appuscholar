@@ -1,4 +1,4 @@
-/** Port of v1 provHash (index.html:3402), provCountDoc (3408) and computeOriginality (3346), without a DOM. */
+/** Port of v1 provHash (index.html:3402), provCountDoc (3407) and computeOriginality (3346), without a DOM. */
 export type OriginStats = { typed: number; ai: number; passages: number; kept: number; edited: number; unknown: number };
 
 /** djb2 over whitespace-stripped text, base36 (v1 provHash). */
@@ -21,7 +21,8 @@ type Visit = { text(t: string, inAi: boolean): void; passage(f: Frame): void };
 /** Walks the HTML as a token stream. A frame is any element whose class list has `ai-ins`. */
 function walk(html: string, v: Visit): void {
   const src = String(html || "").replace(/<!--[\s\S]*?-->/g, "");
-  const re = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)([^>]*)>|[^<]+/g;
+  // The attribute part takes a "…" run whole, so a ">" inside a quoted value does not end the tag (v1 reads the DOM, which does not either).
+  const re = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|[^">])*)>|[^<]+/g;
   const stack: string[] = [];
   const frames: Frame[] = [];
   let m: RegExpExecArray | null;

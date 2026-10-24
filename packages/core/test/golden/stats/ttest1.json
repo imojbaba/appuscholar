@@ -1,0 +1,898 @@
+{
+ "engine": "stats",
+ "captured": "2026-10-19",
+ "node": "v26.9.0",
+ "platform": "darwin",
+ "arch": "arm64",
+ "v1": {
+  "build": "2026.10.13a",
+  "sha256": "e3ad7404efcc2684144cc86a8d9bc8cd607e98b3580283c769fe00e18b5fcb47",
+  "lines": 13699
+ },
+ "cases": [
+  {
+   "id": "ttest1-demo",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "50"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "50"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "50.92",
+       "2.43",
+       "12",
+       "50",
+       "1.31",
+       "11",
+       ".218"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.980",
+       ".982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.4312501.3111.218Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>50</td><td>1.31</td><td>11</td><td>.218</td></tr></tbody></table><p class=\"desc\">Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-mu-empty",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": ""
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 0, t(11) = 72.61, p < .001, mean difference = 50.92, 95% CI [49.37, 52.46], d = 20.96.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "50.92",
+       "2.43",
+       "12",
+       "0",
+       "72.61",
+       "11",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 50.92, 95% CI [49.37, 52.46], Cohen's d = 20.96."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.980",
+       ".982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.4312072.6111< .001Mean difference 50.92, 95% CI [49.37, 52.46], Cohen's d = 20.96.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 0, t(11) = 72.61, p < .001, mean difference = 50.92, 95% CI [49.37, 52.46], d = 20.96.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>0</td><td>72.61</td><td>11</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Mean difference 50.92, 95% CI [49.37, 52.46], Cohen's d = 20.96.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 0, t(11) = 72.61, p &lt; .001, mean difference = 50.92, 95% CI [49.37, 52.46], d = 20.96.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-mu-text",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "abc"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "abc"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 0, t(11) = 72.61, p < .001, mean difference = 50.92, 95% CI [49.37, 52.46], d = 20.96.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "50.92",
+       "2.43",
+       "12",
+       "0",
+       "72.61",
+       "11",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 50.92, 95% CI [49.37, 52.46], Cohen's d = 20.96."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.980",
+       ".982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.4312072.6111< .001Mean difference 50.92, 95% CI [49.37, 52.46], Cohen's d = 20.96.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 0, t(11) = 72.61, p < .001, mean difference = 50.92, 95% CI [49.37, 52.46], d = 20.96.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>0</td><td>72.61</td><td>11</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Mean difference 50.92, 95% CI [49.37, 52.46], Cohen's d = 20.96.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 0, t(11) = 72.61, p &lt; .001, mean difference = 50.92, 95% CI [49.37, 52.46], d = 20.96.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-mu-decimal-lower",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "55.5"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "55.5"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly lower than the test value of 55.5, t(11) = -6.54, p < .001, mean difference = -4.58, 95% CI [-6.13, -3.04], d = -1.89.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "50.92",
+       "2.43",
+       "12",
+       "55.5",
+       "-6.54",
+       "11",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference -4.58, 95% CI [-6.13, -3.04], Cohen's d = -1.89."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.980",
+       ".982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.431255.5-6.5411< .001Mean difference -4.58, 95% CI [-6.13, -3.04], Cohen's d = -1.89.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly lower than the test value of 55.5, t(11) = -6.54, p < .001, mean difference = -4.58, 95% CI [-6.13, -3.04], d = -1.89.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>55.5</td><td>-6.54</td><td>11</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">Mean difference -4.58, 95% CI [-6.13, -3.04], Cohen's d = -1.89.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly lower than the test value of 55.5, t(11) = -6.54, p &lt; .001, mean difference = -4.58, 95% CI [-6.13, -3.04], d = -1.89.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-higher",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49",
+   "values": {
+    "dv": "score",
+    "mu": "49"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "49"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 49, t(11) = 2.73, p = .019, mean difference = 1.92, 95% CI [0.37, 3.46], d = 0.79.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "50.92",
+       "2.43",
+       "12",
+       "49",
+       "2.73",
+       "11",
+       ".019"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 1.92, 95% CI [0.37, 3.46], Cohen's d = 0.79."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.980",
+       ".982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.4312492.7311.019Mean difference 1.92, 95% CI [0.37, 3.46], Cohen's d = 0.79.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 49, t(11) = 2.73, p = .019, mean difference = 1.92, 95% CI [0.37, 3.46], d = 0.79.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>49</td><td>2.73</td><td>11</td><td>.019</td></tr></tbody></table><p class=\"desc\">Mean difference 1.92, 95% CI [0.37, 3.46], Cohen's d = 0.79.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was significantly higher than the test value of 49, t(11) = 2.73, p = .019, mean difference = 1.92, 95% CI [0.37, 3.46], d = 0.79.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-all-same",
+   "test": "ttest1",
+   "csv": "score\n5\n5\n5\n5",
+   "values": {
+    "dv": "score",
+    "mu": "3"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "3"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Every value is the same, so there is no spread and this test cannot be calculated."
+   ]
+  },
+  {
+   "id": "ttest1-one-value",
+   "test": "ttest1",
+   "csv": "score\n5",
+   "values": {
+    "dv": "score",
+    "mu": "3"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "3"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Need at least 2 values"
+   ]
+  },
+  {
+   "id": "ttest1-text-in-numeric",
+   "test": "ttest1",
+   "csv": "score\n52\n48\n55\n51\n49\n53\n50\n47\n54\n52\n51\n49\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+   "values": {
+    "dv": "score",
+    "mu": "50"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "50"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "50.92",
+       "2.43",
+       "12",
+       "50",
+       "1.31",
+       "11",
+       ".218"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.980",
+       ".982"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    },
+    {
+     "kind": "note",
+     "html": "4 entries that are not a number were left out."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp50.922.4312501.3111.218Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38.Assumption checksVariableNShapiro-Wilk Wpscore120.980.982No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.4 entries that are not a number were left out.A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>50.92</td><td>2.43</td><td>12</td><td>50</td><td>1.31</td><td>11</td><td>.218</td></tr></tbody></table><p class=\"desc\">Mean difference 0.92, 95% CI [-0.63, 2.46], Cohen's d = 0.38.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.980</td><td>.982</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><p class=\"desc\">4 entries that are not a number were left out.</p><div id=\"statsSentence\">A one-sample t-test showed that score (M = 50.92, SD = 2.43) was not significantly different from the test value of 50, t(11) = 1.31, p = .218, mean difference = 0.92, 95% CI [-0.63, 2.46], d = 0.38.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-n3",
+   "test": "ttest1",
+   "csv": "score\n4\n7\n9",
+   "values": {
+    "dv": "score",
+    "mu": "5"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "5"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 6.67, SD = 2.52) was not significantly different from the test value of 5, t(2) = 1.15, p = .370, mean difference = 1.67, 95% CI [-4.58, 7.92], d = 0.66.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "6.67",
+       "2.52",
+       "3",
+       "5",
+       "1.15",
+       "2",
+       ".370"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 1.67, 95% CI [-4.58, 7.92], Cohen's d = 0.66."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "3",
+       "0.987",
+       ".780"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp6.672.52351.152.370Mean difference 1.67, 95% CI [-4.58, 7.92], Cohen's d = 0.66.Assumption checksVariableNShapiro-Wilk Wpscore30.987.780No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 6.67, SD = 2.52) was not significantly different from the test value of 5, t(2) = 1.15, p = .370, mean difference = 1.67, 95% CI [-4.58, 7.92], d = 0.66.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>6.67</td><td>2.52</td><td>3</td><td>5</td><td>1.15</td><td>2</td><td>.370</td></tr></tbody></table><p class=\"desc\">Mean difference 1.67, 95% CI [-4.58, 7.92], Cohen's d = 0.66.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>3</td><td>0.987</td><td>.780</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 6.67, SD = 2.52) was not significantly different from the test value of 5, t(2) = 1.15, p = .370, mean difference = 1.67, 95% CI [-4.58, 7.92], d = 0.66.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-n2-assumptions-skip",
+   "test": "ttest1",
+   "csv": "score\n4\n7",
+   "values": {
+    "dv": "score",
+    "mu": "5"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "5"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 5.50, SD = 2.12) was not significantly different from the test value of 5, t(1) = 0.33, p = .795, mean difference = 0.50, 95% CI [-18.56, 19.56], d = 0.24.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "5.50",
+       "2.12",
+       "2",
+       "5",
+       "0.33",
+       "1",
+       ".795"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 0.50, 95% CI [-18.56, 19.56], Cohen's d = 0.24."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "2",
+       "needs 3 or more values"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": ""
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp5.502.12250.331.795Mean difference 0.50, 95% CI [-18.56, 19.56], Cohen's d = 0.24.Assumption checksVariableNShapiro-Wilk Wpscore2needs 3 or more valuesA one-sample t-test showed that score (M = 5.50, SD = 2.12) was not significantly different from the test value of 5, t(1) = 0.33, p = .795, mean difference = 0.50, 95% CI [-18.56, 19.56], d = 0.24.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>5.50</td><td>2.12</td><td>2</td><td>5</td><td>0.33</td><td>1</td><td>.795</td></tr></tbody></table><p class=\"desc\">Mean difference 0.50, 95% CI [-18.56, 19.56], Cohen's d = 0.24.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>2</td><td colspan=\"2\">needs 3 or more values</td></tr></tbody></table><p class=\"desc\"></p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 5.50, SD = 2.12) was not significantly different from the test value of 5, t(1) = 0.33, p = .795, mean difference = 0.50, 95% CI [-18.56, 19.56], d = 0.24.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-no-numeric-column",
+   "test": "ttest1",
+   "csv": "grp\na\nb\nc",
+   "values": {
+    "mu": "1"
+   },
+   "form": {
+    "values": {
+     "dv": "",
+     "mu": "1"
+    },
+    "ticked": {}
+   },
+   "apa": null,
+   "blocks": [],
+   "resultsText": "",
+   "resultsHtml": "",
+   "toasts": [
+    "Could not run that test — check the columns you picked match what the test needs"
+   ]
+  },
+  {
+   "id": "ttest1-skewed",
+   "test": "ttest1",
+   "csv": "score\n1\n1\n1\n1\n1\n1\n1\n1\n2\n2\n30\n50",
+   "values": {
+    "dv": "score",
+    "mu": "1"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "1"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 7.67, SD = 15.70) was not significantly different from the test value of 1, t(11) = 1.47, p = .169, mean difference = 6.67, 95% CI [-3.31, 16.64], d = 0.42.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "7.67",
+       "15.70",
+       "12",
+       "1",
+       "1.47",
+       "11",
+       ".169"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 6.67, 95% CI [-3.31, 16.64], Cohen's d = 0.42."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "12",
+       "0.501",
+       "&lt; .001"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp7.6715.701211.4711.169Mean difference 6.67, 95% CI [-3.31, 16.64], Cohen's d = 0.42.Assumption checksVariableNShapiro-Wilk Wpscore120.501< .001At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that score (M = 7.67, SD = 15.70) was not significantly different from the test value of 1, t(11) = 1.47, p = .169, mean difference = 6.67, 95% CI [-3.31, 16.64], d = 0.42.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>7.67</td><td>15.70</td><td>12</td><td>1</td><td>1.47</td><td>11</td><td>.169</td></tr></tbody></table><p class=\"desc\">Mean difference 6.67, 95% CI [-3.31, 16.64], Cohen's d = 0.42.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>12</td><td>0.501</td><td>&lt; .001</td></tr></tbody></table><p class=\"desc\">At least one Shapiro-Wilk p is below .05, so the scores depart from a normal curve. Look at the histogram. With small groups or a clear skew, a rank test (Mann-Whitney, Wilcoxon, Kruskal-Wallis) is the safer choice. With larger groups the t-test and ANOVA tolerate mild departures. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 7.67, SD = 15.70) was not significantly different from the test value of 1, t(11) = 1.47, p = .169, mean difference = 6.67, 95% CI [-3.31, 16.64], d = 0.42.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-n25",
+   "test": "ttest1",
+   "csv": "score\n12\n15\n11\n14\n13\n16\n12\n15\n14\n13\n17\n12\n14\n15\n13\n16\n11\n14\n15\n13\n12\n16\n14\n13\n15",
+   "values": {
+    "dv": "score",
+    "mu": "14"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": "14"
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that score (M = 13.80, SD = 1.63) was not significantly different from the test value of 14, t(24) = -0.61, p = .546, mean difference = -0.20, 95% CI [-0.87, 0.47], d = -0.12.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "13.80",
+       "1.63",
+       "25",
+       "14",
+       "-0.61",
+       "24",
+       ".546"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference -0.20, 95% CI [-0.87, 0.47], Cohen's d = -0.12."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "score",
+       "25",
+       "0.957",
+       ".360"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp13.801.632514-0.6124.546Mean difference -0.20, 95% CI [-0.87, 0.47], Cohen's d = -0.12.Assumption checksVariableNShapiro-Wilk Wpscore250.957.360No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.A one-sample t-test showed that score (M = 13.80, SD = 1.63) was not significantly different from the test value of 14, t(24) = -0.61, p = .546, mean difference = -0.20, 95% CI [-0.87, 0.47], d = -0.12.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>13.80</td><td>1.63</td><td>25</td><td>14</td><td>-0.61</td><td>24</td><td>.546</td></tr></tbody></table><p class=\"desc\">Mean difference -0.20, 95% CI [-0.87, 0.47], Cohen's d = -0.12.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>score</td><td>25</td><td>0.957</td><td>.360</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small.</p></div><div id=\"statsSentence\">A one-sample t-test showed that score (M = 13.80, SD = 1.63) was not significantly different from the test value of 14, t(24) = -0.61, p = .546, mean difference = -0.20, 95% CI [-0.87, 0.47], d = -0.12.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  },
+  {
+   "id": "ttest1-name-needs-escaping",
+   "test": "ttest1",
+   "csv": "Tom's <score> & more\n3\n5\n4\n6",
+   "values": {
+    "dv": "Tom's <score> & more"
+   },
+   "form": {
+    "values": {
+     "dv": "0",
+     "mu": ""
+    },
+    "ticked": {}
+   },
+   "apa": "A one-sample t-test showed that Tom's <score> & more (M = 4.50, SD = 1.29) was significantly higher than the test value of 0, t(3) = 6.97, p = .006, mean difference = 4.50, 95% CI [2.45, 6.55], d = 3.49.",
+   "blocks": [
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "M",
+       "SD",
+       "N",
+       "Test value",
+       "t",
+       "df",
+       "p"
+      ],
+      [
+       "4.50",
+       "1.29",
+       "4",
+       "0",
+       "6.97",
+       "3",
+       ".006"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "Mean difference 4.50, 95% CI [2.45, 6.55], Cohen's d = 3.49."
+    },
+    {
+     "kind": "heading",
+     "text": "Assumption checks"
+    },
+    {
+     "kind": "table",
+     "rows": [
+      [
+       "Variable",
+       "N",
+       "Shapiro-Wilk W",
+       "p"
+      ],
+      [
+       "Tom's &lt;score&gt; &amp; more",
+       "4",
+       "0.993",
+       ".972"
+      ]
+     ]
+    },
+    {
+     "kind": "note",
+     "html": "No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict."
+    }
+   ],
+   "resultsText": "ResultsMSDNTest valuetdfp4.501.29406.973.006Mean difference 4.50, 95% CI [2.45, 6.55], Cohen's d = 3.49.Assumption checksVariableNShapiro-Wilk WpTom's <score> & more40.993.972No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.A one-sample t-test showed that Tom's <score> & more (M = 4.50, SD = 1.29) was significantly higher than the test value of 0, t(3) = 6.97, p = .006, mean difference = 4.50, 95% CI [2.45, 6.55], d = 3.49.Insert into documentCopy💡 Explain in plain language",
+   "resultsHtml": "<h3 style=\"margin-top:0\">Results</h3><table class=\"stats-table\"><tbody><tr><th>M</th><th>SD</th><th>N</th><th>Test value</th><th>t</th><th>df</th><th>p</th></tr><tr><td>4.50</td><td>1.29</td><td>4</td><td>0</td><td>6.97</td><td>3</td><td>.006</td></tr></tbody></table><p class=\"desc\">Mean difference 4.50, 95% CI [2.45, 6.55], Cohen's d = 3.49.</p><div class=\"stats-assump\"><h4 style=\"margin:14px 0 4px\">Assumption checks</h4><table class=\"stats-table\"><tbody><tr><th>Variable</th><th>N</th><th>Shapiro-Wilk W</th><th>p</th></tr><tr><td>Tom's &lt;score&gt; &amp; more</td><td>4</td><td>0.993</td><td>.972</td></tr></tbody></table><p class=\"desc\">No Shapiro-Wilk p is below .05, so nothing here argues against normality. That is weaker evidence than it sounds when groups are small. With fewer than 20 values these tests have little power and miss real departures; with several hundred they flag differences too small to matter. Treat them as a prompt to look at the plot, not as a verdict.</p></div><div id=\"statsSentence\">A one-sample t-test showed that Tom's &lt;score&gt; &amp; more (M = 4.50, SD = 1.29) was significantly higher than the test value of 0, t(3) = 6.97, p = .006, mean difference = 4.50, 95% CI [2.45, 6.55], d = 3.49.</div><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn btn-purple\" style=\"flex:1\" onclick=\"statsInsert()\">Insert into document</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsCopy()\">Copy</button><button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"statsExplain()\">💡 Explain in plain language</button></div>",
+   "toasts": []
+  }
+ ]
+}

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { latexDocument, toLatex } from "../lib/export/latex";
+import { fileTitle, openTitle } from "../lib/vault/titles";
 
 const body = `<h1>Intro</h1><p>Mean was <b>12%</b> &amp; <i>rising</i> <u>u</u> <s>s</s> x<sup>2</sup> H<sub>2</sub>O.</p><h2>Sub</h2><ul><li>a</li><li>b</li></ul><blockquote>q</blockquote><table><tr><th>h1</th><th>h2</th></tr><tr><td>1</td><td>2</td></tr></table><p><a href="https://x.org">link</a></p><div data-page-break></div><p>#$%&_{}~^\\</p><img src="data:image/png;base64,AA">`;
 
@@ -35,5 +36,14 @@ describe("toLatex", () => {
     const { filename, blob } = latexDocument("A/B: c", "<p>x</p>");
     expect(filename).toBe("AB c.tex");
     expect(blob.type).toBe("text/x-tex");
+  });
+  it("the LaTeX file name comes from the opened title; a locked one is untitled", async () => {
+    const doc = { id: "d1", title: "ct:Sleep and exam anxiety", titleKeyVersion: 1, deks: [{ v: 1, wrapped: "w" }] };
+    const open = { decryptBody: async (d: { bodyHtml: string }) => d.bodyHtml.slice(3) };
+    const locked = { decryptBody: async () => { throw new Error("vault-locked"); } };
+    const opened = latexDocument(fileTitle(await openTitle(open, doc, "d1")), "<p>x</p>");
+    expect(opened.filename).toBe("Sleep and exam anxiety.tex");
+    expect(toLatex(fileTitle(await openTitle(open, doc, "d1")), "<p>x</p>")).toContain("\\title{Sleep and exam anxiety}");
+    expect(latexDocument(fileTitle(await openTitle(locked, doc, "d1")), "<p>x</p>").filename).toBe("untitled.tex");
   });
 });

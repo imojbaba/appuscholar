@@ -1,0 +1,102 @@
+[
+ {
+  "id": "mannwhitney-demo",
+  "csv": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "rating",
+   "iv": "group"
+  },
+  "why": "TG_DEMO's mannwhitney: tied ratings, so the normal approximation"
+ },
+ {
+  "id": "mannwhitney-integer-labels",
+  "csv": "group,score\n10,15\n10,17\n10,19\n10,21\n10,22\n2,11\n2,12\n2,13\n2,14\n2,16\nx,",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "groups 10 and 2 (10 first in the file); the row x with an empty score makes the column categorical and is dropped by statsGroupBy. Object-key order puts 2 first (F4), so U1 is 2's, the rank-biserial r is negative (10 scores higher) and the note reads '(positive: 2 tends to score higher)'; no ties and both groups under 50, so the exact p"
+ },
+ {
+  "id": "mannwhitney-decimal-ties",
+  "csv": "group,score\nA,1.1\nA,2.2\nA,3.3\nA,4.4\nB,1.0\nB,2.1\nB,3.2\nB,4.3\nB,0.3",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "decimal scores 1.1, 1.0, 2.2, 2.1 ... across the groups: no two parse to the same number, stkTieTerm is 0, so the exact branch (F15: ties are exact floating-point equality)"
+ },
+ {
+  "id": "mannwhitney-ties",
+  "csv": "group,score\nA,3\nA,5\nA,5\nA,6\nA,7\nA,8\nB,1\nB,2\nB,3\nB,3\nB,5\nB,4",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "small groups with tied scores: the normal approximation with continuity and tie corrections, and z in the note and sentence"
+ },
+ {
+  "id": "mannwhitney-n50",
+  "csv": "group,score\nA,2\nA,4\nA,6\nA,8\nA,10\nA,12\nA,14\nA,16\nA,18\nA,20\nA,22\nA,24\nA,26\nA,28\nA,30\nA,32\nA,34\nA,36\nA,38\nA,40\nA,42\nA,44\nA,46\nA,48\nA,50\nA,52\nA,54\nA,56\nA,58\nA,60\nA,62\nA,64\nA,66\nA,68\nA,70\nA,72\nA,74\nA,76\nA,78\nA,80\nA,82\nA,84\nA,86\nA,88\nA,90\nA,92\nA,94\nA,96\nA,98\nA,100\nB,21\nB,23\nB,25\nB,27\nB,29\nB,31\nB,33\nB,35\nB,37\nB,39\nB,41\nB,43",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "A has exactly 50 distinct scores (n1<50 fails), B 12, no ties: the normal approximation"
+ },
+ {
+  "id": "mannwhitney-all-same",
+  "csv": "group,score\nA,4\nA,4\nA,4\nB,4\nB,4\nB,4",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "every score the same: sdU is 0, the toast"
+ },
+ {
+  "id": "mannwhitney-three-groups",
+  "csv": "group,score\nA,1\nA,2\nA,3\nB,4\nB,5\nB,6\nC,7\nC,8\nC,9",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "three groups: the toast counts 3"
+ },
+ {
+  "id": "mannwhitney-text-in-numeric",
+  "csv": "group,rating\nA,4\nA,5\nA,4\nA,3\nA,5\nA,4\nA,5\nA,4\nA,3\nA,5\nB,2\nB,3\nB,3\nB,2\nB,4\nB,3\nB,2\nB,3\nB,1\nB,3\nA,10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nB,-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "rating",
+   "iv": "group"
+  },
+  "why": "A text cell makes its column categorical (F17), so v1's form never offers it as a numeric field; the entries dropped from a numeric column are digit strings that match the numeric pattern and overflow parseFloat to ±Infinity (a 401-digit 1 and a 400-digit negative). statsGroupBy drops both; mannwhitney has no assumption pass, so the note says 2."
+ },
+ {
+  "id": "mannwhitney-non-significant",
+  "csv": "group,score\nA,10\nA,13\nA,11\nA,16\nA,12\nB,14\nB,9\nB,15\nB,17\nB,8",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "score",
+   "iv": "group"
+  },
+  "why": "no ties, small groups: the exact p, not significant, a negative rank-biserial r"
+ },
+ {
+  "id": "mannwhitney-name-needs-escaping",
+  "csv": "team,Tom's <score> & more\n<ctl>,3\n<ctl>,5\n<ctl>,4\n<ctl>,1\nA&B,7\nA&B,6\nA&B,8\nA&B,9",
+  "test": "mannwhitney",
+  "values": {
+   "dv": "Tom's <score> & more",
+   "iv": "team"
+  },
+  "why": "group labels go through escHTML in the table and the note and raw into the sentence"
+ }
+]

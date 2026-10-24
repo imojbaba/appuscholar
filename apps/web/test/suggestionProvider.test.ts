@@ -6,9 +6,12 @@ import { Editor } from "@tiptap/core";
 import { provHash } from "@appuscholar/core";
 import { editorExtensions } from "../lib/editorExtensions";
 import { selectionRange } from "../lib/editor/insert";
+import { toast } from "@/components/ui/toast";
+import { runDevil } from "../lib/ai/actions";
+import en from "../messages/en.json";
 
-const ws = vi.hoisted(() => ({ dockShow: vi.fn(), setAiWaiting: vi.fn() }));
-vi.mock("@/components/workspace/WorkspaceContext", () => ({ useWorkspace: () => ws }));
+const ws = vi.hoisted(() => ({ openDocument: vi.fn() }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ws }));
 vi.mock("@/components/ui/toast", () => ({ toast: vi.fn() }));
 
 import { SuggestionProvider, useSuggestion, type SuggestionValue } from "../lib/ai/suggestion";
@@ -21,6 +24,7 @@ const api = new Proxy({} as SuggestionValue, { get: (_t, k) => (seen.value as un
 function Probe() { const v = useSuggestion(); useEffect(() => { seen.value = v; }); return null; }
 let root: Root, host: HTMLElement;
 beforeEach(() => {
+  ws.openDocument.mockReset();
   host = document.createElement("div");
   root = createRoot(host);
   act(() => root.render(createElement(SuggestionProvider, null, createElement(Probe))));
@@ -88,6 +92,29 @@ describe("SuggestionProvider", () => {
     ed.destroy();
   });
 
+  it("a label given to setThinking is the pane's text while it thinks; set, setFeedback and clear drop it", () => {
+    const ed = make("<p>one</p>");
+    act(() => api.setEditor(ed));
+    let token = 0;
+    act(() => { token = api.setThinking("polishing"); });
+    expect(api.statusLabel).toBeNull();
+    act(() => { token = api.setThinking("custom", null, "💜 Thinking this through…"); });
+    expect(api.status).toBe("custom");
+    expect(api.statusLabel).toBe("💜 Thinking this through…");
+    act(() => api.set("the read", null, token));
+    expect(api.statusLabel).toBeNull();
+    expect(api.sug).toBe("the read");
+    expect(api.note).toBeNull();
+    act(() => { token = api.setThinking("custom", null, "💜 Thinking this through…"); });
+    act(() => api.setFeedback("questions", token));
+    expect(api.statusLabel).toBeNull();
+    act(() => { api.setThinking("custom", null, "💜 Thinking this through…"); });
+    act(() => api.clear("Network error"));
+    expect(api.statusLabel).toBeNull();
+    expect(api.status).toBe("idle");
+    ed.destroy();
+  });
+
   it("feedback resets selectionAtRequest and is never insertable", () => {
     const ed = make("<p>one two</p>");
     act(() => api.setEditor(ed));
@@ -98,6 +125,52 @@ describe("SuggestionProvider", () => {
     expect(api.selectionAtRequest).toBe(false);
     expect(api.sug).toBeNull();
     expect(api.tab()).toBe(false);
+    ed.destroy();
+  });
+
+  it("the devil's advocate's answer, run through the real provider, is shown and cannot be accepted (v1 window._sug = null)", async () => {
+    const ed = make("<p>mine</p>");
+    act(() => api.setEditor(ed));
+    const passage = Array.from({ length: 30 }, (_, i) => "word" + i).join(" ");
+    await act(async () => {
+      await runDevil({
+        callAI: async () => "1. A weakness.", hasSelection: () => false, selectionText: () => "", docText: () => passage,
+        setThinking: api.setThinking, isCurrent: api.isCurrent, set: api.set, setFeedback: api.setFeedback, clear: api.clear,
+        toast: vi.fn(), t: (k: string) => (en as Record<string, string>)[k] ?? k
+      });
+    });
+    expect(api.text).toBe((en as Record<string, string>).devil_label + "\n\n1. A weakness.");
+    expect(api.sug).toBeNull();
+    vi.mocked(toast).mockClear();
+    act(() => api.accept());
+    expect(toast).toHaveBeenCalledWith("No suggestion to accept yet");
+    expect(api.tab()).toBe(false);
+    expect(ed.getHTML()).toBe("<p>mine</p>");
+    ed.destroy();
+  });
+
+  it("an answer, its feedback and an error open the document beside the place; a request alone, Dismiss and Accept leave it as it is (Task 11)", () => {
+    const ed = make("<p>mine</p>");
+    act(() => api.setEditor(ed));
+    expect(ws.openDocument).not.toHaveBeenCalled();
+    let token = 0;
+    act(() => { token = api.setThinking("thinking", null); });
+    expect(ws.openDocument).not.toHaveBeenCalled();
+    act(() => api.set("more", null, token));
+    expect(ws.openDocument).toHaveBeenCalledTimes(1);
+    act(() => { token = api.setThinking("reading"); });
+    expect(ws.openDocument).toHaveBeenCalledTimes(1);
+    act(() => api.setFeedback("questions", token));
+    expect(ws.openDocument).toHaveBeenCalledTimes(2);
+    act(() => api.clear("Network error"));
+    expect(ws.openDocument).toHaveBeenCalledTimes(3);
+    act(() => api.clear());
+    act(() => { token = api.setThinking("thinking", null); });
+    act(() => api.set("more", null, token));
+    ws.openDocument.mockClear();
+    act(() => api.accept());
+    act(() => api.clear());
+    expect(ws.openDocument).not.toHaveBeenCalled();
     ed.destroy();
   });
 });

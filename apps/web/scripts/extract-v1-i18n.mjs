@@ -2,9 +2,13 @@
 // The dictionaries in messages/ are generated, with one exception: the nine v2 keys in i18n-overrides.mjs
 // (terms_d1..d4, terms_ver, welcome_intro, faq_a_lost, faq_a_key, sap_desc) are applied after extraction, so re-running this keeps them,
 // and their v1 Hindi strings are replaced by the HINDI_DRAFTS (drafts for Dr. Sharma's review, not yet approved).
+// V2_STRINGS (vault, export, account deletion: new copy with no v1 equivalent) are added after that, in both languages; a key that collides with a v1 key throws.
+// The panel copy of v1 that has no data-i18n key (Research, Analyse a paper, Reading shelf) is added last by extract-v1-panels.mjs as rs2_/ap2_/sh2_ keys,
+// Hindi = English until Dr. Sharma provides Hindi, and messages/v1-panels.manifest.json records each key's v1 lines and their sha256.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { applyOverrides, applyHindiDrafts } from "./i18n-overrides.mjs";
+import { applyOverrides, applyHindiDrafts, applyV2Strings, applyPanelFixes } from "./i18n-overrides.mjs";
+import { extractV1Panels, applyV1Panels } from "./extract-v1-panels.mjs";
 const src = readFileSync(process.argv[2], "utf8");
 const outDir = process.argv[3] ? pathToFileURL(process.argv[3].replace(/\/?$/, "/")) : new URL("../messages/", import.meta.url);
 const start = src.indexOf("const I18N={");
@@ -14,7 +18,12 @@ const literal = src.slice(start + "const I18N=".length, end + 2);
 const I18N = new Function("return " + literal)();   // the block is string literals only (verified by the parity test below)
 I18N.en = applyOverrides(I18N.en);
 I18N.hi = applyHindiDrafts(I18N.hi);
+({ en: I18N.en, hi: I18N.hi } = applyV2Strings(I18N.en, I18N.hi));   // new v2 copy with no v1 equivalent; throws if a key collides with a v1 key
+const panels = extractV1Panels(src);
+({ en: I18N.en, hi: I18N.hi } = applyV1Panels(I18N.en, I18N.hi, panels));   // throws if a panel key collides with an existing key
+({ en: I18N.en, hi: I18N.hi } = applyPanelFixes(I18N.en, I18N.hi));   // v1 panel typos ("Appuscholer", W21); throws if a key is missing or has no match
 mkdirSync(outDir, { recursive: true });
+writeFileSync(new URL("v1-panels.manifest.json", outDir), JSON.stringify(panels.manifest, null, 2) + "\n");
 for (const lang of ["en", "hi"]) {
   const sorted = Object.fromEntries(Object.keys(I18N[lang]).sort().map(k => [k, I18N[lang][k]]));
   writeFileSync(new URL(`${lang}.json`, outDir), JSON.stringify(sorted, null, 2) + "\n");

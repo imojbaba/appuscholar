@@ -1,0 +1,8 @@
+{
+ "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=6&term=caffeine%20sleep%20quality",
+ "status": 200,
+ "headers": {
+  "content-type": "application/json; charset=UTF-8"
+ },
+ "body": "{\"header\":{\"type\":\"esearch\",\"version\":\"0.3\"},\"esearchresult\":{\"count\":\"558\",\"retmax\":\"6\",\"retstart\":\"0\",\"idlist\":[\"42840507\",\"42806148\",\"42796929\",\"42788513\",\"42761998\",\"42761839\"],\"translationset\":[{\"from\":\"caffeine\",\"to\":\"\\\"caffein\\\"[All Fields] OR \\\"caffeinated\\\"[All Fields] OR \\\"caffeine\\\"[Supplementary Concept] OR \\\"caffeine\\\"[All Fields] OR \\\"caffeine\\\"[MeSH Terms] OR \\\"caffeine's\\\"[All Fields] OR \\\"caffeines\\\"[All Fields] OR \\\"caffeinism\\\"[All Fields]\"},{\"from\":\"sleep quality\",\"to\":\"\\\"sleep quality\\\"[MeSH Terms] OR (\\\"sleep\\\"[All Fields] AND \\\"quality\\\"[All Fields]) OR \\\"sleep quality\\\"[All Fields]\"}],\"querytranslation\":\"(\\\"caffein\\\"[All Fields] OR \\\"caffeinated\\\"[All Fields] OR \\\"caffeine\\\"[Supplementary Concept] OR \\\"caffeine\\\"[All Fields] OR \\\"caffeine\\\"[MeSH Terms] OR \\\"caffeine s\\\"[All Fields] OR \\\"caffeines\\\"[All Fields] OR \\\"caffeinism\\\"[All Fields]) AND (\\\"sleep quality\\\"[MeSH Terms] OR (\\\"sleep\\\"[All Fields] AND \\\"quality\\\"[All Fields]) OR \\\"sleep quality\\\"[All Fields])\"}}\n"
+}

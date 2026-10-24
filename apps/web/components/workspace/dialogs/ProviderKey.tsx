@@ -4,14 +4,17 @@ import { PROVIDERS, PROV_ORDER, type ProviderId } from "@appuscholar/core";
 import { apiFetch } from "@/lib/api";
 import { tHtml, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
-import { cryptoOK, isProvider, keyStore, unlockKeyBlob, type KeyMode } from "@/lib/ai/keys";
+import { cryptoOK, isProvider, keyStore, type KeyMode } from "@/lib/ai/keys";
 import { toCallError } from "@/lib/ai/callAI";
 import { useKeys } from "@/lib/ai/useKeys";
+import { saveOpenAlexKey, useOpenAlexKey } from "@/lib/research/oaKey";
+import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SecretInput } from "@/components/ui/secret-input";
 import { toast } from "@/components/ui/toast";
-import { useWorkspace } from "../WorkspaceContext";
-import { askPassphrase } from "./Passphrase";
+import { useProject } from "@/components/frame/ProjectContext";
+import { openVaultSetup } from "./VaultSetup";
 
 /** v1 FIELD_LIST (index.html:2499). */
 export const FIELD_LIST = ["psychology", "education", "sociology", "medicine and health", "nursing", "management and commerce", "law", "economics", "science", "engineering and technology", "humanities"];
@@ -31,7 +34,7 @@ const MODE_HINT: Record<KeyMode, string> = {
 };
 
 export function ProviderKey() {
-  const { dialog, closeDialog } = useWorkspace();
+  const { dialog, closeDialog } = useProject();
   return (
     <Dialog open={dialog === "settings"} onOpenChange={(o) => { if (!o) closeDialog(); }}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" data-testid="provider-dialog">
@@ -47,8 +50,9 @@ const TONE: Record<NonNullable<Out>["tone"], string> = { run: "text-muted-foregr
 function Form() {
   const t = useT();
   const { settings, update } = useSettings();
-  const { project, reloadProject, closeDialog, openTerms, settingsProvider } = useWorkspace();
+  const { project, reloadProject, closeDialog, openTerms, settingsProvider } = useProject();
   const keys = useKeys();
+  const vault = useVault();
   const active: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   const [p, setP] = useState<ProviderId>(settingsProvider ?? active);
   const [key, setKey] = useState("");
@@ -65,6 +69,15 @@ function Form() {
   const [customField, setCustomField] = useState(fieldKnown ? "" : field);
   const [orcid, setOrcid] = useState(settings.orcid ?? "");
   const contentLang: "en" | "hi" = project ? (project.contentLang === "hi" ? "hi" : "en") : settings.contentLang === "hi" ? "hi" : "en";
+  // The OpenAlex key (v1 1186-1190): the field shows the key when it is open in this tab, as v1's fieldInit fills #oaKeyIn (2510); saved on change.
+  const oaKey = useOpenAlexKey() ?? "";
+  const [oaIn, setOaIn] = useState<string | null>(null);
+  const oaShown = oaIn ?? oaKey;
+  async function saveOaKey() {
+    if (oaIn === null || oaIn === oaKey) return;
+    const ok = await saveOpenAlexKey(oaIn, { keys, vault, setupVault: openVaultSetup, toast, t });
+    if (ok) setOaIn(null);
+  }
 
   function pick(q: ProviderId) { setP(q); setKey(""); setOut(null); setMode(initialMode(q)); }
 
@@ -72,18 +85,13 @@ function Form() {
     const k = key.trim();
     if (!k) { toast("Paste your key first"); return; }
     if (busy) return;
-    let pass: string | undefined;
-    if (mode === "pass") {
-      if (!cryptoOK()) { toast("This browser cannot encrypt — choose another option"); return; }
-      const first = await askPassphrase({ kind: "choose" });
-      if (first === null || first.length < 6) { toast("Passphrase needs at least 6 characters — nothing was saved"); return; }
-      const again = await askPassphrase({ kind: "confirm" });
-      if (again !== first) { toast("The two passphrases did not match — nothing was saved"); return; }
-      pass = first;
-    }
+    if (mode === "pass" && !cryptoOK()) { toast("This browser cannot encrypt — choose another option"); return; }
     setBusy(true);
+    // "Protect with a passphrase" locks the key under the vault: with no vault yet, the student sets one up first and its
+    // passphrase is the key's; with a vault, it is opened (asked for once) if it is locked. Cancelling either saves nothing.
+    if (mode === "pass" && !(vault.status === "off" ? await openVaultSetup() : await vault.ensureUnlocked())) { setBusy(false); return; }
     try {
-      await keys.save(p, k, mode, pass);
+      await keys.save(p, k, mode);
     } catch {
       toast(mode === "pass" ? "Could not encrypt and store the key — nothing was saved" : "Could not save the key. Try again.");
       setBusy(false);
@@ -108,12 +116,9 @@ function Form() {
     const typed = key.trim();
     let use = typed || keyStore.getUnlocked(p) || "";
     if (!use && keys.blobs[p]) {
-      const pass = await askPassphrase({ kind: "unlock", provider: p });
-      if (pass) {
-        try { use = await unlockKeyBlob(keys.blobs[p]!, pass); } catch { setOut({ tone: "fail", text: "Wrong passphrase — nothing was unlocked. Try again." }); return; }
-        keyStore.setSession(p, use);
-        toast("Key unlocked for this session ✓");
-      }
+      // A key locked under the vault opens with the vault; a legacy one asks for its key passphrase (and is then re-saved under the vault).
+      try { use = (await keys.getUnlocked(p)) ?? ""; } catch { setOut({ tone: "fail", text: t("vault_wrong") }); return; }
+      if (use) toast("Key unlocked for this session ✓");
     }
     if (!use) {
       setOut({ tone: "warn", text: keys.blobs[p] ? `${name}: your key is locked with a passphrase. Paste it again here to test it, or close this window and use any AI button once to unlock it.` : `${name}: no key yet. Paste your key in the box above, then test again.` });
@@ -178,7 +183,7 @@ function Form() {
       </div>
 
       <div className="field !mb-0">
-        <input className="input" type="password" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} placeholder={placeholder} aria-label={t("settings_keyin_placeholder")} data-testid="key-input" />
+        <SecretInput secret="key" autoComplete="off" spellCheck={false} value={key} onChange={(e) => setKey(e.target.value)} placeholder={placeholder} aria-label={t("settings_keyin_placeholder")} data-testid="key-input" toggleTestId="key-input-toggle" />
       </div>
 
       <div role="radiogroup" aria-labelledby="keyModeLabel" className="field !mb-0">
@@ -206,6 +211,13 @@ function Form() {
           <option value="hi">{t("settings_contentlang_hi")}</option>
         </select>
         <p className="m-0 text-[13px] text-muted-foreground">{t("settings_contentlang_desc")}</p>
+      </div>
+
+      <div className="field !mb-0 border-t border-line pt-3">
+        <label htmlFor="oaKeyIn">{t("rs2_oa_key_label")}</label>
+        <SecretInput secret="key" id="oaKeyIn" autoComplete="off" spellCheck={false} value={oaShown} placeholder={t("rs2_oa_key_placeholder")}
+          onChange={(e) => setOaIn(e.target.value)} onBlur={() => { void saveOaKey(); }} onKeyDown={(e) => { if (e.key === "Enter") void saveOaKey(); }} data-testid="oa-key-input" />
+        <p className="m-0 text-[13px] text-muted-foreground">{t("rs2_oa_key_desc")}</p>
       </div>
 
       <div className="field !mb-0 border-t border-line pt-3">
