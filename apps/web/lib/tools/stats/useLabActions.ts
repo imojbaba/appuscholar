@@ -1,9 +1,14 @@
 "use client";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { hasParticipantsBlob, listProjectBlobs } from "@/lib/blobs/listing";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
+import { todayIso } from "@/lib/tools/participants/dates";
+import { planOf } from "@/lib/tools/participants/plan";
+import { useParticipants } from "@/lib/tools/participants/useParticipants";
 import { nameFromFile } from "./intake";
-import { applyPd, getLab, parse, patchLab, setName, setText, splitOnSemicolons, useLab } from "./lab";
+import { applyPd, getLab, parse, patchLab, setName, setPdContext, setText, splitOnSemicolons, useLab } from "./lab";
+import { NO_CONTEXT } from "./pdList";
 
 /** v1 rtDsName (9378): the name a set is registered under when the box is empty. It is a stored key, not a word the student reads, so it is not translated. */
 export const UNTITLED = "Untitled data";
@@ -14,6 +19,9 @@ export const KEY_FILE = "appuscholar_key_keep_separate.csv";
  * What the Data tab does with the lab (lib/tools/stats/lab.ts): each action changes the lab (the table's fingerprint is recorded in `stats_sets` by StatsSetsHost, which
  * the stats Panel mounts under every tab: v1 rtRegister 9380) and, for the personal-data box, downloads the key file. The dataset name is
  * remembered in `stats_prefs.statsname` (v1 rtNameChanged 9379). One instance is shared by the intake and the personal-data box.
+ *
+ * It also reads the participant list and the identification plan (`design_ec`) for as long as the tab is open, and hands them to the lab, which scans the table against the list;
+ * Apply adds the people the table names through the list's `saveNow` before it codes the table (R35). Nothing of the list stays in the lab once the tab closes.
  */
 export function useLabActions(projectId: string) {
   const pid = projectId || null;
@@ -32,6 +40,28 @@ export function useLabActions(projectId: string) {
 
   const { name } = useLab(projectId);
 
+  // The participant list and the plan, for the personal-details box. The lab keeps no copy once the tab is gone.
+  const participants = useParticipants(projectId);
+  const ec = useProjectBlob("design_ec", pid);
+  const mode = planOf(ec.value).mode;
+  // With the vault locked the list cannot be read, but the project's blob listing says whether there is one (R41, R51; the same listing the AI request reads). A listing that cannot be read says there
+  // is none: there is no way to tell, so nothing is said to be locked.
+  const locked = participants.state === "locked";
+  const [listing, setListing] = useState<{ projectId: string; has: boolean } | null>(null);
+  useEffect(() => {
+    if (!locked || !pid) return;
+    let live = true;
+    listProjectBlobs(pid).then((l) => { if (live) setListing({ projectId: pid, has: hasParticipantsBlob(l) }); }, () => { if (live) setListing({ projectId: pid, has: false }); });
+    return () => { live = false; setListing(null); };
+  }, [locked, pid]);
+  const listLocked = locked && listing?.projectId === pid ? listing.has : undefined;
+  useEffect(() => {
+    setPdContext(projectId, { list: participants.list, state: participants.state, mode, saveFailed: participants.saveFailed, listLocked });
+  }, [projectId, participants.list, participants.state, participants.saveFailed, mode, listLocked]);
+  useEffect(() => () => setPdContext(projectId, NO_CONTEXT), [projectId]);
+  const saveNowRef = useRef(participants.saveNow);
+  useEffect(() => { saveNowRef.current = participants.saveNow; });
+
   /** A name that reached the lab while the tab was not open (a file's name seeds an empty box) is remembered when it opens again. */
   useEffect(() => {
     if (prefs.loading || prefs.locked || pid === null || !name || prefs.value?.statsname === name) return;
@@ -47,9 +77,12 @@ export function useLabActions(projectId: string) {
   const parseNow = useCallback(async () => { await parse(projectId); }, [projectId]);
   const split = useCallback(async () => { await splitOnSemicolons(projectId); }, [projectId]);
   const apply = useCallback(async () => {
-    const r = await applyPd(projectId);
+    const r = await applyPd(projectId, {}, { saveNow: (update) => saveNowRef.current(update), today: todayIso });
     if (r?.keyCsv) downloadBlob(KEY_FILE, new Blob(["\uFEFF" + r.keyCsv], { type: "text/csv;charset=utf-8" }));
   }, [projectId]);
+
+  /** Sends the list again after a save that did not land (the box says the list has changes not saved yet, R38). */
+  const retryList = useCallback(() => { void saveNowRef.current((prev) => prev); }, []);
 
   /** v1 statsUpload (9403): the file's text into the paste box, its name into an empty name box, then parse. */
   const upload = useCallback((file: File) => {
@@ -63,6 +96,6 @@ export function useLabActions(projectId: string) {
     reader.readAsText(file);
   }, [projectId, rename, parseNow]);
 
-  return { rename, parseNow, split, apply, upload, prefs };
+  return { rename, parseNow, split, apply, upload, retryList, prefs };
 }
 export type LabActions = ReturnType<typeof useLabActions>;

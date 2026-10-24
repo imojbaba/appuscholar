@@ -5,6 +5,7 @@ import type { AiUseEntry, Store } from "../store/types";
 import type { AuthEnv } from "../auth";
 import { complete, type GatewayDeps } from "../ai/gateway";
 import { AiError, type AiErrorCode } from "../ai/types";
+import { AI_QUOTAS, quotaRules, type QuotaLimits } from "../ai/quota";
 
 const Provider = z.enum(["gemini", "groq", "deepseek", "openrouter", "openai", "claude"]);
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => !Number.isNaN(Date.parse(s + "T00:00:00Z")) && new Date(s + "T00:00:00Z").toISOString().startsWith(s));
@@ -46,7 +47,9 @@ export function summariseAiUse(rows: AiUseEntry[]): { byKind: Record<string, num
   return { byKind, byProvider, total: rows.length };
 }
 
-export function aiRoutes(store: Store, deps: GatewayDeps) {
+export function aiRoutes(store: Store, deps: GatewayDeps, quota: { now?: () => Date; limits?: QuotaLimits } = {}) {
+  const limits = quota.limits ?? AI_QUOTAS;
+  const clock = quota.now ?? (() => new Date());
   const r = new Hono<AuthEnv>();
   r.use("*", async (c, next) => {
     const userId = c.get("userId");
@@ -69,6 +72,16 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     }
   }
 
+  /** Counts one call for this route; answers the 429 when a window is full (nothing reaches the provider), else null. Logs the bucket and the opaque user id only. */
+  async function overQuota(c: { get: (k: "userId") => string; header: (n: string, v: string) => void; json: (b: unknown, s: 429) => Response }, route: "complete" | "test"): Promise<Response | null> {
+    const userId = c.get("userId");
+    const res = await store.consumeQuota(userId, quotaRules(route, limits), clock());
+    if (res.ok) return null;
+    console.warn(JSON.stringify({ kind: "ai-quota", bucket: res.bucket, user: userId }));
+    c.header("Retry-After", String(res.retryAfterSec));
+    return c.json({ error: "quota", detail: `${res.bucket.split(":")[1]}:${res.retryAfterSec}` }, 429);
+  }
+
   r.post("/complete", async (c) => {
     const body = CompleteBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
@@ -76,6 +89,8 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     return guarded(c, async () => {
       const scan = scanText(b.prompt);
       if (scan.total > 0 && !b.pdAccepted) throw new AiError("personal-data", foundSentence(scan.counts));
+      const limited = await overQuota(c, "complete");
+      if (limited) return limited;
       const prompt = b.noLang ? b.prompt : b.prompt + contentLangInstruction(b.contentLang);
       const out = await complete({ provider: b.provider, apiKey: b.apiKey, prompt, temperature: b.temperature, maxTokens: b.maxTokens }, deps);
       const userId = c.get("userId");
@@ -93,6 +108,8 @@ export function aiRoutes(store: Store, deps: GatewayDeps) {
     const body = TestBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
     return guarded(c, async () => {
+      const limited = await overQuota(c, "test");
+      if (limited) return limited;
       const out = await complete({ provider: body.data.provider, apiKey: body.data.apiKey, prompt: "Reply with the single word OK.", temperature: 0, maxTokens: 20 }, deps);
       return c.json({ ok: true, reply: out.text });
     });

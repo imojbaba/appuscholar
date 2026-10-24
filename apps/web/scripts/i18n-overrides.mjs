@@ -327,6 +327,7 @@ export const V2_STRINGS = {
   tab_name_investigator: { en: "Investigator", hi: "अन्वेषक" },
   tab_name_budget: { en: "Budget", hi: "बजट" },
   tab_name_aiuse: { en: "AI-use statement", hi: "AI-उपयोग विवरण" },
+  tab_name_participants: { en: "Participants", hi: "प्रतिभागी" },
   tab_name_data: { en: "Statistics", hi: "सांख्यिकी" },
   tab_name_power: { en: "Sample size", hi: "नमूना आकार" },
   tab_name_charts: { en: "Charts", hi: "चार्ट" },
@@ -347,6 +348,7 @@ export const V2_STRINGS = {
   design_next_investigator: { en: "Next: estimate your budget, if a funder or your department asks for one.", hi: "आगे: अगर कोई अनुदानदाता या आपका विभाग माँगे, तो अपने बजट का अनुमान लगाएँ।" },
   design_next_budget: { en: "Next: when your plans are ready, go to Collection and analysis and collect your data.", hi: "आगे: जब आपकी योजना तैयार हो जाए, तो संग्रह और विश्लेषण में जाकर अपना डेटा एकत्र करें।" },
   design_next_aiuse: { en: "Next: build this statement last, just before you hand in, from your whole log.", hi: "आगे: यह विवरण सबसे अंत में, जमा करने से ठीक पहले, अपने पूरे लॉग से बनाएँ।" },
+  collect_next_participants: { en: "Next: paste your data in Statistics; names on your list are swapped for their codes.", hi: "आगे: अपना डेटा सांख्यिकी में चिपकाएँ; आपकी सूची के नाम उनके कोड से बदल दिए जाते हैं।" },
   collect_next_data: { en: "Next: run the test that fits your data, then put its result in your document.", hi: "आगे: अपने डेटा के लिए उपयुक्त परीक्षण चलाएँ, फिर उसका परिणाम अपने दस्तावेज़ में डालें।" },
   collect_next_power: { en: "Next: put the sample size sentence in your protocol, and ask your supervisor to confirm the effect size.", hi: "आगे: नमूना आकार का वाक्य अपने प्रोटोकॉल में डालें, और प्रभाव आकार की पुष्टि अपने पर्यवेक्षक से कराएँ।" },
   collect_next_charts: { en: "Next: check your figure against its key, then insert it with its caption.", hi: "आगे: अपने चित्र को उसकी कुंजी से मिलाकर देखें, फिर उसे उसके कैप्शन के साथ डालें।" },
@@ -525,7 +527,15 @@ export const V2_STRINGS = {
   hdr_menu: { en: "Menu", hi: "मेन्यू" },
   // The Menu's language item names the other language in itself: Hindi in the English interface, English in the Hindi one.
   menu_lang_other: { en: "हिन्दी", hi: "English" },
-  doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" }
+  doc_back: { en: "Back to {place}", hi: "{place} पर वापस जाएँ" },
+  // Go-live Task 1: the per-user AI quota answer (minute: wait a moment; hour: minutes to wait, rounded up; day: try tomorrow). DRAFT Hindi.
+  ai_quota_minute: { en: "Too many AI requests in a minute. Wait a moment and try again.", hi: "एक मिनट में AI के बहुत ज़्यादा अनुरोध हो गए हैं। थोड़ा रुकें और फिर कोशिश करें।" },
+  ai_quota_day: { en: "You have used your AI calls for today. Try again tomorrow.", hi: "आपने आज के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। कल फिर कोशिश करें।" },
+  ai_quota_hour: { en: "You have used your AI calls for this hour. Try again in {minutes} minutes.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। {minutes} मिनट बाद फिर कोशिश करें।" },
+  ai_quota_hour_one: { en: "You have used your AI calls for this hour. Try again in 1 minute.", hi: "आपने इस घंटे के लिए अपनी AI कॉल इस्तेमाल कर ली हैं। 1 मिनट बाद फिर कोशिश करें।" },
+  // Go-live Task 3: the panel shown when a page throws (app/global-error.tsx and app/(app)/error.tsx). DRAFT Hindi.
+  app_error_title: { en: "Something went wrong", hi: "कुछ गड़बड़ हो गई" },
+  app_error_retry: { en: "Try again", hi: "फिर कोशिश करें" }
 };
 
 /** Adds the v2 strings to both dictionaries. A V2 key that already exists in the v1 extraction is a collision and throws. */

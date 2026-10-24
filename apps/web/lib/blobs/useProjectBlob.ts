@@ -17,6 +17,12 @@ import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./
  */
 const UNGUARDED: ReadonlySet<BlobKind> = new Set<BlobKind>(["idea_intake", "rs_prefs", "stats_prefs", "qual_prefs", "words_prefs", "close_prefs", "writing_samples"]);
 
+/**
+ * The kinds that hold names and are only ever stored sealed (R17; the api refuses them in plaintext, SEALED_ONLY_KINDS in apps/api/src/routes/blobWrite.ts). With the vault off a save of one
+ * sends nothing and holds nothing: it is refused, and the state reports it as a failed save (`error`). Never keyVersion 0. Every other kind still saves in plaintext while the vault is off.
+ */
+export const SEALED_ONLY: ReadonlySet<BlobKind> = new Set<BlobKind>(["participants"]);
+
 /** A set() is saved this long after the last one (three in a row are one PUT). */
 export const BLOB_SAVE_DEBOUNCE_MS = 800;
 
@@ -27,7 +33,15 @@ export const BLOB_SAVE_DEBOUNCE_MS = 800;
  * was set is kept and goes with the next set, flush or unlock. While a value is held over a blob that did not open at a save's re-read (a 409), `value` is
  * that held value (the panel shows the student's own text) and `broken` is true.
  */
-export type ProjectBlobState<T> = { value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean };
+export type ProjectBlobState<T> = {
+  value: T | null; loading: boolean; locked: boolean; broken?: boolean; error?: boolean;
+  /**
+   * The server's version of the value `value` is based on (0 for a blob not there yet): from the last read or accepted save, so a value set here and not yet saved
+   * carries the version it was set on. Undefined while the stored value is not known, and from an api without versions. A reader that keeps the latest of several
+   * windows' values (lib/tools/participants/store.ts) takes the newest by this.
+   */
+  version?: number;
+};
 /** A new value, or an update of the current one (`prev` is null while there is no blob yet). */
 export type BlobUpdate<T> = T | ((prev: T | null) => T);
 export type ProjectBlob<T> = ProjectBlobState<T> & {
@@ -67,6 +81,8 @@ type ClientDeps<T> = {
    * further sets, and is never saved over the blob unasked. False or absent: the panel asks, and its next set is the go-ahead.
    */
   unguarded?: boolean;
+  /** SEALED_ONLY: with the vault off a save is refused, not sent in plaintext and not held (`error` is set, as for a failed save). */
+  sealedOnly?: boolean;
   /** Called after each save the server accepted (the pop-out sync's announce). */
   onSaved?: () => void;
   /** A save lost the race to another window BLOB_CONFLICT_ATTEMPTS times in a row: its value is held (the hook's toast). */
@@ -75,6 +91,8 @@ type ClientDeps<T> = {
 
 /** PUTs one save makes while another window keeps saving first; after the last conflict the value is held. */
 export const BLOB_CONFLICT_ATTEMPTS = 3;
+/** A SEALED_ONLY kind's save found the vault off: thrown by seal(), caught by save(), which sends and holds nothing. */
+class PlaintextRefused extends Error { constructor() { super("sealed-only"); } }
 const isVersionConflict = (e: unknown): boolean => e instanceof ApiError && e.status === 409 && e.code === "version-conflict";
 /** Deep equality of two JSON values (key order aside). */
 function sameJson(a: unknown, b: unknown): boolean {
@@ -137,7 +155,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     loading: !attempted,
     locked: (!known && lockedRead) || heldByLock,
     broken: known && broken && (value === null || brokenHeld),
-    error
+    error,
+    version: known ? version : undefined
   });
   const emit = () => {
     if (!active || o.headless) return;
@@ -188,7 +207,10 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   /** The body to send, or null when the vault stays locked (the value is held). Never plaintext in place of ciphertext. */
   async function seal(json: string): Promise<BlobPut | null> {
     // A vault still "loading" is waited for, never taken for "off".
-    if ((await o.vault().known()) === "off") return { body: json, keyVersion: 0 };
+    if ((await o.vault().known()) === "off") {
+      if (o.sealedOnly) throw new PlaintextRefused();
+      return { body: json, keyVersion: 0 };
+    }
     const sealNow = async () => {
       const s = await o.vault().encryptBody({ id: o.id, deks }, json);
       return { body: s.bodyHtml, keyVersion: s.keyVersion, ...(s.dek ? { dek: s.dek } : {}) };
@@ -255,6 +277,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
         const json = JSON.stringify(v);
         outcomeUnknown = false;
         try { w = await sealAndPut(json); } catch (e) {
+          // Refused before anything was sent: not held (the names never leave in plaintext, nor wait for a later send); the state reports a failed save.
+          if (e instanceof PlaintextRefused) { error = true; return false; }
           if (outcomeUnknown) { markUnsure(json, carried); throw e; }
           if (!isVersionConflict(e)) throw e;
           // Another window saved first. After the last attempt the value is held and goes with the next edit (or flush, unlock, mount).
@@ -352,6 +376,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   return {
     /** Takes ops held for this blob (from a panel that went away) before the first read; they replay onto the loaded value. */
     adopt(held: HeldOp<T>[]) { ops = compactOps([...held, ...ops]); },
+    /** What the client knows now, as a panel's state would show it. A headless client reports no state of its own, so a caller that only reads asks here once `start()` has answered. */
+    state: snapshot,
     leftover,
     /** The first read, after any last save of this blob from a panel that went away; what it held is adopted. */
     start(): Promise<boolean> {
@@ -455,6 +481,8 @@ export function projectBlobClient<K extends BlobKind>(kind: K, projectId: string
     readOnly: (opts.readOnly ?? false) || !blobWritable(kind),
     // Idea and the preference kinds have no R16 ask; every other kind's panel asks before it sets over a blob that does not open.
     unguarded: UNGUARDED.has(kind),
+    // R17: a kind that holds names is refused, not sent, while the vault is off.
+    sealedOnly: SEALED_ONLY.has(kind),
     // The other windows read the blob again once it is saved here (v1's storage event, 7614).
     onSaved: syncedKind(kind) ? () => announceBlob(id) : undefined,
     parse: (json) => parseBlob(kind, json),

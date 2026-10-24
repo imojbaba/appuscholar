@@ -37,6 +37,8 @@ export const KIND_STAGE: Record<FixedBlobKind, { stage: StageKey; work: boolean 
   words_prefs: { stage: "writing", work: false },
   close_prefs: { stage: "review", work: false },
   viva_log: { stage: "review", work: true },
+  // The participant list (spec 2026-10-24-participants-design.md §6): the student's own work in Collection and analysis.
+  participants: { stage: "collect", work: true },
   /** Wave D: a derived copy of the words the student typed; it must not make Writing "in progress" by itself. */
   writing_samples: { stage: "writing", work: false }
 };

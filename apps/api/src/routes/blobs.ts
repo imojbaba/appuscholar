@@ -50,9 +50,10 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
   });
 
   /**
-   * Creates or replaces the blob. keyVersion 0 is refused with 409 vault-required once the user has a vault record. With If-Match (the
-   * version the client read; "0" for a blob it has never seen) the write lands only on that version, else 409 version-conflict with the
-   * current one; a missing blob is version 0, so a save naming a version above 0 never recreates a blob deleted elsewhere.
+   * Creates or replaces the blob. keyVersion 0 is refused with 409 vault-required once the user has a vault record, and always for a kind in
+   * SEALED_ONLY_KINDS (the participant list). With If-Match (the version the client read; "0" for a blob it has never seen) the write lands
+   * only on that version, else 409 version-conflict with the current one; a missing blob is version 0, so a save naming a version above 0
+   * never recreates a blob deleted elsewhere.
    */
   r.put("/:id/blobs/:kind", async (c) => {
     if (!(await owned(c))) return c.json({ error: "not-found" }, 404);
@@ -69,7 +70,7 @@ export function blobRoutes(store: Store, maxBodyBytes: number) {
     const current = await store.getBlob(userId, projectId, kind);
     // A stale tab hears version-conflict before any rule judged against a blob it has not seen; the store checks again, atomically.
     if (expectedVersion !== undefined && (current?.version ?? 0) !== expectedVersion) return c.json({ error: "version-conflict", version: current?.version ?? 0 }, 409);
-    const w = await resolveBlobWrite(store, userId, current?.deks ?? [], body.data);
+    const w = await resolveBlobWrite(store, userId, kind, current?.deks ?? [], body.data);
     if (!w.ok) return c.json({ error: w.error }, w.status);
     try {
       const b = await store.putBlob(userId, projectId, kind, { body: w.body, keyVersion: w.keyVersion, dek: w.addDek, expectedVersion });

@@ -33,6 +33,7 @@ import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { signIn } from "./support/signin";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
+import * as editorAt from "./support/editor";
 import { POWER_FOOTER_NOTE } from "@appuscholar/core";
 
 // ---- Copy: every sentence asserted is read from the dictionaries -------------------------------------------------------------------------------------
@@ -147,22 +148,8 @@ async function toTab(page: Page, tab: "data" | "power" | "charts" | "check" | "s
 /** The text of an svg data URL (an <img src>), decoded. */
 const svgOf = (src: string) => decodeURIComponent(src.replace(/^data:image\/svg\+xml[^,]*,/, ""));
 
-/** Puts the cursor `offset` characters into the first text node of the editor paragraph holding `needle`. */
-async function cursorInParagraph(page: Page, needle: string, offset: number) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate(({ needle, offset }) => {
-    const p = [...document.querySelectorAll(".ProseMirror p")].find((x) => x.textContent?.includes(needle));
-    if (!p) throw new Error("paragraph not found: " + needle);
-    const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
-    const node = walker.nextNode()!;
-    const range = document.createRange();
-    range.setStart(node, offset);
-    range.collapse(true);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, { needle, offset });
-}
+/** Puts the cursor `offset` characters into the first text node of the editor paragraph holding `needle`, in the editor's own state (support/editor.ts). */
+const cursorInParagraph = (page: Page, needle: string, offset: number) => editorAt.cursorInParagraph(page.locator(".ProseMirror"), needle, offset);
 
 test("Collection and analysis: data, a test inserted and checked, explain, guide, power, charts, scales, phone", async ({ page }) => {
   const net = await stubNetwork(page);

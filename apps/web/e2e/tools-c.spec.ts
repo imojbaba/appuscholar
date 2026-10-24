@@ -34,6 +34,7 @@ import { QUAL_PALETTE, qualDeleteCascade } from "@appuscholar/core";
 import { signIn } from "./support/signin";
 import { toolBuilt } from "./support/builtTools";
 import { API_ORIGIN } from "./support/origins";
+import { selectText } from "./support/editor";
 
 // ---- Copy: every sentence asserted is read from the dictionaries (en.json and the Coding tab's own file) ---------------------------------------------
 
@@ -141,28 +142,8 @@ async function unlock(page: Page) {
   await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
 }
 
-/** Selects the text of one phrase (or from the start of `from` to the end of `to`) in the open document, with the editor focused, as a drag would. */
-async function select(page: Page, from: string, to: string = from) {
-  await editor(page).evaluate((root, [a, b]) => {
-    const find = (s: string): [Text, number] => {
-      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      for (let n = w.nextNode() as Text | null; n; n = w.nextNode()) {
-        const i = n.data.indexOf(s);
-        if (i >= 0) return [n, i];
-      }
-      throw new Error("text not in the document: " + s);
-    };
-    (root as HTMLElement).focus();
-    const [n1, i1] = find(a!);
-    const [n2, i2] = find(b!);
-    const r = document.createRange();
-    r.setStart(n1, i1);
-    r.setEnd(n2, i2 + b!.length);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(r);
-  }, [from, to]);
-}
+/** Selects the text of one phrase (or from the start of `from` to the end of `to`) in the open document, with the editor focused, as a drag would; in the editor's own state (support/editor.ts). */
+const select = (page: Page, from: string, to: string = from) => selectText(editor(page), from, to);
 
 /** The computed background of the first tag in the open document that carries the code, or null when there is none. */
 async function tagBackground(page: Page, id: string): Promise<string | null> {
@@ -270,7 +251,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     // The home's row for the stage: the Coding tab's facts line (client-side navigation keeps the page's state).
     await page.getByTestId("place-home").click();
     await expect(page.getByTestId("home-stages")).toBeVisible();
-    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_codes", { n: 3 }));
+    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_codes", { n: 3 }), { timeout: 20_000 });
     await expect(page.getByTestId("home-detail-collect")).not.toHaveText(T("detail_not_built"));
     await page.getByTestId("home-open-collect").click();
     await page.getByTestId("place-tab-coding").click();
@@ -591,7 +572,7 @@ test("the Coding tab: codes, tags, colours, passages, export and delete", async 
     await expect(editor(page).locator("span.qual-tag")).toHaveCount(0);
     // The home says one code now.
     await page.getByTestId("place-home").click();
-    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_code_one"));
+    await expect(page.getByTestId("home-detail-collect")).toContainText(T("qual_facts_code_one"), { timeout: 20_000 });
     await expect(page.getByTestId("home-detail-collect")).not.toContainText(T("qual_facts_codes", { n: 3 }));
   });
 

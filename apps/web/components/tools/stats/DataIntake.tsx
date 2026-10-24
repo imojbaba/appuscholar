@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 /** How many left-out lines are named before "and N more". */
 const LINES_SHOWN = 10;
 
-const STATUS_KEY = { none: "", empty: "stats_data_empty", parsed: "stats_data_parsed", split: "stats_data_split_done", read_failed: "stats_data_read_failed" } as const;
+const STATUS_KEY = { none: "", empty: "stats_data_empty", parsed: "stats_data_parsed", split: "stats_data_split_done", read_failed: "stats_data_read_failed", adding: "stats_data_adding" } as const;
 
 /** The quiet line (v1 toasted "Data parsed" and the empty message; toasts are "Saved" and "Inserted" only, register row D-S2-62). */
 function Status({ lab }: { lab: LabState }) {
   const t = useT();
-  const key = lab.busy ? "stats_data_busy" : STATUS_KEY[lab.status.kind];
+  // Apply waiting for the participant list to save holds the page too (busy); it says what it is doing, not that the data is being read.
+  const key = lab.status.kind === "adding" ? STATUS_KEY.adding : lab.busy ? "stats_data_busy" : STATUS_KEY[lab.status.kind];
   const good = !lab.busy && (lab.status.kind === "parsed" || lab.status.kind === "split");
   return (
     <p className={good ? "ap-ok" : "ap-small"} role="status" aria-live="polite" data-testid="stats-status" hidden={!key}>

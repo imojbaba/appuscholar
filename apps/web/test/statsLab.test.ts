@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { pdScan, statsParseText } from "@appuscholar/core";
+import { pdScan, pdScanV2, statsParseText } from "@appuscholar/core";
 import { nameFromFile, parseSliced, scanSliced, semicolonsToTabs, skippedLines, looksSemicolon } from "../lib/tools/stats/intake";
-import { applyPd, clearLab, getData, getLab, parse, resetLabs, setChoice, setName, setText, splitOnSemicolons, subscribeLab } from "../lib/tools/stats/lab";
+import { applyPd, clearLab, getData, getLab, parse, resetLabs, setChoice, setName, setPdContext, setText, splitOnSemicolons, subscribeLab } from "../lib/tools/stats/lab";
 
 /*
  * Task B1: the Statistics lab's store (ledger ruling R1: rows live in memory, in a module-level store keyed by project, never in a blob) and the
@@ -147,6 +147,8 @@ describe("the lab store (R1)", () => {
   describe("applyPd (v1 pdApply 9488)", () => {
     const text = "name,phone,score\nAsha Rao,9876543210,12\nRavi Kumar,9123456780,15\nMeena Iyer,9988776655,9\nJohn Paul,9012345678,11";
     it("rewrites the paste text, re-parses, and hands back the key file only when a column was coded", async () => {
+      // No vault, so no list to wait for or to clash with: v1's fresh codes (with the list being read, or locked with a list in the project, they are not made: R51).
+      setPdContext("p1", { list: null, state: "off", mode: null, saveFailed: false });
       setText("p1", text);
       await parse("p1");
       const r = (await applyPd("p1"))!;
@@ -155,6 +157,15 @@ describe("the lab store (R1)", () => {
       expect(getLab("p1").text.split("\n")[0]).toBe("ParticipantCode,score");
       expect(getData("p1")!.headers).toEqual(["ParticipantCode", "score"]);
       expect(getLab("p1").pdResult).toEqual({ removed: 1, coded: 1, keyed: true });
+    });
+    it("makes no fresh codes for names while the list is being read, even for a code chosen before: the column is removed, as the box shows it (R51)", async () => {
+      setText("p1", text); // no context set: the list has not been read
+      await parse("p1");
+      setChoice("p1", 0, "code");
+      const r = (await applyPd("p1"))!;
+      expect(r.keyCsv).toBe("");
+      expect(getData("p1")!.headers).toEqual(["score"]);
+      expect(getLab("p1").pdResult).toEqual({ removed: 2, coded: 0, keyed: false });
     });
     it("gives no key file when every flagged column is removed", async () => {
       setText("p1", text);
@@ -236,12 +247,24 @@ describe("parseSliced and scanSliced equal core's whole-table calls", () => {
     for (const c of pd) {
       const data = statsParseText(c.text);
       if (!data) continue;
-      expect(await scanSliced(data, { budgetMs: 0, yieldNow: NOW }), c.id).toEqual(pdScan(data));
+      // pdScanV2 (F1: a column the values alone call names is not flagged when an answer has more than four words), which is v1's pdScan everywhere else.
+      expect(await scanSliced(data, { budgetMs: 0, yieldNow: NOW }), c.id).toEqual(pdScanV2(data));
     }
+  });
+  it("is v1's scan on every table of the corpus where no name column is dropped (F1 changes nothing else)", async () => {
+    let same = 0;
+    for (const c of pd) {
+      const data = statsParseText(c.text);
+      if (!data) continue;
+      const sliced = await scanSliced(data);
+      if (JSON.stringify(sliced) === JSON.stringify(pdScan(data))) same++;
+      else expect(sliced!.found.length, c.id).toBeLessThan(pdScan(data).found.length);
+    }
+    expect(same).toBeGreaterThan(pd.length / 2);
   });
   it("puts Col<n> back for a blank heading", async () => {
     const data = statsParseText("a,,c\nx,y@mail.org,1\nz,w@mail.org,2\nq,r@mail.org,3")!;
-    expect(await scanSliced(data)).toEqual(pdScan(data));
+    expect(await scanSliced(data)).toEqual(pdScanV2(data));
     expect(pdScan(data).found[0]!.name).toBe("Col2");
   });
 });

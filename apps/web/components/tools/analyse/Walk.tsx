@@ -3,6 +3,7 @@ import { AP_STAGES, apCheckQuote, fieldLabel, type ApWalkRes } from "@appuschola
 import { tHtml, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useCallAI } from "@/lib/ai/useCallAI";
+import { useLiterature } from "@/lib/ai/literature";
 import { stageAsk, stageName } from "@/lib/analyse/cards";
 import { NOTES_POPOUT, type ApNotesStore } from "@/lib/analyse/notes";
 import { apWalkShow, walkDraft } from "@/lib/analyse/walk";
@@ -74,7 +75,8 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
   const t = useT();
   const s = useApState();
   const { settings } = useSettings();
-  const callAI = useCallAI();
+  // The paper is published text: no name in it is a participant's to suggest (C13).
+  const callAI = useLiterature(useCallAI());
   const d = s.doc!;
   const note = notes.note(d.id);
   const stored = note?.stages ?? {};

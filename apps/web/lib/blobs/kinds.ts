@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { CitationEntry, RcCheck } from "@appuscholar/core";
 import { CLOSE_SCHEMAS, type CloseShapes } from "./kinds/close";
 import { DESIGN_SCHEMAS, type DesignShapes } from "./kinds/design";
+import { PARTICIPANTS_SCHEMAS, type ParticipantsShapes } from "./kinds/participants";
 import { QUAL_SCHEMAS, type QualShapes } from "./kinds/qual";
 import { SAMPLES_SCHEMAS, type SamplesShapes } from "./kinds/samples";
 import { STATS_SCHEMAS, type StatsShapes } from "./kinds/stats";
@@ -13,11 +14,13 @@ import { WORDS_SCHEMAS, type WordsShapes } from "./kinds/words";
  * The stage panels' blob kinds, one blob per kind per project, as the api lists them (apps/api/src/routes/blobWrite.ts BLOB_KINDS and
  * SHELF_PAPER_KIND): keep the strings exactly as they are there. The stage 3 to 6 tools' kinds (Task G3, ruling R8) come after the stage 2
  * ones, one per v1 key group, each tool's shapes in its own `kinds/<tool>.ts`; every kind has its stage in KIND_STAGE (lib/frame/stages.ts).
+ * `participants` (the participant list, spec 2026-10-24-participants-design.md §6) comes last: it holds names, so the api refuses it in plaintext.
  */
 export const BLOB_KINDS = [
   "idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols",
   "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
   "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log",
+  "participants",
   "writing_samples"
 ] as const;
 export type FixedBlobKind = (typeof BLOB_KINDS)[number];
@@ -119,7 +122,7 @@ type FixedShapes = {
   ap_cols: ApCols;
   rs_prefs: RsPrefs;
   shelf_cols: ShelfCols;
-} & DesignShapes & StatsShapes & QualShapes & StyleShapes & WordsShapes & CloseShapes & VivaShapes & SamplesShapes;
+} & DesignShapes & StatsShapes & QualShapes & StyleShapes & WordsShapes & CloseShapes & VivaShapes & ParticipantsShapes & SamplesShapes;
 /** What a blob of kind K holds. */
 export type BlobShape<K extends BlobKind> = K extends FixedBlobKind ? FixedShapes[K] : ShelfPaper;
 
@@ -133,7 +136,7 @@ const SCHEMAS: Record<FixedBlobKind, z.ZodType> = {
   ap_cols: ApColsSchema,
   rs_prefs: RsPrefsSchema,
   shelf_cols: ShelfColsSchema,
-  ...DESIGN_SCHEMAS, ...STATS_SCHEMAS, ...QUAL_SCHEMAS, ...STYLE_SCHEMAS, ...WORDS_SCHEMAS, ...CLOSE_SCHEMAS, ...VIVA_SCHEMAS, ...SAMPLES_SCHEMAS
+  ...DESIGN_SCHEMAS, ...STATS_SCHEMAS, ...QUAL_SCHEMAS, ...STYLE_SCHEMAS, ...WORDS_SCHEMAS, ...CLOSE_SCHEMAS, ...VIVA_SCHEMAS, ...PARTICIPANTS_SCHEMAS, ...SAMPLES_SCHEMAS
 };
 const schemaOf = (kind: BlobKind): z.ZodType | null =>
   (BLOB_KINDS as readonly string[]).includes(kind) ? SCHEMAS[kind as FixedBlobKind] : SHELF_PAPER_KIND.test(kind) ? ShelfPaperSchema : null;
