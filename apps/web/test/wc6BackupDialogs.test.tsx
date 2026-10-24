@@ -9,10 +9,11 @@ import wcEn from "../messages/tools/help-backup.en.json";
 
 const h = vi.hoisted(() => ({
   zip: null as Blob | null, build: vi.fn(), audit: vi.fn(async () => {}), download: vi.fn(),
-  vault: { known: async () => "off", ensureUnlocked: async () => true, decryptBody: async () => "" }
+  vault: { known: async () => "off", ensureUnlocked: async () => true, decryptBody: async () => "" },
+  me: { id: "u1", scratchProjectId: "s1" } as { id: string; scratchProjectId: string } | null
 }));
 vi.mock("@/lib/vault/useVault", () => ({ useVault: () => h.vault }));
-vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1", scratchProjectId: "s1" } }) }));
+vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: h.me }) }));
 vi.mock("@/lib/help/backup/buildZip", () => ({ buildBackupZip: h.build, logBackupExport: h.audit }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.download }));
 const apiSpy = vi.hoisted(() => vi.fn());
@@ -24,6 +25,8 @@ import { lastBackup, lastVerify } from "../lib/help/backup/stamp";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const E = { ...en, ...wcEn } as Record<string, string>;
+/** A message with its {holes} filled, as t() fills them. */
+const say = (key: string, vars: Record<string, string | number> = {}) => E[key]!.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k]));
 const roots: Root[] = [];
 const $ = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
 async function until(pred: () => boolean) {
@@ -65,6 +68,7 @@ function mount() {
 
 beforeEach(async () => {
   localStorage.clear();
+  h.me = { id: "u1", scratchProjectId: "s1" };
   h.build.mockReset(); h.audit.mockClear(); h.download.mockReset(); apiSpy.mockReset();
   h.build.mockImplementation(async () => await zipBlob());
 });
@@ -108,10 +112,78 @@ describe("Help's backup buttons: the locked backup (Task C6)", () => {
     const inner = await unlockBackup(bytes, "a long enough pass");
     expect(Object.keys((await JSZip.loadAsync(inner)).files)).toContain("index.json");
     expect(h.audit).toHaveBeenCalledTimes(1);
-    expect(lastBackup()).toBeGreaterThan(0);
+    expect(lastBackup("u1")).toBeGreaterThan(0);
     expect(JSON.stringify({ ...localStorage })).not.toContain("a long enough pass");
-    expect(($("bk-pass1") as HTMLInputElement).value).toBe("");
+    // The form is gone once the file is made, so no passphrase stays on screen, and the only button left reads Close.
+    expect($("bk-pass1")).toBeNull();
+    expect($("bk-pass2")).toBeNull();
+    expect($("bk-lock-go")).toBeNull();
+    expect($("bk-lock-cancel")!.textContent).toBe(E.close_btn);
+    expect(document.body.innerHTML).not.toContain("a long enough pass");
     expect(apiSpy).not.toHaveBeenCalled();
+    await click("bk-lock-cancel");
+    expect($("locked-backup-dialog")).toBeNull();
+  });
+
+  it("the audit is posted after the zip is built and before the file is saved, as Help's export does", async () => {
+    const order: string[] = [];
+    h.build.mockImplementation(async () => { order.push("build"); return await zipBlob(); });
+    h.audit.mockImplementation(async () => { order.push("audit"); });
+    h.download.mockImplementation(() => { order.push("download"); });
+    mount();
+    await click("help-locked-backup");
+    await type("bk-pass1", "a long enough pass");
+    await type("bk-pass2", "a long enough pass");
+    await click("bk-lock-go");
+    await until(() => order.includes("download"));
+    expect(order).toEqual(["build", "audit", "download"]);
+  });
+
+  it("a failing audit saves no file and stamps no backup", async () => {
+    h.audit.mockRejectedValueOnce(new Error("network"));
+    mount();
+    await click("help-locked-backup");
+    await type("bk-pass1", "a long enough pass");
+    await type("bk-pass2", "a long enough pass");
+    await click("bk-lock-go");
+    await until(() => $("bk-lock-verdict")?.textContent === E.wc_bk_fail);
+    expect(h.download).not.toHaveBeenCalled();
+    expect(lastBackup("u1")).toBe(0);
+  });
+
+  it("a browser without Web Crypto says so inside the window and builds nothing", async () => {
+    mount();
+    await click("help-locked-backup");
+    await type("bk-pass1", "a long enough pass");
+    await type("bk-pass2", "a long enough pass");
+    vi.stubGlobal("crypto", { getRandomValues: crypto.getRandomValues.bind(crypto) });
+    try { await click("bk-lock-go"); } finally { vi.unstubAllGlobals(); }
+    expect($("bk-lock-verdict")!.textContent).toBe(E.wc_bk_nocrypto);
+    expect(h.build).not.toHaveBeenCalled();
+  });
+
+  it("the stamp is this student's: appu_last_backup_<id>, never the bare key, and another student on the computer has none", async () => {
+    mount();
+    await click("help-locked-backup");
+    await type("bk-pass1", "a long enough pass");
+    await type("bk-pass2", "a long enough pass");
+    await click("bk-lock-go");
+    await until(() => h.download.mock.calls.length > 0);
+    await until(() => $("bk-lock-verdict")?.textContent === E.wc_bk_done);
+    expect(Object.keys(localStorage)).toEqual(["appu_last_backup_u1"]);
+    expect(lastBackup("u2")).toBe(0);
+  });
+
+  it("with nobody signed in the file is still made but nothing is stamped", async () => {
+    h.me = null;
+    mount();
+    await click("help-locked-backup");
+    await type("bk-pass1", "a long enough pass");
+    await type("bk-pass2", "a long enough pass");
+    await click("bk-lock-go");
+    await until(() => h.download.mock.calls.length > 0);
+    await until(() => $("bk-lock-verdict")?.textContent === E.wc_bk_done);
+    expect(localStorage.length).toBe(0);
   });
 
   it("a vault that stays locked makes no file and says so", async () => {
@@ -123,7 +195,7 @@ describe("Help's backup buttons: the locked backup (Task C6)", () => {
     await click("bk-lock-go");
     await until(() => $("bk-lock-verdict")?.textContent === E.wc_bk_need_unlock);
     expect(h.download).not.toHaveBeenCalled();
-    expect(lastBackup()).toBe(0);
+    expect(lastBackup("u1")).toBe(0);
   });
 
   it("a failing build says so and downloads nothing", async () => {
@@ -135,7 +207,7 @@ describe("Help's backup buttons: the locked backup (Task C6)", () => {
     await click("bk-lock-go");
     await until(() => $("bk-lock-verdict")?.textContent === E.wc_bk_fail);
     expect(h.download).not.toHaveBeenCalled();
-    expect(lastBackup()).toBe(0);
+    expect(lastBackup("u1")).toBe(0);
   });
 });
 
@@ -148,9 +220,19 @@ describe("Help's backup buttons: check a backup file (Task C6)", () => {
     expect($("bk-check-pass")).toBeNull();
     await click("bk-check-go");
     await until(() => !!$("bk-check-summary"));
-    expect($("bk-check-summary")!.textContent).toBe(E.wc_bk_check_ok.replace("{p}", "1").replace("{n}", "1").replace("{d}", "2026-10-20"));
-    expect(lastVerify()).toBeGreaterThan(0);
+    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_ok", { p: 1, n: 1, d: "2026-10-20" }));
+    expect(lastVerify("u1")).toBeGreaterThan(0);
+    expect(Object.keys(localStorage)).toEqual(["appu_last_verify_u1"]);
+    expect($("bk-last-verify")!.textContent).toContain(E.bk_last_verify!.split("{d}")[0]!);
     expect(apiSpy).not.toHaveBeenCalled();
+  });
+
+  it("another student's last check on this computer is not shown, and the old device-wide key is not read", async () => {
+    localStorage.setItem("appu_last_verify_u2", String(Date.now()));
+    localStorage.setItem("appu_last_verify", String(Date.now()));
+    mount();
+    await click("help-check-backup");
+    expect($("bk-last-verify")!.textContent).toBe(E.bk_never_verify);
   });
 
   it("a file with a missing document says which one", async () => {
@@ -159,8 +241,9 @@ describe("Help's backup buttons: check a backup file (Task C6)", () => {
     await choose(asFile(await zipBlob({ dropFile: "Sleep study/Draft.html" }), "x.zip"));
     await click("bk-check-go");
     await until(() => !!$("bk-check-problems"));
-    expect($("bk-check-problems")!.textContent).toBe(E.wc_bk_prob_missing.replace("{name}", "Sleep study/Draft.html"));
-    expect(lastVerify()).toBe(0);
+    expect($("bk-check-problems")!.textContent).toBe(say("wc_bk_prob_missing", { name: "Sleep study/Draft.html" }));
+    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_bad", { p: 1, n: 1, d: "2026-10-20" }));
+    expect(lastVerify("u1")).toBe(0);
   });
 
   it("a locked file asks for its passphrase: wrong shows the error, right shows the counts", async () => {
@@ -179,8 +262,31 @@ describe("Help's backup buttons: check a backup file (Task C6)", () => {
     await type("bk-check-pass", "a long enough pass");
     await click("bk-check-go");
     await until(() => !!$("bk-check-summary"));
-    expect($("bk-check-summary")!.textContent).toBe(E.wc_bk_check_ok_locked.replace("{p}", "1").replace("{n}", "1").replace("{d}", "2026-10-20"));
+    expect($("bk-check-summary")!.textContent).toBe(say("wc_bk_check_ok_locked", { p: 1, n: 1, d: "2026-10-20" }));
     expect($("bk-check-error")).toBeNull();
+  });
+
+  it("a file from the old app says where it goes, locked or not, and is not recorded as checked", async () => {
+    mount();
+    await click("help-check-backup");
+    await choose(asFile(new NodeBlob(['{"app":"appuscholar","v":1,"exported":"2026-01-01T00:00:00.000Z","data":{}}']) as unknown as Blob, "appuscholar-backup-2026-01-01.json"));
+    await click("bk-check-go");
+    await until(() => !!$("bk-check-error"));
+    expect($("bk-check-error")!.textContent).toBe(E.wc_bk_check_v1);
+    expect(E.wc_bk_check_v1).toContain("Import a v1 backup");
+    await choose(asFile(new NodeBlob(['{"app":"appuscholar","v":2,"locked":true,"enc":{},"ct":"AAAA"}']) as unknown as Blob, "appuscholar-backup-locked-2026-01-01.json"));
+    expect($("bk-check-error")).toBeNull();
+    await click("bk-check-go");
+    await until(() => !!$("bk-check-error"));
+    expect($("bk-check-error")!.textContent).toBe(E.wc_bk_check_v1);
+    expect(lastVerify("u1")).toBe(0);
+  });
+
+  it("the file box takes the locked, zip and old .json files", async () => {
+    mount();
+    await click("help-check-backup");
+    const accept = ($("bk-check-file") as HTMLInputElement).accept;
+    for (const ext of [".locked", ".zip", ".json"]) expect(accept).toContain(ext);
   });
 
   it("a file that is not a backup says so", async () => {

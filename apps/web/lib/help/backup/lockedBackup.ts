@@ -19,7 +19,7 @@ async function deriveKey(pass: string, salt: Uint8Array<ArrayBuffer>, iter: numb
  * is authenticated with the ciphertext. Nothing is stored, logged or sent; the passphrase exists only as the argument. Fewer than 10 characters
  * throws BackupError("short-passphrase").
  */
-export async function lockBackup(zip: Uint8Array, passphrase: string): Promise<Uint8Array> {
+export async function lockBackup(zip: Uint8Array, passphrase: string): Promise<Uint8Array<ArrayBuffer>> {
   if ([...passphrase.normalize("NFC")].length < MIN_PASSPHRASE) throw new BackupError("short-passphrase");
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
   const header = { kdf: "PBKDF2-SHA256" as const, iter: KDF_ROUNDS, salt: b64(salt), iv: b64(iv) };

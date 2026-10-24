@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 import { localDay } from "@/lib/vault/export";
 import { checkBackup, type BackupReport } from "@/lib/help/backup/checkBackup";
-import { BackupError, isLocked } from "@/lib/help/backup/format";
+import { BackupError, isLocked, isV1Backup } from "@/lib/help/backup/format";
 import { lastVerify } from "@/lib/help/backup/stamp";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +23,7 @@ function problemText(t: ReturnType<typeof useT>, code: string): string {
  */
 export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useT();
+  const { me } = useSettings();
   const [bytes, setBytes] = useState<Uint8Array | null>(null);
   const [locked, setLocked] = useState(false);
   const [pass, setPass] = useState("");
@@ -46,18 +48,19 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
     if (!bytes || busy) return;
     setBusy(true); setReport(null); setError(null);
     try {
-      setReport(await checkBackup(bytes, locked ? pass : undefined));
+      setReport(await checkBackup(bytes, locked ? pass : undefined, me?.id));
     } catch (e) {
       const code = e instanceof BackupError ? e.code : null;
-      setError(code === "wrong-passphrase" ? "bk_err_wrong" : code === "not-a-backup" ? "bk_verify_bad" : "wc_bk_read_fail");
+      // A file from the old app is a backup, only not one this check reads: say where it goes instead of calling it unreadable.
+      setError(code === "wrong-passphrase" ? "bk_err_wrong" : code === "not-a-backup" ? (isV1Backup(bytes) ? "wc_bk_check_v1" : "bk_verify_bad") : "wc_bk_read_fail");
     } finally {
       setBusy(false);
     }
   }
 
-  const last = open ? lastVerify() : 0;
+  const last = open ? lastVerify(me?.id) : 0;
   const saved = report?.exportedAt ? localDay(new Date(report.exportedAt)) : "?";
-  const vars = report ? { p: report.projects, n: report.documents, d: saved } : {};
+  const vars = { p: report?.projects ?? 0, n: report?.documents ?? 0, d: saved };
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
       <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto" data-testid="check-backup-dialog">
@@ -71,11 +74,11 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
           </p>
           <label className="grid gap-1 text-sm font-medium">
             {t("wc_bk_file")}
-            <input type="file" accept=".locked,.zip,application/zip,application/octet-stream" className="input" data-testid="bk-check-file" onChange={(e) => { void pick(e.target.files?.[0]); }} />
+            <input type="file" accept=".locked,.zip,.json,application/zip,application/octet-stream,application/json" className="input" data-testid="bk-check-file" onChange={(e) => { void pick(e.target.files?.[0]); }} />
           </label>
           {locked && (
             <label className="grid gap-1 text-sm font-medium">
-              <span>{t("wc_bk_check_locked")}</span>
+              <span>{t("bk_m_open")}</span>
               <SecretInput autoComplete="off" autoFocus value={pass} onChange={(e) => setPass(e.target.value)} aria-label={t("bk_pass1")} data-testid="bk-check-pass" toggleTestId="bk-check-pass-toggle" />
             </label>
           )}
@@ -87,7 +90,7 @@ export function CheckBackupDialog({ open, onClose }: { open: boolean; onClose: (
               </p>
               {report.problems.length > 0 && (
                 <ul className="m-0 grid gap-1 pl-5" data-testid="bk-check-problems">
-                  {report.problems.map((p) => <li key={p}>{problemText(t, p)}</li>)}
+                  {report.problems.map((p, i) => <li key={i + p}>{problemText(t, p)}</li>)}
                 </ul>
               )}
             </div>

@@ -32,8 +32,18 @@ export function isLocked(file: Uint8Array): boolean {
   return file.length > MAGIC.length && MAGIC.every((b, i) => file[i] === b);
 }
 
+/**
+ * True when the bytes look like a backup from the old single-page app (v1): a `.json` file that opens `{"app":"appuscholar"`, locked or not.
+ * Those hold the old browser's stored data, not an account export, so Check does not read them and Import a v1 backup does; this only lets
+ * the check say so. Only the first bytes are looked at, because a v1 file can be large.
+ */
+export function isV1Backup(file: Uint8Array): boolean {
+  const head = new TextDecoder("utf-8").decode(file.subarray(0, 64));
+  return /^\ufeff?\s*\{\s*"app"\s*:\s*"appuscholar"/.test(head);
+}
+
 /** magic + header length + header JSON + ciphertext. */
-export function packLocked(header: LockHeader, ct: Uint8Array): Uint8Array {
+export function packLocked(header: LockHeader, ct: Uint8Array): Uint8Array<ArrayBuffer> {
   const head = new TextEncoder().encode(JSON.stringify(header));
   const out = new Uint8Array(MAGIC.length + LEN + head.length + ct.length);
   out.set(MAGIC, 0);

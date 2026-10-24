@@ -22,7 +22,7 @@ const D = [
   { id: "d2", pid: "p1", title: "Draft two", kind: "draft", bad: false },
   { id: "s1", pid: "p2", title: "A source", kind: "source", bad: false }
 ];
-function deps(opts: { unreadable?: string } = {}): ExportDeps {
+function deps(opts: { unreadable?: string; badBlob?: boolean } = {}): ExportDeps {
   return {
     listProjects: async () => P,
     listDocuments: async (pid) => D.filter((d) => d.pid === pid).map((d) => ({ id: d.id, title: d.title, titleKeyVersion: 0, deks: [], kind: d.kind, createdAt: at, updatedAt: at, deletedAt: null, wordCount: 3 })),
@@ -35,7 +35,10 @@ function deps(opts: { unreadable?: string } = {}): ExportDeps {
     writingRecordText: async () => "RECORD",
     listBlobs: async () => [{ kind: "idea_intake", keyVersion: 0, updatedAt: at }],
     getBlob: async (_p, kind) => ({ kind, body: "{}", keyVersion: 0, deks: [], updatedAt: at, version: 1 }),
-    decryptBlob: async () => JSON.stringify({ topic: "invented" })
+    decryptBlob: async () => {
+      if (opts.badBlob) { const { VaultError } = await import("../lib/vault/crypto"); throw new VaultError("corrupt"); }
+      return JSON.stringify({ topic: "invented" });
+    }
   };
 }
 const zipBytes = async (o?: Parameters<typeof deps>[0]) => new Uint8Array(await (await exportAll(deps(o))).arrayBuffer());
@@ -77,11 +80,26 @@ describe("checkBackup (Task C6)", () => {
     expect(r2.problems).toEqual(["missing:writing-process-record.txt"]);
   });
 
-  it("lists a document that was already unreadable when the backup was made", async () => {
+  it("lists a document that was already unreadable when the backup was made, under its project", async () => {
     const r = await checkBackup(await zipBytes({ unreadable: "d2" }));
     expect(r.ok).toBe(false);
     expect(r.documents).toBe(2);
-    expect(r.problems).toEqual(["unreadable:Draft two"]);
+    expect(r.problems).toEqual(["unreadable:Sleep study/Draft two"]);
+  });
+
+  it("lists stage data that was unreadable when the backup was made, the same way, and does not record a check", async () => {
+    const r = await checkBackup(await zipBytes({ badBlob: true }), undefined, "u1");
+    expect(r.ok).toBe(false);
+    expect(r.documents).toBe(3);
+    expect(r.problems).toEqual(["unreadable:Sleep study/idea_intake", "unreadable:Reading log/idea_intake"]);
+    expect([...store.keys()].some((k) => k.startsWith("appu_last_verify"))).toBe(false);
+  });
+
+  it("a saved date that is not a date is left out, not shown as NaN", async () => {
+    const z = await JSZip.loadAsync(await zipBytes());
+    const idx = JSON.parse(await z.file("index.json")!.async("string"));
+    z.file("index.json", JSON.stringify({ ...idx, exportedAt: "last tuesday-ish" }));
+    expect((await checkBackup(new Uint8Array(await z.generateAsync({ type: "arraybuffer" })))).exportedAt).toBeNull();
   });
 
   it("rejects a non-zip, a zip without index.json, and a zip with a broken index.json as not-a-backup", async () => {
@@ -99,11 +117,16 @@ describe("checkBackup (Task C6)", () => {
     expect(await rejectsWith(checkBackup(locked, "a long enough passphrase"))).toBe("not-a-backup");
   });
 
-  it("records appu_last_verify on success only", async () => {
-    await rejectsWith(checkBackup(new TextEncoder().encode("nope")));
-    expect(store.has("appu_last_verify")).toBe(false);
+  it("records appu_last_verify_<user id> on success only, and nothing when it is not told who is asking", async () => {
+    await rejectsWith(checkBackup(new TextEncoder().encode("nope"), undefined, "u1"));
+    expect(store.size).toBe(0);
+    await checkBackup(await zipBytes(), undefined, "u1");
+    expect([...store.keys()]).toEqual(["appu_last_verify_u1"]);
+    expect(Number(store.get("appu_last_verify_u1"))).toBeGreaterThan(0);
+    store.clear();
     await checkBackup(await zipBytes());
-    expect(Number(store.get("appu_last_verify"))).toBeGreaterThan(0);
+    await checkBackup(await zipBytes(), undefined, null);
+    expect(store.size).toBe(0);
   });
 
   it("never calls the api or the network", async () => {
