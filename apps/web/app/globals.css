@@ -708,6 +708,20 @@
 .find-chip:not([data-picked]) { border-color: var(--line-strong); background: var(--card); color: var(--muted); text-decoration: line-through; }
 .find-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .find-chip:focus-within { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+/* The paste box under the search (wave B Task 19, D-S2-124): "Already have a paper? Paste a link, DOI or PubMed number", one box and a button, and under them the line that says what was kept. */
+.find-paste { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s2) var(--s6); font-size: 14px; }
+.find-paste > summary { display: flex; align-items: center; min-height: 40px; cursor: pointer; color: var(--purple-800); font-weight: 600; }
+.find-paste > summary:focus-visible, .find-paste-go:focus-visible, .find-paste-undo:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.find-paste-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--s2); }
+.find-paste-input { flex: 1 1 360px; min-width: 0; min-height: 44px; padding: 0 14px; }
+.find-paste-go { min-height: 44px; padding: 0 16px; font-weight: 600; }
+.find-paste-go[aria-disabled="true"], .find-paste-undo[aria-disabled="true"] { opacity: 0.6; cursor: default; }
+.find-paste-go[aria-busy="true"], .find-paste-undo[aria-busy="true"] { cursor: progress; }
+.find-paste-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin: var(--s3) 0 var(--s2); padding: var(--s2) var(--s3); border-left: 3px solid var(--ok-ink); border-radius: var(--r-ctl); background: var(--ok-bg); color: var(--ok-ink); overflow-wrap: anywhere; }
+.find-paste-line:empty { display: none; }
+.find-paste-line[data-kind="msg"], .find-paste-line[data-kind="changed"] { border-left-color: var(--flag-ink); background: var(--flag-bg); color: var(--flag-ink); }
+.find-paste-line[data-kind="busy"], .find-paste-line[data-kind="removed"] { border-left-color: var(--line-strong); background: var(--soft); color: var(--muted); }
+.find-paste-undo { min-height: 36px; padding: 0 12px; }
 .find-grid { display: flex; flex-wrap: wrap; gap: var(--s6); align-items: flex-start; }
 .find-filters { flex: 1 1 220px; max-width: 260px; display: flex; flex-direction: column; gap: var(--s4); padding: var(--s5); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); font-size: 14px; }
 .find-filters h2 { margin: 0; font-size: 15px; font-weight: 700; }
@@ -753,6 +767,10 @@
 @media (max-width: 700px) {
   .find { gap: var(--s4); }
   .find-search { padding: var(--s4); }
+  .find-paste { padding: var(--s1) var(--s4); }
+  .find-paste > summary { min-height: 44px; }
+  .find-paste-row > * { flex: 1 1 100%; }
+  .find-paste-input, .find-paste-go, .find-paste-undo { min-height: 44px; }
   .find-grid { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s4); }
   .find-filters { flex: none; max-width: none; padding: var(--s4); }
   .find-main { flex: none; }
