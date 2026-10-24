@@ -117,7 +117,8 @@ describe("the pop-out's write guard, by stage (v1 POPOUT_WRITABLE 1964; register
     expect(EVERY.some((k) => blobWritable(k))).toBe(false);
     // Task G3: Writing and Design and ethics have kinds of their own now (their tools'), and nothing else.
     at("/p/p1/writing?window=1");
-    expect(EVERY.filter((k) => blobWritable(k))).toEqual(["style_profile", "style_samples", "style_meta", "words_bank", "words_prefs"]);
+    // Wave D's writing_samples is a Writing kind too; the capture itself never runs in a pop-out (lib/writingSamples).
+    expect(EVERY.filter((k) => blobWritable(k))).toEqual(["style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "writing_samples"]);
     at("/p/p1/design?window=1");
     expect(EVERY.filter((k) => blobWritable(k))).toEqual(["design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget"]);
     at("/p/p1/lit/find");
