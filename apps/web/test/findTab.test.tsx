@@ -150,6 +150,16 @@ describe("Find: the search (canvas Find)", () => {
     expect(rf.requested.some((u) => u.includes("%22evaluation%20anxiety%22"))).toBe(true);
   });
 
+  it("the paste box sits under the search and above the filters, outside the search form (Task 19)", async () => {
+    await mount();
+    const paste = tid("find-paste")!;
+    const form = field("rsTopic").form!;
+    expect(paste.tagName).toBe("DETAILS");
+    expect(form.contains(paste)).toBe(false);
+    expect(form.compareDocumentPosition(paste) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(paste.compareDocumentPosition($(".find-grid")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("Enter in the topic box searches, as Search does", async () => {
     await mount();
     setResearch({ oa: true, pm: false });

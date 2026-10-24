@@ -8,9 +8,10 @@ import { libraryRead } from "./keep";
  * answered; or null when the library cannot be read now, with nothing kept: it is broken (does not open on this device), it failed to read (the press asks for the
  * read again, and the student presses Keep once more), or the tab went away first. A library that is loading or locked is waited for: the press stays queued and the
  * job runs when the read lands (a locked vault asks for the passphrase through the library's flush, once). Used by the Find tab; the paste box (Task 19) and the
- * adding screen (Task 20) keep the same way.
+ * adding screen (Task 20) keep the same way. `current()` is the library as the newest render has it: what a press that is answered later (null, after a wait) needs
+ * to say why, since the `library` of the render it was made in is old by then.
  */
-export function useKeep(): { library: Library; keepWhenRead<R>(job: (library: Library) => R): Promise<R | null> } {
+export function useKeep(): { library: Library; current(): Library; keepWhenRead<R>(job: (library: Library) => R): Promise<R | null> } {
   const library = useLibrary();
   const latest = useRef(library);
   const queue = useRef<Array<{ run(l: Library): void; drop(): void }>>([]);
@@ -32,5 +33,7 @@ export function useKeep(): { library: Library; keepWhenRead<R>(job: (library: Li
     void l.flush();
   }), []);
 
-  return { library, keepWhenRead };
+  const current = useCallback(() => latest.current, []);
+
+  return { library, current, keepWhenRead };
 }
