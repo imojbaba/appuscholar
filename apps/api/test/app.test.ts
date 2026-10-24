@@ -443,6 +443,25 @@ describe("ai routes", () => {
     expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
   });
 
+  it("does not log an Ask Appu question as the Guide sends it: the prompt goes out unchanged and no AI-use row is written, for the account or the open project (Task C3)", async () => {
+    const created = await (await post("/projects", { title: "Sleep" })).json() as { id: string };
+    // The head of apps/web's appuPrompt (pinned in full by test/wc3AppuLib.test.ts), with a guide section and a question after it.
+    const prompt =
+      "You are Appu, the help assistant inside Appuscholar, a writing and research tool for students.\n" +
+      "Answer the student's question using ONLY the guide sections below. If they do not contain the answer, say you do not know.\n" +
+      "Tool currently open in the app: writing/words\n\nGUIDE SECTIONS:\nSECTION 1: Consent\n ask every participant first. \n\nSTUDENT QUESTION:\nDo I need consent?";
+    const r = await post("/ai/complete", { provider: "groq", apiKey: "gsk_x", prompt, day: "2026-10-24", temperature: 0.2, maxTokens: 700, noLang: true, contentLang: "hi", projectId: created.id });
+    expect(r.status).toBe(200);
+    // noLang: the Hindi instruction is not added to Appu's English answer
+    expect(JSON.parse(sent[0]!.body).messages[0].content).toBe(prompt);
+    expect(await (await app.request("/ai/log", { headers: auth })).json()).toEqual([]);
+    expect(await (await app.request(`/ai/log?projectId=${created.id}`, { headers: auth })).json()).toEqual([]);
+    expect(await (await app.request("/ai/log/summary", { headers: auth })).json()).toEqual({ byKind: {}, byProvider: {}, total: 0 });
+    // the same call with another opening is logged, so the empty log above is the Appu rule and not a broken log
+    await post("/ai/complete", { provider: "groq", apiKey: "gsk_x", prompt: "Improve this text", day: "2026-10-24", projectId: created.id });
+    expect(await (await app.request("/ai/log", { headers: auth })).json()).toHaveLength(1);
+  });
+
   it("never writes the key or the prompt to the console on failure", async () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     status = 503;

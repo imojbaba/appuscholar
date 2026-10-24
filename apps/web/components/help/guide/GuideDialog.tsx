@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { Printer } from "@phosphor-icons/react";
 import { sanitizeHtml } from "@appuscholar/core";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,22 @@ const GROUP_KEYS = ["wc_guide_group_Begin", "wc_guide_group_Tools", "wc_guide_gr
 const BODY = "mt-2 break-words text-[13.5px] leading-relaxed [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_h4]:mt-3 [&_h4]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_table]:my-2 [&_td]:border [&_td]:px-2 [&_th]:border [&_th]:px-2 [&_a]:underline";
 
 /**
+ * What Ask Appu (Task C3) needs of the dialog it sits in, given to everything drawn in `extra`: the sections the dialog shows (so Appu ranks the
+ * same ones), `setQuery` (the search box's text, as if typed; `openId` keeps that section open though the search would leave it closed) and
+ * `showOnly` (these sections alone, all open, under their own counter; the next keystroke or `setQuery` ends it).
+ */
+export type GuideApi = { sections: GuideSection[]; setQuery(q: string, openId?: string): void; showOnly(ids: string[]): void };
+const GuideApiContext = createContext<GuideApi | null>(null);
+export function useGuideApi(): GuideApi {
+  const v = useContext(GuideApiContext);
+  if (!v) throw new Error("useGuideApi must be used inside <GuideDialog>");
+  return v;
+}
+
+/**
  * The Guide (Task C2; v1 `guideDlg`, `guideFilter`, `guideRender`, `guidePrint`, build 2026.10.24a): a search box, a count, the contents grouped
  * Begin, Tools, Practice, Help, each section a details element, and "Print or save as PDF". Every section's HTML goes through sanitizeHtml.
- * `extra` is drawn between the search row and the count (Task C3 puts Ask Appu there). The query lives inside the open dialog, so it starts empty each time.
+ * `extra` is drawn between the search row and the count (Task C3 puts Ask Appu there, and reaches the dialog through useGuideApi). The query lives inside the open dialog, so it starts empty each time.
  * Opened from Help, it is a second dialog over it: Escape or Close ends only the Guide.
  */
 export function GuideDialog({ open, onClose, sections = GUIDE, extra }: { open: boolean; onClose: () => void; sections?: GuideSection[]; extra?: ReactNode }) {
@@ -40,14 +53,28 @@ export function GuideDialog({ open, onClose, sections = GUIDE, extra }: { open: 
   );
 }
 
+/** Brings a section Ask Appu's link opened into view in the scrolling list (not every browser, or jsdom, has it). */
+function showNearest(el: HTMLElement | null): void { el?.scrollIntoView?.({ block: "nearest" }); }
+
 function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; extra?: ReactNode; onClose: () => void }) {
   const t = useT();
   const [query, setQuery] = useState("");
+  // Set by Ask Appu: sections listed in place of a search (pinned), and one kept open though the search would close it. The search box clears both.
+  const [pinned, setPinned] = useState<string[] | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [popupBlocked, setPopupBlocked] = useState(false);
-  const hits = useMemo(() => searchGuide(query, sections), [query, sections]);
   const byId = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections]);
+  const searched = useMemo(() => searchGuide(query, sections), [query, sections]);
+  const hits = useMemo(() => (pinned ? pinned.filter((id) => byId.has(id)).map((id) => ({ id, open: true })) : searched), [pinned, byId, searched]);
   const bodies = useMemo(() => new Map(sections.map((s) => [s.id, sanitizeHtml(s.html)])), [sections]);
-  const count = guideCount(guideWords(query).length, hits.length, sections.length);
+  const count = pinned
+    ? { key: hits.length === 1 ? "wc_guide_count_asked_one" : "wc_guide_count_asked", vars: { h: hits.length } }
+    : guideCount(guideWords(query).length, hits.length, sections.length);
+  const api = useMemo<GuideApi>(() => ({
+    sections,
+    setQuery: (text, id) => { setPinned(null); setOpenId(id ?? null); setQuery(text); },
+    showOnly: (ids) => { setPinned(ids); setOpenId(null); setQuery(""); }
+  }), [sections]);
 
   // v1 guidePrint: a new window with every section, then print() from here once it has laid out.
   const print = () => {
@@ -63,11 +90,11 @@ function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; ext
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="search" className="min-w-[220px] flex-1 text-ellipsis" data-testid="guide-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("wc_guide_search_ph")} aria-label={t("wc_guide_search_label")} />
+        <Input type="search" className="min-w-[220px] flex-1 text-ellipsis" data-testid="guide-search" value={query} onChange={(e) => api.setQuery(e.target.value)} placeholder={t("wc_guide_search_ph")} aria-label={t("wc_guide_search_label")} />
         <Button variant="ghost" data-testid="guide-print" onClick={print}><Printer weight="regular" aria-hidden="true" />{t("wc_guide_print")}</Button>
       </div>
       {popupBlocked && <p className="m-0 text-sm text-destructive" role="status" data-testid="guide-print-note">{t("wc_guide_popup")}</p>}
-      {extra}
+      <GuideApiContext.Provider value={api}>{extra}</GuideApiContext.Provider>
       <p className="m-0 text-[12.5px] text-muted-foreground" aria-live="polite" data-testid="guide-count">{t(count.key, count.vars)}</p>
       <div className="min-h-0 flex-1 overflow-y-auto pr-1" data-testid="guide-list" role="region" aria-label={t("wc_guide_contents")}>
         {hits.length === 0 ? (
@@ -82,9 +109,10 @@ function GuideBody({ sections, extra, onClose }: { sections: GuideSection[]; ext
                 <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(key)}</h3>
                 {inGroup.map((h) => {
                   const s = byId.get(h.id)!;
+                  const open = h.open || s.id === openId;
                   return (
                     // Keyed by whether the search opens it, so a new search re-opens or closes it while a click on the summary is kept until then.
-                    <details key={s.id + (h.open ? "-open" : "")} open={h.open} className="my-2 rounded-lg border border-line px-3" data-testid={"guide-section-" + s.id}>
+                    <details key={s.id + (open ? "-open" : "")} open={open} ref={s.id === openId ? showNearest : undefined} className="my-2 rounded-lg border border-line px-3" data-testid={"guide-section-" + s.id}>
                       <summary className="cursor-pointer py-3 text-sm font-semibold text-purple-800">{s.title}</summary>
                       <div className={BODY} dangerouslySetInnerHTML={{ __html: bodies.get(s.id) ?? "" }} />
                     </details>
