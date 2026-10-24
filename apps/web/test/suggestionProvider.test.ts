@@ -115,6 +115,37 @@ describe("SuggestionProvider", () => {
     ed.destroy();
   });
 
+  it("an answer says what it is (a helper's name and the text it read); a new request, an error, Dismiss and a document switch drop that (Task 32)", () => {
+    const ed = make("<p>one</p>");
+    act(() => api.setEditor(ed));
+    const source = { title: "Paper helper", scope: "On the whole document" };
+    let token = 0;
+    expect(api.source).toBeNull();
+    expect(api.answer).toBe(false);
+    act(() => { token = api.setThinking("custom", null, "thinking"); });
+    act(() => api.set("the read", null, token, source));
+    expect(api.source).toEqual(source);
+    expect(api.answer).toBe(true);
+    act(() => { token = api.setThinking("custom", null, "thinking"); });
+    expect(api.source).toBeNull();
+    expect(api.answer).toBe(false);
+    act(() => api.setFeedback("questions", token, source));
+    expect(api.source).toEqual(source);
+    expect(api.answer).toBe(true);
+    expect(api.sug).toBeNull();
+    act(() => api.clear("Network error"));
+    expect(api.source).toBeNull();
+    expect(api.answer).toBe(false);
+    // The writing buttons and Draft first give no source, but their answers are still AI output.
+    act(() => { token = api.setThinking("polishing"); });
+    act(() => api.set("better", null, token));
+    expect(api.source).toBeNull();
+    expect(api.answer).toBe(true);
+    act(() => api.setEditor(make("<p>other</p>")));
+    expect(api.answer).toBe(false);
+    ed.destroy();
+  });
+
   it("feedback resets selectionAtRequest and is never insertable", () => {
     const ed = make("<p>one two</p>");
     act(() => api.setEditor(ed));

@@ -9,6 +9,7 @@ import { resizeImage } from "@/lib/editor/image";
 import { DICTATION_LANGS, UNSUPPORTED_MESSAGE, defaultDictationLang, startDictation, type Dictation } from "@/lib/editor/dictate";
 import { TableSize } from "@/components/workspace/dialogs/TableSize";
 import { FindReplace } from "./FindReplace";
+import { HelpButton } from "./HelpMenu";
 
 const FONTS = ["Georgia", "Times New Roman", "Arial", "Noto Sans Devanagari"];
 const SIZES = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
@@ -124,6 +125,9 @@ export function FormatBar({ editor }: { editor: Editor }) {
   return (
     <>
       <div className="fmtbar" role="toolbar" aria-label="Formatting" data-testid="format-bar">
+        {/* The research helpers (Task 32): first in the bar, so a phone's scrolling bar shows it without a scroll. */}
+        <HelpButton editor={editor} />
+        <Sep />
         <select className="select" aria-label="Paragraph style" data-testid="fmt-paragraph" value={s.block} onChange={(e) => setBlock(e.target.value as Block)}>
           <option value="paragraph">Paragraph</option>
           <option value="h1">Heading 1</option>

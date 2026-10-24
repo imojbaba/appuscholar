@@ -5,9 +5,9 @@ import { useT } from "@/lib/i18n";
 import { insertAiText, mapRange, type SelectionRange } from "@/lib/editor/insert";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
-import type { SuggestionNote, SuggestionStatus } from "./actions";
+import type { HelperSource, SuggestionNote, SuggestionStatus } from "./actions";
 
-export type { SuggestionNote, SuggestionStatus };
+export type { HelperSource, SuggestionNote, SuggestionStatus };
 
 export type SuggestionValue = {
   /** The text Accept and Tab insert, or null. Draft first feedback and error messages are never here (rule 4). */
@@ -20,9 +20,13 @@ export type SuggestionValue = {
   statusLabel: string | null;
   /** True when the suggestion replaces the selection it was made from (Improve, Extend), false when it goes at the end (Continue). */
   selectionAtRequest: boolean;
+  /** What the text is, when a research helper gave it (its name and the text it read): the pane's label. Null for the writing buttons and for errors. */
+  source: HelperSource | null;
+  /** The text is the AI's answer (a suggestion or feedback), not a message of the app's: the pane gives it the gold edge. */
+  answer: boolean;
   /** Stores a result for the request that was given `token`; a stale token is ignored. It replaces the range given to `setThinking`, or is appended when there was none. */
-  set(text: string, note: SuggestionNote | null, token: number): void;
-  setFeedback(text: string, token: number): void;
+  set(text: string, note: SuggestionNote | null, token: number, source?: HelperSource): void;
+  setFeedback(text: string, token: number, source?: HelperSource): void;
   /** Starts a request: shows the status (or `label`, when given, as the pane's text) and returns the token its result must carry. `range` is the text the answer will replace; it is mapped through every edit made while the AI thinks and while the suggestion waits. */
   setThinking(status: SuggestionStatus, range?: SelectionRange | null, label?: string): number;
   /** False once another request started, Dismiss was pressed or the document changed since `token` was issued. */
@@ -54,33 +58,35 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   const [status, setStatus] = useState<SuggestionStatus>("idle");
   const [statusLabel, setStatusLabel] = useState<string | null>(null);
   const [selectionAtRequest, setSelectionAtRequest] = useState(false);
+  const [source, setSource] = useState<HelperSource | null>(null);
+  const [answer, setAnswer] = useState(false);
   const [editor, setEditorState] = useState<Editor | null>(null);
   // Mirrors for the editor's key handler and the buttons, which can fire before a render has caught up.
   const live = useRef({ sug: null as string | null, range: null as SelectionRange | null, editor: null as Editor | null, token: 0 });
 
   const isCurrent = useCallback((token: number) => token === live.current.token, []);
-  const set = useCallback<SuggestionValue["set"]>((s, n, token) => {
+  const set = useCallback<SuggestionValue["set"]>((s, n, token, src) => {
     if (token !== live.current.token) return;
     // The range was stored when the request started and has been mapped through every edit since.
     live.current.sug = s;
-    setSug(s); setText(s); setNote(n); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(live.current.range !== null);
+    setSug(s); setText(s); setNote(n); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(live.current.range !== null); setSource(src ?? null); setAnswer(true);
     openDocument();
   }, [openDocument]);
-  const setFeedback = useCallback((s: string, token: number) => {
+  const setFeedback = useCallback((s: string, token: number, src?: HelperSource) => {
     if (token !== live.current.token) return;
     live.current.sug = null; live.current.range = null;
-    setSug(null); setText(s); setNote(null); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(false);
+    setSug(null); setText(s); setNote(null); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(false); setSource(src ?? null); setAnswer(true);
     openDocument();
   }, [openDocument]);
   const setThinking = useCallback((s: SuggestionStatus, range: SelectionRange | null = null, label?: string) => {
     live.current.sug = null; live.current.range = range;
-    setSug(null); setText(null); setNote(null); setStatus(s); setStatusLabel(label ?? null); setSelectionAtRequest(range !== null);
+    setSug(null); setText(null); setNote(null); setStatus(s); setStatusLabel(label ?? null); setSelectionAtRequest(range !== null); setSource(null); setAnswer(false);
     return ++live.current.token;
   }, []);
   const clear = useCallback((msg?: string) => {
     live.current.sug = null; live.current.range = null;
     live.current.token++; // an answer still on its way is no longer wanted
-    setSug(null); setText(msg ?? null); setNote(null); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(false);
+    setSug(null); setText(msg ?? null); setNote(null); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(false); setSource(null); setAnswer(false);
     // An error is shown in the pane (v1 showAIError); Dismiss and the placeholder after Accept leave the document where it is.
     if (msg !== undefined && msg !== t("ai_pane_placeholder")) openDocument();
   }, [openDocument, t]);
@@ -89,7 +95,7 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
     // A request and its suggestion belong to the document they were made for: another document's editor must not receive them.
     if (live.current.editor !== e) {
       live.current.sug = null; live.current.range = null; live.current.token++;
-      setSug(null); setText(null); setNote(null); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(false);
+      setSug(null); setText(null); setNote(null); setStatus("idle"); setStatusLabel(null); setSelectionAtRequest(false); setSource(null); setAnswer(false);
     }
     live.current.editor = e;
     setEditorState(e);
@@ -123,8 +129,8 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   }, [accept]);
 
   const value = useMemo<SuggestionValue>(
-    () => ({ sug, text, note, status, statusLabel, selectionAtRequest, set, setFeedback, setThinking, isCurrent, clear, editor, setEditor, accept, copy, tab }),
-    [sug, text, note, status, statusLabel, selectionAtRequest, set, setFeedback, setThinking, isCurrent, clear, editor, setEditor, accept, copy, tab]
+    () => ({ sug, text, note, status, statusLabel, selectionAtRequest, source, answer, set, setFeedback, setThinking, isCurrent, clear, editor, setEditor, accept, copy, tab }),
+    [sug, text, note, status, statusLabel, selectionAtRequest, source, answer, set, setFeedback, setThinking, isCurrent, clear, editor, setEditor, accept, copy, tab]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

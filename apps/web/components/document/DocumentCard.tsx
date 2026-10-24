@@ -22,6 +22,7 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { ActionRow } from "./ActionRow";
 import { DocAside, aiPaneHasContent } from "./DocAside";
 import { SelectionBubble } from "./SelectionBubble";
+import { HelpMenu } from "./HelpMenu";
 import { FormatBar } from "./FormatBar";
 
 function isProvider(v: unknown): v is ProviderId { return typeof v === "string" && v in PROVIDERS; }
@@ -106,6 +107,7 @@ export function DocumentCard() {
         )}
         {currentDoc && !currentDoc.unreadable && <Editor key={currentDoc.id} docId={currentDoc.id} initialHtml={currentDoc.bodyHtml} initialSeq={currentDoc.currentSeq} deks={currentDoc.deks} onReady={onReady} onStatus={onStatus} onCount={onCount} onEditor={setEditor} onFiles={startImport} onTab={tab} highlightAi={highlightAi} />}
         {editor && <SelectionBubble key={"bubble-" + editor.instanceId} editor={editor} />}
+        {editor && <HelpMenu key={"help-" + editor.instanceId} editor={editor} />}
         {editor && <ActionRow key={"actions-" + editor.instanceId} editor={editor} highlightAi={highlightAi} onHighlightAi={setHighlightAi} />}
       </section>
     <DocAside />

@@ -9,10 +9,14 @@ import { selBubbleVisible } from "@/lib/editor/selectionBubble";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
 import { placeHref } from "@/lib/frame/places";
+import { requestHelpMenu } from "./HelpMenu";
 
 const KEY = "selBubble";
 
-/** The v1 selection bubble (mockup 01): Find papers, Cite and Improve above 8 to 800 characters of selected text. Hidden while typing, scrolling or after an action. */
+/**
+ * The v1 selection bubble (mockup 01): Find papers, Cite and Improve above 8 to 800 characters of selected text. Hidden while typing, scrolling or after an action.
+ * "More help" opens the document's help menu (the research helpers) on the same selection; that menu is not limited to 800 characters (Task 32).
+ */
 export function SelectionBubble({ editor }: { editor: Editor }) {
   const t = useT();
   const { go, projectId, setPendingSearch } = useProject();
@@ -49,6 +53,7 @@ export function SelectionBubble({ editor }: { editor: Editor }) {
   };
   const cite = () => { hide(); collapseSelectionToEnd(editor); void go(placeHref(projectId ?? "", "lit", "citations")); toast(t("sel_cite_toast")); };
   const improve = () => { void run("improve"); hide(); };
+  const more = () => { hide(); requestHelpMenu(editor); };
 
   return (
     <BubbleMenu
@@ -69,6 +74,7 @@ export function SelectionBubble({ editor }: { editor: Editor }) {
       <button type="button" data-testid="sel-find" onMouseDown={keep} onClick={find}>{t("sel_find")}</button>
       <button type="button" data-testid="sel-cite" onMouseDown={keep} onClick={cite}>{t("sel_cite")}</button>
       <button type="button" data-testid="sel-improve" onMouseDown={keep} onClick={improve}>{t("sel_improve")}</button>
+      <button type="button" data-testid="sel-more" onMouseDown={keep} onClick={more}>{t("help_more")}</button>
     </BubbleMenu>
   );
 }

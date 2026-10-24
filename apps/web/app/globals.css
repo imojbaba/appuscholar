@@ -204,6 +204,8 @@
 .editor .ProseMirror .page-break { margin: 18px 0; border-top: 2px dashed var(--line-strong); text-align: center; line-height: 0; height: 0; }
 .editor .ProseMirror .page-break::after { content: "Page break"; display: inline-block; background: var(--card); padding: 0 10px; font-size: 11px; line-height: 1; color: var(--muted); }
 .editor .ProseMirror .page-break.ProseMirror-selectednode { border-top-color: var(--purple-800); }
+/* The words the research helpers will read, while the document has lost focus to the help menu (lib/editor/heldSelection.ts). */
+.editor .ProseMirror .held-sel { background: var(--purple-100); border-radius: 2px; }
 
 /* Action row under the document and the AI suggestion pane (mockup 02). Gold marks the machine; a flag is an amber sentence, not a badge. */
 .actions { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; position: relative; }
@@ -217,6 +219,11 @@
 .ai-row { display: flex; gap: 6px; margin-top: 12px; }
 .ai-row .primary { flex: 1; justify-content: center; }
 .thinking { color: var(--accent-ink); font-weight: 500; }
+/* An AI answer has the gold edge; a research helper's answer says which helper, what text it read, and to check it (Task 32). */
+.ai-out.ai-answer { border: 1px solid var(--gold); border-left-width: 4px; }
+.ai-source { margin: 0 0 8px; font-size: 13px; line-height: 18px; color: var(--ink); }
+.ai-source span { color: var(--muted); }
+.ai-check { margin: 8px 0 0; font-size: 12px; line-height: 16px; color: var(--flag-ink); }
 
 /* Selection bubble (mockup 01): TipTap's BubbleMenu positions it, so only the look is here. */
 .sel-bubble { display: flex; gap: 2px; padding: 3px; border-radius: var(--r-ctl); background: var(--purple-500); box-shadow: var(--shadow-float); z-index: 40; }
@@ -224,6 +231,17 @@
 .sel-bubble button:hover { background: rgba(255, 255, 255, 0.14); }
 .sel-bubble button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
 .sel-bubble::after { content: ""; position: absolute; left: 24px; bottom: -6px; border: 6px solid transparent; border-top-color: var(--purple-500); border-bottom: 0; }
+
+/* The help menu (Task 32): "Help with this text" in the document's toolbar and "More help" in the bubble open it. Each choice is a whole row, 44px at least. */
+.help-btn { gap: 6px; }
+.help-btn svg { width: 16px; height: 16px; color: var(--gold); }
+.help-list { display: grid; gap: var(--s2); }
+.help-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
+.help-item:hover { background: var(--soft); }
+.help-item:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
+.help-item-name { font-size: 14px; font-weight: 600; color: var(--purple-800); }
+.help-item-what { font-size: 13px; line-height: 18px; color: var(--muted); }
+.help-where { margin: 0; font-size: 12px; line-height: 16px; color: var(--muted); }
 
 /* Ask Appuscholar */
 .panel.chat { display: flex; flex-direction: column; }
@@ -436,6 +454,8 @@
   .docbar .select.grow { flex: none; width: 190px; }
   .actions { padding: 10px 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
   .actions > * { flex: none; }
+  .sel-bubble button { min-height: 44px; }
+  .help-menu { max-height: calc(100vh - 32px); overflow-y: auto; }
   .panel { padding: 14px 12px; }
   .exp-dlg { padding: 20px 16px; gap: 14px; }
   .exp-x { width: 44px; height: 44px; }

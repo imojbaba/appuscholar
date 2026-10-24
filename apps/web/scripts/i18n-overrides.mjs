@@ -300,8 +300,8 @@ export const V2_STRINGS = {
   state_sum_started_early: { en: "{stages} started early", hi: "{stages} जल्दी शुरू हुआ" },
   state_sum_reopened: { en: "{stages} reopened", hi: "{stages} फिर से खुला" },
   state_sum_none: { en: "Nothing started yet", hi: "अभी कुछ शुरू नहीं हुआ" },
-  // Wave B Task 10 (register D-S2-44): the Literature place's counted tabs and suggested next lines, Writing's helpers beside the document, and a
-  // stage not built yet. DRAFT Hindi.
+  // Wave B Task 10 (register D-S2-44): the Literature place's counted tabs and suggested next lines, Writing's chat beside the document (its research helpers moved into the
+  // document in Task 32), and a stage not built yet. DRAFT Hindi.
   tab_name_count: { en: "{name} ({n})", hi: "{name} ({n})" },
   lit_suggested_next: { en: "Suggested next", hi: "आगे का सुझाव" },
   lit_next_find: { en: "Next: open your reading list and read a paper you kept.", hi: "आगे: अपनी पढ़ने की सूची खोलें और रखा हुआ कोई पेपर पढ़ें।" },
@@ -309,11 +309,32 @@ export const V2_STRINGS = {
   lit_next_compare: { en: "Next: find the gap your papers leave open, then write.", hi: "आगे: वह कमी खोजें जो आपके पेपर खुली छोड़ते हैं, फिर लिखें।" },
   lit_next_citations: { en: "Next: put your reference list in your document.", hi: "आगे: अपनी संदर्भ सूची अपने दस्तावेज़ में डालें।" },
   lit_read_a_paper: { en: "Read a paper", hi: "कोई पेपर पढ़ें" },
-  writing_aside: { en: "Chat and research helpers", hi: "चैट और शोध सहायक" },
+  writing_aside: { en: "Chat", hi: "चैट" },
   writing_chat: { en: "Chat", hi: "चैट" },
-  writing_helpers: { en: "Research helpers", hi: "शोध सहायक" },
   not_built_body: { en: "The tools for this stage come in a later release. You can plan it in your document now.", hi: "इस चरण के टूल बाद की किसी रिलीज़ में आएंगे। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
   not_built_open_doc: { en: "Open my document", hi: "मेरा दस्तावेज़ खोलें" },
+  // Wave B Task 32 (register D-S2-135): the research helpers in the document. "Help with this text" in the document's toolbar and "More help" in the
+  // selection bubble open one menu; its subtitle says how much text the helper reads, and the answer beside the document says which helper made
+  // it and to check it. DRAFT Hindi.
+  help_with_text: { en: "Help with this text", hi: "इस पाठ में मदद" },
+  help_more: { en: "More help", hi: "और मदद" },
+  help_scope_selection: { en: "On your selection ({chars} characters)", hi: "आपके चुने हुए पाठ पर ({chars} अक्षर)" },
+  help_scope_whole: { en: "On the whole document", hi: "पूरे दस्तावेज़ पर" },
+  help_scope_cut: { en: "Only the first {n} characters were sent.", hi: "केवल पहले {n} अक्षर भेजे गए।" },
+  help_where: { en: "The answer opens beside your document. You choose what goes into it.", hi: "उत्तर आपके दस्तावेज़ के पास खुलता है। उसमें क्या जाए, यह आप तय करते हैं।" },
+  help_paper: { en: "Paper helper", hi: "पेपर सहायक" },
+  help_paper_what: { en: "Sums up a research paper under four headings: aim, method, key findings and limitations.", hi: "शोध पेपर का सार चार शीर्षकों में देता है: उद्देश्य, विधि, मुख्य निष्कर्ष और सीमाएँ।" },
+  help_case: { en: "Explain a case", hi: "केस समझाएँ" },
+  help_case_what: { en: "Names the issues and the ideas that fit a case description. It gives no diagnosis.", hi: "केस विवरण के मुद्दे और उस पर लागू होने वाले सिद्धांत बताता है। यह कोई निदान नहीं देता।" },
+  help_litrev: { en: "Literature review helper", hi: "साहित्य समीक्षा सहायक" },
+  help_litrev_what: { en: "Advises how to build a literature review paragraph from the sources in your text. It does not write the paragraph.", hi: "आपके पाठ के स्रोतों से साहित्य समीक्षा का अनुच्छेद बनाने की सलाह देता है। यह अनुच्छेद खुद नहीं लिखता।" },
+  help_explain: { en: "Explain the statistics", hi: "आँकड़े समझाएँ" },
+  help_explain_what: { en: "Explains an idea in your text in plain words, with an everyday example.", hi: "आपके पाठ के किसी विचार को सरल शब्दों में, रोज़मर्रा के उदाहरण के साथ समझाता है।" },
+  help_stats: { en: "Format results in APA", hi: "परिणाम APA में लिखें" },
+  help_stats_what: { en: "Writes pasted test output as APA sentences. It adds no interpretation.", hi: "चिपकाए गए परीक्षण परिणाम को APA वाक्यों में लिखता है। यह कोई व्याख्या नहीं जोड़ता।" },
+  help_devil: { en: "Challenge my argument", hi: "मेरे तर्क को चुनौती दें" },
+  help_devil_what: { en: "Argues against your passage the way a critical reviewer would. Nothing in the reply goes into your document.", hi: "एक आलोचक समीक्षक की तरह आपके अंश के विरुद्ध तर्क देता है। उत्तर का कुछ भी आपके दस्तावेज़ में नहीं जाता।" },
+  help_check: { en: "The AI wrote this from your text. It can be wrong or miss something, so check it against your sources before you use any of it.", hi: "यह AI ने आपके पाठ से लिखा है। यह गलत हो सकता है या कुछ छोड़ सकता है, इसलिए इसका उपयोग करने से पहले अपने स्रोतों से जाँच लें।" },
   // Task G2: a tab whose tool is not built yet (the stage may have others that are). DRAFT Hindi.
   not_built_tab_body: { en: "This tool comes in a later release. You can plan it in your document now.", hi: "यह टूल बाद की किसी रिलीज़ में आएगा। आप अभी अपने दस्तावेज़ में इसकी योजना बना सकते हैं।" },
   // Task G2 (stages 3 to 6, ruling R3): the tool registry's tab names, from v1's own tool names in plain words, and each tab's suggested next line

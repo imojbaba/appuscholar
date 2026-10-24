@@ -46,7 +46,6 @@ vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-tes
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/tools/ChatPanel", () => ({ useChatLog: () => ({ log: [], ask: () => {} }), ChatPanel: () => <div data-testid="chat-panel" /> }));
-vi.mock("@/components/tools/HelpersPanel", () => ({ HelpersPanel: () => <div data-testid="panel-psych" /> }));
 
 import { StagePlace } from "../components/frame/StagePlace";
 import { loadPaper } from "../lib/analyse/intake";
@@ -186,16 +185,17 @@ describe("Literature waits for the paper ids (wave B, Task 17, ruling B2-R6)", (
 });
 
 describe("Writing and the stages not built (Task 10)", () => {
-  it("Writing has Chat and Research helpers above the document", async () => {
+  it("Writing has Chat above the document; the Research helpers are in the document now (Task 32)", async () => {
     await mount("writing");
     const aside = tid("writing-aside")!;
     expect(aside.tagName).toBe("ASIDE");
-    // Both are entry points again (Task 6 had removed them with the dock); each opens on demand.
+    // Chat is an entry point again (Task 6 had removed it with the dock) and opens on demand; the helpers moved into the document's toolbar.
     const summaries = [...aside.querySelectorAll("summary")].map((s) => s.textContent);
-    expect(summaries).toEqual(["Chat", "Research helpers"]);
+    expect(summaries).toEqual(["Chat"]);
     for (const d of aside.querySelectorAll("details")) act(() => { d.open = true; d.dispatchEvent(new Event("toggle")); });
     expect(aside.querySelector('[data-testid="chat-panel"]')).not.toBeNull();
-    expect(aside.querySelector('[data-testid="panel-psych"]')).not.toBeNull();
+    expect(aside.querySelector('[data-testid="panel-psych"]')).toBeNull();
+    expect(aside.textContent).not.toContain("Research helpers");
   });
 
   it("Design and ethics says Not built yet and offers the document", async () => {
@@ -334,7 +334,7 @@ describe("the stage 3 to 6 places (Task G2)", () => {
     expect(parsePlace("writing", ["words"])).toEqual({ stage: "writing", tab: "words", rest: [] });
     for (const tab of [null, "document"]) {
       await mount("writing", tab);
-      // The document tab is today's Writing: the helpers aside (the shell shows the document at full width), nothing that is not built.
+      // The document tab is today's Writing: the chat aside (the shell shows the document at full width), nothing that is not built.
       expect(tid("writing-aside")).not.toBeNull();
       expect(tid("not-built")).toBeNull();
       expect(tid("writing-next")).toBeNull();

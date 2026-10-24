@@ -2,13 +2,12 @@
 import { useState } from "react";
 import { plainText, useT } from "@/lib/i18n";
 import { ChatPanel, useChatLog } from "@/components/tools/ChatPanel";
-import { HelpersPanel } from "@/components/tools/HelpersPanel";
 
 /**
  * The Writing place's document tab (its first; My style and Words are the tool registry's, Task G2): the document at full width (the project
- * shell keeps it mounted and shows it here) with an aside of Chat and Research helpers, the two tools that lost their way in when Task 6 removed
- * the dock. Each opens on demand, so the document stays near the top; the chat's bubbles last while the student stays in Writing. Task 32
- * replaces the aside with the helpers on the student's own text.
+ * shell keeps it mounted and shows it here) with an aside holding Chat, the tool that lost its way in when Task 6 removed the dock. It opens on
+ * demand, so the document stays near the top; the chat's bubbles last while the student stays in Writing. The Research helpers are not here any
+ * more: Task 32 moved them into the document, acting on the student's own text ("Help with this text").
  */
 export function WritingPlace() {
   const t = useT();
@@ -16,7 +15,6 @@ export function WritingPlace() {
   return (
     <aside className="place-body writing-aside" aria-label={plainText(t("writing_aside"))} data-testid="writing-aside">
       <Fold label={t("writing_chat")}><ChatPanel chat={chat} /></Fold>
-      <Fold label={t("writing_helpers")}><HelpersPanel /></Fold>
     </aside>
   );
 }

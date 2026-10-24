@@ -10,6 +10,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Placeholder } from "@tiptap/extensions";
 import type { Editor } from "@tiptap/core";
 import { FindDecorations } from "./editor/findDecorations";
+import { HeldSelection } from "./editor/heldSelection";
 import { Indent } from "./editor/indent";
 import { markCursorPlaced } from "./editor/insert";
 
@@ -130,7 +131,8 @@ const schemaExtensions: Extensions = [
   RefParagraph,
   PageBreak,
   ClassSpan,
-  FindDecorations
+  FindDecorations,
+  HeldSelection
 ];
 
 /** Remembers that the student has been in this document (its first focus), so a citation goes at the cursor rather than at the end (insertCitation). Not part of the schema. */

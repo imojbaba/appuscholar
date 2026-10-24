@@ -5,10 +5,14 @@ import {
   shSummaryNoteId, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
 } from "@appuscholar/core";
 import { currentStylePrompt, currentStyleVocabNote } from "@/lib/tools/style/current";
+import { helperScope } from "@/lib/editor/heldSelection";
+import { HELPER_MENU, scopeLine, type HelperId } from "./helperMenu";
 
 /** "custom": a request outside the writing buttons (a stage tool), whose pane text is the label given to setThinking. */
 export type SuggestionStatus = "idle" | "thinking" | "polishing" | "expanding" | "reading" | "custom";
 export type SuggestionNote = { msg: string; warn: boolean };
+/** What an answer is, for the label beside the document (Task 32): the helper that gave it, the text it read ("On your selection (2,000 characters)") and, when the text was longer than the prompt keeps, a sentence saying so. */
+export type HelperSource = { title: string; scope: string; cut?: string };
 
 /** Everything the three writing buttons and Draft first touch, so the orchestration can be driven with fakes in a test. */
 export type ActionDeps = {
@@ -22,14 +26,14 @@ export type ActionDeps = {
   setThinking(status: SuggestionStatus, range?: SelectionRange | null, label?: string): number;
   /** False once the request that was given `token` has been superseded: its answer (or error) must be dropped. */
   isCurrent(token: number): boolean;
-  /** A suggestion the student can accept: Tab and Accept insert it, over the range given to `setThinking` or at the end. `note` is the accuracy check, null where v1 shows none. */
-  set(text: string, note: SuggestionNote | null, token: number): void;
+  /** A suggestion the student can accept: Tab and Accept insert it, over the range given to `setThinking` or at the end. `note` is the accuracy check, null where v1 shows none. `source`, when given, labels the answer with the helper that made it. */
+  set(text: string, note: SuggestionNote | null, token: number, source?: HelperSource): void;
   /** Draft first feedback: shown in the pane, never insertable (rule 4). */
-  setFeedback(text: string, token: number): void;
+  setFeedback(text: string, token: number, source?: HelperSource): void;
   /** Resets the pane; with a message (an error) the pane shows it. The pane opens with the document beside the place on its own (Task 11): no action asks for it. */
   clear(msg?: string): void;
   toast(msg: string): void;
-  t(key: string): string;
+  t(key: string, vars?: Record<string, string | number>): string;
   draftFirst: boolean;
   /** The optional My Writing Style block appended to the prompt. Absent, Continue, Improve and Extend read the open project's (lib/tools/style/current.ts, ledger ruling R3). */
   stylePrompt?: string;
@@ -126,7 +130,10 @@ export const HELPER_THINKING = "💜 Thinking…";
 /** Where the case tool's yes is kept for the session (v1 sessionKeys['appu_case_ack'], 8605-8607). */
 export const HELPER_CASE_ACK_KEY = "appu_case_ack";
 
-/** What the Research helpers touch: the suggestion pane, the AI, the text (v1 selText: the selection, else the whole document), the field, and the case tool's confirm and session store. */
+/**
+ * What the Research helpers touch: the suggestion pane, the AI, the text (v1 selText: the selection, else the whole document), the field, and the case tool's confirm and session store.
+ * `hasSelection` and `selectionText` are the selection the document holds (heldEditorSelection, Task 32): kept while the help menu has the focus, and of any length.
+ */
 export type HelperDeps = Pick<ActionDeps, "callAI" | "hasSelection" | "selectionText" | "setThinking" | "isCurrent" | "set" | "setFeedback" | "clear" | "toast" | "t"> & {
   /** The whole document as v1's getEditorText (3151) read it: docInnerText of the editor's HTML. */
   docText(): string;
@@ -137,34 +144,53 @@ export type HelperDeps = Pick<ActionDeps, "callAI" | "hasSelection" | "selection
 };
 export type DevilDeps = Omit<HelperDeps, "field" | "confirm" | "session">;
 
-/** v1 selText (5554): the selection when there is one, else the whole document. */
-const helperText = (d: Pick<HelperDeps, "hasSelection" | "selectionText" | "docText">) => d.hasSelection() ? d.selectionText() : d.docText();
+/**
+ * v1 selText (5554): the selection when there is one, else the whole document. The selection is the one the document holds (Task 32: kept across a
+ * blur, and of any length, since the prompt builders cut the text, at 12,000 characters and at 6,000 for the devil's advocate, as v1); a held text that
+ * is only white space is no selection, and the menu says so too. helperScope trims it, as v1's `selText().trim()`.
+ */
+function helperText(d: Pick<HelperDeps, "hasSelection" | "selectionText" | "docText">) {
+  const held = d.hasSelection() ? { text: d.selectionText() } : null;
+  return helperScope(held, held?.text.trim() ? "" : d.docText());
+}
+
+/**
+ * The label on a helper's answer: its name in the menu and the text it read. A text longer than the builder keeps (12,000 characters, the devil's
+ * advocate's 6,000: v1's cuts) says so, because the answer is then about the start of it only.
+ */
+function sourceOf(id: HelperId, scope: { whole: boolean; chars: number }, t: HelperDeps["t"]): HelperSource {
+  const limit = id === "devil" ? 6000 : 12000;
+  const source: HelperSource = { title: t(HELPER_MENU.find((h) => h.id === id)!.name), scope: scopeLine(t, scope) };
+  if (scope.chars > limit) source.cut = t("help_scope_cut", { n: limit.toLocaleString("en-IN") });
+  return source;
+}
 
 /** One of the five Research helpers (v1 psychTool 8600-8615): the answer lands in the suggestion pane, insertable with Tab or Accept. */
 export async function runHelper(kind: HelperKind, d: HelperDeps): Promise<void> {
-  const whole = !d.hasSelection();
-  const txt = helperText(d).trim();
+  const scope = helperText(d);
+  const txt = scope.text;
   if (txt.length < HELPER_MIN_CHARS) { d.toast(HELPER_NEED_TEXT); return; }
   if (kind === "case" && !d.session.get(HELPER_CASE_ACK_KEY)) {
     if (!d.confirm(HELPER_CASE_CONFIRM)) return;
     d.session.set(HELPER_CASE_ACK_KEY, "1");
   }
-  if (whole && txt.length > 12000) d.toast(HELPER_LONG_DOC);
+  if (scope.whole && txt.length > 12000) d.toast(HELPER_LONG_DOC);
   // The builder adds v1's "\n\nText:\n" and cuts the text to its first 12,000 characters.
   const built = buildHelperPrompt(kind, d.field, txt);
   const token = d.setThinking("custom", null, HELPER_THINKING);
   try {
     const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
-    // v1 shows no accuracy check for this answer (setSug with no note, 8612).
-    d.set(reply, null, token);
+    // v1 shows no accuracy check for this answer (setSug with no note, 8612); the label beside it says which helper and what text, and to check it.
+    d.set(reply, null, token, sourceOf(kind, scope, d.t));
     d.toast(d.t("rs2_ready_press_tab_in"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }
 
 /** "😈 Challenge my argument" (v1 devilTool 8619-8630): a reviewer's objections, shown in the pane as feedback that Tab and Accept never insert. */
 export async function runDevil(d: DevilDeps): Promise<void> {
-  const txt = helperText(d).trim();
+  const scope = helperText(d);
+  const txt = scope.text;
   if (txt.split(/\s+/).filter(Boolean).length < DEVIL_MIN_WORDS) { d.toast(d.t("devil_need")); return; }
   // The builder adds v1's "\n\nPASSAGE:\n" and cuts the passage to its first 6,000 characters.
   const built = buildDevilPrompt(txt);
@@ -172,7 +198,7 @@ export async function runDevil(d: DevilDeps): Promise<void> {
   try {
     const reply = await d.callAI(built.prompt, { temp: built.temp, max: built.max });
     if (!d.isCurrent(token)) return;
-    d.setFeedback(d.t("devil_label") + "\n\n" + reply, token);
+    d.setFeedback(d.t("devil_label") + "\n\n" + reply, token, sourceOf("devil", scope, d.t));
     d.toast(d.t("devil_ready"));
   } catch (e) { if (d.isCurrent(token)) fail(d, e); }
 }

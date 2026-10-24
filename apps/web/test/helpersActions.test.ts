@@ -8,6 +8,8 @@ import { apiMsg } from "../lib/ai/callAI";
 import en from "../messages/en.json";
 
 const E = en as Record<string, string>;
+/** t() with its {name} fill-ins, as the app's own. */
+const fmt = (k: string, vars?: Record<string, string | number>) => (E[k] ?? k).replace(/\{(\w+)\}/g, (m, n: string) => (vars && n in vars ? String(vars[n]) : m));
 const PASSAGE = "Sleep quality predicted exam scores in a sample of 120 first-year students (r = .41, p < .001).";
 
 type Mocked = { [K in keyof HelperDeps]: Mock<Extract<HelperDeps[K], (...a: never[]) => unknown>> };
@@ -25,7 +27,7 @@ function deps(over: Partial<HelperDeps> & { store?: Map<string, string> } = {}) 
     setFeedback: vi.fn<HelperDeps["setFeedback"]>(() => void log.push("feedback")),
     clear: vi.fn(() => void log.push("clear")),
     toast: vi.fn((m: string) => void log.push("toast:" + m)),
-    t: vi.fn((k: string) => E[k] ?? k),
+    t: vi.fn(fmt),
     confirm: vi.fn(() => { log.push("confirm"); return true; }),
     session: { get: vi.fn((k: string) => store.get(k) ?? null), set: vi.fn((k: string, v: string) => void store.set(k, v)) },
     field: fieldLabel("psychology"),
@@ -107,7 +109,8 @@ describe("runHelper (v1 psychTool 8600-8615)", () => {
     const { d, m, log } = deps();
     await runHelper("litrev", d);
     expect(m.setThinking).toHaveBeenCalledWith("custom", null, "\u{1F49C} Thinking…");
-    expect(m.set).toHaveBeenCalledWith("Aim: ...", null, 7);
+    // The fourth argument names what the answer is, for the label beside the document (Task 32).
+    expect(m.set).toHaveBeenCalledWith("Aim: ...", null, 7, { title: "Literature review helper", scope: `On your selection (${PASSAGE.length} characters)` });
     expect(m.setFeedback).not.toHaveBeenCalled();
     expect(log).toEqual(["thinking:custom:\u{1F49C} Thinking…", "call", "set", "toast:Ready — press Tab in the editor to insert"]);
   });
@@ -203,7 +206,7 @@ describe("runDevil (v1 devilTool 8619-8630)", () => {
     const { d, m, log } = deps({ selectionText: vi.fn(() => words(40)), callAI: vi.fn(async () => { log.push("call"); return "1. ..."; }) });
     await runDevil(d);
     expect(m.setThinking).toHaveBeenCalledWith("custom", null, E.devil_thinking);
-    expect(m.setFeedback).toHaveBeenCalledWith(E.devil_label + "\n\n1. ...", 7);
+    expect(m.setFeedback).toHaveBeenCalledWith(E.devil_label + "\n\n1. ...", 7, { title: "Challenge my argument", scope: `On your selection (${words(40).trim().length} characters)` });
     expect(m.set).not.toHaveBeenCalled();
     expect(log).toEqual([`thinking:custom:${E.devil_thinking}`, "call", "feedback", "toast:" + E.devil_ready]);
   });
@@ -218,5 +221,56 @@ describe("runDevil (v1 devilTool 8619-8630)", () => {
     await runDevil(stale.d);
     expect(stale.m.setFeedback).not.toHaveBeenCalled();
     expect(stale.m.toast).not.toHaveBeenCalled();
+  });
+});
+
+describe("the helpers read the held selection through helperScope (Task 32)", () => {
+  it("the answer is labelled with the helper and the text it read: the whole document with nothing held", async () => {
+    const { d, m } = deps({ hasSelection: vi.fn(() => false) });
+    await runHelper("paper", d);
+    expect(m.set).toHaveBeenCalledWith("Aim: ...", null, 7, { title: "Paper helper", scope: "On the whole document" });
+    const devil = deps({ hasSelection: vi.fn(() => false), docText: vi.fn(() => "word ".repeat(30)) });
+    await runDevil(devil.d);
+    expect(devil.m.setFeedback).toHaveBeenCalledWith(E.devil_label + "\n\nAim: ...", 7, { title: "Challenge my argument", scope: "On the whole document" });
+  });
+
+  it("a held selection of 3,000 characters is counted with its thousands separator", async () => {
+    const { d, m } = deps({ selectionText: vi.fn(() => "x".repeat(3000)) });
+    await runHelper("explain", d);
+    expect(m.set.mock.calls[0]![3]).toEqual({ title: "Explain the statistics", scope: "On your selection (3,000 characters)" });
+  });
+
+  it("a held selection of white space only is read as the whole document, as the menu says", async () => {
+    const { d, m } = deps({ selectionText: vi.fn(() => " \n \n "), docText: vi.fn(() => "the whole document " + PASSAGE) });
+    await runHelper("litrev", d);
+    expect(m.docText).toHaveBeenCalled();
+    expect(m.callAI.mock.calls[0]![0]).toBe(buildHelperPrompt("litrev", "psychology", "the whole document " + PASSAGE).prompt);
+    expect(m.set.mock.calls[0]![3]).toEqual({ title: "Literature review helper", scope: "On the whole document" });
+  });
+
+  it("the long-document notice is for a whole document only: a held selection of any length is cut by the builder without it", async () => {
+    const { d, m } = deps({ selectionText: vi.fn(() => "s".repeat(20000)) });
+    await runHelper("paper", d);
+    expect(m.toast).not.toHaveBeenCalledWith(HELPER_LONG_DOC);
+    expect((m.callAI.mock.calls[0]![0] as string).endsWith("\n\nText:\n" + "s".repeat(12000))).toBe(true);
+  });
+
+  it("a text longer than the builder keeps says so in the label: 12,000 for a helper, 6,000 for the devil's advocate", async () => {
+    const long = deps({ selectionText: vi.fn(() => "s".repeat(20000)) });
+    await runHelper("paper", long.d);
+    expect(long.m.set.mock.calls[0]![3]).toEqual({ title: "Paper helper", scope: "On your selection (20,000 characters)", cut: "Only the first 12,000 characters were sent." });
+    const exact = deps({ selectionText: vi.fn(() => "s".repeat(12000)) });
+    await runHelper("paper", exact.d);
+    expect(exact.m.set.mock.calls[0]![3]).toEqual({ title: "Paper helper", scope: "On your selection (12,000 characters)" });
+    const devil = deps({ hasSelection: vi.fn(() => false), docText: vi.fn(() => ("word ".repeat(1500)).trim()) });
+    await runDevil(devil.d);
+    expect(devil.m.setFeedback.mock.calls[0]![2]).toEqual({ title: "Challenge my argument", scope: "On the whole document", cut: "Only the first 6,000 characters were sent." });
+  });
+
+  it("the stale-token and error paths carry no label", async () => {
+    const bad = deps({ callAI: vi.fn(async () => { throw new Error("boom"); }) });
+    await runHelper("paper", bad.d);
+    expect(bad.m.set).not.toHaveBeenCalled();
+    expect(bad.m.clear).toHaveBeenCalledWith("boom");
   });
 });
