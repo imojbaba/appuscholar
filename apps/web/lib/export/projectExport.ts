@@ -72,7 +72,7 @@ const UNREADABLE = "unreadable.txt";
 const BOM = "﻿";
 const csvBlob = (text: string) => new Blob([BOM + text], { type: "text/csv;charset=utf-8" });
 
-/** The citation library's entries as search results, for rsCsvText (the library holds no source, abstract or AI reading, so those columns are empty). */
+/** The citation library's entries as search results, for rsCsvText (the library holds no source, retraction flag or AI reading, so those columns are empty; the CSV has no abstract column). */
 export function keptPapers(lib: CitationEntry[]): RsPaper[] {
   return lib.map((e) => ({ title: e.title ?? "", authors: e.author ?? "", year: e.year ?? "", venue: e.source || e.container || "", doi: e.doi ?? "", url: e.url, source: "" }));
 }

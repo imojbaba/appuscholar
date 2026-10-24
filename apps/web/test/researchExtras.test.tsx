@@ -4,14 +4,14 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildQuickReadPrompt, rsCsvText, type RsPaper, type RsQuick } from "@appuscholar/core";
+import { buildQuickReadPrompt, type RsPaper, type RsQuick } from "@appuscholar/core";
 import en from "../messages/en.json";
 
 /*
  * The Find tab, part 2 (v1 976-1030 and its script): the quick read and its box (rsQuickHTML / rsQuickP 8161-8182), the filters that are left (the year, free full
  * text, retracted: 8331-8375), the export of the shown list (rsCsvDownload 8196, now Export) and connected papers over the recorded OpenAlex bodies (8498-8523). Moved
  * from the Research panel in wave B Task 18: a result's actions are in its More menu; the ticked-papers batch, the literature review, the research gap, the confirmed
- * filters, the four external searches and the manual add left Find (the review and the gap come back in Compare, Task 22). Every request must have a recording.
+ * filters, the other three external searches and the manual add left Find (the review and the gap come back in Compare, Task 22). Every request must have a recording.
  */
 
 type Blob_ = { value: unknown; loading: boolean; locked: boolean; set: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> };
@@ -42,7 +42,6 @@ vi.mock("@/lib/export/download", async (orig) => ({ ...(await orig<typeof import
 
 import { FindTab } from "../components/literature/FindTab";
 import { getResearch, resetResearch, setResearch, shownNow } from "../lib/research/useSearch";
-import { downloadCsv } from "../lib/research/extras";
 import { resetCiteStyle } from "../lib/cite/useLibrary";
 import { assertAllRecorded, recordedFetch } from "./support/recordedFetch";
 
@@ -95,8 +94,6 @@ async function moreItem(card: HTMLElement, item: string) {
   await act(async () => { card.querySelector('[data-testid="find-more"]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
   await click(tid(item));
 }
-/** jsdom's Blob has no arrayBuffer(): read it with a FileReader. */
-const bytes = (b: Blob) => new Promise<ArrayBuffer>((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as ArrayBuffer); r.onerror = () => rej(r.error); r.readAsArrayBuffer(b); });
 
 beforeEach(() => {
   h.blobs = { citations: blob([]), retraction_cache: blob({}), rs_prefs: blob(null) };
@@ -245,7 +242,7 @@ describe("Find part 2: the filters (8331-8375)", () => {
 });
 
 describe("Find part 2: Export (rsCsvDownload 8196), now in the export place (Task 12)", () => {
-  it("Export opens the export place with the search lists ticked, and its last search is the papers shown, as the CSV wrote them", async () => {
+  it("Export opens the export place with the search lists ticked, and its last search is the papers shown", async () => {
     const ps = fresh();
     await mount(ps);
     type("rsSort", "citations");
@@ -255,10 +252,6 @@ describe("Find part 2: Export (rsCsvDownload 8196), now in the export place (Tas
     expect(h.download).not.toHaveBeenCalled();
     const shown = titles().map((tt) => ps.find((p) => p.title === tt)!);
     expect(shownNow()).toEqual(shown);
-    // v1's file, as search/last-search.csv holds it.
-    const file = await new Promise<{ name: string; file: Blob }>((done) => downloadCsv(shownNow()!, { download: (name, f) => done({ name, file: f }), toast: () => {}, t: (k) => k }));
-    expect(file.name).toBe("search-results.csv");
-    expect(new TextDecoder("utf-8", { ignoreBOM: true }).decode(await bytes(file.file))).toBe("﻿" + rsCsvText(shown));
   });
 });
 

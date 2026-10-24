@@ -550,6 +550,10 @@ export const V2_STRINGS = {
   find_sources: { en: "Sources: OpenAlex and PubMed. Not finding it?", hi: "स्रोत: OpenAlex और PubMed। नहीं मिल रहा?" },
   find_scholar: { en: "Search Google Scholar", hi: "Google Scholar पर खोजें" },
   find_count: { en: "{total} papers. Showing {shown} that match your filters.", hi: "{total} शोध-पत्र। आपके फ़िल्टर से मेल खाने वाले {shown} दिखाए जा रहे हैं।" },
+  // The count's singular forms: "1 paper" and "that matches" for one. Hindi has no plural of शोध-पत्र; वाला / वाले and दिखाया / दिखाए follow the number.
+  find_count_one: { en: "1 paper. Showing 1 that matches your filters.", hi: "1 शोध-पत्र। आपके फ़िल्टर से मेल खाने वाला 1 दिखाया जा रहा है।" },
+  find_count_one_none: { en: "1 paper. Showing 0 that match your filters.", hi: "1 शोध-पत्र। आपके फ़िल्टर से मेल खाने वाले 0 दिखाए जा रहे हैं।" },
+  find_count_shown_one: { en: "{total} papers. Showing 1 that matches your filters.", hi: "{total} शोध-पत्र। आपके फ़िल्टर से मेल खाने वाला 1 दिखाया जा रहा है।" },
   find_sort: { en: "Sort", hi: "क्रम" },
   find_cited: { en: "Cited {n} times.", hi: "{n} बार उद्धृत।" },
   find_cited_one: { en: "Cited 1 time.", hi: "1 बार उद्धृत।" },
@@ -561,13 +565,16 @@ export const V2_STRINGS = {
   find_why_title: { en: "Why it fits (AI): {reason} Rated from the title only.", hi: "यह क्यों मेल खाता है (AI): {reason} केवल शीर्षक से आँका गया।" },
   find_keep: { en: "Keep", hi: "रखें" },
   find_kept: { en: "Kept", hi: "रखा गया" },
+  // Said once, in a polite live region, when a Keep went through: the button keeps focus and the toast is gone.
+  find_kept_announce: { en: "Kept: {title}", hi: "रखा गया: {title}" },
   find_more: { en: "More", hi: "और" },
   find_more_aria: { en: "More actions for {title}", hi: "{title} के लिए और विकल्प" },
   find_item_cite: { en: "Put a citation in my document", hi: "मेरे दस्तावेज़ में उद्धरण डालें" },
   find_item_open: { en: "Open the paper", hi: "शोध-पत्र खोलें" },
   find_item_pdf: { en: "Get the free PDF", hi: "निःशुल्क PDF पाएँ" },
   find_item_connected: { en: "Papers connected to this one", hi: "इससे जुड़े शोध-पत्र" },
-  find_item_quick: { en: "Quick read", hi: "त्वरित समीक्षा" },
+  // Ruling B2-R38: the plan's copy rule bans "Quick read" in new copy, so the More item says what it does. v1's key rs2_quick_read (the AI box's heading) keeps its value until Task 35.
+  find_item_quick: { en: "Read the abstract with AI", hi: "AI से सार पढ़ें" },
   find_item_read: { en: "Read it now", hi: "अभी पढ़ें" },
   find_fold: { en: "{n} probably not relevant (fit 0 or 1). Nothing is deleted.", hi: "{n} शायद प्रासंगिक नहीं (मेल 0 या 1)। कुछ भी मिटाया नहीं गया।" },
   find_library_error: { en: "Your saved papers could not be reached. Check your connection, then press Keep again.", hi: "आपके सहेजे हुए शोध-पत्र तक पहुँचा नहीं जा सका। अपना कनेक्शन जाँचें, फिर 'रखें' दोबारा दबाएँ।" },
