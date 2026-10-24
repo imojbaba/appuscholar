@@ -27,7 +27,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q1: The language button is announced differently from what it shows
 
-- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints)
+- Case: S10-01 (the axe scan at "the second tab, locked, with its sentence kept" and at "the locked document"), and S6-01 to S6-05 (the axe scan at every checkpoint of the Coding tab and its document); it will show at every desktop screen with no window open, and it does in S5-01, S5-02, S5-04, S5-05, S5-06 and S5-08 (the axe scan of each of their checkpoints), and in S7-01 (six screens of the Writing place and the AI-use statement), S7-02, S7-03 and S7-07
 - Date: 2026-10-24
 - Commit: c0769fcff141aefb4937328b9b77acf06f3e5edd
 - Kind: UI (accessibility)
@@ -138,7 +138,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q11: Text set in the pale chip colour: the empty circles on Overview and the counts on the AI-use statement tab
 
-- Case: S3-01 (Overview with nothing ready; the AI-use statement tab, built), S3-03 and S3-05 (the AI-use statement tab, axe)
+- Case: S3-01 (Overview with nothing ready; the AI-use statement tab, built), S3-03 and S3-05 (the AI-use statement tab, axe), and S7-01 (the AI-use statement tab with four kinds of help)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -182,7 +182,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q15: On a phone, the project name in a place's top line is 20 px tall and the "Your question" strip's summary 32 px
 
-- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question) and S5-07 (the Data and Charts tabs); it shows at the top of every place
+- Case: S3-08 (the Design place, Pathway, Budget and AI-use statement, on a phone, in Hindi), S6-06 (the Coding tab, its passages view, its name field and its delete question), S5-07 (the Data and Charts tabs) and S7-06 (the Writing place's four screens); it shows at the top of every place
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
@@ -204,18 +204,18 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q17: On a phone, the document toolbar's Undo, Bold, Italic, Underline, bulleted list and numbered list buttons are 32 to 35.5 px wide
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage) and S5-07 (the document after a figure is inserted, the same screen, where Undo shows too)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, before and after the tap that tags a passage), S5-07 (the document after a figure is inserted, the same screen, where Undo shows too) and S7-06 (the Writing place's document tab, My style and Words: all four of its screens carry the toolbar)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI
 - Expected: as Q15 (source: spec section 8, layout rules, O17)
-- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag in S6-06, after a figure in S5-07), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx` (the `Fmt` buttons, line 24). This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
+- Happened: `button "Bold" [fmt-bold]: 32 × 44 px`, `[fmt-italic]` and `[fmt-underline]` 32 × 44 px, `[fmt-bullets]` 32.8 × 44 px, `[fmt-numbered]` 35.5 × 44 px; and, once there is something to undo (after a tag in S6-06, after a figure in S5-07, in S7-06), `button "Undo" [fmt-undo]: 32 × 44 px` (on commit aa23121acb939df540ea10f828065bb49c396ef5). File: `components/document/FormatBar.tsx` (the `Fmt` buttons, line 24); the Redo button beside it is disabled until there is something to redo, and the layout rule does not measure a disabled control, so it is not listed. This is the "FormatBar buttons 32 px wide on a phone" candidate of the QA layer's notes, seen here for the first time in a case; the Writing story will meet it too.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on 6ca5839: case S3-08, the failed check "the document full screen, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q15.
 - Status: known
 
 ### Q18: On a Hindi page, the document toolbar's more-formatting button shows Hindi but is named in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi) and S5-07 (the same screen after a figure is inserted)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (accessibility)
@@ -226,7 +226,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 
 ### Q19: On a Hindi page, the document bar and toolbar are in English
 
-- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi) and S5-07 (the same screen after a figure is inserted)
+- Case: S3-08 (the document full screen, on a phone, in Hindi), S6-06 (the interview full screen, in Hindi), S5-07 (the same screen after a figure is inserted) and S7-06 (the Writing place: the document tab, My style and Words each carry the toolbar and the document bar; its own check of the toolbar's words names Q19)
 - Date: 2026-10-24
 - Commit: 6ca58396356d330b554b081f170d5e8d5b69cb1d
 - Kind: UI (Hindi)
@@ -325,6 +325,61 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: it is not. With the phrase selected in the open document, pressing Back shows the place and hides the document (`components/frame/DocumentBeside.tsx` line 37, `full = useMedia(PHONE_QUERY) && side`; lines 24 to 26). The selection is still held by the editor, so tapping the code does tag the phrase, but the tap then opens the document full screen over the place again (the tag goes through `requestInsert`, which opens a closed document first: `components/frame/ProjectShell.tsx` line 448, reached by `wrapSelection` in `lib/editor/docAccess.ts`), so the student ends on the document with the phrase shaded, and the code list and the line "Tagged as ..." are out of sight. Tagging works only for a student who selects, goes back, taps and comes back to look.
 - Evidence: the run of 2026-10-24 on 66d8ec3: case S6-06, the check "the passage to be tagged is on the screen when the code is tapped" (its message holds what was seen) and the check that follows it, which passes. Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S6-06"`.
 - Status: awaiting (OJ)
+
+### Q50: When the AI grammar check could not read the text, the panel says "Nothing found by the rules or the AI"
+
+- Case: S7-05
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: Unexpected (conceptual)
+- Expected: an AI check that failed to read the text does not report that the AI found nothing; the line under the cards says how many parts the AI read, and the empty box is consistent with it (source: `tools-d.md` row 5, "AI check: 1 of 1 part read"; the wording `wd2_nothing_ai`, "Nothing found by the rules or the AI", claims the AI read the text)
+- Happened: with an AI key the provider rejects (the key mode `fail401`), Check with AI shows the message "Your API key was rejected. Open ⚙ and paste it again.", the line "AI check: 0 of 1 part read. The AI misses errors and sometimes flags correct text, so each item is a suggestion.", and, in the box where the cards would be, "Nothing found by the rules or the AI. That does not mean the text is perfect." Cause: `components/tools/words/Grammar.tsx` line 101 picks `wd2_nothing_ai` when `counts.parts` is not 0, and `gramAiMerge` (`packages/core/src/words.ts` line 244) returns `parts: chunks.length` (the parts the text was cut into) whether or not any was read, with `checked: done` (0 here) beside it; `checkWithAi` (`lib/tools/words/gram.ts`) calls it after the first request failed, with no reply to merge. The test that tells whether the AI read anything is `counts.checked`. A student who sees the box and not the line above it is told the AI looked and found no slip, when it did not look.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S7-05, the failed check "the panel does not say \"Nothing found by the rules or the AI\" when the AI could not read the text" (its data check just before, "the AI line says no part was read", passes). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S7-05"`.
+- Status: known
+
+### Q51: On a phone, My style's tick rows, folded checks and ten-word answers are under 44 px
+
+- Case: S7-06 (My style, and My style with the ten-word check open, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI
+- Expected: on a phone, every control at least 44 px each way; a tick or an option is pressed through its label, so the larger of the two is its target (source: spec section 8, layout rules, O17; `tools-d.md` row 6, "Every button is at least 44 px tall"; as Q3)
+- Happened: `input [style-decl]: 295 × 36 px` (the declaration the student must tick before anything is learned), `input [style-on]: 317 × 20 px` (Use my style in suggestions), the summaries of the three folded checks, `summary ... in [style-live]: 317 × 40 px`, `in [style-vocab]: 317 × 20 px` and `in [style-try]: 317 × 20 px`, and, once the ten-word check is open, its fifty answer rows `input [style-vocab-<i>-<j>]` (four options and "I do not know" for each of ten words): 317 × 20 px each. Files: `components/tools/style/Panel.tsx` (lines 144 and 170, the two tick rows), `components/tools/style/StyleChecks.tsx` (the three `<summary className="cursor-pointer font-semibold">` at lines 60, 109 and 173, and the radio rows at lines 116 and 121).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S7-06, the failed checks "My style, on a phone, in Hindi: every control at least 44 px each way" and "My style with the ten words open, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S7-06"`.
+- Status: known
+
+### Q52: On a phone, Words' similar-word links, word-bank summary and Ignore buttons are under 44 px
+
+- Case: S7-06 (Words, with an entry and cards, on a phone, in Hindi)
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI
+- Expected: as Q51 (source: spec section 8, layout rules, O17; `tools-d.md` row 6)
+- Happened: `button "survey" [dict-similar]: 37 × 44 px` (each similar word of an entry is a link as wide as its word), `summary "मेरा शब्द-भंडार" in [words-dictionary]: 295 × 18 px` (My word bank, folded) and `button "छोड़ें" [gram-ignore]: 38 × 44 px` on each grammar card (Apply is wide enough). Files: `components/tools/words/Dictionary.tsx` (line 154, the similar-word button with `p-0`), `components/tools/words/WordBank.tsx` (line 24, the summary), `components/tools/words/Grammar.tsx` (line 114, an `xs` button).
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S7-06, the failed check "Words, with an entry and cards, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q51.
+- Status: known
+
+### Q53: On a Hindi page the personal-details window is in English
+
+- Case: S7-06 (the personal-details window, on a phone, in Hindi); it opens from every AI request that carries an email address, phone number or ID number
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI (Hindi)
+- Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name this window)
+- Happened: with the page in Hindi, Check with AI on a text with an email address opens a window whose title "Personal details in this text", its line "Found: 1 email address.", its explanation "This text goes straight to your AI provider. The check finds email addresses, phone numbers and ID numbers. It cannot find a name written inside a sentence, so read the text once yourself." and its buttons "Mask them and send" and "Send as it is" are English; only Cancel is Hindi (`रद्द करें`, the dictionary's `sap_cancel_btn`). They are literals in `apps/web/lib/ai/pdDialog.tsx` (lines 13, 51, 55, 57 and 58). It is the window a student reads before deciding what leaves the browser. (The English wording is the sheets', `tools-d.md` row 5 and `phase-2.md` row 28; the question is the Hindi page.)
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S7-06, the failed check "the personal-details window, on a phone, in Hindi: no English on a Hindi screen" (its first finding is listed under the share badge, because the badge's English word "yours" stands just before the window's title in the page's text; the run it reports is the window's own words, and `[pd-found]` is the second finding). Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S7-06"`.
+- Status: known
+
+### Q54: On a Hindi page the share badge under the document reads "NN% yours" in English
+
+- Case: S7-06 (the Writing place's document tab, on a phone, in Hindi); the badge shows under every document with 20 characters or more
+- Date: 2026-10-24
+- Commit: aa23121acb939df540ea10f828065bb49c396ef5
+- Kind: UI (Hindi)
+- Expected: the badge is in the page's language; the Hindi dictionary writes the same words as "% आपका" (`org_badge_title` in `messages/hi.json`: "यह आपके \"% आपका\", मेरा लेखन या लेखन नमूनों में नहीं गिना जाता।") (source: spec section 8, layout rules, no English on a Hindi screen; `phase-2.md` row 17, "NN% yours")
+- Happened: the badge reads "100% yours" on a Hindi page, and its hover text is English too. `apps/web/components/document/OriginBadge.tsx` line 32 builds it as `${share.studentPct}% yours` (no dictionary key) and line 12 holds the hover text as an English constant (`TITLE`); only the source-paper badge (`org_badge_src`) goes through the dictionary. The layout rule alone does not report it (one English word beside a number), so the case checks the badge's own text for Devanagari.
+- Evidence: the qa-report artifact of the run of 2026-10-24 on aa23121: case S7-06, the failed check "the share badge under the document is in Hindi (the Hindi dictionary writes \"% yours\" as \"% आपका\")". Re-run as Q53.
+- Status: known
 
 ### Q96: While the vault is locked, an amount typed into Budget is dropped
 
