@@ -1,11 +1,11 @@
-import { crLookupDoi, rsEntryFromResultV2, type CitationEntry, type CitationStyle, type RsPaper } from "@appuscholar/core";
+import { crLookupDoiV2, rsEntryFromResultV2, type CitationEntry, type CitationStyle, type PasteResult, type RsPaper } from "@appuscholar/core";
 import type { StoredEntry } from "@/lib/blobs/kinds";
 import type { Library } from "@/lib/cite/useLibrary";
 import { newPid, paperMatch } from "./ids";
 
 /*
- * Keep (wave B Task 18, register row D-S2-123): the one door through which a paper joins the project's library and its reading list. The paste box (Task 19) and the
- * bookmark (Task 20) keep through keepEntry too. A kept paper is a library entry with a `pid` (lib/papers/ids) and `rl: true`; whether it is kept already is decided
+ * Keep (wave B Task 18, register row D-S2-123): the one door through which a paper joins the project's library and its reading list. The paste box (Task 19, D-S2-124) and the
+ * bookmark (Task 20) keep through keepEntry too, and the paste box's Undo takes a paper it just kept out again (undoKeep). A kept paper is a library entry with a `pid` (lib/papers/ids) and `rl: true`; whether it is kept already is decided
  * by paperMatch (the DOI when both have one, else the same long title and year), never by position or by title alone.
  */
 
@@ -76,13 +76,13 @@ export type KeepResultDeps = KeepDeps & Pick<Library, "style" | "fillEmpty"> & {
 };
 
 /**
- * W2: an OpenAlex paper kept with a DOI and an empty volume, issue or pages is filled from Crossref's record of that DOI (and its author, only when empty), onto the entry
- * with this pid. The request carries the DOI only and is aborted after CROSSREF_FILL_TIMEOUT_MS; any failure (offline, HTTP error, not in Crossref, the timeout) is swallowed.
+ * W2: an OpenAlex paper kept with a DOI and an empty volume, issue or pages is filled from Crossref's record of that DOI (crLookupDoiV2, so Crossref's article number is the
+ * pages when it lists no page range, as a pasted paper has it; Task 19), and its author, only when empty, onto the entry with this pid. The request carries the DOI only and is aborted after CROSSREF_FILL_TIMEOUT_MS; any failure (offline, HTTP error, not in Crossref, the timeout) is swallowed.
  */
 function fillFromCrossref(p: RsPaper, entry: CitationEntry, pid: string, d: Pick<KeepResultDeps, "fetch" | "fillEmpty">): void {
   if (p.source !== "OpenAlex" || !entry.doi || (entry.volume && entry.issue && entry.pages)) return;
   const f: typeof fetch = (input, init) => d.fetch(input, { ...init, signal: AbortSignal.timeout(CROSSREF_FILL_TIMEOUT_MS) });
-  void crLookupDoi(f, entry.doi).then((cr) => {
+  void crLookupDoiV2(f, entry.doi).then((cr) => {
     if (!cr) return;
     d.fillEmpty((e) => (e as StoredEntry).pid === pid, { volume: cr.volume ?? "", issue: cr.issue ?? "", pages: cr.pages ?? "", author: cr.author ?? "" });
   }, () => {});
@@ -100,4 +100,44 @@ export function keepResult(p: RsPaper, d: KeepResultDeps): KeepResult {
     fillFromCrossref(p, entry, r.pid, d);
   }
   return r;
+}
+
+/**
+ * A pasted paper (pasteLookup's "ok") as the entry Keep stores: the entry as looked up, with the abstract (up to 4,000 characters, as resultEntry cuts it) and the open-access link
+ * when the lookup brought them. Only OpenAlex brings either. It sets no citation style, as core's lookup does not: the page's own choice stays the library's.
+ */
+export function pastedEntry(r: Extract<PasteResult, { result: "ok" }>): StoredEntry {
+  const abstract = (r.abstract ?? "").trim() ? r.abstract!.slice(0, ABSTRACT_MAX) : "";
+  return { ...r.entry, ...(abstract ? { abstract } : {}), ...(r.oa ? { oa: r.oa } : {}) };
+}
+
+/** What a kept paper is made of for Undo: the citation's fields, the reading-list mark, the abstract and the link. Anything else on an entry is the app's own bookkeeping. */
+const KEPT_FIELDS: ReadonlyArray<keyof StoredEntry> = [
+  "author", "year", "title", "source", "volume", "issue", "pages", "doi", "url", "month", "day", "accessed", "container", "editors", "number", "degree", "type", "style", "lang",
+  "rl", "abstract", "oa"
+];
+/** Whether two entries are the same kept paper in every field the student sees or edits (an empty field and an absent one are the same). */
+const sameKept = (a: StoredEntry, b: StoredEntry): boolean => KEPT_FIELDS.every((k) => (a[k] ?? "") === (b[k] ?? ""));
+
+/**
+ * Undo of a keep (the paste box's "Kept: {title}" line): takes the entry `added`, as keepEntry stored it with its pid, out of the library, but only while the library still holds
+ * exactly that entry (sameKept). "changed": the entry is there and is not as it was kept (the student edited it, or another window did), so it stays. "gone": no entry has that
+ * pid any more, so there is nothing to remove. A field the app adds to an entry later in the background does not count as a change. The copy shown is checked first, so a
+ * "changed" or "gone" writes nothing; the stored entries are checked again inside the update. Like keepEntry it needs a library that has been read, or it throws.
+ */
+export function undoKeep(added: StoredEntry, d: KeepDeps): "removed" | "changed" | "gone" {
+  if (!libraryRead(d)) throw new Error("Undo needs a library that has been read.");
+  const shown = d.lib.find((l) => l.pid === added.pid);
+  if (!shown) return "gone";
+  if (!sameKept(shown, added)) return "changed";
+  const seen: { state?: "removed" | "changed" | "gone" } = {};
+  const took = d.update((prev) => {
+    const at = prev.find((l) => l.pid === added.pid);
+    if (!at) { seen.state = "gone"; return prev; }
+    if (!sameKept(at, added)) { seen.state = "changed"; return prev; }
+    seen.state = "removed";
+    return prev.filter((l) => l !== at);
+  });
+  if (!took) throw new Error("The library did not take the change.");
+  return seen.state ?? "removed";
 }
