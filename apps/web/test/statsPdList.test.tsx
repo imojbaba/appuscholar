@@ -123,6 +123,12 @@ async function load(csv: string) {
   await click("stats-parse");
   await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 }
+/** Parses another table into the tab that is already open. */
+async function clearAndLoad(csv: string) {
+  await type("stats-paste", csv);
+  await click("stats-parse");
+  await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+}
 async function applyAndWait() {
   await click("pd-apply");
   await until(() => tid("pd-result") !== null);
@@ -567,6 +573,73 @@ describe("cells that are not one person", () => {
   it("a listed cell with other names in it is warned about before it is swapped for one code", async () => {
     await load("who,score\nPriya and Sunita Devi,5\nKavya Nair,6\nAnanya Rao,7");
     expect(text("pd-wide-0")).toBe(fill(E.stats_pd_wide_one!, { examples: "Priya and Sunita Devi" }));
+  });
+});
+
+// ---- Leftover cells of a coded name column (R49) ---------------------------------------------------------------------------------------------------
+
+describe("cells of a name column that are not on the list and were not added (R49)", () => {
+  beforeEach(() => { h.store.participants = MOCK_LIST(); h.store.design_ec = { idMode: "codes" }; });
+  const K = "K. R. Narayanan Swamy Iyer";
+  const M = "Mohammed Abdul Rahman Khan Siddiqui";
+  /** The reviewer's probe: two people with long names that are not on the list, a listed one, and Sunita, who is added. */
+  const PROBE = `student name,score\nPriya Sharma,12\n${K},15\nSunita Devi,10\n${M},9`;
+  const pasted = () => (tid("stats-paste") as HTMLTextAreaElement).value.split("\n");
+
+  it("the box names them, not as people to add, and starts at Remove these cells while the column is being replaced with codes", async () => {
+    await load(PROBE);
+    expect(sel("pd-sel-0").value).toBe("code");
+    expect(text("pd-leftover-0")).toContain(fill(E.stats_pd_leftover_many!, { n: 2, names: `${K}, ${M}` }));
+    expect(sel("pd-leftover-sel-0").value).toBe("remove");
+    expect([...sel("pd-leftover-sel-0").options].map((o) => o.textContent)).toEqual([E.stats_pd_leftover_remove, E.stats_pd_leftover_keep]);
+    // Sunita is the only one added; the long names are not people.
+    expect(text("pd-will-add")).toBe(fill(E.stats_pd_will_add_one!, { names: "Sunita Devi (P006)" }));
+    expect(text("pd-unlisted-0")).toContain(fill(E.stats_pd_unlisted_one!, { names: "Sunita Devi" }));
+    // The words in cells that go are not asked about one by one.
+    expect(tid("pd-maybe-0")).toBeNull();
+  });
+
+  it("Apply with the default choice leaves no leftover name in the coded column", async () => {
+    await load(PROBE);
+    await applyAndWait();
+    expect(pasted()).toEqual(["ParticipantCode,score", "P001,12", ",15", "P006,10", ",9"]);
+    expect(pasted().join("\n")).not.toMatch(/Narayanan|Mohammed|Siddiqui|Swamy/);
+    expect(listPeople()).toBe(6);
+    expect(savedList().people.map((p) => p.name)).not.toContain(K);
+    expect(savedList().people.map((p) => p.name)).not.toContain(M);
+  });
+
+  it("Keep leaves them as typed, and the box asks about the words inside them as it does for any answer", async () => {
+    await load(PROBE);
+    await choose("pd-leftover-sel-0", "keep");
+    expect(tid("pd-maybe-0")).not.toBeNull();
+    await applyAndWait();
+    expect(pasted()).toEqual(["ParticipantCode,score", "P001,12", `${K},15`, "P006,10", `${M},9`]);
+  });
+
+  it("with the column kept as it is, the cells start at Keep; chosen to go, they are emptied under the old header", async () => {
+    await load(PROBE);
+    await choose("pd-sel-0", "keep");
+    expect(sel("pd-leftover-sel-0").value).toBe("keep");
+    await choose("pd-leftover-sel-0", "remove");
+    await applyAndWait();
+    expect(pasted()).toEqual(["student name,score", "Priya Sharma,12", ",15", "Sunita Devi,10", ",9"]);
+  });
+
+  it("a column removed says nothing about them, and a table with none says nothing at all", async () => {
+    await load(PROBE);
+    await choose("pd-sel-0", "remove");
+    expect(tid("pd-leftover-0")).toBeNull();
+    await clearAndLoad(MOCK);
+    expect(tid("pd-leftover-0")).toBeNull();
+  });
+
+  it("a long list of them shows a few and the number", async () => {
+    const many = Array.from({ length: 6 }, (_, i) => `Mr Ravi Kumar Number${i} Of Nagpur`).join("\n");
+    await load(`student name,score\nPriya Sharma,1\n${many.split("\n").map((v, i) => `${v},${i}`).join("\n")}`);
+    const first = [0, 1, 2].map((i) => `Mr Ravi Kumar Number${i} Of Nagpur`).join(", ");
+    expect(text("pd-leftover-0")).toContain(fill(E.stats_pd_leftover_many!, { n: 6, names: `${first} ${fill(E.stats_pd_more!, { n: 3 })}` }));
+    expect(text("pd-leftover-0")).not.toContain("Number5");
   });
 });
 

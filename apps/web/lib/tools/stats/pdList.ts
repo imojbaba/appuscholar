@@ -21,6 +21,8 @@ import type { ParticipantsState } from "@/lib/tools/participants/useParticipants
  * - any other column with something from the list in it: Keep, or codes when over half of its non-empty values are listed (R8); its names inside answers start at their codes; its ask finds
  *   and suggestions start at "Choose…" (nothing is done to a guess).
  * - phone, e-mail, date of birth, address and ID number columns: v1's start (Remove); a code from the list cannot stand for them, so only Remove and Keep.
+ * - a name column's cells that are not on the list and were not added, because they are not shaped like a name (more than four words, R11: "K. R. Narayanan Swamy Iyer"), are said (R49): they start
+ *   at Remove these cells when the column is going to codes, and at Keep otherwise; the words inside cells that go are not asked about.
  * - rows of a person who withdrew with remove start removed (R10); a row that may be one of several people, some of whom withdrew, is asked about and starts at Keep (R10/R13); a cell that is
  *   two people on the list ("Priya & Rahul") is shown apart, never added as a person, and starts at Keep; a listed cell with more in it than the name is warned about before it is swapped for one code.
  */
@@ -55,11 +57,13 @@ export type ListChoices = {
   inText: Record<number, "codes" | "keep">;
   drop: Record<number, boolean>;
   ask: Record<string, "remove" | "keep">;
+  /** What to do with a name column's cells that are not on the list and were not added (R49). */
+  leftover: Record<number, "remove" | "keep">;
   multi: Record<string, "keep" | "codes" | "remove">;
   /** "" = Choose…, "name" = [name], "add" = add to the list, "keep" = not a name or keep, else the id of the person an ask find is. */
   maybe: Record<string, string>;
 };
-export const NO_CHOICES: ListChoices = { action: {}, unlisted: {}, inText: {}, drop: {}, ask: {}, multi: {}, maybe: {} };
+export const NO_CHOICES: ListChoices = { action: {}, unlisted: {}, inText: {}, drop: {}, ask: {}, leftover: {}, multi: {}, maybe: {} };
 export const choiceKey = (col: number, k: string | number): string => `${col}:${k}`;
 
 /** v1's start of a flagged column, except that a column only the values call names (a guess, F1) starts at Choose… and an anonymous plan starts names at Remove. */
@@ -109,6 +113,8 @@ export type ColView = {
   multi: Array<{ key: string; value: string; codes: string[]; choice: "keep" | "codes" | "remove" }>;
   /** Listed cells that hold more than the name. */
   wide: string[];
+  /** A name column's cells that are not on the list and were not added (R49: an answer of more than four words under a heading that says names): how many cells, a few of the values, and what Apply does with them. */
+  leftover: { cells: number; values: string[]; choice: "remove" | "keep" };
   /** Listed cells whose name more than one person on the list has ("Sam"): they are not coded as the first of those people (R36), they stay as written. `cells` counts them. */
   shared: Array<{ value: string; codes: string[]; cells: number }>;
   withdrawn: Array<{ id: string; name: string; on: string; rows: number }>;
@@ -150,7 +156,7 @@ export type ViewInput = {
 
 /** Under an anonymous plan nobody is added to the list from a table: a choice made before the plan said so is Choose… again. */
 const noAddChoice = (choice: string, anonymous: boolean): string => (anonymous && choice === "add" ? "" : choice);
-const emptyColumn = (index: number): ColumnNames => ({ index, listed: [], unlisted: [], withdrawn: [], withdrawnAsk: [], inText: [], roll: [] });
+const emptyColumn = (index: number): ColumnNames => ({ index, listed: [], unlisted: [], withdrawn: [], withdrawnAsk: [], inText: [], roll: [], leftover: [] });
 const distinct = (xs: string[]): string[] => [...new Set(xs)];
 
 export function viewOf(input: ViewInput): PdView {
@@ -171,7 +177,7 @@ export function viewOf(input: ViewInput): PdView {
     const cellAt = (row: number): string => data.rows[row]?.[i] ?? "";
     const role: ColView["role"] = !f ? "answers" : f.kind === "name" ? "name" : f.kind === "roll" ? "roll" : "other";
     const base: ColView = {
-      index: i, name, role, found: f, codes: [], listedCells: 0, unlisted: [], multi: [], wide: [], shared: [], withdrawn: [], keepNotes: [], ask: [], sure: { texts: [], answers: 0 }, maybe: [],
+      index: i, name, role, found: f, codes: [], listedCells: 0, unlisted: [], multi: [], wide: [], leftover: { cells: 0, values: [], choice: "keep" }, shared: [], withdrawn: [], keepNotes: [], ask: [], sure: { texts: [], answers: 0 }, maybe: [],
       rollState: "none", rollCodes: [], options: [], action: "keep", unlistedChoice: "add", inText: "keep", drop: true, anonymous: anonymous && role === "name", noAdd: anonymous
     };
 
@@ -244,12 +250,36 @@ export function viewOf(input: ViewInput): PdView {
     }
     const ask: ColView["ask"] = col.withdrawnAsk.map((a) => ({ row: a.row, value: cellAt(a.row).trim(), codes: a.personIds.map(codeOf), choice: choices.ask[choiceKey(i, a.row)] ?? "keep" }));
 
+    const canCode = live.length > 0 || singles.length > 0;
+    const heading = f?.why === "heading";
+    let start: ColAction;
+    let options: ColAction[];
+    if (role === "name") {
+      start = anonymous ? "remove" : !canCode ? "keep" : heading ? "code" : col.listed.length * 2 > nonEmpty ? "code" : "";
+      options = anonymous ? ["remove", "keep"]
+        : [...(heading ? [] : [""] as ColAction[]), "remove", ...(canCode ? ["code" as const] : []), "keep", ...(heading ? [] : ["notnames" as const])];
+    } else {
+      start = !anonymous && canCode && col.listed.length * 2 > nonEmpty ? "code" : "keep";
+      options = anonymous ? (live.length > 0 ? ["remove", "keep"] : []) : canCode ? ["code", "keep"] : [];
+    }
+    const pick = choices.action[i];
+    const action = pick !== undefined && options.includes(pick) ? pick : start;
+
+    // A name column's cells that are not on the list and not added (R49) go with the codes, unless the student keeps them. The words inside cells that go are not asked about.
+    const left = role === "name" ? col.leftover : [];
+    const leftKeys = new Set<string>();
+    const leftover: ColView["leftover"] = {
+      cells: left.length, values: left.map((l) => l.value).filter((v) => !leftKeys.has(normName(v)) && !!leftKeys.add(normName(v))),
+      choice: choices.leftover[i] ?? (action === "code" ? "remove" : "keep")
+    };
+    const leftGone = new Set(action !== "remove" && leftover.choice === "remove" ? left.map((l) => l.row) : []);
+
     // Names and guesses inside answers: not in the cells that are a name of their own (listed, or one of the unlisted).
     const sureTexts = new Map<string, string>();
     let sureAnswers = 0;
     const groups = new Map<string, MaybeGroup>();
     for (const t of col.inText) {
-      if (listedRows.has(t.row) || unlistedKeys.has(normName(cellAt(t.row)))) continue;
+      if (listedRows.has(t.row) || leftGone.has(t.row) || unlistedKeys.has(normName(cellAt(t.row)))) continue;
       let hasSure = false;
       const inThis = new Set<string>();
       for (const find of t.finds) {
@@ -267,26 +297,12 @@ export function viewOf(input: ViewInput): PdView {
       if (hasSure) sureAnswers++;
     }
 
-    const canCode = live.length > 0 || singles.length > 0;
-    const heading = f?.why === "heading";
-    let start: ColAction;
-    let options: ColAction[];
-    if (role === "name") {
-      start = anonymous ? "remove" : !canCode ? "keep" : heading ? "code" : col.listed.length * 2 > nonEmpty ? "code" : "";
-      options = anonymous ? ["remove", "keep"]
-        : [...(heading ? [] : [""] as ColAction[]), "remove", ...(canCode ? ["code" as const] : []), "keep", ...(heading ? [] : ["notnames" as const])];
-    } else {
-      start = !anonymous && canCode && col.listed.length * 2 > nonEmpty ? "code" : "keep";
-      options = anonymous ? (live.length > 0 ? ["remove", "keep"] : []) : canCode ? ["code", "keep"] : [];
-    }
-    const pick = choices.action[i];
-    const action = pick !== undefined && options.includes(pick) ? pick : start;
     const sure = { texts: [...sureTexts.values()], answers: sureAnswers };
     const inText = choices.inText[i] ?? (sure.texts.length || multi.length ? "codes" : "keep");
     // The names in a cell of several people are replaced by the same switch as the names inside answers: with that at Keep they stay as typed.
     for (const m of multi) if (m.choice === "codes" && inText !== "codes") m.choice = "keep";
     cols.push({
-      ...base, codes, listedCells: col.listed.length, unlisted: singles, multi, wide, shared, withdrawn, keepNotes, ask, sure, maybe: [...groups.values()], options, action,
+      ...base, codes, listedCells: col.listed.length, unlisted: singles, multi, wide, leftover, shared, withdrawn, keepNotes, ask, sure, maybe: [...groups.values()], options, action,
       unlistedChoice: choices.unlisted[i] ?? (anonymous ? "remove" : "add"), inText, drop: choices.drop[i] ?? true
     });
   });
@@ -361,9 +377,11 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
         // A row that may be several people stays as typed unless it is removed: it is not coded as the first of them. Nor is a cell that is wholly a name several people have (R36).
         const listed = n.listed.filter((l) => !askChoice.has(l.row) && (owners.get(normName(data.rows[l.row]?.[c.index] ?? ""))?.length ?? 0) < 2);
         const adding = action === "codes" && c.unlistedChoice === "add" && !c.noAdd;
+        // The cells that are not on the list and were not added go with the codes when the student says so (R49): nothing is replaced inside them.
+        const leftGone = new Set(action !== "remove" && c.leftover.choice === "remove" ? n.leftover.map((l) => l.row) : []);
         const inText = n.inText.filter((t) => {
           const key = cellKey(t.row);
-          if (singleKeys.has(key)) return false;
+          if (singleKeys.has(key) || leftGone.has(t.row)) return false;
           const choice = multiChoice.get(key);
           return choice === undefined ? true : choice === "codes" && c.inText === "codes";
         });
@@ -393,8 +411,8 @@ export function makePlan(input: ViewInput, view: PdView): PdPlan {
             if (!gone.has(t.row) && !whole.has(t.row) && t.finds.some((f) => picked.has(normName(f.text)) || (f.kind === "sure" && c.inText === "codes"))) answers++;
           }
         }
-        scan.push({ index: c.index, listed, unlisted: adding ? c.unlisted : [], withdrawn, withdrawnAsk: [], inText, roll: [] });
-        plans.push({ index: c.index, action, inText: c.inText, dropRows: withdrawn.length > 0, picks });
+        scan.push({ index: c.index, listed, unlisted: adding ? c.unlisted : [], withdrawn, withdrawnAsk: [], inText, roll: [], leftover: n.leftover });
+        plans.push({ index: c.index, action, inText: c.inText, dropRows: withdrawn.length > 0, picks, leftover: c.leftover.choice });
       }
       const r = listTransform({ ...data, rows }, scan, plans, m, codeOfName);
       const same = !r.coded && !r.removed && !r.removedRows && r.headers.length === data.headers.length

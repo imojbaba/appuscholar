@@ -21,14 +21,16 @@ import type { PdFound } from "./pdscan";
  *   people, one letter, or marked everyday) is a name cell in a name column only; elsewhere the cell is searched like any answer, so a lone "Will" among open answers is an ask find and
  *   does not turn the column into names (F1 again). In a name column, a value that is not on the list is one name, "unlisted" (distinct, first seen), unless it is not shaped like a name:
  *   more than four words, no letter in it (a number, a dash), or a placeholder (NA, N/A, nil, none); those are never unlisted, so one exact-name answer cannot turn a comments column into
- *   new participants. Every cell that is not wholly a name is also searched for names inside it (inText). A name column's value whose sure finds name exactly one person is that person's
+ *   new participants. Those values, and any other value with a letter in it that is neither on the list, nor a name to add, nor a code, are the column's `leftover` (R49): reported, never
+ *   added as people (R11), and emptied by listTransform when the plan says `leftover: "remove"`. Every cell that is not wholly a name is also searched for names inside it (inText). A name column's value whose sure finds name exactly one person is that person's
  *   cell (listed, and withdrawn if they withdrew with remove), not a new name, so "Dr. Priya Sharma" is never added beside P001. A cell that is a person's code is already a code: it is
  *   neither listed nor unlisted (but it still marks the row of a withdrawn person). A cell that is only a number is not searched. Cells are the table's own, not trimmed again: finds are
  *   positions in the cell as it is.
  * - listTransform: writes the table back with the student's choices per column. `codes` puts each person's code (from the list) in place of a listed or roll cell and what `add` returns
  *   in place of an unlisted value (the caller allocates the code and puts the person on the list; one call per distinct name, in column order and then row order, among the rows kept);
  *   `remove` drops the column; `keep` leaves it; `codes` on a column the scan has nothing about is `keep`. `dropRows` drops the rows in that column's `withdrawn` (the union over every
- *   column that asks; `withdrawnAsk` rows are never dropped here), whether or not the column itself stays.
+ *   column that asks; `withdrawnAsk` rows are never dropped here), whether or not the column itself stays. `leftover: "remove"` empties the column's leftover cells (they would otherwise
+ *   stay in the table as they are, under the coded header); a plan with no `leftover` keeps them.
  *   Names inside cells: with `inText: "codes"` a sure find becomes its person's code; a pick (the student's answer for an ask or suggest find, by the normal form of the find's text)
  *   replaces every find with that text in the column; a find with no answer is left as it is. Header of the first coded column is `ParticipantCode`, later ones `ParticipantCode 2`,
  *   `ParticipantCode 3`, skipping any name that a column left in the table already has; each stays where its column was. The CSV is v1's pdCsv.
@@ -70,6 +72,11 @@ export type ColumnNames = {
   inText: Array<{ row: number; finds: NameFind[] }>;
   /** Cells that are the roll number of a listed person. */
   roll: Array<{ row: number; personId: string }>;
+  /**
+   * In a name column, the cells (not the distinct values) with a letter in them that are not on the list and not a name to add either: an answer of more than four words (R11), as written
+   * (trimmed). Not a code, a roll number, a placeholder or a number. They are never added as people; the student keeps them or removes them (ColumnPlan.leftover).
+   */
+  leftover: Array<{ row: number; value: string }>;
 };
 
 /** The student's choice for one column. `picks` answer the column's ask and suggest finds by the normal form of the find's text; `to` is a person's code or "[name]". */
@@ -79,6 +86,8 @@ export type ColumnPlan = {
   inText: "codes" | "keep";
   dropRows: boolean;
   picks: Array<{ text: string; to: string }>;
+  /** What to do with the column's leftover cells: "remove" empties them; "keep" or nothing leaves them as they are. */
+  leftover?: "remove" | "keep";
 };
 
 /** A spelling that is one letter, with its marks (as participants.ts counts it). */
@@ -132,7 +141,7 @@ export function listTableScan(
     const cells = data.rows.map((r) => r[index] ?? "");
     // Only a spelling the matcher would not ask about counts as "a listed value" for finding a name column (F1: one lone "Will" among open answers must not make them all names).
     const isName = named.has(index) || cells.some((c) => names.get(normName(c))?.ambiguous === false);
-    const col: ColumnNames = { index, listed: [], unlisted: [], withdrawn: [], withdrawnAsk: [], inText: [], roll: [] };
+    const col: ColumnNames = { index, listed: [], unlisted: [], withdrawn: [], withdrawnAsk: [], inText: [], roll: [], leftover: [] };
     const seen = new Set<string>();
     /** A cell that is these people's: removed when all of them withdrew with remove, asked about when only some did. */
     const withdraw = (row: number, ids: string[]) => {
@@ -164,7 +173,12 @@ export function listTableScan(
       if (NUMBER.test(value)) return;
       const finds = [...findNames(cell, m), ...suggestNames(cell, m, opts.notNames, { speakerLabels: false, firstNames: opts.suggest })].sort((a, b) => a.start - b.start);
       if (finds.length) col.inText.push({ row, finds });
-      if (!isName || !shapedLikeAName(value)) return;
+      if (!isName) return;
+      if (!shapedLikeAName(value)) {
+        // Not one person's name (R11), so not added; but it is in a name column and will sit under the coded header unless the student says otherwise (R49). A number or a placeholder is not worth a word.
+        if (/\p{L}/u.test(value) && !PLACEHOLDER.test(value)) col.leftover.push({ row, value });
+        return;
+      }
       // A value of a name column that holds exactly one person's name is that person's cell; otherwise it is a name that is not on the list.
       const sure = new Set(finds.filter((f) => f.kind === "sure").flatMap((f) => f.personIds));
       if (sure.size === 1) {
@@ -176,7 +190,7 @@ export function listTableScan(
         col.unlisted.push(value);
       }
     });
-    if (col.listed.length || col.unlisted.length || col.withdrawn.length || col.withdrawnAsk.length || col.inText.length || col.roll.length) out.push(col);
+    if (col.listed.length || col.unlisted.length || col.withdrawn.length || col.withdrawnAsk.length || col.inText.length || col.roll.length || col.leftover.length) out.push(col);
   });
   return out;
 }
@@ -228,7 +242,9 @@ export function listTransform(
     const unlisted = new Map(s.unlisted.map((u) => [normName(u), u]));
     const inText = new Map(s.inText.map((t) => [t.row, t.finds]));
     const picks = new Map(p.picks.map((k) => [normName(k.text), k.to]));
+    const leftover = new Set(p.leftover === "remove" ? s.leftover.map((l) => l.row) : []);
     return keepRows.map((ri) => {
+      if (leftover.has(ri)) return "";
       const cell = cellAt(ri);
       if (p.action === "codes") {
         const code = codeOfId.get(people.get(ri) ?? "");

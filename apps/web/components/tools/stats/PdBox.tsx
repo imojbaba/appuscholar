@@ -31,6 +31,9 @@ function resultText(t: T, r: PdResult): string {
   ].filter(Boolean).join(" ");
 }
 
+/** A cell's text for a line of the box: the first 40 characters. */
+const clip = (v: string): string => (v.length <= 40 ? v : v.slice(0, 40).trimEnd() + "…");
+
 /** At most `max` of the names, then "and N more". */
 function shortList(t: T, names: string[], max: number): string {
   return names.length <= max ? names.join(", ") : names.slice(0, max).join(", ") + " " + t("stats_pd_more", { n: names.length - max });
@@ -118,6 +121,15 @@ function ListColumn({ projectId, c }: { projectId: string; c: ColView }) {
             {c.unlisted.length === 1 ? t("stats_pd_unlisted_one", { names: c.unlisted[0]! }) : t("stats_pd_unlisted_many", { n: c.unlisted.length, names: shortList(t, c.unlisted, 8) })}
           </Line>
         )}
+        {c.leftover.cells > 0 && c.action !== "remove" && (
+          <Line id={`pd-leftover-${i}`} pick={(by) =>
+            <Pick id={`pd-leftover-sel-${i}`} by={by} value={c.leftover.choice}
+              options={[["remove", t("stats_pd_leftover_remove")], ["keep", t("stats_pd_leftover_keep")]]}
+              onChange={(v) => setListChoice(projectId, "leftover", i, v as "remove" | "keep")} />
+          }>
+            {t(c.leftover.cells === 1 ? "stats_pd_leftover_one" : "stats_pd_leftover_many", { n: c.leftover.cells, names: shortList(t, c.leftover.values.map(clip), 3) })}
+          </Line>
+        )}
         {c.multi.length > 0 && (
           <div data-testid={`pd-multi-${i}`}>
             {c.multi.map((m, k) => (
@@ -194,7 +206,7 @@ function ListColumn({ projectId, c }: { projectId: string; c: ColView }) {
 
 /** Whether a column has anything to say: a flagged column always has; any other only for what the list found in it. */
 const hasWords = (c: ColView): boolean =>
-  c.role !== "answers" || c.options.length > 0 || c.unlisted.length + c.multi.length + c.wide.length + c.shared.length + c.withdrawn.length + c.keepNotes.length + c.ask.length + c.sure.texts.length + c.maybe.length > 0;
+  c.role !== "answers" || c.options.length > 0 || c.unlisted.length + c.multi.length + c.wide.length + c.leftover.cells + c.shared.length + c.withdrawn.length + c.keepNotes.length + c.ask.length + c.sure.texts.length + c.maybe.length > 0;
 
 /** Why the box is v1's, in one line. */
 const WHY: Record<NotUsed, string> = {

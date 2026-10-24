@@ -237,6 +237,41 @@ describe("listTableScan", () => {
     expect(column(listTableScan(table("comments\nRahul Verma\nDr Asha Verma Rao\nDr Asha Verma Rao Singh"), m, OPTS), 0).unlisted).toEqual(["Dr Asha Verma Rao"]);
   });
 
+  it("leftover (R49): a name column's cells that are not on the list, not a name to add, not a code and not a placeholder are reported, and are never added as people", () => {
+    const m = buildMatcher([PRIYA, RAHUL]);
+    const d = table(
+      [
+        "student name,x",
+        "Priya Sharma,1",
+        "K. R. Narayanan Swamy Iyer,2",
+        "Sunita Devi,3",
+        "Mohammed Abdul Rahman Khan Siddiqui,4",
+        "NA,5",
+        "P002,6",
+        "12,7",
+        "Rahul,8",
+        "K. R. Narayanan Swamy Iyer,9",
+      ].join("\n"),
+    );
+    const c = column(listTableScan(d, m, { ...OPTS, nameColumns: [0] }), 0);
+    expect(c.unlisted).toEqual(["Sunita Devi"]);
+    expect(c.listed.map((l) => l.row)).toEqual([0, 7]);
+    // Every cell (not every distinct value), with the row, as written.
+    expect(c.leftover).toEqual([
+      { row: 1, value: "K. R. Narayanan Swamy Iyer" },
+      { row: 3, value: "Mohammed Abdul Rahman Khan Siddiqui" },
+      { row: 8, value: "K. R. Narayanan Swamy Iyer" },
+    ]);
+    // A column that is no name column has none: its long answers are answers (nothing is said of it).
+    expect(listTableScan(table("notes\nLiked it a lot in the second week of the course\nIt was fine"), m, OPTS)).toEqual([]);
+  });
+
+  it("leftover is empty when every value of the column is a name that is listed, to add, a code or a placeholder", () => {
+    const m = buildMatcher([PRIYA]);
+    const c = column(listTableScan(table("name,x\nPriya Sharma,1\nSunita Devi,2\nNA,3\nP001,4\n-,5"), m, { ...OPTS, nameColumns: [0] }), 0);
+    expect(c.leftover).toEqual([]);
+  });
+
   it("placeholders, numbers and values with no letter are never unlisted names", () => {
     const m = buildMatcher([PRIYA]);
     const c = column(listTableScan(table("name,x\nNA,1\n-,2\n12,3\nn/a,4\nNone,5\nNIL,6\n--,7\nSunita Devi,8"), m, { ...OPTS, nameColumns: [0] }), 0);
@@ -444,6 +479,24 @@ describe("listTransform", () => {
     expect(out.rows).toEqual([["[name] said P002 left"]]);
     const unanswered = listTransform(d, scan, [plan(0, { inText: "codes" })], people, () => "X");
     expect(unanswered.rows).toEqual([["Meena said P002 left"]]);
+  });
+
+  it("leftover cells (R49) are emptied when the plan removes them, and stay when it keeps them or says nothing; they are never added as people", () => {
+    const d = table("student name,score\nPriya Sharma,1\nK. R. Narayanan Swamy Iyer,2\nSunita Devi,3\nMohammed Abdul Rahman Khan Siddiqui,4");
+    const scan = listTableScan(d, buildMatcher([PRIYA]), { ...OPTS, nameColumns: [0] });
+    const asked: string[] = [];
+    const add = (name: string) => { asked.push(name); return "P006"; };
+    const removed = listTransform(d, scan, [plan(0, { action: "codes", leftover: "remove" })], buildMatcher([PRIYA]), add);
+    expect(removed.headers).toEqual(["ParticipantCode", "score"]);
+    expect(removed.rows).toEqual([["P001", "1"], ["", "2"], ["P006", "3"], ["", "4"]]);
+    expect(asked).toEqual(["Sunita Devi"]);
+    expect(removed.added).toEqual(["Sunita Devi"]);
+    for (const over of [{ leftover: "keep" as const }, {}]) {
+      const kept = listTransform(d, scan, [plan(0, { action: "codes", ...over })], buildMatcher([PRIYA]), () => "P006");
+      expect(kept.rows).toEqual([["P001", "1"], ["K. R. Narayanan Swamy Iyer", "2"], ["P006", "3"], ["Mohammed Abdul Rahman Khan Siddiqui", "4"]]);
+    }
+    // A removed column has nothing left to empty.
+    expect(listTransform(d, scan, [plan(0, { action: "remove", leftover: "remove" })], buildMatcher([PRIYA]), add).rows).toEqual([["1"], ["2"], ["3"], ["4"]]);
   });
 
   it("does not change its input", () => {
