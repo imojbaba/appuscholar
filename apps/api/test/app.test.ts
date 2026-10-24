@@ -395,7 +395,7 @@ describe("ai routes", () => {
     expect(await projectLog()).toEqual([{ d: "2026-10-21", p: "groq", m: "openai/gpt-oss-120b", k: "checking whether my project idea is realistic", g: "feedback" }]);
   });
 
-  it("logs the four kinds Task Q3 labels (OJ's yes, decision 7): a question about a paper, a walk-through stage, the statistics helper and a lesson question", async () => {
+  it("logs the three kinds Task Q3 labels (OJ's yes, decision 7): a question about a paper, a walk-through stage and a lesson question; the statistics helper keeps v1's label (B3-R3)", async () => {
     const doc = apBuild("Practice paper", ["Abstract\nWe studied 120 students.\n\nMethod\nSurvey of students in Delhi.\n\nResults\nSleep predicted recall."], "pdf");
     const step = { k: "procedure", title: "Consent", said: "Participants consented.", flaw: "No consent form is shown." };
     const prompts = [
@@ -410,7 +410,7 @@ describe("ai routes", () => {
     expect(log.map((x) => [x.k, x.g])).toEqual([
       ["asking questions about a paper", "explain"],
       ["working through a paper section by section", "feedback"],
-      ["explaining statistics", "explain"],
+      ["formatting statistics output in APA style", "text"],
       ["a guided lesson on a paper", "explain"],
       ["grammar and polish", "text"]
     ]);

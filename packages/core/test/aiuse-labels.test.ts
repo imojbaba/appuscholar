@@ -18,9 +18,10 @@ import type { RsPaper } from "../src/research";
  * build*Prompt builder, because those labels are what a student hands in. Rewording a prompt must not silently relabel it.
  * Four rows are fixed by the spec (idea, gap finder, literature review, shelf summary); every other row is the value
  * classifyAiUse returned on commit 6c38396, written down as it was. Later tasks append their builders to LABELS.
- * Task Q3 (OJ's yes, decision 7; register D-S2-136) changed eight rows on purpose: the route now logs classifyAiUseV2, whose four
- * new rules label the ask, the walk-through, the statistics helper and the lesson question (all five teachers). Each changed row
- * says so below, and V1_LABEL_OF_CHANGED holds the label v1's classifyAiUse (the port, never edited) still gives it.
+ * Task Q3 (OJ's yes, decision 7; register D-S2-136) changed seven rows on purpose: the route now logs classifyAiUseV2, whose three
+ * new rules label the ask, the walk-through and the lesson question (all five teachers). Each changed row says so below, and
+ * V1_LABEL_OF_CHANGED holds the label v1's classifyAiUse (the port, never edited) still gives it. The statistics helper is not
+ * one of them (ruling B3-R3, see its row).
  */
 const paper = (n: number): RsPaper => ({ title: "Sleep and memory in students " + n, authors: "A. Rao", year: 2021, venue: "J. Psych", doi: "10.1/x" + n, source: "crossref", abstract: "We studied 120 students and found that sleep length predicted recall scores." });
 const doc = apBuild("Practice paper", ["Abstract\nWe studied 120 students.\n\nMethod\nSurvey of students in Delhi.\n\nResults\nSleep predicted recall."], "pdf");
@@ -50,8 +51,8 @@ export const LABELS: Array<[name: string, build: () => string, k: string, g: AiU
   ["buildHelperPrompt case", () => buildHelperPrompt("case", "psychology", "some text").prompt, "analysing a case description", "explain"],
   ["buildHelperPrompt litrev", () => buildHelperPrompt("litrev", "psychology", "some text").prompt, "advice on building a literature review", "feedback"],
   ["buildHelperPrompt explain", () => buildHelperPrompt("explain", "psychology", "some text").prompt, "explaining a concept", "explain"],
-  // Q3 changed this row: v1 labels the stats helper as APA formatting (text); the route now logs "explaining statistics" (explain).
-  ["buildHelperPrompt stats", () => buildHelperPrompt("stats", "psychology", "some text").prompt, "explaining statistics", "explain"],
+  // Q3 did not change this row (ruling B3-R3): the stats helper is the "Format results in APA" button, which writes APA reporting sentences for the student, so v1's label (text, the AI produced or reworded text) is the honest one.
+  ["buildHelperPrompt stats", () => buildHelperPrompt("stats", "psychology", "some text").prompt, "formatting statistics output in APA style", "text"],
   ["buildDevilPrompt", () => buildDevilPrompt("some passage").prompt, "counter-arguments to my passage", "feedback"],
   ["buildVivaPrompt conf", () => buildVivaPrompt("conf", "some text").prompt, "practice viva questions", "feedback"],
   ["buildVivaPrompt viva", () => buildVivaPrompt("viva", "some text").prompt, "practice viva questions", "feedback"],
@@ -79,9 +80,8 @@ export const LABELS: Array<[name: string, build: () => string, k: string, g: AiU
   ["buildDictPrompt", () => buildDictPrompt("psychology", "study").prompt, "looking up a word", "explain"]
 ];
 
-/** The eight rows Q3 changed on purpose, with the label v1's classifyAiUse gives the same prompt (the port is not edited, so this stays true). */
+/** The seven rows Q3 changed on purpose, with the label v1's classifyAiUse gives the same prompt (the port is not edited, so this stays true). The stats helper is not here: it keeps v1's label (ruling B3-R3). */
 const V1_LABEL_OF_CHANGED: Record<string, { k: string; g: AiUseGroup }> = {
-  "buildHelperPrompt stats": { k: "formatting statistics output in APA style", g: "text" },
   buildAskPrompt: { k: "other help", g: "other" },
   buildWalkPrompt: { k: "other help", g: "other" },
   "buildLessonAskPrompt raj": { k: "asking a teaching character about the practice paper", g: "explain" },
@@ -102,7 +102,7 @@ describe("classifyAiUseV2 against v1's classifyAiUse (Task Q3)", () => {
     expect(classifyAiUse(build())).toEqual(V1_LABEL_OF_CHANGED[name] ?? { k, g });
   });
 
-  it("exactly the eight rows named in V1_LABEL_OF_CHANGED differ from v1, and every other builder keeps v1's label", () => {
+  it("exactly the seven rows named in V1_LABEL_OF_CHANGED differ from v1, and every other builder keeps v1's label", () => {
     const differ = LABELS.filter(([, build]) => JSON.stringify(classifyAiUseV2(build())) !== JSON.stringify(classifyAiUse(build()))).map(([name]) => name);
     expect(differ.sort()).toEqual(Object.keys(V1_LABEL_OF_CHANGED).sort());
   });
