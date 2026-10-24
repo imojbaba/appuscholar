@@ -8,7 +8,8 @@
  *      (Appu's opening words, the best sections, the open tool, the question last) at temperature 0.2 and 700 tokens without the language
  *      line, the answer is drawn as text (its markup is not), "From the guide" links open the section, and a refused call (the free limit)
  *      shows the provider's sentence and the links;
- *   3. At 375 px a long answer scrolls inside its own box: the Guide's list keeps room, the dialog fits the screen and Close stays reachable.
+ *   3. At six screen sizes, from a 360 x 640 phone to a 1440 x 789 desktop, with an answer of about 110 words and a long one: the dialog fits the
+ *      screen, Close stays on it, the Guide's list keeps its floor (at least 120 px) and can be scrolled into view, and nothing scrolls sideways.
  * The Guide holds its 26 sections (Task C1); the steps read the titles from the content. That Appu's own questions leave no row in the AI-use log
  * is pinned where the log is written: apps/api/test/app.test.ts ("does not log an Ask Appu question as the Guide sends it") and, for the prompt's
  * opening words, apps/web/test/wc3AppuLib.test.ts. Here the AI gateway is answered in the browser, so nothing reaches a provider.
@@ -37,18 +38,24 @@ test.describe.configure({ timeout: 120_000 });
 
 type Sent = { provider: string; prompt: string; temperature?: number; maxTokens?: number; noLang?: boolean };
 
-/** Answers /ai/complete in the browser: a recorded reply, or the free-limit refusal for a question that mentions "alpha"; keeps what was sent. */
-async function answerAi(page: Page, reply: string, delayMs = 500): Promise<Sent[]> {
+/**
+ * Answers /ai/complete in the browser: `pick` chooses the reply for a prompt (a text, or "refuse" for the free-limit answer); what was sent is kept.
+ * `hold()` makes the next calls wait until `release()`, so a step can look at the busy state for as long as it needs.
+ */
+function answerAi(page: Page, pick: (prompt: string) => string | "refuse"): Promise<{ sent: Sent[]; hold(): void; release(): void }> {
   const sent: Sent[] = [];
-  await page.route(API_ORIGIN + "/ai/complete", async (route: Route) => {
+  let held = false;
+  let waiting: Array<() => void> = [];
+  const control = { sent, hold: () => { held = true; }, release: () => { held = false; waiting.splice(0).forEach((go) => go()); } };
+  return page.route(API_ORIGIN + "/ai/complete", async (route: Route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: CORS });
     const body = route.request().postDataJSON() as Sent;
     sent.push(body);
-    await new Promise((r) => setTimeout(r, delayMs));
-    if (/STUDENT QUESTION:\n.*alpha/.test(body.prompt)) return route.fulfill({ status: 429, contentType: "application/json", headers: CORS, body: JSON.stringify({ error: "rate-limit" }) });
-    return route.fulfill({ status: 200, contentType: "application/json", headers: CORS, body: JSON.stringify({ text: reply, model: "mock" }) });
-  });
-  return sent;
+    if (held) await new Promise<void>((go) => waiting.push(go));
+    const answer = pick(body.prompt);
+    if (answer === "refuse") return route.fulfill({ status: 429, contentType: "application/json", headers: CORS, body: JSON.stringify({ error: "rate-limit" }) });
+    return route.fulfill({ status: 200, contentType: "application/json", headers: CORS, body: JSON.stringify({ text: answer, model: "mock" }) });
+  }).then(() => control);
 }
 
 /** Saves a Groq key remembered in this browser: from the header's AI pill, or from the phone's menu. */
@@ -105,11 +112,11 @@ test("with no AI key Appu lists the matching sections and sends nothing", async 
   // A question the guide covers: the matching sections only, open, the search box empty, the line and its links.
   await page.getByTestId("appu-q").fill(QUESTION);
   await page.getByTestId("appu-go").click();
+  await expect(page.getByTestId("appu-link-scales")).toHaveText(SCALES.title);
   const links = page.locator("[data-testid^=appu-link-]");
   const n = await links.count();
   expect(n).toBeGreaterThanOrEqual(1);
   expect(n).toBeLessThanOrEqual(3);
-  await expect(page.getByTestId("appu-link-scales")).toHaveText(SCALES.title);
   await expect(page.getByTestId("appu-answer")).toContainText(EN.wc_appu_nokey.split("{links}")[0]!);
   await expect(page.getByTestId("appu-answer")).toContainText(EN.wc_appu_nokey.split("{links}")[1]!.replace(/^\./, "").trim());
   await expect(rows).toHaveCount(n);
@@ -129,16 +136,20 @@ test("with no AI key Appu lists the matching sections and sends nothing", async 
 });
 
 test("with a key and the AI answered from a recording: the answer as text, the guide's links, and a refused call", async ({ page }) => {
-  const sent = await answerAi(page, REPLY);
+  const ai = await answerAi(page, (prompt) => (/STUDENT QUESTION:\n.*alpha/.test(prompt) ? "refuse" : REPLY));
+  const sent = ai.sent;
   await signIn(page, NEW_ACCOUNT);
   await saveKey(page);
   await openGuide(page);
 
   await page.getByTestId("appu-q").fill(QUESTION);
+  // While Appu reads (the recording is held back until these have been seen): the line, and the button is off.
+  ai.hold();
   await page.getByTestId("appu-go").click();
-  // While Appu reads: the line, and the button is off.
   await expect(page.getByTestId("appu-answer")).toHaveText(EN.wc_appu_busy);
   await expect(page.getByTestId("appu-go")).toBeDisabled();
+  await expect(page.getByTestId("appu-text")).toHaveCount(0);
+  ai.release();
   await expect(page.getByTestId("appu-text")).toBeVisible();
   await expect(page.getByTestId("appu-go")).toBeEnabled();
 
@@ -180,37 +191,71 @@ test("with a key and the AI answered from a recording: the answer as text, the g
   expect(sent).toHaveLength(2);
 });
 
-test.describe("on a phone", () => {
-  test.use({ viewport: { width: 375, height: 812 } });
+/** What a student sees at each size: a 360 x 640 phone, a 375 x 812 one, short laptops (1366 x 657, 1280 x 620) and a desktop. */
+const SIZES = [[375, 812], [360, 720], [360, 640], [1366, 657], [1280, 620], [1440, 789]] as const;
+/** About 110 words, the length Appu is told to keep to. */
+const TYPICAL_REPLY = Array.from({ length: 8 }, (_, i) => `Step ${i + 1}: flip each negative item so that a high score always means more of the trait, and do it before you add the scale up.`).join(" ");
+/** About 500 words, past what the prompt asks for but within the 700 tokens allowed. */
+const LONG_REPLY = Array.from({ length: 30 }, (_, i) => `Point ${i + 1}: flip each negative item so that a high score always means more of the trait, and check it against the scale's manual.`).join("\n");
 
-  test("a long answer scrolls in its own box and the Guide keeps its list and its Close button", async ({ page }) => {
-    const longReply = Array.from({ length: 30 }, (_, i) => `Point ${i + 1}: flip each negative item so a high score always means more of the trait.`).join("\n");
-    await answerAi(page, longReply, 200);
-    await signIn(page, NEW_ACCOUNT);
-    await saveKey(page);
-    await openGuide(page);
+for (const [width, height] of SIZES) {
+  test.describe(`at ${width} x ${height}`, () => {
+    test.use({ viewport: { width, height } });
 
-    const dialog = page.getByTestId("guide-dialog");
-    await page.getByTestId("appu-q").fill(QUESTION);
-    await page.getByTestId("appu-go").click();
-    await expect(page.getByTestId("appu-text")).toBeVisible();
+    test("an answer of 110 words and a long one: the Guide fits, Close stays on the screen, the list keeps its floor", async ({ page }) => {
+      await answerAi(page, (prompt) => (/STUDENT QUESTION:\n.*long answer/.test(prompt) ? LONG_REPLY : TYPICAL_REPLY));
+      await signIn(page, NEW_ACCOUNT);
+      await openGuide(page);
+      const dialog = page.getByTestId("guide-dialog");
+      const list = page.getByTestId("guide-list");
 
-    const answer = page.getByTestId("appu-answer");
-    expect(await answer.evaluate((el) => el.scrollHeight > el.clientHeight), "the long answer scrolls in its box").toBe(true);
-    // The dialog fits the screen, no sideways scroll, and the list is still a usable height.
-    const b = (await dialog.boundingBox())!;
-    expect(b.x).toBeGreaterThanOrEqual(0);
-    expect(b.x + b.width).toBeLessThanOrEqual(375);
-    expect(b.y).toBeGreaterThanOrEqual(0);
-    expect(b.y + b.height).toBeLessThanOrEqual(812);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    const list = (await page.getByTestId("guide-list").boundingBox())!;
-    // With the answer and the note showing, about a heading and one row (without the cap it was squeezed to 22 px).
-    expect(list.height, "the Guide's list keeps room beside a long answer").toBeGreaterThanOrEqual(70);
-    for (const id of ["appu-q", "appu-go", "guide-search", "guide-close"]) await expect(page.getByTestId(id)).toBeInViewport();
+      // With no key the matching sections are listed: the list is brought into view, with Close on the screen, wherever the answer line sits.
+      await page.getByTestId("appu-q").fill(QUESTION);
+      await page.getByTestId("appu-go").click();
+      await expect(page.getByTestId("appu-answer")).toContainText(EN.wc_appu_nokey.split("{links}")[0]!);
+      await expect(list).toBeInViewport({ ratio: 0.9 });
+      await expect(page.getByTestId("guide-close")).toBeInViewport();
+      await page.getByTestId("guide-close").click();
+      await page.keyboard.press("Escape");
+      await expect(page.getByTestId("help-dialog")).toBeHidden();
 
-    await page.getByTestId("guide-close").click();
-    await expect(dialog).toBeHidden();
-    await expect(page.getByTestId("help-dialog")).toBeVisible();
+      // Then with a key.
+      await saveKey(page);
+      await openGuide(page);
+
+      const checkLayout = async (what: string) => {
+        const b = (await dialog.boundingBox())!;
+        expect(b.x, what).toBeGreaterThanOrEqual(0);
+        expect(b.x + b.width, what).toBeLessThanOrEqual(width);
+        expect(b.y, what).toBeGreaterThanOrEqual(0);
+        expect(b.y + b.height, what).toBeLessThanOrEqual(height);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), what + ": no sideways scroll").toBe(true);
+        expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth), what + ": the dialog does not scroll sideways").toBe(true);
+        await expect(page.getByTestId("guide-close"), what + ": Close is on the screen").toBeInViewport();
+        // The list is not squeezed below its floor (8rem = 128 px) whatever the answer, and scrolling the part above Close brings it into view.
+        expect((await list.boundingBox())!.height, what + ": the list's height").toBeGreaterThanOrEqual(120);
+        await list.scrollIntoViewIfNeeded();
+        await expect(list, what + ": the list can be brought into view").toBeInViewport({ ratio: 0.9 });
+        await expect(page.getByTestId("guide-close"), what + ": Close is still on the screen").toBeInViewport();
+      };
+
+      await page.getByTestId("appu-q").fill(QUESTION);
+      await page.getByTestId("appu-go").click();
+      await expect(page.getByTestId("appu-text")).toHaveText(TYPICAL_REPLY);
+      await checkLayout("an answer of about 110 words");
+
+      await page.getByTestId("appu-q").fill(QUESTION + " (long answer please)");
+      await page.getByTestId("appu-go").click();
+      await expect(page.getByTestId("appu-text")).toHaveText(LONG_REPLY);
+      const answer = page.getByTestId("appu-answer");
+      expect(await answer.evaluate((el) => el.scrollHeight > el.clientHeight), "the long answer scrolls in its own box").toBe(true);
+      expect((await answer.boundingBox())!.height, "the box is kept to a third of the screen").toBeLessThanOrEqual(height * 0.33);
+      await checkLayout("a long answer");
+
+      // Close ends only the Guide.
+      await page.getByTestId("guide-close").click();
+      await expect(dialog).toBeHidden();
+      await expect(page.getByTestId("help-dialog")).toBeVisible();
+    });
   });
-});
+}

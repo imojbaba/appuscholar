@@ -47,13 +47,17 @@ export function AskAppu() {
   const [busy, setBusy] = useState(false);
   const running = useRef(false);
 
+  const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+  // The account's saved keys are read once the app opens; until then a key locked in the account would look like no key, so Ask waits for them
+  // (a key already held in this tab needs no waiting, and a failed read still ends with `loaded`).
+  const waiting = !!keys && !keys.loaded && !keyStore.getUnlocked(provider);
+
   const ask = async () => {
     const q = question.trim();
-    if (!q || running.current) return;
+    if (!q || running.current || waiting) return;
     const hits = appuRank(q, guide.sections);
     if (!hits.length) { setOut({ kind: "none" }); return; }
     // A key usable now, or saved (v2 may hold it locked in the account: the call asks for the passphrase then).
-    const provider: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
     if (!(keys ? keys.hasKey(provider) : !!keyStore.getUnlocked(provider))) {
       guide.showOnly(hits.map((s) => s.id));
       setOut({ kind: "nokey", hits });
@@ -89,14 +93,14 @@ export function AskAppu() {
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) void ask(); }}
         />
-        <Button variant="primary" disabled={busy} data-testid="appu-go" onClick={() => { void ask(); }}>{t("wc_appu_go")}</Button>
+        <Button variant="primary" disabled={busy || waiting} data-testid="appu-go" onClick={() => { void ask(); }}>{t("wc_appu_go")}</Button>
       </div>
       <p className="mb-0 mt-1.5 text-[12.5px] text-muted-foreground" data-testid="appu-note">{t("wc_appu_note")}</p>
       <div aria-live="polite">
-        {/* A long answer scrolls inside its own box, so it cannot push the Guide's list out of the dialog. On a phone the dialog is a 90dvh column
-            with the search above and the list below, so the box is kept to about five lines there. */}
+        {/* A long answer scrolls inside its own box, kept to a third of the screen's height (not its width: a short laptop screen is as short as
+            a phone), so the part of the Guide above Close does not grow past the list by more than that. */}
         {out && (
-          <div className="mt-2 max-h-[15dvh] overflow-y-auto text-[13.5px] leading-relaxed sm:max-h-[40dvh]" data-testid="appu-answer">
+          <div className="mt-2 max-h-[32dvh] overflow-y-auto text-[13.5px] leading-relaxed" data-testid="appu-answer">
             {out.kind === "busy" && t("wc_appu_busy")}
             {out.kind === "none" && t("wc_appu_none")}
             {out.kind === "nokey" && withLinks(t("wc_appu_nokey"), links(out.hits))}

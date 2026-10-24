@@ -13,7 +13,7 @@ import type { GuideSection } from "@/lib/help/guide/types";
 
 const h = vi.hoisted(() => ({
   callAI: vi.fn(),
-  keys: null as null | { hasKey(p: string): boolean },
+  keys: null as null | { hasKey(p: string): boolean; loaded: boolean },
   path: "/p/p-secret-id/writing/words" as string | null
 }));
 // Task C3 mounts Ask Appu in the Guide, so the Guide's own tests (wc2GuideDialog) mock these too: the hooks need the workspace's providers.
@@ -34,7 +34,7 @@ const FIX: GuideSection[] = [
 let roots: Root[] = [];
 beforeEach(() => {
   h.callAI.mockReset();
-  h.keys = { hasKey: () => true };
+  h.keys = { hasKey: () => true, loaded: true };
   h.path = "/p/p-secret-id/writing/words";
 });
 afterEach(() => { for (const r of roots) act(() => r.unmount()); roots = []; document.body.innerHTML = ""; delete (window as unknown as { __pwned?: number }).__pwned; });
@@ -144,7 +144,7 @@ describe("no section matches", () => {
 
 describe("no AI key", () => {
   it("lists the matching sections in the Guide, all open, under 'N sections match your question', and says why there is no answer", async () => {
-    h.keys = { hasKey: () => false };
+    h.keys = { hasKey: () => false, loaded: true };
     dialog();
     type(q("guide-search") as HTMLInputElement, "export");
     await ask("Should I give consent forms to participants, and is alpha needed?");
@@ -160,14 +160,14 @@ describe("no AI key", () => {
     expect(all("[data-testid^=appu-link-]").map((a) => a.getAttribute("data-testid"))).toEqual(["appu-link-consent", "appu-link-alpha"]);
   });
   it("says '1 section matches your question' for one", async () => {
-    h.keys = { hasKey: () => false };
+    h.keys = { hasKey: () => false, loaded: true };
     dialog();
     await ask("export");
     expect(sectionIds()).toEqual(["backup"]);
     expect(text("guide-count")).toBe("1 section matches your question");
   });
   it("the next keystroke in the search box ends the list and goes back to searching", async () => {
-    h.keys = { hasKey: () => false };
+    h.keys = { hasKey: () => false, loaded: true };
     dialog();
     await ask("consent");
     expect(text("guide-count")).toMatch(/match your question$/);
@@ -189,6 +189,39 @@ describe("no AI key", () => {
     await ask("alpha");
     expect(h.callAI).toHaveBeenCalledTimes(1);
     expect(text("appu-answer")).toMatch(/^Appu needs an AI key/);
+    spy.mockRestore();
+  });
+});
+
+describe("while the saved keys are still being read", () => {
+  it("a key saved in the account is not 'no key': Ask waits (button off, Enter does nothing, nothing listed) until the keys have loaded", async () => {
+    h.keys = { hasKey: () => false, loaded: false };
+    dialog();
+    const box = q("appu-q") as HTMLInputElement;
+    type(box, "alpha");
+    expect((q("appu-go") as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => { box.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+    expect(h.callAI).not.toHaveBeenCalled();
+    expect(q("appu-answer")).toBeNull();
+    expect(sections().length).toBe(5);
+    // the keys arrive: a locked key is a key, so the question is sent (the call asks for the passphrase)
+    h.keys = { hasKey: () => true, loaded: true };
+    h.callAI.mockResolvedValue("Set alpha first.");
+    type(box, "alpha ");
+    expect((q("appu-go") as HTMLButtonElement).disabled).toBe(false);
+    await act(async () => { q("appu-go")!.click(); });
+    expect(h.callAI).toHaveBeenCalledTimes(1);
+    expect(text("appu-text")).toBe("Set alpha first.");
+  });
+  it("a key already held in this tab needs no waiting", async () => {
+    h.keys = { hasKey: () => true, loaded: false };
+    h.callAI.mockResolvedValue("ok");
+    const spy = vi.spyOn(keyStore, "getUnlocked").mockReturnValue("gsk_test");
+    dialog();
+    type(q("appu-q") as HTMLInputElement, "alpha");
+    expect((q("appu-go") as HTMLButtonElement).disabled).toBe(false);
+    await act(async () => { q("appu-go")!.click(); });
+    expect(h.callAI).toHaveBeenCalledTimes(1);
     spy.mockRestore();
   });
 });
@@ -249,8 +282,10 @@ describe("the answer", () => {
     dialog();
     await ask("alpha");
     const cls = q("appu-answer")!.className;
-    expect(cls).toMatch(/\bmax-h-\[/);
+    // by the screen's height, not its width: a short laptop screen needs it as much as a phone
+    expect(cls).toContain("max-h-[32dvh]");
     expect(cls).toContain("overflow-y-auto");
+    expect(cls).not.toMatch(/\bsm:max-h/);
   });
   it("leaves the list as it was: an answer does not touch the search", async () => {
     h.callAI.mockResolvedValue("ok");
@@ -323,8 +358,25 @@ describe("a link in the answer", () => {
     type(q("guide-search") as HTMLInputElement, "alpha");
     expect(sections().every((d) => !(d as HTMLDetailsElement).open)).toBe(true);
   });
+  it("pressing the same link again reopens its section after it was closed, and brings it into view again", async () => {
+    const scroll = vi.fn();
+    (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = scroll;
+    h.callAI.mockResolvedValue("Set alpha first.");
+    dialog();
+    await ask("alpha");
+    act(() => { q("appu-link-alpha")!.click(); });
+    expect((q("guide-section-alpha") as HTMLDetailsElement).open).toBe(true);
+    const first = scroll.mock.calls.length;
+    expect(first).toBeGreaterThanOrEqual(1);
+    // the student closes the section by its heading, then presses the link again
+    (q("guide-section-alpha") as HTMLDetailsElement).open = false;
+    act(() => { q("appu-link-alpha")!.click(); });
+    expect((q("guide-section-alpha") as HTMLDetailsElement).open).toBe(true);
+    expect(scroll.mock.calls.length).toBeGreaterThan(first);
+    delete (Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
+  });
   it("a link from the no-key list ends that list and searches for the title", async () => {
-    h.keys = { hasKey: () => false };
+    h.keys = { hasKey: () => false, loaded: true };
     dialog();
     await ask("export");
     expect(text("guide-count")).toBe("1 section matches your question");
@@ -379,6 +431,28 @@ describe("the dialog's small API for Ask Appu", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => draw(<Probe />)).toThrow(/Guide/);
     err.mockRestore();
+  });
+});
+
+describe("the dialog's layout with Ask Appu in it", () => {
+  it("scrolls as a whole above the Close button, and the list keeps a floor of 8rem", () => {
+    dialog();
+    const scroller = q("guide-scroll")!;
+    expect(scroller.className).toContain("overflow-y-auto");
+    for (const id of ["guide-search", "appu-box", "guide-count", "guide-list"]) expect(scroller.contains(q(id)), id).toBe(true);
+    expect(scroller.contains(q("guide-close"))).toBe(false);
+    expect(q("guide-list")!.className).toContain("min-h-[8rem]");
+    expect(q("guide-list")!.className).toContain("overflow-y-auto");
+  });
+  it("brings the list into view when Ask Appu pins sections (no key), so they are not left below the fold", async () => {
+    const scroll = vi.fn();
+    (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = scroll;
+    h.keys = { hasKey: () => false, loaded: true };
+    dialog();
+    await ask("export");
+    expect(scroll).toHaveBeenCalled();
+    expect(scroll.mock.contexts.some((el) => (el as HTMLElement).getAttribute?.("data-testid") === "guide-list")).toBe(true);
+    delete (Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
   });
 });
 
