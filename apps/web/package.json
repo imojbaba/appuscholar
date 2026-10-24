@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
-    "doctext:capture": "node scripts/capture-doctext-chrome.mjs"
+    "doctext:capture": "node scripts/capture-doctext-chrome.mjs",
+    "i18n:remap": "node scripts/hindi-remap-sheet.mjs"
   },
   "dependencies": {
     "@appuscholar/core": "workspace:*",
