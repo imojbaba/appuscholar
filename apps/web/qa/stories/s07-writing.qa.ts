@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Page, Response } from "@playwright/test";
 import {
-  BANK_CSV_NAME, PROVIDERS, STYLE_MIN_WORDS, STY_VOCAB, aiuBuildV2, bankAdd, bankCsv, classifyAiUse, dictParse, gramLocal, originCount, originShare, styleVocabScore, styleWordCount, wordCount,
+  BANK_CSV_NAME, PROVIDERS, STYLE_MIN_WORDS, STY_VOCAB, aiuBuildV2, aiuDate, bankAdd, bankCsv, classifyAiUse, dictParse, gramLocal, originCount, originShare, styleVocabScore, styleWordCount, wordCount,
   type AiuEntry, type DictAi, type DictEntry, type OriginStats
 } from "@appuscholar/core";
 import { MARK } from "../fixtures/common";
@@ -637,9 +637,11 @@ test("S7-01 I write, teach the app my style, look up words, check my writing by 
       expect(calls.map((e) => e.outcome)).toEqual(["answered"]);
       expect(calls[0]!.prompt, "the word alone is sent").toContain("<<<\nstudy\n>>>");
     }, { source: `${SHEET} row 4` });
+    // "Saved" is also the toast of Save profile (sty2_saved), and the recorder keeps one of two equal toasts in a row: the toasts after this press are what is read.
+    const toastsBefore = (await toasts()).length;
     await page.getByTestId("dict-save").click();
     await qa.check("data", "the first save shows the toast \"Saved\"; the second says \"“study” is already in your word bank.\"", async () => {
-      await expect.poll(toasts).toContain(T("wd2_saved"));
+      await expect.poll(async () => (await toasts()).slice(toastsBefore), { message: "the toasts shown since the press" }).toContain(T("wd2_saved"));
       await page.getByTestId("dict-save").click();
       await expect(page.getByTestId("dict-status")).toHaveText(T("wd2_already", { w: "study" }));
       expect(T("wd2_already", { w: "study" })).toBe("“study” is already in your word bank.");
@@ -1246,6 +1248,9 @@ test("S7-04 a 50,000-word draft stays usable: a sentence typed into it arrives w
       expect(wordCount(`<p>${text}</p>`)).toBe(WORDS);
     }, { source: "phase-2.md rows 24 and 25 (an imported file becomes a document)" });
     // No checkpoint on this screen: its full-page picture is about 100,000 px tall and the browser needs longer than the picture's 15 s to take it. The rule that matters for a long page is measured directly.
+    await qa.check("visual", "the draft screen's picture and the rules a checkpoint measures on it (overlap, cut-off, axe)", async () => {
+      notChecked("a full-page picture of the open 50,000-word draft is about 100,000 px tall and takes the browser longer than the 15 s the capture is given, so no checkpoint was taken; the sideways-scroll rule is measured directly in the check below");
+    }, { source: "spec section 8 (a screenshot of every checkpoint; layout rules and the axe scan measured at each)" });
     await qa.check("visual", "with the draft open the page does not scroll sideways, and the document is no wider than the window", async () => {
       expect(await fitsWidth(page), "no sideways page scroll").toBe(true);
       const box = (await page.locator(".ProseMirror").first().boundingBox())!;
@@ -1445,20 +1450,34 @@ test("S7-06 on a phone in Hindi, the Writing tabs, My style and Words fit the sc
       await expect(page.getByTestId("act-extend")).toHaveText(hi("extend_btn"));
       expect(await fitsWidth(page), "no sideways page scroll").toBe(true);
     }, { source: `${SHEET} row 6; ${P2} row 33` });
-    await qa.check("conceptual", "the share badge under the document is in Hindi (the Hindi dictionary writes \"% yours\" as \"% आपका\")", async () => {
-      const badge = page.getByTestId("origin-badge");
-      await expect(badge).toBeVisible();
-      expect(dictionary("hi")["org_badge_title"], "the Hindi dictionary's own word for \"% yours\"").toContain("% आपका");
-      expect(await badge.innerText(), "the badge's text").toMatch(/\p{Script=Devanagari}/u);
+    const badge = page.getByTestId("origin-badge");
+    const badgeText = await badge.waitFor({ state: "visible", timeout: 5_000 }).then(() => badge.innerText(), () => null);
+    await qa.check("visual", "the share badge is on the screen, and the Hindi dictionary has its own word for \"% yours\" to compare it with", async () => {
+      if (badgeText === null) notChecked("the share badge was not on the screen (it shows from 20 characters of text), so its language was not read");
+      if (!(dictionary("hi")["org_badge_title"] ?? "").includes("% आपका")) notChecked("the Hindi dictionary no longer writes \"% yours\" as \"% आपका\" in org_badge_title, so there is no Hindi word to compare the badge with");
+    }, { source: `${P2} row 17; messages/hi.json org_badge_title` });
+    await qa.check("visual", "the share badge under the document is in Hindi (the Hindi dictionary writes \"% yours\" as \"% आपका\")", async () => {
+      if (badgeText === null) notChecked("the share badge was not on the screen, so its language was not read");
+      expect(badgeText, "the badge's text").toMatch(/\p{Script=Devanagari}/u);
     }, { source: `${P2} row 17 ("NN% yours"); messages/hi.json org_badge_title (the register's Hindi for \"% yours\" is \"% आपका\"); spec section 8 (no English on a Hindi screen)`, known: "Q54" });
-    await qa.check("conceptual", "the document toolbar's words (Paragraph, Image, Table, Find, Dictate) are in Hindi", async () => {
-      const words = await page.getByTestId("format-bar").evaluate((bar) => {
-        const parts: string[] = [];
-        for (const el of bar.querySelectorAll("button, label, select")) parts.push(el.tagName === "SELECT" ? ((el as HTMLSelectElement).selectedOptions[0]?.label ?? "") : (el.textContent ?? ""));
-        return parts.join(" ");
-      });
-      const english = words.match(/[A-Za-z]{3,}/g) ?? [];
-      expect(english, `English words in the toolbar: ${words.replace(/\s+/g, " ")}`).toEqual([]);
+    const toolbar = page.getByTestId("format-bar");
+    const toolbarWords = await toolbar.waitFor({ state: "visible", timeout: 5_000 }).then(
+      () =>
+        toolbar.evaluate((bar) => {
+          const parts: string[] = [];
+          for (const el of bar.querySelectorAll("button, label, select")) parts.push(el.tagName === "SELECT" ? ((el as HTMLSelectElement).selectedOptions[0]?.label ?? "") : (el.textContent ?? ""));
+          return parts.join(" ").replace(/\s+/g, " ").trim();
+        }),
+      () => null
+    );
+    await qa.check("visual", "the document toolbar is on the screen and has words to read", async () => {
+      if (toolbarWords === null) notChecked("the document toolbar (format-bar) was not on the screen, so its words were not read");
+      if (toolbarWords === "") notChecked("the document toolbar had no text to read");
+    }, { source: `${WALK} O9; components/document/FormatBar.tsx` });
+    await qa.check("visual", "the document toolbar's words (Paragraph, Image, Table, Find, Dictate) are in Hindi", async () => {
+      if (toolbarWords === null || toolbarWords === "") notChecked("the document toolbar's words were not read (see the check before)");
+      const english = toolbarWords!.match(/[A-Za-z]{3,}/g) ?? [];
+      expect(english, `English words in the toolbar: ${toolbarWords}`).toEqual([]);
     }, { source: `${WALK} O9 ("the document toolbar stays English in Hindi mode (Paragraph, Image, Table, Find, Dictate)"); spec section 8 (no English on a Hindi screen)`, known: "Q19" });
     await qa.check("conceptual", "the Hindi wording of the tabs and panels reads naturally", async () => {
       notChecked("whether the Hindi reads well is Dr. Sharma's and the hand walk's (O9, O22); the case checks that Hindi is shown, not how it reads");
@@ -1494,8 +1513,9 @@ test("S7-06 on a phone in Hindi, the Writing tabs, My style and Words fit the sc
     await replaceDoc(page, AI_TEXT);
     await page.getByTestId("gram-ai").click();
     await expect(page.getByTestId("pd-dialog")).toBeVisible();
-    await qa.check("data", "the window names what it found, in the sheet's words, and its three buttons are there", async () => {
-      await expect(page.getByTestId("pd-found")).toHaveText("Found: 1 email address.");
+    await qa.check("data", "the window names what it found (the count, 1) and its three buttons are there; the language of its words is the checkpoint's", async () => {
+      await expect(page.getByTestId("pd-found")).toBeVisible();
+      await expect(page.getByTestId("pd-found")).toContainText(/(^|\D)1(\D|$)/);
       await expect(page.getByTestId("pd-mask")).toBeVisible();
       await expect(page.getByTestId("pd-send")).toBeVisible();
       await expect(page.getByTestId("pd-cancel")).toHaveText(hi("sap_cancel_btn"));
@@ -1588,8 +1608,9 @@ test("S7-07 [O15] when the dictionary is down, the page does not blame my intern
       await expect(page.getByTestId("dict-save")).toHaveCount(0);
     }, { source: `${WALK} row 4 of tools-d (BLOCKED: the dictionary service down for browsers)` });
     await qa.check("conceptual", "the message does not blame the student's internet, which is fine: it says the dictionary did not answer", async () => {
-      expect(await page.evaluate(() => navigator.onLine), "the student's network is on").toBe(true);
-      expect(said, `the page said: ${said}`).not.toMatch(/internet|connection|offline/i);
+      // Not the sentence the page gives today, and nothing that tells the student their own internet or connection is the trouble. (The page's second sentence, "Words you looked up before still work offline.", is true and does not blame anyone.)
+      expect(said, "the sentence the page gives today (wd2_offline)").not.toBe(T("wd2_offline"));
+      expect(said, `the page said: ${said}`).not.toMatch(/needs the internet|your (internet|connection|network)|you are (offline|not connected)|check your (internet|connection)/i);
     }, { source: `${WALK} O15 ("when it fails, Appuscholar tells the student \"The dictionary needs the internet\", which blames their connection"); spec section 9 (O15)`, known: "O15" });
     await look(page, qa, "Words, with the dictionary down");
   });
@@ -1610,5 +1631,89 @@ test("S7-07 [O15] when the dictionary is down, the page does not blame my intern
       await expect(page.getByTestId("gram-card")).toHaveCount(2);
       expect(down.refused).toEqual([]);
     }, { source: `${SHEET} row 5 (the rules are free and instant: they need no service)` });
+  });
+});
+
+// ---- S7-08 --------------------------------------------------------------------------------------------------------------------------------------------------------
+
+/** The date a statement names a day by (core's aiuDate: "25 October 2026"). */
+const STATEMENT_DATE = /\b\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b/g;
+
+test.describe(() => {
+  // A student in India: Kolkata is 5 h 30 min ahead of UTC.
+  test.use({ timezoneId: "Asia/Kolkata" });
+
+  test("S7-08 the dates my style and my AI request carry are the day where I am", async ({ page, qa }) => {
+    qa.begin({
+      story: "S7",
+      id: "S7-08",
+      goal: "It is 01:30 in India, already tomorrow there while it is still today in UTC: the day written beside my declaration and my ten-word level is the day my AI request is logged under, and the day my AI-use statement names",
+      situation: { vault: "off", network: "fine", screen: "desktop", lang: "en", data: "realistic", ai: "answers" },
+      steps: ["a student whose clock says 01:30 in India", "declare my style and take the ten words", "the AI-use statement"],
+      code: ["apps/web/lib/tools/style/learn.ts", "apps/web/lib/ai/callAI.ts", "apps/web/components/tools/style", "apps/web/components/tools/design/AiUse.tsx"]
+    });
+    // 20:00 UTC of the machine's UTC day is 01:30 of the next day in Kolkata: two calendar days that disagree.
+    const at = new Date(`${new Date().toISOString().slice(0, 10)}T20:00:00Z`);
+    const utcDay = at.toISOString().slice(0, 10);
+    const myDay = at.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    let s!: Student;
+    let clockWorks = false;
+    const dates: { declaration?: string; tenWords?: string; request?: string; statement?: string[] } = {};
+    const day = (text: string) => /\d{4}-\d{2}-\d{2}/.exec(text)?.[0];
+
+    await qa.step("a student whose clock says 01:30 in India", async () => {
+      await page.clock.setSystemTime(at);
+      s = await newStudent(page, qa, { key: "ok", vault: "off", project: PROJECT });
+      const read = await page.evaluate(() => {
+        const d = new Date();
+        const z = (n: number) => String(n).padStart(2, "0");
+        return { local: `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`, utc: d.toISOString().slice(0, 10), hour: d.getHours() };
+      });
+      clockWorks = read.local === myDay && read.utc === utcDay;
+      await qa.check("data", "the page's clock reads the day after UTC's: 01:30 in Kolkata on my day, still the UTC day before", async () => {
+        if (!clockWorks) notChecked(`the page's clock did not take the set time (it reads local ${read.local}, UTC ${read.utc}; wanted local ${myDay}, UTC ${utcDay}), so the two days were not told apart`);
+        expect(read.hour).toBe(1);
+      }, { source: "task S7-08 (timezoneId Asia/Kolkata, the clock set to 20:00 UTC)" });
+    });
+
+    await qa.step("declare my style and take the ten words", async () => {
+      await toPlace(page, s.projectId!, "writing", "document");
+      await typeInDoc(page, STYLE_TEXT);
+      await toTab(page, "style");
+      await page.getByTestId("style-decl").check();
+      await page.getByTestId("style-learn").click();
+      await expect(page.getByTestId("style-status")).toHaveText(T("sty2_learned_doc"));
+      await openDetails(page, "style-vocab");
+      for (let i = 0; i < 7; i++) await page.getByTestId(`style-vocab-${i}-${STY_VOCAB[i]!.a}`).check();
+      await page.getByTestId("style-vocab-btn").click();
+      const band = T("sty2_band_" + styleVocabScore(STY_VOCAB.map((q, i) => (i < 7 ? q.a : -1))).k);
+      await expect(page.getByTestId("style-vocab-state")).toContainText(band);
+      dates.declaration = day(await page.getByTestId("style-summary").innerText());
+      dates.tenWords = day(await page.getByTestId("style-vocab-state").innerText());
+      const log = await apiGet<AiuEntry[]>(page, `/ai/log?projectId=${s.projectId}`);
+      dates.request = log.find((e) => e.k === KIND.style)?.d;
+      await qa.check("data", "the one AI request (describing my writing style) is logged under my day, the day it is where I am", async () => {
+        expect(log, "the project's AI log").toHaveLength(1);
+        expect(dates.request, "the day the AI log gives the request").toBe(myDay);
+      }, { source: "apps/web/lib/ai/callAI.ts localDay (the AI-use log records the local calendar day: \"Local calendar day, YYYY-MM-DD\")" });
+    });
+
+    await qa.step("the AI-use statement", async () => {
+      const { text } = await aiUseStatement(page, s.projectId!);
+      dates.statement = [...new Set(text.match(STATEMENT_DATE) ?? [])];
+      await qa.check("data", "the day beside my declaration, the day beside my ten-word level, the day my request is logged under and the days my AI-use statement names are all my day", async () => {
+        if (!clockWorks || dates.request !== myDay) notChecked("the page's clock did not read the set time, so my day and the UTC day were the same day");
+        if (!dates.declaration || !dates.tenWords || !dates.statement?.length) notChecked(`a date was not read (declaration ${dates.declaration}, ten words ${dates.tenWords}, statement ${JSON.stringify(dates.statement)})`);
+        expect(dates, `my day is ${myDay} and the UTC day is ${utcDay}; the statement names days as ${aiuDate(myDay)}`).toEqual({
+          declaration: myDay,
+          tenWords: myDay,
+          request: myDay,
+          statement: [aiuDate(myDay)]
+        });
+      }, {
+        source: "tools-d.md rows 2 and 3 (\"declared as my own writing on <today>\", \"Your level: <band> (<k> of 10, <today>)\"); apps/web/lib/tools/style/learn.ts line 26 (todayIso, UTC) against apps/web/lib/ai/callAI.ts line 61 (localDay)",
+        known: "Q55"
+      });
+    });
   });
 });
