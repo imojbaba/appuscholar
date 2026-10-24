@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { buildMatcher, type Matcher } from "@appuscholar/core";
 import { useSuggestion } from "@/lib/ai/suggestion";
 import { rangesFor, type TextSpan } from "@/lib/tools/participants/docNames";
-import { toMatchPeople } from "@/lib/tools/participants/list";
+import { suggestionNotNames, toMatchPeople } from "@/lib/tools/participants/list";
 import { publishList, useListFor } from "@/lib/tools/participants/store";
 import { useParticipants } from "@/lib/tools/participants/useParticipants";
 
@@ -18,12 +18,16 @@ import { useParticipants } from "@/lib/tools/participants/useParticipants";
  * While the list is open, has people on it (a destroyed list, or one with nobody, has nothing to look for) and the switch "Highlight names in my documents" is not off, the text of the editor (`.editor .ProseMirror`) is painted with the CSS Custom
  * Highlight API: `pp-sure` for names on the list (purple, with a solid underline) and `pp-maybe` for names to ask about and names not on the list (amber, dashed). Highlights are
  * ranges the browser draws; the document is not touched and nothing is stored. The ranges are computed per block from the editor's text nodes (docNames.ts rangesFor), once when the
- * list or the editor changes and again, at most every REPAINT_MS, after the editor's DOM changes (a MutationObserver on its root). A browser without `CSS.highlights` paints nothing.
+ * list or the editor changes and again, at most every REPAINT_MS, after the editor's DOM changes (a MutationObserver on its root). An editor that is mounted but whose DOM is not in the
+ * page is looked for again up to MAX_LOOKS times, then not until the next list or editor change. A browser without `CSS.highlights` paints nothing. A made-up name is never painted as a
+ * name that is not on the list (suggestionNotNames).
  * Both highlights are removed when the list is not in use, the switch is off, and when the layer unmounts.
  */
 
 /** The most often the highlights are worked out again while the document is being edited. */
 export const REPAINT_MS = 500;
+/** How many times the layer looks again for an editor that is not in the page yet, REPAINT_MS apart, before it waits for the next list or editor change. */
+export const MAX_LOOKS = 20;
 
 /** A stable empty list for the effect's dependencies. */
 const NONE: string[] = [];
@@ -63,6 +67,7 @@ function usePaint(matcher: Matcher | null, notNames: string[], editor: unknown):
     const api = highlightApi();
     if (!api || !matcher) return;
     let root: Element | null = null;
+    let looks = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const observer = new MutationObserver(() => schedule());
     function schedule() { if (timer === undefined) timer = setTimeout(paint, REPAINT_MS); }
@@ -77,10 +82,11 @@ function usePaint(matcher: Matcher | null, notNames: string[], editor: unknown):
       }
       if (!root) {
         removeHighlights(api!);
-        // An editor is mounted but its DOM is not in the page yet: look again.
-        if (editor) schedule();
+        // An editor is mounted but its DOM is not in the page yet: look again, a bounded number of times (the next list or editor change starts afresh).
+        if (editor && looks++ < MAX_LOOKS) schedule();
         return;
       }
+      looks = 0;
       const { sure, maybe } = rangesFor(root, matcher!, notNames);
       api!.registry.set(SURE, new api!.Highlight(...sure.map(toRange)));
       api!.registry.set(MAYBE, new api!.Highlight(...maybe.map(toRange)));
@@ -102,7 +108,9 @@ export function DocumentLayer({ projectId }: { projectId: string }) {
   const list = own.state === "ready" ? (stored ?? own.list) : null;
   const paints = list !== null && !list.destroyedAt && list.people.length > 0 && list.highlight !== false && highlightApi() !== null;
   const matcher = useMemo(() => (paints && list ? buildMatcher(toMatchPeople(list, false)) : null), [paints, list]);
-  usePaint(matcher, list?.notNames ?? NONE, editor);
+  // The words that are not suggested: "Not a name" and the made-up names (R34).
+  const notNames = useMemo(() => (list ? suggestionNotNames(list) : NONE), [list]);
+  usePaint(matcher, notNames, editor);
   // The names leave the window's memory with the layer (the project is closed or the page goes).
   useEffect(() => () => publishList(projectId, null), [projectId]);
   return paints ? <style data-testid="pp-highlight-style">{STYLE}</style> : null;

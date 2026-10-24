@@ -187,5 +187,6 @@
   "pp_find_done_many": "Replaced {n} places.",
   "pp_find_refused": "Could not change “{title}”. It may have been deleted, or it has changes that are not saved yet. Nothing was changed in it.",
   "pp_find_versions": "Earlier saved versions of a document still hold the old text, sealed in your vault.",
-  "pp_find_close": "Close"
+  "pp_find_close": "Close",
+  "pp_find_stale": "Nothing to replace there now: the text has changed. The results are fresh again."
 }

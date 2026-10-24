@@ -20,14 +20,20 @@ const m = vi.hoisted(() => ({
   rewrite: vi.fn(),
   toast: vi.fn(),
   saveRefused: false,
-  latest: null as unknown
+  latest: null as unknown,
+  /** The open document's id (the shell's currentDoc), or null; `text` is what the editor holds now. */
+  openId: null as string | null,
+  text: vi.fn(),
+  /** What the calls were, in order ("all", "text", "rewrite:<id>"). */
+  order: [] as string[]
 }));
-vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ allDocuments: m.all, rewriteDocument: m.rewrite }) }));
+vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ allDocuments: m.all, rewriteDocument: m.rewrite, text: m.text }) }));
+vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ currentDoc: m.openId ? { id: m.openId } : null }) }));
 vi.mock("@/components/ui/toast", () => ({ toast: m.toast }));
 
 import { findInHtml, replaceInHtml, NAME_PLACEHOLDER } from "../lib/tools/participants/docNames";
-import { FindNames } from "../components/tools/participants/FindNames";
-import { toMatchPeople } from "../lib/tools/participants/list";
+import { FindNames, openFirst } from "../components/tools/participants/FindNames";
+import { suggestionNotNames, toMatchPeople } from "../lib/tools/participants/list";
 import { planOf, type ParticipantsPlan } from "../lib/tools/participants/plan";
 import type { Participant, ParticipantList } from "../lib/blobs/kinds/participants";
 import en from "../messages/tools/participants.en.json";
@@ -268,11 +274,16 @@ beforeEach(() => {
   m.refuse = new Set();
   m.saveRefused = false;
   m.latest = null;
+  m.openId = null;
+  m.order = [];
   m.toast.mockClear();
   m.all.mockReset();
-  m.all.mockImplementation(async () => m.docs.map((d) => ({ ...d })));
+  m.all.mockImplementation(async () => { m.order.push("all"); return m.docs.map((d) => ({ ...d })); });
+  m.text.mockReset();
+  m.text.mockImplementation(() => { m.order.push("text"); return m.docs.find((d) => d.id === m.openId)?.text ?? ""; });
   m.rewrite.mockReset();
   m.rewrite.mockImplementation(async (id: string, html: string) => {
+    m.order.push("rewrite:" + id);
     if (m.refuse.has(id)) return false;
     m.docs = m.docs.map((d) => (d.id === id ? { ...d, html, text: html.replace(/<[^>]+>/g, "") } : d));
     return true;
@@ -586,6 +597,122 @@ describe("Find names in my documents", () => {
     await click("pp-find-close");
     expect($("pp-find-results")).toBeNull();
     expect(text("pp-find")).toBe("Find names in my documents");
+  });
+});
+
+// ---- Fix round 1 (ruling R34) -------------------------------------------------------------------------------------------------------------------------
+
+describe("made-up names are never suggested (R34)", () => {
+  /** "Neha" is on the built-in first names; here it is the made-up name P001 is given. */
+  const withNeha = FIVE.map((p) => (p.code === "P001" ? { ...p, pseudonym: "Neha" } : p));
+
+  it("suggestionNotNames: the words the student said are not names, and the made-up names with each of their words, in normal form, once", () => {
+    const l = list(FIVE.map((p) => (p.code === "P001" ? { ...p, pseudonym: "Neha  Singh" } : p.code === "P002" ? { ...p, pseudonym: "  " } : p.code === "P003" ? { ...p, pseudonym: "NEHA" } : p)), { notNames: ["meena"] });
+    expect([...suggestionNotNames(l)].sort()).toEqual(["meena", "neha", "neha singh", "singh"]);
+    expect(suggestionNotNames(list())).toEqual([]);
+  });
+
+  it("after Replace all in made-up names mode the made-up name is not flagged 'not on your list' (the results read again)", async () => {
+    m.docs = [doc("d1", "Interview two", "<p>Priya agreed.</p>")];
+    await find(list(withNeha), PSEUDO);
+    await click("pp-find-replace-all-P001");
+    expect(htmlOf("d1")).toBe("<p>Neha agreed.</p>");
+    expect($$("pp-find-suggest-")).toHaveLength(0);
+    expect(text("pp-find-none")).toBe("No names found in your documents.");
+    expect(text("pp-find-done")).toBe("Replaced 1 place.");
+  });
+
+  it("a made-up name already in a document, or as a speaker label of several words, is not suggested either", async () => {
+    const two = FIVE.map((p) => (p.code === "P001" ? { ...p, pseudonym: "Neha Singh" } : p));
+    m.docs = [doc("d1", "Interview two", "<p>Neha Singh: Hello there. Then Neha left.</p>")];
+    await find(list(two), PSEUDO);
+    expect($$("pp-find-suggest-")).toHaveLength(0);
+    expect(text("pp-find-none")).toBe("No names found in your documents.");
+  });
+
+  it("a word that is on the first-names list and is nobody's made-up name is still suggested", async () => {
+    m.docs = [doc("d1", "Interview two", "<p>Then Neha left.</p>")];
+    await find(list(FIVE), PSEUDO);
+    expect($$("pp-find-suggest-")).toHaveLength(1);
+  });
+});
+
+describe("Find names under an anonymous plan (R34)", () => {
+  it("offers no Add to list (the list does not grow); Replace with [name] and Not a name stay", async () => {
+    const ANON = planOf({ idMode: "anonymous", record: ["age"], minors: "no" });
+    await find(list(), ANON);
+    expect($$("pp-find-suggest-")).toHaveLength(1);
+    expect($("pp-find-add")).toBeNull();
+    expect($("pp-find-mask")).not.toBeNull();
+    expect($("pp-find-notname")).not.toBeNull();
+    // The list's people are still found and replaced (matching runs while a list exists, C15).
+    expect($("pp-find-replace-all-P001")).not.toBeNull();
+  });
+});
+
+describe("writing (R34)", () => {
+  const press = (docId: string, code: string) => click($("pp-find-doc-" + docId)!.querySelector<HTMLElement>(`[data-testid="pp-find-replace-all-${code}"]`)!);
+  const two = () => [doc("d1", "Interview one", "<p>Priya came.</p>"), doc("d2", "Interview two", "<p>Priya stayed.</p>")];
+
+  it("the open document is checked against the editor and written right after the documents are read, and nothing else is written", async () => {
+    m.docs = two();
+    m.openId = "d1";
+    await find();
+    m.order = [];
+    await press("d1", "P001");
+    expect(m.order).toEqual(["all", "text", "rewrite:d1", "all"]);
+    expect(htmlOf("d1")).toBe("<p>P001 came.</p>");
+    expect(htmlOf("d2")).toBe("<p>Priya stayed.</p>");
+  });
+
+  it("a document that is not open is written without the editor check", async () => {
+    m.docs = two();
+    m.openId = "d1";
+    await find();
+    m.order = [];
+    await press("d2", "P001");
+    expect(m.order).toEqual(["all", "rewrite:d2", "all"]);
+  });
+
+  it("text typed in the open document since it was read is not overwritten: nothing is written for it, and the page says the text has changed", async () => {
+    m.docs = two();
+    m.openId = "d1";
+    await find();
+    // The editor holds more than the read did.
+    m.text.mockImplementation(() => { m.order.push("text"); return "Priya came. And something just typed."; });
+    m.order = [];
+    await press("d1", "P001");
+    expect(m.order).toEqual(["all", "text", "all"]);
+    expect(htmlOf("d1")).toBe("<p>Priya came.</p>");
+    expect(text("pp-find-stale")).toBe("Nothing to replace there now: the text has changed. The results are fresh again.");
+    expect(text("pp-find-done")).toBeNull();
+  });
+
+  it("openFirst puts the open document's target first and keeps the order of the others; with none open it changes nothing", () => {
+    const t = (id: string) => ({ doc: { id }, pick: () => null });
+    const a = [t("d2"), t("d3"), t("d1")];
+    expect(openFirst(a, "d1").map((x) => x.doc.id)).toEqual(["d1", "d2", "d3"]);
+    expect(openFirst(a, null).map((x) => x.doc.id)).toEqual(["d2", "d3", "d1"]);
+    expect(openFirst(a, "d9").map((x) => x.doc.id)).toEqual(["d2", "d3", "d1"]);
+    // The list given is not changed.
+    expect(a.map((x) => x.doc.id)).toEqual(["d2", "d3", "d1"]);
+  });
+
+  it("a replace whose re-find matches nothing says so in the page, writes nothing, and the results are fresh again", async () => {
+    m.docs = [doc("d1", "Interview two", "<p>Priya came. Rahul too.</p>")];
+    await find();
+    expect($("pp-find-person-P001")).not.toBeNull();
+    // Priya was taken out of the document since the results were drawn.
+    m.docs = [doc("d1", "Interview two", "<p>Rahul too.</p>")];
+    await click("pp-find-replace-all-P001");
+    expect(m.rewrite).not.toHaveBeenCalled();
+    expect(text("pp-find-stale")).toBe("Nothing to replace there now: the text has changed. The results are fresh again.");
+    expect($("pp-find-person-P001")).toBeNull();
+    expect($("pp-find-person-P002")).not.toBeNull();
+    expect(text("pp-find-done")).toBeNull();
+    // The next press that works clears the line.
+    await click("pp-find-replace-all-P002");
+    expect($("pp-find-stale")).toBeNull();
   });
 });
 

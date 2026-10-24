@@ -188,6 +188,22 @@ export function addNotName(l: ParticipantList, word: string): ParticipantList {
   return !k || l.notNames.includes(k) ? l : { ...l, notNames: [...l.notNames, k] };
 }
 
+/**
+ * The words that suggestions (spec §7.5) leave out, in normal form, each once (R34): what the student answered "Not a name" for, and the made-up names on the list, whole and word
+ * by word. A made-up name is a stand-in the student chose (and Replace all writes it into their documents), so it is never "a name that is not on your list", even when it is one of
+ * the built-in first names ("Neha"). The matcher itself does not look for made-up names; only the suggestions skip them.
+ */
+export function suggestionNotNames(l: ParticipantList): string[] {
+  const out = new Set(l.notNames);
+  for (const p of l.people) {
+    const whole = normName(p.pseudonym ?? "");
+    if (!whole) continue;
+    out.add(whole);
+    for (const word of whole.split(" ")) out.add(word);
+  }
+  return [...out];
+}
+
 /** Words that come before a name and are not part of it (C2). Compared lower case, without the dot. */
 const BEFORE_A_NAME: ReadonlySet<string> = new Set(["mohd", "md", "mr", "mrs", "ms", "dr", "shri", "smt", "kumari"]);
 

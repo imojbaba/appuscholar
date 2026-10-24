@@ -403,6 +403,61 @@ describe("DocumentLayer", () => {
     expect(strings("pp-sure")).toEqual(["Rahul", "Priya", "Rahul"]);
   });
 
+  it("a made-up name is not painted amber as a name that is not on the list (R34)", async () => {
+    h.store.participants = list(FIVE.map((p) => (p.code === "P001" ? { ...p, pseudonym: "Neha" } : p)));
+    editor("<p>Neha said so. Meena too.</p>");
+    await mount();
+    // Neha is on the built-in first names and is P001's made-up name; Meena is nobody's.
+    expect(strings("pp-maybe")).toEqual(["Meena"]);
+    expect(strings("pp-sure")).toEqual([]);
+  });
+
+  it("a word is still painted amber when it is on the first names and nobody's made-up name", async () => {
+    h.store.participants = list();
+    editor("<p>Neha said so.</p>");
+    await mount();
+    expect(strings("pp-maybe")).toEqual(["Neha"]);
+  });
+
+  it("stops looking for the editor after 20 tries when none is in the page, and starts again on the next list or editor change", async () => {
+    h.store.participants = list();
+    h.editor = {};
+    const spy = vi.spyOn(document, "querySelector");
+    const looks = () => spy.mock.calls.filter((c) => c[0] === ".editor .ProseMirror").length;
+    await mount();
+    expect(looks()).toBe(1);
+    act(() => { vi.advanceTimersByTime(500 * 40); });
+    // The first look and twenty more.
+    expect(looks()).toBe(21);
+    act(() => { vi.advanceTimersByTime(60_000); });
+    expect(looks()).toBe(21);
+    // A list change looks again, and tries again from the start.
+    h.store.participants = list(FIVE, { notNames: ["x"] });
+    await notify();
+    expect(looks()).toBe(22);
+    act(() => { vi.advanceTimersByTime(60_000); });
+    expect(looks()).toBe(42);
+    // An editor that is there now is found at once when the editor changes.
+    editor(DOC);
+    h.editor = {};
+    await notify();
+    expect(strings("pp-sure")).toEqual(["Priya", "Rahul", "प्रिया"]);
+    spy.mockRestore();
+  });
+
+  it("an editor that is in the page is watched without any limit: edits keep repainting", async () => {
+    h.store.participants = list();
+    const pm = editor("<p>Nothing.</p>");
+    await mount();
+    const node = pm.querySelector("p")!.firstChild as Text;
+    for (let i = 0; i < 30; i++) {
+      node.data = node.data + " Rahul";
+      await micro();
+      act(() => { vi.advanceTimersByTime(600); });
+    }
+    expect(strings("pp-sure")).toHaveLength(30);
+  });
+
   it("a browser without CSS.highlights: the layer renders, throws nothing, paints nothing and draws no styles", async () => {
     vi.stubGlobal("CSS", {});
     h.store.participants = list();

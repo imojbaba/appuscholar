@@ -4,10 +4,11 @@ import { MagnifyingGlass } from "@phosphor-icons/react";
 import { buildMatcher, normName } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import type { Participant, ParticipantList } from "@/lib/blobs/kinds/participants";
+import { useProject } from "@/components/frame/ProjectContext";
 import { useDocAccess, type ProjectDocument } from "@/lib/editor/docAccess";
 import { todayIso } from "@/lib/tools/participants/dates";
 import { findInHtml, NAME_PLACEHOLDER, replaceInHtml, type DocFind } from "@/lib/tools/participants/docNames";
-import { addNotName, addPerson, nextCode, suggestedShortName, toMatchPeople } from "@/lib/tools/participants/list";
+import { addNotName, addPerson, nextCode, suggestedShortName, suggestionNotNames, toMatchPeople } from "@/lib/tools/participants/list";
 import type { ParticipantsPlan } from "@/lib/tools/participants/plan";
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +29,10 @@ import { Button } from "@/components/ui/button";
  * by its title in the page; it is never in a toast, and no name is ever in a toast, a console line or an address. Results are derived from the documents read and the list as it is, so
  * adding a person or learning "Not a name" shows at once, and after a replace the documents are read again. C19: replacing changes a document's current text only; the one line that says
  * earlier saved versions still hold the old text is shown once, under the results.
+ *
+ * Suggestions skip the made-up names on the list (suggestionNotNames, R34: Replace all writes a made-up name into the document, and it must not come back as "not on your list"). Under an
+ * anonymous plan no person is added from here (the list does not grow); Replace with [name] and Not a name stay. A write that finds nothing to replace in the document as it is now
+ * says so ("Nothing to replace there now").
  *
  * The documents are read only when the button is pressed (the results are mounted then, and press again to read again), so the tab costs nothing until it is used.
  */
@@ -73,6 +78,14 @@ function cardOf(doc: ProjectDocument, finds: DocFind[], byId: Map<string, Partic
 
 const hasRows = (c: Card) => c.sure.length + c.ask.length + c.suggest.length > 0;
 
+/**
+ * The targets of one write with the one for the open document first (R34), the others in the order given. The open document is the one the student can be typing in, so it is the
+ * first to be written once the documents are read; none open (or not among the targets) keeps the order. Does not change the list it is given.
+ */
+export function openFirst<T extends { doc: { id: string } }>(targets: T[], openId: string | null): T[] {
+  return [...targets.filter((x) => x.doc.id === openId), ...targets.filter((x) => x.doc.id !== openId)];
+}
+
 /** Their finds carry "withdrew: remove their data" (C17). */
 const withdrewRemove = (p: Participant) => p.withdrawn?.data === "remove";
 
@@ -105,13 +118,18 @@ function Results({ list, plan, save, refused, onClose }: {
 }) {
   const t = useT();
   const access = useDocAccess();
+  // The document the student has open in the writing window (a pop-out may not know it: then nothing is open here).
+  const openId = useProject().currentDoc?.id ?? null;
   const accessRef = useRef(access);
+  const openRef = useRef(openId);
   const alive = useRef(true);
-  useEffect(() => { accessRef.current = access; });
+  useEffect(() => { accessRef.current = access; openRef.current = openId; });
   // null: still reading.
   const [docs, setDocs] = useState<ProjectDocument[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<number | null>(null);
+  // A write found nothing to replace in the document as it is now.
+  const [stale, setStale] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   // The documents that refused a rewrite, by id, with their titles.
@@ -128,9 +146,11 @@ function Results({ list, plan, save, refused, onClose }: {
 
   const byId = useMemo(() => new Map(list.people.map((p) => [p.id, p])), [list.people]);
   const matcher = useMemo(() => buildMatcher(toMatchPeople(list, plan.pseudonyms)), [list, plan.pseudonyms]);
+  // "Not a name" and the made-up names: never suggested (R34).
+  const notNames = useMemo(() => suggestionNotNames(list), [list]);
   const cards = useMemo(
-    () => (docs ?? []).map((d) => cardOf(d, findInHtml(d.html, matcher, { notNames: list.notNames }), byId)).filter(hasRows),
-    [docs, matcher, list.notNames, byId]
+    () => (docs ?? []).map((d) => cardOf(d, findInHtml(d.html, matcher, { notNames }), byId)).filter(hasRows),
+    [docs, matcher, notNames, byId]
   );
 
   /** What a person's name is replaced with: their made-up name in made-up names mode when they have one, else their code. */
@@ -138,27 +158,39 @@ function Results({ list, plan, save, refused, onClose }: {
 
   /**
    * Writes: reads the documents again, finds the names again in each document as it is now, and replaces the finds that `pick` gives a text for, one rewrite for each document. A
-   * document that refuses is named; the results are then read again. A second press while this runs does nothing.
+   * document that refuses is named; one with nothing left to replace is said so (the page was out of date); the results are then read again. A second press while this runs does nothing.
+   *
+   * The open document first (R34): it is the one the student can be typing in. The documents are read (allDocuments takes as long as it takes to open every one of them, and the open one is
+   * read as the editor holds it at that moment), the open document's replacement is worked out, and then, back to back, the editor's text is compared with the text that was read and the document
+   * is rewritten: if the student typed in between, nothing is written for it (a rewrite would put the old text back over theirs) and the page says the text has changed. What still holds: between
+   * that comparison and the editor taking the new content there is one asynchronous step (the shell's requestInsert, which may open the document or ask for the passphrase first), and a
+   * keystroke inside it would be overwritten; a change of formatting alone (no text) is not seen by the comparison; in a pop-out the comparison is with the writing window's last snapshot, up to
+   * 300 ms old. Another document's text is sealed and written as a new revision, which an editor of this tab cannot be typing into.
    */
   async function replaceIn(targets: Array<{ doc: ProjectDocument; pick: (f: DocFind) => string | null }>): Promise<void> {
     if (busy) return;
     setBusy(true);
     setDone(null);
+    setStale(false);
     setStatus("");
     setError("");
     let placed = 0;
+    let changed = false;
     const failed: Record<string, string | null> = {};
     try {
       const fresh = await accessRef.current.allDocuments();
-      for (const { doc, pick } of targets) {
+      for (const { doc, pick } of openFirst(targets, openRef.current)) {
         const now = fresh.find((d) => d.id === doc.id);
         if (!now) { failed[doc.id] = doc.title; continue; }
-        const picks = findInHtml(now.html, matcher, { notNames: list.notNames }).flatMap((find) => {
+        const picks = findInHtml(now.html, matcher, { notNames }).flatMap((find) => {
           const to = pick(find);
           return to === null ? [] : [{ find, to }];
         });
-        if (picks.length === 0) continue;
-        if (await accessRef.current.rewriteDocument(now.id, replaceInHtml(now.html, picks))) { placed += picks.length; failed[doc.id] = null; }
+        if (picks.length === 0) { changed = true; continue; }
+        const html = replaceInHtml(now.html, picks);
+        // The open document's text is checked right before it is written (see above).
+        if (now.id === openRef.current && accessRef.current.text() !== now.text) { changed = true; continue; }
+        if (await accessRef.current.rewriteDocument(now.id, html)) { placed += picks.length; failed[doc.id] = null; }
         else failed[doc.id] = now.title;
       }
       const again = await accessRef.current.allDocuments();
@@ -170,6 +202,7 @@ function Results({ list, plan, save, refused, onClose }: {
         return next;
       });
       if (placed > 0) setDone(placed);
+      if (changed) setStale(true);
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -307,7 +340,9 @@ function Results({ list, plan, save, refused, onClose }: {
               <span>{row.finds.length === 1 ? t("pp_find_suggest_one", { word: row.word }) : t("pp_find_suggest_many", { word: row.word, places: places(row.finds.length) })}</span>
             </span>
             <span className="inline-flex flex-wrap items-center gap-2">
-              <Button type="button" variant="primary" size="sm" disabled={busy} data-testid="pp-find-add" aria-label={t("pp_find_add_aria", { word: row.word })} onClick={() => addToList(row.word)}>{t("pp_find_add")}</Button>
+              {plan.mode !== "anonymous" && (
+                <Button type="button" variant="primary" size="sm" disabled={busy} data-testid="pp-find-add" aria-label={t("pp_find_add_aria", { word: row.word })} onClick={() => addToList(row.word)}>{t("pp_find_add")}</Button>
+              )}
               <Button type="button" variant="ghost" size="sm" disabled={busy} data-testid="pp-find-mask" aria-label={t("pp_find_mask_aria", { word: row.word })} onClick={() => void maskIn(c.doc, row.word)}>{t("pp_find_mask")}</Button>
               <Button type="button" variant="ghost" size="sm" disabled={busy} data-testid="pp-find-notname" aria-label={t("pp_find_notname_aria", { word: row.word })} onClick={() => notAName(row.word)}>{t("pp_find_notname")}</Button>
             </span>
@@ -326,6 +361,7 @@ function Results({ list, plan, save, refused, onClose }: {
       <div role="status" aria-live="polite">
         {status && <p className="note" data-testid="pp-find-status">{status}</p>}
         {done !== null && <p className="note" data-testid="pp-find-done">{t(done === 1 ? "pp_find_done_one" : "pp_find_done_many", { n: done })}</p>}
+        {stale && <p className="note" data-testid="pp-find-stale">{t("pp_find_stale")}</p>}
       </div>
       {refusedTitles.length > 0 && (
         <div role="alert" data-testid="pp-find-refused">
