@@ -144,6 +144,14 @@ export const auditLog = pgTable("audit_log", {
   at: timestamp("at", { mode: "date" }).notNull().defaultNow()
 }, (t) => [index("audit_log_user_idx").on(t.userId)]);
 
+/** Fixed-window call counters for the per-user AI quota: one row per user, bucket (for example "complete:hour") and window start. */
+export const rateCounters = pgTable("rate_counters", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  bucket: text("bucket").notNull(),
+  windowStart: timestamp("window_start", { mode: "date", withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0)
+}, (t) => [primaryKey({ columns: [t.userId, t.bucket, t.windowStart] })]);
+
 export type Project = typeof projects.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentRevision = typeof documentRevisions.$inferSelect;

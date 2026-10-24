@@ -50,7 +50,7 @@ async function hitCounts(d: Db, cols: Column[], needles: string[]): Promise<Reco
   }
   return out;
 }
-const USER_TABLES = ["users", "accounts", "sessions", "verification_tokens", "projects", "documents", "document_revisions", "credentials", "ai_use_log", "vault_keys", "audit_log", "project_blobs"];
+const USER_TABLES = ["users", "accounts", "sessions", "verification_tokens", "projects", "documents", "document_revisions", "credentials", "ai_use_log", "vault_keys", "audit_log", "project_blobs", "rate_counters"];
 
 storeContract("drizzle", async () => {
   const { store, users: u } = await makeEnv();
@@ -294,6 +294,7 @@ if (!url) {
       await store.appendAiUse(id, p.id, { d: "2026-10-16", p: "groq", m: "llama", k: "rewrite", g: "text" });
       await store.putVault(id, { passWrapped: "s.i.p", recoveryWrapped: "s.i.r", checkWrapped: "i.c", publicKey: null, privateKeyWrapped: null });
       await store.putBlob(id, p.id, "idea_intake", { body: "{}", keyVersion: 0 });
+      await store.consumeQuota(id, [{ bucket: "complete:hour", windowSec: 3600, limit: 40 }], new Date());
       await store.appendAudit(id, "export");
       // Every user-identifying value of this user: its id and email, and the ids of the rows that hang off it.
       return [id, email, p.id, doc.id];

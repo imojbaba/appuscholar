@@ -1,8 +1,11 @@
-import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite } from "./types";
+import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite, QuotaRule, QuotaResult } from "./types";
 import { asTitle, DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 /** A vault record's next updatedAt: now, but always after the last one, so a precondition never matches two versions. */
 const after = (prev: Date): Date => new Date(Math.max(Date.now(), prev.getTime() + 1));
+
+/** Quota counters from windows that began longer ago than this are dropped (both stores). */
+const QUOTA_KEEP_MS = 2 * 86_400_000;
 
 type DocRow = { id: string; projectId: string; title: string; titleKeyVersion: number; kind: string; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
 
@@ -15,6 +18,8 @@ export class MemoryStore implements Store {
   private vaults = new Map<string, VaultRecord>();
   private audit: { userId: string; action: AuditAction; target: string | null; at: Date }[] = [];
   private aiUse: { userId: string; projectId: string | null; e: AiUseEntry; at: Date }[] = [];
+  /** Quota counters keyed by userId + "\n" + bucket + "\n" + window start in ms: { start, count }. */
+  private quota = new Map<string, { userId: string; start: number; count: number }>();
   /** Keyed by projectId + "\n" + kind (a kind never holds a newline). */
   private blobs = new Map<string, ProjectBlob>();
 
@@ -336,6 +341,20 @@ export class MemoryStore implements Store {
     return this.blobs.delete(projectId + "\n" + kind);
   }
 
+  async consumeQuota(userId: string, rules: QuotaRule[], now: Date): Promise<QuotaResult> {
+    const ms = now.getTime();
+    for (const [k, v] of this.quota) if (v.userId === userId && v.start < ms - QUOTA_KEEP_MS) this.quota.delete(k);
+    for (const r of rules) {
+      const len = r.windowSec * 1000;
+      const start = Math.floor(ms / len) * len;
+      const key = userId + "\n" + r.bucket + "\n" + start;
+      const row = this.quota.get(key);
+      if ((row?.count ?? 0) >= r.limit) return { ok: false, bucket: r.bucket, retryAfterSec: Math.max(1, Math.ceil((start + len - ms) / 1000)) };
+      if (row) row.count++; else this.quota.set(key, { userId, start, count: 1 });
+    }
+    return { ok: true };
+  }
+
   async appendAudit(userId: string, action: AuditAction, target?: string): Promise<void> {
     this.audit.push({ userId, action, target: target ?? null, at: new Date() });
   }
@@ -347,6 +366,7 @@ export class MemoryStore implements Store {
     for (const p of [...this.projects.values()]) if (p.userId === userId) await this.deleteProject(userId, p.id);
     for (const k of [...this.credentials.keys()]) if (this.credentials.get(k)!.userId === userId) this.credentials.delete(k);
     await this.eraseAiUse(userId);
+    for (const [k, v] of this.quota) if (v.userId === userId) this.quota.delete(k);
     this.vaults.delete(userId);
     this.users.delete(userId);
     await this.appendAudit(userId, "account-erased");

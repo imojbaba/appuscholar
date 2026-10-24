@@ -9,8 +9,9 @@ import { meRoutes } from "./routes/me";
 import { vaultRoutes } from "./routes/vault";
 import { aiRoutes } from "./routes/ai";
 import type { AnthropicFactory } from "./ai/types";
+import type { QuotaLimits } from "./ai/quota";
 
-export type AppOptions = { store: Store; jwtSecret: string; maxBodyBytes?: number; corsOrigin?: string; ai?: { fetch?: typeof fetch; anthropic?: AnthropicFactory } };
+export type AppOptions = { store: Store; jwtSecret: string; maxBodyBytes?: number; corsOrigin?: string; ai?: { fetch?: typeof fetch; anthropic?: AnthropicFactory }; quota?: { now?: () => Date; limits?: QuotaLimits } };
 
 /**
  * The most a document write may carry. Ciphertext is 4/3 the size of its HTML (base64), so this leaves room for a ~2.1 MB document,
@@ -34,7 +35,7 @@ export function createApp(o: AppOptions) {
   app.route("/documents", documentRoutes(o.store, maxBodyBytes));
   app.route("/me/vault", vaultRoutes(o.store));
   app.route("/me", meRoutes(o.store));
-  app.route("/ai", aiRoutes(o.store, { fetch: o.ai?.fetch ?? fetch, anthropic: o.ai?.anthropic }));
+  app.route("/ai", aiRoutes(o.store, { fetch: o.ai?.fetch ?? fetch, anthropic: o.ai?.anthropic }, o.quota));
   app.onError((err, c) => { console.error(err); return c.json({ error: "server" }, 500); });
   return app;
 }
