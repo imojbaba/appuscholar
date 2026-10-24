@@ -168,6 +168,28 @@ async function readCards(page: Page): Promise<CardRead[]> {
   );
 }
 
+/** A card as core's filter rule reads a paper: what the card shows of its year, its open-access badge, its retraction badge and its quick read. */
+function paperOf(c: CardRead): RsPaper {
+  const kind = /Kind of study: (.+?) — /.exec(c.lines[2] ?? "")?.[1];
+  const n = /Sample size: ([\d,]+) — /.exec(c.lines[3] ?? "")?.[1];
+  return {
+    title: c.title, authors: c.authors, year: c.year, venue: "", doi: "", source: c.source, retracted: c.retracted, ...(c.oa ? { oaStatus: "gold" } : {}),
+    ...(c.lines.length ? { quick: { ...(kind ? { design: { type: kind, ok: true } } : {}), ...(n ? { sample: { n: Number(n.replace(/,/g, "")), ok: true } } : {}) } } : {})
+  };
+}
+type FilterSet = { year: number; oa: boolean; ret: boolean; des: string; n: number };
+/** The cards a filter should leave, and the sentence under the list, by core's own rsFilterPass over what the cards show. */
+function expectedFilter(papers: RsPaper[], f: FilterSet): { titles: string[]; line: string } {
+  const passed = papers.map((p) => rsFilterPass(p, f));
+  const shown = passed.filter((r) => r.ok).length;
+  const needQ = passed.filter((r) => r.needsQuick).length;
+  const none = !f.year && !f.oa && !f.ret && !f.des && !f.n;
+  return {
+    titles: papers.filter((_, i) => passed[i]!.ok).map((p) => p.title),
+    line: none ? "" : `${T("rs2_showing_of_papers", { listCount: shown, rsResultsOriginalCount: papers.length })} ${papers.length - shown} ${T("rs2_hidden_by_your_filters")}${needQ ? " " + T("rs2_of_those_are_hidden", { needQ }) : ""}`
+  };
+}
+
 /** The OpenAlex answers the page receives from now on (the works of the search), so that a case can compare the cards with what the service sent. */
 function recordOpenAlex(page: Page): { works(): Array<{ display_name: string; authorships: Array<{ author: { display_name: string } }> }> } {
   const seen: Array<{ display_name: string; authorships: Array<{ author: { display_name: string } }> }> = [];
@@ -369,7 +391,7 @@ test("S2-01 I search for papers, read their abstracts quickly, filter, and keep 
     situation: { vault: "open", network: "fine", screen: "desktop", lang: "en", data: "realistic", ai: "answers" },
     steps: [
       "a student with a project", "Find: related terms and the search", "the cards sorted by most cited", "a paper added by hand", "quick reads", "filters", "connected papers",
-      "Insert citation, + Citation library and the CSV", "the library", "the home"
+      "Insert citation, + Citation library and the CSV", "the library", "a retracted paper", "the home"
     ],
     code: CODE
   });
@@ -522,35 +544,21 @@ test("S2-01 I search for papers, read their abstracts quickly, filter, and keep 
     await page.getByTestId("rs-filters").locator("summary").click();
     await expect(page.getByTestId("rs-filters")).toContainText(T("rs2_filters_only_hide_papers"));
     const all = await readCards(page);
-    const asPaper = (c: CardRead): RsPaper => {
-      const dTy = /Kind of study: (.+?) — /.exec(c.lines[2] ?? "")?.[1];
-      const n = /Sample size: ([\d,]+) — /.exec(c.lines[3] ?? "")?.[1];
-      return {
-        title: c.title, authors: c.authors, year: c.year, venue: "", doi: "", source: c.source, retracted: c.retracted, ...(c.oa ? { oaStatus: "gold" } : {}),
-        ...(c.lines.length ? { quick: { ...(dTy ? { design: { type: dTy, ok: true } } : {}), ...(n ? { sample: { n: Number(n.replace(/,/g, "")), ok: true } } : {}) } } : {})
-      };
-    };
-    const papers = all.map(asPaper);
-    /** The cards a filter should leave, and the sentence under the list, by core's own rsFilterPass over what the cards show. */
-    const expected = (f: { year: number; oa: boolean; ret: boolean; des: string; n: number }) => {
-      const passed = papers.map((p) => rsFilterPass(p, f));
-      const shown = passed.filter((r) => r.ok).length;
-      const needQ = passed.filter((r) => r.needsQuick).length;
-      const none = !f.year && !f.oa && !f.ret && !f.des && !f.n;
-      return { titles: papers.filter((_, i) => passed[i]!.ok).map((p) => p.title), line: none ? "" : `${T("rs2_showing_of_papers", { listCount: shown, rsResultsOriginalCount: papers.length })} ${papers.length - shown} ${T("rs2_hidden_by_your_filters")}${needQ ? " " + T("rs2_of_those_are_hidden", { needQ }) : ""}` };
-    };
+    const papers = all.map(paperOf);
+    const expected = (f: FilterSet) => expectedFilter(papers, f);
     const shownTitles = async () => (await page.getByTestId("rs-card").locator("h4").allInnerTexts());
     const clear = async () => {
       await page.getByTestId("rs-filter-clear").click();
       await expect(page.getByTestId("rs-card")).toHaveCount(all.length);
     };
-    const step = async (label: string, act: () => Promise<void>, f: Parameters<typeof expected>[0], source: string, o: { hides?: boolean } = {}) => {
+    const step = async (label: string, act: () => Promise<void>, f: FilterSet, source: string, o: { hides?: boolean } = {}) => {
+      const listed = await shownTitles();
       await act();
       const want = expected(f);
       await qa.check("data", label, async () => {
         // A filter that, by core's own rule over what the cards show, hides nothing and leaves nothing out would show only that the page does not break: it is not what the check is about.
         if (want.titles.length === 0) notChecked("core's filter rule leaves no card for this filter, so the shown list could not be compared");
-        if (o.hides && want.titles.length === papers.length) notChecked("core's filter rule hides no card for this filter on this list, so the filter was not shown to hide anything");
+        if (o.hides && want.titles.length >= listed.length) notChecked("core's filter rule hides no card from the list shown before this filter, so the filter was not shown to hide anything");
         await expect.poll(shownTitles).toEqual(want.titles);
         await expect(page.getByTestId("rs-fstat")).toHaveText(want.line);
       }, { source });
@@ -568,8 +576,6 @@ test("S2-01 I search for papers, read their abstracts quickly, filter, and keep 
       await expect(page.getByTestId("rs-fstat")).toHaveText("");
       await expect.poll(shownTitles).toEqual(all.map((c) => c.title));
     }, { source: `${SHEET} row 5 ("Clear brings every card back")` });
-    await step("Hide papers flagged as retracted leaves every paper that is not flagged", () => page.locator("#rsFRet").check(), { year: 0, oa: false, ret: true, des: "", n: 0 }, `${SHEET} row 5`);
-    await clear();
     const kind = QUICK[0]!.reply.design.type;
     await step(`Kind of study (confirmed) "${kind}" leaves the paper whose quick read found it, and says the others have no quick read yet`, async () => void (await page.locator("#rsFDes").selectOption(kind)), { year: 0, oa: false, ret: false, des: kind, n: 0 }, `${SHEET} row 5 (Expect: "Z of those are hidden only because they have no Quick read yet")`, { hides: true });
     await clear();
@@ -694,6 +700,43 @@ test("S2-01 I search for papers, read their abstracts quickly, filter, and keep 
       }
     }, { source: `${FIXA} row 17 (every body is ciphertext); ${E2E} (after the journey)` });
     await look(page, qa, "Citations, four sources");
+  });
+
+  await qa.step("a retracted paper", async () => {
+    // The recorded search for a paper OpenAlex marks as retracted (no recorded paper of the exam anxiety search is): OpenAlex alone, on the topic's own words.
+    const recorded = recordingFor("search=Ileal-lymphoid-nodular");
+    const topic = new URL(recorded.url).searchParams.get("search")!;
+    const flagged = (JSON.parse(recorded.body) as { results: Array<{ display_name: string; is_retracted?: boolean }> }).results.filter((r) => r.is_retracted).map((r) => r.display_name);
+    await page.getByTestId("place-tab-find").click();
+    await expect(page.getByTestId("panel-research")).toBeVisible();
+    await page.getByTestId("rs-topic").fill(topic);
+    await page.locator("#rsSrcPubmed").uncheck();
+    await page.getByTestId("rs-find").click();
+    await expect(page.getByTestId("rs-card").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("rs-status")).not.toContainText(T("rs2_searched_your_words_plus", { termsCount: 1 }).slice(0, 20));
+    const list = await readCards(page);
+    await qa.check("data", "a paper OpenAlex marks as retracted carries a \"⚠ Retracted\" badge on its card, and only that one", async () => {
+      expect(flagged.length, "retracted papers in the recorded answer").toBeGreaterThan(0);
+      expect(list.filter((c) => c.retracted).map((c) => c.title).sort()).toEqual([...flagged].sort());
+      await expect(page.locator('[data-testid="rs-card"] .retr-badge').first()).toHaveText("⚠ " + T("retr_badge"));
+    }, { source: `${SHEET} row 5 (\"Hide papers flagged as retracted\"); recorded OpenAlex answer (oa-search-retracted, is_retracted)` });
+    const filters = page.getByTestId("rs-filters");
+    if (!(await filters.evaluate((d) => (d as HTMLDetailsElement).open))) await filters.locator("summary").click();
+    const papers = list.map(paperOf);
+    const want = expectedFilter(papers, { year: 0, oa: false, ret: true, des: "", n: 0 });
+    await page.locator("#rsFRet").check();
+    await qa.check("data", "Hide papers flagged as retracted takes the retracted paper off the list, leaves every other, and says how many are hidden", async () => {
+      expect(want.titles.length, "papers the rule leaves").toBeLessThan(papers.length);
+      expect(want.titles.length, "papers the rule leaves").toBeGreaterThan(0);
+      await expect.poll(async () => await page.getByTestId("rs-card").locator("h4").allInnerTexts()).toEqual(want.titles);
+      await expect(page.getByTestId("rs-fstat")).toHaveText(want.line);
+      await expect(page.locator('[data-testid="rs-card"] .retr-badge')).toHaveCount(0);
+    }, { source: `${SHEET} row 5 (Expect: "Hide papers flagged as retracted, then Clear filters"; "Showing X of N papers. Y hidden by your filters, not deleted.")` });
+    await page.getByTestId("rs-filter-clear").click();
+    await qa.check("conceptual", "Clear filters brings the retracted paper back, with its badge: hidden, never deleted", async () => {
+      await expect(page.getByTestId("rs-card")).toHaveCount(papers.length);
+      expect((await readCards(page)).filter((c) => c.retracted).map((c) => c.title).sort()).toEqual([...flagged].sort());
+    }, { source: `${SHEET} row 5 (\"Filters hide, never delete\")` });
   });
 
   await qa.step("the home", async () => {
@@ -1472,10 +1515,14 @@ test("S2-04 with my vault locked, + Citation library asks for my passphrase once
     await qa.check("conceptual", "nothing is claimed that did not happen: no toast says the reference list was inserted", async () => {
       expect(said.filter((x) => /inserted/i.test(x)), "toasts after the press").toEqual([]);
     }, { source: `${B1} row 11; apps/web/lib/cite/share.ts citeInsertBib` });
-    await qa.check("conceptual", "what the page says after the press is that the library is locked, not that the library is empty (it holds two sources)", async () => {
+    await qa.check("conceptual", "the press does not tell me the library is empty: it holds two sources, it is only locked", async () => {
       expect(said, "toasts after the press").not.toContain(LIBRARY_EMPTY);
-      expect(said.length, "the press said nothing at all").toBeGreaterThan(0);
+      expect(await page.getByTestId("panel-cite").innerText(), "the page after the press").not.toContain(LIBRARY_EMPTY);
     }, { source: "spec section 6 (S2: \"Insert reference list with the unlock cancelled inserts nothing and says so\"); apps/web/lib/cite/share.ts:26 (LIBRARY_EMPTY is said when lib.length is 0) and lib/cite/useLibrary.ts:114 (lib is [] while the library is locked)", known: "Q63" });
+    await qa.check("conceptual", "after the press the page tells me why nothing went in: locked or unlock wording, on the page or in a toast", async () => {
+      const words = [...said, await page.getByTestId("panel-cite").innerText()].join("\n");
+      expect(words, "what the page and its toasts say after the press").toMatch(/locked|unlock|passphrase/i);
+    }, { source: "spec section 6 (S2: \"... inserts nothing and says so\")" });
     await qa.check("data", "nothing was saved by the press", async () => {
       expect(seen.kinds()).toEqual([]);
     }, { source: "spec section 6 (S2, locked)" });
@@ -1591,6 +1638,9 @@ function libraryFile(n = 2000): string {
   return JSON.stringify(entries, null, 2);
 }
 
+/** The CPU slowdown of the second insert of S2-06: the browser runs every task this many times slower. */
+const SLOWER_CPU = 4;
+
 /** Waits `ms` on this side, with no round trip to the page: a duration read from the page, shown as a wait for the report (`qa.timed`). */
 const after = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -1636,7 +1686,7 @@ test("S2-06 a library of 2,000 sources: Insert reference list puts all of them i
     id: "S2-06",
     goal: "I import a library of 2,000 sources and press Insert reference list: the whole list is in my document once, within ten seconds, and the page keeps answering while it goes in",
     situation: { vault: "open", network: "fine", screen: "desktop", lang: "en", data: "huge", ai: "answers" },
-    steps: ["a student and a library file of 2,000 sources", "import the library", "Insert reference list"],
+    steps: ["a student and a library file of 2,000 sources", "import the library", "Insert reference list", "the same insert on a slower computer"],
     code: [...CODE, "apps/web/lib/export", "packages/core/src/citlib.ts"]
   });
   let s!: Student;
@@ -1657,14 +1707,25 @@ test("S2-06 a library of 2,000 sources: Insert reference list puts all of them i
     await expect(page.getByTestId("cite-count")).toHaveText("0");
   });
 
-  /** The freeze budget, read from the page's probe: the longest single blocking task, shown for the report as a wait of that length. */
-  const freezeCheck = async (what: string, freeze: Awaited<ReturnType<typeof readFreeze>>) => {
+  /** The freeze budget, read from the page's probe: the longest single blocking task, shown for the report as a wait of that length (a time measured in the page, as qa.timed takes it). */
+  const freezeCheck = async (what: string, freeze: Awaited<ReturnType<typeof readFreeze>>, o: { source: string; known?: string }) => {
     const label = `the longest blocking task of the page ${what} (${freeze.task} ms; the 10 ms timer was late by up to ${freeze.gap} ms)`;
     if (freeze.ticks < 1 || !freeze.observed) {
-      await qa.check("data", label, async () => notChecked(freeze.observed ? "the probe in the page never ticked, so it measured nothing" : "the browser reports no long tasks here, so the probe measured nothing"), { source: "spec section 8 (no main-thread freeze over 1 s during huge data)" });
+      await qa.check("data", label, async () => notChecked(freeze.observed ? "the probe in the page never ticked, so it measured nothing" : "the browser reports no long tasks here, so the probe measured nothing"), { source: o.source });
       return;
     }
-    await qa.timed(label, FREEZE_MS, () => after(freeze.task), { source: "spec section 8 (no main-thread freeze over 1 s during huge data)" });
+    await qa.timed(label, FREEZE_MS, () => after(freeze.task), { source: o.source, ...(o.known ? { known: o.known } : {}) });
+  };
+  const FREEZE_SOURCE = "spec section 8 (no main-thread freeze over 1 s during huge data)";
+  /** The list is in the document once: 2,000 references, each source once, the heading once. */
+  const listInDocumentOnce = async () => {
+    const items = (await page.locator(".ProseMirror p.ref-item").allInnerTexts()).map(flat);
+    expect(items).toHaveLength(2000);
+    const lib = JSON.parse(file) as Array<{ title: string }>;
+    for (const e of lib.slice(0, 50)) expect(items.filter((x) => x.includes(e.title)).length, e.title).toBe(1);
+    expect(new Set(items).size, "different references").toBe(2000);
+    const head = await page.locator(".ProseMirror p.ref-head").allInnerTexts();
+    expect(head.map(flat)).toEqual([bibliography([], "apa").head]);
   };
 
   await qa.step("import the library", async () => {
@@ -1676,7 +1737,7 @@ test("S2-06 a library of 2,000 sources: Insert reference list puts all of them i
       await expect(page.getByTestId("place-tab-citations")).toHaveText(T("tab_name_count", { name: T("tab_name_citations"), n: 2000 }));
       await expect(page.getByTestId("cite-card")).toHaveCount(2000, { timeout: 30_000 });
     }, { source: "apps/web/lib/cite/share.ts importedToast; spec section 6 (S2: a 2,000-source reference list)" });
-    await freezeCheck("while the library was read and its 2,000 cards drawn", await readFreeze(page));
+    await freezeCheck("while the library was read and its 2,000 cards drawn", await readFreeze(page), { source: FREEZE_SOURCE });
     await qa.check("data", "the server holds the 2,000 sources sealed: the MARK is not in what it stores", async () => {
       const lib = (await serverRows(s.uid)).blobs.find((b) => b.kind === "citations");
       if (!lib) notChecked("the account has no citations blob on the server, so there was nothing to read");
@@ -1688,26 +1749,42 @@ test("S2-06 a library of 2,000 sources: Insert reference list puts all of them i
   await qa.step("Insert reference list", async () => {
     await expect(page.getByTestId("place-open-doc")).toBeVisible();
     await expect(page.getByTestId("frame-doc")).toBeHidden();
-    await startFreezeProbe(page);
     await qa.timed("Insert reference list with 2,000 sources: from the press to the list in the document", ACTION_MS, async () => {
       await page.getByTestId("cite-insertbib").click();
       await expect(page.getByTestId("frame-doc")).toBeVisible({ timeout: 60_000 });
       await expect(page.locator(".ProseMirror p.ref-item")).toHaveCount(2000, { timeout: 60_000 });
       await expect.poll(toasts, { timeout: 60_000 }).toContain(T("cite_bib_fmt"));
     }, { source: "spec section 8 (an ordinary action within 10 s); plan Task 15 (S2-06: Insert reference list within ACTION_MS, inserted once)" });
-    await freezeCheck("while the list went in", await readFreeze(page));
-    await qa.check("data", "the list is in the document once: 2,000 references, each source once, the heading once", async () => {
-      const items = (await page.locator(".ProseMirror p.ref-item").allInnerTexts()).map(flat);
-      expect(items).toHaveLength(2000);
-      const lib = JSON.parse(file) as Array<{ title: string }>;
-      for (const e of lib.slice(0, 50)) expect(items.filter((x) => x.includes(e.title)).length, e.title).toBe(1);
-      expect(new Set(items).size, "different references").toBe(2000);
-      const head = await page.locator(".ProseMirror p.ref-head").allInnerTexts();
-      expect(head.map(flat)).toEqual([bibliography([], "apa").head]);
-    }, { source: `${B1} row 11 (\"the reference list goes in once ... Nothing is inserted twice\")` });
+    await qa.check("data", "the list is in the document once: 2,000 references, each source once, the heading once", listInDocumentOnce, { source: `${B1} row 11 (\"the reference list goes in once ... Nothing is inserted twice\")` });
     await qa.check("data", "the library still counts 2000 sources", async () => {
-      await expect(page.getByTestId("cite-count")).toHaveText("2000");
+      await expect(page.getByTestId("place-lit-citations").getByTestId("cite-count")).toHaveText("2000");
     }, { source: "apps/web/lib/cite/share.ts" });
+  });
+
+  await qa.step("the same insert on a slower computer", async () => {
+    // On this machine the 2,000 references go in with a longest blocking task of 0.6 to 1.1 s, at the edge of the 1 s budget, so one run says little of a student's slower laptop. The list is taken out of
+    // the document and put in again with the CPU slowed four times (the browser's own throttle), where the budget is missed by a wide margin every time.
+    await page.locator(".ProseMirror").click();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.press("Delete");
+    await expect(page.locator(".ProseMirror p.ref-item")).toHaveCount(0, { timeout: 60_000 });
+    await expect(page.getByTestId("cite-insertbib")).toBeVisible();
+    const cdp = await context.newCDPSession(page);
+    let freeze: Awaited<ReturnType<typeof readFreeze>>;
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: SLOWER_CPU });
+    try {
+      await startFreezeProbe(page);
+      await page.getByTestId("cite-insertbib").click();
+      await expect(page.locator(".ProseMirror p.ref-item")).toHaveCount(2000, { timeout: 180_000 });
+      freeze = await readFreeze(page);
+    } finally {
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+    }
+    await freezeCheck(`while the list went in again, with the CPU ${SLOWER_CPU} times slower`, freeze, {
+      source: `${FREEZE_SOURCE}; the list goes in as one block (apps/web/components/tools/cite/CiteShare.tsx:21, target.block(bibliographyHtml(...)))`,
+      known: "Q67"
+    });
+    await qa.check("data", "after the second insert the list is in the document once, as after the first", listInDocumentOnce, { source: `${B1} row 11 (\"Nothing is inserted twice\")` });
   });
 });
 
