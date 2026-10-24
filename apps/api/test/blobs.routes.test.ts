@@ -16,6 +16,8 @@ const NEW_KINDS = [
   "design_reg", "design_proto", "design_ec", "design_ctri", "design_pi", "design_budget", "stats_sets", "stats_runs", "stats_prefs", "qual_codes", "qual_prefs",
   "style_profile", "style_samples", "style_meta", "words_bank", "words_prefs", "close_prefs", "viva_log"
 ];
+/** The participant list: names, so it is only ever stored sealed (the api refuses it in plaintext, vault or not). It comes after the others, as in the web client. */
+const SEALED_ONLY = ["participants"];
 
 async function token(sub: string) {
   return new SignJWT({ email: sub + "@x.org" }).setProtectedHeader({ alg: "HS256" }).setSubject(sub).setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) + 900).sign(key);
@@ -39,7 +41,7 @@ describe("blob routes", () => {
   const blob = (kind: string, p = pid) => `/projects/${p}/blobs/${kind}`;
 
   it("kinds: the fixed list, and shelf_paper:<id> with a 1-64 character [A-Za-z0-9_-] id", () => {
-    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols", ...NEW_KINDS]);
+    expect(BLOB_KINDS).toEqual(["idea_intake", "citations", "retraction_cache", "refcheck_cache", "shelf_index", "ap_notes", "ap_cols", "rs_prefs", "shelf_cols", ...NEW_KINDS, ...SEALED_ONLY]);
     for (const k of [...BLOB_KINDS, "shelf_paper:a", "shelf_paper:" + "x".repeat(64), "shelf_paper:A-b_9"]) expect(isBlobKind(k), k).toBe(true);
     for (const k of ["", "notes", "IDEA_INTAKE", "shelf_paper:", "shelf_paper:" + "x".repeat(65), "shelf_paper:a.b", "shelf_paper:a b", "shelf_paper:a/b", "shelf_paper", "idea_intake:x"]) expect(isBlobKind(k), k).toBe(false);
   });
@@ -132,6 +134,33 @@ describe("blob routes", () => {
     // Another user without a vault still writes plaintext.
     const other = (await json<{ id: string }>(await as("u2", "POST", "/projects", { title: "T" }))).id;
     expect((await as("u2", "PUT", blob("citations", other), { body: "[]", keyVersion: 0 })).status).toBe(200);
+  });
+
+  it("participants: a plaintext write is refused with 409 vault-required whether or not the user has a vault, and ciphertext goes in", async () => {
+    const plain = { body: '{"v":1,"next":1,"people":[],"notNames":[]}', keyVersion: 0 };
+    // No vault record: every other kind still takes plaintext (unchanged), this one does not.
+    expect((await req("PUT", blob("stats_prefs"), { body: "{}", keyVersion: 0 })).status).toBe(200);
+    const refused = await req("PUT", blob("participants"), plain);
+    expect(refused.status).toBe(409);
+    expect(await json(refused)).toEqual({ error: "vault-required" });
+    expect((await req("GET", blob("participants"))).status).toBe(404); // nothing was stored
+    expect((await req("PUT", blob("participants"), { ...plain, dek: { v: 1, wrapped: "k" } })).status).toBe(409); // a dek on a plaintext write changes nothing
+    // Ciphertext goes in, with the dek arriving with it, and a second sealed write finds that dek known.
+    const sealed = await req("PUT", blob("participants"), { body: ct("a.b"), keyVersion: 1, dek: { v: 1, wrapped: "k" } });
+    expect(sealed.status).toBe(200);
+    expect(await json(sealed)).toMatchObject({ kind: "participants", body: ct("a.b"), keyVersion: 1, deks: [{ v: 1, wrapped: "k" }], version: 1 });
+    expect((await req("PUT", blob("participants"), { body: ct("c.d"), keyVersion: 1 })).status).toBe(200);
+    // Not even over a sealed blob, and not with a version to match.
+    const again = await req("PUT", blob("participants"), plain);
+    expect(again.status).toBe(409);
+    expect(await json(again)).toEqual({ error: "vault-required" });
+    expect((await putIf("participants", '"2"', plain)).status).toBe(409);
+    expect((await json(await req("GET", blob("participants")))).body).toBe(ct("c.d"));
+    // With a vault record, as before.
+    await req("PUT", "/me/vault", VAULT);
+    expect((await req("PUT", blob("participants"), plain)).status).toBe(409);
+    expect((await req("PUT", blob("participants"), { body: ct("e.f"), keyVersion: 1 })).status).toBe(200);
+    expect((await req("PUT", blob("stats_prefs"), { body: "{}", keyVersion: 0 })).status).toBe(409);
   });
 
   it("ciphertext: the body must have the sealed shape, and the dek rules are the documents'", async () => {

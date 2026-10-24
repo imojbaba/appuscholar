@@ -17,7 +17,7 @@ describe("the kind-to-stage map", () => {
       design_reg: ["design", true], design_proto: ["design", true], design_ec: ["design", true], design_ctri: ["design", true], design_pi: ["design", true], design_budget: ["design", true],
       stats_sets: ["collect", true], stats_runs: ["collect", true], stats_prefs: ["collect", false], qual_codes: ["collect", true], qual_prefs: ["collect", false],
       style_profile: ["writing", true], style_samples: ["writing", true], style_meta: ["writing", true], words_bank: ["writing", true], words_prefs: ["writing", false],
-      close_prefs: ["review", false], viva_log: ["review", true]
+      close_prefs: ["review", false], viva_log: ["review", true], participants: ["collect", true]
     } as const;
     for (const [k, [stage, w]] of Object.entries(want)) {
       expect(BLOB_KINDS, k).toContain(k);
