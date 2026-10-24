@@ -15,6 +15,7 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import { e2eEmail, signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
 import { WEB_ORIGIN } from "./support/origins";
+import * as editorAt from "./support/editor";
 
 /** The vault passphrase (at least 10 characters). Since Phase 3A "Protect with a passphrase" locks the key under the vault, so this one passphrase opens both. */
 const PASS = "secret passphrase 1";
@@ -53,46 +54,11 @@ async function selectInEditor(page: Page, text: string) {
   }, text);
 }
 
-/** Puts the cursor at the very end of the document (the same on every platform, unlike an End key chord). */
-async function cursorToEnd(page: Page) {
-  await page.locator(".ProseMirror").focus();
-  await page.evaluate(() => {
-    const last = document.querySelector(".ProseMirror")!.lastElementChild!;
-    last.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(last);
-    range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
-}
-
-/**
- * Selects the whole block of the editor that contains `text`, and waits for the selection bubble. The caret is put in the block first and given a moment, so that the selection really
- * changes: a second selection of the same block straight after the first (the step that cancels a request and asks again) is no change to the editor and raises no bubble, and the
- * `scrollIntoView` of the second one can fire a scroll event that hides a bubble the editor had just shown again (the selection bubble hides on any scroll). Retried until the bubble shows.
- */
-async function selectBlockWith(page: Page, text: string) {
-  const place = (collapse: boolean) => page.evaluate(([needle, collapse]) => {
-    const block = [...document.querySelectorAll(".ProseMirror p")].find((p) => p.textContent?.includes(needle as string));
-    if (!block) throw new Error("block not found in the editor: " + needle);
-    block.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(block);
-    if (collapse) range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, [text, collapse] as const);
-  await expect(async () => {
-    await page.locator(".ProseMirror").focus();
-    await place(true);
-    await page.waitForTimeout(200);
-    await place(false);
-    await expect(page.getByTestId("sel-bubble")).toBeVisible({ timeout: 3_000 });
-  }).toPass({ timeout: 30_000 });
-}
+// Set in the editor's own state (support/editor.ts says why a DOM range placed after focus can be lost).
+/** Puts the cursor at the very end of the document. */
+const cursorToEnd = (page: Page) => editorAt.cursorToEnd(page.locator(".ProseMirror"));
+/** Selects the whole block of the editor that contains `text`, and waits for the selection bubble (again after a Cancel: R45). */
+const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockForBubble(page.locator(".ProseMirror"), text);
 
 // A stuck step fails in seconds with its own message instead of eating the whole test timeout.
 test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });

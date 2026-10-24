@@ -48,6 +48,7 @@ import { consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
+import * as editorAt from "./support/editor";
 
 // ---- Copy: every sentence asserted is read from the dictionaries (or is core's own output) --------------------------------------------------------------
 
@@ -221,44 +222,11 @@ async function newDocument(page: Page, title: string) {
   await expect(page.locator("#doc-select option:checked")).toHaveText(title);
 }
 
+// Set in the editor's own state (support/editor.ts says why a DOM range placed after focus can be lost).
 /** Puts the cursor at the very end of the open document. */
-async function cursorToEnd(page: Page) {
-  await editor(page).focus();
-  await editor(page).evaluate((root) => {
-    const last = root.lastElementChild!;
-    const range = document.createRange();
-    range.selectNodeContents(last);
-    range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
-}
-
-/**
- * Selects the whole paragraph of the open document that holds `text`, as a drag would, and waits for the selection bubble. The caret is put in the paragraph first and given a moment, so that
- * the selection really changes (a second selection of the same paragraph, straight after the first, is no change to the editor and raises no bubble).
- */
-async function selectBlockWith(page: Page, text: string) {
-  const place = (collapse: boolean) => editor(page).evaluate((root, [needle, collapse]) => {
-    const block = [...root.querySelectorAll("p")].find((p) => p.textContent?.includes(needle as string));
-    if (!block) throw new Error("block not found in the editor: " + needle);
-    block.scrollIntoView({ block: "center" });
-    const range = document.createRange();
-    range.selectNodeContents(block);
-    if (collapse) range.collapse(false);
-    const sel = window.getSelection()!;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }, [text, collapse] as const);
-  await expect(async () => {
-    await editor(page).focus();
-    await place(true);
-    await page.waitForTimeout(200);
-    await place(false);
-    await expect(page.getByTestId("sel-bubble")).toBeVisible({ timeout: 3_000 });
-  }).toPass({ timeout: 30_000 });
-}
+const cursorToEnd = (page: Page) => editorAt.cursorToEnd(editor(page));
+/** Selects the whole paragraph of the open document that holds `text`, as a drag would, and waits for the selection bubble. */
+const selectBlockWith = (page: Page, text: string) => editorAt.selectBlockForBubble(editor(page), text);
 
 /** The text of every range the browser paints with a highlight of this name (CSS Custom Highlight API), or null when there is none. */
 async function painted(page: Page, name: "pp-sure" | "pp-maybe"): Promise<string[] | null> {
