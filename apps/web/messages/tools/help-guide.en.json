@@ -1,1 +1,19 @@
-{}
+{
+  "wc_guide_btn": "Guide",
+  "wc_guide_title": "Guide",
+  "wc_guide_english_only": "The guide is in English for now. A Hindi version is planned.",
+  "wc_guide_search_label": "Search the guide",
+  "wc_guide_search_ph": "Search the guide, for example: alpha, consent, backup",
+  "wc_guide_print": "Print or save as PDF",
+  "wc_guide_popup": "Allow pop-ups for this page, then press Print again.",
+  "wc_guide_count_all": "{total} sections",
+  "wc_guide_count_match": "{h} of {total} sections match",
+  "wc_guide_empty": "Nothing in the guide matches that. Try one word, such as test or citation.",
+  "wc_guide_contents": "Contents",
+  "wc_guide_group_Begin": "Begin",
+  "wc_guide_group_Tools": "Tools",
+  "wc_guide_group_Practice": "Practice",
+  "wc_guide_group_Help": "Help",
+  "wc_guide_print_title": "Appuscholar guide",
+  "wc_guide_print_from": "Printed from the app. Build {build}."
+}

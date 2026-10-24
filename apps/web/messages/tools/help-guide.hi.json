@@ -1,3 +1,20 @@
 {
-  "$draft": "DRAFT: Hindi for Dr. Sharma's review, reviewed by: (pending)"
+  "$draft": "DRAFT: Hindi for Dr. Sharma's review, reviewed by: (pending)",
+  "wc_guide_btn": "गाइड",
+  "wc_guide_title": "गाइड",
+  "wc_guide_english_only": "गाइड अभी अंग्रेज़ी में है। हिंदी संस्करण की योजना है।",
+  "wc_guide_search_label": "गाइड में खोजें",
+  "wc_guide_search_ph": "गाइड में खोजें, जैसे: alpha, consent, backup",
+  "wc_guide_print": "प्रिंट करें या PDF में सहेजें",
+  "wc_guide_popup": "इस पेज के लिए पॉप-अप की अनुमति दें, फिर दोबारा प्रिंट दबाएँ।",
+  "wc_guide_count_all": "{total} खंड",
+  "wc_guide_count_match": "{total} में से {h} खंड मेल खाते हैं",
+  "wc_guide_empty": "गाइड में इससे मेल खाता कुछ नहीं मिला। कोई एक शब्द आज़माएँ, जैसे test या citation।",
+  "wc_guide_contents": "विषय-सूची",
+  "wc_guide_group_Begin": "शुरुआत",
+  "wc_guide_group_Tools": "उपकरण",
+  "wc_guide_group_Practice": "अभ्यास",
+  "wc_guide_group_Help": "सहायता",
+  "wc_guide_print_title": "Appuscholar गाइड",
+  "wc_guide_print_from": "ऐप से छापा गया। बिल्ड {build}।"
 }
