@@ -142,3 +142,30 @@ describe("citToBibtex", () => {
     expect(citToBibtex([])).toBe("");
   });
 });
+
+describe("doi and url are verbatim in BibTeX and a doi is bare (review fix)", () => {
+  const E: CitationEntry = { author: "Lee, K", year: "2001", title: "Alpha", doi: "10.1002/a_b&c#d%e", url: "https://example.org/p_1?x=1&y=2#top%20z" };
+  it("writes doi and url without any escape: _ & # % ? = stay as typed", () => {
+    const s = citToBibtex([E]);
+    expect(s).toContain("  doi = {10.1002/a_b&c#d%e},");
+    expect(s).toContain("  url = {https://example.org/p_1?x=1&y=2#top%20z}\n");
+    expect(s).not.toContain("\\");
+  });
+  it("percent-encodes only a brace (and a space in the url) so the field cannot break", () => {
+    const s = citToBibtex([{ title: "T", doi: "10.1/a{b}c", url: "https://example.org/a b/{x}" }]);
+    expect(s).toContain("doi = {10.1/a%7Bb%7Dc},");
+    expect(s).toContain("url = {https://example.org/a%20b/%7Bx%7D}");
+  });
+  it("still escapes the other fields", () => {
+    expect(citToBibtex([{ title: "A_b", doi: "10.1/a_b" }])).toContain("title = {A\\_b}");
+  });
+  it("writes a doi typed as a doi.org link bare in RIS (DO) and BibTeX (doi)", () => {
+    for (const d of ["https://doi.org/10.1038/x1", "http://dx.doi.org/10.1038/x1", "10.1038/x1"]) {
+      expect(citToRis([{ title: "T", doi: d }])).toContain("\r\nDO  - 10.1038/x1\r\n");
+      expect(citToBibtex([{ title: "T", doi: d }])).toContain("doi = {10.1038/x1}");
+    }
+  });
+  it("keeps the doi verbatim in RIS too", () => {
+    expect(citToRis([E])).toContain("DO  - 10.1002/a_b&c#d%e\r\n");
+  });
+});

@@ -1,0 +1,27 @@
+{
+  "name": "@appuscholar/quality",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/sets.ts",
+  "types": "./src/sets.ts",
+  "exports": {
+    ".": "./src/sets.ts",
+    "./grade": "./src/grade.ts",
+    "./sets": "./src/sets.ts"
+  },
+  "scripts": {
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@appuscholar/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "eslint": "^10.0.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^5.0.4"
+  }
+}

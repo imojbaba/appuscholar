@@ -3,7 +3,7 @@
    A source is read as the rest of the citation engine reads it (citation.ts): its kind from `type` (citKind), its authors from the `;`-separated "Last, First" list (citNames; a name
    with no comma is an organisation), `source` as the journal, publisher, institution, school or website, `container` as the book or proceedings a chapter or paper is in.
    Every field is trimmed, a field with nothing in it is left out, and line breaks inside a value become one space. */
-import { citKind, citNames, type CitationEntry, type CitationKind } from "./citation";
+import { citDoiBare, citKind, citNames, type CitationEntry, type CitationKind } from "./citation";
 
 const clean = (x: string | undefined): string => String(x ?? "").replace(/\s+/g, " ").trim();
 /** Pages "a-b" (a hyphen, en dash or em dash between two parts, spaces allowed) as the two ends; anything else is one start page. */
@@ -34,7 +34,7 @@ export function citToRis(lib: CitationEntry[]): string {
       ["IS", clean(e.issue)],
       ["SP", sp],
       ["EP", ep],
-      ["DO", clean(e.doi)],
+      ["DO", clean(citDoiBare(e))],
       ["UR", clean(e.url)]
     ];
     return rows.filter(([t, v]) => t === "TY" || v).map(([t, v]) => t + "  - " + v + "\r\n").join("") + "ER  - \r\n";
@@ -46,6 +46,9 @@ const BIB_TYPE: Record<CitationKind, string> = { journal: "article", book: "book
 const BIB_ESC: Record<string, string> = { "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "%": "\\%", "&": "\\&", "$": "\\$", "#": "\\#", "_": "\\_" };
 /** A value with `{ } % & $ # _` escaped (and a backslash, which would start a command). One pass, so an escape is never escaped again. */
 const bibEsc = (x: string): string => x.replace(/[\\{}%&$#_]/g, (c) => BIB_ESC[c]!);
+
+/** A doi or url is written as typed (BibTeX reads these fields verbatim, so an escape would corrupt them): only what would break the braces is percent-encoded, a brace and a space. */
+const bibVerbatim = (x: string): string => x.replace(/[{} ]/g, (c) => (c === " " ? "%20" : c === "{" ? "%7B" : "%7D"));
 
 /** Lower-case ASCII letters and digits only: accents dropped (NFD), the few letters NFD leaves whole mapped, anything else removed. */
 function asciiKey(x: string): string {
@@ -89,10 +92,10 @@ export function citToBibtex(lib: CitationEntry[]): string {
       ["volume", clean(e.volume)],
       ["number", clean(e.issue) || (kind === "report" ? clean(e.number) : "")],
       ["pages", pages],
-      ["doi", clean(e.doi)],
+      ["doi", clean(citDoiBare(e))],
       ["url", clean(e.url)]
     ];
-    const fields = rows.filter(([, v]) => v).map(([k, v]) => "  " + k + " = {" + (k === "author" ? v : bibEsc(v)) + "}");
+    const fields = rows.filter(([, v]) => v).map(([k, v]) => "  " + k + " = {" + (k === "author" ? v : k === "doi" || k === "url" ? bibVerbatim(v) : bibEsc(v)) + "}");
     return "@" + BIB_TYPE[kind] + "{" + key + fields.map((f) => ",\n" + f).join("") + "\n}\n";
   }).join("\n");
 }
