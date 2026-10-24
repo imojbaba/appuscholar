@@ -13,11 +13,16 @@
 //   - scripts/fixtures/wave-b-base.json: the base (key -> [English, Hindi]). A shallow clone cannot run `git show <base>:`, hence the file;
 //     test/hindiRemap.test.ts compares it with git whenever the base commit is reachable.
 //   - scripts/fixtures/wave-b-head.json: the dictionaries the sheet was generated from (same shape, plus the tool files and the commit they were taken at).
+//   - scripts/fixtures/v1-hindi-remap.json: the Hindi that Dr. Sharma's newest v1 gave to English copies (made by v1-hindi-remap.mjs). It adds the counts
+//     of the remap and two sections: the keys remapped, and the keys whose Hindi is still English with the reason.
 // To refresh after the dictionaries change: run `pnpm --filter @appuscholar/web i18n:remap` (it rewrites the head snapshot and then the sheet),
 // and commit wave-b-head.json and docs/i18n/wave-b-hindi-remap.md together. The sheet is built only from this repo's own dictionaries.
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { KIND, REMAP_URL, stripEmoji } from "./v1-hindi-remap.mjs";
+
+export { stripEmoji };
 
 /** The wave B base: the last commit before wave B (2026-10-20). */
 export const BASE_COMMIT = "af11810";
@@ -37,13 +42,24 @@ export const STATUS = {
   NEW_MISSING: "new key, no Hindi yet",
 };
 
+/** How a remapped key was matched, in words. */
+export const KIND_LABEL = {
+  [KIND.EXACT]: "exact English",
+  [KIND.NORMALISED]: "same words (emoji, spacing or spelling differ)",
+  [KIND.PLACEHOLDERS]: "placeholders renamed",
+};
+
+/** Why a main-dictionary Hindi is still English after the remap. The text before the first comma is the short name used in the counts. */
+export const REASON = {
+  NONE: "no Hindi in v1",
+  AMBIGUOUS: "ambiguous in v1",
+  REJECTED: "v1 Hindi not used",
+  KEEP: "a name or format, stays English",
+  LATE: "added after the remap, not checked against v1",
+};
+
 const readJson = url => JSON.parse(readFileSync(url, "utf8"));
 const sortedKeys = o => Object.keys(o).sort();
-
-/** The text without emoji and pictographs (and the joiners and variation selectors that go with them), spaces tidied. */
-export function stripEmoji(s) {
-  return s.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\u{FE0F}\u{200D}\u{2600}-\u{27BF}\u{2B50}\u{2B55}]/gu, "").replace(/\s+/g, " ").trim();
-}
 
 /** The base dictionaries, read with `git show <base>:apps/web/messages/{en,hi}.json`, as { base, keys: { key: [en, hi] } } sorted by key. */
 export function readBaseFromGit(base = BASE_COMMIT) {
@@ -116,8 +132,31 @@ function cell(s) {
   return text.startsWith("`") || text.endsWith("`") ? `${fence} ${text} ${fence}` : `${fence}${text}${fence}`;
 }
 
-/** The sheet as a string. All inputs are passed in, so the function is pure. */
-export function renderSheet({ base, head, baseKeys, en, hi, tools }) {
+/** Plain table-cell text: pipes escaped, line breaks as <br>. */
+const plain = s => String(s).replace(/\|/g, "\\|").replace(/\r?\n/g, " <br> ");
+
+/** What the remap file says about the head dictionaries: the rows of its two sections and the counts of the header. */
+function remapView(remap, en, hi) {
+  const remapped = sortedKeys(remap.keys).map(k => [k, remap.keys[k].en, remap.keys[k].hi, remap.keys[k].v1Key, remap.keys[k].kind]);
+  const reasonOf = k => {
+    if (k in remap.ambiguous) return [REASON.AMBIGUOUS, `${REASON.AMBIGUOUS}: ${remap.ambiguous[k].v1.map(([v, h]) => `\`${v}\` says ${h}`).join(", ")}`];
+    if (k in remap.rejected) return [REASON.REJECTED, `${REASON.REJECTED}: ${remap.rejected[k].reason} (v1 key \`${remap.rejected[k].v1Key}\`)`];
+    if (remap.keepEnglish.includes(k)) return [REASON.KEEP, REASON.KEEP];
+    if (remap.noV1Hindi.includes(k)) return [REASON.NONE, REASON.NONE];
+    return [REASON.LATE, REASON.LATE];
+  };
+  const still = sortedKeys(en).filter(k => hi[k] === en[k]).map(k => [k, en[k], ...reasonOf(k)]);
+  const before = remapped.length + Object.keys(remap.ambiguous).length + Object.keys(remap.rejected).length + remap.keepEnglish.length + remap.noV1Hindi.length;
+  const kinds = Object.values(KIND).map(kd => [kd, remapped.filter(r => r[4] === kd).length]);
+  const reasons = Object.values(REASON).map(r => [r, still.filter(x => x[2] === r).length]);
+  return { remapped, still, before, kinds, reasons };
+}
+
+/**
+ * The sheet as a string. All inputs are passed in, so the function is pure. `remap` (the v1 Hindi remap file) is optional: without it the sheet has no remap counts or sections.
+ * @param {{ base: string, head: string, baseKeys: any, en: any, hi: any, tools: any, remap?: any }} a
+ */
+export function renderSheet({ base, head, baseKeys, en, hi, tools, remap }) {
   const rows = [];
   let removed = 0;
   for (const k of Object.keys(baseKeys)) if (!(k in en)) removed++;
@@ -152,11 +191,12 @@ export function renderSheet({ base, head, baseKeys, en, hi, tools }) {
       toolRows.push([file, k, te[k], th[k], status]);
     }
   }
+  const view = remap ? remapView(remap, en, hi) : null;
   const out = [];
   out.push("# Wave B Hindi re-map sheet", "");
-  out.push(`Generated by \`apps/web/scripts/hindi-remap-sheet.mjs\` from two pinned snapshots: the dictionaries at the base commit \`${base}\` (apps/web/scripts/fixtures/wave-b-base.json) and the dictionaries \`apps/web/messages/en.json\`, \`hi.json\` and \`tools/*.json\` as they stood at commit \`${head}\` (apps/web/scripts/fixtures/wave-b-head.json).`, "");
+  out.push(`Generated by \`apps/web/scripts/hindi-remap-sheet.mjs\` from two pinned snapshots: the dictionaries at the base commit \`${base}\` (apps/web/scripts/fixtures/wave-b-base.json) and the dictionaries \`apps/web/messages/en.json\`, \`hi.json\` and \`tools/*.json\` as they stood at commit \`${head}\` (apps/web/scripts/fixtures/wave-b-head.json).` + (view ? " The counts and the last two sections come from a third pinned file, apps/web/scripts/fixtures/v1-hindi-remap.json, made by `apps/web/scripts/v1-hindi-remap.mjs` from Dr. Sharma's newest v1." : ""), "");
   out.push("This sheet is a snapshot at that commit, not a live view: the dictionaries keep changing after it was generated. To refresh it, run \`pnpm --filter @appuscholar/web i18n:remap\` (it rewrites the head snapshot and then this sheet) and commit both files together. Do not edit by hand.", "");
-  out.push("All Hindi in this sheet is DRAFT, for Dr. Sharma's review. Quoted English and Hindi are verbatim, including any emoji in the old strings.", "");
+  out.push("All Hindi in this sheet is DRAFT, for Dr. Sharma's review. Quoted English and Hindi are verbatim, including any emoji in the old strings." + (view ? " The one exception is the section \"Hindi remapped from v1\", which is her own Hindi." : ""), "");
   out.push("## Counts", "");
   out.push(`- Keys at the base: ${fmt(Object.keys(baseKeys).length)}`);
   out.push(`- Hindi values that were English copies at the base: ${fmt(baseCopies)}`);
@@ -165,6 +205,13 @@ export function renderSheet({ base, head, baseKeys, en, hi, tools }) {
   out.push(`- Keys added since the base: ${fmt(added)}`);
   out.push(`- Keys removed since the base (not listed as rows): ${fmt(removed)}`);
   out.push(`- Keys whose only change is the emoji: ${fmt(emojiOnly)}`);
+  if (view) {
+    const [exact, same, shaped] = view.kinds.map(([, n]) => n);
+    const short = r => r.split(",")[0];
+    out.push(`- English copies before the v1 remap, main dictionary: ${fmt(view.before)}`);
+    out.push(`- Remapped from v1 build ${remap.v1.build} (commit \`${remap.v1.commit}\`): ${fmt(view.remapped.length)} (exact English ${fmt(exact)}, same words ${fmt(same)}, placeholders renamed ${fmt(shaped)})`);
+    out.push(`- Still English after the remap, main dictionary: ${fmt(view.still.length)} (${view.reasons.map(([r, n]) => `${short(r)} ${fmt(n)}`).join(", ")})`);
+  }
   out.push(`- Hindi values still English now, main dictionary: ${fmt(nowCopies)}`);
   out.push(`- Hindi values still English now, tool files: ${fmt(toolCopies)}`);
   out.push(`- Hindi values still English now, both: ${fmt(nowCopies + toolCopies)}`);
@@ -181,13 +228,25 @@ export function renderSheet({ base, head, baseKeys, en, hi, tools }) {
   out.push("| File | Key | English | Hindi (DRAFT) | Status |", "|---|---|---|---|---|");
   for (const [f, k, e, h, st] of toolRows) out.push(`| ${f} | ${cell(k)} | ${cell(e)} | ${cell(h)} | ${st} |`);
   out.push("");
+  if (view) {
+    out.push(`## Hindi remapped from v1: ${fmt(view.remapped.length)} keys`, "");
+    out.push(`Until now Hindi mode showed the English text for these keys. They now show the Hindi in Dr. Sharma's own v1 (build ${remap.v1.build}, commit \`${remap.v1.commit}\`), found by the English text; v1's key is in the table. The Hindi is hers, not a draft, but it was written for v1's screens, so please check it in place. Three things were adjusted to keep the two languages alike: "Appuscholer" is spelt "Appuscholar", the Hindi has the same edge spaces as the English, and the Hindi starts with the same emoji as the English (or none).`, "");
+    out.push("| Key | English | Hindi from v1 | v1 key | Match |", "|---|---|---|---|---|");
+    for (const [k, e, h, v, kd] of view.remapped) out.push(`| ${cell(k)} | ${cell(e)} | ${cell(h)} | ${cell(v)} | ${KIND_LABEL[kd]} |`);
+    out.push("");
+    out.push(`## Hindi still English after the remap: ${fmt(view.still.length)} keys`, "");
+    out.push("Hindi mode shows the English text for these keys. Reasons: \"no Hindi in v1\" (v1 has no Hindi for that English, often because v1 itself still shows it in English; Dr. Sharma to provide); \"ambiguous in v1\" (v1 has two different Hindi values for it; she is asked to choose); \"v1 Hindi not used\" (v1's Hindi has other tags, placeholders or emoji than the English); \"a name or format\" (a product name, a file format or a typed word, which stays as it is in both languages).", "");
+    out.push("| Key | English | Reason |", "|---|---|---|");
+    for (const [k, e, , text] of view.still) out.push(`| ${cell(k)} | ${cell(e)} | ${plain(text)} |`);
+    out.push("");
+  }
   return out.join("\n");
 }
 
 /** The sheet from the two pinned snapshots (deterministic: it does not read messages/). */
 export function buildSheet(headSnap = readJson(HEAD_URL)) {
   const snap = readJson(SNAPSHOT_URL);
-  return renderSheet({ base: snap.base, baseKeys: snap.keys, ...headInputs(headSnap) });
+  return renderSheet({ base: snap.base, baseKeys: snap.keys, ...headInputs(headSnap), remap: readJson(REMAP_URL) });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

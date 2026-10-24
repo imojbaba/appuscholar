@@ -129,7 +129,7 @@ describe("i18n coverage", () => {
     const offenders = [...files.flatMap(f => findOffenders(f, readFileSync(f, "utf8"))).map(h => h.replace(/:\d+ /, " "))].sort();
     expect(offenders).toEqual([...STAGE2_TS_KNOWN].sort());
   });
-  it("every rs2_, ap2_ and sh2_ key in English is in Hindi too (English text until Dr. Sharma gives Hindi), so none counts as an untranslated literal", () => {
+  it("every rs2_, ap2_ and sh2_ key in English is in Hindi too (English text where Dr. Sharma has not given Hindi yet), so none counts as an untranslated literal", () => {
     const keys = Object.keys(en).filter(k => /^(rs2|ap2|sh2)_/.test(k));
     expect(keys.length).toBeGreaterThan(0);
     const hindi = hi as Record<string, string>;

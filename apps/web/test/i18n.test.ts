@@ -55,7 +55,8 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
     expect(E.ap2_consent).toMatch(/^I am allowed to read this paper/);
     expect(E.sh2_intro).toMatch(/^Add PDFs you have the right to read/);
     expect(E.ap2_stage_gap_ask).toBe("In your own words: what was missing in earlier work, and what did this study set out to answer?");
-    expect(H.rs2_terms_btn).toBe(E.rs2_terms_btn);
+    expect(H.rs2_terms_btn).toBe("💡 मिलते-जुलते शब्द सुझाएँ");   // Dr. Sharma's Hindi from v1 build 2026.10.24a (the remap, Task 39)
+    expect(H.rs2_batch).toBe(E.rs2_batch);   // no Hindi in v1 for this one: the English until she gives it
     const m = JSON.parse(readFileSync("messages/v1-panels.manifest.json", "utf8"));
     expect(m.rs2_terms_btn.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
@@ -81,14 +82,15 @@ describe("stage-2 panel copy extracted from v1 (rs2_ / ap2_ / sh2_)", () => {
       expect(E[`ap2_stage_${k}_name`], k).toBeTruthy();
     }
   });
-  it("every manifest key is in both dictionaries, Hindi equals English, and the manifest is sorted", () => {
+  it("every manifest key is in both dictionaries, Hindi equals English unless the v1 Hindi remap has it, and the manifest is sorted", () => {
+    const remapped = (JSON.parse(readFileSync("scripts/fixtures/v1-hindi-remap.json", "utf8")) as { keys: Record<string, { hi: string }> }).keys;
     const keys = Object.keys(manifest);
     expect(keys.length).toBeGreaterThan(100);
     expect(keys).toEqual([...keys].sort());
     for (const k of keys) {
       expect(k, k).toMatch(/^(rs2|ap2|sh2)_/);
       expect(E[k], k).toBeTruthy();
-      expect(H[k], k).toBe(E[k]);
+      expect(H[k], k).toBe(k in remapped ? remapped[k]!.hi : E[k]);
       expect(manifest[k]!.lines, k).toMatch(/^\d+-\d+$/);
       expect(manifest[k]!.sha256, k).toMatch(/^[0-9a-f]{64}$/);
     }
