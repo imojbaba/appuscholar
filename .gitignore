@@ -10,3 +10,4 @@ dist/
 *.tsbuildinfo
 apps/web/qa-report/
 apps/web/qa-results/
+apps/web/blob-report/

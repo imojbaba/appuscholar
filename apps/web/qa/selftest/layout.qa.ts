@@ -234,6 +234,23 @@ test("layout: a short word joins a run of English without counting, so a label o
   expect(rulesOf(small, "english-in-hindi")).toEqual([]);
 });
 
+test("layout: an icon beside a word does not split a row of buttons, and a drawing's own text is not read", TAGS, async ({ page, qa }) => {
+  measuring(qa, "SELF-LAYOUT-M19");
+  // O9's shape with icons: <svg> + one English word a button, side by side. The svg is not read and is no break, so the words are one run (as with an emoji for the icon).
+  const icon = `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h12v12H2z"/></svg>`;
+  const toolbar = await measure(page, `<div role="toolbar"><button>${icon}Edit</button><button>${icon}Share</button></div>`, { lang: "hi" });
+  expect(rulesOf(toolbar, "english-in-hindi").map((f) => f.detail)).toEqual(["Edit Share"]);
+  // The text inside a drawing (a chart's axis) is the chart's, not read, and it does not join or split what stands around it.
+  const chart = await measure(page, `<p>नमस्ते</p><svg width="200" height="60"><text x="4" y="30">Revenue by month</text></svg><p>नमस्ते</p>`, { lang: "hi" });
+  expect(rulesOf(chart, "english-in-hindi")).toEqual([]);
+  expect(chart.measured["english-in-hindi"]).toBe(2);
+  const around = await measure(page, `<button>Edit</button><svg width="200" height="60"><text x="4" y="30">Revenue by month</text></svg><button>Share</button>`, { lang: "hi" });
+  expect(rulesOf(around, "english-in-hindi").map((f) => f.detail)).toEqual(["Edit Share"]);
+  // A box that is not read (the student's own words) still ends the run: that is a break, an svg is not.
+  const boxed = await measure(page, `<button>Edit</button><div data-testid="library-list">Attention is all you need</div><button>Share</button>`, { lang: "hi", exempt: ["library-list"] });
+  expect(rulesOf(boxed, "english-in-hindi")).toEqual([]);
+});
+
 test("layout: the register excuses a piece that is, whole, one of its sentences, and nothing else", TAGS, async ({ page, qa }) => {
   measuring(qa, "SELF-LAYOUT-M17");
   // The shelf's tabs and the matrix header: kept English, one word a piece, side by side (Papers + Search form a run unless each piece is excused).

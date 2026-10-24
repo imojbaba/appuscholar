@@ -146,8 +146,8 @@ const D_S2_18_CONSTANTS: readonly string[] = [
 ];
 
 /**
- * The English sentences the register keeps in Hindi (spec section 8: "the register's listed exceptions"). A sentence of these, wherever it is on the screen, is not English left
- * by mistake. One group per register row:
+ * The English sentences the register keeps in Hindi (spec section 8: "the register's listed exceptions"). A piece of text that is, whole, one of these sentences is the register's
+ * and not English left by mistake; the same words inside a longer text, or beside a word that is not the register's, are not excused. One group per register row:
  *  - D-S2-1:  the `rs2_*` keys (Research panel): the Hindi value is the English text.
  *  - D-S2-2:  the `ap2_*` keys (Analyse a paper panel): the Hindi value is the English text.
  *  - D-S2-3:  the `sh2_*` keys (Reading shelf dialog): the Hindi value is the English text.
@@ -377,8 +377,9 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
 
   // English in Hindi: the visible text, in the order of the page, read as one stream (so a toolbar of buttons that each hold one English word is one run: O9). A run is Latin
   // words next to each other, short ones included; it is English left on the screen when it holds two or more words of three or more letters (ruling R20). A number or a word in
-  // another script ends a run; so does a piece that is a sentence of the register (excused whole, piece by piece), and so does what is not read: the editor and the exempt
-  // boxes (the student's own text), what was typed into a field, a part of the page in another language (`lang` set and not Hindi), scripts and styles, the text inside a chart.
+  // another script ends a run; so does a piece that is, whole, a sentence of the register (excused piece by piece), and so does a box that is not read: the editor and the exempt
+  // boxes (the student's own text), what was typed into a field, a part of the page in another language (`lang` set and not Hindi). Not read, and no break in the run: scripts
+  // and styles and the other tags of SKIP, and drawings (svg: an icon beside a word does not split the buttons around it, and the text inside a chart is the chart's).
   // Read besides the text: an empty field's placeholder, the label a select shows, a button-type input's value (the app's words).
   if (want.has("english-in-hindi") && a.lang === "hi") {
     const hostShown = new Map<Element, boolean>();
@@ -402,7 +403,9 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
       acceptNode: (node) => {
         if (node.nodeType !== Node.ELEMENT_NODE) return NodeFilter.FILTER_ACCEPT;
         const el = node as Element;
-        let skip = SKIP.has(el.tagName) || el.namespaceURI === SVG;
+        // A drawing (an icon, a chart) is not read and is no break in the run: <button><svg/>Edit</button><button><svg/>Share</button> are two words side by side (O9).
+        const drawing = el.namespaceURI === SVG;
+        let skip = SKIP.has(el.tagName) || drawing;
         if (!skip && el.matches(a.skipSelector)) {
           // The editor and the exempt boxes are the student's, unless the app is speaking in one (the sentence it shows where the student's text is missing).
           skip = el.matches(".ProseMirror") || !fallbacks.has(norm(el.textContent ?? ""));
@@ -410,8 +413,9 @@ async function inPage(a: InPageArgs): Promise<InPageResult> {
         // Another language is not Hindi's to answer for (the language switch names the other one in itself).
         const lang = el.getAttribute("lang");
         if (!skip && lang && !/^hi(-|$)/i.test(lang)) skip = true;
-        // The words either side of what is not read are not one run: a mark in the stream stands for it.
-        if (skip && !SKIP.has(el.tagName)) pieces.push({ text: BREAK, el });
+        // The words either side of a box that is not read (the student's own text, another language) are not one run: a mark in the stream stands for it. The tags in SKIP
+        // (scripts, styles and the like) and drawings push none.
+        if (skip && !SKIP.has(el.tagName) && !drawing) pieces.push({ text: BREAK, el });
         return skip ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
       }
     });

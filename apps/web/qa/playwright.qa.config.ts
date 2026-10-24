@@ -29,7 +29,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   timeout: 600_000,
   expect: { timeout: 20_000 },
-  reporter: [["list"]],
+  // list on screen; ./reporter.ts writes qa-report/ (index.html, summary.md, fix-brief.md, results.json); a shard also writes its blob report, which `playwright merge-reports --reporter ./qa/reporter.ts` joins into one report.
+  reporter: [["list"], ["./reporter.ts"], ...(process.env.QA_SHARD ? [["blob"] as ["blob"]] : [])],
   // A stuck click or navigation fails in seconds with its own message instead of taking the whole test timeout (Playwright's default for both is none): ruling R16.
   use: { baseURL: QA_WEB_ORIGIN, trace: "retain-on-failure", actionTimeout: 20_000, navigationTimeout: 45_000 },
   projects: [
