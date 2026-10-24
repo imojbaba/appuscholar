@@ -4,7 +4,7 @@ import type { GuideSection } from "./types";
  * The Guide's sections: v1's 26 in v1's order, ids, groups and titles (index.html build 2026.10.24a, `GUIDE` 10591-10783), as HTML that `sanitizeHtml` keeps
  * unchanged (no `dl`, `dt` or `dd`). The text is v1's, word for word, except where v1 said work, keys, backups, the AI-use log, offline use or installation
  * were on "this browser" or "this computer" (v2 saves work in the student's account, sealed by the vault when it is on), or named a button, menu or place v2
- * does not have. Each change is a row in the wave C register (docs/superpowers/specs/wave-c-rows/c1.md, D-C-1 onward). Copy here is English only, as the Guide is.
+ * does not have. Each change is a row in the wave C register (docs/superpowers/specs/parity-deviations.md, D-C-1 onward). Copy here is English only, as the Guide is.
  */
 export const GUIDE: GuideSection[] = [
   {

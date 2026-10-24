@@ -10,7 +10,7 @@ import { DICTS, plainText } from "@/lib/i18n";
  * Task C1: the Guide's 26 sections. v1's GUIDE (index.html build 2026.10.24a, lines 10591-10785) in v1's order, ids, groups and titles. Each section's
  * text is v1's, except where it said work, keys, backups, the AI-use log, offline use or installation were on "this browser" or "this computer" (untrue
  * in v2, where work is saved in the student's account) or named a button or place v2 does not have. Every such change is a row in
- * docs/superpowers/specs/wave-c-rows/c1.md.
+ * docs/superpowers/specs/parity-deviations.md (D-C-1 to D-C-39).
  */
 
 const V1: ReadonlyArray<readonly [string, "Begin" | "Tools" | "Practice" | "Help", string]> = [
@@ -173,7 +173,7 @@ describe("the Guide's content (Task C1)", () => {
       ["charts", "Charts", "tab_name_charts"], ["qual", "Coding", "tab_name_coding"], ["style", "My style", "tab_name_style"], ["cite", "Citations", "tab_name_citations"],
       ["chat", "Chat", "writing_chat"],
       ["slides", "Make PPT", "tab_name_slides"], ["slides", "Generate slide preview", "slides_generate_btn"],
-      ["habits", "Export all my work", "acct_export"], ["faq", "Export all my work", "acct_export"]
+      ["habits", "Export all my work", "acct_export"], ["faq", "Export all my work", "acct_export"], ["faq", "Restore from backup", "wc_bk_restore_btn"], ["appu", "Ask Appu", "wc_appu_label"]
     ];
     for (const [id, label, key] of LABELS) {
       expect(GUIDE.find((s) => s.id === id)!.html, `${id}: <b>${label}`).toContain("<b>" + label);
