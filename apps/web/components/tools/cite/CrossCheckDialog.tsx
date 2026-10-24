@@ -13,7 +13,13 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
  * sources cited but missing from the list (with near misses and "Go to this text", which selects the passage), the list entries never cited,
  * the entries that could not be read. "Scan again" reads the document again. No AI, nothing leaves the browser.
  */
-export function CrossCheckDialog({ editor, lib, style }: { editor: Editor | null; lib: CitationEntry[]; style: CitationStyle }) {
+export function CrossCheckDialog({ editor, lib, style, label, className = "flex-1", describedBy }: {
+  editor: Editor | null; lib: CitationEntry[]; style: CitationStyle;
+  /** The button's words (the Citations tab words it for its "Check again" list); v1's `cc_btn` when absent. */
+  label?: string; className?: string;
+  /** The id of the line that says why the button is off (no document open), for screen readers. */
+  describedBy?: string;
+}) {
   const t = useT();
   const [res, setRes] = useState<CcResult | null>(null);
   const [open, setOpen] = useState(false);
@@ -33,7 +39,7 @@ export function CrossCheckDialog({ editor, lib, style }: { editor: Editor | null
   const sum = !r || (r.srcKind === "none" && !r.cited) ? "" : t("cc_sum", { c: r.cited, m: r.missing.length, u: r.unused.length });
   return (
     <>
-      <Button variant="ghost" className="flex-1" data-testid="cite-cc-btn" disabled={!ready} onClick={() => { scan(); setOpen(true); }}>{t("cc_btn")}</Button>
+      <Button variant="ghost" className={className} data-testid="cite-cc-btn" disabled={!ready} aria-describedby={describedBy} onClick={() => { scan(); setOpen(true); }}>{label ?? t("cc_btn")}</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent data-testid="cc-dialog" className="cc-dlg sm:max-w-[920px]" showCloseButton={false}
           onCloseAutoFocus={(e) => { if (jumped.current) { jumped.current = false; e.preventDefault(); } }}>

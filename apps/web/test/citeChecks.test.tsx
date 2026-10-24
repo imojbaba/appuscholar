@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
@@ -76,8 +76,9 @@ function probe(out: HookProbe): Root {
 }
 function Hooks({ out }: { out: HookProbe }) {
   const library = useLibrary();
-  out.library = library;
-  out.checks = useCiteChecks(library);
+  const checks = useCiteChecks(library);
+  // Handed out after each render, as an effect does it (the probe's owner keeps the latest).
+  useEffect(() => { Object.assign(out, { library, checks }); });
   return null;
 }
 const $ = (sel: string) => document.body.querySelector<HTMLElement>(sel);
@@ -474,7 +475,14 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
     h.blobs.refcheck_cache = blob({ [citKey(done)]: { ...cache[citKey(AUTHORLESS)]! } });
     mount();
     await settle();
-    await click(tid("source-fix")!);
+    // The answer still says "no author", but the source has one now (wave A LATER T11): the row reads Checked and offers nothing.
+    expect(all("source-status")[0]!.textContent).toBe("Checked");
+    expect(tid("source-fix")).toBeNull();
+    expect(lineOf().textContent).toBe("");
+    // And a fill asked for anyway has nothing to write: no question, no write.
+    const out: HookProbe = {};
+    probe(out);
+    out.checks!.fillFromCrossref(done);
     expect(window.confirm).not.toHaveBeenCalled();
     expect(h.blobs.citations.set).not.toHaveBeenCalled();
     expect(h.blobs.refcheck_cache.set).not.toHaveBeenCalled();
@@ -513,20 +521,30 @@ describe("Fill from Crossref (fix wave A, W27, W28; register D-S2-33)", () => {
   });
 
   it("fillEmpty asks the library as it stands now, not as it was when the function was handed out; a library still being read queues the fill", () => {
-    h.blobs.citations = blob([]);
+    // One blob client, so one `set`: the hook's own is stable across renders.
+    const first = blob([]);
+    h.blobs.citations = first;
     const out: HookProbe = {};
     const root = probe(out);
     const early = out.library!.fillEmpty;
     // The source is kept after `early` was handed out (Keep, then Crossref's answer, which calls the function it was given).
-    h.blobs.citations = blob([SMITH]);
+    h.blobs.citations = { ...first, value: [SMITH] };
     act(() => { root.render(<Hooks out={out} />); });
     expect(early((e) => e.title === SMITH.title, { volume: "9" })).toBe(true);
-    expect(h.blobs.citations.set).toHaveBeenCalledTimes(1);
+    expect(first.set).toHaveBeenCalledTimes(1);
+    // A write just made is not in the list the last render read: the next fill is queued, not refused.
+    expect(early((e) => e.title === "Written a moment ago", { volume: "9" })).toBe(true);
+    expect(first.set).toHaveBeenCalledTimes(2);
     // Not read yet: there is nothing to say no with, so the fill waits for the stored library, as an add does.
-    h.blobs.citations = { ...blob(null), loading: true };
+    h.blobs.citations = { ...first, value: null, loading: true };
     act(() => { root.render(<Hooks out={out} />); });
     expect(out.library!.fillEmpty((e) => e.title === SMITH.title, { volume: "9" })).toBe(true);
-    expect(h.blobs.citations.set).toHaveBeenCalledTimes(1);
+    expect(first.set).toHaveBeenCalledTimes(3);
+    // A locked library is not read either.
+    h.blobs.citations = { ...first, value: null, locked: true };
+    act(() => { root.render(<Hooks out={out} />); });
+    expect(out.library!.fillEmpty((e) => e.title === SMITH.title, { volume: "9" })).toBe(true);
+    expect(first.set).toHaveBeenCalledTimes(4);
   });
 
   it("the author line leaves the check once the entry has an author; a real difference of a saved author stays (wave A LATER T11)", async () => {

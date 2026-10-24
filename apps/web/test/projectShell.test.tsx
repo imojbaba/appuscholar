@@ -39,7 +39,7 @@ vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/literature/FindTab", () => ({ FindTab: () => <div data-testid="panel-find" /> }));
 vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
-vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
+vi.mock("@/components/literature/CitationsTab", () => ({ CitationsTab: () => <div data-testid="panel-citations" /> }));
 vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div data-testid="panel-analyse" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));
 vi.mock("@/components/tools/shelf/ShelfDialog", () => ({ ShelfDialog: h.stub, ShelfMatrix: () => <div data-testid="shelf-matrix" /> }));

@@ -11,10 +11,6 @@ export const CITATION_INSERTED = "Citation inserted ✓";
 export const SAVED_TO_LIBRARY = "Saved to library ✓";
 /** v1's duplicate toast ("Already in your library", 8448, 8476, 13651) is the keyed `rs2_already_in_your_library`, read through `t` by Research and the capture. */
 export const FORM_CLEARED = "Form cleared";
-/** A library card's button (7864): "Insert " and the in-text form, or "¹ (n)" for AMA's superscript. */
-export const insertLabel = (f: Formatted): string => "Insert " + (f.sup ? "¹ (" + f.num + ")" : f.intext);
-/** A card's ✕ (7860). */
-export const REMOVE_TITLE = "Remove";
 
 export type CiteDeps = {
   lib: CitationEntry[];
@@ -50,7 +46,7 @@ export async function citeInsert(d: CitationEntry, deps: CiteDeps): Promise<void
   if (r.inserted) deps.toast(r.warn ? deps.t("cite_num_unsaved") : CITATION_INSERTED);
 }
 
-/** citUseLib 7867: a library card's Insert. */
+/** citUseLib 7867: a source's Insert citation (a library card's button in v1; the Citations row's More menu). */
 export async function citeUseLib(i: number, deps: CiteDeps): Promise<void> {
   const d = deps.lib[i];
   if (!d) return;

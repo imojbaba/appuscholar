@@ -11,9 +11,10 @@ import { noPids } from "./support/noPids";
 import en from "../messages/en.json";
 
 /*
- * The library block's buttons after the cards (v1 940-946: Insert reference list, Load classic psychology sources, Export / Import, the class-sharing note), the quote block
- * (914-919) and the one-click capture's <details> (921-928), rendered in the Citation Manager. Expected values are v1's own: test/golden/citlib (citExport, citImport and the
- * size cap, captured from v1 running) and test/golden/citshare (psychLoadStarters, the empty export, the bookmarklet).
+ * The library block's buttons (v1 940-946: Insert reference list, Load classic psychology sources, Export / Import, the class-sharing note) and the quote block (914-919), as the Citations
+ * tab (wave B Task 23) lays them out: the quote box inside "Add a source by hand", the classics, Export and Import inside More, Insert reference list under "In your document". v1's
+ * one-click capture (921-928) is not on this tab (ruling B2-R37). Expected values are v1's own: test/golden/citlib (citExport, citImport and the size cap, captured from v1 running) and
+ * test/golden/citshare (psychLoadStarters, the empty export, the bookmarklet).
  */
 type Lib = CitationEntry[];
 type Blob = { value: Lib | null; loading: boolean; locked: boolean; broken?: boolean; set: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> };
@@ -219,7 +220,7 @@ describe("Export and import (citExport 7991-7998, citImport 7999-8023)", () => {
   });
 });
 
-describe("📖 Load classic psychology sources (psychLoadStarters 7983-7987)", () => {
+describe("Add the classic psychology sources (psychLoadStarters 7983-7987)", () => {
   for (const s of SHARE.starters) {
     it(`${s.id}: v1's library afterwards and v1's toast`, async () => {
       h.blob.value = s.lib;

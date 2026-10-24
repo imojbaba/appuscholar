@@ -492,7 +492,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   return (
     <ProjectProvider value={value}>
       <SuggestionProvider>
-        {/* One citation library for the Citation Manager and the caret chip under the document. */}
+        {/* One citation library for the Citations tab and the caret chip under the document. */}
         <CiteLibraryProvider>
         {/* v1 boot's citCheckCaptureHash (13676-13677): a citation the bookmarklet sent in the address's #capture= hash, saved to this project's library. */}
         {inProject && <CaptureHash />}

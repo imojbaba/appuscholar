@@ -9,6 +9,11 @@ import { citFmt, crToEntry, sanitizeHtml, type CitationEntry } from "@appuschola
 import { editorExtensions } from "../lib/editorExtensions";
 import en from "../messages/en.json";
 
+/*
+ * What the Citation Manager panel's own tests held that the Citations tab (wave B Task 23) keeps: the form of "Add a source by hand" (v1 874-912) with its lookup and paste (7931-7976),
+ * + Library and Insert citation (7505-7508), and the library as the tab reads it and its rows write it (7819-7866), the per-source Insert citation and Remove being in each row's More menu
+ * (ruling B2-R28). The status, the use, the heading and the asides are citationsTab.test.tsx's; the checks are citeChecks.test.tsx's.
+ */
 type Lib = CitationEntry[];
 type Blob = { value: Lib | null; loading: boolean; locked: boolean; broken?: boolean; set: ReturnType<typeof vi.fn>; flush: ReturnType<typeof vi.fn> };
 const h = vi.hoisted(() => ({
@@ -103,8 +108,9 @@ async function settle(ms = 0) { await act(async () => { await new Promise((r) =>
 const toasts = () => h.toast.mock.calls.map((c) => c[0] as string);
 const shown = (testid: string) => !(tid(testid) as HTMLElement).hidden;
 const rowEls = () => [...document.body.querySelectorAll<HTMLElement>('[data-testid="source-row"]')];
-/** Radix opens a menu from its trigger on Enter. */
+/** Radix opens a menu from its trigger on Enter, after the timers of an earlier menu have run (see citationsTab.test.tsx). */
 async function openMore(i: number) {
+  await settle(30);
   await act(async () => { rowEls()[i]!.querySelector('[data-testid="source-more"]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
 }
 const items = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];

@@ -6,10 +6,10 @@ import { useApNotes } from "@/lib/analyse/notes";
 import { useLibrary } from "@/lib/cite/useLibrary";
 import { useShelf } from "@/lib/shelf/useShelf";
 import { PLACE_TABS, placeHref } from "@/lib/frame/places";
+import { CitationsTab } from "@/components/literature/CitationsTab";
 import { FindTab } from "@/components/literature/FindTab";
 import { AnalysePanel } from "@/components/tools/analyse/AnalysePanel";
 import { Across } from "@/components/tools/analyse/Across";
-import { CitePanel } from "@/components/tools/cite/CitePanel";
 import { ShelfDialog, ShelfMatrix } from "@/components/tools/shelf/ShelfDialog";
 import { PlaceHeader } from "@/components/frame/PlaceHeader";
 import { useProject } from "@/components/frame/ProjectContext";
@@ -17,9 +17,9 @@ import { PanelLoading } from "@/components/tools/PanelLoading";
 
 /**
  * The Literature place (canvas Find): four tabs, each a link, in the order Find, Reading list ({n} kept papers on the shelf), Compare and Citations
- * ({n} library entries); a count not known yet (read, locked) is left out. Find is the canvas's Find (wave B Task 18: search, Keep and More). The other tabs are
- * today's tools until B2 and B3 replace them: Reading list is the shelf inline, then Analyse a paper under "Read a paper"; Compare is the shelf's table and the paper
- * cards side by side; Citations is the Citation Manager. The tab's suggested next line comes last, drawn here so it stays when the content is replaced.
+ * ({n} library entries); a count not known yet (read, locked) is left out. Find is the canvas's Find (wave B Task 18: search, Keep and More) and Citations is the canvas's
+ * Citations (Task 23: every source with its status, its use and its fix). The other tabs are today's tools until B2 and B3 replace them: Reading list is the shelf inline,
+ * then Analyse a paper under "Read a paper"; Compare is the shelf's table and the paper cards side by side. The tab's suggested next line comes last, drawn here so it stays when the content is replaced.
  */
 export function LitPlace({ tab }: { tab: string }) {
   return (
@@ -73,7 +73,7 @@ function PapersReady({ children }: { children: React.ReactNode }) {
 function Content({ tab }: { tab: string }) {
   if (tab === "reading") return <Reading />;
   if (tab === "compare") return <Compare />;
-  if (tab === "citations") return <CitePanel />;
+  if (tab === "citations") return <CitationsTab />;
   return <FindTab />;
 }
 

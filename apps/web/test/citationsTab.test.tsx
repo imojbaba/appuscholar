@@ -108,8 +108,12 @@ function editorWith(html: string) {
   h.editor = e;
   return e;
 }
-/** Radix opens a menu from its trigger on Enter. */
+/**
+ * Radix opens a menu from its trigger on Enter. It first lets the timers of an earlier menu run (a closed menu hands focus back to its trigger on a timer, after the test's own
+ * timer), so a second menu opened at once is not met by the first one's leftovers when the machine is busy.
+ */
 async function openMore(row: HTMLElement) {
+  await settle(30);
   await act(async () => { row.querySelector('[data-testid="source-more"]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
   expect($('[role="menu"]')).not.toBeNull();
 }

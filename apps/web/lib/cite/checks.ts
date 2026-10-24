@@ -14,6 +14,7 @@ import type { Library } from "./useLibrary";
  *   project's `retraction_cache` blob, v1's appu_retraction_cache), with the summary and the card warning of citRender 7826-7833, 7856;
  * - the source reality check, rcRun 7772-7790 (Crossref through core's rcCheckOneV2, v1's rcCheckOne plus the empty author, volume, issue and pages, with a 200 ms pause after each lookup, cached per citKey in
  *   the `refcheck_cache` blob, v1's appu_refcheck), with the summary 7842-7846 and rcLine 7792-7797.
+ * The Citations tab (wave B Task 23) reads both caches as one word per source: `sourceStatus`, from the stored Crossref answer as it stands now (`rcCurrent`) and the retraction answer.
  */
 
 /** v1 7564: RETRACT_TTL, a week. */
@@ -85,12 +86,40 @@ export async function retractionRefresh(force: boolean, deps: RetractionDeps): P
   finally { retrBusy = false; }
 }
 
-export type RcSummary = { n: number; o: number; d: number; f: number };
-/** citRender 7842-7846: the entries with a stored answer other than an error; null when there is none (the line is empty). */
-export function rcSummary(lib: CitationEntry[], cache: RefCheckCache | null): RcSummary | null {
-  const c = cache ?? {};
-  const rs = lib.map((d) => c[citKey(d)]).filter((x): x is RcCheck => !!x && x.s !== "err");
-  return rs.length ? { n: rs.length, o: rs.filter((x) => x.s === "ok").length, d: rs.filter((x) => x.s === "diff").length, f: rs.filter((x) => x.s === "nf").length } : null;
+/**
+ * A stored Crossref answer as it reads now (wave A LATER T11): a field the source has been given since the check no longer counts as missing. The check says "no author" (`m` holds
+ * { k: "author" } together with "author" in `miss`) when the entry had none; once the entry has an author that line goes, and so does any other field in `miss` the entry now has. What
+ * is left is the same answer, or a match when nothing is left. An author difference the check found with an author saved (no "author" in `miss`) stays, and so does an answer that is
+ * not a difference. The answer itself is returned when nothing changes.
+ */
+export function rcCurrent(d: CitationEntry, c: RcCheck | undefined): RcCheck | undefined {
+  if (!c || c.s !== "diff" || !c.miss || !c.miss.length) return c;
+  const has = (k: keyof CitationEntry) => !!String(d[k] ?? "").trim();
+  const miss = c.miss.filter((k) => !has(k));
+  if (miss.length === c.miss.length) return c;
+  const m = (c.m ?? []).filter((x) => !(x.k === "author" && c.miss!.includes("author") && has("author")));
+  const { miss: _miss, m: _m, ...rest } = c;
+  return { ...rest, s: m.length || miss.length ? "diff" : "ok", m, ...(miss.length ? { miss } : {}) };
+}
+
+/** What a source's row says about it: Crossref's answer and OpenAlex's retraction answer in one word. */
+export type SourceStatus = "checked" | "fix" | "year" | "retracted" | "unchecked";
+
+/**
+ * The Citations tab's status for one source. Retracted wins over everything Crossref says. No answer, or one that is an error, is "unchecked"; Crossref not knowing the source, a
+ * title or author that differs, or a field Crossref has and the source lacks is "fix"; a year that differs and nothing else is "year" (a reprint is often the cause, so it is not called a fix);
+ * a match is "checked". Judged on rcCurrent, so a field filled since the check is not held against the source.
+ */
+export function sourceStatus(d: CitationEntry, check: RcCheck | undefined, retr: RetractionCache[string] | null): SourceStatus {
+  if (retr && retr.r) return "retracted";
+  const c = rcCurrent(d, check);
+  if (!c || c.s === "err") return "unchecked";
+  if (c.s === "nf") return "fix";
+  if (c.s === "ok") return "checked";
+  const m = c.m ?? [];
+  if (c.miss && c.miss.length) return "fix";
+  if (!m.length) return "checked";
+  return m.every((x) => x.k === "year") ? "year" : "fix";
 }
 
 export type RcDeps = {
@@ -146,7 +175,6 @@ export type CiteChecks = {
    * (the library's fillEmpty), moves the source's cached answer to its new key as a match, and says so. Cancel changes nothing.
    */
   fillFromCrossref(d: CitationEntry): void;
-  rcSum: RcSummary | null;
   refreshRetractions(force: boolean): Promise<void>;
   runRefCheck(force: boolean): Promise<void>;
 };
@@ -163,7 +191,6 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
   const { lib } = library;
   const retraction = useMemo(() => retractionStatus(lib, retr.value), [lib, retr.value]);
   const rc = useMemo(() => rcBlob.value ?? {}, [rcBlob.value]);
-  const rcSum = useMemo(() => rcSummary(lib, rcBlob.value), [lib, rcBlob.value]);
   const f: typeof fetch = useCallback((input, init) => fetch(input, init), []);
   const live = useRef({ lib, retr, rcBlob, oaKey: opts.oaKey });
   useEffect(() => { live.current = { lib, retr, rcBlob, oaKey: opts.oaKey }; });
@@ -187,11 +214,12 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
     const patch = c ? rcFillPatch(d, c) : null;
     if (!c || !patch) return;
     if (!window.confirm(t("rc_fill_confirm", { list: rcFillList(patch, t) }))) return;
+    // False when no stored source has the key the answer is under (another window changed it since this row was drawn): nothing is written and nothing moves (wave A LATER T11).
     if (!fillEmpty((e) => citKey(e) === old, patch)) return;
-    const next = citKey({ ...d, ...patch });
-    // The answer moves with the source (its key holds the surname): the differences the fill settles are dropped, any other stays.
-    const m = (c.m || []).filter((x) => !(x.k === "author" && patch.author));
-    const moved: RcCheck = { s: m.length ? "diff" : "ok", m, ...(c.f ? { f: c.f } : {}), ...(c.viaTitle ? { viaTitle: c.viaTitle } : {}), t: c.t };
+    const filled = { ...d, ...patch };
+    const next = citKey(filled);
+    // The answer moves with the source (its key holds the surname): what the fill settles leaves it (rcCurrent), any other difference stays.
+    const moved = rcCurrent(filled, c) ?? c;
     live.current.rcBlob.set((prev) => { const n = { ...(prev ?? {}) }; delete n[old]; n[next] = moved; return n; });
     toast(t("rc_filled"));
   }, [fillEmpty, t]);
@@ -205,5 +233,5 @@ export function useCiteChecks(library: Library, opts: { oaKey?: string } = {}): 
     void refreshRetractions(false);
   }, [ready, library.projectId, refreshRetractions]);
 
-  return { retraction, rc, rcReadOnly: rcBlob.readOnly === true, rcSum, fillFromCrossref, refreshRetractions, runRefCheck };
+  return { retraction, rc, rcReadOnly: rcBlob.readOnly === true, fillFromCrossref, refreshRetractions, runRefCheck };
 }

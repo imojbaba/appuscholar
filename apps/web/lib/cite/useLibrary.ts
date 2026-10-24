@@ -1,5 +1,5 @@
 "use client";
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CitationEntry, CitationStyle } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -57,7 +57,9 @@ export type Library = {
   update(fn: (prev: StoredEntry[]) => StoredEntry[]): boolean;
   /**
    * Fix wave A (W1, W2): the first stored entry `match` finds gets the fields of `fill` that are empty there (fillEmptyIn), as an update, so it lands on the
-   * stored library. False when nothing could be saved (no project yet, or a broken library kept); nothing is written when no entry matches.
+   * stored library. False when nothing could be saved (no project yet, or a broken library kept) and, once the library has been read, when no entry matches: nothing is
+   * written then (wave A LATER T11; it answered true). While the library is not read (loading, locked, broken, failed) there is nothing to say no with, so the fill is queued
+   * as an update, as before. It asks the library as it stands when it is called, not as it was when the function was handed out.
    */
   fillEmpty(match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>): boolean;
   /** Sends what is pending now; true once nothing is left off the server. */
@@ -67,13 +69,13 @@ export type Library = {
 };
 
 /**
- * One library for the whole workspace: the Citation Manager, the caret chip under the document and (later) Research read the same blob through
+ * One library for the whole workspace: the Citations tab, the caret chip under the document and (later) Research read the same blob through
  * the same client, so an entry saved in one is seen by the others at once. Without the provider (a panel rendered on its own) the hook holds
  * its own.
  *
  * The provider waits for the workspace's loaded project (never the scratch project while the active one is still loading). It never asks for
  * the passphrase on its own: it reads only while the vault is off or open, so the document's unlock comes first and a cancelled one is not
- * asked again for the chip. A panel that writes to the library (the Citation Manager) asks for it (`useLibrary()`, not passive): the library
+ * asked again for the chip. A panel that writes to the library (the Citations tab) asks for it (`useLibrary()`, not passive): the library
  * is then read even while the vault is locked, and the blob asks for the passphrase as Task 7's panel did (ruling R5).
  */
 type SharedLibrary = { library: Library; demand(): () => void };
@@ -123,12 +125,19 @@ function useOwnLibrary(projectId: string | null): Library {
   const error = !!blob.error;
   const ready = projectId !== null;
   const lib = useMemo(() => value ?? [], [value]);
+  /**
+   * The library as the last render read it, for fillEmpty to say whether anything matches; null while it is not known: not read yet (loading, locked, broken, failed) or
+   * written since (the next render brings the written list). A function handed out earlier (Keep's Crossref answer comes after a network round trip) reads this, not its own render's `lib`.
+   */
+  const known = useRef<StoredEntry[] | null>(null);
+  useEffect(() => { known.current = loading || locked || broken || error ? null : lib; }, [lib, loading, locked, broken, error]);
 
   /** R16: a library that does not open is replaced only once the student says so. */
   const mayWrite = useCallback(() => !broken || window.confirm(t("vault_cite_broken_confirm")), [broken, t]);
   const update = useCallback((fn: (prev: StoredEntry[]) => StoredEntry[]) => {
     if (!ready || !mayWrite()) return false;
     set((prev) => withPids(fn(prev ?? [])));
+    known.current = null;
     return true;
   }, [ready, mayWrite, set]);
   const add = useCallback((entry: CitationEntry): AddResult => {
@@ -146,7 +155,10 @@ function useOwnLibrary(projectId: string | null): Library {
       return i < 0 ? prev : [...prev.slice(0, i), ...prev.slice(i + 1)];
     });
   }, [update]);
-  const fillEmpty = useCallback((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => update((prev) => fillEmptyIn(prev, match, fill)), [update]);
+  const fillEmpty = useCallback((match: (e: CitationEntry) => boolean, fill: Partial<CitationEntry>) => {
+    if (known.current && !known.current.some(match)) return false;
+    return update((prev) => fillEmptyIn(prev, match, fill));
+  }, [update]);
 
   return { lib, loading, locked, broken, error, ready, projectId, add, remove, update, fillEmpty, flush, style: current, setStyle: writeStyle };
 }

@@ -395,15 +395,14 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("place-home").click();
     await page.getByTestId("home-open-lit").click();
     await page.getByTestId("place-tab-citations").click();
-    await expect(page.getByTestId("panel-cite")).toBeVisible();
+    await expect(page.getByTestId("panel-citations")).toBeVisible();
     const projectPath = new URL(page.url()).pathname;
     expect(projectPath).toMatch(/^\/p\/[0-9a-f-]+\/lit\/citations$/);
     const opened = page.waitForEvent("popup");
     await page.getByTestId("place-new-window").click();
     const popup = await opened;
-    // The window shows Citations (an empty library, so nothing to unlock there), with no document and no switcher.
-    await expect(popup.getByTestId("panel-cite")).toBeVisible();
-    await expect(popup.getByTestId("cite-count")).toHaveText("0");
+    // The window shows Citations (wave B Task 23: the tab, not the Citation Manager panel), with no document and no switcher.
+    await expect(popup.getByTestId("panel-citations")).toBeVisible();
     expect(new URL(popup.url()).pathname + new URL(popup.url()).search).toBe(projectPath + "?window=1");
     // Nothing in the window needed the vault yet, so it is locked there: the project's name reads "Locked title" until its pill opens it.
     await expect(popup.getByTestId("window-where")).toHaveText("Locked title / Literature");
@@ -412,6 +411,8 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await popup.getByTestId("pass-input").fill(PASS);
     await popup.getByTestId("pass-ok").click();
     await expect(popup.getByTestId("window-where")).toHaveText(PROJECT + " / Literature");
+    // The library is empty: the heading counts none (it is shown once the library is read, so with the vault open here).
+    await expect(popup.getByTestId("cit-head")).toHaveText("0 sources, 0 cited in your document");
     await expect(popup.getByTestId("project-switcher")).toHaveCount(0);
     await expect(popup.locator(".ProseMirror")).toHaveCount(0);
     // A link to the old pop-out page opens the active project's Citations in a window of its own.
