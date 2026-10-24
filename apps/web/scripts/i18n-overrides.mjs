@@ -466,7 +466,7 @@ export const V2_STRINGS = {
   exp_part_citations: { en: "Citations", hi: "उद्धरण" },
   exp_detail_citations: { en: "{n} sources, with the reference list in your chosen style", hi: "{n} स्रोत, आपकी चुनी शैली में संदर्भ सूची के साथ" },
   exp_detail_citations_unknown: { en: "Your sources, with the reference list in your chosen style", hi: "आपके स्रोत, आपकी चुनी शैली में संदर्भ सूची के साथ" },
-  exp_format_citations: { en: "Library file and reference list (text)", hi: "लाइब्रेरी फ़ाइल और संदर्भ सूची (टेक्स्ट)" },
+  exp_format_citations: { en: "RIS, BibTeX, text", hi: "RIS, BibTeX, टेक्स्ट" },
   exp_part_search: { en: "Search lists", hi: "खोज सूचियाँ" },
   exp_detail_search: { en: "Papers you searched and kept, with quick reads", hi: "जो पेपर आपने खोजे और रखे, त्वरित समीक्षा के साथ" },
   exp_part_notes: { en: "Reading notes", hi: "पढ़ने के नोट्स" },

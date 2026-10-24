@@ -57,7 +57,7 @@ function doiUrl(d: CitationEntry): string{
   if(d.doi)return'https://doi.org/'+String(d.doi).trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i,'');
   return d.url?String(d.url).trim():'';
 }
-function citDoiBare(d: CitationEntry): string{return d.doi?String(d.doi).trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i,''):''}
+export function citDoiBare(d: CitationEntry): string{return d.doi?String(d.doi).trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i,''):''}
 /* names */
 export function citNames(raw: string | undefined): CitName[]{
   return (raw||'').split(';').map(x=>x.trim()).filter(Boolean).map(n=>{

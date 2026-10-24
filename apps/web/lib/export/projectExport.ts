@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import {
-  AP_STAGES, aiuBuildV2, apAcrossCols, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shColsOf,
+  AP_STAGES, aiuBuildV2, apAcrossCols, apAcrossCsv, bibliography, citToBibtex, citToRis, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shColsOf,
   type AiuEntry, type ApNoteLike, type CitationEntry, type CitationStyle, type RsPaper
 } from "@appuscholar/core";
 import { acrossData, cardLabels, stageName } from "@/lib/analyse/cards";
@@ -130,7 +130,7 @@ function questionText(i: BlobShape<"idea_intake">, t: T): string {
 
 /**
  * The ticked parts of one project as one zip, at these paths: `documents/<title>.doc` and `.html` (sources under `documents/sources/`),
- * `question.txt`, `citations/library.json` and `citations/references.txt`, `search/kept-papers.csv` (and `search/last-search.csv` when this
+ * `question.txt`, `citations/library.json`, `citations/library.ris`, `citations/library.bib` and `citations/references.txt`, `search/kept-papers.csv` (and `search/last-search.csv` when this
  * session ran a search), `notes/<paper title>.txt`, `compare/table.csv` and `compare/paper-cards.csv`, `writing-record.txt`,
  * `ai-use-statement.txt`, `reading-list-backup.json`. A part with nothing in it writes no file. Deleted documents are left out. A document or a
  * blob that does not open (VaultError "corrupt"), or a blob that is not of its kind's shape, is left out and named in `unreadable.txt`, as the
@@ -197,6 +197,9 @@ export async function exportProject(d: ProjectExportDeps, parts: ReadonlyArray<E
     const lib = await library();
     if (lib.length) {
       zip.file("citations/library.json", exportLibrary(lib));
+      // For reference managers (Task 38; D-S2-140). RIS is CRLF text and BibTeX is LF text, both UTF-8 as they are.
+      zip.file("citations/library.ris", citToRis(lib));
+      zip.file("citations/library.bib", citToBibtex(lib));
       zip.file("citations/references.txt", referencesText(lib, o.style));
     }
   }

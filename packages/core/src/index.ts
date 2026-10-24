@@ -140,3 +140,4 @@ export {
   docToSlideModelV2,
 } from "./pptModel";
 export type { PptSlide, PptxText, PptxDeck } from "./pptModel";
+export { citToRis, citToBibtex } from "./citexport";

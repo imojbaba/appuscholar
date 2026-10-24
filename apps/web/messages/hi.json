@@ -421,7 +421,7 @@
   "exp_detail_record": "आपने क्या टाइप किया और AI से क्या आया, हर संस्करण में",
   "exp_detail_search": "जो पेपर आपने खोजे और रखे, त्वरित समीक्षा के साथ",
   "exp_download": "zip डाउनलोड करें",
-  "exp_format_citations": "लाइब्रेरी फ़ाइल और संदर्भ सूची (टेक्स्ट)",
+  "exp_format_citations": "RIS, BibTeX, टेक्स्ट",
   "exp_format_csv": "CSV",
   "exp_format_documents": "Word और HTML",
   "exp_format_json": "JSON",
