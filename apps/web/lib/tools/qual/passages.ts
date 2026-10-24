@@ -11,6 +11,13 @@ export function qualTagSpans(html: string): HTMLElement[] {
   return Array.from(body.querySelectorAll<HTMLElement>("span.qual-tag"));
 }
 
+/** A span's text with each line break (`<br>`, a hard break the editor keeps inside the tag) read as a space; v1's textContent ran the words on each side together (D-S2-110). */
+function spanText(span: HTMLElement): string {
+  const copy = span.cloneNode(true) as HTMLElement;
+  for (const br of Array.from(copy.querySelectorAll("br"))) br.replaceWith(" ");
+  return copy.textContent ?? "";
+}
+
 /**
  * The passages tagged with a code across the project's documents (v1 qualFindPassages 6289-6297): for each document in the order given, each span of the code in
  * document order, its text trimmed (core's qualPassageText), spans with no text left out. The code's id is compared with the span's data-qcode value, never put in a selector.
@@ -20,7 +27,7 @@ export function findPassages(docs: ProjectDocument[], codeId: string): QualPassa
   for (const d of docs) {
     for (const span of qualTagSpans(d.html)) {
       if (span.getAttribute("data-qcode") !== codeId) continue;
-      const text = qualPassageText(span.textContent ?? "");
+      const text = qualPassageText(spanText(span));
       if (text !== null) out.push({ doc: d.title || NO_TITLE, text });
     }
   }

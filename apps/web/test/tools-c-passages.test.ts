@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { sanitizeHtml } from "@appuscholar/core";
+import { qualBuildMarkdown, sanitizeHtml } from "@appuscholar/core";
 import type { ProjectDocument } from "../lib/editor/docAccess";
 import { findPassages } from "../lib/tools/qual/passages";
 import { stripCodes, stripFromDocuments } from "../lib/tools/qual/strip";
@@ -45,6 +45,15 @@ describe("findPassages (v1 qualFindPassages)", () => {
   it("skips empty and whitespace-only spans, and trims the rest", () => {
     const docs = [doc("a", "T", `<p>${tag("q1", "")}${tag("q1", "    ")}${tag("q1", "  kept \n")}</p>`)];
     expect(findPassages(docs, "q1")).toEqual([{ doc: "T", text: "kept" }]);
+  });
+
+  it("a line break inside a tagged passage reads as a space, so the words on each side stay apart in the list and in the export (D-S2-110)", () => {
+    // TipTap keeps a hard break (Shift-Enter) inside the mark's span; v1 read textContent, where <br> is nothing, and "long<br>and" became "longand".
+    const docs = [doc("a", "Interview two", `<p>Asha said the nights ${tag("q1", "were   long<br>and quiet")}.</p><p>${tag("q1", "<br>")}</p>`)];
+    expect(findPassages(docs, "q1")).toEqual([{ doc: "Interview two", text: "were   long and quiet" }]);
+    const md = qualBuildMarkdown([{ id: "q1", name: "Sleep", parentId: null, color: "#3b82f6" }], (id) => findPassages(docs, id));
+    expect(md).toContain('- **Interview two:** "were long and quiet"');
+    expect(md).not.toContain("longand");
   });
 
   it("nested spans of the same code are both listed, as querySelectorAll finds them", () => {

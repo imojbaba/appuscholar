@@ -29,9 +29,11 @@ const h = vi.hoisted(() => ({
   prefsSet: vi.fn(),
   download: vi.fn(),
   hook: null as null | ((...a: unknown[]) => Promise<unknown>),
-  currentId: "cur" as string | null
+  currentId: "cur" as string | null,
+  vault: "unlocked" as "loading" | "off" | "locked" | "unlocked" | "migrating"
 }));
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project: { id: "p1" }, projectId: "p1", currentDoc: h.currentId ? { id: h.currentId } : null }) }));
+vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: h.vault }) }));
 vi.mock("@/lib/editor/docAccess", () => ({ useDocAccess: () => ({ text: () => h.text, selection: () => "", allDocuments: async () => h.docs }) }));
 vi.mock("@/lib/shelf/useShelf", () => ({
   useShelf: () => ({ projectId: "p1", index: h.index, ...h.shelf, loadPaper: async (id: string) => (h.papers[id] ? { pages: h.papers[id], notes: [], cells: {} } : null) })
@@ -88,7 +90,7 @@ const blobText = (b: Blob) => new Promise<string>((res) => { const r = new FileR
 // The panel's body is fetched when its tab first opens (Panel.tsx); load it once here so no test waits on the first cold import.
 beforeAll(async () => { await import("../components/tools/close/CloseBody"); }, 120_000);
 beforeEach(() => {
-  h.text = STUDENT; h.docs = []; h.currentId = "cur";
+  h.text = STUDENT; h.docs = []; h.currentId = "cur"; h.vault = "unlocked";
   h.index = [{ id: "p1", title: "Paper one", file: "p1.pdf", size: 1, added: "", total: 1, kept: 1 }, { id: "p2", title: "", file: "second.pdf", size: 1, added: "", total: 1, kept: 1 }];
   h.shelf = { loading: false, locked: false, broken: false, error: false };
   h.papers = { p1: [SOURCE], p2: ["Nothing alike here at all, just some other words about a different subject entirely."] };
@@ -151,6 +153,24 @@ describe("Closeness: the check", () => {
     await mount(); await run();
     expect(tid("close-note")!.textContent).toBe(E.close_need_words);
     expect(tid("close-result")).toBeNull();
+  });
+  it("with the vault locked it says the document is locked, not that it is too short, and checks nothing (live walk, F5)", async () => {
+    // A locked vault leaves the open document unread: the editor is empty, so the word guard would blame a long document for being short.
+    h.vault = "locked";
+    h.text = "";
+    await mount(); await run();
+    expect(tid("close-note")!.textContent).toBe(E.close_doc_locked);
+    expect(tid("close-note")!.textContent).not.toBe(E.close_need_words);
+    expect(tid("close-result")).toBeNull();
+  });
+  it("with no vault at all, or once it is open, the word guard is as before", async () => {
+    for (const v of ["off", "unlocked"] as const) {
+      h.vault = v;
+      h.text = "Far too short to compare.";
+      await mount(); await run();
+      expect(tid("close-note")!.textContent, v).toBe(E.close_need_words);
+      act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = "";
+    }
   });
   it("needs a source: every box unticked and nothing pasted", async () => {
     await mount();

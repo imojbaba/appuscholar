@@ -445,6 +445,36 @@ describe("useVault", () => {
     expect(s.v.status).toBe("locked");
   }, 30_000);
 
+  it("an open vault stays open when the browser comes back online: the re-read record does not lock it (W33)", async () => {
+    server.vault = { ...(await vaultWith("right")), complete: true };
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    await act(async () => { await s.v.unlock("right", false); });
+    expect(s.v.status).toBe("unlocked");
+    await act(async () => { window.dispatchEvent(new Event("online")); await new Promise((r) => setTimeout(r, 20)); });
+    await until(() => server.calls.filter((c) => c.path === "/me/vault" && c.method === "GET").length === 2);
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(s.v.status).toBe("unlocked");
+    expect(s.seen).toEqual(["loading", "locked", "unlocked"]);
+    // The key is still the one in use: a write is sealed, and the pill's ensureUnlocked answers at once with no ask.
+    const enc = await s.v.encryptBody({ id: "d1", deks: [] }, "<p>still open</p>");
+    expect(enc.keyVersion).toBe(1);
+    expect(await s.v.ensureUnlocked()).toBe(true);
+    expect(h.ask).not.toHaveBeenCalled();
+  }, 30_000);
+
+  it("back online, a record that is another vault's now (replaced elsewhere) locks this tab instead of keeping a key that no longer opens it", async () => {
+    server.vault = { ...(await vaultWith("right")), complete: true };
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    await act(async () => { await s.v.unlock("right", false); });
+    expect(s.v.status).toBe("unlocked");
+    server.vault = { ...(await vaultWith("new one")), complete: true };
+    await act(async () => { window.dispatchEvent(new Event("online")); await new Promise((r) => setTimeout(r, 20)); });
+    await until(() => s.v.status === "locked");
+    await expect(s.v.encryptBody({ id: "d1", deks: [] }, "<p>x</p>")).rejects.toThrow("vault-locked");
+  }, 30_000);
+
   it("an unlock that finishes after the account changed never opens the new account's session", async () => {
     server.vault = await vaultWith("right");
     const s = await mount();

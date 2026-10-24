@@ -35,6 +35,8 @@ export default function SlidesBody() {
   async function generate() {
     if (reading) return;
     setNote(null);
+    // The old preview goes while the document is read again (it takes seconds with several documents): its Download would hand over the previous deck as if current.
+    setShown(null);
     setReading(true);
     const text = access.text();
     let docs: Awaited<ReturnType<typeof access.allDocuments>> | null = null;

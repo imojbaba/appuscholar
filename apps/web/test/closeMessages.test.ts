@@ -29,6 +29,7 @@ describe("close.en.json", () => {
   });
   it("keeps v1's sentences for the 30-word and no-source guards and for a result of nothing", () => {
     expect(E.close_need_words).toBe("Write at least about 30 words first");
+    expect(E.close_doc_locked).toBe("Your document is locked. Unlock your vault with the pill at the top, then check again.");
     expect(E.close_need_source).toBe("Tick a source, or paste a passage to compare with");
     expect(E.close_none).toBe("No passage of {minRun} words or more matched. That is only about the sources you chose.");
     expect(E.close_limits).toMatch(/A low number is not a clean bill\./);

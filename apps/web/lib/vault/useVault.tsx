@@ -355,6 +355,20 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
           inflight = false;
           if (!live) return;
           record.current = rec;
+          const open = vk.current;
+          if (open) {
+            // Read again with the vault open (back online, W33): the key in memory stays in use while it still opens this record's check blob; a record
+            // that is another vault's now (erased and set up again elsewhere) locks this tab instead.
+            setComplete(rec.complete);
+            settle();
+            const mine = epoch.current;
+            void verifyVaultKey(rec.checkWrapped, open).catch(() => {
+              if (!live || epoch.current !== mine || vk.current !== open) return;
+              forgetKeys();
+              setStatus("locked");
+            });
+            return;
+          }
           setState({ uid: userId, status: "locked", complete: rec.complete });
           statusRef.current = "locked";
           settle();
@@ -372,7 +386,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("online", load);
     load();
     return () => { live = false; clearTimeout(timer); window.removeEventListener("online", load); settle(); };
-  }, [userId, forgetKeys, setStatus, unlockRemembered]);
+  }, [userId, forgetKeys, setStatus, setComplete, unlockRemembered]);
 
   const setup = useCallback(async (pass: string, rememberIt: boolean) => {
     const mine = epoch.current;

@@ -7,6 +7,7 @@ import { useDocAccess, type ProjectDocument } from "@/lib/editor/docAccess";
 import { useProjectBlob } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
 import { useShelf } from "@/lib/shelf/useShelf";
+import { useVault } from "@/lib/vault/useVault";
 import { CLOSE_FILE, closeReport } from "@/lib/tools/close/report";
 import { createRunner, type CloseRunner } from "@/lib/tools/close/runner";
 import { gatherSources, otherDocuments } from "@/lib/tools/close/sources";
@@ -27,6 +28,7 @@ export default function CloseBody({ projectId }: { projectId: string }) {
   const t = useT();
   const shelf = useShelf();
   const access = useDocAccess();
+  const vault = useVault();
   const { currentDoc } = useProject();
   const prefs = useProjectBlob("close_prefs", projectId || null);
   const stored = (n: number | undefined) => (n === undefined ? null : String(n));
@@ -62,6 +64,8 @@ export default function CloseBody({ projectId }: { projectId: string }) {
     if (busy) return;
     const text = access.text();
     setNote(null);
+    // A locked vault leaves the open document unread (the editor is empty): say so, never that a long document is too short (D-S2-112).
+    if (vault.status === "locked") { setNote({ key: "close_doc_locked" }); return; }
     // clRun's first guard (6939): about 30 words.
     if (!clEnoughWords(text)) { setNote({ key: "close_need_words" }); return; }
     const mine = ++token.current;
