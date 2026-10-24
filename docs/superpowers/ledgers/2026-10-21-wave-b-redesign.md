@@ -281,3 +281,4 @@ Task 23: nit (deferred): useLibrary's `known` stays null after a write that chan
 For Task 35: the caret chip's v1 key cit_caret_chip says "show in Citation Manager", a name no longer on screen.
 Task 23 fix round dispatched (wt-t23).
 Task 20: implemented 754daf4 on wave-b2-t20 (from the Task 23 branch; web 2383 pass, core 8031, golden 7708, typecheck, lint, i18n clean, per the implementer). Review running.
+Task 19 web: implemented c70bc8d on wave-b2-t19web (PasteBox; Find's fill uses crLookupDoiV2; undoKeep; web 2344 pass, typecheck, lint, i18n clean, per the implementer); wave-b2 merged in (eeaa08d; a criss-cross register base, resolved row by row against every merge base). Review running.
