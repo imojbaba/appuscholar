@@ -14,3 +14,7 @@ Plan: `docs/superpowers/plans/2026-10-24-golive-build.md`. One line per task; ru
 - Task 2 minors (deferred): the unauthenticated route makes one database call per hit (no limit, per plan); only run on pglite, not on Neon.
 - Ruling: no separate scoped re-review of Task 2's fix wave (new tests prove each point); the final whole-branch review reads it — if wrong: found one task later.
 - Task 2: complete (commits a981a55..4070eab)
+- Task 3: fix round 1/5 (1 Important + 1 small addressed: x-vercel-id validated before logging, error panel refreshes the route; commits 6bb2fd2..1f4fff8)
+- Task 3 minors (deferred): behind a rewriting proxy the same-origin check could 403 real reports (check once on the preview); a flood can fill the 30-per-minute cap and hide real reports for that minute; no root `app/error.tsx` (errors outside (app) fall to global-error); a short alphabetic path slug is not masked.
+- Ruling: no separate scoped re-review of Task 3's fix wave (header regex + one effect, RED/GREEN in report); the final whole-branch review reads it — if wrong: found one step later.
+- Task 3: complete (commits bf8f9f4..1f4fff8)
