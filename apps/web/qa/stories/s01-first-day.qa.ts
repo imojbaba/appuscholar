@@ -212,13 +212,18 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
   await qa.step("my key", async () => {
     // Every toast from here to the end of the day, in order (one toast replaces another, so two close together are read from this record).
     toasts = await recordToasts(page);
+    await qa.check("conceptual", "with no vault yet, the key window starts at Remember on this computer and says the key can be locked later, so saving the first key does not send the student into the vault set-up", async () => {
+      await expect(page.getByTestId("provider-dialog")).toBeVisible();
+      await expect(page.getByTestId("key-mode-plain")).toBeChecked();
+      await expect(page.getByTestId("key-mode-later")).toHaveText(T("settings_keymode_later"));
+    }, { source: "first-run fix 2026-10-26 (Dr. Sharma's first login: the key step forced the vault set-up)" });
     await fillKeyWindow(page, s.key!);
     await qa.check("data", "the key window is the AI provider window, with Groq chosen and \"Protect with a passphrase\" ticked", async () => {
       await expect(page.getByTestId("provider-dialog").getByRole("heading", { name: T("settings_h2") })).toBeVisible();
       await expect(page.getByTestId("prov-select")).toHaveValue("groq");
       await expect(page.getByTestId("key-mode-pass")).toBeChecked();
     }, { source: `${ROW1} ("Choose Groq, paste your key, choose Protect with a passphrase")` });
-    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the key window");
     await page.getByTestId("key-save").click();
   });
@@ -485,7 +490,7 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await qa.check("data", "the key window speaks Hindi where it has Hindi: its heading, its introduction, the provider and key-mode labels, the three key modes and Save", inHindi("provider-dialog", [
       "settings_h2", "settings_intro", "settings_provider_label", "settings_keymode_label", "settings_keymode_pass", "settings_keymode_plain", "settings_keymode_session", "settings_savekey_btn"
     ]), { source: `${ROW1}; spec section 6 (the windows' words in Hindi)` });
-    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the key window, on a phone, in Hindi");
     await page.getByTestId("key-save").click();
   });

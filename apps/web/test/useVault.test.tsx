@@ -326,6 +326,44 @@ describe("useVault", () => {
     expect(h.ask).not.toHaveBeenCalled();
   }, 30_000);
 
+  it("one ask per unlock (O18): the page's own asks share one prompt and stay quiet after a cancel; the student's press still asks; after the next unlock and lock the page asks once again", async () => {
+    server.vault = await vaultWith("right");
+    const s = await mount();
+    await until(() => s.v.status === "locked");
+    let answer!: (v: string | null) => void;
+    h.ask.mockImplementation(() => new Promise((r) => { answer = r; }));
+    // Three sealed items read at once (a document, two panels): one prompt between them.
+    const reads: Promise<boolean>[] = [];
+    act(() => { for (let i = 0; i < 3; i++) reads.push(s.v.ensureUnlocked("auto")); });
+    await until(() => h.ask.mock.calls.length === 1);
+    await act(async () => { answer(null); });
+    expect(await Promise.all(reads)).toEqual([false, false, false]);
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    // After the cancel, every later read or save the page makes by itself (autosave, another panel, the next item) is quiet.
+    let ok: boolean | undefined;
+    for (let i = 0; i < 4; i++) await act(async () => { ok = await s.v.ensureUnlocked("auto"); });
+    expect(ok).toBe(false);
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    // The student's own press (the pill, Unlock, a locked document chosen) asks; cancelled, the page stays quiet still.
+    h.ask.mockReset().mockResolvedValueOnce(null);
+    await act(async () => { ok = await s.v.ensureUnlocked(); });
+    expect(ok).toBe(false);
+    await act(async () => { ok = await s.v.ensureUnlocked("auto"); });
+    expect(ok).toBe(false);
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    h.ask.mockReset().mockResolvedValueOnce("right");
+    await act(async () => { ok = await s.v.ensureUnlocked("student"); });
+    expect(ok).toBe(true);
+    await until(() => s.v.status === "unlocked");
+    // Locked again: the next unlock may be asked for once by the page, and once only.
+    act(() => { s.v.lock(); });
+    h.ask.mockReset().mockResolvedValue(null);
+    await act(async () => { ok = await s.v.ensureUnlocked("auto"); });
+    await act(async () => { ok = await s.v.ensureUnlocked("auto"); });
+    expect(ok).toBe(false);
+    expect(h.ask).toHaveBeenCalledTimes(1);
+  }, 30_000);
+
   it("a remembered vault opens on the next visit without the passphrase, and forgetting it locks the next visit", async () => {
     const a = await mount();
     await until(() => a.v.status === "off");

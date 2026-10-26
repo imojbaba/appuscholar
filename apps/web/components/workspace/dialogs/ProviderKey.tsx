@@ -56,8 +56,18 @@ function Form() {
   const active: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
   const [p, setP] = useState<ProviderId>(settingsProvider ?? active);
   const [key, setKey] = useState("");
-  const initialMode = (q: ProviderId): KeyMode => (!keyStore.getUnlocked(q) || keys.blobs[q] ? "pass" : keyStore.isPlain(q) ? "plain" : "session");
-  const [mode, setMode] = useState<KeyMode>(() => initialMode(settingsProvider ?? active));
+  /**
+   * The mode a provider's key starts at: the way its key is kept now; for a new key "Protect with a passphrase" once a vault exists, and with no
+   * vault yet "Remember on this computer", so that a new student's first key does not open the vault setup (the key can be locked later from here).
+   * While the vault is still being read ("loading") the vault's answer is waited for: the choice follows it until the student picks one.
+   */
+  const initialMode = (q: ProviderId): KeyMode => {
+    if (keys.blobs[q]) return "pass";
+    if (keyStore.getUnlocked(q)) return keyStore.isPlain(q) ? "plain" : "session";
+    return vault.status === "off" ? "plain" : "pass";
+  };
+  const [picked, setMode] = useState<KeyMode | null>(null);
+  const mode: KeyMode = picked ?? initialMode(p);
   const [out, setOut] = useState<Out>(null);
   const [busy, setBusy] = useState(false);
   const info = PROVIDERS[p];
@@ -75,11 +85,11 @@ function Form() {
   const oaShown = oaIn ?? oaKey;
   async function saveOaKey() {
     if (oaIn === null || oaIn === oaKey) return;
-    const ok = await saveOpenAlexKey(oaIn, { keys, vault, setupVault: openVaultSetup, toast, t });
+    const ok = await saveOpenAlexKey(oaIn, { keys, vault, toast, t });
     if (ok) setOaIn(null);
   }
 
-  function pick(q: ProviderId) { setP(q); setKey(""); setOut(null); setMode(initialMode(q)); }
+  function pick(q: ProviderId) { setP(q); setKey(""); setOut(null); setMode(null); }
 
   async function save() {
     const k = key.trim();
@@ -195,6 +205,7 @@ function Form() {
           </label>
         ))}
         <p className="m-0 text-[13px] text-muted-foreground" data-testid="key-mode-hint">{MODE_HINT[mode]}</p>
+        {mode === "plain" && vault.status === "off" && <p className="m-0 text-[13px] text-muted-foreground" data-testid="key-mode-later">{t("settings_keymode_later")}</p>}
       </div>
 
       <div className="flex flex-wrap gap-2">

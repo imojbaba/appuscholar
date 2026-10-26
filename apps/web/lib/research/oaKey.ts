@@ -7,7 +7,7 @@ import { useVault, type VaultValue } from "@/lib/vault/useVault";
 /*
  * The OpenAlex key (v1 1186-1190, oaKey / oaKeySave 8029-8031): optional, for paper search, the retraction check and the reference check. v1 keeps
  * it in this browser's localStorage (`appu_key_openalex`); here it is the credential `openalex`, locked under the vault as an AI key is ("v2." and
- * the vault's iv.ct), and opened into this tab's memory (register row D-S2-12).
+ * the vault's iv.ct), and opened into this tab's memory (register row D-S2-12). With no vault it is remembered on this computer, as v1 kept it.
  */
 export const OPENALEX = "openalex" as const;
 
@@ -38,15 +38,14 @@ export function useOpenAlexKey(): string | null {
 export type OaKeySaveDeps = {
   keys: Pick<KeysValue, "save" | "forget">;
   vault: Pick<VaultValue, "status" | "ensureUnlocked">;
-  /** The vault setup dialog (openVaultSetup): true once a vault exists. */
-  setupVault(): Promise<boolean>;
   toast(msg: string): void;
   t(key: string): string;
 };
 
 /**
- * oaKeySave (8031): the field's value trimmed; a key is stored, an empty field removes it, each with v1's toast. Storing needs the vault: with
- * none yet the student sets one up first, a locked one is opened; cancelling either stores nothing (and shows no toast).
+ * oaKeySave (8031): the field's value trimmed; a key is stored, an empty field removes it, each with v1's toast. With a vault the key is locked
+ * under it (a locked vault is opened; cancelling stores nothing and shows no toast). With no vault yet it is remembered on this computer, as the
+ * AI key's default is then ("Remember on this computer", v1's localStorage): saving a key never sends a new student into the vault setup.
  */
 export async function saveOpenAlexKey(value: string, d: OaKeySaveDeps): Promise<boolean> {
   const v = String(value || "").trim();
@@ -55,7 +54,12 @@ export async function saveOpenAlexKey(value: string, d: OaKeySaveDeps): Promise<
     d.toast(d.t("rs2_openalex_key_removed"));
     return true;
   }
-  if (!(d.vault.status === "off" ? await d.setupVault() : await d.vault.ensureUnlocked())) return false;
+  if (d.vault.status === "off") {
+    try { await d.keys.save(OPENALEX, v, "plain"); } catch { d.toast("Could not save the key. Try again."); return false; }
+    d.toast(d.t("rs2_openalex_key_saved_on"));
+    return true;
+  }
+  if (!(await d.vault.ensureUnlocked())) return false;
   try { await d.keys.save(OPENALEX, v, "pass"); } catch { d.toast("Could not encrypt and store the key — nothing was saved"); return false; }
   d.toast(d.t("rs2_openalex_key_saved_on"));
   return true;

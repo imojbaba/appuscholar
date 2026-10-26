@@ -4,8 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../messages/en.json";
 
-const h = vi.hoisted(() => ({ ask: vi.fn(), toast: vi.fn(), dl: vi.fn(), setup: vi.fn(), api: vi.fn() }));
-vi.mock("@/components/workspace/dialogs/Passphrase", async () => (await import("./support/passphraseMock")).passphraseMock(h.ask));
+// The real passphrase window (PassphraseHost) is mounted: what the student is told must be inside it, under its field (O9), not only in a toast.
+const h = vi.hoisted(() => ({ toast: vi.fn(), dl: vi.fn(), setup: vi.fn(), api: vi.fn() }));
 vi.mock("@/components/ui/toast", () => ({ toast: h.toast }));
 vi.mock("@/lib/export/download", () => ({ downloadBlob: h.dl }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("../lib/api")>()), apiFetch: h.api }));
@@ -14,11 +14,13 @@ vi.mock("@/lib/vault/useVault", () => ({ useVault: () => ({ status: "off", setup
 
 import { ApiError } from "../lib/api";
 import { openVaultSetup, VaultSetupHost } from "../components/workspace/dialogs/VaultSetup";
+import { PassphraseHost } from "../components/workspace/dialogs/Passphrase";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const CODE = "ABCDE-FGHJK-LMNPQ-RSTUV";
 const PASS = "correct horse battery";
+const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k]));
 const roots: Root[] = [];
 const $ = (id: string) => document.body.querySelector<HTMLElement>(`[data-testid="${id}"]`);
 async function until(pred: () => boolean) {
@@ -30,56 +32,148 @@ async function click(id: string) {
   if (!el) throw new Error("no element " + id);
   await act(async () => { el.click(); await new Promise((r) => setTimeout(r, 0)); });
 }
+function type(id: string, value: string) {
+  const el = $(id) as HTMLInputElement;
+  act(() => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, value);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+/** Types into the passphrase window and presses OK. */
+async function answer(value: string) {
+  await until(() => !!$("pass-input"));
+  type("pass-input", value);
+  await click("pass-ok");
+}
+const message = () => $("pass-message")?.textContent ?? null;
 async function mount() {
   const box = document.createElement("div");
   document.body.appendChild(box);
   const root = createRoot(box);
   roots.push(root);
-  await act(async () => { root.render(<VaultSetupHost />); });
+  await act(async () => { root.render(<><VaultSetupHost /><PassphraseHost /></>); });
+}
+/** Opens the setup; `result` is what openVaultSetup answers (wrapped: an async function would wait for it). */
+async function open(): Promise<{ result: Promise<boolean> }> {
+  await mount();
+  let result!: Promise<boolean>;
+  await act(async () => { result = openVaultSetup(); });
+  return { result };
 }
 function readBlob(b: Blob): Promise<string> {
   return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error); r.readAsText(b); });
 }
 /** Opens the setup and goes through to the recovery sheet with matching passphrases. */
-async function toSheet(): Promise<Promise<boolean>> {
-  await mount();
-  let result!: Promise<boolean>;
-  await act(async () => { result = openVaultSetup(); });
-  h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS);
+async function toSheet(): Promise<{ result: Promise<boolean> }> {
+  const { result } = await open();
   h.setup.mockResolvedValue({ recoveryCode: CODE });
   await click("vault-setup-submit");
+  await answer(PASS);
+  await until(() => message() === en.bk_pass2);
+  await answer(PASS);
   await until(() => !!$("vault-code"));
-  return result;
+  return { result };
 }
 
-beforeEach(() => { h.ask.mockReset(); h.toast.mockReset(); h.dl.mockReset(); h.setup.mockReset(); h.api.mockReset(); });
+beforeEach(() => { h.toast.mockReset(); h.dl.mockReset(); h.setup.mockReset(); h.api.mockReset(); });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
 
 describe("VaultSetup and the recovery sheet", () => {
-  it("a failed setup says so and stays open; a vault that exists already closes the setup", async () => {
-    await mount();
-    let result!: Promise<boolean>;
-    await act(async () => { result = openVaultSetup(); });
-    h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS);
-    h.setup.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  it("the choose prompt says the minimum before anything is typed", async () => {
+    await open();
     await click("vault-setup-submit");
-    await until(() => h.toast.mock.calls.length === 1);
-    expect(h.toast).toHaveBeenCalledWith(en.vault_setup_fail);
-    await until(() => !!$("vault-setup-dialog"));
-    expect($("vault-code")).toBeNull();
+    await until(() => message() === en.vault_setup_intro);
+    expect($("pass-rule")!.textContent).toBe(fill(en.vault_pass_rule, { n: 10 }));
+    expect($("pass-verdict")).toBeNull();
+  });
 
-    h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS);
-    h.setup.mockRejectedValueOnce(new ApiError(409, "vault-exists"));
+  it("a passphrase too short is refused inside the choose window, under its field, and asked again there: never back to the intro", async () => {
+    await open();
     await click("vault-setup-submit");
-    await until(() => h.toast.mock.calls.length === 2);
-    expect(h.toast).toHaveBeenLastCalledWith(en.vault_setup_fail);
+    await answer("short");
+    await until(() => !!$("pass-verdict"));
+    expect($("pass-verdict")!.textContent).toBe(fill(en.vault_err_short, { n: 10 }));
+    expect($("pass-input")!.getAttribute("aria-describedby")).toBe("pass-verdict");
+    // Still the choose window, with what was typed kept; the intro is not back.
+    expect(message()).toBe(en.vault_setup_intro);
+    expect(($("pass-input") as HTMLInputElement).value).toBe("short");
+    expect($("vault-setup-dialog")).toBeNull();
+    expect(h.setup).not.toHaveBeenCalled();
+    // A long enough one goes on to the confirm window.
+    await answer(PASS);
+    await until(() => message() === en.bk_pass2);
+    expect($("pass-verdict")).toBeNull();
+  });
+
+  it("two entries apart: the reason shows in a fresh choose window (never the intro); then matching entries set the vault up", async () => {
+    const { result } = await open();
+    await click("vault-setup-remember");
+    await click("vault-setup-submit");
+    await answer(PASS);
+    await until(() => message() === en.bk_pass2);
+    await answer(PASS + "x");
+    await until(() => message() === en.vault_setup_intro && !!$("pass-verdict"));
+    expect($("pass-verdict")!.textContent).toBe(en.vault_err_match);
+    expect(($("pass-input") as HTMLInputElement).value).toBe("");
+    expect($("vault-setup-dialog")).toBeNull();
+    expect(h.setup).not.toHaveBeenCalled();
+    h.setup.mockResolvedValue({ recoveryCode: CODE });
+    await answer(PASS);
+    await until(() => message() === en.bk_pass2);
+    await answer(PASS);
+    await until(() => !!$("vault-code"));
+    expect(h.setup).toHaveBeenCalledTimes(1);
+    expect(h.setup).toHaveBeenCalledWith(PASS, true);
+    await expect(result).resolves.toBe(true);
+    expect(h.toast).not.toHaveBeenCalled();
+  });
+
+  it("a failed setup is said inside the confirm window, and OK there tries again with the same entries", async () => {
+    const { result } = await open();
+    await click("vault-setup-submit");
+    await answer(PASS);
+    await until(() => message() === en.bk_pass2);
+    h.setup.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await answer(PASS);
+    await until(() => !!$("pass-verdict"));
+    expect($("pass-verdict")!.textContent).toBe(en.vault_setup_fail);
+    expect(message()).toBe(en.bk_pass2);
+    expect($("vault-setup-dialog")).toBeNull();
+    expect($("vault-code")).toBeNull();
+    // The entry is kept: OK alone tries again.
+    h.setup.mockResolvedValueOnce({ recoveryCode: CODE });
+    await click("pass-ok");
+    await until(() => !!$("vault-code"));
+    expect(h.setup).toHaveBeenCalledTimes(2);
+    expect(h.setup).toHaveBeenLastCalledWith(PASS, false);
+    await expect(result).resolves.toBe(true);
+  });
+
+  it("a vault that exists already (set up meanwhile elsewhere) closes the setup and says so", async () => {
+    const { result } = await open();
+    await click("vault-setup-submit");
+    await answer(PASS);
+    await until(() => message() === en.bk_pass2);
+    h.setup.mockRejectedValueOnce(new ApiError(409, "vault-exists"));
+    await answer(PASS);
     await expect(result).resolves.toBe(false);
+    expect(h.toast).toHaveBeenCalledWith(en.vault_setup_fail);
+    await until(() => !$("pass-dialog"));
     expect($("vault-setup-dialog")).toBeNull();
     expect($("vault-code")).toBeNull();
   });
 
+  it("Cancel in the choose window brings the setup back, without a message", async () => {
+    await open();
+    await click("vault-setup-submit");
+    await until(() => !!$("pass-cancel"));
+    await click("pass-cancel");
+    await until(() => !!$("vault-setup-dialog"));
+    expect(h.toast).not.toHaveBeenCalled();
+    expect(h.setup).not.toHaveBeenCalled();
+  });
 
-  it("VaultSetup requires matching passphrases, then shows the sheet and enables Done after the checkbox", async () => {
+  it("the setup window speaks, and the sheet says beside Done what Done waits for", async () => {
     await mount();
     let result!: Promise<boolean>;
     await act(async () => { result = openVaultSetup(); });
@@ -89,43 +183,16 @@ describe("VaultSetup and the recovery sheet", () => {
     expect($("vault-setup-submit")!.textContent).toBe(en.vault_setup_btn);
     expect($("vault-setup-later")!.textContent).toBe(en.vault_setup_later);
     expect($("vault-setup-remember")!.closest("label")!.textContent).toContain(en.vault_remember);
-
-    // Two different entries: nothing is set up, the student is told, and the setup stays open.
-    h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS + "x");
-    await click("vault-setup-submit");
-    await until(() => h.toast.mock.calls.length === 1);
-    expect(h.ask).toHaveBeenNthCalledWith(1, { kind: "vault-choose" });
-    expect(h.ask).toHaveBeenNthCalledWith(2, { kind: "vault-confirm" });
-    expect(h.toast).toHaveBeenCalledWith(en.bk_err_match);
-    expect(h.setup).not.toHaveBeenCalled();
-    await until(() => !!$("vault-setup-dialog"));
-
-    // Too short: refused before the confirm step.
-    h.ask.mockResolvedValueOnce("short");
-    await click("vault-setup-submit");
-    await until(() => h.toast.mock.calls.length === 2);
-    expect(h.toast).toHaveBeenLastCalledWith(en.bk_err_short);
-    expect(h.ask).toHaveBeenCalledTimes(3);
-    expect(h.setup).not.toHaveBeenCalled();
-
-    // Cancelling the first prompt returns to the setup without a message.
-    h.ask.mockResolvedValueOnce(null);
-    await click("vault-setup-submit");
-    await until(() => !!$("vault-setup-dialog"));
-    expect(h.toast).toHaveBeenCalledTimes(2);
-
-    // Matching, with "Remember on this computer" ticked.
-    await click("vault-setup-remember");
-    h.ask.mockResolvedValueOnce(PASS).mockResolvedValueOnce(PASS);
     h.setup.mockResolvedValue({ recoveryCode: CODE });
     await click("vault-setup-submit");
+    await answer(PASS);
+    await until(() => message() === en.bk_pass2);
+    await answer(PASS);
     await until(() => !!$("vault-code"));
-    expect(h.setup).toHaveBeenCalledTimes(1);
-    expect(h.setup).toHaveBeenCalledWith(PASS, true);
     await expect(result).resolves.toBe(true);
     expect($("vault-setup-dialog")).toBeNull();
 
-    // The sheet: the code shown once, Done disabled until "I have saved it" is ticked.
+    // The sheet: the code shown once, Done disabled until "I have saved it" is ticked, and a line beside it that says so.
     const sheet = $("vault-sheet-dialog")!;
     expect(sheet.textContent).toContain(en.vault_sheet_h2);
     expect(sheet.textContent).toContain(en.vault_sheet_intro);
@@ -134,12 +201,15 @@ describe("VaultSetup and the recovery sheet", () => {
     const done = $("vault-sheet-done") as HTMLButtonElement;
     expect(done.textContent).toBe(en.vault_sheet_done);
     expect(done.disabled).toBe(true);
+    expect($("vault-sheet-hint")!.textContent).toBe(en.vault_sheet_hint);
+    expect(done.getAttribute("aria-describedby")).toBe("vault-sheet-hint");
     // Escape does not dismiss the sheet before it is saved.
     await act(async () => { document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
     expect($("vault-code")).not.toBeNull();
     expect($("vault-sheet-saved")!.closest("label")!.textContent).toContain(en.vault_sheet_saved);
     await click("vault-sheet-saved");
     expect(($("vault-sheet-done") as HTMLButtonElement).disabled).toBe(false);
+    expect($("vault-sheet-hint")).toBeNull();
     await click("vault-sheet-done");
     await until(() => !$("vault-sheet-dialog"));
     // The code is gone from the page once Done is pressed, and nothing here sent it anywhere.
@@ -154,7 +224,7 @@ describe("VaultSetup and the recovery sheet", () => {
     await click("vault-setup-later");
     await expect(result).resolves.toBe(false);
     expect($("vault-setup-dialog")).toBeNull();
-    expect(h.ask).not.toHaveBeenCalled();
+    expect($("pass-dialog")).toBeNull();
     expect(h.setup).not.toHaveBeenCalled();
   });
 

@@ -25,6 +25,8 @@ import { expect, notChecked, test } from "../support/test";
  */
 const SHEET = "phase-3a.md";
 const E2E = "e2e/phase3a-vault.spec.ts";
+/** The first-run fix of 2026-10-26: a first-time student can never get stuck at the passphrase (the set-up says its rule and every refusal inside its window). */
+const FIRST_RUN = "first-run fix 2026-10-26 (Dr. Sharma's first login); e2e/phase3a-vault.spec.ts, first run";
 /**
  * The folders a fix for these cases starts in: the vault and its windows; plus, for a fault, where it sits: Q1 the header (AppHeader.tsx), Q2 the project's home (ProjectHome.tsx),
  * Q3 and Q4 the windows' tick rows (the dialogs folder), Q5 the passphrase field (ui/secret-input.tsx, and the `.input` rule in app/globals.css that outranks its `pr-11`).
@@ -136,6 +138,23 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     }, { source: `${SHEET} row 3` });
     await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
+    await qa.check("data", "the choose window says the 10-character minimum before anything is typed", async () => {
+      await expect(page.getByTestId("pass-rule")).toHaveText(T("vault_pass_rule", { n: 10 }));
+    }, { source: FIRST_RUN });
+    await answerPassphrase(page, "too short");
+    await qa.check("conceptual", "a passphrase too short is refused inside the choose window, under its field, and asked again there, not back at the start", async () => {
+      await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_err_short", { n: 10 }));
+      await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
+      await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
+    }, { source: FIRST_RUN });
+    await answerPassphrase(page, s.passphrase!);
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
+    await answerPassphrase(page, s.passphrase! + "x");
+    await qa.check("conceptual", "two entries apart are said inside the window, and the passphrase is chosen again there, not back at the start", async () => {
+      await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_err_match"));
+      await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
+      await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
+    }, { source: FIRST_RUN });
     await answerPassphrase(page, s.passphrase!);
     await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
     await answerPassphrase(page, s.passphrase!);
@@ -144,12 +163,14 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     await qa.check("data", "the recovery sheet shows a code of four groups of five (XXXXX-XXXXX-XXXXX-XXXXX)", async () => {
       expect(s.recoveryCode).toMatch(RECOVERY_CODE);
     }, { source: `${SHEET} row 3` });
-    await qa.check("data", "Done stays disabled until \"I have saved it\" is ticked", async () => {
+    await qa.check("data", "Done stays disabled until \"I have saved it\" is ticked, and the line beside it says so", async () => {
       await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
-    }, { source: `${SHEET} row 3` });
+      await expect(page.getByTestId("vault-sheet-hint")).toHaveText(T("vault_sheet_hint"));
+    }, { source: `${SHEET} row 3; ${FIRST_RUN}` });
     await page.getByTestId("vault-sheet-saved").check();
     await qa.check("data", "ticking \"I have saved it\" enables Done", async () => {
       await expect(page.getByTestId("vault-sheet-done")).toBeEnabled();
+      await expect(page.getByTestId("vault-sheet-hint")).toBeHidden();
     }, { source: `${SHEET} row 3` });
     await qa.checkpoint("the recovery sheet");
     await page.getByTestId("vault-sheet-done").click();
@@ -185,7 +206,7 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
       await expect(stale.getByTestId("pass-message")).toHaveText(T("vault_unlock_hint"));
       await expect(pill(stale)).toHaveText(T("vault_pill_locked"));
     }, { source: `${SHEET} row 4a` });
-    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(stale, ["pass-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(stale, ["pass-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the second tab asks for the passphrase");
     await stale.getByTestId("pass-cancel").click();
     await expect(stale.getByTestId("pass-dialog")).toBeHidden();
@@ -293,7 +314,7 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     await page.getByTestId("help-btn").click();
     await page.getByTestId("help-change-pass").click();
     await expect(page.getByTestId("vault-change-dialog")).toBeVisible();
-    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["vault-change-old", "vault-change-new", "vault-change-again"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["vault-change-old", "vault-change-new", "vault-change-again"]), { source: EYE_SOURCE });
     await qa.checkpoint("the change passphrase window");
     await page.getByTestId("vault-change-old").fill(s.passphrase!);
     await page.getByTestId("vault-change-new").fill(next);
@@ -326,7 +347,7 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
     await page.getByTestId("vault-forgot").click();
     await expect(page.getByTestId("pass-dialog")).toBeHidden();
     await expect(page.getByTestId("vault-recover-dialog")).toBeVisible();
-    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["recover-pass", "recover-pass2"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["recover-pass", "recover-pass2"]), { source: EYE_SOURCE });
     await qa.checkpoint("the recovery window");
     const toasts = await recordToasts(page);
     const third = fresh();
@@ -608,7 +629,7 @@ test("S10-04 [O18] a locked vault asks for the passphrase once when Closeness op
     const asks = await lockByReload(page, s);
     await qa.check("conceptual", "opening Closeness with a locked vault asks for the passphrase at most once", async () => {
       expect(asks, "passphrase windows the page opened, one after each Cancel (docs/walkthroughs/notes/2026-10-23-tools-walk.md, O18: four on opening Closeness)").toBeLessThanOrEqual(1);
-    }, { source: "docs/walkthroughs/notes/2026-10-23-tools-walk.md, O18; spec section 9 ('once per opening, not once per sealed item'); known.json O18", known: "O18" });
+    }, { source: "docs/walkthroughs/notes/2026-10-23-tools-walk.md, O18 (fixed: one ask per unlock); spec section 9 ('once per opening, not once per sealed item')" });
     await qa.check("data", "after the Cancels the pill still reads Vault locked, and nothing is asked", async () => {
       await expect(pill(page)).toHaveText(T("vault_pill_locked"));
       await expect(page.getByTestId("pass-dialog")).toBeHidden();
@@ -684,13 +705,13 @@ test("S10-05 unlocking on a slow network shows a sign of progress, and a second 
           await page.getByTestId("pass-ok").click();
           await sign.first().waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
         },
-        { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer)", known: "Q2" }
+        { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer)" }
       );
       await qa.check("conceptual", "within 1 s of OK the home no longer says \"This project is locked\" (the pill reads Vault unlocked by then, and the page must not contradict it)", async () => {
         await expect.poll(() => page.evaluate(() => (window as unknown as { __lockedGoneAt: number | null }).__lockedGoneAt), { timeout: 20_000, message: "the home's locked card never went" }).not.toBeNull();
         const goneAt = await page.evaluate(() => (window as unknown as { __lockedGoneAt: number | null }).__lockedGoneAt);
         expect(goneAt, "ms from OK until the home stopped saying the project is locked").toBeLessThanOrEqual(PROGRESS_MS);
-      }, { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); the header's own \"Vault unlocked\" at the same moment", known: "Q2" });
+      }, { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); the header's own \"Vault unlocked\" at the same moment" });
       // The end of the wait is the stages on the screen, a condition, not a time: a window a second unlock would open shows up before then.
       await expect(page.getByTestId("home-stages")).toBeVisible({ timeout: 30_000 });
       // "No second unlock" is proved as "no second passphrase window": a second unlock would have to ask again, and the app's one ask is the window. The press is a synthetic click from the page (above).
@@ -754,8 +775,18 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
     await qa.checkpoint("the set-up window, on a phone, in Hindi");
     await page.getByTestId("vault-setup-submit").click();
     await inHindi("the passphrase window explains the vault in Hindi", () => page.getByTestId("pass-message"), "vault_setup_intro", `${SHEET} row 3`);
-    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(page, ["pass-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("data", "it says the 10-character minimum in Hindi before anything is typed", async () => {
+      expect("vault_pass_rule" in dictionary(hi)).toBe(true);
+      await expect(page.getByTestId("pass-rule")).toHaveText(T("vault_pass_rule", { n: 10 }, hi));
+    }, { source: FIRST_RUN });
+    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(page, ["pass-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the passphrase window of the set-up, on a phone, in Hindi");
+    await answerPassphrase(page, "too short");
+    await qa.check("data", "a passphrase too short is refused in Hindi inside the window, and asked again there", async () => {
+      await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_err_short", { n: 10 }, hi));
+      await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro", {}, hi));
+    }, { source: FIRST_RUN });
+    await qa.checkpoint("the set-up's choose window with its refusal, on a phone, in Hindi");
     await answerPassphrase(page, s.passphrase!);
     await inHindi("asked again, it says so in Hindi", () => page.getByTestId("pass-message"), "bk_pass2", `${SHEET} row 3`);
     await answerPassphrase(page, s.passphrase!);
@@ -763,11 +794,11 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
     s.recoveryCode = (await page.getByTestId("vault-code").innerText()).trim();
     await qa.check("data", "the recovery sheet speaks Hindi (title, explanation, the download, \"I have saved it\", Done) and shows a code of four groups of five", async () => {
       expect(s.recoveryCode).toMatch(RECOVERY_CODE);
-      for (const key of ["vault_sheet_h2", "vault_sheet_intro", "vault_sheet_download", "vault_sheet_saved", "vault_sheet_done"]) {
+      for (const key of ["vault_sheet_h2", "vault_sheet_intro", "vault_sheet_download", "vault_sheet_saved", "vault_sheet_done", "vault_sheet_hint"]) {
         expect(key in dictionary(hi), `${key} has no Hindi sentence in messages/hi.json`).toBe(true);
         await expect(dialogText("vault-sheet-dialog", key)(page), key).toBeVisible();
       }
-    }, { source: `${SHEET} row 3` });
+    }, { source: `${SHEET} row 3; ${FIRST_RUN} (the line beside Done)` });
     await qa.checkpoint("the recovery sheet, on a phone, in Hindi");
     await page.getByTestId("vault-sheet-saved").check();
     await page.getByTestId("vault-sheet-done").click();
@@ -790,7 +821,7 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
         await expect(dialogText("pass-dialog", key)(page), key).toBeVisible();
       }
     }, { source: `${SHEET} row 4c; spec section 6 (the windows' words in Hindi)` });
-    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(page, ["pass-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the passphrase field keeps room for its eye, so a long passphrase does not run under it", () => expectEyeRoom(page, ["pass-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the unlock window, on a phone, in Hindi");
     await answerPassphrase(page, s.passphrase! + "-wrong");
     await inHindi("a wrong passphrase gives its verdict in Hindi, inside the window", () => page.getByTestId("pass-verdict"), "vault_wrong", `${SHEET} row 4b; O9`);
@@ -813,7 +844,7 @@ test("S10-06 on a phone in Hindi, the vault's set-up, unlock and recovery window
         await expect(dialogText("vault-recover-dialog", key)(page), key).toBeVisible();
       }
     }, { source: `${SHEET} row 7a; spec section 6 (the windows' words in Hindi)` });
-    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["recover-pass", "recover-pass2"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the passphrase fields keep room for their eyes, so a long passphrase does not run under them", () => expectEyeRoom(page, ["recover-pass", "recover-pass2"]), { source: EYE_SOURCE });
     await qa.checkpoint("the recovery window, on a phone, in Hindi");
     // A code that is not the sheet's is refused first: the verdict, in Hindi, inside the window (the alphabet is the sheet's: no 0, 1, I or O).
     const next = fresh();

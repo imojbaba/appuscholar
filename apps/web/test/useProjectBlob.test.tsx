@@ -300,6 +300,38 @@ describe("useProjectBlob", () => {
     expect(putsTo("p1", "idea_intake")).toHaveLength(0);
   }, 30_000);
 
+  it("one ask per unlock (O18): panels reading sealed blobs at once share one ask; after its Cancel a panel opened later asks nothing; the pill's ask opens them all", async () => {
+    const vk = await generateVaultKey();
+    server.vault = await vaultFor(vk, "right");
+    server.blobs = [
+      await sealedBlob(vk, "p1", "idea_intake", INTAKE), await sealedBlob(vk, "p1", "citations", [{ author: "Ng, A." }]),
+      await sealedBlob(vk, "p1", "ap_notes", [])
+    ];
+    const box: { v: VaultValue | null; b: Record<string, ProjectBlob<unknown>> } = { v: null, b: {} };
+    function Panel({ k }: { k: BlobKind }) { box.b[k] = useProjectBlob(k, "p1"); return null; }
+    function Probe() { box.v = useVault(); return null; }
+    const root = createRoot(document.createElement("div"));
+    roots.push(root);
+    h.ask.mockResolvedValue(null);
+    await act(async () => { root.render(<VaultProvider><Probe /><Panel k="idea_intake" /><Panel k="citations" /></VaultProvider>); });
+    await until(() => !box.b.idea_intake!.loading && !box.b.citations!.loading);
+    await settle();
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    expect(box.b.idea_intake!.locked && box.b.citations!.locked).toBe(true);
+    // Another panel opens (another place, or the home's own reads): quiet.
+    await act(async () => { root.render(<VaultProvider><Probe /><Panel k="idea_intake" /><Panel k="citations" /><Panel k="ap_notes" /></VaultProvider>); });
+    await until(() => !box.b.ap_notes!.loading);
+    await settle();
+    expect(box.b.ap_notes!.locked).toBe(true);
+    expect(h.ask).toHaveBeenCalledTimes(1);
+    // The student presses the pill: one ask, and every panel opens.
+    h.ask.mockResolvedValue("right");
+    await act(async () => { await box.v!.ensureUnlocked(); });
+    await until(() => !box.b.idea_intake!.locked && !box.b.citations!.locked && !box.b.ap_notes!.locked);
+    expect(box.b.idea_intake!.value).toEqual(INTAKE);
+    expect(h.ask).toHaveBeenCalledTimes(2);
+  }, 30_000);
+
   it("set while locked prompts once; cancelled, the value is held (shown, still locked) and sent after a later unlock", async () => {
     const vk = await generateVaultKey();
     server.vault = await vaultFor(vk, "right");

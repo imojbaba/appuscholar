@@ -6,7 +6,7 @@ import { toast } from "@/components/ui/toast";
 import { isStaleKeys, isVaultLocked } from "@/lib/vault/errors";
 import { announceBlob, onBlobAnnounced } from "@/lib/popout/channel";
 import { blobWritable } from "@/lib/popout/mode";
-import { useVault, type VaultValue, type WrappedDek } from "@/lib/vault/useVault";
+import { useVault, type VaultAsker, type VaultValue, type WrappedDek } from "@/lib/vault/useVault";
 import { applyOps, compactOps, heldBlobs, type HeldOp } from "./held";
 import { BLOB_KINDS, blobId, parseBlob, type BlobKind, type BlobShape } from "./kinds";
 
@@ -141,6 +141,11 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   let error = false;
   /** The student cancelled an unlock this blob asked for after its first read: no prompt again until the vault opens (resume). */
   let declined = o.headless === true;
+  /**
+   * The next read is the panel's own set while the read is locked (the student typed or pressed something): it asks as the student does, so it may
+   * ask once more after a cancel of the page's asks. Every other read, and a debounced save, asks as the page does (O18: not again after a cancel).
+   */
+  let byStudent = false;
   let firstRead = true;
   let active = true;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -166,23 +171,25 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
   const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };
 
   /** Opens a blob as read: its value (null when broken), or "locked" when the vault stays locked. Asks for the passphrase unless declined. */
-  async function openWire(w: BlobWire): Promise<{ value: T | null } | "locked"> {
+  async function openWire(w: BlobWire, by: VaultAsker = "auto"): Promise<{ value: T | null } | "locked"> {
     const doc = { id: o.id, deks: w.deks, bodyHtml: w.body, keyVersion: w.keyVersion };
     let text: string | null = null;
     try { text = await o.vault().decryptBody(doc); } catch (e) {
       if (!isVaultLocked(e)) return { value: null }; // VaultError("corrupt")
-      // The vault shares one prompt between every caller waiting on it (the document, other panels).
-      if (declined || !(await o.vault().ensureUnlocked().catch(() => false))) return "locked";
+      // The vault shares one prompt between every caller waiting on it (the document, other panels); the page's own reads ask no more after a cancel.
+      if (declined || !(await o.vault().ensureUnlocked(by).catch(() => false))) return "locked";
       try { text = await o.vault().decryptBody(doc); } catch (e2) { if (isVaultLocked(e2)) return "locked"; return { value: null }; }
     }
     return { value: o.parse(text) };
   }
 
   async function read(): Promise<void> {
+    const by: VaultAsker = byStudent ? "student" : "auto";
+    byStudent = false;
     let w: BlobWire | null;
     try { w = await o.get(); } catch { attempted = true; error = true; return; }
     if (w) deks = w.deks;
-    const opened = w ? await openWire(w) : { value: null };
+    const opened = w ? await openWire(w, by) : { value: null };
     attempted = true;
     // The first read asks once; a set while still locked may ask once more, and a cancel then holds without asking again.
     if (opened === "locked" && !firstRead) declined = true;
@@ -218,7 +225,7 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
     try { return await sealNow(); } catch (e) { if (!isVaultLocked(e)) throw e; }
     if (!declined) {
       // Once per attempt; while the migration runs this waits for it without a prompt.
-      try { if (await o.vault().ensureUnlocked()) return await sealNow(); } catch (e) { if (!isVaultLocked(e)) throw e; }
+      try { if (await o.vault().ensureUnlocked("auto")) return await sealNow(); } catch (e) { if (!isVaultLocked(e)) throw e; }
     }
     declined = true;
     return null;
@@ -413,8 +420,8 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       emit();
       clearTimer();
       if (declined && (heldByLock || !known)) return; // held until the vault opens
-      // The read is locked: ask now (one prompt) rather than after the debounce.
-      if (!known && lockedRead) { void flush(); return; }
+      // The read is locked: ask now (one prompt, the student's: this set is theirs) rather than after the debounce.
+      if (!known && lockedRead) { byStudent = true; void flush(); return; }
       timer = setTimeout(() => { timer = null; void flush(); }, o.delayMs);
     },
     /**

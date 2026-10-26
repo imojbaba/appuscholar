@@ -45,7 +45,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: pressing OK on the unlock window while every answer from the server takes 3 s shows a sign within 1 s that the project is opening ("Opening your saved work…", or the project itself), and the home stops saying the project is locked once the header says "Vault unlocked" (source: spec section 8, a sign of progress within 1 s of any press that takes longer)
 - Happened: sampled every 100 ms after OK: at 146 ms the pill reads "Vault unlocked", and for the next 3.3 s the home still shows the card "This project is locked. Enter your passphrase to open it." with its Unlock button, and no loading line (`home-loading` never appears); at 3,430 ms the six stages show. The card comes from `apps/web/components/frame/ProjectHome.tsx` (`locked = blobs.some((b) => b.locked)`), which stays true until each blob has been read again after the unlock. The case measures it twice: the `timed` check ("took 3,3xx ms; the budget is 1,000 ms") and the check that the locked card is gone within 1 s.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc: case S10-05, the time check and the conceptual check, both naming Q2. The 100 ms timeline above is from a throwaway probe of the same steps. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S10-05"`.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q3: On a phone, the "Remember on this computer" tick row is 20 px tall
 
@@ -56,7 +56,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: on a phone, every control at least 44 px each way; a tick box is pressed through its label, so the larger of the two is its target (source: spec section 8, layout rules, O17)
 - Happened: `input [vault-setup-remember]: 325 × 20 px` and `input [pass-remember]: 325 × 20 px` (the box itself is the browser's 13 px one). Files: `components/workspace/dialogs/VaultSetup.tsx`, `Passphrase.tsx`.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc: case S10-06, failed checks "the set-up window", "the unlock window" and "the unlock window with the verdict": "every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S10-06"`.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q4: On a phone, the recovery sheet's "I have saved it" tick row is 20 px tall
 
@@ -67,7 +67,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: as Q3 (source: spec section 8, layout rules, O17)
 - Happened: `input [vault-sheet-saved]: 325 × 20 px`. The sheet cannot be closed until this box is ticked, so a student with a thumb must hit it. File: `components/workspace/dialogs/RecoverySheet.tsx`.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc: case S10-06, failed checks "the recovery sheet" and "the new recovery sheet": "every control at least 44 px each way". Re-run as Q3.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q5: The show-passphrase eye lies over the right end of every passphrase and key field
 
@@ -79,7 +79,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Happened: the field's right padding computes to 10 px, not 44 px, and the eye is 44 px wide: the `.input` rule in `app/globals.css` (line 133) is outside any `@layer`, so it wins over Tailwind's `pr-11` utility. A passphrase of about 70 characters or more runs under the eye (measured: field 462 px wide, eye 44 px at its right end, `padding-right: 10px`; a screenshot with a long passphrase shows the dots up to and under the icon). It shows as the overlap rule's finding `input ... over button ... [pass-input-toggle]: they cross by 44 × 36 px` (on a phone 44 × 44 px) for `pass-input`, `vault-change-old`, `vault-change-new`, `vault-change-again`, `recover-pass` and `recover-pass2`. The key window (`components/workspace/dialogs/ProviderKey.tsx`) has two more: `key-input` (eye `key-input-toggle`) and `oa-key-input` (its eye has no test id: `input "Paste a free OpenAlex key" [oa-key-input] over button "Show key"`), each measured at padding-right 10 px against an eye 44 px wide, crossing by 44 × 36 px (44 × 44 px on a phone).
 - Detected by: the check "the passphrase field(s) keep room for their eye" of S10-01 and S10-06, and "the key fields keep room for their eyes" of S1-01 and S1-02 (the field's computed padding-right against the eye's width), which carries Q5 and passes once the padding is 44 px; the overlap rule (`qa/support/layout.ts`) does not flag an absolutely placed control held in a field's padding as wide as itself, so it stops flagging the eyes at the same time.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc: cases S10-01 and S10-06, the failed checks "... no two controls on top of each other" of the second tab, the unlock window with the verdict, the change passphrase window and the two recovery windows. Re-run: `pnpm --filter @appuscholar/web qa:local -g "S10-01"`. And the run of 2026-10-24 on cfada86: cases S1-01 and S1-02, the failed checks "the key fields keep room for their eyes" and "the key window: no two controls on top of each other" (`key-input` over `key-input-toggle`, and `oa-key-input` over its eye). Re-run: `pnpm --filter @appuscholar/web qa:local -g "S1-0"`.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q6: The terms window's text scrolls, but the keyboard cannot reach it
 

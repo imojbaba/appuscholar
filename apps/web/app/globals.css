@@ -132,6 +132,9 @@
 .field label { font-size: 13px; line-height: 18px; font-weight: 500; }
 .input, .field .input { width: 100%; min-height: var(--ctl); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font-size: 14px; line-height: 20px; resize: vertical; }
 .input::placeholder, .field .input::placeholder { color: var(--muted); }
+/* A passphrase or key field with its eye (components/ui/secret-input.tsx): the text stops before the 44 px eye. A utility class (pr-11) loses to .input,
+   which is not in a cascade layer (Q5). */
+.input.input-secret, .field .input.input-secret { padding-right: 44px; }
 /* Citation Manager (v1 874-947): side-by-side fields, the style note under its select, the library cards. */
 .cite-row { display: flex; gap: 8px; }
 .cite-row > .field, .cite-row > .flex-1 { min-width: 0; }

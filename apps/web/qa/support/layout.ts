@@ -130,6 +130,7 @@ const D_S2_18_CONSTANTS: readonly string[] = [
   'Captured "{title}" into your citation library ✓',
   // lib/research/oaKey.ts
   "Could not remove the key. Try again.",
+  "Could not save the key. Try again.",
   "Could not encrypt and store the key — nothing was saved",
   // lib/shelf/useShelf.ts
   "Columns can be changed only in the writing window.",

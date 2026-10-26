@@ -250,6 +250,30 @@ describe("the project home", () => {
     await until(() => text("home-detail-lit").includes("Highlights: 2"));
   });
 
+  it("the moment the vault unlocks, the home says it is opening, never \"This project is locked\" under a header that says unlocked (Q2)", async () => {
+    const unlocked = { ...vaultOff, status: "unlocked", known: async () => "unlocked", decryptBody: async (d: { bodyHtml: string }) => JSON.stringify(server.blobs[d.bodyHtml.replace(/^sealed-/, "")]!.value) };
+    h.vault = { ...vaultOff, status: "locked", known: async () => "locked", ensureUnlocked: async () => false, decryptBody: async () => { throw new Error("vault-locked"); } };
+    server.keyVersion = 1;
+    const r = mount();
+    await until(() => !!q("home-locked"));
+    // From here every read of the project's saved work waits (a slow network) until it is let go.
+    let release!: () => void;
+    const gate = new Promise<void>((res) => { release = res; });
+    const answer = h.api.getMockImplementation()!;
+    h.api.mockImplementation(async (path: string, init?: { method?: string }) => { if (/\/blobs\//.test(path)) await gate; return answer(path, init); });
+    h.vault = unlocked;
+    act(() => { r.render(<ProjectHome />); });
+    expect(q("home-locked")).toBeNull();
+    expect(q("home-unlock")).toBeNull();
+    expect(q("home-loading")).not.toBeNull();
+    await act(async () => { await new Promise((res) => setTimeout(res, 50)); });
+    expect(q("home-locked")).toBeNull();
+    expect(q("home-loading")).not.toBeNull();
+    await act(async () => { release(); });
+    await until(() => text("home-q-text") === "Does a fixed bedtime lower exam anxiety?");
+    expect(q("home-loading")).toBeNull();
+  });
+
   it("highlight counts are read once per paper version: a repeat visit reads none, a changed version re-reads only that paper", async () => {
     server.blobs.shelf_index!.value = [...(server.blobs.shelf_index!.value as unknown[]), { id: "sp2", title: "Lee 2021", file: "l.pdf", size: 1, added: "2026-10-07", total: 2, kept: 2 }];
     server.blobs["shelf_paper:sp2"] = { value: { pages: ["p"], notes: [{ id: "m1", page: 1, quote: "q", note: "", at: "x" }], cells: {} }, updatedAt: "2026-10-07T00:00:00Z", version: 4 };

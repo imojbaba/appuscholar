@@ -10,8 +10,9 @@
  * document's) goes to the server in plaintext; the vault's setup seals both, and a locked vault shows "Locked title" in the header and the
  * project list (whose six stage bars still show), never ciphertext, until the passphrase brings the names back.
  */
-import { test, expect, type Page, type Request, type Response } from "@playwright/test";
+import { test, expect, type Page, type Request, type Response, type Route } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import JSZip from "jszip";
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
@@ -423,4 +424,202 @@ test("vault journey, 9b: after Delete my account the same address signs in to a 
   await page.getByTestId("scratch-space").click();
   await expect(page.getByTestId("word-count")).toHaveText("0 words");
   await expect(page.locator(".ProseMirror")).not.toContainText("Procrastination");
+});
+
+// ---- First run (2026-10-26): a new student can never get stuck at the passphrase ----------------------------------------------------------------------------
+
+const EN = JSON.parse(readFileSync(path.join(__dirname, "../messages/en.json"), "utf8")) as Record<string, string>;
+/** t() as lib/i18n.tsx's tFormat does it: the English sentence with its {vars} filled in. */
+function T(key: string, vars?: Record<string, string | number>): string {
+  const raw = EN[key];
+  if (raw === undefined) throw new Error("no such key in en.json: " + key);
+  return vars ? raw.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m)) : raw;
+}
+/** The first-run passphrase: long enough (10 characters or more). A test value only. */
+const FIRST_PASS = "first run passphrase";
+
+/** Counts every passphrase window the page opens, from the next load on (window.__asks), so a quick ask and cancel is never missed. */
+async function countAsks(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __asks: number };
+    w.__asks = 0;
+    const watch = () => new MutationObserver((records) => {
+      for (const r of records) for (const n of r.addedNodes) if (n instanceof Element && (n.matches('[data-testid="pass-dialog"]') || n.querySelector('[data-testid="pass-dialog"]'))) w.__asks++;
+    }).observe(document.body, { childList: true, subtree: true });
+    if (document.body) watch(); else document.addEventListener("DOMContentLoaded", watch);
+  });
+}
+const asks = (page: Page) => page.evaluate(() => (window as unknown as { __asks: number }).__asks);
+
+/** The terms, then "Set up my key" on the welcome: the key window, as a new student meets it. */
+async function toKeyWindow(page: Page) {
+  await signIn(page, { prefix: "fr" });
+  await page.getByTestId("terms-age").check();
+  await page.getByTestId("terms-agree").check();
+  await page.getByTestId("terms-continue").click();
+  await page.getByTestId("welcome-setup").click();
+  await expect(page.getByTestId("provider-dialog")).toBeVisible();
+}
+
+test("first run: the key is saved without a vault; the setup says its rule and every refusal inside its window; the sheet says what Done needs; one ask per unlock; the home shows it is opening", async ({ page }) => {
+  test.setTimeout(240_000);
+  await countAsks(page);
+  let projectId = "";
+
+  await test.step("1. the key window starts at Remember on this computer, says the key can be locked later, and Save does not open the vault setup", async () => {
+    await toKeyWindow(page);
+    await expect(page.getByTestId("key-mode-plain")).toBeChecked();
+    await expect(page.getByTestId("key-mode-later")).toHaveText(T("settings_keymode_later"));
+    await page.getByTestId("prov-select").selectOption("groq");
+    await page.getByTestId("key-input").fill("gsk_test");
+    await page.getByTestId("key-save").click();
+    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_off"));
+    await expect(page.getByTestId("first-run")).toBeVisible();
+    await page.locator("#ideaTopic").fill(TOPIC);
+    await page.getByTestId("idea-save").click();
+    await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("home-stages")).toBeVisible();
+    projectId = /\/p\/([0-9a-f-]+)$/.exec(page.url())![1]!;
+  });
+
+  await test.step("2. the setup: the rule before typing; too short and two entries apart are said inside the window, under the field, and asked again there", async () => {
+    await page.getByTestId("vault-pill").click();
+    await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
+    await expect(page.getByTestId("vault-setup-remember")).not.toBeChecked();
+    await page.getByTestId("vault-setup-submit").click();
+    await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
+    await expect(page.getByTestId("pass-rule")).toHaveText(T("vault_pass_rule", { n: 10 }));
+    await page.getByTestId("pass-input").fill("short");
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_err_short", { n: 10 }));
+    await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
+    await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
+    await page.getByTestId("pass-input").fill(FIRST_PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
+    await expect(page.getByTestId("pass-verdict")).toBeHidden();
+    await page.getByTestId("pass-input").fill(FIRST_PASS + " typo");
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_err_match"));
+    await expect(page.getByTestId("pass-message")).toHaveText(T("vault_setup_intro"));
+    await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
+  });
+
+  await test.step("3. a setup that fails (no network) is said inside the confirm window; OK there tries again and the recovery sheet comes", async () => {
+    await page.getByTestId("pass-input").fill(FIRST_PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
+    const refuse = (route: Route) => (route.request().method() === "PUT" ? route.abort("internetdisconnected") : route.fallback());
+    await page.route(API + "/me/vault", refuse);
+    await page.getByTestId("pass-input").fill(FIRST_PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_setup_fail"));
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
+    await page.unroute(API + "/me/vault", refuse);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
+    await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
+  });
+
+  await test.step("4. the recovery sheet: Done waits for the tick and the line beside it says so; ticked, Done closes it", async () => {
+    await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
+    await expect(page.getByTestId("vault-sheet-hint")).toHaveText(T("vault_sheet_hint"));
+    await page.getByTestId("vault-sheet-saved").check();
+    await expect(page.getByTestId("vault-sheet-hint")).toBeHidden();
+    await page.getByTestId("vault-sheet-done").click();
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
+    // The project's saved work is sealed by the one-off migration before the vault reads unlocked.
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"), { timeout: 30_000 });
+  });
+
+  await test.step("5. a locked vault asks once as a page opens; after Cancel it asks no more, there or in the next place the student opens", async () => {
+    // Literature opened with the vault locked: the document and the place's saved work all wait on one ask.
+    await page.goto(`/p/${projectId}/lit`);
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_locked"));
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    await page.getByTestId("pass-cancel").click();
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(2_000);
+    expect(await asks(page), "passphrase windows as Literature opened").toBe(1);
+    // The project's home reads its own saved work: it says the project is locked, and asks nothing.
+    await page.getByTestId("place-home").click();
+    await expect(page.getByTestId("home-locked")).toBeVisible();
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(2_000);
+    expect(await asks(page), "passphrase windows after the Cancel").toBe(1);
+    await expect(page.getByTestId("pass-dialog")).toBeHidden();
+  });
+
+  await test.step("6. the pill asks again (the student's own press); after the right passphrase the home says it is opening at once, never that the project is locked", async () => {
+    // Every read of the project's saved work takes 2 s from here (a slow network), so the opening state has time to be seen.
+    const slow = async (route: Route) => { if (route.request().method() === "GET") await new Promise((r) => setTimeout(r, 2_000)); await route.fallback(); };
+    await page.route(/\/projects\/[^/]+\/blobs\//, slow);
+    await page.getByTestId("vault-pill").click();
+    await expect(page.getByTestId("pass-dialog")).toBeVisible();
+    expect(await asks(page)).toBe(2);
+    await page.getByTestId("pass-input").fill(FIRST_PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
+    await expect(page.getByTestId("home-locked")).toBeHidden({ timeout: 1_000 });
+    await expect(page.getByTestId("home-loading").or(page.getByTestId("home-stages")).first()).toBeVisible({ timeout: 1_000 });
+    await expect(page.getByTestId("home-stages")).toBeVisible({ timeout: 30_000 });
+    await page.unroute(/\/projects\/[^/]+\/blobs\//, slow);
+    expect(await asks(page), "no further ask after the unlock").toBe(2);
+  });
+});
+
+test.describe("first run on a phone (375 px)", () => {
+  test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
+
+  /** The element's box inside the 375 px window, and at least 44 px tall. */
+  async function fitsAndTall(page: Page, testId: string, row = false) {
+    const el = row ? page.getByTestId(testId).locator("xpath=ancestor::label[1]") : page.getByTestId(testId);
+    const box = (await el.boundingBox())!;
+    expect(box, testId).not.toBeNull();
+    expect(box.x, testId + " left edge").toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width, testId + " right edge").toBeLessThanOrEqual(375 + 0.5);
+    expect(box.height, testId + " height").toBeGreaterThanOrEqual(44 - 0.5);
+  }
+  const noSidewaysScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+
+  test("the vault setup and the recovery sheet fit the screen, their tick rows are 44 px tall, the eye leaves room, and the sheet says what Done needs", async ({ page }) => {
+    test.setTimeout(180_000);
+    await signIn(page, { prefix: "frp", newAccount: true, ready: ["first-run"] });
+    await page.getByTestId("vault-pill").click();
+    await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
+    await fitsAndTall(page, "vault-setup-remember", true);
+    expect(await noSidewaysScroll(page)).toBe(true);
+    await page.getByTestId("vault-setup-submit").click();
+    await expect(page.getByTestId("pass-rule")).toHaveText(T("vault_pass_rule", { n: 10 }));
+    // The eye keeps its 44 px: the field's text stops before it (Q5).
+    const padding = await page.getByTestId("pass-input").evaluate((el) => parseFloat(getComputedStyle(el).paddingRight));
+    expect(padding).toBeGreaterThanOrEqual(44);
+    await page.getByTestId("pass-input").fill("short");
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-verdict")).toHaveText(T("vault_err_short", { n: 10 }));
+    await expect(page.getByTestId("pass-verdict")).toBeInViewport();
+    await page.getByTestId("pass-input").fill(FIRST_PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("pass-message")).toHaveText(T("bk_pass2"));
+    await page.getByTestId("pass-input").fill(FIRST_PASS);
+    await page.getByTestId("pass-ok").click();
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
+    await fitsAndTall(page, "vault-sheet-saved", true);
+    await expect(page.getByTestId("vault-sheet-hint")).toHaveText(T("vault_sheet_hint"));
+    await expect(page.getByTestId("vault-sheet-hint")).toBeInViewport();
+    await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
+    expect(await noSidewaysScroll(page)).toBe(true);
+    // A thumb on the tick row's words (not the 13 px box) ticks it.
+    await page.getByTestId("vault-sheet-saved").locator("xpath=ancestor::label[1]").getByText(T("vault_sheet_saved")).tap();
+    await expect(page.getByTestId("vault-sheet-saved")).toBeChecked();
+    await expect(page.getByTestId("vault-sheet-hint")).toBeHidden();
+    await page.getByTestId("vault-sheet-done").tap();
+    await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
+    await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"), { timeout: 30_000 });
+  });
 });

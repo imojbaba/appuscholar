@@ -6,11 +6,8 @@ import { useVault } from "@/lib/vault/useVault";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
-import { askPassphrase } from "./Passphrase";
+import { askPassphrase, VAULT_MIN_PASS } from "./Passphrase";
 import { RecoverySheet } from "./RecoverySheet";
-
-/** As the locked backup (bk_err_short): a vault passphrase is at least 10 characters. */
-const MIN_PASS = 10;
 
 type Phase = "closed" | "intro" | "asking" | "sheet";
 let opener: (() => void) | null = null;
@@ -55,24 +52,41 @@ export function VaultSetupHost() {
 
   async function submit() {
     if (phaseRef.current !== "intro") return;
-    // The choose / confirm prompts replace the setup on screen; it comes back if the student cancels or the entries do not fit.
+    // The choose / confirm prompts replace the setup on screen. What does not fit is said inside the prompt, under its field, and asked again there
+    // (O9's verdict): a passphrase too short in the choose prompt, a failed setup in the confirm prompt, two entries apart in a fresh choose prompt.
+    // Only Cancel brings the setup back. (A toast at the foot of the page is not seen behind a modal, and sending the student back to the start
+    // without a reason kept a new student from ever getting past this step.)
     go("asking");
-    const first = await askPassphrase({ kind: "vault-choose" });
-    if (first === null) { go("intro"); return; }
-    if (first.length < MIN_PASS) { toast(t("bk_err_short")); go("intro"); return; }
-    const again = await askPassphrase({ kind: "vault-confirm" });
-    if (again === null) { go("intro"); return; }
-    if (again !== first) { toast(t("bk_err_match")); go("intro"); return; }
-    try {
-      const { recoveryCode } = await vault.setup(first, remember);
-      setCode(recoveryCode);
+    let verdict: string | null = null;
+    for (;;) {
+      const first = await askPassphrase({ kind: "vault-choose" }, {
+        verdict,
+        accept: (v) => (v.length < VAULT_MIN_PASS ? t("vault_err_short", { n: VAULT_MIN_PASS }) : null)
+      });
+      if (first === null) { go("intro"); return; }
+      const r: { outcome: "apart" | "exists" | "done" | null } = { outcome: null };
+      const again = await askPassphrase({ kind: "vault-confirm" }, {
+        accept: async (v) => {
+          if (v !== first) { r.outcome = "apart"; return null; }
+          try {
+            const { recoveryCode } = await vault.setup(first, remember);
+            setCode(recoveryCode);
+            r.outcome = "done";
+            return null;
+          } catch (e) {
+            // A vault that already exists (set up meanwhile elsewhere: the provider has re-read it, so the pill shows it locked) cannot be set up again.
+            if ((e instanceof ApiError && e.status === 409) || (e instanceof Error && e.message === "vault-exists")) { r.outcome = "exists"; return null; }
+            // Offline, or the server failed: the entries stay, and OK tries again.
+            return t("vault_setup_fail");
+          }
+        }
+      });
+      if (again === null || r.outcome === null) { go("intro"); return; }
+      if (r.outcome === "apart") { verdict = t("vault_err_match"); continue; }
+      if (r.outcome === "exists") { toast(t("vault_setup_fail")); go("closed"); settle(false); return; }
       go("sheet");
       settle(true);
-    } catch (e) {
-      toast(t("vault_setup_fail"));
-      // A vault that already exists (set up meanwhile elsewhere: the provider has re-read it, so the pill shows it locked) cannot be set up again.
-      if ((e instanceof ApiError && e.status === 409) || (e instanceof Error && e.message === "vault-exists")) { go("closed"); settle(false); return; }
-      go("intro");
+      return;
     }
   }
   function later() {
@@ -89,7 +103,7 @@ export function VaultSetupHost() {
             <DialogTitle className="text-xl font-semibold text-purple-800">🔒 {t("vault_setup_h2")}</DialogTitle>
             <DialogDescription>{t("vault_setup_intro")}</DialogDescription>
           </DialogHeader>
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} data-testid="vault-setup-remember" />
             <span>{t("vault_remember")}</span>
           </label>

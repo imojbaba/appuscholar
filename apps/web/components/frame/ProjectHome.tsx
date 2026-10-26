@@ -145,10 +145,13 @@ function HomeLoad({ retry }: { retry(): void }) {
 
   const facts = homeFacts({ idea: idea.value, citations: citations.value, shelfIndex: shelf.value, apNotes: notes.value }, mine?.draftWords ?? 0, project?.field ?? "", highlights);
   const blobs = [idea, citations, shelf, notes];
-  const locked = blobs.some((b) => b.locked);
+  // Once the vault opens, a read that was locked is made again (the blob's resume): from that moment the home says it is opening, never that the
+  // project is locked while the header says the vault is unlocked (Q2).
+  const vaultOpen = vault.status === "unlocked" || vault.status === "migrating";
+  const locked = !vaultOpen && blobs.some((b) => b.locked);
   // A read that failed has no value: shown as empty it would say "No question yet" of a project that has one.
   const failed = workFailed || blobs.some((b) => b.error && !b.loading);
-  const loading = work === null || blobs.some((b) => b.loading);
+  const loading = work === null || blobs.some((b) => b.loading || b.locked);
   const name = project ? title.text : projectId === me?.scratchProjectId ? t("scratch_name") : "";
   const open = (stage: StageKey, tab?: string) => { void go(placeHref(projectId, stage, tab)); };
   const mark = async (stage: StageKey, ready: boolean) => {

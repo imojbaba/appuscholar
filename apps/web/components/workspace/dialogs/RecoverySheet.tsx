@@ -17,7 +17,7 @@ function today(): string {
 /**
  * The recovery code, shown once: right after the vault is set up (or recovered). It lives only in the caller's state and in
  * the file the student downloads; nothing here sends it anywhere. The sheet cannot be dismissed until "I have saved it" is
- * ticked and Done pressed, after which the caller forgets the code.
+ * ticked and Done pressed (a line beside Done says so while it is unticked), after which the caller forgets the code.
  */
 export function RecoverySheet({ code, onDone }: { code: string | null; onDone: () => void }) {
   const t = useT();
@@ -49,12 +49,14 @@ export function RecoverySheet({ code, onDone }: { code: string | null; onDone: (
             <div>
               <Button variant="ghost" data-testid="vault-sheet-download" onClick={download}>{t("vault_sheet_download")}</Button>
             </div>
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
               <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} data-testid="vault-sheet-saved" />
               <span>{t("vault_sheet_saved")}</span>
             </label>
-            <DialogFooter>
-              <Button variant="primary" disabled={!saved} data-testid="vault-sheet-done" onClick={done}>{t("vault_sheet_done")}</Button>
+            {/* The sheet has no close button and ignores Escape: what Done waits for is said beside it, so a student is never left at a button that does nothing. */}
+            <DialogFooter className="items-center gap-2">
+              {!saved && <p id="vault-sheet-hint" className="m-0 text-sm text-muted-foreground sm:mr-auto" data-testid="vault-sheet-hint">{t("vault_sheet_hint")}</p>}
+              <Button variant="primary" disabled={!saved} aria-describedby={saved ? undefined : "vault-sheet-hint"} data-testid="vault-sheet-done" onClick={done}>{t("vault_sheet_done")}</Button>
             </DialogFooter>
           </>
         )}

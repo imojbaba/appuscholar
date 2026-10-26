@@ -111,3 +111,5 @@ Screenshot and replay paths in the brief are relative to the `qa-report/` folder
 - `fixed`: it was fixed. A check that still names it and fails is a regression and turns CI red.
 
 A check that names an id missing from `known.json` fails the case, and the report warns of the id. Each fault found by a run gets a Q id in `docs/qa/faults.md`.
+
+**A fault on the first-run path is never a known fault.** Signing in for the first time, the terms, the welcome, the key window, the vault setup and its recovery sheet, and the first unlock must work for a new student, so a fault there blocks the merge and is fixed, not listed here (2026-10-26: O18, Q2, Q3, Q4 and Q5 were taken out of `known.json` when they were fixed).
