@@ -22,6 +22,7 @@ const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0,
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport }) }));
 
 import { ProjectHome, highlightCache } from "../components/frame/ProjectHome";
+import { clearJustMade, markJustMade, readJustMade } from "../lib/frame/justMade";
 import { heldBlobs } from "../lib/blobs/held";
 
 // Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
@@ -272,6 +273,39 @@ describe("the project home", () => {
     await act(async () => { release(); });
     await until(() => text("home-q-text") === "Does a fixed bedtime lower exam anxiety?");
     expect(q("home-loading")).toBeNull();
+  });
+
+  it("says where the student is: a visible heading, Project home over the project's name", async () => {
+    mount();
+    await until(() => !!q("home-stages"));
+    expect(q("home-title")!.textContent).toBe(en.home_title_kicker + project.title);
+    expect(text("home-title-name")).toBe(project.title);
+    expect(q("home-ready")).toBeNull();
+  });
+
+  it("right after first run made the project, says once what was saved and what the home holds; Got it puts it away for good", async () => {
+    markJustMade("p1", true);
+    let r = mount();
+    await until(() => !!q("home-ready"));
+    expect(text("home-ready")).toContain(en.home_ready_h);
+    expect(text("home-ready")).toContain(en.home_ready_saved_checked);
+    expect(text("home-ready")).toContain(en.home_ready_where);
+    expect(q("home-stages")).not.toBeNull();
+    await act(async () => { q("home-ready-ok")!.click(); });
+    expect(q("home-ready")).toBeNull();
+    expect(readJustMade("p1")).toBeNull();
+    act(() => { r.unmount(); });
+    r = mount();
+    await until(() => !!q("home-stages"));
+    expect(q("home-ready")).toBeNull();
+    // Without a check, it does not claim one.
+    markJustMade("p1", false);
+    act(() => { r.unmount(); });
+    mount();
+    await until(() => !!q("home-ready"));
+    expect(text("home-ready")).toContain(en.home_ready_saved);
+    expect(text("home-ready")).not.toContain(en.home_ready_saved_checked);
+    clearJustMade();
   });
 
   it("highlight counts are read once per paper version: a repeat visit reads none, a changed version re-reads only that paper", async () => {

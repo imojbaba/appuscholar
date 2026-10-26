@@ -112,7 +112,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("key-save").click();
     // No vault yet: its setup comes first, and its passphrase is the one that locks the key.
     await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
     const toasts = await recordToasts(page);
     await page.getByTestId("vault-setup-submit").click();
     await expect(page.getByTestId("pass-dialog")).toBeVisible();

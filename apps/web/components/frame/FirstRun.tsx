@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { EMPTY_INTAKE, IdeaForm, IdeaReadPanel, useIdeaCheck, type IdeaFields, type IdeaReadValue } from "@/components/places/IdeaPlace";
 import { useProject, type Project } from "./ProjectContext";
+import { markJustMade } from "@/lib/frame/justMade";
 
 /** Seconds added to the first check's age, for the claim's way to the server (the server dates it on its own clock). */
 const CLAIM_MARGIN_S = 60;
@@ -74,6 +75,8 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
       // A move is idempotent, so a retry moves again harmlessly; the moved document is then the project's first, and none is made.
       if (moveDocId) await apiFetch(`/documents/${moveDocId}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) });
       await listOrSeed(id, vault);
+      // The home says once what was just saved and where things are.
+      markJustMade(id, read !== null);
       await openProject(id, moveDocId ? { docId: moveDocId } : {});
     } catch {
       toast(t("start_fail"));

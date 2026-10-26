@@ -74,7 +74,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
   let projectId = "";
   await test.step("1. sign in with a new account, accept the terms, skip the welcome tour; first run saves the project (its title in plaintext: the vault is off); Writing opens its document", async () => {
     await signIn(page, { prefix: "v", newAccount: true, ready: ["first-run"] });
-    await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+    await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
     await page.locator("#ideaTopic").fill(TOPIC);
     await page.getByTestId("idea-save-title").fill(PROJECT);
     const created = page.waitForResponse((r) => r.request().method() === "POST" && r.url() === API + "/projects" && r.ok());
@@ -114,7 +114,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await expect(stale.getByTestId("project-home")).toBeVisible();
     await stale.getByTestId("home-open-writing").click();
     await expect(stale.locator(".ProseMirror")).toContainText(SENTENCE_2);
-    await expect(stale.getByTestId("vault-pill")).toHaveText("Vault off");
+    await expect(stale.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
   });
 
   await test.step("3. the Vault off pill opens the setup: passphrase twice, Remember unticked, the recovery sheet, Done; the document is migrated", async () => {
@@ -416,7 +416,7 @@ test("vault journey, 9b: after Delete my account the same address signs in to a 
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
   await page.getByTestId("welcome-later").click();
-  await expect(page.getByTestId("vault-pill")).toHaveText("Vault off");
+  await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
   // No project: first run; the scratch space holds an empty first document.
   await expect(page.getByTestId("first-run")).toBeVisible();
   await page.goto("/projects");

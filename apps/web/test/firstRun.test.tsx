@@ -24,6 +24,7 @@ vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ proje
 import { ApiError } from "../lib/api";
 import { ideaTitle } from "../lib/frame/ideaRead";
 import { FirstRun } from "../components/frame/FirstRun";
+import { clearJustMade, readJustMade } from "../lib/frame/justMade";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -176,6 +177,18 @@ describe("First run", () => {
     await act(async () => { release(); });
     await until(() => h.openProject.mock.calls.length > 0);
     await until(() => $('[data-testid="idea-save-progress"]')!.textContent === "");
+  });
+
+  it("the new project is marked as just made, with whether its idea was checked, so its home can say once what was saved", async () => {
+    clearJustMade();
+    await render();
+    await type("ideaTopic", TOPIC);
+    await click("idea-check");
+    await click("idea-save");
+    await until(() => h.openProject.mock.calls.length > 0);
+    expect(readJustMade("pNew")).toEqual({ id: "pNew", checked: true });
+    expect(readJustMade("another")).toBeNull();
+    clearJustMade();
   });
 
   it("after a check, saving claims the check's AI-use rows for the new project, so its AI-use statement counts them", async () => {

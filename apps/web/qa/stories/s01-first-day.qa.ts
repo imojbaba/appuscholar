@@ -205,6 +205,12 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       await expect(page.getByTestId("welcome-setup")).toHaveText(T("welcome_setup_btn"));
       await expect(page.getByTestId("welcome-later")).toHaveText(T("welcome_later_btn"));
     }, { source: `${ROW1} ("on the welcome window press Set up my key")` });
+    await qa.check("conceptual", "the welcome window says what really happens next (the question, the check and save, the project's home) and that the key can wait, and names no button the page does not have", async () => {
+      const next = page.getByTestId("welcome-next").locator("li");
+      await expect(next).toHaveText([T("welcome_next1"), T("welcome_next2"), T("welcome_next3")]);
+      await expect(page.getByTestId("welcome-key-note")).toHaveText(T("welcome_key_note").replace(/<\/?b>/g, ""));
+      await expect(page.getByTestId("welcome-dialog")).not.toContainText("⚙");
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); v1's steps named a ⚙ AI Provider / Key button the v2 header does not have" });
     await qa.checkpoint("the welcome window");
     await page.getByTestId("welcome-setup").click();
   });
@@ -331,6 +337,19 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       expect(projectId, "the project's id in the address").not.toBe("");
       await expect(page).toHaveURL(new RegExp(`/p/${projectId}$`));
     }, { source: `${B1} row 3 ("The project's home opens")` });
+    await qa.check("conceptual", "the home says where I am (Project home, over my project's name) and, once, what was just saved and what the page holds", async () => {
+      await expect(page.getByTestId("home-title")).toHaveText(T("home_title_kicker") + PROJECT);
+      const ready = page.getByTestId("home-ready");
+      await expect(ready.getByRole("heading", { name: T("home_ready_h") })).toBeVisible();
+      await expect(ready).toContainText(T("home_ready_saved_checked"));
+      await expect(ready).toContainText(T("home_ready_where"));
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\")" });
+    await qa.checkpoint("the project's home, just made");
+    await page.getByTestId("home-ready-ok").click();
+    // That it stays away after a reload is test/projectHome.test.tsx's: a reload here would lock this student's vault and leave the home asking for the passphrase.
+    await qa.check("data", "Got it puts the note away", async () => {
+      await expect(page.getByTestId("home-ready")).toBeHidden();
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\")" });
   });
 
   await qa.step("the project's home", async () => {
@@ -477,7 +496,7 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
   });
 
   await qa.step("the welcome window", async () => {
-    await qa.check("data", "the welcome window speaks Hindi: its heading, its introduction and its two buttons", inHindi("welcome-dialog", ["welcome_h2", "welcome_intro", "welcome_setup_btn", "welcome_later_btn"]), {
+    await qa.check("data", "the welcome window speaks Hindi: its heading, its introduction, what happens next and its two buttons", inHindi("welcome-dialog", ["welcome_h2", "welcome_intro", "welcome_next_h", "welcome_next1", "welcome_next2", "welcome_next3", "welcome_setup_btn", "welcome_later_btn"]), {
       source: `${ROW1}; spec section 6 (the windows' words in Hindi)`
     });
     await qa.checkpoint("the welcome window, on a phone, in Hindi");
@@ -543,6 +562,12 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await page.getByTestId("idea-save").click();
     await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("home-phone")).toBeVisible();
+    await qa.check("data", "the home says once, in Hindi, what was just saved and what the page holds", inHindi("home-ready", ["home_ready_h", "home_ready_saved_checked", "home_ready_where", "home_ready_ok"]), {
+      source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); spec section 6 (phone + Hindi)"
+    });
+    // As the home's own checkpoint below: the Idea row holds the AI's verdict in English inside the app's Hindi sentence, checked whole further on.
+    await qa.checkpoint("the project's home just made, on a phone, in Hindi", { exempt: ["home-detail-idea"] });
+    await page.getByTestId("home-ready-ok").click();
     await qa.check("data", "the home is the phone's: the project button names the project, the question is closed, the six stages show their states in Hindi", async () => {
       await expect(page.getByTestId("home-project-btn")).toContainText(PROJECT);
       await expect(page.getByTestId("home-q-fold")).not.toHaveAttribute("open", "");
