@@ -536,11 +536,13 @@ describe("useVault", () => {
     await until(() => s.v.status === "locked");
     const recovering = s.v.recover("AAAAA-BBBBB-CCCCC-DDDDD", "new");
     const changing = s.v.changePassphrase("right", "next");
+    // Handled from the start: either may reject with "vault-changed" as soon as the account switches, before the line that waits for them.
+    const settled = Promise.allSettled([recovering, changing]);
     const other = await vaultWith("other");
     h.api.mockImplementation((path: string, init?: RequestInit) => (path === "/me/vault" && !init?.method ? Promise.resolve({ ...other }) : fakeApi(path, init)));
     h.uid = "u2";
     await act(async () => { s.render(); });
-    await act(async () => { await Promise.allSettled([recovering, changing]); });
+    await act(async () => { await settled; });
     await until(() => s.v.status === "locked");
     await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
     expect(s.v.status).toBe("locked");
