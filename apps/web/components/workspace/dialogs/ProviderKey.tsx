@@ -19,19 +19,12 @@ import { openVaultSetup } from "./VaultSetup";
 /** v1 FIELD_LIST (index.html:2499). */
 export const FIELD_LIST = ["psychology", "education", "sociology", "medicine and health", "nursing", "management and commerce", "law", "economics", "science", "engineering and technology", "humanities"];
 const OTHER = "__other";
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-/** The v1 option labels (index.html:1148-1153). */
-const OPTION: Record<ProviderId, string> = {
-  gemini: "Google Gemini — free, easiest", groq: "Groq — free & very fast", deepseek: "DeepSeek — paid, very cheap",
-  openrouter: "OpenRouter — free models", openai: "ChatGPT (OpenAI) — paid", claude: "Claude (Anthropic) — paid"
-};
-/** v1 keyModeNote (index.html:5069-5073). */
-const MODE_HINT: Record<KeyMode, string> = {
-  pass: "You choose a passphrase now and type it once each time you open Appuscholar. The key is stored locked; nobody at Appuscholar can read the stored copy.",
-  plain: "No passphrase. The key stays in this browser only.",
-  session: "Kept in memory only. Closing the tab erases it."
-};
+/**
+ * The window's words are in the dictionaries (Q9: on a Hindi page they were English): the v1 option labels (index.html:1148-1153) as settings_opt_<id>,
+ * each provider's steps (core's stepsHtml without its link) as settings_steps_<id>, v1 keyModeNote (5069-5073) as settings_keymode_hint_<mode>.
+ * A field's stored value stays v1's English (the AI reads it); only its label is translated, as settings_field_<value with _ for spaces>.
+ */
+const fieldKey = (f: string) => "settings_field_" + f.replace(/ /g, "_");
 
 export function ProviderKey() {
   const { dialog, closeDialog } = useProject();
@@ -93,9 +86,9 @@ function Form() {
 
   async function save() {
     const k = key.trim();
-    if (!k) { toast("Paste your key first"); return; }
+    if (!k) { toast(t("settings_key_paste_first")); return; }
     if (busy) return;
-    if (mode === "pass" && !cryptoOK()) { toast("This browser cannot encrypt — choose another option"); return; }
+    if (mode === "pass" && !cryptoOK()) { toast(t("settings_key_nocrypto")); return; }
     setBusy(true);
     // "Protect with a passphrase" locks the key under the vault: with no vault yet, the student sets one up first and its
     // passphrase is the key's; with a vault, it is opened (asked for once) if it is locked. Cancelling either saves nothing.
@@ -103,7 +96,7 @@ function Form() {
     try {
       await keys.save(p, k, mode);
     } catch {
-      toast(mode === "pass" ? "Could not encrypt and store the key — nothing was saved" : "Could not save the key. Try again.");
+      toast(t(mode === "pass" ? "settings_key_lock_fail" : "settings_key_save_fail"));
       setBusy(false);
       return;
     }
@@ -111,13 +104,13 @@ function Form() {
     void update({ provider: p });
     setKey("");
     closeDialog();
-    toast(PROVIDERS[p].name + " connected ✓" + (mode === "pass" ? " and encrypted 🔒" : ""));
+    toast(t(mode === "pass" ? "settings_key_connected_locked" : "settings_key_connected", { p: PROVIDERS[p].name }));
   }
 
   async function forget() {
-    try { await keys.forget(p); } catch { toast("Could not remove the key. Try again."); return; }
+    try { await keys.forget(p); } catch { toast(t("settings_key_remove_fail")); return; }
     setKey(""); setOut(null);
-    toast(info.short + " key removed ✓");
+    toast(t("settings_key_removed", { p: info.short }));
   }
 
   async function test() {
@@ -128,17 +121,17 @@ function Form() {
     if (!use && keys.blobs[p]) {
       // A key locked under the vault opens with the vault; a legacy one asks for its key passphrase (and is then re-saved under the vault).
       try { use = (await keys.getUnlocked(p)) ?? ""; } catch { setOut({ tone: "fail", text: t("vault_wrong") }); return; }
-      if (use) toast("Key unlocked for this session ✓");
+      if (use) toast(t("settings_key_unlocked"));
     }
     if (!use) {
-      setOut({ tone: "warn", text: keys.blobs[p] ? `${name}: your key is locked with a passphrase. Paste it again here to test it, or close this window and use any AI button once to unlock it.` : `${name}: no key yet. Paste your key in the box above, then test again.` });
+      setOut({ tone: "warn", text: t(keys.blobs[p] ? "settings_test_locked" : "settings_test_nokey", { p: name }) });
       return;
     }
     setOut({ tone: "run", text: t("aitest_running") }); setBusy(true);
     try {
       const r = await apiFetch<{ ok: true; reply: string }>("/ai/test", { method: "POST", body: JSON.stringify({ provider: p, apiKey: use }) });
       const saved = keyStore.getUnlocked(p);
-      const tail = typed && typed !== saved ? ` This key is not saved yet. Press Save Key to keep it and switch to ${info.short}.` : p !== active ? ` ${info.short} is not your active provider yet. Press Save Key to switch to it.` : "";
+      const tail = typed && typed !== saved ? " " + t("settings_test_unsaved", { p: info.short }) : p !== active ? " " + t("settings_test_notactive", { p: info.short }) : "";
       setOut({ tone: "ok", text: `${t("aitest_ok", { p: name })} ${t("aitest_reply")} ${String(r.reply).trim().slice(0, 80)}${tail}` });
     } catch (e) {
       setOut({ tone: "fail", text: `${t("aitest_fail", { p: name })} ${toCallError(e).message}` });
@@ -149,21 +142,21 @@ function Form() {
     try {
       if (project) { await apiFetch(`/projects/${project.id}`, { method: "PATCH", body: JSON.stringify({ contentLang: v }) }); await reloadProject(); }
       else await update({ contentLang: v });
-      toast(v === "hi" ? "Content language: Hindi (हिन्दी)" : "Content language: English");
-    } catch { toast("Could not save the content language. Try again."); }
+      toast(t(v === "hi" ? "settings_contentlang_set_hi" : "settings_contentlang_set_en"));
+    } catch { toast(t("settings_contentlang_fail")); }
   }
 
   function chooseField(v: string) {
     if (v === OTHER) { setOtherField(true); return; }
     setOtherField(false);
     void update({ field: v });
-    toast("Your field: " + v);
+    toast(t("settings_field_set", { f: t(fieldKey(v)) }));
   }
   function saveCustomField() {
     const v = customField.replace(/[^\p{L}\p{N} ,&'-]/gu, "").trim().slice(0, 60);
     if (!v) return;
     setCustomField(v);
-    if (v !== settings.field) { void update({ field: v }); toast("Your field: " + v); }
+    if (v !== settings.field) { void update({ field: v }); toast(t("settings_field_set", { f: v })); }
   }
   function saveOrcid() {
     const v = orcid.trim();
@@ -171,8 +164,7 @@ function Form() {
     if (v !== (settings.orcid ?? "")) void update({ orcid: v });
   }
 
-  const steps = info.stepsHtml.replace(/\s*<a [^>]*>[^<]*<\/a>/, "");
-  const placeholder = locked ? "A passphrase-protected key is saved — paste a new one to replace it" : keys.hasKey(p) ? "A key is saved — paste a new one to replace it" : `Paste your ${info.short} key`;
+  const placeholder = locked ? t("settings_key_ph_locked") : keys.hasKey(p) ? t("settings_key_ph_saved") : t("settings_key_ph_new", { p: info.short });
 
   return (
     <>
@@ -184,11 +176,11 @@ function Form() {
       <div className="field !mb-0">
         <label htmlFor="provSel">{t("settings_provider_label")}</label>
         <select className="input" id="provSel" value={p} onChange={(e) => { if (isProvider(e.target.value)) pick(e.target.value); }} data-testid="prov-select">
-          {PROV_ORDER.map((id) => <option key={id} value={id}>{OPTION[id]}</option>)}
+          {PROV_ORDER.map((id) => <option key={id} value={id}>{t("settings_opt_" + id)}</option>)}
         </select>
       </div>
       <div className="rounded-lg bg-soft px-3 py-2.5 text-[13px] leading-[1.7]" data-testid="prov-help">
-        <b>{info.name}:</b> {tHtml(steps)} <a href={info.keysUrl} target="_blank" rel="noopener" className="font-semibold text-purple-800 underline">Open →</a>
+        <b>{info.name}:</b> {tHtml(t("settings_steps_" + p))} <a href={info.keysUrl} target="_blank" rel="noopener" className="font-semibold text-purple-800 underline">{t("settings_open_link")}</a>
         {info.warning && <p className="m-0 mt-1.5 text-amber-700" data-testid="prov-warning">{info.warning}</p>}
       </div>
 
@@ -199,12 +191,12 @@ function Form() {
       <div role="radiogroup" aria-labelledby="keyModeLabel" className="field !mb-0">
         <label id="keyModeLabel">{t("settings_keymode_label")}</label>
         {(["pass", "plain", "session"] as const).map((m) => (
-          <label key={m} className="flex items-center gap-2 text-sm font-normal">
+          <label key={m} className="flex min-h-11 items-center gap-2 text-sm font-normal">
             <input type="radio" name="key-mode" checked={mode === m} disabled={m === "pass" && !cryptoOK()} onChange={() => setMode(m)} data-testid={"key-mode-" + m} />
             {t("settings_keymode_" + m)}
           </label>
         ))}
-        <p className="m-0 text-[13px] text-muted-foreground" data-testid="key-mode-hint">{MODE_HINT[mode]}</p>
+        <p className="m-0 text-[13px] text-muted-foreground" data-testid="key-mode-hint">{t("settings_keymode_hint_" + mode)}</p>
         {mode === "plain" && vault.status === "off" && <p className="m-0 text-[13px] text-muted-foreground" data-testid="key-mode-later">{t("settings_keymode_later")}</p>}
       </div>
 
@@ -232,35 +224,35 @@ function Form() {
       </div>
 
       <div className="field !mb-0 border-t border-line pt-3">
-        <label htmlFor="fieldSel">My field of study</label>
+        <label htmlFor="fieldSel">{t("settings_field_label")}</label>
         <select className="input" id="fieldSel" value={otherField ? OTHER : field} onChange={(e) => chooseField(e.target.value)} data-testid="field-select">
-          {FIELD_LIST.map((f) => <option key={f} value={f}>{cap(f)}</option>)}
-          <option value={OTHER}>Other…</option>
+          {FIELD_LIST.map((f) => <option key={f} value={f}>{t(fieldKey(f))}</option>)}
+          <option value={OTHER}>{t("settings_field_other")}</option>
         </select>
-        {otherField && <input className="input mt-1.5" type="text" maxLength={60} placeholder="Type your field" aria-label="Type your field" value={customField} onChange={(e) => setCustomField(e.target.value)} onBlur={saveCustomField} onKeyDown={(e) => { if (e.key === "Enter") saveCustomField(); }} data-testid="field-custom" />}
-        <p className="m-0 text-[13px] text-muted-foreground">The AI uses this to pitch explanations and examples at your field. Psychology has the most tools built in; the others are being added.</p>
+        {otherField && <input className="input mt-1.5" type="text" maxLength={60} placeholder={t("settings_field_custom")} aria-label={t("settings_field_custom")} value={customField} onChange={(e) => setCustomField(e.target.value)} onBlur={saveCustomField} onKeyDown={(e) => { if (e.key === "Enter") saveCustomField(); }} data-testid="field-custom" />}
+        <p className="m-0 text-[13px] text-muted-foreground">{t("settings_field_desc")}</p>
       </div>
 
       <div className="field !mb-0 border-t border-line pt-3">
         <label htmlFor="orcidIn">{t("settings_orcid_label")}</label>
         <input className="input" id="orcidIn" type="text" placeholder="0000-0000-0000-0000" maxLength={40} value={orcid} onChange={(e) => setOrcid(e.target.value)} onBlur={saveOrcid} data-testid="orcid-input" />
-        <p className="m-0 text-[13px]"><a href="https://orcid.org/register" target="_blank" rel="noopener" className="text-purple-800 underline">{t("settings_orcid_link")}</a></p>
+        <p className="m-0 text-[13px]"><a href="https://orcid.org/register" target="_blank" rel="noopener" className="inline-flex min-h-11 items-center text-purple-800 underline">{t("settings_orcid_link")}</a></p>
       </div>
 
       <div className="field !mb-0 border-t border-line pt-3">
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
           <input type="checkbox" checked={settings.aiFallback !== false} onChange={(e) => { void update({ aiFallback: e.target.checked }); }} data-testid="ai-fallback" />
-          <span>If my AI is busy or fails, try my other saved keys automatically</span>
+          <span>{t("settings_fallback_label")}</span>
         </label>
-        <p className="m-0 text-[13px] text-muted-foreground">The text of that one request then goes to the other provider you saved a key for, and a message tells you which one answered. Switch this off if you want every request to stay with one provider.</p>
+        <p className="m-0 text-[13px] text-muted-foreground">{t("settings_fallback_desc")}</p>
       </div>
 
       <div className="field !mb-0 border-t border-line pt-3">
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
           <input type="checkbox" checked={!settings.aiLogOff} onChange={(e) => { void update({ aiLogOff: !e.target.checked }); }} data-testid="ai-log" />
-          <span>Keep the log</span>
+          <span>{t("settings_log_label")}</span>
         </label>
-        <p className="m-0 text-[13px] text-muted-foreground">A private log of the date, the AI provider, the model and the kind of help. It never keeps what you typed or what the AI answered.</p>
+        <p className="m-0 text-[13px] text-muted-foreground">{t("settings_log_desc")}</p>
       </div>
 
       <div>

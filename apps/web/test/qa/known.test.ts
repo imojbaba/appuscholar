@@ -111,12 +111,12 @@ describe("known.json", () => {
 
   it("holds the faults fixed in #25 as fixed, and the open ones as known or awaiting a decision (spec section 9)", () => {
     for (const id of ["F2", "F3", "F4", "F5"]) expect(byId(id)?.status, id).toBe("fixed");
-    for (const id of ["F1", "O1", "O2", "O3", "O6", "O7", "O12", "O15", "O21"]) expect(byId(id)?.status, id).toBe("known");
+    for (const id of ["F1", "O1", "O2", "O7", "O12", "O15", "O21"]) expect(byId(id)?.status, id).toBe("known");
     for (const id of ["O4", "O5", "O8", "O11", "O14", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
   });
 
-  it("has no entry for a fault on the first-run path: such a fault is a blocker, fixed before merge, never a known fault (O18, Q2, Q3, Q4, Q5, fixed on first-run-fix)", () => {
-    for (const id of ["O18", "Q2", "Q3", "Q4", "Q5"]) expect(byId(id), id).toBeUndefined();
+  it("has no entry for a fault on the first-run path: such a fault is a blocker, fixed before merge, never a known fault (all fixed on first-run-fix)", () => {
+    for (const id of ["O3", "O6", "O18", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]) expect(byId(id), id).toBeUndefined();
   });
 
   it("has no entry for a budget row or O23 until a run shows it failing", () => {

@@ -57,13 +57,16 @@ export type CallCtx = {
   onRateLimit?(): void;
 };
 
+/** The page's language (lib/i18n sets <html lang>): this module has no `t`. */
+const pageLang = (): "en" | "hi" => (typeof document !== "undefined" && document.documentElement.lang === "hi" ? "hi" : "en");
+
 /**
  * The sentence for a per-user quota answer. `detail` is "minute:<seconds>", "hour:<seconds to wait>" or "day:<seconds>": the minute says to wait a
  * moment (the wait is under a minute), the hour says how long to wait in whole minutes (rounded up), the day says to come back tomorrow.
  * In Hindi (a draft for the Hindi reader) when the page language is hi.
  */
 function quotaMessage(detail?: string): string {
-  const lang = typeof document !== "undefined" && document.documentElement.lang === "hi" ? "hi" : "en";
+  const lang = pageLang();
   if (/^minute:\d+$/.test(detail ?? "")) return tFormat(DICTS.en, DICTS.hi, "ai_quota_minute", lang);
   const m = /^hour:(\d+)$/.exec(detail ?? "");
   if (!m) return tFormat(DICTS.en, DICTS.hi, "ai_quota_day", lang);
@@ -144,7 +147,7 @@ async function ensureKey(ctx: CallCtx): Promise<string> {
     let got: string | null;
     try { got = await ctx.unlockKey(p); } catch { throw new AiCallError("bad-pass", apiMsg("bad-pass")); }
     if (!got) throw new AiCallError("no-key", apiMsg("no-key"));
-    toast("Key unlocked for this session ✓");
+    toast(tFormat(DICTS.en, DICTS.hi, "settings_key_unlocked", pageLang()));
     return got;
   }
   const pass = await ctx.askPassphrase(p);
@@ -152,7 +155,7 @@ async function ensureKey(ctx: CallCtx): Promise<string> {
   let plain: string;
   try { plain = await unlockKeyBlob(blob, pass); } catch { throw new AiCallError("bad-pass", apiMsg("bad-pass")); }
   keyStore.setSession(p, plain);
-  toast("Key unlocked for this session ✓");
+  toast(tFormat(DICTS.en, DICTS.hi, "settings_key_unlocked", pageLang()));
   return plain;
 }
 

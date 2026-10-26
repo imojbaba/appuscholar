@@ -67,7 +67,9 @@ function TermsContent({ gate }: { gate: boolean }) {
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-purple-800">{t("terms_h")}</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[56vh] overflow-auto pr-1.5 text-[13.5px] leading-relaxed" data-testid="terms-body">
+        {/* The keyboard reaches the terms too: the box takes focus, so the arrow keys and Page Down scroll it (Q6). */}
+        <div className="max-h-[56vh] overflow-auto rounded-[var(--r-ctl)] pr-1.5 text-[13.5px] leading-relaxed focus-visible:outline-2 focus-visible:outline-purple-800"
+          tabIndex={0} role="region" aria-label={t("terms_h")} data-testid="terms-body">
           <h3 className="mb-1 mt-1.5 text-sm font-semibold">{t("terms_data_h")}</h3>
           {list(["terms_d1", "terms_d2", "terms_d3", "terms_d4"])}
           <h3 className="mb-1 mt-2.5 text-sm font-semibold">{t("terms_use_h")}</h3>
@@ -84,12 +86,12 @@ function TermsContent({ gate }: { gate: boolean }) {
         ) : (
           <>
             <div className="grid gap-1.5">
-              <label className="flex cursor-pointer items-start gap-2 text-[13.5px]">
-                <input type="checkbox" className="mt-1" checked={age} data-testid="terms-age" onChange={(e) => { setAge(e.target.checked); if (e.target.checked && agree) setNeed(false); }} />
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[13.5px]">
+                <input type="checkbox" checked={age} data-testid="terms-age" onChange={(e) => { setAge(e.target.checked); if (e.target.checked && agree) setNeed(false); }} />
                 <span>{t("terms_age")}</span>
               </label>
-              <label className="flex cursor-pointer items-start gap-2 text-[13.5px]">
-                <input type="checkbox" className="mt-1" checked={agree} data-testid="terms-agree" onChange={(e) => { setAgree(e.target.checked); if (e.target.checked && age) setNeed(false); }} />
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[13.5px]">
+                <input type="checkbox" checked={agree} data-testid="terms-agree" onChange={(e) => { setAgree(e.target.checked); if (e.target.checked && age) setNeed(false); }} />
                 <span>{t("terms_agree")}</span>
               </label>
             </div>

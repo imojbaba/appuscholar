@@ -58,8 +58,8 @@ const AI_USE_IDEA = "checking whether my project idea is realistic";
 /** The three verdicts the idea prompt asks for (packages/core buildIdeaPromptV2; wave-b1.md row 2). */
 const VERDICTS = /^(Proceed as planned|Proceed with these modifications|Reconsider this topic)/;
 const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
-/** The two toasts of stage-2.md row 1: the key saved under the vault ("Groq connected ✓ and encrypted 🔒", a literal in ProviderKey.tsx) and the vault's migration. */
-const KEY_TOASTS = ["Groq connected ✓ and encrypted 🔒", T("vault_migrated")];
+/** The two toasts of stage-2.md row 1: the key saved under the vault ("Groq connected ✓ and encrypted 🔒", settings_key_connected_locked) and the vault's migration. */
+const KEY_TOASTS = [T("settings_key_connected_locked", { p: "Groq" }), T("vault_migrated")];
 
 /**
  * The fake provider's recorded reply to the idea prompt (qa/fixtures/ai-replies.json), taken apart for what the page must show: five rated lines, each "Area: Rating. Reason", then "Verdict: ...".
@@ -506,12 +506,12 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await qa.check("data", "the two toasts of the sheet were shown, each once, and no others", async () => {
       await expect.poll(async () => (await toasts()).length, { message: "the toasts shown so far" }).toBe(2);
       const shown = await toasts();
-      expect([...shown].sort()).toEqual([KEY_TOASTS[0]!, T("vault_migrated", {}, hi)].sort());
+      expect([...shown].sort()).toEqual([T("settings_key_connected_locked", { p: "Groq" }, hi), T("vault_migrated", {}, hi)].sort());
     }, { source: `${ROW1} ("The toasts ... 'Groq connected ✓ and encrypted 🔒' ... and 'All your documents are now locked in your vault ✓'")` });
     await qa.check("data", "every toast speaks Hindi (the provider's name apart)", async () => {
       const english = (await toasts()).filter((text) => !/\p{Script=Devanagari}/u.test(text));
       expect(english, "toasts with no Hindi in them").toEqual([]);
-    }, { source: "spec section 8 (in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries); ProviderKey.tsx writes this toast in code", known: "Q9" });
+    }, { source: "spec section 8 (in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries); the key toast is settings_key_connected_locked (it was written in code: Q9)" });
   });
 
   await qa.step("first run", async () => {
@@ -610,7 +610,7 @@ test("S1-03 [O3] on a slow network, Save as my project shows a sign of progress 
           await page.getByTestId("idea-save").click();
           await page.waitForFunction(progressSign, { savedLabel: T("idea_save_btn"), before }, { polling: 50, timeout: 60_000 }).catch(() => undefined);
         },
-        { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); tools-walk O3", known: "O3" }
+        { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); tools-walk O3" }
       );
       await pressEnter;
       await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 120_000 });
@@ -755,6 +755,6 @@ test("S1-05 [O6] after a reload the header never says \"add your key\" to a stud
     await qa.check("data", "in the 3 s after the reload the header never read \"AI: add your key\"", async () => {
       if (texts.length === 0) notChecked("the AI pill never appeared in the 3 s after the reload, so there was nothing to read");
       expect(texts, "every text the AI pill showed, in order").not.toContain(T("ai_pill_nokey"));
-    }, { source: "tools-walk O6 (after a reload the header reads 'AI: add your key' for about 2 s)", known: "O6" });
+    }, { source: "tools-walk O6 (after a reload the header reads 'AI: add your key' for about 2 s)" });
   });
 });

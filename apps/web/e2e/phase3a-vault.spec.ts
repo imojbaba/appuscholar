@@ -587,6 +587,37 @@ test.describe("first run on a phone (375 px)", () => {
   }
   const noSidewaysScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
+  test("the terms and the key window fit the screen, every tick row and choice is 44 px tall, and the keyboard can scroll the terms", async ({ page }) => {
+    test.setTimeout(120_000);
+    await signIn(page, { prefix: "frt" });
+    await expect(page.getByTestId("terms-dialog")).toBeVisible();
+    // Q6: the terms text takes focus, and a key scrolls it.
+    const body = page.getByTestId("terms-body");
+    await body.focus();
+    await expect(body).toBeFocused();
+    const before = await body.evaluate((el) => el.scrollTop);
+    await page.keyboard.press("PageDown");
+    await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(before);
+    // Q7: the two tick rows.
+    await fitsAndTall(page, "terms-age", true);
+    await fitsAndTall(page, "terms-agree", true);
+    expect(await noSidewaysScroll(page)).toBe(true);
+    await page.getByTestId("terms-age").check();
+    await page.getByTestId("terms-agree").check();
+    await page.getByTestId("terms-continue").click();
+    await page.getByTestId("welcome-setup").click();
+    await expect(page.getByTestId("provider-dialog")).toBeVisible();
+    // Q8: the three key modes, the two option ticks and the ORCID link.
+    for (const id of ["key-mode-pass", "key-mode-plain", "key-mode-session", "ai-fallback", "ai-log"]) {
+      await page.getByTestId(id).scrollIntoViewIfNeeded();
+      await fitsAndTall(page, id, true);
+    }
+    const orcid = page.getByTestId("provider-dialog").getByRole("link", { name: T("settings_orcid_link") });
+    await orcid.scrollIntoViewIfNeeded();
+    expect((await orcid.boundingBox())!.height).toBeGreaterThanOrEqual(44 - 0.5);
+    expect(await noSidewaysScroll(page)).toBe(true);
+  });
+
   test("the vault setup and the recovery sheet fit the screen, their tick rows are 44 px tall, the eye leaves room, and the sheet says what Done needs", async ({ page }) => {
     test.setTimeout(180_000);
     await signIn(page, { prefix: "frp", newAccount: true, ready: ["first-run"] });

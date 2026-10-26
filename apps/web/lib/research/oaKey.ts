@@ -50,17 +50,17 @@ export type OaKeySaveDeps = {
 export async function saveOpenAlexKey(value: string, d: OaKeySaveDeps): Promise<boolean> {
   const v = String(value || "").trim();
   if (!v) {
-    try { await d.keys.forget(OPENALEX); } catch { d.toast("Could not remove the key. Try again."); return false; }
+    try { await d.keys.forget(OPENALEX); } catch { d.toast(d.t("settings_key_remove_fail")); return false; }
     d.toast(d.t("rs2_openalex_key_removed"));
     return true;
   }
   if (d.vault.status === "off") {
-    try { await d.keys.save(OPENALEX, v, "plain"); } catch { d.toast("Could not save the key. Try again."); return false; }
+    try { await d.keys.save(OPENALEX, v, "plain"); } catch { d.toast(d.t("settings_key_save_fail")); return false; }
     d.toast(d.t("rs2_openalex_key_saved_on"));
     return true;
   }
   if (!(await d.vault.ensureUnlocked())) return false;
-  try { await d.keys.save(OPENALEX, v, "pass"); } catch { d.toast("Could not encrypt and store the key — nothing was saved"); return false; }
+  try { await d.keys.save(OPENALEX, v, "pass"); } catch { d.toast(d.t("settings_key_lock_fail")); return false; }
   d.toast(d.t("rs2_openalex_key_saved_on"));
   return true;
 }

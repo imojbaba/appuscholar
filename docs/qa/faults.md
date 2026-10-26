@@ -34,7 +34,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: a control's accessible name contains the text it shows, so that a person who says what they see ("EN") can reach it (source: spec section 8, the axe scan: any serious or critical finding)
 - Happened: `button[aria-label="Switch interface language"]`: label-content-name-mismatch (serious): Elements must have their visible text as part of their accessible name. The button shows "EN" (or "हि") and is named "Switch interface language" (`apps/web/components/frame/AppHeader.tsx`, `data-testid="lang-toggle"`).
 - Evidence: the qa-report artifact of the run of 2026-10-24 on c0769fc (screenshots and replay are kept with that run, not in the repository): case S10-01, failed checks "the second tab, locked, with its sentence kept: no serious or critical accessibility finding (axe)" and "the locked document: ... (axe)". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S10-01"`. The notes of the QA layer list two label-content-name-mismatch findings as candidates; this is the language button, seen on two screens of S10-01; the other candidate has not turned up in S10.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q2: After the right passphrase, the project's home says "This project is locked" and shows nothing opening
 
@@ -90,7 +90,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: a box that scrolls can be scrolled from the keyboard: it takes focus, or holds something that does (source: spec section 8, the axe scan: any serious or critical finding; WCAG 2.1.1, keyboard)
 - Happened: `.max-h-[56vh]`: scrollable-region-focusable (serious): Scrollable region must have keyboard access. It is the text of the terms (`data-testid="terms-body"` in `apps/web/components/workspace/dialogs/Terms.tsx`: `max-h-[56vh] overflow-auto`, no tabindex, nothing focusable inside). A student who does not use a mouse or a touch screen cannot scroll to the end of what they are asked to accept. The window cannot be dismissed (the gate), so it is the first screen of every new account.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86 (kept with that run, not in the repository): cases S1-01 and S1-02, the failed check "the terms: no serious or critical accessibility finding (axe)". Re-run: `pnpm --filter @appuscholar/web qa:local -g "S1-01"`.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q7: On a phone, the terms window's two tick rows are 40 px and 20 px tall
 
@@ -101,7 +101,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: on a phone, every control at least 44 px each way; a tick box is pressed through its label, so the larger of the two is its target (source: spec section 8, layout rules, O17; as Q3)
 - Happened: `input [terms-age]: 325 × 40 px` and `input [terms-agree]: 325 × 20 px` (the box itself is the browser's 13 px one). These are the two ticks a new student must press to go on. File: `components/workspace/dialogs/Terms.tsx`.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86: case S1-02, the failed check "the terms, on a phone, in Hindi: every control at least 44 px each way". Re-run: `pnpm --filter @appuscholar/web qa:local --project=phone -g "S1-02"`.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q8: On a phone, the key window's key-mode choices and option ticks are 18 to 36 px tall, and its ORCID link 17 px
 
@@ -112,7 +112,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: as Q7 (source: spec section 8, layout rules, O17)
 - Happened: six controls under 44 px: `input [key-mode-pass]: 325 × 36 px`, `[key-mode-plain]` and `[key-mode-session]`: 325 × 18 px, `[ai-fallback]`: 325 × 36 px, `[ai-log]`: 325 × 18 px, and the link "Don't have one? Get a free ORCID iD →" (in Hindi: "नहीं है? मुफ़्त ORCID iD पाएं →", `settings_orcid_link`): 160.4 × 17 px. The known match names that link in both languages, inside `[provider-dialog]`. The first three are how a new student chooses to keep their key. File: `components/workspace/dialogs/ProviderKey.tsx`.
 - Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86: case S1-02, the failed check "the key window, on a phone, in Hindi: every control at least 44 px each way". Re-run as Q7.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q9: On a Hindi page the key window's choices and hints, and the toast that says the key is connected, are in English
 
@@ -123,7 +123,7 @@ Copy this for each fault. Keep the entries in order of id, newest last.
 - Expected: in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries, except what the register lists (source: spec section 8, layout rules; the register's exceptions D-S2-1, -2, -3 and -18 do not name this window or this toast)
 - Happened: on the key window, a run of English in each of four places: the provider list (`select [prov-select]`: "Google Gemini — free, easiest", "Groq — free & very fast" ... from `OPTION` in `ProviderKey.tsx`) with the steps under it ("Sign up free → API Keys → Create API Key → copy (starts with gsk_). Open →", the `stepsHtml` of each provider in `packages/core/src/providers.ts:18`); the key-mode hint (`[key-mode-hint]`: "You choose a passphrase now and type it once each time you open Appuscholar ...", `MODE_HINT`); the label "My field of study" with its note ("The AI uses this to pitch explanations and examples at your field ..."); and, in one run, the option "If my AI is busy or fails, try my other saved keys automatically" with its note, followed by "Keep the log" with its note ("A private log of the date, the AI provider, the model and the kind of help ...", `ProviderKey.tsx:248-252`). The rule reports that last run under its first element, so the known match names the fallback option, and it covers "Keep the log" and its note too. The toast after the key is saved reads "Groq connected ✓ and encrypted 🔒" in English (`PROVIDERS[p].name + " connected ✓" + ...` in the same file; the sheet quotes it in English). Apart from the provider steps (in core) all are v1's English literals in `components/workspace/dialogs/ProviderKey.tsx`. The dictionary has Hindi for the window's title, labels and buttons, which show in Hindi (the case's own check passes).
 - Evidence: the qa-report artifact of the run of 2026-10-24 on cfada86: case S1-02, the failed check "the key window, on a phone, in Hindi: no English on a Hindi screen", and "every toast speaks Hindi (the provider's name apart)". Re-run as Q7.
-- Status: known
+- Status: fixed on branch first-run-fix (2026-10-26); taken out of known.json (a fault on the first-run path is never a known fault)
 
 ### Q10: The project export window has no accessible name
 

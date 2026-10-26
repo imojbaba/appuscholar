@@ -128,10 +128,7 @@ const D_S2_18_CONSTANTS: readonly string[] = [
   // lib/cite/capture.ts
   "Could not read that captured citation",
   'Captured "{title}" into your citation library ✓',
-  // lib/research/oaKey.ts
-  "Could not remove the key. Try again.",
-  "Could not save the key. Try again.",
-  "Could not encrypt and store the key — nothing was saved",
+  // lib/research/oaKey.ts: its three toasts are dictionary sentences with Hindi now (settings_key_*), not constants.
   // lib/shelf/useShelf.ts
   "Columns can be changed only in the writing window.",
   // lib/analyse/ask.ts: "Something went wrong. Try again." (above)
