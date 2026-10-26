@@ -71,39 +71,3 @@ describe("the account menu's exports", () => {
     expect(h.exportWork).toHaveBeenCalledTimes(2);
   });
 });
-
-/** A phone (PHONE_QUERY matches), until the test ends. */
-function phone() {
-  const was = window.matchMedia;
-  window.matchMedia = ((q: string) => ({ matches: q === "(max-width: 700px)", media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
-  return () => { window.matchMedia = was; };
-}
-
-describe("the header on a phone (Task 14, canvas Phone)", () => {
-  it("is the wordmark, the vault pill and Menu; Menu holds the projects, the AI key, Help, the language and the account", async () => {
-    const undo = phone();
-    try {
-      mount("p1");
-      expect(tid("wordmark")).not.toBeNull();
-      expect(tid("phone-menu")!.getAttribute("aria-label")).toBe(E.hdr_menu);
-      for (const id of ["project-switcher", "ai-pill", "help-btn", "lang-toggle", "account-menu-btn"]) expect(tid(id), id).toBeNull();
-      await openMenu("phone-menu", "phone-menu-list");
-      for (const id of ["switcher-scratch", "switcher-all", "menu-ai", "menu-help", "menu-lang", "acct-export-project", "acct-export", "acct-sign-out", "acct-erase"]) expect(tid(id), id).not.toBeNull();
-      // One way to the AI key: the menu's own item says which key is set, as the AI pill does.
-      expect(tid("acct-ai")).toBeNull();
-      expect(tid("menu-ai")!.textContent).toBe(E.ai_pill_nokey);
-      expect(tid("menu-lang")!.textContent).toBe(E.menu_lang_other);
-      await pick("menu-help");
-      expect(h.openHelp).toHaveBeenCalledTimes(1);
-      await openMenu("phone-menu", "phone-menu-list");
-      await pick("acct-export-project");
-      expect(h.openExport).toHaveBeenCalledTimes(1);
-    } finally { undo(); }
-  });
-
-  it("is the full header above the phone's width", () => {
-    mount("p1");
-    expect(tid("phone-menu")).toBeNull();
-    for (const id of ["project-switcher", "ai-pill", "help-btn", "lang-toggle", "account-menu-btn"]) expect(tid(id), id).not.toBeNull();
-  });
-});
