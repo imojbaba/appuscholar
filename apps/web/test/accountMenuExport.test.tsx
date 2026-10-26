@@ -41,7 +41,16 @@ async function openMenu(trigger = "account-menu-btn", menu = "account-menu") {
   await act(async () => { tid(trigger)!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
   expect(tid(menu)).not.toBeNull();
 }
-const pick = async (id: string) => { await act(async () => { tid(id)!.click(); }); };
+/**
+ * Picks an item, then lets the menu finish closing. Radix's FocusScope hands focus back to the trigger in a setTimeout(0) once the menu
+ * unmounts, and `await act` resolves on a setImmediate, so that timer could still be pending when the next line reopened the menu: it then
+ * focused the trigger, outside the new menu, whose DismissableLayer closed it (the phone test's second Menu, about 1 run in 8). A timer set
+ * after Radix's runs after it.
+ */
+const pick = async (id: string) => {
+  await act(async () => { tid(id)!.click(); });
+  await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+};
 
 describe("the account menu's exports", () => {
   it("inside a project, Export this project opens its export place with the default parts", async () => {
