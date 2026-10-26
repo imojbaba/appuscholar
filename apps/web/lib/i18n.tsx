@@ -48,8 +48,11 @@ export function useT() {
 }
 /** Some v1 strings carry <kbd> and <b> markup (ai_pane_desc, psych_panel_note). Render those with this, never with raw innerHTML of user data. */
 export function tHtml(s: string): React.ReactNode {
-  const parts = s.split(/(<kbd>.*?<\/kbd>|<b>.*?<\/b>)/g);
-  return parts.map((p, i) => p.startsWith("<kbd>") ? <kbd key={i}>{p.slice(5, -6)}</kbd> : p.startsWith("<b>") ? <b key={i}>{p.slice(3, -4)}</b> : p);
+  // `<b lang="en">`: a word kept in English on purpose (a button on an English website), marked as English for screen readers and the QA Hindi check.
+  const parts = s.split(/(<kbd>.*?<\/kbd>|<b(?: lang="en")?>.*?<\/b>)/g);
+  return parts.map((p, i) => p.startsWith("<kbd>") ? <kbd key={i}>{p.slice(5, -6)}</kbd>
+    : p.startsWith('<b lang="en">') ? <b key={i} lang="en">{p.slice(13, -4)}</b>
+    : p.startsWith("<b>") ? <b key={i}>{p.slice(3, -4)}</b> : p);
 }
 /** A few v1 labels (tab_idea, tab_design, tab_stats) carry an &amp; entity because v1 wrote them with innerHTML. React escapes text, so decode it for display. */
 export function plain(s: string): string { return s.replace(/&amp;/g, "&"); }

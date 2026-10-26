@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { EMPTY_INTAKE, IdeaForm, IdeaReadPanel, useIdeaCheck, type IdeaFields, type IdeaReadValue } from "@/components/places/IdeaPlace";
 import { useProject, type Project } from "./ProjectContext";
+import { markJustMade } from "@/lib/frame/justMade";
 
 /** Seconds added to the first check's age, for the claim's way to the server (the server dates it on its own clock). */
 const CLAIM_MARGIN_S = 60;
@@ -74,6 +75,8 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
       // A move is idempotent, so a retry moves again harmlessly; the moved document is then the project's first, and none is made.
       if (moveDocId) await apiFetch(`/documents/${moveDocId}/move`, { method: "POST", body: JSON.stringify({ projectId: id }) });
       await listOrSeed(id, vault);
+      // The home says once what was just saved and where things are.
+      markJustMade(id, read !== null);
       await openProject(id, moveDocId ? { docId: moveDocId } : {});
     } catch {
       toast(t("start_fail"));
@@ -87,9 +90,11 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
         <input className="input" id="ideaSaveTitle" data-testid="idea-save-title" value={name} maxLength={200} onChange={(e) => setOwnName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void save(); }} />
       </div>
       <div className="ai-read-acts">
-        <Button variant="primary" disabled={busy || checking} data-testid="idea-save" onClick={() => { void save(); }}>{t("idea_save_btn")}</Button>
+        {/* Making the project takes several seconds on the live site: the button and a status line say so, rather than the button only dimming (O3). */}
+        <Button variant="primary" disabled={busy || checking} aria-busy={busy || undefined} data-testid="idea-save" onClick={() => { void save(); }}>{t(busy ? "idea_save_busy" : "idea_save_btn")}</Button>
         {read && <Button variant="ghost" data-testid="idea-edit" onClick={() => topicRef.current?.focus()}>{t("idea_edit_btn")}</Button>}
       </div>
+      <p className="idea-note" role="status" data-testid="idea-save-progress">{busy ? t("idea_save_busy_note") : ""}</p>
     </>
   );
 

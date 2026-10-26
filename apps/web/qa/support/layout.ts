@@ -74,7 +74,7 @@ export const HINDI_NAMES: readonly string[] = [
  * the header of every screen. Found on the first real run of the rule (the header's project switcher, its phone form, the "back to the project" link, the question on the home).
  * A case adds its own boxes with `exempt` (a library list, a transcript).
  */
-export const STUDENT_TEXT_IDS: readonly string[] = ["project-switcher", "place-home", "home-project-btn", "home-q-text"];
+export const STUDENT_TEXT_IDS: readonly string[] = ["project-switcher", "place-home", "home-project-btn", "home-q-text", "home-title-name"];
 
 /**
  * The app's own sentences that stand where the student's text would, inside those boxes: the question's "No question yet." (QuestionCard.tsx), the switcher's "All projects" and
@@ -128,9 +128,7 @@ const D_S2_18_CONSTANTS: readonly string[] = [
   // lib/cite/capture.ts
   "Could not read that captured citation",
   'Captured "{title}" into your citation library ✓',
-  // lib/research/oaKey.ts
-  "Could not remove the key. Try again.",
-  "Could not encrypt and store the key — nothing was saved",
+  // lib/research/oaKey.ts: its three toasts are dictionary sentences with Hindi now (settings_key_*), not constants.
   // lib/shelf/useShelf.ts
   "Columns can be changed only in the writing window.",
   // lib/analyse/ask.ts: "Something went wrong. Try again." (above)

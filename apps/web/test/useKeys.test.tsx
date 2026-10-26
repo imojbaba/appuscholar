@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { forgetRemembered } from "../lib/vault/remember";
+import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({
   api: vi.fn(), ask: vi.fn(), toast: vi.fn(), openSetup: vi.fn(), update: vi.fn(async () => {}),
@@ -76,6 +77,56 @@ beforeEach(async () => {
 });
 afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); document.body.innerHTML = ""; });
 
+/** Types into a field as a student does (React's onChange). */
+function typeInto(id: string, value: string) {
+  const input = $(id) as HTMLInputElement;
+  act(() => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+
+describe("the key window on a first login (no vault yet)", () => {
+  it("starts at Remember on this computer, says the key can be locked later, and Save stores it here without opening the vault setup", async () => {
+    const s = await mount(true);
+    await until(() => s.vault.status === "off" && s.keys.loaded);
+    expect(($("key-mode-plain") as HTMLInputElement).checked).toBe(true);
+    expect(($("key-mode-pass") as HTMLInputElement).checked).toBe(false);
+    expect($("key-mode-later")!.textContent).toBe(en.settings_keymode_later);
+    typeInto("key-input", "AIza-secret-1");
+    await act(async () => { $("key-save")!.click(); await new Promise((r) => setTimeout(r, 10)); });
+    expect(h.openSetup).not.toHaveBeenCalled();
+    expect(h.ask).not.toHaveBeenCalled();
+    expect(server.calls.some((c) => c.path === "/me/vault" && c.method === "PUT")).toBe(false);
+    expect(credPuts()).toHaveLength(0);
+    expect(keyStore.getUnlocked("gemini")).toBe("AIza-secret-1");
+    expect(keyStore.isPlain("gemini")).toBe(true);
+    expect(h.ws.closeDialog).toHaveBeenCalled();
+  }, 30_000);
+
+  it("Protect with a passphrase stays a choice: chosen, it opens the setup", async () => {
+    const s = await mount(true);
+    await until(() => s.vault.status === "off" && s.keys.loaded);
+    h.openSetup.mockResolvedValue(false);
+    act(() => { ($("key-mode-pass") as HTMLInputElement).click(); });
+    expect(($("key-mode-pass") as HTMLInputElement).checked).toBe(true);
+    expect($("key-mode-later")).toBeNull();
+    typeInto("key-input", "AIza-secret-1");
+    await act(async () => { $("key-save")!.click(); await new Promise((r) => setTimeout(r, 10)); });
+    expect(h.openSetup).toHaveBeenCalledTimes(1);
+  }, 30_000);
+
+  it("with a vault (locked or open), the window starts at Protect with a passphrase", async () => {
+    const s = await mount();
+    await until(() => s.vault.status === "off" && s.keys.loaded);
+    await act(async () => { await s.vault.setup(VAULT_PASS, false); });
+    const t = await mount(true);
+    await until(() => t.vault.status === "locked" && t.keys.loaded);
+    expect(($("key-mode-pass") as HTMLInputElement).checked).toBe(true);
+    expect($("key-mode-later")).toBeNull();
+  }, 30_000);
+});
+
 describe("AI keys locked under the vault", () => {
   it("saving a key in pass mode with the vault off runs setup first, then stores a v2: blob", async () => {
     const s = await mount(true);
@@ -83,11 +134,9 @@ describe("AI keys locked under the vault", () => {
     // The setup dialog (mocked here) sets the vault up with the passphrase the student chose there.
     h.openSetup.mockImplementation(async () => { await s.vault.setup(VAULT_PASS, false); return true; });
 
-    const input = $("key-input") as HTMLInputElement;
-    act(() => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "AIza-secret-1");
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    typeInto("key-input", "AIza-secret-1");
+    // With no vault the window starts at Remember on this computer: Protect with a passphrase is chosen on purpose.
+    act(() => { ($("key-mode-pass") as HTMLInputElement).click(); });
     expect(($("key-mode-pass") as HTMLInputElement).checked).toBe(true);
     await act(async () => { $("key-save")!.click(); });
     await until(() => credPuts().length === 1);
@@ -113,11 +162,8 @@ describe("AI keys locked under the vault", () => {
     const s = await mount(true);
     await until(() => s.vault.status === "off" && s.keys.loaded);
     h.openSetup.mockResolvedValue(false);
-    const input = $("key-input") as HTMLInputElement;
-    act(() => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "AIza-secret-1");
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    typeInto("key-input", "AIza-secret-1");
+    act(() => { ($("key-mode-pass") as HTMLInputElement).click(); });
     await act(async () => { $("key-save")!.click(); await new Promise((r) => setTimeout(r, 10)); });
     expect(h.openSetup).toHaveBeenCalledTimes(1);
     expect(credPuts()).toHaveLength(0);

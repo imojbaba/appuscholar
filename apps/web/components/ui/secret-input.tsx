@@ -22,7 +22,7 @@ export function SecretInput({ className, secret = "pass", toggleTestId, ...props
   const label = secret === "key" ? (shown ? "key_hide" : "key_show") : shown ? "pass_hide" : "pass_show";
   return (
     <div className="relative">
-      <input {...props} type={shown ? "text" : "password"} className={cn("input pr-11", className)} />
+      <input {...props} type={shown ? "text" : "password"} className={cn("input input-secret", className)} />
       <button
         type="button"
         className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-[var(--r-ctl)] text-muted-foreground hover:text-ink focus-visible:outline-2 focus-visible:outline-purple-800"

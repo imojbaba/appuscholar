@@ -259,7 +259,7 @@ export function useAutosave(docId: string, initialHtml: string, initialSeq: numb
       initialHtml,
       delayMs: 1500,
       encrypt: (html) => encryptRef.current ? encryptRef.current(html) : sealBody(vaultRef.current, doc, html),
-      ensureUnlocked: () => vaultRef.current.ensureUnlocked(),
+      ensureUnlocked: () => vaultRef.current.ensureUnlocked("auto"),
       reload: async () => {
         const fresh = await apiFetch<{ deks: WrappedDek[] }>(`/documents/${docId}`);
         doc.deks = fresh.deks;

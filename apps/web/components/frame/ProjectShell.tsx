@@ -10,7 +10,7 @@ import { TERMS_SINCE, needsTerms } from "@/lib/terms";
 import { toast } from "@/components/ui/toast";
 import { isImportable } from "@/lib/import/parse";
 import { allPdf, importFiles } from "@/lib/import/run";
-import { useVault, type VaultValue } from "@/lib/vault/useVault";
+import { useVault, type VaultAsker, type VaultValue } from "@/lib/vault/useVault";
 import { VaultError } from "@/lib/vault/crypto";
 import { documentTitlePath, sealPlainTitles, useTitle, type Titled } from "@/lib/vault/titles";
 import { shouldWarnOnUnloadBlobs } from "@/lib/blobs/held";
@@ -50,9 +50,10 @@ type Loaded = { project: Project | null; projectId: string; documents: DocumentS
  * is open, then sanitised here, because the server cannot sanitise what it cannot read. Never an empty stand-in for text that did not open:
  * a cancelled unlock or a body that does not decrypt is marked `unreadable` and no editor opens on it.
  */
-export async function readableDoc(vault: Pick<VaultValue, "ensureUnlocked" | "decryptBody">, doc: DocumentWithBody): Promise<DocumentWithBody> {
+export async function readableDoc(vault: Pick<VaultValue, "ensureUnlocked" | "decryptBody">, doc: DocumentWithBody, by: VaultAsker = "auto"): Promise<DocumentWithBody> {
   if (!doc.keyVersion) return doc;
-  if (!(await vault.ensureUnlocked())) return { ...doc, bodyHtml: "", unreadable: "locked" };
+  // The document the page opens by itself asks as the page does (once, and not after a cancel); one the student chooses asks every time (`by`).
+  if (!(await vault.ensureUnlocked(by))) return { ...doc, bodyHtml: "", unreadable: "locked" };
   try {
     return { ...doc, bodyHtml: sanitizeHtml(await vault.decryptBody(doc)) };
   } catch (e) {
@@ -272,7 +273,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     const mine = ++docToken.current;
     selecting.current = true;
     try {
-      const doc = await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${id}`));
+      const doc = await readableDoc(vaultRef.current, await apiFetch<DocumentWithBody>(`/documents/${id}`), "student");
       if (mine === docToken.current) setCurrentDoc(doc);
     } finally { if (mine === docToken.current) selecting.current = false; }
     return true;

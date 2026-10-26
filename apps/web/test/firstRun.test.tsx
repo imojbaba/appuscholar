@@ -24,6 +24,7 @@ vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ proje
 import { ApiError } from "../lib/api";
 import { ideaTitle } from "../lib/frame/ideaRead";
 import { FirstRun } from "../components/frame/FirstRun";
+import { clearJustMade, readJustMade } from "../lib/frame/justMade";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -158,6 +159,36 @@ describe("First run", () => {
     const order = calls.map((c) => c.method + " " + c.path);
     expect(order.indexOf("POST /projects")).toBeLessThan(order.indexOf("PUT /projects/pNew/blobs/idea_intake"));
     expect(order.indexOf("PUT /projects/pNew/blobs/idea_intake")).toBeLessThan(order.indexOf("POST /projects/pNew/documents"));
+  });
+
+  it("O3: while the project is being made, the button and a status line say so (not only a dimmed button)", async () => {
+    await render();
+    await type("ideaTopic", TOPIC);
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    h.api.mockImplementation(async (path: string, init?: RequestInit) => { if (path === "/projects" && init?.method === "POST") await held; return fakeApi(path, init); });
+    expect($('[data-testid="idea-save-progress"]')!.textContent).toBe("");
+    await click("idea-save");
+    const button = $('[data-testid="idea-save"]') as HTMLButtonElement;
+    expect(button.textContent).toBe(E.idea_save_busy);
+    expect(button.disabled).toBe(true);
+    expect($('[data-testid="idea-save-progress"]')!.getAttribute("role")).toBe("status");
+    expect($('[data-testid="idea-save-progress"]')!.textContent).toBe(E.idea_save_busy_note);
+    await act(async () => { release(); });
+    await until(() => h.openProject.mock.calls.length > 0);
+    await until(() => $('[data-testid="idea-save-progress"]')!.textContent === "");
+  });
+
+  it("the new project is marked as just made, with whether its idea was checked, so its home can say once what was saved", async () => {
+    clearJustMade();
+    await render();
+    await type("ideaTopic", TOPIC);
+    await click("idea-check");
+    await click("idea-save");
+    await until(() => h.openProject.mock.calls.length > 0);
+    expect(readJustMade("pNew")).toEqual({ id: "pNew", checked: true });
+    expect(readJustMade("another")).toBeNull();
+    clearJustMade();
   });
 
   it("after a check, saving claims the check's AI-use rows for the new project, so its AI-use statement counts them", async () => {

@@ -18,6 +18,12 @@ import { isPopout } from "@/lib/popout/mode";
 /** A document's key, wrapped under the vault key, with the version that revisions name in `keyVersion`. */
 export type WrappedDek = { v: number; wrapped: string };
 export type VaultStatus = "loading" | "off" | "locked" | "unlocked" | "migrating";
+/**
+ * Who wants the vault open. "student": a press of the student's own (the vault pill, an Unlock button, choosing a locked document, saving a key):
+ * it always asks. "auto": a read or a save the page makes by itself (a panel's saved work, the document opening with the page, autosave): it asks
+ * only until the student cancels an ask, then stays quiet until the vault opens (O18: one ask per unlock, not one per sealed item).
+ */
+export type VaultAsker = "student" | "auto";
 
 export type VaultValue = {
   status: VaultStatus;
@@ -30,11 +36,12 @@ export type VaultValue = {
   lock(): void;
   forgetThisComputer(): Promise<void>;
   /**
-   * Prompts via askVaultUnlock until correct or cancelled (its "Remember on this computer" box is honoured). While the one-off migration
-   * runs it resolves once the migration has finished, so a write held by encryptBody goes out after it and never races its rewrites or a
-   * document's first key.
+   * Prompts via askVaultUnlock until correct or cancelled (its "Remember on this computer" box is honoured). One prompt at a time, shared by
+   * every caller waiting on it. After a cancel, an "auto" ask resolves false without a prompt until the vault opens; a "student" ask (the
+   * default) still asks. While the one-off migration runs it resolves once the migration has finished, so a write held by encryptBody goes out
+   * after it and never races its rewrites or a document's first key.
    */
-  ensureUnlocked(): Promise<boolean>;
+  ensureUnlocked(by?: VaultAsker): Promise<boolean>;
   /** The vault exists but is not complete and no migration runs: finish it now (unlocking first when locked). */
   resumeMigration(): Promise<void>;
   /**
@@ -104,6 +111,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   /** A document's (or blob's) first key, generated but not yet on the server, by id: a retried first save must carry the same one. */
   const pendingDek = useRef(new Map<string, WrappedDek>());
   const unlocking = useRef<Promise<boolean> | null>(null);
+  /** The student cancelled an unlock ask since the vault last opened (or this account was read): the page's own asks stay quiet (O18). */
+  const declined = useRef(false);
   /** Settles when this account's GET /me/vault has answered (record or 404), or when the account changes. */
   const loading = useRef<Promise<void> | null>(null);
   /** Bumped on every account change; an operation started under an older epoch must not touch the session. */
@@ -284,6 +293,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const opened = useCallback((key: CryptoKey) => {
     vk.current = key;
+    declined.current = false;
     if (statusRef.current !== "migrating") setStatus("unlocked");
     startMigration();
     void addKeypair(key);
@@ -336,6 +346,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     record.current = null;
     statusRef.current = "loading";
     unlocking.current = null;
+    declined.current = false;
     migration.current = null;
     migrated.current = false;
     keypairTried.current = false;
@@ -507,10 +518,12 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (uid) await forgetRemembered(uid);
   }, []);
 
-  const openNow = useCallback((): Promise<boolean> => {
+  const openNow = useCallback((by: VaultAsker): Promise<boolean> => {
     if (vk.current) return Promise.resolve(true);
     // One prompt at a time: a second caller waits for the first instead of cancelling its dialog.
     if (unlocking.current) return unlocking.current;
+    // The student said no to the last ask: the page does not ask again by itself (another panel, autosave, the next sealed item). The pill does.
+    if (by === "auto" && declined.current) return Promise.resolve(false);
     const mine = epoch.current;
     let run!: Promise<boolean>;
     run = (async () => {
@@ -525,7 +538,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         let verdict: string | undefined;
         for (;;) {
           const answer = await askVaultUnlock(verdict ? { verdict } : {});
-          if (answer === null || epoch.current !== mine) return false;
+          if (epoch.current !== mine) return false;
+          if (answer === null) { declined.current = true; return false; }
           try { await unlock(answer.pass, answer.remember); return true; } catch (e) {
             if (epoch.current !== mine) return false;
             if (!(e instanceof VaultError && e.code === "wrong-passphrase")) throw e;
@@ -539,12 +553,12 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     return run;
   }, [unlock, unlockRemembered, t]);
 
-  const ensureUnlocked = useCallback(async (): Promise<boolean> => {
+  const ensureUnlocked = useCallback(async (by: VaultAsker = "student"): Promise<boolean> => {
     for (;;) {
       // A write waits for the migration (one started by this very unlock too); the migration's run never rejects.
       const m = migration.current;
       if (m) { await m; continue; }
-      if (!(await openNow())) return false;
+      if (!(await openNow(by))) return false;
       if (!migration.current) return true;
     }
   }, [openNow]);

@@ -13,7 +13,7 @@ import { useProject } from "@/components/frame/ProjectContext";
  */
 export const WELCOME_GUARD_MS = 800;
 
-/** v1 `welcomeDlg`: the four-step tour. Either button (or closing it) marks it seen; it can be replayed from Help. */
+/** v1 `welcomeDlg`, retold for v2: what the first session holds, and the AI key as a choice now or later. Either button (or closing it) marks it seen; it can be replayed from Help. */
 export function Welcome() {
   const t = useT();
   const { update } = useSettings();
@@ -38,9 +38,13 @@ export function Welcome() {
           <DialogTitle className="text-xl font-semibold text-purple-800">{t("welcome_h2")}</DialogTitle>
         </DialogHeader>
         <p className="m-0 text-sm leading-[1.7]">{t("welcome_intro")}</p>
-        <ol className="m-0 ml-5 list-decimal text-sm leading-[1.7]">
-          {[1, 2, 3, 4].map((n) => <li key={n}>{tHtml(t("welcome_step" + n))}</li>)}
+        {/* What the first session really is, in its order (v1's four steps, welcome_step1-4, named a ⚙ button the v2 header does not have and began with
+            writing, not the question). */}
+        <h3 className="m-0 text-sm font-semibold">{t("welcome_next_h")}</h3>
+        <ol className="m-0 ml-5 list-decimal text-sm leading-[1.7]" data-testid="welcome-next">
+          {[1, 2, 3].map((n) => <li key={n}>{t("welcome_next" + n)}</li>)}
         </ol>
+        <p className="m-0 text-sm leading-[1.7]" data-testid="welcome-key-note">{tHtml(t("welcome_key_note"))}</p>
         <p className="m-0 rounded-md border border-line bg-soft p-3 text-[13px]">{t("welcome_warn")}</p>
         <div className="flex gap-2">
           <Button variant="primary" className="flex-1" disabled={!armed} data-testid="welcome-setup" onClick={() => { done(); openSettings(); }}>{t("welcome_setup_btn")}</Button>

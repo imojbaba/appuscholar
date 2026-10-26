@@ -58,8 +58,8 @@ const AI_USE_IDEA = "checking whether my project idea is realistic";
 /** The three verdicts the idea prompt asks for (packages/core buildIdeaPromptV2; wave-b1.md row 2). */
 const VERDICTS = /^(Proceed as planned|Proceed with these modifications|Reconsider this topic)/;
 const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
-/** The two toasts of stage-2.md row 1: the key saved under the vault ("Groq connected ✓ and encrypted 🔒", a literal in ProviderKey.tsx) and the vault's migration. */
-const KEY_TOASTS = ["Groq connected ✓ and encrypted 🔒", T("vault_migrated")];
+/** The two toasts of stage-2.md row 1: the key saved under the vault ("Groq connected ✓ and encrypted 🔒", settings_key_connected_locked) and the vault's migration. */
+const KEY_TOASTS = [T("settings_key_connected_locked", { p: "Groq" }), T("vault_migrated")];
 
 /**
  * The fake provider's recorded reply to the idea prompt (qa/fixtures/ai-replies.json), taken apart for what the page must show: five rated lines, each "Area: Rating. Reason", then "Verdict: ...".
@@ -205,6 +205,12 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       await expect(page.getByTestId("welcome-setup")).toHaveText(T("welcome_setup_btn"));
       await expect(page.getByTestId("welcome-later")).toHaveText(T("welcome_later_btn"));
     }, { source: `${ROW1} ("on the welcome window press Set up my key")` });
+    await qa.check("conceptual", "the welcome window says what really happens next (the question, the check and save, the project's home) and that the key can wait, and names no button the page does not have", async () => {
+      const next = page.getByTestId("welcome-next").locator("li");
+      await expect(next).toHaveText([T("welcome_next1"), T("welcome_next2"), T("welcome_next3")]);
+      await expect(page.getByTestId("welcome-key-note")).toHaveText(T("welcome_key_note").replace(/<\/?b>/g, ""));
+      await expect(page.getByTestId("welcome-dialog")).not.toContainText("⚙");
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); v1's steps named a ⚙ AI Provider / Key button the v2 header does not have" });
     await qa.checkpoint("the welcome window");
     await page.getByTestId("welcome-setup").click();
   });
@@ -212,13 +218,18 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
   await qa.step("my key", async () => {
     // Every toast from here to the end of the day, in order (one toast replaces another, so two close together are read from this record).
     toasts = await recordToasts(page);
+    await qa.check("conceptual", "with no vault yet, the key window starts at Remember on this computer and says the key can be locked later, so saving the first key does not send the student into the vault set-up", async () => {
+      await expect(page.getByTestId("provider-dialog")).toBeVisible();
+      await expect(page.getByTestId("key-mode-plain")).toBeChecked();
+      await expect(page.getByTestId("key-mode-later")).toHaveText(T("settings_keymode_later"));
+    }, { source: "first-run fix 2026-10-26 (Dr. Sharma's first login: the key step forced the vault set-up)" });
     await fillKeyWindow(page, s.key!);
     await qa.check("data", "the key window is the AI provider window, with Groq chosen and \"Protect with a passphrase\" ticked", async () => {
       await expect(page.getByTestId("provider-dialog").getByRole("heading", { name: T("settings_h2") })).toBeVisible();
       await expect(page.getByTestId("prov-select")).toHaveValue("groq");
       await expect(page.getByTestId("key-mode-pass")).toBeChecked();
     }, { source: `${ROW1} ("Choose Groq, paste your key, choose Protect with a passphrase")` });
-    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the key window");
     await page.getByTestId("key-save").click();
   });
@@ -326,6 +337,19 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       expect(projectId, "the project's id in the address").not.toBe("");
       await expect(page).toHaveURL(new RegExp(`/p/${projectId}$`));
     }, { source: `${B1} row 3 ("The project's home opens")` });
+    await qa.check("conceptual", "the home says where I am (Project home, over my project's name) and, once, what was just saved and what the page holds", async () => {
+      await expect(page.getByTestId("home-title")).toHaveText(T("home_title_kicker") + PROJECT);
+      const ready = page.getByTestId("home-ready");
+      await expect(ready.getByRole("heading", { name: T("home_ready_h") })).toBeVisible();
+      await expect(ready).toContainText(T("home_ready_saved_checked"));
+      await expect(ready).toContainText(T("home_ready_where"));
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\")" });
+    await qa.checkpoint("the project's home, just made");
+    await page.getByTestId("home-ready-ok").click();
+    // That it stays away after a reload is test/projectHome.test.tsx's: a reload here would lock this student's vault and leave the home asking for the passphrase.
+    await qa.check("data", "Got it puts the note away", async () => {
+      await expect(page.getByTestId("home-ready")).toBeHidden();
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\")" });
   });
 
   await qa.step("the project's home", async () => {
@@ -472,7 +496,7 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
   });
 
   await qa.step("the welcome window", async () => {
-    await qa.check("data", "the welcome window speaks Hindi: its heading, its introduction and its two buttons", inHindi("welcome-dialog", ["welcome_h2", "welcome_intro", "welcome_setup_btn", "welcome_later_btn"]), {
+    await qa.check("data", "the welcome window speaks Hindi: its heading, its introduction, what happens next and its two buttons", inHindi("welcome-dialog", ["welcome_h2", "welcome_intro", "welcome_next_h", "welcome_next1", "welcome_next2", "welcome_next3", "welcome_setup_btn", "welcome_later_btn"]), {
       source: `${ROW1}; spec section 6 (the windows' words in Hindi)`
     });
     await qa.checkpoint("the welcome window, on a phone, in Hindi");
@@ -485,7 +509,7 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await qa.check("data", "the key window speaks Hindi where it has Hindi: its heading, its introduction, the provider and key-mode labels, the three key modes and Save", inHindi("provider-dialog", [
       "settings_h2", "settings_intro", "settings_provider_label", "settings_keymode_label", "settings_keymode_pass", "settings_keymode_plain", "settings_keymode_session", "settings_savekey_btn"
     ]), { source: `${ROW1}; spec section 6 (the windows' words in Hindi)` });
-    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE, known: "Q5" });
+    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE });
     await qa.checkpoint("the key window, on a phone, in Hindi");
     await page.getByTestId("key-save").click();
   });
@@ -501,12 +525,12 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await qa.check("data", "the two toasts of the sheet were shown, each once, and no others", async () => {
       await expect.poll(async () => (await toasts()).length, { message: "the toasts shown so far" }).toBe(2);
       const shown = await toasts();
-      expect([...shown].sort()).toEqual([KEY_TOASTS[0]!, T("vault_migrated", {}, hi)].sort());
+      expect([...shown].sort()).toEqual([T("settings_key_connected_locked", { p: "Groq" }, hi), T("vault_migrated", {}, hi)].sort());
     }, { source: `${ROW1} ("The toasts ... 'Groq connected ✓ and encrypted 🔒' ... and 'All your documents are now locked in your vault ✓'")` });
     await qa.check("data", "every toast speaks Hindi (the provider's name apart)", async () => {
       const english = (await toasts()).filter((text) => !/\p{Script=Devanagari}/u.test(text));
       expect(english, "toasts with no Hindi in them").toEqual([]);
-    }, { source: "spec section 8 (in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries); ProviderKey.tsx writes this toast in code", known: "Q9" });
+    }, { source: "spec section 8 (in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries); the key toast is settings_key_connected_locked (it was written in code: Q9)" });
   });
 
   await qa.step("first run", async () => {
@@ -538,6 +562,12 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await page.getByTestId("idea-save").click();
     await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("home-phone")).toBeVisible();
+    await qa.check("data", "the home says once, in Hindi, what was just saved and what the page holds", inHindi("home-ready", ["home_ready_h", "home_ready_saved_checked", "home_ready_where", "home_ready_ok"]), {
+      source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); spec section 6 (phone + Hindi)"
+    });
+    // As the home's own checkpoint below: the Idea row holds the AI's verdict in English inside the app's Hindi sentence, checked whole further on.
+    await qa.checkpoint("the project's home just made, on a phone, in Hindi", { exempt: ["home-detail-idea"] });
+    await page.getByTestId("home-ready-ok").click();
     await qa.check("data", "the home is the phone's: the project button names the project, the question is closed, the six stages show their states in Hindi", async () => {
       await expect(page.getByTestId("home-project-btn")).toContainText(PROJECT);
       await expect(page.getByTestId("home-q-fold")).not.toHaveAttribute("open", "");
@@ -605,7 +635,7 @@ test("S1-03 [O3] on a slow network, Save as my project shows a sign of progress 
           await page.getByTestId("idea-save").click();
           await page.waitForFunction(progressSign, { savedLabel: T("idea_save_btn"), before }, { polling: 50, timeout: 60_000 }).catch(() => undefined);
         },
-        { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); tools-walk O3", known: "O3" }
+        { source: "spec section 8 (a sign of progress within 1 s of any press that takes longer); tools-walk O3" }
       );
       await pressEnter;
       await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 120_000 });
@@ -750,6 +780,6 @@ test("S1-05 [O6] after a reload the header never says \"add your key\" to a stud
     await qa.check("data", "in the 3 s after the reload the header never read \"AI: add your key\"", async () => {
       if (texts.length === 0) notChecked("the AI pill never appeared in the 3 s after the reload, so there was nothing to read");
       expect(texts, "every text the AI pill showed, in order").not.toContain(T("ai_pill_nokey"));
-    }, { source: "tools-walk O6 (after a reload the header reads 'AI: add your key' for about 2 s)", known: "O6" });
+    }, { source: "tools-walk O6 (after a reload the header reads 'AI: add your key' for about 2 s)" });
   });
 });

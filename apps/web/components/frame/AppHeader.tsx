@@ -52,7 +52,8 @@ export function AppHeader() {
       {phone ? <PhoneMenu account={account} lang={lang} switchLang={switchLang} /> : (
         <>
           <AiPill onOpen={() => openSettings()} />
-          <button type="button" className="app-hbtn app-desk" aria-label="Switch interface language" title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
+          {/* The name starts with the text the button shows, so speech input ("click हि") and screen readers agree with the screen (Q1). */}
+          <button type="button" className="app-hbtn app-desk" aria-label={lang === "en" ? "हि — " + t("lang_switch_to_hi") : "EN — " + t("lang_switch_to_en")} title="हिन्दी / English" data-testid="lang-toggle" onClick={switchLang}>
             {lang === "en" ? "हि" : "EN"}
           </button>
           <button type="button" className="app-hbtn app-desk" data-testid="help-btn" onClick={openHelp}>
@@ -106,12 +107,15 @@ function PhoneMenu({ account, lang, switchLang }: { account: Account; lang: stri
 /** "AI: Gemini, your key" when a key for the chosen provider is usable or saved; "AI: add your key" otherwise. Both open the key dialog. */
 function AiPill({ onOpen }: { onOpen(): void }) {
   const t = useT();
-  const { settings } = useSettings();
-  const { hasKey } = useKeys();
+  const { me, settings } = useSettings();
+  const { hasKey, loaded } = useKeys();
   const current: ProviderId = isProvider(settings.provider) ? settings.provider : "gemini";
+  // Until the account (its provider, its keys on this computer) and its keys on the server are read, the pill claims nothing: after a reload it
+  // said "add your key" for about 2 s to a student who has one (O6).
+  const known = me !== null && loaded;
   return (
     <button type="button" className="app-ai-pill app-desk" data-testid="ai-pill" onClick={onOpen}>
-      {hasKey(current) ? t("ai_pill_key", { provider: PROVIDERS[current].short }) : t("ai_pill_nokey")}
+      {!known ? t("ai_pill_wait") : hasKey(current) ? t("ai_pill_key", { provider: PROVIDERS[current].short }) : t("ai_pill_nokey")}
     </button>
   );
 }

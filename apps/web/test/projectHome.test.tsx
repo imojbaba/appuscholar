@@ -22,6 +22,7 @@ const project = { id: "p1", title: "Sleep and exam anxiety", titleKeyVersion: 0,
 vi.mock("@/components/frame/ProjectContext", () => ({ useProject: () => ({ project, projectId: "p1", go: h.go, place: null, openExport: h.openExport }) }));
 
 import { ProjectHome, highlightCache } from "../components/frame/ProjectHome";
+import { clearJustMade, markJustMade, readJustMade } from "../lib/frame/justMade";
 import { heldBlobs } from "../lib/blobs/held";
 
 // Every tool module this file does not turn on is pinned to its unbuilt stub, so a tool session turning its own module on never changes
@@ -248,6 +249,63 @@ describe("the project home", () => {
     await until(() => text("home-q-text") === "Does a fixed bedtime lower exam anxiety?");
     expect(q("home-locked")).toBeNull();
     await until(() => text("home-detail-lit").includes("Highlights: 2"));
+  });
+
+  it("the moment the vault unlocks, the home says it is opening, never \"This project is locked\" under a header that says unlocked (Q2)", async () => {
+    const unlocked = { ...vaultOff, status: "unlocked", known: async () => "unlocked", decryptBody: async (d: { bodyHtml: string }) => JSON.stringify(server.blobs[d.bodyHtml.replace(/^sealed-/, "")]!.value) };
+    h.vault = { ...vaultOff, status: "locked", known: async () => "locked", ensureUnlocked: async () => false, decryptBody: async () => { throw new Error("vault-locked"); } };
+    server.keyVersion = 1;
+    const r = mount();
+    await until(() => !!q("home-locked"));
+    // From here every read of the project's saved work waits (a slow network) until it is let go.
+    let release!: () => void;
+    const gate = new Promise<void>((res) => { release = res; });
+    const answer = h.api.getMockImplementation()!;
+    h.api.mockImplementation(async (path: string, init?: { method?: string }) => { if (/\/blobs\//.test(path)) await gate; return answer(path, init); });
+    h.vault = unlocked;
+    act(() => { r.render(<ProjectHome />); });
+    expect(q("home-locked")).toBeNull();
+    expect(q("home-unlock")).toBeNull();
+    expect(q("home-loading")).not.toBeNull();
+    await act(async () => { await new Promise((res) => setTimeout(res, 50)); });
+    expect(q("home-locked")).toBeNull();
+    expect(q("home-loading")).not.toBeNull();
+    await act(async () => { release(); });
+    await until(() => text("home-q-text") === "Does a fixed bedtime lower exam anxiety?");
+    expect(q("home-loading")).toBeNull();
+  });
+
+  it("says where the student is: a visible heading, Project home over the project's name", async () => {
+    mount();
+    await until(() => !!q("home-stages"));
+    expect(q("home-title")!.textContent).toBe(en.home_title_kicker + project.title);
+    expect(text("home-title-name")).toBe(project.title);
+    expect(q("home-ready")).toBeNull();
+  });
+
+  it("right after first run made the project, says once what was saved and what the home holds; Got it puts it away for good", async () => {
+    markJustMade("p1", true);
+    let r = mount();
+    await until(() => !!q("home-ready"));
+    expect(text("home-ready")).toContain(en.home_ready_h);
+    expect(text("home-ready")).toContain(en.home_ready_saved_checked);
+    expect(text("home-ready")).toContain(en.home_ready_where);
+    expect(q("home-stages")).not.toBeNull();
+    await act(async () => { q("home-ready-ok")!.click(); });
+    expect(q("home-ready")).toBeNull();
+    expect(readJustMade("p1")).toBeNull();
+    act(() => { r.unmount(); });
+    r = mount();
+    await until(() => !!q("home-stages"));
+    expect(q("home-ready")).toBeNull();
+    // Without a check, it does not claim one.
+    markJustMade("p1", false);
+    act(() => { r.unmount(); });
+    mount();
+    await until(() => !!q("home-ready"));
+    expect(text("home-ready")).toContain(en.home_ready_saved);
+    expect(text("home-ready")).not.toContain(en.home_ready_saved_checked);
+    clearJustMade();
   });
 
   it("highlight counts are read once per paper version: a repeat visit reads none, a changed version re-reads only that paper", async () => {

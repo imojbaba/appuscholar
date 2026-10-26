@@ -8,8 +8,8 @@ import en from "../messages/en.json";
 
 /*
  * The OpenAlex key (v1 1186-1190, oaKeySave 8031): the field in the AI Provider / Key dialog, below the content language as in v1, stored as the
- * credential `openalex` locked under the vault ("v2." + the vault's iv.ct, as an AI key), never an AI provider; useOpenAlexKey opens it once the
- * vault is open and never asks for a passphrase itself.
+ * credential `openalex` locked under the vault ("v2." + the vault's iv.ct, as an AI key) when there is one, else remembered on this computer (never
+ * the vault setup), never an AI provider; useOpenAlexKey opens it once the vault is open and never asks for a passphrase itself.
  */
 
 const h = vi.hoisted(() => ({
@@ -100,13 +100,29 @@ describe("the OpenAlex key setting (v1 1186-1190)", () => {
     expect(input.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   }, 30_000);
 
-  it("a key is stored as the credential openalex, locked under the vault (set up first), and toasts v1's sentence", async () => {
+  it("with no vault yet, a key is remembered on this computer (as the AI key is then), the vault setup is not opened, and v1's sentence is toasted", async () => {
     const s = await mount(true);
     await until(() => s.vault.status === "off" && s.keys.loaded);
-    h.openSetup.mockImplementation(async () => { await s.vault.setup(VAULT_PASS, false); return true; });
+    typeKey("  " + KEY + "  ");
+    await until(() => toasts().length === 1);
+    expect(toasts()).toEqual([E.rs2_openalex_key_saved_on]);
+    expect(h.openSetup).not.toHaveBeenCalled();
+    expect(h.ask).not.toHaveBeenCalled();
+    expect(server.calls.some((c) => c.path === "/me/vault" && c.method === "PUT")).toBe(false);
+    expect(server.creds.openalex).toBeUndefined();
+    expect(keyStore.isPlain("openalex")).toBe(true);
+    await until(() => s.oa === KEY);
+    // not an AI provider: the provider list is unchanged
+    expect(s.keys.providersWithKeys()).toEqual([]);
+  }, 30_000);
+
+  it("with a vault, a key is stored as the credential openalex, locked under the vault, and toasts v1's sentence", async () => {
+    const s = await mount(true);
+    await until(() => s.vault.status === "off" && s.keys.loaded);
+    await act(async () => { await s.vault.setup(VAULT_PASS, false); });
     typeKey("  " + KEY + "  ");
     await until(() => !!server.creds.openalex);
-    expect(h.openSetup).toHaveBeenCalledTimes(1);
+    expect(h.openSetup).not.toHaveBeenCalled();
     const blob = server.creds.openalex!;
     expect(blob.startsWith("v2.")).toBe(true);
     expect(blob).not.toContain(KEY);
@@ -118,22 +134,17 @@ describe("the OpenAlex key setting (v1 1186-1190)", () => {
     expect(s.oa).toBe(KEY);
   }, 30_000);
 
-  it("an emptied field removes the key and toasts 'OpenAlex key removed'; Not now at the setup stores nothing", async () => {
+  it("an emptied field removes the key and toasts 'OpenAlex key removed'", async () => {
     const s = await mount(true);
     await until(() => s.vault.status === "off" && s.keys.loaded);
-    h.openSetup.mockResolvedValueOnce(false);
     typeKey(KEY);
-    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
-    expect(server.creds.openalex).toBeUndefined();
-    expect(toasts()).toEqual([]);
-    h.openSetup.mockImplementation(async () => { await s.vault.setup(VAULT_PASS, false); return true; });
-    typeKey(KEY);
-    await until(() => !!server.creds.openalex);
     await until(() => s.oa === KEY);
     typeKey("");
-    await until(() => !server.creds.openalex && toasts().length === 2);
+    await until(() => toasts().length === 2);
     expect(toasts()).toEqual([E.rs2_openalex_key_saved_on, E.rs2_openalex_key_removed]);
     await until(() => s.oa === null);
+    expect(keyStore.isPlain("openalex")).toBe(false);
+    expect(h.openSetup).not.toHaveBeenCalled();
   }, 30_000);
 
   it("in a new tab the key stays closed while the vault is locked (no prompt of its own) and opens with the vault", async () => {

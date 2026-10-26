@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import en from "../messages/en.json";
 
 const h = vi.hoisted(() => ({ dialog: "welcome" as string | null, openSettings: vi.fn(), closeDialog: vi.fn(), update: vi.fn(async () => undefined) }));
 vi.mock("@/lib/settings", () => ({ useSettings: () => ({ me: { id: "u1" }, settings: {}, update: h.update, reload: async () => undefined }) }));
@@ -28,6 +29,18 @@ afterEach(() => { act(() => { for (const r of roots.splice(0)) r.unmount(); }); 
  * never seen. The welcome's primary button sits where Continue was and took focus as the window opened, so a second click or an Enter
  * meant for the terms landed on "Set up my key". The welcome now opens with its buttons disarmed for a moment and no button focused.
  */
+describe("Welcome (what the first session holds)", () => {
+  it("tells a new student the three steps that really follow, and that the AI key can be set up now or later; it names no button the header does not have", () => {
+    mount();
+    const steps = [...$("welcome-next")!.querySelectorAll("li")].map((li) => li.textContent);
+    expect(steps).toEqual([en.welcome_next1, en.welcome_next2, en.welcome_next3]);
+    expect($("welcome-key-note")!.textContent).toBe(en.welcome_key_note.replace(/<\/?b>/g, ""));
+    // v1's steps sent the student to "⚙ AI Provider / Key", which the v2 header does not show (it shows the AI pill).
+    expect($("welcome-dialog")!.textContent).not.toContain("⚙");
+    expect($("welcome-dialog")!.textContent).not.toContain("Press Tab");
+  });
+});
+
 describe("Welcome (first-run order)", () => {
   it("opens with both buttons disarmed, and a click in that moment opens nothing", () => {
     mount();

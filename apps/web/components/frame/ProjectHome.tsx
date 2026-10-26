@@ -13,6 +13,7 @@ import { suggestNext } from "@/lib/frame/suggest";
 import { stageKinds, stageStates, type StageWork } from "@/lib/frame/stages";
 import { placeHref } from "@/lib/frame/places";
 import { useProjectWork, type ProjectWork } from "@/lib/frame/useProjectWork";
+import { clearJustMade, readJustMade, type JustMade } from "@/lib/frame/justMade";
 import { STAGE_ORDER, type StageKey } from "@/lib/tools";
 import { TOOL_TABS, toolModule, type StageBlobs, type ToolFacts, type ToolModule } from "@/lib/tools/registry";
 import { PHONE_QUERY, useMedia } from "@/lib/useMedia";
@@ -140,15 +141,20 @@ function HomeLoad({ retry }: { retry(): void }) {
   const mine = work?.find((w) => w.id === projectId) ?? null;
   const highlights = useHighlightCounts(projectId, mine);
   const [stageFacts, setStageFacts] = useState<Partial<Record<StageKey, ToolFacts[]>>>({});
+  // First run has just made this project: say once what was saved and where things are, until dismissed.
+  const [made, setMade] = useState<JustMade | null>(() => (projectId ? readJustMade(projectId) : null));
   const onFacts = useCallback((stage: StageKey, f: ToolFacts[]) => setStageFacts((p) => ({ ...p, [stage]: f })), []);
   if (!projectId) return null;
 
   const facts = homeFacts({ idea: idea.value, citations: citations.value, shelfIndex: shelf.value, apNotes: notes.value }, mine?.draftWords ?? 0, project?.field ?? "", highlights);
   const blobs = [idea, citations, shelf, notes];
-  const locked = blobs.some((b) => b.locked);
+  // Once the vault opens, a read that was locked is made again (the blob's resume): from that moment the home says it is opening, never that the
+  // project is locked while the header says the vault is unlocked (Q2).
+  const vaultOpen = vault.status === "unlocked" || vault.status === "migrating";
+  const locked = !vaultOpen && blobs.some((b) => b.locked);
   // A read that failed has no value: shown as empty it would say "No question yet" of a project that has one.
   const failed = workFailed || blobs.some((b) => b.error && !b.loading);
-  const loading = work === null || blobs.some((b) => b.loading);
+  const loading = work === null || blobs.some((b) => b.loading || b.locked);
   const name = project ? title.text : projectId === me?.scratchProjectId ? t("scratch_name") : "";
   const open = (stage: StageKey, tab?: string) => { void go(placeHref(projectId, stage, tab)); };
   const mark = async (stage: StageKey, ready: boolean) => {
@@ -160,7 +166,8 @@ function HomeLoad({ retry }: { retry(): void }) {
 
   return (
     <section className="home" data-testid="project-home">
-      <h1 className="sr-only" data-testid="home-title">{name}</h1>
+      {/* Where the student is, in words: the project's home and its name (on a phone the project button above says it, so the heading is for screen readers). */}
+      <h1 className="home-title" data-testid="home-title"><span className="home-title-kicker">{t("home_title_kicker")}</span><span data-testid="home-title-name">{name}</span></h1>
       {STAGE_ORDER.filter((s) => factModules(s).length > 0).map((s) => <StageFactsReader key={s} stage={s} projectId={projectId} mine={mine} onFacts={onFacts} />)}
       {locked ? (
         <div className="home-card home-locked" data-testid="home-locked">
@@ -175,8 +182,24 @@ function HomeLoad({ retry }: { retry(): void }) {
       ) : loading ? (
         <PanelLoading testId="home-loading" />
       ) : (
-        <HomeBody pv={pv} facts={facts} toolFacts={stageFacts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} />
+        <>
+          {made && <ProjectReady checked={made.checked} onDone={() => { clearJustMade(); setMade(null); }} />}
+          <HomeBody pv={pv} facts={facts} toolFacts={stageFacts} states={stageStates(mine ?? NO_WORK)} open={open} mark={mark} />
+        </>
       )}
+    </section>
+  );
+}
+
+/** Once, right after first run made the project: what was saved, and what the home below holds. */
+function ProjectReady({ checked, onDone }: { checked: boolean; onDone(): void }) {
+  const t = useT();
+  return (
+    <section className="home-card home-ready" role="status" data-testid="home-ready">
+      <h2>{t("home_ready_h")}</h2>
+      <p>{t(checked ? "home_ready_saved_checked" : "home_ready_saved")}</p>
+      <p>{t("home_ready_where")}</p>
+      <button type="button" className="home-btn" onClick={onDone} data-testid="home-ready-ok">{t("home_ready_ok")}</button>
     </section>
   );
 }

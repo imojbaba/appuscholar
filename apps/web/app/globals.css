@@ -132,6 +132,9 @@
 .field label { font-size: 13px; line-height: 18px; font-weight: 500; }
 .input, .field .input { width: 100%; min-height: var(--ctl); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--card); font-size: 14px; line-height: 20px; resize: vertical; }
 .input::placeholder, .field .input::placeholder { color: var(--muted); }
+/* A passphrase or key field with its eye (components/ui/secret-input.tsx): the text stops before the 44 px eye. A utility class (pr-11) loses to .input,
+   which is not in a cascade layer (Q5). */
+.input.input-secret, .field .input.input-secret { padding-right: 44px; }
 /* Citation Manager (v1 874-947): side-by-side fields, the style note under its select, the library cards. */
 .cite-row { display: flex; gap: 8px; }
 .cite-row > .field, .cite-row > .flex-1 { min-width: 0; }
@@ -605,6 +608,17 @@
 .home-side { flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: var(--s5); }
 .home-main { flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: var(--s6); }
 .home-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+/* The home says where the student is: "Project home" over the project's name (on a phone the project button says it, so the heading is for screen readers there). */
+.home-title { margin: 0 0 var(--s5); font-size: 24px; line-height: 1.25; overflow-wrap: anywhere; }
+.home-title-kicker { display: block; margin-bottom: 2px; font-size: 13px; font-weight: 600; color: var(--muted); }
+/* Once, after first run made the project: what was saved and where things are. */
+.home-ready { margin: 0 0 var(--s5); padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s2); border-color: var(--purple-500); background: var(--soft); }
+.home-card.home-ready h2 { font-size: 16px; color: var(--purple-800); }
+.home-ready p { margin: 0; font-size: 14px; line-height: 1.55; }
+@media (max-width: 700px) {
+  .home-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .home-ready { padding: var(--s4); }
+}
 .home-card h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
 .home-card-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
 .home-link { min-height: 32px; padding: 0 10px; border: none; background: none; color: var(--purple-800); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }

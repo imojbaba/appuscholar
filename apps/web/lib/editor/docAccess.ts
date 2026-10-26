@@ -11,7 +11,7 @@ import { useSuggestion } from "@/lib/ai/suggestion";
 import { VaultError } from "@/lib/vault/crypto";
 import type { ExportDoc, ExportDocSummary } from "@/lib/vault/export";
 import { titleText, UNTITLED } from "@/lib/vault/titles";
-import { useVault, type VaultValue } from "@/lib/vault/useVault";
+import { useVault, type VaultAsker, type VaultValue } from "@/lib/vault/useVault";
 import { onSyncMessage, syncChannel, type DocAckMessage, type DocHelloMessage, type DocOp, type DocReplyMessage, type DocRequestMessage, type DocSnapshotMessage } from "@/lib/popout/channel";
 import { isPopout } from "@/lib/popout/mode";
 import { toast } from "@/components/ui/toast";
@@ -202,8 +202,8 @@ type Live = {
   vault: Pick<VaultValue, "known" | "ensureUnlocked" | "decryptBody" | "encryptBody">;
 };
 const usable = (e: Editor | null): Editor | null => (e && !e.isDestroyed ? e : null);
-/** The vault open when there is one; false when the student cancelled the unlock. */
-const unlocked = async (v: Live["vault"]): Promise<boolean> => (await v.known()) === "off" || v.ensureUnlocked();
+/** The vault open when there is one; false when the student cancelled the unlock. `by`: a panel's own read asks as the page (not again after a cancel). */
+const unlocked = async (v: Live["vault"], by?: VaultAsker): Promise<boolean> => (await v.known()) === "off" || v.ensureUnlocked(by);
 
 /** The calls in the writing window: on `editor` (the open document's, mounted even while the document is closed) and the shell's requestInsert. */
 function writingAccess(editor: Editor | null, ref: { readonly current: Live }): DocAccess {
@@ -230,7 +230,7 @@ function writingAccess(editor: Editor | null, ref: { readonly current: Live }): 
     async allDocuments() {
       try {
         const { projectId, vault } = live();
-        if (!projectId || !(await unlocked(vault))) return [];
+        if (!projectId || !(await unlocked(vault, "auto"))) return [];
         // As the project export reads them (lib/export/projectExport.ts): the list, then each document opened in the browser; v1's order.
         const list = (await apiFetch<ExportDocSummary[]>(`/projects/${projectId}/documents`)).filter((d) => !d.deletedAt);
         list.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
