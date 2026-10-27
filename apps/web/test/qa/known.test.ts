@@ -115,6 +115,13 @@ describe("known.json", () => {
     for (const id of ["O4", "O5", "O8", "O11", "O14", "O20"]) expect(byId(id)?.status, id).toBe("awaiting");
   });
 
+  it("holds the accessibility, phone-size and Hindi faults Q10, Q11 and Q15 to Q19 as fixed", () => {
+    for (const id of ["Q10", "Q11", "Q15", "Q16", "Q17", "Q18", "Q19"]) {
+      expect(byId(id)?.status, id).toBe("fixed");
+      expect(byId(id)?.title, id).toMatch(/ \(fixed\)$/);
+    }
+  });
+
   it("has no entry for a fault on the first-run path: such a fault is a blocker, fixed before merge, never a known fault (all fixed on first-run-fix)", () => {
     for (const id of ["O3", "O6", "O18", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9"]) expect(byId(id), id).toBeUndefined();
   });

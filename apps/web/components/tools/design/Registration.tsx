@@ -43,7 +43,7 @@ export function Registration({ projectId, now = () => new Date() }: { projectId:
       <div className="stack" style={{ maxWidth: "62ch" }}>
         <section className="flex flex-col gap-1.5" aria-label={t("design_ctri_list")} data-testid="ctri-fields">
           {CTRI_FIELDS.map((f, i) => (
-            <label key={i} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+            <label key={i} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
               <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"ctri-field-" + i} checked={!!checks[String(i)]} onChange={(e) => toggle(i, e.target.checked)} />
               {f}
             </label>

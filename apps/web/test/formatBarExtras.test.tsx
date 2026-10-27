@@ -878,3 +878,48 @@ describe("dictation: errors", () => {
     expect(h.toast).toHaveBeenCalledWith(H.dict_err_network);
   });
 });
+
+// ---- The toolbar in Hindi (Q18, Q19) ------------------------------------------------------------------------------------------------
+
+describe("the toolbar speaks the page's language", () => {
+  it("in Hindi every button, option and name is the Hindi dictionary's, and no English word is left in the app's own words", async () => {
+    withMore();
+    await mount(make(), "hi");
+    const bar = tid("format-bar")!;
+    expect(bar.getAttribute("aria-label")).toBe(H.fb_toolbar);
+    expect(tid("fmt-paragraph")!.getAttribute("aria-label")).toBe(H.fb_para_style);
+    expect(Array.from(tid("fmt-paragraph")!.querySelectorAll("option")).map((o) => o.textContent)).toEqual([H.fb_para, H.fb_h1, H.fb_h2, H.fb_h3, H.fb_quote]);
+    expect(tid("fmt-bold")!.getAttribute("aria-label")).toBe(H.fb_bold);
+    expect(tid("fmt-italic")!.getAttribute("aria-label")).toBe(H.fb_italic);
+    expect(tid("fmt-underline")!.getAttribute("aria-label")).toBe(H.fb_underline);
+    expect(tid("fmt-image")!.textContent).toBe(H.fb_image_btn);
+    expect(tid("fmt-table")!.textContent).toBe(H.fb_table_btn);
+    expect(tid("fmt-find")!.textContent).toBe(H.fb_find_btn);
+    expect(tid("fmt-row")!.textContent).toBe(H.fb_row_btn);
+    expect(tid("fmt-col")!.textContent).toBe(H.fb_col_btn);
+    expect(tid("fmt-pagebreak")!.textContent).toBe(H.fb_pagebreak_btn);
+    // Every name and every visible word of the two bars: no run of two Latin words of three letters or more (the QA rule, ruling R20), save the font and browser names.
+    const words = (s: string) => s.split(/[^\p{L}]+/u).filter((w) => /^[A-Za-z]{3,}$/.test(w));
+    for (const el of [bar, tid("format-bar-more")!]) {
+      const seen = [el.getAttribute("aria-label") ?? "", ...Array.from(el.querySelectorAll("button, label, select, input")).flatMap((x) => [x.getAttribute("aria-label") ?? "", x.getAttribute("title") ?? "", x.tagName === "SELECT" ? "" : x.textContent ?? ""])];
+      expect(seen.flatMap(words).filter((w) => !["Georgia", "Times", "New", "Roman", "Arial", "Noto", "Sans", "Devanagari", "Chrome", "Edge"].includes(w)), el.getAttribute("data-testid") ?? "").toEqual([]);
+    }
+  });
+
+  it("the more-formatting button is named by words that contain the ones it shows, in both languages (axe label-content-name-mismatch)", async () => {
+    await mount(make(), "hi");
+    const hi = tid("fmt-more")!;
+    expect(hi.getAttribute("aria-label")).toBe(H.fb_more_label);
+    expect(hi.textContent).toBe("और ▾");
+    expect(hi.getAttribute("aria-label")).toContain("और");
+    expect(hi.getAttribute("aria-label")).not.toBe("More formatting");
+  });
+
+  it("in English the names are v1's", async () => {
+    await mount(make());
+    expect(tid("fmt-more")!.getAttribute("aria-label")).toBe("More formatting");
+    expect(tid("fmt-more")!.textContent).toBe("More ▾");
+    expect(tid("fmt-bold")!.getAttribute("aria-label")).toBe("Bold");
+    expect(tid("fmt-image")!.textContent).toBe("🖼 Image");
+  });
+});

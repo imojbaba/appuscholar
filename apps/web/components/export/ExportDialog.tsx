@@ -139,7 +139,7 @@ function ExportBody({ initial, onClose }: { initial: ExportPartId[]; onClose(): 
       onEscapeKeyDown={(e) => { if (busy.current) e.preventDefault(); }} onInteractOutside={(e) => { if (busy.current) e.preventDefault(); }}>
       <div className="exp-head">
         <div>
-          <DialogTitle id="exp-h" className="exp-h">{t("exp_title", { title: name })}</DialogTitle>
+          <DialogTitle className="exp-h">{t("exp_title", { title: name })}</DialogTitle>
           <DialogDescription className="exp-sub">{t("exp_sub")}</DialogDescription>
         </div>
         <DialogClose asChild>

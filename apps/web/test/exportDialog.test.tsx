@@ -128,7 +128,11 @@ describe("ExportDialog", () => {
     await render();
     await click(tid("open-all"));
     expect(tid("export-dialog")).not.toBeNull();
-    expect($("#exp-h")!.textContent).toBe("Export: Sleep and exam anxiety");
+    expect($(".exp-h")!.textContent).toBe("Export: Sleep and exam anxiety");
+    // The window is named by its title (Q10): aria-labelledby points at the id the title really has.
+    const named = tid("export-dialog")!.getAttribute("aria-labelledby");
+    expect(named).toBeTruthy();
+    expect(document.getElementById(named!)).toBe($(".exp-h"));
     const text = tid("export-dialog")!.textContent!;
     for (const s of [
       "Unlocked in your browser and saved to your computer. The files are readable, so keep them somewhere safe.",

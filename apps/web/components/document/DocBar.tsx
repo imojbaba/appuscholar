@@ -42,7 +42,7 @@ export function DocBar() {
     try {
       // With a vault the new document's empty body is encrypted from the start (the vault is opened first).
       // Its title is sealed with it, under the same first key.
-      const body = await newDocumentBody(vault, name.trim() || "Untitled");
+      const body = await newDocumentBody(vault, name.trim() || t("doc_untitled"));
       // The unlock was cancelled: nothing is created and the name dialog stays open.
       if (!body) return;
       const made = await apiFetch<DocumentWithBody>(`/projects/${projectId}/documents`, { method: "POST", body: JSON.stringify(body) });
@@ -61,7 +61,7 @@ export function DocBar() {
     try {
       // Sealed under the document's own key; a locked vault asks for the passphrase first, and a cancelled ask renames nothing.
       if ((await vault.known()) !== "off" && !(await vault.ensureUnlocked())) return;
-      const title = await sealTitle(vault, currentDoc.id, currentDoc.deks, name.trim() || "Untitled");
+      const title = await sealTitle(vault, currentDoc.id, currentDoc.deks, name.trim() || t("doc_untitled"));
       const d = await apiFetch<DocumentSummary>(`/documents/${currentDoc.id}`, { method: "PATCH", body: JSON.stringify(title) });
       patchDoc(d.id, { title: d.title, titleKeyVersion: d.titleKeyVersion });
       setDialog(null);
@@ -102,7 +102,7 @@ export function DocBar() {
       await reloadDocs();
       toast("Deleted — ", {
         ms: UNDO_MS,
-        action: { label: "Undo", testId: "undo-delete", onClick: () => { void undo(gone.id, gone.projectId); } }
+        action: { label: t("fb_undo"), testId: "undo-delete", onClick: () => { void undo(gone.id, gone.projectId); } }
       });
     } catch (e) {
       setDialog(null);
@@ -170,8 +170,8 @@ export function DocBar() {
         {documents.map((d) => <DocOption key={d.id} doc={d} />)}
       </select>
       {isSource && <Badge variant="chip" title={t("org_badge_title")} data-testid="doc-source-badge">{t("org_badge_src")}</Badge>}
-      <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName("Untitled " + (documents.length + 1)); setDialog("new"); }}>{t("doc_new_btn")}</Button>
-      <button type="button" className="icon" aria-label="Rename this document" title="Rename this document" data-testid="doc-rename" disabled={!currentDoc} onClick={() => { void askRename(); }}>✎</button>
+      <Button variant="ghost" size="sm" title={t("doc_new_title")} data-testid="doc-new" onClick={() => { setName(t("doc_untitled_n", { n: documents.length + 1 })); setDialog("new"); }}>{t("doc_new_btn")}</Button>
+      <button type="button" className="icon" aria-label={t("doc_rename_title")} title={t("doc_rename_title")} data-testid="doc-rename" disabled={!currentDoc} onClick={() => { void askRename(); }}>✎</button>
       <button type="button" className="icon del" aria-label={t("doc_delete_title")} title={t("doc_delete_title")} data-testid="doc-delete" disabled={!currentDoc} onClick={askDelete}>🗑</button>
       <Button variant="ghost" size="sm" title={t("doc_import_title")} data-testid="doc-import" onClick={() => fileRef.current?.click()}>{t("doc_import_btn")}</Button>
       <input ref={fileRef} type="file" accept={IMPORT_ACCEPT} multiple hidden data-testid="doc-import-input" aria-label="Choose files to import"
@@ -182,8 +182,8 @@ export function DocBar() {
       <Dialog open={dialog === "new" || dialog === "rename"} onOpenChange={(o) => { if (!o) close(); }}>
         <DialogContent className="max-w-sm" data-testid="doc-name-dialog">
           <form onSubmit={(e) => { e.preventDefault(); void (dialog === "new" ? create() : rename()); }}>
-            <DialogHeader><DialogTitle>{dialog === "new" ? "Name for the new document:" : "Rename this document:"}</DialogTitle></DialogHeader>
-            <Input className="my-4" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} autoFocus aria-label={dialog === "new" ? "Name for the new document" : "Rename this document"} data-testid="doc-name-input" />
+            <DialogHeader><DialogTitle>{dialog === "new" ? t("doc_name_new_h") : t("doc_rename_h")}</DialogTitle></DialogHeader>
+            <Input className="my-4" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} autoFocus aria-label={dialog === "new" ? t("doc_name_new") : t("doc_rename_title")} data-testid="doc-name-input" />
             <DialogFooter>
               <Button type="button" variant="ghost" size="md" onClick={close}>{t("sap_cancel_btn")}</Button>
               <Button type="submit" variant="primary" size="md" disabled={busy} data-testid="doc-name-ok">OK</Button>

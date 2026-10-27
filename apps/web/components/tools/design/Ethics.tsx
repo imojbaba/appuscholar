@@ -152,7 +152,7 @@ export function Ethics({ projectId }: { projectId: string }) {
     const whyId = "ec-rec-why-" + f.id;
     return (
       <div key={f.id} className="flex flex-col" data-testid={"ec-rec-row-" + f.id}>
-        <label className="flex cursor-pointer items-start gap-2 text-[13.5px] text-ink">
+        <label className="tick-row flex cursor-pointer items-start gap-2 text-[13.5px] text-ink">
           <input
             type="checkbox" className="mt-0.5 size-[17px] shrink-0 accent-purple-600" data-testid={"ec-rec-" + f.id} aria-describedby={why !== "" ? whyId : undefined}
             checked={record.includes(f.id)} onChange={(e) => tick(f.id, e.target.checked)}
@@ -183,7 +183,7 @@ export function Ethics({ projectId }: { projectId: string }) {
       <div className="stack" style={{ maxWidth: "62ch" }}>
         <section className="flex flex-col gap-1.5" aria-label={t("design_ec_docs")} data-testid="ec-docs">
           {EC_DOCS.map((d, i) => (
-            <label key={i} className="flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
+            <label key={i} className="tick-row flex cursor-pointer items-center gap-2 text-[13.5px] text-ink">
               <input type="checkbox" className="size-[17px] accent-purple-600" data-testid={"ec-doc-" + i} checked={!!checks[String(i)]} onChange={(e) => toggle(i, e.target.checked)} />
               {d}
             </label>

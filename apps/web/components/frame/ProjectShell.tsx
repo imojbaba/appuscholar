@@ -113,6 +113,9 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   // Loads and creations outlive a render; they read the newest vault from here.
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
+  // The first document is titled in the page's language as it is when the load runs, not when the effect was set up.
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; });
   // After each unlock of a complete vault, titles still in plaintext (from before the vault, or renamed since by an older tab) are sealed.
   const titlesSealable = vault.status === "unlocked" && vault.complete && !isPopout();
   const scratchForTitles = me?.scratchProjectId ?? null;
@@ -237,7 +240,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
             proj = (await apiFetch<Project[]>("/projects")).find((x) => x.id === urlProjectId) ?? null;
             if (!proj) return { missing: true };
           }
-          const docs = await listOrSeed(urlProjectId, vaultRef.current);
+          const docs = await listOrSeed(urlProjectId, vaultRef.current, tRef.current("doc_first_title"));
           const want = nextDoc?.projectId === urlProjectId ? nextDoc.docId : null;
           nextDoc = null;
           // A pop-out opens no document.
@@ -317,7 +320,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const reloadDocs = useCallback(async () => {
     const pid = projectIdRef.current;
     if (!pid) return;
-    const list = byCreated(await listOrSeed(pid, vaultRef.current));
+    const list = byCreated(await listOrSeed(pid, vaultRef.current, tRef.current("doc_first_title")));
     setDocuments(list);
     const open = currentDocRef.current;
     const keep = open && list.some((d) => d.id === open.id) ? open.id : list[0]?.id;
