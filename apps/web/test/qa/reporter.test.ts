@@ -241,7 +241,7 @@ describe("what is left out of the marks", () => {
   });
 
   it("reads the tag, not the id: a numbered SELF- case without the tag is a case of its own, in the Harness row", async () => {
-    const result = caseResult("SELF-19", [bad({ known: "F1" })], { meta: { story: "S0", id: "SELF-19", goal: "Check the fixture", situation: {}, steps: [] } });
+    const result = caseResult("SELF-19", [bad({ known: "O12" })], { meta: { story: "S0", id: "SELF-19", goal: "Check the fixture", situation: {}, steps: [] } });
     const untagged = await run([testCase("SELF-19", [attempt({ attachments: [qaAttachment(result)] })])]);
     expect(untagged.json().cases.map((c) => [c.id, c.mark])).toEqual([["SELF-19", "KNOWN FAULT"]]);
     expect(untagged.read("summary.md")).toContain("### Harness.");
@@ -279,7 +279,7 @@ describe("retries", () => {
     const src = fresh();
     const { shotPath, trace } = failedFirst(src);
     writeFileSync(trace, await new JSZip().file("trace.trace", "{}").generateAsync({ type: "nodebuffer" }));
-    const known1 = bad({ label: "a known one", message: "the known message", known: "F1" });
+    const known1 = bad({ label: "a known one", message: "the known message", known: "O12" });
     const first = attempt({
       status: "failed",
       attachments: [
