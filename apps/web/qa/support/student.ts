@@ -83,13 +83,63 @@ export async function setUpVault(page: Page, passphrase: string): Promise<string
   return code;
 }
 
+/** Opens Connect AI from the header: the AI pill, or on a phone the Menu's AI item. */
+export async function openConnectAI(page: Page): Promise<void> {
+  const pill = page.getByTestId("ai-pill");
+  if (await pill.isVisible()) await pill.click();
+  else { await page.getByTestId("phone-menu").click(); await page.getByTestId("menu-ai").click(); }
+  await expect(page.getByTestId("connect-dialog")).toBeVisible();
+}
+
 /**
- * A new student, through the UI as the e2e `newProject` helpers do it: a new account signed in (support/session.ts), the terms, the welcome window, the AI key in the provider
- * window, the vault set up with a generated passphrase, and first run's "Save as my project". Ends on the project's home (`project: false`: on first run, with no project).
+ * Connect AI, open at its question (4a), walked as a student does: Yes, I have a key; Groq, through "Using a different AI company?" (Gemini is the default and the fake
+ * provider refuses it); the key; Connect (the api tests it with the fake provider); then how it is kept. "pass" chooses and confirms the passphrase in the window and reads,
+ * ticks and closes the recovery sheet, whose code is returned; "vault" is a student whose vault exists already (4d is skipped and the key is locked under it).
+ */
+export async function connectKey(page: Page, o: { key: string; keep: "plain" | "pass" | "vault"; passphrase?: string; answerTest?: boolean }): Promise<string | null> {
+  const dialog = page.getByTestId("connect-dialog");
+  // A key the fake provider is told to refuse or delay (its mode) is a key that worked when it was connected and fails later: its test is answered OK in the browser,
+  // so the case meets the failure where it means to, not at Connect.
+  const answer = (route: Route) => route.request().method() === "OPTIONS"
+    ? route.fulfill({ status: 204, headers: { "access-control-allow-origin": QA_WEB_ORIGIN, "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "POST, OPTIONS" } })
+    : route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": QA_WEB_ORIGIN }, body: JSON.stringify({ ok: true, reply: "OK" }) });
+  if (o.answerTest) await page.route(QA_API_ORIGIN + "/ai/test", answer);
+  await expect(dialog).toHaveAttribute("data-screen", "ask");
+  await page.getByTestId("connect-yes").click();
+  await page.getByTestId("connect-other").click();
+  await page.getByTestId("connect-provider").selectOption("groq");
+  await expect(page.getByTestId("connect-provider"), "the key must be saved as Groq: the fake AI provider refuses the default, Gemini").toHaveValue("groq");
+  await page.getByTestId("connect-key").fill(o.key);
+  await page.getByTestId("connect-go").click();
+  if (o.keep === "vault") { await expect(dialog).toBeHidden({ timeout: 20_000 }); if (o.answerTest) await page.unroute(QA_API_ORIGIN + "/ai/test", answer); return null; }
+  await expect(dialog).toHaveAttribute("data-screen", "keep", { timeout: 20_000 });
+  if (o.answerTest) await page.unroute(QA_API_ORIGIN + "/ai/test", answer);
+  if (o.keep === "plain") {
+    await page.getByTestId("connect-keep-plain").click();
+    await expect(dialog).toBeHidden();
+    return null;
+  }
+  if (!o.passphrase) throw new Error("QA connectKey: keep \"pass\" needs a passphrase");
+  await page.getByTestId("connect-keep-pass").click();
+  await page.getByTestId("new-pass").fill(o.passphrase);
+  await page.getByTestId("new-pass2").fill(o.passphrase);
+  await page.getByTestId("new-pass-go").click();
+  await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible({ timeout: 20_000 });
+  const code = (await page.getByTestId("vault-code").innerText()).trim();
+  await page.getByTestId("vault-sheet-saved").check();
+  await page.getByTestId("vault-sheet-done").click();
+  await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
+  await expect(dialog).toBeHidden();
+  return code;
+}
+
+/**
+ * A new student, through the UI as the e2e `newProject` helpers do it: a new account signed in (support/session.ts), the terms, the AI key through Connect AI,
+ * the vault set up with a generated passphrase, and first run's "Save as my project". Ends on the project's home (`project: false`: on first run, with no project).
  *
- *  - `key`: the fake provider's mode for the key (default "ok"), or "none" for a student with no key (the welcome window is skipped with "Later"). The key goes in as Groq, chosen
- *    in the provider window and asserted: Gemini is the app's default and the fake provider refuses it. The key is given to `qa.useKey`, so the case's teardown reads its log.
- *  - `keyMode`: "plain" (default; the key stays in the browser) or "passphrase" (the key is locked under the vault, so the vault is set up through the key window).
+ *  - `key`: the fake provider's mode for the key (default "ok"), or "none" for a student with no key (AI is never connected). The key goes in as Groq, chosen
+ *    in Connect AI and asserted: Gemini is the app's default and the fake provider refuses it. The key is given to `qa.useKey`, so the case's teardown reads its log.
+ *  - `keyMode`: "plain" (default; the key stays in the browser) or "passphrase" (the key is locked under the vault, so the vault is set up inside Connect AI).
  *  - `vault`: "off" (default) or "on" (a passphrase made up for the student, set up before the project is saved, so every title and blob goes to the server sealed).
  *  - `project`: `{ name, idea }` (default DEFAULT_PROJECT), or false.
  *  - `lang`: the interface language, set before the project is saved (phone cases run in "hi").
@@ -117,28 +167,17 @@ export async function newStudent(
     qa.useKey(student.key);
   }
 
-  // A new account meets the terms gate, then the welcome window.
+  // A new account meets the terms gate; then first run, with nothing over it (first-run build spec, OJ 2026-10-27).
   await page.goto("/");
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  if (!student.key) {
-    await page.getByTestId("welcome-later").click();
-    await expect(page.getByTestId("welcome-dialog")).toBeHidden();
-  } else {
-    await page.getByTestId("welcome-setup").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
-    await page.getByTestId("prov-select").selectOption("groq");
-    await expect(page.getByTestId("prov-select"), "newStudent must save the key as Groq: the fake AI provider refuses the default, Gemini").toHaveValue("groq");
-    await page.getByTestId("key-input").fill(student.key);
-    await page.getByTestId(keyMode === "plain" ? "key-mode-plain" : "key-mode-pass").check();
-    await page.getByTestId("key-save").click();
-    if (keyMode === "passphrase") {
-      // "Protect with a passphrase" sets the vault up first, and its passphrase is the key's.
-      student.passphrase = newPassphrase();
-      student.recoveryCode = await setUpVault(page, student.passphrase);
-    }
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await expect(page.getByTestId("terms-dialog")).toBeHidden();
+  if (student.key) {
+    // The key goes in through Connect AI, from the header (the AI pill, or the Menu's AI item on a phone).
+    await openConnectAI(page);
+    if (keyMode === "passphrase") student.passphrase = newPassphrase();
+    student.recoveryCode = (await connectKey(page, { key: student.key, keep: keyMode === "plain" ? "plain" : "pass", passphrase: student.passphrase, answerTest: aiMode !== "ok" })) ?? undefined;
   }
   if (withVault && !student.passphrase) {
     student.passphrase = newPassphrase();

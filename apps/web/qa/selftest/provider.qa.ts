@@ -29,8 +29,7 @@ test("provider: the api's AI route meets the fake provider", { tag: ["@selftest"
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-later").click();
-  await expect(page.getByTestId("welcome-dialog")).toBeHidden();
+  await expect(page.getByTestId("terms-dialog")).toBeHidden();
 
   const tokenResponse = await page.request.get("/api/token");
   expect(tokenResponse.status()).toBe(200);

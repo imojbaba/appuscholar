@@ -182,6 +182,7 @@ function Flow({ ask }: { ask: ConnectAsk }) {
   }
 
   const later = <p className="m-0 text-[13px] text-muted-foreground" data-testid="connect-later">{t("connect_later")}</p>;
+  const laterSmall = <p className="m-0 text-[13px] text-muted-foreground">{t("connect_later")}</p>;
   const backBtn = trail.length > 0 && <Button type="button" variant="ghost" disabled={busy} data-testid="connect-back" onClick={back}>{t("connect_back")}</Button>;
   const saveInstead = (id: string) => ask.offerSave
     ? <Button type="button" variant="ghost" className="h-auto min-h-11 whitespace-normal" disabled={busy} data-testid={id} onClick={() => end("save")}>{t("connect_save_idea")}</Button>
@@ -220,6 +221,7 @@ function Flow({ ask }: { ask: ConnectAsk }) {
             <a href={PROVIDERS.gemini.keysUrl} target="_blank" rel="noopener" data-testid="connect-open-studio">{t("connect_open_studio")}</a>
           </Button>
           <p className="m-0 text-[13px] text-muted-foreground" data-testid="connect-free-note">{t("connect_free_note")}</p>
+          {laterSmall}
           <DialogFooter className="sticky bottom-0 bg-background pt-1">
             {backBtn}
             <Button variant="primary" data-testid="connect-have-key" onClick={() => go("paste")}>{t("connect_have_key")}</Button>
@@ -249,6 +251,7 @@ function Flow({ ask }: { ask: ConnectAsk }) {
           )}
           {statusLine}
           {failLine}
+          {laterSmall}
           <DialogFooter className="sticky bottom-0 bg-background pt-1">
             {backBtn}
             {fail && saveInstead("connect-fail-save")}

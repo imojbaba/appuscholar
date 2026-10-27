@@ -362,7 +362,7 @@
 .idea-sharpen:not([open]) { padding-top: var(--s2); padding-bottom: var(--s2); }
 .idea-sharpen summary:focus-visible, .idea-field-change:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 .idea-field { margin-top: var(--s2); font-size: 14px; color: var(--muted); display: grid; gap: var(--s1); }
-.idea-field-change { min-height: 44px; padding: 0 4px; border: none; background: none; color: var(--purple-800); text-decoration: underline; text-underline-offset: 2px; font: inherit; cursor: pointer; }
+.idea-field-change { min-height: 44px; min-width: 44px; padding: 0 4px; border: none; background: none; color: var(--purple-800); text-decoration: underline; text-underline-offset: 2px; font: inherit; cursor: pointer; }
 .idea-check, .ai-read-acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
 .idea-check button, .ai-read-acts button { min-height: 44px; }
 .idea-note { margin: 0; font-size: 13px; color: var(--muted); }

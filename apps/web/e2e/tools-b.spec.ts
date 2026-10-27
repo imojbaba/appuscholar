@@ -32,6 +32,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import * as editorAt from "./support/editor";
 import { POWER_FOOTER_NOTE } from "@appuscholar/core";
@@ -117,14 +118,11 @@ async function newProject(page: Page): Promise<string> {
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_test");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { keep: "plain" });
   await expect(page.getByTestId("first-run")).toBeVisible();
   await page.locator("#ideaTopic").fill(FIRST_RUN_IDEA);
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 pupils in two villages");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });

@@ -277,7 +277,8 @@ async function projectWithIdeaCheck(
 ): Promise<{ student: Student; id: string }> {
   const student = await newStudent(page, qa, { key: "ok", project: false, ...(o.vault ? { vault: o.vault } : {}) });
   await page.locator("#ideaTopic").fill("Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?");
-  if (o.resources) await page.locator("#ideaRes").fill(o.resources);
+  // The three questions are folded away, optional ("Add details for better feedback").
+  if (o.resources) { await page.getByTestId("idea-details-toggle").click(); await page.locator("#ideaRes").fill(o.resources); }
   await page.getByTestId("idea-save-title").fill(PROJECT);
   await page.getByTestId("idea-check").click();
   if (o.afterCheck) await o.afterCheck();

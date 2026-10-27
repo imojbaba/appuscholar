@@ -14,6 +14,7 @@ import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { e2eEmail, signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
+import { connectAI } from "./support/connect";
 import { WEB_ORIGIN } from "./support/origins";
 import * as editorAt from "./support/editor";
 
@@ -87,60 +88,32 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("terms-need")).toHaveText("Tick both boxes to continue.");
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
-    const where = (await page.getByTestId("terms-continue").boundingBox())!;
     await page.getByTestId("terms-continue").click();
     await expect(page.getByTestId("terms-dialog")).toBeHidden();
-    // O11 (Phase 3A walk): a second click where Continue was, or an Enter meant for it, arrives as the welcome opens with its primary
-    // button in the same place. Neither may open the key window: the welcome shows first, with its Later button.
-    await expect(page.getByTestId("welcome-dialog")).toBeVisible();
-    await expect(page.getByTestId("welcome-setup")).toBeDisabled();
-    await page.mouse.click(where.x + where.width / 2, where.y + where.height / 2);
-    await page.keyboard.press("Enter");
-    await expect(page.getByTestId("welcome-dialog")).toBeVisible();
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
-    await expect(page.getByTestId("welcome-later")).toBeVisible();
-    await expect(page.getByTestId("welcome-later")).toBeEnabled();
+    // First run (OJ 2026-10-27): nothing opens over the idea screen after the terms; AI is connected when it is first needed.
+    await expect(page.getByTestId("first-run")).toBeVisible();
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
-  await test.step("2. Welcome, then Set up my key: Groq, a passphrase (the vault setup and its recovery sheet), Save, Test", async () => {
-    await expect(page.getByTestId("welcome-dialog")).toBeVisible();
-    await page.getByTestId("welcome-setup").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
-    await page.getByTestId("prov-select").selectOption("groq");
-    await page.getByTestId("key-input").fill("gsk_test");
-    await page.getByTestId("key-mode-pass").check();
-    await page.getByTestId("key-save").click();
-    // No vault yet: its setup comes first, and its passphrase is the one that locks the key.
-    await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
+  await test.step("2. Connect AI from the AI pill: Groq, a passphrase (chosen and confirmed in the window, then its recovery sheet); the AI connection's Test", async () => {
+    await expect(page.getByTestId("ai-pill")).toHaveText("Connect AI");
     await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
     const toasts = await recordToasts(page);
-    await page.getByTestId("vault-setup-submit").click();
-    await expect(page.getByTestId("pass-dialog")).toBeVisible();
-    await expect(page.getByTestId("pass-message")).toContainText("only this passphrase opens them");
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
-    await expect(page.getByTestId("pass-message")).toHaveText("Type it again");
-    await page.getByTestId("pass-input").fill(PASS);
-    await page.getByTestId("pass-ok").click();
-    // The recovery sheet: the code shown once; Done waits for "I have saved it".
-    await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
-    await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
     // The key is saved under the vault. First run has no document yet, so nothing is migrated (phase3a-vault.spec.ts step 3 migrates a written one).
-    await expect.poll(toasts).toEqual(expect.arrayContaining(["Groq connected ✓ and encrypted 🔒", "All your documents are now locked in your vault ✓"]));
-    await expect(page.getByTestId("vault-sheet-done")).toBeDisabled();
-    await page.getByTestId("vault-sheet-saved").check();
-    await page.getByTestId("vault-sheet-done").click();
-    await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    const code = await connectAI(page, { keep: "pass", passphrase: PASS });
+    expect(code).toMatch(RECOVERY_CODE);
+    await expect.poll(toasts).toEqual(expect.arrayContaining(["AI connected.", "All your documents are now locked in your vault ✓"]));
     await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
 
-    // The AI pill names the provider; it opens the key dialog.
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
+    // The AI pill names the company; it opens the AI connection, whose Test asks the provider.
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
     await page.getByTestId("ai-pill").click();
-    await page.getByTestId("key-test").click();
-    await expect(page.getByTestId("key-test-out")).toContainText("Working ✓ Provider: Groq. The AI replied: OK");
+    await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "manage");
+    await page.getByTestId("connect-test").click();
+    await expect(page.getByTestId("connect-status")).toHaveText("Groq answered. Your key works.");
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
   });
 
   await test.step("3. first run: the idea, Save as my project (no check needed); the home's six stages; Writing opens the project's empty document", async () => {
@@ -443,12 +416,7 @@ test("sign-out asks whether to forget the AI keys remembered on this computer (k
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_remembered");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { key: "gsk_remembered", keep: "plain" });
   // The key is filed under this account, never under the bare provider name.
   const keys = await remembered();
   expect(keys).toHaveLength(1);

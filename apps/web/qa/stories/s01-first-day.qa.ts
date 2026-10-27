@@ -7,7 +7,7 @@ import { dictionary, T, type Lang } from "../support/dict";
 import { EYE_SOURCE, expectEyeRoom } from "../support/eyes";
 import { QA_API_ORIGIN } from "../support/origins";
 import { signInAs } from "../support/session";
-import { apiGet, docText, newStudent, providerCalls, qaKey, recordToasts, setUpVault, slowApi, toPlace, type Student } from "../support/student";
+import { apiGet, docText, newStudent, providerCalls, qaKey, recordToasts, slowApi, toPlace, type Student } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
 // The sentence callAI's apiMsg gives a rate limit: an English constant in the module, not a dictionary key (the way e2e/stage2-idea-literature.spec.ts imports its English constants, ruling R15).
 import { apiMsg } from "../../lib/ai/callAI";
@@ -20,27 +20,31 @@ import { apiMsg } from "../../lib/ai/callAI";
  * slow api (S1-03, O3); the idea check failing once and then retried (S1-04); the header's key status after a reload (S1-05, O6). The vault's own windows are S10's: here the vault is
  * only set up on the way, because "Protect with a passphrase" asks for it (stage-2.md row 1).
  *
+ * The first day follows the first-run build spec OJ approved on 2026-10-27: after the terms the idea screen is the first real screen (no welcome window), and AI is connected when it is
+ * first needed: "Get feedback on my idea" with no key opens Connect AI (the question, the key, how it is kept, the passphrase and the recovery sheet), and the feedback then runs on the
+ * typed idea with no second press. Where the sheets (stage-2.md, wave-b1.md) describe the older welcome window and key window, the spec is what is asserted, and the report says so.
+ *
  * The words come from the dictionaries (dict.ts). Where the sheet and the app differ, the app's dictionary is what is asserted, and the report says so: the sheet's vault pill "Locked to
- * you" is the app's `vault_pill_yours`, "Vault unlocked" (as S10 and the e2e assert). The sentences that are not in a dictionary are the app's own constants: the key's toast "Groq connected ✓
- * and encrypted 🔒" (quoted by the sheet) and callAI's rate-limit sentence (imported from its module).
+ * you" is the app's `vault_pill_yours`, "🔓 Unlocked" (as S10 and the e2e assert), and the sheet's key toast "Groq connected ✓ and encrypted 🔒" is the app's `connect_done_toast`,
+ * "AI connected.". The sentence that is not in a dictionary is callAI's rate-limit sentence (imported from its module).
  *
  * Three things a reader of a case would not guess:
  *  - S1-01 changes the AI's answer on its way back from the api (`labelFirstLineArea`): the fake provider's recorded reply has no line labelled only "Area", and the sheet says such a line shows
  *    no name. The request still goes through the api and the provider, which log it as usual.
  *  - S1-02 gives the account Hindi through its settings before its first page. The terms are a modal window over the header, so the language button cannot be pressed until they are accepted
- *    (its overlay intercepts the press), and the terms and the welcome window are the first screens of a new account.
+ *    (its overlay intercepts the press), and the terms are the first screen of a new account.
  *  - S1-03 and S1-05 sample the page itself (a sign of progress; every text the AI pill shows), not from the test's side: what they look for can be on the screen for less than a poll.
  */
 const ROW1 = "stage-2.md row 1";
 const B1 = "wave-b1.md";
 const E2E = "e2e/stage2-idea-literature.spec.ts step 1";
-/** The folders a fix for these cases starts in: first run, the Idea check, the project's home and list, and the key window. */
+/** The folders a fix for these cases starts in: first run, the Idea check, the project's home and list, and Connect AI. */
 const CODE = [
   "apps/web/components/frame/FirstRun.tsx",
   "apps/web/components/places/IdeaPlace.tsx",
   "apps/web/components/frame/ProjectHome.tsx",
   "apps/web/components/frame/ProjectList.tsx",
-  "apps/web/components/workspace/dialogs/ProviderKey.tsx"
+  "apps/web/components/workspace/dialogs/ConnectAI.tsx"
 ];
 
 /** The idea of wave-b1.md row 2, in its four fields. */
@@ -58,8 +62,8 @@ const AI_USE_IDEA = "checking whether my project idea is realistic";
 /** The three verdicts the idea prompt asks for (packages/core buildIdeaPromptV2; wave-b1.md row 2). */
 const VERDICTS = /^(Proceed as planned|Proceed with these modifications|Reconsider this topic)/;
 const RECOVERY_CODE = /^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$/;
-/** The two toasts of stage-2.md row 1: the key saved under the vault ("Groq connected ✓ and encrypted 🔒", settings_key_connected_locked) and the vault's migration. */
-const KEY_TOASTS = [T("settings_key_connected_locked", { p: "Groq" }), T("vault_migrated")];
+/** The two toasts of stage-2.md row 1: AI connected (the sheet's "Groq connected ✓ and encrypted 🔒" is the spec's connect_done_toast) and the vault's migration. */
+const KEY_TOASTS = [T("connect_done_toast"), T("vault_migrated")];
 
 /**
  * The fake provider's recorded reply to the idea prompt (qa/fixtures/ai-replies.json), taken apart for what the page must show: five rated lines, each "Area: Rating. Reason", then "Verdict: ...".
@@ -80,9 +84,10 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const pill = (page: Page) => page.getByTestId("vault-pill");
 
-/** Where the student's idea goes into the four fields of first run, by the ids the e2e suite uses (the labels differ with the language). */
+/** Where the student's idea goes into the four fields of first run, by the ids the e2e suite uses (the labels differ with the language). The three questions are folded away, optional. */
 async function writeIdea(page: Page): Promise<void> {
   await page.locator("#ideaTopic").fill(IDEA.topic);
+  if (!(await page.getByTestId("idea-details").evaluate((el) => (el as HTMLDetailsElement).open))) await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill(IDEA.resources);
   await page.locator("#ideaTime").fill(IDEA.timeframe);
   await page.locator("#ideaCons").fill(IDEA.constraints);
@@ -91,23 +96,38 @@ async function writeIdea(page: Page): Promise<void> {
 /** The project name first run offers: the idea's first 60 characters, cut at the last word that fits (D-S2-39; the e2e computes it the same way). */
 const OFFERED_NAME = IDEA.topic.slice(0, IDEA.topic.slice(0, 61).lastIndexOf(" "));
 
-/** The terms: both boxes, then Continue. The welcome window opens. */
+/** The terms: both boxes, then Continue. First run's idea screen is then in front, with nothing over it. */
 async function acceptTerms(page: Page): Promise<void> {
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await expect(page.getByTestId("welcome-dialog")).toBeVisible();
-  // The welcome ignores presses for a moment after it opens (WELCOME_GUARD_MS): a picture of it is taken, and a button pressed, when it is armed.
-  await expect(page.getByTestId("welcome-setup")).toBeEnabled();
+  await expect(page.getByTestId("terms-dialog")).toBeHidden();
+  await expect(page.getByTestId("first-run")).toBeVisible();
 }
 
-/** The key window: Groq chosen and asserted (the fake provider refuses the default, Gemini), the key typed, "Protect with a passphrase" chosen. Save is the caller's. */
-async function fillKeyWindow(page: Page, key: string): Promise<void> {
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await expect(page.getByTestId("prov-select"), "the key must be saved as Groq: the fake AI provider refuses the default, Gemini").toHaveValue("groq");
-  await page.getByTestId("key-input").fill(key);
-  await page.getByTestId("key-mode-pass").check();
+/** Connect AI's key screen (4c): Groq chosen through "Using a different AI company?" and asserted (the fake provider refuses the default, Gemini), the key typed. Connect is the caller's. */
+async function fillKey(page: Page, key: string): Promise<void> {
+  await page.getByTestId("connect-other").click();
+  await page.getByTestId("connect-provider").selectOption("groq");
+  await expect(page.getByTestId("connect-provider"), "the key must be saved as Groq: the fake AI provider refuses the default, Gemini").toHaveValue("groq");
+  await page.getByTestId("connect-key").fill(key);
+}
+
+/** The new passphrase in Connect AI (4d's second choice), typed twice; then the window's button. */
+async function choosePassphrase(page: Page, passphrase: string): Promise<void> {
+  await page.getByTestId("new-pass").fill(passphrase);
+  await page.getByTestId("new-pass2").fill(passphrase);
+  await page.getByTestId("new-pass-go").click();
+}
+
+/** The recovery sheet: its code read, "I have saved it" ticked, Done. Returns the code. */
+async function readSheet(page: Page): Promise<string> {
+  await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible({ timeout: 20_000 });
+  const code = (await page.getByTestId("vault-code").innerText()).trim();
+  await page.getByTestId("vault-sheet-saved").check();
+  await page.getByTestId("vault-sheet-done").click();
+  await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
+  return code;
 }
 
 /**
@@ -144,7 +164,7 @@ async function recordButtonTexts(page: Page, testId: string): Promise<void> {
 const buttonTexts = (page: Page) => page.evaluate(() => (window as unknown as { __texts: string[] }).__texts);
 
 /**
- * What the page says in its live regions and toast right now (the texts that are there before a press are no sign of what the press does: the "Groq connected" toast of the key window
+ * What the page says in its live regions and toast right now (the texts that are there before a press are no sign of what the press does: the "AI connected." toast of Connect AI
  * is still on the screen when first run's Save is pressed). Runs in the page.
  */
 function liveTexts(): string[] {
@@ -169,14 +189,14 @@ function progressSign(arg: { savedLabel: string; before: string[] }): boolean {
 
 // ---- S1-01 -------------------------------------------------------------------------------------------------------------------------------------------
 
-test("S1-01 I start: the terms, my key, my vault, my idea checked, my project made", { tag: ["@slice"] }, async ({ page, context, qa }) => {
+test("S1-01 I start: the terms, my idea, Connect AI at the feedback (my key, my vault), the feedback, my project made", { tag: ["@slice"] }, async ({ page, context, qa }) => {
   qa.begin({
     story: "S1",
     id: "S1-01",
-    goal: "I sign in for the first time, accept the terms, add my AI key with a passphrase, write my idea, check it and save it as my project, and my home, my project list and my AI-use log show it",
+    goal: "I sign in for the first time, accept the terms, write my idea, ask for feedback, connect AI there with a passphrase, get the feedback and save my project, and my home, my project list and my AI-use log show it",
     situation: { vault: "off", network: "fine", screen: "desktop", lang: "en", data: "empty", ai: "answers" },
     steps: [
-      "the terms", "the welcome window", "my key", "my vault", "first run: my idea", "check if it is doable", "save as my project", "the project's home", "the project list", "the AI-use log"
+      "the terms", "first run: my idea", "get feedback: Connect AI", "my key", "my vault", "the feedback", "save as my project", "the project's home", "the project list", "the AI-use log"
     ],
     code: CODE
   });
@@ -199,89 +219,113 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
     await acceptTerms(page);
   });
 
-  await qa.step("the welcome window", async () => {
-    await qa.check("data", "the welcome window offers to set up the key, or later", async () => {
-      await expect(page.getByTestId("welcome-dialog").getByRole("heading", { name: T("welcome_h2") })).toBeVisible();
-      await expect(page.getByTestId("welcome-setup")).toHaveText(T("welcome_setup_btn"));
-      await expect(page.getByTestId("welcome-later")).toHaveText(T("welcome_later_btn"));
-    }, { source: `${ROW1} ("on the welcome window press Set up my key")` });
-    await qa.check("conceptual", "the welcome window says what really happens next (the question, the check and save, the project's home) and that the key can wait, and names no button the page does not have", async () => {
-      const next = page.getByTestId("welcome-next").locator("li");
-      await expect(next).toHaveText([T("welcome_next1"), T("welcome_next2"), T("welcome_next3")]);
-      await expect(page.getByTestId("welcome-key-note")).toHaveText(T("welcome_key_note").replace(/<\/?b>/g, ""));
-      await expect(page.getByTestId("welcome-dialog")).not.toContainText("⚙");
-    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); v1's steps named a ⚙ AI Provider / Key button the v2 header does not have" });
-    await qa.checkpoint("the welcome window");
-    await page.getByTestId("welcome-setup").click();
-  });
-
-  await qa.step("my key", async () => {
-    // Every toast from here to the end of the day, in order (one toast replaces another, so two close together are read from this record).
-    toasts = await recordToasts(page);
-    await qa.check("conceptual", "with no vault yet, the key window starts at Remember on this computer and says the key can be locked later, so saving the first key does not send the student into the vault set-up", async () => {
-      await expect(page.getByTestId("provider-dialog")).toBeVisible();
-      await expect(page.getByTestId("key-mode-plain")).toBeChecked();
-      await expect(page.getByTestId("key-mode-later")).toHaveText(T("settings_keymode_later"));
-    }, { source: "first-run fix 2026-10-26 (Dr. Sharma's first login: the key step forced the vault set-up)" });
-    await fillKeyWindow(page, s.key!);
-    await qa.check("data", "the key window is the AI provider window, with Groq chosen and \"Protect with a passphrase\" ticked", async () => {
-      await expect(page.getByTestId("provider-dialog").getByRole("heading", { name: T("settings_h2") })).toBeVisible();
-      await expect(page.getByTestId("prov-select")).toHaveValue("groq");
-      await expect(page.getByTestId("key-mode-pass")).toBeChecked();
-    }, { source: `${ROW1} ("Choose Groq, paste your key, choose Protect with a passphrase")` });
-    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE });
-    await qa.checkpoint("the key window");
-    await page.getByTestId("key-save").click();
-  });
-
-  await qa.step("my vault", async () => {
-    // "Protect with a passphrase" sets the vault up first, and its passphrase is the key's.
-    s.passphrase = fresh();
-    s.recoveryCode = await setUpVault(page, s.passphrase);
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
-    await qa.check("data", "the recovery sheet showed a code of four groups of five (XXXXX-XXXXX-XXXXX-XXXXX)", async () => {
-      expect(s.recoveryCode).toMatch(RECOVERY_CODE);
-    }, { source: `${ROW1} ("write the recovery code down"); e2e/phase3a-vault.spec.ts step 3` });
-    await qa.check("data", "the toasts: the key is connected and encrypted, and all the documents are locked in the vault, each once", async () => {
-      // The sheet names the two and no order (the app showed the vault's first in every run so far). One toast replaces another, so they are read from the record.
-      await expect.poll(async () => [...(await toasts())].sort(), { message: "the toasts shown so far" }).toEqual([...KEY_TOASTS].sort());
-    }, { source: `${ROW1} ("The toasts 'Groq connected ✓ and encrypted 🔒' ... and 'All your documents are now locked in your vault ✓'"); ${E2E}` });
-    await qa.check("data", "the vault pill reads Vault unlocked, and the AI pill reads AI: Groq, your key", async () => {
-      await expect(pill(page)).toHaveText(T("vault_pill_yours"));
-      await expect(pill(page)).toHaveAttribute("data-status", "unlocked");
-      await expect(page.getByTestId("ai-pill")).toHaveText(T("ai_pill_key", { provider: "Groq" }));
-    }, { source: `${ROW1} (the sheet's vault pill "Locked to you" is the app's "Vault unlocked", as ${E2E} asserts)` });
-  });
-
   await qa.step("first run: my idea", async () => {
-    await qa.check("data", "first run asks what I want to study, offers Save as my project before any check, and says I can check later", async () => {
+    await qa.check("conceptual", "after the terms nothing opens over the page: the idea screen is the first real screen", async () => {
+      await expect(page).toHaveURL(/\/start$/);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+    }, { source: "first-run build spec (OJ 2026-10-27), step 3: the Welcome dialog is removed from first run" });
+    await qa.check("data", "first run asks what I want to study, offers to save without feedback before any, and says I can get it later", async () => {
       await expect(page.getByTestId("first-run")).toBeVisible();
       await expect(page.getByTestId("first-run").locator("h1")).toHaveText(T("idea_h"));
-      await expect(page.getByTestId("idea-save")).toHaveText(T("idea_save_btn"));
+      await expect(page.getByTestId("idea-hint")).toHaveText(T("idea_hint"));
+      await expect(page.getByTestId("idea-save")).toHaveText(T("idea_save_plain_btn"));
       await expect(page.getByTestId("idea-check")).toHaveText(T("idea_check_btn"));
+      await expect(page.getByTestId("idea-check-note")).toHaveText(T("idea_check_note"));
       await expect(page.getByTestId("first-run").getByText(T("idea_save_unchecked"))).toBeVisible();
-    }, { source: `${ROW1} ("First run shows Save as my project before any check"); ${B1} row 2 ("You can also save it now and check it later in your project.")` });
-    await qa.check("data", "the four fields carry their questions: Your idea, who and what you can use, how much time, what limits you", async () => {
+    }, { source: "first-run build spec (OJ 2026-10-27), step 3; " + `${B1} row 2` });
+    await qa.check("data", "my field of study sits under the idea (Field: Psychology · Change), and the three questions are folded away, optional", async () => {
+      await expect(page.getByTestId("idea-field-value")).toHaveText(T("idea_field", { f: T("settings_field_psychology") }));
+      await expect(page.getByTestId("idea-field-change")).toHaveText(T("idea_field_change"));
+      await expect(page.getByTestId("idea-details-toggle")).toHaveText(T("idea_sharpen_h"));
+      await expect(page.locator("#ideaRes")).toBeHidden();
+    }, { source: "first-run build spec (OJ 2026-10-27), step 3" });
+    await writeIdea(page);
+    await qa.check("data", "the three questions carry their labels: Your idea, who and what you can use, how much time, what limits you", async () => {
       for (const [id, key] of [["ideaTopic", "idea_topic_lbl"], ["ideaRes", "idea_resources_lbl"], ["ideaTime", "idea_timeframe_lbl"], ["ideaCons", "idea_constraints_lbl"]] as const) {
         await expect(page.locator(`label[for="${id}"]`)).toHaveText(T(key));
       }
     }, { source: `${B1} row 2 (the four field labels)` });
-    await writeIdea(page);
     await qa.check("data", "the project name is filled from the idea: its first 60 characters, cut at the last word that fits", async () => {
       await expect(page.getByTestId("idea-save-title")).toHaveValue(OFFERED_NAME);
     }, { source: `${B1} row 3 ("Project name (filled from your idea ...)"); ${E2E}` });
     await qa.checkpoint("first run, with my idea written");
   });
 
-  await qa.step("check if it is doable", async () => {
+  await qa.step("get feedback: Connect AI", async () => {
+    // Every toast from here to the end of the day, in order (one toast replaces another, so two close together are read from this record).
+    toasts = await recordToasts(page);
     endAreaLabel = await labelFirstLineArea(context);
     await recordButtonTexts(page, "idea-check");
     await page.getByTestId("idea-check").click();
+    const dialog = page.getByTestId("connect-dialog");
+    await qa.check("conceptual", "with no key, Get feedback opens Connect AI, which says what a key is and that Google gives one free, and offers three ways on", async () => {
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toHaveAttribute("data-screen", "ask");
+      await expect(dialog.getByRole("heading", { name: T("connect_h") })).toBeVisible();
+      await expect(dialog).toContainText(T("connect_intro"));
+      await expect(page.getByTestId("connect-yes")).toHaveText(T("connect_yes"));
+      await expect(page.getByTestId("connect-no")).toHaveText(T("connect_no"));
+      await expect(page.getByTestId("connect-save")).toHaveText(T("connect_save_idea"));
+      await expect(page.getByTestId("connect-later")).toHaveText(T("connect_later"));
+    }, { source: "first-run build spec (OJ 2026-10-27), step 4a" });
+    await qa.checkpoint("Connect AI: the question");
+  });
+
+  await qa.step("my key", async () => {
+    await page.getByTestId("connect-yes").click();
+    await qa.check("data", "the key screen says where the key is from, with a link for another AI company", async () => {
+      await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "paste");
+      await expect(page.getByTestId("connect-from")).toContainText(T("connect_from", { p: "Google Gemini" }));
+      await expect(page.getByTestId("connect-other")).toHaveText(T("connect_other"));
+    }, { source: "first-run build spec (OJ 2026-10-27), step 4c" });
+    await fillKey(page, s.key!);
+    await qa.check("visual", "the key field keeps room for its eye, so a long key does not run under it", () => expectEyeRoom(page, ["connect-key"]), { source: EYE_SOURCE });
+    await qa.checkpoint("Connect AI: my key");
+    await page.getByTestId("connect-go").click();
+    await qa.check("data", "Connect tests the key at once, then asks how to keep it: Remember on this computer, or Protect with a passphrase", async () => {
+      await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "keep", { timeout: 20_000 });
+      await expect(page.getByTestId("connect-keep-plain")).toContainText(T("connect_keep_plain"));
+      await expect(page.getByTestId("connect-keep-pass")).toContainText(T("connect_keep_pass"));
+      await expect(page.getByTestId("connect-keep-later")).toHaveText(T("connect_keep_later"));
+      expect((await providerCalls(s.key!)).filter((e) => e.prompt === "Reply with the single word OK."), "the key's test at the provider").toHaveLength(1);
+    }, { source: "first-run build spec (OJ 2026-10-27), steps 4c and 4d" });
+    await qa.checkpoint("Connect AI: how should we keep it?");
+    await page.getByTestId("connect-keep-pass").click();
+  });
+
+  await qa.step("my vault", async () => {
+    s.passphrase = fresh();
+    await qa.check("data", "the passphrase is chosen in the same window, with the two rules ticked as they are typed", async () => {
+      await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "pass");
+      await expect(page.getByTestId("new-pass-len")).toHaveAttribute("data-ok", "false");
+      await page.getByTestId("new-pass").fill(s.passphrase!);
+      await expect(page.getByTestId("new-pass-len")).toHaveAttribute("data-ok", "true");
+      await expect(page.getByTestId("new-pass-same")).toHaveAttribute("data-ok", "false");
+      await expect(page.getByTestId("new-pass-go")).toBeDisabled();
+    }, { source: "first-run build spec (OJ 2026-10-27), step 4d (live checks for 'at least 10 characters' and 'both match')" });
+    await choosePassphrase(page, s.passphrase);
+    s.recoveryCode = await readSheet(page);
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
+    await qa.check("data", "the recovery sheet showed a code of four groups of five (XXXXX-XXXXX-XXXXX-XXXXX)", async () => {
+      expect(s.recoveryCode).toMatch(RECOVERY_CODE);
+    }, { source: `${ROW1} ("write the recovery code down"); e2e/phase3a-vault.spec.ts step 3` });
+    await qa.check("data", "the vault pill reads Unlocked, and the AI pill reads AI: Groq", async () => {
+      await expect(pill(page)).toHaveText(T("vault_pill_yours"));
+      await expect(pill(page)).toHaveAttribute("data-status", "unlocked");
+      await expect(page.getByTestId("ai-pill")).toHaveText(T("ai_pill_key", { provider: "Groq" }));
+    }, { source: `${ROW1} (the sheet's vault pill "Locked to you" is the app's "🔓 Unlocked", as ${E2E} asserts)` });
+  });
+
+  await qa.step("the feedback", async () => {
     const read = page.getByTestId("idea-read");
-    await expect(read).toBeVisible();
-    await qa.check("data", "the button reads \"Checking your idea…\" while it runs, then \"Check if it is doable\" again", async () => {
+    // No second press: once AI is connected, the feedback runs on the idea as it was typed.
+    await expect(read).toBeVisible({ timeout: 30_000 });
+    await qa.check("data", "the toasts: AI connected, and all the documents are locked in the vault, each once", async () => {
+      await expect.poll(async () => [...(await toasts())].sort(), { message: "the toasts shown so far" }).toEqual([...KEY_TOASTS].sort());
+    }, { source: `${ROW1} ("The toasts 'Groq connected ✓ and encrypted 🔒' ... and 'All your documents are now locked in your vault ✓'"); first-run build spec (OJ 2026-10-27), step 4e ("AI connected.")` });
+    await qa.check("data", "the feedback ran with no second press: the button read \"Reading your idea…\" while it ran, then \"Get feedback on my idea\" again", async () => {
       expect(await buttonTexts(page)).toEqual([T("idea_check_btn"), T("idea_checking"), T("idea_check_btn")]);
-    }, { source: `${B1} row 2 ("The button reads 'Checking your idea…' while it runs")` });
+    }, { source: "first-run build spec (OJ 2026-10-27), step 4e; " + `${B1} row 2` });
     await qa.check("data", "the AI read is labelled as AI, and shows five rated lines (the first without a name), each with its reason and its rating, then the verdict", async () => {
       await expect(read.locator(".ai-read-label")).toHaveText(T("idea_read_label"));
       await expect(read.getByTestId("idea-read-line")).toHaveCount(RATED.length);
@@ -323,6 +367,10 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       expect(await read.getByTestId("idea-read-area").allInnerTexts(), "the names shown on the read").not.toContain("Area");
       expect((await lines.first().innerText()).split(/\s+/), "the words of the first line").not.toContain("Area");
     }, { source: `${B1} row 2 ("A line the AI labels only 'Area' shows with no name, never the word 'Area'")` });
+    await qa.check("data", "under the read: the project name, then Save as my project", async () => {
+      await expect(read.getByTestId("idea-save-title")).toBeVisible();
+      await expect(read.getByTestId("idea-save")).toHaveText(T("idea_save_btn"));
+    }, { source: "first-run build spec (OJ 2026-10-27), step 5" });
     await qa.checkpoint("the AI read of my idea");
     await endAreaLabel();
   });
@@ -342,8 +390,15 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
       const ready = page.getByTestId("home-ready");
       await expect(ready.getByRole("heading", { name: T("home_ready_h") })).toBeVisible();
       await expect(ready).toContainText(T("home_ready_saved_checked"));
-      await expect(ready).toContainText(T("home_ready_where"));
-    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\")" });
+      // What is at the top of the page, in the header's own words: AI, the lock (a vault exists here), Account.
+      await expect(ready).toContainText(T("home_ready_top_h"));
+      await expect(page.getByTestId("home-ready-top-ai")).toHaveText(T("home_ready_top_ai_k") + " " + T("home_ready_top_ai"));
+      await expect(page.getByTestId("home-ready-top-lock")).toHaveText(T("home_ready_top_lock_k") + " " + T("home_ready_top_lock"));
+      await expect(page.getByTestId("home-ready-top-account")).toHaveText(T("home_ready_top_account_k") + " " + T("home_ready_top_account"));
+    }, { source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); first-run build spec (OJ 2026-10-27), step 6" });
+    await qa.check("data", "with a key there is no \"AI isn't connected\" line", async () => {
+      await expect(page.getByTestId("home-ai-off")).toHaveCount(0);
+    }, { source: "first-run build spec (OJ 2026-10-27), step 6" });
     await qa.checkpoint("the project's home, just made");
     await page.getByTestId("home-ready-ok").click();
     // That it stays away after a reload is test/projectHome.test.tsx's: a reload here would lock this student's vault and leave the home asking for the passphrase.
@@ -435,10 +490,12 @@ test("S1-01 I start: the terms, my key, my vault, my idea checked, my project ma
     await qa.check("data", "the first day showed the two toasts of the sheet and no others (no failure toast)", async () => {
       expect([...(await toasts())].sort()).toEqual([...KEY_TOASTS].sort());
     }, { source: `${ROW1}; ${E2E}` });
-    await qa.check("data", "the AI provider received one request, answered, for the idea check, carrying my four fields", async () => {
-      expect(asked.map((e) => ({ host: e.host, kind: e.kind, outcome: e.outcome }))).toEqual([{ host: "api.groq.com", kind: AI_USE_IDEA, outcome: "answered" }]);
-      for (const words of Object.values(IDEA)) expect(asked[0]!.prompt).toContain(words);
-    }, { source: `${B1} row 2; packages/core/src/aiuse.ts (the label of the idea prompt)` });
+    await qa.check("data", "the AI provider received two requests, both answered: Connect's key test, then the idea check carrying my four fields", async () => {
+      expect(asked.map((e) => ({ host: e.host, outcome: e.outcome }))).toEqual([{ host: "api.groq.com", outcome: "answered" }, { host: "api.groq.com", outcome: "answered" }]);
+      expect(asked[0]!.prompt).toBe("Reply with the single word OK.");
+      expect(asked[1]!.kind).toBe(AI_USE_IDEA);
+      for (const words of Object.values(IDEA)) expect(asked[1]!.prompt).toContain(words);
+    }, { source: `${B1} row 2; packages/core/src/aiuse.ts (the label of the idea prompt); first-run build spec (OJ 2026-10-27), step 4c (Connect tests the key)` });
     await qa.check("data", "the AI-use log holds one entry, \"checking whether my project idea is realistic\", and the save has claimed it for the new project", async () => {
       const all = await apiGet<Array<{ k: string; p: string }>>(page, "/ai/log");
       expect(all.filter((e) => e.k === AI_USE_IDEA), "idea-check entries in the account's log").toHaveLength(1);
@@ -455,9 +512,9 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
   qa.begin({
     story: "S1",
     id: "S1-02",
-    goal: "On my phone, in Hindi, I accept the terms, add my key, write my idea, check it and save my project, and every screen fits and speaks Hindi",
+    goal: "On my phone, in Hindi, I accept the terms, write my idea, connect AI when I ask for feedback, get the feedback and save my project, and every screen fits and speaks Hindi",
     situation: { vault: "off", network: "fine", screen: "phone", lang: "hi", data: "empty", ai: "answers" },
-    steps: ["Hindi from the first screen", "the terms", "the welcome window", "the key window", "my vault", "first run", "check, save and home"],
+    steps: ["Hindi from the first screen", "the terms", "first run", "Connect AI", "my vault", "feedback, save and home"],
     code: CODE
   });
   const hi: Lang = "hi";
@@ -495,58 +552,65 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await acceptTerms(page);
   });
 
-  await qa.step("the welcome window", async () => {
-    await qa.check("data", "the welcome window speaks Hindi: its heading, its introduction, what happens next and its two buttons", inHindi("welcome-dialog", ["welcome_h2", "welcome_intro", "welcome_next_h", "welcome_next1", "welcome_next2", "welcome_next3", "welcome_setup_btn", "welcome_later_btn"]), {
-      source: `${ROW1}; spec section 6 (the windows' words in Hindi)`
-    });
-    await qa.checkpoint("the welcome window, on a phone, in Hindi");
-    await page.getByTestId("welcome-setup").click();
-  });
-
-  await qa.step("the key window", async () => {
-    toasts = await recordToasts(page);
-    await fillKeyWindow(page, s.key!);
-    await qa.check("data", "the key window speaks Hindi where it has Hindi: its heading, its introduction, the provider and key-mode labels, the three key modes and Save", inHindi("provider-dialog", [
-      "settings_h2", "settings_intro", "settings_provider_label", "settings_keymode_label", "settings_keymode_pass", "settings_keymode_plain", "settings_keymode_session", "settings_savekey_btn"
-    ]), { source: `${ROW1}; spec section 6 (the windows' words in Hindi)` });
-    await qa.check("visual", "the key fields keep room for their eyes, so a long key does not run under them", () => expectEyeRoom(page, ["key-input", "oa-key-input"]), { source: EYE_SOURCE });
-    await qa.checkpoint("the key window, on a phone, in Hindi");
-    await page.getByTestId("key-save").click();
-  });
-
-  await qa.step("my vault", async () => {
-    // The vault's own windows on a phone in Hindi are S10-06's: here they are only walked through.
-    s.recoveryCode = await setUpVault(page, s.passphrase!);
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
-    await qa.check("data", "the vault pill says in Hindi that the vault is open", async () => {
-      await expect(pill(page)).toHaveText(T("vault_pill_yours", {}, hi));
-      await expect(pill(page)).toHaveAttribute("data-status", "unlocked");
-    }, { source: `${ROW1}; spec section 6 (phone + Hindi)` });
-    await qa.check("data", "the two toasts of the sheet were shown, each once, and no others", async () => {
-      await expect.poll(async () => (await toasts()).length, { message: "the toasts shown so far" }).toBe(2);
-      const shown = await toasts();
-      expect([...shown].sort()).toEqual([T("settings_key_connected_locked", { p: "Groq" }, hi), T("vault_migrated", {}, hi)].sort());
-    }, { source: `${ROW1} ("The toasts ... 'Groq connected ✓ and encrypted 🔒' ... and 'All your documents are now locked in your vault ✓'")` });
-    await qa.check("data", "every toast speaks Hindi (the provider's name apart)", async () => {
-      const english = (await toasts()).filter((text) => !/\p{Script=Devanagari}/u.test(text));
-      expect(english, "toasts with no Hindi in them").toEqual([]);
-    }, { source: "spec section 8 (in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries); the key toast is settings_key_connected_locked (it was written in code: Q9)" });
-  });
-
   await qa.step("first run", async () => {
     await expect(page.getByTestId("first-run")).toBeVisible();
-    await qa.check("data", "first run speaks Hindi: the heading, its hint, the three questions, the check and the save", inHindi("first-run", [
-      "idea_h", "idea_hint", "idea_topic_lbl", "idea_sharpen_h", "idea_resources_lbl", "idea_timeframe_lbl", "idea_constraints_lbl", "idea_check_btn", "idea_check_note", "idea_save_title", "idea_save_btn", "idea_save_unchecked"
-    ]), { source: `${B1} row 2; spec section 6 (the windows' words in Hindi)` });
+    await qa.check("data", "first run speaks Hindi: the heading, its hint, the field line, the folded questions, the feedback button and its note, and the save", inHindi("first-run", [
+      "idea_h", "idea_hint", "idea_topic_lbl", "idea_field_change", "idea_sharpen_h", "idea_check_btn", "idea_check_note", "idea_save_title", "idea_save_plain_btn", "idea_save_unchecked"
+    ]), { source: "first-run build spec (OJ 2026-10-27), step 3; spec section 6 (the windows' words in Hindi)" });
     await writeIdea(page);
+    await qa.check("data", "the three questions, opened, speak Hindi", inHindi("first-run", ["idea_resources_lbl", "idea_timeframe_lbl", "idea_constraints_lbl"]), { source: `${B1} row 2; spec section 6` });
     await quiet();
     await qa.checkpoint("first run, on a phone, in Hindi");
   });
 
-  await qa.step("check, save and home", async () => {
+  await qa.step("Connect AI", async () => {
+    toasts = await recordToasts(page);
     await page.getByTestId("idea-check").click();
+    await expect(page.getByTestId("connect-dialog")).toBeVisible();
+    await qa.check("data", "Connect AI speaks Hindi: its heading, what a key is, its three choices and where to find it later", inHindi("connect-dialog", [
+      "connect_h", "connect_intro", "connect_yes", "connect_no", "connect_save_idea", "connect_later"
+    ]), { source: "first-run build spec (OJ 2026-10-27), step 4a; spec section 6" });
+    await qa.checkpoint("Connect AI, on a phone, in Hindi");
+    await page.getByTestId("connect-yes").click();
+    await fillKey(page, s.key!);
+    await qa.check("visual", "the key field keeps room for its eye, so a long key does not run under it", () => expectEyeRoom(page, ["connect-key"]), { source: EYE_SOURCE });
+    await qa.checkpoint("Connect AI: my key, on a phone, in Hindi");
+    await page.getByTestId("connect-go").click();
+    await expect(page.getByTestId("connect-dialog")).toHaveAttribute("data-screen", "keep", { timeout: 20_000 });
+    await qa.check("data", "how to keep the key speaks Hindi", inHindi("connect-dialog", ["connect_keep_h", "connect_keep_plain", "connect_keep_plain_desc", "connect_keep_pass", "connect_keep_pass_desc", "connect_keep_later"]), {
+      source: "first-run build spec (OJ 2026-10-27), step 4d; spec section 6"
+    });
+    await qa.checkpoint("Connect AI: how should we keep it, on a phone, in Hindi");
+    await page.getByTestId("connect-keep-pass").click();
+  });
+
+  await qa.step("my vault", async () => {
+    // The vault's own windows on a phone in Hindi are S10-06's: here the passphrase is chosen inside Connect AI and the sheet is walked through.
+    await qa.check("data", "the passphrase screen speaks Hindi, rules included", inHindi("connect-dialog", ["connect_pass_h", "connect_pass_label", "connect_pass2_label", "connect_pass_rule_same", "connect_pass_go"]), {
+      source: "first-run build spec (OJ 2026-10-27), step 4d; spec section 6"
+    });
+    await choosePassphrase(page, s.passphrase!);
+    s.recoveryCode = await readSheet(page);
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
+    await qa.check("data", "the vault pill says in Hindi that the vault is open", async () => {
+      await expect(pill(page)).toHaveText(T("vault_pill_yours", {}, hi));
+      await expect(pill(page)).toHaveAttribute("data-status", "unlocked");
+    }, { source: `${ROW1}; spec section 6 (phone + Hindi)` });
+    await qa.check("data", "the two toasts were shown, each once, and no others: AI connected and the vault's", async () => {
+      await expect.poll(async () => (await toasts()).length, { message: "the toasts shown so far" }).toBe(2);
+      const shown = await toasts();
+      expect([...shown].sort()).toEqual([T("connect_done_toast", {}, hi), T("vault_migrated", {}, hi)].sort());
+    }, { source: `${ROW1}; first-run build spec (OJ 2026-10-27), step 4e` });
+    await qa.check("data", "every toast speaks Hindi (the provider's name apart)", async () => {
+      const english = (await toasts()).filter((text) => !/\p{Script=Devanagari}/u.test(text));
+      expect(english, "toasts with no Hindi in them").toEqual([]);
+    }, { source: "spec section 8 (in Hindi, no English on the app's own screens, including text written into components rather than the dictionaries)" });
+  });
+
+  await qa.step("feedback, save and home", async () => {
+    // No second press: once AI is connected, the feedback runs on the typed idea.
     const read = page.getByTestId("idea-read");
-    await expect(read).toBeVisible();
+    await expect(read).toBeVisible({ timeout: 30_000 });
     await qa.check("data", "the AI read is labelled in Hindi, and has five rated lines and the verdict", async () => {
       await expect(read.locator(".ai-read-label")).toHaveText(T("idea_read_label", {}, hi));
       await expect(read.getByTestId("idea-read-line")).toHaveCount(RATED.length);
@@ -562,7 +626,7 @@ test("S1-02 on a phone in Hindi, the first day fits the screen and speaks Hindi"
     await page.getByTestId("idea-save").click();
     await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("home-phone")).toBeVisible();
-    await qa.check("data", "the home says once, in Hindi, what was just saved and what the page holds", inHindi("home-ready", ["home_ready_h", "home_ready_saved_checked", "home_ready_where", "home_ready_ok"]), {
+    await qa.check("data", "the home says once, in Hindi, what was just saved and what is at the top of the page", inHindi("home-ready", ["home_ready_h", "home_ready_saved_checked", "home_ready_top_h", "home_ready_top_ai", "home_ready_top_lock", "home_ready_top_account", "home_ready_ok"]), {
       source: "first-session fix 2026-10-26 (Dr. Sharma: \"I don't understand what to do, where am I and what is made\"); spec section 6 (phone + Hindi)"
     });
     // As the home's own checkpoint below: the Idea row holds the AI's verdict in English inside the app's Hindi sentence, checked whole further on.
@@ -734,11 +798,11 @@ test("S1-04 when the AI refuses the idea check once, I am told why, nothing is s
 
 // ---- S1-05 -------------------------------------------------------------------------------------------------------------------------------------------
 
-test("S1-05 [O6] after a reload the header never says \"add your key\" to a student who has one", { tag: ["@slice"] }, async ({ page, qa }) => {
+test("S1-05 [O6] after a reload the header never says \"Connect AI\" to a student who has one", { tag: ["@slice"] }, async ({ page, qa }) => {
   qa.begin({
     story: "S1",
     id: "S1-05",
-    goal: "I have saved my key and I reload my project's home: the header says AI: Groq, your key, and never AI: add your key, not even for a moment",
+    goal: "I have saved my key and I reload my project's home: the header says AI: Groq, and never Connect AI, not even for a moment",
     situation: { vault: "off", network: "fine", screen: "desktop", lang: "en", data: "empty", ai: "answers" },
     steps: ["a student with a saved key", "reload the home"],
     code: ["apps/web/components/frame/AppHeader.tsx", "apps/web/lib/ai/useKeys.ts", "apps/web/lib/settings.tsx"]
@@ -773,11 +837,11 @@ test("S1-05 [O6] after a reload the header never says \"add your key\" to a stud
     await expect(page.getByTestId("project-home")).toBeVisible();
     await page.waitForFunction(() => (window as unknown as { __pillDone: boolean }).__pillDone, null, { timeout: 15_000 });
     const texts = await page.evaluate(() => (window as unknown as { __pillTexts: string[] }).__pillTexts);
-    await qa.check("data", "after the reload the header ends up reading AI: Groq, your key", async () => {
+    await qa.check("data", "after the reload the header ends up reading AI: Groq", async () => {
       if (texts.length === 0) notChecked("the AI pill never appeared in the 3 s after the reload, so there was nothing to read");
       expect(texts[texts.length - 1]).toBe(T("ai_pill_key", { provider: "Groq" }));
     }, { source: `${ROW1} ("the AI pill 'AI: Groq, your key'")` });
-    await qa.check("data", "in the 3 s after the reload the header never read \"AI: add your key\"", async () => {
+    await qa.check("data", "in the 3 s after the reload the header never read \"Connect AI\"", async () => {
       if (texts.length === 0) notChecked("the AI pill never appeared in the 3 s after the reload, so there was nothing to read");
       expect(texts, "every text the AI pill showed, in order").not.toContain(T("ai_pill_nokey"));
     }, { source: "tools-walk O6 (after a reload the header reads 'AI: add your key' for about 2 s)" });

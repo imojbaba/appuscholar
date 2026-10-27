@@ -46,6 +46,7 @@ import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { consentMarkdownV2, ethicsStatementV2, protocolMarkdownV2, ecMinorsNoteV2, needsCombinationWarning, type Plan } from "@appuscholar/core";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { recordToasts } from "./support/toasts";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import * as editorAt from "./support/editor";
@@ -157,14 +158,11 @@ async function newProject(page: Page): Promise<string> {
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await page.getByTestId("welcome-setup").click();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_test");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { keep: "plain" });
   await expect(page.getByTestId("first-run")).toBeVisible();
   await page.locator("#ideaTopic").fill(TOPIC);
+  // The three questions are folded away, optional ("Add details for better feedback").
+  await page.getByTestId("idea-details-toggle").click();
   await page.locator("#ideaRes").fill("About 60 first-years");
   await page.getByTestId("idea-save").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
