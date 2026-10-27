@@ -11,6 +11,8 @@
 import { deflateSync } from "node:zlib";
 import { test, expect, type Page, type Response, type Route } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
+import { connectAI } from "./support/connect";
 import { recordToasts } from "./support/toasts";
 import { installFakeSpeech, speech } from "./support/fakeSpeech";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
@@ -93,31 +95,34 @@ async function setUpVault(page: Page) {
   await page.getByTestId("vault-sheet-saved").check();
   await page.getByTestId("vault-sheet-done").click();
   await expect(page.getByTestId("vault-sheet-dialog")).toBeHidden();
-  await expect(page.getByTestId("vault-pill")).toHaveText("Vault unlocked");
+  await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
 }
 
-/** Saves `key` for `provider` in the open key dialog, with no passphrase (the key stays in this browser), and waits for the dialog to close. */
-async function saveKeyInDialog(page: Page, provider: string, key: string) {
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
-  await page.getByTestId("prov-select").selectOption(provider);
-  await page.getByTestId("key-input").fill(key);
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+/** Opens Settings from the account menu (the specialty pack and the writing samples are there; the AI key is Connect AI's). */
+async function openSettings(page: Page) {
+  await page.getByTestId("account-menu-btn").click();
+  await page.getByTestId("acct-settings").click();
+  await expect(page.getByTestId("settings-dialog")).toBeVisible();
 }
 
-/** A new account (terms accepted, welcome skipped), then the idea saved as a project and its Writing place open on an empty document. */
+/** Closes Settings with Escape. */
+async function closeSettings(page: Page) {
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("settings-dialog")).toBeHidden();
+}
+
+/**
+ * A new account (terms accepted), then, as asked, a Groq key connected from the AI pill and the vault set up, and a first study (Start a new study) whose
+ * Writing place is open on its first document.
+ */
 async function newWriter(page: Page, o: { groqKey?: boolean; vault?: boolean } = {}) {
-  await signIn(page, { prefix: "d", newAccount: true, ready: ["first-run"] });
+  await signIn(page, { prefix: "d", newAccount: true, ready: ["project-list"] });
   if (o.groqKey) {
-    await page.getByTestId("ai-pill").click();
-    await saveKeyInDialog(page, "groq", "gsk_test");
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
+    await connectAI(page, { provider: "groq", keep: "plain" });
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
   }
   if (o.vault) await setUpVault(page);
-  await page.locator("#ideaTopic").fill(TOPIC);
-  await page.getByTestId("idea-save").click();
-  await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
+  await makeStudy(page, { question: TOPIC });
   await page.getByTestId("home-open-writing").click();
   await expect(page.getByTestId("place-name")).toHaveText("Writing");
   await expect(page.locator(".ProseMirror")).toBeVisible();
@@ -582,16 +587,15 @@ test("4. dictation with a fake recogniser: the first-use notice, spoken punctuat
 
 // ---- 5. The AI pill's caret --------------------------------------------------------------------------------------------------------------------------
 
-test("5. AI pill caret: a provider with no key opens Settings on it, one with a key becomes the provider and the pill says so", async ({ page }) => {
+test("5. AI pill caret: a provider with no key opens Connect AI on it, one with a key becomes the provider and the pill says so", async ({ page }) => {
   test.setTimeout(180_000);
-  await signIn(page, { prefix: "d", newAccount: true, ready: ["first-run"] });
+  await signIn(page, { prefix: "d", newAccount: true, ready: ["project-list"] });
   const toasts = await recordToasts(page);
 
-  await test.step("save a Groq key: the pill names Groq", async () => {
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: add your key");
-    await page.getByTestId("ai-pill").click();
-    await saveKeyInDialog(page, "groq", "gsk_test");
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
+  await test.step("connect a Groq key: the pill names Groq", async () => {
+    await expect(page.getByTestId("ai-pill")).toHaveText("Connect AI");
+    await connectAI(page, { provider: "groq", keep: "plain" });
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
   });
 
   await test.step("the caret lists the providers, a dot for the ones with a key", async () => {
@@ -602,23 +606,26 @@ test("5. AI pill caret: a provider with no key opens Settings on it, one with a 
     await expect(page.getByTestId("ai-switch-groq")).toHaveAttribute("aria-checked", "true");
   });
 
-  await test.step("Gemini has no key: Settings opens on Gemini, and the toast says to paste its key", async () => {
+  await test.step("Gemini has no key: Connect AI opens on Gemini, and the toast says to paste its key", async () => {
     await page.getByTestId("ai-switch-gemini").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
-    await expect(page.getByTestId("prov-select")).toHaveValue("gemini");
+    const dialog = page.getByTestId("connect-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("data-screen", "ask");
+    await page.getByTestId("connect-yes").click();
+    // The key it asks for is Gemini's: the line names Google's Gemini, and the company is not changed from the list.
+    await expect(page.getByTestId("connect-from")).toContainText("From Google Gemini.");
     await expect.poll(toasts).toContain("Paste your Gemini key to enable it");
     // Nothing was switched: closing the window leaves the pill on Groq.
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
   });
 
   await test.step("paste a Gemini key from there: Gemini becomes the provider", async () => {
     await page.getByTestId("ai-pill-menu").click();
     await page.getByTestId("ai-switch-gemini").click();
-    await expect(page.getByTestId("prov-select")).toHaveValue("gemini");
-    await saveKeyInDialog(page, "gemini", "test-gemini-key");
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Gemini, your key");
+    await connectAI(page, { provider: "gemini", key: "test-gemini-key", keep: "plain", open: false });
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Gemini");
   });
 
   await test.step("Groq has a key: choosing it switches at once (the API is told), the pill reads Groq and the toast says what the next request does", async () => {
@@ -627,12 +634,12 @@ test("5. AI pill caret: a provider with no key opens Settings on it, one with a 
     const patch = page.waitForRequest((r) => isSettingsPatch(r) && (r.postDataJSON() as { provider?: string }).provider === "groq");
     await page.getByTestId("ai-switch-groq").click();
     await patch;
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
+    await expect(page.getByTestId("connect-dialog")).toBeHidden();
     await expect.poll(toasts).toContain("Now using Groq. Your next AI request goes to Groq.");
     // And it is what the account says after a reload.
     await page.reload();
-    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq, your key");
+    await expect(page.getByTestId("ai-pill")).toHaveText("AI: Groq");
   });
 });
 
@@ -650,14 +657,12 @@ test("6. specialty pack: General research takes the Research helpers fold out of
   });
 
   await test.step("Settings: Specialty pack to General research; the API is told", async () => {
-    await page.getByTestId("ai-pill").click();
-    await expect(page.getByTestId("provider-dialog")).toBeVisible();
+    await openSettings(page);
     await expect(page.getByTestId("settings-pack")).toHaveValue("psychology");
     const patch = page.waitForRequest((r) => isSettingsPatch(r) && (r.postDataJSON() as { pack?: string }).pack === "general");
     await page.getByTestId("settings-pack").selectOption("general");
     await patch;
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await closeSettings(page);
   });
 
   await test.step("Writing keeps only Chat, also after a reload", async () => {
@@ -669,13 +674,12 @@ test("6. specialty pack: General research takes the Research helpers fold out of
   });
 
   await test.step("Psychology again: the fold returns", async () => {
-    await page.getByTestId("ai-pill").click();
+    await openSettings(page);
     await expect(page.getByTestId("settings-pack")).toHaveValue("general");
     const patch = page.waitForRequest((r) => isSettingsPatch(r) && (r.postDataJSON() as { pack?: string }).pack === "psychology");
     await page.getByTestId("settings-pack").selectOption("psychology");
     await patch;
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await closeSettings(page);
     await expect(folds).toHaveText(["Chat", "Research helpers"]);
   });
 });
@@ -706,11 +710,10 @@ test("7. writing samples: nothing is kept until the box is ticked; then the type
   const words = (tag: string, n: number) => Array.from({ length: n }, (_, i) => tag + (i + 1)).join(" ");
 
   await test.step("Settings: the capture is off by default and says so", async () => {
-    await page.getByTestId("ai-pill").click();
+    await openSettings(page);
     await expect(page.getByTestId("wsamp-toggle")).not.toBeChecked();
     await expect(page.getByTestId("wsamp-status")).toHaveText("Off — nothing is being saved for this right now.");
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await closeSettings(page);
   });
 
   await test.step("35 words typed while it is off: the document is saved, no copy is", async () => {
@@ -723,14 +726,13 @@ test("7. writing samples: nothing is kept until the box is ticked; then the type
   });
 
   await test.step("tick the box: the API is told, and the status counts nothing saved yet", async () => {
-    await page.getByTestId("ai-pill").click();
+    await openSettings(page);
     const patch = page.waitForRequest((r) => isSettingsPatch(r) && (r.postDataJSON() as { writingSampleCapture?: boolean }).writingSampleCapture === true);
     await page.getByTestId("wsamp-toggle").check();
     await patch;
     await expect.poll(toasts).toContain("Writing-style capture turned on");
     await expect(page.getByTestId("wsamp-status")).toHaveText("0 document(s) saved so far, 0 words of your own writing captured.");
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await closeSettings(page);
   });
 
   await test.step("35 more words: the project's copy appears on the server (a plain JSON body: this account has no vault)", async () => {
@@ -756,8 +758,8 @@ test("7. writing samples: nothing is kept until the box is ticked; then the type
     expect(e.text.endsWith("beta34 beta35")).toBe(true);
   });
 
-  await test.step("Settings counts it for the open project", async () => {
-    await page.getByTestId("ai-pill").click();
+  await test.step("Settings counts it for the open study", async () => {
+    await openSettings(page);
     await expect(page.getByTestId("wsamp-status")).toHaveText("1 document(s) saved so far, 70 words of your own writing captured.");
   });
 
@@ -772,8 +774,7 @@ test("7. writing samples: nothing is kept until the box is ticked; then the type
     await expect.poll(async () => (await stored()).status()).toBe(404);
     await expect(page.getByTestId("wsamp-status")).toHaveText("0 document(s) saved so far, 0 words of your own writing captured.");
     // The documents themselves are untouched.
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("provider-dialog")).toBeHidden();
+    await closeSettings(page);
     await page.getByTestId("doc-select").selectOption(docId);
     await expect(editor).toContainText("alpha1 alpha2");
   });
