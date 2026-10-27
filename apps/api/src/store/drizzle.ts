@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, inArray, isNull, lt, lte, max, ne, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { users, projects, documents, documentRevisions, credentials, aiUseLog, vaultKeys, auditLog, verificationTokens, projectBlobs, rateCounters, type Db } from "@appuscholar/db";
-import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, StageMarks, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite, QuotaRule, QuotaResult } from "./types";
+import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, ProjectMeta, ProjectType, TitleWrite, StageMarks, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, AuthorKind, Settings, UserRecord, Credential, AiUseEntry, OriginStats, ProjectKind, ProjectStage, AuditAction, AuditEntry, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite, QuotaRule, QuotaResult } from "./types";
 import { asTitle, DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 const APPEND_RETRIES = 2;
@@ -55,7 +55,7 @@ export class DrizzleStore implements Store {
     return { passWrapped: v.passWrapped, recoveryWrapped: v.recoveryWrapped, checkWrapped: v.checkWrapped, publicKey: v.publicKey, privateKeyWrapped: v.privateKeyWrapped, complete: v.complete, updatedAt: v.updatedAt };
   }
   private toProject(p: typeof projects.$inferSelect): Project {
-    return { ...p, kind: p.kind as ProjectKind, stageMarks: p.stageMarks as StageMarks };
+    return { ...p, kind: p.kind as ProjectKind, type: p.type as ProjectType | null, stageMarks: p.stageMarks as StageMarks };
   }
   private toUser(u: typeof users.$inferSelect): UserRecord {
     return { id: u.id, email: u.email, locale: u.locale, settings: u.settings as Settings, activeProjectId: u.activeProjectId, termsAcceptedAt: u.termsAcceptedAt, ageConfirmed: u.ageConfirmed };
@@ -91,9 +91,9 @@ export class DrizzleStore implements Store {
     await this.d.update(users).set({ termsAcceptedAt: at, ageConfirmed: true }).where(eq(users.id, userId));
   }
 
-  async createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage): Promise<Project> {
+  async createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage, meta: ProjectMeta = {}): Promise<Project> {
     const t = asTitle(title);
-    const sealed = { userId, title: t.title, titleKeyVersion: t.titleKeyVersion, deks: t.dek ? [{ v: t.dek.v, wrapped: t.dek.wrapped }] : [] };
+    const sealed = { userId, title: t.title, titleKeyVersion: t.titleKeyVersion, deks: t.dek ? [{ v: t.dek.v, wrapped: t.dek.wrapped }] : [], type: meta.type ?? null, field: meta.field ?? null };
     const [p] = await this.d.insert(projects).values(stage ? { ...sealed, stage } : sealed).returning();
     return this.toProject(p!);
   }
@@ -146,6 +146,8 @@ export class DrizzleStore implements Store {
     if (patch.stage !== undefined) set.stage = patch.stage;
     if (patch.status !== undefined) set.status = patch.status;
     if (patch.contentLang !== undefined) set.contentLang = patch.contentLang;
+    if (patch.type !== undefined) set.type = patch.type;
+    if (patch.field !== undefined) set.field = patch.field;
     if (Object.keys(set).length === 0) return this.getProject(userId, id);
     // The dek rule is checked on the row being written, in the same statement; the project was found above, so no row means it refused.
     const [row] = await this.d.update(projects).set(set).where(and(eq(projects.id, id), dek.ok)).returning();

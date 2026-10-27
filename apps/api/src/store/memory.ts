@@ -1,4 +1,4 @@
-import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, TitleWrite, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite, QuotaRule, QuotaResult } from "./types";
+import type { Store, Project, ProjectSummary, ProjectWork, ProjectPatch, ProjectMeta, TitleWrite, DocumentSummary, DocumentWithBody, DocumentRevision, RevisionSummary, NewRevision, ProjectStage, Settings, UserRecord, Credential, AiUseEntry, AuditAction, AuditEntry, OriginStats, VaultRecord, VaultWrapsPatch, WrappedDek, ProjectBlob, BlobSummary, BlobWrite, QuotaRule, QuotaResult } from "./types";
 import { asTitle, DekExistsError, VaultExistsError, VaultKeypairExistsError, VaultStaleError, VersionConflictError } from "./types";
 
 /** A vault record's next updatedAt: now, but always after the last one, so a precondition never matches two versions. */
@@ -81,16 +81,16 @@ export class MemoryStore implements Store {
     u.ageConfirmed = true;
   }
 
-  async createProject(userId: string, title: string | TitleWrite, stage: ProjectStage = "idea"): Promise<Project> {
+  async createProject(userId: string, title: string | TitleWrite, stage: ProjectStage = "idea", meta: ProjectMeta = {}): Promise<Project> {
     const t = asTitle(title);
-    const p: Project = { id: crypto.randomUUID(), userId, title: t.title, field: "psychology", stage, status: "active", contentLang: "en", kind: "research", createdAt: new Date(), stageMarks: {}, deks: this.withDek([], t.dek), titleKeyVersion: t.titleKeyVersion };
+    const p: Project = { id: crypto.randomUUID(), userId, title: t.title, field: meta.field ?? null, type: meta.type ?? null, stage, status: "active", contentLang: "en", kind: "research", createdAt: new Date(), stageMarks: {}, deks: this.withDek([], t.dek), titleKeyVersion: t.titleKeyVersion };
     this.projects.set(p.id, p);
     return this.projectCopy(p);
   }
   async getScratchProject(userId: string): Promise<Project> {
     const found = [...this.projects.values()].find(p => p.userId === userId && p.kind === "scratch");
     if (found) return this.projectCopy(found);
-    const p: Project = { id: crypto.randomUUID(), userId, title: "Scratch space", field: "psychology", stage: "idea", status: "active", contentLang: "en", kind: "scratch", createdAt: new Date(), stageMarks: {}, deks: [], titleKeyVersion: 0 };
+    const p: Project = { id: crypto.randomUUID(), userId, title: "Scratch space", field: null, type: null, stage: "idea", status: "active", contentLang: "en", kind: "scratch", createdAt: new Date(), stageMarks: {}, deks: [], titleKeyVersion: 0 };
     this.projects.set(p.id, p);
     return this.projectCopy(p);
   }
@@ -126,6 +126,8 @@ export class MemoryStore implements Store {
     if (patch.stage !== undefined) p.stage = patch.stage;
     if (patch.status !== undefined) p.status = patch.status;
     if (patch.contentLang !== undefined) p.contentLang = patch.contentLang;
+    if (patch.type !== undefined) p.type = patch.type;
+    if (patch.field !== undefined) p.field = patch.field;
     return this.projectCopy(p);
   }
   async markStage(userId: string, id: string, stage: ProjectStage, ready: boolean, now: Date): Promise<Project | null> {

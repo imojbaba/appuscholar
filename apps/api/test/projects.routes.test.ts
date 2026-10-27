@@ -34,6 +34,28 @@ describe("project routes (wave B)", () => {
   const sealedDoc = async (pid: string, title: unknown = { title: ct("tA.tB"), titleKeyVersion: 1 }) =>
     req("POST", `/projects/${pid}/documents`, { ...(title as object), bodyHtml: ct("bA.bB"), keyVersion: 1, wordCount: 2, originStats: STATS, dek: DEK1 });
 
+  it("a study is made with its type and field (start-a-study spec), returned on read and in the list, and both can be changed", async () => {
+    const r = await post("/projects", { title: "Sleep", type: "masters", field: " psychology " });
+    expect(r.status).toBe(201);
+    const made = await json(r);
+    expect(made).toMatchObject({ title: "Sleep", type: "masters", field: "psychology" });
+    expect((await json<Array<{ id: string; type: string; field: string }>>(await req("GET", "/projects"))).find((p) => p.id === made.id)).toMatchObject({ type: "masters", field: "psychology" });
+    const changed = await json(await req("PATCH", `/projects/${made.id}`, { type: "phd", field: "Public health in rural Bihar" }));
+    expect(changed).toMatchObject({ type: "phd", field: "Public health in rural Bihar" });
+  });
+
+  it("a study made without a type or field has neither (null), not a default field", async () => {
+    expect(await json(await post("/projects", { title: "Old style" }))).toMatchObject({ type: null, field: null });
+  });
+
+  it("refuses a type outside the six, and an empty or over-long field", async () => {
+    expect((await post("/projects", { title: "S", type: "postdoc" })).status).toBe(400);
+    expect((await post("/projects", { title: "S", field: "   " })).status).toBe(400);
+    expect((await post("/projects", { title: "S", field: "x".repeat(61) })).status).toBe(400);
+    const id = await project();
+    expect((await req("PATCH", `/projects/${id}`, { type: "postdoc" })).status).toBe(400);
+  });
+
   it("ai-use/claim attaches the first run's idea check, logged before the project existed, to the new project", async () => {
     const check = { d: "2026-10-21", p: "openai", m: "gpt-4o-mini", k: "checking whether my project idea is realistic", g: "feedback" } as const;
     await store.appendAiUse("u1", null, check);
