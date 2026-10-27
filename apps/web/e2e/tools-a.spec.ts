@@ -51,10 +51,10 @@ const TABS = ["overview", "pathway", "protocol", "ethics", "registration", "inve
 type Tab = (typeof TABS)[number];
 /** "N of 6 ready", from the message the Overview uses. */
 const READY = (done: number) => T("design_home_ready", { done, total: 6 });
-/** core's statement for the log's two kinds of help, with `keep` of them ticked and the rest of the page as it starts (v1's defaults). */
+/** core's statement for the log's two kinds of help, with `keep` of them ticked and the rest of the page as it starts ("What you did yourself" all unticked, O5). */
 const statement = (keep: Record<string, 1>) => aiuBuildV2({
   list: LOG, keep, other: "", fmt: "course",
-  ticks: { own: true, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS
+  ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS
 });
 /** The Budget rows once 1500 and 2500 are typed into the first two lines. */
 const BUDGET_AFTER = BUDGET_DEFAULTS.map((label, i) => ({ label, amount: i === 0 ? "1500" : i === 1 ? "2500" : "" }));
