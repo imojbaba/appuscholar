@@ -11,7 +11,7 @@ import { STAGE_ORDER, type StageKey } from "../lib/tools";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const FACTS: HomeFacts = { question: "Q", people: "", time: "", limits: "", field: "", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 };
+const FACTS: HomeFacts = { question: "Q", who: "", how: "", time: "", have: "", ethics: "", answered: 0, field: "", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 };
 const STATES = Object.fromEntries(STAGE_ORDER.map((s) => [s, "not-started"])) as Record<StageKey, StageState>;
 const roots: Root[] = [];
 const text = (id: string) => document.body.querySelector(`[data-testid="${id}"]`)!.textContent!;

@@ -126,6 +126,26 @@ describe("ProjectList", () => {
     expect(host.querySelector('[data-testid="list-legend"]')!.textContent).toBe("ReadyIn progressStarted early or reopenedNot started");
   });
 
+  it("a study's card names its type and field (a list field by its label, the student's own words as typed), and one next step", async () => {
+    const shaped = project("a", { type: "masters", field: "medicine and health", blobs: [{ kind: "idea_intake", updatedAt: "2026-10-09T00:00:00.000Z", version: 1 }] });
+    const fresh = project("b", { type: "phd", field: "Rural public health" });
+    const ready = project("c", {
+      type: null, field: null,
+      stageMarks: Object.fromEntries(STAGE_ORDER.map((k) => [k, { readyAt: "2026-10-10T00:00:00.000Z" }])),
+      blobs: [{ kind: "idea_intake", updatedAt: "2026-10-09T00:00:00.000Z", version: 1 }]
+    });
+    work = [shaped, fresh, ready];
+    const { host } = await render();
+    const r = rows(host);
+    expect(r[0]!.querySelector('[data-testid="project-row-meta"]')!.textContent).toBe("Master's dissertation · Medicine and health. Edited 9 Oct 2026.");
+    expect(r[1]!.querySelector('[data-testid="project-row-meta"]')!.textContent).toBe("PhD thesis · Rural public health. Edited 5 Mar 2026.");
+    expect(r[2]!.querySelector('[data-testid="project-row-meta"]')!.textContent).toBe("Edited 9 Oct 2026.");
+    // Next: Shape your study while the Idea stage is empty, else the first stage that is not ready; all ready says so.
+    expect(r[1]!.querySelector('[data-testid="project-row-next"]')!.textContent).toBe("Next: Shape your study");
+    expect(r[0]!.querySelector('[data-testid="project-row-next"]')!.textContent).toBe("Next: Idea");
+    expect(r[2]!.querySelector('[data-testid="project-row-next"]')!.textContent).toBe("Every stage is ready.");
+  });
+
   it("an edit today says today, and a project with no field leaves it out", async () => {
     work = [project("a", { field: "", draftWords: 3, draftEditedAt: NOW })];
     const { host } = await render();
@@ -141,7 +161,7 @@ describe("ProjectList", () => {
     const items = [...host.querySelectorAll('[role="list"] > li')];
     expect(items[items.length - 1]!.getAttribute("data-testid")).toBe("scratch-row");
     const scratch = host.querySelector<HTMLAnchorElement>('[data-testid="scratch-space"]')!;
-    expect(scratch.textContent).toContain("Documents not in a project");
+    expect(scratch.textContent).toContain("Documents not in a study");
     expect(scratch.getAttribute("href")).toBe("/p/scratch1/writing");
     await act(async () => { scratch.click(); });
     expect((h.ws as { openProject: ReturnType<typeof vi.fn> }).openProject).toHaveBeenCalledWith(null);
@@ -180,12 +200,13 @@ describe("ProjectList", () => {
     expect(host.querySelector('[data-testid="list-unlock"]')).toBeNull();
   });
 
-  it("New project opens first run", async () => {
+  it("the dashboard: Your studies, Start a new study opens the new-study form, and with none yet it says what a study is", async () => {
     const { host } = await render();
+    expect(host.querySelector("h1")!.textContent).toBe("Your studies");
     const a = host.querySelector<HTMLAnchorElement>('[data-testid="new-project"]')!;
-    expect(a.textContent).toBe("New project");
+    expect(a.textContent).toBe("Start a new study");
     expect(a.getAttribute("href")).toBe("/start");
-    expect(host.querySelector('[data-testid="projects-empty"]')!.textContent).toBe("No projects yet.");
+    expect(host.querySelector('[data-testid="projects-empty"]')!.textContent).toBe("You have no studies yet. A study is one piece of research, from the first idea to the final write-up.");
   });
 
   it("delete asks first, names the project, then deletes it and reads the list again", async () => {

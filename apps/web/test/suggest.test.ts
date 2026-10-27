@@ -3,7 +3,7 @@ import type { HomeFacts } from "@/lib/frame/homeFacts";
 import { suggestNext } from "@/lib/frame/suggest";
 
 const facts = (f: Partial<HomeFacts> = {}): HomeFacts => ({
-  question: "Does peer tutoring help?", people: "", time: "", limits: "", field: "", verdict: "Go ahead.", checked: true, readText: "",
+  question: "Does peer tutoring help?", who: "", how: "", time: "", have: "", ethics: "", answered: 1, field: "", verdict: "Go ahead.", checked: true, readText: "",
   kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0, ...f
 });
 
@@ -11,8 +11,9 @@ const SUGGEST_CASES: Array<[string, HomeFacts, string, { stage: string; tab?: st
   ["no question asks for one", facts({ question: "" }), "next_question", { stage: "idea" }],
   ["a question of spaces is no question", facts({ question: "   ", verdict: null, checked: false }), "next_question", { stage: "idea" }],
   ["no question wins over everything else", facts({ question: "", kept: 5, read: 5, cards: 5 }), "next_question", { stage: "idea" }],
-  ["a question with no read asks for the feasibility read", facts({ verdict: null, checked: false }), "next_feasibility", { stage: "idea" }],
-  ["no read wins over kept papers", facts({ verdict: null, checked: false, kept: 4 }), "next_feasibility", { stage: "idea" }],
+  // The feasibility read is optional (start-a-study spec): a question with none goes on to Find, and never asks for one.
+  ["a question with no read goes on to Find; the feasibility check is never a step", facts({ verdict: null, checked: false }), "next_find", { stage: "lit", tab: "find" }],
+  ["no read does not hold back kept papers", facts({ verdict: null, checked: false, kept: 4 }), "next_read", { stage: "lit", tab: "reading" }],
   ["a read that did not parse is checked: no second check, on to Find", facts({ verdict: null, checked: true, readText: "Looks fine." }), "next_find", { stage: "lit", tab: "find" }],
   ["a read with no verdict line is checked too", facts({ verdict: null, checked: true, kept: 1, read: 1 }), "next_write", { stage: "writing" }],
   ["nothing kept goes to Find", facts(), "next_find", { stage: "lit", tab: "find" }],

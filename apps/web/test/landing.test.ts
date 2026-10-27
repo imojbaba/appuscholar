@@ -2,11 +2,8 @@ import { describe, expect, it } from "vitest";
 import { landingPath, landingTarget } from "@/lib/frame/landing";
 
 describe("what opens", () => {
-  it("landingPath: a new student goes to first run, a returning one to the active project's home, otherwise the list", () => {
-    expect(landingPath({ projectIds: [], activeProjectId: null })).toBe("/start");
-    expect(landingPath({ projectIds: ["a", "b"], activeProjectId: "b" })).toBe("/p/b");
-    expect(landingPath({ projectIds: ["a"], activeProjectId: "gone" })).toBe("/projects");
-    expect(landingPath({ projectIds: ["a"], activeProjectId: null })).toBe("/projects");
+  it("landingPath: the dashboard, Your studies, always (start-a-study spec: a new student starts a study from there)", () => {
+    expect(landingPath()).toBe("/projects");
   });
 
   it("/?import=1 opens the v1 import on the project list", () => {
@@ -20,7 +17,8 @@ describe("what opens", () => {
     expect(landingTarget({ projectIds: [], activeProjectId: null, scratchProjectId: "s", search: "", hash: "#capture=xyz" })).toBe("/p/s/writing#capture=xyz");
   });
 
-  it("any other address lands by landingPath; another hash is not carried", () => {
-    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", scratchProjectId: "s", search: "", hash: "#top" })).toBe("/p/a");
+  it("any other address lands on the dashboard, a new student's and a returning one's alike; another hash is not carried", () => {
+    expect(landingTarget({ projectIds: ["a"], activeProjectId: "a", scratchProjectId: "s", search: "", hash: "#top" })).toBe("/projects");
+    expect(landingTarget({ projectIds: [], activeProjectId: null, scratchProjectId: "s", search: "", hash: "" })).toBe("/projects");
   });
 });

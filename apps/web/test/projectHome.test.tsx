@@ -123,7 +123,10 @@ describe("the project home", () => {
     mount();
     await until(() => !!q("home-question"));
     expect(text("home-q-text")).toBe("Does a fixed bedtime lower exam anxiety?");
-    expect(q("home-question")!.querySelector("dl")!.textContent).toBe("PeopleAbout 60 volunteersTimeOne semesterLimitsNo trackersFieldPsychology");
+    // Shape your study's parts after the question (v1's boxes: resources are what you have, constraints are ethics), then the field.
+    expect(q("home-question")!.querySelector("dl")!.textContent).toBe("Who or what you'd studyNot written yetHow you'd find outNot written yetTimeOne semesterWhat you haveAbout 60 volunteersEthicsNo trackersFieldPsychology");
+    expect(text("home-shape-count")).toBe(fill(en.shape_home_card, { n: 4 }));
+    expect(text("home-q-edit")).toBe(en.shape_home_continue);
     expect(text("home-q-verdict")).toBe(fill(en.home_verdict, { verdict: "go ahead, with two changes" }));
     await until(() => text("home-next-say") === fill(en.next_read, { n: 2 }));
     expect(text("home-next-btn")).toBe(en.next_btn_reading);
@@ -407,13 +410,13 @@ describe("the project home", () => {
       expect(q("home-question")).toBeNull();
       expect(q("home-out")).toBeNull();
       expect(text("home-project-btn")).toBe(project.title);
-      // "Your question", closed; inside, the question and the facts as one line, and Edit.
+      // "Shape your study", closed; inside, the question and who, time and what you have as one line, and Continue.
       const fold = q("home-q-fold") as HTMLDetailsElement;
       expect(fold.tagName).toBe("DETAILS");
       expect(fold.open).toBe(false);
-      expect(fold.querySelector("summary")!.textContent).toBe(en.home_q_h);
+      expect(fold.querySelector("summary")!.textContent).toBe(en.shape_h);
       expect(text("home-q-text")).toBe("Does a fixed bedtime lower exam anxiety?");
-      expect(text("home-q-line")).toBe("About 60 volunteers. One semester. No trackers.");
+      expect(text("home-q-line")).toBe("One semester. About 60 volunteers.");
       act(() => { q("home-q-edit")!.click(); });
       expect(h.go).toHaveBeenLastCalledWith("/p/p1/idea");
       // Each stage row: the name, what it holds and the chip; the row opens the stage, and More stays beside it.

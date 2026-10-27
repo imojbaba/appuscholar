@@ -3,20 +3,33 @@ import type { ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
 import { homeFacts } from "@/lib/frame/homeFacts";
 
 const READ = "Topic: High. A.\nAccess: Medium. B.\nTime: Low. C.\nVerdict: Proceed with these modifications.";
-const idea: IdeaIntake = { topic: "Peer tutoring and maths anxiety", resources: "Year 9 at two schools", timeframe: "One term", constraints: "School approval", read: { text: READ, at: "2026-10-21T10:00:00.000Z" } };
+const idea: IdeaIntake = {
+  topic: "Peer tutoring and maths anxiety", who: "Year 9 at two schools", how: "A questionnaire before and after", resources: "The schools' consent", timeframe: "One term",
+  constraints: "School approval", read: { text: READ, at: "2026-10-21T10:00:00.000Z" }
+};
 const shelf = (id: string, title: string): ShelfIndex[number] => ({ id, title, file: id + ".pdf", size: 1, added: "2026-10-01", total: 10, kept: 10 });
 const note = (n: Partial<ApNotes[string]> = {}): ApNotes[string] => ({ stages: {}, card: {}, ...n });
 const none = { idea: null, citations: null, shelfIndex: null, apNotes: null };
 
 describe("homeFacts", () => {
   it("nothing stored gives empty facts, the field and the draft words", () => {
-    expect(homeFacts(none, 0, "Education")).toEqual({ question: "", people: "", time: "", limits: "", field: "Education", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 });
+    expect(homeFacts(none, 0, "Education")).toEqual({
+      question: "", who: "", how: "", time: "", have: "", ethics: "", answered: 0, field: "Education", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0
+    });
     expect(homeFacts(none, 120, "").draftWords).toBe(120);
   });
 
-  it("the question card's facts are the intake's four fields, and the verdict comes from its read", () => {
+  it("the study card's facts are Shape your study's six parts (v1's four boxes keep their keys), with how many are answered, and the verdict comes from its read", () => {
     const f = homeFacts({ ...none, idea }, 0, "Education");
-    expect(f).toMatchObject({ question: idea.topic, people: idea.resources, time: idea.timeframe, limits: idea.constraints, field: "Education", verdict: "Proceed with these modifications.", checked: true, readText: READ });
+    expect(f).toMatchObject({
+      question: idea.topic, who: "Year 9 at two schools", how: "A questionnaire before and after", time: idea.timeframe, have: idea.resources, ethics: idea.constraints, answered: 6,
+      field: "Education", verdict: "Proceed with these modifications.", checked: true, readText: READ
+    });
+  });
+
+  it("a part marked Not sure yet counts as answered; an empty one does not", () => {
+    const f = homeFacts({ ...none, idea: { topic: "Q", resources: "", timeframe: "", constraints: "", unsure: ["how", "ethics"] } }, 0, "");
+    expect(f.answered).toBe(3);
   });
 
   it("no read is not checked; a stored read that does not parse is checked, with no verdict and its text as it came", () => {

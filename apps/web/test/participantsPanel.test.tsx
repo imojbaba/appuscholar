@@ -800,7 +800,7 @@ describe("the vault and the other states", () => {
     const root = createRoot(el);
     roots.push(root);
     await act(async () => { root.render(<Panel tab="participants" projectId="" />); });
-    expect(text("pp-no-project")).toBe("Open a project to see its participants.");
+    expect(text("pp-no-project")).toBe("Open a study to see its participants.");
     expect(h.asked).toEqual([]);
   });
 

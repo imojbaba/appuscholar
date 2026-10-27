@@ -1,4 +1,5 @@
 "use client";
+import { publishStudyField } from "@/lib/frame/studyField";
 import type { StageKey } from "@/lib/tools";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
@@ -147,6 +148,10 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [error, setError] = useState(false);
   const [missing, setMissing] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
+  // The AI features read the open study's own field (lib/frame/studyField); a page with no study, or this shell gone, falls back to the account's.
+  const studyField = project?.field ?? null;
+  useEffect(() => { publishStudyField(studyField); }, [studyField]);
+  useEffect(() => () => { publishStudyField(null); }, []);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);

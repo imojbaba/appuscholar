@@ -438,7 +438,7 @@ describe("deleting a code takes its tags out of the documents first", () => {
 });
 
 describe("a delete is refused while a document of the project was not read", () => {
-  const UNREAD = "Not deleted. Some documents of this project could not be read (the vault is locked, you are offline, or a document does not open). Try again.";
+  const UNREAD = "Not deleted. Some documents of this study could not be read (the vault is locked, you are offline, or a document does not open). Try again.";
   const deleteQa = async () => { await click("qual-delete-qa"); await click("qual-delete-confirm-yes"); };
 
   it("allDocuments() answering [] for a project that has documents: refused, codes intact, nothing rewritten", async () => {

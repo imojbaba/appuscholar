@@ -136,10 +136,6 @@ export type ProjectValue = {
 
 const Ctx = createContext<ProjectValue | null>(null);
 export const ProjectProvider = Ctx.Provider;
-/** The project, or null outside a ProjectShell (a hook that also serves pages and tests without one). */
-export function useProjectOrNull(): ProjectValue | null {
-  return useContext(Ctx);
-}
 export function useProject(): ProjectValue {
   const v = useContext(Ctx);
   if (!v) throw new Error("useProject must be used inside <ProjectShell>");
