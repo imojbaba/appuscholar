@@ -1,5 +1,5 @@
 [
-  { "id": "F1", "title": "An open-answer column is called names, and Apply swaps the answers for codes (until Participants merges)", "status": "known" },
+  { "id": "F1", "title": "An open-answer column is called names, and Apply swaps the answers for codes (fixed by Participants, #28)", "status": "fixed" },
   { "id": "F2", "title": "The vault shows locked after the network returns (fixed in #25)", "status": "fixed" },
   { "id": "F3", "title": "A line break inside a coded passage joins the words (fixed in #25)", "status": "fixed" },
   { "id": "F4", "title": "The old slides preview and its Download stay live while Generate reads (fixed in #25)", "status": "fixed" },
