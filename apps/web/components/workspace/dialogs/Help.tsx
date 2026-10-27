@@ -178,7 +178,7 @@ export function Help() {
           <Badge className="self-start" data-testid="app-version">Version {APP_VERSION}</Badge>
           <DialogDescription>{t("help_intro")}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2" data-testid="help-faq">
+        <div className="help-faq grid gap-2" data-testid="help-faq">
           {FAQ.map((k) => (
             <details key={k} className="rounded-lg border border-line px-3 py-2 text-sm" data-testid={"faq-" + k}>
               <summary className="cursor-pointer font-medium">{t("faq_q_" + k)}</summary>

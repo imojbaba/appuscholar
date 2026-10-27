@@ -512,6 +512,9 @@
   .tick-row { min-height: 44px; align-items: center; }
   .budget-remove { min-width: 44px; }
   .fmt { min-width: 44px; }
+  /* Analyse a paper's rows: a button as wide as it is tall at least, and a long label (Hindi's "check this paper's reference list") wraps inside the screen instead of pushing the page sideways. */
+  .help-faq summary { min-height: 44px; }
+  .ap-row button { min-width: 44px; max-width: 100%; height: auto; white-space: normal; text-align: start; }
 }
 /* Task 8b: a translated quote (v1 250), the quote box, the one-click capture's <details> (v1 921-928) and the library's last buttons (v1 940-946). */
 .editor .ProseMirror .translated-quote { border-bottom: 2px dotted #7c3aed; cursor: help; }
