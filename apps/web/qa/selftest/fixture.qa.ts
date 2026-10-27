@@ -544,8 +544,8 @@ test("fixture: the same check passing is recorded ok with its known id (the repo
 
 test("fixture: a failing check awaiting a decision does not fail the case either", MECHANICS, async ({ qa }) => {
   qa.begin(meta("SELF-21", ["go"]));
-  await qa.check("conceptual", "the statement says where the requests go", async () => expect("browser").toBe("server"), { known: "O4" });
-  expect(qa.result().checks[0]).toMatchObject({ ok: false, known: "O4" });
+  await qa.check("conceptual", "the Viva tab says that Tab inserts AI text", async () => expect("silent").toBe("says so"), { known: "O20" });
+  expect(qa.result().checks[0]).toMatchObject({ ok: false, known: "O20" });
 });
 
 test("fixture: a failing check with no known id fails the case", MECHANICS, async ({ qa }) => {
@@ -575,6 +575,21 @@ test("fixture: the result notes an id that known.json lacks, once", TAGS, async 
   const r = qa.result();
   expect(r.missingKnown).toEqual(["ZZ99"]);
   expect(r.checks.map((c) => c.known)).toEqual(["ZZ99", "ZZ99", "F1"]);
+});
+
+test("fixture: a failing check with a very long label still leaves its screenshot, and the case goes on", TAGS, async ({ page, qa }) => {
+  qa.selfTest = true;
+  qa.begin(meta("SELF-26B", ["long"]));
+  await page.setContent("<h1>Home</h1>");
+  const label = "the zip holds exactly the files of the parts listed: " + "the documents as .doc and .html, question.txt, the citations, the search list, ".repeat(5);
+  expect(label.length).toBeGreaterThan(300);
+  await qa.step("long", async () => {
+    expect(await qa.check("data", label, async () => expect(1).toBe(2))).toBe(false);
+  });
+  const r = qa.result();
+  expect(r.stoppedAt).toBeUndefined();
+  expect(existsSync(r.checks[0]!.screenshot!)).toBe(true);
+  expect(test.info().attachments.some((a) => a.name.startsWith("failed check: the zip holds exactly"))).toBe(true);
 });
 
 test("fixture: a checkpoint takes a full-page screenshot, attached and listed", TAGS, async ({ page, qa }) => {

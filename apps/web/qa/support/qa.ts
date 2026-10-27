@@ -142,6 +142,8 @@ const clip = (s: string, n: number) => {
 /** An error as text for the report: the message without the colours Playwright puts in it. */
 const plain = (message: string, n: number): string => clip(stripVTControlCharacters(message).trim(), n);
 const errorText = (e: unknown, n: number): string => plain(e instanceof Error ? e.message : String(e), n);
+/** The longest name an attached screenshot is given (a file name holds 255 bytes, and Playwright adds a hash and an extension to the attachment's name). */
+const ATTACH_NAME_MAX = 100;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "shot";
 const FAIL_OF: Record<CheckKind, FailKind> = { data: "unexpected", visual: "ui", conceptual: "unexpected" };
 
@@ -443,7 +445,8 @@ export class QaCase implements Qa {
       if (o.strict) throw e;
       return undefined;
     }
-    await this.testInfo.attach(attachAs, { path: file, contentType: "image/png" });
+    // Playwright copies an attachment to a file named after it: a label of a few hundred characters (a check that lists every file of a zip) would not fit a file name (ENAMETOOLONG) and would stop the case.
+    await this.testInfo.attach(attachAs.slice(0, ATTACH_NAME_MAX), { path: file, contentType: "image/png" });
     return file;
   }
 
