@@ -66,6 +66,7 @@ export type LayoutMeasure = {
  */
 export const HINDI_NAMES: readonly string[] = [
   "Appuscholar", "OpenAlex", "PubMed", "Crossref", "CTRI", "ICMR", "APA", "DOI", "PDF", "CSV", "PPT", "AI",
+  "RIS", "BibTeX", // the citation file types the export offers beside CSV (the export window's format line, exp_format_citations)
   "Excel", "SPSS", "Google Sheets", // the programs a table is pasted from (the Data tab's privacy line, stats_data_privacy), named in Latin in a Hindi sentence (S5)
   "Groq", "OpenAI", "ChatGPT", "Gemini", "Claude", "DeepSeek", "OpenRouter", "Google Scholar", "Wiktionary", "LaTeX",
   "PowerPoint" // the program the Make PPT deck opens in, named in Latin in a Hindi button ("PowerPoint (.pptx) के रूप में डाउनलोड करें", slides_download) (S8)
