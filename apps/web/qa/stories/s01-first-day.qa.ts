@@ -7,7 +7,7 @@ import { dictionary, T, type Lang } from "../support/dict";
 import { EYE_SOURCE, expectEyeRoom } from "../support/eyes";
 import { QA_API_ORIGIN } from "../support/origins";
 import { signInAs } from "../support/session";
-import { apiGet, docText, newStudent, providerCalls, qaKey, recordToasts, slowApi, toPlace, type Student } from "../support/student";
+import { apiGet, docText, KEY_TEST_PROMPT, newStudent, providerCalls, qaKey, recordToasts, slowApi, toPlace, type Student } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
 // The sentence callAI's apiMsg gives a rate limit: an English constant in the module, not a dictionary key (the way e2e/stage2-idea-literature.spec.ts imports its English constants, ruling R15).
 import { apiMsg } from "../../lib/ai/callAI";
@@ -287,7 +287,7 @@ test("S1-01 I start: the terms, my idea, Connect AI at the feedback (my key, my 
       await expect(page.getByTestId("connect-keep-plain")).toContainText(T("connect_keep_plain"));
       await expect(page.getByTestId("connect-keep-pass")).toContainText(T("connect_keep_pass"));
       await expect(page.getByTestId("connect-keep-later")).toHaveText(T("connect_keep_later"));
-      expect((await providerCalls(s.key!)).filter((e) => e.prompt === "Reply with the single word OK."), "the key's test at the provider").toHaveLength(1);
+      expect((await providerCalls(s.key!, { keyTest: true })).filter((e) => e.prompt === KEY_TEST_PROMPT), "the key's test at the provider").toHaveLength(1);
     }, { source: "first-run build spec (OJ 2026-10-27), steps 4c and 4d" });
     await qa.checkpoint("Connect AI: how should we keep it?");
     await page.getByTestId("connect-keep-pass").click();
@@ -486,13 +486,13 @@ test("S1-01 I start: the terms, my idea, Connect AI at the feedback (my key, my 
   });
 
   await qa.step("the AI-use log", async () => {
-    const asked = await providerCalls(s.key!);
+    const asked = await providerCalls(s.key!, { keyTest: true });
     await qa.check("data", "the first day showed the two toasts of the sheet and no others (no failure toast)", async () => {
       expect([...(await toasts())].sort()).toEqual([...KEY_TOASTS].sort());
     }, { source: `${ROW1}; ${E2E}` });
     await qa.check("data", "the AI provider received two requests, both answered: Connect's key test, then the idea check carrying my four fields", async () => {
       expect(asked.map((e) => ({ host: e.host, outcome: e.outcome }))).toEqual([{ host: "api.groq.com", outcome: "answered" }, { host: "api.groq.com", outcome: "answered" }]);
-      expect(asked[0]!.prompt).toBe("Reply with the single word OK.");
+      expect(asked[0]!.prompt).toBe(KEY_TEST_PROMPT);
       expect(asked[1]!.kind).toBe(AI_USE_IDEA);
       for (const words of Object.values(IDEA)) expect(asked[1]!.prompt).toContain(words);
     }, { source: `${B1} row 2; packages/core/src/aiuse.ts (the label of the idea prompt); first-run build spec (OJ 2026-10-27), step 4c (Connect tests the key)` });

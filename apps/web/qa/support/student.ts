@@ -35,9 +35,15 @@ export function qaKey(mode: AiMode = "ok"): string {
   return `gsk_qa_${mode}_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
 }
 
-/** The requests the fake AI provider received with this key, oldest first (the provider's log, QA_PROVIDER_LOG: complete lines only). */
-export async function providerCalls(key: string): Promise<ShimLogEntry[]> {
-  return readProviderLog().filter((e) => e.key === key);
+/** The prompt of the api's key test (apps/api/src/routes/ai.ts, POST /ai/test): Connect AI sends it once when a key is connected. */
+export const KEY_TEST_PROMPT = "Reply with the single word OK.";
+
+/**
+ * The requests the fake AI provider received with this key, oldest first (the provider's log, QA_PROVIDER_LOG: complete lines only). Connect AI's key test, made once as the
+ * key is connected and never logged as AI use, is left out unless `keyTest` is set: the cases count the requests the student's work made.
+ */
+export async function providerCalls(key: string, o: { keyTest?: boolean } = {}): Promise<ShimLogEntry[]> {
+  return readProviderLog().filter((e) => e.key === key && (o.keyTest || e.prompt !== KEY_TEST_PROMPT));
 }
 
 // ---- The student ----------------------------------------------------------------------------------------------------------------------------------------
