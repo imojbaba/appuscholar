@@ -18,7 +18,7 @@ import { QA_API_ORIGIN } from "../support/origins";
 import type { Qa } from "../support/qa";
 import { serverRows } from "../support/server";
 import {
-  apiGet, cancelPassphraseAsks, catchDownload, docText, lockByReload, newStudent, providerCalls, recordToasts, setLang, slowApi, toPlace, typeInDoc, unlock, type Downloaded, type Student
+  apiGet, catchDownload, docText, lockByReload, newStudent, providerCalls, recordToasts, setLang, slowApi, toPlace, typeInDoc, unlock, type Downloaded, type Student
 } from "../support/student";
 import { expect, notChecked, test } from "../support/test";
 
@@ -1181,7 +1181,7 @@ test("S8-02 [F5, O18] with the vault locked, Closeness says my document is locke
     const asks = await lockByReload(page, s);
     await qa.check("conceptual", "opening Closeness with a locked vault asks for the passphrase at most once, whatever the shelf, the documents and the settings it reads", async () => {
       expect(asks, "passphrase windows the page opened, one after each Cancel (tools-e row 19: four on opening Closeness)").toBeLessThanOrEqual(1);
-    }, { source: `${WALK} O18; spec section 9 ('once per opening, not once per sealed item'); known.json O18`, known: "O18" });
+    }, { source: `${WALK} O18 (fixed: one ask per unlock); spec section 9 ('once per opening, not once per sealed item')` });
   });
 
   await qa.step("Closeness while locked", async () => {
@@ -1204,25 +1204,25 @@ test("S8-02 [F5, O18] with the vault locked, Closeness says my document is locke
     await page.getByTestId("place-tab-slides").click();
     await expect(page.getByTestId("panel-slides")).toBeVisible();
     await page.getByTestId("slides-generate").click();
-    // Generate asks for the passphrase by itself; the student cancels.
-    await expect(page.getByTestId("pass-dialog")).toBeVisible();
-    const asks = await cancelPassphraseAsks(page, { firstWaitMs: 1_000 });
-    await qa.check("data", "Generate slide preview asks for the passphrase and, cancelled, says \"Could not read your document. Try again.\", with no preview and no Download", async () => {
+    // The page's own reads share one ask (O18): the student cancelled it when Closeness opened, so Generate's read of the documents is quiet until the vault opens, and says it could not read them.
+    await expect(page.getByTestId("slides-unreadable")).toBeVisible();
+    await qa.check("data", "Generate slide preview says \"Could not read your document. Try again.\", with no preview and no Download", async () => {
       await expect(page.getByTestId("slides-unreadable")).toHaveText(T("slides_read_failed"));
       await expect(page.getByTestId("slides-card")).toHaveCount(0);
       await expect(page.getByTestId("slides-download")).toHaveCount(0);
       await expect(page.getByTestId("slides-preview")).toHaveCount(0);
     }, { source: `${SHEET} row 19; ${WALK} tools-e row 19 (Make PPT: Cancel gives 'Could not read your document. Try again.', no preview, no download)` });
-    await qa.check("conceptual", "Generate slide preview asks for the passphrase once, not once for each document it reads", async () => {
-      expect(asks, "passphrase windows the press opened, one after each Cancel").toBeLessThanOrEqual(1);
-    }, { source: `${WALK} O18; spec section 9` });
+    await qa.check("conceptual", "Generate slide preview does not ask for the passphrase again after the Cancel: once per opening, not once for each document it reads", async () => {
+      await expect(page.getByTestId("pass-dialog")).toHaveCount(0);
+    }, { source: `${WALK} O18; spec section 9 ('once per opening, not once per sealed item')` });
     await expect(page.getByTestId("vault-pill")).toHaveAttribute("data-status", "locked");
     await look(page, qa, "Make PPT, vault locked");
   });
 
   await qa.step("unlock", async () => {
-    await page.getByTestId("slides-generate").click();
+    // The vault opens from the pill (the page asks nothing by itself after a Cancel); Generate then reads the documents.
     await unlock(page, s);
+    await page.getByTestId("slides-generate").click();
     await expect(page.getByTestId("slides-card").first()).toBeVisible({ timeout: ACTION_MS });
     await qa.check("data", "after the passphrase the preview appears with the Download button, the same cards core's model gives, and no further question is asked", async () => {
       await expect(page.getByTestId("slides-unreadable")).toHaveCount(0);

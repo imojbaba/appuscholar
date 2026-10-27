@@ -1265,7 +1265,8 @@ test("S6-06 on a phone in Hindi, the Coding tab fits the screen, its row control
     await expect(page.getByTestId("frame-doc")).toBeVisible();
     await pickDoc(page, KAVITA.title, PHRASE.anxiety1);
     await selectInDoc(page, PHRASE.anxiety1);
-    await look(page, qa, "the interview full screen, on a phone, in Hindi");
+    // The document bar's list holds the titles the student gave the documents (the interview's, in English): not the app's words.
+    await look(page, qa, "the interview full screen, on a phone, in Hindi", { exempt: ["doc-select"] });
     await page.getByTestId("doc-back").tap();
     await expect(page.getByTestId("doc-back")).toHaveCount(0);
     await expect(panel(page)).toBeVisible();
@@ -1298,7 +1299,7 @@ test("S6-06 on a phone in Hindi, the Coding tab fits the screen, its row control
         await expectShaded(page, ids.chinta, QUAL_PALETTE[0]!);
       }
     }, { source: `${SHEET} row 10 ("record exactly what you see: whether the phrase is still selected after going back, and whether tapping the code tags it or says \"Select some text in your document first\"")` });
-    await look(page, qa, "the interview after the tap, on a phone, in Hindi");
+    await look(page, qa, "the interview after the tap, on a phone, in Hindi", { exempt: ["doc-select"] });
     await page.getByTestId("doc-back").tap();
     await expect(page.getByTestId("doc-back")).toHaveCount(0);
   });
