@@ -764,3 +764,56 @@
   .rs-line .rs-select { display: block; width: 100%; max-width: 100%; min-height: 44px; margin-top: 4px; }
   .doc-back:focus-visible, .home-project:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
 }
+
+/* ---- Dark theme (Task C9; v1 :root[data-theme="dark"], index.html 26). Light stays the default: the inline script in layout.tsx sets data-theme from
+   this device's choice (appu_theme) and says "light" unless dark was chosen, whatever the device itself prefers. The tokens above are redefined, so
+   every component that reads one follows (v1's own dark values where it had them). Where one token plays two roles (a purple that is text on a card
+   and a fill under white text, the primary colour as text, a red that is a note's ink and a button's fill) the element that needs the other role
+   re-declares the token for itself: a rule on a Tailwind class sets no property, so that class's hover, focus and pressed variants still win. The
+   editor's paper stays the light page. All of it is `@media not print`, so a page printed from the dark theme prints light. test/wc9Contrast.test.ts
+   reads this block and holds every text pair to 4.5:1. --fill and --fill-active are dark-only: the primary button's own purples. ---- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@media not print {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --purple-900: #ede9fe; --purple-800: #d8ccff; --purple-700: #a78bfa; --purple-600: #7c3aed; --purple-100: #3a2d5e;
+    --gold-wash: #3a2d12;
+    --bg: #1a1628; --card: #241e38; --soft: #2a2340; --chip: #332b4a; --line: #38304f; --line-strong: #4a3f66; --dashed: #7a68ab;
+    --ink: #eae6f3; --muted: #b0a9c4; --accent-ink: #c4b5fd;
+    --flag-ink: #fde68a; --flag-bg: #3d2f0b; --ok-ink: #86efac; --ok-bg: #0f3321; --danger-ink: #fca5a5; --danger-bg: #44181a;
+    --shadow-float: 0 6px 18px rgba(0, 0, 0, 0.55); --shadow-dialog: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --fill: #6d28d9; --fill-active: #5b21b6;
+    --primary: var(--fill);
+    /* Settings' key line is Tailwind's green, red and amber 700, and the personal-details dialog's words are amber 50 and 900, which are dark inks and a pale fill on a dark
+       page; here they are the notes' inks and fill. */
+    --color-green-700: var(--ok-ink); --color-red-700: var(--danger-ink); --color-amber-700: var(--flag-ink); --color-amber-900: var(--flag-ink); --color-amber-50: var(--flag-bg);
+  }
+  /* The editor's paper stays a white page in this theme (D-C-85): pasted and picked text colours, and the colours the Highlight tool writes into the
+     text, were chosen for white. Every colour the theme changes goes back to its light value inside the paper. */
+  :root[data-theme="dark"] .editor {
+    color-scheme: light; background: var(--card); color: var(--ink);
+    --purple-900: #3b0764; --purple-800: #4c1d95; --purple-700: #5b21b6; --purple-600: #6d28d9; --purple-100: #ede9fe;
+    --gold-wash: #fdf4e3;
+    --bg: #fbfaf9; --card: #ffffff; --soft: #f8f6fc; --chip: #f4f3f6; --line: #ece8f2; --line-strong: #ddd9e4; --dashed: #cdbdf0;
+    --ink: #2a2438; --muted: #6b6579; --accent-ink: #5b21b6;
+    --flag-ink: #92400e; --flag-bg: #fef3c7; --ok-ink: #166534; --ok-bg: #dcfce7; --danger-ink: #b91c1c; --danger-bg: #fee2e2;
+  }
+  /* Role switches: the element takes the other role's colour for itself. */
+  :root[data-theme="dark"] .bg-purple-800.text-white { --purple-800: var(--fill); --purple-900: var(--fill-active); }
+  :root[data-theme="dark"] .bg-purple-900.text-white { --purple-900: var(--fill); }
+  :root[data-theme="dark"] .text-primary { --primary: var(--purple-800); }
+  :root[data-theme="dark"] .bg-destructive { --destructive: #b91c1c; }
+  :root[data-theme="dark"] .bg-gold { --ink: #2a2438; }
+  :root[data-theme="dark"] .toast { --gold-bright: #7a5412; }
+  :root[data-theme="dark"] .home-next { --purple-800: var(--fill); --purple-100: #ede9fe; }
+  /* A marked passage keeps the page's ink (the browser's own mark is black text). */
+  :root[data-theme="dark"] mark { color: inherit; }
+  /* Colours the light theme writes as a literal. */
+  :root[data-theme="dark"] .select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b0a9c4' stroke-width='1.5'/%3E%3C/svg%3E"); }
+  :root[data-theme="dark"] .cit-item.cit-active { background: var(--purple-100); }
+  :root[data-theme="dark"] .cit-item .rc-ok { color: var(--ok-ink); }
+  :root[data-theme="dark"] .cit-item .rc-nf, :root[data-theme="dark"] .cit-item .rc-diff, :root[data-theme="dark"] .rs-quick .ap-warn { color: var(--flag-ink); }
+  :root[data-theme="dark"] .app-ai-pill, :root[data-theme="dark"] .ai-read-label { color: var(--gold-bright); }
+  /* The simulator's powered bars are the darker ones (its sentence says so); the purple the light page uses is too close to this card. */
+  :root[data-theme="dark"] .power-sim svg rect[fill="#6d28d9"] { fill: #8b5cf6; }
+}

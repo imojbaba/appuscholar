@@ -13,6 +13,7 @@ import { blobId, type BlobKind } from "@/lib/blobs/kinds";
 import { hasParticipantsBlob, listProjectBlobs, type BlobListing } from "@/lib/blobs/listing";
 import type { BlobWire } from "@/lib/blobs/useProjectBlob";
 import { downloadBlob } from "@/lib/export/download";
+import { stampBackup } from "@/lib/help/backup/stamp";
 import { buildAllRecordText, openRecordTitles, type WritingRecord } from "@/lib/writingRecord";
 import { openTitle, projectKeyId, titleText, UNTITLED } from "@/lib/vault/titles";
 import { APP_VERSION } from "@/lib/version";
@@ -22,10 +23,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { useProject } from "@/components/frame/ProjectContext";
+import { HelpButtons } from "@/components/help/HelpButtons";
 import { ChangePassphrase } from "./ChangePassphrase";
 import { EraseAccount } from "./EraseAccount";
 
-const FAQ = ["lost", "hindi", "key"];
+const FAQ = ["lost", "hindi", "key", "broken"];
 // The app never sends mail (rule 12): the button opens the student's own mail app.
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 /**
@@ -117,6 +119,7 @@ export function useAccount() {
       });
       await apiFetch<void>("/me/export-audit", { method: "POST" });
       downloadBlob(exportFileName(), blob);
+      stampBackup(me?.id);
       toast(t("export_done"));
     } catch {
       toast(t("export_fail"));
@@ -191,6 +194,7 @@ export function Help() {
             <p className="m-0 text-muted-foreground" data-testid="help-contact-unset">{t("help_contact_unset")}</p>
           )}
         </div>
+        <HelpButtons />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" data-testid="help-terms" onClick={openTerms}>{t("terms_reopen_btn")}</Button>
           <Button variant="ghost" data-testid="help-import-v1" onClick={openImportV1}>Import a v1 backup</Button>
