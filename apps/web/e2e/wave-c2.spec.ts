@@ -24,7 +24,7 @@ import { signIn } from "./support/signin";
 import { GUIDE } from "../lib/help/guide/content";
 
 const EN = JSON.parse(readFileSync(path.join(__dirname, "../messages/tools/help-guide.en.json"), "utf8")) as Record<string, string>;
-const NEW_ACCOUNT = { prefix: "c2", newAccount: true, ready: ["first-run"] };
+const NEW_ACCOUNT = { prefix: "c2", newAccount: true, ready: ["project-list"] };
 
 test.describe.configure({ timeout: 120_000 });
 

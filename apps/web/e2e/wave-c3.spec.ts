@@ -4,7 +4,7 @@
  *   1. With no AI key, an English question that matches nothing gets v1's line and sends nothing; a question that matches lists those
  *      sections in the Guide (open, under "N sections match your question"), says why there is no answer, and sends nothing; a link in the
  *      line searches for that section and opens it;
- *   2. With a key (saved in the key window) and the AI answered from a recording: the button waits while Appu reads, the request is v1's prompt
+ *   2. With a key (connected in Connect AI) and the AI answered from a recording: the button waits while Appu reads, the request is v1's prompt
  *      (Appu's opening words, the best sections, the open tool, the question last) at temperature 0.2 and 700 tokens without the language
  *      line, the answer is drawn as text (its markup is not), "From the guide" links open the section, and a refused call (the free limit)
  *      shows the provider's sentence and the links;
@@ -23,11 +23,12 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 import { GUIDE } from "../lib/help/guide/content";
 
 const EN = JSON.parse(readFileSync(path.join(__dirname, "../messages/tools/help-guide.en.json"), "utf8")) as Record<string, string>;
-const NEW_ACCOUNT = { prefix: "c3", newAccount: true, ready: ["first-run"] };
+const NEW_ACCOUNT = { prefix: "c3", newAccount: true, ready: ["project-list"] };
 const QUESTION = "how do I reverse-score items?";
 const SCALES = GUIDE.find((s) => s.id === "scales")!;
 /** v1's answer shape: plain words, and here with markup in it to show the page does not draw it. */
@@ -58,20 +59,14 @@ function answerAi(page: Page, pick: (prompt: string) => string | "refuse"): Prom
   }).then(() => control);
 }
 
-/** Saves a Groq key remembered in this browser: from the header's AI pill, or from the phone's menu. */
+/** Connects a Groq key remembered in this browser (Connect AI): from the header's AI pill, or from the phone's menu. */
 async function saveKey(page: Page): Promise<void> {
-  if ((page.viewportSize()?.width ?? 1280) < 700) {
+  const phone = (page.viewportSize()?.width ?? 1280) < 700;
+  if (phone) {
     await page.getByTestId("phone-menu").click();
     await page.getByTestId("menu-ai").click();
-  } else {
-    await page.getByTestId("ai-pill").click();
   }
-  await expect(page.getByTestId("provider-dialog")).toBeVisible();
-  await page.getByTestId("prov-select").selectOption("groq");
-  await page.getByTestId("key-input").fill("gsk_test");
-  await page.getByTestId("key-mode-plain").check();
-  await page.getByTestId("key-save").click();
-  await expect(page.getByTestId("provider-dialog")).toBeHidden();
+  await connectAI(page, { keep: "plain", open: !phone });
 }
 
 async function openGuide(page: Page): Promise<void> {
