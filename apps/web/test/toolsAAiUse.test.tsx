@@ -77,7 +77,7 @@ const LOG: AiuEntry[] = [
 ];
 const TICKS_OFF = { own: false, reword: false, cite: false, facts: false, noData: false };
 /** What the page starts with: the "I planned" tick on, as v1's dialog (aiuOwn is `checked`). */
-const TICKS_DEFAULT = { ...TICKS_OFF, own: true };
+const TICKS_DEFAULT = TICKS_OFF;
 const ALL = (list: AiuEntry[]): Record<string, 1> => Object.fromEntries(list.map((x) => [x.k, 1 as const]));
 
 const roots: Root[] = [];
@@ -293,21 +293,19 @@ describe("AI-use statement (Task A4): the statement", () => {
 
   it("each tick feeds core: all five true, and unticked rows leave their requests out", async () => {
     await render();
-    for (const id of ["aiu-reword", "aiu-cite", "aiu-facts", "aiu-nodata"]) await click(id);
-    await click("aiu-own");
+    for (const id of ["aiu-own", "aiu-reword", "aiu-cite", "aiu-facts", "aiu-nodata"]) await click(id);
     await click("aiu-row-1");
     await click("aiu-build");
     const list = LOG;
     const keep = { "grammar and polish": 1, "feedback on my draft": 1 } as Record<string, 1>;
-    const want = aiuBuildV2({ list, keep, other: "", fmt: "course", ticks: { own: false, reword: true, cite: true, facts: true, noData: true }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
+    const want = aiuBuildV2({ list, keep, other: "", fmt: "course", ticks: { own: true, reword: true, cite: true, facts: true, noData: true }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string };
     expect(out()).toBe(want.text);
     expect(out()).not.toContain("summarising a paper");
   });
 
-  it("v1's defaults: only 'I planned the argument' is ticked, the style is coursework", async () => {
+  it("the defaults: none of the five 'What you did yourself' boxes is ticked for the student (O5), the style is coursework", async () => {
     await render();
-    expect(($("aiu-own") as HTMLInputElement).checked).toBe(true);
-    for (const id of ["aiu-reword", "aiu-cite", "aiu-facts", "aiu-nodata"]) expect(($(id) as HTMLInputElement).checked, id).toBe(false);
+    for (const id of ["aiu-own", "aiu-reword", "aiu-cite", "aiu-facts", "aiu-nodata"]) expect(($(id) as HTMLInputElement).checked, id).toBe(false);
     expect(($("aiu-fmt") as HTMLSelectElement).value).toBe("course");
     expect($$('[data-testid="aiu-fmt"] option').map((o) => o.getAttribute("value"))).toEqual(["course", "thesis", "journal"]);
   });
