@@ -40,7 +40,7 @@ vi.mock("@/lib/blobs/useProjectBlob", () => ({ useProjectBlob: () => ({ value: n
 vi.mock("@/lib/ai/useCallAI", () => ({ useCallAI: () => vi.fn() }));
 vi.mock("@/lib/ai/suggestion", () => ({ useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/lib/research/oaKey", () => ({ useOpenAlexKey: () => null }));
-vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
+vi.mock("@/components/places/ShapeStudy", () => ({ ShapeStudy: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/tools/research/ResearchPanel", () => ({ ResearchPanel: () => <div data-testid="panel-research" /> }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));

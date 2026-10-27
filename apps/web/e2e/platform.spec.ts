@@ -11,16 +11,14 @@ import { signIn } from "./support/signin";
 
 const fixture = path.resolve(__dirname, "../../../packages/core/test/fixtures/v1-backup-small.json");
 
-/** A new account past the terms gate and the welcome tour, on first run (a student with no project). */
-const NEW_ACCOUNT = { prefix: "t", newAccount: true, ready: ["first-run"] };
+/** A new account past the terms gate, on the dashboard (a student with no study yet). */
+const NEW_ACCOUNT = { prefix: "t", newAccount: true, ready: ["project-list"] };
 
 test("sign in, write, reload, import a v1 backup", async ({ page }) => {
   await signIn(page, NEW_ACCOUNT);
-  await expect(page).toHaveURL(/\/start$/);
-
-  // The project list: no project yet, and the scratch space opens at its writing place.
-  await page.goto("/projects");
-  await expect(page.getByTestId("project-list")).toBeVisible();
+  // The dashboard is the home page: no study yet, and the scratch space opens at its writing place.
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.getByTestId("projects-empty")).toBeVisible();
   await page.getByTestId("scratch-space").click();
   await expect(page).toHaveURL(/\/p\/[0-9a-f-]+\/writing$/);
   await expect(page.getByTestId("doc-select")).toBeVisible();

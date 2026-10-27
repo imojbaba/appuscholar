@@ -2,13 +2,16 @@ import type { CitationEntry } from "@appuscholar/core";
 import type { ApNote, ApNotes, IdeaIntake, ShelfIndex } from "@/lib/blobs/kinds";
 import type { StageBlobs, ToolFacts, ToolModule } from "@/lib/tools/registry";
 import { parseIdeaRead } from "./ideaRead";
+import { answerOf, answeredCount } from "./shapeStudy";
 
 /**
- * What the project home shows and suggestNext decides from. `checked`: a feasibility read is stored, parsed or not; `verdict` is its "Verdict:" line
- * when it parses (null otherwise), and `readText` the read as it came ("" with none), which the question card shows when there is no verdict.
+ * What the project home shows and suggestNext decides from. The plan's six parts (Shape your study: question, who, how, time, have, ethics) and how many
+ * are answered. `checked`: the student asked for the optional feasibility read and it is stored, parsed or not; `verdict` is its "Verdict:" line when it
+ * parses (null otherwise), and `readText` the read as it came ("" with none), which the card shows when there is no verdict.
  */
 export type HomeFacts = {
-  question: string; people: string; time: string; limits: string; field: string; verdict: string | null; checked: boolean; readText: string;
+  question: string; who: string; how: string; time: string; have: string; ethics: string; answered: number;
+  field: string; verdict: string | null; checked: boolean; readText: string;
   kept: number; read: number; highlights: number; cards: number; draftWords: number;
 };
 
@@ -35,7 +38,8 @@ export function homeFacts(
   const notes = Object.values(b.apNotes ?? {});
   const notesRead = notes.filter((n) => noted(n) && !(n.title !== undefined && readTitles.has(titleKey(n.title))));
   return {
-    question: idea?.topic ?? "", people: idea?.resources ?? "", time: idea?.timeframe ?? "", limits: idea?.constraints ?? "", field,
+    question: answerOf(idea, "question"), who: answerOf(idea, "who"), how: answerOf(idea, "how"), time: answerOf(idea, "time"), have: answerOf(idea, "have"),
+    ethics: answerOf(idea, "ethics"), answered: answeredCount(idea), field,
     verdict: idea?.read ? parseIdeaRead(idea.read.text)?.verdict ?? null : null,
     checked: !!idea?.read,
     readText: idea?.read?.text ?? "",

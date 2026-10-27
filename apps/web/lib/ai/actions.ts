@@ -1,8 +1,8 @@
 import type { SelectionRange } from "@/lib/editor/insert";
 import {
-  accCheck, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
+  accCheck, buildCoachPrompt, buildDevilPrompt, buildDraftFirstPrompt, buildGapFinderPromptV2, buildHelperPrompt, buildIdeaPromptV2, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
   buildShelfSummaryPromptV2, buildSuggestTermsPrompt, buildWritingPrompt, DEVIL_MIN_WORDS, HELPER_MIN_CHARS, QUICK_READ_MIN_CHARS, rsParseTerms, rsQuickCheck, rsRankParse, shMineOk,
-  shSummaryNoteId, type Built, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
+  shSummaryNoteId, type Built, type CoachPlan, type CoachSection, type HelperKind, type RsPaper, type RsQuick, type ShNote, type WritingKind
 } from "@appuscholar/core";
 import { currentStylePrompt, currentStyleVocabNote } from "@/lib/tools/style/current";
 
@@ -110,6 +110,20 @@ export async function checkIdea(d: IdeaDeps): Promise<string | null> {
   if (!d.intake.topic.trim()) { d.toast(IDEA_NEED_TOPIC); return null; }
   // The builder trims each field, fills the defaults of the three optional ones and makes v1's cuts (2,000 / 1,000 / 1,000); V2 names each area's line by the area (W7).
   const built = buildIdeaPromptV2(d.field, d.intake);
+  try {
+    return await d.callAI(built.prompt, { temp: built.temp, max: built.max });
+  } catch (e) {
+    d.toast(errorText(e));
+    return null;
+  }
+}
+
+/**
+ * Shape your study's "Help me think" (start-a-study spec): the coach's reply on one part of the plan, or null when the call failed (its message in a
+ * toast). It asks questions, offers options and names what is missing; it never grades (packages/core prompts-coach.ts).
+ */
+export async function coachSection(d: Pick<ActionDeps, "callAI" | "toast"> & { field: string; section: CoachSection; plan: CoachPlan }): Promise<string | null> {
+  const built = buildCoachPrompt(d.field, d.section, d.plan);
   try {
     return await d.callAI(built.prompt, { temp: built.temp, max: built.max });
   } catch (e) {

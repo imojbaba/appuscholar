@@ -33,6 +33,7 @@ import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type Locator, type Page, type Response } from "@playwright/test";
 import { QUAL_PALETTE, qualDeleteCascade } from "@appuscholar/core";
+import { makeStudy } from "./support/study";
 import { signIn } from "./support/signin";
 import { toolBuilt } from "./support/builtTools";
 import { API_ORIGIN } from "./support/origins";
@@ -87,12 +88,8 @@ test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 // ---- Helpers ---------------------------------------------------------------------------------------------------------------------------------------
 
 async function newProject(page: Page): Promise<string> {
-  await signIn(page, { prefix: "c", newAccount: true, ready: ["first-run"] });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  // The three questions are folded away, optional ("Add details for better feedback").
-  await page.getByTestId("idea-details-toggle").click();
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
+  await signIn(page, { prefix: "c", newAccount: true, ready: ["project-list"] });
+  await makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("home-stages")).toBeVisible();
   const id = /\/p\/([^/?#]+)/.exec(page.url())?.[1];

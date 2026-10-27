@@ -17,7 +17,7 @@ vi.mock("@/components/frame/ProjectContext", async (orig) => ({ ...(await orig<t
 import { ApiError } from "../lib/api";
 import { VaultProvider } from "../lib/vault/useVault";
 import { DocBar } from "../components/document/DocBar";
-import { FirstRun } from "../components/frame/FirstRun";
+import { NewStudy } from "../components/frame/NewStudy";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const roots: Root[] = [];
@@ -70,7 +70,7 @@ describe("Move to project", () => {
     expect((h.ws as { openProject: ReturnType<typeof vi.fn> }).openProject).toHaveBeenCalledWith("p1", { docId: "D1" });
   });
 
-  it("New project goes to first run carrying the document, which moves it into the project it creates", async () => {
+  it("New study goes to Start a new study carrying the document, which moves it into the study it creates", async () => {
     await render(<DocBar />);
     await click(document.querySelector('[data-testid="doc-move"]'));
     await until(() => !!document.querySelector('[data-testid="doc-move-new"]'));
@@ -79,14 +79,15 @@ describe("Move to project", () => {
 
     act(() => { for (const r of roots.splice(0)) r.unmount(); });
     document.body.innerHTML = "";
-    await render(<FirstRun moveDocId="D1" />);
+    await render(<NewStudy moveDocId="D1" />);
     expect(document.body.textContent).toContain(en.start_move_note);
-    const input = document.querySelector("#ideaTopic") as HTMLTextAreaElement;
+    const input = document.querySelector("#newName") as HTMLInputElement;
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(input, "Sleep");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Sleep");
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    await click(document.querySelector('[data-testid="idea-save"]'));
+    await click(document.querySelector('[data-testid="new-type-masters"]'));
+    await click(document.querySelector('[data-testid="new-create"]'));
     await until(() => (h.ws as { openProject: ReturnType<typeof vi.fn> }).openProject.mock.calls.length > 0);
     expect(moves().map(([p, i]) => [p, JSON.parse((i as { body: string }).body)])).toEqual([["/documents/D1/move", { projectId: "pNew" }]]);
     expect((h.ws as { openProject: ReturnType<typeof vi.fn> }).openProject).toHaveBeenCalledWith("pNew", { docId: "D1" });

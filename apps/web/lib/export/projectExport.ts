@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { SECTIONS, answerOf, unsureOf } from "@/lib/frame/shapeStudy";
 import {
   AP_STAGES, aiuBuildV2, apAcrossCols, apAcrossCsv, bibliography, exportLibrary, PROVIDERS, rsCsvText, SHELF_DEFAULT_COLS, shColsOf,
   type AiuEntry, type ApNoteLike, type CitationEntry, type CitationStyle, type RsPaper
@@ -119,10 +120,10 @@ function notesText(p: Paper, t: T): string {
   return s;
 }
 
-/** The question's four fields under the Idea panel's labels, then the stored read after "AI read:" (exp_ai_read). */
+/** The plan's six parts under Shape your study's titles ("Not sure yet" where marked), then the stored read after "AI read:" (exp_ai_read). */
 function questionText(i: BlobShape<"idea_intake">, t: T): string {
-  const f: Array<[string, string]> = [["idea_topic_label", i.topic], ["idea_resources_label", i.resources], ["idea_timeframe_label", i.timeframe], ["idea_constraints_label", i.constraints]];
-  let s = f.map(([k, v]) => t(k) + "\n" + v + "\n").join("\n");
+  const unsure = unsureOf(i);
+  let s = SECTIONS.map((sec) => t("shape_" + sec.key + "_title") + "\n" + (answerOf(i, sec.key) || (unsure.includes(sec.key) ? t("shape_not_sure") : "")) + "\n").join("\n");
   const read = (i as { read?: { text?: unknown } }).read?.text;
   if (typeof read === "string" && read) s += "\n" + t("exp_ai_read") + "\n" + read + "\n";
   return s;

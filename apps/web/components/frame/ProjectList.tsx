@@ -11,6 +11,8 @@ import { stateSummary } from "@/lib/frame/stateSummary";
 import { useProjectWork, type ProjectWork } from "@/lib/frame/useProjectWork";
 import { homeHref, placeHref } from "@/lib/frame/places";
 import { STAGE_ORDER } from "@/lib/tools";
+import { FIELD_LIST, fieldKey } from "@/lib/fields";
+import { isStudyType, studyTypeKey } from "@/lib/frame/studyTypes";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,11 +78,11 @@ export function ProjectList() {
   return (
     <section className="plist" data-testid="project-list">
       <div className="plist-head">
-        <h1>{t("list_title")}</h1>
-        <Button asChild variant="primary"><Link href="/start" data-testid="new-project">{t("projects_new")}</Link></Button>
+        <h1>{t("dash_h")}</h1>
+        <Button asChild variant="primary"><Link href="/start" data-testid="new-project">{t("dash_new")}</Link></Button>
       </div>
       <VaultLine />
-      {rows && rows.length === 0 && <p className="place-note" data-testid="projects-empty">{t("projects_none")}</p>}
+      {rows && rows.length === 0 && <p className="place-note plist-empty" data-testid="projects-empty">{t("dash_empty")}</p>}
       <ul role="list" className="plist-rows">
         {rows?.map((p) => (
           <li key={p.id} className="plist-row" data-testid="project-row">
@@ -89,6 +91,7 @@ export function ProjectList() {
                 <span className="plist-name"><span data-testid="project-row-title"><Name project={p} /></span>
                   {p.status === "complete" && <Badge variant="ok">{t("projects_finished")}</Badge>}</span>
                 <span className="plist-meta" data-testid="project-row-meta"><Meta project={p} /></span>
+                {p.status !== "complete" && <span className="plist-next" data-testid="project-row-next">{nextLine(stageStates(p), t)}</span>}
               </span>
               <Bars states={stageStates(p)} />
             </Link>
@@ -145,12 +148,28 @@ function Bars({ states }: { states: Record<(typeof STAGE_ORDER)[number], StageSt
   );
 }
 
-/** "{field}. Edited {date}.", or "Edited {date}." for a project with no field. */
+/** "{type} · {field}. Edited {date}.", each part only when the study has it (a study made before types has none; one with no field uses the account's). */
 function Meta({ project }: { project: ProjectWork }) {
   const t = useT();
   const { lang } = useLang();
   const date = editedDay(lastEdited(project), new Date(), t, lang);
-  return <>{project.field ? t("list_meta", { field: project.field, date }) : t("list_meta_nofield", { date })}</>;
+  const parts = [isStudyType(project.type) ? t(studyTypeKey(project.type)) : "", project.field ? fieldName(project.field, t) : ""].filter(Boolean).join(" · ");
+  return <>{parts ? t("dash_meta", { parts, date }) : t("list_meta_nofield", { date })}</>;
+}
+
+/** v1's list fields by their translated label; the student's own words as typed. */
+function fieldName(field: string, t: T): string {
+  return FIELD_LIST.includes(field) ? t(fieldKey(field)) : field;
+}
+
+/**
+ * The card's one next step: Shape your study while the Idea stage has nothing in it, else the first stage in order that is not ready, by its short name;
+ * every stage ready says so. From the stage states alone, so it shows while the vault is locked.
+ */
+export function nextLine(states: Record<(typeof STAGE_ORDER)[number], StageState>, t: T): string {
+  if (states.idea === "not-started") return t("dash_next_shape");
+  const next = STAGE_ORDER.find((s) => states[s] !== "ready");
+  return next ? t("dash_next", { stage: t("list_stage_" + next) }) : t("dash_all_ready");
 }
 
 /** The vault's line above the list: the titles are locked to the student, locked now (with Unlock), or readable on the server. */

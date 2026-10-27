@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import type { HelperKind } from "@appuscholar/core";
 import { docInnerText, fieldLabel } from "@appuscholar/core";
 import { plain, tHtml, useT } from "@/lib/i18n";
@@ -32,6 +33,7 @@ export function resetHelperSession(): void { memory.clear(); }
 export function HelpersPanel() {
   const t = useT();
   const { settings } = useSettings();
+  const studyField = useStudyField();
   const suggestion = useSuggestion();
   const callAI = useCallAI();
   const { editor } = suggestion;
@@ -41,7 +43,7 @@ export function HelpersPanel() {
     selectionText: () => (editor && !editor.isDestroyed ? selectionText(editor) : ""),
     docText: () => (editor && !editor.isDestroyed ? docInnerText(editor.getHTML()) : ""),
     setThinking: suggestion.setThinking, isCurrent: suggestion.isCurrent, set: suggestion.set, setFeedback: suggestion.setFeedback, clear: suggestion.clear,
-    toast, t, field: fieldLabel(settings.field),
+    toast, t, field: studyField,
     confirm: (msg) => window.confirm(msg),
     session
   });

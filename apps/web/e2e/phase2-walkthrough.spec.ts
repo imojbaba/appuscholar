@@ -15,6 +15,7 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import { e2eEmail, signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
 import { connectAI } from "./support/connect";
+import { makeStudy } from "./support/study";
 import { WEB_ORIGIN } from "./support/origins";
 import * as editorAt from "./support/editor";
 
@@ -90,8 +91,9 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
     await expect(page.getByTestId("terms-dialog")).toBeHidden();
-    // First run (OJ 2026-10-27): nothing opens over the idea screen after the terms; AI is connected when it is first needed.
-    await expect(page.getByTestId("first-run")).toBeVisible();
+    // After the terms the dashboard (start-a-study spec, OJ 2026-10-27), with nothing over it; AI is connected when it is first needed.
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByTestId("project-list")).toBeVisible();
     await expect(page.getByTestId("connect-dialog")).toBeHidden();
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
@@ -116,20 +118,17 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     await expect(page.getByTestId("connect-dialog")).toBeHidden();
   });
 
-  await test.step("3. first run: the idea, Save as my project (no check needed); the home's six stages; Writing opens the project's empty document", async () => {
+  await test.step("3. Start a new study, its question in Shape your study (no check needed), Finish later; the home's six stages; Writing opens the study's empty document", async () => {
     await page.getByTestId("help-btn").click();
     await expect(page.getByTestId("app-version")).toHaveText(/^Version \S+$/);
     await page.keyboard.press("Escape");
-    await expect(page).toHaveURL(/\/start$/);
-    await expect(page.getByTestId("first-run")).toBeVisible();
-    await page.locator("#ideaTopic").fill(TOPIC);
-    await page.getByTestId("idea-save-title").fill(PROJECT);
-    await page.getByTestId("idea-save").click();
+    await makeStudy(page, { name: PROJECT, question: TOPIC });
     await expect(page).toHaveURL(/\/p\/[0-9a-f-]+$/);
-    await expect(page.getByTestId("project-home")).toBeVisible();
     await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
     await expect(page.getByTestId("home-q-text")).toHaveText(TOPIC);
-    await expect(page.getByTestId("home-q-verdict")).toHaveText("Feasibility not checked yet.");
+    await expect(page.getByTestId("home-shape-count")).toHaveText("Shape your study: 1 of 6 parts answered.");
+    // The feasibility check is optional: the card shows no verdict and asks for none.
+    await expect(page.getByTestId("home-q-verdict")).toHaveCount(0);
     for (const [s, state] of [["idea", "In progress"], ["lit", "Not started"], ["design", "Not started"], ["collect", "Not started"], ["writing", "Not started"], ["review", "Not started"]]) {
       await expect(page.getByTestId("home-state-" + s)).toHaveText(state);
     }

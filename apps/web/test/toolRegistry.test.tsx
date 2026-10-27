@@ -93,7 +93,7 @@ describe("the tool registry (Task G2)", () => {
     // Chat and the six stage-2 tools as before, and stats now that its module is built; never qual, whose module is not, nor viva (not a ToolId).
     expect([...BUILT_IN].sort()).toEqual(["analyse", "chat", "cite", "idea", "psych", "research", "stats"]);
     const states = Object.fromEntries(STAGE_ORDER.map((s) => [s, "not-started"])) as Record<StageKey, StageState>;
-    const facts: HomeFacts = { question: "", people: "", time: "", limits: "", field: "", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 };
+    const facts: HomeFacts = { question: "", who: "", how: "", time: "", have: "", ethics: "", answered: 0, field: "", verdict: null, checked: false, readText: "", kept: 0, read: 0, highlights: 0, cards: 0, draftWords: 0 };
     await render(<StageRows states={states} facts={facts} onOpen={() => {}} onMark={() => {}} />);
     const detail = (s: StageKey) => tid("home-detail-" + s)!.textContent;
     // Collection and analysis is built (one of its modules is); its facts come with Task G3, so it says nothing it does not know.

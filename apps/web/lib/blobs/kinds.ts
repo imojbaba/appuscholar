@@ -38,7 +38,16 @@ const str = z.string();
 const num = z.number();
 
 /** Idea & Feasibility intake: the four fields of the form, and (wave B, Task 9) the AI read of them as it came, with when it was made (ISO). Optional, so an intake stored before it still parses. */
-const IdeaIntakeSchema = z.looseObject({ topic: str, resources: str, timeframe: str, constraints: str, read: z.looseObject({ text: str, at: str }).optional() });
+/**
+ * The study plan (start-a-study spec): v1's four idea boxes (the question, what the student has, time, other constraints, now ethics), the two parts Shape
+ * your study adds (who would take part, how the evidence would be collected), the parts marked "Not sure yet", the coach's latest reply per part, and the
+ * feasibility read when the student asked for one.
+ */
+const AiText = z.looseObject({ text: str, at: str });
+const IdeaIntakeSchema = z.looseObject({
+  topic: str, resources: str, timeframe: str, constraints: str, who: str.optional(), how: str.optional(),
+  unsure: z.array(str).optional(), coach: z.record(str, AiText).optional(), read: AiText.optional()
+});
 /** One source as v1 stores it (core's CitationEntry: every known value a string, all optional). */
 const CitationEntrySchema = z.looseObject({
   author: str.optional(), year: str.optional(), title: str.optional(), source: str.optional(), volume: str.optional(), issue: str.optional(),

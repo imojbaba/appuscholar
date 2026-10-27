@@ -4,6 +4,8 @@ import type { Editor } from "@tiptap/core";
 import type { ProviderId } from "@appuscholar/core";
 import type { ExportPartId } from "@/lib/export/projectExport";
 import type { Place } from "@/lib/frame/places";
+import type { StageKey } from "@/lib/tools";
+import type { StudyType } from "@/lib/frame/studyTypes";
 import type { WrappedDek } from "@/lib/vault/useVault";
 import type { InsertMessage } from "@/lib/popout/channel";
 
@@ -11,7 +13,7 @@ import type { InsertMessage } from "@/lib/popout/channel";
  * Wire shapes of the API (dates arrive as ISO strings). `title` is ciphertext when `titleKeyVersion` is 1 or more: it is shown through
  * useTitle (lib/vault/titles), never as it is.
  */
-export type Project = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; field: string; stage: string; status: string; contentLang: string; kind: string };
+export type Project = { id: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; field: string | null; type: StudyType | null; stage: string; status: string; contentLang: string; kind: string };
 export type DocumentSummary = { id: string; projectId: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; kind: string; currentSeq: number; wordCount: number; createdAt: string; updatedAt: string };
 /**
  * `bodyHtml` is the text the editor opens with: decrypted on load when `keyVersion` is 1 or more. `unreadable` is set when it could not be:
@@ -43,7 +45,8 @@ export type ProjectValue = {
    * the student stayed), the project is recorded as active (PATCH /me/active-project), then its home opens (the scratch space's writing place).
    * `docId` is shown once it has loaded. Opening the project already open re-reads it and its documents.
    */
-  openProject(id: string | null, opts?: { docId?: string }): Promise<boolean>;
+  /** `place`: open that stage instead of the home (a new study opens Shape your study). */
+  openProject(id: string | null, opts?: { docId?: string; place?: StageKey }): Promise<boolean>;
   /** The text the selection bubble's Find papers kept for the Research tool (up to 200 characters), or null. */
   pendingSearch: string | null;
   setPendingSearch(text: string | null): void;

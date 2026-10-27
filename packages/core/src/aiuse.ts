@@ -27,7 +27,9 @@ const AIU_RULES: Array<[RegExp, string, AiUseGroup]> = [
   [/^You help a student of .{0,60} search research databases/, "suggesting search terms", "explain"],
   [/^Paraphrase the passage below in the voice/, "trying my style on a practice passage", "explain"],
   [/studying the writing style|^Analyze the writing style/, "describing my writing style", "explain"],
-  [/scholarly writing coach/, "answering a writing question", "explain"]
+  [/scholarly writing coach/, "answering a writing question", "explain"],
+  // Not v1's (start-a-study spec): Shape your study's "Help me think". No v1 prompt starts with these words.
+  [/^You are a research-methods coach for a student who is shaping their study/, "thinking through my study plan", "feedback"]
 ];
 
 /** Kind of help a prompt represents, or null for the Appu help assistant (not logged). */

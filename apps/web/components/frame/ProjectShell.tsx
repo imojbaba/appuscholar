@@ -1,4 +1,6 @@
 "use client";
+import { publishStudyField } from "@/lib/frame/studyField";
+import type { StageKey } from "@/lib/tools";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { usePathname, useRouter } from "next/navigation";
@@ -146,6 +148,10 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
   const [error, setError] = useState(false);
   const [missing, setMissing] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
+  // The AI features read the open study's own field (lib/frame/studyField); a page with no study, or this shell gone, falls back to the account's.
+  const studyField = project?.field ?? null;
+  useEffect(() => { publishStudyField(studyField); }, [studyField]);
+  useEffect(() => () => { publishStudyField(null); }, []);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [currentDoc, setCurrentDoc] = useState<DocumentWithBody | null>(null);
@@ -345,7 +351,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     return true;
   }, [urlProjectId, confirmExit, router]);
 
-  const openProject = useCallback(async (id: string | null, opts: { docId?: string } = {}): Promise<boolean> => {
+  const openProject = useCallback(async (id: string | null, opts: { docId?: string; place?: StageKey } = {}): Promise<boolean> => {
     const target = id ?? scratchProjectId;
     if (!target) return false;
     if (target === projectIdRef.current) {
@@ -360,7 +366,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       await reload();
     } catch (e) { switching.current = false; throw e; }
     // The scratch space has no home: it opens where its documents are (decision 4).
-    router.push(id ? homeHref(id) : placeHref(target, "writing"));
+    router.push(id ? (opts.place ? placeHref(id, opts.place) : homeHref(id)) : placeHref(target, "writing"));
     return true;
   }, [scratchProjectId, reloadProject, reloadDocs, selectDoc, confirmExit, reload, router]);
 

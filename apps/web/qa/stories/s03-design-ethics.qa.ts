@@ -267,8 +267,9 @@ function tabRow(page: Page) {
 }
 
 /**
- * A project made through first run, as the sheet's "You need" has it: the idea written, "Get feedback on my idea" pressed and its read waited for, then "Save as my project". The check is
- * the one request of the AI-use log. `afterCheck` runs after the check is pressed and before its read is waited for (the personal-details dialog of S3-04 stands in between).
+ * A study made as the sheet's "You need" has it: Start a new study, its question (and what the student has) in Shape your study, then the summary's optional "Check if it's
+ * doable" pressed and its read waited for, then Go to my study. The check is the one request of the AI-use log. `afterCheck` runs after the check is pressed and before its
+ * read is waited for (the personal-details dialog of S3-04 stands in between).
  */
 async function projectWithIdeaCheck(
   page: Page,
@@ -276,18 +277,32 @@ async function projectWithIdeaCheck(
   o: { vault?: "off" | "on"; resources?: string; afterCheck?: () => Promise<void> } = {}
 ): Promise<{ student: Student; id: string }> {
   const student = await newStudent(page, qa, { key: "ok", project: false, ...(o.vault ? { vault: o.vault } : {}) });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?");
-  // The three questions are folded away, optional ("Add details for better feedback").
-  if (o.resources) { await page.getByTestId("idea-details-toggle").click(); await page.locator("#ideaRes").fill(o.resources); }
-  await page.getByTestId("idea-save-title").fill(PROJECT);
+  const saved = () => page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/idea_intake$/.test(r.url()) && r.ok(), { timeout: 30_000 });
+  await page.getByTestId("new-project").click();
+  await page.getByTestId("new-name").fill(PROJECT);
+  await page.getByTestId("new-type-masters").check();
+  await page.getByTestId("new-create").click();
+  await expect(page.getByTestId("shape-part")).toBeVisible({ timeout: 30_000 });
+  let wrote = saved();
+  await page.getByTestId("shape-answer").fill("Does a fixed bedtime routine for one week lower exam anxiety in first-year college students?");
+  await wrote;
+  if (o.resources) {
+    await page.getByTestId("shape-dot-have").click();
+    await expect(page.getByTestId("shape-part")).toHaveAttribute("data-part", "have");
+    wrote = saved();
+    await page.getByTestId("shape-answer").fill(o.resources);
+    await wrote;
+  }
+  await page.getByTestId("shape-dot-ethics").click();
+  await page.getByTestId("shape-next").click();
+  await expect(page.getByTestId("shape-summary")).toBeVisible();
   await page.getByTestId("idea-check").click();
   if (o.afterCheck) await o.afterCheck();
   await expect(page.getByTestId("idea-read")).toBeVisible({ timeout: 30_000 });
-  await page.getByTestId("idea-save").click();
-  // The save took 21 s on the QA stack with no sign of progress (O3, S1-03): the case waits for it.
+  await page.getByTestId("shape-go-study").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 90_000 });
   const id = /^\/p\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1];
-  if (!id) throw new Error(`QA S3: the project was saved but the page is not on its home (${page.url()}).`);
+  if (!id) throw new Error(`QA S3: the study was made but the page is not on its home (${page.url()}).`);
   student.projectId = id;
   return { student, id };
 }
@@ -717,7 +732,7 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
       expect(log, "the api's log for this project").toHaveLength(1);
       expect(log[0]!.k).toBe(AI_USE_IDEA);
       await expect(page.getByTestId("aiu-count")).toHaveText(T("design_aiu_count", { all: log.length, n: log.length }));
-      await expect(page.getByTestId("aiu-count")).toHaveText("Requests logged for this project: 1. In the dates below: 1.");
+      await expect(page.getByTestId("aiu-count")).toHaveText("Requests logged for this study: 1. In the dates below: 1.");
     }, { source: `${SHEET} row 6; ${E2E} step 6 (there the log is made up; here it is the api's)` });
     await qa.check("data", "the AI provider received exactly the one request the log counts: the idea check, answered", async () => {
       const asked = await providerCalls(s.key!);
@@ -737,7 +752,7 @@ test("S3-01 I plan my study and get the ethics paperwork ready: pathway, protoco
     }, { source: "WCAG 1.4.3 (text contrast); spec section 8, the axe scan (color-contrast); components/tools/design/AiUse.tsx (class text-muted)", known: "Q11" });
     await qa.check("data", "a note says the log covers this project only and that AI used outside Appuscholar goes in the box \"AI tools you used outside Appuscholar (optional)\"", async () => {
       await expect(page.getByTestId("aiu-scope")).toHaveText(T("design_aiu_scope"));
-      await expect(page.getByTestId("aiu-scope")).toContainText("this project's log only");
+      await expect(page.getByTestId("aiu-scope")).toContainText("this study's log only");
       await expect(page.getByTestId("aiu-scope")).toContainText("AI tools you used outside Appuscholar");
       await expect(page.getByText(T("design_aiu_other"), { exact: true })).toBeVisible();
       expect(T("design_aiu_other")).toBe("AI tools you used outside Appuscholar (optional)");

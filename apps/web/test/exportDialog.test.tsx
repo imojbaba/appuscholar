@@ -133,8 +133,8 @@ describe("ExportDialog", () => {
     for (const s of [
       "Unlocked in your browser and saved to your computer. The files are readable, so keep them somewhere safe.",
       "What to include",
-      "Documents", "My first document, and every other document in this project", "Word and HTML",
-      "Your question and feasibility read", "The project card and the last AI read",
+      "Documents", "My first document, and every other document in this study", "Word and HTML",
+      "Your question and feasibility read", "The study card and the last AI read",
       "Citations", "2 sources, with the reference list in your chosen style", "Library file and reference list (text)",
       "Search lists", "Papers you searched and kept, with quick reads",
       "Reading notes", "Highlights, your own summaries and AI summaries, marked as such",
@@ -142,7 +142,7 @@ describe("ExportDialog", () => {
       "Writing record", "What you typed and what came from AI, per version",
       "AI-use statement", "Which AI helped, for what, on which days; never your text",
       "Cancel", "Download zip",
-      "To take every project at once, or to leave Appuscholar, use Account, Export all my work."
+      "To take every study at once, or to leave Appuscholar, use Account, Export all my work."
     ]) expect(text).toContain(s);
     // Until RIS and BibTeX exist (Task 38), the citations line does not offer them.
     expect(text).not.toContain("RIS");

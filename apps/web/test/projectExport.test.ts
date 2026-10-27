@@ -119,8 +119,9 @@ describe("exportProject", () => {
     expect(await text(z, "compare/table.csv")).toBe("﻿" + shMatrixCsv("sh2_paper", [...SHELF_DEFAULT_COLS], [{ title: SHELF_INDEX[0]!.title, cells: SHELF_PAPER.cells }]));
     expect(await text(z, "compare/paper-cards.csv")).toBe("﻿" + apAcrossCsv(acrossData(t, AP_NOTES, ["design", "verdict"], false)));
     const q = await text(z, "question.txt");
-    expect(q).toContain("idea_topic_label\nSleep and exam anxiety");
-    expect(q).toContain("idea_constraints_label\nNone");
+    // Shape your study's six parts under their titles: v1's topic is the question, its constraints are ethics.
+    expect(q).toContain("shape_question_title\nSleep and exam anxiety");
+    expect(q).toContain("shape_ethics_title\nNone");
     expect(q).toContain("exp_ai_read\nFeasible: High. A narrow sample.");
     const statement = aiuBuildV2({ list: LOG, keep: { "Idea check": 1 }, other: "", fmt: "course", ticks: { own: false, reword: false, cite: false, facts: false, noData: false }, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS });
     expect(await text(z, "ai-use-statement.txt")).toBe("text" in statement ? statement.text : "");

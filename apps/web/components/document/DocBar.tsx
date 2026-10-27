@@ -192,7 +192,7 @@ export function DocBar() {
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" size="md" onClick={close}>{t("sap_cancel_btn")}</Button>
-            {/* First run creates the project and moves the document into it (FirstRun's moveDocId). */}
+            {/* Start a new study creates the study and moves the document into it (NewStudy's moveDocId). */}
             <Button type="button" variant="primary" size="md" disabled={busy || !currentDoc} data-testid="doc-move-new" onClick={() => { if (currentDoc) { setDialog(null); void go(`/start?move=${encodeURIComponent(currentDoc.id)}`); } }}>{t("doc_move_new")}</Button>
           </DialogFooter>
         </DialogContent>

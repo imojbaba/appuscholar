@@ -18,6 +18,7 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
+import { makeStudy } from "./support/study";
 import { signIn } from "./support/signin";
 import { stageBuilt, tabBuilt } from "./support/builtTools";
 
@@ -47,12 +48,8 @@ test.describe.configure({ timeout: 180_000 });
 
 /** First run's "Save as my project" with a typed idea; the new project's home opens. Returns the project's id. */
 async function newProject(page: Page): Promise<string> {
-  await signIn(page, { prefix: "g", newAccount: true, ready: ["first-run"] });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  // The three questions are folded away, optional ("Add details for better feedback").
-  await page.getByTestId("idea-details-toggle").click();
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
+  await signIn(page, { prefix: "g", newAccount: true, ready: ["project-list"] });
+  await makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("home-stages")).toBeVisible();
   const id = /\/p\/([^/?#]+)/.exec(page.url())?.[1];

@@ -12,12 +12,12 @@ import { PANEL_FIXES, applyPanelFixes, withPanelFixes } from "../scripts/i18n-ov
 
 describe("v1 chrome strings", () => {
   it("has the keys the workspace uses, verbatim", () => {
-    expect(en.project_bar_empty).toBe("No research project yet — working in scratch space");
+    expect(en.project_bar_empty).toBe("No study yet — working in scratch space"); // "project" reads "study" everywhere (start-a-study spec, register D-S2-122)
     expect(en.settings_btn).toBe("⚙ AI Provider / Key");
     expect(en.stage_guide_final).toBe("Final stage — nothing after this in the sequence");
     expect(hi.df_btn).toBe("✍ पहले खुद लिखें");
     expect(hi.dock_ai_tab).toBe("✨ एआई सुझाव");
-    expect(hi.tab_new_project).toBe("✨ नया शोध प्रोजेक्ट");
+    expect(hi.tab_new_project).toBe("✨ नया शोध अध्ययन");
   });
   it("every Hindi key exists in English (no orphan translations)", () => {
     const missing = Object.keys(hi).filter(k => !(k in en));

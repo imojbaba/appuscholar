@@ -17,6 +17,7 @@ import JSZip from "jszip";
 import { signIn } from "./support/signin";
 import { recordToasts } from "./support/toasts";
 import { answerKeyTests, connectAI } from "./support/connect";
+import { makeStudy } from "./support/study";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
 
 const APP = WEB_ORIGIN + "/";
@@ -73,18 +74,15 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
   let docId = "";
 
   let projectId = "";
-  await test.step("1. sign in with a new account, accept the terms; first run saves the project (its title in plaintext: the vault is off); Writing opens its document", async () => {
-    await signIn(page, { prefix: "v", newAccount: true, ready: ["first-run"] });
+  await test.step("1. sign in with a new account, accept the terms; Start a new study makes the study (its title in plaintext: the vault is off); Writing opens its document", async () => {
+    await signIn(page, { prefix: "v", newAccount: true, ready: ["project-list"] });
     await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
-    await page.locator("#ideaTopic").fill(TOPIC);
-    await page.getByTestId("idea-save-title").fill(PROJECT);
     const created = page.waitForResponse((r) => r.request().method() === "POST" && r.url() === API + "/projects" && r.ok());
-    await page.getByTestId("idea-save").click();
+    projectId = await makeStudy(page, { name: PROJECT, question: TOPIC });
     const body = (await created).request().postDataJSON() as { title: string; titleKeyVersion?: number };
     expect(body.title).toBe(PROJECT);
     expect(body.titleKeyVersion ?? 0).toBe(0);
     await expect(page.getByTestId("project-home")).toBeVisible();
-    projectId = /\/p\/([0-9a-f-]+)$/.exec(page.url())![1]!;
     await page.getByTestId("home-open-writing").click();
     await expect(page.getByTestId("doc-select")).toBeVisible();
     await expect(page.getByTestId("project-switcher")).toContainText(PROJECT);
@@ -110,8 +108,8 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
   // A second tab of the same browser, opened before the vault exists: it keeps believing the vault is off (moment 4's held save).
   const stale = await page.context().newPage();
   await test.step("2b. a second tab opens the same document and is left open", async () => {
-    // `/` opens the active project's home; its Writing row opens the document.
-    await stale.goto(APP);
+    // `/` opens the dashboard (start-a-study spec): the study's home is opened by its address; its Writing row opens the document.
+    await stale.goto(`${WEB_ORIGIN}/p/${projectId}`);
     await expect(stale.getByTestId("project-home")).toBeVisible();
     await stale.getByTestId("home-open-writing").click();
     await expect(stale.locator(".ProseMirror")).toContainText(SENTENCE_2);
@@ -259,10 +257,10 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     const other = await browser.newContext({ storageState: { cookies, origins: [] } });
     try {
       const p2 = await other.newPage();
-      await p2.goto(APP);
+      await p2.goto(`${WEB_ORIGIN}/p/${projectId}`);
       await expect(p2.getByTestId("vault-pill")).toHaveText("🔒 Locked");
       await expect(p2.locator(".ProseMirror")).toHaveCount(0);
-      // `/` opens the active project's home, which loads the document: the passphrase is asked there.
+      // The study's home loads the document: the passphrase is asked there.
       await unlockWith(p2, PASS_1);
       await expect(p2.getByTestId("project-home")).toBeVisible();
       await expect(p2.getByTestId("project-switcher")).toContainText(PROJECT);
@@ -396,7 +394,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
  * next sign-in is issued a new id (the account-erased tombstone, Task 3 ruling, answers 401 only to the old id's token).
  */
 test("vault journey, 9b: after Delete my account the same address signs in to a fresh account", async ({ page }) => {
-  const email = await signIn(page, { prefix: "x", newAccount: true, ready: ["first-run"] });
+  const email = await signIn(page, { prefix: "x", newAccount: true, ready: ["project-list"] });
   // Writing without a project: the scratch space, from the project list.
   await page.goto("/projects");
   await page.getByTestId("scratch-space").click();
@@ -417,9 +415,8 @@ test("vault journey, 9b: after Delete my account the same address signs in to a 
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
   await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Protect my work");
-  // No project: first run; the scratch space holds an empty first document.
-  await expect(page.getByTestId("first-run")).toBeVisible();
-  await page.goto("/projects");
+  // No study: the dashboard says so; the scratch space holds an empty first document.
+  await expect(page.getByTestId("project-list")).toBeVisible();
   await expect(page.getByTestId("projects-empty")).toBeVisible();
   await page.getByTestId("scratch-space").click();
   await expect(page.getByTestId("word-count")).toHaveText("0 words");
@@ -457,7 +454,7 @@ async function toConnect(page: Page) {
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
-  await expect(page.getByTestId("first-run")).toBeVisible();
+  await expect(page.getByTestId("project-list")).toBeVisible();
 }
 
 test("first run: the key is saved without a vault; the setup says its rule and every refusal inside its window; the sheet says what Done needs; one ask per unlock; the home shows it is opening", async ({ page }) => {
@@ -471,12 +468,8 @@ test("first run: the key is saved without a vault; the setup says its rule and e
     await expect(page.getByTestId("vault-setup-dialog")).toBeHidden();
     await expect(page.getByTestId("pass-dialog")).toBeHidden();
     await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_off"));
-    await expect(page.getByTestId("first-run")).toBeVisible();
-    await page.locator("#ideaTopic").fill(TOPIC);
-    await page.getByTestId("idea-save").click();
-    await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId("home-stages")).toBeVisible();
-    projectId = /\/p\/([0-9a-f-]+)$/.exec(page.url())![1]!;
+    await expect(page.getByTestId("project-list")).toBeVisible();
+    projectId = await makeStudy(page, { question: TOPIC });
   });
 
   await test.step("2. the setup: the rule before typing; too short and two entries apart are said inside the window, under the field, and asked again there", async () => {
@@ -599,7 +592,7 @@ test.describe("first run on a phone (375 px)", () => {
     await page.getByTestId("terms-age").check();
     await page.getByTestId("terms-agree").check();
     await page.getByTestId("terms-continue").click();
-    await expect(page.getByTestId("first-run")).toBeVisible();
+    await expect(page.getByTestId("project-list")).toBeVisible();
     // Connect AI from the phone's Menu: its three choices, then (the key tested) the two ways to keep it, each 44 px tall and inside the screen.
     await answerKeyTests(page);
     await page.getByTestId("phone-menu").click();
@@ -637,7 +630,7 @@ test.describe("first run on a phone (375 px)", () => {
 
   test("the vault setup and the recovery sheet fit the screen, their tick rows are 44 px tall, the eye leaves room, and the sheet says what Done needs", async ({ page }) => {
     test.setTimeout(180_000);
-    await signIn(page, { prefix: "frp", newAccount: true, ready: ["first-run"] });
+    await signIn(page, { prefix: "frp", newAccount: true, ready: ["project-list"] });
     await page.getByTestId("vault-pill").click();
     await expect(page.getByTestId("vault-setup-dialog")).toBeVisible();
     await fitsAndTall(page, "vault-setup-remember", true);

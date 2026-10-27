@@ -5,6 +5,7 @@
  *   pnpm --filter @appuscholar/web exec playwright test e2e/frame-responsive.spec.ts
  */
 import { test, expect, type Page } from "@playwright/test";
+import { makeStudy } from "./support/study";
 import { signIn } from "./support/signin";
 
 const PHONE = { width: 375, height: 812 };
@@ -12,7 +13,7 @@ const PHONE = { width: 375, height: 812 };
 test.use({ viewport: PHONE });
 
 /** A new account past the terms gate and the welcome tour, on first run. */
-const NEW_ACCOUNT = { prefix: "f", newAccount: true, ready: ["first-run"] };
+const NEW_ACCOUNT = { prefix: "f", newAccount: true, ready: ["project-list"] };
 
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 /** What reaches past the screen's right edge (outside a sideways scroller), named for the failure message. */
@@ -50,14 +51,10 @@ const pastGutter = (page: Page, root: string) => page.evaluate((sel) => {
   return out;
 }, root);
 
-/** First run's "Save as my project" with a typed idea; the new project's home opens. */
+/** A new study (Start a new study, then Shape your study's question and what the student has); its home opens. */
 async function newProject(page: Page) {
   await signIn(page, NEW_ACCOUNT);
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  // The three questions are folded away, optional ("Add details for better feedback").
-  await page.getByTestId("idea-details-toggle").click();
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
+  await makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("home-stages")).toBeVisible();
 }
@@ -79,7 +76,7 @@ test("the home has no horizontal scroll", async ({ page }) => {
     [...el.querySelectorAll("[data-testid]")].map((p) => p.getAttribute("data-testid")).filter((id) => ids.includes(id!)), PARTS);
   expect(order).toEqual(PARTS);
   await expect(page.getByTestId("home-q-fold")).not.toHaveAttribute("open");
-  await expect(page.getByTestId("home-project-btn")).toContainText("Does a fixed bedtime routine");
+  await expect(page.getByTestId("home-project-btn")).toContainText("Bedtime and exam anxiety");
   // Each stage row: its name, what it holds and its state.
   const idea = page.getByTestId("home-stage-idea");
   await expect(idea).toContainText("Idea");
@@ -164,26 +161,32 @@ test("the document opens full screen and Back returns to the same tab", async ({
   await expect(page.getByTestId("place-open-doc")).toBeFocused();
 });
 
-test("first run and the project list fit the width", async ({ page }) => {
+test("the dashboard, Start a new study and Shape your study fit the width", async ({ page }) => {
   await signIn(page, NEW_ACCOUNT);
-  await expect(page).toHaveURL(/\/start$/);
+  // After the terms a new student lands on the dashboard (start-a-study spec).
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.getByTestId("project-list")).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
-  expect(await pastGutter(page, "[data-testid=first-run]")).toEqual([]);
-  expect(await smallTargets(page, "[data-testid=first-run]")).toEqual([]);
+  expect(await pastGutter(page, "[data-testid=project-list]")).toEqual([]);
+  expect(await smallTargets(page, "[data-testid=project-list]")).toEqual([]);
   expect(await smallTargets(page, "[data-testid=app-header]")).toEqual([]);
 
-  await page.goto("/projects");
-  await expect(page.getByTestId("project-list")).toBeVisible();
+  await page.getByTestId("new-project").click();
+  await expect(page.getByTestId("new-study")).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
-  expect(await smallTargets(page, "[data-testid=project-list]")).toEqual([]);
+  expect(await pastGutter(page, "[data-testid=new-study]")).toEqual([]);
+  expect(await smallTargets(page, "[data-testid=new-study]")).toEqual([]);
 
-  // With a project in it, its row and six bars fit too.
-  await page.goto("/start");
-  await page.locator("#ideaTopic").fill("Screen time and sleep in teenagers across one school term in Pune");
-  await page.getByTestId("idea-save").click();
-  await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
+  // Shape your study's first part, and the dashboard with the study in it: its card and six bars fit too.
+  const id = await makeStudy(page, { name: "Screen time and sleep in teenagers", question: "Screen time and sleep in teenagers across one school term in Pune", stay: true });
+  expect(await noHorizontalScroll(page)).toBe(true);
+  expect(await pastGutter(page, "[data-testid=panel-idea]")).toEqual([]);
+  expect(await smallTargets(page, "[data-testid=panel-idea]")).toEqual([]);
+  await page.goto(`/p/${id}/idea`);
+  await expect(page.getByTestId("shape-summary")).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
+  expect(await smallTargets(page, "[data-testid=panel-idea]")).toEqual([]);
   await page.goto("/projects");
-  await expect(page.getByTestId("project-list")).toBeVisible();
   await expect(page.locator(".plist-row", { hasText: "Screen time and sleep" })).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
   expect(await pastGutter(page, "[data-testid=project-list]")).toEqual([]);

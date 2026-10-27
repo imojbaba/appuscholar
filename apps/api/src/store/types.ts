@@ -17,12 +17,17 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number];
 /** The stages the student marked Ready, each stamped by the server's clock. */
 export type StageMarks = Partial<Record<ProjectStage, { readyAt: string }>>;
 /** `deks` and `titleKeyVersion` seal the title as a document's revisions are sealed: 0 is a plaintext title. */
-export type Project = { id: string; userId: string; title: string; field: string; stage: string; status: string; contentLang: string; kind: ProjectKind; createdAt: Date; stageMarks: StageMarks; deks: WrappedDek[]; titleKeyVersion: number };
+/** A study's type (start-a-study spec, OJ 2026-10-27); null on a study made before types existed. */
+export const PROJECT_TYPES = ["ug", "masters", "phd", "course", "article", "other"] as const;
+export type ProjectType = (typeof PROJECT_TYPES)[number];
+/** A study's field (v1's list key or the student's own words) and type are set when it is made; null on an older study, whose AI then uses the account's field. */
+export type ProjectMeta = { type?: ProjectType; field?: string };
+export type Project = { id: string; userId: string; title: string; field: string | null; type: ProjectType | null; stage: string; status: string; contentLang: string; kind: ProjectKind; createdAt: Date; stageMarks: StageMarks; deks: WrappedDek[]; titleKeyVersion: number };
 export const PROJECT_STATUSES = ["active", "complete"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type ProjectSummary = Project & { documentCount: number; lastEditedAt: Date | null };
 /** A title without `titleKeyVersion` is plaintext (0). `dek` is added to the project's deks as TitleWrite's is. */
-export type ProjectPatch = { title?: string; titleKeyVersion?: number; dek?: WrappedDek; stage?: ProjectStage; status?: ProjectStatus; contentLang?: "en" | "hi" };
+export type ProjectPatch = { title?: string; titleKeyVersion?: number; dek?: WrappedDek; stage?: ProjectStage; status?: ProjectStatus; contentLang?: "en" | "hi"; type?: ProjectType; field?: string };
 /** A per-document data key wrapped under the user's vault key; `v` matches the revisions' `keyVersion`. */
 export type WrappedDek = { v: number; wrapped: string };
 export type DocumentSummary = { id: string; projectId: string; title: string; titleKeyVersion: number; kind: string; currentSeq: number; wordCount: number; createdAt: Date; updatedAt: Date; deletedAt: Date | null; deks: WrappedDek[] };
@@ -96,7 +101,7 @@ export type QuotaResult = { ok: true } | { ok: false; bucket: string; retryAfter
 
 export interface Store {
   /** DekExistsError cannot happen here: a new project has no deks. */
-  createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage): Promise<Project>;
+  createProject(userId: string, title: string | TitleWrite, stage?: ProjectStage, meta?: ProjectMeta): Promise<Project>;
   /** Excludes the scratch project. */
   listProjects(userId: string): Promise<ProjectSummary[]>;
   /** listProjects' projects, in its order, with their work (see ProjectWork). At most 3 SQL statements for any number of projects. */

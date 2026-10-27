@@ -2,7 +2,7 @@
   "pp_title": "Your participants",
   "pp_desc": "Add each person when they join. Appuscholar gives them a code and looks for their name in your data, documents and AI requests.",
   "pp_sealed": "Sealed in your vault: only you can open it",
-  "pp_no_project": "Open a project to see its participants.",
+  "pp_no_project": "Open a study to see its participants.",
   "pp_off": "Participant details are only ever stored locked. Lock your work with a passphrase to start your list.",
   "pp_off_btn": "Lock my work",
   "pp_locked": "Unlock to see your participants",

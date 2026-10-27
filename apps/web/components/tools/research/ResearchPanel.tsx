@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fieldLabel, rsFoldIndex, type Formatted, type RsPaper } from "@appuscholar/core";
 import { plain, useT } from "@/lib/i18n";
@@ -48,6 +49,7 @@ export function ResearchPanel() {
   const t = useT();
   const { project, pendingSearch, setPendingSearch, setPendingAnalyse, go } = useProject();
   const { me, settings } = useSettings();
+  const studyField = useStudyField();
   // Every request this panel makes is about papers found by the search (quick reads, the literature review, the gap finder): published text, so no name in it is a participant's to suggest (C13).
   const callAI = useLiterature(useCallAI());
   const projectId = project?.id ?? me?.scratchProjectId ?? null;
@@ -83,7 +85,7 @@ export function ResearchPanel() {
   const { list: results, needQ } = useMemo(() => shownResults(s.original, s.sort, s.filter), [s.original, s.sort, s.filter]);
   const fold = rsFoldIndex(results, s.sort);
   const fstat = filterStat(t, filterVals(s.filter), results.length, s.original.length, needQ);
-  const field = fieldLabel(settings.field);
+  const field = studyField;
 
   const addDeps = (): AddDeps => ({
     lib: library.lib, style: library.style, update: library.update, toast, t,

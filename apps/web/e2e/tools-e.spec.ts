@@ -27,6 +27,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
+import { makeStudy } from "./support/study";
 import { signIn } from "./support/signin";
 import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
@@ -189,17 +190,13 @@ const editorText = () => page.locator(".ProseMirror").evaluate((el) => el.textCo
 
 test("0. sign in, an AI key on this device, a project, a named document", async () => {
   await signIn(page, { prefix: "e", newAccount: false });
-  await expect(page).toHaveURL(/\/start$/);
+  await expect(page).toHaveURL(/\/projects$/);
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
   await connectAI(page, { keep: "plain" });
-  await expect(page.getByTestId("first-run")).toBeVisible();
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  // The three questions are folded away, optional ("Add details for better feedback").
-  await page.getByTestId("idea-details-toggle").click();
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
+  await expect(page.getByTestId("project-list")).toBeVisible();
+  await makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
   projectId = /\/p\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
   expect(projectId).not.toBe("");

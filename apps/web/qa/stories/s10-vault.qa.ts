@@ -116,8 +116,8 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
   });
 
   await qa.step("open a second tab", async () => {
-    // `/` opens the active project's home; its Writing row opens the document.
-    await stale.goto("/");
+    // `/` opens the dashboard (start-a-study spec); the study's home, opened by its address, has the Writing row that opens the document.
+    await stale.goto(`/p/${s.projectId}`);
     await expect(stale.getByTestId("project-home")).toBeVisible();
     await stale.getByTestId("home-open-writing").click();
     await qa.check("data", "the second tab shows the same two sentences, and its pill reads Vault off", async () => {
@@ -288,6 +288,12 @@ test("S10-01 I set up my vault, and my words stay mine in a second tab, a fresh 
         await expect(pill(other.page)).toHaveText(T("vault_pill_locked"));
         await expect(other.page.locator(".ProseMirror")).toHaveCount(0);
       }, { source: `${SHEET} row 5` });
+      // `/` is the dashboard (start-a-study spec): it says the names are locked and offers Unlock, and asks nothing by itself; the study's home does.
+      await qa.check("data", "the dashboard says the study names are locked and offers Unlock", async () => {
+        await expect(other.page.getByTestId("list-vault-line")).toHaveText(T("list_vault_locked"));
+        await expect(other.page.getByTestId("list-unlock")).toBeVisible();
+      }, { source: `${SHEET} row 5; start-a-study spec (the dashboard is the home page)` });
+      await other.page.goto(`/p/${s.projectId}`);
       // `unlock` presses the pill when the page has not asked, which would hide a page that never asks: the page must open the window itself, as a student who just opens it sees.
       await qa.check("data", "the page asks for the passphrase by itself, before any press (the document it opens is sealed)", async () => {
         await expect(other.page.getByTestId("pass-dialog")).toBeVisible();

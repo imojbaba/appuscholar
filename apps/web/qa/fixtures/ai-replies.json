@@ -35,6 +35,11 @@
     "reply": "Topic clarity and researchability: High. The question names one routine, one outcome (exam anxiety) and one group (first-year students), so it can be tested.\nAccess to participants or data: Medium. Sixty volunteers from your own college is realistic, but recruiting them in exam weeks may be slow.\nTime: Medium. One semester fits a one-week routine, if the ethics approval is in place before the exam period starts.\nResources and equipment: High. A paper questionnaire and a routine sheet are all the study needs.\nEthical complexity: Low. Asking students to keep a bedtime is low risk; ask your supervisor what the monthly ethics committee needs from you.\nVerdict: Proceed with these modifications: book the ethics committee date now and plan the recruitment before the exam weeks."
   },
   {
+    "match": "You are a research-methods coach for a student who is shaping their study",
+    "feature": "Shape your study: Help me think",
+    "reply": "Questions to ask yourself:\nWhich exams matter most to you: the end-of-semester ones, or weekly tests?\nHow would you know the routine was followed for the whole week?\nOptions to consider:\nA short daily sleep diary next to the questionnaire.\nAsking two classes rather than volunteers, so the groups are similar.\nStill missing:\nHow you will measure exam anxiety, and when."
+  },
+  {
     "match": "You help a student of *search research databases",
     "feature": "Suggest search terms",
     "reply": {

@@ -77,8 +77,8 @@ export const HINDI_NAMES: readonly string[] = [
 export const STUDENT_TEXT_IDS: readonly string[] = ["project-switcher", "place-home", "home-project-btn", "home-q-text", "home-title-name"];
 
 /**
- * The app's own sentences that stand where the student's text would, inside those boxes: the question's "No question yet." (QuestionCard.tsx), the switcher's "All projects" and
- * "Documents not in a project" (AppHeader.tsx), and the titles it cannot show, "Locked title" and "This title cannot be opened" (lib/vault/titles.ts). A box whose whole text is
+ * The app's own sentences that stand where the student's text would, inside those boxes: the question's "No question yet." (QuestionCard.tsx), the switcher's "All studies" and
+ * "Documents not in a study" (AppHeader.tsx), and the titles it cannot show, "Locked title" and "This title cannot be opened" (lib/vault/titles.ts). A box whose whole text is
  * one of these, in either language, is the app speaking, so it is read like any other text (an exempt box is skipped only for what the student wrote).
  */
 const APP_FALLBACK_KEYS = ["place_question_none", "switcher_all", "scratch_name", "title_locked", "title_unreadable"] as const;

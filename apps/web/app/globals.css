@@ -348,25 +348,60 @@
 .list-rows .name { flex: 1 1 200px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .list-rows .acts { display: flex; flex-wrap: wrap; gap: 6px; }
 /* First run and the Idea place (canvas Start): the form, and the AI read beside it (under it on a narrow screen). */
-.idea-place { display: flex; flex-wrap: wrap; gap: var(--s7); align-items: flex-start; }
-.idea-place.start { max-width: 1240px; margin: 0 auto; padding: var(--s7); }
-.idea-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--s4); }
-.idea-aside { flex: 1 1 320px; min-width: 0; max-width: 440px; display: flex; flex-direction: column; gap: var(--s4); }
-.idea-form { display: flex; flex-direction: column; gap: var(--s5); }
-.idea-h { margin: 0; font-size: 30px; line-height: 1.2; }
-.idea-hint { margin: 8px 0 0; color: var(--muted); max-width: 60ch; }
-.idea-topic .input { font-size: 17px; }
-.idea-sharpen, .idea-save-plain { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s6); }
-.idea-sharpen summary { cursor: pointer; font-size: 16px; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
-.idea-sharpen[open] summary { margin-bottom: var(--s3); }
-.idea-sharpen:not([open]) { padding-top: var(--s2); padding-bottom: var(--s2); }
-.idea-sharpen summary:focus-visible, .idea-field-change:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; }
-.idea-field { margin-top: var(--s2); font-size: 14px; color: var(--muted); display: grid; gap: var(--s1); }
-.idea-field-change { min-height: 44px; min-width: 44px; padding: 0 4px; border: none; background: none; color: var(--purple-800); text-decoration: underline; text-underline-offset: 2px; font: inherit; cursor: pointer; }
+/* Start a new study and Shape your study (start-a-study spec). One column, read top to bottom; on a phone every control is 44px. */
+.new-study { max-width: 640px; margin: 0 auto; padding: var(--s7); display: flex; flex-direction: column; gap: var(--s3); }
+.new-study h1 { margin: 0; font-size: 26px; line-height: 1.25; }
+.new-study form { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s3); }
+.field-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.new-types { border: 0; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
+.new-types legend { font-size: 13px; line-height: 18px; font-weight: 500; margin-bottom: 6px; }
+.new-type { display: flex; align-items: center; gap: var(--s3); min-height: 44px; padding: 0 var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--card); cursor: pointer; }
+.new-type:has(input:checked) { border-color: var(--purple-800); background: var(--soft); }
+.new-type input { width: 18px; height: 18px; accent-color: var(--purple-800); }
+.new-error { margin: 0; min-height: 20px; font-size: 14px; font-weight: 600; color: var(--danger-ink); }
+.new-acts, .shape-nav, .shape-acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+.new-acts a, .new-acts button, .shape-nav button, .shape-acts a, .shape-acts button { min-height: 44px; }
+.shape { max-width: 760px; display: flex; flex-direction: column; gap: var(--s4); }
+.shape-part, .shape-summary { display: flex; flex-direction: column; gap: var(--s4); }
+.shape-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2) var(--s4); }
+.shape-kicker { margin: 0; font-size: 13px; font-weight: 600; color: var(--purple-800); text-transform: uppercase; letter-spacing: .04em; }
+.shape-lead { margin: 0; color: var(--muted); max-width: 64ch; }
+.shape h2 { margin: 0; font-size: 24px; line-height: 1.25; }
+.shape h2:focus { outline: none; }
+.shape-q { margin: 0; font-size: 17px; }
+.shape-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s3); font-size: 13px; color: var(--muted); }
+.shape-dots { margin: 0; padding: 0; list-style: none; display: flex; gap: 0; }
+/* A 12px dot in a 44px target, so each is a reachable control on a phone. */
+.shape-dot { width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.shape-dot::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--card); }
+.shape-dot[data-done]::before { background: var(--purple-800); border-color: var(--purple-800); }
+.shape-dot[aria-current="step"]::before { box-shadow: 0 0 0 3px var(--soft), 0 0 0 5px var(--purple-800); }
+.shape-dot:focus-visible { outline: 2px solid var(--purple-800); outline-offset: 2px; border-radius: 50%; }
+.shape-guide { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s4) var(--s5); }
+.shape-guide h3 { margin: 0 0 6px; font-size: 14px; }
+.shape-guide ul { margin: 0 0 var(--s3); padding-left: 1.2em; display: grid; gap: 4px; font-size: 14px; }
+.shape-example { margin: 0; font-size: 14px; color: var(--muted); }
+.shape-unsure { display: inline-flex; align-items: center; gap: var(--s2); min-height: 44px; align-self: flex-start; font-size: 14px; cursor: pointer; }
+.shape-unsure input { width: 18px; height: 18px; accent-color: var(--purple-800); }
+.shape-coach { display: flex; flex-direction: column; gap: var(--s3); }
+.shape-coach-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
+.shape-coach-row button { min-height: 44px; }
+.shape-note { margin: 0; font-size: 13px; color: var(--muted); }
+.shape-coach-text { margin: 0; white-space: pre-wrap; font-size: 15px; line-height: 1.55; }
+.shape-later { margin-left: auto; display: inline-flex; align-items: center; min-height: 44px; color: var(--purple-800); }
+.shape-list { margin: 0; display: grid; gap: var(--s2); }
+.shape-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s3); align-items: start; padding: var(--s3) var(--s4); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
+.shape-item dt { font-size: 13px; font-weight: 600; color: var(--muted); }
+.shape-item dd { grid-column: 1; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.shape-item dd[data-state="empty"], .shape-item dd[data-state="unsure"] { color: var(--muted); font-style: italic; }
+.shape-item .shape-item-act { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
+.shape-item button { min-height: 44px; min-width: 44px; }
+.plist-next { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--purple-800); }
+.plist-empty { max-width: 60ch; }
+.home-q-count { margin: 0; font-size: 13px; color: var(--muted); }
 .idea-check, .ai-read-acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
 .idea-check button, .ai-read-acts button { min-height: 44px; }
 .idea-note { margin: 0; font-size: 13px; color: var(--muted); }
-.idea-save-plain .idea-note { margin-bottom: var(--s3); }
 /* AI output: always a gold edge and a label that says what it is and what to check. */
 .ai-read { background: var(--card); border: 1px solid var(--gold); border-radius: var(--r-card); padding: var(--s6); display: flex; flex-direction: column; gap: 14px; }
 .ai-read-label { margin: 0; font-size: 13px; font-weight: 600; color: #7a5412; }
@@ -429,11 +464,10 @@
   .plist-stage .plist-stage-name { font-size: 11px; }
   .plist button, .plist-head a { min-height: 44px; }
   .home-interim, .start-interim, .list-interim, .frame-note { padding: 16px; }
-  .idea-place { gap: var(--s5); }
-  .idea-place.start { padding: 16px; }
-  .idea-main, .idea-aside { flex-basis: 100%; max-width: none; }
-  .idea-h { font-size: 26px; }
-  .idea-sharpen, .idea-save-plain, .ai-read { padding: 16px; }
+  .new-study { padding: 16px; }
+  .shape h2 { font-size: 21px; }
+  .shape-guide, .ai-read { padding: 16px; }
+  .shape-later { margin-left: 0; }
   .doc { min-height: 460px; overflow: visible; }
   .doc > .editor { overflow: visible; }
   .card-head { padding: 10px 12px; }

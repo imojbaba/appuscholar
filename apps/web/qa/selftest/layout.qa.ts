@@ -333,13 +333,13 @@ test("layout: the register excuses a piece that is, whole, one of its sentences,
 test("layout: an exempt box is read when the app is speaking in it, and a part of the page in another language is not read", TAGS, async ({ page, qa }) => {
   measuring(qa, "SELF-LAYOUT-M18");
   // The sentences the app shows where the student's text is missing (QuestionCard, the switcher, the vault's titles), in either language.
-  const english = await measure(page, `<header><span data-testid="project-switcher">All projects</span></header><p>नमस्ते</p><p data-testid="home-q-text">No question yet.</p><p>नमस्ते</p>`, { lang: "hi" });
-  expect(rulesOf(english, "english-in-hindi").map((f) => f.detail)).toEqual(["All projects", "No question yet."]);
+  const english = await measure(page, `<header><span data-testid="project-switcher">All studies</span></header><p>नमस्ते</p><p data-testid="home-q-text">No question yet.</p><p>नमस्ते</p>`, { lang: "hi" });
+  expect(rulesOf(english, "english-in-hindi").map((f) => f.detail)).toEqual(["All studies", "No question yet."]);
   const hindi = await measure(page, `<header><span data-testid="project-switcher">${T("switcher_all", {}, "hi")}</span></header><p data-testid="home-q-text">${T("place_question_none", {}, "hi")}</p>`, { lang: "hi" });
   expect(rulesOf(hindi, "english-in-hindi")).toEqual([]);
   expect(hindi.measured["english-in-hindi"]).toBe(2);
   // Whatever else is in the box is the student's, as before.
-  const theirs = await measure(page, `<header><span data-testid="project-switcher">All projects of mine, and a long one</span></header><p>नमस्ते</p>`, { lang: "hi" });
+  const theirs = await measure(page, `<header><span data-testid="project-switcher">All studies of mine, and a long one</span></header><p>नमस्ते</p>`, { lang: "hi" });
   expect(rulesOf(theirs, "english-in-hindi")).toEqual([]);
   // The language switch names the other language in itself (lang="en" on the item); a part in Hindi is still read.
   const switchItem = await measure(page, `<button lang="en">Switch to English</button><p>नमस्ते</p><button lang="hi-IN">Save your work</button>`, { lang: "hi" });

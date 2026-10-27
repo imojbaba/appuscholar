@@ -2,19 +2,23 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { originCount } from "@appuscholar/core";
 import { NoTitle, PlainTitle, SealedTitle, WriteFields, checkTitle, resolveWrite, titleOf } from "./docWrite";
-import { DekExistsError, PROJECT_STAGES, PROJECT_STATUSES, type OriginStats, type ProjectStage, type Store, type WrappedDek } from "../store/types";
+import { DekExistsError, PROJECT_STAGES, PROJECT_STATUSES, PROJECT_TYPES, type OriginStats, type ProjectStage, type Store, type WrappedDek } from "../store/types";
 import { foldWeekly, summariseAiLog, type DatedStats } from "./writingRecord";
 import type { AuthEnv } from "../auth";
 
-const Stage = z.object({ stage: z.enum(PROJECT_STAGES).optional() });
+/** A study's field: v1's list key or the student's own words (the field picker keeps 60 characters). */
+const Field = z.string().trim().min(1).max(60);
+const Stage = z.object({ stage: z.enum(PROJECT_STAGES).optional(), type: z.enum(PROJECT_TYPES).optional(), field: Field.optional() });
 const Create = z.union([Stage.extend(PlainTitle.shape), Stage.extend(SealedTitle.shape)]);
 const PatchFields = z.object({
   stage: z.enum(PROJECT_STAGES).optional(),
   status: z.enum(PROJECT_STATUSES).optional(),
-  contentLang: z.enum(["en", "hi"]).optional()
+  contentLang: z.enum(["en", "hi"]).optional(),
+  type: z.enum(PROJECT_TYPES).optional(),
+  field: Field.optional()
 });
 const Patch = z.union([PatchFields.extend(PlainTitle.shape), PatchFields.extend(SealedTitle.shape), PatchFields.extend(NoTitle.shape)])
-  .refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined, { message: "empty patch" });
+  .refine(v => v.title !== undefined || v.stage !== undefined || v.status !== undefined || v.contentLang !== undefined || v.type !== undefined || v.field !== undefined, { message: "empty patch" });
 /** How long ago, by the client's own stopwatch, its first check began: the server turns it into a time on its own clock. A day at most. */
 const ClaimAiUse = z.object({ secondsAgo: z.number().min(0).max(24 * 3600) });
 const DocFields = z.object({ kind: z.string().trim().min(1).max(40).default("draft") });
@@ -46,13 +50,14 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
     const title = titleOf(body.data)!;
     const check = checkTitle([], title, dekOf(body.data));
     if (!check.ok) return c.json({ error: check.error }, check.status);
-    return c.json(await store.createProject(c.get("userId"), { ...title, dek: check.addDek }, body.data.stage), 201);
+    const { stage, type, field } = body.data;
+    return c.json(await store.createProject(c.get("userId"), { ...title, dek: check.addDek }, stage, { type, field }), 201);
   });
   r.patch("/:id", async (c) => {
     const body = Patch.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "invalid" }, 400);
     const userId = c.get("userId"), id = c.req.param("id");
-    const { stage, status, contentLang } = body.data;
+    const { stage, status, contentLang, type, field } = body.data;
     const title = titleOf(body.data);
     let dek: WrappedDek | undefined;
     if (title && title.titleKeyVersion > 0) {
@@ -63,7 +68,7 @@ export function projectRoutes(store: Store, maxBodyBytes: number) {
       dek = check.addDek;
     }
     try {
-      const p = await store.updateProject(userId, id, { stage, status, contentLang, ...title, ...(dek ? { dek } : {}) });
+      const p = await store.updateProject(userId, id, { stage, status, contentLang, type, field, ...title, ...(dek ? { dek } : {}) });
       return p ? c.json(p) : c.json({ error: "not-found" }, 404);
     } catch (e) {
       if (e instanceof DekExistsError) return c.json({ error: "dek-exists" }, 409);

@@ -173,7 +173,7 @@ export async function newStudent(
     qa.useKey(student.key);
   }
 
-  // A new account meets the terms gate; then first run, with nothing over it (first-run build spec, OJ 2026-10-27).
+  // A new account meets the terms gate; then the dashboard, with nothing over it (start-a-study spec, OJ 2026-10-27).
   await page.goto("/");
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
@@ -192,13 +192,21 @@ export async function newStudent(
     student.recoveryCode = await setUpVault(page, student.passphrase);
   }
   await expect(vaultPill(page)).toHaveAttribute("data-status", withVault ? "unlocked" : "off");
-  await expect(page.getByTestId("first-run")).toBeVisible();
+  await expect(page.getByTestId("project-list")).toBeVisible();
   if (o.lang) await setLang(page, o.lang);
 
   if (project === false) return student;
-  await page.locator("#ideaTopic").fill(project.idea ?? DEFAULT_PROJECT.idea);
-  await page.getByTestId("idea-save-title").fill(project.name);
-  await page.getByTestId("idea-save").click();
+  // Start a new study: its name, a type and the field (the account's), then Shape your study's question, then Finish later to its home.
+  await page.getByTestId("new-project").click();
+  await expect(page.getByTestId("new-study")).toBeVisible();
+  await page.getByTestId("new-name").fill(project.name);
+  await page.getByTestId("new-type-masters").check();
+  await page.getByTestId("new-create").click();
+  await expect(page.getByTestId("shape-part")).toBeVisible({ timeout: 20_000 });
+  const saved = page.waitForResponse((r) => r.request().method() === "PUT" && /\/blobs\/idea_intake$/.test(r.url()) && r.ok(), { timeout: 20_000 });
+  await page.getByTestId("shape-answer").fill(project.idea ?? DEFAULT_PROJECT.idea);
+  await saved;
+  await page.getByTestId("shape-later").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
   const id = /^\/p\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1];
   if (!id) throw new Error(`QA newStudent: the project was saved but the page is not on its home (${page.url()}).`);

@@ -3,10 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import type { WrappedDek } from "@/lib/vault/useVault";
 import type { StageKey } from "@/lib/tools";
+import type { StudyType } from "./studyTypes";
 
 /** One project of `GET /projects?include=work` (apps/api store's ProjectWork) as the web receives it: times are ISO strings. */
 export type ProjectWork = {
-  id: string; userId: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; field: string; stage: string; status: string; contentLang: string; kind: string;
+  id: string; userId: string; title: string; titleKeyVersion: number; deks: WrappedDek[]; field: string | null; type: StudyType | null; stage: string; status: string; contentLang: string; kind: string;
   createdAt: string; stageMarks: Partial<Record<StageKey, { readyAt: string }>>; documentCount: number; lastEditedAt: string | null;
   blobs: Array<{ kind: string; updatedAt: string; version: number }>; draftWords: number; draftEditedAt: string | null;
 };

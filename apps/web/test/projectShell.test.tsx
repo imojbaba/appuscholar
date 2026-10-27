@@ -39,7 +39,7 @@ vi.mock("@/lib/shelf/useShelf", () => ({ useShelf: () => ({ index: null }) }));
 vi.mock("@/lib/cite/capture", () => ({ CaptureHash: h.stub }));
 vi.mock("@/lib/ai/suggestion", () => ({ SuggestionProvider: ({ children }: { children: React.ReactNode }) => children, useSuggestion: () => ({ editor: null }) }));
 vi.mock("@/components/tools/research/ResearchPanel", () => ({ ResearchPanel: () => <div data-testid="panel-research" /> }));
-vi.mock("@/components/places/IdeaPlace", () => ({ IdeaPlace: () => <div data-testid="panel-idea" /> }));
+vi.mock("@/components/places/ShapeStudy", () => ({ ShapeStudy: () => <div data-testid="panel-idea" /> }));
 vi.mock("@/components/tools/cite/CitePanel", () => ({ CitePanel: () => <div data-testid="panel-cite" /> }));
 vi.mock("@/components/tools/analyse/AnalysePanel", () => ({ AnalysePanel: () => <div data-testid="panel-analyse" /> }));
 vi.mock("@/components/tools/analyse/Across", () => ({ Across: () => <div data-testid="ap-across" /> }));

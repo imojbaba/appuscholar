@@ -45,7 +45,10 @@ export const projects = pgTable("projects", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  field: text("field").notNull().default("psychology"),
+  /** v1's field key or the student's own words, set when the study is made; null on a study made before (start-a-study spec, 2026-10-27). */
+  field: text("field"),
+  /** ug, masters, phd, course, article or other; null on a study made before types existed. */
+  type: text("type"),
   stage: text("stage").notNull().default("idea"),
   status: text("status").notNull().default("active"),
   contentLang: text("content_lang").notNull().default("en"),

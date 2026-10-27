@@ -29,6 +29,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect as baseExpect, type Page, type Request, type Route, type BrowserContext } from "@playwright/test";
 import { BANK_CSV_NAME, STY_VOCAB, styleVocabScore, styleWordCount } from "@appuscholar/core";
+import { makeStudy } from "./support/study";
 import { signIn } from "./support/signin";
 import { connectAI } from "./support/connect";
 import { API_ORIGIN, WEB_ORIGIN } from "./support/origins";
@@ -199,18 +200,14 @@ test("Writing's My style and Words tabs, end to end", async ({ page, context }) 
 
   // ---- Set-up (not a numbered step): a key protected by the vault's passphrase, then a project saved from first run ----------------------------------
   await signIn(page, { prefix: "d" });
-  await expect(page).toHaveURL(/\/start$/);
+  await expect(page).toHaveURL(/\/projects$/);
   await page.getByTestId("terms-age").check();
   await page.getByTestId("terms-agree").check();
   await page.getByTestId("terms-continue").click();
   await connectAI(page, { keep: "pass", passphrase: PASS });
   await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_yours"));
-  await expect(page.getByTestId("first-run")).toBeVisible();
-  await page.locator("#ideaTopic").fill(IDEA);
-  // The three questions are folded away, optional ("Add details for better feedback").
-  await page.getByTestId("idea-details-toggle").click();
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
+  await expect(page.getByTestId("project-list")).toBeVisible();
+  await makeStudy(page, { question: IDEA, have: "About 60 first-years" });
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId("home-stages")).toBeVisible();
   const projectId = /\/p\/([^/?#]+)/.exec(page.url())?.[1];

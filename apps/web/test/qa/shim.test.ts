@@ -5,8 +5,7 @@ import {
   apBuild, AP_STAGES, buildAskPrompt, buildChatPrompt, buildDevilPrompt, buildDictPrompt, buildDraftFirstPrompt, buildGapFinderPrompt, buildGapFinderPromptV2,
   buildGrammarPrompt, buildHelperPrompt, buildIdeaPrompt, buildIdeaPromptV2, buildLessonAskPrompt, buildLitReviewPrompt, buildQuickReadPrompt, buildRankPrompt,
   buildShelfSummaryPrompt, buildShelfSummaryPromptV2, buildStyleAnalyzePrompt, buildStyleFilesPrompt, buildStyleTryPrompt, buildSuggestTermsPrompt, buildVivaPrompt,
-  buildWalkPrompt, buildWritingPrompt, classifyAiUse, contentLangInstruction, rsQuickCheck, rsRankParse, STY_PASSAGES, type RsPaper
-} from "@appuscholar/core";
+  buildWalkPrompt, buildWritingPrompt, classifyAiUse, contentLangInstruction, rsQuickCheck, rsRankParse, STY_PASSAGES, type RsPaper, buildCoachPrompt } from "@appuscholar/core";
 import { buildStatsExplainPrompt } from "@/lib/tools/stats/explain";
 import { quotePrompt } from "@/lib/cite/quote";
 import { createShimFetch, type ShimLogEntry } from "../../qa/provider-shim/core.mjs";
@@ -249,6 +248,7 @@ const IDEA = { topic: "sleep and recall in college students" };
 const FEATURES: Array<[name: string, prompt: () => string, entry: string]> = [
   ["idea", () => buildIdeaPrompt("psychology", IDEA).prompt, "Is my idea realistic"],
   ["idea v2", () => buildIdeaPromptV2("psychology", IDEA).prompt, "Is my idea realistic"],
+  ["shape your study coach", () => buildCoachPrompt("psychology", "how", { answers: { question: IDEA.topic }, unsure: [] }).prompt, "Shape your study: Help me think"],
   ["gap finder", () => buildGapFinderPrompt("psychology", [paper(1), paper(2)]).prompt, "Find a research gap"],
   ["gap finder v2", () => buildGapFinderPromptV2("psychology", [paper(1), paper(2)]).prompt, "Find a research gap"],
   ["literature review", () => buildLitReviewPrompt("psychology", [paper(1), paper(2)]).prompt, "Draft a literature review paragraph"],

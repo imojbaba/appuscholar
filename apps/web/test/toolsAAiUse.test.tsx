@@ -127,7 +127,7 @@ describe("AI-use statement (Task A4): the log", () => {
     const labels = $$('[data-testid^="aiu-row-"]').map((r) => r.closest("label")!.textContent);
     expect(labels).toEqual(["Grammar and polish (2)", "Summarising a paper (1)", "Feedback on my draft (1)"]);
     for (const r of $$('[data-testid^="aiu-row-"]')) expect((r as HTMLInputElement).checked).toBe(true);
-    expect(text("aiu-count")).toBe("Requests logged for this project: 4. In the dates below: 4.");
+    expect(text("aiu-count")).toBe("Requests logged for this study: 4. In the dates below: 4.");
     // v1's dates start at the log's first and last day.
     expect(($("aiu-from") as HTMLInputElement).value).toBe("2026-10-01");
     expect(($("aiu-to") as HTMLInputElement).value).toBe("2026-10-09");
@@ -139,7 +139,7 @@ describe("AI-use statement (Task A4): the log", () => {
     const list = aiuInRange(LOG, "2026-10-01", "2026-10-05");
     expect(list).toHaveLength(3);
     expect(rows()).toEqual(["grammar and polish", "summarising a paper"]);
-    expect(text("aiu-count")).toBe("Requests logged for this project: 4. In the dates below: 3.");
+    expect(text("aiu-count")).toBe("Requests logged for this study: 4. In the dates below: 3.");
     await click("aiu-build");
     expect(out()).toBe((aiuBuildV2({ list, keep: ALL(list), other: "", fmt: "course", ticks: TICKS_DEFAULT, style: { on: false, decl: "", samples: 0 }, providers: PROVIDERS }) as { text: string }).text);
     // A cleared date is no limit (v1: an empty box).
@@ -224,7 +224,7 @@ describe("AI-use statement (Task A4): the log", () => {
     expect(h.update).toHaveBeenLastCalledWith({ aiLogOff: false });
   });
 
-  it("no project open: nothing is read", async () => {
+  it("no study open: nothing is read", async () => {
     await render(<AiUse projectId="" />);
     expect(h.paths).toEqual([]);
     expect(text("aiu-log-msg")).toBe(E.design_aiu_no_project);
@@ -396,11 +396,11 @@ describe("AI-use statement (Task A4): where the log is kept (D-S2-58)", () => {
     expect(out()).not.toContain("kept in my browser");
   });
 
-  it("the tab says the statement covers this project's log only, whatever state the log is in", async () => {
+  it("the tab says the statement covers this study's log only, whatever state the log is in", async () => {
     await render();
     expect(text("aiu-scope")).toBe(E.design_aiu_scope);
-    expect(E.design_aiu_scope).toContain("this project's log only");
-    expect(E.design_aiu_scope).toContain("no project open");
+    expect(E.design_aiu_scope).toContain("this study's log only");
+    expect(E.design_aiu_scope).toContain("no study open");
     for (const r of roots.splice(0)) await act(async () => { r.unmount(); });
     document.body.innerHTML = "";
     h.logFails = 1;
