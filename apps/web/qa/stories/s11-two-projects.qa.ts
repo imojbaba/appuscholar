@@ -616,18 +616,21 @@ test("S11-01 I keep two projects apart: project A's design data, Closeness setti
   });
 
   await qa.step("project B", async () => {
-    // Row 5: "All projects" (the wordmark), "New project", only a project name, "Save as my project".
+    // Row 5: "All studies" (the wordmark), "Start a new study" with its name and type, Shape your study left for later.
     await page.getByTestId("wordmark").click();
     await expect(page).toHaveURL(/\/projects$/);
     await expect(page.getByTestId("project-list")).toBeVisible();
     await expect(page.getByTestId("project-row")).toHaveCount(1);
     await page.getByTestId("new-project").click();
     await expect(page).toHaveURL(/\/start$/);
-    await expect(page.getByTestId("first-run")).toBeVisible();
-    await page.getByTestId("idea-save-title").fill(PROJECT_B);
-    await page.getByTestId("idea-save").click();
-    // The save took 21 s on the QA stack with no sign of progress (O3, S1-03): the case waits for it.
-    await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 90_000 });
+    await expect(page.getByTestId("new-study")).toBeVisible();
+    await page.getByTestId("new-name").fill(PROJECT_B);
+    await page.getByTestId("new-type-masters").check();
+    await page.getByTestId("new-create").click();
+    // The study opens on Shape your study; Finish later leaves it empty and goes to the study's home.
+    await expect(page.getByTestId("shape-part")).toBeVisible({ timeout: 90_000 });
+    await page.getByTestId("shape-later").click();
+    await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
     idB = projectIdOf(page);
     expect(idB, "B's id").not.toBe("");
     expect(idB, "B is a project of its own").not.toBe(idA);

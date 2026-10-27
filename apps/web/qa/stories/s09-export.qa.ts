@@ -55,6 +55,8 @@ const IDEA = {
   timeframe: "One semester",
   constraints: "No sleep-tracking devices; the college ethics committee meets once a month."
 };
+/** The six parts of Shape your study, in the order question.txt lists them (lib/frame/shapeStudy.ts SECTIONS). */
+const PLAN_PARTS = ["question", "who", "how", "time", "have", "ethics"] as const;
 /** What the api logs for the idea check and for the shelf's summary: core's own label of each prompt (packages/core/src/aiuse.ts classifyAiUse, over the prompt core builds), not retyped. */
 const AI_USE_IDEA = classifyAiUse(buildIdeaPromptV2("psychology", IDEA).prompt)?.k ?? "(core gives the idea prompt no label)";
 const AI_USE_SUMMARY = classifyAiUse(buildShelfSummaryPromptV2("psychology", ["A page of text for the summary."]).prompt)?.k ?? "(core gives the shelf summary prompt no label)";
@@ -137,20 +139,43 @@ async function writeDoc(page: Page, text: string): Promise<void> {
   await saved;
 }
 
-/** The first-run page of a new student with a key: the four fields, the name, "Check if it is doable" and its read, then "Save as my project". Ends on the project's home. */
+/** The save of the study's plan (Shape your study saves as it is typed, after a short debounce). */
+const planSaved = (page: Page) => page.waitForResponse((r) => isBlobPut("idea_intake")(r) && r.ok(), { timeout: 30_000 });
+
+/**
+ * A new student's first study through the screens: Start a new study (its name and type), Shape your study's question, time, what they have and ethics (who and how skipped), then, with a key,
+ * the optional "Check if it is doable" and its read, and Go to my study. Ends on the study's home. (The idea of wave-b1.md row 2 is the four boxes v1 had; they are four of the six parts.)
+ */
 async function firstRunProject(page: Page, qa: Qa, o: { vault?: "off" | "on"; lang?: "en" | "hi"; key?: "ok" | "none"; name?: string } = {}): Promise<Student> {
   const s = await newStudent(page, qa, { key: o.key ?? "ok", project: false, ...(o.vault ? { vault: o.vault } : {}), ...(o.lang ? { lang: o.lang } : {}) });
-  await page.locator("#ideaTopic").fill(IDEA.topic);
-  await page.locator("#ideaRes").fill(IDEA.resources);
-  await page.locator("#ideaTime").fill(IDEA.timeframe);
-  await page.locator("#ideaCons").fill(IDEA.constraints);
-  await page.getByTestId("idea-save-title").fill(o.name ?? PROJECT);
+  await page.getByTestId("new-project").click();
+  await expect(page.getByTestId("new-study")).toBeVisible();
+  await page.getByTestId("new-name").fill(o.name ?? PROJECT);
+  await page.getByTestId("new-type-masters").check();
+  await page.getByTestId("new-create").click();
+  const part = page.getByTestId("shape-part");
+  await expect(part).toHaveAttribute("data-part", "question", { timeout: 90_000 });
+  const answer = async (text: string): Promise<void> => {
+    const saved = planSaved(page);
+    await page.getByTestId("shape-answer").fill(text);
+    await saved;
+    await page.getByTestId("shape-next").click();
+  };
+  await answer(IDEA.topic);
+  for (const skipped of ["who", "how"]) {
+    await expect(part).toHaveAttribute("data-part", skipped);
+    await page.getByTestId("shape-skip").click();
+  }
+  for (const [key, text] of [["time", IDEA.timeframe], ["have", IDEA.resources], ["ethics", IDEA.constraints]] as const) {
+    await expect(part).toHaveAttribute("data-part", key);
+    await answer(text);
+  }
+  await expect(page.getByTestId("shape-summary")).toBeVisible();
   if (s.key) {
     await page.getByTestId("idea-check").click();
     await expect(page.getByTestId("idea-read")).toBeVisible({ timeout: 30_000 });
   }
-  await page.getByTestId("idea-save").click();
-  // The save took 21 s on the QA stack with no sign of progress (O3, S1-03): the case waits for it.
+  await page.getByTestId("shape-go-study").click();
   await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 90_000 });
   const id = /^\/p\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1];
   if (!id) throw new Error(`QA S9: the project was saved but the page is not on its home (${page.url()}).`);
@@ -296,9 +321,9 @@ async function codeAPassage(page: Page, id: string): Promise<string> {
 /** The idea checked again from the Idea place (a second request of the log), saved with the project. */
 async function checkIdeaAgain(page: Page, id: string): Promise<void> {
   await toPlace(page, id, "idea");
-  await expect(page.getByTestId("idea-again")).toBeVisible();
+  await expect(page.getByTestId("idea-check")).toBeVisible();
   await savedBy(page, isBlobPut("idea_intake"), async () => {
-    await page.getByTestId("idea-again").click();
+    await page.getByTestId("idea-check").click();
   });
 }
 
@@ -519,13 +544,13 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
       expect([...shown].sort((a, b) => a - b), "parts named in the window's order").toEqual(shown);
     }, { source: `${SHEET_B1} row 12 ("While it builds: 'Building your zip: <part>. Keep this page open.'")` });
     await qa.check("data", "the zip holds exactly the files of the parts listed: the documents as .doc and .html, question.txt, the citations, the search list, a note for each paper, the comparison table and paper cards, the writing record, the AI-use statement, the reading list backup, the three Design files and the coded passages", async () => {
-      // The sheet's names (row 12): documents/<title>.doc and .html, question.txt, citations/library.json and references.txt, search/kept-papers.csv (last-search.csv only after a
+      // The sheet's names (row 12): documents/<title>.doc and .html, question.txt, citations/library.json and references.txt (and the RIS and BibTeX files of the same library, wave-b-side), search/kept-papers.csv (last-search.csv only after a
       // search in this session: none here), notes/<paper>.txt, compare/table.csv and paper-cards.csv, writing-record.txt, ai-use-statement.txt; and the tools' own: reading-list-backup.json,
       // design/ and qual/ (D-S2-55, D-S2-84).
       expect(files.size, "entries in the zip").toBeGreaterThan(0);
       const expected = [
         ...[DOC_A, DOC_B].flatMap((d) => [`documents/${zipName(d.title)}.doc`, `documents/${zipName(d.title)}.html`]),
-        "question.txt", "citations/library.json", "citations/references.txt", "search/kept-papers.csv",
+        "question.txt", "citations/library.json", "citations/library.ris", "citations/library.bib", "citations/references.txt", "search/kept-papers.csv",
         `notes/${zipName(paperTitle(1))}.txt`, `notes/${zipName(PRACTICE_TITLE)}.txt`,
         "compare/table.csv", "compare/paper-cards.csv", "writing-record.txt", "ai-use-statement.txt", "reading-list-backup.json",
         "design/ctri-readiness.md", "design/pi-cv.txt", "design/trial-budget.md", `qual/appuscholar-coded-passages-${today()}.md`
@@ -540,8 +565,9 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
         expect(plain(text(files, `documents/${zipName(d.title)}.doc`)), `${d.title} as a Word file`).toContain(d.text);
       }
     }, { source: `${SHEET_B1} row 12 ("documents/<title>.doc and .html")` });
-    await qa.check("data", "question.txt holds my idea in its four boxes and the AI read after \"AI read:\", with the verdict", async () => {
+    await qa.check("data", "question.txt holds my study's plan under the titles of its six parts (my four answers in them) and the AI read after \"AI read:\", with the verdict", async () => {
       const q = text(files, "question.txt");
+      for (const part of PLAN_PARTS) expect(q).toContain(T(`shape_${part}_title`));
       for (const words of Object.values(IDEA)) expect(q).toContain(words);
       expect(q).toContain(T("exp_ai_read"));
       expect(q.slice(q.indexOf(T("exp_ai_read")))).toContain(VERDICT);
@@ -558,6 +584,18 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
         expect(kept, "kept-papers.csv").toContain(c.doi);
       }
     }, { source: `${SHEET_B1} row 12 ("citations/library.json and citations/references.txt, search/kept-papers.csv")` });
+    await qa.check("data", "the same library is there as a RIS file and a BibTeX file, each holding both sources with their titles and DOIs", async () => {
+      const ris = text(files, "citations/library.ris");
+      const bib = text(files, "citations/library.bib");
+      for (const c of CITES) {
+        for (const [what, body] of [["library.ris", ris], ["library.bib", bib]] as const) {
+          expect(body, what).toContain(c.title);
+          expect(body, what).toContain(c.doi);
+        }
+      }
+      expect(ris.match(/^TY {2}- /gm) ?? [], "RIS records").toHaveLength(CITES.length);
+      expect(bib.match(/^@\w+\{/gm) ?? [], "BibTeX entries").toHaveLength(CITES.length);
+    }, { source: "apps/web/lib/export/projectExport.ts (citations/library.ris and library.bib: citToRis, citToBibtex); the export window's format line \"RIS, BibTeX, text\"" });
     await qa.check("data", "a note for each paper: the shelf paper's highlight with its page and my note, and the practice paper's card", async () => {
       const shelf = text(files, `notes/${zipName(paperTitle(1))}.txt`);
       expect(shelf.startsWith(paperTitle(1))).toBe(true);
@@ -776,18 +814,17 @@ test("S9-01 I take my work out: the project's zip, all my work, and my account d
   await qa.step("sign in again", async () => {
     const again = await signInAs(context, { email: s.email });
     await page.goto("/");
-    await qa.check("data", "the same address signs in to a new account: another user id, the terms window again, then the welcome window, and afterwards the pill reads Vault off", async () => {
+    await qa.check("data", "the same address signs in to a new account: another user id, the terms window again, then my dashboard with no study, and afterwards the pill reads Vault off", async () => {
       expect(again.uid, "the new account's id").not.toBe(s.uid);
       await expect(page.getByTestId("terms-dialog")).toBeVisible();
       await page.getByTestId("terms-age").check();
       await page.getByTestId("terms-agree").check();
       await page.getByTestId("terms-continue").click();
-      await page.getByTestId("welcome-later").click();
+      await expect(page.getByTestId("terms-dialog")).toBeHidden();
+      await expect(page.getByTestId("project-list")).toBeVisible();
       await expect(page.getByTestId("vault-pill")).toHaveText(T("vault_pill_off"));
-    }, { source: `${SHEET_P3} row 9b ("A fresh account: the terms window again, then the welcome window; afterwards the pill reads 'Vault off'"); ${E2E_V} (moment 9b)` });
+    }, { source: `${SHEET_P3} row 9b ("A fresh account: the terms window again, then the welcome window; afterwards the pill reads 'Vault off'"); ${E2E_V} (moment 9b); start-a-study spec (the welcome window is gone: the dashboard follows the terms)` });
     await qa.check("data", "it is empty: no project, an empty first document with 0 words, none of my old words, and the server holds nothing of the old account", async () => {
-      await expect(page.getByTestId("first-run")).toBeVisible();
-      await page.goto("/projects");
       await expect(page.getByTestId("projects-empty")).toBeVisible();
       await page.getByTestId("scratch-space").click();
       await expect(page.getByTestId("word-count")).toHaveText("0 words");
@@ -1307,11 +1344,11 @@ test("S9-05 on a phone in Hindi, the export window, Help and the window that ask
       const hiLines = LISTED.filter((p) => p.ticked).map((p) => inHindi("exp_building", { part: inHindi(PART_KEYS[p.id]!.label) }));
       expect(shown.filter((line) => !hiLines.includes(line)), `lines that are not the Hindi \"building\" line of a ticked part (shown: ${JSON.stringify(shown)})`).toEqual([]);
     }, { source: `${SHEET_B1} row 12; spec section 6 (phone + Hindi)` });
-    await qa.check("data", "question.txt carries the Hindi labels of the idea's four boxes", async () => {
+    await qa.check("data", "question.txt carries the Hindi titles of the plan's six parts", async () => {
       const q = text(files, "question.txt");
-      for (const key of ["idea_topic_label", "idea_resources_label", "idea_timeframe_label", "idea_constraints_label"]) expect(q, key).toContain(inHindi(key));
+      for (const part of PLAN_PARTS) expect(q, part).toContain(inHindi(`shape_${part}_title`));
       expect(q).toContain(IDEA.topic);
-    }, { source: "lib/export/projectExport.ts questionText (the Idea panel's labels and exp_ai_read, through the page's language)" });
+    }, { source: "lib/export/projectExport.ts questionText (Shape your study's titles and exp_ai_read, through the page's language)" });
   });
 
   await qa.step("Help and Export all my work", async () => {
