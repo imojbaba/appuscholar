@@ -1,6 +1,6 @@
 /**
  * Wave C, Task C4: the problem report, the tool counts and the "page looks broken" FAQ entry, walked by a student.
- *   1. a project is made and two places of it are opened, so there is something to count;
+ *   1. a study is made and two places of it are opened, so there is something to count;
  *   2. Help opens; the FAQ entry "The page looks broken" is there and opens to its answer;
  *   3. "Report a problem" opens; the student types a description; the preview shows what the app adds (build, tool, language, browser, screen,
  *      online, AI provider) and three earlier script errors whose messages carry an email address, a key and the engine's own quotation of a
@@ -19,6 +19,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
 
 const MESSAGES = path.join(__dirname, "../messages");
 const EN = { ...JSON.parse(readFileSync(path.join(MESSAGES, "en.json"), "utf8")), ...JSON.parse(readFileSync(path.join(MESSAGES, "tools/help-report.en.json"), "utf8")) } as Record<string, string>;
@@ -34,13 +35,10 @@ test("Help shows the 'page looks broken' entry and the problem report copies a m
     w.__clip = [];
     Object.defineProperty(navigator, "clipboard", { value: { writeText: (s: string) => { w.__clip.push(s); return Promise.resolve(); } }, configurable: true });
   });
-  await signIn(page, { prefix: "c4", newAccount: true, ready: ["first-run"] });
+  await signIn(page, { prefix: "c4", newAccount: true, ready: ["project-list"] });
 
   // 1. A project, and two of its places.
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
-  await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
+  await makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
   await page.getByTestId("home-open-lit").click();
   await expect(page).toHaveURL(/\/lit$/);
   await page.getByTestId("place-tab-compare").click();

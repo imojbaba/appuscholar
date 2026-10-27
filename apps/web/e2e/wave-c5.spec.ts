@@ -1,7 +1,7 @@
 /**
  * Wave C, Task C5: the welcome-back recap after a gap.
  *
- * One sign-in and one project. The steps:
+ * One sign-in and one study. The steps:
  *   1. a student whose last visit was eight days ago loads the app and, a moment after the project has loaded, meets the recap: the days away,
  *      the project, what the account can count, the three questions and the switch in its footer;
  *   2. they answer, press Save my answers, and the recap goes with "Saved"; the answers sit on this device under this account's key;
@@ -18,6 +18,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { signIn } from "./support/signin";
+import { makeStudy } from "./support/study";
 
 const EN = JSON.parse(readFileSync(path.join(__dirname, "../messages/en.json"), "utf8")) as Record<string, string>;
 const RECAP = JSON.parse(readFileSync(path.join(__dirname, "../messages/tools/help-recap.en.json"), "utf8")) as Record<string, string>;
@@ -30,13 +31,10 @@ const T = (key: string): string => {
 const DAY = 86_400_000;
 test.describe.configure({ timeout: 120_000 });
 
-/** First run's "Save as my project" with a typed idea; the new project's home opens. */
+/** A new account makes its first study (Start a new study, then Shape your study's question and what it has); the study's home opens. */
 async function newProject(page: Page): Promise<void> {
-  await signIn(page, { prefix: "r", newAccount: true, ready: ["first-run"] });
-  await page.locator("#ideaTopic").fill("Does a fixed bedtime routine lower exam anxiety in first-year students?");
-  await page.locator("#ideaRes").fill("About 60 first-years");
-  await page.getByTestId("idea-save").click();
-  await expect(page.getByTestId("project-home")).toBeVisible({ timeout: 20_000 });
+  await signIn(page, { prefix: "r", newAccount: true, ready: ["project-list"] });
+  await makeStudy(page, { question: "Does a fixed bedtime routine lower exam anxiety in first-year students?", have: "About 60 first-years" });
 }
 
 /** The account's keys on this device, read off the page: the app names them `appu_<what>_<account id>`, so the spec learns the id from the key. */
@@ -79,7 +77,7 @@ test("a student back after eight days meets the recap once, answers it, and is n
   await expect(dialog).toBeVisible();
   const facts = page.getByTestId("recap-facts");
   await expect(facts).toContainText("You have been away 8 days.");
-  await expect(facts).toContainText(/Project: .+\./);
+  await expect(facts).toContainText(/Study: .+\./);
   await expect(facts).toContainText(/new document\(s\)/);
   await expect(dialog).toContainText(T("wc_recap_intro"));
   await expect(dialog).not.toContainText("this computer");
