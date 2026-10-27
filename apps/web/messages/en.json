@@ -348,6 +348,7 @@
   "connect_done_toast": "AI connected.",
   "connect_fail_key": "{p} did not accept this key. Check that you copied all of it, with no spaces, then try again.",
   "connect_fail_network": "Could not reach {p}. Check your internet connection, then try again.",
+  "connect_fail_slow": "{p} took too long to answer, so the check was stopped. Try again in a minute. If it keeps happening, save your idea without feedback and connect AI later.",
   "connect_fail_other": "{p} did not answer as expected.",
   "connect_free_note": "A free key has a daily limit, which is plenty for thesis work. On a free key, Google may use what you send it to improve its services.",
   "connect_from": "From {p}.",

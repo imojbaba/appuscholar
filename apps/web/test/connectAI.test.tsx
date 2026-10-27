@@ -252,6 +252,67 @@ describe("Connect AI: a key that does not connect", () => {
   }, 30_000);
 });
 
+/** A key check the server never answers: it only ends when the caller stops it. */
+function hangingTest(seen: { signal: AbortSignal | null }) {
+  h.api.mockImplementation((path: string, init?: RequestInit) => {
+    if (path !== "/ai/test") return fakeApi(path, init);
+    seen.signal = init?.signal ?? null;
+    return new Promise((_, reject) => { init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))); });
+  });
+}
+
+describe("Connect AI: a key check that never answers (live, 27 Oct: stuck on Checking your key for 5 minutes)", () => {
+  it("is stopped after 30 seconds and said in plain words, with Try again and Save my idea without feedback", async () => {
+    const seen = { signal: null as AbortSignal | null };
+    hangingTest(seen);
+    await mount();
+    await click("connect-yes");
+    typeInto("connect-key", "AIza-slow");
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      await click("connect-go");
+      expect($("connect-status")!.textContent).toBe(E.connect_checking);
+      await act(async () => { vi.advanceTimersByTime(29_000); });
+      expect($("connect-error")).toBeNull();
+      await act(async () => { vi.advanceTimersByTime(1_000); });
+      await until(() => !!$("connect-error"));
+    } finally { vi.useRealTimers(); }
+    expect(seen.signal!.aborted).toBe(true);
+    expect($("connect-error")!.textContent).toBe(fill(E.connect_fail_slow!, { p: "Google Gemini" }));
+    expect($("connect-status")!.textContent).toBe("");
+    expect(($("connect-go") as HTMLButtonElement).disabled).toBe(false);
+    expect($("connect-go")!.textContent).toBe("Try again");
+    expect($("connect-fail-save")).not.toBeNull();
+    expect(screen()).toBe("paste");
+    expect(credPuts()).toHaveLength(0);
+  }, 30_000);
+
+  it("the server's own time limit (504 slow) says the same", async () => {
+    h.api.mockImplementation((path: string, init?: RequestInit) => path === "/ai/test" ? Promise.reject(new ApiError(504, "slow")) : fakeApi(path, init));
+    await mount();
+    await click("connect-yes");
+    typeInto("connect-key", "AIza-slow");
+    await click("connect-go");
+    await until(() => !!$("connect-error"));
+    expect($("connect-error")!.textContent).toBe(fill(E.connect_fail_slow!, { p: "Google Gemini" }));
+  }, 30_000);
+
+  it("the window can be closed while the key is being checked: the check is stopped and nothing is saved", async () => {
+    const seen = { signal: null as AbortSignal | null };
+    hangingTest(seen);
+    await mount();
+    await click("connect-yes");
+    typeInto("connect-key", "AIza-slow");
+    await click("connect-go");
+    expect($("connect-status")!.textContent).toBe(E.connect_checking);
+    await escape();
+    expect(ended()).toEqual(["closed"]);
+    expect(seen.signal!.aborted).toBe(true);
+    expect(keyStore.getUnlocked("gemini")).toBeNull();
+    expect(credPuts()).toHaveLength(0);
+  }, 30_000);
+});
+
 describe("Connect AI: the question and closing", () => {
   it("4a's Save my idea without feedback ends with save; without a save to offer it says Not now", async () => {
     await mount();

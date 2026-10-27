@@ -3,7 +3,7 @@ import { z } from "zod";
 import { classifyAiUse, contentLangInstruction, scanText } from "@appuscholar/core";
 import type { AiUseEntry, Store } from "../store/types";
 import type { AuthEnv } from "../auth";
-import { complete, type GatewayDeps } from "../ai/gateway";
+import { complete, testKey, type GatewayDeps } from "../ai/gateway";
 import { AiError, type AiErrorCode } from "../ai/types";
 import { AI_QUOTAS, quotaRules, type QuotaLimits } from "../ai/quota";
 
@@ -28,9 +28,9 @@ const Range = z.object({ from: Day.optional(), to: Day.optional() });
 /** GET /ai/log: the range, and optionally one project (the project export's AI-use statement); without it, the whole account's log. */
 const LogQuery = Range.extend({ projectId: z.string().min(1).max(100).optional() });
 
-const STATUS: Record<AiErrorCode, 400 | 401 | 404 | 429 | 502> = {
+const STATUS: Record<AiErrorCode, 400 | 401 | 404 | 429 | 502 | 504> = {
   "personal-data": 400, blocked: 400, truncated: 400, empty: 400, "no-key": 400,
-  "key-rejected": 401, "model-gone": 404, "rate-limit": 429, "provider-error": 502, network: 502
+  "key-rejected": 401, "model-gone": 404, "rate-limit": 429, "provider-error": 502, network: 502, slow: 504
 };
 
 /** v1 pdPreSend wording ("Found: 1 email address, 2 phone numbers."), with "addresses" spelled correctly where v1 wrote "addresss". */
@@ -61,7 +61,7 @@ export function aiRoutes(store: Store, deps: GatewayDeps, quota: { now?: () => D
   });
 
   // Never log the request body, the key or the prompt: only the error class is recorded.
-  async function guarded(c: { json: (b: unknown, s: 400 | 401 | 404 | 429 | 502) => Response }, run: () => Promise<Response>): Promise<Response> {
+  async function guarded(c: { json: (b: unknown, s: 400 | 401 | 404 | 429 | 502 | 504) => Response }, run: () => Promise<Response>): Promise<Response> {
     try {
       return await run();
     } catch (e) {
@@ -110,8 +110,8 @@ export function aiRoutes(store: Store, deps: GatewayDeps, quota: { now?: () => D
     return guarded(c, async () => {
       const limited = await overQuota(c, "test");
       if (limited) return limited;
-      const out = await complete({ provider: body.data.provider, apiKey: body.data.apiKey, prompt: "Reply with the single word OK.", temperature: 0, maxTokens: 20 }, deps);
-      return c.json({ ok: true, reply: out.text });
+      await testKey(body.data, deps);
+      return c.json({ ok: true, reply: "OK" });
     });
   });
 

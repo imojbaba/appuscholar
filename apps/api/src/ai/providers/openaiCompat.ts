@@ -17,7 +17,7 @@ export const openaiCompat: Adapter = async (input, fetchImpl) => {
   const headers: Record<string, string> = { "Content-Type": "application/json", Authorization: "Bearer " + input.apiKey };
   if (input.provider === "openrouter") { headers["HTTP-Referer"] = "https://appuscholar.local"; headers["X-Title"] = "Appuscholar"; }
   const r = await postWithRetry(fetchImpl, url, {
-    method: "POST", headers,
+    method: "POST", headers, signal: input.signal,
     body: JSON.stringify({ model, messages: [{ role: "user", content: input.prompt }], temperature: input.temperature, max_tokens: input.maxTokens })
   });
   if (!r.ok) throw await httpError(r);

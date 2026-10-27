@@ -475,6 +475,19 @@ describe("ai routes", () => {
     expect(await bad.json()).toMatchObject({ error: "key-rejected" });
   });
 
+  it("POST /ai/test with a company that never answers ends at 20 s with 504 slow (live, 27 Oct: it sat for five minutes)", async () => {
+    const never = createApp({ store, jwtSecret: SECRET, ai: { fetch: ((_u: string, init: RequestInit) => new Promise<Response>((_, reject) => {
+      init.signal?.addEventListener("abort", () => reject(new DOMException("The operation was aborted.", "TimeoutError")));
+    })) as never } });
+    const t0 = Date.now();
+    const r = await never.request("/ai/test", { method: "POST", headers: auth, body: JSON.stringify({ provider: "gemini", apiKey: "AIza-x" }) });
+    const took = Date.now() - t0;
+    expect(r.status).toBe(504);
+    expect(await r.json()).toMatchObject({ error: "slow" });
+    expect(took).toBeGreaterThanOrEqual(19_000);
+    expect(took).toBeLessThan(25_000);
+  }, 40_000);
+
   it("serves the log with a range, a summary, and erases it", async () => {
     for (const day of ["2026-10-14", "2026-10-15"]) await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Improve this text", day });
     await post("/ai/complete", { provider: "groq", apiKey: "k", prompt: "Continue this writing", day: "2026-10-15" });

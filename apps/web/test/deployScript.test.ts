@@ -92,6 +92,8 @@ describe("scripts/deploy-vercel.sh", () => {
     git(repo, "commit", "-am", "elsewhere");
     // Pushed by path, as another clone would: this clone's origin/* refs do not move until it fetches.
     git(repo, "push", origin, "HEAD:refs/heads/side");
+    // git 2.56 also moves origin/side when the pushed-to path is origin's URL; another clone's push would not, so that ref is taken back out.
+    try { git(repo, "update-ref", "-d", "refs/remotes/origin/side"); } catch { /* older git made no such ref */ }
     expect(git(repo, "branch", "-r", "--contains", "HEAD")).toBe("");
     const r = deploy(repo);
     expect(r.status).toBe(0);

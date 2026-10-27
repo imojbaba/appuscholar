@@ -30,9 +30,14 @@ export function ConnectAI() {
 
 type Fail = { text: string } | null;
 
+/** How long a key check may take before it is stopped and said (a provider or server that never answers must not hold the window). */
+export const CHECK_MS = 30_000;
+class CheckTimeout extends Error {}
+
 /** What a failed key test says, in plain words, with what to fix: the company's refusal, the connection, or the call's own sentence. */
 function failText(e: unknown, company: string, t: ReturnType<typeof useT>): string {
   const err = toCallError(e);
+  if (e instanceof CheckTimeout || err.code === "slow") return t("connect_fail_slow", { p: company });
   if (err.code === "key-rejected" || err.code === "no-key" || (e instanceof ApiError && e.status === 400)) return t("connect_fail_key", { p: company });
   if (err.code === "network") return t("connect_fail_network", { p: company });
   return t("connect_fail_other", { p: company }) + " " + err.message;
@@ -65,6 +70,22 @@ function Flow({ ask }: { ask: ConnectAsk }) {
   const [code, setCode] = useState<string | null>(null);
   const done = useRef(false);
   const info = PROVIDERS[p];
+  /** The key check in flight: closing the window stops it; past CHECK_MS it is stopped and said. */
+  const checking = useRef<AbortController | null>(null);
+  async function checkKey(apiKey: string): Promise<void> {
+    const ctl = new AbortController();
+    checking.current = ctl;
+    let late = false;
+    const timer = setTimeout(() => { late = true; ctl.abort(); }, CHECK_MS);
+    try {
+      await apiFetch<{ ok: true; reply: string }>("/ai/test", { method: "POST", body: JSON.stringify({ provider: p, apiKey }), signal: ctl.signal });
+    } catch (e) {
+      throw late ? new CheckTimeout() : e;
+    } finally {
+      clearTimeout(timer);
+      if (checking.current === ctl) checking.current = null;
+    }
+  }
 
   const end = (r: ConnectResult) => {
     if (done.current) return;
@@ -78,7 +99,10 @@ function Flow({ ask }: { ask: ConnectAsk }) {
   };
   /** The cross, Escape or a click outside: nothing typed on the page is lost; a key that passed its test but was not kept is not saved, and the student is told. */
   const close = () => {
-    if (busy || code) return;
+    if (code) return;
+    // A key check can be walked away from (it is stopped); a save or a passphrase setup in progress cannot.
+    if (busy && !checking.current) return;
+    checking.current?.abort();
     if (tested.current && (screen === "keep" || screen === "pass")) toast(t("connect_not_saved"));
     end("closed");
   };
@@ -90,8 +114,9 @@ function Flow({ ask }: { ask: ConnectAsk }) {
     if (busy) return;
     setBusy(true); setFail(null); setStatus(t("connect_checking"));
     try {
-      await apiFetch<{ ok: true; reply: string }>("/ai/test", { method: "POST", body: JSON.stringify({ provider: p, apiKey: k }) });
+      await checkKey(k);
     } catch (e) {
+      if (done.current) return;
       setStatus(null); setFail({ text: failText(e, info.name, t) }); setBusy(false);
       return;
     }
@@ -151,11 +176,12 @@ function Flow({ ask }: { ask: ConnectAsk }) {
     if (!use) return;
     setBusy(true); setStatus(t("connect_checking"));
     try {
-      await apiFetch("/ai/test", { method: "POST", body: JSON.stringify({ provider: p, apiKey: use }) });
+      await checkKey(use);
       setStatus(t("connect_test_ok", { p: info.name }));
     } catch (e) {
+      if (done.current) return;
       setStatus(null); setFail({ text: failText(e, info.name, t) });
-    } finally { setBusy(false); }
+    } finally { if (!done.current) setBusy(false); }
   }
   async function remove() {
     if (busy) return;
