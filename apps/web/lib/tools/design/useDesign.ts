@@ -65,8 +65,11 @@ export function useDesign<K extends DesignKey>(key: K, projectId: string): Desig
   return { value: blob.value, loading: blob.loading, locked: blob.locked, broken: blob.broken, error: blob.error, readOnly, flush: blob.flush, unread: waiting, save };
 }
 
-/** What the six blobs say together: each one's done flag, and whether any is still opening, locked or unreadable (the Overview's notes). */
-export type DesignStatus = NoteState & { done: Partial<Record<DesignKey, boolean>> };
+/**
+ * What the six blobs say together: each one's done flag, which of them are not known yet (`unknown`: still opening, locked or unreadable, so "not done" would be a
+ * guess), and whether any is (the Overview's notes).
+ */
+export type DesignStatus = NoteState & { done: Partial<Record<DesignKey, boolean>>; unknown: Partial<Record<DesignKey, boolean>> };
 
 /** Reads the six blobs once, for useDesignStatus and useDesignDone. */
 function useSix(projectId: string): DesignStatus {
@@ -77,10 +80,11 @@ function useSix(projectId: string): DesignStatus {
   };
   const all = Object.values(b);
   const done: Partial<Record<DesignKey, boolean>> = {};
-  for (const k of Object.keys(b) as DesignKey[]) done[k] = isDone(b[k].value);
+  const unknown: Partial<Record<DesignKey, boolean>> = {};
+  for (const k of Object.keys(b) as DesignKey[]) { done[k] = isDone(b[k].value); unknown[k] = unread(b[k]); }
   const n = all.map(notesOf);
   return {
-    done,
+    done, unknown,
     loading: n.some((x) => x.loading), locked: n.some((x) => x.locked), broken: n.some((x) => x.broken),
     readFailed: n.some((x) => x.readFailed), saveFailed: n.some((x) => x.saveFailed)
   };

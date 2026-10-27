@@ -229,14 +229,68 @@ describe("Budget (Task A3)", () => {
       const root = await render();
       expect(($(T("budget-export")) as HTMLButtonElement).disabled, mode).toBe(true);
       await click("budget-export");
-      await type("budget-amount-0", "5");
-      await click("budget-add");
+      // Locked: the boxes are not shown (see below), so there is nothing to type in; opening or broken: the box is there.
+      if ($(T("budget-amount-0"))) await type("budget-amount-0", "5");
+      if ($(T("budget-add"))) await click("budget-add");
       expect(h.downloads, mode).toHaveLength(0);
       expect(h.sets, mode).toHaveLength(0);
       if (mode === "locked") expect($(T("design-locked"))).not.toBeNull();
       await act(async () => { root.unmount(); });
       document.body.innerHTML = "";
     }
+  });
+
+  it("O7: while the saved rows are opening the boxes are shown but refuse typing (no key is taken and given back empty), and the add and remove buttons are off", async () => {
+    h.loading = true;
+    await render();
+    expect($(T("design-loading"))).not.toBeNull();
+    for (let i = 0; i < 7; i++) {
+      expect(($(T("budget-amount-" + i)) as HTMLInputElement).readOnly, "amount " + i).toBe(true);
+      expect(($(T("budget-label-" + i)) as HTMLInputElement).readOnly, "label " + i).toBe(true);
+    }
+    expect(($(T("budget-add")) as HTMLButtonElement).disabled).toBe(true);
+    expect(($(T("budget-remove-0")) as HTMLButtonElement).disabled).toBe(true);
+    // No "Total: ₹0" over rows that are not read yet.
+    expect($(T("budget-total"))).toBeNull();
+    // Once they are read the boxes take typing again, and the total is shown.
+    h.loading = false;
+    h.store.set("design_budget", { rows: [{ label: "Site costs", amount: "1500" }], done: true });
+    h.version++;
+    await act(async () => { for (const l of h.listeners) l(); });
+    expect(($(T("budget-amount-0")) as HTMLInputElement).readOnly).toBe(false);
+    expect(($(T("budget-amount-0")) as HTMLInputElement).value).toBe("1500");
+    expect(text("budget-total")).toBe("Total: ₹1,500");
+    await type("budget-amount-0", "2000");
+    expect(stored()!.rows[0]!.amount).toBe("2000");
+  });
+
+  it("Q13 and Q96: while the vault is locked (or the read failed) there are no empty boxes and no \"Total: ₹0\" under the note, so no amount can be typed and given back empty; they return when the work is read", async () => {
+    for (const mode of ["locked", "failed"] as const) {
+      h.locked = mode === "locked"; h.error = mode === "failed";
+      const root = await render();
+      expect($(T(mode === "locked" ? "design-locked" : "design-read-failed")), mode).not.toBeNull();
+      expect($(T("budget-rows")), mode).toBeNull();
+      expect($(T("budget-amount-0")), mode).toBeNull();
+      expect($(T("budget-add")), mode).toBeNull();
+      expect($(T("budget-total")), mode).toBeNull();
+      expect(document.body.textContent, mode).not.toContain(budgetTotalText(budgetRows(undefined)));
+      expect(h.sets, mode).toHaveLength(0);
+      await act(async () => { root.unmount(); });
+      document.body.innerHTML = "";
+    }
+    // Unlocked and read: the rows and the total are there.
+    h.locked = false; h.error = false;
+    await render();
+    expect($(T("budget-amount-0"))).not.toBeNull();
+    expect(text("budget-total")).toBe(budgetTotalText(budgetRows(undefined)));
+  });
+
+  it("a locked blob that holds a value (typed or read earlier) keeps showing its rows and total", async () => {
+    h.locked = true;
+    h.store.set("design_budget", { rows: [{ label: "Site costs", amount: "1500" }], done: true });
+    await render();
+    expect(($(T("budget-amount-0")) as HTMLInputElement).readOnly).toBe(false);
+    expect(text("budget-total")).toBe("Total: ₹1,500");
   });
 
   it("the Panel draws it for the budget tab, and the intro is v1's sentence", async () => {

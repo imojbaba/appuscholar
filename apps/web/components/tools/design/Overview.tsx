@@ -17,7 +17,8 @@ const STAGE_OF = Object.fromEntries(TOOL_TABS.map((x) => [x.tab, x.stage]));
 /**
  * The Design and ethics overview (v1 designRenderDash 5884-5897 and the panel 756-766): the panel's sentence, "N of 6 ready" from designDashboard over
  * the six blobs' done flags, six rows each a link to its tab with a mark that is a word as well as an icon, and the AI-use statement as a seventh row
- * that has no mark and is not counted (v1: the seventh button was outside the count). Nothing here rules on anything; the committee decides.
+ * that has no mark and is not counted (v1: the seventh button was outside the count). A piece whose saved work is not known yet (opening, locked or unreadable) has no
+ * mark either: "Not ready yet" there would be a claim about work the page has not read. Nothing here rules on anything; the committee decides.
  */
 export function Overview({ projectId }: { projectId: string }) {
   const t = useT();
@@ -46,7 +47,7 @@ export function Overview({ projectId }: { projectId: string }) {
         <p className="desc" style={{ marginBottom: 6 }}><b data-testid="design-count">{t("design_home_ready", { done: dash.done, total: dash.total })}</b></p>
       )}
       <ul className="m-0 flex list-none flex-col gap-0.5 p-0" aria-label={t("design_rows_label")} data-testid="design-rows">
-        {dash.items.map((i) => link(i.key, TAB_OF[i.key], i.done))}
+        {dash.items.map((i) => link(i.key, TAB_OF[i.key], s.unknown[i.key] ? null : i.done))}
         {link("aiuse", "aiuse", null)}
       </ul>
     </div>

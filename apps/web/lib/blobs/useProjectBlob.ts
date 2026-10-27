@@ -455,6 +455,14 @@ export function createBlobClient<T>(o: ClientDeps<T> & { delayMs: number; onStat
       if (!known || pending) void flush();
     },
     /**
+     * The browser is back online: a read or save that failed (`error`: offline, a dropped connection, a gateway error) is made again now, so a value kept after
+     * a failed save is sent without waiting for the next change. Nothing is made again that did not fail; the debounce, a lock held (no prompt) and a broken blob are as they were.
+     */
+    retry() {
+      if (!active || o.headless || !error) return;
+      void flush();
+    },
+    /**
      * Another project or kind, or unmount: what is pending, or a save still in flight, is seen through now, without a prompt (the panel
      * is gone), and tracked so a new mount of this blob waits for it. What still cannot go is kept in the held-blobs registry for this
      * blob id, and nothing here touches the panel's state any more.
@@ -546,6 +554,13 @@ export function useProjectBlob<K extends BlobKind>(kind: K, projectId: string | 
     const stop = syncedKind(kind) ? onBlobAnnounced(blobId(projectId, kind), () => c.refresh()) : () => {};
     return () => { stop(); if (client.current === c) client.current = null; c.dispose(); };
   }, [kind, projectId, key, readOnly]);
+
+  // Back online: held-blobs sends only what a panel that went away left behind; this panel's own failed read or save is tried again here (like the vault's own retry).
+  useEffect(() => {
+    const back = () => client.current?.retry();
+    window.addEventListener("online", back);
+    return () => window.removeEventListener("online", back);
+  }, []);
 
   const open = vault.status === "unlocked" || vault.status === "migrating";
   useEffect(() => { if (open) client.current?.resume(); }, [open, key]);

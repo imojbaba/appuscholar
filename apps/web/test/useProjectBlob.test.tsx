@@ -641,6 +641,57 @@ describe("useProjectBlob", () => {
     });
   });
 
+  describe("back online with the panel still open (Q14)", () => {
+    it("a save that failed offline is sent when the browser comes back online, and the error clears; it is not left until the next change", async () => {
+      let offline = false;
+      h.api.mockImplementation((path: string, init?: RequestInit) => {
+        if (offline && init?.method === "PUT") { server.calls.push({ path, method: "PUT" }); return Promise.reject(new TypeError("Failed to fetch")); }
+        return fakeApi(path, init);
+      });
+      const s = await mount("design_budget", "p1");
+      await until(() => !s.b.loading);
+      offline = true;
+      act(() => { s.b.set({ rows: [{ label: "Site costs", amount: "1500" }], done: true }); });
+      await until(() => s.b.error === true);
+      expect(server.blobs).toHaveLength(0);
+      expect(s.b.value).toMatchObject({ done: true });
+      expect(shouldWarnOnUnloadBlobs()).toBe(true);
+      // Back online: the open panel's own value goes out.
+      offline = false;
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await until(() => server.blobs.length === 1);
+      await until(() => s.b.error === false);
+      expect(server.blobs[0]).toMatchObject({ body: JSON.stringify({ rows: [{ label: "Site costs", amount: "1500" }], done: true }), keyVersion: 0 });
+      expect(shouldWarnOnUnloadBlobs()).toBe(false);
+    });
+
+    it("a read that failed offline is read again when the browser comes back online", async () => {
+      server.blobs = [{ projectId: "p1", kind: "design_budget", body: JSON.stringify({ rows: [], done: false }), keyVersion: 0, deks: [] }];
+      let offline = true;
+      h.api.mockImplementation((path: string, init?: RequestInit) => (offline && path.includes("/blobs/") && !init?.method ? Promise.reject(new TypeError("Failed to fetch")) : fakeApi(path, init)));
+      const s = await mount("design_budget", "p1");
+      await until(() => !s.b.loading);
+      expect(s.b).toMatchObject({ value: null, error: true });
+      offline = false;
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await until(() => s.b.error === false);
+      expect(s.b.value).toEqual({ rows: [], done: false });
+    });
+
+    it("online with nothing failed sends nothing, and an unmounted panel does not listen", async () => {
+      const s = await mount("design_budget", "p1");
+      await until(() => !s.b.loading);
+      const before = blobCalls().length;
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await settle();
+      expect(blobCalls()).toHaveLength(before);
+      s.unmount();
+      await act(async () => { window.dispatchEvent(new Event("online")); });
+      await settle();
+      expect(blobCalls()).toHaveLength(before);
+    });
+  });
+
   describe("a save in flight when the panel goes away", () => {
     /** Holds every blob PUT until released, then answers it (ok) or fails it as offline. */
     function gatePuts() {
