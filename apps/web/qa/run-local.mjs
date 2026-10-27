@@ -1,4 +1,5 @@
 // The QA layer on a Mac, in one command: `pnpm --filter @appuscholar/web qa:local [playwright args]`.
+//   0. runs one case at a time unless QA_WORKERS is set (the pglite note below);
 //   1. refuses to start when a QA port is taken (a server left over from another run would answer, and the run would test old code);
 //   2. starts pglite on the QA database port (e2e/support/pglite-postgres.mjs, migrations applied);
 //   3. `qa:build` (the api bundle and `next build`), then `qa` with the arguments passed through (`-g harness`, `--project=phone`, ...);
@@ -46,6 +47,10 @@ if (taken.length) {
 
 // One database for the api, the web server and signInAs. Always this run's pglite, whatever DATABASE_URL the shell has.
 const env = { ...process.env, DATABASE_URL: `postgres://postgres:postgres@127.0.0.1:${PG_PORT}/postgres` };
+// One case at a time unless QA_WORKERS says otherwise: pglite-socket keeps one connection's messages together only inside a transaction, so with two workers
+// the api's, the web server's and the test's connections can interleave a Parse and a Bind ("bind message supplies 4 parameters, but prepared statement requires 2"),
+// and the api answers an ordinary request with a 500 or a 401. CI's Postgres service has no such limit and keeps the config's default of 2.
+if (!env.QA_WORKERS) env.QA_WORKERS = "1";
 // The build carries the commit so the harness can read it back in Help (the same path as the production pill). CI passes GITHUB_SHA itself.
 if (!env.GITHUB_SHA) {
   try {
