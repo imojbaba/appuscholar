@@ -1,6 +1,6 @@
 "use client";
 import type { StageKey } from "@/lib/tools";
-import { IdeaPlace } from "@/components/places/IdeaPlace";
+import { ShapeStudy } from "@/components/places/ShapeStudy";
 import { LitPlace } from "@/components/places/LitPlace";
 import { WritingPlace } from "@/components/places/WritingPlace";
 import { StagedPlace } from "@/components/places/StagedPlace";
@@ -16,7 +16,7 @@ export function StagePlace({ stage, tab }: { stage: StageKey; tab: string | null
   if (stage === "idea") return (
     <>
       <PlaceHeader stage={stage} tab={tab} />
-      <div className="place-body" data-testid="place-idea"><IdeaPlace /></div>
+      <div className="place-body" data-testid="place-idea"><ShapeStudy /></div>
     </>
   );
   if (stage === "writing" && (tab ?? "document") === "document") return (

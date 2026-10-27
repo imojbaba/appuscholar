@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import { useRef } from "react";
 import { fieldLabel } from "@appuscholar/core";
 import { tHtml, useT } from "@/lib/i18n";
@@ -56,10 +57,11 @@ export function Ask() {
   const t = useT();
   const s = useApState();
   const { settings } = useSettings();
+  const studyField = useStudyField();
   // The paper is published text: no name in it is a participant's to suggest (C13).
   const callAI = useLiterature(useCallAI());
   const box = useRef<HTMLTextAreaElement>(null);
-  const ask = () => { void apAsk({ callAI, field: fieldLabel(settings.field), toast, t }); };
+  const ask = () => { void apAsk({ callAI, field: studyField, toast, t }); };
   return (
     <div data-testid="ap-ask">
       <div className="field">

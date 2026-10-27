@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import { AP_STAGES, apCheckQuote, fieldLabel, type ApWalkRes } from "@appuscholar/core";
 import { tHtml, useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -75,6 +76,7 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
   const t = useT();
   const s = useApState();
   const { settings } = useSettings();
+  const studyField = useStudyField();
   // The paper is published text: no name in it is a participant's to suggest (C13).
   const callAI = useLiterature(useCallAI());
   const d = s.doc!;
@@ -88,7 +90,7 @@ export function Walk({ notes }: { notes: ApNotesStore }) {
     setAp((x) => ({ tryDraft: { ...x.tryDraft, [st.k]: v } }));
     notes.put(d, (n) => { n.stages[st.k] = { ...(n.stages[st.k] ?? {}), mine: v }; });
   };
-  const show = () => { void apWalkShow({ callAI, field: fieldLabel(settings.field), toast, t, mine: (k) => walkDraft(s, note, k), put: notes.put }); };
+  const show = () => { void apWalkShow({ callAI, field: studyField, toast, t, mine: (k) => walkDraft(s, note, k), put: notes.put }); };
   return (
     <div data-testid="ap-walk">
       <div className="ap-row ap-wrap ap-stages" data-testid="ap-stages">

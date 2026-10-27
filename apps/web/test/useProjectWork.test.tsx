@@ -7,7 +7,7 @@ import { useProjectWork, type ProjectWork } from "@/lib/frame/useProjectWork";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const project = (id: string): ProjectWork => ({
-  id, userId: "u1", title: "T " + id, titleKeyVersion: 0, deks: [], field: "Education", stage: "idea", status: "active", contentLang: "en", kind: "project",
+  id, userId: "u1", title: "T " + id, titleKeyVersion: 0, deks: [], field: "Education", type: null, stage: "idea", status: "active", contentLang: "en", kind: "project",
   createdAt: "2026-10-01T00:00:00.000Z", stageMarks: {}, documentCount: 1, lastEditedAt: null,
   blobs: [{ kind: "idea_intake", updatedAt: "2026-10-02T00:00:00.000Z", version: 1 }], draftWords: 0, draftEditedAt: null
 });

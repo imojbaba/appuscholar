@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import { useEffect, useRef, useState } from "react";
 import { crLookupDoi, fieldLabel, resolveShelfTitle, SHELF_DEFAULT_COLS, SHELF_TITLE_TIMEOUT_MS, shColsOf } from "@appuscholar/core";
 import { useLibrary } from "@/lib/cite/useLibrary";
@@ -68,6 +69,7 @@ function ShelfBody({ inline = false }: { inline?: boolean }) {
   const t = useT();
   const store = useShelfStore();
   const { settings } = useSettings();
+  const studyField = useStudyField();
   // The shelf summarises the pages of a paper: published text, so no name in it is a participant's to suggest (C13).
   const callAI = useLiterature(useCallAI());
   const { editor } = useSuggestion();
@@ -118,7 +120,7 @@ function ShelfBody({ inline = false }: { inline?: boolean }) {
             onSaveHighlight={(sel, note) => saveHighlight(reading.id, page, sel, note, ops)}
             onDeleteHighlight={(noteId) => deleteHighlight(reading.id, noteId, ops)}
             onSummarise={(mine, setOut) => shelfSummarise({
-              callAI, field: fieldLabel(settings.field), t, mine, pages: reading.paper!.pages, setOut,
+              callAI, field: studyField, t, mine, pages: reading.paper!.pages, setOut,
               saveNote: async (n) => ops.updatePaper(reading.id, (p) => ({ ...p, notes: [...p.notes, n] })) && ops.flushPaper(reading.id)
             })} />
         ) : tab === "papers" ? (

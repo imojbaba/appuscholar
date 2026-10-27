@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import { fieldLabel } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
 import { useCallAI } from "@/lib/ai/useCallAI";
@@ -19,7 +20,8 @@ export function Panel({ projectId }: { tab: string; projectId: string }) {
   const data = useWordsData(projectId || null);
   const callAI = useCallAI();
   const { settings } = useSettings();
-  const field = fieldLabel(settings.field);
+  const studyField = useStudyField();
+  const field = studyField;
   const ask = (prompt: string, o: { temp: number; max: number; noLang: boolean }) => callAI(prompt, o);
 
   return (

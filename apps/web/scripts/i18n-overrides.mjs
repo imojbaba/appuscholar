@@ -12,10 +12,10 @@ export const OVERRIDES = {
   // v1 said everything stays on this computer; in v2 it is saved under the account.
   welcome_intro: "A writing and research assistant, with psychology research support built in. Everything you write is saved under your account.",
   // The v1 answers said everything and the key live only in this browser; the key is connected from Connect AI (first-run build spec, OJ 2026-10-27).
-  faq_a_lost: "Your documents are saved under your account with every version, so clearing a browser does not lose them. Sign in on any device to find them. If a document is missing, check the Doc list and Research Projects, then write to us.",
+  faq_a_lost: "Your documents are saved under your account with every version, so clearing a browser does not lose them. Sign in on any device to find them. If a document is missing, check the Doc list and Studies, then write to us.",
   faq_a_key: "Your AI key is kept on this computer, or locked with your passphrase under your account. If the app says AI is not connected, press <b>Connect AI</b> at the top of the page and paste your key again.",
   // v1 said nothing moves; in v2 the open document moves into the project.
-  sap_desc: "Research projects track which stage a piece of work is at, so the app can point you to the right tools. The open document moves into the project; your other documents stay in scratch space."
+  sap_desc: "Studies track which stage a piece of work is at, so the app can point you to the right tools. The open document moves into the study; your other documents stay in scratch space."
 };
 
 /** Returns a copy of the English dictionary with the overrides applied. Every override must replace an existing key. */
@@ -37,9 +37,9 @@ export const HINDI_DRAFTS = {
   terms_d4: "शोध-पत्र की खोज आपके खोज-शब्द, DOI या ORCID iD को OpenAlex, Crossref, PubMed और ORCID को भेजती है। फ़ॉन्ट तथा Word और PDF के टूल ऐप के साथ Appuscholar के अपने पते से लोड होते हैं, जो किसी भी वेबसाइट की तरह आपका IP पता देख सकता है।",
   terms_ver: "संस्करण {version}, {date}।",
   welcome_intro: "लेखन और शोध में सहायक, जिसमें मनोविज्ञान शोध की सहायता पहले से जुड़ी है। आप जो कुछ लिखते हैं वह आपके खाते के अंतर्गत सहेजा जाता है।",
-  faq_a_lost: "आपके दस्तावेज़ हर संस्करण के साथ आपके खाते के अंतर्गत सहेजे जाते हैं, इसलिए ब्राउज़र साफ़ करने से वे नहीं खोते। किसी भी डिवाइस पर साइन इन करके उन्हें पाएँ। कोई दस्तावेज़ न दिखे तो दस्तावेज़ सूची और शोध प्रोजेक्ट्स देखें, फिर हमें लिखें।",
+  faq_a_lost: "आपके दस्तावेज़ हर संस्करण के साथ आपके खाते के अंतर्गत सहेजे जाते हैं, इसलिए ब्राउज़र साफ़ करने से वे नहीं खोते। किसी भी डिवाइस पर साइन इन करके उन्हें पाएँ। कोई दस्तावेज़ न दिखे तो दस्तावेज़ सूची और शोध अध्ययन देखें, फिर हमें लिखें।",
   faq_a_key: "आपकी AI कुंजी इस कंप्यूटर पर रखी जाती है, या आपके खाते के अंतर्गत आपके पासफ़्रेज़ से बंद रहती है। अगर ऐप कहे कि AI जुड़ा नहीं है, तो पेज के ऊपर <b>AI जोड़ें</b> दबाएँ और अपनी कुंजी फिर से पेस्ट करें।",
-  sap_desc: "शोध प्रोजेक्ट यह दर्ज करते हैं कि कोई कार्य किस चरण पर है, ताकि ऐप आपको सही टूल तक पहुँचा सके। खुला हुआ दस्तावेज़ प्रोजेक्ट में चला जाता है; आपके बाक़ी दस्तावेज़ स्क्रैच स्पेस में रहते हैं।"
+  sap_desc: "शोध अध्ययन यह दर्ज करते हैं कि कोई कार्य किस चरण पर है, ताकि ऐप आपको सही टूल तक पहुँचा सके। खुला हुआ दस्तावेज़ अध्ययन में चला जाता है; आपके बाक़ी दस्तावेज़ स्क्रैच स्पेस में रहते हैं।"
 };
 
 /** Returns a copy of the Hindi dictionary with the draft Hindi wording written over the nine overridden keys. */

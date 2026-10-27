@@ -30,7 +30,7 @@ const t = (key: string, vars?: Record<string, string | number>) => (E[key] ?? ke
 const PASS = "right passphrase";
 const NOW = new Date().toISOString();
 const project = (id: string, over: Partial<ProjectWork> = {}): ProjectWork => ({
-  id, userId: "u-list", title: "Project " + id, titleKeyVersion: 0, deks: [], field: "Education", stage: "idea", status: "active", contentLang: "en", kind: "project",
+  id, userId: "u-list", title: "Project " + id, titleKeyVersion: 0, deks: [], field: "Education", type: null, stage: "idea", status: "active", contentLang: "en", kind: "project",
   createdAt: "2026-03-05T10:00:00.000Z", stageMarks: {}, documentCount: 1, lastEditedAt: null, blobs: [], draftWords: 0, draftEditedAt: null, ...over
 });
 

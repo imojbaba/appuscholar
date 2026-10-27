@@ -53,7 +53,7 @@ function Form() {
       </DialogHeader>
 
       <div className="field !mb-0">
-        <FieldPicker variant="select" />
+        <FieldPicker />
         <p className="m-0 text-[13px] text-muted-foreground">{t("settings_field_desc")}</p>
       </div>
 

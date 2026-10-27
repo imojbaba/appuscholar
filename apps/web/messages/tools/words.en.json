@@ -1,7 +1,7 @@
 {
   "wd2_desc": "Look up a word and keep the ones you want to learn, then check your writing for common slips. Nothing changes in your document unless you press Apply.",
   "wd2_saved": "Saved",
-  "wd2_no_project": "Open a project to keep a word bank and your spelling choice. You can still look up words and check your writing.",
+  "wd2_no_project": "Open a study to keep a word bank and your spelling choice. You can still look up words and check your writing.",
   "wd2_locked": "Your word bank and spelling choice are locked. Unlock your vault to read them and save to them.",
   "wd2_broken": "Some of your saved word data cannot be opened on this device. Nothing was changed.",
   "wd2_broken_confirm": "Saving now replaces what is stored, which cannot be opened. Save anyway?",

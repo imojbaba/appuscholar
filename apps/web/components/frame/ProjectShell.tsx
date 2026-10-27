@@ -1,4 +1,5 @@
 "use client";
+import type { StageKey } from "@/lib/tools";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { usePathname, useRouter } from "next/navigation";
@@ -345,7 +346,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
     return true;
   }, [urlProjectId, confirmExit, router]);
 
-  const openProject = useCallback(async (id: string | null, opts: { docId?: string } = {}): Promise<boolean> => {
+  const openProject = useCallback(async (id: string | null, opts: { docId?: string; place?: StageKey } = {}): Promise<boolean> => {
     const target = id ?? scratchProjectId;
     if (!target) return false;
     if (target === projectIdRef.current) {
@@ -360,7 +361,7 @@ export function ProjectShell({ projectId: urlProjectId, openImportV1 = false, ch
       await reload();
     } catch (e) { switching.current = false; throw e; }
     // The scratch space has no home: it opens where its documents are (decision 4).
-    router.push(id ? homeHref(id) : placeHref(target, "writing"));
+    router.push(id ? (opts.place ? placeHref(id, opts.place) : homeHref(id)) : placeHref(target, "writing"));
     return true;
   }, [scratchProjectId, reloadProject, reloadDocs, selectDoc, confirmExit, reload, router]);
 

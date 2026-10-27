@@ -1,4 +1,5 @@
 "use client";
+import { useStudyField } from "@/lib/frame/studyField";
 import { useCallback, useSyncExternalStore } from "react";
 import { fieldLabel, oaSearch, pmSearchV2, rsDedupe, rsFilterPass, rsSortResults, type RsBrief, type RsFilter, type RsPaper, type RsQuick } from "@appuscholar/core";
 import { useT } from "@/lib/i18n";
@@ -222,10 +223,11 @@ export function useSearch(opts: { rankStored: boolean; persistRank(rank: boolean
   // Ranking reads the abstracts of the papers found: published text, so no name in it is a participant's to suggest (C13). "Suggest related terms" is made from the student's own topic, and is not.
   const rankAI = useLiterature(callAI);
   const { settings } = useSettings();
+  const studyField = useStudyField();
   const oaKey = useOpenAlexKey();
   const s = useResearchState();
   const rank = s.rank ?? opts.rankStored;
-  const field = fieldLabel(settings.field);
+  const field = studyField;
   const { persistRank } = opts;
 
   /** researchSearch, on the topic in the box (or `topic`, the selection bubble's text, 7655). */
