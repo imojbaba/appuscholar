@@ -323,8 +323,8 @@ test("S1-01 I start: the terms, my idea, Connect AI at the feedback (my key, my 
     await qa.check("data", "the toasts: AI connected, and all the documents are locked in the vault, each once", async () => {
       await expect.poll(async () => [...(await toasts())].sort(), { message: "the toasts shown so far" }).toEqual([...KEY_TOASTS].sort());
     }, { source: `${ROW1} ("The toasts 'Groq connected ✓ and encrypted 🔒' ... and 'All your documents are now locked in your vault ✓'"); first-run build spec (OJ 2026-10-27), step 4e ("AI connected.")` });
-    await qa.check("data", "the feedback ran with no second press: the button read \"Reading your idea…\" while it ran, then \"Get feedback on my idea\" again", async () => {
-      expect(await buttonTexts(page)).toEqual([T("idea_check_btn"), T("idea_checking"), T("idea_check_btn")]);
+    await qa.check("data", "the feedback ran with no second press: the button read \"Reading your idea…\" while it ran, then \"Get feedback again\" (Save as my project is now the next step)", async () => {
+      expect(await buttonTexts(page)).toEqual([T("idea_check_btn"), T("idea_checking"), T("idea_again_btn")]);
     }, { source: "first-run build spec (OJ 2026-10-27), step 4e; " + `${B1} row 2` });
     await qa.check("data", "the AI read is labelled as AI, and shows five rated lines (the first without a name), each with its reason and its rating, then the verdict", async () => {
       await expect(read.locator(".ai-read-label")).toHaveText(T("idea_read_label"));

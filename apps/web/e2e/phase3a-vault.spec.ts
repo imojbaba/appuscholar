@@ -138,7 +138,7 @@ test("vault journey: setup, write, new browser context needs the passphrase, wro
     await expect(page.getByTestId("vault-sheet-dialog")).toBeVisible();
     await expect(page.getByTestId("vault-code")).toHaveText(RECOVERY_CODE);
     firstCode = (await page.getByTestId("vault-code").innerText()).trim();
-    await expect.poll(toasts).toContain("All your documents are now locked in your vault ✓");
+    await expect.poll(toasts).toContain("All your work is now locked with your passphrase ✓");
     page.off("request", onRequest);
     // Every plaintext revision (the empty seed and the one with the two sentences) was rewritten in place as ciphertext.
     expect(rewrites.length).toBeGreaterThanOrEqual(2);

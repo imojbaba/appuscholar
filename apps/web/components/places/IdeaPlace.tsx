@@ -61,9 +61,11 @@ export function useIdeaCheck(onSaveWithout?: () => void): { busy: boolean; check
  * ("Add details for better feedback (optional)", open when one already holds something), and the feedback button. `opening`: the saved intake is still being
  * read, so the loading sign stands in for the boxes (W8). `level` is the heading's level (first run's page title is h1).
  */
-export function IdeaForm({ intake, onEdit, waiting, opening, busy, onCheck, topicRef, level = 2 }: {
+export function IdeaForm({ intake, onEdit, waiting, opening, busy, onCheck, topicRef, level = 2, again = false }: {
   intake: IdeaFields; onEdit(key: keyof IdeaFields, value: string): void; waiting: boolean; opening: boolean; busy: boolean; onCheck(): void;
   topicRef?: React.Ref<HTMLTextAreaElement>; level?: 1 | 2;
+  /** First run with a read already beside it: the button asks again, quietly, and Save as my project is the one next step. */
+  again?: boolean;
 }) {
   const t = useT();
   const H = level === 1 ? "h1" : "h2";
@@ -102,7 +104,7 @@ export function IdeaForm({ intake, onEdit, waiting, opening, busy, onCheck, topi
         </>
       )}
       <div className="idea-check">
-        <Button variant="primary" data-testid="idea-check" disabled={waiting || busy} onClick={onCheck}>{busy ? t("idea_checking") : t("idea_check_btn")}</Button>
+        <Button variant={again ? "ghost" : "primary"} data-testid="idea-check" disabled={waiting || busy} onClick={onCheck}>{busy ? t("idea_checking") : t(again ? "idea_again_btn" : "idea_check_btn")}</Button>
         <span className="idea-note" data-testid="idea-check-note">{t("idea_check_note")}</span>
       </div>
     </div>

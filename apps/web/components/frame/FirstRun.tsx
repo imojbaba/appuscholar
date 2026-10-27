@@ -45,13 +45,18 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
   // Set once the project exists, so a retry after a later step failed never creates a second one.
   const [made, setMade] = useState<string | null>(null);
   const topicRef = useRef<HTMLTextAreaElement>(null);
+  const saveBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { saveRef.current = () => { void save(); }; });
   // When the first check began: its AI use is logged with no project (there is none yet), and the save claims it for the new one.
   const firstCheckAt = useRef<number | null>(null);
 
   async function run() {
     const r = await check(intake, () => { firstCheckAt.current ??= Date.now(); });
-    if (r) setRead(r);
+    if (r) {
+      setRead(r);
+      // The next step is the save under the read: brought into view (on a phone, and below a long read, it is out of sight).
+      requestAnimationFrame(() => saveBtnRef.current?.scrollIntoView?.({ block: "center", behavior: "smooth" }));
+    }
   }
 
   async function save() {
@@ -101,7 +106,7 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
       <div className="ai-read-acts">
         {/* Making the project takes several seconds on the live site: the button and a status line say so, rather than the button only dimming (O3).
             Before a read it is the screen's second way on, "Save without feedback"; under a read it is the one next step. */}
-        <Button variant={read ? "primary" : "ghost"} disabled={busy || checking} aria-busy={busy || undefined} data-testid="idea-save" onClick={() => { void save(); }}>{t(busy ? "idea_save_busy" : read ? "idea_save_btn" : "idea_save_plain_btn")}</Button>
+        <Button ref={saveBtnRef} variant={read ? "primary" : "ghost"} disabled={busy || checking} aria-busy={busy || undefined} data-testid="idea-save" onClick={() => { void save(); }}>{t(busy ? "idea_save_busy" : read ? "idea_save_btn" : "idea_save_plain_btn")}</Button>
         {read && <Button variant="ghost" data-testid="idea-edit" onClick={() => topicRef.current?.focus()}>{t("idea_edit_btn")}</Button>}
       </div>
       <p className="idea-note" role="status" data-testid="idea-save-progress">{busy ? t("idea_save_busy_note") : ""}</p>
@@ -112,7 +117,7 @@ export function FirstRun({ moveDocId }: { moveDocId?: string }) {
     <section className="idea-place start" data-testid="first-run">
       <div className="idea-main">
         {moveDocId && <p className="place-note" data-testid="start-move-note">{t("start_move_note")}</p>}
-        <IdeaForm intake={intake} onEdit={(key, v) => setIntake((prev) => ({ ...prev, [key]: v }))} waiting={busy} opening={false} busy={checking} onCheck={() => void run()} topicRef={topicRef} level={1} />
+        <IdeaForm intake={intake} onEdit={(key, v) => setIntake((prev) => ({ ...prev, [key]: v }))} waiting={busy} opening={false} busy={checking} onCheck={() => void run()} topicRef={topicRef} level={1} again={read !== null} />
       </div>
       <aside className="idea-aside">
         {read ? <IdeaReadPanel read={read}>{saveBlock}</IdeaReadPanel> : (

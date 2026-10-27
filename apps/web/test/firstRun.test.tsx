@@ -280,9 +280,12 @@ describe("First run", () => {
     await until(() => $('[data-testid="idea-read"]') !== null);
     expect(h.callAI).toHaveBeenCalledTimes(1);
     expect(h.callAI).toHaveBeenCalledWith(buildIdeaPromptV2(fieldLabel("psychology"), { topic: TOPIC, resources: "", timeframe: "", constraints: "" }).prompt, { temp: 0.3, max: 1200, provider: "gemini" });
-    // Read first, then the name, then Save as my project.
+    // Read first, then the name, then Save as my project: the one next step; the feedback button now asks again, quietly.
     const panel = $('[data-testid="idea-read"]')!;
     expect(panel.querySelector('[data-testid="idea-save"]')!.textContent).toBe("Save as my project");
+    expect(panel.querySelector('[data-testid="idea-save"]')!.getAttribute("data-variant")).toBe("primary");
+    expect($('[data-testid="idea-check"]')!.textContent).toBe("Get feedback again");
+    expect($('[data-testid="idea-check"]')!.getAttribute("data-variant")).toBe("ghost");
     expect(panel.querySelector('[data-testid="idea-save-title"]')).not.toBeNull();
   });
 

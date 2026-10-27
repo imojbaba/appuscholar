@@ -217,7 +217,7 @@ function Flow({ ask }: { ask: ConnectAsk }) {
           <ol className="m-0 ml-5 grid list-decimal gap-1 text-sm leading-[1.6]" data-testid="connect-get-steps">
             {[1, 2, 3, 4, 5].map((n) => <li key={n}>{t("connect_get_" + n)}</li>)}
           </ol>
-          <Button asChild variant="primary" className="h-auto min-h-11 whitespace-normal">
+          <Button asChild variant="ghost" className="h-auto min-h-11 whitespace-normal">
             <a href={PROVIDERS.gemini.keysUrl} target="_blank" rel="noopener" data-testid="connect-open-studio">{t("connect_open_studio")}</a>
           </Button>
           <p className="m-0 text-[13px] text-muted-foreground" data-testid="connect-free-note">{t("connect_free_note")}</p>

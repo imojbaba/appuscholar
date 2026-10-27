@@ -103,7 +103,7 @@ test("the Phase 2 journey: terms, key, project, writing, AI help, My writing, ex
     // The key is saved under the vault. First run has no document yet, so nothing is migrated (phase3a-vault.spec.ts step 3 migrates a written one).
     const code = await connectAI(page, { keep: "pass", passphrase: PASS });
     expect(code).toMatch(RECOVERY_CODE);
-    await expect.poll(toasts).toEqual(expect.arrayContaining(["AI connected.", "All your documents are now locked in your vault ✓"]));
+    await expect.poll(toasts).toEqual(expect.arrayContaining(["AI connected.", "All your work is now locked with your passphrase ✓"]));
     await expect(page.getByTestId("vault-pill")).toHaveText("🔓 Unlocked");
 
     // The AI pill names the company; it opens the AI connection, whose Test asks the provider.

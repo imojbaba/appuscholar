@@ -30,7 +30,7 @@ import { expect, notChecked, test } from "../support/test";
  * Three things a reader of a case would not guess:
  *  - The idea check. The sheet needs "a project made through first run with its idea check" (row 6b: an older project whose idea was saved without the check will not do). `newStudent`
  *    saves the project without checking the idea, so the cases that need the AI-use log's one request make the project here (`projectWithIdeaCheck`): they sign in with `project: false`,
- *    write the idea, press "Check if it is doable", wait for the read, then "Save as my project". The check is the log's one request; the fake provider answers it.
+ *    write the idea, press "Get feedback on my idea", wait for the read, then "Save as my project". The check is the log's one request; the fake provider answers it.
  *  - "Saved" in S3-06. Budget autosaves its amounts and shows no "Saved" word (only Protocol, Ethics and Investigator's Save buttons toast it), so the case waits for what the word stands for: the
  *    PUT of the budget blob answers, the page's "last save did not go through" line goes, and the server holds the amounts.
  *  - The Hindi checkpoints exempt only core's own English (the pathway's list and its warning), never the app's words around them (story-common: the Hindi exemption rule).
@@ -267,7 +267,7 @@ function tabRow(page: Page) {
 }
 
 /**
- * A project made through first run, as the sheet's "You need" has it: the idea written, "Check if it is doable" pressed and its read waited for, then "Save as my project". The check is
+ * A project made through first run, as the sheet's "You need" has it: the idea written, "Get feedback on my idea" pressed and its read waited for, then "Save as my project". The check is
  * the one request of the AI-use log. `afterCheck` runs after the check is pressed and before its read is waited for (the personal-details dialog of S3-04 stands in between).
  */
 async function projectWithIdeaCheck(
