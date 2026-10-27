@@ -3,7 +3,7 @@ import { z } from "zod";
 import { classifyAiUse, contentLangInstruction, scanText } from "@appuscholar/core";
 import type { AiUseEntry, Store } from "../store/types";
 import type { AuthEnv } from "../auth";
-import { complete, TEST_TIMEOUT_MS, type GatewayDeps } from "../ai/gateway";
+import { complete, testKey, type GatewayDeps } from "../ai/gateway";
 import { AiError, type AiErrorCode } from "../ai/types";
 import { AI_QUOTAS, quotaRules, type QuotaLimits } from "../ai/quota";
 
@@ -110,8 +110,8 @@ export function aiRoutes(store: Store, deps: GatewayDeps, quota: { now?: () => D
     return guarded(c, async () => {
       const limited = await overQuota(c, "test");
       if (limited) return limited;
-      const out = await complete({ provider: body.data.provider, apiKey: body.data.apiKey, prompt: "Reply with the single word OK.", temperature: 0, maxTokens: 20, timeoutMs: TEST_TIMEOUT_MS }, deps);
-      return c.json({ ok: true, reply: out.text });
+      await testKey(body.data, deps);
+      return c.json({ ok: true, reply: "OK" });
     });
   });
 

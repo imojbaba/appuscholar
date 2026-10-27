@@ -2,7 +2,7 @@ import type { ProviderId } from "@appuscholar/core";
 
 export type { ProviderId };
 /** `signal` ends the call: the gateway sets it from `timeoutMs` so a provider that never answers cannot hold the request (live, 27 Oct). */
-export type CompleteInput = { provider: ProviderId; apiKey: string; prompt: string; temperature?: number; maxTokens?: number; timeoutMs?: number; signal?: AbortSignal };
+export type CompleteInput = { provider: ProviderId; apiKey: string; prompt: string; temperature?: number; maxTokens?: number; timeoutMs?: number; signal?: AbortSignal; modelTimeoutMs?: number };
 export type CompleteOutput = { text: string; model: string };
 export type AiErrorCode = "no-key" | "key-rejected" | "model-gone" | "rate-limit" | "provider-error" | "network" | "blocked" | "truncated" | "empty" | "personal-data" | "slow";
 

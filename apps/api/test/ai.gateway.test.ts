@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Anthropic from "@anthropic-ai/sdk";
-import { complete, fetchRetry5xx } from "../src/ai/gateway";
+import { complete, fetchRetry5xx, testKey } from "../src/ai/gateway";
+import { GEMINI_CHAIN, GEMINI_THINKING_ROOM } from "../src/ai/providers/gemini";
 import { AiError } from "../src/ai/types";
 import { defaultAnthropic } from "../src/ai/providers/anthropic";
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -11,13 +12,13 @@ describe("gateway", () => {
     const calls: string[] = [];
     const fetchMock = vi.fn(async (url: string) => { calls.push(url); return url.includes("gemini-3.8-flash") ? json(404, {}) : json(200, { candidates: [{ content: { parts: [{ text: "hello" }] } }] }); });
     const r = await complete({ provider: "gemini", apiKey: "AIza-test", prompt: "p" }, { fetch: fetchMock as never });
-    expect(r).toEqual({ text: "hello", model: "gemini-3.6-flash" });
+    expect(r).toEqual({ text: "hello", model: "gemini-3.7-flash" });
     expect(calls[0]).toContain("generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent");
   });
   it("gemini sends the key in x-goog-api-key, the v1 body, and drops thought parts", async () => {
     const fetch = vi.fn(async (_u: string, init: RequestInit) => {
       expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("AIza-test");
-      expect(JSON.parse(init.body as string)).toEqual({ contents: [{ parts: [{ text: "p" }] }], generationConfig: { temperature: 0.8, maxOutputTokens: 2000 } });
+      expect(JSON.parse(init.body as string)).toEqual({ contents: [{ parts: [{ text: "p" }] }], generationConfig: { temperature: 0.8, maxOutputTokens: 2000 + 2048 } });
       return json(200, { candidates: [{ content: { parts: [{ text: "hidden", thought: true }, { text: "a" }, { text: "b" }] } }] });
     });
     expect((await complete({ provider: "gemini", apiKey: "AIza-test", prompt: "p" }, { fetch: fetch as never })).text).toBe("ab");
@@ -25,7 +26,7 @@ describe("gateway", () => {
   it("gemini exhausting the chain on 404 maps to model-gone", async () => {
     const fetch = vi.fn(async () => json(404, {}));
     await expect(complete({ provider: "gemini", apiKey: "k", prompt: "p" }, { fetch: fetch as never })).rejects.toMatchObject({ code: "model-gone" });
-    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch).toHaveBeenCalledTimes(5);
   });
   it("gemini safety block maps to blocked with v1 wording", async () => {
     const fetch = vi.fn(async () => json(200, { promptFeedback: { blockReason: "SAFETY" } }));
@@ -167,6 +168,80 @@ describe("a provider that never answers", () => {
   it("every call gets a time limit even when the caller sets none", async () => {
     const fetch = vi.fn(async (_u: string, init: RequestInit) => { expect(init.signal).toBeInstanceOf(AbortSignal); return json(200, { candidates: [{ content: { parts: [{ text: "ok" }] } }] }); });
     expect((await complete({ provider: "gemini", apiKey: "k", prompt: "p" }, { fetch: fetch as never })).text).toBe("ok");
+  });
+});
+
+describe("Gemini as it answered a new free key live (27 Oct 2026)", () => {
+  const ok = (text: string) => json(200, { candidates: [{ content: { parts: [{ text }] } }] });
+  const model = (u: string) => /models\/([^:]+):/.exec(u)?.[1];
+  it("tries 3.8, 3.7, 3.6, 3.5 and 2.5 in that order", () => {
+    expect(GEMINI_CHAIN).toEqual(["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash"]);
+  });
+  it("a busy model (503 high demand) is passed over at once, not retried: the next model answers", async () => {
+    const seen: string[] = [];
+    const fetch = vi.fn(async (u: string) => { seen.push(model(u)!); return u.includes("3.8") ? json(503, { error: { code: 503, message: "This model is currently experiencing high demand.", status: "UNAVAILABLE" } }) : ok("feedback"); });
+    expect(await complete({ provider: "gemini", apiKey: "AIza-k", prompt: "p" }, { fetch: fetch as never })).toEqual({ text: "feedback", model: "gemini-3.7-flash" });
+    expect(seen).toEqual(["gemini-3.8-flash", "gemini-3.7-flash"]);
+  });
+  it("a model's own rate limit (429) passes to the next; when every model is limited the answer is rate-limit", async () => {
+    const fetch = vi.fn(async () => json(429, {}));
+    await expect(complete({ provider: "gemini", apiKey: "k", prompt: "p" }, { fetch: fetch as never })).rejects.toMatchObject({ code: "rate-limit" });
+    expect(fetch).toHaveBeenCalledTimes(5);
+  });
+  it("a model that does not answer in its time is passed over for the next", async () => {
+    const fetch = vi.fn((u: string, init: RequestInit) => u.includes("3.8")
+      ? new Promise<Response>((_, reject) => { init.signal?.addEventListener("abort", () => reject(new DOMException("t", "TimeoutError"))); })
+      : Promise.resolve(ok("late but fine")));
+    expect(await complete({ provider: "gemini", apiKey: "k", prompt: "p", modelTimeoutMs: 50 }, { fetch: fetch as never })).toEqual({ text: "late but fine", model: "gemini-3.7-flash" });
+  });
+  it("2.5 closed to new users (404) does not hide an earlier model's answer: gone models are passed over", async () => {
+    const fetch = vi.fn(async (u: string) => (u.includes("3.5") ? ok("from 3.5") : json(404, { error: { message: "no longer available to new users" } })));
+    expect((await complete({ provider: "gemini", apiKey: "k", prompt: "p" }, { fetch: fetch as never })).model).toBe("gemini-3.5-flash");
+  });
+  it("a wrong key (400 API_KEY_INVALID) is key-rejected at once, without trying the other models", async () => {
+    const fetch = vi.fn(async () => json(400, { error: { code: 400, message: "API key not valid. Please pass a valid API key.", status: "INVALID_ARGUMENT", details: [{ reason: "API_KEY_INVALID" }] } }));
+    await expect(complete({ provider: "gemini", apiKey: "abc", prompt: "p" }, { fetch: fetch as never })).rejects.toMatchObject({ code: "key-rejected" });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it("thinking gets room on top of the answer's limit (3.6 spent the key test's 20 tokens thinking and said nothing)", async () => {
+    const fetch = vi.fn(async (_u: string, init: RequestInit) => {
+      expect(JSON.parse(init.body as string).generationConfig.maxOutputTokens).toBe(20 + GEMINI_THINKING_ROOM);
+      return ok("OK");
+    });
+    await complete({ provider: "gemini", apiKey: "k", prompt: "p", maxTokens: 20 }, { fetch: fetch as never });
+  });
+});
+
+describe("testKey: Connect AI's key check", () => {
+  it("Gemini: one call to the models list with the key in x-goog-api-key, no model asked to write", async () => {
+    const fetch = vi.fn(async (u: string, init: RequestInit) => {
+      expect(u).toBe("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1");
+      expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("AIza-good");
+      expect(init.method ?? "GET").toBe("GET");
+      return json(200, { models: [{ name: "models/gemini-3.8-flash" }] });
+    });
+    await expect(testKey({ provider: "gemini", apiKey: " AIza-good " }, { fetch: fetch as never })).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it("Gemini: a wrong key is key-rejected", async () => {
+    const fetch = vi.fn(async () => json(400, { error: { message: "API key not valid. Please pass a valid API key.", details: [{ reason: "API_KEY_INVALID" }] } }));
+    await expect(testKey({ provider: "gemini", apiKey: "abc" }, { fetch: fetch as never })).rejects.toMatchObject({ code: "key-rejected" });
+  });
+  it("Gemini: a key Google refuses for another reason (403) is key-rejected too", async () => {
+    const fetch = vi.fn(async () => json(403, { error: { message: "permission denied" } }));
+    await expect(testKey({ provider: "gemini", apiKey: "k" }, { fetch: fetch as never })).rejects.toMatchObject({ code: "key-rejected" });
+  });
+  it("an empty key is no-key, with no call", async () => {
+    const fetch = vi.fn();
+    await expect(testKey({ provider: "gemini", apiKey: "  " }, { fetch: fetch as never })).rejects.toMatchObject({ code: "no-key" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it("other companies are still asked for the one-word reply", async () => {
+    const fetch = vi.fn(async (_u: string, init: RequestInit) => {
+      expect(JSON.parse(init.body as string)).toMatchObject({ messages: [{ role: "user", content: "Reply with the single word OK." }], temperature: 0, max_tokens: 20 });
+      return json(200, { choices: [{ message: { content: "OK" } }] });
+    });
+    await expect(testKey({ provider: "groq", apiKey: "gsk_x" }, { fetch: fetch as never })).resolves.toBeUndefined();
   });
 });
 
