@@ -1,6 +1,7 @@
 "use client";
 import { useT } from "@/lib/i18n";
-import { StatsSetsHost } from "@/lib/tools/stats/StatsSets";
+import { StatsSetsHost, useStatsSets } from "@/lib/tools/stats/StatsSets";
+import { LockOfferNote } from "@/components/workspace/LockOfferNote";
 import { useLabActions } from "@/lib/tools/stats/useLabActions";
 import { useRunActions } from "@/lib/tools/stats/useRunActions";
 import { NotBuilt } from "@/components/places/NotBuilt";
@@ -36,7 +37,14 @@ function DataTab({ projectId }: { projectId: string }) {
  * Panel again) loses nothing.
  */
 export function Panel({ tab, projectId }: { tab: string; projectId: string }) {
-  return <StatsSetsHost projectId={projectId}>{tabOf(tab, projectId)}</StatsSetsHost>;
+  return <StatsSetsHost projectId={projectId}><StatsLockOffer />{tabOf(tab, projectId)}</StatsSetsHost>;
+}
+
+/** A data table recorded is data about real people, saved: with no passphrase set, the lock is offered once, above whichever tab is open (first-run build spec). */
+function StatsLockOffer() {
+  const sets = useStatsSets();
+  const recorded = !!sets.value && Object.keys(sets.value).length > 0;
+  return <LockOfferNote saved={recorded} />;
 }
 
 function tabOf(tab: string, projectId: string) {
